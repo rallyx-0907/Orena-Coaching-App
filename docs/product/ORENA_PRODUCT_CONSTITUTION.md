@@ -281,7 +281,17 @@ Content should not merely decorate drills.
 
 # 10. Entry experience
 
-The main entry into Orena should create curiosity and continuation.
+Orena is experience-centered, not discovery-only. Discovery, intentional
+practice, continuation, learner-owned content, and revisiting important language
+are equally valid first-class learner intentions.
+
+A learner may directly choose Dictation, Shadowing, Speaking, Writing, Grammar,
+Recall, or another capability. They must not have to discover a story first.
+Direct capability access does not authorize isolated skill-module products.
+Discovery, practice, continuation, imports, recall, and contextual suggestions
+converge on shared capability primitives and shared learner evidence.
+
+The main entry into Orena should create curiosity, agency, and continuation.
 
 It should help the learner perceive:
 
@@ -444,6 +454,22 @@ When possible, it should remain connected to:
 # 17. Listening
 
 Listening should help learners participate in real language.
+
+Listening must provide a first-class synchronized Follow experience. During
+playback, the active spoken segment, its original-language transcript, and its
+support-language meaning are visible together as one coherent moment. Seeking
+updates the active segment; selecting a transcript segment seeks playback.
+Replay and playback-speed changes preserve this synchronization.
+
+Chinese remains primary for Chinese content. Contextual Pinyin may support it
+when useful. Missing translation must be represented truthfully, with recovery
+where available; original text must never be mislabeled as translated meaning.
+
+The learner may watch, listen, follow, and understand for the entire clip
+without entering Dictation or Shadowing. Deeper actions may grow from the same
+segment: dictation, imitation, pronunciation, vocabulary inspection, grammar or
+context explanation, saving language, and response. These are shared
+capabilities, not separate screen-oriented learning engines.
 
 Useful experiences may include:
 
@@ -769,6 +795,17 @@ The detailed durable content contract is defined in:
 ---
 
 # 31. Constitution change policy
+
+Human-authorized product-layer reset (D-046): historical learner-facing skill
+dashboards, module shells, Listening mode destinations, Shadowing Studio, and
+screen-specific handoff/session orchestration must be removed from the active
+tree. Git history is their archive. Extract and independently test valuable
+capability primitives before deleting mixed wrappers. Do not preserve competing
+product specifications or rename old wrappers to claim a clean foundation.
+
+The active product domain centers content, encounters, practice intentions,
+continuation, learner memory, and expression over reusable capabilities and
+protected infrastructure. This does not authorize production/data changes.
 
 Do not update this Constitution as part of ordinary feature implementation.
 

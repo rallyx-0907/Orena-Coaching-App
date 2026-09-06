@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const projectRoot = path.resolve(process.argv[2] || '.');
-const root = path.join(projectRoot, 'static', 'becoming');
+const root = path.join(projectRoot, 'static', 'orena');
 const entry = path.join(root, 'app.js');
 const cache = new Map();
 
@@ -43,9 +43,9 @@ async function load(file) {
 
 try {
   await load(entry);
-  console.log(`BECOMING browser ESM graph validation OK (${cache.size} modules linked)`);
+  console.log(`Orena browser ESM graph validation OK (${cache.size} modules linked)`);
 } catch (error) {
-  console.error('BECOMING browser ESM graph validation FAILED');
+  console.error('Orena browser ESM graph validation FAILED');
   console.error(error?.stack || error);
   process.exit(1);
 }

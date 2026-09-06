@@ -133,14 +133,13 @@ async def validation_error_response(request: Request, exc: RequestValidationErro
     return response
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
-BECOMING_ASSET_ROOT = (ROOT / "static" / "becoming").resolve()
+ORENA_ASSET_ROOT = (ROOT / "static" / "orena").resolve()
 
-@app.get("/becoming-assets/{asset_path:path}", include_in_schema=False)
-def becoming_asset(asset_path: str):
-    # Dedicated BECOMING asset route, isolated from the legacy /static mount.
-    candidate = (BECOMING_ASSET_ROOT / asset_path).resolve()
+@app.get("/orena-assets/{asset_path:path}", include_in_schema=False)
+def orena_asset(asset_path: str):
+    candidate = (ORENA_ASSET_ROOT / asset_path).resolve()
     try:
-        candidate.relative_to(BECOMING_ASSET_ROOT)
+        candidate.relative_to(ORENA_ASSET_ROOT)
     except ValueError as exc:
         raise HTTPException(404, "Asset not found") from exc
 
@@ -645,7 +644,7 @@ def home() -> HTMLResponse:
     # Every asset already answers `no-store`; the document that names them has
     # to as well.
     return HTMLResponse(
-        (ROOT / "templates" / "becoming" / "index.html").read_text(encoding="utf-8"),
+        (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 

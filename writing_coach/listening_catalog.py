@@ -52,7 +52,7 @@ REVIEWED_MEDIA_HOSTS = frozenset({"commons.wikimedia.org", "upload.wikimedia.org
 # thumbnail legitimately comes from YouTube's image CDN, and a Commons lesson's
 # never does. The web player and the native adapter apply the same mapping.
 REVIEWED_POSTER_HOSTS: Mapping[str, frozenset[str]] = {
-    "wikimedia-commons": REVIEWED_MEDIA_HOSTS,
+    "wikimedia-commons": REVIEWED_MEDIA_HOSTS | {"thumb.wikimedia.org"},
     "youtube": frozenset({"i.ytimg.com", "img.youtube.com"}),
 }
 PUBLIC_CONTENT_STATUS = "PUBLISHED"

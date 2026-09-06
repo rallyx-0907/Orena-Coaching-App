@@ -21,7 +21,7 @@ const COMMONS_MEDIA_HOSTS = ['commons.wikimedia.org', 'upload.wikimedia.org'];
  * image CDN. listening_catalog.py checks poster host against the source's own
  * provider; this is defence in depth against an arbitrary origin.
  */
-const POSTER_HOSTS = [...COMMONS_MEDIA_HOSTS, 'i.ytimg.com', 'img.youtube.com'];
+const POSTER_HOSTS = [...COMMONS_MEDIA_HOSTS, 'thumb.wikimedia.org', 'i.ytimg.com', 'img.youtube.com'];
 
 /**
  * One reviewed-media URL policy, stated the same way on all three sides:

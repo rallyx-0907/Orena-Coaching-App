@@ -1131,3 +1131,39 @@ and provider constraints.
 **Supersedes / Superseded by:** Extends D-044 and D-014. It does not supersede
 the stable Shared Media Learning contract or existing verified learning-domain
 implementation.
+
+## D-046 — Experience-centered entry, synchronized Follow, and product-layer reset
+
+**Status:** Accepted by explicit human instruction, 2026-09-06.
+
+**Decision:** Orena is experience-centered, not discovery-only. Discovery,
+direct intentional practice, continuation, learner-owned content, and revisiting
+language are first-class entry intentions. Direct Dictation, Shadowing,
+Speaking, Writing, Grammar, and Recall access is valid. Every entry converges
+on shared capability primitives, content identities, and learner evidence.
+
+Listening must provide synchronized Follow: media playback, active original
+segment, and that segment's support-language meaning together. Seeking,
+transcript selection, replay, and speed changes preserve synchronization.
+Chinese is primary with optional contextual Pinyin. Follow never requires
+Dictation or Shadowing; deeper practice can use the current segment.
+
+**Consequences:** Physically remove historical learner-facing skill dashboards,
+module shells, Listening mode destinations, Shadowing Studio, screen-specific
+handoffs/session orchestration, and tests/specifications whose sole purpose is
+to preserve that product model. Extract and independently test useful primitives
+from mixed modules before deletion. Git history is the archive; no legacy copy.
+Build the new product layer around content, encounters, practice intentions,
+continuation, learner memory, and expression. Preserve auth, ownership,
+PostgreSQL, APIs, providers, media retrieval, evaluation, and evidence contracts
+where valid. Deleting obsolete working-tree files is explicitly authorized;
+production operations and destructive history rewriting remain unauthorized.
+
+**Supersedes:** Narrows D-044/D-045 interpretations that could force discovery
+before practice. Supersedes historical product shell, screen hierarchy,
+Listening-mode and Studio composition decisions, and native instructions to
+reproduce those obsolete products. Historical verified technical facts remain
+historical facts. The preceding uncommitted experience mission is discarded as
+a product direction; only independently useful primitives or approved assets
+may survive. Product approval of the new implementation remains a final human
+browser-review gate.

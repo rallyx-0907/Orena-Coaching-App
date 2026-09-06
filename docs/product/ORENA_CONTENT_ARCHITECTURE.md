@@ -107,7 +107,13 @@ Saved is a learner relationship to content, not a separate content origin.
 
 # 3. Discover and bring your own
 
-The learner-facing content system should support two complementary behaviors.
+Discovery and importing are complementary content paths, not an exhaustive
+list of learner intentions. Orena also supports direct intentional practice,
+continuation, and revisiting language. A learner may choose Dictation, Shadowing,
+Speaking, Writing, Grammar, or Recall directly, then choose or resume meaningful
+material. The same content identities, capability primitives, and learner
+evidence serve every entry path. No discovery prerequisite or separate
+practice-only content repository is required.
 
 ## Discover
 
@@ -277,6 +283,14 @@ read
 # 7. Listening content
 
 Listening should provide a discoverable media world.
+
+Media also supports intentional practice and continuation. Every prepared
+media encounter must offer synchronized Follow: playback selects the current
+timestamped original segment and its support-language meaning together;
+transcript selection seeks, and replay and speed changes preserve alignment.
+Chinese is primary, with optional contextual Pinyin. Follow remains usable
+without requiring an exercise. Deeper practice uses that same source and segment
+identity rather than creating Listening-mode or Studio-specific sessions.
 
 Possible Orena-provided or appropriately sourced media experiences include:
 
@@ -597,6 +611,12 @@ Existing code proves current implementation state.
 It does not define the final content architecture.
 
 Existing foundations should be reused when compatible.
+
+Under the human-authorized reset in D-046, reuse means clean capability
+primitives and infrastructure. Historical screen/session wrappers, skill-first
+routes, mode selectors, and competing product specifications must be physically
+removed, extracting and testing useful logic first. Git history is the archive;
+an active legacy directory is not an acceptable substitute.
 
 Examples include:
 
