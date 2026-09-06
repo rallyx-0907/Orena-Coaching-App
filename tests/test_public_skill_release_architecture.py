@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from writing_coach.core.platform_api import api_platform_skills
@@ -58,7 +59,8 @@ def test_platform_contract_is_one_language_wide_release_matrix() -> None:
 
 def test_new_navigation_is_independent_of_historical_skill_hierarchy() -> None:
     source = (ROOT / 'static/orena/app.js').read_text(encoding='utf-8')
-    assert "if(!user.is_admin)" in source  # internal review remains gated
+    # The gate itself is the contract, not the source formatting around it.
+    assert re.search(r"if\s*\(\s*!\s*user\.is_admin\s*\)", source)  # internal review remains gated
     assert 'applySkillNavigation' not in source
     assert 'routeAvailable' not in source
     assert not (ROOT / 'static/becoming').exists()

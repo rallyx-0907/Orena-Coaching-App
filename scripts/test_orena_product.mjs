@@ -35,6 +35,22 @@ const unavailable=learnerMemory({getItem(){throw Error('blocked');},setItem(){th
 assert.equal(unavailable.write('draft','你好'),false);
 assert.equal(unavailable.value.expressions.draft,'你好');
 
+// Imported media is content the learner owns, held to the same owner and
+// language scoping as imported text, and reachable from the same surfaces.
+assert.equal(a.addMedia({id:'media:a',title:'Not an import'}),false,'Only url: identities are learner media imports');
+assert.equal(a.value.mediaImports.length,0);
+a.addMedia({id:'url:https://example.org/a',title:'A voice I brought',kind:'audio',duration_ms:61000});
+a.addMedia({id:'url:https://example.org/a',title:'A voice I brought',kind:'audio',duration_ms:61000});
+assert.equal(a.value.mediaImports.length,1,'Re-entering an import must not duplicate it');
+assert.equal(a.value.mediaImports[0].origin,'imported');
+assert.equal(learnerMemory(storage,'owner-a','en').value.mediaImports.length,1);
+assert.equal(learnerMemory(storage,'owner-b','en').value.mediaImports.length,0);
+assert.equal(learnerMemory(storage,'owner-a','zh').value.mediaImports.length,0);
+a.remove('url:https://example.org/a');
+assert.equal(learnerMemory(storage,'owner-a','en').value.mediaImports.length,0);
+const world=readFileSync(new URL('../static/orena/ui/world.js',import.meta.url),'utf8');
+assert.match(world,/practiceMedia[\s\S]{0,40}\.filter\(\(x\) => supports\(/,'Practice intents must offer imported media, not the catalog alone');
+
 for (const language of ['en','zh']) {
   const text=language==='en'?'The train is here.':'火车来了。';
   const segments=[{segment_id:'one',start_ms:500,end_ms:2000,original_text:text},{segment_id:'two',start_ms:3000,end_ms:5000,original_text:text}];

@@ -23,9 +23,17 @@ been removed from the working tree. Native wrapper removal, test migration,
 regression repair and complete EN/ZH browser acceptance remain in progress.
 
 Verified so far: independent extracted EN/ZH capability checks; browser ESM
-graph (20 modules); real English audio playback with synchronized original
-segment and Vietnamese meaning on transcript selection. This is execution
-evidence, not milestone acceptance.
+graph (21 modules); real audio playback with synchronized original segment,
+contextual Pinyin and Vietnamese meaning on transcript selection, in both
+languages. Learner-imported media now reaches every Practice intent beside the
+curated catalog, so Discover and Bring-your-own share one library. Authored
+grammar pattern notes are joined onto the canonical catalog by stable Concept ID
+and labelled as generated. This is execution evidence, not milestone acceptance.
+
+Operator note: the Platform Admin web surface has no host template since the
+reset removed `templates/index.html`; its API and script remain. Whether Orena
+keeps that page, and where, is an open human decision recorded in
+`docs/project/CURRENT_HANDOFF.md`.
 
 NEXT_REVIEWABLE_SLICE: Finish the full D-046 reset foundation mission, including
 intentional Dictation/Shadowing, browser EN/ZH and responsive regression checks.

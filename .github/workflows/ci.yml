@@ -27,18 +27,22 @@ jobs:
       - run: python scripts/validate_architecture.py
       - run: python scripts/build_listening_dev_catalog.py --check
       - run: node --experimental-vm-modules scripts/validate_browser_esm_graph.mjs
+      # The D-046 reset deleted the old Listening-mode/Shadowing-Studio gates
+      # along with the product they guarded. These are their replacements at the
+      # new product boundary: the encounter/practice-intent layer, the shared
+      # capability primitives, and the media contracts that outlived the reset.
       - run: |
-          node scripts/test_interactive_transcript_contract.mjs
-          node scripts/test_listening_player_lifecycle_contract.mjs
-          node scripts/test_listening_smart_follow_contract.mjs
-          node scripts/test_listening_ui.mjs
+          node scripts/test_orena_primitives.mjs
+          node scripts/test_orena_product.mjs
+          node scripts/test_orena_follow_clock.mjs
           node scripts/test_transcript_display_units.mjs
           node scripts/test_transcript_playback.mjs
-          node scripts/test_active_listening.mjs
-          node scripts/test_shadowing_practice.mjs
+          node scripts/test_dictation_evaluator.mjs
+          node scripts/test_audio_recorder.mjs
+          node scripts/test_m3_pronunciation_contract.mjs
           node scripts/test_media_learning_quality.mjs
           node scripts/test_real_media_catalog_contract.mjs
-          node scripts/test_listening_discovery_contract.mjs
+          node scripts/test_media_status_compact_accessor.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite
