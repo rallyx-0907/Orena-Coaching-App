@@ -1,5 +1,5 @@
 import {ApiClient, SESSION_COOKIE_NAME} from './client';
-import {dictionaryWordToLibraryInput} from '../features/reading/readingLibraryHandoff';
+import {dictionaryWordToLibraryInput} from '../capabilities/dictionary-save';
 
 const response = (body: unknown): Response => ({status: 200, ok: true, json: async () => body} as Response);
 const session = {id: 41, created_at: '2026-08-30T00:00:00Z', language_code: 'en', target_level: 'B1', topic: 'daily_life', learner_goal: 'work', title: 'A small change', passage: 'A short passage.', questions: [{id: 1, question: 'What changed?', options: ['A', 'B', 'C', 'D']}], recycled_words: [], generation_mode: 'generated', material: 'article'};

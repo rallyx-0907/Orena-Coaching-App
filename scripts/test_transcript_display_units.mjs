@@ -3,7 +3,7 @@ import {
   buildTranscriptDisplayUnits,
   displayUnitContains,
   displayUnitMeaning,
-} from '../static/becoming/domain/transcript-display-units.js';
+} from '../static/orena/capabilities/transcript-display-units.js';
 
 const source=[
   {segment_id:'s0',order:0,start_ms:0,end_ms:3900,original_text:'do you forget words when you speak'},

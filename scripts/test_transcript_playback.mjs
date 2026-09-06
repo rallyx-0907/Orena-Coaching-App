@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {activeCanonicalSegment} from '../static/becoming/domain/transcript-playback.js';
+import {activeCanonicalSegment} from '../static/orena/capabilities/transcript-timeline.js';
 
 const segments=[
   {segment_id:'s0',start_ms:0,end_ms:3900},

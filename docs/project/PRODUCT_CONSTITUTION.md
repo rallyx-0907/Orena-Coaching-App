@@ -41,9 +41,8 @@ canonical Orena Product Constitution.
 - The canonical Orena web route is `/`.
 - `/becoming` is deprecated and compatibility-only. No new learner feature may
   target it.
-- Historical paths such as `static/becoming/**`, `templates/becoming/**`, and
-  `writing_coach/becoming_*` may remain while technically required. Their names
-  are implementation history, not current product direction.
+- D-046 retires the historical learner-product implementation. Git is the archive.
+  Stable `writing_coach/becoming_*` capability and persistence contracts may remain.
 - A legacy namespace, filename, symbol, branch, screenshot, comment, or archived
   document never authorizes revival of the BECOMING product identity or route.
 
@@ -60,25 +59,13 @@ canonical Orena Product Constitution.
 
 ## Connected learning system
 
-Orena is not four isolated skill applications. Its core learning system is:
+Orena is experience-centered, not discovery-only (D-046). Discovery, intentional
+Practice, continuation, learner-owned content and learner memory are valid entry
+intentions. They converge on shared capabilities and learner evidence.
 
-```text
-Listening ↔ Speaking ↔ Reading ↔ Writing
-```
-
-Library / Active Recall, Grammar, Dictionary, Progress, and Media Learning are
-shared infrastructure. Evidence and content should move meaningfully between
-skills rather than being trapped inside a module.
-
-Canonical continuity includes:
-
-```text
-Listen → Dictation → Read transcript → Dictionary / Vocabulary
-→ Shadow → Speaking feedback → Writing response → Active Recall
-```
-
-Do not create parallel media, progress, dictionary, vocabulary, scoring, or
-learning-evidence systems per skill or per client.
+Do not restore historical skill dashboards, Listening shells, Shadowing Studio,
+mode hierarchies, or screen-oriented handoffs. Extract useful primitives before
+deleting mixed modules. Do not create separate learning engines per entry intent.
 
 ## Languages
 
@@ -89,16 +76,13 @@ learning-evidence systems per skill or per client.
 
 ## Listening and Media Learning
 
-- Listening is content-library-first. Curated, interesting learning content is
-  the primary experience; learner media import is secondary.
-- Curated and learner-imported media use the same Listening Engine.
-- Normal Listening, Active Listening, Dictation, Shadowing, transcript,
-  dictionary, translation, Pinyin, progress, and resume share canonical media
-  contracts.
-- One canonical Media Learning Object powers relevant downstream learning
-  experiences. Do not build skill-specific media pipelines.
-- Rights and provenance belong to the canonical source/media object and follow
-  downstream Listening, Speaking, Reading, and Writing use.
+- Follow is first-class: synchronized playback, active original subtitle and
+  same-segment support-language meaning. Seek, selection, replay and speed changes
+  preserve that relationship. Chinese is primary; Pinyin is contextual.
+- Learners can stay in Follow without doing Dictation or Shadowing.
+- Curated and learner-imported media use the same capability primitives and
+  canonical Media Learning Object. Rights and provenance travel with the content.
+- Practice can begin directly or emerge from an encounter; evidence stays shared.
 
 ## Persistence
 

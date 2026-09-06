@@ -102,12 +102,12 @@ def test_support_language_is_distinct_from_ui_locale() -> None:
 def test_no_vietnamese_default_survives_in_the_web_client() -> None:
     """The four defaults the audit named must stay gone."""
 
-    store = (REPO / "static/becoming/store.js").read_text(encoding="utf-8")
-    api = (REPO / "static/becoming/api.js").read_text(encoding="utf-8")
+    store = (REPO / "static/orena/app.js").read_text(encoding="utf-8")
+    api = (REPO / "static/orena/infrastructure/api.js").read_text(encoding="utf-8")
     assert "||'vi'" not in store and '|| "vi"' not in store
     assert "||'vi'" not in api and '|| "vi"' not in api
     assert "['vi','en','zh']" not in store, "the three-language enum must not come back"
-    assert "AVAILABLE_SUPPORT_LANGUAGES" in store
+    assert "languages.support_languages" in store
 
     listening_api = (REPO / "writing_coach/listening_api.py").read_text(encoding="utf-8")
     assert 'Query(default="vi"' not in listening_api

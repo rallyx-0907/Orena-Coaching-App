@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_reset_foundation",
     "status": "in_progress",
-    "next_task": "Complete D-046 product-layer removal, native wrapper retirement, new encounter/practice UX, tests, EN/ZH responsive browser acceptance, and final human review. Preserve intentional deletions; checkpoint commits are recovery points, not review gates."
+    "next_task": "Finish the Orena WEB foundation: shared Follow/Practice, owned content, evidence, EN/ZH browser and responsive checks, web test migration, final human review. Native mobile is frozen by current human instruction; retain completed changes and do no further native work."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

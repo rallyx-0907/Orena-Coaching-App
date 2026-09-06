@@ -11,6 +11,18 @@ to fit an implementation.
 an approved product surface establishes a new shared contract. **Do not store:**
 page-specific polish lists, temporary defects, or generic framework guidance.
 
+## Current human direction (D-046)
+
+The historical learner product is retired. Current mainline UI is technical
+history, not design authority. The Product Constitution, Content Architecture
+and approved brand govern the new web foundation. Experience-centered does not
+mean discovery-only; direct practice must converge with contextual practice.
+
+Native mobile is frozen by explicit human scope update on 2026-09-06. No further
+native work belongs to this mission. Its existing working-tree state is retained.
+A future native mission follows coherent, human-approved web direction. Nothing
+in the older full-port rule authorizes rebuilding the deleted product.
+
 ## Source of truth
 
 ```text

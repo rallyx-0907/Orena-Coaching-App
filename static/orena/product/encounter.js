@@ -2,7 +2,7 @@ import {activeCanonicalSegment} from '../capabilities/transcript-timeline.js';
 // One content focus is shared by Follow and every practice intention. No
 // destination-specific session, return route, or duplicated media payload.
 export function encounter(payload,supportLanguage) {
-  const segments=payload?.transcript?.segments||[];
+  const segments=(payload?.transcript?.segments||[]).map(segment=>({...segment,spoken_text:payload.catalog?.spoken_text_by_segment?.[segment.segment_id]||segment.original_text}));
   let focus=segments[0]?.segment_id||null;
   return {
     payload,segments,

@@ -2,111 +2,45 @@
 
 ## Governance
 
-**Purpose:** explain the current learner/product architecture and cross-skill
-contracts. **Authority:** product relationships are human-governed; agents may
-clarify only accepted, verified contracts. **Change when:** an accepted product
-relationship or canonical contract changes. **Do not store:** source-file
-inventories, implementation history, task status, or old architectures.
+Purpose: describe current product relationships. Change when accepted product
+relationships change. Do not store historical architecture or unverified features.
 
-## Connected learner system
+Product authority: canonical Product Constitution, Content Architecture, approved
+brand and human decision D-046. Technical capabilities do not dictate navigation.
 
-```text
-                         ORENA
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-      Listening ───────► Speaking ───────► Writing
-          │                ▲                ▲
-          └────────────► Reading ───────────┘
-                           │
-                           ▼
-                  Library / Active Recall
+## Entry intentions
 
- Shared across the system: Grammar · Dictionary · Media Learning · Progress
- Authentication · Entitlements · AI Capabilities · Admin
-```
+Explore meaningful content; deliberately Practice; resume a real continuation;
+bring personally relevant content; revisit saved language. None is a mandatory
+funnel. The same encounter and capability model serves all entry intentions.
 
-## Listening
+## Shared product relationships
 
-- **Purpose:** learn from interesting curated or learner-selected media through
-  normal listening, active listening, Dictation, and Shadowing.
-- **Important input:** canonical Media Learning Object, rights/provenance,
-  timestamped segments, transcript, translation, and Pinyin where applicable.
-- **Important output:** listening progress, Dictation evidence, difficult words,
-  selected segment/mode, and Speaking Shadowing handoff.
-- **Cross-skill handoffs:** transcript to Reading/Dictionary; vocabulary to
-  Library; segment to Speaking; evidence to Progress and future practice.
-- **Canonical contracts:** one Media Learning identity and one Listening Engine
-  for curated and imported sources.
-- **Engine versus catalog:** the Listening Engine and the real media catalog are
-  two separate truths. The engine, its modes, and the shared media contracts
-  exist and are locally accepted; the built-in catalog is still seed/synthetic
-  and has no accepted real EN or ZH playback. A working engine over seed content
-  is not a shipped catalog, and neither one completes the other.
-- **Must not duplicate:** imported player, curated player, transcript store,
-  vocabulary system, progress authority, or media ingestion per mode.
+An encounter relates content identity, provenance, current segment, practice
+intention and expression. Media Follow keeps playback, original and meaning
+synchronized. Dictation reconstructs a spoken moment; Shadowing records imitation;
+Speaking responds; Writing develops an expression; Grammar reveals a useful pattern;
+Recall revisits saved language. These are capabilities, not isolated applications.
 
-## Speaking
+## Content and evidence
 
-- **Purpose:** turn selected language into spoken production and feedback.
-- **Input:** learner recording, language context, or canonical media segment for
-  Shadowing.
-- **Output:** bounded transcript/evaluation evidence and return context.
-- **Handoffs:** receives Listening/Reading content; returns feedback to the same
-  media segment and contributes progress/evidence.
-- **Must not duplicate:** Media Learning, vocabulary, proficiency authority, or
-  client-specific scoring.
+Orena-provided, generated and learner-imported origins remain distinct. Saving is
+a learner relationship, not a new content origin. Canonical Media Learning owns
+source, rights, timestamps, translations and playback metadata for provided and
+imported media alike. Shared APIs own vocabulary, recall and practice evidence.
+Current drafts/collections/continuation are device-local and owner/language scoped;
+they do not imply account-wide persistence, completed learning or mastery.
 
-## Reading
+## Infrastructure
 
-- **Purpose:** understand texts, answer comprehension prompts, inspect language,
-  and retain useful vocabulary.
-- **Input:** canonical reading content or shared transcript/text context.
-- **Output:** comprehension evidence, dictionary context, saved words, and
-  writing/speaking prompts.
-- **Handoffs:** Library/Active Recall, Grammar, Writing, and Progress.
-- **Must not duplicate:** dictionary, vocabulary, Grammar concepts, or progress.
+Retain PostgreSQL repositories, user ownership, auth/session, provider controls,
+media recovery, translation/support language, ASR/recording/pronunciation, stable
+Grammar concepts, dictionary and existing evaluation/evidence contracts.
+Do not duplicate engines per route or entry intention. Internal technical release
+registries do not define the new learner navigation or authorize public release.
 
-## Writing
+## Platform scope
 
-- **Purpose:** produce, evaluate, review, revise, and transfer language into
-  durable practice.
-- **Input:** learner text, goal/language context, and prompts/evidence from other
-  skills.
-- **Output:** evaluation evidence, Review, revisions, targeted Grammar practice,
-  and Progress/Library cues.
-- **Must not duplicate:** Review evidence, Grammar curriculum, learner memory,
-  or language-specific product flows.
-
-## Shared learning infrastructure
-
-### Media Learning
-
-Owns canonical source/media identity, provenance/rights, transcript, timestamped
-segments, translations, and bounded playback metadata. Learner progress remains
-learner-scoped outside the content object.
-
-### Library / Active Recall
-
-Owns saved vocabulary and scheduled recall reused by every skill. No skill or
-client creates a private flashcard system.
-
-### Grammar and Dictionary
-
-Grammar owns stable concepts and shared pedagogy. Dictionary owns contextual
-lookup and language-specific adapters. Skills consume these contracts rather
-than copying them.
-
-### Progress
-
-Owns truthful learner evidence and resume continuity. Practice scores do not
-automatically become proficiency claims.
-
-## Platform systems
-
-- **Authentication:** one server-authoritative identity/session boundary.
-- **Entitlements:** one plan/usage contract; clients do not invent policy.
-- **AI capabilities:** provider/configuration infrastructure separated from
-  deterministic learning logic and credentials.
-- **Admin:** authorized operational/editorial control surfaces; learner clients
-  do not bypass them.
+Web is the active experience foundation. Native is frozen by the current human
+instruction and awaits a separate mission after web approval. No production,
+provider, credential, billing or publication gates have changed.

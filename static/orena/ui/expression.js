@@ -1,5 +1,5 @@
 import {esc,status} from './html.js';
-import {link} from '../product/intent.js';
+import {link,sourceLink} from '../product/intent.js';
 import {contentFor} from '../content/texts.js';
 
 export async function renderExpression(root,ctx) {
@@ -7,7 +7,7 @@ export async function renderExpression(root,ctx) {
   const source=memory.value.continuation.find(x=>x.id===id)||memory.value.imports.find(x=>x.id===id)||contentFor(language).find(x=>`story:${x.id}`===id);
   let parentId=null;
   const title=source?.title||c.freeTitle;
-  root.innerHTML=`<div class="back-row"><a href="${source?link('encounter',{id}):link('practice')}">← ${source?c.returnLabel:c.practice}</a></div><section class="expression-room"><small>${c.writingName}</small><h1>${esc(title)}</h1><p>${c.responsePrompt}</p><form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="12" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id]||'')}</textarea><div class="expression-tools"><span data-draft-status class="meta">${memory.available?c.local:c.memoryUnavailable}</span><button class="primary">${c.review} ↗</button></div></form><section id="writingFeedback" aria-live="polite"></section></section>`;
+  root.innerHTML=`<div class="back-row"><a href="${source?sourceLink(id):link('practice')}">← ${source?c.returnLabel:c.practice}</a></div><section class="expression-room"><small>${c.writingName}</small><h1>${esc(title)}</h1><p>${c.responsePrompt}</p><form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="12" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id]||'')}</textarea><div class="expression-tools"><span data-draft-status class="meta">${memory.available?c.local:c.memoryUnavailable}</span><button class="primary">${c.review} ↗</button></div></form><section id="writingFeedback" aria-live="polite"></section></section>`;
   root.querySelector('textarea').oninput=event=>{memory.write(id,event.target.value);memory.enter({id,title,intent:'writing'});root.querySelector('[data-draft-status]').textContent=memory.available?c.local:c.memoryUnavailable;};
   root.querySelector('form').onsubmit=async event=>{
     event.preventDefault();const button=event.currentTarget.querySelector('button'),feedback=root.querySelector('#writingFeedback');button.disabled=true;feedback.textContent=c.loading;
@@ -41,6 +41,6 @@ export async function renderGrammar(root,ctx) {
   }
   const lesson=await api.grammarLesson(ctx.location.id);if(!alive())return;
   const examples=lesson.examples||[],id=`grammar:${lesson.id}`;
-  root.innerHTML=`<div class="back-row"><a href="${link('practice',{intent:'grammar'})}">← ${c.grammarName}</a></div><header class="page-intro"><div><small>${esc(lesson.level)}</small><h1 lang="${language}">${esc(lesson.title)}</h1><p>${c.grammarNote}</p></div></header><section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map(x=>`<blockquote lang="${language}">${esc(x.target||x.en||x.zh||'')}${x.pinyin&&ctx.profile.pinyin!=='off'?`<small>${esc(x.pinyin)}</small>`:''}${ctx.support==='vi'&&x.vi?`<p lang="vi">${esc(x.vi)}</p>`:''}</blockquote>`).join('')}</div><div><h2>${c.yourExample}</h2><textarea rows="6" lang="${language}" maxlength="12000">${esc(memory.value.expressions[id]||'')}</textarea><p class="meta">${c.local}</p><a class="primary" href="${link('expression',{id})}">${c.develop} ↗</a></div></section>`;
+  root.innerHTML=`<div class="back-row"><a href="${link('practice',{intent:'grammar'})}">← ${c.grammarName}</a></div><header class="page-intro"><div><small>${esc(lesson.level)}</small><h1 lang="${language}">${esc(lesson.title)}</h1><p>${c.grammarNote}</p></div></header><section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map(x=>`<blockquote lang="${language}">${esc(x.target||x.en||x.zh||'')}${x.pinyin&&ctx.profile.pinyin!=='off'?`<small>${esc(x.pinyin)}</small>`:''}${ctx.support==='vi'&&x.vi?`<p lang="vi">${esc(x.vi)}</p>`:''}</blockquote>`).join('')}</div><div><h2>${c.yourExample}</h2><textarea aria-label="${c.yourExample}" rows="6" lang="${language}" maxlength="12000">${esc(memory.value.expressions[id]||'')}</textarea><p class="meta">${c.local}</p><a class="primary" href="${link('expression',{id})}">${c.develop} ↗</a></div></section>`;
   root.querySelector('textarea').oninput=event=>{memory.write(id,event.target.value);memory.enter({id,title:lesson.title,intent:'writing'});};
 }

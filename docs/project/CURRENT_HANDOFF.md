@@ -2,6 +2,10 @@
 
 ## Governance
 
+Purpose: compact verified recovery context. Authority: agent updates after
+verified evidence under current human direction. Change when ownership, stage,
+blockers or the next checkpoint changes. Do not store secrets or unverified success.
+
 Current execution state on `codex/work`; durable product authority is the
 Product Constitution, Content Architecture, approved brand, and D-046.
 
@@ -37,11 +41,13 @@ Browser refinement and full removal/regression completion. Latest code adds
 seek control, pronunciation presentation, recording cancellation guards, and
 next-segment practice; these latest refinements still need browser validation.
 
-## PENDING / NEXT EXACT TASK
+## PENDING
+
+## NEXT EXACT TASK
 
 1. Check current diff; continue without recreating old product code.
-2. Finish native learner wrapper / route / shell removal, retaining auth,
-   secure sessions, API contracts, recording and linguistic primitives.
+2. Native is frozen by the current human scope update. Do not change, test,
+   restore or extend native code. Existing completed changes remain.
 3. Remove remaining obsolete original web product files and old product-only
    tests; migrate primitive tests and validators to the new product boundary.
 4. Fix outstanding new-layer issues: continuation routes for free Writing and
@@ -86,3 +92,18 @@ Before reset, the full Python run and pristine starting HEAD both produced
 are inherited baseline failures; do not weaken assertions to hide them.
 The reset intentionally retires tests tied only to removed product behavior.
 Do not claim current full-suite results until the test migration is finished.
+
+## Current scope update
+
+Human explicitly froze native mobile / Expo / React Native on 2026-09-06.
+Continue exclusively on WEB from the current state; do not undo completed work.
+
+## Latest verified web checks
+
+Sixteen local Node capability/product checks pass, including playback-clock replay
+across all displayed rates, EN/ZH reconstruction, transcript meaning identity,
+owned drafts and continuation routes. Full Python last run: 746 passed / 27 failed
+before current test migration; 20 inherited, two test-environment dependencies,
+five old-template/memory assertions. Rerun after migration. Chinese browser Follow
+showed synchronized original, contextual Pinyin and Vietnamese meaning. Dictation
+saved a real test attempt. Latest speaker-label and replay fixes await browser retest.

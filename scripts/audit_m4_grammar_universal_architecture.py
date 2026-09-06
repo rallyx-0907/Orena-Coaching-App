@@ -40,22 +40,6 @@ for forbidden in (
     if forbidden in runtime:
         raise SystemExit(f"GRAMMAR_RUNTIME_BINARY_BRANCH_FAIL {forbidden}")
 
-component = (
-    ROOT / "static/becoming/components/grammar-learning.js"
-).read_text(encoding="utf-8")
-for forbidden in (
-    "targetLanguage==='zh'",
-    'targetLanguage === "zh"',
-    "hidePinyin",
-    "showPinyin",
-):
-    if forbidden in component:
-        raise SystemExit(f"GRAMMAR_SHARED_RENDERER_LANGUAGE_HARDCODE_FAIL {forbidden}")
-
-store = (ROOT / "static/becoming/store.js").read_text(encoding="utf-8")
-if "state.language=language==='zh'?'zh':'en'" in store:
-    raise SystemExit("TARGET_LANGUAGE_STATE_BINARY_FALLBACK_FAIL")
-
 print("M4_GRAMMAR_UNIVERSAL_ARCHITECTURE_AUDIT=PASS")
 print("CURRENT_GRAMMAR_LANGUAGES=" + ",".join(sorted(providers)))
 

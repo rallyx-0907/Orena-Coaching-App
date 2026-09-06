@@ -97,6 +97,7 @@ function ensureYouTubeIframeApi(){
 }
 
 function clearSegmentTimer(root){
+  const controller=controllers.get(root);if(controller)controller.segmentEndMs=null;
   const timer=segmentTimers.get(root);
   if(timer!==undefined){
     clearTimeout(timer);
@@ -129,10 +130,12 @@ function emitClock(root,controller){
     let currentTime=Number(controller.player.getCurrentTime?.());
     if(!Number.isFinite(currentTime))return;
     let state=Number(controller.player.getPlayerState?.());
+    if(Number.isFinite(controller.segmentEndMs)&&currentTime*1000>=controller.segmentEndMs&&state===1){
+      controller.player.pauseVideo?.();controller.segmentEndMs=null;state=2;
+    }
     if(Number.isFinite(controller.endMs)&&currentTime*1000>=controller.endMs&&state===1){
       controller.player.pauseVideo?.();
-      controller.player.seekTo?.(controller.startMs/1000,true);
-      currentTime=controller.startMs/1000;
+
       state=2;
     }
     root.dataset.mediaClock='ready';
@@ -322,6 +325,8 @@ export function replaySegment(root,playback,startMs,endMs=null,rate=1){
   if(!started)return false;
 
   const delay=segmentPlaybackDelayMs(startMs,endMs,rate);
+  const controller=controllers.get(root);
+  if(controller&&delay!==null){controller.segmentEndMs=Number(endMs);return true;}
   if(delay!==null){
     const timer=setTimeout(()=>{
       sendCommand(root,playback,'pauseVideo');
@@ -378,6 +383,6 @@ export function togglePlayback(root,playback){
 }
 
 export function setPlaybackRate(root,playback,rate){
-  if(![.75,1,1.25].includes(rate))return false;
+  if(![.5,.75,1,1.25,1.5,2].includes(rate))return false;
   return sendCommand(root,playback,'setPlaybackRate',[rate]);
 }

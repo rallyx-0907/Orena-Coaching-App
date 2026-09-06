@@ -11,7 +11,7 @@ globalThis.fetch=async (url,options)=>{
 };
 
 try{
-  const {api}=await import('../static/becoming/api.js?media-status-compact-test');
+  const {api}=await import('../static/orena/infrastructure/api.js?media-status-compact-test');
   const payload=await api.mediaImportStatusCompact({
     job_id:'opaque-processing-handle-12345',
     compact:false,

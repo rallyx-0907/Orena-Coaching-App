@@ -7,13 +7,14 @@ import {renderWorld} from './ui/world.js';
 import {renderEncounter} from './ui/encounter.js';
 import {renderExpression,renderLanguage,renderGrammar} from './ui/expression.js';
 
-let generation=0,cleanup=()=>{},pendingWrites=0;
+let generation=0,cleanup=()=>{},pendingWrites=0,writeTail=Promise.resolve();
 const root=document.getElementById('main');
 const storage=(()=>{try{return localStorage;}catch{return {getItem(){return null;},setItem(){throw Error('Storage unavailable');}};}})();
 const ui=storage.getItem('orena.interface')==='zh'?'zh':'en';
 const ctx={api,ui,c:copy[ui],language:'en',profile:{},memory:null,location:route(location.hash),
   alive:()=>true,go:(page,options)=>{location.hash=link(page,options);},
-  async mutate(action){pendingWrites++;document.querySelectorAll('[data-preference]').forEach(x=>x.disabled=true);try{return await action();}finally{pendingWrites--;if(!pendingWrites)document.querySelectorAll('[data-preference]').forEach(x=>x.disabled=false);}},
+  settledWrites:()=>writeTail,
+  async mutate(action){pendingWrites++;document.querySelectorAll('[data-preference]').forEach(x=>x.disabled=true);const write=writeTail.then(action);writeTail=write.catch(()=>{});try{return await write;}finally{pendingWrites--;if(!pendingWrites)document.querySelectorAll('[data-preference]').forEach(x=>x.disabled=false);}},
   import:()=>importContent(),message:status,
 };
 function shell() {
@@ -23,11 +24,12 @@ function shell() {
   document.getElementById('shell').innerHTML=`<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><nav aria-label="Orena">${[['discover',c.discover],['practice',c.practice],['content',c.content],['language',c.language]].map(([page,title])=>`<a href="${link(page)}" ${current===page?'aria-current="page"':''}>${title}</a>`).join('')}</nav><div class="shell-actions"><button class="bring-button" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}">${ctx.language.toUpperCase()} <span aria-hidden="true">☰</span></button></div>`;
   document.querySelector('[data-bring]').onclick=importContent;
   document.querySelector('[data-preference]').onclick=()=>preferences();
-  document.getElementById('footer').innerHTML=`<a href="#/" class="brand-small">orena</a><span>${c.internal}</span><a href="/account">${c.account} ↗</a>`;
+  document.getElementById('footer').innerHTML=`<a href="#/" class="brand-small">orena</a><span>${c.internal}</span><button class="quiet" data-account>${c.preferences} ↗</button>`;
+  document.querySelector('[data-account]')?.addEventListener('click',()=>preferences());
 }
 function preferences(onboarding=false) {
   const c=ctx.c;
-  const sheet=dialog({title:onboarding?c.welcome:c.preferences,body:`<p>${onboarding?c.welcomeNote:c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language==='en'?'selected':''}>English</option><option value="zh" ${ctx.language==='zh'?'selected':''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui==='en'?'selected':''}>English</option><option value="zh" ${ctx.ui==='zh'?'selected':''}>中文</option></select></label><label>${c.support}<select name="support">${[['en','English'],['zh','中文'],['vi','Tiếng Việt']].map(([code,title])=>`<option value="${code}" ${ctx.support===code?'selected':''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin!=='off'?'checked':''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding?c.enterOrena:c.persisted}</button></form><button class="quiet" id="themeButton">◐ ${c.theme}</button>`});
+  const sheet=dialog({title:onboarding?c.welcome:c.preferences,body:`<p>${onboarding?c.welcomeNote:c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language==='en'?'selected':''}>English</option><option value="zh" ${ctx.language==='zh'?'selected':''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui==='en'?'selected':''}>English</option><option value="zh" ${ctx.ui==='zh'?'selected':''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({code,label:title})=>`<option value="${code}" ${ctx.support===code?'selected':''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin!=='off'?'checked':''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding?c.enterOrena:c.apply}</button></form><button class="quiet" id="themeButton">◐ ${c.theme}</button>`});
   sheet.querySelector('#themeButton').onclick=()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;try{storage.setItem('orena.theme',theme);}catch{}};
   sheet.querySelector('#preferencesForm').onsubmit=async event=>{
     event.preventDefault();if(pendingWrites)return;
@@ -78,7 +80,7 @@ async function boot() {
   try {
     document.documentElement.dataset.theme=storage.getItem('orena.theme')==='dark'?'dark':'light';
     const [user,languages,profile]=await Promise.all([api.me(),api.languages(),api.learnerProfile()]);
-    ctx.user=user;ctx.owner=user.email||user.mode||'local';ctx.language=languages.active;ctx.profile=profile;ctx.support=profile.support_language||profile.native_language||'en';
+    ctx.supportLanguages=languages.support_languages||[];ctx.user=user;ctx.owner=user.email||user.mode||'local';ctx.language=languages.active;ctx.profile=profile;ctx.support=profile.support_language||profile.native_language||'en';
     ctx.memory=learnerMemory(storage,ctx.owner,ctx.language);
     // New product direction remains internal until the human release gate.
     if(!user.is_admin){root.innerHTML=`<section class="empty"><h1>orena</h1><p>${ctx.c.limited}</p><a href="/account">${ctx.c.account}</a></section>`;return;}

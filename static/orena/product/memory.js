@@ -18,7 +18,7 @@ export function learnerMemory(storage,owner,language) {
   return {
     get value(){return value;},get available(){return available;},
     keep(id){value.kept=value.kept.includes(id)?value.kept.filter(x=>x!==id):[id,...value.kept].slice(0,100);return save();},
-    enter({id,title,segment='',intent=null,source_url=''}) {value.continuation=[{id,title,segment,intent,source_url},...value.continuation.filter(x=>x.id!==id)].slice(0,20);return save();},
+    enter({id,title,segment,intent=null,source_url}) {const previous=value.continuation.find(x=>x.id===id);value.continuation=[{id,title,segment:segment??previous?.segment??'',intent,source_url:source_url??previous?.source_url??''},...value.continuation.filter(x=>x.id!==id)].slice(0,20);return save();},
     write(id,text,field='expressions'){if(!['expressions','answers'].includes(field)||['__proto__','constructor','prototype'].includes(id))throw Error('Invalid draft');value[field][id]=String(text).slice(0,12000);return save();},
     add({title,text}) {if(value.imports.length>=20||!title?.trim()||!text?.trim()||text.length>12000)throw Error('Invalid text');const item={id:`text:${crypto.randomUUID()}`,title:title.trim().slice(0,120),text:text.trim(),language,origin:'imported',kind:'text'};value.imports.unshift(item);save();return item;},
     remove(id){value.imports=value.imports.filter(x=>x.id!==id);value.kept=value.kept.filter(x=>x!==id);value.continuation=value.continuation.filter(x=>x.id!==id);delete value.expressions[id];save();},

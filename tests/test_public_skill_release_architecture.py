@@ -56,36 +56,18 @@ def test_platform_contract_is_one_language_wide_release_matrix() -> None:
         assert "release_state" not in source
 
 
-def test_navigation_consumes_shared_skill_contract() -> None:
-    template = (ROOT / "templates/becoming/index.html").read_text(encoding="utf-8")
-    app = (ROOT / "static/becoming/app.js").read_text(encoding="utf-8")
-    navigation = (ROOT / "static/becoming/domain/skill-release.js").read_text(encoding="utf-8")
-
-    assert 'data-route="write" data-skill="writing" hidden' in template
-    assert 'data-route="read" data-skill="reading" hidden' in template
-    assert 'data-route="listen" data-skill="listening" hidden' in template
-    assert 'data-route="speak" data-skill="speaking" hidden' in template
-    for supporting_route in ("home", "library", "journey", "profile"):
-        assert f'data-route="{supporting_route}" data-skill=' not in template
-    assert "applySkillNavigation(state.skills" in app
-    assert "routeAvailable(route,state.skills" in app
-    assert "item.public_available===true" in navigation
-    assert "item.internal_available===true" in navigation
-    assert "link.classList.toggle('hidden',hidden)" in navigation
-    assert "development" not in navigation
-    assert "write:'writing'" in navigation
-    assert "review:'writing'" in navigation
-    assert "read:'reading'" in navigation
-    assert "listen:'listening'" in navigation
-    assert "speak:'speaking'" in navigation
-    for supporting_route in ("home", "library", "journey", "profile", "onboarding"):
-        assert f"{supporting_route}:" not in navigation
+def test_new_navigation_is_independent_of_historical_skill_hierarchy() -> None:
+    source = (ROOT / 'static/orena/app.js').read_text(encoding='utf-8')
+    assert "if(!user.is_admin)" in source  # internal review remains gated
+    assert 'applySkillNavigation' not in source
+    assert 'routeAvailable' not in source
+    assert not (ROOT / 'static/becoming').exists()
 
 
 def test_reading_implementation_and_release_versions_remain_intact() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert (ROOT / "writing_coach/becoming_reading.py").is_file()
-    assert (ROOT / "static/becoming/screens/reading.js").is_file()
+    assert (ROOT / "static/orena/ui/encounter.js").is_file()
     for route in (
         '@app.get("/api/reading/sessions"',
         '@app.get("/api/reading/session/{session_id}"',

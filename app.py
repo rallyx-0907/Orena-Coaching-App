@@ -655,11 +655,6 @@ def home() -> HTMLResponse:
 @app.get("/becoming/", response_class=HTMLResponse)
 def becoming_preview() -> RedirectResponse:
     return RedirectResponse("/", status_code=302)
-@app.get("/static/style.css")
-def style() -> HTMLResponse:
-    return HTMLResponse((ROOT / "static" / "style.css").read_text(encoding="utf-8"), media_type="text/css")
-
-
 @app.get("/static/account.js")
 def account_script() -> HTMLResponse:
     return HTMLResponse(

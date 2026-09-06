@@ -110,7 +110,8 @@
           "translations": {
             "vi": "Vương Minh: Đây là gì? Lý Hồng: Đây là sách. Kia là gì? Kia là bút máy. Kia là tạp chí à? Không, đó không phải tạp chí. Đó là từ điển.",
             "en": "Wang Ming: What's this? Li Hong: This is a book. What's that? That's a pen. Is that a magazine? No, that's not a magazine. That's a dictionary."
-          }
+          },
+          "spoken_text": "这是什么？这是书。那是什么？那是钢笔。那是杂志吗？不，那不是杂志。那是字典。"
         }
       ]
     },
@@ -145,7 +146,8 @@
           "translations": {
             "vi": "Ginny: Họ là ai?",
             "en": "Ginny: Who are they?"
-          }
+          },
+          "spoken_text": "他们是谁？"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:001",
@@ -156,7 +158,8 @@
           "translations": {
             "vi": "Owen: Cô ấy là Amy, người Trung Quốc. Anh ấy là Tony, người Mỹ.",
             "en": "Owen: She is Amy, and she is Chinese. He is Tony, and he is American."
-          }
+          },
+          "spoken_text": "她是艾美，她是中国人。他是东尼，他是美国人。"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:002",
@@ -167,7 +170,8 @@
           "translations": {
             "vi": "Ginny: Bạn cũng là người Mỹ à?",
             "en": "Ginny: Are you also American?"
-          }
+          },
+          "spoken_text": "你也是美国人吗？"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:003",
@@ -178,7 +182,8 @@
           "translations": {
             "vi": "Owen: Không, tôi là người Anh. Còn bạn? Bạn là người nước nào?",
             "en": "Owen: No, I'm British. How about you? What nationality are you?"
-          }
+          },
+          "spoken_text": "不是，我是英国人。你呢？你是哪国人？"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:004",
@@ -189,7 +194,8 @@
           "translations": {
             "vi": "Ginny: Tôi là người Pháp.",
             "en": "Ginny: I'm French."
-          }
+          },
+          "spoken_text": "我是法国人。"
         }
       ]
     },

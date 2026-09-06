@@ -243,6 +243,7 @@ def _load_source(raw: Mapping[str, Any], *, allow_dev: bool = False) -> CatalogS
             "end_ms": end_ms,
             "original_text": _required_text(segment.get("original_text"), "original_text"),
             "pinyin": str(segment.get("pinyin") or "").strip(),
+            "spoken_text": str(segment.get("spoken_text") or "").strip(),
             "translations": {str(key).casefold(): _required_text(value, "translation") for key, value in translations.items()},
         })
 
@@ -567,6 +568,7 @@ def translated_media_object(lesson: CuratedListeningLesson, target_language: str
 def lesson_metadata(lesson: CuratedListeningLesson) -> dict[str, object]:
     source = lesson.source
     return {
+        "spoken_text_by_segment": {str(item["segment_id"]): str(item["spoken_text"]) for item in source.segments if item.get("spoken_text")},
         "lesson_id": lesson.lesson_id,
         "media_object_id": source.source_media_id,
         "title": lesson.media_object.asset.title,

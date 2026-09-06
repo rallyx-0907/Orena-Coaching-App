@@ -51,4 +51,7 @@ const zh={
 export const copy={en,zh};
 
 Object.assign(copy.en,{seek:"Seek through this media",accuracy:"Pronunciation accuracy",fluency:"Fluency",voiceMeasureNote:"Provider measurements of this recording, not a mastery claim."});
-Object.assign(copy.zh,{seek:"??????",accuracy:"?????",fluency:"???",voiceMeasureNote:"?????????????????????"});
+Object.assign(copy.zh,{seek:"定位媒体进度",accuracy:"发音准确度",fluency:"流利度",voiceMeasureNote:"服务提供方对这次录音的测量，不代表已掌握。"});
+
+Object.assign(copy.en,{apply:'Save preferences',pendingMedia:'The voice is here. The words are on their way.',pendingNote:'You can watch or listen while Orena prepares the transcript. Follow and practice become available when the words are ready.',sourceOnly:'The transcript is not ready yet. You can still enjoy the source, or check again.',local:'Drafts and collections stay on this device. Saved language and practice stay in your account.'});
+Object.assign(copy.zh,{apply:'保存设置',pendingMedia:'声音已到，文字正在路上。',pendingNote:'字幕准备期间，你仍可以观看或聆听。文字就绪后，就能跟随理解或进入练习。',sourceOnly:'字幕还没准备好。你可以继续欣赏原片，或再次查看。',local:'草稿和收藏保存在此设备。语言收藏和练习记录保存在你的账户。'});

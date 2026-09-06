@@ -13,3 +13,14 @@ export function supports(content,intent) {
   if(['dictation','shadowing'].includes(intent))return ['audio','video','embed'].includes(content.kind||content.playback_kind);
   return true;
 }
+
+export function continuationLink(item) {
+  if(item.intent==='writing'||item.id.startsWith('expression:'))return link('expression',{id:item.id});
+  if(item.id.startsWith('grammar:'))return link('practice',{id:item.id.slice(8),intent:'grammar'});
+  return link('encounter',{id:item.id,intent:item.intent});
+}
+export function sourceLink(id) {
+  if(id.startsWith('expression:'))return link('practice');
+  if(id.startsWith('grammar:'))return link('practice',{id:id.slice(8),intent:'grammar'});
+  return link('encounter',{id});
+}

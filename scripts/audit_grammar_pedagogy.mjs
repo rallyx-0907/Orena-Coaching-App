@@ -13,7 +13,7 @@ import {
   isGenericLabel,
   ARCHETYPE_PRIMARY_VISUAL,
   VISUAL_BLOCK_TYPE,
-} from '../static/becoming/domain/grammar-pedagogy.js';
+} from '../static/orena/capabilities/grammar-pedagogy.js';
 
 const load=path=>{
   const raw=JSON.parse(readFileSync(new URL(path,import.meta.url),'utf8'));

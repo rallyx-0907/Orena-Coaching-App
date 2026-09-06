@@ -33,25 +33,17 @@ removed merely because current code conflicts with them.
 
 ## `static/becoming/**`
 
-- **Status:** LEGACY TECHNICAL NAMESPACE
-- **Current replacement:** Orena product behavior served at `/`; migration of
-  the namespace itself is not currently required.
-- **Why retired:** the path predates the active product identity.
-- **What may remain:** current Orena web implementation files while technically
-  required.
-- **What must not happen:** the directory name must not be interpreted as an
-  active product route or authorization to revive BECOMING.
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-046).
+- **Replacement:** new Orena product in `static/orena/`.
+- **Must not happen:** restoring skill dashboards, old Listening/Shadowing shells,
+  mode routers or screen/session handoffs, even under new names. Extract independent
+  capabilities; Git preserves the obsolete implementation.
 
 ## `templates/becoming/**`
 
-- **Status:** LEGACY TECHNICAL NAMESPACE
-- **Current replacement:** Orena root shell.
-- **Why retired:** the template path is historical; its active rendered product
-  is Orena.
-- **What may remain:** the canonical Orena shell template and compatibility
-  asset references.
-- **What must not happen:** no new `/becoming` product shell or branding may be
-  inferred from this path.
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-046).
+- **Replacement:** `templates/orena/index.html` at `/`.
+- **Must not happen:** restoring the old learner shell or competing root template.
 
 ## `writing_coach/becoming_*`
 
