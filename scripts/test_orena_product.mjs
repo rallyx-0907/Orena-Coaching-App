@@ -85,7 +85,7 @@ assert.equal(mergeListeningEvidence(stored,{...local,checked_attempt_count:999})
 // Contracts the encounter surface must keep. These are the regressions this
 // layer has actually shipped, so they are worth naming rather than trusting.
 const encounterSource=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
-assert.match(encounterSource,/mergeListeningEvidence\(await readPrior\(\)/,'Dictation that began without the stored record must merge into it, never replace it');
+assert.match(encounterSource,/recoverListeningEvidence\(readPrior\)/,'Dictation that began without the stored record must merge against one recovered baseline');
 assert.match(encounterSource,/playing \? 'gap' : lastClockSegment/,'A resting player is not "between spoken lines"; Follow must keep showing the current line');
 assert.doesNotMatch(encounterSource,/memory\.write\(id, heard\)\s*;/,'A speech transcript must not overwrite writing the learner already has');
 assert.match(encounterSource,/bindPronunciation\(\);[\s\S]{0,200}if \(intent === 'shadowing'\)/,'Take actions must be wired before the progress save is awaited');

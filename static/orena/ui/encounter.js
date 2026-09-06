@@ -1,9 +1,10 @@
+import { responseComposer, bindComposer } from './patterns.js';
 import { esc, safeExternal, dialog, status } from './html.js';
 import { link } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
 import {
   dictationEvidence,
-  mergeListeningEvidence,
+  recoverListeningEvidence,
 } from '../product/evidence.js';
 import { contentFor } from '../content/texts.js';
 import { preparedMeaning } from '../content/language-notes.js';
@@ -30,13 +31,16 @@ export async function inspectPhrase(ctx, text, title) {
   const selection = String(window.getSelection() || '').trim();
   const sheet = dialog({
     title: c.inspect,
-    body: `<blockquote lang="${language}">${esc(text)}</blockquote><form id="phraseForm"><label>${c.phrase}<input name="phrase" maxlength="180" value="${esc(text.includes(selection) ? selection : '')}" required></label><button class="outline">${c.inspectAction}</button></form><div id="phraseMeaning"></div><form id="savePhrase"><label>${c.note}<textarea name="note" rows="3" maxlength="2400"></textarea></label><button class="primary">${c.savePhrase} ＋</button><p role="status"></p></form>`,
+    body: `<p>${c.phraseHelp}</p><blockquote lang="${language}">${esc(text)}</blockquote><form id="phraseForm"><label>${c.phrase}<input name="phrase" maxlength="180" value="${esc(text.includes(selection) ? selection : '')}" required></label><button class="outline">${c.inspectAction}</button></form><div id="phraseMeaning" class="context-note" role="status"></div><form id="savePhrase"><label>${c.note}<textarea name="note" rows="3" maxlength="2400"></textarea></label><button class="primary">${c.savePhrase} ＋</button><p role="status"></p></form>`,
   });
   const phrase = () => sheet.querySelector('[name=phrase]').value.trim();
   sheet.querySelector('#phraseForm').onsubmit = async (event) => {
     event.preventDefault();
-    if (!phrase() || !text.includes(phrase())) return;
     const target = sheet.querySelector('#phraseMeaning');
+    if (!phrase() || !text.includes(phrase())) {
+      target.textContent = c.phraseOutside;
+      return;
+    }
     target.textContent = c.loading;
     try {
       const result = await api.contextualDictionary({
@@ -68,7 +72,7 @@ export async function inspectPhrase(ctx, text, title) {
     const form = event.currentTarget,
       output = form.querySelector('[role=status]');
     if (!phrase() || !text.includes(phrase())) {
-      output.textContent = c.phrase;
+      output.textContent = c.phraseOutside;
       return;
     }
     form.querySelector('button').disabled = true;
@@ -83,7 +87,8 @@ export async function inspectPhrase(ctx, text, title) {
           focus_note: title.slice(0, 2400),
         }),
       );
-      if (sheet.isConnected) output.textContent = c.persisted;
+      if (sheet.isConnected)
+        output.innerHTML = `${c.persisted} · <a class="quiet" href="${link('language')}">${c.memoryLink} →</a>`;
     } catch {
       if (sheet.isConnected) {
         output.textContent = c.failedSave;
@@ -92,30 +97,18 @@ export async function inspectPhrase(ctx, text, title) {
     }
   };
 }
-function responseBlock(ctx, item) {
-  const { c, memory, language } = ctx;
-  return `<section class="response"><div><small>${c.respond}</small><h2 lang="${language}">${esc(item.prompt || c.responsePrompt)}</h2></div><div><label class="sr-only" for="response">${c.respond}</label><textarea id="response" rows="4" maxlength="12000" lang="${language}" placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[item.id] || '')}</textarea><p data-draft-status class="meta">${memory.available ? c.local : c.memoryUnavailable}</p><a class="primary" href="${link('expression', { id: item.id })}">${c.develop} ↗</a></div></section>`;
-}
-function bindResponse(root, ctx, item) {
-  root.querySelector('#response')?.addEventListener('input', (event) => {
-    ctx.memory.write(item.id, event.target.value);
-    root.querySelector('[data-draft-status]').textContent = ctx.memory.available
-      ? ctx.c.local
-      : ctx.c.memoryUnavailable;
-  });
-}
 function textEncounter(root, ctx, item) {
   const { c, language, memory } = ctx;
   let count = item.kind === 'conversation' ? 1 : item.paragraphs?.length || 1;
   const paragraphs = item.paragraphs || [item.text];
-  memory.enter({ id: item.id, title: item.title });
+  memory.enter({ id: item.id, title: item.title, excerpt: paragraphs[0] });
   const paint = () => {
     root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><button data-keep class="quiet" aria-pressed="${memory.value.kept.includes(item.id)}">${memory.value.kept.includes(item.id) ? c.saved : c.keep} ＋</button></div><header class="text-heading"><small>${origin(item, c)}</small><h1 lang="${language}">${esc(item.title)}</h1><p lang="${language}">${esc(item.subtitle || '')}</p></header><div class="text-encounter"><article class="passage ${item.kind === 'conversation' ? 'dialogue' : ''}" lang="${language}">${paragraphs
       .slice(0, count)
       .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`)
       .join(
         '',
-      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${responseBlock(ctx, item)}<p class="provenance">${item.origin === 'imported' ? c.ownText : c.prepared}</p>`;
+      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${responseComposer(ctx, item)}<p class="provenance">${item.origin === 'imported' ? c.ownText : c.prepared}</p>`;
     root.querySelector('[data-keep]').onclick = () => {
       memory.keep(item.id);
       paint();
@@ -160,7 +153,7 @@ function textEncounter(root, ctx, item) {
           }
         }),
     );
-    bindResponse(root, ctx, item);
+    bindComposer(root, ctx, item);
     bindImages(root, c);
   };
   paint();
@@ -282,9 +275,10 @@ export async function renderEncounter(root, ctx) {
       segment: model.current?.segment_id,
       intent: practice,
       source_url: payload.asset.source_url,
+      excerpt: model.current?.original_text,
     });
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(payload.catalog?.topic || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? '<div class="audio-atmosphere" aria-hidden="true"><span>◌</span><i>▂ ▅ ▃ ▇ ▅ ▂ ▆ ▃</i></div>' : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="practice-space" hidden></section></section><aside class="transcript-panel"><h2>${c.transcript}</h2><ol>${model.segments.map((s, i) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span lang="${language}">${esc(s.original_text)}</span></button></li>`).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseBlock(ctx, item)}`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(payload.catalog?.topic || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? '<div class="audio-atmosphere" aria-hidden="true"><span>◌</span><i>▂ ▅ ▃ ▇ ▅ ▂ ▆ ▃</i></div>' : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="practice-space" hidden></section></section><aside class="transcript-panel"><h2>${c.transcript}</h2><ol>${model.segments.map((s, i) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span lang="${language}">${esc(s.original_text)}</span></button></li>`).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
   const playerRoot = root.querySelector('.media-stage');
   const practiceRoot = root.querySelector('.practice-space');
   const moment = root.querySelector('.follow-moment');
@@ -424,19 +418,15 @@ export async function renderEncounter(root, ctx) {
           !transcript.matches(':hover') &&
           !transcript.contains(document.activeElement)
         )
-          transcript
-            .querySelector('ol')
-            .scrollTo({
-              top: Math.max(
-                0,
-                active.offsetTop -
-                  transcript.querySelector('ol').offsetTop -
-                  60,
-              ),
-              behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
-                ? 'instant'
-                : 'smooth',
-            });
+          transcript.querySelector('ol').scrollTo({
+            top: Math.max(
+              0,
+              active.offsetTop - transcript.querySelector('ol').offsetTop - 60,
+            ),
+            behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
+              ? 'instant'
+              : 'smooth',
+          });
       }
     }
   }
@@ -540,16 +530,19 @@ export async function renderEncounter(root, ctx) {
       });
       body.querySelectorAll('form button').forEach((x) => (x.disabled = false));
       const evidenceStatus = () => body.querySelector('[data-evidence-status]');
+      const recover = recoverListeningEvidence(readPrior);
       if (!priorRead) evidenceStatus().textContent = c.priorProgressUnread;
       const persist = async () => {
+        const snapshot = dictation.value;
         const output = evidenceStatus();
+        body
+          .querySelectorAll('form button, [data-retry-save]')
+          .forEach((x) => (x.disabled = true));
         output.textContent = c.saving;
         try {
           // Practice that began without the stored record only knows this
           // session, so fold it into the server's copy instead of replacing it.
-          const evidence = priorRead
-            ? dictation.value
-            : mergeListeningEvidence(await readPrior(), dictation.value);
+          const evidence = priorRead ? snapshot : await recover(snapshot);
           await ctx.mutate(() => api.saveListeningProgress(evidence));
           if (isAlive() && version === practiceVersion)
             output.textContent = c.persisted;
@@ -560,6 +553,11 @@ export async function renderEncounter(root, ctx) {
               .querySelector('[data-retry-save]')
               ?.addEventListener('click', persist);
           }
+        } finally {
+          if (isAlive() && version === practiceVersion)
+            body
+              .querySelectorAll('form button')
+              .forEach((x) => (x.disabled = false));
         }
       };
       body.querySelector('form').onsubmit = async (event) => {
@@ -716,7 +714,10 @@ export async function renderEncounter(root, ctx) {
               return;
             area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p><p>${c.contentMatch}: ${result.content_match.content_match}%</p><p class="meta">${c.comparisonNote}</p><p>${result.saved ? c.persisted : c.failedSave}</p>`;
           } else {
-            const result = await api.transcribeSpeech(currentTake.blob, language);
+            const result = await api.transcribeSpeech(
+              currentTake.blob,
+              language,
+            );
             if (
               !isAlive() ||
               version !== practiceVersion ||
@@ -748,7 +749,7 @@ export async function renderEncounter(root, ctx) {
     .forEach(
       (button) => (button.onclick = () => openPractice(button.dataset.intent)),
     );
-  bindResponse(root, ctx, item);
+  bindComposer(root, ctx, item, () => model.current?.original_text || '');
   bindImages(root, c);
   if (['dictation', 'shadowing', 'speaking'].includes(practice))
     openPractice(practice);

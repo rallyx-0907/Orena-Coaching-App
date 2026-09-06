@@ -91,7 +91,7 @@ export function learnerMemory(storage, owner, language) {
         : [id, ...value.kept].slice(0, 100);
       return save();
     },
-    enter({ id, title, segment, intent = null, source_url }) {
+    enter({ id, title, segment, intent = null, source_url, excerpt }) {
       const previous = value.continuation.find((x) => x.id === id);
       value.continuation = [
         {
@@ -100,6 +100,7 @@ export function learnerMemory(storage, owner, language) {
           segment: segment ?? previous?.segment ?? '',
           intent,
           source_url: source_url ?? previous?.source_url ?? '',
+          excerpt: String(excerpt ?? previous?.excerpt ?? '').slice(0, 1200),
         },
         ...value.continuation.filter((x) => x.id !== id),
       ].slice(0, 20);

@@ -2,9 +2,9 @@
 
 Branch: `codex/work`
 
-CURRENT_MILESTONE: ORENA_PRODUCT_RESET_FOUNDATION_V1
+CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
 
-STATUS: REVIEWABLE
+STATUS: IMPLEMENTING
 
 The human-authorized D-046 reset supersedes the discarded experience mission.
 Discovery, intentional Practice, continuation, imported content and recalled
@@ -40,7 +40,4 @@ reset removed `templates/index.html`; its API and script remain. Whether Orena
 keeps that page, and where, is an open human decision recorded in
 `docs/project/CURRENT_HANDOFF.md`.
 
-NEXT_REVIEWABLE_SLICE: Awaiting human review of this foundation. The next slice
-should not begin until that review, the two open decisions in
-`docs/project/CURRENT_HANDOFF.md` are answered, and one manual microphone pass
-over Shadowing and Speaking has run.
+NEXT_REVIEWABLE_SLICE: The human-authorized Golden Star extends the D-046 checkpoint. Establish shared experience references for media/Follow/deep practice, intentional Practice, expression, contextual understanding and learner memory. Fewer coherent reference journeys, not full capability breadth. Native remains frozen. Final browser review follows integrated validation.

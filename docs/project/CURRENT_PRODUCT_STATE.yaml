@@ -48,9 +48,9 @@
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "orena_product_reset_foundation",
+    "id": "orena_web_golden_star",
     "status": "in_progress",
-    "next_task": "Finish the Orena WEB foundation: shared Follow/Practice, owned content, evidence, EN/ZH browser and responsive checks, web test migration, final human review. Native mobile is frozen by current human instruction; retain completed changes and do no further native work."
+    "next_task": "Establish the Golden Star WEB reference: shared shell, visual and interaction foundations across media/Follow/deep practice, intentional Practice, expression, contextual language and memory. Validate EN/ZH, themes and responsive behavior. Native remains frozen. Final human browser review; no broad feature completion."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

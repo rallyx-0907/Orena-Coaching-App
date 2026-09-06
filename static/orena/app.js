@@ -70,7 +70,8 @@ const ctx = {
 };
 function shell() {
   const c = ctx.c,
-    current = ctx.location.page;
+    current =
+      ctx.location.page === 'expression' ? 'practice' : ctx.location.page;
   document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
   document.documentElement.dataset.learning = ctx.language;
   document.getElementById('shell').innerHTML =
@@ -101,14 +102,12 @@ function preferences(onboarding = false) {
     title: onboarding ? c.welcome : c.preferences,
     body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form><button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
   });
-  sheet.querySelector('#themeButton').onclick = () => {
-    const theme =
-      document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = theme;
-    try {
-      storage.setItem('orena.theme', theme);
-    } catch {}
-  };
+  const themeControl = document.createElement('label');
+  themeControl.className = 'theme-control';
+  themeControl.innerHTML = `${c.theme}<select aria-label="${c.theme}">${['system', 'light', 'dark'].map((value) => `<option value="${value}" ${window.orenaTheme.preference === value ? 'selected' : ''}>${c['theme' + value]}</option>`).join('')}</select>`;
+  sheet.querySelector('#themeButton').replaceWith(themeControl);
+  themeControl.querySelector('select').onchange = (event) =>
+    window.orenaTheme.set(event.target.value);
   sheet.querySelector('#preferencesForm').onsubmit = async (event) => {
     event.preventDefault();
     if (pendingWrites) return;
@@ -255,8 +254,6 @@ async function render() {
 }
 async function boot() {
   try {
-    document.documentElement.dataset.theme =
-      storage.getItem('orena.theme') === 'dark' ? 'dark' : 'light';
     const [user, languages, profile] = await Promise.all([
       api.me(),
       api.languages(),

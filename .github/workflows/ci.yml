@@ -34,6 +34,7 @@ jobs:
       - run: |
           node scripts/test_orena_primitives.mjs
           node scripts/test_orena_product.mjs
+          node scripts/test_orena_foundation.mjs
           node scripts/test_orena_follow_clock.mjs
           node scripts/test_transcript_display_units.mjs
           node scripts/test_transcript_playback.mjs

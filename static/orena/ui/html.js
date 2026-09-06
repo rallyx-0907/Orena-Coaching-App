@@ -40,7 +40,14 @@ export function dialog({ title, body, onReady }) {
   onReady?.(element);
   return element;
 }
+let announcementTimer;
 export function status(message) {
   const region = document.getElementById('announcement');
-  if (region) region.textContent = message;
+  clearTimeout(announcementTimer);
+  if (region) {
+    region.textContent = message;
+    announcementTimer = setTimeout(() => {
+      region.textContent = '';
+    }, 7000);
+  }
 }

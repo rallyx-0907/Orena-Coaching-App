@@ -61,7 +61,8 @@ export function dictationEvidence({ asset, segment, language, previous = {} }) {
    rather than writing over it. Never lowers a stored value. */
 export function mergeListeningEvidence(stored, local) {
   if (!stored || typeof stored !== 'object') return { ...local };
-  const number = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+  const number = (value) =>
+    Number.isFinite(Number(value)) ? Number(value) : 0;
   const bestStored = stored.best_accuracy_percent;
   const bestLocal = local.best_accuracy_percent;
   return {
@@ -69,7 +70,8 @@ export function mergeListeningEvidence(stored, local) {
     revealed: Boolean(stored.revealed) || Boolean(local.revealed),
     checked_attempt_count: Math.min(
       1000,
-      number(stored.checked_attempt_count) + number(local.checked_attempt_count),
+      number(stored.checked_attempt_count) +
+        number(local.checked_attempt_count),
     ),
     best_accuracy_percent:
       bestStored == null && bestLocal == null
@@ -77,5 +79,23 @@ export function mergeListeningEvidence(stored, local) {
         : Math.max(number(bestStored), number(bestLocal)),
     best_exact: Boolean(stored.best_exact) || Boolean(local.best_exact),
     last_answer: local.last_answer || stored.last_answer || '',
+  };
+}
+
+// Capture one recovered baseline for this attempt accumulator. Re-reading a
+// record after our own successful write would count those attempts twice.
+// Retrying the same snapshot is an idempotent replacement, including when a
+// server write succeeded but its response was lost. A failed read can retry.
+export function recoverListeningEvidence(read) {
+  let baseline;
+  return async (local) => {
+    if (!baseline)
+      baseline = Promise.resolve()
+        .then(read)
+        .catch((error) => {
+          baseline = null;
+          throw error;
+        });
+    return mergeListeningEvidence(await baseline, local);
   };
 }
