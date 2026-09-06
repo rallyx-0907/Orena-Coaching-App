@@ -1,7 +1,10 @@
 import { esc, safeExternal, dialog, status } from './html.js';
 import { link } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
-import { dictationEvidence } from '../product/evidence.js';
+import {
+  dictationEvidence,
+  mergeListeningEvidence,
+} from '../product/evidence.js';
 import { contentFor } from '../content/texts.js';
 import { preparedMeaning } from '../content/language-notes.js';
 import {
@@ -166,6 +169,10 @@ function waitingMedia(root, ctx, payload) {
   const { c, language, memory } = ctx;
   const id = ctx.location.id,
     title = payload.asset.title || c.pendingMedia;
+  // A catalog lesson whose transcript is still missing reaches this same
+  // waiting room, and it must not be described as something the learner
+  // brought in. addMedia already ignores anything that is not an import.
+  const imported = id.startsWith('url:');
   memory.enter({ id, title, source_url: payload.asset.source_url });
   memory.addMedia({
     id,
@@ -173,7 +180,7 @@ function waitingMedia(root, ctx, payload) {
     kind: payload.playback.kind,
     duration_ms: payload.asset.duration_ms,
   });
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${c.imported}</small></div><header class="encounter-heading"><div><small>${c.pendingMedia}</small><h1 lang="${language}">${esc(title)}</h1></div><p>${c.pendingNote}</p></header><section class="pending-media"><div class="player-wrap">${mediaPlayer(payload.playback, title)}</div><div class="transport"><button data-play>${c.play}</button><button data-retry>${c.retry}</button></div><p data-recovery-state role="status">${c.pendingNote}</p></section>`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${imported ? c.imported : c.curated}</small></div><header class="encounter-heading"><div><small>${c.pendingMedia}</small><h1 lang="${language}">${esc(title)}</h1></div><p>${c.pendingNote}</p></header><section class="pending-media"><div class="player-wrap">${mediaPlayer(payload.playback, title)}</div><div class="transport"><button data-play>${c.play}</button><button data-retry>${c.retry}</button></div><p data-recovery-state role="status">${c.pendingNote}</p></section>`;
   const playerRoot = root.querySelector('.pending-media');
   connectMediaPlayer(playerRoot, payload.playback);
   root.querySelector('[data-play]').onclick = () =>
@@ -277,7 +284,7 @@ export async function renderEncounter(root, ctx) {
       source_url: payload.asset.source_url,
     });
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(payload.catalog?.topic || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? '<div class="audio-atmosphere" aria-hidden="true"><span>◌</span><i>▂ ▅ ▃ ▇ ▅ ▂ ▆ ▃</i></div>' : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶ / Ⅱ</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="practice-space" hidden></section></section><aside class="transcript-panel"><h2>${c.transcript}</h2><ol>${model.segments.map((s, i) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span lang="${language}">${esc(s.original_text)}</span></button></li>`).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseBlock(ctx, item)}`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(payload.catalog?.topic || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? '<div class="audio-atmosphere" aria-hidden="true"><span>◌</span><i>▂ ▅ ▃ ▇ ▅ ▂ ▆ ▃</i></div>' : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="practice-space" hidden></section></section><aside class="transcript-panel"><h2>${c.transcript}</h2><ol>${model.segments.map((s, i) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span lang="${language}">${esc(s.original_text)}</span></button></li>`).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseBlock(ctx, item)}`;
   const playerRoot = root.querySelector('.media-stage');
   const practiceRoot = root.querySelector('.practice-space');
   const moment = root.querySelector('.follow-moment');
@@ -347,7 +354,9 @@ export async function renderEncounter(root, ctx) {
         paintFollow();
       }
     } catch {
-      if (isAlive()) meaning.textContent = c.noMeaning;
+      // Saying "no meaning" again would look like nothing happened; the
+      // learner asked for a retry and deserves to know it did not land.
+      if (isAlive()) meaning.textContent = c.meaningUnavailable;
     } finally {
       button.disabled = false;
     }
@@ -365,19 +374,43 @@ export async function renderEncounter(root, ctx) {
         remember();
       }),
   );
-  root.querySelector('[data-seek]').oninput = (event) => {
+  const seekInput = root.querySelector('[data-seek]');
+  const timeOutput = root.querySelector('[data-time]');
+  const playButton = root.querySelector('[data-play]');
+  // While the learner is holding the handle, the clock must not write the
+  // position back underneath them, or the thumb fights the drag.
+  let scrubbing = false;
+  const releaseScrub = () => {
+    scrubbing = false;
+  };
+  seekInput.addEventListener('pointerdown', () => {
+    scrubbing = true;
+  });
+  seekInput.addEventListener('keydown', () => {
+    scrubbing = true;
+  });
+  seekInput.addEventListener('pointerup', releaseScrub);
+  seekInput.addEventListener('pointercancel', releaseScrub);
+  seekInput.addEventListener('keyup', releaseScrub);
+  seekInput.addEventListener('blur', releaseScrub);
+  seekInput.oninput = (event) => {
+    timeOutput.textContent = duration(Number(event.target.value));
     seekPlayback(playerRoot, payload.playback, Number(event.target.value));
   };
   function onClock(event) {
-    root.querySelector('[data-time]').textContent = duration(
-      event.detail.time_ms,
-    );
-    root.querySelector('[data-seek]').value = String(event.detail.time_ms);
-    root.querySelector('[data-play]').textContent =
-      event.detail.player_state === 1 ? 'Ⅱ' : '▶';
+    const playing = event.detail.player_state === 1;
+    if (!scrubbing) {
+      timeOutput.textContent = duration(event.detail.time_ms);
+      seekInput.value = String(event.detail.time_ms);
+    }
+    playButton.textContent = playing ? 'Ⅱ' : '▶';
+    playButton.setAttribute('aria-label', playing ? c.pause : c.playAction);
     if (practice) return;
     const s = model.follow(event.detail.time_ms);
-    const key = s?.segment_id || 'gap';
+    // "Between spoken lines" is only true of media that is running. At rest -
+    // and a paused player sits at 0ms, before the first line - the learner
+    // should still be looking at the line they are on.
+    const key = s ? s.segment_id : playing ? 'gap' : lastClockSegment;
     if (key !== lastClockSegment) {
       lastClockSegment = key;
       paintFollow(!s);
@@ -415,6 +448,7 @@ export async function renderEncounter(root, ctx) {
     recorder.cleanup();
     recorder = createLocalAudioRecorder();
     recording = false;
+    setRecordingLock(false);
     take = null;
     practiceTarget = null;
     practiceRoot.hidden = true;
@@ -426,6 +460,18 @@ export async function renderEncounter(root, ctx) {
     paintFollow();
     remember();
   }
+  /* A live microphone owns the segment. Rather than swallowing clicks that
+     would move it, say so on the controls themselves, so the reason a control
+     will not respond is visible and reaches assistive technology too. */
+  function setRecordingLock(active) {
+    root.querySelectorAll('[data-segment]').forEach((x) => {
+      x.disabled = active;
+      if (active) x.title = c.recordingInProgress;
+      else x.removeAttribute('title');
+    });
+    const next = practiceRoot.querySelector('[data-next-moment]');
+    if (next && (active || !next.dataset.exhausted)) next.disabled = active;
+  }
   function basePractice() {
     stopSegmentPlayback(playerRoot, payload.playback);
     practiceTarget = { ...model.current };
@@ -433,6 +479,9 @@ export async function renderEncounter(root, ctx) {
     transcript.hidden = practice === 'dictation';
     root.querySelector('.moment-actions').hidden = true;
     practiceRoot.hidden = false;
+    // The transcript stays on screen through Shadowing and Speaking, so it has
+    // to mark the line being practised rather than the one Follow left behind.
+    paintFollow();
     remember();
   }
   async function openPractice(intent) {
@@ -449,9 +498,11 @@ export async function renderEncounter(root, ctx) {
     const body = practiceRoot.querySelector('[data-practice-body]');
     const nextIndex =
       model.segments.findIndex((x) => x.segment_id === target.segment_id) + 1;
-    practiceRoot.querySelector('[data-next-moment]').disabled =
-      nextIndex >= model.segments.length;
-    practiceRoot.querySelector('[data-next-moment]').onclick = () => {
+    const nextButton = practiceRoot.querySelector('[data-next-moment]');
+    const exhausted = nextIndex >= model.segments.length;
+    nextButton.disabled = exhausted;
+    if (exhausted) nextButton.dataset.exhausted = 'true';
+    nextButton.onclick = () => {
       if (recording) return;
       closePractice();
       model.select(model.segments[nextIndex].segment_id);
@@ -465,14 +516,20 @@ export async function renderEncounter(root, ctx) {
       answer.value = memory.value.answers[key] || '';
       answer.oninput = () => memory.write(key, answer.value, 'answers');
       body.querySelectorAll('form button').forEach((x) => (x.disabled = true));
-      let previous = {};
-      try {
+      let previous = {},
+        priorRead = false;
+      const readPrior = async () => {
         await ctx.settledWrites();
         const progress = await api.listeningProgress(payload.asset.asset_id);
-        previous =
+        return (
           (progress.items || []).find(
             (x) => x.segment_id === target?.segment_id,
-          ) || {};
+          ) || {}
+        );
+      };
+      try {
+        previous = await readPrior();
+        priorRead = true;
       } catch {}
       if (!isAlive() || version !== practiceVersion) return;
       const dictation = dictationEvidence({
@@ -482,20 +539,27 @@ export async function renderEncounter(root, ctx) {
         previous,
       });
       body.querySelectorAll('form button').forEach((x) => (x.disabled = false));
+      const evidenceStatus = () => body.querySelector('[data-evidence-status]');
+      if (!priorRead) evidenceStatus().textContent = c.priorProgressUnread;
       const persist = async () => {
-        const evidence = dictation.value;
-        const output = body.querySelector('[data-evidence-status]');
+        const output = evidenceStatus();
         output.textContent = c.saving;
         try {
+          // Practice that began without the stored record only knows this
+          // session, so fold it into the server's copy instead of replacing it.
+          const evidence = priorRead
+            ? dictation.value
+            : mergeListeningEvidence(await readPrior(), dictation.value);
           await ctx.mutate(() => api.saveListeningProgress(evidence));
           if (isAlive() && version === practiceVersion)
             output.textContent = c.persisted;
         } catch {
-          if (isAlive() && version === practiceVersion)
-            output.innerHTML = `${c.failedSave} <button data-retry-save>${c.retry}</button>`;
-          body
-            .querySelector('[data-retry-save]')
-            ?.addEventListener('click', persist);
+          if (isAlive() && version === practiceVersion) {
+            output.innerHTML = `${priorRead ? c.failedSave : c.priorProgressUnread} <button data-retry-save>${c.retry}</button>`;
+            body
+              .querySelector('[data-retry-save]')
+              ?.addEventListener('click', persist);
+          }
         }
       };
       body.querySelector('form').onsubmit = async (event) => {
@@ -531,6 +595,7 @@ export async function renderEncounter(root, ctx) {
         if (recording) {
           take = await recorder.stop();
           recording = false;
+          setRecordingLock(false);
           button.textContent = `● ${c.record}`;
           if (!isAlive() || version !== practiceVersion) return;
           if (take) {
@@ -538,6 +603,12 @@ export async function renderEncounter(root, ctx) {
             body.querySelector('[data-take]').innerHTML =
               `<h3>${c.take}</h3><audio controls src="${esc(take.url)}"></audio><div class="button-row"><button class="primary" data-feedback-action>${c.feedback}</button>${intent === 'shadowing' ? `<button class="outline" data-pronunciation>${c.pronunciation}</button>` : ''}</div>`;
             output.textContent = c.selfReport;
+            // Wire the take's own actions before anything is awaited: these
+            // buttons are already on screen, and a slow save must not leave
+            // them looking live while nothing answers a click.
+            body.querySelector('[data-feedback-action]').onclick = () =>
+              voiceFeedback();
+            bindPronunciation();
             if (intent === 'shadowing') {
               try {
                 await ctx.settledWrites();
@@ -564,39 +635,6 @@ export async function renderEncounter(root, ctx) {
                 if (isAlive()) output.textContent = c.failedSave;
               }
             }
-            body.querySelector('[data-feedback-action]').onclick = () =>
-              voiceFeedback();
-            body
-              .querySelector('[data-pronunciation]')
-              ?.addEventListener('click', async (event) => {
-                // A recording made while this request is in flight replaces the
-                // take, so the answer that comes back is about audio the
-                // learner has already moved on from.
-                const pronunciationButton = event.currentTarget,
-                  assessedTake = takeId,
-                  assessedBlob = take?.blob;
-                pronunciationButton.disabled = true;
-                const area = body.querySelector('[data-feedback]');
-                area.textContent = c.loading;
-                try {
-                  const result = await api.assessPronunciation(
-                    assessedBlob,
-                    language,
-                    target.spoken_text || target.original_text,
-                  );
-                  if (
-                    isAlive() &&
-                    version === practiceVersion &&
-                    assessedTake === takeId
-                  )
-                    area.innerHTML = `<h3>${c.pronunciation}</h3><p>${c.accuracy}: ${result.accuracy_score ?? c.notMeasured} · ${c.fluency}: ${result.fluency_score ?? c.notMeasured}</p><div class="pronunciation-words">${(result.words || []).map((x) => `<span lang="${language}">${esc(x.word)} <small>${x.accuracy_score ?? c.notMeasured}</small></span>`).join('')}</div><p class="meta">${result.score_kind === 'synthetic_demo' ? c.demoMeasurement : c.voiceMeasureNote}</p>`;
-                } catch {
-                  if (isAlive() && assessedTake === takeId) {
-                    area.textContent = c.feedbackUnavailable;
-                    pronunciationButton.disabled = false;
-                  }
-                }
-              });
           } else output.textContent = c.microphone;
         } else {
           stopSegmentPlayback(playerRoot, payload.playback);
@@ -613,11 +651,44 @@ export async function renderEncounter(root, ctx) {
             return;
           }
           recording = started;
+          setRecordingLock(started);
           button.textContent = started ? `■ ${c.stop}` : `● ${c.record}`;
           output.textContent = started ? c.recording : c.microphone;
         }
         button.disabled = false;
       };
+      function bindPronunciation() {
+        const pronunciationButton = body.querySelector('[data-pronunciation]');
+        if (!pronunciationButton) return;
+        pronunciationButton.onclick = async () => {
+          // A recording made while this request is in flight replaces the take,
+          // so the answer that comes back is about audio the learner has
+          // already moved on from.
+          const assessedTake = takeId,
+            assessedBlob = take?.blob;
+          pronunciationButton.disabled = true;
+          const area = body.querySelector('[data-feedback]');
+          area.textContent = c.loading;
+          try {
+            const result = await api.assessPronunciation(
+              assessedBlob,
+              language,
+              target.spoken_text || target.original_text,
+            );
+            if (
+              isAlive() &&
+              version === practiceVersion &&
+              assessedTake === takeId
+            )
+              area.innerHTML = `<h3>${c.pronunciation}</h3><p>${c.accuracy}: ${result.accuracy_score ?? c.notMeasured} · ${c.fluency}: ${result.fluency_score ?? c.notMeasured}</p><div class="pronunciation-words">${(result.words || []).map((x) => `<span lang="${language}">${esc(x.word)} <small>${x.accuracy_score ?? c.notMeasured}</small></span>`).join('')}</div><p class="meta">${result.score_kind === 'synthetic_demo' ? c.demoMeasurement : c.voiceMeasureNote}</p>`;
+          } catch {
+            if (isAlive() && assessedTake === takeId) {
+              area.textContent = c.feedbackUnavailable;
+              pronunciationButton.disabled = false;
+            }
+          }
+        };
+      }
       async function voiceFeedback() {
         const currentTake = take,
           currentTakeId = takeId;
@@ -653,7 +724,14 @@ export async function renderEncounter(root, ctx) {
             )
               return;
             const heard = result.text || result.transcript || '';
-            memory.write(id, heard);
+            // What was spoken becomes the start of a draft, but never at the
+            // cost of writing the learner already has. Whatever is stored is
+            // what the response box shows, so the two cannot silently diverge.
+            const draft = root.querySelector('#response');
+            if (heard && !(draft?.value || memory.value.expressions[id])) {
+              memory.write(id, heard);
+              if (draft) draft.value = heard;
+            }
             area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(heard)}</p><a class="outline" href="${link('expression', { id })}">${c.develop} ↗</a>`;
           }
         } catch {

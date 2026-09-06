@@ -3,7 +3,7 @@ import {existsSync, readFileSync} from 'node:fs';
 import {route, link, continuationLink, sourceLink, practiceIntentions} from '../static/orena/product/intent.js';
 import {learnerMemory} from '../static/orena/product/memory.js';
 import {encounter} from '../static/orena/product/encounter.js';
-import {dictationEvidence} from '../static/orena/product/evidence.js';
+import {dictationEvidence, mergeListeningEvidence} from '../static/orena/product/evidence.js';
 import {copy} from '../static/orena/ui/copy.js';
 
 for (const retired of ['static/becoming', 'templates/becoming/index.html', 'templates/index.html', 'static/app.js', 'static/product-shell.js']) {
@@ -66,7 +66,33 @@ for (const language of ['en','zh']) {
 }
 const dialogue=dictationEvidence({asset:'dialogue',language:'zh',segment:{segment_id:'one',original_text:'欧文：你好。',spoken_text:'你好。'}});
 assert.equal(dialogue.compare('你好').result.exact,true,'Unspoken speaker labels must not be graded');
+// The server replaces a segment record wholesale, so practice that began
+// without the stored copy must fold into it, never write over it.
+const stored={revealed:true,checked_attempt_count:4,best_accuracy_percent:88,best_exact:true,last_answer:'earlier'};
+const local={asset_id:'a',segment_id:'one',presentation:'checked',revealed:false,checked_attempt_count:1,best_accuracy_percent:40,best_exact:false,last_answer:'now'};
+const merged=mergeListeningEvidence(stored,local);
+assert.equal(merged.best_accuracy_percent,88,'A recovered write must never lower the stored best accuracy');
+assert.equal(merged.checked_attempt_count,5,'Attempts made offline are added to the stored count');
+assert.equal(merged.revealed,true,'A previously revealed line stays revealed');
+assert.equal(merged.best_exact,true,'A previous exact match is not erased');
+assert.equal(merged.last_answer,'now','The newest answer is the one worth keeping');
+assert.equal(merged.asset_id,'a');assert.equal(merged.segment_id,'one');
+assert.equal(mergeListeningEvidence({},local).best_accuracy_percent,40,'A genuinely empty record keeps the local result');
+assert.equal(mergeListeningEvidence(null,local).best_accuracy_percent,40,'A missing record keeps the local result');
+assert.equal(mergeListeningEvidence({best_accuracy_percent:null},{...local,best_accuracy_percent:null}).best_accuracy_percent,null,'Unmeasured stays unmeasured rather than becoming zero');
+assert.equal(mergeListeningEvidence(stored,{...local,checked_attempt_count:999}).checked_attempt_count,1000,'The stored contract bound still holds');
+
+// Contracts the encounter surface must keep. These are the regressions this
+// layer has actually shipped, so they are worth naming rather than trusting.
+const encounterSource=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
+assert.match(encounterSource,/mergeListeningEvidence\(await readPrior\(\)/,'Dictation that began without the stored record must merge into it, never replace it');
+assert.match(encounterSource,/playing \? 'gap' : lastClockSegment/,'A resting player is not "between spoken lines"; Follow must keep showing the current line');
+assert.doesNotMatch(encounterSource,/memory\.write\(id, heard\)\s*;/,'A speech transcript must not overwrite writing the learner already has');
+assert.match(encounterSource,/bindPronunciation\(\);[\s\S]{0,200}if \(intent === 'shadowing'\)/,'Take actions must be wired before the progress save is awaited');
+
 const app=readFileSync(new URL('../static/orena/app.js',import.meta.url),'utf8');
 assert.doesNotMatch(app,/applySkillNavigation|sharedMediaSession|ShadowingStudio/);
 assert.match(app,/languages.support_languages/);
+assert.match(app,/a\.skip[\s\S]{0,160}event\.preventDefault\(\)/,'Skip to content must move focus without rewriting the route');
+assert.match(app,/if \(location\.hash === next\) render\(\)/,'Re-entering the route you are already on must still act');
 console.log('Orena product boundary, intents, owned memory, EN/ZH meaning and truthful evidence: PASS');

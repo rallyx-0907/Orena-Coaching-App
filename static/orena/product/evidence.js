@@ -53,3 +53,29 @@ export function dictationEvidence({ asset, segment, language, previous = {} }) {
     },
   };
 }
+
+/* The server replaces a segment's record wholesale, so the client is the only
+   thing standing between a transient read failure and a learner's lost best
+   score. When practice started without the stored record, the local evidence
+   counts only this session; fold it into whatever the server actually holds
+   rather than writing over it. Never lowers a stored value. */
+export function mergeListeningEvidence(stored, local) {
+  if (!stored || typeof stored !== 'object') return { ...local };
+  const number = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+  const bestStored = stored.best_accuracy_percent;
+  const bestLocal = local.best_accuracy_percent;
+  return {
+    ...local,
+    revealed: Boolean(stored.revealed) || Boolean(local.revealed),
+    checked_attempt_count: Math.min(
+      1000,
+      number(stored.checked_attempt_count) + number(local.checked_attempt_count),
+    ),
+    best_accuracy_percent:
+      bestStored == null && bestLocal == null
+        ? null
+        : Math.max(number(bestStored), number(bestLocal)),
+    best_exact: Boolean(stored.best_exact) || Boolean(local.best_exact),
+    last_answer: local.last_answer || stored.last_answer || '',
+  };
+}

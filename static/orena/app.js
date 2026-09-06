@@ -41,7 +41,11 @@ const ctx = {
   location: route(location.hash),
   alive: () => true,
   go: (page, options) => {
-    location.hash = link(page, options);
+    const next = link(page, options);
+    // Assigning the hash it already has fires no hashchange, so re-entering
+    // the route you are on would silently do nothing.
+    if (location.hash === next) render();
+    else location.hash = next;
   },
   settledWrites: () => writeTail,
   async mutate(action) {
@@ -239,8 +243,13 @@ async function render() {
     root.querySelector('h1')?.focus({ preventScroll: true });
   } catch (error) {
     if (scope.alive()) {
-      root.innerHTML = `<section class="empty"><h1>${ctx.c.unavailable}</h1><p>${esc(error.message)}</p><button class="primary" id="retry">${ctx.c.retry}</button></section>`;
+      // Retrying a route that is gone - the wrong language, a removed import,
+      // an id that never existed - only fails again, so always offer the way
+      // back out as well.
+      root.innerHTML = `<section class="empty"><h1>${ctx.c.unavailable}</h1><p>${esc(error.message)}</p><div class="button-row"><button class="primary" id="retry">${ctx.c.retry}</button><a class="outline" href="${link()}">${ctx.c.discover} ↗</a></div></section>`;
       root.querySelector('#retry').onclick = render;
+      root.querySelector('h1').setAttribute('tabindex', '-1');
+      root.querySelector('h1').focus({ preventScroll: true });
     }
   }
 }
@@ -265,6 +274,14 @@ async function boot() {
       root.innerHTML = `<section class="empty"><h1>orena</h1><p>${ctx.c.limited}</p><a href="/account">${ctx.c.account}</a></section>`;
       return;
     }
+    // "Skip to content" is a fragment link, and letting it write #main into the
+    // hash reads as a route change - the keyboard entry point would throw the
+    // learner back to Discover. Move focus ourselves and leave the route alone.
+    document.querySelector('a.skip')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      root.focus({ preventScroll: true });
+      root.scrollIntoView({ block: 'start' });
+    });
     window.addEventListener('hashchange', render);
     await render();
     if (!profile.exists) preferences(true);

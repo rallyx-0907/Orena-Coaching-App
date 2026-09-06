@@ -389,3 +389,28 @@ Object.assign(copy.zh, {
   notMeasured: '未测量',
   demoMeasurement: '仅为演示数值，并非对你的录音的评估。',
 });
+
+Object.assign(copy.en, {
+  pause: 'Pause',
+  playAction: 'Play',
+  noCorrections: 'Nothing to correct in this piece.',
+  meaningUnavailable: 'The meaning could not be recovered just now.',
+  priorProgressUnread:
+    'Your earlier progress for this line could not be read, so nothing was overwritten. Practise freely and save again when you are back online.',
+  savedNotRefreshed: 'Saved. The list could not be refreshed just now.',
+  noPatterns: 'No patterns are prepared for this language yet.',
+  recordingInProgress: 'Finish or stop the recording first.',
+  curated: 'From Orena',
+});
+Object.assign(copy.zh, {
+  pause: '暂停',
+  playAction: '播放',
+  noCorrections: '这段文字没有需要更正的地方。',
+  meaningUnavailable: '暂时无法取回这句的含义。',
+  priorProgressUnread:
+    '暂时读不到你之前在这一句的练习记录，因此没有覆盖任何内容。你可以继续练习，恢复连接后再保存。',
+  savedNotRefreshed: '已保存。列表暂时无法刷新。',
+  noPatterns: '这个语言还没有准备好的语法脉络。',
+  recordingInProgress: '请先结束或停止录音。',
+  curated: '来自 Orena',
+});

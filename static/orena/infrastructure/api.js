@@ -20,7 +20,7 @@ async function request(url, options={}){
     const detail=payload && typeof payload==='object' ? payload.detail : payload;
     const structured=detail && typeof detail==='object';
     const rawMessage=structured ? detail.message : detail;
-    const looksLikeHtml=typeof rawMessage==='string'&&/(<!doctype|<html[\\s>])/i.test(rawMessage);
+    const looksLikeHtml=typeof rawMessage==='string'&&/(<!doctype|<html[\s>])/i.test(rawMessage);
     const message=looksLikeHtml ? `Request failed (${response.status}). Please try again.` : rawMessage;
     const error=new Error(typeof message==='string'&&message ? message : `Request failed (${response.status})`);
     /* The canonical envelope, §2.6: a stable category the caller can branch on,

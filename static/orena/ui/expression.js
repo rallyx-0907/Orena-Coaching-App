@@ -44,7 +44,10 @@ export async function renderExpression(root, ctx) {
       const corrections = (result.errors || []).filter(
         (x) => x.fragment && text.includes(x.fragment),
       );
-      feedback.innerHTML = `<h2>${c.review}</h2>${result.evaluator==='fallback-demo'?`<p class="notice">${c.demoMeasurement}</p>`:''}${result.corrected_text ? `<blockquote lang="${language}">${esc(result.corrected_text)}</blockquote>` : ''}${corrections.map((x) => `<article class="correction"><del lang="${language}">${esc(x.fragment)}</del><p lang="${language}">${esc(x.suggestion || '')}</p>${ctx.support === 'vi' && x.explanation_vi ? `<p lang="vi">${esc(x.explanation_vi)}</p>` : ''}</article>`).join('')}<p>${c.persisted}</p><button class="outline" data-revise>${c.revision} ↗</button>`;
+      // A review that found nothing has to say so. Rendering an empty shell
+      // reads as a failure the learner cannot tell apart from a real one.
+      const findings = corrections.length || result.corrected_text;
+      feedback.innerHTML = `<h2>${c.review}</h2>${result.evaluator === 'fallback-demo' ? `<p class="notice">${c.demoMeasurement}</p>` : ''}${findings ? '' : `<p>${c.noCorrections}</p>`}${result.corrected_text ? `<blockquote lang="${language}">${esc(result.corrected_text)}</blockquote>` : ''}${corrections.map((x) => `<article class="correction"><del lang="${language}">${esc(x.fragment)}</del><p lang="${language}">${esc(x.suggestion || '')}</p>${ctx.support === 'vi' && x.explanation_vi ? `<p lang="vi">${esc(x.explanation_vi)}</p>` : ''}</article>`).join('')}<p>${c.persisted}</p><button class="outline" data-revise>${c.revision} ↗</button>`;
       feedback.querySelector('[data-revise]').onclick = () =>
         root.querySelector('textarea').focus();
     } catch {
@@ -86,6 +89,18 @@ export async function renderLanguage(root, ctx) {
             await ctx.mutate(() =>
               api.reviewLibraryVocabulary(current.word, button.dataset.grade),
             );
+          } catch {
+            if (alive()) {
+              output.textContent = c.failedSave;
+              root
+                .querySelectorAll('[data-grade]')
+                .forEach((x) => (x.disabled = false));
+            }
+            return;
+          }
+          // The grade is already recorded. If only the refresh fails, say that
+          // rather than telling the learner their answer was lost.
+          try {
             const updated = await api.libraryVocabulary();
             if (!alive()) return;
             items = updated.items || [];
@@ -94,7 +109,7 @@ export async function renderLanguage(root, ctx) {
             status(c.persisted);
           } catch {
             if (alive()) {
-              output.textContent = c.failedSave;
+              output.textContent = c.savedNotRefreshed;
               root
                 .querySelectorAll('[data-grade]')
                 .forEach((x) => (x.disabled = false));
@@ -116,7 +131,10 @@ export async function renderGrammar(root, ctx) {
         ...note,
       }))
       .filter((x) => x.level);
-    root.innerHTML = `<header class="page-intro"><div><small>${c.grammarName}</small><h1>${c.grammarTitle}</h1><p>${c.grammarNote}</p></div></header><div class="pattern-list">${lessons.map((x) => `<a href="${link('practice', { intent: 'grammar', id: x.id })}"><small>${esc(x.level)}</small><h2 lang="${language}">${esc(x.title[ctx.ui])}</h2><p lang="${language}">${esc(x.line)}</p><span>↗</span></a>`).join('')}</div>`;
+    // An authored note whose Concept ID the catalog does not know, or a
+    // catalog that answered with nothing usable, must read as an empty shelf
+    // rather than a heading above a blank page.
+    root.innerHTML = `<header class="page-intro"><div><small>${c.grammarName}</small><h1>${c.grammarTitle}</h1><p>${c.grammarNote}</p></div></header>${lessons.length ? `<div class="pattern-list">${lessons.map((x) => `<a href="${link('practice', { intent: 'grammar', id: x.id })}"><small>${esc(x.level)}</small><h2 lang="${language}">${esc(x.title[ctx.ui])}</h2><p lang="${language}">${esc(x.line)}</p><span>↗</span></a>`).join('')}</div>` : `<section class="empty"><h2>${c.noPatterns}</h2><a class="primary" href="${link('practice')}">${c.practice} →</a></section>`}`;
     return;
   }
   const lesson = await api.grammarLesson(ctx.location.id);
@@ -125,7 +143,7 @@ export async function renderGrammar(root, ctx) {
     id = `grammar:${lesson.id}`,
     note = patternsFor(language).find((x) => x.id === lesson.id),
     title = note?.title[ctx.ui] || lesson.title;
-  root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'grammar' })}">← ${c.grammarName}</a></div><header class="page-intro"><div><small>${esc(lesson.level)}</small><h1 lang="${language}">${esc(title)}</h1><p>${c.grammarNote}</p></div></header><section class="pattern-focus"><small>${c.generatedNote}</small><div class="pattern-parts" lang="${language}">${(note?.parts || []).map((x) => `<span>${esc(x)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p lang="${ctx.support}">${esc(note?.note[ctx.support] || (ctx.support === 'vi' ? lesson.explanation_vi : '') || c.noMeaning)}</p></section><section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map((x) => `<blockquote lang="${language}">${esc(x.target || x.en || x.zh || '')}${x.pinyin && ctx.profile.pinyin !== 'off' ? `<small>${esc(x.pinyin)}</small>` : ''}${ctx.support === 'vi' && (x.meaning_vi || x.vi) ? `<p lang="vi">${esc(x.meaning_vi || x.vi)}</p>` : ''}</blockquote>`).join('')}</div><div><h2>${c.yourExample}</h2><textarea aria-label="${c.yourExample}" rows="6" lang="${language}" maxlength="12000">${esc(memory.value.expressions[id] || '')}</textarea><p class="meta">${c.local}</p><a class="primary" href="${link('expression', { id })}">${c.develop} ↗</a></div></section>`;
+  root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'grammar' })}">← ${c.grammarName}</a></div><header class="page-intro"><div><small>${esc(lesson.level)}</small><h1 lang="${language}">${esc(title)}</h1><p>${c.grammarNote}</p></div></header>${note ? `<section class="pattern-focus"><small>${c.generatedNote}</small><div class="pattern-parts" lang="${language}">${note.parts.map((x) => `<span>${esc(x)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p lang="${ctx.support}">${esc(note.note[ctx.support] || (ctx.support === 'vi' ? lesson.explanation_vi : '') || c.noMeaning)}</p></section>` : ''}<section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map((x) => `<blockquote lang="${language}">${esc(x.target || x.en || x.zh || '')}${x.pinyin && ctx.profile.pinyin !== 'off' ? `<small>${esc(x.pinyin)}</small>` : ''}${ctx.support === 'vi' && (x.meaning_vi || x.vi) ? `<p lang="vi">${esc(x.meaning_vi || x.vi)}</p>` : ''}</blockquote>`).join('')}</div><div><h2>${c.yourExample}</h2><textarea aria-label="${c.yourExample}" rows="6" lang="${language}" maxlength="12000">${esc(memory.value.expressions[id] || '')}</textarea><p class="meta">${c.local}</p><a class="primary" href="${link('expression', { id })}">${c.develop} ↗</a></div></section>`;
   root.querySelector('textarea').oninput = (event) => {
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing' });

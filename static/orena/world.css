@@ -2002,3 +2002,30 @@ input[type='checkbox'] {
     font-size: 20px;
   }
 }
+
+/* Narrow-width reach. Orena's inline links are deliberately typographic rather
+   than buttons, which reads well under a mouse but leaves several of them
+   around 18px tall on a phone. These rules add height around the same type;
+   they change no size, colour, weight or arrangement. */
+@media (max-width: 480px) {
+  .back-row a,
+  .back-row button,
+  .source a,
+  .collection-row h2 a,
+  .side-story > a h2 {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .intent-nav a,
+  .intent-ribbon > a {
+    align-items: center;
+    min-height: 44px;
+  }
+  .transport > button:nth-child(2) {
+    min-height: 44px;
+  }
+  .moment-actions button {
+    min-height: 44px;
+  }
+}
