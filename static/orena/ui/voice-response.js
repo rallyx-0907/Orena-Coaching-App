@@ -97,6 +97,7 @@ export function mountVoiceResponse(
     result.querySelector('[data-understand]').onclick = () => {
       const selected = selectionWithin(result.querySelector('[data-heard]'));
       openUnderstanding(ctx, {
+        origin: { id, where: title, why: 'from_speaking' },
         selection: selected?.text || value.heard,
         context: `${prompt}\n${value.heard}`.slice(0, 2400),
         title,

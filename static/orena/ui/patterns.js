@@ -4,8 +4,31 @@ import { esc } from './html.js';
 import {
   link,
   continuationLink,
+  sourceLink,
   practiceIntentions,
 } from '../product/intent.js';
+
+/* Why Orena kept something, and the way back to where the learner met it.
+
+   A kept phrase that cannot answer "where did I see this?" is an anonymous
+   card, which is the thing this product is trying not to produce. The reason
+   is a stable key rather than free text, so it reads in either interface
+   language; the route back is offered only when there is genuinely something
+   to return to. */
+export function keptProvenance(c, kept) {
+  if (!kept) return '';
+  const reason = c[`kept_${kept.why}`] || '';
+  const where = String(kept.where || '').trim();
+  return `<p class="kept-because">${reason ? esc(reason) : ''}${
+    where
+      ? `${reason ? ' · ' : ''}${
+          kept.origin
+            ? `<a href="${sourceLink(kept.origin)}">${esc(where)} ↗</a>`
+            : esc(where)
+        }`
+      : ''
+  }</p>`;
+}
 
 export function pageIntro({ title, note = '', eyebrow = '', language = '' }) {
   return `<header class="page-intro"><div>${eyebrow ? `<small>${esc(eyebrow)}</small>` : ''}<h1${language ? ` lang="${esc(language)}"` : ''}>${esc(title)}</h1>${note ? `<p>${esc(note)}</p>` : ''}</div></header>`;

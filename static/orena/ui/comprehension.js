@@ -66,7 +66,7 @@ function result(c, item, support) {
 export function bindComprehension(
   root,
   ctx,
-  { sessionId, questions, onEvidence },
+  { sessionId, questions, onEvidence, origin = null },
 ) {
   const section = root.querySelector('[data-comprehension]');
   if (!section || !questions?.length) return;
@@ -107,6 +107,7 @@ export function bindComprehension(
           const fragment = button.dataset.look;
           const context = onEvidence?.(fragment) || fragment;
           openUnderstanding(ctx, {
+            origin: origin || null,
             selection: fragment,
             context,
             title: c.comprehension,

@@ -57,6 +57,7 @@ export function renderConversation(root, ctx) {
           const index = Number(button.dataset.inspectTurn),
             turn = state.turns[index];
           openUnderstanding(ctx, {
+            origin: { id: state.id, where: state.title, why: 'from_speaking' },
             selection: turn.text.slice(0, 1600),
             context: state.turns
               .slice(Math.max(0, index - 1), index + 1)

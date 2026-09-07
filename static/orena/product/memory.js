@@ -2,6 +2,31 @@
 // Practice evidence remains in the existing PostgreSQL-backed capability APIs.
 const volatile = new Map();
 import { restoreConversation } from './conversation.js';
+
+/* Why a learner kept something. A small, stable vocabulary rather than free
+   text, so the collection can say it in either interface language and group by
+   it. "manual" is not a reason - it is how the save happened. */
+export const KEEP_REASONS = [
+  'looked_up',
+  'from_reading',
+  'from_listening',
+  'from_writing',
+  'from_speaking',
+  'from_grammar',
+];
+
+function keptRecord(term, item) {
+  return {
+    term: String(term).slice(0, 180),
+    // The encounter this came from, so the learner can go back to it. Empty
+    // when the origin cannot be routed to, which the surface must respect.
+    origin: String(item.origin || '').slice(0, 200),
+    where: String(item.where || '').slice(0, 240),
+    why: item.why,
+    context: String(item.context || '').slice(0, 1200),
+    at: typeof item.at === 'string' ? item.at.slice(0, 40) : '',
+  };
+}
 export function learnerMemory(storage, owner, language) {
   const key = `orena.encounters.v1:${encodeURIComponent(owner)}:${language}`;
   let available = true,
@@ -14,6 +39,7 @@ export function learnerMemory(storage, owner, language) {
       answers: {},
       revisions: {},
       conversations: {},
+      keptLanguage: {},
     };
   try {
     const parsed =
@@ -100,6 +126,19 @@ export function learnerMemory(storage, owner, language) {
             .slice(-100)
             .map(([k, v]) => [k, v.slice(0, 12000)]),
         );
+      value.keptLanguage = Object.fromEntries(
+        Object.entries(parsed.keptLanguage || {})
+          .filter(
+            ([term, item]) =>
+              typeof term === 'string' &&
+              term &&
+              !['__proto__', 'constructor', 'prototype'].includes(term) &&
+              item &&
+              KEEP_REASONS.includes(item.why),
+          )
+          .slice(-200)
+          .map(([term, item]) => [term, keptRecord(term, item)]),
+      );
     }
     if (volatile.has(key)) available = false;
   } catch {
@@ -122,6 +161,35 @@ export function learnerMemory(storage, owner, language) {
     },
     get available() {
       return available;
+    },
+    /* Language the learner chose to keep, with enough around it to answer what
+       it was, where they met it, what it meant there and why they kept it. The
+       word itself and its review history live in the account library; this is
+       the route back and the reason, which that table has no column for.
+
+       Device-scoped, like everything else here: on another device the learner
+       still has their words and their review state, and loses only the path
+       back to where they found them. */
+    rememberLanguage(entry) {
+      const term = String(entry?.term || '').trim();
+      if (
+        !term ||
+        ['__proto__', 'constructor', 'prototype'].includes(term) ||
+        !KEEP_REASONS.includes(entry.why)
+      )
+        return false;
+      value.keptLanguage = Object.fromEntries(
+        [
+          ...Object.entries(value.keptLanguage).filter(([k]) => k !== term),
+          [term, keptRecord(term, { ...entry, at: new Date().toISOString() })],
+        ].slice(-200),
+      );
+      return save();
+    },
+    forgetLanguage(term) {
+      if (!value.keptLanguage[String(term)]) return false;
+      delete value.keptLanguage[String(term)];
+      return save();
     },
     keep(id) {
       value.kept = value.kept.includes(id)

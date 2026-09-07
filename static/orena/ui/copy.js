@@ -652,6 +652,23 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  kept_looked_up: 'You looked this up',
+  kept_from_reading: 'From something you read',
+  kept_from_listening: 'From something you followed',
+  kept_from_writing: 'From your own writing',
+  kept_from_speaking: 'From something you said',
+  kept_from_grammar: 'From a pattern you were studying',
+});
+Object.assign(copy.zh, {
+  kept_looked_up: '你查过这个说法',
+  kept_from_reading: '来自你读过的内容',
+  kept_from_listening: '来自你听过的内容',
+  kept_from_writing: '来自你自己写的东西',
+  kept_from_speaking: '来自你说过的话',
+  kept_from_grammar: '来自你在学的语法点',
+});
+
+Object.assign(copy.en, {
   conversationTurnsSoFar: 'turns so far',
 });
 Object.assign(copy.zh, {

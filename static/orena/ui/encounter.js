@@ -49,11 +49,12 @@ import { art, origin, duration, bindImages, audioIdentity } from './content.js';
 /* Every capability investigates language through the one shared surface. This
    keeps the old call shape so the transcript, the story margin and the
    dictation comparison do not each need to know about it. */
-export function inspectPhrase(ctx, text, title, context) {
+export function inspectPhrase(ctx, text, title, context, origin = null) {
   return openUnderstanding(ctx, {
     selection: text,
     context: context || text,
     title,
+    origin,
   });
 }
 
@@ -91,6 +92,7 @@ function textEncounter(root, ctx, item) {
         selection: picked ? picked.text : paragraphs.join('\n').slice(0, 2400),
         context: picked ? picked.context : paragraphs.join('\n').slice(0, 2400),
         title: `${origin(item, c)} · ${item.title}`,
+        origin: { id: item.id, where: item.title, why: 'from_reading' },
       });
     };
     root.querySelector('[data-inspect]').onclick = investigate;
@@ -150,6 +152,9 @@ function textEncounter(root, ctx, item) {
       sessionId: readingSessionId(item.id),
       questions: item.questions,
       onEvidence: showEvidence,
+      // Evidence from a check belongs to the passage it was found in, not to
+      // the check: a phrase kept here must lead back to the text.
+      origin: { id: item.id, where: item.title, why: 'from_reading' },
     });
     bindComposer(root, ctx, item);
     bindImages(root, c);
@@ -415,6 +420,7 @@ export async function renderEncounter(root, ctx) {
       picked ? picked.text : model.current.original_text,
       `${origin(item, c)} · ${item.title}`,
       model.current.original_text,
+      { id, where: item.title, why: 'from_listening' },
     );
     if (held && sheet) {
       const note = document.createElement('p');
@@ -747,6 +753,7 @@ export async function renderEncounter(root, ctx) {
               target.original_text,
               item.title,
               target.original_text,
+              { id, where: item.title, why: 'from_listening' },
             );
           body.querySelector('[data-again]').onclick = () => {
             body.querySelector('.comparison').innerHTML = '';

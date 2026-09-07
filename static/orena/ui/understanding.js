@@ -81,7 +81,13 @@ function explanationBlock(c, result) {
 /* `selection` is the language in question, `context` the text it came from.
    The API refuses a selection its context does not contain, which is the same
    rule the learner sees: an explanation is always about something on screen. */
-export function openUnderstanding(ctx, { selection, context, title, question = '' }) {
+/* `origin` is how a kept phrase finds its way home: the encounter it came from
+   and why the learner was there. Every capability that opens this surface knows
+   both; without them a saved word becomes an anonymous card. */
+export function openUnderstanding(
+  ctx,
+  { selection, context, title, question = '', origin = null },
+) {
   const { c, api, language, support } = ctx;
   const source = String(selection || '').trim();
   const passage = String(context || source).trim();
@@ -202,6 +208,19 @@ export function openUnderstanding(ctx, { selection, context, title, question = '
             focus_note: String(title || '').slice(0, 2400),
           }),
         );
+        /* The library owns the word and its review history; it has no column
+           for where the learner met it. That lives beside it in memory, so a
+           kept phrase can lead back to the passage, turn or line it came from.
+           Written after the account save: a route back to something that was
+           never saved would be worse than no route at all. */
+        if (origin?.why)
+          ctx.memory.rememberLanguage({
+            term: source,
+            origin: origin.id || '',
+            where: origin.where || String(title || ''),
+            why: origin.why,
+            context: passage,
+          });
         report.saved(savedLanguageLink(c));
       } catch {
         report.failed(c.failedSave, save);

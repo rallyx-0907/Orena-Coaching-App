@@ -1507,3 +1507,19 @@
   display: block;
   margin-top: var(--space-2);
 }
+
+/* Why Orena kept something, and the way back. Sits where the origin label was,
+   so the card gains a reason and a route without gaining a row. */
+.kept-because {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.kept-because a {
+  color: inherit;
+}
+.kept-because a:hover,
+.kept-because a:focus-visible {
+  color: var(--ink);
+}
