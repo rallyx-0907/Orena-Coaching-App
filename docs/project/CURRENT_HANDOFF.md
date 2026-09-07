@@ -33,19 +33,34 @@ matters for recovery is where the invariants live:
 
 - **Listening** `ui/encounter.js` - Follow opens no practice panel; a question
   pauses the voice; the end of an *excerpt* is what "reached the end" means.
-- **Reading** `content/reading.js` - `readable()` is the contract and the gate
-  every adapter ends at, carrying rights in the shape media uses. Sessions come
-  from `becoming_reading.py`, reused not rebuilt.
+- **Reading** `content/reading.js` - `readable()` is the gate every adapter
+  ends at, carrying rights in the shape media uses; sessions come from
+  `becoming_reading.py`, reused not rebuilt. `reading-library.js` admits a
+  published text only with cleared rights, an https evidence URL, a
+  verification date, edition and changes - never anything generated or
+  imported. Comprehension is optional: a text without questions says so on the
+  row and in the encounter, none are fabricated, and the count comes from the
+  API so "none" differs from "not loaded".
 - **Writing** `ui/writing-review.js` - renders the evaluator payload and
   `revision_delta()`, both of which the surface used to discard. A quote not in
-  the learner's text is dropped. The stated task travels to the evaluator.
-- **Speaking** `ui/voice-response.js` - free expression has no reference line,
-  so alignment is *not applicable*, not *not measured*; evaluator and
-  persistence both refuse alignment without one. Measured evidence and coaching
-  are separate panels making separate claims.
+  the learner's text is dropped; the stated task travels to the evaluator.
+  `product/revision.js` refuses an ambiguous quotation rather than guessing
+  which occurrence a learner meant.
+- **Speaking** `ui/voice-response.js`, `product/conversation.js` - free
+  expression has no reference line, so alignment is *not applicable*, not *not
+  measured*; evaluator and persistence both refuse it without one. Measured
+  evidence and coaching are separate panels making separate claims. A
+  conversation is an ordered exchange the product owns; `conversation.py` is
+  stateless and rejects a stale reply. The partner never coaches, so the
+  learner's own turns carry that action - partner turns do not, and the
+  handler refuses one.
 - **Grammar and Vocabulary** `ui/expression.js`, `content/patterns.js` - both
   reach the shared explanation with their own context; each pattern carries a
-  contrast reasoned in en/zh/vi. Depth through the shared system, not breadth.
+  contrast reasoned in en/zh/vi. `product/grammar-shelf.js` extends the catalog
+  without a second syllabus.
+- **Continuation** `ui/patterns.js` - a thread is named by its shape, not only
+  its intention: a conversation and a single take are both Speaking about the
+  same situation and must not render alike.
 - **One explanation system** `ui/understanding.js` - USAGE_JUDGEMENTS,
   JUDGEMENT_KEYS, the spoken-coaching schema and the authored contrasts are one
   vocabulary, checked against each other.
@@ -53,8 +68,8 @@ matters for recovery is where the invariants live:
 ## Last verified batch
 
 Local execution only; no CI claim.
-- Twenty-three Node gates PASS. ESM graph: 37 modules. Both validators OK.
-- Full Python in the app image: 781 passed / 20 failed (see below). The rich
+- Twenty-six Node gates PASS. ESM graph: 44 modules. Both validators OK.
+- Full Python in the app image: 787 passed / 20 failed (see below). The rich
   provider paths - registers, spoken coaching, generated reading, contextual
   explanation - run against an injected provider; their grounding rules were
   mutation-checked.
@@ -90,23 +105,17 @@ review.
 
 ## IN PROGRESS
 
-2026-09-07 GPT-6 continuation from clean `3a999c9`: preserve all Opus additions.
-Conversation ledger and web route implemented over the existing voice recorder,
-evaluator, contextual explanation and provider infrastructure. Typed and speech
-turns have distinct provenance; partner text is explicitly generated. Pending
-turns survive reload, retry does not duplicate them, stale replies cannot append
-after closing. Exchanges are owner/language-scoped device memory, not new server
-progress or proficiency. Node ledger tests and 29 relevant Python tests passed.
-Next: library sourcing/rights, scalable Grammar entry, Writing depth patterns.
-Browser control currently cannot launch: missing codex-windows-sandbox-setup.exe
-helper. Do not claim new browser acceptance until this runtime issue is resolved.
+Nothing. GPT-6's conversation ledger, published library, revision workbench and
+grammar shelf are finished and committed. That run could not launch a browser,
+which is how published texts reached the top of Reading with no comprehension
+and no explanation of why; browser acceptance has since run in EN and ZH.
 
 ## PENDING
 
 Microphone capture needs real hardware and cannot run here. The AI surfaces
-now have deterministic provider-injected coverage of their grounding rules; a
-run against a live provider should still confirm the prompts produce what those
-rules expect.
+have deterministic provider-injected coverage of their grounding rules; a live
+provider run should still confirm the prompts produce what those rules
+expect.
 
 ## BLOCKED
 
@@ -126,11 +135,11 @@ None identified.
   Concept ID. Reference quality over breadth remains the scope choice.
 - Conversation state is now implemented; cross-device conversation persistence
   and streaming/voice synthesis remain future work, not implied capabilities.
-- Reading library breadth: the contract and rights fields are in place, so a
-  new source needs an adapter. No catalog was added - sourcing real
-  public-domain and licensed material is a rights decision. Without a provider
-  the API answers every request with one built-in passage per language, which
-  the surface labels as such.
+- Reading library breadth: the contract, rights fields and admission gate are
+  in place, with two seed texts. Growing the catalogue is a rights decision per
+  text, not an engineering one. Without a provider the API answers every
+  request with one built-in passage per language, which the surface labels as
+  such.
 - Non-CI r8/r10/r11 matrices refer to deleted learner wrappers; admin gates to
   the missing operator host; r20 is frozen native. Do not weaken active tests
   for them.

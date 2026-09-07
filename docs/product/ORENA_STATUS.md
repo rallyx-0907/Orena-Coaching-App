@@ -33,7 +33,7 @@ hand-off into Recall - and the thread shelf then offers all three archetypes
 back. Learner-imported media reaches every Practice intent beside the curated
 catalog. Authored grammar notes join the canonical catalog by stable Concept ID
 and are labelled as generated. Listening evidence is not overwritten when the
-stored record cannot be read first. Local suites sit at 781 passed / 20 failed,
+stored record cannot be read first. Local suites sit at 787 passed / 20 failed,
 the 20 being the inherited baseline; the rich provider paths now have
 deterministic provider-injected coverage of their grounding rules.
 Microphone-dependent paths were not executed. This is execution evidence, not
@@ -57,6 +57,13 @@ Learning capabilities now built on that foundation:
   not. Dictation, Shadowing and Speaking remain optional deeper paths.
 - **Dictation** offers a hint ladder of structure and earned anchors that never
   completes a word.
+- **Reading** carries a published library beside generated passages and the
+  learner's own text. A text becomes published only with cleared rights, an
+  evidence URL, a verification date and a record of what was changed - the
+  admission rule matters more than the two seed texts behind it. Comprehension
+  is optional and pure reading is valid, so a text without questions says so
+  both in the list and when opened, and no questions are invented to make every
+  text look alike.
 - **Reading** is a real experience with its own intention. A learner asks for a
   passage by form and subject; it arrives in the same encounter as every other
   text, with highlight-to-explain, keeping into the collection, and an optional
@@ -77,8 +84,15 @@ Learning capabilities now built on that foundation:
   conversational, professional, formal, academic and technical with the signals
   that place each and when each is the wrong choice; it is a comparison, not a
   rewrite button, and no version is presented as the correct one.
-- **Speaking** is its own experience: a situation or the learner's own prompt,
-  a take, the words recognition returned, evidence, guidance, another try. What
+- **Speaking** can now be an exchange rather than a single take. A
+  conversation runs over the same recorder and coaching the room already uses;
+  the partner is explicitly simulated, never claims to have heard a voice, and
+  never corrects - so each of the learner's own turns carries the question
+  "how did that land?", answered by the shared coaching surface. Partner turns
+  do not, because coaching is about the learner's words.
+- **Speaking** is also its own single-take experience: a situation or the
+  learner's own prompt, a take, the words recognition returned, evidence,
+  guidance, another try. What
   was measured and what is coaching are separate panels making separate claims;
   coaching reads the transcript and says so, never claiming to have heard the
   voice. Free expression reports alignment as not applicable, because there was
