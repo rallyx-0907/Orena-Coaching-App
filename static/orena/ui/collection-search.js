@@ -21,4 +21,9 @@ export function bindCollectionSearch(root, c, render) {
   };
   form.oninput = update;
   update();
+  /* A collection can be narrowed by something other than this form - entering a
+     grammar family, say. The caller re-runs this rather than writing the count
+     itself, so the number under the search box can never disagree with the rows
+     beneath it. */
+  return update;
 }

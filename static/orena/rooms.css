@@ -176,3 +176,105 @@
   .reading-volume .reading-mark { transition: transform 160ms ease; }
   .reading-volume:is(:hover, :focus-visible) .reading-mark { transform: translateY(-3px); }
 }
+
+/* Grammar has two ways in, and they should not look alike. The syllabus above
+   is a structure to walk into; the catalogue below is a drawer to open when
+   the learner already knows the name of what they want. */
+.grammar-syllabus {
+  display: grid;
+  gap: var(--space-8);
+  margin-block: var(--space-8) var(--space-12);
+}
+.syllabus-level > header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: var(--space-4);
+}
+.syllabus-level > header h2 {
+  font-size: var(--text-reading);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+.syllabus-level > header small {
+  color: var(--muted);
+}
+/* Families are read across, not down: a level holds four to seven of them, and
+   a stack of full-width rows would read as another flat list. */
+.family-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-3);
+}
+.family-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  text-align: left;
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+}
+.family-card small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.family-card h3 {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.35;
+}
+/* One real line from the family, quieter than its name: enough to recognise
+   what the family is about without competing with it. */
+.family-card p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.family-card:hover,
+.family-card:focus-visible {
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--sage-surface);
+}
+.family-card:hover small,
+.family-card:hover p,
+.family-card:focus-visible small,
+.family-card:focus-visible p {
+  color: var(--on-sage-muted);
+}
+.grammar-browse {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+}
+.grammar-browse > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  cursor: pointer;
+  font-size: var(--text-lead);
+}
+.grammar-browse > summary small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.family-active {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+@media (max-width: 800px) {
+  .family-row {
+    grid-template-columns: 1fr;
+  }
+  .grammar-syllabus {
+    gap: var(--space-6);
+  }
+}

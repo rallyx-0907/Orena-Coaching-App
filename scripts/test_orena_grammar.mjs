@@ -107,6 +107,72 @@ assert.ok(
   'a word with no recorded sentence offers no context-free lookup',
 );
 
+/* --- A syllabus to walk into, and a catalogue to search ---
+
+   Two hundred and thirty-four patterns in one flat list answers only "where is
+   the pattern whose name I already know". The levels and families the syllabus
+   already declares give the learner who does not know that a way in. The
+   grouping is read from the data - nothing is ordered by difficulty,
+   recommended, or marked as learned, because no such evidence exists. */
+const { grammarFamilies, filterGrammar, grammarShelf } = await import(
+  '../static/orena/product/grammar-shelf.js'
+);
+
+const catalogue = {
+  lessons: [
+    { id: 'a1-a', level: 'A1', module: 'Sentence foundations', kind: 'lesson', preview: { text: 'I study English every day.' } },
+    { id: 'a1-b', level: 'A1', module: 'Sentence foundations', kind: 'lesson', preview: { text: 'She calls me after school.' } },
+    { id: 'a1-c', level: 'A1', module: 'Present time', kind: 'lesson', preview: { text: 'I walk to school every day.' } },
+    { id: 'b2-a', level: 'B2', module: 'Conditionals and modality', kind: 'lesson', preview: { text: 'If we leave now, we may arrive.' } },
+    // A review never reaches the shelf, so it must not reach the syllabus.
+    { id: 'b2-r', level: 'B2', module: 'Conditionals and modality', kind: 'review', preview: { text: 'Review.' } },
+  ],
+};
+const shelf = grammarShelf(catalogue, [], 'en');
+const syllabus = grammarFamilies(shelf);
+
+assert.deepEqual(syllabus.map((x) => x.level), ['A1', 'B2'], 'levels come out ordered');
+assert.equal(syllabus[0].total, 3);
+assert.deepEqual(
+  syllabus[0].families.map((f) => [f.name, f.count]),
+  [['Sentence foundations', 2], ['Present time', 1]],
+  'a level is grouped into the families its own data declares',
+);
+assert.equal(
+  syllabus[0].families[0].line,
+  'I study English every day.',
+  'a family shows one real line from itself, never an invented sample',
+);
+assert.equal(syllabus[1].total, 1, 'a review is not a pattern to walk into');
+
+// Every catalogued pattern is reachable through exactly one family, so the
+// syllabus is a complete way in rather than a curated subset.
+const grouped = syllabus.flatMap((l) => l.families).reduce((n, f) => n + f.count, 0);
+assert.equal(grouped, shelf.length, 'the syllabus reaches every catalogued pattern');
+
+// Entering a family narrows the catalogue to it.
+assert.equal(filterGrammar(shelf, { family: 'Present time' }).length, 1);
+assert.equal(filterGrammar(shelf, { family: 'Sentence foundations' }).length, 2);
+assert.equal(filterGrammar(shelf, {}).length, shelf.length, 'no family means the whole catalogue');
+// A family and a level filter compose rather than fighting.
+assert.equal(filterGrammar(shelf, { family: 'Present time', level: 'B2' }).length, 0);
+
+/* Both layers are present in the room, and the catalogue stays closed until
+   asked for - it is the second question, not the first. */
+const room = read('static/orena/ui/expression.js');
+assert.ok(room.includes('class="grammar-syllabus"'), 'the syllabus layer is rendered');
+assert.ok(
+  /<details class="grammar-browse" data-browse>/.test(room),
+  'the catalogue is a drawer, closed until the learner opens it',
+);
+assert.ok(
+  room.includes('rerunSearch()'),
+  'entering a family reports its count through the search binding, so the stated number matches the rows',
+);
+for (const ui of LANGUAGES)
+  for (const key of ['grammarSyllabus', 'grammarBrowse', 'grammarPatterns', 'grammarPatternOne', 'grammarInFamily'])
+    assert.ok(copy[ui][key], `${ui}: missing ${key}`);
+
 console.log(
-  'Grammar and vocabulary: shared judgements, EN/ZH contrast pedagogy, and one explanation surface: PASS',
+  'Grammar and vocabulary: shared judgements, EN/ZH contrast pedagogy, one explanation surface, and a syllabus beside the catalogue: PASS',
 );

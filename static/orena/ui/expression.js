@@ -15,7 +15,11 @@ import {bindRevisionWorkbench} from './revision-workbench.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
-import { grammarShelf, filterGrammar } from '../product/grammar-shelf.js';
+import {
+  grammarShelf,
+  filterGrammar,
+  grammarFamilies,
+} from '../product/grammar-shelf.js';
 import { recallShape, blankContext } from '../product/recall.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
@@ -284,8 +288,27 @@ export async function renderGrammar(root, ctx) {
     const result = await api.grammarLibrary();
     if (!alive()) return;
     const lessons = grammarShelf(result, patternsFor(language), ctx.ui);
-    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}${intentNavigation(c, 'grammar')}${collectionSearch(c, { facet: c.collectionLevel, options: (result.levels || []).map((level) => ({ value: level, label: level })) })}<div class="pattern-list" data-grammar-results></div><button class="outline" data-more>${esc(c.collectionMore)}</button>`;
+    /* A syllabus and a catalogue answer different questions. The flat list
+       answers "where is the pattern whose name I already know"; a learner who
+       does not yet know what they need has no way into it. The levels and
+       families the syllabus already declares are the way in, and the catalogue
+       stays underneath for anyone who does know. */
+    const syllabus = grammarFamilies(lessons);
+    const patternCount = (n) =>
+      `${n} ${esc(n === 1 ? c.grammarPatternOne : c.grammarPatterns)}`;
+    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}${intentNavigation(c, 'grammar')}<section class="grammar-syllabus" aria-label="${esc(c.grammarSyllabus)}">${syllabus
+      .map(
+        (level) =>
+          `<section class="syllabus-level"><header><h2>${esc(level.level)}</h2><small>${patternCount(level.total)}</small></header><div class="family-row">${level.families
+            .map(
+              (family) =>
+                `<button class="family-card" data-family="${esc(family.name)}" data-family-level="${esc(family.level)}"><small>${patternCount(family.count)}</small><h3>${esc(family.name)}</h3>${family.line ? `<p lang="${language}">${esc(family.line)}</p>` : ''}</button>`,
+            )
+            .join('')}</div></section>`,
+      )
+      .join('')}</section><details class="grammar-browse" data-browse><summary><span>${esc(c.grammarBrowse)}</span><small>${patternCount(lessons.length)}</small></summary>${collectionSearch(c, { facet: c.collectionLevel, options: (result.levels || []).map((level) => ({ value: level, label: level })) })}<p class="family-active" data-family-active hidden></p><div class="pattern-list" data-grammar-results></div><button class="outline" data-more>${esc(c.collectionMore)}</button></details>`;
     let shown = 18,
+      family = '',
       filtered = lessons;
     const paint = () => {
       root.querySelector('[data-grammar-results]').innerHTML =
@@ -298,16 +321,49 @@ export async function renderGrammar(root, ctx) {
           .join('') || `<p>${esc(c.noPatterns)}</p>`;
       root.querySelector('[data-more]').hidden = shown >= filtered.length;
     };
-    bindCollectionSearch(root, c, ({ query, facet }) => {
+    let search = { query: '', facet: 'all' };
+    const refilter = () => {
       shown = 18;
-      filtered = filterGrammar(lessons, { query, level: facet });
+      filtered = filterGrammar(lessons, {
+        query: search.query,
+        level: search.facet,
+        family,
+      });
+      const label = root.querySelector('[data-family-active]');
+      label.hidden = !family;
+      label.textContent = family ? `${c.grammarInFamily} ${family}` : '';
       paint();
       return filtered.length;
+    };
+    const rerunSearch = bindCollectionSearch(root, c, (next) => {
+      search = next;
+      // Searching the whole catalogue is a deliberate widening: it leaves the
+      // family the learner had entered rather than silently intersecting.
+      if (next.query.trim()) family = '';
+      return refilter();
+    });
+    /* Entering a family opens the catalogue already narrowed to it, so the
+       structure above and the list below are one place rather than two. */
+    root.querySelectorAll('[data-family]').forEach((card) => {
+      card.onclick = () => {
+        family = card.dataset.family;
+        const browse = root.querySelector('[data-browse]');
+        browse.open = true;
+        // Through the search binding, so the stated count matches the rows.
+        rerunSearch();
+        browse.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'auto'
+            : 'smooth',
+          block: 'start',
+        });
+      };
     });
     root.querySelector('[data-more]').onclick = () => {
       shown += 18;
       paint();
     };
+    paint();
     return;
   }
   const lesson = await api.grammarLesson(ctx.location.id);

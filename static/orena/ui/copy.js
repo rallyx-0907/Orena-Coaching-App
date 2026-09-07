@@ -510,6 +510,11 @@ Object.assign(copy.zh, {
 Object.assign(copy.en, {
   hint: 'Give me a hint',
   hintMore: 'A little more',
+  grammarSyllabus: 'How the language is built up',
+  grammarBrowse: 'Find a particular pattern',
+  grammarPatterns: 'patterns',
+  grammarPatternOne: 'pattern',
+  grammarInFamily: 'Inside',
   hintTitle: 'The shape of the line',
   hintNote:
     'Each * is a character still to find. Everything you type correctly appears here as you go.',
@@ -519,6 +524,11 @@ Object.assign(copy.en, {
 Object.assign(copy.zh, {
   hint: '给我一点提示',
   hintMore: '再多一点',
+  grammarSyllabus: '语言是怎样一层层搭起来的',
+  grammarBrowse: '找某一个具体的句式',
+  grammarPatterns: '个句式',
+  grammarPatternOne: '个句式',
+  grammarInFamily: '正在看',
   hintTitle: '这句话的轮廓',
   hintNote: '每个 * 代表一个还没找到的字。你写对的部分会随时显示出来。',
   hintAnchors: '已找到',
