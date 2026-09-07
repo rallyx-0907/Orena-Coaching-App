@@ -9,6 +9,7 @@ import {
   openUnderstanding,
   selectionWithin,
 } from './understanding.js';
+import { voiceEvidence } from './voice-evidence.js';
 import { link } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
 import {
@@ -761,7 +762,9 @@ export async function renderEncounter(root, ctx) {
               currentTakeId !== takeId
             )
               return;
-            area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p><p>${c.contentMatch}: ${result.content_match.content_match}%</p><p class="meta">${c.comparisonNote}</p><p>${result.saved ? c.persisted : c.failedSave}</p>`;
+            // The envelope already separates measurement from derivation; show
+            // that separation rather than collapsing it into one percentage.
+            area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p>${voiceEvidence(c, result.evaluation, language)}<p>${result.saved ? c.persisted : c.failedSave}</p>`;
           } else {
             const result = await api.transcribeSpeech(
               currentTake.blob,

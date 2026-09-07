@@ -754,3 +754,74 @@
 .revision-list small {
   color: var(--muted);
 }
+
+/* Speaking evidence, with the line between measured and derived kept visible.
+   An unmeasured dimension recedes rather than disappearing: knowing something
+   was not measured is itself worth reading. */
+.voice-evidence {
+  margin-top: var(--space-6);
+}
+.voice-evidence h3 {
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: var(--space-6);
+}
+.voice-dimensions {
+  margin: var(--space-3) 0 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.voice-dimension {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.voice-dimension dt {
+  font-weight: 650;
+}
+.voice-dimension dd {
+  margin: 0;
+  text-align: right;
+}
+.voice-dimension dd b {
+  font-family: var(--display-font);
+  font-size: var(--text-lead);
+  font-weight: 800;
+}
+.voice-dimension dd small {
+  display: block;
+  color: var(--muted);
+}
+.voice-dimension[data-unmeasured] dd b {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--muted);
+}
+.voice-tokens {
+  display: grid;
+  gap: var(--space-2);
+}
+.voice-tokens small {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.voice-tokens .missing b {
+  border-bottom: 2px solid var(--sun);
+}
+.voice-tokens .extra b {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.voice-steps {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-6);
+}
+.voice-steps li {
+  margin: var(--space-2) 0;
+}

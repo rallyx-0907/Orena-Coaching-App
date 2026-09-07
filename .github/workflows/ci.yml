@@ -39,6 +39,7 @@ jobs:
           node scripts/test_orena_word_follow.mjs
           node scripts/test_orena_dictation_hints.mjs
           node scripts/test_orena_understanding.mjs
+          node scripts/test_orena_voice_evidence.mjs
           node scripts/test_transcript_display_units.mjs
           node scripts/test_transcript_playback.mjs
           node scripts/test_dictation_evaluator.mjs

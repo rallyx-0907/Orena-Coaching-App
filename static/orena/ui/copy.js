@@ -583,3 +583,51 @@ Object.assign(copy.zh, {
   revisionLabel: '第',
   revisionRestored: '已取回较早的版本。',
 });
+
+Object.assign(copy.en, {
+  measuredHere: 'What was measured',
+  againstTheLine: 'Against the line you heard',
+  alignmentNote:
+    'Compared word by word with the original. No judgement of your accent is made here.',
+  whatToTryNext: 'What to try next',
+  guidanceNote:
+    'Suggestions drawn from the evidence above. They are guidance, not a measurement.',
+  proficiencyNote:
+    'One recording cannot measure how well you speak the language. Nothing here claims to.',
+  dimension_transcription_confidence: 'Speech recognised',
+  dimension_content_match: 'Matched the line',
+  dimension_pronunciation: 'Pronunciation',
+  dimension_fluency: 'Fluency',
+  dimension_proficiency: 'Overall ability',
+  sourceAsr: 'measured by speech recognition',
+  sourceAlignment: 'compared with the original text',
+  sourceDemo: 'demonstration value, not a measurement',
+  sourceNotAssessed: 'not assessed from one recording',
+  sourceProvider: 'measured by',
+  step_focus_words: 'Give these words another try',
+  step_missing_tokens: 'Words the recording did not contain',
+  step_fluency: 'Try it once more at a steadier pace',
+  step_complete_line: 'Say the whole line through without stopping',
+});
+Object.assign(copy.zh, {
+  measuredHere: '实际测得的部分',
+  againstTheLine: '与你听到的原句相比',
+  alignmentNote: '逐词与原文对照。这里不对你的口音作任何评判。',
+  whatToTryNext: '接下来可以试试',
+  guidanceNote: '这些建议来自上面的证据，是建议，不是测量结果。',
+  proficiencyNote: '一次录音无法衡量你的语言水平，这里也不作这样的判断。',
+  dimension_transcription_confidence: '语音识别把握度',
+  dimension_content_match: '与原句的吻合度',
+  dimension_pronunciation: '发音',
+  dimension_fluency: '流利度',
+  dimension_proficiency: '整体水平',
+  sourceAsr: '由语音识别测得',
+  sourceAlignment: '与原文逐词对照得出',
+  sourceDemo: '演示数值，并非测量结果',
+  sourceNotAssessed: '一次录音无法评估',
+  sourceProvider: '测量方',
+  step_focus_words: '这几个词可以再试一次',
+  step_missing_tokens: '录音里没有出现的词',
+  step_fluency: '用更稳的语速再说一遍',
+  step_complete_line: '试着一口气把整句说完',
+});
