@@ -172,7 +172,7 @@
   aspect-ratio: 16/9;
   border-radius: 11px;
   overflow: hidden;
-  background: var(--night);
+  background: var(--night-surface);
 }
 .window-media > img {
   width: 100%;
@@ -260,7 +260,8 @@
   padding: 26px 30px;
   border-top: 2px solid var(--ink);
   border-bottom: 1px solid var(--line);
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
 }
 .intent-ribbon > div {
   flex: 1;
@@ -271,7 +272,7 @@
 .intent-ribbon p {
   font-size: var(--text-xs);
   margin: 6px 0 0;
-  color: var(--muted);
+  color: var(--on-sage-muted);
 }
 .intent-ribbon > a {
   font-size: var(--text-sm);
@@ -365,12 +366,13 @@
   overflow: hidden;
   min-height: 265px;
   padding: 30px;
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
   border-radius: 4px;
 }
 .text-paths > a:nth-child(2) {
-  background: var(--coral);
-  color: #193a31;
+  background: var(--coral-surface);
+  color: var(--on-coral);
 }
 .text-paths h2 {
   position: relative;
@@ -388,8 +390,8 @@
   display: grid;
   place-items: center;
   height: 100%;
-  background: var(--sage);
-  color: var(--ink);
+  background: var(--sage-surface);
+  color: var(--on-sage);
 }
 .text-art span {
   font-size: 80px;
@@ -448,20 +450,20 @@
   grid-template-columns: 140px 1.5fr 1fr;
   gap: 32px;
   align-items: center;
-  background: var(--night);
-  color: #f8f1de;
+  background: var(--night-surface);
+  color: var(--on-night);
   padding: 50px 45px;
   border-radius: 10px;
   margin: 35px 0;
 }
 .practice-invitation p {
   font-size: var(--text-sm);
-  color: #c6d8bf;
+  color: var(--on-night-muted);
 }
 .practice-invitation .primary {
-  background: var(--sun);
-  border-color: var(--sun);
-  color: #193b31;
+  background: var(--sun-surface);
+  border-color: var(--sun-surface);
+  color: var(--on-sun);
 }
 .big-voice {
   font-size: 220px;
@@ -471,11 +473,11 @@
   transform: translateY(35px);
 }
 .practice-small {
-  border-left: 1px solid #75897b;
+  border-left: 1px solid var(--on-night-line);
   padding-left: 35px;
 }
 .practice-small > a {
-  border-bottom: 1px solid #c6d8bf;
+  border-bottom: 1px solid var(--on-night-muted);
   padding: 7px 0;
   display: inline-block;
 }
@@ -509,8 +511,8 @@
   position: relative;
   overflow: hidden;
   min-height: 100%;
-  background: var(--sage);
-  color: var(--ink);
+  background: var(--sage-surface);
+  color: var(--on-sage);
   display: grid;
   place-items: center;
 }
@@ -534,8 +536,8 @@
   place-items: center;
   min-height: 160px;
   height: 100%;
-  background: var(--sage);
-  color: var(--ink);
+  background: var(--sage-surface);
+  color: var(--on-sage);
 }
 .back-row {
   display: flex;
@@ -573,7 +575,8 @@
   min-width: 0;
 }
 .player-wrap {
-  background: var(--night);
+  background: var(--night-surface);
+  color: var(--on-night);
   border-radius: 10px;
   overflow: hidden;
   position: relative;
@@ -726,7 +729,8 @@
   font-size: var(--text-sm);
 }
 .transcript-panel button[aria-current='true'] {
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
   box-shadow: inset 3px 0 var(--accent);
 }
 .media-encounter:has(.transcript-panel[hidden]) {
@@ -798,12 +802,13 @@
   border-radius: 4px;
 }
 .diff .correct {
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
 }
 .diff .missing,
 .diff .wrong {
-  background: var(--sun);
-  color: #243d30;
+  background: var(--sun-surface);
+  color: var(--on-sun);
 }
 .diff .extra {
   color: var(--accent);
@@ -857,7 +862,8 @@
   line-height: 1.5;
 }
 .dialogue > p {
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
   padding: 25px 28px;
   border-radius: 3px 20px 20px 20px;
   margin-right: 35px;
@@ -1345,7 +1351,7 @@
   .practice-small {
     grid-column: 2;
     border: 0;
-    border-top: 1px solid #75897b;
+    border-top: 1px solid var(--on-night-line);
     padding: 20px 0 0;
   }
   .big-voice {
@@ -1691,7 +1697,8 @@
 
 .pattern-focus {
   padding: 30px;
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
   border-radius: 9px;
   margin: 0 0 35px;
 }
@@ -1710,7 +1717,7 @@
 }
 .pattern-parts i {
   font-style: normal;
-  color: var(--muted);
+  color: var(--on-sage-muted);
 }
 .pattern-list > a {
   grid-template-columns: 65px minmax(0, 1fr) minmax(0, 1fr) 24px;

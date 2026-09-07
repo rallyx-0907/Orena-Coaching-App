@@ -27,6 +27,21 @@
   --sun: #ebba68;
   --coral: #e4a085;
   --night: #173a35;
+  /* A tinted panel carries its own ink. Pairing is the token, not something
+     each screen re-decides, so a panel can never be recoloured in one theme
+     while its text stays legible only in the other. */
+  --sage-surface: #dce5d5;
+  --on-sage: #14332b;
+  --on-sage-muted: #4e6157;
+  --coral-surface: #e4a085;
+  --on-coral: #23140e;
+  --on-coral-muted: #4a3227;
+  --night-surface: #173a35;
+  --on-night: #f8f1de;
+  --on-night-muted: #c6d8bf;
+  --on-night-line: #75897b;
+  --sun-surface: #ebba68;
+  --on-sun: #23180a;
   --font:
     'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
     sans-serif;
@@ -43,6 +58,18 @@
   --sun: #dca658;
   --coral: #a36850;
   --night: #10241f;
+  --sage-surface: #2c4537;
+  --on-sage: #eef3e9;
+  --on-sage-muted: #bccdbe;
+  --coral-surface: #7d4a39;
+  --on-coral: #fdeee6;
+  --on-coral-muted: #eed2c4;
+  --night-surface: #10241f;
+  --on-night: #f4edde;
+  --on-night-muted: #bcd0c2;
+  --on-night-line: #4a6356;
+  --sun-surface: #7a5717;
+  --on-sun: #fdf3df;
   color-scheme: dark;
 }
 * {
@@ -58,8 +85,8 @@ html {
   scrollbar-gutter: stable;
 }
 ::selection {
-  background: var(--sun);
-  color: #173b32;
+  background: var(--sun-surface);
+  color: var(--on-sun);
 }
 :where(button, input, select, summary) {
   min-height: 44px;
@@ -311,7 +338,8 @@ input[type='checkbox'] {
 }
 .notice {
   padding: 18px;
-  background: var(--sage);
+  background: var(--sage-surface);
+  color: var(--on-sage);
   border-radius: 7px;
 }
 .notice button {

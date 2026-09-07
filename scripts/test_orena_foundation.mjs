@@ -159,6 +159,65 @@ for (const name of ['foundation', 'world', 'experiences']) {
     `${name}: use the text scale`,
   );
 }
+// Every tinted panel ships with the ink that belongs on it, in both themes.
+// Checking the tokens rather than the rendered pages means a new screen using
+// a panel inherits a legible pairing instead of re-deciding one by hand.
+const foundationCss = fs.readFileSync('static/orena/foundation.css', 'utf8');
+function tokens(selector) {
+  const block = foundationCss.split(selector)[1].split('}')[0];
+  return Object.fromEntries(
+    [...block.matchAll(/(--[\w-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]),
+  );
+}
+function channelLuminance(hex) {
+  const parts = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = parts.map((v) =>
+    v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4),
+  );
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a, b) {
+  const x = channelLuminance(a),
+    y = channelLuminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+const pairings = [
+  ['--sage-surface', '--on-sage', 4.5],
+  ['--sage-surface', '--on-sage-muted', 4.5],
+  ['--coral-surface', '--on-coral', 4.5],
+  ['--coral-surface', '--on-coral-muted', 4.5],
+  ['--night-surface', '--on-night', 4.5],
+  ['--night-surface', '--on-night-muted', 4.5],
+  ['--sun-surface', '--on-sun', 4.5],
+  ['--paper', '--ink', 4.5],
+  ['--paper', '--muted', 4.5],
+  ['--surface', '--ink', 4.5],
+];
+for (const [themeName, selector] of [
+  ['light', ':root {'],
+  ['dark', ":root[data-theme='dark'] {"],
+]) {
+  const palette = tokens(selector);
+  for (const [surface, ink, need] of pairings) {
+    assert.ok(palette[surface], `${themeName}: missing ${surface}`);
+    assert.ok(palette[ink], `${themeName}: missing ${ink}`);
+    const ratio = contrast(palette[surface], palette[ink]);
+    assert.ok(
+      ratio >= need,
+      `${themeName}: ${ink} on ${surface} is ${ratio.toFixed(2)}:1, below ${need}:1`,
+    );
+  }
+}
+// A panel colour must never be used as a background without its paired ink.
+for (const name of ['foundation', 'world', 'experiences']) {
+  const css = fs.readFileSync(`static/orena/${name}.css`, 'utf8');
+  assert.doesNotMatch(
+    css,
+    /background:\s*var\(--(sage|coral|night|sun)\)/,
+    `${name}: paint panels with the --*-surface token so the ink is paired`,
+  );
+}
+
 console.log(
-  'Golden Star: first-paint/live themes, EN/ZH patterns, contextual drafts, continuation and retry-safe evidence PASS',
+  'Golden Star: first-paint/live themes, paired panel tokens, EN/ZH patterns, contextual drafts, continuation and retry-safe evidence PASS',
 );
