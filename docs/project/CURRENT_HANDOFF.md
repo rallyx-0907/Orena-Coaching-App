@@ -77,11 +77,10 @@ Local execution only; no CI claim.
   provider paths - registers, spoken coaching, generated reading, contextual
   explanation - run against an injected provider; their grounding rules were
   mutation-checked.
-- Browser sweep light/dark at 1440/390 in EN and ZH: no overflow, no text
-  below its contrast threshold, no pointer target under 24px.
-- Journeys against the real server: the Listening, Reading, Writing, Speaking
-  and Grammar paths each run end to end into understanding, keeping and Recall.
-  The three closed findings carry their own evidence in the completion ledger.
+- Browser at 390/1440/1920 in EN and ZH, light/dark on representative rooms:
+  no overflow, no pointer target under 24px, no dead controls.
+- Journeys driven in the browser: see the ledger's "Functional core", which
+  records what is real, what is provider-held, and the evidence for each.
 
 ## Runtime / safety
 
@@ -98,22 +97,25 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-COMPLETE THE ORENA GOLDEN STAR REFERENCE IMPLEMENTATION. Follow
-`GOLDEN_STAR_COMPLETION.md`: distinctive shell, multi-entry architecture,
-experience compositions, approved brand world and deep EN/ZH journeys. Evaluate
-the actual browser at narrow, desktop and wide widths. Extend committed
-primitives; the current visual uniformity is a reference-product deficiency.
-The three capability-review findings are closed (see the ledger); the reference
-implementation itself remains open.
+The provider-free learning core is functional and browser-verified (ledger,
+"Functional core"). What remains:
+
+1. Provider-gated content binds Reading, Writing, Grammar, Vocabulary and
+   Speaking. Each reaches its capability and reports the boundary truthfully;
+   none can show generated language here. A human gate, not implementation.
+2. Speaking beyond ASR: ledger, coaching and turn context are real, but no take
+   can be recorded in this runtime.
+3. Sweep 800px, and light/dark across every room, not only representative ones.
+4. Editorial character per room and the learner-facing copy pass - the original
+   visual/editorial mission, still not started.
 
 ## IN PROGRESS
 
-Golden Star completion is IMPLEMENTING. Ledger item 5 done: Recall no longer
-prints the phrase it withholds, revision comparison no longer calls an
-unchanged issue both removed and new, and a turn's explanation context can no
-longer exclude the selected text. Shell, entries and rooms are committed and
-green. Remaining: the browser sweep at 390/800/1440/1920 in both themes and
-languages, the deep journeys, and the extension-guide write-up.
+Golden Star completion is IMPLEMENTING. The functional core was driven in a
+browser rather than read: Follow synchronisation with click-to-seek and speed,
+the whole Dictation loop, keeping a phrase through to My Language, Continue and
+Recall, EN/ZH parity on Dictation, and zero dead controls across eleven routes.
+Three capability-review findings closed.
 
 ## PENDING
 

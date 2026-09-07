@@ -30,17 +30,18 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
 
 ## Implementation plan and completion ledger
 
-- [ ] Shell and multi-entry orientation: `ui/reference.js`, `product/intent.js`,
+- [x] Shell and multi-entry orientation: `ui/reference.js`, `product/intent.js`,
   `app.js`, `reference.css`. Add Continue as a route using continuationLink;
   route tests must reject silent fall-through. All navigation links resolve to
   existing capabilities, including direct Reading/Listening/Speaking/Writing.
-- [ ] Editorial Discover and Practice: `ui/world.js`, `reference.css`.
+- [x] Editorial Discover and Practice: `ui/world.js`, `reference.css`.
   Compose real content with contrasting scale, image, type and background;
   retain import, provenance, unavailable states and shared library filtering.
-- [ ] Distinct learning rooms: `ui/reading.js`, `ui/speaking.js`,
+- [x] Distinct learning rooms: `ui/reading.js`, `ui/speaking.js`,
   `ui/expression.js`, `rooms.css`. Preserve API and event contracts, use quiet
   content/work zones and purposeful illustration, no large mascot in editors.
-- [ ] Deep journeys: media Follow -> Dictation -> understanding -> keep ->
+- [~] Deep journeys (Speaking blocked on ASR; explanation content on the
+  provider hold): media Follow -> Dictation -> understanding -> keep ->
   Recall; Reading -> selection -> understanding -> response -> Writing ->
   Continue; Speaking situation -> own turn -> coaching -> writing; Grammar ->
   example -> understanding -> My Language. Exercise available paths in browser;
@@ -73,13 +74,73 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
     nearest the selection. Verified against the running server - the old
     construction returns 422 "Selected text must come from the supplied learner
     context", the new one returns 200.
-- [ ] Validate Node contracts and ESM, project-memory and architecture gates;
+- [~] Validate Node contracts and ESM, project-memory and architecture gates;
   run CI-defined Python gate when Docker ownership is established. Evaluate
   light/dark, EN/ZH at 390, 800, 1440 and 1920 widths in the actual browser.
   Check keyboard, overflow, readable ink, truthful states and route restoration.
+  Done: all gates green, and 390/1440/1920 swept in EN and ZH with no overflow
+  and no sub-24px target. Not yet swept: 800, and light/dark across every room
+  rather than the representative ones.
 - [ ] Record evidence, extend ORENA_WEB_EXTENSION_GUIDE with reusable rails,
   update current status and checkpoint explicit files. Present browser-reviewable
   result. Only the human may establish Golden Star acceptance.
+
+## Functional core: what is real, and where the boundary is
+
+Established by driving the running product in a browser, not by reading code.
+Each line below was exercised as a learner would.
+
+**Real end to end, no provider required.**
+
+- *Listening / Follow* - playback advances the active segment; seeking moves it;
+  clicking a transcript segment seeks playback to it; changing speed keeps
+  synchronisation (1.5x advanced 5.2 media-seconds in 3.5s wall time with the
+  active segment still correct); replay returns to the line being worked on.
+  Each segment is one block carrying its own support-language meaning.
+- *Dictation* - hear, reconstruct, compare, see the perception gap, reveal.
+  Dropping one word from the target line produced the hint
+  `With the big **** starting the...` and a comparison reading 94% with
+  "Not heard: bang". Reveal is a separate action. Evidence is recorded.
+- *Learner continuity* - keeping a phrase from inside the reading explanation
+  wrote provenance to device memory (origin, where, why, the exact sentence)
+  **and** the word to the account library; My Language then showed it as "From
+  something you read - The last train home" with a route back; Continue listed
+  the real threads that activity produced; Recall withholds the phrase until
+  reveal.
+- *Reading* - a real passage, genuine text selection, and inquiry carrying the
+  exact selection plus the sentence it sat in.
+- *Writing* - draft persistence ("Draft kept on this device"), required level
+  targeting, revision recording and truthful comparison.
+- *Shell* - across all eleven entry routes, zero dead controls: every button
+  has a handler. No horizontal overflow and no sub-24px target at 390, 1440 or
+  1920; content occupies 88% of a 1920 viewport, so there is no dead desktop
+  margin.
+- *EN/ZH parity* - the same Dictation flow in Chinese masks one unit per Han
+  character: dropping 输 from 你可以输入你找的内容 gives 你可以*入你找的内容.
+
+**Provider holds - implemented and wired, content unavailable in this runtime.**
+
+These are not gaps in the product. Each path reaches its capability, and each
+reports the boundary truthfully rather than simulating a result. Activating a
+paid provider is a human gate, so they are recorded rather than resolved.
+
+- *Contextual explanation* - `POST /api/dictionary/contextual` answers
+  `{"available": false, "claim": "contextual_dictionary_unavailable"}` and the
+  panel says "This explanation is unavailable right now. Nothing has been
+  guessed in its place." This gates explanation **content** for Reading,
+  Writing, Grammar and Vocabulary alike; the shared surface, the origin it
+  carries and the follow-up questions are all real.
+- *Writing evaluation* - `POST /api/evaluate` answers 503
+  `evaluation_unavailable`, and the room renders "Feedback is currently
+  unavailable. Your writing is still kept on this device." in EN and ZH.
+- *Speech* - `GET /api/speech/status` reports `configured: false,
+  provider: null`, so record -> ASR -> spoken evidence cannot run here. No
+  pronunciation evidence or audio analysis is invented in its place.
+
+The consequence worth stating plainly: the learning loops that need no provider
+are genuinely usable now, and the ones that need one are complete up to the
+provider call. What this runtime cannot show is generated language content, not
+missing product.
 
 ## Rulings
 
