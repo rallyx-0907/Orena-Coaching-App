@@ -100,6 +100,18 @@ assert.doesNotMatch(
   'the bespoke inspect sheet is retired, not living alongside the shared one',
 );
 
+/* A judgement sits on its own tinted surface and carries the ink paired with
+   it. The sheet's ambient prose rule scores higher than a bare component
+   class, so without an explicit exclusion it paints the pill --muted against
+   that surface - 4.35:1 in dark, below AA, in every capability that opens this
+   surface. Specificity is not observable from a stylesheet's text, so this
+   asserts the exclusion that keeps the pairing intact. */
+const world = readFileSync('static/orena/world.css', 'utf8');
+assert.ok(
+  world.includes('.sheet p:not(.notice):not(.judgement)'),
+  'the sheet prose colour must not outrank a panel that carries its own ink',
+);
+
 console.log(
   'Contextual understanding: shared judgement vocabulary EN/ZH, context-preserving follow-ups, and no invented authority PASS',
 );

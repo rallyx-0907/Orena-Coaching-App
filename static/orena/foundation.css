@@ -262,9 +262,13 @@ textarea {
   resize: vertical;
   line-height: 1.9;
 }
-input[type='checkbox'] {
-  width: 20px;
-  height: 20px;
+/* A choice control is a pointer target, and the browser default is 13px wide.
+   Wrapping it in a label gives a larger target, but the control itself should
+   not be the small thing a learner has to hit. */
+input[type='checkbox'],
+input[type='radio'] {
+  width: 24px;
+  height: 24px;
   accent-color: var(--accent);
 }
 [hidden] {

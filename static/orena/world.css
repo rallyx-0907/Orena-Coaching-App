@@ -1032,8 +1032,15 @@
   margin: 0 0 20px;
 }
 /* A sheet's supporting prose is muted, but a panel inside one keeps the ink
-   that belongs to it - the pairing is the token, not the container. */
-.sheet p:not(.notice) {
+   that belongs to it - the pairing is the token, not the container.
+
+   The exclusions are load-bearing rather than decorative. This selector scores
+   higher than a bare component class, so anything it reaches paints over that
+   component's own paired ink: `.judgement` sits on a tinted surface and was
+   rendering in --muted against it, at 4.35:1, everywhere the explanation
+   surface opens. A new element that paints its own surface belongs on this
+   list, or it inherits the same bug. */
+.sheet p:not(.notice):not(.judgement) {
   font-size: var(--text-sm);
   color: var(--muted);
 }
