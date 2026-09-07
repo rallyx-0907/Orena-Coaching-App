@@ -2,7 +2,7 @@ import { esc, dialog, focusRegion } from './html.js';
 import { pageIntro, progressReporter } from './patterns.js';
 import { openUnderstanding } from './understanding.js';
 import { loadSpokenCoaching } from './spoken-coaching.js';
-import { mountVoiceResponse } from './voice-response.js';
+import { mountVoiceResponse, speechConfigured } from './voice-response.js';
 import {
   conversation,
   learnerTurn,
@@ -145,7 +145,15 @@ export function renderConversation(root, ctx) {
         draw();
         void send();
       };
-      root.querySelector('[data-voice]').onclick = () => {
+      /* The same answer the take itself would give, given before the learner
+         opens a recorder they cannot use. Typing a reply is unaffected. */
+      const voiceButton = root.querySelector('[data-voice]');
+      void speechConfigured(api).then((ready) => {
+        if (!alive() || ready || !voiceButton.isConnected) return;
+        voiceButton.disabled = true;
+        voiceButton.title = c.voiceUnavailable;
+      });
+      voiceButton.onclick = () => {
         const sheet = dialog({
           title: c.record,
           body: '<div data-conversation-voice></div>',

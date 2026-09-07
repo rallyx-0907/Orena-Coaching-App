@@ -161,6 +161,10 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload),
   }),
+  // Whether a speech provider is attached at all. Asked before the learner is
+  // invited to record, so the room can be honest up front instead of after a
+  // take they already made.
+  speechStatus:()=>request('/api/speech/status'),
   transcribeSpeech:(blob,language,filename='recording.webm')=>{
     const form=new FormData();
     form.append('file',blob,filename);

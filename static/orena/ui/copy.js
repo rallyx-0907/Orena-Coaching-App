@@ -510,6 +510,8 @@ Object.assign(copy.zh, {
 Object.assign(copy.en, {
   hint: 'Give me a hint',
   hintMore: 'A little more',
+  voiceUnavailable:
+    'Recording needs a speech service, and none is connected here. Everything else in this room still works — write your reply instead.',
   grammarSyllabus: 'How the language is built up',
   grammarBrowse: 'Find a particular pattern',
   grammarPatterns: 'patterns',
@@ -524,6 +526,8 @@ Object.assign(copy.en, {
 Object.assign(copy.zh, {
   hint: '给我一点提示',
   hintMore: '再多一点',
+  voiceUnavailable:
+    '录音需要语音服务，这里还没有接上。这个房间的其他部分都能用——可以改成写下你的回答。',
   grammarSyllabus: '语言是怎样一层层搭起来的',
   grammarBrowse: '找某一个具体的句式',
   grammarPatterns: '个句式',

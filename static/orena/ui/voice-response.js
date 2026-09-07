@@ -7,6 +7,28 @@ import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
 import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import { link } from '../product/intent.js';
 
+/* Whether a speech service is attached at all, asked once per session.
+
+   Every room that invites a take needs the same answer, and asking on each
+   redraw would put a request behind every keystroke that repaints a composer.
+   It fails open: if the check itself cannot be read, the recorder stays
+   available and the transcription path reports whatever it actually finds.
+   Being wrongly hopeful costs a learner one take; being wrongly discouraging
+   would hide a working capability. */
+let speechAnswer = null;
+export function speechConfigured(api) {
+  // A caller that cannot answer the question is not evidence of absence, so it
+  // is treated like any other unreadable check rather than throwing inside the
+  // mount and taking the whole recorder down with it.
+  if (typeof api?.speechStatus !== 'function') return Promise.resolve(true);
+  if (!speechAnswer)
+    speechAnswer = api
+      .speechStatus()
+      .then((status) => status?.configured !== false)
+      .catch(() => true);
+  return speechAnswer;
+}
+
 // One free-response experience in a situation, a passage or a media moment.
 // The prompt supplies context, never words the learner must reproduce.
 export function mountVoiceResponse(
@@ -62,6 +84,12 @@ export function mountVoiceResponse(
     }
   };
   void historyLoad();
+  // Say so before the learner records, not after a take they already made.
+  void speechConfigured(api).then((ready) => {
+    if (!alive() || ready) return;
+    record.disabled = true;
+    state.textContent = c.voiceUnavailable;
+  });
   const showResult = (value) => {
     const resultTakeId = takeId;
     result.innerHTML = `<h3>${esc(c.heard)}</h3><p class="meta">${esc(c.voiceTranscriptNote)}</p><p class="voice-transcript" lang="${language}" data-heard>${esc(value.heard)}</p><div class="button-row"><button class="outline" data-understand>${esc(c.lookCloser)} ↗</button><button class="outline" data-develop>${esc(c.develop)} ↗</button></div><details><summary>${esc(c.measuredHere)}</summary>${voiceEvidence(c, value.evaluation, language)}</details><div data-coaching></div><p role="status" data-saved></p><p class="meta">${esc(c.voiceReflect)}</p>`;

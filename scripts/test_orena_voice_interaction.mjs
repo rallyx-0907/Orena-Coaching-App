@@ -1,6 +1,7 @@
 // Interaction effects under deterministic audio/API adapters. This is not
 // browser or microphone acceptance; the recorder has its own platform tests.
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {mountVoiceResponse} from '../static/orena/ui/voice-response.js';
 import {learnerMemory} from '../static/orena/product/memory.js';
 import {copy} from '../static/orena/ui/copy.js';
@@ -49,4 +50,45 @@ for(const language of ['en','zh']) {
   const pending=node('[data-record]').onclick();cleanup();finish(true);await pending;
   assert.ok(cleaned>=2);assert.equal(node('[data-record]').textContent,'');
 }
-console.log('Voice interaction: explicit upload, playback, account evidence, draft preservation, late-permission cleanup EN/ZH PASS');
+/* --- The room says a take is impossible before asking for one ---
+
+   The transcription endpoint has always answered 503 when no speech provider is
+   attached, but the learner only met that after granting a microphone,
+   speaking, and waiting. The same answer is now asked for up front. */
+const {speechConfigured} = await import('../static/orena/ui/voice-response.js');
+const readSrc = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+
+{
+  // Unconfigured: the room is told, once, and can act on it.
+  let calls = 0;
+  const api = {speechStatus: async () => { calls += 1; return {configured: false, provider: null}; }};
+  assert.equal(await speechConfigured(api), false);
+  // Cached: a composer that repaints must not put a request behind every redraw.
+  assert.equal(await speechConfigured(api), false);
+  assert.equal(calls, 1, 'the answer is asked for once, not once per paint');
+}
+
+/* Failing open is the deliberate direction. Being wrongly hopeful costs one
+   take; being wrongly discouraging would hide a capability that works. */
+{
+  const {speechConfigured: fresh} = await import(
+    `../static/orena/ui/voice-response.js?probe=${Date.now()}`
+  );
+  const api = {speechStatus: async () => { throw new Error('offline'); }};
+  assert.equal(await fresh(api), true, 'an unreadable check must not disable a working recorder');
+}
+// A caller that cannot answer at all is the same case, and must not throw
+// inside the mount and take the recorder down with it.
+assert.equal(await speechConfigured({}), true);
+assert.equal(await speechConfigured(undefined), true);
+
+// Both rooms that invite a take consult it, and both say the same thing.
+for (const path of ['static/orena/ui/voice-response.js', 'static/orena/ui/conversation.js'])
+  assert.ok(
+    readSrc(path).includes('speechConfigured(api)'),
+    `${path} invites a take without asking whether one is possible`,
+  );
+for (const ui of ['en', 'zh'])
+  assert.ok(copy[ui].voiceUnavailable, `${ui}: no truthful line for an absent speech service`);
+
+console.log('Voice interaction: explicit upload, playback, account evidence, draft preservation, late-permission cleanup, and a stated speech boundary EN/ZH PASS');
