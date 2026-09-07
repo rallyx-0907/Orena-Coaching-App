@@ -5,10 +5,7 @@ import {
   savedLanguageLink,
 } from './patterns.js';
 import { esc, safeExternal, dialog, status, focusRegion } from './html.js';
-import {
-  openUnderstanding,
-  selectionWithin,
-} from './understanding.js';
+import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
 import { link, deeperPractice } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
@@ -16,7 +13,9 @@ import {
   dictationEvidence,
   recoverListeningEvidence,
 } from '../product/evidence.js';
+import { comprehensionSection, bindComprehension } from './comprehension.js';
 import { contentFor } from '../content/texts.js';
+import { readingText, readingSessionId } from '../content/reading.js';
 import { preparedMeaning } from '../content/language-notes.js';
 import {
   mediaPlayer,
@@ -56,6 +55,10 @@ export function inspectPhrase(ctx, text, title, context) {
   });
 }
 
+// Paragraph text is escaped, and the line breaks inside it are the ones the
+// passage wrote.
+const lines = (value) => esc(value).replace(/\n/g, '<br>');
+
 function textEncounter(root, ctx, item) {
   const { c, language, memory } = ctx;
   let count = item.kind === 'conversation' ? 1 : item.paragraphs?.length || 1;
@@ -64,10 +67,10 @@ function textEncounter(root, ctx, item) {
   const paint = () => {
     root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><button data-keep class="quiet" aria-pressed="${memory.value.kept.includes(item.id)}">${memory.value.kept.includes(item.id) ? c.saved : c.keep} ＋</button></div><header class="text-heading"><small>${origin(item, c)}</small><h1 lang="${language}">${esc(item.title)}</h1><p lang="${language}">${esc(item.subtitle || '')}</p></header><div class="text-encounter"><article class="passage ${item.kind === 'conversation' ? 'dialogue' : ''}" lang="${language}">${paragraphs
       .slice(0, count)
-      .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`)
+      .map((p) => `<p>${lines(p)}</p>`)
       .join(
         '',
-      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${responseComposer(ctx, item)}<p class="provenance">${item.origin === 'imported' ? c.ownText : c.prepared}</p>`;
+      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
     root.querySelector('[data-keep]').onclick = () => {
       memory.keep(item.id);
       paint();
@@ -127,6 +130,25 @@ function textEncounter(root, ctx, item) {
           await save();
         }),
     );
+    const showEvidence = (fragment) => {
+      const index = paragraphs.findIndex((part) => part.includes(fragment));
+      if (index < 0) return '';
+      passage
+        .querySelectorAll('mark')
+        .forEach((mark) => mark.replaceWith(mark.textContent));
+      const target = passage.querySelectorAll('p')[index];
+      if (target) {
+        const [before, ...rest] = paragraphs[index].split(fragment);
+        target.innerHTML = `${lines(before)}<mark>${esc(fragment)}</mark>${lines(rest.join(fragment))}`;
+        target.scrollIntoView({ block: 'center' });
+      }
+      return paragraphs[index].slice(0, 2400);
+    };
+    bindComprehension(root, ctx, {
+      sessionId: readingSessionId(item.id),
+      questions: item.questions,
+      onEvidence: showEvidence,
+    });
     bindComposer(root, ctx, item);
     bindImages(root, c);
   };
@@ -158,6 +180,16 @@ function waitingMedia(root, ctx, payload) {
 export async function renderEncounter(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
   const id = location.id;
+  if (id.startsWith('reading:')) {
+    const sessionId = readingSessionId(id);
+    if (!sessionId) throw Error(c.unavailable);
+    const payload = await api.readingSession(sessionId);
+    const item = readingText(payload.found ? payload.session : null, language);
+    if (!alive()) return;
+    if (!item) throw Error(c.unavailable);
+    textEncounter(root, ctx, item);
+    return;
+  }
   if (id.startsWith('story:') || id.startsWith('text:')) {
     const item = id.startsWith('story:')
       ? contentFor(language).find((x) => `story:${x.id}` === id)
@@ -261,13 +293,14 @@ export async function renderEncounter(root, ctx) {
   mediaStatus.setAttribute('role', 'status');
   mediaStatus.hidden = true;
   playerRoot.querySelector('.player-wrap').after(mediaStatus);
-  const onMediaState = event => {
+  const onMediaState = (event) => {
     const state = event.detail.state;
     mediaStatus.hidden = !['blocked', 'error'].includes(state);
     if (state === 'blocked') mediaStatus.textContent = c.mediaBlocked;
     if (state === 'error') {
       mediaStatus.innerHTML = `${c.mediaFailed} <button data-retry-media>${c.retry}</button>`;
-      mediaStatus.querySelector('[data-retry-media]').onclick = () => ctx.go('encounter', {id, intent:practice});
+      mediaStatus.querySelector('[data-retry-media]').onclick = () =>
+        ctx.go('encounter', { id, intent: practice });
     }
   };
   playerRoot.addEventListener('orena:media-state', onMediaState);
@@ -602,7 +635,10 @@ export async function renderEncounter(root, ctx) {
           await ctx.mutate(() => api.saveListeningProgress(evidence));
           report.saved();
         } catch {
-          report.failed(priorRead ? c.failedSave : c.priorProgressUnread, persist);
+          report.failed(
+            priorRead ? c.failedSave : c.priorProgressUnread,
+            persist,
+          );
         } finally {
           if (isAlive() && version === practiceVersion)
             body
@@ -617,7 +653,12 @@ export async function renderEncounter(root, ctx) {
           body.querySelector('.comparison').innerHTML =
             `<h3>${result.accuracy_percent}% ${c.match}</h3><div class="diff" lang="${language}">${diff.map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`).join('')}</div><p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p><div class="button-row"><button data-again>${c.tryAgain} ↺</button><button data-understand>${c.inspect} ↗</button></div>`;
           body.querySelector('[data-understand]').onclick = () =>
-            inspectPhrase(ctx, target.original_text, item.title, target.original_text);
+            inspectPhrase(
+              ctx,
+              target.original_text,
+              item.title,
+              target.original_text,
+            );
           body.querySelector('[data-again]').onclick = () => {
             body.querySelector('.comparison').innerHTML = '';
             answer.focus();

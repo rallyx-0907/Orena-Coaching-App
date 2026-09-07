@@ -16,6 +16,17 @@ on the capabilities themselves, not only on the foundation.
 
 ## DONE
 
+Recovery checkpoint (2026-09-07): continued the unfinished Reading diff from
+`cf2f8b1`, without restarting the accepted Golden Star. Reading now adapts the
+real session envelope, requests an explicit language-profile level, presents
+generated/built-in provenance, joins kept passages into the collection, and
+offers optional comprehension with passage evidence and shared understanding.
+EN browser: created a B1 built-in passage and persisted a 3/4 check with one
+intentional wrong answer; no proficiency claim. Reading Node contracts,
+product/foundation gates, ESM graph and backend Reading self-test passed.
+Continue immediately with independent Speaking; final ZH/responsive browser
+acceptance remains in this same mission. Native mobile remains frozen.
+
 D-046 authority clarification and the physical product reset are committed.
 Shared media, transcript, dictation, recording, provider and evidence
 primitives survive. Discovery, intentional Practice, learner imports,

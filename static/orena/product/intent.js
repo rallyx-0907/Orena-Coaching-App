@@ -4,6 +4,7 @@
    without it Listening quietly collapses into Dictation. */
 export const practiceIntentions = [
   'follow',
+  'reading',
   'dictation',
   'shadowing',
   'speaking',
@@ -12,8 +13,11 @@ export const practiceIntentions = [
   'recall',
 ];
 
-// Intentions that open a practice panel over the moment. Follow is absent by
-// design: it is the encounter itself.
+/* Reading sits beside Follow for the same reason: a passage read to its end is
+   the learning, and the questions after it are optional. */
+
+// Intentions that open a practice panel over the moment. Follow and Reading are
+// absent by design: they are the encounter itself.
 export const deeperPractice = ['dictation', 'shadowing', 'speaking'];
 export function route(hash = '') {
   const [path, query] = String(hash).replace(/^#\/?/, '').split('?');
@@ -45,6 +49,12 @@ export function supports(content, intent) {
   if (!intent) return true;
   if (['follow', 'dictation', 'shadowing'].includes(intent))
     return ['audio', 'video', 'embed'].includes(
+      content.kind || content.playback_kind,
+    );
+  // A voice is followed; a passage is read. Neither substitutes for the other,
+  // so an intention to read must not offer an audio moment.
+  if (intent === 'reading')
+    return !['audio', 'video', 'embed'].includes(
       content.kind || content.playback_kind,
     );
   return true;

@@ -6,6 +6,14 @@ export const duration = (ms) => {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 };
 export function origin(item, c) {
+  // A reading passage is labelled by how it actually came to exist. Without a
+  // generator the API answers every request with the same built-in passage, and
+  // calling that "written for you" would be the one lie the surface cannot
+  // afford while asking the learner to trust its explanations.
+  if (item.generation_mode)
+    return item.generation_mode === 'generated'
+      ? c.readingWritten
+      : c.readingBuiltIn;
   return item.is_development_candidate
     ? c.candidate
     : item.origin === 'imported'
