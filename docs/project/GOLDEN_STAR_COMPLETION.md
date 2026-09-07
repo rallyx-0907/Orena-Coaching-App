@@ -45,8 +45,8 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
   Continue; Speaking situation -> own turn -> coaching -> writing; Grammar ->
   example -> understanding -> My Language. Exercise available paths in browser;
   label provider/hardware-limited steps honestly rather than simulating success.
-- [~] Completion findings: Recall answer exposure (P1) and Writing revision
-  classification (P1) **closed**; long-turn contextual explanation (P2) open. See `CAPABILITY_DIRECTION_REVIEW.md`. They do not replace this mission.
+- [x] Completion findings: all three **closed** - Recall answer exposure (P1),
+  Writing revision classification (P1), long-turn contextual explanation (P2). See `CAPABILITY_DIRECTION_REVIEW.md`. They do not replace this mission.
   Correct within the relevant experience and validate before acceptance.
   - Recall: `blankContext` returned the passage split on the phrase and rejoined
     with it, so every occurrence after the first was printed back; it now
@@ -65,6 +65,14 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
     side of a category. Several on either side are reported as gone and arrived
     rather than paired on a guess. The finding's own case now returns A
     persistent and B changed to C, identically under PYTHONHASHSEED 0/1/2/3/42.
+  - Conversation context: asking about a turn sent the first 2400 characters of
+    the preceding and current turns joined, so a preceding turn long enough to
+    fill the budget evicted the very turn holding the selection, and the server
+    refused it. `turnContext()` now budgets around the selection: its own turn
+    is never trimmed, and the room left goes to the end of what came before,
+    nearest the selection. Verified against the running server - the old
+    construction returns 422 "Selected text must come from the supplied learner
+    context", the new one returns 200.
 - [ ] Validate Node contracts and ESM, project-memory and architecture gates;
   run CI-defined Python gate when Docker ownership is established. Evaluate
   light/dark, EN/ZH at 390, 800, 1440 and 1920 widths in the actual browser.

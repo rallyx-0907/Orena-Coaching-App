@@ -159,6 +159,51 @@ for (const ui of ['en', 'zh']) {
   );
 }
 
+/* --- Asking about a turn must send the turn the learner selected ---
+
+   The server refuses a context that does not contain the selection, so a
+   context budgeted from the start of the pair fails outright when the
+   preceding turn is long enough to fill the allowance on its own. The turn
+   holding the selection is never the part that gets trimmed. */
+const { turnContext, CONTEXT_LIMIT, SELECTION_LIMIT } = await import(
+  '../static/orena/ui/conversation.js'
+);
+
+const contains = (turns, index) => {
+  const selection = turns[index].text.slice(0, SELECTION_LIMIT);
+  const context = turnContext(turns, index);
+  assert.ok(context.length <= CONTEXT_LIMIT, `context over budget: ${context.length}`);
+  assert.ok(
+    context.toLowerCase().includes(selection.toLowerCase()),
+    'the server would reject this: the selection is not in its own context',
+  );
+  return context;
+};
+
+// The ordinary case still carries what came before.
+const short = [{ text: 'Where did you go?' }, { text: 'I went to the market.' }];
+assert.equal(turnContext(short, 1), ['Where did you go?', 'I went to the market.'].join('\n'));
+contains(short, 1);
+assert.equal(turnContext(short, 0), 'Where did you go?', 'the first turn has nothing before it');
+
+/* The finding's case: a preceding turn permitted to fill the entire budget.
+   Taking the first 2400 characters kept it and dropped the learner's own
+   sentence entirely. */
+const longPair = [{ text: 'x'.repeat(CONTEXT_LIMIT) }, { text: 'I meant it kindly.' }];
+const budgeted = contains(longPair, 1);
+assert.ok(budgeted.endsWith('I meant it kindly.'), 'the selected turn survives, whole');
+assert.ok(budgeted.startsWith('x'), 'the room that remains still goes to what came before');
+
+// A turn longer than the whole budget still yields a context holding its
+// selection, because the selection is capped below the context.
+const huge = [{ text: 'y'.repeat(50) }, { text: 'z'.repeat(CONTEXT_LIMIT * 2) }];
+contains(huge, 1);
+
+// Chinese counts the same way: characters, not bytes.
+const zh = [{ text: '很'.repeat(CONTEXT_LIMIT) }, { text: '我昨天去了商店。' }];
+const zhContext = contains(zh, 1);
+assert.ok(zhContext.endsWith('我昨天去了商店。'));
+
 console.log(
-  'Conversation ledger, coaching on your own turns, and distinguishable threads: PASS',
+  'Conversation ledger, coaching on your own turns, distinguishable threads, and context that keeps its selection: PASS',
 );

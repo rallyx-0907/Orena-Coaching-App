@@ -13,6 +13,30 @@ import {
 } from '../product/conversation.js';
 import { link } from '../product/intent.js';
 
+/* Asking what something in a turn means sends that text and the context it sat
+   in, and the server refuses a context that does not contain the selection -
+   correctly, since an explanation grounded in text the learner did not select
+   is not about their words.
+
+   Budgeting from the start of the pair broke exactly that: a preceding turn may
+   itself fill the whole allowance, and taking the first 2400 characters then
+   kept the preceding turn and dropped the one holding the selection. The
+   learner asked about their own sentence and got a 422.
+
+   The selection's own turn is therefore never what gets trimmed. Whatever room
+   is left goes to what came before it, taken from its end, because the part of
+   a previous turn nearest the selection is the part that explains it. */
+export const CONTEXT_LIMIT = 2400;
+export const SELECTION_LIMIT = 1600;
+
+export function turnContext(turns, index) {
+  const body = String(turns[index]?.text ?? '').slice(0, CONTEXT_LIMIT);
+  const preceding = index > 0 ? String(turns[index - 1]?.text ?? '') : '';
+  const room = CONTEXT_LIMIT - body.length - 1; // the newline between them
+  if (!preceding || room <= 0) return body;
+  return `${preceding.slice(-room)}\n${body}`;
+}
+
 export function startConversation(ctx, { title, situation }) {
   const state = conversation({
     id: `conversation:${crypto.randomUUID()}`,
@@ -58,12 +82,8 @@ export function renderConversation(root, ctx) {
             turn = state.turns[index];
           openUnderstanding(ctx, {
             origin: { id: state.id, where: state.title, why: 'from_speaking' },
-            selection: turn.text.slice(0, 1600),
-            context: state.turns
-              .slice(Math.max(0, index - 1), index + 1)
-              .map((t) => t.text)
-              .join('\n')
-              .slice(0, 2400),
+            selection: turn.text.slice(0, SELECTION_LIMIT),
+            context: turnContext(state.turns, index),
             title: state.title,
           });
         }),
