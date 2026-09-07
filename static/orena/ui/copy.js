@@ -568,3 +568,18 @@ Object.assign(copy.zh, {
   lookCloser: '仔细看看',
   selectToUnderstand: '选中任意词语或句子，可以进一步了解。',
 });
+
+Object.assign(copy.en, {
+  revisionHistory: 'What you have written before',
+  revisionNote:
+    'Each version you sent for review is kept on this device. Opening one brings it back into the editor; the words you are working on now are kept too.',
+  revisionLabel: 'Version',
+  revisionRestored: 'Earlier version brought back.',
+});
+Object.assign(copy.zh, {
+  revisionHistory: '你之前写过的版本',
+  revisionNote:
+    '每次送去点评的版本都保存在此设备。打开其中一个会把它放回编辑框；你正在写的内容也会一并保留。',
+  revisionLabel: '第',
+  revisionRestored: '已取回较早的版本。',
+});

@@ -11,6 +11,7 @@ export function learnerMemory(storage, owner, language) {
       continuation: [],
       expressions: {},
       answers: {},
+      revisions: {},
     };
   try {
     const parsed =
@@ -51,6 +52,32 @@ export function learnerMemory(storage, owner, language) {
           (x) => x && typeof x.id === 'string' && typeof x.title === 'string',
         )
         .slice(0, 20);
+      /* What a learner actually submitted for review, kept in order. The live
+         draft is overwritten as they type; without this, revising a piece
+         destroys the version they revised from. */
+      value.revisions = Object.fromEntries(
+        Object.entries(parsed.revisions || {})
+          .filter(
+            ([key, list]) =>
+              !['__proto__', 'constructor', 'prototype'].includes(key) &&
+              Array.isArray(list),
+          )
+          .slice(-40)
+          .map(([key, list]) => [
+            key,
+            list
+              .filter((x) => x && typeof x.text === 'string')
+              .slice(-20)
+              .map((x) => ({
+                text: x.text.slice(0, 12000),
+                at: typeof x.at === 'string' ? x.at.slice(0, 40) : '',
+                essay_id: Number.isInteger(x.essay_id) ? x.essay_id : null,
+                revision_no: Number.isInteger(x.revision_no) ? x.revision_no : null,
+                overall: Number.isFinite(x.overall) ? x.overall : null,
+                level: typeof x.level === 'string' ? x.level.slice(0, 24) : '',
+              })),
+          ]),
+      );
       for (const field of ['expressions', 'answers'])
         value[field] = Object.fromEntries(
           Object.entries(parsed[field] || {})
@@ -115,6 +142,31 @@ export function learnerMemory(storage, owner, language) {
       value[field][id] = String(text).slice(0, 12000);
       return save();
     },
+    /* Called when a draft is sent for review, never on a keystroke: this is a
+       record of what the learner stood behind, not of their typing. */
+    recordRevision(id, entry) {
+      if (
+        ['__proto__', 'constructor', 'prototype'].includes(id) ||
+        !String(entry?.text ?? '').trim()
+      )
+        return false;
+      const list = value.revisions[id] || [];
+      const last = list[list.length - 1];
+      // Reviewing the same words twice is one revision, not two.
+      if (last && last.text === entry.text) return save();
+      value.revisions[id] = [
+        ...list,
+        {
+          text: String(entry.text).slice(0, 12000),
+          at: new Date().toISOString(),
+          essay_id: Number.isInteger(entry.essay_id) ? entry.essay_id : null,
+          revision_no: Number.isInteger(entry.revision_no) ? entry.revision_no : null,
+          overall: Number.isFinite(entry.overall) ? entry.overall : null,
+          level: typeof entry.level === 'string' ? entry.level.slice(0, 24) : '',
+        },
+      ].slice(-20);
+      return save();
+    },
     add({ title, text }) {
       if (
         value.imports.length >= 20 ||
@@ -157,6 +209,7 @@ export function learnerMemory(storage, owner, language) {
       value.kept = value.kept.filter((x) => x !== id);
       value.continuation = value.continuation.filter((x) => x.id !== id);
       delete value.expressions[id];
+      delete value.revisions[id];
       save();
     },
   };

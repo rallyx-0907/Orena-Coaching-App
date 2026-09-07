@@ -725,3 +725,32 @@
     min-height: 44px;
   }
 }
+
+/* A learner's own earlier attempts, kept as work rather than as scores. */
+.revision-history:not(:empty) {
+  border-top: 1px solid var(--line);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+}
+.revision-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.revision-list button {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.revision-list button:hover {
+  background: var(--surface);
+}
+.revision-list small {
+  color: var(--muted);
+}

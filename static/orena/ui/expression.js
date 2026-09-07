@@ -20,7 +20,11 @@ export async function renderExpression(root, ctx) {
     memory.value.continuation.find((x) => x.id === id) ||
     memory.value.imports.find((x) => x.id === id) ||
     contentFor(language).find((x) => `story:${x.id}` === id);
-  let parentId = null;
+  const revisionsOf = () => memory.value.revisions?.[id] || [];
+  // Continue the server's series across visits instead of starting a new one
+  // every time the learner comes back to the same piece.
+  let parentId =
+    [...revisionsOf()].reverse().find((x) => x.essay_id)?.essay_id ?? null;
   const title = source?.title || c.freeTitle;
   const hasSource = source && !id.startsWith('expression:');
   const original = contentFor(language).find((x) => 'story:' + x.id === id);
@@ -32,12 +36,44 @@ export async function renderExpression(root, ctx) {
   const prompt = original?.prompt || c.responsePrompt;
   const invitations = contentFor(language).slice(0, 2);
   const levels = ctx.languageProfiles?.find(x => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div><div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target" required><option value="">${c.chooseTarget}</option>${levels.map(level => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div></form><section id="writingFeedback" aria-live="polite"></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div><div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target" required><option value="">${c.chooseTarget}</option>${levels.map(level => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div></form><section id="writingFeedback" aria-live="polite"></section><section class="revision-history" data-revisions></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
+  const paintRevisions = () => {
+    const list = revisionsOf();
+    const host = root.querySelector('[data-revisions]');
+    if (!list.length) {
+      host.innerHTML = '';
+      return;
+    }
+    host.innerHTML = `<h2>${esc(c.revisionHistory)}</h2><p class="meta">${esc(c.revisionNote)}</p><ol class="revision-list">${list
+      .map(
+        (entry, index) =>
+          `<li><button class="quiet" data-revision="${index}"><small>${esc(c.revisionLabel)} ${entry.revision_no ?? index + 1}${entry.overall != null ? ` · ${entry.overall}` : ''}${entry.level ? ` · ${esc(entry.level)}` : ''}</small><span lang="${esc(language)}">${esc(entry.text.slice(0, 120))}${entry.text.length > 120 ? '…' : ''}</span></button></li>`,
+      )
+      .join('')}</ol>`;
+    host.querySelectorAll('[data-revision]').forEach((button) => {
+      button.onclick = () => {
+        const entry = revisionsOf()[Number(button.dataset.revision)];
+        if (!entry) return;
+        // Bringing a version back is a choice the learner makes explicitly,
+        // and the words currently in the box are never lost to it silently.
+        const current = root.querySelector('textarea');
+        if (current.value.trim() && current.value !== entry.text)
+          memory.recordRevision(id, { text: current.value });
+        current.value = entry.text;
+        memory.write(id, entry.text);
+        updateCount();
+        paintRevisions();
+        current.focus();
+        status(c.revisionRestored);
+      };
+    });
+  };
   const updateCount = () => {
     root.querySelector('[data-character-count]').textContent =
       [...root.querySelector('textarea').value].length + ' ' + c.draftCount;
   };
   updateCount();
+  paintRevisions();
   root.querySelector('textarea').oninput = (event) => {
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing', excerpt });
@@ -65,6 +101,14 @@ export async function renderExpression(root, ctx) {
       );
       if (!alive()) return;
       parentId = result.id;
+      memory.recordRevision(id, {
+        text,
+        essay_id: Number.isInteger(result.id) ? result.id : null,
+        revision_no: Number.isInteger(result.revision_no) ? result.revision_no : null,
+        overall: Number.isFinite(result.overall) ? result.overall : null,
+        level: typeof result.app_cefr === 'string' ? result.app_cefr : '',
+      });
+      paintRevisions();
       // Only show a correction whose fragment is genuinely in what the learner
       // wrote, so a struck-through phrase is always one of their own.
       const corrections = (result.errors || []).filter(

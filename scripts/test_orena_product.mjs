@@ -82,6 +82,25 @@ assert.equal(mergeListeningEvidence(null,local).best_accuracy_percent,40,'A miss
 assert.equal(mergeListeningEvidence({best_accuracy_percent:null},{...local,best_accuracy_percent:null}).best_accuracy_percent,null,'Unmeasured stays unmeasured rather than becoming zero');
 assert.equal(mergeListeningEvidence(stored,{...local,checked_attempt_count:999}).checked_attempt_count,1000,'The stored contract bound still holds');
 
+// A draft is overwritten as the learner types, so without this the version
+// they revised from is destroyed by revising. Revisions record what was sent
+// for review, never a keystroke.
+a.recordRevision('expression:free',{text:'First try.',essay_id:1,revision_no:1,overall:62,level:'B1'});
+a.recordRevision('expression:free',{text:'First try.',essay_id:1,revision_no:1,overall:62,level:'B1'});
+a.recordRevision('expression:free',{text:'Second, better try.',essay_id:2,revision_no:2,overall:74,level:'B1'});
+const kept=learnerMemory(storage,'owner-a','en').value.revisions['expression:free'];
+assert.equal(kept.length,2,'reviewing the same words twice is one revision');
+assert.deepEqual(kept.map(x=>x.revision_no),[1,2],'order is the learner history');
+assert.equal(kept[0].text,'First try.','the earlier text survives the later one');
+assert.equal(kept[1].overall,74);
+assert.equal(a.recordRevision('expression:free',{text:'   '}),false,'nothing is not a version');
+assert.equal(a.recordRevision('__proto__',{text:'x'}),false,'prototype keys stay rejected');
+assert.equal(learnerMemory(storage,'owner-b','en').value.revisions['expression:free'],undefined,'revisions are owner-scoped');
+assert.equal(learnerMemory(storage,'owner-a','zh').value.revisions['expression:free'],undefined,'revisions are language-scoped');
+const expressionSource=readFileSync(new URL('../static/orena/ui/expression.js',import.meta.url),'utf8');
+assert.match(expressionSource,/memory\.recordRevision\(id, \{\s*text,/,'a reviewed draft is recorded as a version');
+assert.doesNotMatch(expressionSource,/oninput[\s\S]{0,200}recordRevision/,'typing is not a version');
+
 // Contracts the encounter surface must keep. These are the regressions this
 // layer has actually shipped, so they are worth naming rather than trusting.
 const encounterSource=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
