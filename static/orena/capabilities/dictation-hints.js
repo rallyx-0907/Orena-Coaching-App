@@ -13,7 +13,7 @@ import {
 
 export const MAX_HINT_LEVEL = 2;
 
-const MASK = '▁'; // ▁ - one mark per character still to be found.
+const MASK = '*'; // One mark per character still to be found.
 
 /* Split the canonical line into comparable words and the structure between
    them, keeping the surface spelling so a slot has the shape of the thing the
@@ -66,27 +66,46 @@ export function confirmedWords(input) {
   return wordProgress(input).map((entry) => entry.found);
 }
 
-/* The leading characters a learner has already typed correctly for a word they
-   have not finished.
+/* Which characters of a word the learner has actually produced.
 
-   Showing these is not revealing anything: they came from the learner, and
-   seeing their own correct start is what lets them reason about the rest of the
-   word instead of staring at an undifferentiated run of marks. The comparison
-   is on character units, so Chinese counts characters and English counts
-   letters, and case is ignored because dictation is not a spelling-case test. */
-export function earnedPrefix(word, attempt) {
+   A prefix is not enough: someone who writes "Undar" for "Under" has earned the
+   "Und" and the "r", and a model that stops at the first mistake hides the "r"
+   they got right. So the comparison is an alignment, not a walk - the longest
+   common subsequence between the target and what they typed, which is what
+   keeps a missing letter, an extra letter or a swapped pair from shifting every
+   character after it.
+
+   Case is ignored: dictation is not a spelling-case test. */
+export function earnedCharacters(word, attempt) {
   const target = [...String(word ?? '')];
-  const typed = [...String(attempt ?? '')];
-  let shared = 0;
-  while (
-    shared < target.length &&
-    shared < typed.length &&
-    target[shared].toLowerCase() === typed[shared].toLowerCase()
-  )
-    shared += 1;
-  // The whole word is never given back this way: that would be a reveal
-  // wearing a hint's clothes.
-  return Math.min(shared, Math.max(0, target.length - 1));
+  const typed = [...String(attempt ?? '')].map((c) => c.toLowerCase());
+  const lower = target.map((c) => c.toLowerCase());
+  const earned = target.map(() => false);
+  if (!target.length || !typed.length) return earned;
+
+  // Longest common subsequence, then walk it back to mark which of the
+  // learner's characters landed on which of the target's.
+  const grid = Array.from({ length: target.length + 1 }, () =>
+    new Uint16Array(typed.length + 1),
+  );
+  for (let row = target.length - 1; row >= 0; row -= 1)
+    for (let column = typed.length - 1; column >= 0; column -= 1)
+      grid[row][column] =
+        lower[row] === typed[column]
+          ? grid[row + 1][column + 1] + 1
+          : Math.max(grid[row + 1][column], grid[row][column + 1]);
+
+  let row = 0;
+  let column = 0;
+  while (row < target.length && column < typed.length) {
+    if (lower[row] === typed[column]) {
+      earned[row] = true;
+      row += 1;
+      column += 1;
+    } else if (grid[row + 1][column] >= grid[row][column + 1]) row += 1;
+    else column += 1;
+  }
+  return earned;
 }
 
 /* level 1 shows the structure and the shape of every unfound word.
@@ -111,20 +130,27 @@ export function dictationHint({
     if (entry.found) return { text: token.text, kind: 'anchor' };
     remaining += 1;
     const characters = [...token.text];
-    /* What the learner has already earned on this word: their own correct
-       start, plus the opening character the deeper hint level offers. */
-    const earned = earnedPrefix(token.text, entry.attempt);
-    const offered = step >= 2 && characters.length > 1 ? 1 : 0;
-    const shown = Math.max(earned, offered);
-    if (earned > 0) partial += 1;
+    // Every character the learner has actually produced for this word shows;
+    // every position they have not stays masked.
+    const earned = earnedCharacters(token.text, entry.attempt);
+    /* The deeper level offers one character the learner has not earned - the
+       first still-masked one - and never the last, so a hint cannot finish a
+       word for them. */
+    if (step >= 2 && characters.length > 1) {
+      const next = earned.indexOf(false);
+      if (next >= 0 && earned.filter(Boolean).length < characters.length - 1)
+        earned[next] = true;
+    }
+    const known = earned.filter(Boolean).length;
+    if (known > 0) partial += 1;
     return {
-      text: characters.slice(0, shown).join('') + MASK.repeat(characters.length - shown),
-      kind: earned > 0 ? 'partial' : 'slot',
+      text: characters.map((c, i) => (earned[i] ? c : MASK)).join(''),
+      kind: known > 0 ? 'partial' : 'slot',
       length: characters.length,
-      // How much of this word is standing, so the surface can show progress
-      // within a word rather than only between words.
-      known: shown,
+      // Which positions are standing, so the surface can mark them individually
+      // rather than assuming everything known is at the front.
       earned,
+      known,
     };
   });
   const anchors = progress.filter((entry) => entry.found).length;

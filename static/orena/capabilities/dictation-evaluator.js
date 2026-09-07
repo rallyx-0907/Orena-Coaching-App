@@ -89,15 +89,55 @@ export function listeningReconstructionDiff({source_language,expected,answer}){
     }
     raw.push({status:'extra',expected:'',actual:answerUnits[column]});column+=1;
   }
+  /* A missing expected word and an extra written one are the same event when
+     the learner was reaching for that word and mistyped it. Pairing only
+     immediate neighbours gets this wrong as soon as two words in a row are
+     misspelt: the run reorders and later words pair with the wrong partners,
+     which then shifts every anchor after them. So a run of unmatched entries is
+     paired by position within the run, and only where the two words genuinely
+     resemble each other - "stars"/"stors" is one attempt, "the"/"safely" is a
+     missing word and a different extra one. */
   const aligned=[];
-  for(let index=0;index<raw.length;index+=1){
-    const current=raw[index],next=raw[index+1];
-    if(next&&current.status!==next.status&&['missing','extra'].includes(current.status)&&['missing','extra'].includes(next.status)){
-      const missing=current.status==='missing'?current:next;
-      const extra=current.status==='extra'?current:next;
-      aligned.push({status:'wrong',expected:missing.expected,actual:extra.actual});index+=1;
-    }else aligned.push(current);
+  for(let index=0;index<raw.length;){
+    if(!['missing','extra'].includes(raw[index].status)){aligned.push(raw[index]);index+=1;continue;}
+    let end=index;
+    while(end<raw.length&&['missing','extra'].includes(raw[end].status))end+=1;
+    const run=raw.slice(index,end);
+    const missing=run.filter(item=>item.status==='missing');
+    const extra=run.filter(item=>item.status==='extra');
+    const pairedExtra=new Set();
+    const pairs=new Map();
+    missing.forEach((item,position)=>{
+      const candidate=extra[position];
+      if(candidate&&!pairedExtra.has(candidate)&&wordsResemble(item.expected,candidate.actual)){
+        pairs.set(item,candidate);pairedExtra.add(candidate);
+      }
+    });
+    for(const item of run){
+      if(item.status==='missing'){
+        const partner=pairs.get(item);
+        aligned.push(partner
+          ?{status:'wrong',expected:item.expected,actual:partner.actual}
+          :item);
+      }else if(!pairedExtra.has(item))aligned.push(item);
+    }
+    index=end;
   }
   return aligned;
+}
+
+/* Two words are the same attempt when most of one survives in the other. Below
+   that they are separate events, and calling them one correction would tell the
+   learner they mistyped a word they never reached for. */
+export function wordsResemble(expected,actual){
+  const a=[...String(expected||'').toLowerCase()],b=[...String(actual||'').toLowerCase()];
+  if(!a.length||!b.length)return false;
+  const grid=Array.from({length:a.length+1},()=>new Uint16Array(b.length+1));
+  for(let row=a.length-1;row>=0;row-=1)
+    for(let column=b.length-1;column>=0;column-=1)
+      grid[row][column]=a[row]===b[column]
+        ?grid[row+1][column+1]+1
+        :Math.max(grid[row+1][column],grid[row][column+1]);
+  return grid[0][0]/Math.max(a.length,b.length)>=0.5;
 }
 

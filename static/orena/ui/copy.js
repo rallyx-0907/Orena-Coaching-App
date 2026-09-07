@@ -512,7 +512,7 @@ Object.assign(copy.en, {
   hintMore: 'A little more',
   hintTitle: 'The shape of the line',
   hintNote:
-    'Marks stand for what is still yours to find. Words you have already heard correctly stay in place as anchors.',
+    'Each * is a character still to find. Everything you type correctly appears here as you go.',
   hintAnchors: 'found so far',
   hintComplete: 'You have every word. Check it.',
 });
@@ -520,7 +520,7 @@ Object.assign(copy.zh, {
   hint: '给我一点提示',
   hintMore: '再多一点',
   hintTitle: '这句话的轮廓',
-  hintNote: '方块代表还需要你找出的部分。你已经听对的词会留在原位，作为线索。',
+  hintNote: '每个 * 代表一个还没找到的字。你写对的部分会随时显示出来。',
   hintAnchors: '已找到',
   hintComplete: '所有词都对了，检查一下吧。',
 });
@@ -761,7 +761,7 @@ Object.assign(copy.zh, {
 Object.assign(copy.en, {
   showAllMeaning: 'Show meaning for every line',
   allMeaningNote:
-    'Meanings prepared for this lesson, shown beside the words they belong to.',
+    'Meanings prepared for this lesson, shown under the lines they belong to.',
   heldForYou:
     'Paused so you can read this. Close it and the voice waits where you left it.',
   reachedTheEnd: 'You followed this to the end.',
@@ -772,7 +772,7 @@ Object.assign(copy.en, {
 });
 Object.assign(copy.zh, {
   showAllMeaning: '每一句都显示意思',
-  allMeaningNote: '为这一课准备的意思，就放在对应的原文旁边。',
+  allMeaningNote: '为这一课准备的意思，就放在对应原文的下方。',
   heldForYou: '已暂停，方便你看。关掉之后，声音还在原处等你。',
   reachedTheEnd: '你把这一段听完了。',
   reachedTheEndNote:

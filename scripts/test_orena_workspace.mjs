@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   dictationHint,
-  earnedPrefix,
+  earnedCharacters,
   wordProgress,
   MAX_HINT_LEVEL,
 } from '../static/orena/capabilities/dictation-hints.js';
@@ -19,20 +19,23 @@ const hint = (answer, level = 1, expected = LINE, source_language = 'en') =>
   dictationHint({ expected, answer, source_language, level });
 const shown = (h) => h.slots.map((s) => s.text).join('');
 
-/* A learner's own correct letters come back to them. Seeing the start they
-   already typed is what lets them reason about the rest, and it reveals
+/* A learner's own correct characters come back to them wherever they are in
+   the word, not only in an unbroken run from the start. Seeing what they
+   already got right is what lets them reason about the rest, and it reveals
    nothing: they wrote it. */
-assert.equal(earnedPrefix('yesterday', 'yesterda'), 8);
-assert.equal(earnedPrefix('bang', 'bnag'), 1, 'only the letters that actually match');
-assert.equal(earnedPrefix('shop', 'SHO'), 3, 'dictation is not a spelling-case test');
-assert.equal(earnedPrefix('shop', 'xyz'), 0);
-assert.equal(earnedPrefix('shop', ''), 0);
-// The whole word is never handed back this way - that would be a reveal.
-assert.equal(earnedPrefix('shop', 'shop'), 3, 'the last character is always withheld');
-assert.equal(earnedPrefix('去', '去'), 0, 'a one-character unit cannot be partly given');
+const earned = (word, attempt) => earnedCharacters(word, attempt).map(Number).join('');
+assert.equal(earned('yesterday', 'yesterda'), '111111110');
+// The learner typed 'bnag': the b, n and g are theirs; the misplaced a is not.
+assert.equal(earned('bang', 'bnag'), '1011', 'a transposition credits only what landed');
+assert.equal(earned('shop', 'SHO'), '1110', 'dictation is not a spelling-case test');
+assert.equal(earned('shop', 'xyz'), '0000');
+assert.equal(earned('shop', ''), '0000');
+// A word typed in full is the learner's own work, so all of it stands. What is
+// never handed over is a character they did not produce - see the hint gate.
+assert.equal(earned('shop', 'shop'), '1111');
 
 const partial = hint('I went to the shop yesterda');
-assert.ok(shown(partial).includes('yesterda▁'), 'the earned start stands, the rest does not');
+assert.ok(shown(partial).includes('yesterda*'), 'the earned characters stand, the rest do not');
 assert.ok(!shown(partial).includes('yesterday'), 'the hint never completes the word');
 assert.equal(partial.partial, 1);
 assert.equal(partial.anchors, 5, 'words already correct are anchors');
@@ -52,12 +55,12 @@ const blank = hint('');
 assert.equal(blank.anchors, 0);
 assert.equal(blank.partial, 0);
 assert.ok(shown(blank).includes(' '), 'word boundaries survive');
-assert.ok(/▁{4}/.test(shown(blank)), 'a longer word looks longer');
+assert.ok(/\*{4}/.test(shown(blank)), 'a longer word looks longer');
 assert.ok(!shown(blank).includes('shop'), 'nothing is given away at level one');
 
 // The deeper level offers an opening character and no more.
 const deeper = hint('', MAX_HINT_LEVEL);
-assert.ok(shown(deeper).includes('s▁▁▁'), 'the deeper hint opens a word');
+assert.ok(shown(deeper).includes('s***'), 'the deeper hint opens a word');
 assert.ok(!shown(deeper).includes('shop'), 'even the deepest hint is not the answer');
 assert.equal(hint(LINE).complete, true, 'a finished line has nothing left to find');
 
@@ -66,7 +69,7 @@ assert.equal(hint(LINE).complete, true, 'a finished line has nothing left to fin
 const zh = hint('我昨天', 1, '我昨天去了商店。', 'zh');
 assert.equal(zh.total, 7, 'every character is its own unit');
 assert.equal(zh.anchors, 3);
-assert.ok(shown(zh).startsWith('我昨天▁'), 'characters already produced stand');
+assert.ok(shown(zh).startsWith('我昨天*'), 'characters already produced stand');
 assert.ok(shown(zh).endsWith('。'), 'punctuation stays as structure');
 // A one-character unit has nothing to partially open, at any level.
 assert.equal(
@@ -98,6 +101,19 @@ assert.ok(
 assert.ok(
   encounter.includes("prefers-reduced-motion: reduce"),
   'the scroll respects a learner who asked for less motion',
+);
+
+/* The hint is present from the moment the learner arrives. Asking for the
+   shape of the line before you can begin is a step that helps nobody, and a
+   hint that appears only on request is a hint most learners never see. */
+assert.ok(
+  /let hintLevel = 1;/.test(encounter),
+  'the shape of the line is there to begin with',
+);
+assert.ok(
+  encounter.indexOf('paintHint();') <
+    encounter.indexOf("body.querySelectorAll('form button')"),
+  'the panel is painted on arrival, not only when the hint button is pressed',
 );
 
 const world = read('static/orena/world.css');

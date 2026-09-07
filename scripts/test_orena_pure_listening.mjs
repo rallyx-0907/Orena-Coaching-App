@@ -101,4 +101,50 @@ assert.ok(
   'shown meanings say where they came from',
 );
 
+/* --- A spoken segment is one block, not two columns ---
+
+   Setting the original and its meaning side by side turns one utterance into
+   two things to read, makes the pair break apart the moment the column
+   narrows, and leaves the active-line highlight covering only half of what the
+   learner is following. Time, original and meaning stack, in that order, and
+   the highlight covers the whole of it. */
+assert.ok(
+  encounterSource.includes('<span class="line-original"'),
+  'the original line is named, so it can be styled apart from its meaning',
+);
+const segmentMarkup = encounterSource.slice(
+  encounterSource.indexOf('<li><button data-segment='),
+  encounterSource.indexOf('</button></li>'),
+);
+assert.ok(
+  segmentMarkup.indexOf('<time>') <
+    segmentMarkup.indexOf('line-original') &&
+    segmentMarkup.indexOf('line-original') < segmentMarkup.indexOf('line-meaning'),
+  'time, then the line, then what it means',
+);
+
+const worldCss = readFileSync(new URL('../static/orena/world.css', import.meta.url), 'utf8');
+const segmentRule = worldCss.slice(
+  worldCss.indexOf('.transcript-panel button {'),
+  worldCss.indexOf('.transcript-panel time {'),
+);
+assert.ok(
+  /display:\s*grid/.test(segmentRule),
+  'the segment stacks rather than laying its parts out in a row',
+);
+assert.ok(
+  !/display:\s*flex/.test(segmentRule),
+  'a flex row is what made the original and its meaning parallel columns',
+);
+assert.ok(
+  worldCss.includes(".transcript-panel button[aria-current='true'] .line-meaning"),
+  'the active block carries its meaning with it rather than highlighting half of itself',
+);
+
+/* --- Support text ships in its own writing system --- */
+assert.ok(
+  !/\.transcript-panel button > span/.test(worldCss),
+  'styling every child alike is what flattened the meaning into a second original',
+);
+
 console.log('Pure Listening: following to the end, holding the voice, and reading it through: PASS');

@@ -690,23 +690,34 @@
 .transcript-panel li {
   margin-bottom: 4px;
 }
+/* One spoken segment is one block: when it was said, what was said, and what
+   it means, stacked in that order. Laying the original and the meaning out as
+   parallel columns makes them two things to read instead of one line and its
+   translation, and it breaks down entirely at narrow widths. */
 .transcript-panel button {
-  display: flex;
-  gap: 14px;
+  display: grid;
+  gap: 2px;
   width: 100%;
   text-align: left;
-  line-height: 1.9;
-  padding: 14px 16px;
+  line-height: 1.7;
+  padding: 12px 16px;
   border-radius: 5px;
 }
 .transcript-panel time {
   font-size: var(--text-xs);
   color: var(--muted);
-  padding-top: 6px;
-  flex: none;
+  font-variant-numeric: tabular-nums;
 }
-.transcript-panel button > span {
+.transcript-panel .line-original {
   font-size: var(--text-sm);
+}
+/* The meaning belongs to the line above it, so it is set quieter and indented
+   rather than given equal weight. */
+.transcript-panel .line-meaning {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  padding-inline-start: var(--space-3);
+  border-inline-start: 2px solid var(--line);
 }
 .transcript-panel button[aria-current='true'] {
   background: var(--sage-surface);
@@ -720,6 +731,9 @@
 .transcript-panel button[aria-current='true'] time,
 .transcript-panel button[aria-current='true'] .line-meaning {
   color: var(--on-sage-muted);
+}
+.transcript-panel button[aria-current='true'] .line-meaning {
+  border-inline-start-color: var(--on-sage-muted);
 }
 .media-encounter:has(.transcript-panel[hidden]) {
   grid-template-columns: minmax(0, 950px);
@@ -1110,7 +1124,7 @@
 :root[lang^='zh'] small {
   letter-spacing: 0.09em;
 }
-:root[data-learning='zh'] .transcript-panel button > span {
+:root[data-learning='zh'] .transcript-panel .line-original {
   line-height: 2.1;
   font-size: var(--text-base);
 }

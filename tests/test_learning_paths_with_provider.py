@@ -351,7 +351,7 @@ def test_built_in_reading_answers_every_language_with_answerable_questions() -> 
 
 RICH_EXPLANATION = {
     "summary": "A habitual action, said the way people usually say it.",
-    "natural_translation": "Toi thuong di bo den truong.",
+    "natural_translation": "Tôi thường đi bộ đến trường.",
     "grammar_notes": ["Adverbs of frequency sit before the main verb.", "  "],
     "vocabulary": [
         {"fragment": "usually", "meaning": "most of the time", "pos": "adverb", "pronunciation": "ˈjuːʒuəli"},

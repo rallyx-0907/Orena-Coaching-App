@@ -102,4 +102,28 @@ assert.match(
   /^<iframe id="orenaMedia"/,
 );
 
+/* --- Support-language text is real language, not a transliteration ---
+
+   Vietnamese carries meaning in its diacritics: stripping them turns a
+   translation into something a learner has to decode rather than read, and it
+   silently changes words. A learner-facing translation ships with the writing
+   system it belongs to. Any prose of a few words or more carries at least one
+   marked character, so this catches a stripped line without false-flagging a
+   short phrase or a proper noun. */
+const VIETNAMESE_MARKS =
+  /[À-ÃÈ-ÊÌÍÒ-ÕÙÚÝà-ãè-êìíò-õùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ]/;
+let checkedVietnamese = 0;
+for (const source of manifest.sources)
+  for (const segment of source.segments ?? []) {
+    const vi = segment.translations?.vi;
+    if (!vi || vi.trim().split(/\s+/).length < 5) continue;
+    checkedVietnamese += 1;
+    assert.match(
+      vi,
+      VIETNAMESE_MARKS,
+      `${segment.segment_id} ships diacritic-stripped Vietnamese: ${vi}`,
+    );
+  }
+assert.ok(checkedVietnamese > 0, 'the Vietnamese support text is actually being checked');
+
 console.log('REAL_MEDIA_CATALOG_CONTRACT=PASS');
