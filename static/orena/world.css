@@ -731,6 +731,10 @@
 }
 .source a {
   text-decoration: underline;
+  /* The rights link is a real destination, so it carries a real target. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
 }
 .practice-space {
   padding: 30px;
@@ -1027,7 +1031,9 @@
   padding-right: 22px;
   margin: 0 0 20px;
 }
-.sheet p {
+/* A sheet's supporting prose is muted, but a panel inside one keeps the ink
+   that belongs to it - the pairing is the token, not the container. */
+.sheet p:not(.notice) {
   font-size: var(--text-sm);
   color: var(--muted);
 }
