@@ -78,6 +78,11 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
+  registerComparison:(payload)=>request('/api/dictionary/registers',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload||{}),
+  }),
   chineseStrokeOrder:(word)=>request(`/api/chinese/stroke-order?word=${encodeURIComponent(word)}`),
   libraryVocabulary:()=>request('/api/library/vocabulary'),
   saveLibraryVocabulary:(payload)=>request('/api/library/vocabulary',{

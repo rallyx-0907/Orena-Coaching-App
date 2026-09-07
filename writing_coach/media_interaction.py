@@ -65,6 +65,25 @@ class ContextualDictionaryIn(MediaExplainIn):
     context: str = Field(min_length=1, max_length=2400)
 
 
+class RegisterExploreIn(BaseModel):
+    """One meaning, asked for across the registers a learner needs to tell apart."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=2400)
+    source_language: str = Field(min_length=2, max_length=32)
+    target_language: str = Field(min_length=2, max_length=32)
+    # What the learner is writing for. It steers which registers are worth
+    # contrasting; a lab report and a message to a landlord are not the same
+    # kind of formal.
+    situation: str = Field(default="", max_length=240)
+
+    @field_validator("target_language")
+    @classmethod
+    def normalize_register_target(cls, value: str) -> str:
+        return value.strip().casefold()
+
+
 def _primary_language(value: str) -> str:
     return str(value or "").strip().split("-", 1)[0].casefold()
 
@@ -380,6 +399,138 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         ][:4],
         "question": question,
         "claim": "contextual_ai_explanation",
+    }
+
+
+# The registers Orena contrasts. Naming them keeps the answer comparable across
+# requests, and keeps "formal" from meaning something different every time.
+REGISTERS = (
+    "conversational",
+    "concise_professional",
+    "formal",
+    "academic",
+    "technical",
+)
+
+
+def _register_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "meaning": {"type": "string"},
+            "versions": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "register": {"type": "string", "enum": list(REGISTERS)},
+                        "text": {"type": "string"},
+                        "why": {"type": "string"},
+                        "signals": {
+                            "type": "array",
+                            "maxItems": 4,
+                            "items": {"type": "string"},
+                        },
+                        "use_when": {"type": "string"},
+                        "avoid_when": {"type": "string"},
+                    },
+                    "required": [
+                        "register",
+                        "text",
+                        "why",
+                        "signals",
+                        "use_when",
+                        "avoid_when",
+                    ],
+                },
+            },
+            "what_changes": {"type": "string"},
+        },
+        "required": ["meaning", "versions", "what_changes"],
+    }
+
+
+# Mounted beside the contextual explanation because it is the same family of
+# question - what does this language do, and why - asked about a whole piece
+# rather than a selection. `router` itself is not included by the app.
+@contextual_router.post("/registers")
+def explore_registers(payload: RegisterExploreIn) -> dict[str, Any]:
+    """Show one meaning across registers, and teach what moves between them.
+
+    This is deliberately not a rewrite endpoint. Every version must be
+    accompanied by the signals that put it in that register and by when it
+    would be the wrong choice, because the learning is in the difference rather
+    than in any single sentence.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    source = payload.text.strip()
+    situation = payload.situation.strip()
+    if not source:
+        raise HTTPException(422, "Text is required.")
+
+    system = (
+        f"You are a writing tutor. The learner writes {source_name}; explain in "
+        f"{target_name}. Express the SAME meaning in each register: "
+        "conversational, concise_professional, formal, academic, technical. "
+        "Keep the learner's meaning; do not add claims, details or opinions "
+        "they did not write. For each version give the concrete signals that "
+        "place it in that register - word choice, sentence length, hedging, "
+        "agency, terminology - and say when it would be the wrong choice. "
+        "Teach what moves between the versions in what_changes. Do not present "
+        "one version as correct and the others as mistakes; each is right "
+        "somewhere. Never cite a style guide, standard or corpus you were not "
+        "given."
+    )
+    user = (
+        f"LEARNER TEXT:\n{source}\n\n"
+        + (f"WRITING FOR:\n{situation}\n\n" if situation else "")
+        + "Show this meaning in each register and teach the differences."
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        schema=_register_schema(),
+        max_output_tokens=2000,
+    )
+    versions = []
+    for item in raw.get("versions", []) if isinstance(raw.get("versions"), list) else ():
+        if not isinstance(item, dict):
+            continue
+        register = str(item.get("register") or "").strip().casefold()
+        text = str(item.get("text") or "").strip()
+        if register not in REGISTERS or not text:
+            continue
+        versions.append(
+            {
+                "register": register,
+                "text": text[:1200],
+                "why": str(item.get("why") or "").strip()[:900],
+                "signals": [
+                    str(signal).strip()[:180]
+                    for signal in item.get("signals", [])
+                    if str(signal).strip()
+                ][:4],
+                "use_when": str(item.get("use_when") or "").strip()[:400],
+                "avoid_when": str(item.get("avoid_when") or "").strip()[:400],
+            }
+        )
+    return {
+        "source_language": language,
+        "target_language": target,
+        "text": source,
+        "situation": situation,
+        "meaning": str(raw.get("meaning") or "").strip()[:1200],
+        "what_changes": str(raw.get("what_changes") or "").strip()[:1600],
+        "versions": versions,
+        "available": bool(versions),
+        "claim": "register_comparison" if versions else "register_comparison_unavailable",
     }
 
 

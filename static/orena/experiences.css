@@ -825,3 +825,164 @@
 .voice-steps li {
   margin: var(--space-2) 0;
 }
+
+/* A writing review reads as work on a piece, not as a report card: the score
+   is present but the reasoning carries the page. */
+.review-headline {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.review-headline b {
+  font-family: var(--display-font);
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.review-headline span {
+  font-size: var(--text-sm);
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.review-delta {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 750;
+}
+.review-delta[data-direction='up'] {
+  color: var(--accent);
+}
+.review-delta[data-direction='down'] {
+  color: var(--muted);
+}
+.review-summary {
+  font-size: var(--text-lead);
+  line-height: 1.7;
+  max-width: var(--measure);
+}
+.review-dimensions h3,
+.review-strengths h3,
+.review-issues h3,
+.review-next h3,
+.register-changes h3 {
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: var(--space-8);
+}
+.review-dimensions dl {
+  margin: var(--space-3) 0 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.review-dimension {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+}
+.review-dimension dt {
+  font-weight: 650;
+}
+.review-dimension dd {
+  margin: 0;
+  display: contents;
+}
+.review-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.review-bar i {
+  display: block;
+  block-size: 100%;
+  background: var(--accent);
+}
+.review-dimension dd b {
+  font-family: var(--display-font);
+  font-weight: 800;
+  min-inline-size: 2.5ch;
+  text-align: right;
+}
+.review-strengths article {
+  border-left: 3px solid var(--sage);
+  padding-left: var(--space-4);
+  margin: var(--space-4) 0;
+}
+.review-strengths small,
+.review-issues .correction > small {
+  display: block;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.review-issues .correction[data-priority='high'] {
+  border-left: 3px solid var(--coral);
+  padding-left: var(--space-4);
+}
+.review-why {
+  max-width: var(--measure);
+}
+.review-next ol {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-6);
+}
+.review-next li {
+  margin: var(--space-2) 0;
+}
+
+/* One meaning across registers. Each version is a card of reasoning, never a
+   button that replaces the learner's words. */
+.registers {
+  display: grid;
+  gap: var(--space-4);
+}
+.register-ask {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.register-ask button {
+  justify-self: start;
+}
+.register-meaning {
+  font-size: var(--text-lead);
+  font-family: var(--display-font);
+  font-weight: 700;
+}
+.register-versions {
+  display: grid;
+  gap: var(--space-4);
+}
+.register-version {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+}
+.register-version h3 {
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.register-version blockquote {
+  margin: var(--space-2) 0;
+  font-size: var(--text-lead);
+}
+.register-version ul {
+  margin: var(--space-1) 0 var(--space-3);
+  padding-left: var(--space-6);
+}
+@media (max-width: 480px) {
+  .review-dimension {
+    grid-template-columns: 1fr auto;
+  }
+  .review-bar {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
