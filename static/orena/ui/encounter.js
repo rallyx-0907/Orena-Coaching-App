@@ -264,6 +264,13 @@ export async function renderEncounter(root, ctx) {
     });
   const prior = memory.value.continuation.find((x) => x.id === id);
   if (prior?.segment) model.select(prior.segment);
+  // Where this encounter actually begins and ends. A catalog excerpt is a
+  // shorter thing than the asset it was cut from, and following an excerpt to
+  // its end is still following something to its end.
+  const startOfMedia = payload.catalog?.excerpt_start_ms || 0;
+  const endOfMedia =
+    payload.catalog?.excerpt_end_ms || payload.asset.duration_ms || 0;
+  let reachedTheEnd = false;
   let practice = deeperPractice.includes(location.intent)
       ? location.intent
       : null,
@@ -288,7 +295,7 @@ export async function renderEncounter(root, ctx) {
       excerpt: model.current?.original_text,
     });
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${location.intent === 'follow' ? c.followOptional : c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="practice-space" hidden></section></section><aside class="transcript-panel"><h2>${c.transcript}</h2><ol>${model.segments.map((s, i) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span lang="${language}">${esc(s.original_text)}</span></button></li>`).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${location.intent === 'follow' ? c.followOptional : c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section><section class="practice-space" hidden></section></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><label class="meaning-toggle"><input type="checkbox" data-all-meaning><span>${esc(c.showAllMeaning)}</span></label></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><p class="meta" data-meaning-note hidden>${esc(c.allMeaningNote)}</p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -372,14 +379,50 @@ export async function renderEncounter(root, ctx) {
       String(memory.value.kept.includes(id)),
     );
   };
+  /* Understanding something should never cost the learner their place. A
+     question asked while the voice runs pauses it, and says so, so the answer
+     is read against a stopped moment rather than over the next three lines. */
+  function holdTheVoice() {
+    const playing = playerRoot.dataset.mediaClock === 'ready' && !playButton.textContent.includes('▶');
+    if (playing) togglePlayback(playerRoot, payload.playback);
+    return playing;
+  }
   root.querySelector('[data-inspect]').onclick = () => {
     const picked = selectionWithin(moment);
-    inspectPhrase(
+    const held = holdTheVoice();
+    const sheet = inspectPhrase(
       ctx,
       picked ? picked.text : model.current.original_text,
       `${origin(item, c)} · ${item.title}`,
       model.current.original_text,
     );
+    if (held && sheet) {
+      const note = document.createElement('p');
+      note.className = 'meta';
+      note.textContent = c.heldForYou;
+      sheet.querySelector('.understanding-source')?.append(note);
+    }
+  };
+  // Reading the whole thing is a way of understanding it. The meanings are the
+  // ones the lesson already ships, each with the provenance the panel states.
+  const meaningToggle = root.querySelector('[data-all-meaning]');
+  const showAllMeaning = (on) => {
+    meaningToggle.checked = on;
+    transcript
+      .querySelectorAll('.line-meaning')
+      .forEach((node) => (node.hidden = !on));
+    root.querySelector('[data-meaning-note]').hidden = !on;
+  };
+  meaningToggle.onchange = () => showAllMeaning(meaningToggle.checked);
+  root.querySelector('[data-again]').onclick = () => {
+    root.querySelector('[data-reached]').hidden = true;
+    reachedTheEnd = false;
+    seekPlayback(playerRoot, payload.playback, startOfMedia);
+    togglePlayback(playerRoot, payload.playback);
+  };
+  root.querySelector('[data-read-through]').onclick = () => {
+    showAllMeaning(true);
+    focusRegion(transcript.querySelector('h2'));
   };
   root.querySelector('[data-meaning]').onclick = async (event) => {
     const button = event.currentTarget;
@@ -458,6 +501,26 @@ export async function renderEncounter(root, ctx) {
             ),
           );
       }
+    }
+    /* Following something to its end is the whole point of this intention, and
+       until now nothing marked it: the voice simply stopped. This is not a
+       score and opens no exercise - it says what happened and offers the two
+       things a learner actually wants next, hearing it again or reading it
+       through. It arms only once the player has genuinely settled at the end. */
+    if (
+      !reachedTheEnd &&
+      !playing &&
+      Number.isFinite(endOfMedia) &&
+      endOfMedia > 0 &&
+      event.detail.time_ms >= endOfMedia - 400
+    ) {
+      reachedTheEnd = true;
+      const panel = root.querySelector('[data-reached]');
+      if (panel) {
+        panel.hidden = false;
+        focusRegion(panel.querySelector('h2'));
+      }
+      remember();
     }
     if (practice) return;
     const s = model.follow(event.detail.time_ms);

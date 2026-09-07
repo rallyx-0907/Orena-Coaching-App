@@ -652,6 +652,27 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  showAllMeaning: 'Show meaning for every line',
+  allMeaningNote:
+    'Meanings prepared for this lesson, shown beside the words they belong to.',
+  heldForYou: 'Paused so you can read this. Close it and the voice waits where you left it.',
+  reachedTheEnd: 'You followed this to the end.',
+  reachedTheEndNote:
+    'That was the point. Hear it again, read it through, or leave it here - nothing is waiting to be scored.',
+  hearItAgain: 'Hear it again',
+  readItThrough: 'Read it through with the meaning',
+});
+Object.assign(copy.zh, {
+  showAllMeaning: '每一句都显示意思',
+  allMeaningNote: '为这一课准备的意思，就放在对应的原文旁边。',
+  heldForYou: '已暂停，方便你看。关掉之后，声音还在原处等你。',
+  reachedTheEnd: '你把这一段听完了。',
+  reachedTheEndNote: '这本身就是目的。可以再听一遍，可以通读一次，也可以就到这里——没有什么在等着给你打分。',
+  hearItAgain: '再听一遍',
+  readItThrough: '对照意思通读一次',
+});
+
+Object.assign(copy.en, {
   notApplicable: 'Does not apply here',
   sourceNotApplicable: 'There was no line to match',
   coachingTitle: 'About the words you chose',

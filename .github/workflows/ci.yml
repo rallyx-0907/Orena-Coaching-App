@@ -45,6 +45,7 @@ jobs:
           node scripts/test_orena_free_voice.mjs
           node scripts/test_orena_voice_interaction.mjs
           node scripts/test_orena_spoken_coaching.mjs
+          node scripts/test_orena_pure_listening.mjs
           node scripts/test_transcript_display_units.mjs
           node scripts/test_transcript_playback.mjs
           node scripts/test_dictation_evaluator.mjs
