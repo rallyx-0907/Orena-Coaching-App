@@ -652,6 +652,29 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  recallAsk_in_context: 'What belongs here?',
+  recallAsk_say: 'Say this, then check',
+  recallAsk_reuse: 'Where would you use this?',
+  recallAsk_meaning: 'Do you still know this?',
+  recallReveal_in_context: 'Show the phrase',
+  recallReveal_say: 'Show what you meant',
+  recallReveal_reuse: 'Show the meaning',
+  recallReveal_meaning: 'Show the meaning',
+  recallUseInWriting: 'Use it in something you write',
+});
+Object.assign(copy.zh, {
+  recallAsk_in_context: '这里应该是什么？',
+  recallAsk_say: '先说出来，再看答案',
+  recallAsk_reuse: '你会在什么时候用它？',
+  recallAsk_meaning: '这个你还记得吗？',
+  recallReveal_in_context: '显示这个说法',
+  recallReveal_say: '看看你想说的',
+  recallReveal_meaning: '显示意思',
+  recallReveal_reuse: '显示意思',
+  recallUseInWriting: '在你写的东西里用用看',
+});
+
+Object.assign(copy.en, {
   kept_looked_up: 'You looked this up',
   kept_from_reading: 'From something you read',
   kept_from_listening: 'From something you followed',

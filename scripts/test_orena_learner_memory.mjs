@@ -131,4 +131,78 @@ assert.ok(
   'reopening a kept word carries its own provenance',
 );
 
-console.log('Learner memory: provenance, the route back, and reasons in EN/ZH: PASS');
+
+/* Recall shaped by how the phrase entered the learner's life. A queue of
+   identical cards teaches one thing: how to recognise a card. */
+const { recallShape, blankContext, gradable, RECALL_SHAPES } = await import(
+  '../static/orena/product/recall.js'
+);
+
+const inContext = {
+  word: 'gave way to',
+  source_fragment: 'Outside, the last shops gave way to fields.',
+  definition: 'one thing replaced by another',
+};
+
+// The origin the learner's own saving recorded decides the question.
+assert.equal(recallShape(inContext, { why: 'from_speaking' }), 'say');
+assert.equal(recallShape(inContext, { why: 'from_writing' }), 'reuse');
+assert.equal(recallShape(inContext, { why: 'from_reading' }), 'in_context');
+assert.equal(recallShape(inContext, { why: 'looked_up' }), 'in_context');
+assert.equal(recallShape(inContext, null), 'in_context', 'no provenance still recalls in context');
+// A sentence that does not contain the phrase cannot hide it, so the shape
+// falls back rather than showing a blank that conceals nothing.
+assert.equal(
+  recallShape({ word: 'x', source_fragment: 'an unrelated sentence' }, { why: 'from_reading' }),
+  'meaning',
+);
+assert.equal(recallShape({ word: 'x' }, { why: 'looked_up' }), 'meaning');
+for (const shape of RECALL_SHAPES)
+  for (const ui of ['en', 'zh']) {
+    assert.ok(copy[ui][`recallAsk_${shape}`], `${ui}: no question for "${shape}"`);
+    assert.ok(copy[ui][`recallReveal_${shape}`], `${ui}: no reveal label for "${shape}"`);
+  }
+
+// The gap is the real sentence with the real phrase withheld - never invented.
+assert.deepEqual(blankContext('Outside, the last shops gave way to fields.', 'gave way to'), {
+  before: 'Outside, the last shops ',
+  after: ' fields.',
+  phrase: 'gave way to',
+});
+assert.equal(blankContext('a b c', 'zzz'), null);
+assert.equal(blankContext('', 'x'), null);
+assert.equal(blankContext('a b c', ''), null);
+
+// Seeing a card is not recall. Nothing is graded before the learner has
+// committed to an answer.
+assert.equal(gradable(false), false);
+assert.equal(gradable(undefined), false);
+assert.equal(gradable(true), true);
+
+const recallUi = read('static/orena/ui/expression.js');
+assert.ok(
+  recallUi.includes('recallShape(current, keptNow)'),
+  'the moment asks the question its provenance calls for',
+);
+assert.ok(
+  recallUi.includes('keptProvenance(c, keptNow)'),
+  'a recalled phrase still says where it came from',
+);
+
+/* Repeated attempts must not erase what came before. The library only ever
+   accumulates: a lapse steps the interval back without deleting a success. */
+const library = read('writing_coach/becoming_library.py');
+assert.ok(
+  library.includes('next_stage=max(0,stage-1); lapses+=1'),
+  'a lapse steps back rather than resetting',
+);
+assert.ok(
+  !/success\s*-=|success\s*=\s*0/.test(library),
+  'a forgotten word never loses the successes it already earned',
+);
+assert.ok(
+  !/lapses\s*-=|lapses\s*=\s*0/.test(library),
+  'lapses are history and are not cleared by a later success',
+);
+
+console.log('Learner memory, provenance, the route back, and recall that fits its origin: PASS');

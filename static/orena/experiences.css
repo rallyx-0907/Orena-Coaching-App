@@ -1523,3 +1523,23 @@
 .kept-because a:focus-visible {
   color: var(--ink);
 }
+
+/* The sentence a phrase was met in, with the phrase itself withheld. The gap
+   is sized so the line does not reflow when the answer arrives. */
+.recall-gap {
+  font-size: var(--text-reading);
+  line-height: 2;
+}
+.recall-gap b {
+  display: inline-block;
+  min-inline-size: 5ch;
+  padding: 0 var(--space-2);
+  border-bottom: 2px solid var(--accent);
+  font-weight: 700;
+}
+.recall-moment[data-shape='say'] h2 {
+  letter-spacing: 0.2em;
+}
+.recall-moment .kept-because {
+  margin-top: var(--space-3);
+}
