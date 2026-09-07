@@ -55,10 +55,15 @@ Artwork is framed at its own measured ratio and never repainted to match a
 theme; the three scenes carrying printed caption strips are framed to the art
 above them.
 
-Dictation's hint shows the shape of the line rather than a row of marks: word
-boundaries, each word's length, words already heard as anchors, and the letters
-the learner typed correctly inside a word they have not finished. Every unfound
-word still withholds its last character, so a hint cannot become a reveal.
+Dictation's hint is the shape of the line, present from arrival and following
+what the learner types: word boundaries, each word's length, and a mark for
+every character still to find. Each character supplied correctly appears the
+moment it is supplied, wherever it sits in the word, and a word fully right is
+simply the word. Alignment runs at word level and then character level inside a
+matched word, so an insertion or deletion early in the line does not shift the
+anchors after it. Nothing is shown that the learner did not produce, and the
+deeper level opens at most one unfound character per word and never its last,
+so a hint cannot become the reveal.
 
 Shared foundation: tinted panels carry their own ink in both themes, work that
 leaves the device reports through one primitive whose retries are always wired,
@@ -75,9 +80,15 @@ Learning capabilities now built on that foundation:
   or reading it through; and the transcript can show the meaning of every line
   from the translations the lesson already ships. It tracks the spoken word
   where an asset ships word timing and falls back to the segment where it does
-  not. Dictation, Shadowing and Speaking remain optional deeper paths.
-- **Dictation** offers a hint ladder of structure and earned anchors that never
-  completes a word.
+  not. A spoken segment reads as one block - when it was said, the line, then
+  what it means underneath - so following a line and understanding it are one
+  act rather than two columns to reconcile, and the active line highlights
+  whole. Support text ships in its own writing system: Vietnamese with its
+  diacritics, held by the catalog contract. Dictation, Shadowing and Speaking
+  remain optional deeper paths.
+- **Dictation** offers a live character mask: the line takes shape from the
+  learner's own correct characters, and the hint ladder never completes a word
+  for them.
 - **Reading** carries a published library beside generated passages and the
   learner's own text. A text becomes published only with cleared rights, an
   evidence URL, a verification date and a record of what was changed - the
