@@ -343,3 +343,112 @@ def test_built_in_reading_answers_every_language_with_answerable_questions() -> 
             assert question["evidence_fragment"] in fallback["passage"], language
             assert len(question["options"]) == 4
             assert question["correct_index"] in range(4)
+
+
+# --------------------------------------------------------------------------
+# Contextual understanding, the rich case
+# --------------------------------------------------------------------------
+
+RICH_EXPLANATION = {
+    "summary": "A habitual action, said the way people usually say it.",
+    "natural_translation": "Toi thuong di bo den truong.",
+    "grammar_notes": ["Adverbs of frequency sit before the main verb.", "  "],
+    "vocabulary": [
+        {"fragment": "usually", "meaning": "most of the time", "pos": "adverb", "pronunciation": "ˈjuːʒuəli"},
+        {"fragment": "", "meaning": "dropped", "pos": "noun", "pronunciation": ""},
+    ],
+    "usage_note": "Common in everyday speech.",
+    "judgement": "natural",
+    "judgement_reason": "This is how the frequency adverb is normally placed.",
+    "register": "neutral",
+    "examples": [{"text": "I usually walk to school.", "note": "Frequency before the verb."}],
+    "counter_examples": [
+        {
+            "text": "I walk usually to school.",
+            "note": "Understandable, but not where the adverb normally goes.",
+            "judgement": "possible_but_unnatural",
+        },
+        {
+            "text": "Usually I to school walk.",
+            "note": "The verb cannot go last in English.",
+            "judgement": "grammatically_impossible",
+        },
+    ],
+    "follow_ups": ["When does the adverb go at the end?", ""],
+}
+
+
+def _explain(question: str = "") -> dict[str, Any]:
+    return media_interaction.contextual_dictionary(
+        media_interaction.ContextualDictionaryIn(
+            text="usually",
+            context="I usually walk to school.",
+            source_language="en",
+            target_language="vi",
+            question=question,
+        )
+    )
+
+
+def test_rich_explanation_keeps_examples_counter_examples_and_their_judgements(monkeypatch) -> None:
+    _provider(monkeypatch, dict(RICH_EXPLANATION))
+
+    result = _explain()
+
+    assert result["available"] is True
+    # The contextual route restates the claim as its own: an explanation
+    # grounded in visible context is a different promise from a free lookup.
+    assert result["claim"] == "contextual_dictionary"
+    assert result["examples"][0]["text"] == "I usually walk to school."
+    # "Wrong" is six different things, and a counter-example is only useful if
+    # the learner is told which one it is.
+    judgements = [item["judgement"] for item in result["counter_examples"]]
+    assert judgements == ["possible_but_unnatural", "grammatically_impossible"]
+    assert all(j in media_interaction.USAGE_JUDGEMENTS for j in judgements)
+    assert result["judgement"] == "natural"
+    assert result["judgement_reason"]
+
+
+def test_rich_explanation_drops_empty_notes_vocabulary_and_follow_ups(monkeypatch) -> None:
+    _provider(monkeypatch, dict(RICH_EXPLANATION))
+
+    result = _explain()
+
+    assert result["grammar_notes"] == ["Adverbs of frequency sit before the main verb."]
+    assert [item["fragment"] for item in result["vocabulary"]] == ["usually"]
+    assert result["follow_ups"] == ["When does the adverb go at the end?"]
+
+
+def test_counter_example_judgement_is_normalised_into_the_shared_vocabulary(monkeypatch) -> None:
+    payload = dict(RICH_EXPLANATION)
+    payload["counter_examples"] = [
+        {"text": "I walk usually to school.", "note": "n", "judgement": "sounds_a_bit_odd"}
+    ]
+    payload["judgement"] = "also_not_real"
+    _provider(monkeypatch, payload)
+
+    result = _explain()
+
+    assert result["counter_examples"][0]["judgement"] in media_interaction.USAGE_JUDGEMENTS
+    assert result["judgement"] in media_interaction.USAGE_JUDGEMENTS
+
+
+def test_a_follow_up_question_travels_with_its_selection_and_context(monkeypatch) -> None:
+    seen = _provider(monkeypatch, dict(RICH_EXPLANATION))
+
+    result = _explain(question="Why is it said this way?")
+
+    user = seen[0]["user"]
+    assert "Why is it said this way?" in user
+    assert "usually" in user and "I usually walk to school." in user
+    # Going deeper must not cost the learner the thing they were looking at.
+    assert result["question"] == "Why is it said this way?"
+    assert result["selected_text"] == "usually"
+
+
+def test_explanation_prompt_refuses_authority_it_was_not_given(monkeypatch) -> None:
+    seen = _provider(monkeypatch, dict(RICH_EXPLANATION))
+
+    _explain()
+
+    assert "explain from the language itself instead" in seen[0]["system"]
