@@ -6,12 +6,17 @@
   background: url('/orena-assets/assets/mark.svg') center / contain no-repeat;
   border-radius: 0;
 }
+/* The approved reference sheet carries a caption strip beneath the scene: the
+   artwork ends at row 128 of 152. Framing at the artwork's own ratio (261/128)
+   puts the strip outside the frame at every size, so a placement only ever
+   chooses a width and the character pixels stay untouched. */
 .companion {
-  width: 180px;
-  height: 86px;
-  background: none;
-  border-radius: 8px;
+  display: block;
+  flex: none;
+  width: 184px;
+  aspect-ratio: 261 / 128;
   overflow: hidden;
+  border-radius: var(--radius);
   transform: rotate(3deg);
 }
 .companion img {
@@ -23,10 +28,6 @@
 }
 .empty .companion {
   width: 240px;
-  height: 115px;
-}
-:root:not([data-theme='dark']) .companion {
-  mix-blend-mode: normal;
 }
 #shell {
   gap: var(--space-12);

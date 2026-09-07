@@ -141,26 +141,6 @@
   max-width: 760px;
   color: var(--muted);
 }
-.companion {
-  position: relative;
-  display: block;
-  flex: none;
-  width: 112px;
-  height: 105px;
-  overflow: hidden;
-  border-radius: 35%;
-  background: #fdfbf4;
-}
-.companion img {
-  position: absolute;
-  width: 137px;
-  max-width: none;
-  left: -11px;
-  top: -36px;
-}
-:root:not([data-theme='dark']) .companion {
-  mix-blend-mode: multiply;
-}
 .world-opening {
   display: grid;
   grid-template-columns: minmax(0, 2.15fr) minmax(0, 1fr);
@@ -1259,15 +1239,6 @@
   }
   .arrival p {
     font-size: var(--text-sm);
-  }
-  .companion {
-    width: 78px;
-    height: 84px;
-  }
-  .companion img {
-    width: 115px;
-    left: -20px;
-    top: -30px;
   }
   .arrival .companion {
     align-self: flex-start;
