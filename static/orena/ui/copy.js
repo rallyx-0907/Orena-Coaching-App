@@ -652,6 +652,13 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  conversationHowItLanded: 'How did that land?',
+});
+Object.assign(copy.zh, {
+  conversationHowItLanded: '这句话对方会怎么理解？',
+});
+
+Object.assign(copy.en, {
   comprehensionWaiting: 'questions if you want them',
   readingOnly: 'To read, no questions',
   readingOnlyNote:

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { copy } from '../static/orena/ui/copy.js';
 import {
   conversation,
   learnerTurn,
@@ -88,3 +90,44 @@ for (const language of ['en', 'zh']) {
 console.log(
   'Conversation ledger: cross-turn context, owner/language isolation, retries, stale replies, closing and recovery PASS',
 );
+
+/* The partner is instructed not to coach: a conversation where every reply
+   corrects you is not a conversation. That instruction assumes a separate
+   action exists, and it now does - on the learner's own turns only. */
+const conversationUi = readFileSync(
+  new URL('../static/orena/ui/conversation.js', import.meta.url),
+  'utf8',
+);
+assert.ok(
+  conversationUi.includes("turn.role === 'learner' ? `<button class=\"quiet\" data-coach-turn="),
+  'only a turn the learner produced can be coached',
+);
+assert.ok(
+  conversationUi.includes("if (turn?.role !== 'learner') return;"),
+  'the handler refuses a partner turn even if the markup ever offered one',
+);
+assert.ok(
+  conversationUi.includes('loadSpokenCoaching('),
+  'coaching reuses the shared surface rather than a second one',
+);
+// What the learner was answering travels with the words: an ordinary reply to
+// a question should not be read as an incomplete thought.
+assert.ok(
+  conversationUi.includes('[state.situation, state.turns[index - 1]?.text]'),
+  'coaching is told what the turn was answering',
+);
+// The backend keeps its side of the same bargain.
+const partner = readFileSync(
+  new URL('../writing_coach/conversation.py', import.meta.url),
+  'utf8',
+);
+assert.ok(
+  partner.includes('Do not correct or coach unless asked'),
+  'the partner must stay a partner',
+);
+assert.ok(
+  partner.includes('Never claim to be a real person'),
+  'a simulated partner says it is simulated',
+);
+for (const ui of ['en', 'zh'])
+  assert.ok(copy[ui].conversationHowItLanded, `${ui}: no label for the coaching action`);

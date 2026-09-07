@@ -1,6 +1,7 @@
 import { esc, dialog, focusRegion } from './html.js';
 import { pageIntro, progressReporter } from './patterns.js';
 import { openUnderstanding } from './understanding.js';
+import { loadSpokenCoaching } from './spoken-coaching.js';
 import { mountVoiceResponse } from './voice-response.js';
 import {
   conversation,
@@ -49,7 +50,7 @@ export function renderConversation(root, ctx) {
   const draw = () => {
     const pending = pendingTurn(state),
       full = state.turns.length >= MAX_CONVERSATION_TURNS;
-    root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'speaking' })}">← ${esc(c.speakingName)}</a><span class="meta">${esc(memory.available ? c.conversationLocal : c.memoryUnavailable)}</span></div>${pageIntro({ title: state.title, note: state.situation, eyebrow: c.conversationTitle })}<p class="notice">${esc(c.conversationTruth)}</p><ol class="conversation-turns">${state.turns.map((turn, index) => `<li class="conversation-turn" data-role="${turn.role}"><small>${esc(turn.role === 'partner' ? c.conversationPartner : turn.origin === 'speech_transcript' ? c.conversationSpoken : c.conversationYou)}</small><p lang="${language}">${esc(turn.text)}</p>${turn.meaning && turn.support === ctx.support ? `<details><summary>${esc(c.conversationMeaning)}</summary><p lang="${esc(turn.support)}">${esc(turn.meaning)}</p></details>` : ''}<button class="quiet" data-inspect-turn="${index}">${esc(c.lookCloser)} ↗</button></li>`).join('')}</ol><div class="conversation-composer">${state.ended ? `<h2>${esc(c.conversationEnded)}</h2><p>${esc(c.conversationEndNote)}</p>` : full ? `<p>${esc(c.conversationFull)}</p>` : pending ? `<p>${esc(c.conversationWaiting)}</p><button class="outline" data-retry>${esc(c.retry)}</button>` : `<form data-reply><label for="conversationReply">${esc(c.conversationReply)}</label><textarea id="conversationReply" name="reply" rows="3" maxlength="2400" required lang="${language}">${esc(memory.value.expressions[state.id] || '')}</textarea><div class="button-row"><button class="primary">${esc(c.conversationSend)} →</button><button type="button" class="outline" data-voice>${esc(c.record)}</button></div></form>`}<p role="status" data-conversation-status></p><div class="button-row">${!state.ended ? `<button class="quiet" data-end>${esc(c.conversationEnd)}</button>` : ''}<button class="quiet" data-new>${esc(c.conversationNew)}</button></div></div>`;
+    root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'speaking' })}">← ${esc(c.speakingName)}</a><span class="meta">${esc(memory.available ? c.conversationLocal : c.memoryUnavailable)}</span></div>${pageIntro({ title: state.title, note: state.situation, eyebrow: c.conversationTitle })}<p class="notice">${esc(c.conversationTruth)}</p><ol class="conversation-turns">${state.turns.map((turn, index) => `<li class="conversation-turn" data-role="${turn.role}"><small>${esc(turn.role === 'partner' ? c.conversationPartner : turn.origin === 'speech_transcript' ? c.conversationSpoken : c.conversationYou)}</small><p lang="${language}">${esc(turn.text)}</p>${turn.meaning && turn.support === ctx.support ? `<details><summary>${esc(c.conversationMeaning)}</summary><p lang="${esc(turn.support)}">${esc(turn.meaning)}</p></details>` : ''}<button class="quiet" data-inspect-turn="${index}">${esc(c.lookCloser)} ↗</button>${turn.role === 'learner' ? `<button class="quiet" data-coach-turn="${index}">${esc(c.conversationHowItLanded)} ↗</button><div data-turn-coaching="${index}"></div>` : ''}</li>`).join('')}</ol><div class="conversation-composer">${state.ended ? `<h2>${esc(c.conversationEnded)}</h2><p>${esc(c.conversationEndNote)}</p>` : full ? `<p>${esc(c.conversationFull)}</p>` : pending ? `<p>${esc(c.conversationWaiting)}</p><button class="outline" data-retry>${esc(c.retry)}</button>` : `<form data-reply><label for="conversationReply">${esc(c.conversationReply)}</label><textarea id="conversationReply" name="reply" rows="3" maxlength="2400" required lang="${language}">${esc(memory.value.expressions[state.id] || '')}</textarea><div class="button-row"><button class="primary">${esc(c.conversationSend)} →</button><button type="button" class="outline" data-voice>${esc(c.record)}</button></div></form>`}<p role="status" data-conversation-status></p><div class="button-row">${!state.ended ? `<button class="quiet" data-end>${esc(c.conversationEnd)}</button>` : ''}<button class="quiet" data-new>${esc(c.conversationNew)}</button></div></div>`;
     root.querySelectorAll('[data-inspect-turn]').forEach(
       (button) =>
         (button.onclick = () => {
@@ -64,6 +65,32 @@ export function renderConversation(root, ctx) {
               .slice(0, 2400),
             title: state.title,
           });
+        }),
+    );
+    /* The partner is told not to coach - a conversation where every reply
+       corrects you is not a conversation. This is the separate action that
+       instruction assumes: asked for, about the learner's own words, and
+       answered by the same coaching surface the Speaking room uses. */
+    root.querySelectorAll('[data-coach-turn]').forEach(
+      (button) =>
+        (button.onclick = () => {
+          const index = Number(button.dataset.coachTurn),
+            turn = state.turns[index];
+          if (turn?.role !== 'learner') return;
+          button.disabled = true;
+          void loadSpokenCoaching(
+            root.querySelector(`[data-turn-coaching="${index}"]`),
+            ctx,
+            {
+              transcript: turn.text,
+              // What they were answering, so an ordinary reply to a question is
+              // not read as an incomplete thought.
+              situation: [state.situation, state.turns[index - 1]?.text]
+                .filter(Boolean)
+                .join('\n')
+                .slice(0, 1200),
+            },
+          );
         }),
     );
     root.querySelector('[data-retry]')?.addEventListener('click', send);
