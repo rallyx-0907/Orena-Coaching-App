@@ -161,6 +161,29 @@ for (const name of ['foundation', 'world', 'experiences']) {
     `${name}: use the text scale`,
   );
 }
+// Every topic the catalog actually ships is named in both languages. A missing
+// label is silent - the encounter simply falls back to the generic line - so
+// the gap only ever shows up as one language quietly losing its framing.
+const catalog = JSON.parse(
+  fs.readFileSync('writing_coach/content/listening_catalog.v1.json', 'utf8'),
+);
+const catalogTopics = new Set();
+(function collect(node) {
+  if (Array.isArray(node)) return node.forEach(collect);
+  if (!node || typeof node !== 'object') return;
+  if (typeof node.topic === 'string') catalogTopics.add(node.topic);
+  Object.values(node).forEach(collect);
+})(catalog);
+assert.ok(catalogTopics.size, 'the catalog should declare topics');
+for (const topic of catalogTopics) {
+  for (const ui of ['en', 'zh']) {
+    assert.ok(
+      copy[ui][`topic_${topic}`],
+      `${ui}: catalog topic "${topic}" has no label, so its encounters lose the framing the other language keeps`,
+    );
+  }
+}
+
 // Work that leaves the device reports in one voice, and a retry it offers is
 // always already wired - a retry button rendered without a handler is the
 // defect this primitive exists to make impossible.
