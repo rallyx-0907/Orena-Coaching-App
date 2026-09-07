@@ -561,3 +561,32 @@
     transition: none;
   }
 }
+
+/* The shape of a line the learner is still reconstructing. Anchors read as
+   ordinary text because they are the learner's own work; the marks for what is
+   still missing recede, so the panel reads as scaffolding rather than a score. */
+.hint-line {
+  padding: var(--space-4) var(--space-6);
+  margin-block: var(--space-4);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-radius: var(--radius);
+}
+.hint-slots {
+  font-family: var(--display-font);
+  font-size: var(--text-reading);
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  margin: var(--space-2) 0 var(--space-3);
+}
+.hint-slots b {
+  font-weight: 800;
+}
+.hint-slots i {
+  font-style: normal;
+  color: var(--on-sage-muted);
+  opacity: 0.75;
+}
+.hint-line .meta {
+  color: var(--on-sage-muted);
+}

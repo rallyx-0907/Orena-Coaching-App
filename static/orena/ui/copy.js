@@ -503,3 +503,22 @@ Object.assign(copy.zh, {
   recordingInProgress: '请先结束或停止录音。',
   curated: '来自 Orena',
 });
+
+Object.assign(copy.en, {
+  hint: 'Give me a hint',
+  hintMore: 'A little more',
+  hintTitle: 'The shape of the line',
+  hintNote:
+    'Marks stand for what is still yours to find. Words you have already heard correctly stay in place as anchors.',
+  hintAnchors: 'found so far',
+  hintComplete: 'You have every word. Check it.',
+});
+Object.assign(copy.zh, {
+  hint: '给我一点提示',
+  hintMore: '再多一点',
+  hintTitle: '这句话的轮廓',
+  hintNote:
+    '方块代表还需要你找出的部分。你已经听对的词会留在原位，作为线索。',
+  hintAnchors: '已找到',
+  hintComplete: '所有词都对了，检查一下吧。',
+});

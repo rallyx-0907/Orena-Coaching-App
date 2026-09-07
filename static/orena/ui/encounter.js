@@ -29,6 +29,10 @@ import {
   activeWordIndex,
   wordSpans,
 } from '../capabilities/word-timeline.js';
+import {
+  dictationHint,
+  MAX_HINT_LEVEL,
+} from '../capabilities/dictation-hints.js';
 import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import {
   acquireMedia,
@@ -559,12 +563,39 @@ export async function renderEncounter(root, ctx) {
       openPractice(intent);
     };
     if (intent === 'dictation') {
-      body.innerHTML = `<button class="outline" data-listen>${c.replay} ↺</button><form id="dictationForm"><label for="reconstruction">${c.dictatePrompt}</label><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="3" required></textarea><div class="button-row"><button class="primary">${c.check}</button><button type="button" data-reveal>${c.reveal}</button></div></form><div class="comparison" aria-live="polite"></div><p class="meta">${c.comparisonNote}</p><p data-evidence-status role="status"></p>`;
+      body.innerHTML = `<button class="outline" data-listen>${c.replay} ↺</button><form id="dictationForm"><label for="reconstruction">${c.dictatePrompt}</label><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="3" required></textarea><div class="button-row"><button class="primary">${c.check}</button><button type="button" data-hint>${c.hint}</button><button type="button" data-reveal>${c.reveal}</button></div></form><section class="hint-line" data-hint-panel hidden></section><div class="comparison" aria-live="polite"></div><p class="meta">${c.comparisonNote}</p><p data-evidence-status role="status"></p>`;
       body.querySelector('[data-listen]').onclick = playLine;
+      /* The hint is a working aid, not an outcome: it lives for this visit
+         only and never becomes evidence. Revealing the answer stays the
+         separate, recorded act it already was. */
+      let hintLevel = 0;
+      const hintPanel = body.querySelector('[data-hint-panel]');
+      const hintButton = body.querySelector('[data-hint]');
+      const paintHint = () => {
+        if (!hintLevel) return;
+        const hint = dictationHint({
+          expected: target.spoken_text || target.original_text,
+          answer: body.querySelector('textarea').value,
+          source_language: language,
+          level: hintLevel,
+        });
+        hintPanel.hidden = false;
+        hintPanel.innerHTML = `<small>${esc(c.hintTitle)}</small><p class="hint-slots" lang="${language}">${hint.slots.map((slot) => (slot.kind === 'anchor' ? `<b>${esc(slot.text)}</b>` : slot.kind === 'slot' ? `<i>${esc(slot.text)}</i>` : esc(slot.text))).join('')}</p><p class="meta">${esc(hint.complete ? c.hintComplete : c.hintNote)}${hint.anchors ? ` · ${hint.anchors}/${hint.total} ${esc(c.hintAnchors)}` : ''}</p>`;
+        hintButton.textContent =
+          hintLevel >= MAX_HINT_LEVEL ? c.hintMore : c.hint;
+        hintButton.disabled = hintLevel >= MAX_HINT_LEVEL;
+      };
+      hintButton.onclick = () => {
+        hintLevel = Math.min(MAX_HINT_LEVEL, hintLevel + 1);
+        paintHint();
+      };
       const answer = body.querySelector('textarea'),
         key = `${payload.asset.asset_id}:${target.segment_id}`;
       answer.value = memory.value.answers[key] || '';
-      answer.oninput = () => memory.write(key, answer.value, 'answers');
+      answer.oninput = () => {
+        memory.write(key, answer.value, 'answers');
+        paintHint();
+      };
       body.querySelectorAll('form button').forEach((x) => (x.disabled = true));
       let previous = {},
         priorRead = false;
