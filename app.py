@@ -1345,10 +1345,19 @@ def _grammar_storage_key(lesson: dict[str, Any]) -> str:
 @app.get("/api/library/grammar")
 def api_grammar_library() -> dict[str, Any]:
     course = active_grammar_course()
+    knowledge_by_id = active_grammar_knowledge_by_id()
     completed = _learning_repository.completed_grammar_ids()
     lessons = []
     for item in course:
         row = dict(item)
+        # A real example is the learner-facing entry into a concept. Preserve
+        # the catalog's identity/title while avoiding a second authored syllabus.
+        examples = (knowledge_by_id.get(str(item['id']), {}).get('lesson') or {}).get('examples') or []
+        example = next((x for x in examples if x.get('target') or x.get('en') or x.get('zh')), None)
+        row['preview'] = {
+            'text': str(example.get('target') or example.get('en') or example.get('zh')),
+            'pinyin': str(example.get('pinyin') or ''),
+        } if example else None
         row["completed"] = _grammar_storage_key(row) in completed
         lessons.append(row)
     return {

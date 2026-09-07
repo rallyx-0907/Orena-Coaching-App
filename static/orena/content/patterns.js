@@ -127,4 +127,128 @@ const patterns = {
     },
   ],
 };
+patterns.en.push(
+  {
+    id: 'a2-past-simple-regular-verbs',
+    title: { en: 'Then, or usually?', zh: '那一次，还是平时？' },
+    line: 'Yesterday I walked home.',
+    parts: ['Yesterday', 'walked'],
+    note: {
+      en: 'A completed event at a finished past time uses the past simple. A present routine answers a different question: I walk home every day.',
+      zh: '已经结束的过去时间里发生的事情用一般过去时。现在的习惯是另一回事：I walk home every day。',
+      vi: 'Một sự việc đã kết thúc ở thời điểm quá khứ dùng quá khứ đơn. Thói quen hiện tại là chuyện khác: I walk home every day.',
+    },
+    contrast: {
+      instead: 'Yesterday I walk home.',
+      judgement: 'wrong_for_intended_meaning',
+      why: {
+        en: 'For an ordinary account of yesterday, walked places the event in the past. Narrative present can be a deliberate storytelling choice; it is not the neutral account intended here.',
+        zh: '普通地讲昨天的事，用 walked 表明事情发生在过去。故事中有时刻意使用现在时，但不是这里想表达的普通叙述。',
+        vi: 'Khi kể thông thường về hôm qua, walked đặt sự việc vào quá khứ. Hiện tại kể chuyện là một lựa chọn có chủ ý, không phải cách kể trung tính ở đây.',
+      },
+    },
+  },
+  {
+    id: 'a2-present-perfect-vs-past-simple',
+    title: { en: 'An experience, or a date?', zh: '一次经历，还是一个日期？' },
+    line: 'I visited London last year.',
+    parts: ['visited', 'last year'],
+    note: {
+      en: 'Name a finished past time with the past simple. I have visited London presents the experience without saying when.',
+      zh: '说出已经结束的过去时间时，用一般过去时。I have visited London 表达有过这种经历，不说明是什么时候。',
+      vi: 'Khi nêu thời gian quá khứ đã kết thúc, dùng quá khứ đơn. I have visited London nói về trải nghiệm, không nói khi nào.',
+    },
+    contrast: {
+      instead: 'I have visited London last year.',
+      judgement: 'grammatically_impossible',
+      why: {
+        en: 'In standard English, last year fixes a finished past period, which conflicts with this present-perfect construction. Use visited here.',
+        zh: '标准英语中，last year 指定了已经结束的过去时间，与这里的现在完成时结构冲突。此处用 visited。',
+        vi: 'Trong tiếng Anh chuẩn, last year là thời gian quá khứ đã kết thúc, không đi với cấu trúc hiện tại hoàn thành này. Dùng visited.',
+      },
+    },
+  },
+  {
+    id: 'a2-first-conditional',
+    title: { en: 'Make a plan with room for change', zh: '给计划留一点余地' },
+    line: 'If it rains tomorrow, I will stay home.',
+    parts: ['If it rains', 'I will stay home'],
+    note: {
+      en: 'For a possible future condition, use the present form after if and put the prediction in the main clause.',
+      zh: '表达未来可能出现的条件时，if 从句用现在时，主句表达预测。',
+      vi: 'Với điều kiện có thể xảy ra trong tương lai, dùng hiện tại sau if và đặt dự đoán ở mệnh đề chính.',
+    },
+    contrast: {
+      instead: 'If it will rain tomorrow, I will stay home.',
+      judgement: 'contextually_inappropriate',
+      why: {
+        en: 'This is an ordinary weather condition, not willingness or insistence. Here rains supplies the condition; will belongs in the prediction.',
+        zh: '这里说普通的天气条件，不是意愿或坚持。用 rains 提供条件，用 will 表达主句的预测。',
+        vi: 'Đây là điều kiện thời tiết thông thường, không phải ý muốn hay sự khăng khăng. Rains nêu điều kiện; will nằm trong dự đoán.',
+      },
+    },
+  },
+);
+patterns.zh.push(
+  {
+    id: 'zh-hsk2-1-kinh-nghi-m',
+    title: { en: 'Something you have experienced', zh: '你有过这样的经历吗？' },
+    line: '我没去过北京。',
+    parts: ['没', '去过', '北京'],
+    note: {
+      en: '过 after a verb presents an experience. To say that experience has not happened, use 没 before the verb.',
+      zh: '动词后的“过”表示经历。说没有这种经历时，在动词前用“没”。',
+      vi: '过 sau động từ nói về trải nghiệm. Để nói chưa có trải nghiệm đó, dùng 没 trước động từ.',
+    },
+    contrast: {
+      instead: '我不去过北京。',
+      judgement: 'grammatically_impossible',
+      why: {
+        en: '不 does not negate this experiential 过 construction. 没去过 means you have not been; 不去 means you do not or will not go.',
+        zh: '这里的经历结构“过”不用“不”来否定。“没去过”表示没有经历；“不去”表示不去做或不愿去。',
+        vi: '不 không phủ định cấu trúc trải nghiệm 过 này. 没去过 là chưa từng đi; 不去 là không đi hoặc sẽ không đi.',
+      },
+    },
+  },
+  {
+    id: 'zh-hsk2-4-so-s-nh',
+    title: { en: 'Notice a difference', zh: '说说哪里不一样' },
+    line: '今天比昨天冷。',
+    parts: ['今天', '比昨天', '冷'],
+    note: {
+      en: '比 introduces what you compare against. The adjective follows the comparison: today is colder than yesterday.',
+      zh: '“比”引出比较对象，形容词放在比较结构后面：今天比昨天冷。',
+      vi: '比 đưa ra đối tượng so sánh. Tính từ đứng sau phần so sánh: hôm nay lạnh hơn hôm qua.',
+    },
+    contrast: {
+      instead: '今天比昨天很冷。',
+      judgement: 'grammatically_impossible',
+      why: {
+        en: 'Standard 比 comparisons do not put 很 before this adjective. You can say 冷多了 to express a much larger difference.',
+        zh: '标准的“比”字句这里不在形容词前加“很”。“比昨天冷”已经表达了比较，差别很大时可以说“比昨天冷多了”。',
+        vi: 'Trong câu so sánh 比 chuẩn, không thêm 很 trước tính từ ở đây. Có thể nói 冷多了 để nhấn mạnh chênh lệch lớn.',
+      },
+    },
+  },
+  {
+    id: 'zh-hsk3-1-n-n-t-ng',
+    title: { en: 'Where did you put it?', zh: '你把它放在哪儿了？' },
+    line: '我把钥匙放在桌上了。',
+    parts: ['把钥匙', '放在桌上'],
+    note: {
+      en: '把 brings a known object forward, then tells what happened to it. The rest of the sentence must actually say what you did with the keys.',
+      zh: '“把”把已知的对象提前，后面说清楚这个对象发生了什么变化或去了哪里。',
+      vi: '把 đưa tân ngữ đã xác định lên trước, rồi nói điều gì xảy ra với nó. Phần sau phải cho biết bạn đã làm gì với chìa khóa.',
+    },
+    contrast: {
+      instead: '我把钥匙。',
+      judgement: 'grammatically_impossible',
+      why: {
+        en: 'This stops after naming the object. Add the action and its outcome or destination, such as 放在桌上了.',
+        zh: '这句话只说出了对象，还没有说做了什么。“把”字句需要补上动作和结果或位置，例如“放在桌上了”，让对方知道钥匙去了哪里。',
+        vi: 'Câu này dừng ở việc nêu tân ngữ. Cần thêm hành động và kết quả hoặc vị trí, như 放在桌上了.',
+      },
+    },
+  },
+);
 export const patternsFor = (language) => patterns[language] || [];

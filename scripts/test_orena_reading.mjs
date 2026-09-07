@@ -65,7 +65,16 @@ for (const language of ['en', 'zh']) {
   assert.match(markup, /^<details/);
   assert.ok(!markup.includes('<details open'));
   assert.match(markup, /&lt;one&gt;/);
-  assert.equal(comprehensionSection(copy[language], []), '');
+  /* A text with no questions used to render nothing at all, which is
+     indistinguishable from a check that failed to load. Pure reading is valid,
+     so the absence is now stated: still no form, but no silence either. */
+  const none = comprehensionSection(copy[language], []);
+  assert.ok(!none.includes('<details'), 'no questions means no check to open');
+  assert.ok(!none.includes('<form'), 'no questions means nothing to answer');
+  assert.ok(
+    none.includes(copy[language].readingOnlyNote),
+    'a text without questions says so',
+  );
 }
 for (const id of [
   '',
@@ -151,4 +160,59 @@ assert.ok(
 
 console.log(
   'Reading: source truth, EN/ZH, paragraph fidelity, optional comprehension, readable contract PASS',
+);
+
+/* Optional comprehension, made legible. Pure reading is a complete thing to
+   do, so a text without questions says so rather than looking identical to one
+   whose questions failed to load - and nothing is fabricated to make every
+   text carry a check. */
+const { checkLabel } = await import('../static/orena/ui/reading.js');
+
+for (const ui of ['en', 'zh']) {
+  const c = copy[ui];
+  assert.ok(c.readingOnly, `${ui}: no label for a text without questions`);
+  assert.ok(c.readingOnlyNote, `${ui}: the encounter cannot say a text has none`);
+  assert.ok(c.comprehensionWaiting, `${ui}: no label for waiting questions`);
+  assert.notEqual(c.readingOnly, c.comprehensionDone, `${ui}: two states read alike`);
+
+  // A list entry from the API states its count.
+  assert.equal(checkLabel(c, { question_count: 4 }), `4 ${c.comprehensionWaiting}`);
+  assert.equal(checkLabel(c, { question_count: 0 }), c.readingOnly);
+  // A full item knows its own absence: `readable()` sets the field only when
+  // there are questions, so no field on a whole text means none.
+  assert.equal(checkLabel(c, { paragraphs: ['One.'] }), c.readingOnly);
+  assert.equal(
+    checkLabel(c, { paragraphs: ['One.'], questions: [{ question: 'q' }] }),
+    `1 ${c.comprehensionWaiting}`,
+  );
+  assert.equal(checkLabel(c, { text: 'A text the learner brought.' }), c.readingOnly);
+  // Having answered is worth saying over the count.
+  assert.equal(checkLabel(c, { question_count: 4, attempted: true }), c.comprehensionDone);
+  // A stub carrying neither says nothing: "no questions" and "not loaded yet"
+  // are different claims, and only one of them is knowable here.
+  assert.equal(checkLabel(c, { title: 'Only a title' }), '');
+}
+
+// The encounter says it too, in place of an empty section.
+const comprehension = readFileSync(
+  new URL('../static/orena/ui/comprehension.js', import.meta.url),
+  'utf8',
+);
+assert.ok(
+  comprehension.includes('comprehension-absent'),
+  'a text with no questions must say so rather than render nothing',
+);
+assert.ok(
+  comprehension.includes('c.readingOnlyNote'),
+  'the absence is stated in copy, not left to the learner to infer',
+);
+
+// The count travels from the API rather than being guessed from the id.
+const readingService = readFileSync(
+  new URL('../writing_coach/becoming_reading.py', import.meta.url),
+  'utf8',
+);
+assert.ok(
+  readingService.includes('"question_count":len(_safe_json(row["questions_json"],[]))'),
+  'the sessions list must report how many questions a passage carries',
 );

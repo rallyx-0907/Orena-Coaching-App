@@ -79,6 +79,10 @@ export function readingText(session, language) {
 // one, and never enough to pretend the passage has been read.
 export function readingEntry(item, language) {
   return {
+    // Whether a check is waiting, known without fetching the whole session.
+    question_count: Number.isInteger(item.question_count)
+      ? item.question_count
+      : null,
     id: readingId(item.id),
     title: String(item.title || '').slice(0, 240),
     kind: 'text',
@@ -116,7 +120,9 @@ export function readingEntry(item, language) {
      topic       what it is about, when the source actually chose a subject
      material    the form it takes - an article, a book excerpt, a report
      phrases     prepared language notes, for authored texts that have them
-     questions   optional comprehension, each with an evidence fragment
+     questions   optional comprehension, each with an evidence fragment. Pure
+                 reading is valid: a text with none says so, rather than having
+                 questions invented for it so every text looks alike
      source      where it came from and on what terms - see `readableSource`
      generation_mode  'generated' | 'built-in', for text a model produced
 

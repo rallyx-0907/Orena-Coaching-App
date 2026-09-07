@@ -7,6 +7,7 @@ import {
 import { esc, safeExternal, dialog, status, focusRegion } from './html.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
+import { publishedReading } from '../content/reading-library.js';
 import { mountVoiceResponse } from './voice-response.js';
 import { link, deeperPractice } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
@@ -71,7 +72,7 @@ function textEncounter(root, ctx, item) {
       .map((p) => `<p>${lines(p)}</p>`)
       .join(
         '',
-      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
+      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
     root.querySelector('[data-keep]').onclick = () => {
       memory.keep(item.id);
       paint();
@@ -181,6 +182,12 @@ function waitingMedia(root, ctx, payload) {
 export async function renderEncounter(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
   const id = location.id;
+  if (id.startsWith('published:')) {
+    const item = publishedReading(id, language);
+    if (!item) throw Error(c.unavailable);
+    textEncounter(root, ctx, item);
+    return;
+  }
   if (id.startsWith('reading:')) {
     const sessionId = readingSessionId(id);
     if (!sessionId) throw Error(c.unavailable);
@@ -203,7 +210,8 @@ export async function renderEncounter(root, ctx) {
         ...found,
         id,
         language,
-        paragraphs: found.paragraphs || String(found.text || '').split(/\n\s*\n/),
+        paragraphs:
+          found.paragraphs || String(found.text || '').split(/\n\s*\n/),
       });
     if (!item) throw Error(c.unavailable);
     textEncounter(root, ctx, item);
@@ -393,7 +401,9 @@ export async function renderEncounter(root, ctx) {
      question asked while the voice runs pauses it, and says so, so the answer
      is read against a stopped moment rather than over the next three lines. */
   function holdTheVoice() {
-    const playing = playerRoot.dataset.mediaClock === 'ready' && !playButton.textContent.includes('▶');
+    const playing =
+      playerRoot.dataset.mediaClock === 'ready' &&
+      !playButton.textContent.includes('▶');
     if (playing) togglePlayback(playerRoot, payload.playback);
     return playing;
   }

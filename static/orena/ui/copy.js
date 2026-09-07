@@ -652,6 +652,18 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  comprehensionWaiting: 'questions if you want them',
+  readingOnly: 'To read, no questions',
+  readingOnlyNote:
+    'This one comes without questions. Reading it through was the point.',
+});
+Object.assign(copy.zh, {
+  comprehensionWaiting: '道题，想做再做',
+  readingOnly: '只是阅读，没有题目',
+  readingOnlyNote: '这一篇没有配题目。把它读完，本身就是目的。',
+});
+
+Object.assign(copy.en, {
   notThis: 'What learners write instead',
 });
 Object.assign(copy.zh, {
@@ -739,6 +751,24 @@ Object.assign(copy.zh, {
 
 Object.assign(copy.en, {
   readingName: 'Read',
+  searchCollection: 'Find something',
+  collectionAll: 'All',
+  collectionResults: 'results',
+  collectionMore: 'See more',
+  revisionTry: 'Try a revision',
+  revisionTryNote:
+    'Try your own wording before adopting a suggestion. This experiment is not a new assessment.',
+  revisionYourVersion: 'How would you say it?',
+  revisionExplore: 'Explore this wording',
+  revisionUse: 'Use in my draft',
+  revisionQuestion:
+    'Does my wording preserve the intended meaning and fit this context? Compare with the original:',
+  revisionAmbiguous:
+    'The original occurs more than once, or has already changed. Edit the intended place directly in your draft.',
+  collectionOrigin: 'Where it came from',
+  collectionLevel: 'Level',
+  publishedText: 'Published text · Orena selection',
+  readingRights: 'Edition & text treatment',
   voiceTitle: 'Something only you can say.',
   conversationTitle: 'Stay in the conversation',
   conversationStart: 'Make this a conversation',
@@ -836,6 +866,22 @@ Object.assign(copy.en, {
 });
 Object.assign(copy.zh, {
   readingName: '阅读',
+  searchCollection: '找一点想看的',
+  collectionAll: '全部',
+  collectionResults: '项结果',
+  collectionMore: '再看一些',
+  revisionTry: '试着改一改',
+  revisionTryNote: '采纳建议前，先试试自己的表达。这个尝试不是一次新的评分。',
+  revisionYourVersion: '你会怎么说？',
+  revisionExplore: '看看这种表达是否合适',
+  revisionUse: '放入我的草稿',
+  revisionQuestion: '我的表达是否保留了原意，是否适合这个语境？请与原文比较：',
+  revisionAmbiguous:
+    '原文在草稿中出现了多次，或已经被改动。请直接在草稿里修改你想改的地方。',
+  collectionOrigin: '内容来源',
+  collectionLevel: '级别',
+  publishedText: '出版作品 · Orena 选读',
+  readingRights: '版本与文本处理',
   voiceTitle: '有些话，只有你能说。',
   conversationTitle: '让对话继续',
   conversationStart: '从这里开始一段对话',

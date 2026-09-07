@@ -26,12 +26,14 @@ export function focusRegion(element) {
   element.setAttribute('tabindex', '-1');
   element.focus({ preventScroll: true });
 }
+let dialogSequence = 0;
 export function dialog({ title, body, onReady }) {
   const opener = document.activeElement;
   const element = document.createElement('dialog');
   element.className = 'sheet';
-  element.setAttribute('aria-labelledby', 'sheetTitle');
-  element.innerHTML = `<form method="dialog"><button class="close" aria-label="Close / 关闭">×</button></form><h2 id="sheetTitle">${esc(title)}</h2>${body}`;
+  const titleId = `orena-sheet-title-${++dialogSequence}`;
+  element.setAttribute('aria-labelledby', titleId);
+  element.innerHTML = `<form method="dialog"><button class="close" aria-label="Close / 关闭">×</button></form><h2 id="${titleId}">${esc(title)}</h2>${body}`;
   document.body.append(element);
   element.addEventListener(
     'close',

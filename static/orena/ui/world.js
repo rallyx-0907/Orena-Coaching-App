@@ -11,6 +11,11 @@ import {
 import { contentFor } from '../content/texts.js';
 import { readingEntry, readingSessionId } from '../content/reading.js';
 import { openReadingRequest, readingRow } from './reading.js';
+import {
+  publishedReadings,
+  filterReadings,
+} from '../content/reading-library.js';
+import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -62,17 +67,27 @@ export async function renderWorld(root, ctx) {
   // The recent list is bounded. Kept passages must not disappear simply
   // because the learner requested twelve newer ones.
   if (location.page === 'content') {
-    const missing = memory.value.kept.filter(id => readingSessionId(id) && !reading.some(x => x.id === id));
-    const restored = await Promise.allSettled(missing.map(id => api.readingSession(readingSessionId(id))));
-    if(!alive()) return;
-    for(const item of restored) {
-      if(item.status === 'rejected') readingFailed = true;
-      else if(item.value.found && item.value.session?.language_code === language) reading.push(readingEntry(item.value.session,language));
+    const missing = memory.value.kept.filter(
+      (id) => readingSessionId(id) && !reading.some((x) => x.id === id),
+    );
+    const restored = await Promise.allSettled(
+      missing.map((id) => api.readingSession(readingSessionId(id))),
+    );
+    if (!alive()) return;
+    for (const item of restored) {
+      if (item.status === 'rejected') readingFailed = true;
+      else if (
+        item.value.found &&
+        item.value.session?.language_code === language
+      )
+        reading.push(readingEntry(item.value.session, language));
     }
   }
   // Everything that is read rather than listened to, in one list.
-  const readable = [...reading, ...text, ...memory.value.imports];
+  const published = publishedReadings(language);
+  const readable = [...published, ...reading, ...text, ...memory.value.imports];
   const all = [
+    ...published,
     ...media,
     ...reading,
     ...text,
@@ -96,10 +111,20 @@ export async function renderWorld(root, ctx) {
   if (location.page === 'practice') {
     root.innerHTML = `${headline(intent ? c[`${intent}Intent`] || c[intent] : c.choose, intent ? c[`${intent}IntentNote`] || c[`${intent}Note`] : c.chooseNote, c.practice)}${intentNavigation(c, intent)}${!intent ? `<section class="practice-invitation"><span class="big-voice" aria-hidden="true">“</span><div><h2>${c.shadowing}</h2><p>${c.shadowingNote}</p><a class="primary" href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} →</a></div><div class="practice-small"><h3>${c.dictation}</h3><p>${c.dictationNote}</p><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} →</a></div></section>` : ''}${
       intent === 'reading'
-        ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${
+        ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
+            c,
+            {
+              facet: c.collectionOrigin,
+              options: [
+                { value: 'provided', label: c.provided },
+                { value: 'generated', label: c.generated },
+                { value: 'imported', label: c.imported },
+              ],
+            },
+          )}<div data-reading-results>${
             readable.map((x) => readingRow(x, c)).join('') ||
             `<p>${c.empty}</p>`
-          }</section>`
+          }</div></section>`
         : `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
             practiceMedia
               .filter((x) => supports(x, intent))
@@ -135,7 +160,9 @@ export async function renderWorld(root, ctx) {
     .forEach((x) => (x.onclick = () => openReadingRequest(ctx)));
   root
     .querySelectorAll('[data-retry]')
-    .forEach(button => button.addEventListener('click', () => renderWorld(root, ctx)));
+    .forEach((button) =>
+      button.addEventListener('click', () => renderWorld(root, ctx)),
+    );
   root.querySelectorAll('[data-remove]').forEach(
     (button) =>
       (button.onclick = () => {
@@ -151,5 +178,11 @@ export async function renderWorld(root, ctx) {
         };
       }),
   );
+  bindCollectionSearch(root, c, ({ query, facet }) => {
+    const found = filterReadings(readable, { query, origin: facet });
+    root.querySelector('[data-reading-results]').innerHTML =
+      found.map((x) => readingRow(x, c)).join('') || `<p>${c.empty}</p>`;
+    return found.length;
+  });
   bindImages(root, c);
 }

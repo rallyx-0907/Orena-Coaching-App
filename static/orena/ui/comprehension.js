@@ -11,8 +11,13 @@ import { openUnderstanding } from './understanding.js';
    a comprehension check only, and the surface repeats that rather than letting
    four questions look like a measure of the learner's reading. */
 
+/* Pure reading is a complete thing to do. A text with no questions says so in
+   one quiet line rather than showing nothing, because an absent section and a
+   section that failed to load look identical - and nothing is fabricated to
+   make every text carry a check. */
 export function comprehensionSection(c, questions, latestAttempt) {
-  if (!questions?.length) return '';
+  if (!questions?.length)
+    return `<p class="meta comprehension-absent">${esc(c.readingOnlyNote)}</p>`;
   return `<details class="comprehension" data-comprehension>
     <summary>${esc(c.comprehension)} · ${esc(c.comprehensionOptional)}</summary>
     ${latestAttempt ? `<p class="meta">${esc(c.comprehensionDone)} · ${esc(latestAttempt.correct_count)}/${esc(latestAttempt.total)} · ${esc(c.comprehensionClaim)}</p>` : ''}

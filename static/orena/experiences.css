@@ -1044,15 +1044,46 @@
   gap: var(--space-8);
   margin-block: var(--space-8);
 }
-.conversation-turns { list-style: none; padding: 0; max-width: 56rem; margin: var(--space-8) auto; }
-.conversation-turn { padding: var(--space-6); margin-block: var(--space-6); border-left: 3px solid var(--accent); }
-.conversation-turn > p { font-size: var(--text-lead); white-space: pre-wrap; }
-.conversation-turn > small { color: var(--muted); }
-.conversation-turn[data-role='partner'] { margin-left: var(--space-8); background: var(--sage-surface); color: var(--on-sage); border-color: var(--on-sage-muted); }
-.conversation-turn[data-role='partner'] > small { color: var(--on-sage-muted); }
-.conversation-composer { max-width: 56rem; margin: var(--space-8) auto; }
-.conversation-composer textarea { width: 100%; margin-block: var(--space-3); }
-@media (max-width: 480px) { .conversation-turn[data-role='partner'] { margin-left: var(--space-4); } }
+.conversation-turns {
+  list-style: none;
+  padding: 0;
+  max-width: 56rem;
+  margin: var(--space-8) auto;
+}
+.conversation-turn {
+  padding: var(--space-6);
+  margin-block: var(--space-6);
+  border-left: 3px solid var(--accent);
+}
+.conversation-turn > p {
+  font-size: var(--text-lead);
+  white-space: pre-wrap;
+}
+.conversation-turn > small {
+  color: var(--muted);
+}
+.conversation-turn[data-role='partner'] {
+  margin-left: var(--space-8);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--on-sage-muted);
+}
+.conversation-turn[data-role='partner'] > small {
+  color: var(--on-sage-muted);
+}
+.conversation-composer {
+  max-width: 56rem;
+  margin: var(--space-8) auto;
+}
+.conversation-composer textarea {
+  width: 100%;
+  margin-block: var(--space-3);
+}
+@media (max-width: 480px) {
+  .conversation-turn[data-role='partner'] {
+    margin-left: var(--space-4);
+  }
+}
 .voice-room > section {
   min-width: 0;
 }
@@ -1118,6 +1149,28 @@
   border-bottom: 1px solid var(--line);
   text-decoration: none;
   color: inherit;
+}
+.collection-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  align-items: end;
+  margin-block: var(--space-6);
+}
+.collection-search label {
+  display: grid;
+  gap: var(--space-2);
+  flex: 1 1 14rem;
+}
+.collection-search :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 .reading-row:last-of-type {
   border-bottom: 0;

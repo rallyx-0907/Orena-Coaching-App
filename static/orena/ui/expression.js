@@ -10,9 +10,12 @@ import {
 import { esc, status, focusRegion } from './html.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import { writingReview, shownIssues } from './writing-review.js';
+import {bindRevisionWorkbench} from './revision-workbench.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
+import { grammarShelf, filterGrammar } from '../product/grammar-shelf.js';
+import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
 
 export async function renderExpression(root, ctx) {
@@ -37,8 +40,9 @@ export async function renderExpression(root, ctx) {
     '';
   const prompt = original?.prompt || c.responsePrompt;
   const invitations = contentFor(language).slice(0, 2);
-  const levels = ctx.languageProfiles?.find(x => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div><div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target" required><option value="">${c.chooseTarget}</option>${levels.map(level => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><label class="writing-task"><span>${esc(c.writingTask)}</span><input name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"><small>${esc(c.writingTaskNote)}</small></label></form><section id="writingFeedback" aria-live="polite"></section><section class="revision-history" data-revisions></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
+  const levels =
+    ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div><div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target" required><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><label class="writing-task"><span>${esc(c.writingTask)}</span><input name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"><small>${esc(c.writingTaskNote)}</small></label></form><section id="writingFeedback" aria-live="polite"></section><section class="revision-history" data-revisions></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
   const paintRevisions = () => {
     const list = revisionsOf();
     const host = root.querySelector('[data-revisions]');
@@ -117,7 +121,9 @@ export async function renderExpression(root, ctx) {
       memory.recordRevision(id, {
         text,
         essay_id: Number.isInteger(result.id) ? result.id : null,
-        revision_no: Number.isInteger(result.revision_no) ? result.revision_no : null,
+        revision_no: Number.isInteger(result.revision_no)
+          ? result.revision_no
+          : null,
         overall: Number.isFinite(result.overall) ? result.overall : null,
         level: typeof result.app_cefr === 'string' ? result.app_cefr : '',
       });
@@ -126,6 +132,7 @@ export async function renderExpression(root, ctx) {
       // wrote, so a struck-through phrase is always one of their own.
       const corrections = shownIssues(result, text);
       feedback.innerHTML = writingReview(c, result, { language, text });
+      bindRevisionWorkbench(feedback,ctx,{issues:corrections,reviewedText:text,draft:root.querySelector('#expressionText'),id,title});
       feedback.querySelector('[data-revise]').onclick = () =>
         root.querySelector('textarea').focus();
       feedback.querySelector('[data-registers]').onclick = () =>
@@ -235,7 +242,8 @@ export async function renderLanguage(root, ctx) {
           await refresh();
         }),
     );
-    if (moveFocus) focusRegion(root.querySelector('.recall-moment h2, .empty h2'));
+    if (moveFocus)
+      focusRegion(root.querySelector('.recall-moment h2, .empty h2'));
   }
   paint();
 }
@@ -244,16 +252,31 @@ export async function renderGrammar(root, ctx) {
   if (!ctx.location.id) {
     const result = await api.grammarLibrary();
     if (!alive()) return;
-    const lessons = patternsFor(language)
-      .map((note) => ({
-        ...((result.lessons || []).find((x) => x.id === note.id) || {}),
-        ...note,
-      }))
-      .filter((x) => x.level);
-    // An authored note whose Concept ID the catalog does not know, or a
-    // catalog that answered with nothing usable, must read as an empty shelf
-    // rather than a heading above a blank page.
-    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName })}${intentNavigation(c, 'grammar')}${lessons.length ? `<div class="pattern-list">${lessons.map((x) => `<a href="${link('practice', { intent: 'grammar', id: x.id })}"><small>${esc(x.level)}</small><h2 lang="${ctx.ui}">${esc(x.title[ctx.ui])}</h2><p lang="${language}">${esc(x.line)}</p><span>↗</span></a>`).join('')}</div>` : `<section class="empty"><h2>${c.noPatterns}</h2><a class="primary" href="${link('practice')}">${c.practice} →</a></section>`}`;
+    const lessons = grammarShelf(result, patternsFor(language), ctx.ui);
+    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName })}${intentNavigation(c, 'grammar')}${collectionSearch(c, { facet: c.collectionLevel, options: (result.levels || []).map((level) => ({ value: level, label: level })) })}<div class="pattern-list" data-grammar-results></div><button class="outline" data-more>${esc(c.collectionMore)}</button>`;
+    let shown = 18,
+      filtered = lessons;
+    const paint = () => {
+      root.querySelector('[data-grammar-results]').innerHTML =
+        filtered
+          .slice(0, shown)
+          .map(
+            (x) =>
+              `<a href="${link('practice', { intent: 'grammar', id: x.id })}"><small>${esc(x.level)}</small><h2 lang="${x.editorial ? ctx.ui : language}">${esc(x.heading)}</h2>${x.editorial ? `<p lang="${language}">${esc(x.line)}</p>` : ''}<span aria-hidden="true">↗</span></a>`,
+          )
+          .join('') || `<p>${esc(c.noPatterns)}</p>`;
+      root.querySelector('[data-more]').hidden = shown >= filtered.length;
+    };
+    bindCollectionSearch(root, c, ({ query, facet }) => {
+      shown = 18;
+      filtered = filterGrammar(lessons, { query, level: facet });
+      paint();
+      return filtered.length;
+    });
+    root.querySelector('[data-more]').onclick = () => {
+      shown += 18;
+      paint();
+    };
     return;
   }
   const lesson = await api.grammarLesson(ctx.location.id);
@@ -261,7 +284,12 @@ export async function renderGrammar(root, ctx) {
   const examples = lesson.examples || [],
     id = `grammar:${lesson.id}`,
     note = patternsFor(language).find((x) => x.id === lesson.id),
-    title = note?.title[ctx.ui] || lesson.title;
+    title =
+      note?.title[ctx.ui] ||
+      examples[0]?.target ||
+      examples[0]?.en ||
+      examples[0]?.zh ||
+      lesson.title;
   /* A pattern is easier to hold onto against the thing it is not. The contrast
      is what a learner actually writes instead, named in the one judgement
      vocabulary the rest of the product uses, so "wrong" means the same thing

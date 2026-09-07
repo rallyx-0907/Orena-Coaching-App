@@ -116,7 +116,7 @@ function issues(c, result, language, text) {
   return `<section class="review-issues"><h3>${esc(c.reviewIssues)}</h3>${items
     .map(
       (item, index) =>
-        `<article class="correction" data-priority="${esc(item.priority || 'medium')}"><small>${esc(c[`rubric_${item.category}`] || item.category)}</small><del lang="${esc(language)}">${esc(item.quote)}</del>${item.suggestion ? `<p lang="${esc(language)}">${esc(item.suggestion)}</p>` : ''}${item.why ? `<p class="review-why">${esc(item.why)}</p>` : ''}${item.how ? `<p class="meta">${esc(item.how)}</p>` : ''}<button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button></article>`,
+        `<article class="correction" data-priority="${esc(item.priority || 'medium')}"><small>${esc(c[`rubric_${item.category}`] || item.category)}</small><del lang="${esc(language)}">${esc(item.quote)}</del>${item.suggestion ? `<p lang="${esc(language)}">${esc(item.suggestion)}</p>` : ''}${item.why ? `<p class="review-why">${esc(item.why)}</p>` : ''}${item.how ? `<p class="meta">${esc(item.how)}</p>` : ''}<button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></article>`,
     )
     .join('')}</section>`;
 }
