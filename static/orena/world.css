@@ -713,6 +713,14 @@
   color: var(--on-sage);
   box-shadow: inset 3px 0 var(--accent);
 }
+/* The line being spoken paints its own tinted surface, so its secondary text
+   takes the ink paired with that tint. Ambient --muted is mixed against the
+   page, not against sage, and lands at 4.05:1 there - the timestamp and the
+   meaning are exactly the small text that cannot afford it. */
+.transcript-panel button[aria-current='true'] time,
+.transcript-panel button[aria-current='true'] .line-meaning {
+  color: var(--on-sage-muted);
+}
 .media-encounter:has(.transcript-panel[hidden]) {
   grid-template-columns: minmax(0, 950px);
   justify-content: center;
