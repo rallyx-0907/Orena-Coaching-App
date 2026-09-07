@@ -50,6 +50,32 @@ From `ui/content.js`: `duration`, `origin`, `art`, `audioIdentity`,
 `bindImages`. From `ui/brand.js`: `companionArt`. From `ui/html.js`: `esc`,
 `safeExternal`, `dialog`, `focusRegion`, `status`.
 
+### Learning capabilities
+
+| Primitive | Use it for |
+|---|---|
+| `ui/understanding.js` `openUnderstanding(ctx, {selection, context, title, question})` | Any "what does this mean / why is it like this" moment, in any capability. |
+| `ui/understanding.js` `selectionWithin(root)` | What the learner highlighted, with the block it came from. |
+| `ui/voice-evidence.js` `voiceEvidence(c, evaluation, language)` | Rendering a Speaking envelope without collapsing it. |
+| `capabilities/word-timeline.js` | Word-level Follow, with a truthful fall back to the segment. |
+| `capabilities/dictation-hints.js` | Structure-and-anchor hints that never reach the answer. |
+| `capabilities/dictation-evaluator.js` | The alignment both grading and hints must share. |
+| `product/evidence.js` `mergeListeningEvidence` | Writing progress without lowering what is stored. |
+| `product/memory.js` `recordRevision` | What a learner submitted, kept in order. |
+
+**Never build a second explanation surface.** Reading, Listening, Writing and
+Practice all open `openUnderstanding`; they differ only in what they hand it.
+A follow-up is the same call carrying a `question`, which is what keeps the
+selection and its context on screen while the learner goes deeper.
+
+### Naming what is wrong
+
+`USAGE_JUDGEMENTS` in `writing_coach/media_interaction.py` and `JUDGEMENT_KEYS`
+in `ui/understanding.js` are one vocabulary, checked against each other by
+`scripts/test_orena_understanding.mjs`. Adding a distinction means adding it to
+both plus its label in `copy.en` and `copy.zh`. "Wrong" on its own is not a
+thing this product says.
+
 `progressReporter` is the one to reach for by reflex. It speaks in a single
 voice, refuses to write onto a view the learner has left, and any retry it
 renders is wired before it returns:
@@ -103,6 +129,13 @@ score or an availability the system does not actually have.
 - Imported media with no known length shows no length, not `0:00`.
 - A save whose prior state could not be read merges rather than overwrites
   (`product/evidence.js`, `mergeListeningEvidence`).
+- Word-level Follow refuses timing it cannot reconcile with the line, rather
+  than highlighting an approximation.
+- A dictation hint shows structure and words already earned. It never completes
+  a word for the learner; revealing the answer is a separate, recorded act.
+- Speaking keeps measurement, deterministic alignment and derived guidance as
+  three separate statements, each naming its own source, and never claims
+  proficiency from one recording.
 
 When adding a capability, decide what its unavailable state says before
 designing its successful one.

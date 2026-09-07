@@ -43,6 +43,16 @@ disabled controls are inert, and the companion scene is framed by the artwork's
 own ratio. `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` records what a new
 surface inherits and the checks it owes before it is called done.
 
+Learning capabilities now built on that foundation: Follow tracks the spoken
+word where an asset ships word timing and falls back to the segment where it
+does not; Dictation offers a hint ladder of structure and earned anchors that
+never completes a word; one contextual explanation system serves reading,
+listening, writing and practice, naming which of six things is wrong rather
+than saying "wrong" and answering follow-ups without losing the selection;
+Writing keeps every version sent for review; and Speaking shows the evaluator's
+envelope as separate measured, aligned and derived statements. Microphone and
+provider paths are unexercised in this runtime and are not claimed.
+
 Operator note: the Platform Admin web surface has no host template since the
 reset removed `templates/index.html`; its API and script remain. Whether Orena
 keeps that page, and where, is an open human decision recorded in
