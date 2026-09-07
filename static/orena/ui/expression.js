@@ -5,6 +5,7 @@ import {
   draftStatus,
   responseComposer,
   bindComposer,
+  progressReporter,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
 import { link, sourceLink } from '../product/intent.js';
@@ -107,52 +108,42 @@ export async function renderLanguage(root, ctx) {
           root
             .querySelectorAll('[data-grade]')
             .forEach((x) => (x.disabled = true));
-          const output = root.querySelector('[data-recall-status]');
-          output.textContent = c.saving;
-          try {
-            await ctx.mutate(() =>
+          const report = progressReporter(
+            root.querySelector('[data-recall-status]'),
+            ctx,
+            alive,
+          );
+          report.saving();
+          const grade = () =>
+            ctx.mutate(() =>
               api.reviewLibraryVocabulary(current.word, button.dataset.grade),
             );
+          try {
+            await grade();
           } catch {
-            if (alive()) {
-              output.textContent = c.failedSave;
+            report.failed(c.failedSave, () => button.onclick());
+            if (alive())
               root
                 .querySelectorAll('[data-grade]')
                 .forEach((x) => (x.disabled = false));
-            }
             return;
           }
           // The grade is already recorded. If only the refresh fails, say that
-          // rather than telling the learner their answer was lost.
-          try {
-            const updated = await api.libraryVocabulary();
-            if (!alive()) return;
-            items = updated.items || [];
-            revealed = false;
-            paint(true);
-            status(c.persisted);
-          } catch {
-            if (alive()) {
-              output.innerHTML =
-                c.savedNotRefreshed +
-                ' <button class="quiet" data-refresh>' +
-                c.retry +
-                '</button>';
-              output.querySelector('[data-refresh]').onclick = async () => {
-                const retry = output.querySelector('[data-refresh]');
-                retry.disabled = true;
-                try {
-                  const updated = await api.libraryVocabulary();
-                  if (!alive()) return;
-                  items = updated.items || [];
-                  revealed = false;
-                  paint(true);
-                } catch {
-                  if (alive()) retry.disabled = false;
-                }
-              };
+          // rather than telling the learner their answer was lost, and let the
+          // retry fetch the list again instead of re-submitting the grade.
+          const refresh = async () => {
+            try {
+              const updated = await api.libraryVocabulary();
+              if (!alive()) return;
+              items = updated.items || [];
+              revealed = false;
+              paint(true);
+              status(c.persisted);
+            } catch {
+              report.failed(c.savedNotRefreshed, refresh);
             }
-          }
+          };
+          await refresh();
         }),
     );
     if (moveFocus) focusRegion(root.querySelector('.recall-moment h2, .empty h2'));

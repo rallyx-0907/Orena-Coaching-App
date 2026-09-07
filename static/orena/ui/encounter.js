@@ -1,4 +1,9 @@
-import { responseComposer, bindComposer } from './patterns.js';
+import {
+  responseComposer,
+  bindComposer,
+  progressReporter,
+  savedLanguageLink,
+} from './patterns.js';
 import { esc, safeExternal, dialog, status, focusRegion } from './html.js';
 import { link } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
@@ -75,26 +80,27 @@ export async function inspectPhrase(ctx, text, title) {
       output.textContent = c.phraseOutside;
       return;
     }
-    form.querySelector('button').disabled = true;
-    output.textContent = c.saving;
-    try {
-      await ctx.mutate(() =>
-        api.saveLibraryVocabulary({
-          word: phrase(),
-          definition: form.elements.note.value,
-          source_kind: 'manual',
-          source_fragment: text.slice(0, 1200),
-          focus_note: title.slice(0, 2400),
-        }),
-      );
-      if (sheet.isConnected)
-        output.innerHTML = `${c.persisted} · <a class="quiet" href="${link('language')}">${c.memoryLink} →</a>`;
-    } catch {
-      if (sheet.isConnected) {
-        output.textContent = c.failedSave;
-        form.querySelector('button').disabled = false;
+    const report = progressReporter(output, ctx, () => sheet.isConnected);
+    const save = async () => {
+      form.querySelector('button').disabled = true;
+      report.saving();
+      try {
+        await ctx.mutate(() =>
+          api.saveLibraryVocabulary({
+            word: phrase(),
+            definition: form.elements.note.value,
+            source_kind: 'manual',
+            source_fragment: text.slice(0, 1200),
+            focus_note: title.slice(0, 2400),
+          }),
+        );
+        report.saved(savedLanguageLink(c));
+      } catch {
+        report.failed(c.failedSave, save);
+        if (sheet.isConnected) form.querySelector('button').disabled = false;
       }
-    }
+    };
+    await save();
   };
 }
 function textEncounter(root, ctx, item) {
@@ -131,26 +137,28 @@ function textEncounter(root, ctx, item) {
         (button.onclick = async () => {
           const p = item.phrases[Number(button.dataset.note)],
             output = button.nextElementSibling;
-          button.disabled = true;
-          output.textContent = c.saving;
-          try {
-            await ctx.mutate(() =>
-              ctx.api.saveLibraryVocabulary({
-                word: p.word,
-                phonetic: p.phonetic || '',
-                definition: preparedMeaning(p, language, ctx.support).text,
-                source_kind: 'manual',
-                source_fragment: paragraphs[p.paragraph].slice(0, 1200),
-                focus_note: `${origin(item, c)} · ${item.title}`,
-              }),
-            );
-            if (ctx.alive()) output.textContent = c.persisted;
-          } catch {
-            if (ctx.alive()) {
-              output.textContent = c.failedSave;
-              button.disabled = false;
+          const report = progressReporter(output, ctx, ctx.alive);
+          const save = async () => {
+            button.disabled = true;
+            report.saving();
+            try {
+              await ctx.mutate(() =>
+                ctx.api.saveLibraryVocabulary({
+                  word: p.word,
+                  phonetic: p.phonetic || '',
+                  definition: preparedMeaning(p, language, ctx.support).text,
+                  source_kind: 'manual',
+                  source_fragment: paragraphs[p.paragraph].slice(0, 1200),
+                  focus_note: `${origin(item, c)} · ${item.title}`,
+                }),
+              );
+              report.saved(savedLanguageLink(c));
+            } catch {
+              report.failed(c.failedSave, save);
+              if (ctx.alive()) button.disabled = false;
             }
-          }
+          };
+          await save();
         }),
     );
     bindComposer(root, ctx, item);
@@ -545,30 +553,27 @@ export async function renderEncounter(root, ctx) {
         previous,
       });
       body.querySelectorAll('form button').forEach((x) => (x.disabled = false));
-      const evidenceStatus = () => body.querySelector('[data-evidence-status]');
       const recover = recoverListeningEvidence(readPrior);
-      if (!priorRead) evidenceStatus().textContent = c.priorProgressUnread;
+      const report = progressReporter(
+        body.querySelector('[data-evidence-status]'),
+        ctx,
+        () => isAlive() && version === practiceVersion,
+      );
+      if (!priorRead) report.note(c.priorProgressUnread);
       const persist = async () => {
         const snapshot = dictation.value;
-        const output = evidenceStatus();
         body
-          .querySelectorAll('form button, [data-retry-save]')
+          .querySelectorAll('form button, [data-retry-action]')
           .forEach((x) => (x.disabled = true));
-        output.textContent = c.saving;
+        report.saving();
         try {
           // Practice that began without the stored record only knows this
           // session, so fold it into the server's copy instead of replacing it.
           const evidence = priorRead ? snapshot : await recover(snapshot);
           await ctx.mutate(() => api.saveListeningProgress(evidence));
-          if (isAlive() && version === practiceVersion)
-            output.textContent = c.persisted;
+          report.saved();
         } catch {
-          if (isAlive() && version === practiceVersion) {
-            output.innerHTML = `${priorRead ? c.failedSave : c.priorProgressUnread} <button data-retry-save>${c.retry}</button>`;
-            body
-              .querySelector('[data-retry-save]')
-              ?.addEventListener('click', persist);
-          }
+          report.failed(priorRead ? c.failedSave : c.priorProgressUnread, persist);
         } finally {
           if (isAlive() && version === practiceVersion)
             body

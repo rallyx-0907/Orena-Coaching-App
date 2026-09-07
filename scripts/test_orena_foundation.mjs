@@ -8,6 +8,8 @@ import {
   intentNavigation,
   continuationShelf,
   responseComposer,
+  progressReporter,
+  savedLanguageLink,
 } from '../static/orena/ui/patterns.js';
 import {
   dictationEvidence,
@@ -159,6 +161,60 @@ for (const name of ['foundation', 'world', 'experiences']) {
     `${name}: use the text scale`,
   );
 }
+// Work that leaves the device reports in one voice, and a retry it offers is
+// always already wired - a retry button rendered without a handler is the
+// defect this primitive exists to make impossible.
+function statusElement() {
+  const node = {
+    isConnected: true,
+    innerHTML: '',
+    handlers: {},
+    querySelector(selector) {
+      if (!node.innerHTML.includes(selector.replace(/[[\]]/g, ''))) return null;
+      return {
+        set onclick(fn) {
+          node.handlers.retry = fn;
+        },
+        get onclick() {
+          return node.handlers.retry;
+        },
+      };
+    },
+  };
+  return node;
+}
+for (const ui of ['en', 'zh']) {
+  const c = copy[ui];
+  const element = statusElement();
+  const report = progressReporter(element, { c });
+  report.saving();
+  assert.ok(element.innerHTML.includes(c.saving), `${ui}: saving speaks`);
+  report.saved();
+  assert.ok(element.innerHTML.includes(c.persisted), `${ui}: saved speaks`);
+  report.saved(savedLanguageLink(c));
+  assert.ok(
+    element.innerHTML.includes('#/language') &&
+      element.innerHTML.includes(c.memoryLink),
+    `${ui}: kept language offers the way back to it`,
+  );
+  let retried = 0;
+  report.failed(c.failedSave, () => retried++);
+  assert.ok(element.innerHTML.includes(c.retry), `${ui}: failure offers a retry`);
+  assert.equal(typeof element.handlers.retry, 'function', `${ui}: retry is wired`);
+  element.handlers.retry();
+  assert.equal(retried, 1, `${ui}: retry runs the caller's action`);
+  report.failed(c.failedSave);
+  assert.ok(
+    !element.innerHTML.includes('data-retry-action'),
+    `${ui}: no retry button without a retry`,
+  );
+  // A late answer must not land on a screen the learner already left.
+  const gone = statusElement();
+  const silent = progressReporter(gone, { c }, () => false);
+  silent.saved();
+  assert.equal(gone.innerHTML, '', `${ui}: a dead view stays untouched`);
+}
+
 // Every tinted panel ships with the ink that belongs on it, in both themes.
 // Checking the tokens rather than the rendered pages means a new screen using
 // a panel inherits a legible pairing instead of re-deciding one by hand.
