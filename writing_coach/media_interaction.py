@@ -49,6 +49,9 @@ class MediaExplainIn(BaseModel):
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
     context: str = Field(default="", max_length=2400)
+    # A follow-up is not a new lookup: the learner's question rides along with
+    # the selection and the context it is about.
+    question: str = Field(default="", max_length=400)
 
     @field_validator("target_language")
     @classmethod
@@ -166,6 +169,43 @@ def annotate_media_text(payload: MediaAnnotateIn) -> dict[str, Any]:
     }
 
 
+# The one vocabulary the product uses to say what kind of problem a piece of
+# language has. "Wrong" collapses six different things a learner needs to tell
+# apart, so the model must choose one and the UI labels whichever it picks.
+USAGE_JUDGEMENTS = (
+    "natural",
+    "possible_but_unnatural",
+    "contextually_inappropriate",
+    "wrong_for_intended_meaning",
+    "register_mismatch",
+    "uncommon_but_legitimate",
+    "grammatically_impossible",
+)
+
+
+def _judgement(value: Any) -> str:
+    candidate = str(value or "").strip().casefold()
+    return candidate if candidate in USAGE_JUDGEMENTS else "natural"
+
+
+def _examples(raw: Any, *, with_judgement: bool = False) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        entry: dict[str, Any] = {
+            "text": text[:400],
+            "note": str(item.get("note") or "").strip()[:600],
+        }
+        if with_judgement:
+            entry["judgement"] = _judgement(item.get("judgement"))
+        items.append(entry)
+    return items[:4]
+
+
 def _explanation_schema() -> dict[str, Any]:
     return {
         "type": "object",
@@ -192,6 +232,39 @@ def _explanation_schema() -> dict[str, Any]:
                 },
             },
             "usage_note": {"type": "string"},
+            "judgement": {"type": "string", "enum": list(USAGE_JUDGEMENTS)},
+            "judgement_reason": {"type": "string"},
+            "register": {"type": "string"},
+            "examples": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string"},
+                        "note": {"type": "string"},
+                    },
+                    "required": ["text", "note"],
+                },
+            },
+            "counter_examples": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string"},
+                        "note": {"type": "string"},
+                        "judgement": {"type": "string", "enum": list(USAGE_JUDGEMENTS)},
+                    },
+                    "required": ["text", "note", "judgement"],
+                },
+            },
+            "follow_ups": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {"type": "string"},
+            },
         },
         "required": [
             "summary",
@@ -199,13 +272,25 @@ def _explanation_schema() -> dict[str, Any]:
             "grammar_notes",
             "vocabulary",
             "usage_note",
+            "judgement",
+            "judgement_reason",
+            "register",
+            "examples",
+            "counter_examples",
+            "follow_ups",
         ],
     }
 
 
 @router.post("/explain")
 def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
-    """Explain selected transcript text in learner-selected support language."""
+    """Explain selected text, optionally answering the learner's own question.
+
+    One explanation contract serves reading, listening, writing and practice.
+    A follow-up is this same call carrying a question, so going deeper never
+    loses the selection or the context it came from.
+    """
+    question = str(payload.question or "").strip()
     language = _validated_source_language(payload.source_language)
     target = _support_language(payload.target_language)
     target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
@@ -225,6 +310,17 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         f"The learner is studying {source_name}. Explain in {target_name}. "
         "Be concise, concrete, and tied to the supplied context. "
         "Do not invent cultural claims or grammar rules. "
+        "Say what kind of usage this is by choosing one judgement: natural; "
+        "possible_but_unnatural; contextually_inappropriate; "
+        "wrong_for_intended_meaning; register_mismatch; uncommon_but_legitimate; "
+        "grammatically_impossible. Wrong alone is not useful to a learner, so "
+        "name which of these it is and say why in judgement_reason. "
+        "Give examples of the form used well, and counter-examples a learner "
+        "would plausibly produce or misread, each labelled with its own "
+        "judgement. Counter-examples must be realistic mistakes, not absurd ones. "
+        "Offer follow_ups the learner might ask next, phrased as their question. "
+        "Never cite a source, rule number, dictionary or corpus you were not "
+        "given; explain from the language itself instead. "
         + language_specific
     )
     user = (
@@ -233,6 +329,14 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         "Explain what the selected text means here, why it is phrased this way, "
         "and the most useful vocabulary/grammar to notice."
     )
+    if question:
+        user = (
+            f"SELECTED TEXT:\n{source}\n\n"
+            f"CONTEXT:\n{context or source}\n\n"
+            f"THE LEARNER ASKS:\n{question}\n\n"
+            "Answer their question about the selected text, staying inside this "
+            "context and this selection."
+        )
     raw = _run_structured(
         "learner_dictionary",
         messages=[
@@ -264,6 +368,17 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             if isinstance(item, dict) and str(item.get("fragment") or "").strip()
         ][:8],
         "usage_note": str(raw.get("usage_note") or "").strip()[:1600],
+        "judgement": _judgement(raw.get("judgement")),
+        "judgement_reason": str(raw.get("judgement_reason") or "").strip()[:1200],
+        "register": str(raw.get("register") or "").strip()[:600],
+        "examples": _examples(raw.get("examples")),
+        "counter_examples": _examples(raw.get("counter_examples"), with_judgement=True),
+        "follow_ups": [
+            str(item).strip()[:200]
+            for item in raw.get("follow_ups", [])
+            if str(item).strip()
+        ][:4],
+        "question": question,
         "claim": "contextual_ai_explanation",
     }
 

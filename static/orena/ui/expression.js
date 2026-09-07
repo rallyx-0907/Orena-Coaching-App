@@ -8,6 +8,7 @@ import {
   progressReporter,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
+import { openUnderstanding } from './understanding.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
 import { contentFor } from '../content/texts.js';
@@ -72,9 +73,26 @@ export async function renderExpression(root, ctx) {
       // A review that found nothing has to say so. Rendering an empty shell
       // reads as a failure the learner cannot tell apart from a real one.
       const findings = corrections.length || result.corrected_text;
-      feedback.innerHTML = `<h2>${c.review}</h2>${result.evaluator === 'fallback-demo' ? `<p class="notice">${c.demoMeasurement}</p>` : ''}${findings ? '' : `<p>${c.noCorrections}</p>`}${result.corrected_text ? `<blockquote lang="${language}">${esc(result.corrected_text)}</blockquote>` : ''}${corrections.map((x) => `<article class="correction"><del lang="${language}">${esc(x.fragment)}</del><p lang="${language}">${esc(x.suggestion || '')}</p>${ctx.support === 'vi' && x.explanation_vi ? `<p lang="vi">${esc(x.explanation_vi)}</p>` : ''}</article>`).join('')}<p>${c.persisted}</p><button class="outline" data-revise>${c.revision} ↗</button>`;
+      feedback.innerHTML = `<h2>${c.review}</h2>${result.evaluator === 'fallback-demo' ? `<p class="notice">${c.demoMeasurement}</p>` : ''}${findings ? '' : `<p>${c.noCorrections}</p>`}${result.corrected_text ? `<blockquote lang="${language}">${esc(result.corrected_text)}</blockquote>` : ''}${corrections.map((x, index) => `<article class="correction"><del lang="${language}">${esc(x.fragment)}</del><p lang="${language}">${esc(x.suggestion || '')}</p>${ctx.support === 'vi' && x.explanation_vi ? `<p lang="vi">${esc(x.explanation_vi)}</p>` : ''}<button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button></article>`).join('')}<p>${c.persisted}</p><button class="outline" data-revise>${c.revision} ↗</button>`;
       feedback.querySelector('[data-revise]').onclick = () =>
         root.querySelector('textarea').focus();
+      // "Why?" opens the same explanation surface reading and listening use,
+      // with the learner's own sentence as the context it reasons about.
+      feedback.querySelectorAll('[data-why]').forEach((button) => {
+        button.onclick = () => {
+          const correction = corrections[Number(button.dataset.why)];
+          const sentence =
+            text
+              .split(/(?<=[.!?。！？])\s+/)
+              .find((part) => part.includes(correction.fragment)) || text;
+          openUnderstanding(ctx, {
+            selection: correction.fragment,
+            context: sentence.slice(0, 2400),
+            title: title,
+            question: c.askWhy,
+          });
+        };
+      });
     } catch {
       if (alive()) feedback.textContent = c.reviewUnavailable;
     } finally {

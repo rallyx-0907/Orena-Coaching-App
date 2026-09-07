@@ -5,6 +5,10 @@ import {
   savedLanguageLink,
 } from './patterns.js';
 import { esc, safeExternal, dialog, status, focusRegion } from './html.js';
+import {
+  openUnderstanding,
+  selectionWithin,
+} from './understanding.js';
 import { link } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
 import {
@@ -40,78 +44,17 @@ import {
 } from '../capabilities/media-acquisition.js';
 import { art, origin, duration, bindImages, audioIdentity } from './content.js';
 
-export async function inspectPhrase(ctx, text, title) {
-  const { c, api, language, support } = ctx;
-  const selection = String(window.getSelection() || '').trim();
-  const sheet = dialog({
-    title: c.inspect,
-    body: `<p>${c.phraseHelp}</p><blockquote lang="${language}">${esc(text)}</blockquote><form id="phraseForm"><label>${c.phrase}<input name="phrase" maxlength="180" value="${esc(text.includes(selection) ? selection : '')}" required></label><button class="outline">${c.inspectAction}</button></form><div id="phraseMeaning" class="context-note" role="status"></div><form id="savePhrase"><label>${c.note}<textarea name="note" rows="3" maxlength="2400"></textarea></label><button class="primary">${c.savePhrase} ＋</button><p role="status"></p></form>`,
+/* Every capability investigates language through the one shared surface. This
+   keeps the old call shape so the transcript, the story margin and the
+   dictation comparison do not each need to know about it. */
+export function inspectPhrase(ctx, text, title, context) {
+  return openUnderstanding(ctx, {
+    selection: text,
+    context: context || text,
+    title,
   });
-  const phrase = () => sheet.querySelector('[name=phrase]').value.trim();
-  sheet.querySelector('#phraseForm').onsubmit = async (event) => {
-    event.preventDefault();
-    const target = sheet.querySelector('#phraseMeaning');
-    if (!phrase() || !text.includes(phrase())) {
-      target.textContent = c.phraseOutside;
-      return;
-    }
-    target.textContent = c.loading;
-    try {
-      const result = await api.contextualDictionary({
-        text: phrase(),
-        source_language: language,
-        target_language: support,
-        context: text.slice(0, 2400),
-      });
-      if (!sheet.isConnected) return;
-      if (!result.available || result.selected_text !== phrase()) {
-        target.textContent = c.unavailable;
-        return;
-      }
-      target.textContent = [
-        result.natural_translation,
-        result.summary,
-        ...(result.grammar_notes || []),
-      ]
-        .filter((x) => typeof x === 'string' && x)
-        .join('\n\n');
-      if (!sheet.querySelector('[name=note]').value)
-        sheet.querySelector('[name=note]').value = target.textContent;
-    } catch {
-      if (sheet.isConnected) target.textContent = c.unavailable;
-    }
-  };
-  sheet.querySelector('#savePhrase').onsubmit = async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget,
-      output = form.querySelector('[role=status]');
-    if (!phrase() || !text.includes(phrase())) {
-      output.textContent = c.phraseOutside;
-      return;
-    }
-    const report = progressReporter(output, ctx, () => sheet.isConnected);
-    const save = async () => {
-      form.querySelector('button').disabled = true;
-      report.saving();
-      try {
-        await ctx.mutate(() =>
-          api.saveLibraryVocabulary({
-            word: phrase(),
-            definition: form.elements.note.value,
-            source_kind: 'manual',
-            source_fragment: text.slice(0, 1200),
-            focus_note: title.slice(0, 2400),
-          }),
-        );
-        report.saved(savedLanguageLink(c));
-      } catch {
-        report.failed(c.failedSave, save);
-        if (sheet.isConnected) form.querySelector('button').disabled = false;
-      }
-    };
-    await save();
-  };
 }
+
 function textEncounter(root, ctx, item) {
   const { c, language, memory } = ctx;
   let count = item.kind === 'conversation' ? 1 : item.paragraphs?.length || 1;
@@ -135,12 +78,25 @@ function textEncounter(root, ctx, item) {
         root.querySelector('[data-next]') || root.querySelector('#response')
       )?.focus({ preventScroll: true });
     });
-    root.querySelector('[data-inspect]').onclick = () =>
-      inspectPhrase(
-        ctx,
-        paragraphs.join('\n').slice(0, 2400),
-        `${origin(item, c)} · ${item.title}`,
-      );
+    const passage = root.querySelector('.passage');
+    const investigate = () => {
+      const picked = selectionWithin(passage);
+      openUnderstanding(ctx, {
+        selection: picked ? picked.text : paragraphs.join('\n').slice(0, 2400),
+        context: picked ? picked.context : paragraphs.join('\n').slice(0, 2400),
+        title: `${origin(item, c)} · ${item.title}`,
+      });
+    };
+    root.querySelector('[data-inspect]').onclick = investigate;
+    // A highlight is the natural way to ask about a phrase while reading, so
+    // offer the action where the learner made it rather than only in the margin.
+    passage.addEventListener('mouseup', () => {
+      const picked = selectionWithin(passage);
+      const button = root.querySelector('[data-inspect]');
+      button.textContent = picked
+        ? `${c.lookCloser}: ${picked.text.slice(0, 24)}${picked.text.length > 24 ? '…' : ''} ↗`
+        : `${c.phrase} ↗`;
+    });
     root.querySelectorAll('[data-note]').forEach(
       (button) =>
         (button.onclick = async () => {
@@ -378,12 +334,15 @@ export async function renderEncounter(root, ctx) {
       String(memory.value.kept.includes(id)),
     );
   };
-  root.querySelector('[data-inspect]').onclick = () =>
+  root.querySelector('[data-inspect]').onclick = () => {
+    const picked = selectionWithin(moment);
     inspectPhrase(
       ctx,
-      model.current.original_text,
+      picked ? picked.text : model.current.original_text,
       `${origin(item, c)} · ${item.title}`,
+      model.current.original_text,
     );
+  };
   root.querySelector('[data-meaning]').onclick = async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -654,7 +613,8 @@ export async function renderEncounter(root, ctx) {
           const { result, diff } = dictation.compare(answer.value.trim());
           body.querySelector('.comparison').innerHTML =
             `<h3>${result.accuracy_percent}% ${c.match}</h3><div class="diff" lang="${language}">${diff.map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`).join('')}</div><p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p><div class="button-row"><button data-again>${c.tryAgain} ↺</button><button data-understand>${c.inspect} ↗</button></div>`;
-          body.querySelector('[data-understand]').onclick = () => inspectPhrase(ctx, target.original_text, item.title);
+          body.querySelector('[data-understand]').onclick = () =>
+            inspectPhrase(ctx, target.original_text, item.title, target.original_text);
           body.querySelector('[data-again]').onclick = () => {
             body.querySelector('.comparison').innerHTML = '';
             answer.focus();
