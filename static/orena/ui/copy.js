@@ -652,6 +652,13 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  conversationTurnsSoFar: 'turns so far',
+});
+Object.assign(copy.zh, {
+  conversationTurnsSoFar: '轮，还可以继续',
+});
+
+Object.assign(copy.en, {
   conversationHowItLanded: 'How did that land?',
 });
 Object.assign(copy.zh, {

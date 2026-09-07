@@ -15,6 +15,27 @@ export function intentNavigation(c, current) {
   return `<nav class="intent-nav" aria-label="${esc(c.practice)}">${practiceIntentions.map((key) => `<a href="${key === 'writing' ? link('expression') : link('practice', { intent: key })}" ${key === current ? 'aria-current="page"' : ''}>${esc(c[key + 'Name'])}</a>`).join('')}</nav>`;
 }
 
+/* Two threads can share an intention and be entirely different things: a
+   conversation and a single take are both Speaking, and both used to read
+   "Speaking · <the same situation>" on the shelf. The id prefix already routes
+   the entry, so it can name its shape too - otherwise the only way to tell two
+   threads apart is to open one. */
+function threadShape(item, c) {
+  if (item.id.startsWith('conversation:')) return c.conversationTitle;
+  return item.intent ? c[item.intent + 'Name'] : c.openedLabel;
+}
+
+/* What is actually waiting there. A conversation knows how far it got, which
+   is worth more than "there is more to come back to". */
+function threadState(item, memory, c) {
+  const state = memory.value.conversations?.[item.id];
+  if (state)
+    return state.ended
+      ? c.conversationEnded
+      : `${state.turns.length} ${c.conversationTurnsSoFar}`;
+  return item.segment ? c.resumeMoment : c.resumeEncounter;
+}
+
 export function continuationShelf(ctx, limit = 3) {
   const { memory, c, language } = ctx;
   const entries = memory.value.continuation.slice(0, limit);
@@ -25,10 +46,8 @@ export function continuationShelf(ctx, limit = 3) {
       const action =
         draft && item.intent === 'writing'
           ? c.draftLabel
-          : item.intent
-            ? c[item.intent + 'Name']
-            : c.openedLabel;
-      return `<a class="thread" href="${continuationLink(item)}"><small>${esc(action)}</small><strong lang="${language}">${esc(item.title)}</strong>${draft ? `<p lang="${language}">${esc(draft)}</p>` : `<p>${esc(item.segment ? c.resumeMoment : c.resumeEncounter)}</p>`}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
+          : threadShape(item, c);
+      return `<a class="thread" href="${continuationLink(item)}"><small>${esc(action)}</small><strong lang="${language}">${esc(item.title)}</strong>${draft ? `<p lang="${language}">${esc(draft)}</p>` : `<p>${esc(threadState(item, memory, c))}</p>`}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
     })
     .join('')}</div></section>`;
 }

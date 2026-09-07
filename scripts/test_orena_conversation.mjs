@@ -87,9 +87,6 @@ for (const language of ['en', 'zh']) {
     'conversation',
   );
 }
-console.log(
-  'Conversation ledger: cross-turn context, owner/language isolation, retries, stale replies, closing and recovery PASS',
-);
 
 /* The partner is instructed not to coach: a conversation where every reply
    corrects you is not a conversation. That instruction assumes a separate
@@ -131,3 +128,37 @@ assert.ok(
 );
 for (const ui of ['en', 'zh'])
   assert.ok(copy[ui].conversationHowItLanded, `${ui}: no label for the coaching action`);
+
+/* The shelf must tell two threads apart. A conversation and a single take are
+   both Speaking about the same situation, and used to render identically -
+   the only way to tell them apart was to open one. */
+const patterns = readFileSync(
+  new URL('../static/orena/ui/patterns.js', import.meta.url),
+  'utf8',
+);
+assert.ok(
+  patterns.includes("item.id.startsWith('conversation:')"),
+  'the shelf names a thread by its shape, not only its intention',
+);
+assert.ok(
+  patterns.includes('memory.value.conversations?.[item.id]'),
+  'a conversation on the shelf reports its own state',
+);
+assert.ok(
+  patterns.includes('state.turns.length'),
+  'how far a conversation got is worth more than "there is more"',
+);
+for (const ui of ['en', 'zh']) {
+  assert.ok(copy[ui].conversationTurnsSoFar, `${ui}: no label for turns so far`);
+  // The shape label and the plain intention must not read the same, or the
+  // two threads collapse again.
+  assert.notEqual(
+    copy[ui].conversationTitle,
+    copy[ui].speakingName,
+    `${ui}: a conversation reads the same as a single take`,
+  );
+}
+
+console.log(
+  'Conversation ledger, coaching on your own turns, and distinguishable threads: PASS',
+);
