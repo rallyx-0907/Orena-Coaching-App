@@ -10,10 +10,10 @@ D-046. No human approval or production readiness is implied.
 
 ## Current branch / lane
 
-`codex/work`, Orena WEB Golden Star. Resume from f966b28; do not restore the
-intentionally deleted learner product. Native mobile / Expo / React Native is
-frozen. Latest human instruction explicitly authorizes this continuation beyond
-the earlier REVIEWABLE checkpoint.
+`codex/work`, Orena WEB Golden Star. Continues 7c98fad, the interrupted Golden
+Star run; do not restore the intentionally deleted learner product. Native
+mobile / Expo / React Native is frozen. Latest human instruction explicitly
+authorizes this continuation beyond the earlier REVIEWABLE checkpoint.
 
 ## DONE
 
@@ -32,32 +32,48 @@ repeated saves cannot double-count attempts. Recall refresh retries do not submi
 an already-saved grade twice. Approved world scene replaces the white-backed
 mascot crop; a generated extraction was rejected and is not a product asset.
 
+Shared foundation completed after 7c98fad: every tinted panel carries its own
+ink in both themes (--sage/coral/night/sun-surface with paired --on-* ink), so
+a panel is never a colour a screen pairs by hand; work that leaves the device
+reports through progressReporter(), which speaks in one voice, will not write
+onto a view the learner left, and wires any retry it renders; savedLanguageLink()
+makes every vocabulary save offer the same way into Recall, which the story
+margin previously lacked entirely; disabled controls no longer lift or press;
+the companion frame is derived from the artwork ratio, retiring a mascot-era
+crop whose phone override was still fighting it. Extension guidance now exists
+at docs/product/ORENA_WEB_EXTENSION_GUIDE.md.
+
 ## Last verified batch
 
 Local execution only; no CI claim.
 
-- Golden Star foundation test: themes, EN/ZH reusable patterns, contextual drafts,
-  continuation and retry-safe evidence PASS.
-- Orena product boundary and Follow clock tests PASS.
-- Browser ESM graph: 23 modules linked.
-- Actual browser: desktop EN dark Practice and Explore inspected. Full new EN/ZH,
-  light/dark, responsive and end-to-end acceptance is still pending.
-- Prior f966b28 evidence: CI eleven Node gates plus nine capability gates passed;
-  full Python 753 passed / 20 inherited failures; browser EN/ZH 1440/800/390.
-  Those are prior results, not acceptance of the new Golden Star changes.
+- Golden Star foundation test PASS, now also computing every panel/ink contrast
+  pairing from the token block and holding the reporter contract in EN and ZH.
+  Both new guards verified to fail when their fix is reverted.
+- All twelve CI Node gates PASS. Browser ESM graph: 24 modules linked.
+- Project-memory and architecture validators OK.
+- Full Python in the app image: 753 passed / 20 failed, exactly the inherited
+  baseline, unchanged by this run.
+- Browser acceptance: eleven routes x light/dark x 1440/800/390 in EN and ZH.
+  No horizontal overflow, no text below its contrast threshold, no pointer
+  target under 24px. The sweep previously found whole-caption failures on
+  Explore in both themes.
+- Journeys driven against the real server: media -> Follow -> Dictation ->
+  compare/persist -> look closer -> keep phrase -> Recall hand-off -> thread
+  shelf; story -> margin phrase -> Recall; free Writing with target level ->
+  truthful 503; a blocked vocabulary write, its retry, and its success.
 
 ## NEXT EXACT TASK
 
-Finish and verify Golden Star archetypes: media Follow -> Dictation -> contextual
-language save/Recall; expression -> source-preserving draft -> Continue; direct
-Practice and import convergence. Inspect at real CSS desktop/tablet/phone widths,
-EN/ZH, light/dark. Check the mascot mask, shared action states and typography.
-Finish concise executable extension guidance. Validate, create recovery commits,
-and stop once at final human browser review. Do not expand every capability.
+The archetype references and the shared foundation are in place and swept. Next:
+one operator pass on microphone paths (record, pronunciation, voice feedback),
+which no run has executed; then human browser review. Do not expand capability
+breadth before that review. If review approves, the open decisions in OPEN P1
+are what unblock the remaining non-CI gates.
 
 ## IN PROGRESS
 
-The Golden Star references are being integrated and checked in the browser.
+Nothing. The Golden Star foundation is integrated, swept and reviewable.
 
 ## Runtime / safety
 
@@ -76,7 +92,8 @@ docs/visual-references. No production operations or destructive history.
 
 ## PENDING
 
-New integrated browser acceptance and final human review.
+Microphone paths need one operator pass with real hardware; their guards are
+source contracts, not execution. Then final human review.
 
 ## BLOCKED
 

@@ -22,18 +22,26 @@ static/becoming learner product and seven obsolete product specifications have
 been removed. The foundation slice is now functionally coherent end to end and
 ready for human review; no human approval is claimed.
 
-Verified by browser acceptance against a real server, at 1440 / 800 / 390 px in
-both languages: every route renders with no horizontal overflow and no tap
-target under 30px; Follow keeps original text, contextual Pinyin and support
-meaning synchronized and shows the current line at rest; Dictation, Shadowing
-segment transitions, continuation restore and routing, imported-media practice,
-and unresolvable-import recovery all behave. Learner-imported media reaches
-every Practice intent beside the curated catalog, so Discover and Bring-your-own
-share one library. Authored grammar pattern notes are joined onto the canonical
-catalog by stable Concept ID and labelled as generated. Listening evidence is no
-longer overwritten when the stored record cannot be read first. Local suites sit
-at the inherited baseline, 753 passed / 20 failed. Microphone-dependent paths
-were not executed. This is execution evidence, not milestone acceptance.
+Verified by browser acceptance against a real server, at 1440 / 800 / 390 px, in
+light and dark, in English and Chinese: every route renders with no horizontal
+overflow, no text below its WCAG AA contrast threshold and no pointer target
+under 24px. Follow keeps original text, contextual Pinyin and support meaning
+synchronized and shows the current line at rest. The canonical deep journey runs
+end to end - a media encounter, Follow, Dictation with comparison and durable
+evidence, "look closer" on the line just practised, keeping that phrase, and the
+hand-off into Recall - and the thread shelf then offers all three archetypes
+back. Learner-imported media reaches every Practice intent beside the curated
+catalog. Authored grammar notes join the canonical catalog by stable Concept ID
+and are labelled as generated. Listening evidence is not overwritten when the
+stored record cannot be read first. Local suites sit at the inherited baseline,
+753 passed / 20 failed. Microphone-dependent paths were not executed. This is
+execution evidence, not milestone acceptance.
+
+Shared foundation: tinted panels carry their own ink in both themes, work that
+leaves the device reports through one primitive whose retries are always wired,
+disabled controls are inert, and the companion scene is framed by the artwork's
+own ratio. `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` records what a new
+surface inherits and the checks it owes before it is called done.
 
 Operator note: the Platform Admin web surface has no host template since the
 reset removed `templates/index.html`; its API and script remain. Whether Orena
