@@ -16,7 +16,7 @@ import {
 } from '../product/evidence.js';
 import { comprehensionSection, bindComprehension } from './comprehension.js';
 import { contentFor } from '../content/texts.js';
-import { readingText, readingSessionId } from '../content/reading.js';
+import { readingText, readingSessionId, readable } from '../content/reading.js';
 import { preparedMeaning } from '../content/language-notes.js';
 import {
   mediaPlayer,
@@ -71,7 +71,7 @@ function textEncounter(root, ctx, item) {
       .map((p) => `<p>${lines(p)}</p>`)
       .join(
         '',
-      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
+      )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
     root.querySelector('[data-keep]').onclick = () => {
       memory.keep(item.id);
       paint();
@@ -192,11 +192,21 @@ export async function renderEncounter(root, ctx) {
     return;
   }
   if (id.startsWith('story:') || id.startsWith('text:')) {
-    const item = id.startsWith('story:')
+    const found = id.startsWith('story:')
       ? contentFor(language).find((x) => `story:${x.id}` === id)
       : memory.value.imports.find((x) => x.id === id);
+    // A text the learner brought in is stored as one body of text; the
+    // authored collection already has its paragraphs.
+    const item =
+      found &&
+      readable({
+        ...found,
+        id,
+        language,
+        paragraphs: found.paragraphs || String(found.text || '').split(/\n\s*\n/),
+      });
     if (!item) throw Error(c.unavailable);
-    textEncounter(root, ctx, { ...item, id });
+    textEncounter(root, ctx, item);
     return;
   }
   let pendingCleanup = null;

@@ -29,8 +29,20 @@ for (const language of ['en', 'zh']) {
   const content = readingText(session, language);
   assert.equal(content.paragraphs.length, 2);
   assert.equal(content.paragraphs[0], passage.split('\n\n')[0]);
-  assert.equal(content.topic, '');
-  assert.equal(content.material, '');
+  /* A built-in passage answers every subject and form with the same words, so
+     it must not echo the request back as though it had honoured it. It used to
+     carry these as empty strings; the readable contract leaves out what a
+     source cannot honestly supply, so now they are absent entirely - the same
+     guarantee, stated more strictly. */
+  assert.ok(!('topic' in content), 'a built-in passage claims no subject');
+  assert.ok(!('material' in content), 'a built-in passage claims no form');
+  // A generated one did honour the request, and says so.
+  const written = readingText(
+    { ...session, generation_mode: 'generated' },
+    language,
+  );
+  assert.equal(written.topic, 'work');
+  assert.equal(written.material, 'news');
   assert.equal(origin(content, copy[language]), copy[language].readingBuiltIn);
   assert.equal(
     readingText(
@@ -70,6 +82,73 @@ assert.match(
   /payload\.found \? payload\.session : null/,
   'Read the real API envelope',
 );
+
+/* The readable contract. Books, public-domain works, articles and dialogues
+   are more of what Reading already handles, and adding one should mean writing
+   an adapter rather than redesigning the experience. These hold the gate every
+   adapter ends at. */
+const { readable, readableSource } = await import('../static/orena/content/reading.js');
+
+// What a source cannot honestly supply is left out, never defaulted into a
+// claim. An unknown licence stays unknown rather than becoming an empty one.
+assert.equal(readableSource(null), null);
+assert.equal(readableSource({}), null);
+assert.equal(readableSource({ creator: '  ', license: '', provenance_url: '' }), null);
+assert.deepEqual(
+  readableSource({ creator: 'A. Author', license: 'Public domain', provenance_url: 'https://example.org/x' }),
+  { creator: 'A. Author', license: 'Public domain', provenance_url: 'https://example.org/x' },
+);
+// One of the three is enough to be worth showing; the others stay empty rather
+// than being invented.
+assert.equal(readableSource({ license: 'CC BY-SA 4.0' }).creator, '');
+
+// Nothing without an id, a title and real paragraphs reaches the encounter.
+assert.equal(readable(null), null);
+assert.equal(readable({ id: 'a:1', title: 'T', paragraphs: [] }), null);
+assert.equal(readable({ id: 'a:1', title: 'T', paragraphs: ['   '] }), null);
+assert.equal(readable({ id: '', title: 'T', paragraphs: ['One.'] }), null);
+assert.equal(readable({ id: 'a:1', title: '', paragraphs: ['One.'] }), null);
+
+const book = readable({
+  id: 'book:persuasion-1',
+  title: 'Persuasion, chapter one',
+  language: 'en',
+  paragraphs: ['One.', '  ', 'Two.'],
+  level: 'B2',
+  source: { creator: 'Jane Austen', license: 'Public domain', provenance_url: 'https://example.org/persuasion' },
+});
+assert.deepEqual(book.paragraphs, ['One.', 'Two.'], 'blank paragraphs are not paragraphs');
+assert.equal(book.kind, 'text');
+assert.equal(book.source.creator, 'Jane Austen');
+assert.equal(book.level, 'B2');
+assert.ok(!('questions' in book), 'a text without questions claims none');
+assert.ok(!('generation_mode' in book), 'a text nobody generated says nothing about generation');
+assert.equal(
+  readable({ id: 'x:1', title: 'T', paragraphs: ['One.'], kind: 'conversation' }).kind,
+  'conversation',
+  'a dialogue keeps the kind the encounter lays out line by line',
+);
+
+// The encounter shows rights when a text carries them, through the same block
+// media uses - one vocabulary for the same question, not two.
+const encounterSource = readFileSync(
+  new URL('../static/orena/ui/encounter.js', import.meta.url),
+  'utf8',
+);
+assert.ok(
+  encounterSource.includes('item.source ? `<details class="source">'),
+  'a text that carries rights must be able to show them',
+);
+assert.ok(
+  encounterSource.includes('safeExternal(item.source.provenance_url)'),
+  'a source link is checked before it is offered',
+);
+// Every text source ends at the one gate, so a new adapter cannot skip it.
+assert.ok(
+  encounterSource.includes('readable({'),
+  'the authored collection and learner imports pass through the contract',
+);
+
 console.log(
-  'Reading: source truth, EN/ZH, paragraph fidelity, optional comprehension, API envelope PASS',
+  'Reading: source truth, EN/ZH, paragraph fidelity, optional comprehension, readable contract PASS',
 );
