@@ -1,3 +1,5 @@
+import { discoverySpread, practiceOverview } from './discovery.js';
+import { referenceCopy, editorialIntro } from './reference.js';
 import { duration, origin, art, bindImages } from './content.js';
 import { companionArt, scene } from './brand.js';
 import { pageIntro, intentNavigation, continuationShelf } from './patterns.js';
@@ -121,7 +123,11 @@ export async function renderWorld(root, ctx) {
     recall: 'remembering',
   };
   if (location.page === 'practice') {
-    root.innerHTML = `${headline(intent ? c[`${intent}Intent`] || c[intent] : c.choose, intent ? c[`${intent}IntentNote`] || c[`${intent}Note`] : c.chooseNote, c.practice, INTENT_SCENE[intent] || '')}${intentNavigation(c, intent)}${!intent ? `<section class="practice-invitation"><span class="big-voice" aria-hidden="true">“</span><div><h2>${c.shadowing}</h2><p>${c.shadowingNote}</p><a class="primary" href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} →</a></div><div class="practice-small"><h3>${c.dictation}</h3><p>${c.dictationNote}</p><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} →</a></div></section>` : ''}${
+    const r = referenceCopy[ctx.ui];
+    const intro = !intent || intent === 'follow'
+      ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
+      : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c.practice, INTENT_SCENE[intent] || '');
+    root.innerHTML = `${intro}${intent ? intentNavigation(c, intent) : practiceOverview(ctx)}${
       intent === 'reading'
         ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
             c,
@@ -148,21 +154,9 @@ export async function renderWorld(root, ctx) {
     const kept = all.filter(
       (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',
     );
-    root.innerHTML = `${headline(c.content, c.local)}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
+    root.innerHTML = `${editorialIntro(ctx,{title:referenceCopy[ctx.ui].collectionTitle,note:referenceCopy[ctx.ui].collectionNote,state:'together',eyebrow:referenceCopy[ctx.ui].content})}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
   } else {
-    const feature = media.find((x) => x.kind === 'video') || media[0];
-    root.innerHTML = `<section class="arrival"><div><small>${c.edition}</small><h1>${c.hello}</h1><p>${c.intro}</p></div>${companionArt()}</section><div class="world-opening">${feature ? `<article class="window"><a class="window-media" aria-label="${esc(feature.title)}" href="${destination(feature.id)}">${art(feature)}<span class="play-disc" aria-hidden="true">▶</span><span class="duration">${duration(feature.duration_ms)}</span></a><div class="window-caption"><div><small>${c.video} · ${esc(feature.level)} · ${esc(origin(feature, c))}</small><h2 lang="${language}"><a href="${destination(feature.id)}">${esc(feature.title)} ↗</a></h2></div><p>${esc(feature.description)}</p></div></article>` : `<div class="window">${catalogError}<h2>${c.noCatalog}</h2></div>`}<aside class="side-story"><small>${c.stories}</small><a href="${destination(text[0].id)}">${art(text[0])}<h2 lang="${language}">${esc(text[0].title)} ↗</h2><p lang="${language}">${esc(text[0].subtitle)}</p></a><small>${c.generated}</small></aside></div><section class="intent-ribbon"><div><h2>${c.choose}</h2><p>${c.chooseNote}</p></div><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} ↗</a><a href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} ↗</a><a href="${link('practice', { intent: 'reading' })}">${c.readingName} ↗</a><a href="${link('expression')}">${c.writingName} ↗</a><a href="${link('practice')}">${c.practice} →</a></section>${continuation}<section class="voices"><div class="section-head"><h2>${c.voices}</h2><span class="wave" aria-hidden="true">▂ ▆ ▃ ▇ ▄ ▂</span></div>${practiceMedia
-      .filter((x) => x !== feature)
-      .map((x) => mediaItem(x, null, c))
-      .join('')}</section><section class="text-paths">${text
-      .slice(1)
-      .map(
-        (x) =>
-          `<a href="${destination(x.id)}"><small>${c.generated}</small><h2 lang="${language}">${esc(x.title)} ↗</h2><p lang="${language}">${esc(x.subtitle)}</p>${art(x)}</a>`,
-      )
-      .join(
-        '',
-      )}</section><section class="bring-invitation"><span aria-hidden="true">＋</span><div><h2>${c.bring}</h2><p>${c.emptyNote}</p></div><button class="outline" data-bring>${c.importAction} ↗</button></section>`;
+    root.innerHTML = discoverySpread(ctx, {media, text, catalogError});
   }
   root
     .querySelectorAll('[data-bring]')

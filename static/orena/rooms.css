@@ -1,0 +1,178 @@
+/* Learning rooms share the shell's ink and spacing, but each working surface
+   is composed for its activity. No shell or global primitive is restyled here. */
+.reading-volume {
+  grid-template-columns: 88px minmax(0, 1fr) 24px;
+  gap: var(--space-8);
+  padding-block: var(--space-8);
+}
+.reading-volume .reading-mark {
+  width: 88px;
+  aspect-ratio: 3 / 4;
+  border-radius: 2px 7px 7px 2px;
+  border-left: 9px double var(--on-sage-muted);
+  border-bottom: 5px double var(--on-sage-muted);
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 2.5rem;
+  box-shadow: 4px 4px 0 var(--line);
+}
+.reading-volume:nth-of-type(3n + 2) .reading-mark {
+  background: var(--coral-surface);
+  color: var(--on-coral);
+  border-color: var(--on-coral-muted);
+}
+.reading-volume:nth-of-type(3n) .reading-mark {
+  background: var(--night-surface);
+  color: var(--on-night);
+  border-color: var(--on-night-line);
+}
+.reading-volume-copy { min-width: 0; }
+.reading-volume .reading-volume-copy > strong {
+  display: block;
+  margin-block: var(--space-2);
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  line-height: 1.4;
+}
+.reading-volume .voice-description { max-width: 62ch; }
+
+[data-experience='writing'] .expression-layout {
+  gap: var(--space-8);
+  grid-template-columns: minmax(0, 2.4fr) minmax(220px, 1fr);
+}
+[data-experience='writing'] .expression-room .page-intro { padding-top: 0; }
+[data-experience='writing'] .writing-sheet {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  padding: var(--space-6);
+  box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
+}
+[data-experience='writing'] .writing-sheet textarea {
+  border: 0;
+  border-radius: 0;
+  padding: var(--space-4) 0;
+  min-height: 24rem;
+  resize: vertical;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: var(--text-reading);
+}
+[data-experience='writing'] .expression-tools {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+}
+[data-experience='writing'] .expression-context {
+  margin-top: var(--space-8);
+  padding: var(--space-6);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border: 0;
+  border-top: 1px solid var(--on-sage-muted);
+}
+[data-experience='writing'] .expression-context :is(.meta, small) {
+  color: var(--on-sage-muted);
+}
+[data-experience='writing'] .expression-context :is(a, a > span) { color: var(--on-sage); }
+[data-experience='writing'] .expression-context .expression-starters a { border-color: var(--on-sage-muted); }
+[data-experience='writing'] .revision-history { margin-top: var(--space-12); }
+
+[data-experience='speaking'] .voice-room {
+  gap: var(--space-12);
+  grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr);
+}
+[data-experience='speaking'] .voice-situation {
+  padding: var(--space-8);
+  background: var(--night-surface);
+  color: var(--on-night);
+  border-radius: var(--space-6) var(--space-6) 0 0;
+}
+[data-experience='speaking'] .voice-situation > small { color: var(--on-night-muted); }
+[data-experience='speaking'] .voice-situation h2 {
+  font-size: clamp(1.7rem, 3vw, 2.7rem);
+  line-height: 1.25;
+  margin: var(--space-3) 0 0;
+}
+[data-experience='speaking'] .voice-exchange > [data-voice] {
+  padding: var(--space-8);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+[data-experience='speaking'] .voice-prompt {
+  border: 0;
+  border-radius: 0 var(--space-6) var(--space-6) var(--space-6);
+  margin-right: var(--space-6);
+}
+[data-experience='speaking'] .voice-directions { border-left: 0; padding-left: 0; }
+[data-experience='speaking'] .voice-directions > h2 { font-size: var(--text-lead); }
+[data-experience='speaking'] .voice-directions a[aria-current] {
+  border-left: 3px solid var(--accent);
+  padding-left: var(--space-4);
+}
+[data-experience='speaking'] .voice-directions > button {
+  display: block;
+  margin-top: var(--space-4);
+  width: 100%;
+}
+
+:is([data-experience='language'], [data-experience='recall']) .language-summary {
+  border-block: 1px solid var(--line);
+  padding-block: var(--space-4);
+}
+.language-cabinet {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+.language-cabinet article {
+  position: relative;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--sage);
+  padding: var(--space-8);
+}
+.language-cabinet article:nth-child(even) { border-top-color: var(--coral); }
+.language-cabinet article h2 {
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-weight: 500;
+}
+.language-cabinet article blockquote {
+  border-left: 0;
+  padding-left: 0;
+  font-size: var(--text-lead);
+}
+:is([data-experience='language'], [data-experience='recall']) .recall-moment {
+  border-radius: 0;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--accent);
+  margin: var(--space-12) auto;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  box-shadow: 0 8px 0 -3px var(--paper), 0 9px 0 -3px var(--line);
+}
+:is([data-experience='language'], [data-experience='recall']) .recall-moment > small {
+  display: block;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 1000px) {
+  [data-experience='writing'] .expression-layout,
+  [data-experience='speaking'] .voice-room { grid-template-columns: minmax(0, 1fr); }
+  [data-experience='writing'] .expression-context { margin-top: 0; }
+}
+@media (max-width: 600px) {
+  .reading-volume { grid-template-columns: 60px minmax(0, 1fr) 20px; gap: var(--space-4); }
+  .reading-volume .reading-mark { width: 60px; font-size: 2rem; }
+  .language-cabinet { grid-template-columns: minmax(0, 1fr); }
+  .language-cabinet article,
+  [data-experience='speaking'] .voice-situation,
+  [data-experience='speaking'] .voice-exchange > [data-voice],
+  [data-experience='writing'] .writing-sheet { padding: var(--space-4); }
+  [data-experience='speaking'] .voice-prompt { margin-right: 0; padding: var(--space-4); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reading-volume .reading-mark { transition: transform 160ms ease; }
+  .reading-volume:is(:hover, :focus-visible) .reading-mark { transform: translateY(-3px); }
+}

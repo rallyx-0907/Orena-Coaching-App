@@ -15,13 +15,18 @@ export const RECALL_SHAPES = ['in_context', 'say', 'reuse', 'meaning'];
 /* A phrase can only be recalled inside a sentence if that sentence genuinely
    contains it. Fragments recorded before the phrase was normalised, or a
    context that has drifted, fall back rather than showing a blank that hides
-   nothing. */
+   nothing.
+
+   Every occurrence is withheld, not just the first. "Say hello, then hello
+   again" masked once still prints the answer two words later, which turns
+   retrieval into reading. The passage is returned as the segments between
+   occurrences, so a surface renders a blank at each boundary and cannot
+   accidentally restore one. */
 export function blankContext(context, term) {
   const passage = String(context || '');
   const phrase = String(term || '');
   if (!phrase || !passage.includes(phrase)) return null;
-  const [before, ...rest] = passage.split(phrase);
-  return { before, after: rest.join(phrase), phrase };
+  return { segments: passage.split(phrase), phrase };
 }
 
 export function recallShape(item, kept) {

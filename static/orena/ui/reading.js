@@ -96,9 +96,9 @@ export function checkLabel(c, item) {
 export function readingRow(item, c) {
   const href = link('encounter', { id: item.id, intent: 'reading' });
   const check = checkLabel(c, item);
-  return `<a class="reading-row" href="${href}"><span class="reading-mark" aria-hidden="true">${esc(
+  return `<a class="reading-row reading-volume" href="${href}"><span class="reading-mark" aria-hidden="true">${esc(
     (item.title || '?').trim().slice(0, 1),
-  )}</span><span><small>${esc(origin(item, c))}${item.level ? ` · ${esc(item.level)}` : ''}</small><strong lang="${esc(item.language || '')}">${esc(item.title)}</strong>${
+  )}</span><span class="reading-volume-copy"><small>${esc(origin(item, c))}${item.level ? ` · ${esc(item.level)}` : ''}</small><strong lang="${esc(item.language || '')}">${esc(item.title)}</strong>${
     item.subtitle
       ? `<span class="voice-description" lang="${esc(item.language || '')}">${esc(item.subtitle)}</span>`
       : ''

@@ -165,13 +165,38 @@ for (const shape of RECALL_SHAPES)
 
 // The gap is the real sentence with the real phrase withheld - never invented.
 assert.deepEqual(blankContext('Outside, the last shops gave way to fields.', 'gave way to'), {
-  before: 'Outside, the last shops ',
-  after: ' fields.',
+  segments: ['Outside, the last shops ', ' fields.'],
   phrase: 'gave way to',
 });
 assert.equal(blankContext('a b c', 'zzz'), null);
 assert.equal(blankContext('', 'x'), null);
 assert.equal(blankContext('a b c', ''), null);
+
+/* EVERY occurrence is withheld. Masking only the first left the answer in
+   plain sight a few words later, which makes the task reading, not recall. */
+const twice = blankContext('Say hello, then hello again.', 'hello');
+assert.deepEqual(twice.segments, ['Say ', ', then ', ' again.']);
+for (const segment of twice.segments)
+  assert.ok(!segment.includes('hello'), `a segment still prints the answer: ${segment}`);
+// Whatever a surface puts in the blanks, the sentence it reconstructs is the
+// original - the passage is masked, never rewritten.
+assert.equal(twice.segments.join(twice.phrase), 'Say hello, then hello again.');
+const zh = blankContext('我去商店，然后又去商店。', '商店');
+assert.equal(zh.segments.length, 3, 'the same rule holds for Chinese');
+for (const segment of zh.segments) assert.ok(!segment.includes('商店'));
+
+/* The sentence is shown for every recall shape, so every shape must withhold
+   the phrase until the learner commits. Hiding the heading while printing the
+   source sentence underneath it hands over the same answer. */
+const recallSource = read('static/orena/ui/expression.js');
+assert.ok(
+  recallSource.includes('const withheld ='),
+  'one renderer withholds the phrase wherever the sentence appears',
+);
+assert.ok(
+  !/shape !== 'in_context' && current\.source_fragment \? `<blockquote lang="\$\{language\}">\$\{esc\(current\.source_fragment\)\}/.test(recallSource),
+  'the say/reuse/meaning sentence is no longer printed unmasked before reveal',
+);
 
 // Seeing a card is not recall. Nothing is graded before the learner has
 // committed to an answer.

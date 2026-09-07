@@ -7,6 +7,7 @@ import { renderWorld } from './ui/world.js';
 import { renderEncounter } from './ui/encounter.js';
 import { renderSpeaking } from './ui/speaking.js';
 import { renderConversation } from './ui/conversation.js';
+import { referenceNavigation, referenceCopy, experienceFor, renderContinue } from './ui/reference.js';
 import {
   renderExpression,
   renderLanguage,
@@ -71,26 +72,11 @@ const ctx = {
   message: status,
 };
 function shell() {
-  const c = ctx.c,
-    current = ['expression', 'conversation'].includes(ctx.location.page)
-      ? 'practice'
-      : ctx.location.page;
+  const c = ctx.c;
   document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
   document.documentElement.dataset.learning = ctx.language;
   document.getElementById('shell').innerHTML =
-    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><nav aria-label="Orena">${[
-      ['discover', c.discover],
-      ['practice', c.practice],
-      ['content', c.content],
-      ['language', c.language],
-    ]
-      .map(
-        ([page, title]) =>
-          `<a href="${link(page)}" ${current === page ? 'aria-current="page"' : ''}>${title}</a>`,
-      )
-      .join(
-        '',
-      )}</nav><div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}">${ctx.language.toUpperCase()} <span aria-hidden="true">☰</span></button></div>`;
+    `<div class="shell-identity"><a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><span class="shell-motto">${esc(referenceCopy[ctx.ui].fieldNote)}</span></div>${referenceNavigation(ctx)}<div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}"><span class="language-seal">${ctx.language.toUpperCase()}</span> ${c.preferences} <span aria-hidden="true">⌄</span></button></div>`;
   document.querySelector('[data-bring]').onclick = importContent;
   document.querySelector('[data-preference]').onclick = () => preferences();
   document.getElementById('footer').innerHTML =
@@ -219,6 +205,7 @@ async function render() {
   cleanup = () => {};
   document.querySelectorAll('dialog').forEach((x) => x.close());
   ctx.location = route(location.hash);
+  root.dataset.experience = experienceFor(ctx.location);
   ctx.alive = () => generation === version;
   const scope = { ...ctx, alive: ctx.alive };
   shell();
@@ -227,7 +214,9 @@ async function render() {
   try {
     const page = ctx.location.page;
     const result =
-      page === 'encounter'
+      page === 'continue'
+        ? renderContinue(root, scope)
+        : page === 'encounter'
         ? await renderEncounter(root, scope)
         : page === 'conversation'
           ? renderConversation(root, scope)

@@ -100,13 +100,17 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Review verdict: REQUEST CHANGES. Correct the Recall and Writing P1 findings in
-`CAPABILITY_DIRECTION_REVIEW.md`, verifying EN/ZH. Do not redo the foundation.
-Then authorized microphone/live-provider and human browser review.
+COMPLETE THE ORENA GOLDEN STAR REFERENCE IMPLEMENTATION. Follow
+`GOLDEN_STAR_COMPLETION.md`: distinctive shell, multi-entry architecture,
+experience compositions, approved brand world and deep EN/ZH journeys. Evaluate
+the actual browser at narrow, desktop and wide widths. Extend committed
+primitives; the current visual uniformity is a reference-product deficiency.
+The three capability-review findings remain in the completion ledger, not a
+separate stopping point; close them before acceptance.
 
 ## IN PROGRESS
 
-No implementation edits. State reconciled per human ruling; review recorded above.
+Golden Star completion is IMPLEMENTING under the current human ruling.
 
 ## PENDING
 
