@@ -110,7 +110,21 @@ Learning capabilities now built on that foundation:
   speaking, grammar and vocabulary, naming which of six things is wrong rather
   than saying "wrong" and answering follow-ups without losing the selection.
   Every capability reaches it with the learner's own wording and the context it
-  sat in.
+  sat in, and a deeper question keeps that context however long the learner
+  keeps asking.
+- **What Orena remembers** is no longer an anonymous card. A phrase kept
+  anywhere records where the learner met it, a human name for that place, the
+  sentence it sat in and why they kept it - so the collection can say "From
+  something you read · The last train home" and lead back to the passage
+  itself. This is device memory beside the account's own record of the word
+  and its review history; the surface says so rather than implying otherwise.
+- **Recall** asks the question the phrase's own history calls for. Something
+  met while reading comes back inside its sentence with the phrase withheld;
+  something the learner said comes back meaning-first, to be said again;
+  language from their own writing comes back as a question about where they
+  would use it, with the way into a draft. Nothing invents mastery: seeing a
+  card is not recall, and a forgotten word never loses the successes it already
+  earned.
 
 Microphone and provider paths are unexercised in this runtime and are not
 claimed; with no provider configured, review, explanation, registers and spoken

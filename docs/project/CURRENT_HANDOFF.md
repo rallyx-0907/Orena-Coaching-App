@@ -28,47 +28,49 @@ ORENA_WEB_EXTENSION_GUIDE.md records what a surface inherits.
 
 ## Learning capabilities
 
-`ORENA_STATUS.md` carries what each capability does and refuses to claim. What
-matters for recovery is where the invariants live:
+`ORENA_STATUS.md` says what each capability does and refuses to claim. What
+recovery needs is where the invariants live:
 
 - **Listening** `ui/encounter.js` - Follow opens no practice panel; a question
-  pauses the voice; the end of an *excerpt* is what "reached the end" means.
+  pauses the voice; "the end" is the end of the excerpt, not the asset.
 - **Reading** `content/reading.js` - `readable()` is the gate every adapter
-  ends at, carrying rights in the shape media uses; sessions come from
-  `becoming_reading.py`, reused not rebuilt. `reading-library.js` admits a
-  published text only with cleared rights, an https evidence URL, a
-  verification date, edition and changes - never anything generated or
-  imported. Comprehension is optional: a text without questions says so on the
-  row and in the encounter, none are fabricated, and the count comes from the
-  API so "none" differs from "not loaded".
+  ends at, carrying rights in the shape media uses. `reading-library.js` admits
+  a published text only with cleared rights, an https evidence URL, a
+  verification date, edition and changes. Comprehension is optional and its
+  absence is stated, never fabricated; the count comes from the API, so "none"
+  differs from "not loaded".
 - **Writing** `ui/writing-review.js` - renders the evaluator payload and
-  `revision_delta()`, both of which the surface used to discard. A quote not in
-  the learner's text is dropped; the stated task travels to the evaluator.
-  `product/revision.js` refuses an ambiguous quotation rather than guessing
-  which occurrence a learner meant.
+  `revision_delta()`, both once discarded. A quote not in the learner's text is
+  dropped; the stated task reaches the evaluator; `product/revision.js` refuses
+  an ambiguous quotation.
 - **Speaking** `ui/voice-response.js`, `product/conversation.js` - free
   expression has no reference line, so alignment is *not applicable*, not *not
   measured*; evaluator and persistence both refuse it without one. Measured
-  evidence and coaching are separate panels making separate claims. A
-  conversation is an ordered exchange the product owns; `conversation.py` is
-  stateless and rejects a stale reply. The partner never coaches, so the
-  learner's own turns carry that action - partner turns do not, and the
-  handler refuses one.
+  evidence and coaching are separate panels. A conversation is an ordered
+  exchange the product owns; the partner never coaches, so only the learner's
+  own turns carry that action.
 - **Grammar and Vocabulary** `ui/expression.js`, `content/patterns.js` - both
   reach the shared explanation with their own context; each pattern carries a
-  contrast reasoned in en/zh/vi. `product/grammar-shelf.js` extends the catalog
-  without a second syllabus.
+  contrast reasoned in en/zh/vi; `grammar-shelf.js` extends the catalog.
+- **Kept language** `product/memory.js`, `keptProvenance()` - the library owns
+  the word and its review history and has no column for where it was met, so
+  origin, place, sentence and a fixed-vocabulary reason live beside it in
+  memory, written only after the account save succeeds. Device-scoped.
+- **Recall** `product/recall.js` - the question follows the phrase's history:
+  read, inside its sentence with the phrase withheld; spoken, meaning-first;
+  written, as where they would use it. A sentence not containing the phrase
+  falls back. Seeing a card is not recall; the library only accumulates.
 - **Continuation** `ui/patterns.js` - a thread is named by its shape, not only
-  its intention: a conversation and a single take are both Speaking about the
-  same situation and must not render alike.
+  its intention; a conversation reports how far it got.
 - **One explanation system** `ui/understanding.js` - USAGE_JUDGEMENTS,
   JUDGEMENT_KEYS, the spoken-coaching schema and the authored contrasts are one
-  vocabulary, checked against each other.
+  vocabulary, checked against each other. Every follow-up re-asks about the
+  same selection and passage, so a deeper question keeps its origin.
 
 ## Last verified batch
 
 Local execution only; no CI claim.
-- Twenty-six Node gates PASS. ESM graph: 44 modules. Both validators OK.
+- Twenty-seven Node gates PASS. ESM graph: 45 modules. Both validators OK.
 - Full Python in the app image: 787 passed / 20 failed (see below). The rich
   provider paths - registers, spoken coaching, generated reading, contextual
   explanation - run against an injected provider; their grounding rules were
@@ -85,11 +87,11 @@ Local execution only; no CI claim.
 ## Runtime / safety
 
 Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
-`orena-foundation-postgres` / network; its database is temporary. Restart that
-container after Python changes - the worktree is mounted, but uvicorn does not
-reload. Do not operate production 8000, preview 8010, Cloudflare or volumes.
-No provider keys activated: the AI surfaces return 503 honestly. Pronunciation
-may be demo-labelled. No microphone acceptance has run; do not claim it.
+`orena-foundation-postgres` / network; its database is temporary. Restart it
+after Python changes - the worktree is mounted, uvicorn does not reload. Do not
+operate production 8000, preview 8010, Cloudflare or volumes. No provider keys:
+the AI surfaces return 503 honestly. Pronunciation may be demo-labelled. No
+microphone acceptance has run; do not claim it.
 
 Dependency-heavy tests run in the `ai-writing-coach:local` image (repo mounted
 read-only, tmpfs /rundata, the four *_DB vars pointed there; CLAUDE.md has the
@@ -127,19 +129,18 @@ None identified.
 
 ## OPEN P1
 
-- Platform Admin lost its host when templates/index.html was removed. Its APIs
-  and static/admin.js remain, but admin.js bails at its #page-admin guard, so
-  it is inert. Preserve it without restoring the historical shell; production
-  activation stays gated.
-- Grammar breadth: three authored patterns per language, joined by stable
-  Concept ID. Reference quality over breadth remains the scope choice.
-- Conversation state is now implemented; cross-device conversation persistence
-  and streaming/voice synthesis remain future work, not implied capabilities.
-- Reading library breadth: the contract, rights fields and admission gate are
-  in place, with two seed texts. Growing the catalogue is a rights decision per
-  text, not an engineering one. Without a provider the API answers every
-  request with one built-in passage per language, which the surface labels as
-  such.
+- Platform Admin lost its host when templates/index.html was removed; its APIs
+  and static/admin.js remain but admin.js bails at its #page-admin guard, so it
+  is inert. Preserve it without restoring the historical shell.
+- Grammar breadth: authored patterns joined by stable Concept ID, extended by
+  `grammar-shelf.js` rather than a second syllabus.
+- Cross-device continuity: kept-language provenance, conversations, drafts and
+  continuation are all device memory by design. Whether any of it should follow
+  the learner between devices is a product decision with a persistence cost.
+- Reading library breadth: contract, rights fields and admission gate are in
+  place with two seed texts. Growing the catalogue is a rights decision per
+  text. Without a provider the API answers every request with one built-in
+  passage per language, labelled as such.
 - Non-CI r8/r10/r11 matrices refer to deleted learner wrappers; admin gates to
   the missing operator host; r20 is frozen native. Do not weaken active tests
   for them.
