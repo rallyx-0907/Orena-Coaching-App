@@ -113,11 +113,12 @@ function preferences(onboarding = false) {
     if (pendingWrites) return;
     const form = event.currentTarget,
       data = new FormData(form);
+    const learningChanged = data.get('learning') !== ctx.language;
     form.inert = true;
     try {
       // Save full profile, preserving protected account settings. Language
       // changes wait for current evidence writes to finish.
-      if (data.get('learning') !== ctx.language)
+      if (learningChanged)
         await api.setLanguage(data.get('learning'));
       ctx.language = String(data.get('learning'));
       const prior = await api.learnerProfile();
@@ -138,7 +139,7 @@ function preferences(onboarding = false) {
       sheet.close();
       // Content identities are language-scoped. A language switch returns to
       // a valid entry, never reopens an encounter from the previous language.
-      history.replaceState(null, '', link());
+      if (learningChanged) history.replaceState(null, '', link());
       await render();
     } catch (error) {
       sheet.querySelector('#preferenceError').textContent = error.message;
@@ -260,6 +261,7 @@ async function boot() {
       api.learnerProfile(),
     ]);
     ctx.supportLanguages = languages.support_languages || [];
+    ctx.languageProfiles = languages.languages || [];
     ctx.user = user;
     ctx.owner = user.email || user.mode || 'local';
     ctx.language = languages.active;

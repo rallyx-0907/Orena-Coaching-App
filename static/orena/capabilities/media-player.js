@@ -5,6 +5,10 @@ const YOUTUBE_EMBED_PATH=/^\/embed\/[A-Za-z0-9_-]{11}$/;
 const segmentTimers=new WeakMap();
 const controllers=new WeakMap();
 let youtubeApiPromise=null;
+function mediaState(root,state){
+  root.dataset.mediaClock=state;
+  root.dispatchEvent?.(new CustomEvent('orena:media-state',{detail:{state}}));
+}
 
 const COMMONS_MEDIA_HOSTS=['commons.wikimedia.org','upload.wikimedia.org'];
 // Posters come from whichever provider publishes the media, so the poster
@@ -190,7 +194,7 @@ export function connectMediaPlayer(root,playback){
     endMs:Number.isFinite(parsedEnd)&&parsedEnd>parsedStart?parsedEnd:null,
   };
   controllers.set(root,controller);
-  root.dataset.mediaClock='connecting';
+  mediaState(root,'connecting');
 
   if(adapter.kind==='audio'||adapter.kind==='video'){
     controller.player={
@@ -198,21 +202,33 @@ export function connectMediaPlayer(root,playback){
       getDuration:()=>frame.duration,
       getPlayerState:()=>frame.paused?2:1,
       seekTo:value=>{frame.currentTime=Math.max(0,Number(value)||0);},
-      playVideo:()=>frame.play().catch(()=>{}),
+      playVideo:()=>frame.play().catch(error=>{
+        if(controllers.get(root)===controller)mediaState(root,error?.name==='NotAllowedError'?'blocked':'error');
+      }),
       pauseVideo:()=>frame.pause(),
       isMuted:()=>frame.muted,
       mute:()=>{frame.muted=true;},
       unMute:()=>{frame.muted=false;},
       setPlaybackRate:value=>{frame.playbackRate=Number(value)||1;},
-      destroy:()=>{},
+      destroy:()=>{
+        frame.removeEventListener?.('loadedmetadata',ready);
+        frame.removeEventListener?.('play',clock);
+        frame.removeEventListener?.('pause',clock);
+        frame.removeEventListener?.('error',failed);
+        frame.pause();
+      },
     };
     const ready=()=>{
+      if(controllers.get(root)!==controller||!frame.isConnected)return;
       if(controller.startMs>0&&Math.abs(frame.currentTime-controller.startMs/1000)>.1)frame.currentTime=controller.startMs/1000;
-      root.dataset.mediaClock='ready';startClock(root,controller);
+      mediaState(root,'ready');startClock(root,controller);
     };
+    const clock=()=>{if(controllers.get(root)===controller){mediaState(root,'ready');emitClock(root,controller);}};
+    const failed=()=>{if(controllers.get(root)===controller)mediaState(root,'error');};
     frame.addEventListener('loadedmetadata',ready,{once:true});
-    frame.addEventListener('play',()=>emitClock(root,controller));
-    frame.addEventListener('pause',()=>emitClock(root,controller));
+    frame.addEventListener('play',clock);
+    frame.addEventListener('pause',clock);
+    frame.addEventListener('error',failed);
     if(frame.readyState>=1)ready();
     return true;
   }
@@ -224,7 +240,7 @@ export function connectMediaPlayer(root,playback){
         onReady:()=>{
           if(controllers.get(root)!==controller)return;
           if(controller.startMs>0)controller.player.seekTo(controller.startMs/1000,true);
-          root.dataset.mediaClock='ready';
+          mediaState(root,'ready');
           startClock(root,controller);
         },
         onStateChange:()=>{
@@ -233,12 +249,12 @@ export function connectMediaPlayer(root,playback){
         },
         onError:()=>{
           if(controllers.get(root)!==controller)return;
-          root.dataset.mediaClock='error';
+          mediaState(root,'error');
         },
       },
     });
   }).catch(()=>{
-    if(controllers.get(root)===controller)root.dataset.mediaClock='error';
+    if(controllers.get(root)===controller)mediaState(root,'error');
   });
 
   return true;

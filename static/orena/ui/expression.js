@@ -6,7 +6,7 @@ import {
   responseComposer,
   bindComposer,
 } from './patterns.js';
-import { esc, status } from './html.js';
+import { esc, status, focusRegion } from './html.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
 import { contentFor } from '../content/texts.js';
@@ -29,7 +29,8 @@ export async function renderExpression(root, ctx) {
     '';
   const prompt = original?.prompt || c.responsePrompt;
   const invitations = contentFor(language).slice(0, 2);
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${intentNavigation(c, 'writing')}<div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><button class="primary">${c.review} ↗</button></div></form><section id="writingFeedback" aria-live="polite"></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
+  const levels = ctx.languageProfiles?.find(x => x.code === language)?.levels || [];
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div><div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target" required><option value="">${c.chooseTarget}</option>${levels.map(level => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div></form><section id="writingFeedback" aria-live="polite"></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
   const updateCount = () => {
     root.querySelector('[data-character-count]').textContent =
       [...root.querySelector('textarea').value].length + ' ' + c.draftCount;
@@ -55,7 +56,7 @@ export async function renderExpression(root, ctx) {
         api.evaluate({
           prompt: source ? `${title}\n${c.responsePrompt}` : c.freeTitle,
           text,
-          target_cefr: language === 'zh' ? 'HSK4' : 'B2',
+          target_cefr: root.querySelector('[name=target]').value,
           learning_language: language,
           parent_essay_id: parentId,
         }),
@@ -87,18 +88,18 @@ export async function renderLanguage(root, ctx) {
   let items = data.items || [],
     recalling = ctx.location.intent === 'recall',
     revealed = false;
-  function paint() {
+  function paint(moveFocus = false) {
     if (!alive()) return;
     const due = items.filter((x) => x.due),
       current = due[0];
     root.innerHTML = `${pageIntro({ title: c.wordsTitle, note: c.wordsIntro, eyebrow: c.language })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment"><small>${c.recallName}</small><h2 lang="${language}">${esc(current.word)}</h2>${current.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(current.source_fragment || '')}</blockquote>${revealed ? `<p>${esc(current.definition || current.translation_vi || '')}</p><div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>` : `<button class="primary" data-reveal>${c.showMeaning} →</button>`}<p role="status" data-recall-status></p></section>` : `<section class="empty"><h2>${c.allDone}</h2><a class="outline" href="${link('language')}">${c.language} →</a></section>`) : items.length ? `<section class="word-collection">${items.map((x) => `<article><small>${esc(x.focus_note || c.sourceContext)}</small><h2 lang="${language}">${esc(x.word)}</h2>${x.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(x.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(x.source_fragment || '')}</blockquote><details><summary>${c.meaning}</summary><p>${esc(x.definition || x.translation_vi || '')}</p></details></article>`).join('')}</section>` : `<section class="empty"><h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
     root.querySelector('[data-recall]')?.addEventListener('click', () => {
       recalling = true;
-      paint();
+      paint(true);
     });
     root.querySelector('[data-reveal]')?.addEventListener('click', () => {
       revealed = true;
-      paint();
+      paint(true);
     });
     root.querySelectorAll('[data-grade]').forEach(
       (button) =>
@@ -128,7 +129,7 @@ export async function renderLanguage(root, ctx) {
             if (!alive()) return;
             items = updated.items || [];
             revealed = false;
-            paint();
+            paint(true);
             status(c.persisted);
           } catch {
             if (alive()) {
@@ -145,7 +146,7 @@ export async function renderLanguage(root, ctx) {
                   if (!alive()) return;
                   items = updated.items || [];
                   revealed = false;
-                  paint();
+                  paint(true);
                 } catch {
                   if (alive()) retry.disabled = false;
                 }
@@ -154,6 +155,7 @@ export async function renderLanguage(root, ctx) {
           }
         }),
     );
+    if (moveFocus) focusRegion(root.querySelector('.recall-moment h2, .empty h2'));
   }
   paint();
 }
@@ -171,7 +173,7 @@ export async function renderGrammar(root, ctx) {
     // An authored note whose Concept ID the catalog does not know, or a
     // catalog that answered with nothing usable, must read as an empty shelf
     // rather than a heading above a blank page.
-    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName })}${intentNavigation(c, 'grammar')}${lessons.length ? `<div class="pattern-list">${lessons.map((x) => `<a href="${link('practice', { intent: 'grammar', id: x.id })}"><small>${esc(x.level)}</small><h2 lang="${language}">${esc(x.title[ctx.ui])}</h2><p lang="${language}">${esc(x.line)}</p><span>↗</span></a>`).join('')}</div>` : `<section class="empty"><h2>${c.noPatterns}</h2><a class="primary" href="${link('practice')}">${c.practice} →</a></section>`}`;
+    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName })}${intentNavigation(c, 'grammar')}${lessons.length ? `<div class="pattern-list">${lessons.map((x) => `<a href="${link('practice', { intent: 'grammar', id: x.id })}"><small>${esc(x.level)}</small><h2 lang="${ctx.ui}">${esc(x.title[ctx.ui])}</h2><p lang="${language}">${esc(x.line)}</p><span>↗</span></a>`).join('')}</div>` : `<section class="empty"><h2>${c.noPatterns}</h2><a class="primary" href="${link('practice')}">${c.practice} →</a></section>`}`;
     return;
   }
   const lesson = await api.grammarLesson(ctx.location.id);

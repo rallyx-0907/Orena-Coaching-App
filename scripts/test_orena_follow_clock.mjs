@@ -27,5 +27,11 @@ try {
   replaySegment(root,playback,0,1000);seekPlayback(root,playback,1500);await tick();
   assert.equal(audio.paused,false,'Seeking cancels the previous replay boundary');
   assert.equal(model.current.segment_id,'two');assert.equal(model.meaning(),'Goodbye');
+  audio.dispatchEvent(new Event('error'));
+  assert.equal(root.dataset.mediaClock,'error','A failed source is observable to the product');
 } finally {disconnectMediaPlayer(root);}
+assert.equal(audio.paused,true,'Leaving an encounter stops its native audio');
+audio.dispatchEvent(new Event('loadedmetadata'));
+audio.dispatchEvent(new Event('play'));
+assert.equal(root.dataset.mediaClock,'disconnected','Late media events cannot revive a retired encounter');
 console.log('Follow playback clock: seek, selection, replay and all displayed rates PASS');

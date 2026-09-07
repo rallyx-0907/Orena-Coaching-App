@@ -21,6 +21,11 @@ export function safeExternal(value) {
     return '';
   }
 }
+export function focusRegion(element) {
+  if (!element) return;
+  element.setAttribute('tabindex', '-1');
+  element.focus({ preventScroll: true });
+}
 export function dialog({ title, body, onReady }) {
   const opener = document.activeElement;
   const element = document.createElement('dialog');
