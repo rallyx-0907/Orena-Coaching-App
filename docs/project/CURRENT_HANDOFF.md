@@ -43,25 +43,26 @@ recovery needs is where the invariants live:
   `revision_delta()`, both once discarded. A quote not in the learner's text is
   dropped; the stated task reaches the evaluator; `product/revision.js` refuses
   an ambiguous quotation.
-- **Speaking** `ui/voice-response.js`, `product/conversation.js` - free
-  expression has no reference line, so alignment is *not applicable*, not *not
-  measured*; evaluator and persistence both refuse it without one. Measured
-  evidence and coaching are separate panels. A conversation is an ordered
-  exchange the product owns; the partner never coaches, so only the learner's
-  own turns carry that action.
+- **Speaking** `product/conversation.js` - free expression has no reference
+  line, so alignment is *not applicable*, not *not measured*, and both the
+  evaluator and persistence refuse it without one. Measured evidence and
+  coaching are separate panels. The partner never coaches, so only the
+  learner's own turns carry that action.
 - **Grammar and Vocabulary** `ui/expression.js`, `content/patterns.js` - both
   reach the shared explanation with their own context; each pattern carries a
   contrast reasoned in en/zh/vi; `grammar-shelf.js` extends the catalog.
-- **Kept language** `product/memory.js`, `keptProvenance()` - the library owns
-  the word and its review history and has no column for where it was met, so
-  origin, place, sentence and a fixed-vocabulary reason live beside it in
-  memory, written only after the account save succeeds. Device-scoped.
+- **Kept language** `product/memory.js`, `keptProvenance()` - the library has
+  no column for where a word was met, so origin, place, sentence and a
+  fixed-vocabulary reason live beside it in memory, written only after the
+  account save succeeds. Device-scoped.
 - **Recall** `product/recall.js` - the question follows the phrase's history:
   read, inside its sentence with the phrase withheld; spoken, meaning-first;
-  written, as where they would use it. A sentence not containing the phrase
-  falls back. Seeing a card is not recall; the library only accumulates.
+  written, as where they would use it. Seeing a card is not recall; the library
+  only accumulates.
 - **Continuation** `ui/patterns.js` - a thread is named by its shape, not only
   its intention; a conversation reports how far it got.
+- **Presentation** - workspace, brand and hint invariants live in
+  `ORENA_WEB_EXTENSION_GUIDE.md`, where a surface reads what it inherits.
 - **One explanation system** `ui/understanding.js` - USAGE_JUDGEMENTS,
   JUDGEMENT_KEYS, the spoken-coaching schema and the authored contrasts are one
   vocabulary, checked against each other. Every follow-up re-asks about the
@@ -70,7 +71,7 @@ recovery needs is where the invariants live:
 ## Last verified batch
 
 Local execution only; no CI claim.
-- Twenty-seven Node gates PASS. ESM graph: 45 modules. Both validators OK.
+- Twenty-nine Node gates PASS. ESM graph: 46 modules. Both validators OK.
 - Full Python in the app image: 787 passed / 20 failed (see below). The rich
   provider paths - registers, spoken coaching, generated reading, contextual
   explanation - run against an injected provider; their grounding rules were

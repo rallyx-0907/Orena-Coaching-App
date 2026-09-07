@@ -169,3 +169,40 @@ unfinished work, `sourceLink(id)` for the way back to where it started.
 
 The browser pass is not optional: every defect fixed in this foundation was
 found by looking at the running product, not by reading the code.
+
+## Presentation invariants
+
+What a new surface inherits, and the traps behind each one.
+
+### Workspace`
+
+`world.css`, `ui/encounter.js` - consuming and producing want
+  different shapes. When a practice opens the encounter re-composes: source one
+  side, work the other, each scrolling on its own. The practice panel must stay
+  a sibling of the media stage, not a child, or nothing can place them apart.
+  Narrow, the source becomes a compact sticky strip and the work is scrolled to.
+### Brand`
+
+`content/brand-library.js`, `ui/brand.js` - approved artwork is
+  addressed by state, never by path, and served from `assets/brand/orena` by
+  `/orena-brand` rather than copied into the web tree. Each entry carries its
+  measured size; three scenes have printed caption strips and are framed to the
+  art above them. Reference sheets are not product imagery.
+### Hints`
+
+`capabilities/dictation-hints.js` - word boundaries, word length,
+  earned anchors, and the letters the learner typed correctly inside an
+  unfinished word. Every unfound word withholds its last character, so a hint
+  cannot become a reveal; Chinese counts character units.
+
+### Motion
+
+`foundation.css` carries one arrival keyframe and no loops. Movement says
+"this arrived because of something you did"; ambient drift is decoration.
+Everything is inside `@media (prefers-reduced-motion: no-preference)`.
+
+### Page openings
+
+`pageIntro({ scene })` is the one page opening. Name a state from
+`content/brand-library.js`; never a file path. A surface with nothing worth
+illustrating passes no state and shows none - content is the protagonist.

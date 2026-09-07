@@ -39,6 +39,27 @@ deterministic provider-injected coverage of their grounding rules.
 Microphone-dependent paths were not executed. This is execution evidence, not
 milestone acceptance.
 
+Learning workspace: consuming and producing have different shapes. Following a
+voice is content; reconstructing a line is work, so when a practice opens the
+encounter re-composes - source on one side, work on the other, both in the
+first viewport, each scrolling on its own. Narrow, the source becomes a compact
+sticky strip and the work is brought to the learner rather than left below a
+screenful of media.
+
+The approved red-panda library is in the product. Fifty-two approved assets
+existed and four were reachable, one of them doing duty as both the arrival and
+the empty state; thirty are now addressed by what a moment means - discovery,
+reading, listening, conversation, writing, remembering, completion, empty - so
+each experience looks like itself without any surface knowing a file path.
+Artwork is framed at its own measured ratio and never repainted to match a
+theme; the three scenes carrying printed caption strips are framed to the art
+above them.
+
+Dictation's hint shows the shape of the line rather than a row of marks: word
+boundaries, each word's length, words already heard as anchors, and the letters
+the learner typed correctly inside a word they have not finished. Every unfound
+word still withholds its last character, so a hint cannot become a reveal.
+
 Shared foundation: tinted panels carry their own ink in both themes, work that
 leaves the device reports through one primitive whose retries are always wired,
 disabled controls are inert, and the companion scene is framed by the artwork's
