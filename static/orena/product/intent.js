@@ -61,6 +61,9 @@ export function supports(content, intent) {
 }
 
 export function continuationLink(item) {
+  if (item.intent === 'speaking' && !/^(media:|url:)/.test(item.id)) return link('practice',{id:item.id,intent:'speaking'});
+  if (item.id.startsWith('voice:'))
+    return link('practice', { id: item.id, intent: 'speaking' });
   if (item.intent === 'writing' || item.id.startsWith('expression:'))
     return link('expression', { id: item.id });
   if (item.id.startsWith('grammar:'))
@@ -68,6 +71,8 @@ export function continuationLink(item) {
   return link('encounter', { id: item.id, intent: item.intent });
 }
 export function sourceLink(id) {
+  if (id.startsWith('voice:'))
+    return link('practice', { id, intent: 'speaking' });
   if (id.startsWith('expression:')) return link('practice');
   if (id.startsWith('grammar:'))
     return link('practice', { id: id.slice(8), intent: 'grammar' });

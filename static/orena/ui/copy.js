@@ -652,7 +652,59 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  notApplicable: 'Does not apply here',
+  sourceNotApplicable: 'There was no line to match',
+  coachingTitle: 'About the words you chose',
+  coachingNote:
+    'This reads the transcript, not your voice. It is guidance, not a measurement, and it says nothing about how you sounded.',
+  coachingCarried: 'What carried',
+  coachingLanded: 'What would land differently',
+  coachingAnotherWay: 'Another way to say part of it',
+  coachingNextAttempt: 'One thing to try next time',
+  coachingWorking: 'Reading what you said…',
+  coachingUnavailable:
+    'No guidance is available for this take. Your recording, transcript and evidence are unaffected.',
+});
+Object.assign(copy.zh, {
+  notApplicable: '此处不适用',
+  sourceNotApplicable: '这里没有要对照的原句',
+  coachingTitle: '关于你选择的说法',
+  coachingNote: '这是根据文字记录给出的建议，不是对声音的测量，也不涉及你听起来如何。',
+  coachingCarried: '哪些地方说到位了',
+  coachingLanded: '哪些地方对方会有别的理解',
+  coachingAnotherWay: '其中一处的另一种说法',
+  coachingNextAttempt: '下次可以试试',
+  coachingWorking: '正在读你说的话…',
+  coachingUnavailable: '这次没有可用的建议。你的录音、文字记录与证据都不受影响。',
+});
+
+Object.assign(copy.en, {
   readingName: 'Read',
+  voiceTitle: 'Something only you can say.',
+  voiceOwn: 'I have something to say',
+  voiceOwnNote: 'Who are you speaking to, and what do you want to tell them?',
+  voiceBegin: 'Start with this',
+  voiceOwnSource: 'Your chosen context, kept on this device. Speak in your own words.',
+  voiceIntro:
+    'A person to speak to. An idea to put into words. Start here, without a clip or a script.',
+  voiceSituation: 'Your situation',
+  voiceChoose: 'Another starting point',
+  voiceSource:
+    'Orena-authored invitations. There is no model answer to reproduce.',
+  voiceTryNote:
+    'Try a short reply in your own words. You have up to two minutes; take your time before you start.',
+  voiceHistory: 'What you said before',
+  voiceHistoryNote: 'Transcripts saved to your account. Audio is not kept.',
+  voiceNoHistory: 'No saved responses to this situation yet.',
+  voiceTranscriptNote:
+    'Speech recognition can mishear you. Listen to your recording before treating these words as yours.',
+  voiceReflect:
+    'Listen again: would the other person understand your point? Choose one thing to make clearer in another take.',
+  voiceAnother: 'Try another take',
+  voicePlayback: 'Listen to your recording',
+  voiceHearWords: 'Get my transcript & keep this take',
+  voiceReady:
+    'Listen first. Requesting a transcript sends this recording for speech recognition; the words are saved to your account.',
   reading: 'Read something through',
   readingNote: 'A passage, a point of view, something to carry with you.',
   readingIntent: 'Read something through',
@@ -701,6 +753,29 @@ Object.assign(copy.en, {
 });
 Object.assign(copy.zh, {
   readingName: '阅读',
+  voiceTitle: '有些话，只有你能说。',
+  voiceOwn: '我有想说的话',
+  voiceOwnNote: '你想对谁说？想告诉对方什么？',
+  voiceBegin: '从这里开始',
+  voiceOwnSource: '你选择的语境，保存在此设备上。用自己的话说出来。',
+  voiceIntro:
+    '想象一个倾听的人，把想法说出来。不需要先选视频，也不用照着稿子念。',
+  voiceSituation: '此刻的情境',
+  voiceChoose: '换个话题开始',
+  voiceSource: 'Orena 编写的表达邀请，没有需要复述的标准答案。',
+  voiceTryNote: '用自己的话简短回应。最多录制两分钟，开始前可以慢慢想。',
+  voiceHistory: '你之前说过的话',
+  voiceHistoryNote: '转写文字保存在你的账户中，不保存录音。',
+  voiceNoHistory: '这个情境还没有保存过的回应。',
+  voiceTranscriptNote:
+    '语音识别也会听错。先听一遍录音，再确认这些文字是否是你的原话。',
+  voiceReflect:
+    '再听一遍：对方能明白你的意思吗？下一次，选一个地方说得更清楚。',
+  voiceAnother: '再说一次',
+  voicePlayback: '听自己的录音',
+  voiceHearWords: '转写并保存这次表达',
+  voiceReady:
+    '先听一遍。请求转写后会发送录音进行语音识别，识别出的文字会保存到你的账户。',
   reading: '读完一篇文字',
   readingNote: '一篇文字，一种看法，带走一点新的感受。',
   readingIntent: '完整读一段',

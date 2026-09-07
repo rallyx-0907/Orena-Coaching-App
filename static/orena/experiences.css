@@ -197,11 +197,36 @@
   padding: 28px 36px;
   color: var(--on-night);
 }
-.audio-identity small { color: var(--sun); }
-.audio-identity p { font-family: var(--display-font); font-weight: 700; font-size: 1.5rem; margin: 4px 0; }
-.audio-identity > div > span { font-size: var(--text-sm); color: var(--on-night-muted); }
-.voice-orbit { width: 92px; height: 92px; border-radius: 50%; flex: none; border: 1px solid #ebba6866; display: grid; place-items: center; box-shadow: 0 0 0 12px #ebba6812; }
-.voice-orbit > span { width: 60px; height: 60px; border: 14px solid #e48051; border-radius: 50%; box-shadow: 0 0 0 6px #e4805133; }
+.audio-identity small {
+  color: var(--sun);
+}
+.audio-identity p {
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 4px 0;
+}
+.audio-identity > div > span {
+  font-size: var(--text-sm);
+  color: var(--on-night-muted);
+}
+.voice-orbit {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  flex: none;
+  border: 1px solid #ebba6866;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 12px #ebba6812;
+}
+.voice-orbit > span {
+  width: 60px;
+  height: 60px;
+  border: 14px solid #e48051;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px #e4805133;
+}
 .encounter-heading {
   padding-top: 0;
 }
@@ -451,11 +476,28 @@
   }
 }
 @media (max-width: 480px) {
-  .back-row > small { order: 3; flex-basis: 100%; text-align: left; }
-  .audio-identity { gap: 20px; padding: 24px; min-height: 140px; }
-  .voice-orbit { width: 56px; height: 56px; }
-  .voice-orbit > span { width: 38px; height: 38px; border-width: 9px; }
-  .audio-identity p { font-size: 1.25rem; }
+  .back-row > small {
+    order: 3;
+    flex-basis: 100%;
+    text-align: left;
+  }
+  .audio-identity {
+    gap: 20px;
+    padding: 24px;
+    min-height: 140px;
+  }
+  .voice-orbit {
+    width: 56px;
+    height: 56px;
+  }
+  .voice-orbit > span {
+    width: 38px;
+    height: 38px;
+    border-width: 9px;
+  }
+  .audio-identity p {
+    font-size: 1.25rem;
+  }
   #shell nav {
     flex-wrap: wrap;
     gap: 0 16px;
@@ -797,10 +839,16 @@
   display: block;
   color: var(--muted);
 }
-.voice-dimension[data-unmeasured] dd b {
+.voice-dimension[data-unmeasured] dd b,
+.voice-dimension[data-inapplicable] dd b {
   font-size: var(--text-sm);
   font-weight: 650;
   color: var(--muted);
+}
+/* A dimension that does not apply is not a gap in the evidence, so it recedes
+   further than one that could have been measured and was not. */
+.voice-dimension[data-inapplicable] {
+  opacity: 0.72;
 }
 .voice-tokens {
   display: grid;
@@ -990,6 +1038,68 @@
 /* Reading. A passage the learner asked for is read in the same encounter as
    everything else, so these styles cover only what is new: the list of things
    that can be read, the request, and the optional check that follows a text. */
+.voice-room {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: var(--space-8);
+  margin-block: var(--space-8);
+}
+.voice-room > section {
+  min-width: 0;
+}
+.voice-prompt {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-6);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-left: 3px solid var(--on-sage);
+  font-size: var(--text-reading);
+  line-height: 1.7;
+}
+.voice-directions {
+  border-left: 1px solid var(--line);
+  padding-left: var(--space-6);
+}
+.voice-directions a {
+  display: block;
+  padding-block: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+.voice-directions a[aria-current] {
+  font-weight: 700;
+}
+.voice-response audio {
+  display: block;
+  width: 100%;
+  margin-block: var(--space-4);
+}
+.voice-transcript {
+  font-size: var(--text-reading);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.voice-history {
+  border-top: 1px solid var(--line);
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+}
+.voice-history-take {
+  border-bottom: 1px solid var(--line);
+  padding-block: var(--space-4);
+}
+.voice-history-take small {
+  color: var(--muted);
+}
+@media (max-width: 800px) {
+  .voice-room {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .voice-directions {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: var(--space-4) 0;
+  }
+}
 .reading-row {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) 24px;
@@ -1122,4 +1232,58 @@
     grid-template-columns: 44px minmax(0, 1fr) 20px;
     gap: var(--space-4);
   }
+}
+
+/* Guidance on a spoken response. It sits apart from the evidence panel, and
+   looks like a different kind of claim, because it is one: a reading of the
+   words recognition returned rather than a measurement of the voice. */
+.spoken-coaching {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  border-radius: var(--radius);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  max-width: var(--measure);
+}
+.spoken-coaching h3 {
+  margin-top: 0;
+  font-family: var(--display-font);
+}
+.spoken-coaching h4 {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.spoken-coaching .meta {
+  color: inherit;
+  opacity: 0.85;
+}
+.coaching-point {
+  margin-bottom: var(--space-4);
+}
+.coaching-point blockquote {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 2px solid currentColor;
+  font-style: italic;
+}
+.coaching-point > small {
+  display: block;
+  margin-bottom: var(--space-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  opacity: 0.8;
+}
+.coaching-point p {
+  margin: 0;
+  max-width: var(--measure);
+}
+.coaching-instead {
+  margin-top: var(--space-2) !important;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, currentColor 8%, transparent);
 }

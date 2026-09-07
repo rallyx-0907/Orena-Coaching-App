@@ -7,6 +7,7 @@ import {
 import { esc, safeExternal, dialog, status, focusRegion } from './html.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
+import { mountVoiceResponse } from './voice-response.js';
 import { link, deeperPractice } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
 import {
@@ -275,6 +276,7 @@ export async function renderEncounter(root, ctx) {
     lastClockSegment = null;
   let disposed = false,
     practiceVersion = 0;
+  let voiceCleanup = () => {};
   const isAlive = () => alive() && !disposed;
   const remember = () =>
     memory.enter({
@@ -492,6 +494,8 @@ export async function renderEncounter(root, ctx) {
   connectMediaPlayer(playerRoot, payload.playback);
   paintFollow();
   function closePractice() {
+    voiceCleanup();
+    voiceCleanup = () => {};
     practiceVersion++;
     recorder.cleanup();
     recorder = createLocalAudioRecorder();
@@ -534,6 +538,8 @@ export async function renderEncounter(root, ctx) {
   }
   async function openPractice(intent) {
     if (recording) return;
+    voiceCleanup();
+    voiceCleanup = () => {};
     practiceVersion++;
     const version = practiceVersion;
     practice = intent;
@@ -676,6 +682,22 @@ export async function renderEncounter(root, ctx) {
         persist();
       };
       playLine();
+    } else if (intent === 'speaking') {
+      voiceCleanup = mountVoiceResponse(
+        body,
+        { ...ctx, alive: () => isAlive() && version === practiceVersion },
+        {
+          id,
+          title: item.title,
+          prompt: target.original_text,
+          assetId: payload.asset.asset_id,
+          segmentId: target.segment_id,
+          onRecording: (active) => {
+            recording = active;
+            setRecordingLock(active);
+          },
+        },
+      );
     } else {
       body.innerHTML = `<blockquote lang="${language}">${esc(target.original_text)}</blockquote><p>${esc(model.meaning(target.segment_id) || '')}</p><p>${intent === 'shadowing' ? c.shadowGuide : c.speakingGuide}</p><div class="button-row"><button class="outline" data-listen>${c.replay} ↺</button><button class="primary" data-record>● ${c.record}</button></div><p role="status" data-record-status></p><div data-take></div><p class="meta">${c.localAudio}</p><div data-feedback></div>`;
       body.querySelector('[data-listen]').onclick = playLine;
@@ -787,49 +809,26 @@ export async function renderEncounter(root, ctx) {
         area.textContent = c.loading;
         body.querySelector('[data-feedback-action]').disabled = true;
         try {
-          if (intent === 'shadowing') {
-            const result = await ctx.mutate(() =>
-              evaluateVoice({
-                api,
-                blob: currentTake.blob,
-                language,
-                reference: target.spoken_text || target.original_text,
-                assetId: payload.asset.asset_id,
-                segmentId: target.segment_id,
-                takeId: currentTakeId,
-              }),
-            );
-            if (
-              !isAlive() ||
-              version !== practiceVersion ||
-              currentTakeId !== takeId
-            )
-              return;
-            // The envelope already separates measurement from derivation; show
-            // that separation rather than collapsing it into one percentage.
-            area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p>${voiceEvidence(c, result.evaluation, language)}<p>${result.saved ? c.persisted : c.failedSave}</p>`;
-          } else {
-            const result = await api.transcribeSpeech(
-              currentTake.blob,
+          const result = await ctx.mutate(() =>
+            evaluateVoice({
+              api,
+              blob: currentTake.blob,
               language,
-            );
-            if (
-              !isAlive() ||
-              version !== practiceVersion ||
-              currentTakeId !== takeId
-            )
-              return;
-            const heard = result.text || result.transcript || '';
-            // What was spoken becomes the start of a draft, but never at the
-            // cost of writing the learner already has. Whatever is stored is
-            // what the response box shows, so the two cannot silently diverge.
-            const draft = root.querySelector('#response');
-            if (heard && !(draft?.value || memory.value.expressions[id])) {
-              memory.write(id, heard);
-              if (draft) draft.value = heard;
-            }
-            area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(heard)}</p><a class="outline" href="${link('expression', { id })}">${c.develop} ↗</a>`;
-          }
+              reference: target.spoken_text || target.original_text,
+              assetId: payload.asset.asset_id,
+              segmentId: target.segment_id,
+              takeId: currentTakeId,
+            }),
+          );
+          if (
+            !isAlive() ||
+            version !== practiceVersion ||
+            currentTakeId !== takeId
+          )
+            return;
+          // The envelope already separates measurement from derivation; show
+          // that separation rather than collapsing it into one percentage.
+          area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p>${voiceEvidence(c, result.evaluation, language)}<p>${result.saved ? c.persisted : c.failedSave}</p>`;
         } catch {
           if (isAlive() && version === practiceVersion) {
             area.textContent = c.feedbackUnavailable;
@@ -851,6 +850,7 @@ export async function renderEncounter(root, ctx) {
   if (deeperPractice.includes(practice)) openPractice(practice);
   return () => {
     disposed = true;
+    voiceCleanup();
     practiceVersion++;
     recorder.cleanup();
     playerRoot.removeEventListener('orena:media-time', onClock);

@@ -9,7 +9,7 @@ import {
   supports,
 } from '../product/intent.js';
 import { contentFor } from '../content/texts.js';
-import { readingEntry } from '../content/reading.js';
+import { readingEntry, readingSessionId } from '../content/reading.js';
 import { openReadingRequest, readingRow } from './reading.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
@@ -58,7 +58,18 @@ export async function renderWorld(root, ctx) {
   const reading = (
     result[1].status === 'fulfilled' ? result[1].value.items || [] : []
   ).map((x) => readingEntry(x, language));
-  const readingFailed = result[1].status === 'rejected';
+  let readingFailed = result[1].status === 'rejected';
+  // The recent list is bounded. Kept passages must not disappear simply
+  // because the learner requested twelve newer ones.
+  if (location.page === 'content') {
+    const missing = memory.value.kept.filter(id => readingSessionId(id) && !reading.some(x => x.id === id));
+    const restored = await Promise.allSettled(missing.map(id => api.readingSession(readingSessionId(id))));
+    if(!alive()) return;
+    for(const item of restored) {
+      if(item.status === 'rejected') readingFailed = true;
+      else if(item.value.found && item.value.session?.language_code === language) reading.push(readingEntry(item.value.session,language));
+    }
+  }
   // Everything that is read rather than listened to, in one list.
   const readable = [...reading, ...text, ...memory.value.imports];
   const all = [
@@ -100,7 +111,7 @@ export async function renderWorld(root, ctx) {
     const kept = all.filter(
       (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',
     );
-    root.innerHTML = `${headline(c.content, c.local)}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${companionArt()}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
+    root.innerHTML = `${headline(c.content, c.local)}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${companionArt()}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
   } else {
     const feature = media.find((x) => x.kind === 'video') || media[0];
     root.innerHTML = `<section class="arrival"><div><small>${c.edition}</small><h1>${c.hello}</h1><p>${c.intro}</p></div>${companionArt()}</section><div class="world-opening">${feature ? `<article class="window"><a class="window-media" aria-label="${esc(feature.title)}" href="${destination(feature.id)}">${art(feature)}<span class="play-disc" aria-hidden="true">▶</span><span class="duration">${duration(feature.duration_ms)}</span></a><div class="window-caption"><div><small>${c.video} · ${esc(feature.level)} · ${esc(origin(feature, c))}</small><h2 lang="${language}"><a href="${destination(feature.id)}">${esc(feature.title)} ↗</a></h2></div><p>${esc(feature.description)}</p></div></article>` : `<div class="window">${catalogError}<h2>${c.noCatalog}</h2></div>`}<aside class="side-story"><small>${c.stories}</small><a href="${destination(text[0].id)}">${art(text[0])}<h2 lang="${language}">${esc(text[0].title)} ↗</h2><p lang="${language}">${esc(text[0].subtitle)}</p></a><small>${c.generated}</small></aside></div><section class="intent-ribbon"><div><h2>${c.choose}</h2><p>${c.chooseNote}</p></div><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} ↗</a><a href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} ↗</a><a href="${link('practice', { intent: 'reading' })}">${c.readingName} ↗</a><a href="${link('expression')}">${c.writingName} ↗</a><a href="${link('practice')}">${c.practice} →</a></section>${continuation}<section class="voices"><div class="section-head"><h2>${c.voices}</h2><span class="wave" aria-hidden="true">▂ ▆ ▃ ▇ ▄ ▂</span></div>${practiceMedia
@@ -123,8 +134,8 @@ export async function renderWorld(root, ctx) {
     .querySelectorAll('[data-read]')
     .forEach((x) => (x.onclick = () => openReadingRequest(ctx)));
   root
-    .querySelector('[data-retry]')
-    ?.addEventListener('click', () => renderWorld(root, ctx));
+    .querySelectorAll('[data-retry]')
+    .forEach(button => button.addEventListener('click', () => renderWorld(root, ctx)));
   root.querySelectorAll('[data-remove]').forEach(
     (button) =>
       (button.onclick = () => {

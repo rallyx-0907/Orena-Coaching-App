@@ -5,6 +5,7 @@ import { route, link } from './product/intent.js';
 import { learnerMemory } from './product/memory.js';
 import { renderWorld } from './ui/world.js';
 import { renderEncounter } from './ui/encounter.js';
+import { renderSpeaking } from './ui/speaking.js';
 import {
   renderExpression,
   renderLanguage,
@@ -118,8 +119,7 @@ function preferences(onboarding = false) {
     try {
       // Save full profile, preserving protected account settings. Language
       // changes wait for current evidence writes to finish.
-      if (learningChanged)
-        await api.setLanguage(data.get('learning'));
+      if (learningChanged) await api.setLanguage(data.get('learning'));
       ctx.language = String(data.get('learning'));
       const prior = await api.learnerProfile();
       ctx.profile = await api.saveLearnerProfile({
@@ -231,9 +231,11 @@ async function render() {
           ? await renderExpression(root, scope)
           : page === 'language' || ctx.location.intent === 'recall'
             ? await renderLanguage(root, scope)
-            : page === 'practice' && ctx.location.intent === 'grammar'
-              ? await renderGrammar(root, scope)
-              : await renderWorld(root, scope);
+            : page === 'practice' && ctx.location.intent === 'speaking'
+              ? renderSpeaking(root, scope)
+              : page === 'practice' && ctx.location.intent === 'grammar'
+                ? await renderGrammar(root, scope)
+                : await renderWorld(root, scope);
     if (!scope.alive()) {
       result?.();
       return;

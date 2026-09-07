@@ -14,6 +14,7 @@ const SOURCE_KEYS = {
   deterministic_reference_alignment: 'sourceAlignment',
   synthetic_demo: 'sourceDemo',
   not_assessed: 'sourceNotAssessed',
+  not_applicable: 'sourceNotApplicable',
 };
 
 export function sourceLabel(c, provenance) {
@@ -21,11 +22,16 @@ export function sourceLabel(c, provenance) {
   return c[SOURCE_KEYS[provenance]] || `${c.sourceProvider}: ${provenance}`;
 }
 
+/* Three states, not two. A dimension was measured, or it could have been and
+   was not, or it does not apply to what the learner was asked to do. Free
+   expression has no line to match, and reporting that as "not measured" would
+   describe a gap in the stack rather than the truth about the task. */
 function dimensionRow(c, key, value, provenance) {
   const measured = value !== null && value !== undefined;
-  return `<div class="voice-dimension"${measured ? '' : ' data-unmeasured'}>
+  const inapplicable = !measured && provenance === 'not_applicable';
+  return `<div class="voice-dimension"${measured ? '' : inapplicable ? ' data-inapplicable' : ' data-unmeasured'}>
     <dt>${esc(c[`dimension_${key}`] || key)}</dt>
-    <dd><b>${measured ? esc(String(value)) : esc(c.notMeasured)}</b><small>${esc(sourceLabel(c, provenance))}</small></dd>
+    <dd><b>${measured ? esc(String(value)) : esc(inapplicable ? c.notApplicable : c.notMeasured)}</b><small>${esc(sourceLabel(c, provenance))}</small></dd>
   </div>`;
 }
 

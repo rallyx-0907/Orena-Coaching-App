@@ -65,6 +65,24 @@ class ContextualDictionaryIn(MediaExplainIn):
     context: str = Field(min_length=1, max_length=2400)
 
 
+class SpokenResponseIn(BaseModel):
+    """A transcribed spoken response, and the situation it answered."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    transcript: str = Field(min_length=1, max_length=2400)
+    source_language: str = Field(min_length=2, max_length=32)
+    target_language: str = Field(min_length=2, max_length=32)
+    # What the learner was asked to do. Without it, coaching has to guess at the
+    # task and ends up marking ordinary choices as omissions.
+    situation: str = Field(default="", max_length=1200)
+
+    @field_validator("target_language")
+    @classmethod
+    def normalize_spoken_target(cls, value: str) -> str:
+        return value.strip().casefold()
+
+
 class RegisterExploreIn(BaseModel):
     """One meaning, asked for across the registers a learner needs to tell apart."""
 
@@ -399,6 +417,129 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         ][:4],
         "question": question,
         "claim": "contextual_ai_explanation",
+    }
+
+
+def _spoken_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "carried": {
+                "type": "array",
+                "maxItems": 3,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "quote": {"type": "string"},
+                        "why": {"type": "string"},
+                    },
+                    "required": ["quote", "why"],
+                },
+            },
+            "landed_differently": {
+                "type": "array",
+                "maxItems": 3,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "quote": {"type": "string"},
+                        "why": {"type": "string"},
+                        "instead": {"type": "string"},
+                        "judgement": {"type": "string", "enum": list(USAGE_JUDGEMENTS)},
+                    },
+                    "required": ["quote", "why", "instead", "judgement"],
+                },
+            },
+            "another_way": {"type": "string"},
+            "next_attempt": {"type": "string"},
+        },
+        "required": ["carried", "landed_differently", "another_way", "next_attempt"],
+    }
+
+
+@contextual_router.post("/spoken-response")
+def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
+    """Coach what a learner said, from the words recognition returned.
+
+    This is coaching, not measurement, and the surface must keep the two apart.
+    Nothing here heard the audio: pronunciation, pace and intonation are not
+    knowable from a transcript, and the prompt forbids commenting on them. What
+    is knowable is the language the learner reached for, so that is what comes
+    back - quoted from their own words, in the same judgement vocabulary the
+    rest of the product uses to say what kind of problem something is.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    transcript = payload.transcript.strip()
+    situation = payload.situation.strip()
+    if not transcript:
+        raise HTTPException(422, "A transcript is required.")
+
+    system = (
+        f"You are a speaking tutor. The learner speaks {source_name}; explain in "
+        f"{target_name}. You are reading a speech-recognition transcript of what "
+        "they said. You did NOT hear the audio: never comment on pronunciation, "
+        "accent, pace, volume or intonation, and never say how they sounded. "
+        "Recognition can mishear; if a fragment looks like a recognition error "
+        "rather than a learner choice, leave it alone. Spoken language is not "
+        "written language: false starts, contractions, fillers and short "
+        "sentences are normal speech, not mistakes. Quote only words that appear "
+        "in the transcript. Name at most three things that carried the meaning "
+        "and at most three that would land differently, each with the reason. "
+        "Give one alternative way to say part of it, not a rewrite of the whole "
+        "response, and one concrete thing to try in the next attempt. Do not "
+        "score, grade or estimate a level. Never cite a source you were not given."
+    )
+    user = (
+        (f"THE SITUATION:\n{situation}\n\n" if situation else "")
+        + f"WHAT RECOGNITION HEARD:\n{transcript}\n\n"
+        + "Coach this spoken response."
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        schema=_spoken_schema(),
+        max_output_tokens=1400,
+    )
+
+    def _grounded(items: Any, *, with_alternative: bool) -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = []
+        for item in items if isinstance(items, list) else ():
+            if not isinstance(item, dict):
+                continue
+            quote = str(item.get("quote") or "").strip()
+            why = str(item.get("why") or "").strip()
+            # A quotation the learner did not say is the one thing coaching
+            # must never show: they cannot tell a tutor's slip from their own.
+            if not quote or not why or quote not in transcript:
+                continue
+            entry = {"quote": quote[:400], "why": why[:900]}
+            if with_alternative:
+                entry["instead"] = str(item.get("instead") or "").strip()[:400]
+                entry["judgement"] = _judgement(item.get("judgement"))
+            found.append(entry)
+        return found[:3]
+
+    carried = _grounded(raw.get("carried"), with_alternative=False)
+    landed = _grounded(raw.get("landed_differently"), with_alternative=True)
+    return {
+        "source_language": language,
+        "target_language": target,
+        "transcript": transcript,
+        "situation": situation,
+        "carried": carried,
+        "landed_differently": landed,
+        "another_way": str(raw.get("another_way") or "").strip()[:600],
+        "next_attempt": str(raw.get("next_attempt") or "").strip()[:400],
+        "available": bool(carried or landed),
+        # Said in the payload as well as in the copy: this is derived from a
+        # transcript, and it is not a measurement of speech.
+        "claim": "spoken_response_coaching_from_transcript",
     }
 
 
