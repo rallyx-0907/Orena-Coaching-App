@@ -6,6 +6,7 @@ import { learnerMemory } from './product/memory.js';
 import { renderWorld } from './ui/world.js';
 import { renderEncounter } from './ui/encounter.js';
 import { renderSpeaking } from './ui/speaking.js';
+import { renderConversation } from './ui/conversation.js';
 import {
   renderExpression,
   renderLanguage,
@@ -71,8 +72,9 @@ const ctx = {
 };
 function shell() {
   const c = ctx.c,
-    current =
-      ctx.location.page === 'expression' ? 'practice' : ctx.location.page;
+    current = ['expression', 'conversation'].includes(ctx.location.page)
+      ? 'practice'
+      : ctx.location.page;
   document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
   document.documentElement.dataset.learning = ctx.language;
   document.getElementById('shell').innerHTML =
@@ -227,15 +229,17 @@ async function render() {
     const result =
       page === 'encounter'
         ? await renderEncounter(root, scope)
-        : page === 'expression'
-          ? await renderExpression(root, scope)
-          : page === 'language' || ctx.location.intent === 'recall'
-            ? await renderLanguage(root, scope)
-            : page === 'practice' && ctx.location.intent === 'speaking'
-              ? renderSpeaking(root, scope)
-              : page === 'practice' && ctx.location.intent === 'grammar'
-                ? await renderGrammar(root, scope)
-                : await renderWorld(root, scope);
+        : page === 'conversation'
+          ? renderConversation(root, scope)
+          : page === 'expression'
+            ? await renderExpression(root, scope)
+            : page === 'language' || ctx.location.intent === 'recall'
+              ? await renderLanguage(root, scope)
+              : page === 'practice' && ctx.location.intent === 'speaking'
+                ? renderSpeaking(root, scope)
+                : page === 'practice' && ctx.location.intent === 'grammar'
+                  ? await renderGrammar(root, scope)
+                  : await renderWorld(root, scope);
     if (!scope.alive()) {
       result?.();
       return;

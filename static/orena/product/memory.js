@@ -1,6 +1,7 @@
 // Content relationships and unfinished work, scoped to an authenticated owner.
 // Practice evidence remains in the existing PostgreSQL-backed capability APIs.
 const volatile = new Map();
+import { restoreConversation } from './conversation.js';
 export function learnerMemory(storage, owner, language) {
   const key = `orena.encounters.v1:${encodeURIComponent(owner)}:${language}`;
   let available = true,
@@ -12,11 +13,19 @@ export function learnerMemory(storage, owner, language) {
       expressions: {},
       answers: {},
       revisions: {},
+      conversations: {},
     };
   try {
     const parsed =
       volatile.get(key) || JSON.parse(storage.getItem(key) || 'null');
     if (parsed && typeof parsed === 'object') {
+      value.conversations = Object.fromEntries(
+        Object.values(parsed.conversations || {})
+          .slice(-12)
+          .map((raw) => restoreConversation(raw, language))
+          .filter(Boolean)
+          .map((item) => [item.id, item]),
+      );
       value.imports = (Array.isArray(parsed.imports) ? parsed.imports : [])
         .filter(
           (x) =>
@@ -72,7 +81,9 @@ export function learnerMemory(storage, owner, language) {
                 text: x.text.slice(0, 12000),
                 at: typeof x.at === 'string' ? x.at.slice(0, 40) : '',
                 essay_id: Number.isInteger(x.essay_id) ? x.essay_id : null,
-                revision_no: Number.isInteger(x.revision_no) ? x.revision_no : null,
+                revision_no: Number.isInteger(x.revision_no)
+                  ? x.revision_no
+                  : null,
                 overall: Number.isFinite(x.overall) ? x.overall : null,
                 level: typeof x.level === 'string' ? x.level.slice(0, 24) : '',
               })),
@@ -118,6 +129,19 @@ export function learnerMemory(storage, owner, language) {
         : [id, ...value.kept].slice(0, 100);
       return save();
     },
+    conversation(state) {
+      const valid = restoreConversation(state, language);
+      if (!valid) throw Error('Invalid conversation memory');
+      value.conversations = Object.fromEntries(
+        [
+          ...Object.entries(value.conversations).filter(
+            ([id]) => id !== valid.id,
+          ),
+          [valid.id, valid],
+        ].slice(-12),
+      );
+      return save();
+    },
     enter({ id, title, segment, intent = null, source_url, excerpt }) {
       const previous = value.continuation.find((x) => x.id === id);
       value.continuation = [
@@ -160,9 +184,12 @@ export function learnerMemory(storage, owner, language) {
           text: String(entry.text).slice(0, 12000),
           at: new Date().toISOString(),
           essay_id: Number.isInteger(entry.essay_id) ? entry.essay_id : null,
-          revision_no: Number.isInteger(entry.revision_no) ? entry.revision_no : null,
+          revision_no: Number.isInteger(entry.revision_no)
+            ? entry.revision_no
+            : null,
           overall: Number.isFinite(entry.overall) ? entry.overall : null,
-          level: typeof entry.level === 'string' ? entry.level.slice(0, 24) : '',
+          level:
+            typeof entry.level === 'string' ? entry.level.slice(0, 24) : '',
         },
       ].slice(-20);
       return save();

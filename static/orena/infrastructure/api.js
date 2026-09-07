@@ -37,6 +37,7 @@ async function request(url, options={}){
 }
 
 export const api={
+  conversationTurn:payload=>request('/api/dictionary/conversation-turn',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
   me:()=>request('/api/me'),
   sessionBootstrap:()=>request('/api/session/bootstrap'),
   productMe:()=>request('/api/product/me'),

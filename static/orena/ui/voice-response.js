@@ -12,7 +12,16 @@ import { link } from '../product/intent.js';
 export function mountVoiceResponse(
   root,
   ctx,
-  { id, title, prompt, assetId = '', segmentId = id, onRecording = () => {}, recorder = createLocalAudioRecorder() },
+  {
+    id,
+    title,
+    prompt,
+    assetId = '',
+    segmentId = id,
+    onRecording = () => {},
+    recorder = createLocalAudioRecorder(),
+    onUse = null,
+  },
 ) {
   const { c, api, language, memory } = ctx;
   let disposed = false,
@@ -102,6 +111,13 @@ export function mountVoiceResponse(
       window.location.hash = link('expression', { id: draftId });
     };
     focusRegion(result.querySelector('h3'));
+    if (onUse) {
+      const use = document.createElement('button');
+      use.className = 'primary';
+      use.textContent = c.conversationUse;
+      use.onclick = () => onUse({ heard: value.heard, takeId: resultTakeId });
+      result.querySelector('.button-row').prepend(use);
+    }
     // Coaching is a separate request about the words, and it must not hold up
     // the transcript or the evidence the learner already has.
     void loadSpokenCoaching(result.querySelector('[data-coaching]'), ctx, {

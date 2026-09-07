@@ -90,7 +90,16 @@ review.
 
 ## IN PROGRESS
 
-Nothing. Every capability is integrated and reviewable.
+2026-09-07 GPT-6 continuation from clean `3a999c9`: preserve all Opus additions.
+Conversation ledger and web route implemented over the existing voice recorder,
+evaluator, contextual explanation and provider infrastructure. Typed and speech
+turns have distinct provenance; partner text is explicitly generated. Pending
+turns survive reload, retry does not duplicate them, stale replies cannot append
+after closing. Exchanges are owner/language-scoped device memory, not new server
+progress or proficiency. Node ledger tests and 29 relevant Python tests passed.
+Next: library sourcing/rights, scalable Grammar entry, Writing depth patterns.
+Browser control currently cannot launch: missing codex-windows-sandbox-setup.exe
+helper. Do not claim new browser acceptance until this runtime issue is resolved.
 
 ## PENDING
 
@@ -115,9 +124,8 @@ None identified.
   activation stays gated.
 - Grammar breadth: three authored patterns per language, joined by stable
   Concept ID. Reference quality over breadth remains the scope choice.
-- Speaking conversation architecture is unbuilt. The per-take envelope is
-  honest and coaching is grounded, but nothing holds context across turns. The
-  eventual agent needs a state model designed.
+- Conversation state is now implemented; cross-device conversation persistence
+  and streaming/voice synthesis remain future work, not implied capabilities.
 - Reading library breadth: the contract and rights fields are in place, so a
   new source needs an adapter. No catalog was added - sourcing real
   public-domain and licensed material is a rights decision. Without a provider

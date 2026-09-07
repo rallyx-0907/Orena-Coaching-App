@@ -667,7 +667,8 @@ Object.assign(copy.en, {
   reviewArrived: 'New in this version',
   reviewReworked: 'Reworked',
   writingTask: 'What are you writing?',
-  writingTaskPlaceholder: 'A lab report, a message to my landlord, a commit message…',
+  writingTaskPlaceholder:
+    'A lab report, a message to my landlord, a commit message…',
   writingTaskNote:
     'Optional. Saying what this is stops it being judged as general prose - a technical note and a friendly email are not the same task.',
 });
@@ -688,7 +689,8 @@ Object.assign(copy.en, {
   showAllMeaning: 'Show meaning for every line',
   allMeaningNote:
     'Meanings prepared for this lesson, shown beside the words they belong to.',
-  heldForYou: 'Paused so you can read this. Close it and the voice waits where you left it.',
+  heldForYou:
+    'Paused so you can read this. Close it and the voice waits where you left it.',
   reachedTheEnd: 'You followed this to the end.',
   reachedTheEndNote:
     'That was the point. Hear it again, read it through, or leave it here - nothing is waiting to be scored.',
@@ -700,7 +702,8 @@ Object.assign(copy.zh, {
   allMeaningNote: '为这一课准备的意思，就放在对应的原文旁边。',
   heldForYou: '已暂停，方便你看。关掉之后，声音还在原处等你。',
   reachedTheEnd: '你把这一段听完了。',
-  reachedTheEndNote: '这本身就是目的。可以再听一遍，可以通读一次，也可以就到这里——没有什么在等着给你打分。',
+  reachedTheEndNote:
+    '这本身就是目的。可以再听一遍，可以通读一次，也可以就到这里——没有什么在等着给你打分。',
   hearItAgain: '再听一遍',
   readItThrough: '对照意思通读一次',
 });
@@ -723,22 +726,48 @@ Object.assign(copy.zh, {
   notApplicable: '此处不适用',
   sourceNotApplicable: '这里没有要对照的原句',
   coachingTitle: '关于你选择的说法',
-  coachingNote: '这是根据文字记录给出的建议，不是对声音的测量，也不涉及你听起来如何。',
+  coachingNote:
+    '这是根据文字记录给出的建议，不是对声音的测量，也不涉及你听起来如何。',
   coachingCarried: '哪些地方说到位了',
   coachingLanded: '哪些地方对方会有别的理解',
   coachingAnotherWay: '其中一处的另一种说法',
   coachingNextAttempt: '下次可以试试',
   coachingWorking: '正在读你说的话…',
-  coachingUnavailable: '这次没有可用的建议。你的录音、文字记录与证据都不受影响。',
+  coachingUnavailable:
+    '这次没有可用的建议。你的录音、文字记录与证据都不受影响。',
 });
 
 Object.assign(copy.en, {
   readingName: 'Read',
   voiceTitle: 'Something only you can say.',
+  conversationTitle: 'Stay in the conversation',
+  conversationStart: 'Make this a conversation',
+  conversationLocal: 'Conversation kept on this device',
+  conversationTruth:
+    'An explicitly simulated partner. Replies are generated from this exchange; typed replies are not speaking measurements.',
+  conversationPartner: 'Simulated partner · generated',
+  conversationYou: 'You · typed',
+  conversationSpoken: 'You · speech transcript',
+  conversationMeaning: 'Meaning of this reply',
+  conversationReply: 'What would you say next?',
+  conversationSend: 'Send my reply',
+  conversationThinking: 'Waiting for the next reply…',
+  conversationWaiting: 'Your turn is kept. The partner has not replied yet.',
+  conversationUnavailable:
+    'The partner could not reply. Your turn is kept; retrying sends the same exchange.',
+  conversationEnd: 'Leave this conversation here',
+  conversationEnded: 'A conversation to come back to',
+  conversationEndNote:
+    'Your words remain here to revisit and explore. Ending an exchange is not a proficiency result.',
+  conversationNew: 'Begin a new exchange',
+  conversationFull:
+    'This short exchange has reached twelve replies. Keep what matters, or begin another.',
+  conversationUse: 'Use these words in my reply',
   voiceOwn: 'I have something to say',
   voiceOwnNote: 'Who are you speaking to, and what do you want to tell them?',
   voiceBegin: 'Start with this',
-  voiceOwnSource: 'Your chosen context, kept on this device. Speak in your own words.',
+  voiceOwnSource:
+    'Your chosen context, kept on this device. Speak in your own words.',
   voiceIntro:
     'A person to speak to. An idea to put into words. Start here, without a clip or a script.',
   voiceSituation: 'Your situation',
@@ -808,6 +837,29 @@ Object.assign(copy.en, {
 Object.assign(copy.zh, {
   readingName: '阅读',
   voiceTitle: '有些话，只有你能说。',
+  conversationTitle: '让对话继续',
+  conversationStart: '从这里开始一段对话',
+  conversationLocal: '对话保存在此设备上',
+  conversationTruth:
+    '这是模拟的对话伙伴，回应根据本次交流生成。打字回复不作为口语测量结果。',
+  conversationPartner: '模拟伙伴 · 生成的回应',
+  conversationYou: '你 · 文字输入',
+  conversationSpoken: '你 · 语音转写',
+  conversationMeaning: '这句回应的意思',
+  conversationReply: '接下来，你想说什么？',
+  conversationSend: '发送我的回应',
+  conversationThinking: '正在等待下一句回应……',
+  conversationWaiting: '你的话已经留下，伙伴还没有回应。',
+  conversationUnavailable:
+    '暂时无法获得伙伴的回应。你的话已保留，重试会发送同一段交流。',
+  conversationEnd: '这段对话先到这里',
+  conversationEnded: '一段可以重温的对话',
+  conversationEndNote:
+    '你的话留在这里，可以重温、探索。结束交流不代表获得了水平评估。',
+  conversationNew: '开始另一段交流',
+  conversationFull:
+    '这段短对话已完成十二次回应。留下重要的语言，或开始另一段交流。',
+  conversationUse: '把这些话放入我的回复',
   voiceOwn: '我有想说的话',
   voiceOwnNote: '你想对谁说？想告诉对方什么？',
   voiceBegin: '从这里开始',

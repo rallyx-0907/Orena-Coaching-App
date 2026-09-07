@@ -30,6 +30,7 @@ export function route(hash = '') {
       'language',
       'expression',
       'preferences',
+      'conversation',
     ].includes(path)
       ? path
       : 'discover',
@@ -61,7 +62,10 @@ export function supports(content, intent) {
 }
 
 export function continuationLink(item) {
-  if (item.intent === 'speaking' && !/^(media:|url:)/.test(item.id)) return link('practice',{id:item.id,intent:'speaking'});
+  if (item.id.startsWith('conversation:'))
+    return link('conversation', { id: item.id });
+  if (item.intent === 'speaking' && !/^(media:|url:)/.test(item.id))
+    return link('practice', { id: item.id, intent: 'speaking' });
   if (item.id.startsWith('voice:'))
     return link('practice', { id: item.id, intent: 'speaking' });
   if (item.intent === 'writing' || item.id.startsWith('expression:'))
@@ -71,6 +75,7 @@ export function continuationLink(item) {
   return link('encounter', { id: item.id, intent: item.intent });
 }
 export function sourceLink(id) {
+  if (id.startsWith('conversation:')) return link('conversation', { id });
   if (id.startsWith('voice:'))
     return link('practice', { id, intent: 'speaking' });
   if (id.startsWith('expression:')) return link('practice');

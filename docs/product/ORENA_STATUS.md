@@ -4,7 +4,7 @@ Branch: `codex/work`
 
 CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
 
-STATUS: REVIEWABLE
+STATUS: IMPLEMENTING
 
 The human-authorized D-046 reset supersedes the discarded experience mission.
 Discovery, intentional Practice, continuation, imported content and recalled

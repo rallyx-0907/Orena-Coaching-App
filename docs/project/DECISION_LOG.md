@@ -1167,3 +1167,21 @@ historical facts. The preceding uncommitted experience mission is discarded as
 a product direction; only independently useful primitives or approved assets
 may survive. Product approval of the new implementation remains a final human
 browser-review gate.
+
+## D-047 — Bounded conversation evidence over shared web capabilities
+
+2026-09-07. Human-authorized continuation of the Golden Star WEB mission.
+Conversations use an ordered, immutable exchange of learner and generated partner
+turns. A pending learner turn is retained before requesting a partner response;
+retries reuse that exchange and responses identify the turn they answer. Closing
+an exchange rejects late responses. Typed replies are not speech measurements.
+Voice transcripts enter the composer by explicit learner action, using the same
+recorder/evaluation/coaching primitives as independent Speaking.
+
+The first implementation stores up to twelve bounded exchanges in existing
+owner/language-scoped device memory. Per-take measured evidence stays in the
+existing PostgreSQL API; conversational text does not create mastery claims.
+The provider adapter is stateless and receives bounded turns as untrusted data.
+No new schema, credential activation, real-person impersonation, or server-side
+conversation durability is implied. Cross-device history can later replace the
+storage adapter without replacing the exchange model.

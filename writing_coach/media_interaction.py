@@ -17,10 +17,17 @@ from writing_coach.core.support_languages import (
 )
 from writing_coach.linguistic_annotation import ALLOWED_POS as _SHARED_POS
 from writing_coach.linguistic_annotation import annotate as _annotate
+from writing_coach.conversation import ConversationIn, respond as conversation_reply
 
 
 router = APIRouter()
 contextual_router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
+
+
+@contextual_router.post('/conversation-turn')
+def continue_conversation(payload: ConversationIn):
+    return conversation_reply(payload, language=_validated_source_language(payload.source_language),
+                              support=_support_language(payload.target_language), generate=_run_structured)
 
 _ALLOWED_POS = _SHARED_POS
 _SUPPORT_LANGUAGE_NAMES = {
