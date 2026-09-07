@@ -8,7 +8,7 @@ import {
   progressReporter,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
-import { openUnderstanding } from './understanding.js';
+import { openUnderstanding, judgementLabel } from './understanding.js';
 import { writingReview, shownIssues } from './writing-review.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
@@ -246,6 +246,35 @@ export async function renderGrammar(root, ctx) {
     id = `grammar:${lesson.id}`,
     note = patternsFor(language).find((x) => x.id === lesson.id),
     title = note?.title[ctx.ui] || lesson.title;
-  root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'grammar' })}">← ${c.grammarName}</a></div>${pageIntro({ title, note: c.grammarNote, eyebrow: lesson.level })}${note ? `<section class="pattern-focus"><small>${c.generatedNote}</small><div class="pattern-parts" lang="${language}">${note.parts.map((x) => `<span>${esc(x)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p lang="${ctx.support}">${esc(note.note[ctx.support] || (ctx.support === 'vi' ? lesson.explanation_vi : '') || c.noMeaning)}</p></section>` : ''}<section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map((x) => `<blockquote lang="${language}">${esc(x.target || x.en || x.zh || '')}${x.pinyin && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<small>${esc(x.pinyin)}</small>` : ''}${ctx.support === 'vi' && (x.meaning_vi || x.vi) ? `<p lang="vi">${esc(x.meaning_vi || x.vi)}</p>` : ''}</blockquote>`).join('')}</div></section>${responseComposer(ctx, { id, title, prompt: c.yourExample })}`;
+  /* A pattern is easier to hold onto against the thing it is not. The contrast
+     is what a learner actually writes instead, named in the one judgement
+     vocabulary the rest of the product uses, so "wrong" means the same thing
+     here as it does in a writing review or a reading explanation. */
+  const contrast = note?.contrast;
+  const contrastBlock = contrast
+    ? `<section class="pattern-contrast"><h2>${esc(c.notThis)}</h2><p class="judgement" data-judgement="${esc(contrast.judgement)}">${esc(judgementLabel(c, contrast.judgement))}</p><blockquote lang="${esc(language)}"><del>${esc(contrast.instead)}</del></blockquote><p>${esc(contrast.why[ctx.support] || contrast.why[ctx.ui] || contrast.why.en)}</p><blockquote class="pattern-right" lang="${esc(language)}">${esc(note.line)}</blockquote></section>`
+    : '';
+  root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'grammar' })}">← ${c.grammarName}</a></div>${pageIntro({ title, note: c.grammarNote, eyebrow: lesson.level })}${note ? `<section class="pattern-focus"><small>${c.generatedNote}</small><div class="pattern-parts" lang="${language}">${note.parts.map((x) => `<span>${esc(x)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p lang="${ctx.support}">${esc(note.note[ctx.support] || (ctx.support === 'vi' ? lesson.explanation_vi : '') || c.noMeaning)}</p></section>` : ''}<section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map((x, index) => `<blockquote lang="${language}">${esc(x.target || x.en || x.zh || '')}${x.pinyin && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<small>${esc(x.pinyin)}</small>` : ''}${ctx.support === 'vi' && (x.meaning_vi || x.vi) ? `<p lang="vi">${esc(x.meaning_vi || x.vi)}</p>` : ''}<button class="quiet" data-explain="${index}">${esc(c.lookCloser)} ↗</button></blockquote>`).join('')}</div>${contrastBlock}</section>${responseComposer(ctx, { id, title, prompt: c.yourExample })}`;
+  /* Grammar was the one capability that could not ask its own question. Every
+     example now reaches the same explanation surface reading, listening,
+     writing and speaking use, carrying the pattern as the context it sits in. */
+  root.querySelectorAll('[data-explain]').forEach((button) => {
+    button.onclick = () => {
+      const example = examples[Number(button.dataset.explain)];
+      const sentence = example?.target || example?.en || example?.zh || '';
+      if (!sentence) return;
+      // The pattern is the context the example sits in, unless the example is
+      // the pattern - sending the same sentence twice teaches nothing.
+      const context = [...new Set([note?.line, sentence].filter(Boolean))].join(
+        '\n',
+      );
+      openUnderstanding(ctx, {
+        selection: sentence,
+        context: context.slice(0, 2400),
+        title,
+        question: c.askWhy,
+      });
+    };
+  });
   bindComposer(root, ctx, { id, title }, () => note?.line || '');
 }

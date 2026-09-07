@@ -1411,3 +1411,37 @@
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* A pattern is easier to hold onto against the thing it is not. The contrast
+   names the problem in the same vocabulary a writing review or a reading
+   explanation would use. */
+.pattern-contrast {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+  max-width: var(--measure);
+}
+.pattern-contrast h2 {
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+}
+.pattern-contrast blockquote {
+  margin: var(--space-3) 0;
+  font-size: var(--text-lead);
+}
+.pattern-contrast del {
+  text-decoration-color: var(--coral);
+  text-decoration-thickness: 2px;
+}
+.pattern-contrast .pattern-right {
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--sage-surface);
+}
+.grammar-encounter blockquote [data-explain],
+.grammar-encounter blockquote button {
+  display: block;
+  margin-top: var(--space-2);
+}

@@ -652,6 +652,13 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  notThis: 'What learners write instead',
+});
+Object.assign(copy.zh, {
+  notThis: '学习者常写成什么样',
+});
+
+Object.assign(copy.en, {
   reviewSinceLast: 'What changed since your last version',
   reviewSinceLastNote:
     'A higher score with the same problem still in it is a different result from one where the problem is gone.',
