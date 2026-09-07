@@ -145,6 +145,87 @@ const injected = writingReview(
 );
 assert.ok(!injected.includes('<img'), 'evaluator text is escaped');
 
+/* Revising is where writing is actually learned. `revision_delta()` has always
+   worked out which problems went, which stayed, which arrived and which were
+   reworked; the surface showed one number. These hold the rendering of it. */
+const revised = {
+  ...full,
+  delta: {
+    overall: 6,
+    grammar: 8,
+    naturalness: -2,
+    coherence: 0,
+    issues: {
+      removed: [{ fragment: 'buyed', mini_rule_vi: 'Irregular past' }],
+      persistent: [{ fragment: 'go to the shop yesterday', mini_rule_vi: 'Past simple' }],
+      new: [{ fragment: 'for my family' }],
+      changed: [{ before: { fragment: 'some bread' }, after: { fragment: 'a loaf of bread' } }],
+    },
+  },
+};
+const revisedHtml = writingReview(c, revised, { language: 'en', text });
+for (const fragment of [
+  c.reviewSinceLast,
+  c.reviewFixed,
+  c.reviewStill,
+  c.reviewArrived,
+  c.reviewReworked,
+  'buyed',
+  'a loaf of bread',
+]) {
+  assert.ok(revisedHtml.includes(fragment), `the comparison dropped "${fragment}"`);
+}
+// A score that rose while the same problem persists is a different result from
+// one where the problem is gone, so both must be visible, not just the total.
+assert.ok(
+  revisedHtml.includes("data-tone=\"good\"") && revisedHtml.includes("data-tone=\"watch\""),
+  'fixed and persisting problems must be told apart',
+);
+// Movement is shown where it happened. A dimension that did not move says
+// nothing rather than "0".
+assert.ok(revisedHtml.includes('+8'), 'a dimension that improved says so');
+assert.ok(revisedHtml.includes('-2'), 'a dimension that slipped says so');
+assert.equal(
+  (revisedHtml.match(/dimension-move/g) || []).length,
+  2,
+  'only dimensions that actually moved carry a movement',
+);
+// A first draft has nothing to compare against, and must not imply it does.
+assert.ok(
+  !html.includes('review-comparison'),
+  'a first version shows no comparison',
+);
+assert.ok(
+  !writingReview(c, { ...full, delta: { overall: 6 } }, { language: 'en', text }).includes(
+    'review-comparison',
+  ),
+  'a delta carrying no issue movement renders no comparison shell',
+);
+assert.ok(
+  !writingReview(c, { ...revised, delta: { ...revised.delta, issues: { removed: [], persistent: [], new: [], changed: [] } } }, {
+    language: 'en',
+    text,
+  }).includes('review-comparison'),
+  'an empty comparison is not shown as an empty section',
+);
+
+/* What the learner is writing reaches the evaluator. A lab report and a
+   friendly email are not the same task, and the evaluator has always accepted
+   one - nothing asked the learner for it. */
+const expressionSource = read('static/orena/ui/expression.js');
+assert.ok(
+  expressionSource.includes("root.querySelector('[name=task]').value.trim()"),
+  'the surface must ask what the learner is writing',
+);
+assert.ok(
+  /task && `\$\{c\.writingTask\} \$\{task\}`/.test(expressionSource),
+  'the stated task must travel with the text as the writing task',
+);
+for (const ui of ['en', 'zh']) {
+  for (const key of ['writingTask', 'writingTaskNote', 'reviewSinceLast', 'reviewFixed', 'reviewStill', 'reviewArrived', 'reviewReworked'])
+    assert.ok(copy[ui][key], `${ui}: missing copy for "${key}"`);
+}
+
 // Register exploration is a comparison, not a rewrite button. Each version has
 // to arrive with what puts it in that register and when it is the wrong choice.
 const registers = read('static/orena/ui/registers.js');

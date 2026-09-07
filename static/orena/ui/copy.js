@@ -652,6 +652,32 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  reviewSinceLast: 'What changed since your last version',
+  reviewSinceLastNote:
+    'A higher score with the same problem still in it is a different result from one where the problem is gone.',
+  reviewFixed: 'Gone since last time',
+  reviewStill: 'Still here',
+  reviewArrived: 'New in this version',
+  reviewReworked: 'Reworked',
+  writingTask: 'What are you writing?',
+  writingTaskPlaceholder: 'A lab report, a message to my landlord, a commit message…',
+  writingTaskNote:
+    'Optional. Saying what this is stops it being judged as general prose - a technical note and a friendly email are not the same task.',
+});
+Object.assign(copy.zh, {
+  reviewSinceLast: '与上一版相比有什么变化',
+  reviewSinceLastNote: '分数提高了但问题还在，和问题已经解决，是两回事。',
+  reviewFixed: '上一版有、这一版没有了',
+  reviewStill: '仍然存在',
+  reviewArrived: '这一版新出现的',
+  reviewReworked: '改写过的地方',
+  writingTask: '你在写什么？',
+  writingTaskPlaceholder: '实验报告、写给房东的信息、提交说明…',
+  writingTaskNote:
+    '可填可不填。说明这是什么，才不会被当作一般文章来看——技术说明和朋友之间的邮件不是同一类任务。',
+});
+
+Object.assign(copy.en, {
   showAllMeaning: 'Show meaning for every line',
   allMeaningNote:
     'Meanings prepared for this lesson, shown beside the words they belong to.',
