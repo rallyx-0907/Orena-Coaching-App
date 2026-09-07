@@ -120,6 +120,25 @@ Each line below was exercised as a learner would.
 - *EN/ZH parity* - the same Dictation flow in Chinese masks one unit per Han
   character: dropping 输 from 你可以输入你找的内容 gives 你可以*入你找的内容.
 
+**Rooms given real structure or a stated boundary in this run.**
+
+- *Grammar* - two layers instead of one flat wall. Six levels holding four to
+  seven named families each, read from the syllabus the data already declares,
+  with real counts and a real line from each family; entering one opens the
+  catalogue narrowed to it. The catalogue keeps search and the level filter and
+  stays closed until asked for. Nothing is recommended or marked as learned:
+  `completed` is false throughout and every completion policy is named
+  "not_mastery", so no such evidence exists to claim. Chinese resolves to its
+  own seven levels and twenty families through the same contract.
+- *Speaking and conversation* - both rooms ask `/api/speech/status` before
+  inviting a take. Where no provider is attached the recorder is disabled with
+  the reason stated, and the typed reply, sending and conversation paths stay
+  open. The check fails open, so an unreadable answer never hides a working
+  recorder.
+- *Recall* - asks its own question ("Does it come back?") rather than repeating
+  its navigation label, and its card holds the 760px measure it always asked
+  for.
+
 **Provider holds - implemented and wired, content unavailable in this runtime.**
 
 These are not gaps in the product. Each path reaches its capability, and each

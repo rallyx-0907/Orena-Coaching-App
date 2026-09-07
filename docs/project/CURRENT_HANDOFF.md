@@ -105,8 +105,9 @@ The provider-free learning core is functional and browser-verified (ledger,
    none can show generated language here. A human gate, not implementation.
 2. Speaking beyond ASR: ledger, coaching and turn context are real, but no take
    can be recorded in this runtime.
-3. Editorial character per room and the learner-facing copy pass - the original
-   visual/editorial mission, still not started.
+3. Editorial character per room: Grammar and Recall done; Discover, Reading,
+   Listening, Writing, Speaking, My Language, My Content and Continue not yet
+   reviewed for character. The learner-facing copy pass has not started.
 
 ## IN PROGRESS
 
