@@ -71,19 +71,17 @@ recovery needs is where the invariants live:
 ## Last verified batch
 
 Local execution only; no CI claim.
-- Twenty-nine Node gates PASS. ESM graph: 46 modules. Both validators OK.
-- Full Python in the app image: 787 passed / 20 failed (see below). The rich
+- Thirty Node gates plus the reference gate PASS. ESM graph: 48 modules.
+  Both validators OK.
+- Full Python in the app image: 790 passed / 20 failed (see below). The rich
   provider paths - registers, spoken coaching, generated reading, contextual
   explanation - run against an injected provider; their grounding rules were
   mutation-checked.
 - Browser sweep light/dark at 1440/390 in EN and ZH: no overflow, no text
   below its contrast threshold, no pointer target under 24px.
-- Journeys against the real server: Follow -> Dictation -> compare/persist ->
-  look closer -> keep phrase -> Recall; follow to the end -> again / read
-  through; reading request -> highlight -> explanation -> comprehension ->
-  evidence in the passage; writing review -> revision comparison -> registers;
-  speaking take -> evidence -> coaching -> develop as writing; grammar example
-  and kept word -> explanation.
+- Journeys against the real server: the Listening, Reading, Writing, Speaking
+  and Grammar paths each run end to end into understanding, keeping and Recall.
+  The three closed findings carry their own evidence in the completion ledger.
 
 ## Runtime / safety
 
@@ -105,12 +103,17 @@ COMPLETE THE ORENA GOLDEN STAR REFERENCE IMPLEMENTATION. Follow
 experience compositions, approved brand world and deep EN/ZH journeys. Evaluate
 the actual browser at narrow, desktop and wide widths. Extend committed
 primitives; the current visual uniformity is a reference-product deficiency.
-The three capability-review findings remain in the completion ledger, not a
-separate stopping point; close them before acceptance.
+The three capability-review findings are closed (see the ledger); the reference
+implementation itself remains open.
 
 ## IN PROGRESS
 
-Golden Star completion is IMPLEMENTING under the current human ruling.
+Golden Star completion is IMPLEMENTING. Ledger item 5 done: Recall no longer
+prints the phrase it withholds, revision comparison no longer calls an
+unchanged issue both removed and new, and a turn's explanation context can no
+longer exclude the selected text. Shell, entries and rooms are committed and
+green. Remaining: the browser sweep at 390/800/1440/1920 in both themes and
+languages, the deep journeys, and the extension-guide write-up.
 
 ## PENDING
 
@@ -127,16 +130,13 @@ None identified.
 
 ## OPEN P1
 
-- Recall answer exposure; Writing revision issue misclassification. Evidence:
-  `CAPABILITY_DIRECTION_REVIEW.md`.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard, so it
   is inert. Preserve it without restoring the historical shell.
 - Grammar breadth: authored patterns joined by stable Concept ID, extended by
   `grammar-shelf.js` rather than a second syllabus.
-- Cross-device continuity: kept-language provenance, conversations, drafts and
-  continuation are all device memory by design. Whether any of it should follow
-  the learner between devices is a product decision with a persistence cost.
+- Cross-device continuity: device memory by design; the account architecture is
+  a reserved hold (AGENTS.md, "Architecture holds").
 - Reading library breadth: contract, rights fields and admission gate are in
   place with two seed texts. Growing the catalogue is a rights decision per
   text. Without a provider the API answers every request with one built-in
