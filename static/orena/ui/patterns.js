@@ -1,6 +1,7 @@
 // Shared experience patterns, not a catalog of historical skill screens.
 // The caller owns state and effects; these functions render escaped content.
 import { esc } from './html.js';
+import { scene } from './brand.js';
 import {
   link,
   continuationLink,
@@ -30,8 +31,18 @@ export function keptProvenance(c, kept) {
   }</p>`;
 }
 
-export function pageIntro({ title, note = '', eyebrow = '', language = '' }) {
-  return `<header class="page-intro"><div>${eyebrow ? `<small>${esc(eyebrow)}</small>` : ''}<h1${language ? ` lang="${esc(language)}"` : ''}>${esc(title)}</h1>${note ? `<p>${esc(note)}</p>` : ''}</div></header>`;
+/* One page opening for the whole product. `scene` names an approved state, so
+   an experience looks like itself at the top of the page without any surface
+   knowing an image path - and a page with nothing worth illustrating simply
+   passes nothing. */
+export function pageIntro({
+  title,
+  note = '',
+  eyebrow = '',
+  language = '',
+  scene: state = '',
+}) {
+  return `<header class="page-intro"><div>${eyebrow ? `<small>${esc(eyebrow)}</small>` : ''}<h1${language ? ` lang="${esc(language)}"` : ''}>${esc(title)}</h1>${note ? `<p>${esc(note)}</p>` : ''}</div>${state ? scene(state, { size: 'medium' }) : ''}</header>`;
 }
 
 export function intentNavigation(c, current) {

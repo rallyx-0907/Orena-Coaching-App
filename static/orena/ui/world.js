@@ -1,5 +1,5 @@
 import { duration, origin, art, bindImages } from './content.js';
-import { companionArt } from './brand.js';
+import { companionArt, scene } from './brand.js';
 import { pageIntro, intentNavigation, continuationShelf } from './patterns.js';
 import { esc, dialog } from './html.js';
 import {
@@ -99,8 +99,8 @@ export async function renderWorld(root, ctx) {
   const practiceMedia = [...media, ...memory.value.mediaImports];
   const intent = location.intent;
   const destination = (id) => link('encounter', { id, intent });
-  const headline = (title, note, eyebrow = '') =>
-    pageIntro({ title, note, eyebrow });
+  const headline = (title, note, eyebrow = '', state = '') =>
+    pageIntro({ title, note, eyebrow, scene: state });
   const continuation = continuationShelf(ctx);
   const catalogError = failed
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
@@ -108,8 +108,20 @@ export async function renderWorld(root, ctx) {
   const readingError = readingFailed
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
     : '';
+  /* An intention arrives somewhere, and each somewhere looks like itself. This
+     is the difference between a menu of forms and a set of places - one scene,
+     at the head of the page, doing orientation rather than decoration. */
+  const INTENT_SCENE = {
+    follow: 'listening',
+    reading: 'reading',
+    dictation: 'focus',
+    shadowing: 'speaking',
+    speaking: 'conversation',
+    grammar: 'thinking',
+    recall: 'remembering',
+  };
   if (location.page === 'practice') {
-    root.innerHTML = `${headline(intent ? c[`${intent}Intent`] || c[intent] : c.choose, intent ? c[`${intent}IntentNote`] || c[`${intent}Note`] : c.chooseNote, c.practice)}${intentNavigation(c, intent)}${!intent ? `<section class="practice-invitation"><span class="big-voice" aria-hidden="true">“</span><div><h2>${c.shadowing}</h2><p>${c.shadowingNote}</p><a class="primary" href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} →</a></div><div class="practice-small"><h3>${c.dictation}</h3><p>${c.dictationNote}</p><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} →</a></div></section>` : ''}${
+    root.innerHTML = `${headline(intent ? c[`${intent}Intent`] || c[intent] : c.choose, intent ? c[`${intent}IntentNote`] || c[`${intent}Note`] : c.chooseNote, c.practice, INTENT_SCENE[intent] || '')}${intentNavigation(c, intent)}${!intent ? `<section class="practice-invitation"><span class="big-voice" aria-hidden="true">“</span><div><h2>${c.shadowing}</h2><p>${c.shadowingNote}</p><a class="primary" href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} →</a></div><div class="practice-small"><h3>${c.dictation}</h3><p>${c.dictationNote}</p><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} →</a></div></section>` : ''}${
       intent === 'reading'
         ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
             c,
@@ -136,7 +148,7 @@ export async function renderWorld(root, ctx) {
     const kept = all.filter(
       (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',
     );
-    root.innerHTML = `${headline(c.content, c.local)}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${companionArt()}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
+    root.innerHTML = `${headline(c.content, c.local)}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
   } else {
     const feature = media.find((x) => x.kind === 'video') || media[0];
     root.innerHTML = `<section class="arrival"><div><small>${c.edition}</small><h1>${c.hello}</h1><p>${c.intro}</p></div>${companionArt()}</section><div class="world-opening">${feature ? `<article class="window"><a class="window-media" aria-label="${esc(feature.title)}" href="${destination(feature.id)}">${art(feature)}<span class="play-disc" aria-hidden="true">▶</span><span class="duration">${duration(feature.duration_ms)}</span></a><div class="window-caption"><div><small>${c.video} · ${esc(feature.level)} · ${esc(origin(feature, c))}</small><h2 lang="${language}"><a href="${destination(feature.id)}">${esc(feature.title)} ↗</a></h2></div><p>${esc(feature.description)}</p></div></article>` : `<div class="window">${catalogError}<h2>${c.noCatalog}</h2></div>`}<aside class="side-story"><small>${c.stories}</small><a href="${destination(text[0].id)}">${art(text[0])}<h2 lang="${language}">${esc(text[0].title)} ↗</h2><p lang="${language}">${esc(text[0].subtitle)}</p></a><small>${c.generated}</small></aside></div><section class="intent-ribbon"><div><h2>${c.choose}</h2><p>${c.chooseNote}</p></div><a href="${link('practice', { intent: 'dictation' })}">${c.dictationName} ↗</a><a href="${link('practice', { intent: 'shadowing' })}">${c.shadowingName} ↗</a><a href="${link('practice', { intent: 'reading' })}">${c.readingName} ↗</a><a href="${link('expression')}">${c.writingName} ↗</a><a href="${link('practice')}">${c.practice} →</a></section>${continuation}<section class="voices"><div class="section-head"><h2>${c.voices}</h2><span class="wave" aria-hidden="true">▂ ▆ ▃ ▇ ▄ ▂</span></div>${practiceMedia

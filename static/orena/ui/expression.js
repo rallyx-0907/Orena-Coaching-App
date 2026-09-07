@@ -19,6 +19,7 @@ import { grammarShelf, filterGrammar } from '../product/grammar-shelf.js';
 import { recallShape, blankContext } from '../product/recall.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
+import { scene } from './brand.js';
 
 export async function renderExpression(root, ctx) {
   const { c, language, api, memory, alive } = ctx,
@@ -181,7 +182,7 @@ export async function renderLanguage(root, ctx) {
     const keptNow = current ? memory.value.keptLanguage?.[current.word] : null;
     const shape = current ? recallShape(current, keptNow) : 'meaning';
     const gap = current ? blankContext(current.source_fragment, current.word) : null;
-    root.innerHTML = `${pageIntro({ title: c.wordsTitle, note: c.wordsIntro, eyebrow: c.language })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment" data-shape="${shape}"><small>${esc(c[`recallAsk_${shape}`])}</small>${
+    root.innerHTML = `${pageIntro({ title: c.wordsTitle, note: c.wordsIntro, eyebrow: c.language, scene: 'remembering' })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment" data-shape="${shape}"><small>${esc(c[`recallAsk_${shape}`])}</small>${
                 shape === 'in_context' && gap
                   ? `<blockquote class="recall-gap" lang="${language}">${esc(gap.before)}<b>${revealed ? esc(current.word) : '&nbsp;'.repeat(3)}</b>${esc(gap.after)}</blockquote>`
                   : `<h2 lang="${language}">${revealed || shape !== 'say' ? esc(current.word) : '···'}</h2>${current.phonetic && revealed && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}${shape === 'say' && !revealed ? `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>` : ''}${shape !== 'in_context' && current.source_fragment ? `<blockquote lang="${language}">${esc(current.source_fragment)}</blockquote>` : ''}`
@@ -189,7 +190,7 @@ export async function renderLanguage(root, ctx) {
                 revealed
                   ? `${shape === 'say' ? '' : `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${keptProvenance(c, keptNow)}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>`
                   : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
-              }<p role="status" data-recall-status></p></section>` : `<section class="empty"><h2>${c.allDone}</h2><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection">${items.map((x) => `<article>${keptProvenance(c, memory.value.keptLanguage?.[x.word]) || `<small>${esc(x.focus_note || c.sourceContext)}</small>`}<h2 lang="${language}">${esc(x.word)}</h2>${x.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(x.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(x.source_fragment || '')}</blockquote><details><summary>${c.meaning}</summary><p>${esc(x.definition || x.translation_vi || '')}</p></details>${x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : ''}</article>`).join('')}</section>` : `<section class="empty"><h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
+              }<p role="status" data-recall-status></p></section>` : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection">${items.map((x) => `<article>${keptProvenance(c, memory.value.keptLanguage?.[x.word]) || `<small>${esc(x.focus_note || c.sourceContext)}</small>`}<h2 lang="${language}">${esc(x.word)}</h2>${x.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(x.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(x.source_fragment || '')}</blockquote><details><summary>${c.meaning}</summary><p>${esc(x.definition || x.translation_vi || '')}</p></details>${x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : ''}</article>`).join('')}</section>` : `<section class="empty">${scene('empty', { size: 'medium' })}<h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
     /* A kept word already carries the sentence it came from, which is exactly
        the context the shared explanation needs. Without this, the collection
        is a list to reread rather than something a learner can question - the
@@ -275,7 +276,7 @@ export async function renderGrammar(root, ctx) {
     const result = await api.grammarLibrary();
     if (!alive()) return;
     const lessons = grammarShelf(result, patternsFor(language), ctx.ui);
-    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName })}${intentNavigation(c, 'grammar')}${collectionSearch(c, { facet: c.collectionLevel, options: (result.levels || []).map((level) => ({ value: level, label: level })) })}<div class="pattern-list" data-grammar-results></div><button class="outline" data-more>${esc(c.collectionMore)}</button>`;
+    root.innerHTML = `${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}${intentNavigation(c, 'grammar')}${collectionSearch(c, { facet: c.collectionLevel, options: (result.levels || []).map((level) => ({ value: level, label: level })) })}<div class="pattern-list" data-grammar-results></div><button class="outline" data-more>${esc(c.collectionMore)}</button>`;
     let shown = 18,
       filtered = lessons;
     const paint = () => {

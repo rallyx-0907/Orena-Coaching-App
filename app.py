@@ -149,6 +149,34 @@ def orena_asset(asset_path: str):
     return FileResponse(candidate, headers={"Cache-Control": "no-store, max-age=0"})
 
 
+# The approved red-panda library is product material, not an archive. Serving it
+# from where it lives keeps one canonical copy: duplicating the artwork into the
+# web tree is how a brand quietly forks.
+ORENA_BRAND_ROOT = (ROOT / "assets" / "brand" / "orena").resolve()
+# The reference sheets are design authority for people, not runtime imagery -
+# several megabytes each, and never something to put in front of a learner.
+ORENA_BRAND_SERVED = ("actions", "expressions", "scenes")
+
+@app.get("/orena-brand/{asset_path:path}", include_in_schema=False)
+def orena_brand_asset(asset_path: str):
+    candidate = (ORENA_BRAND_ROOT / asset_path).resolve()
+    try:
+        relative = candidate.relative_to(ORENA_BRAND_ROOT)
+    except ValueError as exc:
+        raise HTTPException(404, "Asset not found") from exc
+
+    if relative.parts[:1] not in [(name,) for name in ORENA_BRAND_SERVED]:
+        raise HTTPException(404, "Asset not found")
+    if candidate.suffix.lower() not in {".png", ".svg", ".webp"}:
+        raise HTTPException(404, "Asset not found")
+    if not candidate.is_file():
+        raise HTTPException(404, "Asset not found")
+
+    # Approved artwork changes only by an explicit brand decision, so it may be
+    # cached; the learner-facing app bundle deliberately is not.
+    return FileResponse(candidate, headers={"Cache-Control": "public, max-age=3600"})
+
+
 class EssayIn(BaseModel):
     prompt: str = Field(default="", max_length=5000)
     text: str = Field(min_length=10, max_length=20000)

@@ -363,9 +363,6 @@ input[type='radio'] {
   margin: 60px auto;
   padding: 35px;
 }
-.empty .companion {
-  margin: 0 auto 25px;
-}
 .empty p {
   color: var(--muted);
 }

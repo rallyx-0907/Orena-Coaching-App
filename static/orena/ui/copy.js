@@ -652,6 +652,13 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  allDoneNote: 'Nothing is waiting. What you kept will come back when it is worth meeting again.',
+});
+Object.assign(copy.zh, {
+  allDoneNote: '现在没有要复习的。你留下的内容，到了值得再见面的时候会回来。',
+});
+
+Object.assign(copy.en, {
   recallAsk_in_context: 'What belongs here?',
   recallAsk_say: 'Say this, then check',
   recallAsk_reuse: 'Where would you use this?',
