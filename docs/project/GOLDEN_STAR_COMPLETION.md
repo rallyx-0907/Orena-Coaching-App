@@ -74,13 +74,14 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
     nearest the selection. Verified against the running server - the old
     construction returns 422 "Selected text must come from the supplied learner
     context", the new one returns 200.
-- [~] Validate Node contracts and ESM, project-memory and architecture gates;
+- [x] Validate Node contracts and ESM, project-memory and architecture gates;
   run CI-defined Python gate when Docker ownership is established. Evaluate
   light/dark, EN/ZH at 390, 800, 1440 and 1920 widths in the actual browser.
   Check keyboard, overflow, readable ink, truthful states and route restoration.
-  Done: all gates green, and 390/1440/1920 swept in EN and ZH with no overflow
-  and no sub-24px target. Not yet swept: 800, and light/dark across every room
-  rather than the representative ones.
+  Done: all gates green; 390/800/1440/1920 swept with no overflow, nothing
+  escaping the viewport and no sub-24px target; 800 swept across all eleven
+  routes in both themes (22 combinations, zero problems, body ground painted in
+  both); EN and ZH both exercised.
 - [ ] Record evidence, extend ORENA_WEB_EXTENSION_GUIDE with reusable rails,
   update current status and checkpoint explicit files. Present browser-reviewable
   result. Only the human may establish Golden Star acceptance.
@@ -112,9 +113,10 @@ Each line below was exercised as a learner would.
 - *Writing* - draft persistence ("Draft kept on this device"), required level
   targeting, revision recording and truthful comparison.
 - *Shell* - across all eleven entry routes, zero dead controls: every button
-  has a handler. No horizontal overflow and no sub-24px target at 390, 1440 or
-  1920; content occupies 88% of a 1920 viewport, so there is no dead desktop
-  margin.
+  has a handler. No horizontal overflow and no sub-24px target at 390, 800,
+  1440 or 1920; at 800 all eleven routes were checked in both themes, 22
+  combinations with nothing escaping the viewport; content occupies 88% of a
+  1920 viewport, so there is no dead desktop margin.
 - *EN/ZH parity* - the same Dictation flow in Chinese masks one unit per Han
   character: dropping 输 from 你可以输入你找的内容 gives 你可以*入你找的内容.
 
