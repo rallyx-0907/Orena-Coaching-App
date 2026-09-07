@@ -33,9 +33,11 @@ hand-off into Recall - and the thread shelf then offers all three archetypes
 back. Learner-imported media reaches every Practice intent beside the curated
 catalog. Authored grammar notes join the canonical catalog by stable Concept ID
 and are labelled as generated. Listening evidence is not overwritten when the
-stored record cannot be read first. Local suites sit at 758 passed / 20 failed,
-the 20 being the inherited baseline. Microphone-dependent paths were not
-executed. This is execution evidence, not milestone acceptance.
+stored record cannot be read first. Local suites sit at 781 passed / 20 failed,
+the 20 being the inherited baseline; the rich provider paths now have
+deterministic provider-injected coverage of their grounding rules.
+Microphone-dependent paths were not executed. This is execution evidence, not
+milestone acceptance.
 
 Shared foundation: tinted panels carry their own ink in both themes, work that
 leaves the device reports through one primitive whose retries are always wired,
@@ -81,11 +83,20 @@ Learning capabilities now built on that foundation:
   coaching reads the transcript and says so, never claiming to have heard the
   voice. Free expression reports alignment as not applicable, because there was
   no line to match.
+- **Grammar** teaches each pattern against the thing it is not. Beside the
+  pattern sits what a learner actually writes instead, struck through, with the
+  problem named in the shared judgement vocabulary and the reason authored in
+  every support language - so "not possible in this language" means the same
+  here as in a writing review. Every example can ask its own question, carrying
+  the pattern as the context it sits in.
+- **Vocabulary** is practised rather than reread: a kept word asks about itself
+  using the sentence it was saved from, so the answer is about how the word
+  worked there rather than a dictionary entry.
 - **One contextual explanation system** serves reading, listening, writing,
-  speaking and practice, naming which of six things is wrong rather than saying
-  "wrong" and answering follow-ups without losing the selection. Every
-  capability reaches it with the learner's own wording and the context it sat
-  in.
+  speaking, grammar and vocabulary, naming which of six things is wrong rather
+  than saying "wrong" and answering follow-ups without losing the selection.
+  Every capability reaches it with the learner's own wording and the context it
+  sat in.
 
 Microphone and provider paths are unexercised in this runtime and are not
 claimed; with no provider configured, review, explanation, registers and spoken
@@ -96,4 +107,4 @@ reset removed `templates/index.html`; its API and script remain. Whether Orena
 keeps that page, and where, is an open human decision recorded in
 `docs/project/CURRENT_HANDOFF.md`.
 
-NEXT_REVIEWABLE_SLICE: Human browser review of the five learning capabilities and the shared understanding that connects them. After that review, the open product decisions in `docs/project/CURRENT_HANDOFF.md` - Speaking's cross-turn conversation architecture, Reading library sourcing and rights, Grammar breadth, and the Platform Admin host - need judgement before more capability breadth is added. Native remains frozen.
+NEXT_REVIEWABLE_SLICE: Human browser review of the learning capabilities and the shared understanding that connects all of them, Grammar and Vocabulary included. After that review, the open product decisions in `docs/project/CURRENT_HANDOFF.md` - Speaking's cross-turn conversation architecture, Reading library sourcing and rights, Grammar breadth, and the Platform Admin host - need judgement before more capability breadth is added. Native remains frozen.
