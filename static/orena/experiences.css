@@ -527,3 +527,37 @@
     flex-basis: 65%;
   }
 }
+
+/* The word being spoken. Emphasis rather than decoration: the line keeps its
+   weight and colour, and a warm underline travels beneath it, so a learner
+   reading ahead is never pulled back by a moving block of colour. Assets
+   without word timing simply never get the attribute. */
+.spoken .word {
+  position: relative;
+  transition: color 0.12s linear;
+}
+.spoken .word::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.12em;
+  height: 0.09em;
+  border-radius: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.12s linear;
+}
+.spoken .word[data-speaking] {
+  color: var(--accent);
+}
+.spoken .word[data-speaking]::after {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .spoken .word,
+  .spoken .word::after {
+    transition: none;
+  }
+}

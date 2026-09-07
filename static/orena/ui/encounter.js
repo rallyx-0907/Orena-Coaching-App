@@ -24,6 +24,11 @@ import {
   seekPlayback,
 } from '../capabilities/media-player.js';
 import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
+import {
+  linePieces,
+  activeWordIndex,
+  wordSpans,
+} from '../capabilities/word-timeline.js';
 import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import {
   acquireMedia,
@@ -308,10 +313,27 @@ export async function renderEncounter(root, ctx) {
   const transcript = root.querySelector('.transcript-panel');
   const original = moment.querySelector('.spoken'),
     meaning = moment.querySelector('.meaning');
+  /* Word-level Follow sharpens the segment; it never replaces it. An asset
+     whose word timing does not reconcile with the canonical line renders as
+     plain text and keeps segment Follow exactly as it was. */
+  let followSpans = null;
+  let followWord = -1;
   function paintFollow(gap = false) {
     const s = model.current;
     if (!s) return;
-    original.textContent = gap ? c.pauseGap : s.original_text;
+    followSpans = gap ? null : wordSpans(s);
+    followWord = -1;
+    if (gap) original.textContent = c.pauseGap;
+    else if (followSpans) {
+      const pieces = linePieces(s);
+      original.innerHTML = pieces
+        .map((piece) =>
+          piece.index < 0
+            ? esc(piece.text)
+            : `<span class="word" data-word="${piece.index}">${esc(piece.text)}</span>`,
+        )
+        .join('');
+    } else original.textContent = s.original_text;
     const translated = model.meaning();
     meaning.textContent = gap
       ? ''
@@ -422,6 +444,20 @@ export async function renderEncounter(root, ctx) {
     }
     playButton.textContent = playing ? 'Ⅱ' : '▶';
     playButton.setAttribute('aria-label', playing ? c.pause : c.playAction);
+    if (followSpans) {
+      const index = activeWordIndex(followSpans, event.detail.time_ms);
+      if (index !== followWord) {
+        followWord = index;
+        original
+          .querySelectorAll('.word')
+          .forEach((node) =>
+            node.toggleAttribute(
+              'data-speaking',
+              Number(node.dataset.word) === index,
+            ),
+          );
+      }
+    }
     if (practice) return;
     const s = model.follow(event.detail.time_ms);
     // "Between spoken lines" is only true of media that is running. At rest -
