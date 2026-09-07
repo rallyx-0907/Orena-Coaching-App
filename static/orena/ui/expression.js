@@ -166,7 +166,23 @@ export async function renderLanguage(root, ctx) {
     if (!alive()) return;
     const due = items.filter((x) => x.due),
       current = due[0];
-    root.innerHTML = `${pageIntro({ title: c.wordsTitle, note: c.wordsIntro, eyebrow: c.language })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment"><small>${c.recallName}</small><h2 lang="${language}">${esc(current.word)}</h2>${current.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(current.source_fragment || '')}</blockquote>${revealed ? `<p>${esc(current.definition || current.translation_vi || '')}</p><div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>` : `<button class="primary" data-reveal>${c.showMeaning} →</button>`}<p role="status" data-recall-status></p></section>` : `<section class="empty"><h2>${c.allDone}</h2><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection">${items.map((x) => `<article><small>${esc(x.focus_note || c.sourceContext)}</small><h2 lang="${language}">${esc(x.word)}</h2>${x.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(x.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(x.source_fragment || '')}</blockquote><details><summary>${c.meaning}</summary><p>${esc(x.definition || x.translation_vi || '')}</p></details></article>`).join('')}</section>` : `<section class="empty"><h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
+    root.innerHTML = `${pageIntro({ title: c.wordsTitle, note: c.wordsIntro, eyebrow: c.language })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment"><small>${c.recallName}</small><h2 lang="${language}">${esc(current.word)}</h2>${current.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(current.source_fragment || '')}</blockquote>${revealed ? `<p>${esc(current.definition || current.translation_vi || '')}</p><div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>` : `<button class="primary" data-reveal>${c.showMeaning} →</button>`}<p role="status" data-recall-status></p></section>` : `<section class="empty"><h2>${c.allDone}</h2><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection">${items.map((x) => `<article><small>${esc(x.focus_note || c.sourceContext)}</small><h2 lang="${language}">${esc(x.word)}</h2>${x.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(x.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(x.source_fragment || '')}</blockquote><details><summary>${c.meaning}</summary><p>${esc(x.definition || x.translation_vi || '')}</p></details>${x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : ''}</article>`).join('')}</section>` : `<section class="empty"><h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
+    /* A kept word already carries the sentence it came from, which is exactly
+       the context the shared explanation needs. Without this, the collection
+       is a list to reread rather than something a learner can question - the
+       same gap Grammar had. */
+    root.querySelectorAll('[data-word-explain]').forEach((button) => {
+      button.onclick = () => {
+        const entry = items.find((x) => x.word === button.dataset.wordExplain);
+        if (!entry?.source_fragment) return;
+        openUnderstanding(ctx, {
+          selection: entry.word,
+          context: entry.source_fragment.slice(0, 2400),
+          title: entry.focus_note || c.sourceContext,
+          question: c.askWhy,
+        });
+      };
+    });
     root.querySelector('[data-recall]')?.addEventListener('click', () => {
       recalling = true;
       paint(true);

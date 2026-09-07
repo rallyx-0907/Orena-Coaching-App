@@ -91,4 +91,22 @@ assert.ok(
   'authored grammar presentation stays labelled as authored',
 );
 
-console.log('Grammar: shared judgements, EN/ZH contrast pedagogy, and one explanation surface: PASS');
+/* Vocabulary practice had the same gap Grammar did. A kept word already
+   carries the sentence it came from, so the collection can ask about it in
+   context rather than being a list to reread. */
+assert.ok(
+  expression.includes('[data-word-explain]'),
+  'a kept word must be able to ask about itself',
+);
+assert.ok(
+  expression.includes('context: entry.source_fragment.slice(0, 2400)'),
+  'the sentence the word came from is the context it is explained in',
+);
+assert.ok(
+  expression.includes("x.source_fragment ? `<button"),
+  'a word with no recorded sentence offers no context-free lookup',
+);
+
+console.log(
+  'Grammar and vocabulary: shared judgements, EN/ZH contrast pedagogy, and one explanation surface: PASS',
+);
