@@ -1,107 +1,97 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+@AGENTS.md
 
-## Restore Orena project memory first
+`AGENTS.md` is the shared Orena operating contract for every agent lane, and it
+is imported above — authority, cold start, lanes, Superpowers, platform scope,
+product invariants, architecture holds, workflow, recovery, validation,
+completion and safety all live there. Read it, do not restate it.
 
-@AGENTS.md is the binding engineering contract. Start with
-`docs/project/PROJECT_MEMORY.md` and its bounded startup order.
-`/resume-orena` restores the current context without loading the historical
-repository.
+**This file is only the Claude Code layer**, and it is authoritative for none of
+the above. Claude-specific tooling, hooks, slash commands, shell and platform
+gotchas, and the operation of this harness legitimately belong here — that is
+what this file is for.
 
-Always verify branch, HEAD, working tree, and recent commits. Chat history is
-not authoritative. Orena is the active product, `/` is canonical, and
-`/becoming` plus BECOMING-named paths/symbols are legacy compatibility—not
-current product direction. Follow `PROJECT_MEMORY.md`'s separate product-intent
-and implementation-fact precedence models.
+Four things never do, because they are shared across lanes and `AGENTS.md` owns
+them: shared Orena **product direction**, shared **engineering workflow**,
+shared **validation policy**, and shared **recovery and governance behaviour**.
+Anything here that starts stating one of those is a duplicate — delete it and
+read `AGENTS.md` instead.
 
-## Test and validation runtime
+References below name `AGENTS.md` headings rather than section numbers, because
+the numbering has drifted before.
 
-The operator's Python 3.11 has **no project dependencies** (no pytest,
-SQLAlchemy, Alembic, psycopg). Run dependency-heavy tests and validators inside
-the app container:
+Claude's lane is `claude/<task>` (`AGENTS.md`, "Lanes").
 
-```powershell
-MSYS_NO_PATHCONV=1 docker compose run --rm --no-deps \n  -e PERSISTENCE_BACKEND=sqlite -e POSTGRES_RUNTIME_URL= \n  -e GOOGLE_CLIENT_ID= -e GOOGLE_CLIENT_SECRET= \n  -e APP_ENV=development -e PUBLIC_BASE_URL=http://localhost:8000 \n  -e GOOGLE_REDIRECT_URI= \n  -v "<abs-windows-path>:/workspace:ro" -w /workspace writing-coach \n  sh -lc "pip install -q pytest; python -m pytest -q -p no:cacheprovider test_app.py tests"
-```
+---
 
-Four things that will otherwise cost you an hour:
+## Slash commands and skills
 
-- The image does **not** ship pytest (`requirements.txt` omits it) — install it in
-  the ephemeral container, as above.
-- Git Bash rewrites `-w /workspace` into `C:/Program Files/Git/workspace`. Prefix
-  with `MSYS_NO_PATHCONV=1` and pass the volume source as a Windows path.
-- Compose may inject `POSTGRES_RUNTIME_URL`, which makes
-  `test_invalid_and_postgres_fail_without_bundle` fail inside the container while
-  passing in CI. Clear it with `-e POSTGRES_RUNTIME_URL=`. Use the current
-  handoff for the latest verified count instead of hardcoding a historical one.
-- Compose also injects the Google OAuth pair, which turns `AUTH_ENABLED` on and
-  makes unauthenticated route tests answer 401 where CI sees 200/503. Clearing
-  the pair alone then trips the `APP_ENV=production` guard, so clear
-  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI` **and**
-  set `APP_ENV=development` with a local `PUBLIC_BASE_URL`, as above. Without
-  it, `tests/test_r17_admin_routes.py` and `tests/test_reference_data_cache.py`
-  fail locally for environment reasons only.
+Shipped in `.claude/`, invoked with `/`. Each is a convenience wrapper around
+behaviour `AGENTS.md` already defines — never a substitute for it, and never a
+prerequisite:
 
-Pure-stdlib validators (`scripts/validate_*.py` that only read files) and the
-Node contract tests run on the host:
+| Command | Wraps |
+| --- | --- |
+| `/resume-orena` | The bounded restore, `AGENTS.md` "Cold start" — live Git checks, then `PROJECT_MEMORY.md`'s canonical sequence. `/load-context` is a compatibility alias. |
+| `/validate-gate` | The validation sequence, `AGENTS.md` "Validation and completion", reporting exact results. |
+| `/completion-report` | The completion report required by `AGENTS.md` "Validation and completion" and `REVIEW_POLICY.md`. |
+| `/governance-update` | The repository-memory transaction, as defined in `PROJECT_MEMORY.md`. |
 
-```powershell
-python scripts/validate_project_memory.py
-python scripts/validate_architecture.py
-node scripts/test_listening_ui.mjs
-```
+These wrap the existing system. They are not a second memory or governance
+system, and nothing may be recorded through them that `PROJECT_MEMORY.md` does
+not already own.
 
-CI (`.github/workflows/ci.yml`) runs the project-memory validator,
-`validate_architecture.py`, the current `.mjs` contract gate, then
-`pytest -q test_app.py tests` with `PERSISTENCE_BACKEND=sqlite`. `/validate-gate`
-reproduces that sequence.
+## Hooks and guards
 
-Linting is ruff, **lint-only** (`ruff.toml`) — no formatter is configured, since
-reformatting would produce large diffs across protected areas. Ruff is not in
-`requirements.txt`; install it separately (`pip install ruff`) and lint the files
-you touched: `ruff check <path>`. There is no `package.json` — `.mjs` tests run
-under bare `node`.
+`.claude/settings.json` wires three guards. They are advisory tooling, not the
+rule — the rules are `AGENTS.md` "Product invariants" and "Safety":
 
-## Branching
+- `guard_git_docker.py` (PreToolUse/Bash) — blocks volume-destroying compose
+  flags, blanket `git add`, destructive resets, force-push to `main`, and
+  deletion of `docs/visual-references/**`.
+- `guard_secrets.py` (PreToolUse/Bash) — blocks commands that would echo `.env`
+  values, dump a container environment, or print credential material.
+- `warn_protected.py` (PostToolUse/Write|Edit) — warns when a protected area was
+  edited, so you state why and verify immediately.
 
-Work on `claude/<task>` branches, mirroring the `codex/*` lane convention. Never
-develop directly on `main`; never auto-merge to `main`. Stage only files
-belonging to the current coherent change — `git add -A` is forbidden.
+**Gotcha:** the Bash guards match the whole command string, including text
+inside heredocs and arguments. A script that merely *mentions* a forbidden
+command — a grep pattern, a doc string, a test fixture — is blocked as though it
+ran it. Move that text into a file with the Write tool and read it from there.
 
-## Shared Docker runtime — three worktrees
+The guards' messages cite `AGENTS.md` section numbers; several predate the
+current numbering. Trust the section *name* they describe, not the number.
 
-`git worktree list` shows three lanes (`...-v030`, `...-claudecode`,
-`...-codex`) sharing one Docker runtime and one set of named volumes
-(`ai-writing-coach-data`, `ai-writing-coach-postgres-data`). Only one lane may
-operate Docker at a time — confirm no other lane is running a batch first.
+## Docker and runtime notes
 
-Never `docker compose down -v`. Never delete persistent volumes as cleanup.
+Concrete detail for the runtime boundaries and shared-runtime rule in
+`AGENTS.md` "Safety" — the rule is there, the local specifics are here:
 
-## Persistence invariants
+- On this machine the off-limits runtimes are production on **8000** and
+  preview on **8010**; the shared named volumes are `ai-writing-coach-data` and
+  `ai-writing-coach-postgres-data`; the lanes are the worktrees `...-v030`,
+  `...-claudecode` and `...-codex`. `docker ps` shows which are live before you
+  start anything.
+- The worktree is mounted into the sandbox container, but **uvicorn does not
+  reload**: restart the container after Python changes. Static JS and CSS are
+  served from disk — force-reload the page, since a stale stylesheet reads
+  exactly like a broken layout.
 
-PostgreSQL is the authoritative runtime; SQLite is frozen rollback/archive
-only. No dual-write, no reverse sync, no silent SQLite fallback, no startup
-auto-import, no startup automatic Alembic.
+## Shell and platform gotchas
 
-## Environment
+- Two shells are available and take different syntax: PowerShell (primary) and
+  Git Bash. Pick one per command; do not mix.
+- Heredocs collapse a backslash-n escape into a real newline. Writing JS or
+  Python source through a shell heredoc silently corrupts regexes, f-strings
+  and `join()` calls that depend on that escape. Use the Write/Edit tools for
+  source files, or build the backslash via `chr(92)`.
+- Long `grep`/`find` sweeps over the repository root time out — use the Grep
+  tool (ripgrep), which skips `.git` and `node_modules`.
+- Screenshots and scratch output belong in the session scratchpad, never in the
+  working tree. Playwright writes into `.playwright-mcp/` under the repository;
+  clean it up before staging.
 
-Copy `.env.example` to `.env` (`start_docker.ps1` does this). Never print,
-commit, or document secret **values** — variable names are fine.
-
-## Protected areas
-
-Do not opportunistically refactor Journey, Review, Library / Active Recall UI,
-shared layout primitives, the shared CSS/JS design system, R5 Grammar contracts
-and Concept IDs, or `docs/visual-references/**`. If a task requires touching
-one, state why, make the minimum change, verify immediately.
-
-## Reporting
-
-Do not report success because code was written — success requires validating the
-changed flow. Label local runs as local execution; never claim CI PASS without
-CI evidence. `/completion-report` emits the required §17 report.
-
-<!-- The Codex import appended a full copy of AGENTS.md here. Removed: it is
-     already pulled in by the @AGENTS.md import above, and duplicating it
+<!-- Do not paste the agent contract into this file. The single import on line 3
+     already loads it; a previous Codex import appended a full copy, which
      loaded the contract twice into every session. -->
