@@ -4,7 +4,7 @@ Branch: `codex/work`
 
 CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
 
-STATUS: IMPLEMENTING
+STATUS: REVIEWABLE
 
 The human-authorized D-046 reset supersedes the discarded experience mission.
 Discovery, intentional Practice, continuation, imported content and recalled
@@ -43,19 +43,47 @@ disabled controls are inert, and the companion scene is framed by the artwork's
 own ratio. `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` records what a new
 surface inherits and the checks it owes before it is called done.
 
-Learning capabilities now built on that foundation: Follow tracks the spoken
-word where an asset ships word timing and falls back to the segment where it
-does not; Dictation offers a hint ladder of structure and earned anchors that
-never completes a word; one contextual explanation system serves reading,
-listening, writing and practice, naming which of six things is wrong rather
-than saying "wrong" and answering follow-ups without losing the selection;
-Writing keeps every version sent for review; and Speaking shows the evaluator's
-envelope as separate measured, aligned and derived statements. Microphone and
-provider paths are unexercised in this runtime and are not claimed.
+Learning capabilities now built on that foundation:
+
+- **Pure Listening** survives beside Dictation. Follow is an intention that
+  opens no practice panel, so a learner can watch or listen to a whole media
+  item and understand it without being pushed into an exercise. It tracks the
+  spoken word where an asset ships word timing and falls back to the segment
+  where it does not.
+- **Dictation** offers a hint ladder of structure and earned anchors that never
+  completes a word.
+- **Reading** is a real experience with its own intention. A learner asks for a
+  passage by form and subject; it arrives in the same encounter as every other
+  text, with highlight-to-explain, keeping into the collection, and an optional
+  comprehension check whose every answer names the words in the passage that
+  settle it and marks them there. It reuses the existing reading service rather
+  than a Reading-only engine, and labels a built-in passage as built-in.
+- **Writing** shows the full review the evaluator returns - weighted
+  dimensions, CEFR, movement against the last revision, strengths quoted from
+  the learner, issues with the reason and the rule - and never strikes through
+  words the learner did not write. Register exploration puts one meaning across
+  conversational, professional, formal, academic and technical with the signals
+  that place each and when each is the wrong choice; it is a comparison, not a
+  rewrite button, and no version is presented as the correct one.
+- **Speaking** is its own experience: a situation or the learner's own prompt,
+  a take, the words recognition returned, evidence, guidance, another try. What
+  was measured and what is coaching are separate panels making separate claims;
+  coaching reads the transcript and says so, never claiming to have heard the
+  voice. Free expression reports alignment as not applicable, because there was
+  no line to match.
+- **One contextual explanation system** serves reading, listening, writing,
+  speaking and practice, naming which of six things is wrong rather than saying
+  "wrong" and answering follow-ups without losing the selection. Every
+  capability reaches it with the learner's own wording and the context it sat
+  in.
+
+Microphone and provider paths are unexercised in this runtime and are not
+claimed; with no provider configured, review, explanation, registers and spoken
+coaching all degrade honestly rather than inventing an answer.
 
 Operator note: the Platform Admin web surface has no host template since the
 reset removed `templates/index.html`; its API and script remain. Whether Orena
 keeps that page, and where, is an open human decision recorded in
 `docs/project/CURRENT_HANDOFF.md`.
 
-NEXT_REVIEWABLE_SLICE: The human-authorized Golden Star extends the D-046 checkpoint. Establish shared experience references for media/Follow/deep practice, intentional Practice, expression, contextual understanding and learner memory. Fewer coherent reference journeys, not full capability breadth. Native remains frozen. Final browser review follows integrated validation.
+NEXT_REVIEWABLE_SLICE: Human browser review of the five learning capabilities and the shared understanding that connects them. After that review, the open product decisions in `docs/project/CURRENT_HANDOFF.md` - Speaking's cross-turn conversation architecture, Reading library sourcing and rights, Grammar breadth, and the Platform Admin host - need judgement before more capability breadth is added. Native remains frozen.
