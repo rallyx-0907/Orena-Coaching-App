@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
-import {route, link, continuationLink, sourceLink, practiceIntentions} from '../static/orena/product/intent.js';
+import {route, link, continuationLink, sourceLink, practiceIntentions, deeperPractice, supports} from '../static/orena/product/intent.js';
 import {learnerMemory} from '../static/orena/product/memory.js';
 import {encounter} from '../static/orena/product/encounter.js';
 import {dictationEvidence, mergeListeningEvidence} from '../static/orena/product/evidence.js';
@@ -100,6 +100,19 @@ assert.equal(learnerMemory(storage,'owner-a','zh').value.revisions['expression:f
 const expressionSource=readFileSync(new URL('../static/orena/ui/expression.js',import.meta.url),'utf8');
 assert.match(expressionSource,/memory\.recordRevision\(id, \{\s*text,/,'a reviewed draft is recorded as a version');
 assert.doesNotMatch(expressionSource,/oninput[\s\S]{0,200}recordRevision/,'typing is not a version');
+
+// Listening must not collapse into Dictation. Following a piece of media to its
+// end is an intention of its own, and it is the one intention that opens
+// nothing over the moment.
+assert.equal(practiceIntentions[0],'follow','following the voice leads the intentions');
+assert.ok(!deeperPractice.includes('follow'),'Follow opens no practice panel');
+assert.deepEqual(deeperPractice,['dictation','shadowing','speaking'],'only these open over the moment');
+assert.equal(route(link('practice',{intent:'follow'})).intent,'follow');
+assert.equal(supports({kind:'audio'},'follow'),true,'a voice can be followed');
+assert.equal(supports({kind:'text'},'follow'),false,'a text is read, not followed');
+const encounterFollow=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
+assert.match(encounterFollow,/deeperPractice\.includes\(practice\)/,'only deeper intentions auto-open');
+assert.doesNotMatch(encounterFollow,/\['dictation', 'shadowing', 'speaking'\]\.includes\(practice\)/,'the hardcoded list is retired');
 
 // Contracts the encounter surface must keep. These are the regressions this
 // layer has actually shipped, so they are worth naming rather than trusting.

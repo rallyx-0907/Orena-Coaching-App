@@ -1,4 +1,9 @@
+/* Following a piece of media to its end, understanding it, is a way of
+   learning in its own right - not the corridor to an exercise. It leads the
+   list because it is the first thing a learner does with a voice, and because
+   without it Listening quietly collapses into Dictation. */
 export const practiceIntentions = [
+  'follow',
   'dictation',
   'shadowing',
   'speaking',
@@ -6,6 +11,10 @@ export const practiceIntentions = [
   'grammar',
   'recall',
 ];
+
+// Intentions that open a practice panel over the moment. Follow is absent by
+// design: it is the encounter itself.
+export const deeperPractice = ['dictation', 'shadowing', 'speaking'];
 export function route(hash = '') {
   const [path, query] = String(hash).replace(/^#\/?/, '').split('?');
   const q = new URLSearchParams(query || '');
@@ -34,7 +43,7 @@ export function link(page = 'discover', { id = '', intent = null } = {}) {
 }
 export function supports(content, intent) {
   if (!intent) return true;
-  if (['dictation', 'shadowing'].includes(intent))
+  if (['follow', 'dictation', 'shadowing'].includes(intent))
     return ['audio', 'video', 'embed'].includes(
       content.kind || content.playback_kind,
     );

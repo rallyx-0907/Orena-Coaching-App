@@ -631,3 +631,20 @@ Object.assign(copy.zh, {
   step_fluency: '用更稳的语速再说一遍',
   step_complete_line: '试着一口气把整句说完',
 });
+
+/* `follow` and `followNote` already name the moment inside an encounter. These
+   name the intention of choosing to listen at all, which is a different thing. */
+Object.assign(copy.en, {
+  followName: 'Just listen',
+  followIntent: 'Listen the whole way through',
+  followIntentNote:
+    'Watch or listen from beginning to end. The words and their meaning move with the voice. Nothing here asks you to perform.',
+  followOptional: 'Deeper practice is here when you want it, and only then.',
+});
+Object.assign(copy.zh, {
+  followName: '只是听',
+  followIntent: '从头到尾听完',
+  followIntentNote:
+    '从头到尾看或听完。文字和含义会随着声音一起向前。这里不要求你表现什么。',
+  followOptional: '想深入练习时随时可以，不想也没关系。',
+});
