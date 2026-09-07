@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { copy } from '../static/orena/ui/copy.js';
 import { learnerMemory } from '../static/orena/product/memory.js';
+import { practiceIntentions } from '../static/orena/product/intent.js';
 import {
   pageIntro,
   intentNavigation,
@@ -161,6 +162,20 @@ for (const name of ['foundation', 'world', 'experiences']) {
     `${name}: use the text scale`,
   );
 }
+// Practice intentions are looked up the same silent way: c[intent + 'Name'] in
+// the navigation and the shelf, c[intent] and c[intent + 'Note'] on the page.
+// Adding an intention without its labels degrades to blank rather than failing.
+for (const intent of practiceIntentions) {
+  for (const ui of ['en', 'zh']) {
+    for (const key of [intent, `${intent}Name`, `${intent}Note`]) {
+      assert.ok(
+        copy[ui][key],
+        `${ui}: practice intention "${intent}" is missing ${key}`,
+      );
+    }
+  }
+}
+
 // Every topic the catalog actually ships is named in both languages. A missing
 // label is silent - the encounter simply falls back to the generic line - so
 // the gap only ever shows up as one language quietly losing its framing.
