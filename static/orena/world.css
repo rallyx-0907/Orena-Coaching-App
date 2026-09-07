@@ -1722,6 +1722,14 @@
 .pattern-list > a {
   grid-template-columns: 65px minmax(0, 1fr) minmax(0, 1fr) 24px;
 }
+/* Some patterns are named by a phrase and carry an example beside them; many
+   are named by the sentence itself and have none. Reserving half of every row
+   for an example that is usually absent left a hole across most of the list
+   while the names wrapped beside it. A row with nothing to put there gives the
+   space back to the name it does have. */
+.pattern-list > a:not(:has(> p)) > h2 {
+  grid-column: 2 / span 2;
+}
 .pending-media {
   max-width: 960px;
   margin: auto;
@@ -1744,6 +1752,12 @@
   .pattern-list > a > span {
     grid-column: 3;
     grid-row: 1;
+  }
+  /* Narrow, the row is already stacked: the example sits on its own line and
+     no track is left reserved, so there is nothing for a name without one to
+     reclaim. Without this it would spread under the arrow. */
+  .pattern-list > a:not(:has(> p)) > h2 {
+    grid-column: 2;
   }
   .pattern-focus {
     padding: 24px 18px;
