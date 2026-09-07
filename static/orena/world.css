@@ -1769,3 +1769,164 @@
     min-height: 44px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Learning workspace.
+
+   Consuming and producing want different shapes. Following a voice is content:
+   the media leads. But the moment a learner starts reconstructing a line, the
+   thing they are working on and the thing they are working from have to be
+   visible at once - otherwise every keystroke is bracketed by a scroll to check
+   the audio and a scroll back to the box.
+
+   So the encounter re-composes when a practice opens: media and its current
+   line on one side, the work on the other, each scrolling on its own.
+   --------------------------------------------------------------------------- */
+@media (min-width: 1080px) {
+  .media-encounter:has(.practice-space:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 0.85fr);
+    align-items: start;
+  }
+  /* The source stays put while the learner works down the page. */
+  .media-encounter:has(.practice-space:not([hidden])) .media-stage {
+    position: sticky;
+    top: var(--space-4);
+    max-block-size: calc(100vh - var(--space-8));
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  /* The practice leaves the media column and becomes the other half. */
+  .media-encounter:has(.practice-space:not([hidden])) .practice-space {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    border-radius: var(--radius);
+    border-bottom: 2px solid var(--sun);
+  }
+  /* The transcript is a third thing; while practising it steps aside rather
+     than competing for the width the work needs. */
+  .media-encounter:has(.practice-space:not([hidden])) .transcript-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    position: static;
+    max-block-size: 22rem;
+    overflow: auto;
+  }
+}
+
+/* Wide displays: use the room for the work, not for longer lines of prose. */
+@media (min-width: 1600px) {
+  #main {
+    max-width: 1560px;
+  }
+  .media-encounter {
+    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
+    gap: 44px;
+  }
+  .media-encounter:has(.practice-space:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) minmax(520px, 0.8fr);
+  }
+  /* Reading is the exception: a longer measure is worse, not better. */
+  .text-encounter {
+    grid-template-columns: minmax(0, var(--measure)) minmax(280px, 1fr);
+    justify-content: center;
+    gap: 72px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Narrow web. A phone-width browser is a first-class place to learn, and the
+   failure there is not overflow - it is the distance between the audio and the
+   box the learner is typing into.
+   --------------------------------------------------------------------------- */
+@media (max-width: 800px) {
+  /* While practising, the source becomes a compact strip that rides along at
+     the top: enough to hear the line again and read it, and nothing else. The
+     work itself must be reachable without a scroll journey, so everything that
+     is not context gets out of the way. */
+  .media-encounter:has(.practice-space:not([hidden])) .media-stage {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--paper);
+    padding-block-end: var(--space-2);
+    box-shadow: 0 8px 20px -14px #0008;
+  }
+  .media-encounter:has(.practice-space:not([hidden])) .player-wrap video,
+  .media-encounter:has(.practice-space:not([hidden])) .player-wrap iframe {
+    block-size: 22vh;
+    object-fit: contain;
+    background: var(--night-surface);
+  }
+  /* Scrubbing and speed are for following, not for reconstructing a line the
+     learner replays with one button. */
+  .media-encounter:has(.practice-space:not([hidden])) .seek-line,
+  .media-encounter:has(.practice-space:not([hidden])) .transport label,
+  .media-encounter:has(.practice-space:not([hidden])) .moment-actions {
+    display: none;
+  }
+  .media-encounter:has(.practice-space:not([hidden])) .transport {
+    padding-block: var(--space-2);
+  }
+  /* The current line stays: it is the thing being reconstructed. */
+  .media-encounter:has(.practice-space:not([hidden])) .follow-moment {
+    padding-block: var(--space-2);
+  }
+  .media-encounter:has(.practice-space:not([hidden])) .follow-moment .meaning {
+    display: none;
+  }
+  /* The transcript is a long list; while practising it collapses out of the
+     way rather than pushing the work down the page. */
+  .media-encounter:has(.practice-space:not([hidden])) .transcript-panel {
+    max-block-size: 13rem;
+    overflow: auto;
+  }
+}
+
+/* Narrow, the chrome above the content was costing nearly three hundred
+   pixels of an eight-hundred-pixel screen: the shell wrapped onto three rows
+   and the back row onto two. Scrolling the navigation on one line is the whole
+   fix, and it applies everywhere rather than only while practising. */
+@media (max-width: 800px) {
+  /* The navigation scrolls on one line rather than wrapping onto two. The
+     shell keeps its own wrapping: forcing that onto one row makes the row
+     taller, not shorter. */
+  #shell nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    gap: var(--space-6);
+  }
+  #shell nav::-webkit-scrollbar {
+    display: none;
+  }
+  .back-row {
+    flex-wrap: nowrap;
+    gap: var(--space-3);
+    padding-block: var(--space-3) var(--space-1);
+  }
+  .back-row > * {
+    white-space: nowrap;
+  }
+  .encounter:has(.practice-space:not([hidden])) .encounter-heading,
+  main:has(.practice-space:not([hidden])) .encounter-heading {
+    padding: var(--space-2) 0 var(--space-3);
+  }
+  main:has(.practice-space:not([hidden])) .encounter-heading h1 {
+    font-size: var(--text-lead);
+    margin: 0;
+  }
+  main:has(.practice-space:not([hidden])) .encounter-heading p,
+  main:has(.practice-space:not([hidden])) .back-row + .encounter-heading small {
+    display: none;
+  }
+}
+
+/* The sticky source strip must not cover the top of the work it sits above. */
+@media (max-width: 1079px) {
+  .practice-space {
+    scroll-margin-top: 34vh;
+  }
+}

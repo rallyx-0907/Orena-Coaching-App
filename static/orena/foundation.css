@@ -189,6 +189,11 @@ textarea:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 4px;
 }
+/* A region moved to for a screen reader is not a control the learner tabbed
+   to. Anything with tabindex="-1" is a programmatic focus target by
+   definition, so it should not wear a focus ring - while real keyboard focus
+   still shows one through :focus-visible above. */
+[tabindex='-1']:focus:not(:focus-visible),
 h1:focus,
 main:focus {
   outline: 0;
@@ -365,4 +370,61 @@ input[type='radio'] {
 }
 .empty p {
   color: var(--muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Motion.
+
+   Movement is here to say something: this arrived, this is the line being
+   spoken, this followed from what you just did. Anything that does not carry
+   meaning is noise, so there is no ambient drift, no floating, and nothing
+   moves that the learner did not cause.
+
+   Everything below is off entirely under prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* Something answered: an explanation, a comparison, a partner's turn, a
+     panel that was not there a moment ago. It settles rather than appears. */
+  .practice-space:not([hidden]),
+  .conversation-turn,
+  .comprehension-result,
+  .spoken-coaching,
+  .review-comparison,
+  .hint-line,
+  .sheet .understanding {
+    animation: orena-settle 0.28s ease-out both;
+  }
+  /* Turns arrive one after another rather than as a block, which is what makes
+     an exchange read as an exchange. */
+  .conversation-turn:nth-last-child(1) {
+    animation-delay: 0.04s;
+  }
+  /* The line being spoken. A change of line is a real event in the media, so
+     it is worth marking - once, briefly. */
+  .follow-moment .spoken {
+    transition: opacity 0.2s ease-out;
+  }
+  .transcript-panel button {
+    transition:
+      background 0.18s ease-out,
+      color 0.18s ease-out;
+  }
+  /* A word that has just become an anchor: the learner earned it. */
+  .hint-word[data-kind='anchor'],
+  .hint-word[data-kind='partial'] {
+    transition: border-color 0.25s ease-out;
+  }
+  .brand-art img {
+    animation: orena-settle 0.4s ease-out both;
+  }
+}
+@keyframes orena-settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

@@ -639,13 +639,39 @@
   letter-spacing: 0.02em;
   margin: var(--space-2) 0 var(--space-3);
 }
-.hint-slots b {
+/* A word is a unit the learner can reason about, so it holds together as one -
+   and inside it, each position says whether it is standing, earned, or still
+   unknown. A single undifferentiated run of marks tells a learner nothing
+   about where they are. */
+.hint-word {
+  display: inline-block;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  padding-inline: 1px;
+}
+.hint-word[data-kind='anchor'] {
+  border-bottom-color: color-mix(in srgb, var(--on-sage) 35%, transparent);
+}
+/* A word the learner has partly reconstructed: the underline shows the word is
+   in progress rather than untouched. */
+.hint-word[data-kind='partial'] {
+  border-bottom-color: var(--accent);
+}
+.hint-mark {
+  font-variant-numeric: tabular-nums;
+}
+.hint-mark[data-state='anchor'] {
   font-weight: 800;
 }
-.hint-slots i {
-  font-style: normal;
+/* Characters the learner typed correctly themselves. Solid, because they own
+   them - they are reading their own work back, not being given an answer. */
+.hint-mark[data-state='known'] {
+  font-weight: 750;
+  color: var(--on-sage);
+}
+.hint-mark[data-state='unknown'] {
   color: var(--on-sage-muted);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 .hint-line .meta {
   color: var(--on-sage-muted);
