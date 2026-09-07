@@ -1516,8 +1516,13 @@
   letter-spacing: 0.04em;
   color: var(--muted);
 }
+/* The way back is a pointer target, not just a phrase. Inline text sits at the
+   line height it inherits, which here is well under the minimum. */
 .kept-because a {
   color: inherit;
+  display: inline-block;
+  min-block-size: 24px;
+  padding-block: 3px;
 }
 .kept-because a:hover,
 .kept-because a:focus-visible {

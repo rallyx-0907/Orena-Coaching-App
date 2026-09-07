@@ -205,4 +205,29 @@ assert.ok(
   'lapses are history and are not cleared by a later success',
 );
 
-console.log('Learner memory, provenance, the route back, and recall that fits its origin: PASS');
+/* A deeper question must not cost the learner the thing that caused it. Every
+   follow-up re-asks about the same selection inside the same passage, and a
+   phrase kept after asking still carries the origin it was found at. */
+assert.ok(
+  understanding.includes('async function run(asked) {'),
+  'follow-ups are one function over one selection',
+);
+assert.ok(
+  /run\(asked\)[\s\S]{0,600}text: source,[\s\S]{0,200}context: passage,/.test(understanding),
+  'an inquiry always re-asks about the same selection and passage',
+);
+assert.ok(
+  /result\.selected_text !== source/.test(understanding),
+  'an answer about something else is refused rather than shown',
+);
+// `origin` is read at save time from the same closure the inquiry runs in, so
+// it cannot drift as the learner asks more.
+assert.ok(
+  understanding.indexOf('function openUnderstanding') <
+    understanding.indexOf('ctx.memory.rememberLanguage'),
+  'provenance is captured from the surface that owns the selection',
+);
+
+console.log(
+  'Learner memory, provenance, the route back, recall that fits its origin, and inquiry that keeps it: PASS',
+);
