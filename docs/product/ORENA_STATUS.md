@@ -6,6 +6,13 @@ CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
 
 STATUS: IMPLEMENTING
 
+Capability-direction review at `aaded1e9237b44a34b333e541d045feb12b9bd57`:
+REQUEST CHANGES. Two P1 corrections precede acceptance: Recall must withhold
+answers before reveal, and Writing revision comparison must preserve persistent
+issues before classifying changes. See `docs/project/CAPABILITY_DIRECTION_REVIEW.md`.
+The completed foundation is not reopened; the execution evidence below remains
+historical and no new browser or live-provider acceptance is claimed.
+
 The human-authorized D-046 reset supersedes the discarded experience mission.
 Discovery, intentional Practice, continuation, imported content and recalled
 language converge on a new encounter product layer. Synchronized Follow is a

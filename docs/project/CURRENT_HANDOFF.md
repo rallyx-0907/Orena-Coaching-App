@@ -94,31 +94,24 @@ operate production 8000, preview 8010, Cloudflare or volumes. No provider keys:
 the AI surfaces return 503 honestly. Pronunciation may be demo-labelled. No
 microphone acceptance has run; do not claim it.
 
-Dependency-heavy tests run in the `ai-writing-coach:local` image (repo mounted
-read-only, tmpfs /rundata, the four *_DB vars pointed there; CLAUDE.md has the
-command). PERSISTENCE_BACKEND=sqlite is test-only, never a runtime fallback.
-The learning language is session-scoped: switch it inside the page. Stage
-explicit task files only; never docs/visual-references.
+Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
+four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
+Switch learning language in-page. Stage task files only, never visual references.
 
 ## NEXT EXACT TASK
 
-GPT-6 review of the capability direction, then an operator pass with a
-microphone and a live provider - neither exists here - then human browser
-review.
+Review verdict: REQUEST CHANGES. Correct the Recall and Writing P1 findings in
+`CAPABILITY_DIRECTION_REVIEW.md`, verifying EN/ZH. Do not redo the foundation.
+Then authorized microphone/live-provider and human browser review.
 
 ## IN PROGRESS
 
-Nothing. GPT-6's conversation ledger, published library, revision workbench and
-grammar shelf are finished and committed. That run could not launch a browser,
-which is how published texts reached the top of Reading with no comprehension
-and no explanation of why; browser acceptance has since run in EN and ZH.
+No implementation edits. State reconciled per human ruling; review recorded above.
 
 ## PENDING
 
-Microphone capture needs real hardware and cannot run here. The AI surfaces
-have deterministic provider-injected coverage of their grounding rules; a live
-provider run should still confirm the prompts produce what those rules
-expect.
+Microphone hardware and live-provider validation remain pending. Deterministic
+provider-injected coverage does not establish live prompt quality.
 
 ## BLOCKED
 
@@ -130,6 +123,8 @@ None identified.
 
 ## OPEN P1
 
+- Recall answer exposure; Writing revision issue misclassification. Evidence:
+  `CAPABILITY_DIRECTION_REVIEW.md`.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard, so it
   is inert. Preserve it without restoring the historical shell.

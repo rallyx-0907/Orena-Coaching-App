@@ -38,7 +38,7 @@
   ],
   "active_branch_or_lane": {
     "expected_development_branch": "codex/work",
-    "lane": "orena_experience_foundation"
+    "lane": "orena_web_capability_direction_review"
   },
   "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
   "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_golden_star",
     "status": "in_progress",
-    "next_task": "Establish the Golden Star WEB reference: shared shell, visual and interaction foundations across media/Follow/deep practice, intentional Practice, expression, contextual language and memory. Validate EN/ZH, themes and responsive behavior. Native remains frozen. Final human browser review; no broad feature completion."
+    "next_task": "The Golden Star WEB foundation and capability implementation are committed at aaded1e9237b44a34b333e541d045feb12b9bd57; do not re-audit or redo completed foundation work. Capability-direction review completed with REQUEST CHANGES: fix Recall answer exposure and Writing revision issue classification, then validate those corrections in EN/ZH. See docs/project/CAPABILITY_DIRECTION_REVIEW.md. An authorized microphone/live-provider operator pass and human browser review remain pending. Native remains frozen; no product approval or public release is claimed. The retained application verification commit, batch and date describe historical execution, not this review."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -189,16 +189,13 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "listening_real_media_catalog_has_one_en_and_one_zh_lesson_only",
-    "listening_durable_progress_tables_exist_but_saving_is_unconfirmed_until_human_qa",
-    "native_curated_video_verified_by_tests_and_prebuild_not_on_a_real_device",
-    "ios_vp9_webm_decode_unproven_both_real_lessons_are_vp9_transcodes",
-    "memory_commits_on_branch_are_not_yet_in_main_pr54_already_merged",
-    "l1_discovery_shipped_on_web_only_native_still_renders_the_old_card",
-    "most_l1_discovery_rails_are_empty_until_l3_loads_real_content",
-    "dev_generated_catalog_is_unreviewed_development_content_never_production",
-    "generated_excerpts_are_proposed_candidates_needing_human_curation",
-    "generated_lesson_ids_are_provisional_and_can_move_if_captions_are_retimed"
+    "recall_exposes_target_in_speaking_context_and_repeated_phrase_gaps",
+    "writing_revision_delta_can_misclassify_persistent_issues",
+    "platform_admin_host_remains_a_human_hold",
+    "grammar_breadth_remains_a_human_review_question",
+    "cross_device_continuity_remains_a_persistence_architecture_hold",
+    "reading_library_breadth_requires_rights_decisions_per_text",
+    "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native"
   ],
   "last_verified_at": "2026-09-02"
 }
