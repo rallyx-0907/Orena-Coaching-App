@@ -175,6 +175,14 @@
 .back-row {
   flex-wrap: wrap;
 }
+/* The way back is the one control every deep surface shares. It stays a
+   typographic link rather than a button, so give it the pointer height the
+   type alone does not reach. */
+.back-row > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
 .back-row > small {
   flex: 1;
   text-align: right;

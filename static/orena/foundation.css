@@ -110,8 +110,8 @@ summary:hover {
   color: var(--paper);
 }
 button:active:not(:disabled),
-.primary:active,
-.outline:active {
+.primary:active:not(:disabled),
+.outline:active:not(:disabled) {
   transform: translateY(1px);
 }
 details > summary {
@@ -317,9 +317,14 @@ input[type='checkbox'] {
 .outline {
   border: 1px solid var(--muted);
 }
-.primary:hover,
-.outline:hover {
+.primary:hover:not(:disabled),
+.outline:hover:not(:disabled) {
   transform: translateY(-2px);
+}
+/* A disabled control answers nothing: no lift, no pointer, no underline. */
+:where(.primary, .outline, .quiet):disabled {
+  transform: none;
+  text-decoration: none;
 }
 .quiet {
   min-height: 44px;
