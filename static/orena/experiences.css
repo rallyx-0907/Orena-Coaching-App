@@ -19,16 +19,26 @@
   display: block;
   flex: none;
 }
+/* The frame is the artwork's own ratio, so nothing is stretched and nothing is
+   cropped by a guess. */
 .brand-art img {
   display: block;
   inline-size: 100%;
-  block-size: auto;
+  block-size: 100%;
   object-fit: contain;
 }
-.brand-art[data-kind='scene'] img {
+.brand-art[data-kind='scene'] {
   border-radius: var(--radius);
+  overflow: hidden;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+/* A few approved scenes carry a printed caption strip below the illustration.
+   The frame is set to the art above it and the image is anchored to the top,
+   which puts the strip outside the frame at every size - the character pixels
+   are never touched, and the file is never edited. */
+.brand-art[data-fit='crop-caption'] img {
   object-fit: cover;
+  object-position: top;
 }
 .brand-art[data-size='hero'] {
   inline-size: min(300px, 34vw);

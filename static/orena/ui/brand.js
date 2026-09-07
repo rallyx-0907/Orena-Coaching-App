@@ -25,7 +25,7 @@ function render(asset, size, label) {
   // A state with no approved artwork shows nothing. Content is the protagonist,
   // and a missing illustration is not a reason to substitute a different one.
   if (!asset) return '';
-  return `<figure class="brand-art" data-kind="${esc(asset.kind)}" data-size="${esc(size)}" data-state="${esc(asset.state)}"${label ? '' : ' aria-hidden="true"'}><img src="${esc(asset.src)}" alt="${esc(label)}" loading="lazy" decoding="async" style="aspect-ratio:${asset.ratio}"></figure>`;
+  return `<figure class="brand-art" data-kind="${esc(asset.kind)}" data-size="${esc(size)}" data-fit="${esc(asset.fit)}" data-state="${esc(asset.state)}" style="aspect-ratio:${asset.ratio}"${label ? '' : ' aria-hidden="true"'}><img src="${esc(asset.src)}" alt="${esc(label)}" width="${asset.width}" height="${asset.height}" loading="lazy" decoding="async"></figure>`;
 }
 
 /* The arrival companion. Named separately because the discover surface has

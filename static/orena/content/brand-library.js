@@ -26,27 +26,26 @@ const SCENE = 'scene';
    content is the protagonist, and a surface with nothing worth illustrating
    should show nothing rather than reach for a mascot. */
 const library = {
-  discovery: { file: 'scenes/bigger-world-awaits.png', kind: SCENE, ratio: 16 / 9 },
-  exploring: { file: 'actions/explore.png', kind: CHARACTER, ratio: 1 },
-  reading: { file: 'scenes/stories-everywhere.png', kind: SCENE, ratio: 16 / 9 },
-  listening: { file: 'scenes/listening-to-the-world.png', kind: SCENE, ratio: 16 / 9 },
-  speaking: { file: 'actions/speak.png', kind: CHARACTER, ratio: 1 },
-  conversation: { file: 'scenes/same-curiosity-further-together.png', kind: SCENE, ratio: 16 / 9 },
-  writing: { file: 'actions/write.png', kind: CHARACTER, ratio: 1 },
-  creating: { file: 'scenes/creating-ideas.png', kind: SCENE, ratio: 16 / 9 },
-  focus: { file: 'actions/practice.png', kind: CHARACTER, ratio: 1 },
-  thinking: { file: 'actions/think.png', kind: CHARACTER, ratio: 1 },
-  remembering: { file: 'actions/take-notes.png', kind: CHARACTER, ratio: 1 },
-  returning: { file: 'scenes/small-steps-real-progress.png', kind: SCENE, ratio: 16 / 9 },
-  completion: { file: 'actions/achieve.png', kind: CHARACTER, ratio: 1 },
-  celebrating: { file: 'actions/celebrate.png', kind: CHARACTER, ratio: 1 },
-  empty: { file: 'actions/hello.png', kind: CHARACTER, ratio: 1 },
-  recovery: { file: 'actions/care.png', kind: CHARACTER, ratio: 1 },
-  learning: { file: 'scenes/learning-at-home.png', kind: SCENE, ratio: 16 / 9 },
-  together: { file: 'scenes/studying-together.png', kind: SCENE, ratio: 16 / 9 },
-  perspective: { file: 'scenes/different-places-new-perspectives.png', kind: SCENE, ratio: 16 / 9 },
-  world: { file: 'scenes/exploring-the-world.png', kind: SCENE, ratio: 16 / 9 },
-  tomorrow: { file: 'scenes/a-brighter-tomorrow.png', kind: SCENE, ratio: 16 / 9 },
+  discovery: { file: 'scenes/bigger-world-awaits.png', kind: SCENE, width: 196, height: 147 },
+  exploring: { file: 'actions/explore.png', kind: CHARACTER, width: 122, height: 167 },
+  reading: { file: 'scenes/stories-everywhere.png', kind: SCENE, width: 197, height: 147 },
+  listening: { file: 'scenes/listening-to-the-world.png', kind: SCENE, width: 262, height: 132 },
+  speaking: { file: 'actions/speak.png', kind: CHARACTER, width: 123, height: 167 },
+  conversation: { file: 'scenes/studying-together.png', kind: SCENE, width: 262, height: 152, caption: true },
+  writing: { file: 'actions/write.png', kind: CHARACTER, width: 122, height: 167 },
+  creating: { file: 'scenes/creating-ideas.png', kind: SCENE, width: 261, height: 132 },
+  focus: { file: 'actions/practice.png', kind: CHARACTER, width: 122, height: 167 },
+  thinking: { file: 'actions/think.png', kind: CHARACTER, width: 138, height: 181 },
+  remembering: { file: 'actions/take-notes.png', kind: CHARACTER, width: 139, height: 181 },
+  returning: { file: 'scenes/small-steps-real-progress.png', kind: SCENE, width: 197, height: 147 },
+  completion: { file: 'actions/achieve.png', kind: CHARACTER, width: 139, height: 193 },
+  celebrating: { file: 'actions/celebrate.png', kind: CHARACTER, width: 123, height: 167 },
+  empty: { file: 'actions/hello.png', kind: CHARACTER, width: 139, height: 185 },
+  recovery: { file: 'actions/care.png', kind: CHARACTER, width: 139, height: 181 },
+  learning: { file: 'scenes/learning-at-home.png', kind: SCENE, width: 262, height: 152, caption: true },
+  together: { file: 'scenes/different-places-new-perspectives.png', kind: SCENE, width: 197, height: 147 },
+  perspective: { file: 'scenes/exploring-the-world.png', kind: SCENE, width: 261, height: 152, caption: true },
+  world: { file: 'scenes/a-brighter-tomorrow.png', kind: SCENE, width: 262, height: 132 },
 };
 
 /* A feeling, for moments that carry one. Kept apart from the states above
@@ -69,14 +68,29 @@ export const FEELINGS = Object.keys(feelings);
 
 export function sceneAsset(state) {
   const entry = library[state];
-  return entry
-    ? { ...entry, src: `${BRAND_ROOT}/${entry.file}`, state }
-    : null;
+  return entry ? shape(entry, state) : null;
+}
+
+/* Presentation facts taken from the artwork itself. A few approved scenes carry
+   a caption strip printed beneath the illustration: those are framed to the art
+   above it, which excludes the strip at every size without touching a pixel of
+   the character. Everything else keeps its own full ratio. */
+function shape(entry, state) {
+  const height = entry.caption ? entry.height - 24 : entry.height;
+  return {
+    ...entry,
+    state,
+    src: `${BRAND_ROOT}/${entry.file}`,
+    ratio: entry.width / height,
+    // Only a captioned scene is framed tighter than its file; everything else
+    // is shown whole.
+    fit: entry.caption ? 'crop-caption' : 'whole',
+  };
 }
 
 export function feelingAsset(feeling) {
   const file = feelings[feeling];
   return file
-    ? { file, src: `${BRAND_ROOT}/${file}`, kind: CHARACTER, ratio: 1, state: feeling }
+    ? shape({ file, kind: CHARACTER, width: 122, height: 141 }, feeling)
     : null;
 }
