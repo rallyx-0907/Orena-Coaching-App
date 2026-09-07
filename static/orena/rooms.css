@@ -278,3 +278,25 @@
     gap: var(--space-6);
   }
 }
+
+/* Retrieval is one question at a time, and the sentence the phrase is missing
+   from is the whole task - so it is set at reading size rather than at the
+   size of a list item.
+
+   The shell gives every direct child of #main a 1480px default measure. That
+   is an ID-specificity rule, so the 760px this card asks for in experiences.css
+   never applied and one recalled sentence ran the full width of a desk built
+   for side-by-side work. Restating it at the shell's own specificity is how a
+   room says it is narrower than the default. */
+#main > .recall-moment {
+  max-width: 760px;
+}
+/* The rights and source line under a passage is fine print, and fine print set
+   across 1080px is unreadable. Same shell default, same correction. */
+#main > .provenance {
+  max-width: 800px;
+}
+:is([data-experience='language'], [data-experience='recall']) .recall-gap {
+  font-size: var(--text-reading);
+  line-height: 1.9;
+}

@@ -45,4 +45,26 @@ assert.match(
   'the stacked row must not let a name without an example reach the arrow',
 );
 
-console.log('Golden Star entry routes, experience orientation, EN/ZH parity and row composition: PASS');
+/* --- The shell's default measure does not silently swallow a room's own ---
+
+   The reference shell centres every direct child of #main inside 1480px. It is
+   an ID-specificity rule, so a room asking for a narrower measure at plain
+   class specificity loses without any warning: one recalled sentence and the
+   rights line under a passage were both being set across 1080px. A room that
+   is narrower than the shell default has to say so at the shell's specificity,
+   and these hold the two that do. */
+const referenceCss = readFileSync(new URL('../static/orena/reference.css', import.meta.url), 'utf8');
+const roomsCss = readFileSync(new URL('../static/orena/rooms.css', import.meta.url), 'utf8');
+assert.match(
+  referenceCss,
+  /#main > \* \{[^}]*max-width: 1480px/,
+  'the shell default this correction exists for is still here',
+);
+const flat = roomsCss.replace(/\s+/g, ' ');
+for (const [selector, measure] of [['.recall-moment', '760px'], ['.provenance', '800px']])
+  assert.ok(
+    flat.includes(`#main > ${selector} { max-width: ${measure}; }`),
+    `${selector} must restate its measure above the shell default`,
+  );
+
+console.log('Golden Star entry routes, experience orientation, EN/ZH parity, row composition and room measures: PASS');
