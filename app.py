@@ -575,20 +575,36 @@ def revision_delta(current: dict[str, Any], previous: dict[str, Any] | None) -> 
         for item in previous.get("errors", [])
         if isinstance(item, dict)
     }
-    current_keys = set(current_items)
-    previous_keys = set(previous_items)
+    # An issue present in both drafts is the same issue, and no reasoning about
+    # a revision can make it otherwise. Exact matches are settled first, so a
+    # category-level guess can never claim the learner fixed a problem and
+    # introduced that same problem in one revision.
+    persistent_keys = sorted(set(current_items) & set(previous_items))
+    unmatched_previous = sorted(set(previous_items) - set(current_items))
+    unmatched_current = sorted(set(current_items) - set(previous_items))
+
+    # What remains may hold a genuine revision: the same problem, reworded. That
+    # can only be claimed where the correspondence is unambiguous - exactly one
+    # unmatched issue on each side of a category. With several, which became
+    # which is not knowable, and pairing them by category alone would tell the
+    # learner something about their own writing that is not true. Those are
+    # reported plainly as gone and arrived instead.
     changed: list[dict[str, Any]] = []
-    for category in sorted({key[0] for key in current_keys} & {key[0] for key in previous_keys}):
-        old = next((key for key in previous_keys if key[0] == category), None)
-        new = next((key for key in current_keys if key[0] == category), None)
-        if old and new and old != new:
-            changed.append({"before": previous_items[old], "after": current_items[new]})
-            previous_keys.discard(old)
-            current_keys.discard(new)
+    shared_categories = sorted(
+        {key[0] for key in unmatched_previous} & {key[0] for key in unmatched_current}
+    )
+    for category in shared_categories:
+        olds = [key for key in unmatched_previous if key[0] == category]
+        news = [key for key in unmatched_current if key[0] == category]
+        if len(olds) == 1 and len(news) == 1:
+            changed.append({"before": previous_items[olds[0]], "after": current_items[news[0]]})
+            unmatched_previous.remove(olds[0])
+            unmatched_current.remove(news[0])
+
     out["issues"] = {
-        "removed": [previous_items[key] for key in sorted(previous_keys - current_keys)],
-        "persistent": [current_items[key] for key in sorted(current_keys & previous_keys)],
-        "new": [current_items[key] for key in sorted(current_keys - previous_keys)],
+        "removed": [previous_items[key] for key in unmatched_previous],
+        "persistent": [current_items[key] for key in persistent_keys],
+        "new": [current_items[key] for key in unmatched_current],
         "changed": changed,
     }
     return out

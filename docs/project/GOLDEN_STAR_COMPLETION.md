@@ -45,9 +45,8 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
   Continue; Speaking situation -> own turn -> coaching -> writing; Grammar ->
   example -> understanding -> My Language. Exercise available paths in browser;
   label provider/hardware-limited steps honestly rather than simulating success.
-- [~] Completion findings: Recall answer exposure (P1) **closed**; Writing
-  revision issue classification (P1) and long-turn contextual explanation (P2)
-  open. See `CAPABILITY_DIRECTION_REVIEW.md`. They do not replace this mission.
+- [~] Completion findings: Recall answer exposure (P1) and Writing revision
+  classification (P1) **closed**; long-turn contextual explanation (P2) open. See `CAPABILITY_DIRECTION_REVIEW.md`. They do not replace this mission.
   Correct within the relevant experience and validate before acceptance.
   - Recall: `blankContext` returned the passage split on the phrase and rejoined
     with it, so every occurrence after the first was printed back; it now
@@ -58,6 +57,14 @@ memory, PostgreSQL contracts and all operational holds remain unchanged.
     the sentence is masked whenever it contains the phrase and restored on
     reveal, in EN and ZH. Verified against the finding's own input in the
     running module, and through the reveal cycle in the browser.
+  - Writing revision: `revision_delta` paired issues by category using `next()`
+    over a set, before exact matches were preserved - so with previous grammar
+    A/B and current A/C it could report A removed and A new while pairing A to
+    C. Exact common issues are now settled first, and a revision is claimed only
+    where the correspondence is unambiguous: exactly one unmatched issue on each
+    side of a category. Several on either side are reported as gone and arrived
+    rather than paired on a guess. The finding's own case now returns A
+    persistent and B changed to C, identically under PYTHONHASHSEED 0/1/2/3/42.
 - [ ] Validate Node contracts and ESM, project-memory and architecture gates;
   run CI-defined Python gate when Docker ownership is established. Evaluate
   light/dark, EN/ZH at 390, 800, 1440 and 1920 widths in the actual browser.
