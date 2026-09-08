@@ -104,9 +104,11 @@ Backbone implementation runs against the locked GPT-6 architecture at `27edeb0`
 in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 is done: server-owned
 scope with an incarnation, settings as `{value, source, version}`, and a patch
 changing only what it names against the version it read. I2 landed its
-startup-schema fix; its schema proposal waits in `migrations/proposed/`, outside
-the live chain, for Codex review per `I2_SCHEMA_REVIEW_REQUEST.md`. Evidence and
-gated limits: `ORENA_IMPLEMENTATION_LEDGER.md`.
+startup-schema fix. Its proposal at `69ceb53` was reviewed outside the
+repository by a Delegated Independent Architecture Reviewer (ChatGPT GPT-5.6
+Sol): APPROVED WITH REQUIRED CHANGES, nine recorded verbatim in
+`I2_SCHEMA_REVIEW_REQUEST.md`. The migration stays in `migrations/proposed/`,
+outside the live chain. Evidence: `ORENA_IMPLEMENTATION_LEDGER.md`.
 
 ## PENDING
 
@@ -115,17 +117,14 @@ provider coverage does not establish live prompt quality.
 
 ## BLOCKED
 
-None.
+I2 §6 step 3 (apply the proposal to a throwaway database and run the
+concurrency proof) until the revised proposal is re-reviewed.
 
 ## OPEN P0
 
 None identified.
 
 ## OPEN P1
-
-- Startup auto-Alembic in `persistence/runtime.py` contradicts D-002. Integration
-  gate I2 requires explicit operator migration and read-only startup verification.
-  Architecture design records the correction; runtime was not modified here.
 
 - `#/language` renders "temporarily unavailable" only inside a long multi-room
   sweep at short dwell (4/4 at 700ms/14 routes; 2/2 at 750ms/13 rooms). Never
@@ -134,7 +133,6 @@ None identified.
   error captured. Needs a dedicated slice, not a speculative rewrite.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard.
-  Preserve it without restoring the historical shell.
 - Grammar breadth: authored patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory remains current; account design is now
@@ -143,7 +141,6 @@ None identified.
   growing it is a rights decision per text. Without a provider the API returns
   one built-in passage per language, labelled.
 - Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 is frozen native.
-  Do not weaken active tests for them.
 
 ## Baseline test evidence
 

@@ -1,3 +1,67 @@
+# I2 schema proposal — architecture review
+
+## Outcome: APPROVED WITH REQUIRED CHANGES
+
+| | |
+| --- | --- |
+| Reviewer role | Delegated Independent Architecture Reviewer |
+| Reviewer model | ChatGPT GPT-5.6 Sol |
+| Reviewed commit | `69ceb5314e86161a23948cf215f21f1ffcb7d335` |
+| Outcome | APPROVED WITH REQUIRED CHANGES |
+
+Review was conducted outside the repository. Recorded here per AGENTS.md
+"Architecture review authority": reviewer identity, reviewed commit and outcome
+must be in Git.
+
+### Required changes, verbatim
+
+1. `mutation_receipts` must persist the command's `expected_version`; it must
+   not be reconstructed from retry input.
+2. Historical receipt command identity must not be reconstructed from current
+   request fields. Persist enough canonical command identity, or compare only
+   persisted canonical command facts.
+3. Complete the I1 → persisted incarnation seam. Current I1 derives incarnation
+   from account identity/created_at, while the proposed schema uses a UUID
+   incarnation row. Define safe bootstrap/resolution/re-registration,
+   concurrent first use, deleted-incarnation refusal, and epoch allocation.
+4. Redesign `language_provenance` so multiple occurrences of the same saved item
+   in the same source are representable; retain source revision where known;
+   add relation versioning; unknown origin must not default to available;
+   enforce/validate saved-word account/language parent scope; test
+   cross-account/cross-language rejection and repeated same-source/different-focus
+   occurrence.
+5. Add SourceRef integrity for `works`: source kind/id must be both present or
+   both absent.
+6. Add positive/non-negative constraints for receipt/change/evidence/checkpoint
+   versions and sequences.
+7. Remove the duplicate `change_records(incarnation_id, sequence)` index unless
+   PostgreSQL evidence proves it is needed; the UNIQUE constraint already
+   provides an index.
+8. Correct proposal documentation from seven tables to eight.
+9. `works.kind` and `mutation_receipts.domain` remain PostgreSQL strings backed
+   by canonical application registries and strict validation; do not use
+   PostgreSQL ENUMs.
+
+### Gate
+
+**Step 3 remains blocked until the revised proposal is re-reviewed.** The
+migration stays in `migrations/proposed/`; nothing is applied and nothing moves
+into `migrations/versions/`.
+
+The proposal itself is unchanged by this record — it is deliberately a
+docs/governance-only commit, so the reviewed artifact at `69ceb53` and the
+findings against it can be verified against each other.
+
+---
+
+## The request as submitted, at `69ceb53`
+
+Retained unedited below, including the two questions the review answered:
+item 9 answers the enumeration question, and items 1 and 2 answer the
+expected-version question — both more strictly than the request proposed.
+
+---
+
 # I2 schema proposal — architecture review request for Codex/GPT-6
 
 Raised by Opus under `ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 2: *"Opus

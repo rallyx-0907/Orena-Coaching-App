@@ -62,6 +62,23 @@ convenience commands and harness-specific tooling only. They are never
 authoritative for anything in the table above, and no agent should need to read
 another harness's file to work in this repository.
 
+## Architecture review authority
+
+Architecture authority is **role-based, not model-name-based**. The role is
+what carries the authority; which model happens to fill it does not.
+
+- **GPT-6/Codex is the preferred Principal Architect.**
+- When unavailable, a sufficiently capable independent model may act as
+  **Delegated Architecture Reviewer**, after reading current Git HEAD, the
+  architecture contracts and the handoff.
+- Reviewer identity, reviewed commit and outcome **must be recorded in Git**.
+- **An implementer may not self-approve its own high-risk architecture
+  changes.**
+- Schema/migration, payment/entitlement, account deletion and destructive
+  lifecycle changes **require independent architecture review**.
+- Existing human authorization gates remain unchanged. Architecture review is
+  not product approval and is not activation authorization.
+
 ---
 
 # 2. Cold start
