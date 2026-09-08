@@ -10,7 +10,11 @@ The three findings from the earlier capability-direction review are closed in
 `docs/project/GOLDEN_STAR_COMPLETION.md`. Golden Star remains IMPLEMENTING.
 The current human ruling assigns architecture and shared contracts to Codex,
 feature implementation to Opus; see `ORENA_REFERENCE_ARCHITECTURE.md` and the
-current handoff. Encounter word exploration is WIP, not acceptance evidence.
+current handoff. Encounter word exploration was completed by Opus; see its
+recorded evidence in the completion ledger. The principal backbone now has
+dedicated account/profile, commerce, Collection, execution and Growth contracts;
+integration packages are in ORENA_BACKBONE_INTEGRATION_GATES.md under docs/project.
+These contracts do not claim deployed sync, billing, achievements or product approval.
 The earlier execution evidence below is historical, not a fresh full-suite,
 browser or live-provider claim from the architectural handoff.
 

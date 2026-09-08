@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_golden_star",
     "status": "in_progress",
-    "next_task": "Complete the Orena Golden Star reference implementation. Codex owns system architecture and shared contracts; Opus implements feature detail. Read docs/product/ORENA_REFERENCE_ARCHITECTURE.md and CURRENT_HANDOFF.md. The three capability-review findings are closed in the completion ledger. Encounter word exploration is WIP handed to Opus. Codex next designs account/evidence ownership and consistency contracts; no new persistence, schema, provider activation or human product approval is implied. Retain the eleven current destinations and the completed foundation."
+    "next_task": "Complete Orena Golden Star under principal architecture ownership. A-D and Encounter WIP are completed by Opus. Read ORENA_REFERENCE_ARCHITECTURE.md, docs/project/ORENA_BACKBONE_EXECUTION.md and ORENA_BACKBONE_INTEGRATION_GATES.md. Backbone contracts cover account/profile, commerce/entitlements/quotas, Collection/My Content/My Language, execution, Growth/achievements and migration. Codex owns architecture and integration; Opus implements I1-I7 under these contracts. No deployed sync, billing activation or human product approval is implied. Preserve eleven destinations and all Opus WIP, especially theme/brand."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -191,7 +191,8 @@
   "current_p1": [
     "platform_admin_host_remains_a_human_hold",
     "grammar_breadth_remains_a_human_review_question",
-    "cross_device_continuity_remains_a_persistence_architecture_hold",
+    "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
+    "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
     "reading_library_breadth_requires_rights_decisions_per_text",
     "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native"
   ],

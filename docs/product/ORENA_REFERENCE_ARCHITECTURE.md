@@ -220,13 +220,20 @@ demonstrated by two real consumers, then extend through it.
 
 ## 8. Account architecture and the scale boundary
 
+The principal-architect continuation now specifies this boundary across
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md`, `ORENA_COMMERCE_ARCHITECTURE.md`,
+`ORENA_COLLECTION_ARCHITECTURE.md`, `ORENA_CONTENT_EXECUTION_ARCHITECTURE.md`
+and `ORENA_EVIDENCE_ARCHITECTURE.md`, using `ORENA_BACKBONE_CONTRACTS.md`.
+These are implementation contracts, not deployed account sync or billing.
+The questions below define the required coverage of those specifications.
+
 Current truth: PostgreSQL owns runtime account/evidence persistence; several
 work and provenance objects remain device-scoped. This is not a finished
 multi-user synchronization design, and this blueprint does not authorize new
 tables, migrations, account-sync behavior or deeper device storage.
 
-The separate architecture package for the stated approximately 100,000-user
-target must resolve, before Opus implements persistence:
+The architecture for the stated approximately 100,000-user target must cover,
+before Opus implements persistence:
 
 1. Ownership and access rules for curated content, imported/private content,
    learner work and evidence; account isolation at service and repository edges.
@@ -240,7 +247,7 @@ target must resolve, before Opus implements persistence:
 6. Backup/restore evidence, migration order, rollback boundaries and operational
    gates. No production operation is implied by the architecture package.
 
-Codex owns that design and its tradeoffs; Opus must not choose a schema by
+Codex owns these contracts and their tradeoffs; Opus must not choose a schema by
 extending whichever frontend object is easiest to persist. Service splitting
 and account synchronization remain design work, not implicit Golden Star UI work.
 
@@ -260,10 +267,14 @@ integration; it does not replace Opus by completing each small UI defect.
 | E. Account/evidence architecture | Codex produces the separate design package | Ownership, consistency, migration and operational questions in section 8 resolved before implementation |
 | F. Golden Star review | Human judges product; Codex assesses architectural consistency | Ledger closed with explicit limitations; no agent declares human acceptance |
 
-Packages A-D may consume existing behavior without rewriting what already
-works. E can be designed alongside them, but its implementation must wait for
-the applicable architecture and operational gates. The open Encounter WIP is
-an Opus task within C, not the governing mission.
+Packages A-D are implemented at the `fe963bf` restore baseline; the Encounter WIP
+is closed in the Golden Star ledger. Preserve Opus's work. Package E is one
+architecture milestone, not the end of Codex ownership. The complete backbone
+roadmap and implementation gates live in
+`docs/project/ORENA_BACKBONE_EXECUTION.md` and
+`docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md`: account/profile, commerce,
+Collection, content execution, Growth/evidence and final integration. F remains
+human product review; architecture completion does not establish that verdict.
 
 ## 10. Review questions for future extensions
 

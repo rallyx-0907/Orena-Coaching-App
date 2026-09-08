@@ -1185,3 +1185,22 @@ The provider adapter is stateless and receives bounded turns as untrusted data.
 No new schema, credential activation, real-person impersonation, or server-side
 conversation durability is implied. Cross-device history can later replace the
 storage adapter without replacing the exchange model.
+
+## D-048 — Principal backbone ownership and implementation separation
+
+2026-09-08. Explicit human direction: Codex/GPT-6 owns the complete Orena
+reference architecture and technical backbone, beyond a single package. Opus
+owns feature implementation, interactions, UI execution and verification under
+those contracts. Existing A-D implementation is preserved; active Opus WIP is
+reserved and each architecture cycle restores live Git before changes.
+
+The required backbone explicitly includes account lifecycle and learner profile,
+commerce/plans/subscription/entitlement/quota, Collection/My Content/My Language,
+content/provider execution, evidence-backed Profile/Growth/achievement contracts,
+and final integration/migration gates. Dedicated specifications are linked from
+ORENA_REFERENCE_ARCHITECTURE.md; execution and evidence remain in project memory.
+
+Ordinary architecture milestones may proceed continuously. This does not grant
+destructive migration, schema/runtime activation, credentials, billing policy,
+production operations or human Golden Star approval. No approved learner-facing
+direction, theme/brand implementation or completed Opus feature is superseded.

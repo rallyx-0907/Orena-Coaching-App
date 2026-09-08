@@ -28,39 +28,23 @@ ORENA_WEB_EXTENSION_GUIDE.md records what a surface inherits.
 
 ## Learning capabilities
 
-`ORENA_STATUS.md` says what each capability does and refuses to claim. What
-recovery needs is where the invariants live:
+Preserved Opus implementation; ORENA_STATUS and GOLDEN_STAR_COMPLETION hold
+behavior and evidence. Current invariants/owners:
 
-- **Listening** `ui/encounter.js` - Follow opens no practice panel; a question
-  pauses the voice; "the end" is the excerpt's end, not the asset's.
-- **Reading** `content/reading.js` - `readable()` is the gate every adapter
-  ends at; `reading-library.js` admits a published text only with cleared
-  rights and evidence. Comprehension is optional; its absence is stated.
-- **Writing** `ui/writing-review.js` - renders the evaluator payload and
-  `revision_delta()`. A quote not in the learner's text is dropped; the stated
-  task reaches the evaluator.
-- **Speaking** `product/conversation.js` - free expression has no reference
-  line, so alignment is *not applicable*, not *not measured*; evaluator and
-  persistence both refuse it without one. Measured evidence and coaching stay
-  separate panels, and only the learner's own turns carry coaching.
-- **Grammar and Vocabulary** `ui/expression.js`, `content/patterns.js` - both
-  reach the shared explanation with their own context; each pattern carries a
-  contrast reasoned in en/zh/vi; `grammar-shelf.js` extends the catalog.
-- **Kept language** `product/memory.js`, `keptProvenance()` - the library has
-  no column for where a word was met, so origin, place, sentence and reason
-  live beside it in device memory, written only after the account save.
-- **Recall** `product/recall.js` - the question follows the phrase's history;
-  every occurrence is withheld until reveal. Seeing a card is not recall.
-- **Continuation** `ui/patterns.js` - a thread is named by its shape, not only
-  its intention; a conversation reports how far it got.
-- **Presentation** - workspace, brand and hint invariants live in
-  `ORENA_WEB_EXTENSION_GUIDE.md`, where a surface reads what it inherits.
-- **One explanation system** `ui/understanding.js` - USAGE_JUDGEMENTS,
-  JUDGEMENT_KEYS, spoken-coaching schema and authored contrasts are one
-  vocabulary. Every follow-up keeps its selection and passage.
+- Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
+- Reading: content/reading.js readable contract; reading-library.js rights gate.
+- Writing: ui/writing-review.js; exact submitted snapshot and grounded revision.
+- Speaking: product/conversation.js; own turns, no absent-reference alignment.
+- Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
+- Kept language: product/memory.js; provenance device sidecar after account save.
+- Recall: product/recall.js; hidden answer, explicit reveal/self-assessment.
+- Continue: ui/patterns.js and product/intent.js; actual work type and intention.
+- Understanding: ui/understanding.js; exact context and stale-answer rejection.
+- Presentation/brand: ORENA_WEB_EXTENSION_GUIDE; Opus owns theme/brand execution.
 
 ## Last verified batch
 
+Opus application evidence below is preserved, not rerun by Codex.
 Local execution only; no CI claim.
 - 32 CI Node gates PASS. ESM graph 51. Both validators OK.
 - Full Python in the app image: 790 passed / 20 failed (see below). The rich
@@ -85,17 +69,18 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-COMPLETE THE ORENA GOLDEN STAR REFERENCE IMPLEMENTATION, with role ownership
-explicit: Codex owns system architecture; Opus implements feature detail.
-Read `docs/product/ORENA_REFERENCE_ARCHITECTURE.md` for the blueprint, shared
-context/outcome boundaries and ordered implementation packages. Proposed
-interfaces are not deployed facts or human acceptance. Preserve the restored
-eleven destinations; Collection remains deferred.
-
-Codex next: the account/evidence architecture package and section 8 contracts,
-without schema/runtime changes. Opus next: package D (continuation
-integration); A, B and C are done. Provider/microphone and final human visual
-acceptance remain held; neither a small fix nor a review replaces the mission.
+Continue the ORENA GOLDEN STAR reference under principal-architect ownership.
+Read `docs/product/ORENA_REFERENCE_ARCHITECTURE.md` and
+`docs/project/ORENA_BACKBONE_EXECUTION.md`; implementation order/acceptance lives
+in `docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` (I1-I7).
+The backbone covers account/profile, commerce/quotas, Collection, content/jobs,
+Growth/achievements and cross-domain migration. It is not merely Package E.
+Codex owns contracts and integration decisions; Opus owns feature/UI execution.
+Backbone design is 8/8 with independent technical review and 18 local contract
+tests; it does not claim I1-I7 runtime implementation or human product approval.
+Start with I1 scoped profile/account adapters; schema/paid activation is gated.
+Preserve A-D, eleven destinations and deferred Collection presentation.
+Inspect live HEAD and WIP every cycle; all active Opus files/domains are reserved.
 
 ## IN PROGRESS
 
@@ -106,7 +91,8 @@ was sub-pixel rounding.
 Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
 rejection, truthful capability outcomes, ten canonical journeys walked, and
 continuation that keeps the learner's intention and stays device-honest.
-E is Codex's; F is human review.
+Backbone contracts/pure policies are specified; runtime integration I1-I7 remains
+Opus implementation work. F is human review, not architecture completion.
 
 Multi-theme system implemented, awaiting visual review: Paper, Night Ink, Deep
 Forest and Sage Field from a registry; identity separate from appearance;
@@ -129,6 +115,10 @@ None identified.
 
 ## OPEN P1
 
+- Startup auto-Alembic in `persistence/runtime.py` contradicts D-002. Integration
+  gate I2 requires explicit operator migration and read-only startup verification.
+  Architecture design records the correction; runtime was not modified here.
+
 - `#/language` renders "temporarily unavailable" only inside a long multi-room
   sweep at short dwell (4/4 at 700ms/14 routes; 2/2 at 750ms/13 rooms). Never
   in isolation, from a single predecessor, or at 300-2600ms dwells; did not
@@ -139,8 +129,8 @@ None identified.
   Preserve it without restoring the historical shell.
 - Grammar breadth: authored patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
-- Cross-device continuity: device memory by design; account architecture is a
-  reserved hold (AGENTS.md, "Architecture holds").
+- Cross-device continuity: device memory remains current; account design is now
+  specified, but schema/sync activation and policy inputs remain gated.
 - Reading library breadth: contract, rights fields and admission gate exist;
   growing it is a rights decision per text. Without a provider the API returns
   one built-in passage per language, labelled.
