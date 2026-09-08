@@ -62,8 +62,7 @@ recovery needs is where the invariants live:
 ## Last verified batch
 
 Local execution only; no CI claim.
-- 32 CI Node gates: 31 PASS, brand-library fails on another lane's
-  uncommitted asset deletions. ESM graph 51. Both validators OK.
+- 32 CI Node gates PASS. ESM graph 51. Both validators OK.
 - Full Python in the app image: 790 passed / 20 failed (see below). The rich
   provider paths run against an injected provider, mutation-checked.
 - Browser at 390/800/1440/1920, EN and ZH, light and dark: no overflow, no
@@ -100,20 +99,24 @@ acceptance remain held; neither a small fix nor a review replaces the mission.
 
 ## IN PROGRESS
 
-Golden Star is IMPLEMENTING. The three earlier capability findings are closed.
-The Encounter close-look WIP is finished and human-approved: EN/ZH, pinyin on
-and off, both themes, 390/1440, keyboard, retry and a Dictation regression
-verified; the 23.984px note was sub-pixel rounding.
+Golden Star is IMPLEMENTING. The three capability findings are closed.
+The Encounter close-look WIP is finished and human-approved; the 23.984px note
+was sub-pixel rounding.
 
 Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
-rejection; outcomes separating an absent provider from a failed request; ten
-canonical journeys walked; and continuation that keeps the learner's intention
-across re-entry, withholds threads whose work is gone, and stays device-honest.
-Evidence in the ledger. E is Codex's; F is human review.
+rejection, truthful capability outcomes, ten canonical journeys walked, and
+continuation that keeps the learner's intention and stays device-honest.
+E is Codex's; F is human review.
+
+Multi-theme system implemented, awaiting visual review: Paper, Night Ink, Deep
+Forest and Sage Field from a registry; identity separate from appearance;
+colour owned solely by `theme.css`. The first two are unchanged and no
+component was touched. Ember deferred. The brand asset set was replaced and the
+runtime library remapped to it.
 
 ## PENDING
 
-Microphone hardware and live-provider validation remain pending. Deterministic
+Microphone hardware and live-provider validation remain pending; deterministic
 provider-injected coverage does not establish live prompt quality.
 
 ## BLOCKED
@@ -127,22 +130,22 @@ None identified.
 ## OPEN P1
 
 - `#/language` renders "temporarily unavailable" only inside a long multi-room
-  sweep at short dwell (4/4 at 700ms/14 routes; 2/2 at 750ms/13 rooms, both
-  themes). Never in isolation, from a single predecessor, or at 300-2600ms
-  dwells. Self-recovers, no error captured; two focused passes did not isolate
-  it. Dedicated debugging slice, not a speculative rewrite.
+  sweep at short dwell (4/4 at 700ms/14 routes; 2/2 at 750ms/13 rooms). Never
+  in isolation, from a single predecessor, or at 300-2600ms dwells; did not
+  reproduce at all before or after Package D (0/130 twice). Self-recovers, no
+  error captured. Needs a dedicated slice, not a speculative rewrite.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
-  and static/admin.js remain but admin.js bails at its #page-admin guard, so it
-  is inert. Preserve it without restoring the historical shell.
+  and static/admin.js remain but admin.js bails at its #page-admin guard.
+  Preserve it without restoring the historical shell.
 - Grammar breadth: authored patterns joined by stable Concept ID, extended by
-  `grammar-shelf.js` rather than a second syllabus.
-- Cross-device continuity: device memory by design; the account architecture is
-  a reserved hold (AGENTS.md, "Architecture holds").
-- Reading library breadth: contract, rights fields and admission gate exist
-  with two seed texts; growing it is a rights decision per text. Without a
-  provider the API returns one built-in passage per language, labelled.
-- Non-CI r8/r10/r11 matrices refer to deleted learner wrappers; r20 is frozen
-  native. Do not weaken active tests for them.
+  `grammar-shelf.js`, not a second syllabus.
+- Cross-device continuity: device memory by design; account architecture is a
+  reserved hold (AGENTS.md, "Architecture holds").
+- Reading library breadth: contract, rights fields and admission gate exist;
+  growing it is a rights decision per text. Without a provider the API returns
+  one built-in passage per language, labelled.
+- Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 is frozen native.
+  Do not weaken active tests for them.
 
 ## Baseline test evidence
 

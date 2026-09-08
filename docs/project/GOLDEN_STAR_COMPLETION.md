@@ -218,6 +218,72 @@ map. The only sweep flags were the known `#/language` flake below and one false
 positive in the probe itself, where a page shorter than the viewport reports a
 negative overflow.
 
+## Multi-theme visual system
+
+Approved and implemented: Orena carries a registry of named themes, not a
+light/dark switch. Identity (`paper`, `night-ink`, `deep-forest`, `sage-field`)
+and appearance (`light`/`dark`) are separate attributes on the root element.
+
+Palette extraction preceded implementation and was reviewed. Every image under
+`assets/brand/` was decoded and sampled; the canonical six come from the Color
+Palette block of `references/01_ACTIONS_AND_SYSTEM_REFERENCE.png`, agreeing
+exactly with `tokens/brand-tokens.json`. Fifteen further values were sampled
+from approved artwork and grouped by family - Forest, Sky, Ink, Earth/Moss,
+Paper/Ember. `pattern/color-pallate.png` was ruled exploratory reference, not
+the canonical palette: it holds eight glossy gradient tiles, four of them the
+purple/blue that `visual_rules.avoid` names, and none of the Orena neutrals.
+No colour was taken from it.
+
+Colour now has one owner, `static/orena/theme.css`, in two layers: a foundation
+layer naming the approved palette, and a semantic block per theme. The two
+competing `:root` blocks in `foundation.css` and `reference.css` are gone -
+which one won had been decided by `<link>` order, and that is why `--paper` was
+on-brand while `--sage` was still a pre-brand mint. Components were not changed:
+they already read semantic names, so all four themes run one component set.
+
+Paper and Night Ink reproduce their previous values exactly, captured live
+before the change. Orena Orange stays canonical at `#FF7A3D` and is now
+reachable as `--brand` for fills; it measures 2.34 on Paper Ivory, so
+`--accent` keeps the contrast-safe partner it already had.
+
+Three defects fixed on the way. The browser chrome colour was a hardcoded pair
+still serving the pre-brand green against an ivory page; it now reads the
+resolved token. `--space-5` was consumed by `rooms.css` and never declared. The
+part-of-speech inks were keyed to `data-theme='dark'`, which stopped matching
+once themes had names - they follow `data-appearance` now and so serve both new
+themes without change.
+
+Evidence: 2,072 rendered text elements measured across four themes and eight
+rooms in EN, and 1,464 across six rooms in ZH - no WCAG AA failure at either.
+No horizontal overflow at 390, 800 or 1440 in any theme. The theme chooser is
+built from the registry and each row previews itself by carrying `data-theme`,
+so a preview cannot drift from the theme it previews. Registering a theme is a
+block in `theme.css`, an entry in `theme.js` and a name in `copy.js` for both
+languages; `test_orena_foundation.mjs` now enforces the contrast pairings for
+every registered theme rather than for two, and holds the single-owner rule.
+
+Ember stays deferred with its extracted values recorded and unshipped.
+
+## Brand asset set replaced
+
+The approved artwork was replaced wholesale and the runtime library was remapped
+to it. Twelve of thirty references pointed at files that no longer exist. The
+new set is uniform where the old one was not - every scene 1672x941, every
+character 1254x1254, no printed caption strips - so the caption-cropping frame
+is no longer exercised. Six scenes now exist where ten states wanted one, so the
+scenes went to the three editorial heroes and the three rooms composed around
+one, and the remaining states took the character artwork that says the same
+thing: `reading` to `learn` (with a book), `writing` to `take-notes` (with a
+notebook), `perspective` to `discover` (with a telescope), `remembering` to
+`grow`. Four expressions with no artwork were dropped rather than substituted;
+`laughing` and `winking` keep their meaning and point at the renamed files.
+27 approved assets are reachable, 2 unused.
+
+`tokens/action-index.json` still lists assets that were removed (`travel`,
+`rest`, `relax`, `write`, and four expressions). It is inside the brand
+directory the human is editing, so it was left alone rather than edited under
+them.
+
 ## Rulings
 
 2026-09-08 human role ruling: Codex owns the large Orena architecture; Opus

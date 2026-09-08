@@ -201,6 +201,31 @@ IDs, environment-specific paths, migration records, API responses or temporary
 UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
+**Theme.** Orena has a canonical multi-theme visual system, not a light/dark
+switch. A theme has an identity (`paper`, `night-ink`, `deep-forest`,
+`sage-field`) and, separately, an appearance (`light` or `dark`); never treat
+the two as the same thing, and never assume there are two of anything.
+
+- Colour has one owner: `static/orena/theme.css`. A foundation layer names the
+  approved palette, grouped by family; a semantic block per theme says what
+  each colour is *for*. Components read only semantic tokens. Do not add a
+  second `:root` colour block anywhere - that is the defect this replaced.
+- Themes derive from approved palettes under `assets/brand/`. Do not invent a
+  colour skin, and do not recolour canonical mascot or brand artwork.
+  `pattern/color-pallate.png` is exploratory theme reference only: it is not
+  the canonical palette, and its gradients are not approved UI colours.
+- Orena Orange `#FF7A3D` is the brand colour and stays canonical. It measures
+  2.34 on Paper Ivory, so on light grounds it is fill and illustration only;
+  `--accent` carries the contrast-safe text and action role. Never change a
+  brand value to make one component pass contrast - assign it a decorative
+  role instead.
+- Every theme must pass AA for body text, secondary text, controls, links and
+  tinted panels. `scripts/test_orena_foundation.mjs` enforces this for every
+  registered theme.
+- A new approved theme is registered - a block in `theme.css`, an entry in
+  `theme.js`, a name and note in `ui/copy.js` for EN and ZH. It is never a new
+  component, a component fork, or a rewrite of the settings UI.
+
 **Protected areas.** Journey, Review, Library / Active Recall UI, shared layout
 primitives, the shared CSS/JS design system, R5 Grammar contracts and Concept
 IDs, canonical Media Learning contracts, accessibility behaviour, and

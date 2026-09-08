@@ -33,13 +33,28 @@ function themeHarness(saved, dark = false, blocked = false) {
   };
   const document = {
     documentElement: { dataset },
+    readyState: 'complete',
+    addEventListener: (_, fn) => (callbacks.ready = fn),
     querySelector: () => ({
       setAttribute: (_, value) => (callbacks.chrome = value),
     }),
   };
+  /* The browser chrome colour is read from the resolved token rather than
+     kept as a second copy of the palette, so the harness has to answer the
+     same question a stylesheet would. */
+  const grounds = {
+    paper: '#f8f3e9',
+    'night-ink': '#102538',
+    'deep-forest': '#1e3a3c',
+    'sage-field': '#eff2ec',
+  };
   vm.runInNewContext(themeCode, {
     window,
     document,
+    getComputedStyle: () => ({
+      getPropertyValue: (name) =>
+        name === '--paper' ? grounds[dataset.theme] || '' : '',
+    }),
     localStorage: {
       getItem: (key) => {
         if (blocked) throw Error('denied');
@@ -53,26 +68,73 @@ function themeHarness(saved, dark = false, blocked = false) {
   });
   return { theme: window.orenaTheme, dataset, callbacks, media };
 }
+/* A theme has an identity and, separately, an appearance. The product used to
+   store the appearance as the preference - the string was literally 'light' or
+   'dark' - which is why a third theme could not exist. These hold the two
+   apart, because every future theme depends on the distinction. */
 const auto = themeHarness(null, true);
-assert.equal(auto.dataset.theme, 'dark');
+assert.equal(auto.dataset.theme, 'night-ink', 'a dark device gets a named theme');
+assert.equal(auto.dataset.appearance, 'dark', 'appearance is tracked separately');
 auto.media.matches = false;
 auto.callbacks.system();
-assert.equal(auto.dataset.theme, 'light');
-auto.theme.set('dark');
+assert.equal(auto.dataset.theme, 'paper');
+assert.equal(auto.dataset.appearance, 'light');
+auto.theme.set('deep-forest');
 auto.callbacks.system();
-assert.equal(auto.dataset.theme, 'dark', 'Explicit choice survives OS changes');
+assert.equal(
+  auto.dataset.theme,
+  'deep-forest',
+  'Explicit choice survives OS changes',
+);
+assert.equal(
+  auto.dataset.appearance,
+  'dark',
+  'a chosen theme brings its own appearance, whatever the device says',
+);
 auto.callbacks.storage({ key: 'orena.theme', newValue: 'system' });
 assert.equal(
   auto.dataset.theme,
-  'light',
+  'paper',
   'Another tab can restore the live device preference',
 );
-assert.equal(themeHarness('light', true).dataset.theme, 'light');
+
+// Every registered theme is selectable and declares an appearance, so the
+// settings UI can be built from the registry rather than from a second list.
+const registry = auto.theme.themes;
+assert.ok(registry.length >= 4, 'the registry carries the approved themes');
+for (const entry of registry) {
+  assert.ok(entry.id && entry.mood, `${entry.id}: incomplete registration`);
+  assert.ok(['light', 'dark'].includes(entry.appearance), `${entry.id}: appearance`);
+  auto.theme.set(entry.id);
+  assert.equal(auto.dataset.theme, entry.id);
+  assert.equal(auto.dataset.appearance, entry.appearance);
+  // Named in both interface languages, like every other learner-facing string.
+  for (const ui of ['en', 'zh']) {
+    assert.ok(copy[ui][`theme_${entry.id}`], `${ui}: ${entry.id} has no name`);
+    assert.ok(copy[ui][`theme_${entry.id}Note`], `${ui}: ${entry.id} has no note`);
+  }
+}
+// An unknown theme falls back rather than leaving the page with no tokens.
+auto.theme.set('not-a-theme');
+assert.equal(auto.dataset.theme, 'paper', 'an unknown id is not applied');
+
+/* A preference written by an older build said 'light' or 'dark'. Each still
+   names exactly one theme, so it is read as that theme: nobody loses their
+   choice to an upgrade. */
+assert.equal(themeHarness('light', true).dataset.theme, 'paper');
+assert.equal(themeHarness('dark', false).dataset.theme, 'night-ink');
+
+/* The browser chrome follows the resolved ground rather than a hardcoded
+   pair, which is how it came to be serving a pre-brand green while the page
+   had been ivory for some time. */
+const chrome = themeHarness('deep-forest', false);
+assert.equal(chrome.callbacks.chrome, '#1e3a3c', 'chrome matches the theme it frames');
+
 const blocked = themeHarness(null, true, true);
-blocked.theme.set('light');
+blocked.theme.set('sage-field');
 assert.equal(
   blocked.dataset.theme,
-  'light',
+  'sage-field',
   'A storage failure must not break a live theme choice',
 );
 
@@ -257,10 +319,28 @@ for (const ui of ['en', 'zh']) {
 // Checking the tokens rather than the rendered pages means a new screen using
 // a panel inherits a legible pairing instead of re-deciding one by hand.
 const foundationCss = fs.readFileSync('static/orena/foundation.css', 'utf8');
+/* Colour has one owner now: theme.css, where a foundation layer names the
+   approved palette and a semantic block per theme says what each colour is
+   for. A semantic token may point at a foundation token, so resolve one hop
+   before measuring - otherwise the check silently skips every token that was
+   written the right way. */
+const themeCss = fs.readFileSync('static/orena/theme.css', 'utf8');
+const declarations = (block) =>
+  Object.fromEntries(
+    [...block.matchAll(/(--[\w-]+):\s*(#[0-9a-f]{6}|var\(--[\w-]+\))/gi)].map(
+      (m) => [m[1], m[2]],
+    ),
+  );
+const foundation = declarations(themeCss.split(':root {')[1].split('}')[0]);
 function tokens(selector) {
-  const block = foundationCss.split(selector)[1].split('}')[0];
+  const block = themeCss.split(selector)[1].split('}')[0];
+  const own = declarations(block);
+  const resolve = (value) => {
+    const reference = /^var\((--[\w-]+)\)$/.exec(value);
+    return reference ? foundation[reference[1]] : value;
+  };
   return Object.fromEntries(
-    [...block.matchAll(/(--[\w-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]),
+    Object.entries(own).map(([name, value]) => [name, resolve(value)]),
   );
 }
 function channelLuminance(hex) {
@@ -287,10 +367,13 @@ const pairings = [
   ['--paper', '--muted', 4.5],
   ['--surface', '--ink', 4.5],
 ];
-for (const [themeName, selector] of [
-  ['light', ':root {'],
-  ['dark', ":root[data-theme='dark'] {"],
-]) {
+/* Every registered theme, not just two. A palette that cannot carry its own
+   text is not a theme, however good it looks in a swatch. */
+const themeBlocks = [...themeCss.matchAll(/\[data-theme='([\w-]+)'\] \{/g)].map(
+  (m) => [m[1], m[0]],
+);
+assert.ok(themeBlocks.length >= 4, 'every approved theme declares its tokens');
+for (const [themeName, selector] of themeBlocks) {
   const palette = tokens(selector);
   for (const [surface, ink, need] of pairings) {
     assert.ok(palette[surface], `${themeName}: missing ${surface}`);
@@ -302,6 +385,47 @@ for (const [themeName, selector] of [
     );
   }
 }
+/* Colour has exactly one owner. Two competing :root blocks - foundation.css
+   and reference.css - used to declare overlapping palettes, and which one won
+   was decided by <link> order. That is how --paper came to be on-brand while
+   --sage was still a pre-brand mint, and it is why a third theme could not be
+   added without fighting the cascade. */
+for (const name of ['foundation', 'world', 'experiences', 'reference', 'rooms']) {
+  const css = fs.readFileSync(`static/orena/${name}.css`, 'utf8');
+  const blocks = css.match(/:root[^{]*\{[^}]*\}/g) || [];
+  for (const block of blocks) {
+    const colours = block.match(/--[\w-]+:\s*#[0-9a-f]{3,8}/gi) || [];
+    assert.equal(
+      colours.length,
+      0,
+      `${name}.css declares colour tokens (${colours.slice(0, 3).join(', ')}); theme.css owns colour`,
+    );
+  }
+}
+
+/* Every theme names an appearance, and appearance is styled separately from
+   identity - form controls, scrollbars and the part-of-speech inks need to
+   know how bright a theme is, not which theme it is. */
+assert.match(themeCss, /\[data-appearance='light'\] \{\s*color-scheme: light;/);
+assert.match(themeCss, /\[data-appearance='dark'\] \{\s*color-scheme: dark;/);
+for (const ink of ['--word-thing', '--word-action', '--word-detail']) {
+  const uses = themeCss.split(ink).length - 1;
+  assert.equal(uses, 2, `${ink} is defined once per appearance, not per theme`);
+}
+
+/* The canonical brand colour stays canonical. It is kept in the foundation
+   layer under its own name and given a contrast-safe partner, rather than
+   being quietly redefined to whatever passes a check. */
+assert.equal(foundation['--o-orange'], '#ff7a3d', 'Orena Orange is canonical');
+assert.equal(foundation['--o-forest-ink'], '#0e2a47', 'Forest Ink is canonical');
+assert.equal(foundation['--o-paper-ivory'], '#f8f3e9', 'Paper Ivory is canonical');
+assert.ok(foundation['--o-action-warm'], 'the contrast-safe action partner exists');
+assert.notEqual(
+  foundation['--o-action-warm'],
+  foundation['--o-orange'],
+  'the action colour is a partner, not a replacement for the brand colour',
+);
+
 // A panel colour must never be used as a background without its paired ink.
 for (const name of ['foundation', 'world', 'experiences']) {
   const css = fs.readFileSync(`static/orena/${name}.css`, 'utf8');

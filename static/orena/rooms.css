@@ -453,16 +453,6 @@
   color: var(--muted);
   cursor: pointer;
 }
-.follow-moment {
-  --word-thing: #234f6b;
-  --word-action: #a23b24;
-  --word-detail: #396044;
-}
-:root[data-theme='dark'] .follow-moment {
-  --word-thing: #a9d5f5;
-  --word-action: #ffb397;
-  --word-detail: #bad49b;
-}
 .close-look-guide { border-top: 1px solid var(--line); padding-top: var(--space-3); }
 .close-look-guide .meta { margin: var(--space-2) 0; }
 .word-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-xs); }

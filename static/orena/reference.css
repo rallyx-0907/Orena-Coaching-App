@@ -1,28 +1,11 @@
 /* Golden Star composition rails. Capabilities retain their own state and
    controls; the shell and experience identity give them a coherent place. */
+/* Colour lives in theme.css, which is the single owner. This block used to
+   restate half the palette and win by <link> order, which is how --paper came
+   to be on-brand while --sage was still a pre-brand mint. */
 :root {
   --rail-width: 224px;
-  --paper: #f8f3e9;
-  --surface: #fffdf8;
-  --ink: #0e2a47;
-  --muted: #586575;
-  --line: #d8d8d0;
-  --night-surface: #0e2a47;
-  --on-night: #fff7e9;
-  --on-night-muted: #c7d4dc;
-  --on-night-line: #718499;
   --story-font: Georgia, 'Noto Serif SC', 'Songti SC', serif;
-}
-:root[data-theme='dark'] {
-  --paper: #102538;
-  --surface: #193247;
-  --ink: #f8f3e9;
-  --muted: #c0ccd4;
-  --line: #3b5061;
-  --night-surface: #0a1b2b;
-  --on-night: #fff7e9;
-  --on-night-muted: #c7d4dc;
-  --on-night-line: #718499;
 }
 #shell {
   position: fixed;
