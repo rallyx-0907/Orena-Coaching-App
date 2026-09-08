@@ -2,7 +2,7 @@ import { discoverySpread, practiceOverview } from './discovery.js';
 import { referenceCopy, editorialIntro } from './reference.js';
 import { duration, origin, art, bindImages } from './content.js';
 import { companionArt, scene } from './brand.js';
-import { pageIntro, intentNavigation, continuationShelf } from './patterns.js';
+import { pageIntro, practiceReturn, continuationShelf } from './patterns.js';
 import { esc, dialog } from './html.js';
 import {
   link,
@@ -127,7 +127,7 @@ export async function renderWorld(root, ctx) {
     const intro = !intent || intent === 'follow'
       ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
       : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c.practice, INTENT_SCENE[intent] || '');
-    root.innerHTML = `${intro}${intent ? intentNavigation(c, intent) : practiceOverview(ctx)}${
+    root.innerHTML = `${intro}${intent ? practiceReturn(c, intent) : practiceOverview(ctx)}${
       intent === 'reading'
         ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
             c,

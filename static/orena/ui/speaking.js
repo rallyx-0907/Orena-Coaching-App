@@ -1,4 +1,4 @@
-import { pageIntro, intentNavigation, continuationShelf } from './patterns.js';
+import { pageIntro, practiceReturn, continuationShelf } from './patterns.js';
 import { esc, dialog } from './html.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { link } from '../product/intent.js';
@@ -23,7 +23,7 @@ export function renderSpeaking(root, ctx) {
     (!location.id ? invitations[0] : null);
   if (!picked) throw Error(c.unavailable);
   const id = picked.own ? location.id : `voice:${picked.key}`;
-  root.innerHTML = `${pageIntro({ title: c.voiceTitle, note: c.voiceIntro, eyebrow: c.speakingName, scene: 'speaking' })}${intentNavigation(c, 'speaking')}<div class="voice-room"><section class="voice-exchange"><header class="voice-situation"><small>${esc(c.voiceSituation)}</small><h2 lang="${language}">${esc(picked.title)}</h2></header><div data-voice></div></section><aside class="voice-directions"><h2>${esc(c.voiceChoose)}</h2>${invitations.map((x) => `<a ${x.key === picked.key ? 'aria-current="true"' : ''} lang="${language}" href="${link('practice', { intent: 'speaking', id: `voice:${x.key}` })}">${esc(x.title)} ↗</a>`).join('')}<p lang="${language}">${esc(picked.cue)}</p><p class="meta">${esc(c.voiceSource)}</p></aside></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `${pageIntro({ title: c.voiceTitle, note: c.voiceIntro, eyebrow: c.speakingName, scene: 'speaking' })}${practiceReturn(c, 'speaking')}<div class="voice-room"><section class="voice-exchange"><header class="voice-situation"><small>${esc(c.voiceSituation)}</small><h2 lang="${language}">${esc(picked.title)}</h2></header><div data-voice></div></section><aside class="voice-directions"><h2>${esc(c.voiceChoose)}</h2>${invitations.map((x) => `<a ${x.key === picked.key ? 'aria-current="true"' : ''} lang="${language}" href="${link('practice', { intent: 'speaking', id: `voice:${x.key}` })}">${esc(x.title)} ↗</a>`).join('')}<p lang="${language}">${esc(picked.cue)}</p><p class="meta">${esc(c.voiceSource)}</p></aside></div>${continuationShelf(ctx, 2)}`;
   // Opening a situation is continuity, never a completed speaking attempt.
   const own = document.createElement('button');
   const talk = document.createElement('button');

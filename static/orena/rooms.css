@@ -334,3 +334,164 @@
   align-items: center;
   min-height: 44px;
 }
+
+/* Collection is for retrieval, so density matters more than drama. Shelves sit
+   side by side where there is width for them: a learner scanning for something
+   they saw last week should see several kinds of thing at once rather than
+   scrolling past one narrow column. */
+.collection-find {
+  margin-block: var(--space-6) var(--space-3);
+}
+.collection-find input {
+  width: 100%;
+  max-width: 620px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+/* Lenses are how the learner met a thing, not modules to enter. They read as a
+   row of quiet switches rather than buttons competing with the content. */
+.lens-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.lens-row button {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.lens-row button[aria-current] {
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--sage-surface);
+}
+.collection-shelves {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-6) var(--space-8);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+.collection-shelf ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.collection-shelf li + li {
+  border-top: 1px solid var(--line);
+}
+.collection-shelf li a {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  align-content: center;
+  padding-block: var(--space-2);
+}
+.collection-shelf li small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+@media (max-width: 800px) {
+  .collection-shelves {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+}
+
+/* Practice: four ways of working, each holding what belongs beneath it, then a
+   quieter pair for language already met. Eight equal cards would say these are
+   eight interchangeable features, which is exactly what they are not. */
+.practice-ways {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+  margin-block: var(--space-6);
+}
+.practice-way {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+}
+.way-lead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  min-height: 44px;
+}
+.way-lead h2 {
+  margin: 0;
+  font-size: var(--text-lead);
+}
+.way-lead p {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+/* Ways of listening closely, kept visibly beneath listening itself. */
+.way-more {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0 0 0 var(--space-6);
+  border-left: 2px solid var(--line);
+}
+.way-more a {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  align-content: center;
+  padding-block: var(--space-2);
+}
+.way-more span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.practice-aside ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-5) 0 0;
+  border-top: 1px solid var(--line);
+}
+.practice-aside a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 44px;
+}
+.practice-aside span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* Where you are inside Practice, and the way back to it. Local, because the
+   whole map belongs to Practice rather than to every room in it. */
+.practice-return {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-block: var(--space-4) var(--space-6);
+  font-size: var(--text-sm);
+}
+.practice-return a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+}
+.practice-return [aria-current] {
+  font-weight: 600;
+}

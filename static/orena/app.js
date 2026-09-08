@@ -8,6 +8,7 @@ import { renderEncounter } from './ui/encounter.js';
 import { renderSpeaking } from './ui/speaking.js';
 import { renderConversation } from './ui/conversation.js';
 import { referenceNavigation, referenceCopy, experienceFor, renderContinue } from './ui/reference.js';
+import { renderCollection } from './ui/collection.js';
 import {
   renderExpression,
   renderLanguage,
@@ -214,7 +215,9 @@ async function render() {
   try {
     const page = ctx.location.page;
     const result =
-      page === 'continue'
+      page === 'collection'
+        ? renderCollection(root, scope)
+        : page === 'continue'
         ? renderContinue(root, scope)
         : page === 'encounter'
         ? await renderEncounter(root, scope)

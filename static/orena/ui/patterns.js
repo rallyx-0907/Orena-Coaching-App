@@ -45,6 +45,18 @@ export function pageIntro({
   return `<header class="page-intro"><div>${eyebrow ? `<small>${esc(eyebrow)}</small>` : ''}<h1${language ? ` lang="${esc(language)}"` : ''}>${esc(title)}</h1>${note ? `<p>${esc(note)}</p>` : ''}</div>${state ? scene(state, { size: 'medium' }) : ''}</header>`;
 }
 
+/* Where a practice room sits, and the way back to the map.
+
+   Every room used to carry the whole practice map as a tab bar - eight modes
+   repeated on each of them - which told the learner, on every screen, that
+   Orena is a set of academic skills to pick between. The complete map belongs
+   in Practice, which the learner chose to enter. Inside a mode, navigation is
+   local: where you are, and how to leave.
+
+   `intentNavigation` remains for surfaces that genuinely need the whole map. */
+export function practiceReturn(c, current) {
+  return `<nav class="practice-return" aria-label="${esc(c.practice)}"><a href="${link('practice')}">← ${esc(c.practice)}</a><span aria-current="page">${esc(c[current + 'Name'] || '')}</span></nav>`;
+}
 export function intentNavigation(c, current) {
   return `<nav class="intent-nav" aria-label="${esc(c.practice)}">${practiceIntentions.map((key) => `<a href="${key === 'writing' ? link('expression') : link('practice', { intent: key })}" ${key === current ? 'aria-current="page"' : ''}>${esc(c[key + 'Name'])}</a>`).join('')}</nav>`;
 }

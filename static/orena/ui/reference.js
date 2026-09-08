@@ -7,6 +7,20 @@ import { continuationShelf, pageIntro } from './patterns.js';
 
 export const referenceCopy = {
   en: {
+    collection: 'Collection',
+    moreStories: 'More to read',
+    collectionSearch: 'Find something you kept',
+    collectionSearchHint: 'Search everything you have met or kept',
+    collectionLenses: 'How you met it',
+    lens_all: 'Everything', lens_reading: 'Read', lens_listening: 'Heard',
+    lens_speaking: 'Spoken', lens_writing: 'Written', lens_language: 'Language',
+    collectionResults: 'here',
+    collectionThreads: 'Where you were', collectionYourContent: 'What you brought in',
+    collectionYourLanguage: 'Language you kept',
+    collectionViewAll: 'See all',
+    collectionEmpty: 'Nothing here yet.',
+    collectionEmptyNote: 'What you read, hear, keep and write will gather here.',
+    threadLabel: 'A thread', contentLabel: 'Yours', languageLabel: 'Kept',
     discover: 'Discover', practice: 'Practice', reading: 'Reading', listening: 'Listening',
     writing: 'Writing', speaking: 'Speaking', understanding: 'Patterns & meaning',
     language: 'My language', recall: 'Recall', continue: 'Continue', content: 'My content',
@@ -34,6 +48,20 @@ export const referenceCopy = {
     direct: 'Choose your intention', review: 'Reference in progress · your work stays yours',
   },
   zh: {
+    collection: '收藏',
+    moreStories: '更多可读的',
+    collectionSearch: '找回你留下的东西',
+    collectionSearchHint: '搜索你遇到过、留下过的一切',
+    collectionLenses: '你是怎么遇到它的',
+    lens_all: '全部', lens_reading: '读过', lens_listening: '听过',
+    lens_speaking: '说过', lens_writing: '写过', lens_language: '语言',
+    collectionResults: '项',
+    collectionThreads: '上次停在哪里', collectionYourContent: '你带进来的',
+    collectionYourLanguage: '你留下的语言',
+    collectionViewAll: '查看全部',
+    collectionEmpty: '这里还是空的。',
+    collectionEmptyNote: '你读过、听过、留下和写下的，都会聚到这里。',
+    threadLabel: '一条线索', contentLabel: '你的', languageLabel: '已留下',
     discover: '发现', practice: '练习', reading: '阅读', listening: '聆听', writing: '写作',
     speaking: '表达', understanding: '句式与含义', language: '我的语言', recall: '回想',
     continue: '继续', content: '我的内容', world: '走进更大的世界', make: '用自己的方式表达', keep: '慢慢积累的世界',
@@ -53,13 +81,16 @@ export const referenceCopy = {
     browseAll: '每一种开始', fieldNote: '跟着好奇心走', direct: '选择练习方向', review: '参考体验建设中 · 你的作品属于你',
   },
 };
+/* Four learner-facing destinations: somewhere to explore, somewhere to practise
+   on purpose, somewhere to find things again, and the way back into what you
+   were doing. The skill routes are all still here and still resolve - they
+   stopped being permanent primary destinations, which is not the same as being
+   removed. Practice is where the whole map lives. */
 const paths = [
-  ['discover', 'discover', null, 'compass'], ['continue', 'continue', null, 'return'],
-  ['reading', 'practice', 'reading', 'book'], ['listening', 'practice', 'follow', 'sound'],
-  ['practice', 'practice', null, 'focus'], ['writing', 'expression', null, 'pen'],
-  ['speaking', 'practice', 'speaking', 'voice'], ['understanding', 'practice', 'grammar', 'spark'],
-  ['content', 'content', null, 'folder'], ['language', 'language', null, 'leaf'],
-  ['recall', 'practice', 'recall', 'return'],
+  ['discover', 'discover', null, 'compass'],
+  ['practice', 'practice', null, 'focus'],
+  ['collection', 'collection', null, 'folder'],
+  ['continue', 'continue', null, 'return'],
 ];
 export function entryPoints(ui) {
   const c = referenceCopy[ui] || referenceCopy.en;
@@ -75,6 +106,7 @@ export function experienceFor(location) {
   if (page === 'encounter') return /^(media:|url:)/.test(id) ? 'listening' : 'reading';
   if (page === 'practice' && intent === 'reading') return 'reading';
   if (page === 'practice' && intent === 'follow') return 'listening';
+  if (['collection', 'content', 'language'].includes(page)) return 'collection';
   return page === 'preferences' ? 'discover' : page;
 }
 const strokes = {
@@ -95,7 +127,7 @@ export function entryIcon(name) {
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui], active = experienceFor(ctx.location), entries = entryPoints(ctx.ui);
   const group = (label, ids) => `<div class="nav-group"><small>${esc(label)}</small>${entries.filter(x=>ids.includes(x.id)).map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</div>`;
-  return `<nav aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}</nav>`;
+  return `<nav aria-label="Orena">${entries.map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</nav>`;
 }
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;
