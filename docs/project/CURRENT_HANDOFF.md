@@ -89,20 +89,19 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Learner-facing IA is now Discover / Practice / Collection / Continue. The four
-skills are inside Practice, not permanent destinations; rooms navigate locally;
-Collection aggregates over the untouched My content and My language stores. The
-practice-intent contract, every legacy route and saved hrefs are unchanged.
-What remains:
+The approved eleven learner-facing destinations and the Discover and Practice
+compositions stand as before. The one behaviour change kept from the IA run:
+no individual room repeats the eight-mode practice map; each shows "← Practice"
+and its own name. Collection is deferred - reachable at #/collection, not
+primary. What remains:
 
 1. Provider-gated content binds Reading, Writing, Grammar, Vocabulary and
    Speaking. Each reaches its capability and reports the boundary truthfully;
    none can show generated language here. A human gate, not implementation.
 2. Speaking beyond ASR: ledger, coaching and turn context are real, but no take
    can be recorded in this runtime.
-3. Phase 3 refinement, per surface, after human review of the IA: Discover,
-   Encounter, Practice, Collection, Continue. The learner-facing copy pass has
-   not started.
+3. USER VISUAL REVIEW of the restored UI. Encounter refinement and any further
+   surface work waits on it. Collection is a deliberate later decision.
 4. Intermittent: #/language rendered "temporarily unavailable" 4/4 in a
    14-route x 2-theme sweep at 700ms dwell, never in isolation, and it
    self-recovers. Not diagnosed; not expanded into scope.
