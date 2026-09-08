@@ -6,12 +6,13 @@ CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
 
 STATUS: IMPLEMENTING
 
-Capability-direction review at `aaded1e9237b44a34b333e541d045feb12b9bd57`:
-REQUEST CHANGES. Two P1 corrections precede acceptance: Recall must withhold
-answers before reveal, and Writing revision comparison must preserve persistent
-issues before classifying changes. See `docs/project/CAPABILITY_DIRECTION_REVIEW.md`.
-The completed foundation is not reopened; the execution evidence below remains
-historical and no new browser or live-provider acceptance is claimed.
+The three findings from the earlier capability-direction review are closed in
+`docs/project/GOLDEN_STAR_COMPLETION.md`. Golden Star remains IMPLEMENTING.
+The current human ruling assigns architecture and shared contracts to Codex,
+feature implementation to Opus; see `ORENA_REFERENCE_ARCHITECTURE.md` and the
+current handoff. Encounter word exploration is WIP, not acceptance evidence.
+The earlier execution evidence below is historical, not a fresh full-suite,
+browser or live-provider claim from the architectural handoff.
 
 The human-authorized D-046 reset supersedes the discarded experience mission.
 Discovery, intentional Practice, continuation, imported content and recalled

@@ -89,30 +89,26 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-The approved eleven learner-facing destinations and the Discover and Practice
-compositions stand as before. The one behaviour change kept from the IA run:
-no individual room repeats the eight-mode practice map; each shows "← Practice"
-and its own name. Collection is deferred - reachable at #/collection, not
-primary. What remains:
+COMPLETE THE ORENA GOLDEN STAR REFERENCE IMPLEMENTATION, with role ownership
+explicit: Codex owns system architecture; Opus implements feature detail.
+Read `docs/product/ORENA_REFERENCE_ARCHITECTURE.md` for the blueprint, shared
+context/outcome boundaries and ordered implementation packages. Proposed
+interfaces are not deployed facts or human acceptance. Preserve the restored
+eleven destinations; Collection remains deferred.
 
-1. Provider-gated content binds Reading, Writing, Grammar, Vocabulary and
-   Speaking. Each reaches its capability and reports the boundary truthfully;
-   none can show generated language here. A human gate, not implementation.
-2. Speaking beyond ASR: ledger, coaching and turn context are real, but no take
-   can be recorded in this runtime.
-3. USER VISUAL REVIEW of the restored UI. Encounter refinement and any further
-   surface work waits on it. Collection is a deliberate later decision.
-4. Intermittent: #/language rendered "temporarily unavailable" 4/4 in a
-   14-route x 2-theme sweep at 700ms dwell, never in isolation, and it
-   self-recovers. Not diagnosed; not expanded into scope.
+Codex next: define the account/evidence architecture package and cross-domain
+contracts identified in section 8, without schema/runtime changes. Opus next:
+finish the Encounter WIP, then implement reference compositions and canonical
+journeys against the blueprint. Provider/microphone and final human visual
+acceptance remain held; neither a small feature fix nor a review replaces the
+Golden Star mission.
 
 ## IN PROGRESS
 
-Golden Star completion is IMPLEMENTING. The functional core was driven in a
-browser rather than read: Follow synchronisation with click-to-seek and speed,
-the whole Dictation loop, keeping a phrase through to My Language, Continue and
-Recall, EN/ZH parity on Dictation, and zero dead controls across eleven routes.
-Three capability-review findings closed.
+Golden Star is IMPLEMENTING. The three earlier capability findings are closed.
+Opus's `8af067f` WIP added word exploration in Encounter. Codex's follow-up is
+partially checked and explicitly handed back to Opus, not accepted: see the
+WIP section in `GOLDEN_STAR_COMPLETION.md`. Codex has stopped feature detail.
 
 ## PENDING
 

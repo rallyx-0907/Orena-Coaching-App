@@ -165,6 +165,33 @@ missing product.
 
 ## Rulings
 
+2026-09-08 human role ruling: Codex owns the large Orena architecture; Opus
+implements feature detail against it. `docs/product/ORENA_REFERENCE_ARCHITECTURE.md`
+defines the proposed engineering boundaries and implementation packages.
+The Golden Star mission continues; Codex does not take over small room fixes.
+
+### Encounter WIP handed to Opus
+
+Starting point: `8af067f07bc3b0ea1e1df3f979ea4779b16e647f` added token exploration.
+Codex stopped feature work when the human clarified ownership. Follow-up files:
+`ui/encounter.js`, `ui/annotated-line.js`, `ui/copy.js`, `rooms.css`,
+`scripts/test_orena_close_look.mjs`, `.github/workflows/ci.yml` (UI paths under
+`static/orena`). Preserve this partial work; it is not accepted completion.
+
+Implemented in that follow-up: request the selected segment lazily, preserve
+timed word spans and exact Unicode text, honor Pinyin-off, pause for inquiry,
+and pair token ink with each theme. Add loading/unavailable/retry and role labels.
+Local checks passed: close-look, word-follow, pure-listening, workspace,
+foundation; ESM linked 50 modules. A bounded code review found no P0/P1.
+EN browser verified two segments and token inquiry holding playback, retaining
+context and reporting the provider boundary honestly. No fresh full suite.
+
+Opus must finish: Chinese browser/Pinyin-on-off, dark and narrow/wide checks,
+keyboard/focus continuity, unavailable/retry behavior, Dictation regression,
+and the final visual pass. One measured desktop token width was 23.984px against
+a 24px rule; inspect browser rounding before calling target-size acceptance.
+Do not count this WIP as a completed Golden Star milestone.
+
 The human explicitly reprioritized Golden Star implementation over the review
 findings. That supersedes the previous next-task ordering, without invalidating
 the findings. This is one reference milestone; no capability breadth, native,

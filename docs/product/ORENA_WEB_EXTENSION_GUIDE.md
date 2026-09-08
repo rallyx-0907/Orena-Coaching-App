@@ -8,6 +8,11 @@ product direction; that lives in `ORENA_PRODUCT_CONSTITUTION.md` and
 If a change here would contradict either of those, the Constitution wins and
 this file is what needs updating.
 
+For system boundaries and the proposed shared experience contracts, read
+`ORENA_REFERENCE_ARCHITECTURE.md`. It separates Codex's architectural ownership
+from Opus's feature implementation. This guide continues to describe existing
+primitives; proposed interfaces in that blueprint are not already shipped APIs.
+
 ---
 
 ## 1. Where a new surface goes

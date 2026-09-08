@@ -453,6 +453,24 @@
   color: var(--muted);
   cursor: pointer;
 }
+.follow-moment {
+  --word-thing: #234f6b;
+  --word-action: #a23b24;
+  --word-detail: #396044;
+}
+:root[data-theme='dark'] .follow-moment {
+  --word-thing: #a9d5f5;
+  --word-action: #ffb397;
+  --word-detail: #bad49b;
+}
+.close-look-guide { border-top: 1px solid var(--line); padding-top: var(--space-3); }
+.close-look-guide .meta { margin: var(--space-2) 0; }
+.word-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-xs); }
+.word-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.word-legend span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.word-legend [data-role='noun'] { color: var(--word-thing); }
+.word-legend [data-role='verb'] { color: var(--word-action); }
+.word-legend [data-role='detail'] { color: var(--word-detail); }
 .follow-moment .spoken .token {
   background: none;
   border: 0;
@@ -461,6 +479,9 @@
   color: inherit;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  min-width: 24px;
+  min-height: 44px;
+  vertical-align: baseline;
 }
 .follow-moment .spoken[data-close-look='on'] .token {
   border-bottom-color: var(--line);
@@ -471,22 +492,22 @@
 }
 .follow-moment .spoken .token[data-pos='noun'],
 .follow-moment .spoken .token[data-pos='proper_noun'] {
-  color: var(--night);
+  color: var(--word-thing);
   font-weight: 600;
 }
 .follow-moment .spoken .token[data-pos='verb'] {
-  color: var(--coral);
+  color: var(--word-action);
   font-weight: 600;
 }
 .follow-moment .spoken .token[data-pos='adjective'],
 .follow-moment .spoken .token[data-pos='adverb'] {
-  color: var(--sage);
+  color: var(--word-detail);
 }
 /* Chinese reads with its sound above the character it belongs to, which is
    where a learner expects it - not on a separate line to reconcile. */
 .follow-moment .spoken[data-close-look='on'] .token[data-reading] {
   display: inline-flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   align-items: center;
   line-height: 1.35;
 }
@@ -495,4 +516,7 @@
   font-size: 0.62em;
   color: var(--muted);
   font-weight: 400;
+}
+@media (max-width: 480px) {
+  .follow-moment .spoken .token { min-width: 44px; }
 }

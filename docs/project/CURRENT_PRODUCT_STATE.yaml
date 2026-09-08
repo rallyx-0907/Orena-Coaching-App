@@ -38,7 +38,7 @@
   ],
   "active_branch_or_lane": {
     "expected_development_branch": "codex/work",
-    "lane": "orena_web_capability_direction_review"
+    "lane": "orena_golden_star_reference_architecture"
   },
   "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
   "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_golden_star",
     "status": "in_progress",
-    "next_task": "The Golden Star WEB foundation and capability implementation are committed at aaded1e9237b44a34b333e541d045feb12b9bd57; do not re-audit or redo completed foundation work. Capability-direction review completed with REQUEST CHANGES: fix Recall answer exposure and Writing revision issue classification, then validate those corrections in EN/ZH. See docs/project/CAPABILITY_DIRECTION_REVIEW.md. An authorized microphone/live-provider operator pass and human browser review remain pending. Native remains frozen; no product approval or public release is claimed. The retained application verification commit, batch and date describe historical execution, not this review."
+    "next_task": "Complete the Orena Golden Star reference implementation. Codex owns system architecture and shared contracts; Opus implements feature detail. Read docs/product/ORENA_REFERENCE_ARCHITECTURE.md and CURRENT_HANDOFF.md. The three capability-review findings are closed in the completion ledger. Encounter word exploration is WIP handed to Opus. Codex next designs account/evidence ownership and consistency contracts; no new persistence, schema, provider activation or human product approval is implied. Retain the eleven current destinations and the completed foundation."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -189,8 +189,6 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "recall_exposes_target_in_speaking_context_and_repeated_phrase_gaps",
-    "writing_revision_delta_can_misclassify_persistent_issues",
     "platform_admin_host_remains_a_human_hold",
     "grammar_breadth_remains_a_human_review_question",
     "cross_device_continuity_remains_a_persistence_architecture_hold",
