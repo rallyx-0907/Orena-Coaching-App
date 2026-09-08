@@ -17,6 +17,37 @@ does not authorize schema deployment, and is not a claim of production
 readiness. Fresh command output is required for every PASS claim, and any
 failing case stops Step 3.
 
+### Step 3 execution — PASS
+
+Run against a disposable database `orena_i2_scratch` inside the sandbox
+PostgreSQL, created and dropped for this rehearsal. The runtime database
+`postgres` was not touched: it stayed at `20260828_0004` with 19 tables and
+none of the eight, and the sandbox kept serving throughout.
+
+| Check | Result |
+| --- | --- |
+| Scratch database | created, used, dropped |
+| Upgrade from live head | `20260828_0004 -> 20260908_0005`, 19 tables -> 27, 24 check constraints |
+| 42 PostgreSQL cases | 42 passed, from a clean live-head database |
+| Concurrency | 19 named cases pass — two edits from one version, stalled stream head, concurrent first use, snapshot vs concurrent write, shared sequence across domains |
+| Isolation | 10 named cases pass — cross-account and cross-language work and occurrence ids, forged incarnation, deletion barrier, re-registration epoch |
+| Rollback rehearsal | `20260908_0005 -> 20260828_0004`; all eight tables dropped, the 19 pre-existing intact, and `saved_words` and `users` rows survived — the downgrade does not cascade into owner tables |
+| Up/down/up | repeatable; 42 pass again after the cycle |
+| Live chain | unchanged — four files, head `20260828_0004` |
+
+**Two defects were found and fixed, both in the test scaffolding rather than
+the proposal.** Alembic splits `version_locations` on whitespace and commas, so
+the fixture's `os.pathsep` separator produced an empty script directory and
+"can't locate revision `20260828_0004`" — `version_path_separator = os` is now
+set explicitly. And the `saved_words` helper inserted a partial row: that
+table's text and counter columns are NOT NULL with Python-side defaults rather
+than server defaults, which the ORM fills in and raw SQL does not. A third
+issue was mine in the assertions: pytest's `ExceptionInfo` exposes `.value`,
+not unittest's `.exception`.
+
+None of the three was in the migration or the adapters, and the migration was
+not modified during Step 3.
+
 ### Review history
 
 | Reviewed commit | Outcome |

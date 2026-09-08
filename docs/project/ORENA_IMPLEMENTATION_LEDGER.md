@@ -124,9 +124,12 @@ are named above so the migration slice knows what is waiting for it.
 PostgreSQL concurrency proof.
 **Status:** in progress. Migration-order item 1 is done. The schema proposal
 passed independent architecture review at `6cc3dc1` after three rounds:
-**§6 step 2 APPROVED**, and **step 3 authorized against an isolated scratch
-PostgreSQL database only**. Steps 4 onward — schema authorization and any
-activation — remain the human's and are untouched.
+**§6 step 2 APPROVED**, and step 3 authorized against an isolated scratch
+PostgreSQL database only. **Step 3 has now run and passed**: upgrade from the
+live head, 42 PostgreSQL cases, concurrency and isolation, and a rollback
+rehearsal that dropped all eight tables and left the owner tables and their
+rows intact. Evidence in `I2_SCHEMA_REVIEW_REQUEST.md`. Steps 4 onward — schema
+authorization and any activation — remain the human's and are untouched.
 
 ### Item 1 — startup verifies the schema, it does not create one
 

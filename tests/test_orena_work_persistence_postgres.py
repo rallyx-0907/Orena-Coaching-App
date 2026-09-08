@@ -69,6 +69,10 @@ def engine():
     root = Path(__file__).resolve().parents[1]
     cfg = _runtime_alembic_config()
     cfg.set_main_option('sqlalchemy.url', URL.replace('%', '%%'))
+    # Alembic splits `version_locations` on whitespace and commas unless told
+    # otherwise, so `os.pathsep` alone silently produced an empty script
+    # directory - no heads, and "can't locate revision" from the live head.
+    cfg.set_main_option('version_path_separator', 'os')
     cfg.set_main_option(
         'version_locations',
         f'{root / "migrations" / "versions"}{os.pathsep}{root / "migrations" / "proposed"}',
@@ -476,14 +480,24 @@ def test_re_registration_does_not_duplicate_an_active_incarnation(engine):
 
 
 def _saved_word(engine, account, language, word):
+    """A row in the existing saved-word table, which this migration does not own.
+
+    Its text and counter columns are NOT NULL with Python-side defaults rather
+    than server defaults, so a raw INSERT has to supply them - the ORM would
+    have filled them in and raw SQL does not.
+    """
     word_id = uuid.uuid4()
     now = datetime.now(UTC)
     with engine.begin() as connection:
         connection.execute(
             text(
                 'INSERT INTO saved_words (id, user_id, language_code, word, '
-                'normalized_word, added_at, updated_at) VALUES '
-                '(:id, :user, :lang, :word, :norm, :now, :now)'
+                'normalized_word, phonetic, part_of_speech, definition, '
+                'translation_vi, added_at, source_fragment, source_kind, '
+                'focus_note, review_stage, successful_recalls, lapse_count, '
+                'updated_at) VALUES '
+                "(:id, :user, :lang, :word, :norm, '', '', '', '', :now, '', "
+                "'manual', '', 0, 0, 0, :now)"
             ),
             {'id': word_id, 'user': account, 'lang': language, 'word': word,
              'norm': word.casefold(), 'now': now},
@@ -587,7 +601,7 @@ def test_an_incomplete_source_reference_is_refused(engine, scope):
                 scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-s',
                 saved_word_id=word, reason='looked_up', source=source,
             )
-        assert caught.exception.reason == 'incomplete_source_ref'
+        assert caught.value.reason == 'incomplete_source_ref'
 
 
 def test_a_receipt_is_compared_against_persisted_facts_only(engine, scope):
@@ -828,7 +842,7 @@ def test_the_work_owner_refuses_provenance_as_a_work_domain(engine, scope):
             scope=scope, domain='provenance', operation_id='op-wrong-owner',
             digest='d', expected_version=0, work_id=str(uuid.uuid4()), payload={},
         )
-    assert caught.exception.registry == 'works.domain'
+    assert caught.value.registry == 'works.domain'
 
     with engine.connect() as connection:
         written = connection.execute(
