@@ -96,18 +96,18 @@ Opus implementation work. F is human review, not architecture completion.
 
 Multi-theme system implemented, awaiting visual review: Paper, Night Ink, Deep
 Forest and Sage Field from a registry; identity separate from appearance;
-colour owned solely by `theme.css`. The first two are unchanged and no
-component was touched. Ember deferred. The brand asset set was replaced and the
-runtime library remapped to it.
+colour owned solely by `theme.css`. Ember deferred. The brand asset set was
+replaced and the runtime library remapped to it.
 
 Backbone implementation runs against the locked GPT-6 architecture at `27edeb0`
 in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 is done. I2 landed
 its startup-schema fix; its proposal at `69ceb53` was reviewed outside the
 repository by a Delegated Independent Architecture Reviewer (ChatGPT GPT-5.6
-Sol) over three rounds, ending **§6 step 2 APPROVED at `6cc3dc1`** with step 3
-authorized against an isolated scratch database only. The migration stays in
-`migrations/proposed/`, outside the live chain. Evidence:
-`ORENA_IMPLEMENTATION_LEDGER.md`.
+Sol): §6 step 2 APPROVED at `6cc3dc1`, step 3 passed. All reversible activation
+preparation is complete - operator migration, backup/restore, inactive wiring,
+deployment and rollback, compatibility dry run: `I2_ACTIVATION_RUNBOOK.md`. The
+migration stays in `migrations/proposed/` and the runtime database is untouched
+at `20260828_0004`. **Awaiting the human's §6 step 4 decision.**
 
 ## PENDING
 
@@ -135,8 +135,8 @@ None identified.
   Preserve it without restoring the historical shell.
 - Grammar breadth: authored patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
-- Cross-device continuity: device memory remains current; account design is now
-  specified, but schema/sync activation and policy inputs remain gated.
+- Cross-device continuity: device memory remains current; I2 schema/sync
+  activation and its policy inputs remain gated.
 - Reading library breadth: contract, rights fields and admission gate exist;
   growing it is a rights decision per text. Without a provider the API returns
   one built-in passage per language, labelled.

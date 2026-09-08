@@ -307,6 +307,59 @@ provenance occurrence id is inspected instead of assumed free.
 A raw integrity error is not an answer. Every one of those situations now
 returns something a caller can act on.
 
+### Activation preparation — complete and reversible
+
+Everything I2 needs before the human's §6 step 4 decision, and nothing that
+would pre-empt it. `I2_ACTIVATION_RUNBOOK.md` is the canonical document.
+
+**The operator command could not do the job.** It created a schema in an empty
+database and refused everything else, which is not the activation path — the
+runtime database has data and sits at `20260828_0004`. It now has an explicit
+`--upgrade --from <revision> --confirm` mode. `--from` is the safeguard: the
+operator states the revision they believe the database is at, and the command
+stops if it differs, because that mismatch usually means the connection string
+points somewhere unexpected.
+
+**Backup and restore** is `scripts/runtime_backup.py` — capture, verify, and a
+rehearsal that restores into a separate database and compares revision and row
+counts against the source before dropping it. A backup nobody has restored is a
+hope. Rehearsed: 41,181-byte dump, 98 entries, every count matched. It also
+surfaced an operational fact worth knowing before a migration night rather than
+during one: **the application image does not ship `postgresql-client`**, so the
+script says where to run it instead of failing with a traceback.
+
+**The runtime wiring exists and is off.** `account_backbone.py` has three
+states, not two: `disabled` is a product decision, `unavailable` is a fault, and
+a surface may say "your drafts stay on this device" for the first and must not
+for the second. Both the flag and the schema are required, so a migration
+applied ahead of a deploy changes nothing on its own — which is what lets the
+schema decision and the activation decision be separate.
+
+**Deployment order is a real constraint, and both wrong orders fail closed.**
+Startup verifies against the build's head, so migrating without deploying and
+deploying without migrating each refuse to start. That is the behaviour to
+want, but the window is real and belongs in a plan rather than in a discovery.
+
+**Rollback is free exactly once.** The downgrade drops the eight tables and does
+not cascade into owner tables — proven with data present. Once the backbone
+holds authoritative work, that same downgrade destroys it, and rollback becomes
+a data-loss question. The last moment rollback is free is the moment before
+activation.
+
+**Compatibility verified end to end** on a throwaway copy of the tree with the
+migration in `versions/`, against a scratch database seeded to the live head:
+the un-migrated refusal names both revisions, every operator safeguard fires,
+the migration applies, the app starts and serves `/`, `/api/learner-profile`
+and `/api/dashboard`, pre-existing rows survive, and the backbone reports
+`disabled` at rest and `active` only with the flag. Both scratch databases were
+dropped; the runtime is still at `20260828_0004` with 19 tables.
+
+**Five policy inputs are absent and every one has defined behaviour** rather
+than a guess. Two of them — restore suppression after deletion, and retention —
+do not block this milestone but must be answered before sync or deletion is
+enabled, because without them a restore can reinstate work a learner deleted
+and nothing is ever purged.
+
 ### Still blocked on the gate
 
 Drafts, conversation turns and continuation live only in device memory today;
