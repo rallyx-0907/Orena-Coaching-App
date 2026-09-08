@@ -123,9 +123,10 @@ are named above so the migration slice knows what is waiting for it.
 **Exit gate:** I1; reviewed additive schema, receipts, cursor/snapshot and
 PostgreSQL concurrency proof.
 **Status:** in progress. Migration-order item 1 is done. The schema proposal
-was reviewed at `69ceb53` — APPROVED WITH REQUIRED CHANGES — and its nine
-findings are being addressed. Step 3 remains blocked pending re-review of the
-revised proposal.
+passed independent architecture review at `6cc3dc1` after three rounds:
+**§6 step 2 APPROVED**, and **step 3 authorized against an isolated scratch
+PostgreSQL database only**. Steps 4 onward — schema authorization and any
+activation — remain the human's and are untouched.
 
 ### Item 1 — startup verifies the schema, it does not create one
 

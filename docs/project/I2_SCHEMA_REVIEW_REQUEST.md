@@ -1,6 +1,34 @@
 # I2 schema proposal — architecture review
 
-## Outcome: APPROVED WITH REQUIRED CHANGES
+## Final verdict: §6 STEP 2 APPROVED
+
+| | |
+| --- | --- |
+| Reviewer role | Delegated Independent Architecture Reviewer |
+| Reviewer model | ChatGPT GPT-5.6 Sol |
+| Reviewed commit | `6cc3dc15d62c10060af62fdcf6176b5dff30d3ff` |
+| Verdict | **I2 §6 STEP 2 — APPROVED.** The two final blockers are closed at architecture/code-inspection level. |
+| Step 3 | **AUTHORIZED — ISOLATED SCRATCH POSTGRESQL ONLY.** |
+
+Step 3 is authorized against a disposable database only. It does not move
+`20260908_0005` into `migrations/versions/`, does not touch the production or
+runtime database, does not activate a caller, does not enable sync or import,
+does not authorize schema deployment, and is not a claim of production
+readiness. Fresh command output is required for every PASS claim, and any
+failing case stops Step 3.
+
+### Review history
+
+| Reviewed commit | Outcome |
+| --- | --- |
+| `69ceb53` | APPROVED WITH REQUIRED CHANGES — nine findings |
+| `0a1a0a5` | CHANGES REQUIRED — six corrections |
+| `728a8df` | CHANGES REQUIRED — two blockers |
+| `6cc3dc1` | **§6 STEP 2 APPROVED; STEP 3 AUTHORIZED** |
+
+---
+
+## First review of `69ceb53`: APPROVED WITH REQUIRED CHANGES
 
 | | |
 | --- | --- |
