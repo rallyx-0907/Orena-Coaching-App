@@ -106,9 +106,13 @@ Golden Star mission.
 ## IN PROGRESS
 
 Golden Star is IMPLEMENTING. The three earlier capability findings are closed.
-Opus's `8af067f` WIP added word exploration in Encounter. Codex's follow-up is
-partially checked and explicitly handed back to Opus, not accepted: see the
-WIP section in `GOLDEN_STAR_COMPLETION.md`. Codex has stopped feature detail.
+The Encounter close-look WIP is finished and human-approved as "khá ổn":
+EN/ZH with pinyin on and off, both themes, 390/1440, keyboard, retry, and a
+Dictation regression all verified; token targets measure 27.8x53.2 (EN) and
+24.0x45.2 (ZH), so the 23.984px note was sub-pixel rounding, not a breach.
+Packages A and B of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
+rejection at both named consumers, and a shared capability outcome that tells an
+absent provider apart from a failed request. C and D remain Opus's.
 
 ## PENDING
 
