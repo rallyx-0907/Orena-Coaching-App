@@ -34,39 +34,31 @@ recovery needs is where the invariants live:
 - **Listening** `ui/encounter.js` - Follow opens no practice panel; a question
   pauses the voice; "the end" is the end of the excerpt, not the asset.
 - **Reading** `content/reading.js` - `readable()` is the gate every adapter
-  ends at, carrying rights in the shape media uses. `reading-library.js` admits
-  a published text only with cleared rights, an https evidence URL, a
-  verification date, edition and changes. Comprehension is optional and its
-  absence is stated, never fabricated; the count comes from the API, so "none"
-  differs from "not loaded".
+  ends at; `reading-library.js` admits a published text only with cleared
+  rights, an https evidence URL, a verification date, edition and changes.
+  Comprehension is optional and its absence is stated, never fabricated.
 - **Writing** `ui/writing-review.js` - renders the evaluator payload and
-  `revision_delta()`, both once discarded. A quote not in the learner's text is
-  dropped; the stated task reaches the evaluator; `product/revision.js` refuses
-  an ambiguous quotation.
+  `revision_delta()`. A quote not in the learner's text is dropped; the stated
+  task reaches the evaluator.
 - **Speaking** `product/conversation.js` - free expression has no reference
-  line, so alignment is *not applicable*, not *not measured*, and both the
-  evaluator and persistence refuse it without one. Measured evidence and
-  coaching are separate panels. The partner never coaches, so only the
-  learner's own turns carry that action.
+  line, so alignment is *not applicable*, not *not measured*; evaluator and
+  persistence both refuse it without one. Measured evidence and coaching stay
+  separate panels, and only the learner's own turns carry coaching.
 - **Grammar and Vocabulary** `ui/expression.js`, `content/patterns.js` - both
   reach the shared explanation with their own context; each pattern carries a
   contrast reasoned in en/zh/vi; `grammar-shelf.js` extends the catalog.
 - **Kept language** `product/memory.js`, `keptProvenance()` - the library has
-  no column for where a word was met, so origin, place, sentence and a
-  fixed-vocabulary reason live beside it in memory, written only after the
-  account save succeeds. Device-scoped.
-- **Recall** `product/recall.js` - the question follows the phrase's history:
-  read, inside its sentence with the phrase withheld; spoken, meaning-first;
-  written, as where they would use it. Seeing a card is not recall; the library
-  only accumulates.
+  no column for where a word was met, so origin, place, sentence and reason
+  live beside it in device memory, written only after the account save.
+- **Recall** `product/recall.js` - the question follows the phrase's history;
+  every occurrence is withheld until reveal. Seeing a card is not recall.
 - **Continuation** `ui/patterns.js` - a thread is named by its shape, not only
   its intention; a conversation reports how far it got.
 - **Presentation** - workspace, brand and hint invariants live in
   `ORENA_WEB_EXTENSION_GUIDE.md`, where a surface reads what it inherits.
 - **One explanation system** `ui/understanding.js` - USAGE_JUDGEMENTS,
-  JUDGEMENT_KEYS, the spoken-coaching schema and the authored contrasts are one
-  vocabulary, checked against each other. Every follow-up re-asks about the
-  same selection and passage, so a deeper question keeps its origin.
+  JUDGEMENT_KEYS, spoken-coaching schema and authored contrasts are one
+  vocabulary. Every follow-up keeps its selection and passage.
 
 ## Last verified batch
 
