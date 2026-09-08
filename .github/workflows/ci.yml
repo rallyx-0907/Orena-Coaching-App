@@ -26,6 +26,7 @@ jobs:
       - run: python scripts/validate_project_memory.py
       - run: python scripts/validate_architecture.py
       - run: python scripts/test_orena_backbone.py
+      - run: python scripts/test_orena_account_profile.py
       - run: python scripts/build_listening_dev_catalog.py --check
       - run: node --experimental-vm-modules scripts/validate_browser_esm_graph.mjs
       # The D-046 reset deleted the old Listening-mode/Shadowing-Studio gates

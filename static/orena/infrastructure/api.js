@@ -52,8 +52,14 @@ export const api={
   }),
   dashboard:()=>request('/api/dashboard'),
   learnerProfile:()=>request('/api/learner-profile'),
-  saveLearnerProfile:(payload)=>request('/api/learner-profile',{
-    method:'PUT',
+  /* Change only the settings named, against the version that was read.
+
+     The whole-profile PUT this replaces carried a default for every field, so
+     saving one preference rewrote the rest - and two devices editing
+     preferences quietly overwrote each other. `expected_version` makes the
+     second writer visible instead. PUT remains for the frozen native client. */
+  patchLearnerProfile:(payload)=>request('/api/learner-profile',{
+    method:'PATCH',
     headers:JSON_HEADERS,
     body:JSON.stringify(payload),
   }),

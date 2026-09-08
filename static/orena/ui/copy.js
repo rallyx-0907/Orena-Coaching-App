@@ -13,6 +13,9 @@ const en = {
   topic_conversations: 'People talking',
   topic_culture: 'How people live',
   topic_technology: 'Tools & know-how',
+  // Somewhere else changed these first. Not the learner's mistake, so it
+  // says what to do rather than reporting a failure.
+  preferencesMoved: 'Your preferences changed somewhere else. These are the current ones — apply again if you still want your change.',
   themesystem: 'Use device setting',
   themesystemNote: 'Paper by day, Night Ink after dark.',
   /* Theme names a learner reads. Keyed by theme id, so registering a theme in
@@ -253,6 +256,7 @@ const zh = {
   topic_conversations: '人们在说话',
   topic_culture: '人们的生活',
   topic_technology: '工具与方法',
+  preferencesMoved: '你的偏好在别处已经改过了。这里显示的是最新的设置 — 如果还想改，再点一次应用。',
   themesystem: '跟随设备设置',
   themesystemNote: '白天用纸色，入夜换墨蓝。',
   theme_paper: '纸色',

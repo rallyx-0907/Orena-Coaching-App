@@ -46,8 +46,9 @@ behavior and evidence. Current invariants/owners:
 
 Opus application evidence below is preserved, not rerun by Codex.
 Local execution only; no CI claim.
-- 32 CI Node gates PASS. ESM graph 51. Both validators OK.
-- Full Python in the app image: 790 passed / 20 failed (see below). The rich
+- 32 CI Node gates PASS. ESM graph 51. Both validators OK. Two stdlib
+  contract gates (backbone, account profile) PASS.
+- Full Python in the app image: 799 passed / 20 failed (see below). The rich
   provider paths run against an injected provider, mutation-checked.
 - Browser at 390/800/1440/1920, EN and ZH, light and dark: no overflow, no
   room repeating the practice map, no dead controls.
@@ -99,6 +100,13 @@ Forest and Sage Field from a registry; identity separate from appearance;
 colour owned solely by `theme.css`. The first two are unchanged and no
 component was touched. Ember deferred. The brand asset set was replaced and the
 runtime library remapped to it.
+
+Backbone implementation runs against the locked GPT-6 architecture at `27edeb0`
+in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 (account, profile,
+preferences) is done: server-owned scope with an incarnation, settings as
+`{value, source, version}`, and a patch changing only what it names against the
+version it read. Evidence and storage-gated limits in
+`ORENA_IMPLEMENTATION_LEDGER.md`. I2 next.
 
 ## PENDING
 

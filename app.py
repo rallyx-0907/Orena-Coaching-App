@@ -91,7 +91,7 @@ from writing_coach.persistence.learning_repository import (
     SQLiteLearningRepository,
 )
 from writing_coach.persistence.specialized_repository import SQLiteSpecializedLearningRepository
-from writing_coach.becoming_memory import (LearnerProfileIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, put_learner_profile)
+from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
 from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, delete_library_vocabulary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
@@ -1862,7 +1862,18 @@ def becoming_learner_profile_get() -> dict[str, Any]:
 
 @app.put("/api/learner-profile", name="becoming_learner_profile_put")
 def becoming_learner_profile_put(payload: LearnerProfileIn) -> dict[str, Any]:
+    """Whole-profile replace, kept for the frozen native client.
+
+    Every field carries a default, so a caller that sends less than the whole
+    profile resets the rest. New callers use PATCH below, which changes only
+    what it names and refuses a write made against a version it did not read.
+    """
     return put_learner_profile(payload)
+
+
+@app.patch("/api/learner-profile", name="becoming_learner_profile_patch")
+def becoming_learner_profile_patch(payload: ProfilePatchIn) -> dict[str, Any]:
+    return patch_learner_profile(payload)
 
 @app.get("/api/learning-memory", name="becoming_learning_memory_get")
 def becoming_learning_memory_get() -> dict[str, Any]:

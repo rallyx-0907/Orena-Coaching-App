@@ -151,13 +151,15 @@ function preferences(onboarding = false) {
       // changes wait for current evidence writes to finish.
       if (learningChanged) await api.setLanguage(data.get('learning'));
       ctx.language = String(data.get('learning'));
-      const prior = await api.learnerProfile();
-      ctx.profile = await api.saveLearnerProfile({
-        goal: prior.goal || 'everyday',
-        style: prior.style || 'guided',
+      /* Send the two settings this form owns, against the version that was
+         read when it opened. Read-modify-writing the whole profile meant a
+         second device saving a different preference lost whichever change
+         landed first, silently; now the server refuses the stale write and the
+         learner is told to reopen rather than being quietly overruled. */
+      ctx.profile = await api.patchLearnerProfile({
+        expected_version: ctx.profile.version ?? '',
         pinyin: data.has('pinyin') ? 'auto' : 'off',
-        native_language: data.get('support'),
-        theme_preset: prior.theme_preset || 'editorial',
+        support_language: data.get('support'),
       });
       ctx.support = ctx.profile.support_language || ctx.profile.native_language;
       ctx.ui = String(data.get('interface'));
@@ -172,7 +174,20 @@ function preferences(onboarding = false) {
       if (learningChanged) history.replaceState(null, '', link());
       await render();
     } catch (error) {
-      sheet.querySelector('#preferenceError').textContent = error.message;
+      /* Somewhere else changed these first. Retrying automatically would
+         overwrite whatever that was, which is the thing the version check
+         exists to prevent - so the current values are fetched and shown, and
+         applying again is the learner's decision. */
+      if (error?.status === 409) {
+        try {
+          ctx.profile = await api.learnerProfile();
+          ctx.support = ctx.profile.support_language || ctx.profile.native_language;
+          form.elements.pinyin.checked = ctx.profile.pinyin !== 'off';
+          form.elements.support.value = ctx.support;
+        } catch {}
+      }
+      sheet.querySelector('#preferenceError').textContent =
+        error?.status === 409 ? c.preferencesMoved : error.message;
       form.inert = false;
     }
   };
