@@ -9,7 +9,7 @@ D-046. No human approval or production readiness is implied.
 
 ## Current branch / lane
 
-`codex/work`, Orena WEB Golden Star plus real learning capabilities. Do not
+`codex/core-encounter`, isolated Core Learner Experience over the Golden Star. Do not
 restore the deleted learner product. Native mobile / Expo / React Native is
 frozen. Human instruction authorizes full-stack WEB work on the capabilities
 themselves, not only on the foundation.
@@ -70,18 +70,15 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Continue the ORENA GOLDEN STAR reference under principal-architect ownership.
-Read `docs/product/ORENA_REFERENCE_ARCHITECTURE.md` and
-`docs/project/ORENA_BACKBONE_EXECUTION.md`; implementation order/acceptance lives
-in `docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` (I1-I7).
-The backbone covers account/profile, commerce/quotas, Collection, content/jobs,
-Growth/achievements and cross-domain migration. It is not merely Package E.
-Codex owns contracts and integration decisions; Opus owns feature/UI execution.
-Backbone design is 8/8 with independent technical review and 18 local contract
-tests; it does not claim I1-I7 runtime implementation or human product approval.
-Start with I1 scoped profile/account adapters; schema/paid activation is gated.
-Preserve A-D, eleven destinations and deferred Collection presentation.
-Inspect live HEAD and WIP every cycle; all active Opus files/domains are reserved.
+Core Learner Experience lane: codex/core-encounter, isolated from Opus's I2
+working tree by explicit human instruction. Slice 1 makes Reading token
+exploration consume the same annotation lifecycle/renderer as media Follow.
+See CORE_EXPERIENCE_SLICE_01.md for exact scope, fresh tests and preview at
+127.0.0.1:8012. Backend sandbox 8011 is reused without Docker operations.
+Continue shared source-focus/selection into Speaking next; preserve the shell,
+EN/ZH, real timing and all existing device/runtime data seams. No I2 activation.
+Opus owns I2 corrections and all listed persistence files; do not modify them.
+Historical I2 status below belongs to Opus and is not re-reviewed by this lane.
 
 ## IN PROGRESS
 

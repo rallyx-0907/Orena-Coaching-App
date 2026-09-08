@@ -37,8 +37,8 @@
     }
   ],
   "active_branch_or_lane": {
-    "expected_development_branch": "codex/work",
-    "lane": "orena_golden_star_reference_architecture"
+    "expected_development_branch": "codex/core-encounter",
+    "lane": "orena_core_learner_experience"
   },
   "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
   "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_golden_star",
     "status": "in_progress",
-    "next_task": "Complete Orena Golden Star under principal architecture ownership. A-D and Encounter WIP are completed by Opus. Read ORENA_REFERENCE_ARCHITECTURE.md, docs/project/ORENA_BACKBONE_EXECUTION.md and ORENA_BACKBONE_INTEGRATION_GATES.md. Backbone contracts cover account/profile, commerce/entitlements/quotas, Collection/My Content/My Language, execution, Growth/achievements and migration. Codex owns architecture and integration; Opus implements I1-I7 under these contracts. No deployed sync, billing activation or human product approval is implied. Preserve eleven destinations and all Opus WIP, especially theme/brand."
+    "next_task": "Core Learner Experience: shared annotation lifecycle and Reading token lens wired to the Encounter route. Read docs/project/CORE_EXPERIENCE_SLICE_01.md. Continue source-focus/selection reuse toward Speaking; preserve Opus I2 and all persistence gates. No shell redesign or fabricated timing/evidence."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

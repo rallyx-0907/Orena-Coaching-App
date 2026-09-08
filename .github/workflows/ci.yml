@@ -42,6 +42,7 @@ jobs:
           node scripts/test_orena_follow_clock.mjs
           node scripts/test_orena_word_follow.mjs
           node scripts/test_orena_close_look.mjs
+          node scripts/test_orena_annotation_session.mjs
           node scripts/test_orena_dictation_hints.mjs
           node scripts/test_orena_understanding.mjs
           node scripts/test_orena_writing_review.mjs

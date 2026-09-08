@@ -461,7 +461,7 @@
 .word-legend [data-role='noun'] { color: var(--word-thing); }
 .word-legend [data-role='verb'] { color: var(--word-action); }
 .word-legend [data-role='detail'] { color: var(--word-detail); }
-.follow-moment .spoken .token {
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token {
   background: none;
   border: 0;
   padding: 0;
@@ -473,40 +473,40 @@
   min-height: 44px;
   vertical-align: baseline;
 }
-.follow-moment .spoken[data-close-look-state='on'] .token {
+:is(.follow-moment .spoken, .passage [data-encounter-line])[data-close-look-state='on'] .token {
   border-bottom-color: var(--line);
 }
-.follow-moment .spoken .token:hover,
-.follow-moment .spoken .token:focus-visible {
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token:hover,
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token:focus-visible {
   border-bottom-color: var(--accent);
 }
-.follow-moment .spoken .token[data-pos='noun'],
-.follow-moment .spoken .token[data-pos='proper_noun'] {
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token[data-pos='noun'],
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token[data-pos='proper_noun'] {
   color: var(--word-thing);
   font-weight: 600;
 }
-.follow-moment .spoken .token[data-pos='verb'] {
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token[data-pos='verb'] {
   color: var(--word-action);
   font-weight: 600;
 }
-.follow-moment .spoken .token[data-pos='adjective'],
-.follow-moment .spoken .token[data-pos='adverb'] {
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token[data-pos='adjective'],
+:is(.follow-moment .spoken, .passage [data-encounter-line]) .token[data-pos='adverb'] {
   color: var(--word-detail);
 }
 /* Chinese reads with its sound above the character it belongs to, which is
    where a learner expects it - not on a separate line to reconcile. */
-.follow-moment .spoken[data-close-look-state='on'] .token[data-reading] {
+:is(.follow-moment .spoken, .passage [data-encounter-line])[data-close-look-state='on'] .token[data-reading] {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   line-height: 1.35;
 }
-.follow-moment .spoken[data-close-look-state='on'] .token[data-reading]::before {
+:is(.follow-moment .spoken, .passage [data-encounter-line])[data-close-look-state='on'] .token[data-reading]::before {
   content: attr(data-reading);
   font-size: 0.62em;
   color: var(--muted);
   font-weight: 400;
 }
 @media (max-width: 480px) {
-  .follow-moment .spoken .token { min-width: 44px; }
+  :is(.follow-moment .spoken, .passage [data-encounter-line]) .token { min-width: 44px; }
 }

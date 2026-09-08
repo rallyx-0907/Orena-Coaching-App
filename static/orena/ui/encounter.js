@@ -1,3 +1,5 @@
+import { annotationSession } from '../product/annotation-session.js';
+import { mountTextLens } from './text-lens.js';
 import { annotatedLine } from './annotated-line.js';
 import {
   responseComposer,
@@ -69,9 +71,9 @@ function textEncounter(root, ctx, item) {
   const paragraphs = item.paragraphs || [item.text];
   memory.enter({ id: item.id, title: item.title, excerpt: paragraphs[0] });
   const paint = () => {
-    root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><button data-keep class="quiet" aria-pressed="${memory.value.kept.includes(item.id)}">${memory.value.kept.includes(item.id) ? c.saved : c.keep} ＋</button></div><header class="text-heading"><small>${origin(item, c)}</small><h1 lang="${language}">${esc(item.title)}</h1><p lang="${language}">${esc(item.subtitle || '')}</p></header><div class="text-encounter"><article class="passage ${item.kind === 'conversation' ? 'dialogue' : ''}" lang="${language}">${paragraphs
+    root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><button data-keep class="quiet" aria-pressed="${memory.value.kept.includes(item.id)}">${memory.value.kept.includes(item.id) ? c.saved : c.keep} ＋</button></div><header class="text-heading"><small>${origin(item, c)}</small><h1 lang="${language}">${esc(item.title)}</h1><p lang="${language}">${esc(item.subtitle || '')}</p><div data-text-lens></div></header><div class="text-encounter"><article class="passage ${item.kind === 'conversation' ? 'dialogue' : ''}" lang="${language}">${paragraphs
       .slice(0, count)
-      .map((p) => `<p>${lines(p)}</p>`)
+      .map((p) => `<p data-encounter-line>${lines(p)}</p>`)
       .join(
         '',
       )}${count < paragraphs.length ? `<button class="outline" data-next>${c.nextLine} →</button>` : item.question ? `<h2>${esc(item.question)}</h2>` : ''}</article><aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
@@ -87,6 +89,7 @@ function textEncounter(root, ctx, item) {
       )?.focus({ preventScroll: true });
     });
     const passage = root.querySelector('.passage');
+    const textLens = mountTextLens(passage, root.querySelector('[data-text-lens]'), ctx, item);
     const investigate = () => {
       const picked = selectionWithin(passage);
       openUnderstanding(ctx, {
@@ -136,6 +139,7 @@ function textEncounter(root, ctx, item) {
         }),
     );
     const showEvidence = (fragment) => {
+      textLens.clear();
       const index = paragraphs.findIndex((part) => part.includes(fragment));
       if (index < 0) return '';
       passage
@@ -360,23 +364,13 @@ export async function renderEncounter(root, ctx) {
      ink they had, because a system a learner cannot hold in their head is
      decoration. */
   let closeLook = false;
-  const annotated = new Map(), annotating = new Set();
+  const annotation = annotationSession({ request: api.annotateMediaText, language, alive });
+  const annotated = annotation.values, annotating = annotation.pending;
   const annotateLine = async (segment) => {
     if (!segment || annotated.has(segment.segment_id) || annotating.has(segment.segment_id)) return;
-    annotating.add(segment.segment_id);
-    try {
-      const result = await api.annotateMediaText({
-        text: segment.original_text,
-        source_language: language,
-      });
-      if (alive()) annotated.set(segment.segment_id, result);
-    } catch {
-      if (alive()) annotated.set(segment.segment_id, null);
-    } finally {
-      annotating.delete(segment.segment_id);
-      if (alive() && closeLook && model.current?.segment_id === segment.segment_id)
-        paintFollow(lastClockSegment === 'gap');
-    }
+    await annotation.load(segment);
+    if (alive() && closeLook && model.current?.segment_id === segment.segment_id)
+      paintFollow(lastClockSegment === 'gap');
   };
   function paintFollow(gap = false) {
     const s = model.current;
