@@ -241,8 +241,12 @@ assert.ok(
   /run\(asked\)[\s\S]{0,600}text: source,[\s\S]{0,200}context: passage,/.test(understanding),
   'an inquiry always re-asks about the same selection and passage',
 );
+/* The refusal moved into the outcome adapter's own read predicate, so it now
+   reads as the condition for accepting an answer rather than for rejecting
+   one. The guarantee is the same and still belongs here: an explanation about
+   different text is not an explanation about this selection. */
 assert.ok(
-  /result\.selected_text !== source/.test(understanding),
+  /read: \(result\) => \(\{[\s\S]{0,120}result\.selected_text === source/.test(understanding),
   'an answer about something else is refused rather than shown',
 );
 // `origin` is read at save time from the same closure the inquiry runs in, so

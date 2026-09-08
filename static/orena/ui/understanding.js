@@ -1,6 +1,7 @@
 import { esc, dialog, focusRegion } from './html.js';
 import { link } from '../product/intent.js';
 import { progressReporter, savedLanguageLink } from './patterns.js';
+import { attempt, isReady, canRetry } from '../capabilities/outcome.js';
 
 /* One contextual explanation surface for every capability. Reading opens it on
    a highlight, Listening on a transcript selection, Writing on a correction,
@@ -153,41 +154,53 @@ export function openUnderstanding(
     body.textContent = c.loading;
     askForm.hidden = true;
     suggestions.innerHTML = '';
-    try {
-      const result = await api.contextualDictionary({
-        text: source,
-        source_language: language,
-        target_language: support,
-        context: passage,
-        question: String(asked || '').trim(),
-      });
-      if (!current()) return;
-      if (!result.available || result.selected_text !== source) {
-        // Say what is missing rather than showing an empty explanation. The
-        // learner can still keep the phrase with a note of their own, which is
-        // often the more valuable half anyway.
-        body.innerHTML = `<p class="notice">${esc(c.understandingUnavailable)}</p>`;
-        askForm.hidden = false;
-        paintSuggestions([]);
-        keepForm.hidden = false;
-        return;
-      }
-      body.innerHTML = explanationBlock(c, result);
-      askForm.hidden = false;
-      paintSuggestions(result.follow_ups);
-      keepForm.hidden = false;
-      if (!keepForm.elements.note.value)
-        keepForm.elements.note.value = [result.natural_translation, result.summary]
-          .filter(Boolean)
-          .join('\n\n');
-      focusRegion(body);
-    } catch {
-      if (!current()) return;
-      body.innerHTML = `<p class="notice">${esc(c.understandingUnavailable)}</p>`;
-      askForm.hidden = false;
+    /* An explanation that is not coming and one that did not arrive are
+       different news. The first is the provider being absent here; the second
+       is a request that failed on the way and is worth asking again. Both used
+       to read as the same sentence, with no way forward from either. */
+    const outcome = await attempt(
+      () =>
+        api.contextualDictionary({
+          text: source,
+          source_language: language,
+          target_language: support,
+          context: passage,
+          question: String(asked || '').trim(),
+        }),
+      {
+        // A payload about different text is not an answer about this selection,
+        // whatever else it carries.
+        read: (result) => ({
+          ok: Boolean(result?.available) && result.selected_text === source,
+        }),
+      },
+    );
+    if (!current()) return;
+    // Keeping the phrase with a note of their own stays available whatever
+    // happened; it is often the more valuable half anyway.
+    askForm.hidden = false;
+    keepForm.hidden = false;
+    if (!isReady(outcome)) {
+      const retryable = canRetry(outcome);
+      body.innerHTML = `<p class="notice">${esc(retryable ? c.understandingFailed : c.understandingUnavailable)}</p>`;
       paintSuggestions([]);
-      keepForm.hidden = false;
+      if (retryable) {
+        const again = document.createElement('button');
+        again.className = 'outline';
+        again.textContent = c.retry;
+        again.onclick = () => run(asked);
+        body.append(again);
+      }
+      return;
     }
+    const result = outcome.value;
+    body.innerHTML = explanationBlock(c, result);
+    paintSuggestions(result.follow_ups);
+    if (!keepForm.elements.note.value)
+      keepForm.elements.note.value = [result.natural_translation, result.summary]
+        .filter(Boolean)
+        .join('\n\n');
+    focusRegion(body);
   }
 
   askForm.onsubmit = (event) => {

@@ -520,6 +520,8 @@ Object.assign(copy.en, {
   grammarPatternOne: 'pattern',
   grammarInFamily: 'Inside',
   grammarSearchAll: 'Search all patterns',
+  understandingFailed:
+    'That explanation did not arrive. Nothing has been guessed in its place — you can ask again.',
   closeLook: 'Look at the words',
   closeLookHelp: 'Choose a word to explore its meaning in this line.',
   closeLookLoading: 'Finding the words in this line…',
@@ -544,6 +546,8 @@ Object.assign(copy.zh, {
   grammarPatternOne: '个句式',
   grammarInFamily: '正在看',
   grammarSearchAll: '搜索全部句式',
+  understandingFailed:
+    '这次没能取到解释，也没有拿别的内容顶替。可以再问一次。',
   closeLook: '看清每个词',
   closeLookHelp: '点一个词，看看它在这句话里的意思。',
   closeLookLoading: '正在找出这句话里的词……',

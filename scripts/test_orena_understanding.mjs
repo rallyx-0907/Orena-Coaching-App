@@ -138,17 +138,66 @@ assert.match(
   /const current = \(\) => alive\(\) && ticket === asking;/,
   'a paint is allowed only while its ticket is still the newest',
 );
-// Both the success and the failure paint are gated; a late failure must not
-// wipe a newer answer either.
+/* One gate covers both outcomes because the request no longer forks into a
+   success path and a catch: it resolves to an outcome first, and the single
+   ticket check guards whatever that outcome turns out to be. A late failure
+   therefore cannot wipe a newer answer either. */
 assert.equal(
   (understanding.match(/if \(!current\(\)\) return;/g) || []).length,
-  2,
-  'both the result and the error path check the ticket',
+  1,
+  'the ticket is checked once, after the outcome resolves',
 );
 assert.ok(
   !/if \(!alive\(\)\) return;\s*if \(!result\.available/.test(understanding),
   'the result path must not fall back to the bare liveness check',
 );
+
+/* --- Nothing coming and nothing arrived are different news ---
+
+   A provider that is absent here will not answer however long the learner
+   waits, so offering a retry would misdescribe what waiting can achieve. A
+   request that failed on the way is worth asking again. These used to be one
+   sentence with no way forward. */
+const { attempt, isReady, canRetry, unavailable, failed } = await import(
+  '../static/orena/capabilities/outcome.js'
+);
+const absent = await attempt(async () => ({ available: false, selected_text: 'x' }), {
+  read: (r) => ({ ok: Boolean(r.available) }),
+});
+assert.equal(absent.state, 'unavailable');
+assert.equal(canRetry(absent), false, 'an absent provider must not offer a retry');
+
+const broke = await attempt(async () => { throw new Error('network'); });
+assert.equal(broke.state, 'failed');
+assert.equal(canRetry(broke), true, 'a failed request is worth asking again');
+
+// A payload about different text is not an answer about this selection.
+const mismatched = await attempt(async () => ({ available: true, selected_text: 'other' }), {
+  read: (r) => ({ ok: r.available && r.selected_text === 'mine' }),
+});
+assert.equal(mismatched.state, 'unavailable');
+assert.equal(isReady(mismatched), false);
+
+const good = await attempt(async () => ({ available: true, selected_text: 'mine' }), {
+  read: (r) => ({ ok: r.available && r.selected_text === 'mine' }),
+});
+assert.ok(isReady(good) && good.value.selected_text === 'mine', 'a real answer survives intact');
+// A capability may say its failure is permanent.
+assert.equal(canRetry(failed('gone', false)), false);
+assert.equal(unavailable('no provider').reason, 'no provider');
+
+// The panel must offer the retry only where retrying can help, and both
+// messages must exist in both languages.
+assert.match(understanding, /canRetry\(outcome\)/, 'the panel asks whether a retry is honest');
+for (const ui of ['en', 'zh']) {
+  assert.ok(copy[ui].understandingUnavailable, `${ui}: missing unavailable copy`);
+  assert.ok(copy[ui].understandingFailed, `${ui}: missing failed copy`);
+  assert.notEqual(
+    copy[ui].understandingUnavailable,
+    copy[ui].understandingFailed,
+    `${ui}: the two outcomes must not say the same thing`,
+  );
+}
 
 console.log(
   'Contextual understanding: shared judgement vocabulary EN/ZH, context-preserving follow-ups, late-answer rejection, and no invented authority PASS',
