@@ -436,3 +436,63 @@
   font-weight: 600;
   color: var(--ink);
 }
+
+/* Looking closely at the spoken line.
+
+   Only the classes that carry the meaning of a sentence are tinted - what
+   things are, what happens, and what kind. Function words keep the ink they
+   already had, because a learner has to be able to hold the system in their
+   head for it to be a reading aid rather than decoration. Three colours drawn
+   from the existing palette, never a colour per part of speech. */
+.close-look {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  cursor: pointer;
+}
+.follow-moment .spoken .token {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.follow-moment .spoken[data-close-look='on'] .token {
+  border-bottom-color: var(--line);
+}
+.follow-moment .spoken .token:hover,
+.follow-moment .spoken .token:focus-visible {
+  border-bottom-color: var(--accent);
+}
+.follow-moment .spoken .token[data-pos='noun'],
+.follow-moment .spoken .token[data-pos='proper_noun'] {
+  color: var(--night);
+  font-weight: 600;
+}
+.follow-moment .spoken .token[data-pos='verb'] {
+  color: var(--coral);
+  font-weight: 600;
+}
+.follow-moment .spoken .token[data-pos='adjective'],
+.follow-moment .spoken .token[data-pos='adverb'] {
+  color: var(--sage);
+}
+/* Chinese reads with its sound above the character it belongs to, which is
+   where a learner expects it - not on a separate line to reconcile. */
+.follow-moment .spoken[data-close-look='on'] .token[data-reading] {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  line-height: 1.35;
+}
+.follow-moment .spoken[data-close-look='on'] .token[data-reading]::before {
+  content: attr(data-reading);
+  font-size: 0.62em;
+  color: var(--muted);
+  font-weight: 400;
+}

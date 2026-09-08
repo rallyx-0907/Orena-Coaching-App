@@ -318,7 +318,7 @@ export async function renderEncounter(root, ctx) {
       excerpt: model.current?.original_text,
     });
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button></section><div class="moment-actions"><span>${location.intent === 'follow' ? c.followOptional : c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><label class="meaning-toggle"><input type="checkbox" data-all-meaning><span>${esc(c.showAllMeaning)}</span></label></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><p class="meta" data-meaning-note hidden>${esc(c.allMeaningNote)}</p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button><label class="close-look"><input type="checkbox" data-close-look><span>${esc(c.closeLook)}</span></label></section><div class="moment-actions"><span>${location.intent === 'follow' ? c.followOptional : c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><label class="meaning-toggle"><input type="checkbox" data-all-meaning><span>${esc(c.showAllMeaning)}</span></label></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><p class="meta" data-meaning-note hidden>${esc(c.allMeaningNote)}</p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -346,6 +346,53 @@ export async function renderEncounter(root, ctx) {
      plain text and keeps segment Follow exactly as it was. */
   let followSpans = null;
   let followWord = -1;
+  /* Looking closely at the line being spoken.
+
+     The annotation endpoint has always returned per-token part of speech - and
+     for Chinese a pinyin reading aid - computed locally, without a provider.
+     Nothing consumed it. It runs on the current line only, when the learner
+     asks: annotating six segments on arrival would spend six requests to
+     colour text nobody is reading yet, and colouring every line at all times
+     is a rainbow rather than a reading aid.
+
+     Only the classes that carry meaning are tinted. Function words keep the
+     ink they had, because a system a learner cannot hold in their head is
+     decoration. */
+  let closeLook = false;
+  let annotated = new Map();
+  const annotateLine = async (segment) => {
+    if (!segment || annotated.has(segment.segment_id)) return;
+    try {
+      const result = await api.annotateMediaText({
+        text: segment.original_text,
+        source_language: language,
+      });
+      if (alive()) annotated.set(segment.segment_id, result);
+    } catch {
+      // The line simply stays as it was; nothing is guessed in its place.
+      annotated.set(segment.segment_id, null);
+    }
+  };
+  /* Rebuild the line from the annotation's own character offsets, so the text
+     shown is the transcript's text and never a reconstruction of it. */
+  const annotatedLine = (segment) => {
+    const result = annotated.get(segment.segment_id);
+    const text = segment.original_text;
+    if (!result?.annotations?.length) return null;
+    let cursor = 0;
+    let html = '';
+    for (const token of result.annotations) {
+      if (!Number.isInteger(token.start) || token.start < cursor) continue;
+      html += esc(text.slice(cursor, token.start));
+      const reading =
+        result.reading_aid === 'pinyin' && token.pronunciation
+          ? ` data-reading="${esc(token.pronunciation)}"`
+          : '';
+      html += `<button class="token" data-token="${esc(token.fragment)}" data-pos="${esc(token.pos || 'other')}"${reading}>${esc(text.slice(token.start, token.end))}</button>`;
+      cursor = token.end;
+    }
+    return html + esc(text.slice(cursor));
+  };
   function paintFollow(gap = false) {
     const s = model.current;
     if (!s) return;
@@ -362,6 +409,9 @@ export async function renderEncounter(root, ctx) {
         )
         .join('');
     } else original.textContent = s.original_text;
+    const closely = !gap && closeLook ? annotatedLine(s) : null;
+    if (closely) original.innerHTML = closely;
+    original.dataset.closeLook = closely ? 'on' : 'off';
     const translated = model.meaning();
     meaning.textContent = gap
       ? ''
@@ -450,6 +500,31 @@ export async function renderEncounter(root, ctx) {
     showAllMeaning(true);
     focusRegion(transcript.querySelector('h2'));
   };
+  const closeLookToggle = root.querySelector('[data-close-look]');
+  closeLookToggle.onchange = async () => {
+    closeLook = closeLookToggle.checked;
+    if (closeLook) {
+      closeLookToggle.disabled = true;
+      await annotateLine(model.current);
+      if (!alive()) return;
+      closeLookToggle.disabled = false;
+    }
+    paintFollow();
+  };
+  /* A token is the smallest thing a learner can point at, so pointing at it
+     opens the same explanation every other surface uses - with the line it
+     came from as its context, which is what makes the answer about this
+     sentence rather than a dictionary entry. */
+  moment.addEventListener('click', (event) => {
+    const token = event.target.closest('[data-token]');
+    if (!token || !model.current) return;
+    openUnderstanding(ctx, {
+      selection: token.dataset.token,
+      context: model.current.original_text.slice(0, 2400),
+      title: item.title,
+      origin: { id, where: item.title, why: 'from_listening' },
+    });
+  });
   root.querySelector('[data-meaning]').onclick = async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
