@@ -300,3 +300,37 @@
   font-size: var(--text-reading);
   line-height: 1.9;
 }
+
+/* The scope a search is running inside, and the way out of it. Both belong on
+   one line above the results, because the count below is only truthful in
+   relation to the scope stated here. */
+.family-active {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.family-active button {
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Leaving an encounter is the most-used control on a phone and was a 24px
+   line of text. The type stays where it is; the target around it grows to a
+   comfortable 44px without the link becoming a button. Applied at every width,
+   since a small pointer target helps nobody. */
+.back-row > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline-end: var(--space-2);
+}
+/* The featured invitation on Discover is the page's primary way into content,
+   so its title carries a full target rather than a text-height one. */
+.editorial-spread h2 > a,
+.editorial-spread > a[href*='encounter'] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

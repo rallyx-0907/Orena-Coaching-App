@@ -331,15 +331,26 @@ export async function renderGrammar(root, ctx) {
       });
       const label = root.querySelector('[data-family-active]');
       label.hidden = !family;
-      label.textContent = family ? `${c.grammarInFamily} ${family}` : '';
+      label.innerHTML = family
+        ? `<span>${esc(c.grammarInFamily)} ${esc(family)}</span><button class="quiet" data-leave-family>${esc(c.grammarSearchAll)}</button>`
+        : '';
+      const leave = label.querySelector('[data-leave-family]');
+      if (leave)
+        leave.onclick = () => {
+          // The query the learner typed is theirs; only the scope widens.
+          family = '';
+          rerunSearch();
+        };
       paint();
       return filtered.length;
     };
     const rerunSearch = bindCollectionSearch(root, c, (next) => {
       search = next;
-      // Searching the whole catalogue is a deliberate widening: it leaves the
-      // family the learner had entered rather than silently intersecting.
-      if (next.query.trim()) family = '';
+      /* Searching stays inside the family the learner entered. Widening used to
+         happen on the first keystroke, which meant a search could answer with
+         patterns from a level they had not asked about and clearing the box
+         dropped them into all 234 with no way back. Leaving a family is now
+         something the learner does on purpose, below. */
       return refilter();
     });
     /* Entering a family opens the catalogue already narrowed to it, so the

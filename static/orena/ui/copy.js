@@ -519,6 +519,7 @@ Object.assign(copy.en, {
   grammarPatterns: 'patterns',
   grammarPatternOne: 'pattern',
   grammarInFamily: 'Inside',
+  grammarSearchAll: 'Search all patterns',
   hintTitle: 'The shape of the line',
   hintNote:
     'Each * is a character still to find. Everything you type correctly appears here as you go.',
@@ -535,6 +536,7 @@ Object.assign(copy.zh, {
   grammarPatterns: '个句式',
   grammarPatternOne: '个句式',
   grammarInFamily: '正在看',
+  grammarSearchAll: '搜索全部句式',
   hintTitle: '这句话的轮廓',
   hintNote: '每个 * 代表一个还没找到的字。你写对的部分会随时显示出来。',
   hintAnchors: '已找到',

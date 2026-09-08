@@ -169,6 +169,31 @@ assert.ok(
   room.includes('rerunSearch()'),
   'entering a family reports its count through the search binding, so the stated number matches the rows',
 );
+/* Searching stays inside the family the learner entered. Widening on the first
+   keystroke meant a search could answer with patterns from a level they had not
+   asked about, and clearing the box dropped them into the whole catalogue with
+   no way back to where they were. */
+assert.ok(
+  !/if \(next\.query\.trim\(\)\) family = '';/.test(room),
+  'a query must not silently clear the family scope',
+);
+assert.ok(
+  room.includes('data-leave-family'),
+  'leaving a family is an explicit action the learner can see and take',
+);
+for (const ui of LANGUAGES)
+  assert.ok(copy[ui].grammarSearchAll, `${ui}: no way to say "search all patterns"`);
+// Scope composes: a family and a query intersect rather than replacing.
+assert.equal(
+  filterGrammar(shelf, { family: 'Sentence foundations', query: 'study' }).length,
+  1,
+  'a query inside a family searches that family',
+);
+assert.equal(
+  filterGrammar(shelf, { family: 'Sentence foundations', query: 'walk' }).length,
+  0,
+  'a match outside the family is not returned while the family is selected',
+);
 for (const ui of LANGUAGES)
   for (const key of ['grammarSyllabus', 'grammarBrowse', 'grammarPatterns', 'grammarPatternOne', 'grammarInFamily'])
     assert.ok(copy[ui][key], `${ui}: missing ${key}`);
