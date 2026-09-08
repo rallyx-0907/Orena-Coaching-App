@@ -118,8 +118,10 @@ are named above so the migration slice knows what is waiting for it.
 **Specification:** `ORENA_ACCOUNT_DATA_ARCHITECTURE` §§3-7.
 **Exit gate:** I1; reviewed additive schema, receipts, cursor/snapshot and
 PostgreSQL concurrency proof.
-**Status:** in progress. Migration-order item 1 is done; the schema proposal
-that the rest depends on is the next deliverable and carries a review gate.
+**Status:** in progress. Migration-order item 1 is done. The schema proposal
+was reviewed at `69ceb53` — APPROVED WITH REQUIRED CHANGES — and its nine
+findings are being addressed. Step 3 remains blocked pending re-review of the
+revised proposal.
 
 ### Item 1 — startup verifies the schema, it does not create one
 
@@ -162,10 +164,16 @@ empty database, which is the behaviour the architecture forbids; the rewrite
 holds all four states and both "no bootstrap" cases. 14 pass. Full suite 797
 passed / 20 failed, failure set byte-identical to a clean `git archive HEAD`.
 
-### The additive schema proposal — delivered, awaiting review
+### The additive schema proposal — reviewed, changes required
 
-`ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 2 is done and handed over in
-`I2_SCHEMA_REVIEW_REQUEST.md`. Seven additive tables in
+`ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 2 is done. The proposal at `69ceb53`
+was reviewed outside the repository by a **Delegated Independent Architecture
+Reviewer (ChatGPT GPT-5.6 Sol)**, whose outcome was **APPROVED WITH REQUIRED
+CHANGES**. The nine required changes are recorded verbatim in
+`I2_SCHEMA_REVIEW_REQUEST.md`, with the request as submitted retained beneath
+them. **Step 3 remains blocked until the revised proposal is re-reviewed.**
+
+Eight additive tables in
 `migrations/proposed/20260908_0005_account_work_backbone.py`: account
 incarnation with its deletion barrier, the per-incarnation stream head,
 mutation receipts, change records, the work aggregate, work turns, kept-language
@@ -193,10 +201,11 @@ language-filtered, writes after deletion, and a recreated incarnation starting
 its own stream. They skip unless `ORENA_TEST_POSTGRES_URL` is set and have not
 been executed: running them is §6 step 3, which follows the review.
 
-Two questions are raised for the reviewer rather than decided: whether
-`works.kind` and `mutation_receipts.domain` should be enumerated in the schema,
-and whether a receipt should store the expected version it was issued against
-instead of that being reconstructed.
+The two questions raised for the reviewer were both answered, and more strictly
+than the request had proposed: `works.kind` and `mutation_receipts.domain` stay
+PostgreSQL strings backed by canonical application registries and strict
+validation rather than becoming PostgreSQL ENUMs, and a receipt must persist the
+expected version it was issued against rather than have it reconstructed.
 
 ### Still blocked on the gate
 
@@ -206,8 +215,12 @@ evaluator result, and the architecture is explicit that those evidence owners
 do not move. So the work aggregate, mutation receipts, change records and the
 per-incarnation stream head are genuinely absent and need additive tables.
 
-Codex review of constraints, parent isolation, transactional receipts and
-indexes (§6 step 2), then §6 step 3 against a throwaway database, then explicit
-human schema/runtime authorization (§6 step 4). Until the schema exists, work
-still lives in device memory and no learner-visible behaviour has changed.
-Activation is not Opus's to declare.
+The current gate is re-review. §6 step 2 is complete and its outcome recorded;
+the nine required changes are being made, after which the revised proposal
+returns to an independent architecture reviewer. Only then does §6 step 3 run
+against a throwaway database, and only then does explicit human schema/runtime
+authorization (§6 step 4) come into scope.
+
+Until the schema exists, work still lives in device memory and no
+learner-visible behaviour has changed. Activation is not Opus's to declare, and
+neither is the re-review.

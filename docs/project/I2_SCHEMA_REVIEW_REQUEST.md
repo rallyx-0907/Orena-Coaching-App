@@ -56,9 +56,12 @@ findings against it can be verified against each other.
 
 ## The request as submitted, at `69ceb53`
 
-Retained unedited below, including the two questions the review answered:
-item 9 answers the enumeration question, and items 1 and 2 answer the
-expected-version question — both more strictly than the request proposed.
+Retained below as the artifact the findings were made against, including the
+two questions the review answered: item 9 answers the enumeration question, and
+items 1 and 2 answer the expected-version question — both more strictly than the
+request proposed. It is a historical record, not the current state: its one
+factual error, the table count, is marked in place rather than rewritten, and
+its "nothing is applied" statement remains true.
 
 ---
 
@@ -79,7 +82,7 @@ starts against real PostgreSQL unchanged. Approving it is a `git mv` into
 
 | File | What it is |
 | --- | --- |
-| `migrations/proposed/20260908_0005_account_work_backbone.py` | Seven new tables. Additive only; no existing table is altered, so old readers are unaffected. |
+| `migrations/proposed/20260908_0005_account_work_backbone.py` | Seven new tables. *(Miscount — it is **eight**; this is review finding 8. Left as written because this section is the artifact that was reviewed.)* Additive only; no existing table is altered, so old readers are unaffected. |
 | `writing_coach/work_contract.py` | Pure decisions around the aggregate: lifecycle, conversation head, conflict branches, snapshot paging, stream contiguity. 26 stdlib counterexamples. |
 | `writing_coach/persistence/work_repository.py` | The transactional seam. No caller is wired to it. |
 | `tests/test_orena_work_persistence_postgres.py` | Ten concurrency cases against real PostgreSQL, skipped unless `ORENA_TEST_POSTGRES_URL` is set. |
