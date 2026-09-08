@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 
 from writing_coach.listening_catalog import (
+    EN_LEVELS,
+    ZH_LEVELS,
     dev_catalog_enabled,
     load_catalog,
     load_catalog_manifest,
@@ -287,7 +289,10 @@ def test_an_invalid_human_row_is_reported_not_generated() -> None:
 
     # The surviving manifest is loadable: a bad row never poisons the overlay.
     for lesson in manifest["lessons"]:
-        assert lesson["estimated_level"] in {"B1", "HSK3"}
+        # L3 replaced the blanket B1/HSK3 fallback with a transcript-based
+        # estimate, so the assertion is now the language's own ladder.
+        assert lesson["estimated_level"] in EN_LEVELS | ZH_LEVELS
+        assert lesson["reviewed_level"] is None
         assert set(lesson["available_modes"]) <= {"listen", "active", "dictation", "shadowing"}
 
 
@@ -433,8 +438,13 @@ def test_en_and_zh_use_the_same_pipeline() -> None:
     assert languages == {"en", "zh"}
     # The transcript language reaches the adapter, not a hardcoded default.
     assert {lang for _, lang in adapter.calls} == {"en", "zh"}
-    levels = {lesson["estimated_level"] for lesson in manifest["lessons"]}
-    assert levels == {"B1", "HSK3"}, "each language falls back to its own level vocabulary"
+    # Each language is estimated on its own ladder, never the other's.
+    en_levels = {lesson["estimated_level"] for lesson in manifest["lessons"]
+                 if lesson["lesson_id"].startswith("dev-en-")}
+    zh_levels = {lesson["estimated_level"] for lesson in manifest["lessons"]
+                 if lesson["lesson_id"].startswith("dev-zh-")}
+    assert en_levels and en_levels <= EN_LEVELS
+    assert zh_levels and zh_levels <= ZH_LEVELS
     assert all(lesson["reviewed_level"] is None for lesson in manifest["lessons"])
 
 

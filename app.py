@@ -57,6 +57,8 @@ from writing_coach.media_ingestion import MediaIngestionService
 from writing_coach.media_providers.supadata import SupadataTranscriptClient
 from writing_coach.media_recovery_policy import build_youtube_adapter
 from writing_coach.media_providers.youtube_audio import YtDlpYouTubeAudioUrlResolver
+from writing_coach.listening_api import preview_visible
+from writing_coach.world_api import router as world_router
 from writing_coach.media_timing import MediaTimingService
 from writing_coach.media_translation import (
     GroqTranslationProvider,
@@ -307,6 +309,9 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
+# Worlds are the discovery layer above lessons; they read the same curated
+# catalog and the same preview-visibility rule, so nothing new is authorised.
+app.include_router(world_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
@@ -638,16 +643,28 @@ def startup() -> None:
 
 
 @app.get("/", response_class=HTMLResponse)
-def home() -> HTMLResponse:
+def home(request: Request = None) -> HTMLResponse:  # type: ignore[assignment]
     # The shell carries the list of stylesheets and modules the app loads, so a
     # cached copy of it keeps loading yesterday's asset list - a stylesheet
     # added since is simply never requested, and the screen renders unstyled.
     # Every asset already answers `no-store`; the document that names them has
     # to as well.
-    return HTMLResponse(
-        (ROOT / "templates" / "becoming" / "index.html").read_text(encoding="utf-8"),
-        headers={"Cache-Control": "no-store, max-age=0"},
-    )
+    shell = (ROOT / "templates" / "becoming" / "index.html").read_text(encoding="utf-8")
+    # The marker is scoped to the people who can actually see preview content,
+    # not to the deployment. One runtime serves normal learners and admin
+    # dogfooding at the same time, so a deployment-wide badge would tell every
+    # learner they are using a preview when, for them, they are not: they see
+    # the ordinary product. Server-rendered against the same admin check that
+    # gates the content, so a client cannot summon it and the pinned session
+    # contract is untouched.
+    if preview_visible(request):
+        shell = shell.replace(
+            "</body>",
+            '<div class="orena-preview-badge" role="status" aria-label="Preview deployment">'
+            "Preview</div></body>",
+            1,
+        )
+    return HTMLResponse(shell, headers={"Cache-Control": "no-store, max-age=0"})
 
 
 

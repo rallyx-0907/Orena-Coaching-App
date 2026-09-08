@@ -508,3 +508,17 @@ body.onboarding-mode .o-drawer-toggle{visibility:hidden}
   .o-scroll{max-height:none;overflow-y:visible}
   .o-stick{position:static;max-height:none;overflow-y:visible}
 }
+
+/* Preview deployment marker.
+   A preview runs production runtime behaviour on purpose, so the only visible
+   difference is this. Deliberately small and out of the way: it marks the
+   environment without redesigning the app or filling the UI with debug data. */
+.orena-preview-badge{
+  position:fixed; left:.75rem; bottom:.75rem; z-index:60;
+  padding:.15rem .5rem; border-radius:999px;
+  font-size:.7rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--text-muted,#6b6257);
+  background:var(--surface,#fff); border:1px solid var(--border,#e2ddd5);
+  box-shadow:0 1px 2px rgb(0 0 0 / 6%); opacity:.85; pointer-events:none;
+}
+@media (max-width:640px){ .orena-preview-badge{ left:.5rem; bottom:.5rem; } }

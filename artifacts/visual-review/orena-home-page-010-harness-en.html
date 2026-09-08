@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Orena Home PAGE-010 harness EN</title>
+    <link rel="stylesheet" href="/static/becoming/orena/product-components.css" />
+    <style>
+        :root {
+            --bg: #f7f4ee;
+            --surface: #fffaf5;
+            --ink: #171513;
+            --ink-soft: #35312d;
+            --muted: #777069;
+            --border: #e8e1d8;
+            --warm: #fff3e8;
+            --shadow: 0 10px 28px rgba(29, 22, 17, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            overflow-x: clip;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Inter, system-ui, sans-serif;
+            line-height: 1.45;
+        }
+
+        .harness-lab {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+        }
+
+        .harness-shell {
+            display: grid;
+            gap: 28px;
+        }
+
+        .harness-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+            gap: 32px;
+            align-items: start;
+        }
+
+        .fixture-banner {
+            margin: 0 0 18px;
+            padding: 10px 14px;
+            border: 1px dashed #d6ccc1;
+            border-radius: 12px;
+            background: var(--warm);
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--ink-soft);
+        }
+
+        @media (max-width: 1024px) {
+            .harness-lab {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .harness-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 390px) {
+            .harness-lab {
+                padding: 16px 12px 32px;
+            }
+
+            .fixture-banner {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="harness-lab">
+        <p class="fixture-banner"><strong>FIXTURE DATA ONLY</strong> — isolated Orena PAGE-010 Home EN variant; not
+            production Home and no learner data is mutated.</p>
+        <div id="app"></div>
+    </div>
+
+    <script type="module">
+        import {
+            journeyHero,
+            continueJourneyCard,
+            worldCard,
+            worldRail,
+            recommendationTile,
+            recommendationRail,
+            challengeCard,
+            discoveryCard,
+            discoveryRail,
+        } from '/static/becoming/orena/product-components.js';
+
+        const text = {
+            heroEyebrow: 'Good morning',
+            heroTitle: 'Keep the spark alive',
+            heroLead: 'Resume a real lesson, discover a place worth exploring, and continue with something that feels meaningful.',
+            heroPrimary: 'Continue',
+            continueKicker: 'Continue',
+            continueTitle: 'Night Market Adventures',
+            continueSubtitle: 'Lesson 03 · Ordering food',
+            continueState: 'Resume at segment 4',
+            continueAction: 'Resume',
+            worldsTitle: 'Explore worlds',
+            worldsLead: 'Start where the language feels real and useful.',
+            world1: { title: 'Food & Culture', description: 'Order, taste, and understand how people talk about food in real settings.', count: '4 journeys', prefix: 'Start with', lead: 'Your first order', suffix: 'for today' },
+            world2: { title: 'City Life', description: 'Daily routines, public spaces, and the way people talk in motion.', count: '3 journeys', prefix: 'Try', lead: 'Weekend plans' },
+            world3: { title: 'Stories & Media', description: 'Short stories, lively conversations, and practical listening cues.', count: '5 journeys', prefix: 'Pick', lead: 'A short scene' },
+            world4: { title: 'Study & Work', description: 'Professional language that still sounds natural and useful in context.', count: '3 journeys', prefix: 'Open', lead: 'Quick meeting prep' },
+            forYouTitle: 'For you',
+            forYouLead: 'A small set of useful next steps, chosen for momentum.',
+            action1Title: 'Shadow the restaurant reply',
+            action1Subtitle: 'Practice natural rhythm and clarity in a real exchange.',
+            action2Title: 'Scan the short menu story',
+            action2Subtitle: 'Match the meaning to the surrounding context.',
+            challengeKicker: 'Challenge',
+            challengeTitle: 'Listen for 20 minutes today',
+            challengeLead: 'Keep your listening momentum going with one short session.',
+            challengeReward: 'A practical daily habit that builds real listening confidence.',
+            challengeAction: 'Start',
+            discoveryTitle: 'Continue exploring',
+            discoveryLead: 'Fresh places to keep moving without a forced dashboard.',
+            discover1: { kicker: 'Continue exploring', title: 'Market phrases', description: 'Practical phrases for ordering in busy spaces.', meta: '4 min' },
+            discover2: { kicker: 'Fresh pick', title: 'Short conversation set', description: 'Listen once, then respond with a quick follow-up.', meta: '5 min' },
+            discover3: { kicker: 'New in this world', title: 'City café scene', description: 'A realistic situation with small phrases that travel well.', meta: '3 min' },
+        };
+
+        const app = document.getElementById('app');
+        const hero = journeyHero({
+            eyebrow: text.heroEyebrow,
+            title: text.heroTitle,
+            supportingText: text.heroLead,
+            artwork: 'home-hero',
+            artworkLabel: 'Home hero artwork',
+            accentFamily: 'listening',
+            lang: 'en',
+            primaryAction: { id: 'home-primary', label: text.heroPrimary },
+            continuation: continueJourneyCard({
+                journeyId: 'night-market',
+                kicker: text.continueKicker,
+                title: text.continueTitle,
+                titleLang: 'en',
+                subtitle: text.continueSubtitle,
+                progressLabel: text.continueState,
+                artwork: 'night-market',
+                accentFamily: 'listening',
+                resumeLabel: text.continueAction,
+                actionAttributes: { 'data-home-continue': 'listening' },
+            }),
+        });
+
+        const worlds = [
+            worldCard({
+                worldId: 'food-culture', title: text.world1.title, description: text.world1.description, lang: 'en', artwork: 'food-world', accentFamily: 'listening', countLabel: text.world1.count, leadPrefix: text.world1.prefix, leadTitle: text.world1.lead, leadSuffix: text.world1.suffix || '', leadLang: 'en', variant: 'featured'
+            }),
+            worldCard({ worldId: 'city-life', title: text.world2.title, description: text.world2.description, lang: 'en', artwork: 'city-life', accentFamily: 'reading', countLabel: text.world2.count, leadPrefix: text.world2.prefix, leadTitle: text.world2.lead, leadLang: 'en', variant: 'standard' }),
+            worldCard({ worldId: 'stories-media', title: text.world3.title, description: text.world3.description, lang: 'en', artwork: 'stories', accentFamily: 'speaking', countLabel: text.world3.count, leadPrefix: text.world3.prefix, leadTitle: text.world3.lead, leadLang: 'en', variant: 'standard' }),
+            worldCard({ worldId: 'work-life', title: text.world4.title, description: text.world4.description, lang: 'en', artwork: 'work', accentFamily: 'writing', countLabel: text.world4.count, leadPrefix: text.world4.prefix, leadTitle: text.world4.lead, leadLang: 'en', variant: 'compact' }),
+        ];
+
+        const forYou = [
+            recommendationTile({ contentId: 'activity-1', contentKind: 'practice', title: text.action1Title, subtitle: text.action1Subtitle, lang: 'en', reason: 'For you', note: { text: '2 minute activity · voice friendly', attributes: { 'data-variant': 'support' } }, accentFamily: 'speaking', actionLabel: 'Start', actionAttributes: { 'data-home-action': 'start-speech' } }),
+            recommendationTile({ contentId: 'activity-2', contentKind: 'reading', title: text.action2Title, subtitle: text.action2Subtitle, lang: 'en', reason: 'Useful next', note: { text: 'Reading practice · 4 minutes', attributes: { 'data-variant': 'support' } }, accentFamily: 'reading', actionLabel: 'Open', actionAttributes: { 'data-home-action': 'open-reading' } }),
+        ];
+
+        const challenge = challengeCard({ challengeId: 'listening-habit', kicker: text.challengeKicker, title: text.challengeTitle, description: text.challengeLead, lang: 'en', current: 12, target: 20, unitLabel: 'minutes', rewardCopy: text.challengeReward, accentFamily: 'listening', actionLabel: text.challengeAction, actionAttributes: { 'data-home-action': 'start-listening' } });
+
+        const discovery = [
+            discoveryCard({ contentId: 'discover-1', kicker: text.discover1.kicker, title: text.discover1.title, description: text.discover1.description, lang: 'en', meta: text.discover1.meta, accentFamily: 'listening' }),
+            discoveryCard({ contentId: 'discover-2', kicker: text.discover2.kicker, title: text.discover2.title, description: text.discover2.description, lang: 'en', meta: text.discover2.meta, accentFamily: 'speaking' }),
+            discoveryCard({ contentId: 'discover-3', kicker: text.discover3.kicker, title: text.discover3.title, description: text.discover3.description, lang: 'en', meta: text.discover3.meta, accentFamily: 'writing' }),
+        ];
+
+        app.innerHTML = `
+      <div class="harness-shell" data-orena-ui="v2">
+        ${hero}
+        ${worldRail({ id: 'worlds', title: text.worldsTitle, description: text.worldsLead, cards: worlds, empty: 'No worlds available right now.', state: 'ready' })}
+        <div class="harness-row">
+          ${recommendationRail({ id: 'for-you', title: text.forYouTitle, description: text.forYouLead, tiles: forYou, empty: 'No recommendations yet.', state: 'ready' })}
+          ${challenge}
+        </div>
+        ${discoveryRail({ id: 'continue-exploring', title: text.discoveryTitle, description: text.discoveryLead, cards: discovery, empty: 'Nothing new yet.', state: 'ready' })}
+      </div>
+    `;
+    </script>
+</body>
+
+</html>

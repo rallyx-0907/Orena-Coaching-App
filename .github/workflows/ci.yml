@@ -39,6 +39,15 @@ jobs:
           node scripts/test_media_learning_quality.mjs
           node scripts/test_real_media_catalog_contract.mjs
           node scripts/test_listening_discovery_contract.mjs
+          node scripts/test_orena_home_h1.mjs
+          node scripts/test_home_personalized_practice_flow.mjs
+          node scripts/test_home_practice_outcome_shape.mjs
+          node scripts/test_home_library_review_handoff.mjs
+          node scripts/test_r12_next_practice_plan.mjs
+          node scripts/test_r12_listening_habit_home.mjs
+          node scripts/test_r12_listening_return.mjs
+          node scripts/test_review_cue_locale.mjs
+          node scripts/test_cross_skill_transfer_locale.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite

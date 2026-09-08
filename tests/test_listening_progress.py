@@ -18,7 +18,7 @@ def test_list_route_is_learner_scoped_and_asset_bounded() -> None:
         def __init__(self) -> None:
             self.asset = None
 
-        def list_listening_progress_records(self, asset_id: str) -> list[dict]:
+        def list_listening_progress_records(self, asset_id: str, lesson_id: str = "") -> list[dict]:
             self.asset = asset_id
             return [{"asset_id": asset_id, "segment_id": "segment-1", "presentation": "checked"}]
 
@@ -79,7 +79,7 @@ def test_shadowing_progress_is_distinct_and_audio_free() -> None:
             self.values = values
             return {"asset_id": values["asset_id"], "segment_id": values["segment_id"], "completed_rounds": values["completed_rounds"]}
 
-        def list_shadowing_progress_records(self, asset_id: str) -> list[dict]:
+        def list_shadowing_progress_records(self, asset_id: str, lesson_id: str = "") -> list[dict]:
             return [{"asset_id": asset_id, "segment_id": "segment-1", "completed_rounds": 2}]
 
     repository = FakeRepository()

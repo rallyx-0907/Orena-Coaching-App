@@ -14,6 +14,11 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}
+      # Content visibility tier, separate from APP_ENV (D-047). Defaults to
+      # production, so this one runtime shows reviewed content only until an
+      # operator opts in. Preview content stays admin-only even then, so this
+      # does not need a second stack, a second database or a second port.
+      ORENA_DEPLOYMENT_TIER: ${ORENA_DEPLOYMENT_TIER:-production}
       APP_BIND_HOST: ${APP_BIND_HOST:-0.0.0.0}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}

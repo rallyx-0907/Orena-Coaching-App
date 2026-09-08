@@ -54,6 +54,14 @@ _VIDEO_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
 _OEMBED_ENDPOINT = "https://www.youtube.com/oembed"
 
 
+# Why an acquisition carries the transcript it does.
+TRANSCRIPT_NATIVE = "native"
+TRANSCRIPT_GENERATED = "generated"
+TRANSCRIPT_ABSENT = "absent"
+TRANSCRIPT_MALFORMED = "malformed"
+TRANSCRIPT_PROBE_FAILED = "probe_failed"
+
+
 @dataclass(frozen=True)
 class YouTubeCaptionSnippet:
     """Provider caption fields before deterministic M1.1 normalization."""
@@ -453,6 +461,7 @@ class YouTubeMediaProviderAdapter:
 
         transcript = None
         native_malformed = False
+        from_fallback = False
         if track is not None:
             try:
                 transcript = normalize_youtube_transcript(asset_id, track)
@@ -467,12 +476,29 @@ class YouTubeMediaProviderAdapter:
             )
             if fallback_track is not None:
                 transcript = normalize_youtube_transcript(asset_id, fallback_track)
+                from_fallback = transcript is not None
 
         if transcript is None and not self._defer_transcript_recovery:
             if native_malformed:
                 raise ProviderTranscriptMalformed()
             if native_caption_error is not None:
                 raise native_caption_error
+
+        # Deferral means a missing transcript is not fatal. It must NOT mean a
+        # failed caption request is quietly reported as "this source has no
+        # captions": one is a fact about the source, the other is a fact about
+        # the network, and only the first should ever be acted on.
+        if transcript is not None:
+            # A transcript the recovery chain generated is NOT the source's own
+            # captions. Labelling it "native" would let generated ASR be
+            # presented to a learner as official captions.
+            transcript_status = TRANSCRIPT_GENERATED if from_fallback else TRANSCRIPT_NATIVE
+        elif native_malformed:
+            transcript_status = TRANSCRIPT_MALFORMED
+        elif native_caption_error is not None:
+            transcript_status = TRANSCRIPT_PROBE_FAILED
+        else:
+            transcript_status = TRANSCRIPT_ABSENT
         source_language = transcript.source_language if transcript is not None else "und"
         asset = MediaLearningAsset(
             asset_id=asset_id,
@@ -497,4 +523,5 @@ class YouTubeMediaProviderAdapter:
                 kind="embed",
                 url=youtube_embed_url(video_id),
             ),
+            transcript_status=transcript_status,
         )

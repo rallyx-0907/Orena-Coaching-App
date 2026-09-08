@@ -19,7 +19,12 @@ loading the historical repository.
    `docs/project/ROADMAP.md`.
 4. Consult `DECISION_LOG.md` only if a durable decision is relevant. Do not load
    archived handoffs or all historical evidence.
-5. If live Git/code contradicts memory, use the intent/fact precedence in
+5. If the current task is learner-facing UI or native work, read
+   `docs/project/DESIGN_CONTRACT.md`, then the Orena UI foundation in order:
+   `ORENA_PRODUCT_DNA.md`, `ORENA_DESIGN_TOKENS.json`,
+   `ORENA_COMPONENT_CONTRACT.md`, `ORENA_RESPONSIVE_COMPOSITION.md`, and the
+   relevant `ORENA_*_GOLDEN_SPEC.md` when one exists.
+6. If live Git/code contradicts memory, use the intent/fact precedence in
    `PROJECT_MEMORY.md` and report `MEMORY CONTRADICTION` rather than guessing.
 
 Output only:

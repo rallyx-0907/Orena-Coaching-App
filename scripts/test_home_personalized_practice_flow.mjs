@@ -235,11 +235,20 @@ try{
       `${locale.toUpperCase()} Home Grammar practice must clear stale saved-state`);
     assert.equal(globalThis.location.hash,'#/review',
       `${locale.toUpperCase()} Home Grammar practice must submit into Review`);
+    /* H1: personalized Writing practice is a recommendation, not the Home hero
+       (ORENA_HOME_H1_IMPLEMENTATION_BRIEF §7). The hero's one action follows
+       the learner's real continuation; the practice handoff itself - the
+       payload, the level and everything transferred into Write - is unchanged
+       and is asserted below against the recommendation tile that now owns it. */
     state.draft={...state.draft,prompt:'',generatedTask:null,practiceContext:null,text:'',html:''};
     globalThis.location.hash='#/home';
+    root.nodes.clear();
+    await renderHome(root);
     assert.match(root.innerHTML,/id="homePrimary"/,
-      `${locale.toUpperCase()} Home must render the personalized Practice action`);
-    const primary=root.querySelector('#homePrimary');
+      `${locale.toUpperCase()} Home must still render one primary hero action`);
+    assert.match(root.innerHTML,/data-home-next-plan[^>]*data-plan-kind="writing"/,
+      `${locale.toUpperCase()} Home must offer personalized Practice as a recommendation`);
+    const primary=root.querySelector('[data-home-next-plan-action]');
     assert.ok(primary.listeners.click,`${locale.toUpperCase()} Home should bind personalized practice`);
     await primary.listeners.click({currentTarget:primary});
 

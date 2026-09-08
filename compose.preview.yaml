@@ -1,0 +1,124 @@
+# NOT THE NORMAL WORKFLOW. Superseded as the default path by D-048.
+#
+# This machine runs ONE long-lived Orena runtime: the main compose stack on
+# 127.0.0.1:8000, with one PostgreSQL and one Cloudflare tunnel. Preview content
+# is a per-user authorization capability of THAT runtime - set
+# ORENA_DEPLOYMENT_TIER=preview in the existing .env - not a reason for a second
+# deployment. Do not start this file for ordinary development, and do not create
+# orena-preview-* volumes.
+#
+# It is kept only as an optional ISOLATED STAGING pattern: a throwaway
+# environment with its own database, for something that genuinely must not share
+# persistence with the dogfood runtime. Starting it is a deliberate, explicit
+# act with its own human deployment gates.
+#
+# Orena PREVIEW deployment — production-like runtime, restricted content.
+#
+# Deliberately a SEPARATE Compose project (`name:` below) rather than an
+# override of compose.yaml, so preview can run beside production without
+# stopping it. Nothing here is shared with production: different project,
+# different volumes, different port, different tunnel.
+#
+#   APP_ENV=production            real HTTPS, real Google auth, secure cookies
+#   ORENA_DEPLOYMENT_TIER=preview may expose designated preview content
+#   PERSISTENCE_BACKEND=postgresql       its OWN database, never production's
+#
+# Preview is production-like runtime behaviour with unreviewed content behind an
+# admin role. It is NOT production publication.
+#
+#   docker compose -f compose.preview.yaml --env-file .env.preview up -d --build
+#   docker compose -f compose.preview.yaml --env-file .env.preview --profile public up -d
+#
+# The second line starts the Cloudflare tunnel and is a human deployment gate.
+
+name: orena-preview
+
+services:
+  writing-coach:
+    build: .
+    image: ai-writing-coach:local
+    restart: unless-stopped
+    environment:
+      # Production runtime posture. Preview does NOT relax security: the whole
+      # point is to exercise the real auth, cookie and persistence paths.
+      APP_ENV: production
+      ORENA_DEPLOYMENT_TIER: preview
+      PERSISTENCE_BACKEND: postgresql
+      # Its own database. Never point this at the production instance.
+      POSTGRES_RUNTIME_URL: ${PREVIEW_POSTGRES_URL:-postgresql+psycopg://orena_preview:${PREVIEW_POSTGRES_PASSWORD:?set PREVIEW_POSTGRES_PASSWORD}@postgres:5432/orena_preview}
+      POSTGRES_SHADOW_URL: ""
+      # Hostname is configuration, never source. PUBLIC_BASE_URL decides the
+      # Google callback, which must be PUBLIC_BASE_URL/auth/google/callback.
+      PUBLIC_BASE_URL: ${PREVIEW_PUBLIC_BASE_URL:?set PREVIEW_PUBLIC_BASE_URL}
+      GOOGLE_REDIRECT_URI: ${PREVIEW_GOOGLE_REDIRECT_URI:-}
+      GOOGLE_CLIENT_ID: ${PREVIEW_GOOGLE_CLIENT_ID:?set PREVIEW_GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${PREVIEW_GOOGLE_CLIENT_SECRET:?set PREVIEW_GOOGLE_CLIENT_SECRET}
+      SESSION_SECRET: ${PREVIEW_SESSION_SECRET:?set PREVIEW_SESSION_SECRET}
+      # Preview content is visible only to these accounts.
+      PLATFORM_ADMIN_EMAILS: ${PREVIEW_ADMIN_EMAILS:?set PREVIEW_ADMIN_EMAILS}
+      BOOTSTRAP_OWNER_EMAIL: ${PREVIEW_BOOTSTRAP_OWNER_EMAIL:-}
+      APP_BIND_HOST: 0.0.0.0
+      WRITING_DB: /data/writing.db
+      AUTH_DB: /data/auth.db
+      USER_DATA_ROOT: /data/users
+      PLATFORM_DB: /data/platform.db
+      PRODUCT_DB: /data/product.db
+      # Curated transcripts are persisted at ingestion (D-046), so the learner
+      # runtime needs no transcript provider. Left off deliberately.
+      MEDIA_TRANSCRIPT_FALLBACK: none
+      SUPADATA_API_KEY: ""
+      LOCAL_TRANSLATION_URL: ${PREVIEW_LOCAL_TRANSLATION_URL:-}
+      GROQ_API_KEY: ${PREVIEW_GROQ_API_KEY:-}
+      GROQ_BASE_URL: ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
+      GROQ_TRANSLATION_MODEL: ${GROQ_TRANSLATION_MODEL:-openai/gpt-oss-120b}
+      MEDIA_TRANSLATION_PROVIDER: ${PREVIEW_MEDIA_TRANSLATION_PROVIDER:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      ALLOW_FALLBACK: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - preview_data:/data
+      - ./app.py:/app/app.py:ro
+      - ./auth_support.py:/app/auth_support.py:ro
+      - ./grammar_course.py:/app/grammar_course.py:ro
+      - ./writing_coach:/app/writing_coach:ro
+      - ./VERSION:/app/VERSION:ro
+      - ./static:/app/static:ro
+      - ./templates:/app/templates:ro
+    ports:
+      # Loopback only. Public access is through the Cloudflare tunnel, not this.
+      - "127.0.0.1:${PREVIEW_HOST_PORT:-18080}:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PREVIEW_POSTGRES_DB:-orena_preview}
+      POSTGRES_USER: ${PREVIEW_POSTGRES_USER:-orena_preview}
+      POSTGRES_PASSWORD: ${PREVIEW_POSTGRES_PASSWORD:?set PREVIEW_POSTGRES_PASSWORD}
+    volumes:
+      - preview_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-orena_preview} -d $${POSTGRES_DB:-orena_preview}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles: ["public"]
+    command: tunnel --no-autoupdate run --token ${PREVIEW_CLOUDFLARE_TUNNEL_TOKEN:?set PREVIEW_CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - writing-coach
+
+volumes:
+  # Distinct names on purpose. The production volumes ai-writing-coach-data and
+  # ai-writing-coach-postgres-data are never touched by this stack.
+  preview_data:
+    name: orena-preview-data
+  preview_postgres_data:
+    name: orena-preview-postgres-data

@@ -25,16 +25,47 @@ backlog, historical narrative, or claims made only to match current code.
 - A legacy namespace, filename, symbol, branch, screenshot, comment, or archived
   document never authorizes revival of the BECOMING product identity or route.
 
+## Learner-facing experience model
+
+- Orena's discovery surface is world-first rather than skill-menu-first.
+- The canonical content relationship is:
+
+```text
+Language → World → Zone → Journey → Lesson → Activity
+```
+
+- Listening, Speaking, Reading, Writing, Grammar, Vocabulary/Dictionary, and
+  Review remain connected learning mechanisms. They do not have to dominate
+  Home or Explore as a flat feature taxonomy.
+- **Home** exists for motivation, discovery, and real continuation.
+- **Progress** is a separate destination for reflection and learning analytics.
+  Home may show progress attached to a specific journey or lightweight global
+  cues, but it must not become a KPI/analytics dashboard.
+- Discovery surfaces should make the learner want to start something; focused
+  learning surfaces should reduce competing visual noise; completion/reward
+  moments may become more expressive again.
+
 ## Design and native parity
 
-- The approved responsive Orena web product is the visual, functional, and
-  interaction source of truth.
+- Orena launches Web first. The approved **responsive Orena web product** is the
+  visual, functional, interaction, and product-meaning source of truth.
+- Responsive approval is not a single desktop screenshot. Golden learner
+  surfaces are deliberately composed and reviewed at desktop, tablet, and
+  mobile-web reference widths.
 - Native mobile is a **full native port** of the same Orena product. It is not a
-  redesign, simplified edition, generic Expo interpretation, generic Material
-  interpretation, or generic iOS interpretation.
-- Native preserves the approved UI, UX, functionality, navigation,
-  interaction/animation intent, state behavior, EN/ZH behavior, light/dark
-  behavior, and learner flows. Only necessary platform mechanics may differ.
+  redesign, simplified edition, WebView shell, generic Expo interpretation,
+  generic Material interpretation, or generic iOS interpretation.
+- The cross-platform rule is **shared meaning, adaptive composition**.
+  Native preserves feature access, learner outcomes, content/state identity,
+  navigation meaning, interaction intent, progress semantics, EN/ZH behavior,
+  design tokens, visual DNA, and state behavior.
+- Native and narrow Web do **not** have to preserve desktop simultaneous
+  visibility, column count, exact card dimensions, chrome placement, or
+  pixel-for-pixel composition. Smaller surfaces may progressively reveal the
+  same information through scroll, rails, sheets, tabs, or other appropriate
+  native composition.
+- Desktop must not simply be shrunk into mobile, and mobile must not rediscover
+  or simplify the product.
 
 ## Connected learning system
 

@@ -43,10 +43,10 @@ class SpecializedLearningRepository(Protocol):
     def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]: ...
     def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None: ...
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
-    def list_listening_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
+    def list_listening_progress_records(self, asset_id: str, lesson_id: str = "") -> list[dict[str, Any]]: ...
     def list_recent_listening_progress_records(self, limit: int = 20) -> list[dict[str, Any]]: ...
     def save_shadowing_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
-    def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
+    def list_shadowing_progress_records(self, asset_id: str, lesson_id: str = "") -> list[dict[str, Any]]: ...
     def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]: ...
     def speaking_progress(self) -> dict[str, Any]: ...
@@ -418,7 +418,7 @@ class SQLiteSpecializedLearningRepository:
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Durable Active Listening progress requires the PostgreSQL runtime.")
 
-    def list_listening_progress_records(self, asset_id: str) -> list[dict[str, Any]]:
+    def list_listening_progress_records(self, asset_id: str, lesson_id: str = "") -> list[dict[str, Any]]:
         raise RuntimeError("Durable Active Listening progress requires the PostgreSQL runtime.")
 
     def list_recent_listening_progress_records(self, limit: int = 20) -> list[dict[str, Any]]:
@@ -427,7 +427,7 @@ class SQLiteSpecializedLearningRepository:
     def save_shadowing_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Durable Shadowing progress requires the PostgreSQL runtime.")
 
-    def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]:
+    def list_shadowing_progress_records(self, asset_id: str, lesson_id: str = "") -> list[dict[str, Any]]:
         raise RuntimeError("Durable Shadowing progress requires the PostgreSQL runtime.")
 
     def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]:
@@ -648,6 +648,7 @@ class PostgresSpecializedLearningRepository:
             "id": str(row.id),
             "language": row.language_code,
             "asset_id": row.asset_id,
+            "lesson_id": getattr(row, "lesson_id", "") or "",
             "segment_id": row.segment_id,
             "presentation": row.presentation,
             "revealed": bool(row.revealed),
@@ -661,8 +662,12 @@ class PostgresSpecializedLearningRepository:
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
         uid, lang = self._scope()
         asset_id = str(values["asset_id"])
+        lesson_id = str(values.get("lesson_id") or "")
         segment_id = str(values["segment_id"])
-        progress_id = stable_uuid("listening-progress", self._key(), lang, asset_id, segment_id)
+        # The identity is the LESSON, so two excerpts of one source keep
+        # separate rows instead of overwriting each other.
+        progress_id = stable_uuid(
+            "listening-progress", self._key(), lang, lesson_id, segment_id)
         with Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
@@ -679,7 +684,8 @@ class PostgresSpecializedLearningRepository:
             if row is None:
                 row = ListeningProgress(
                     id=progress_id, user_id=uid, language_code=lang,
-                    asset_id=asset_id, segment_id=segment_id, **fields,
+                    asset_id=asset_id, lesson_id=lesson_id,
+                    segment_id=segment_id, **fields,
                 )
                 s.add(row)
             else:
@@ -688,15 +694,27 @@ class PostgresSpecializedLearningRepository:
             s.flush()
             return self._listening_progress_payload(row)
 
-    def list_listening_progress_records(self, asset_id: str) -> list[dict[str, Any]]:
+    def list_listening_progress_records(
+        self, asset_id: str, lesson_id: str = "",
+    ) -> list[dict[str, Any]]:
+        """Progress for one lesson when given, else everything for the asset.
+
+        The asset-wide read stays for provenance and for legacy rows; a lesson
+        that asks for its own progress must not receive a sibling excerpt's.
+        """
+
         uid, lang = self._scope()
         with Session(self.engine) as s:
+            scope = (
+                [ListeningProgress.lesson_id == lesson_id] if lesson_id
+                else [ListeningProgress.asset_id == asset_id]
+            )
             rows = s.scalars(
                 select(ListeningProgress)
                 .where(
                     ListeningProgress.user_id == uid,
                     ListeningProgress.language_code == lang,
-                    ListeningProgress.asset_id == asset_id,
+                    *scope,
                 )
                 .order_by(ListeningProgress.updated_at.desc())
             ).all()
@@ -718,6 +736,7 @@ class PostgresSpecializedLearningRepository:
             "id": str(row.id),
             "language": row.language_code,
             "asset_id": row.asset_id,
+            "lesson_id": getattr(row, "lesson_id", "") or "",
             "segment_id": row.segment_id,
             "completed_rounds": int(row.completed_rounds or 0),
             "updated_at": self._iso(row.updated_at),
@@ -726,8 +745,10 @@ class PostgresSpecializedLearningRepository:
     def save_shadowing_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
         uid, lang = self._scope()
         asset_id = str(values["asset_id"])
+        lesson_id = str(values.get("lesson_id") or "")
         segment_id = str(values["segment_id"])
-        progress_id = stable_uuid("shadowing-progress", self._key(), lang, asset_id, segment_id)
+        progress_id = stable_uuid(
+            "shadowing-progress", self._key(), lang, lesson_id, segment_id)
         with Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
@@ -739,7 +760,8 @@ class PostgresSpecializedLearningRepository:
             if row is None:
                 row = ShadowingProgress(
                     id=progress_id, user_id=uid, language_code=lang,
-                    asset_id=asset_id, segment_id=segment_id, **fields,
+                    asset_id=asset_id, lesson_id=lesson_id,
+                    segment_id=segment_id, **fields,
                 )
                 s.add(row)
             else:
@@ -750,15 +772,21 @@ class PostgresSpecializedLearningRepository:
             s.flush()
             return self._shadowing_progress_payload(row)
 
-    def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]:
+    def list_shadowing_progress_records(
+        self, asset_id: str, lesson_id: str = "",
+    ) -> list[dict[str, Any]]:
         uid, lang = self._scope()
         with Session(self.engine) as s:
+            scope = (
+                [ShadowingProgress.lesson_id == lesson_id] if lesson_id
+                else [ShadowingProgress.asset_id == asset_id]
+            )
             rows = s.scalars(
                 select(ShadowingProgress)
                 .where(
                     ShadowingProgress.user_id == uid,
                     ShadowingProgress.language_code == lang,
-                    ShadowingProgress.asset_id == asset_id,
+                    *scope,
                 )
                 .order_by(ShadowingProgress.updated_at.desc())
             ).all()

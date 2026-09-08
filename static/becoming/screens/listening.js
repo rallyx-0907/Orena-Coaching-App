@@ -1129,6 +1129,7 @@ export function createListeningController({importMedia,importStatus,targetLangua
     if(!session||!segment)return null;
     return {
       asset_id:session.asset_id,
+      lesson_id:model.payload?.catalog?.lesson_id||'',
       segment_id:segmentId,
       presentation:segment.presentation,
       revealed:Boolean(segment.revealed),
@@ -1167,7 +1168,7 @@ export function createListeningController({importMedia,importStatus,targetLangua
     const segmentId=segmentIdOverride||session?.current_segment_id;
     const segment=segmentId?session.segments[segmentId]:null;
     if(!session||!segment)return null;
-    return {asset_id:session.asset_id,segment_id:segmentId,completed_rounds:Number(segment.rounds||0)};
+    return {asset_id:session.asset_id,lesson_id:model.payload?.catalog?.lesson_id||'',segment_id:segmentId,completed_rounds:Number(segment.rounds||0)};
   };
   const persistShadowingProgress=(segmentId=null)=>{
     const payload=shadowingProgressPayload(segmentId);

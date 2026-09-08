@@ -34,7 +34,7 @@ for(const locale of ['en','vi','zh']){
   await renderHome(root);
   assert.match(
     root.innerHTML,
-    /practice-outcome-signal/,
+    /data-practice-outcome-status=/,
     `Home ${locale.toUpperCase()} should render a valid practice outcome`,
   );
   assert.doesNotMatch(root.innerHTML,/\[object Object\]/);
@@ -56,10 +56,10 @@ for(const locale of ['en','vi','zh']){
     latestOutcome=value;
     await renderHome(root);
     if(rendered){
-      assert.match(root.innerHTML,/practice-outcome-signal/,
+      assert.match(root.innerHTML,/data-practice-outcome-status=/,
         `Home ${locale.toUpperCase()} should retain a safe outcome shell`);
     }else{
-      assert.doesNotMatch(root.innerHTML,/practice-outcome-signal/,
+      assert.doesNotMatch(root.innerHTML,/data-practice-outcome-status=/,
         `Home ${locale.toUpperCase()} must omit malformed practice outcomes`);
     }
     assert.doesNotMatch(
@@ -75,6 +75,16 @@ const focusStatusCopy={
   vi:'\u0110ang c\u1ea3i thi\u1ec7n',
   zh:'\u6b63\u5728\u6539\u5584',
 };
+/* RETIRED, not lost. Home used to render the Writing dashboard and the
+ * localized learning-memory focus status. Both moved off this screen by
+ * accepted product direction: Home is motivation, discovery and continuation,
+ * and learning analytics belong to Progress/Journey
+ * (PRODUCT_CONSTITUTION "Home and Progress boundary"; H1 brief §8).
+ *
+ * Journey still fetches /api/dashboard and /api/learning-memory and renders
+ * them, so no backend data or learner value was removed - only this screen's
+ * ownership of it. The assertions below are inverted deliberately: what used
+ * to be required on Home is now forbidden on Home. */
 latestMemory={
   patterns:[],
   strengths:[],
@@ -84,10 +94,10 @@ latestMemory={
 for(const locale of ['en','vi','zh']){
   state.supportLanguage=locale;
   await renderHome(root);
-  assert.match(root.innerHTML,/class="writing-dashboard/,
-    `Home ${locale.toUpperCase()} should render the Writing dashboard`);
-  assert.match(root.innerHTML,new RegExp(focusStatusCopy[locale]),
-    `Home ${locale.toUpperCase()} should localize the dashboard focus status`);
+  assert.doesNotMatch(root.innerHTML,/class="writing-dashboard/,
+    `Home ${locale.toUpperCase()} must not render a Writing dashboard`);
+  assert.doesNotMatch(root.innerHTML,new RegExp(focusStatusCopy[locale]),
+    `Home ${locale.toUpperCase()} must not render learning-memory analytics`);
   assert.doesNotMatch(root.innerHTML,/\bimproving\b/,
     `Home ${locale.toUpperCase()} must not leak the raw focus status enum`);
 }

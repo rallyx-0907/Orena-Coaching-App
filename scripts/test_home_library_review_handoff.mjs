@@ -99,14 +99,17 @@ try{
     api.libraryVocabulary=async()=>payload;
     const home=root();
     await renderHome(home);
-    assert.match(home.innerHTML,/data-home-library-review-state="none"/,'invalid Library data should produce a neutral cue');
+    /* H1.1: Home is discovery-first. Nothing due means no review card at all,
+       which is both the truthful answer and the one that leaves the space to
+       real content. What must never happen is a claim, and that is asserted. */
+    assert.doesNotMatch(home.innerHTML,/data-home-library-review-state/,'invalid Library data should produce no review card');
     assert.doesNotMatch(home.innerHTML,/data-home-library-review-word|items due|items completed|due review count/i,
       'invalid Library data must not make a due-count or completion claim');
   }
   api.libraryVocabulary=async()=>{throw new Error('library unavailable');};
   const unavailable=root();
   await renderHome(unavailable);
-  assert.match(unavailable.innerHTML,/data-home-library-review-state="none"/,'unavailable Library data should produce a neutral cue');
+  assert.doesNotMatch(unavailable.innerHTML,/data-home-library-review-state/,'unavailable Library data should produce no review card');
   assert.doesNotMatch(unavailable.innerHTML,/data-home-library-review-word|items due|items completed|due review count/i,
     'unavailable Library data must not make a due-count or completion claim');
   console.log('Home scheduled Library review handoff contract OK');

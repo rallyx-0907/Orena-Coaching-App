@@ -1017,3 +1017,544 @@ comes from the development runtime and is labelled as such.
 
 **Supersedes / Superseded by:** Supersedes the earlier open question of how L3
 content would be visually QA'd. Supersedes no implementation contract.
+
+## D-044 - L3 content ingestion is not blocked by an external provider quota
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (human decision)
+
+**Decision:** The remaining L2.5 evidence - one real cold Supadata acceptance on
+fixture `iSTlFeW-Z9M` - is an EXTERNAL PROVIDER ACCEPTANCE GATE, not a
+precondition for L3 content ingestion. L3 may execute while it is outstanding.
+L2.5 is NOT marked complete: its acceptance stands as
+`OVERALL_L2_5_ACCEPTANCE = PARTIAL / EXTERNAL_GATE_PENDING`, with
+implementation, automated regression and real warm end-to-end all PASS and
+`REAL_COLD_PROVIDER_ACCEPTANCE = PENDING_EXTERNAL_QUOTA`. That debt survives
+L3 and must still be run when quota resets.
+
+**Reason:** The earlier sequencing rule - L2.5 must fully pass before L3 - was
+written when the missing evidence could plausibly have indicated a code defect.
+It no longer can: the cold path was measured returning `provider_starting` with
+a resume handle in 1.36s, the async orchestration and the atomic provider poll
+are contract-tested, and warm generated-transcript end-to-end is proven on real
+media. The only unproven step is the provider finishing a job, and the only
+blocker is a purchased quota that has run out. Holding all content work behind
+someone else's billing cycle would stall the product for a reason unrelated to
+Orena's correctness.
+
+**Consequences:** L3 runs with Supadata generation switched off across the pack.
+A playable source without captions is classified `RECOVERY_REQUIRED` - valid
+media awaiting transcript recovery - and never `unsupported` or
+`MEDIA_UNAVAILABLE`. No paid transcript generation is spent on bulk import.
+Project memory keeps `L2_5_REAL_COLD_ACCEPTANCE=PENDING_EXTERNAL_PROVIDER_QUOTA`
+as an open item even if L3 completes and the next task advances to L4.
+
+**Supersedes / Superseded by:** Supersedes the sequencing rule that L2.5 had to
+pass completely before L3 began. Supersedes no product, rights or persistence
+contract, and does not weaken any production guard.
+
+## D-045 - Listening content is short-form dialogue, not long informational video
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (human product decision)
+
+**Decision:** The Listening library's primary material is short memorable
+dialogue: movie and animation scene excerpts, quotes in real spoken context,
+short stories and situational comedy, natural conversational speech. Most
+lessons run 15-60 seconds, up to ~90 when a scene needs the context. Long
+informational video is no longer primary material and is used only where it
+contains clearly excerptable sections. The 100 EN / 100 ZH development pack is
+retired as the primary source strategy; the first pilot families are Kung Fu
+Panda scene clips from licensed distributors (EN) and the DaihuaXiyou 呆話西遊
+channel (ZH).
+
+**Reason:** The old pack was too long, too informational and too boring for the
+product this is meant to be. The learner should think "I want to watch this",
+not "I am opening a textbook video". Excerpt length should follow the natural
+dialogue unit - setup, response, conclusion - rather than a fixed duration.
+
+**Consequences:** Pilot source packs
+`listening_sources_en_pilot_dialogue.csv` (11 rows) and
+`listening_sources_zh_pilot_daihuaxiyou.csv` (6 rows) encode the new policy at
+15-90 seconds and at most two excerpts per source. Every row's channel identity
+was verified through provider oEmbed rather than assumed, and reupload channels
+were excluded rather than used to pad the count. Rights truth is unchanged:
+everything stays DEV_CANDIDATE / rights_review / proposed / reviewed_level null,
+because availability on YouTube is not publication permission.
+
+A structural consequence found while verifying: short-form animation channels
+commonly disable captions entirely. All 7 DaihuaXiyou videos checked have
+captions disabled, so this content direction depends on generated transcript
+recovery - a paid provider - far more than the old informational pack did. That
+is a cost and gating consideration for scaling, not a reason to reject the
+direction.
+
+**Supersedes / Superseded by:** Supersedes the source strategy behind the
+100 EN / 100 ZH development pack as primary Listening material. Supersedes no
+rights, persistence or excerpt-timing contract - excerpt boundaries still come
+only from real transcript timing.
+
+## D-046 - Curated transcripts are acquired at ingestion, never at learner runtime
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (human product decision)
+
+**Decision:** For curated Listening media, transcript acquisition is an
+INGESTION-time operation. The canonical transcript is persisted before a lesson
+is READY, and a learner opening that lesson must never cause a call to the
+YouTube transcript API, Supadata, or any other transcript provider. Provider
+APIs belong to ingestion; the learner runtime reads a PERSISTED CANONICAL
+TRANSCRIPT ARTIFACT.
+
+Meaning is deliberately the opposite: transcript is eager and persisted, while
+translation stays lazy and cached (editorial → persisted generated → live
+service → truthful unavailable). Pinyin is derived deterministically from the
+canonical Hanzi and never from an external AI.
+
+**Reason:** A learner should never wait on somebody else's API to read a
+sentence Orena already has, and Orena should never pay twice for the same
+transcript. It is also a resilience property, proven the hard way this week: the
+build host is IP-blocked by YouTube, yet every curated lesson still opens
+instantly, because the transcript was acquired once and stored.
+
+**Consequences:** The storage backend today is the existing generated catalog
+artifact - the durable rule is "persisted canonical transcript artifact", NOT
+"transcripts live in JSON forever". Migration to database or object storage is
+expected when artifact size slows checkout/build/CI, when the corpus reaches
+many thousands of lessons, or when editorial workflow needs independent
+transcript revisions; it must happen behind this same contract.
+
+Transcript provenance travels with the persisted text: origin
+(provider_caption / generated_asr / unspecified), revision, language, quality
+state (provider_caption / generated_unreviewed / reviewed) and provider/model.
+Lessons predating this default to UNSPECIFIED rather than being promoted to
+"official captions", and the loader refuses to let generated ASR be labelled as
+provider captions.
+
+`tests/test_curated_transcript_contract.py` makes this permanent: it patches
+every transcript provider to raise on any call, then opens real EN and ZH
+lessons. A refactor that moves acquisition back into the hot path fails there.
+
+My Media is explicitly NOT covered. User imports keep native captions →
+recovery → generated ASR, with the async provider_starting / queued /
+processing lifecycle. The rule applies to CURATED READY content only, and the
+pipeline is not duplicated.
+
+**Supersedes / Superseded by:** Supersedes nothing; it makes explicit an
+architecture the code already had but did not guarantee. Extends D-042's
+disclosure rule to persisted curated transcripts.
+
+## D-047 - A preview deployment tier, separate from APP_ENV
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (human product decision)
+
+**Decision:** Orena gains an explicit deployment tier, `ORENA_DEPLOYMENT_TIER`,
+with values `production` and `preview`. It is distinct from `APP_ENV`:
+
+    APP_ENV                runtime and security posture (HTTPS, Google auth,
+                           secure cookies, fail-fast guards)
+    ORENA_DEPLOYMENT_TIER  product publication tier: which catalog content this
+                           deployment may expose at all
+
+A preview deployment runs `APP_ENV=production` with
+`PERSISTENCE_BACKEND=postgresql` on its own database, reached over real HTTPS
+with real Google login. It is production-like runtime behaviour with restricted
+unreviewed content. It is NOT production publication.
+
+The tier defaults to `production` when unset, and an unrecognised value is
+refused at startup rather than coerced.
+
+**Reason:** The previous preview rule (D-043) put unreviewed content on a local
+development runtime. That was right for a throwaway check and wrong for using
+Orena as a learner: `APP_ENV=development` skips the auth, cookie and persistence
+paths that production actually uses, and SQLite cannot exercise the Listening
+progress/resume path at all. A preview that does not exercise production
+behaviour cannot tell us whether production behaviour works.
+
+**Consequences:** Production tier never loads the preview artifact, so preview
+lessons are absent from the process rather than filtered from a response - the
+failure mode is closed, not cosmetic. On preview tier, visibility is enforced
+server-side in the catalog on both the listing and the single-lesson endpoint,
+and requires the existing platform-admin role; authentication alone is not
+enough, because preview content is unreviewed with unresolved rights.
+
+Preview content keeps DEV_CANDIDATE / proposed / rights_review /
+reviewed_level null, and uses the same lesson model, canonical segments,
+Dictation, Shadowing, Meaning, Pinyin and progress model as everything else.
+Only visibility differs.
+
+`compose.preview.yaml` is a separate Compose project with its own volumes,
+database, loopback port and tunnel token, so preview runs beside production
+without stopping it and shares no production data. Deployment, DNS, Cloudflare
+and Google OAuth changes remain human gates.
+
+**Supersedes / Superseded by:** EXTENDS **D-043**, which stays correct for local
+development QA of generated content. D-043's rule that unreviewed content must
+never reach the production deployment is unchanged and is now enforced by the
+tier rather than only by APP_ENV. Supersedes no rights, persistence or
+publication contract: preview visibility is a deployment concern, not a
+publication decision.
+
+## D-048 - One local Orena runtime; preview is per-user, not per-deployment
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (human operational decision)
+
+**Decision:** This machine runs ONE long-lived Orena runtime: the existing
+Compose stack on `127.0.0.1:8000`, with one PostgreSQL and one Cloudflare
+tunnel, reached over real HTTPS with real Google login. Preview content is an
+authorization capability of that runtime, enabled with
+`ORENA_DEPLOYMENT_TIER=preview` in the existing environment. There is no second
+Orena container, PostgreSQL, image, port, tunnel or Compose project, and no
+feature-specific database volumes.
+
+The preview marker is scoped to the USER, not the deployment: it appears only
+for a caller who may actually see preview content. Normal learners see the
+ordinary product with no marker, on the same runtime, at the same time.
+
+Daily development is `docker compose restart writing-coach` — source is
+bind-mounted, so Python, JS, CSS and catalog changes need no rebuild. Rebuild
+only when the image changes (Dockerfile, requirements, system packages). Docker
+keeps one CURRENT image and one ROLLBACK image; QA, feature, milestone and test
+images are not retained.
+
+**Reason:** A second stack duplicated the parts that carry real risk -
+persistence and identity - to gain nothing the tier did not already provide.
+Preview visibility is a question about WHO is asking, and that is already
+answered inside one process. Duplicating databases per feature is how learner
+data gets stranded in a volume nobody remembers, and the previous plan would
+also have taught a bad default: spin up infrastructure to look at content.
+
+The deployment-wide badge was the same mistake in miniature. On a shared runtime
+it would have told every ordinary learner they were using a preview, which is
+false for them.
+
+**Consequences:** `compose.preview.yaml` remains as an optional ISOLATED STAGING
+pattern for something that genuinely must not share persistence, and its header
+says it is not the normal workflow. Port 18080 and `orena-preview-*` volumes are
+not part of ordinary development; none were ever created.
+
+Port 8000 is the current developer/dogfood convention, NOT permanent product
+architecture.
+
+The tier contract, its server-side enforcement and its security tests from
+**D-047** are unchanged and still required.
+
+**Supersedes / Superseded by:** SUPERSEDES the deployment topology of **D-047**
+(a separate preview stack with its own database and port). D-047's tier
+contract, fail-closed production behaviour and admin-only visibility remain in
+force. Extends **D-043**; no history rewritten.
+
+## D-049 - Learner progress is lesson-scoped; Continue Learning is real progress
+
+**Date:** 2026-09-03
+
+**Status:** Accepted
+
+**Decision:** Durable Listening/Dictation and Shadowing progress is identified by
+`(user, language, lesson, segment)`. `asset_id` remains on the row as
+provenance and keeps its index, but no longer defines progress identity.
+Continue Learning is generated server-side from that persisted PostgreSQL
+progress, not from catalog metadata, client storage or any recommendation
+heuristic.
+
+**Reason:** Shared media identity and learner progress identity are different
+things. One source carries several curated excerpts, so keying progress by the
+media asset meant finishing one excerpt made its siblings look started, and two
+excerpts sharing a segment id shared a row. Continue Learning, meanwhile, was
+declared in the discovery order and never populated: the first rail a returning
+learner sees was always empty.
+
+**Consequences:** Migration `20260903_0005` adds `lesson_id` and re-keys both
+tables. Backfill associates a legacy row with a lesson ONLY where its asset maps
+to exactly one lesson; assets with none or several stay `lesson_id = ""`,
+legacy/unassigned. Picking the first or newest lesson would manufacture a
+certainty the data does not contain and attach real work to the wrong excerpt,
+so ambiguous history is preserved rather than resolved.
+
+The server validates every progress write: the lesson must exist, belong to the
+stated asset, match the learning language and contain the segment. A client
+lesson_id is never trusted on its own. An omitted lesson_id is a legacy path
+that resolves only when the asset is unambiguous; it can be removed once no
+client omits it.
+
+Continue Learning obeys the same visibility boundary as discovery, enforced
+server-side, so preview content cannot reappear through a learner's own
+progress. A segment that no longer exists resumes at the lesson start rather
+than seeking to something gone.
+
+Listening MODE is still not persisted; resuming restores the lesson and segment
+only. That is recorded as a follow-up rather than claimed.
+
+**Supersedes / Superseded by:** Supersedes the asset-scoped progress identity
+introduced with durable Listening progress. Supersedes no persistence,
+publication or visibility contract.
+
+## D-050 - Orena discovery is world-first; Web launches first with adaptive composition
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (human product/design decision)
+
+**Decision:** Orena's learner-facing discovery model is world-first:
+
+```text
+Language → World → Zone → Journey → Lesson → Activity
+```
+
+Listening, Speaking, Reading, Writing, Grammar, Vocabulary/Dictionary and Review
+remain connected learning mechanisms, but Home/Explore do not have to present
+them as a flat primary feature menu. Home owns motivation, discovery and real
+continuation; detailed learning analytics live on a separate Progress surface.
+
+Orena launches on responsive Web first. The Web product is the design and
+product-meaning source of truth, but cross-platform parity follows **shared
+meaning, adaptive composition** rather than pixel-identical layout. Desktop may
+show more useful content simultaneously; tablet/mobile may progressively reveal
+the same product meaning with different columns, rails, stacking, chrome and
+gesture patterns.
+
+The initial UI-system proof is the Golden Web slice Home → World → Listening
+Journey. This establishes the Orena product UI kit and responsive grammar; it
+does not by itself change existing public-release gates for skills.
+
+**Reason:** Previous AI-generated UI repeatedly converged on sterile,
+same-weight SaaS/dashboard patterns and made mobile a separate redesign effort.
+The new system must create emotional pull before disciplined learning, while
+remaining production-realistic and reusable across Web and later native
+clients.
+
+**Consequences:** `docs/ORENA_PRODUCT_DNA.md`,
+`docs/ORENA_DESIGN_TOKENS.json`, `docs/ORENA_COMPONENT_CONTRACT.md`,
+`docs/ORENA_RESPONSIVE_COMPOSITION.md`, and relevant Golden Specs govern
+migrated learner UI. Agents compose approved product components/recipes instead
+of redesigning from a blank canvas. Golden screens are reviewed at 1440, 1024
+and 390 widths. Home analytics blocks are prohibited; journey-specific progress
+cues remain allowed. Native preserves product semantics, feature access, state
+and visual DNA but need not preserve desktop simultaneous visibility.
+
+**Supersedes / Superseded by:** Clarifies and extends D-040 and the Design
+Contract by replacing any pixel-identical/same-simultaneous-layout
+interpretation with adaptive composition. It does not supersede D-004/D-005
+public-release gates.
+
+## D-051 - Home is built from Orena product components, and a World must have content
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (implements D-050 and the H1 brief)
+
+**Decision:** Migrated Orena learner screens are composed from a shared product
+component layer rather than page-local markup. The first layer ships as
+`static/becoming/orena/product-components.js` and its `.css`, opted into per
+screen with `data-orena-ui="v2"` so a migrated screen cannot restyle a screen
+that has not migrated yet. Home is the first migrated surface: its body is
+JourneyHero → Continue → Explore Worlds → For You Today → Challenge → Continue
+Exploring, and the Writing dashboard, latest-score panel, learning-memory cards,
+streak block and recent-drafts list are no longer Home's.
+
+Worlds become a versioned semantic source: `orena_worlds.v1.json` declares the
+editorial world set per learning language, `world_catalog.py` computes each
+world's availability, lesson count and lead lesson from the real curated
+catalog, and `GET /api/worlds` returns that. A world with no real lesson is
+defined but reports `available: false` and is not offered to a learner.
+Membership is by canonical lesson topic, never by content tag.
+
+Home shows no completion percentage. The D-049 resume contract carries a lesson
+and a segment, not a ratio, so the continuation card states where the learner
+was rather than how far along they are.
+
+**Reason:** The previous Home was a Writing dashboard: same-weight analytics
+panels organised around evidence rather than around wanting to start something.
+Rebuilding it as page-local markup would have produced a second one-off visual
+system, which the Component Contract exists to prevent. Worlds needed a source
+of truth because the tempting failure is a discovery surface that looks full -
+six confident cards per language claiming lessons that were never ingested.
+
+**Consequences:** The catalog is small, so today EN exposes 3 of 6 defined
+worlds and ZH 3 of 6; the rest appear when content does. Learning analytics
+remain available and unchanged at their own surfaces - Journey still reads
+`/api/dashboard` and `/api/learning-memory`, and no backend data or persistence
+was removed. Stable Home handoffs are preserved inside the new components:
+Library due review, personalized Writing practice, the Grammar handoff from the
+latest outcome with its evidence and parent-essay lineage, the review cue, the
+listening goal, and the cross-skill cue. Home tests that asserted the dashboard
+were retired with their reason recorded rather than deleted silently. There is
+no Explore route yet, so a World card opens its lead lesson through the existing
+lesson autostart handoff; a real World route arrives with the shell migration.
+Artwork containers, ratios and crop rules are real, but the artwork itself is a
+textless development placeholder - H2 owns production artwork and visual Golden.
+
+**Supersedes / Superseded by:** Implements D-050 for Home. Does not supersede
+D-049; it consumes that contract. Does not change any public-release gate.
+
+## D-052 - Orena product components carry no raw-markup escape hatch; the practice-outcome contract is backend-authoritative
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (audit correction to D-051's H1 implementation)
+
+**Decision:** Two standing rules for the Orena product component layer,
+established while fixing the H1 audit findings.
+
+First, a product component never accepts page-authored HTML. `bodyHtml` and
+`secondaryActions` existed in the first H1 cut of
+`static/becoming/orena/product-components.js` and are removed permanently.
+Supporting text, a quoted sentence, or a secondary action is a semantic prop
+(`quote`/`quoteLang`, `note`, `links`) that the component itself renders and
+escapes. A caller that can inject markup will eventually inject page-specific
+markup, at which point the "component" is a template and a native port has to
+reimplement whatever the page happened to put in it.
+
+Second, any UI surface that renders a backend-derived status enum must treat
+that backend function as authoritative, not reinvent the enum from memory or
+convenience. `derive_practice_outcome()` in `writing_coach/becoming_outcomes.py`
+emits exactly seven statuses (`improved`, `transferred`, `held`,
+`still_working`, `needs_attention`, `not_observed`, `needs_more_evidence`); a
+frontend contract for that field must recognise exactly those seven, with
+regression coverage per status.
+
+**Reason:** The H1 implementation of Home invented four practice-outcome
+statuses no backend has ever produced and silently excluded six of the seven
+real ones, so a learner whose revision came back `still_working` or
+`needs_attention` lost the Grammar practice handoff - the exact evidence,
+grammar id and parent-essay lineage - without any visible error. Separately,
+`bodyHtml`/`secondaryActions` had already let one screen's markup start
+leaking into the "component" layer the Component Contract exists to keep
+generic.
+
+**Consequences:** `recommendationTile`, `challengeCard` and every other Orena
+product component reject raw HTML through any prop name - the H1.1 regression
+test in `test_orena_home_h1.mjs` checks this behaviourally, not by grepping for
+one prop name. Any future screen that surfaces a backend enum states which
+backend function is authoritative and lists every value that function can
+return, the way this entry does for practice outcomes.
+
+**Supersedes / Superseded by:** Corrects the H1 implementation of D-051; does
+not change D-051's decision itself (Home's composition, the world-catalog
+contract, or the removal of Home analytics).
+
+## D-053 - Home obeys the screen-lifecycle contract, and a Listening continuation has exactly one source
+
+**Date:** 2026-09-03
+
+**Status:** Accepted (audit correction to D-051/D-052's Home implementation)
+
+**Decision:** Four standing rules, established while fixing the H1.2 audit
+findings.
+
+First, Home's progressive render obeys the same `root._cleanupScreen` contract
+every other screen already uses (write.js, speaking.js, reading.js,
+profile.js): `renderHome` registers a disposal flag as soon as it starts, and
+every later repaint checks it before touching `root.innerHTML`. A
+`settle()`-then-`paint()` that resolves after the learner has navigated away
+is a no-op, not a rewrite of whatever screen is now on the page.
+
+Second, `renderHome`'s returned promise is bounded. A request that never
+settles at all - not merely a slow one - cannot hold the app-level render
+lifecycle (`aria-busy`, the rail refresh, focus) open indefinitely. A
+section-settle budget races the real requests; a request still outstanding
+past the budget keeps running and still repaints if it answers, subject to the
+disposal guard above, but the render lifecycle itself moves on.
+
+Third, a Listening continuation has exactly one owner. D-049's server-side
+Continue Learning already outranks a local per-device resume for the Hero
+card; H1.2 closes the gap where Next Practice could independently reach for
+the same, or a different, local resume and render a second, competing "resume
+listening" affordance. Next Practice only considers a local resume when
+nothing - server or local - has already claimed Listening as the
+continuation.
+
+Fourth, a section's "nothing to show" state distinguishes a genuine empty
+answer from a real provider outage, and a composed label's UI-language and
+content-language halves are tracked separately rather than forced into one
+string. For You only claims "loading" while a provider that could still
+supply content has not answered, only claims a genuine empty state once every
+relevant provider has truthfully answered with nothing, and only claims
+"unavailable" once at least one of them has failed outright. Personal's six
+independent sub-requests keep their per-call resilience - one missing signal
+must not cost the others - while a *total* failure across all six is now
+distinguishable from a fresh learner's true absence of evidence. Separately, a
+World's lead label ("Start with {title}") no longer forces its
+interface-language prefix and its content-language lesson title into one
+shared `lang`.
+
+**Reason:** Home repaints itself progressively through independent,
+asynchronously-settling request groups (D-052). Without a lifecycle guard, a
+request that resolves after the learner has navigated to Write or Listen would
+silently overwrite that screen with a stale Home render, and a request that
+never resolves at all - `api.js` sets no client-side fetch timeout - would
+leave `aria-busy="true"` on the page forever. Separately, the same per-device
+local resume that legitimately becomes Home's own continuation card when no
+server progress exists was also, independently, being offered a second time
+through Next Practice: a real product bug where a learner could see two
+different "resume listening" affordances for two different lessons at once.
+And a personal-provider outage was rendering identically to a genuine
+new-learner empty state, erasing exactly the signal an operator needs to tell
+"nothing to see yet" from "something is broken".
+
+**Consequences:** `static/becoming/screens/home.js` registers
+`root._cleanupScreen` at the top of `renderHome` and guards `paint()` with it;
+`renderHome` accepts an internal section-settle budget (default 6s) the render
+lifecycle cannot exceed. `nextPracticePlan`'s local-resume branch is excluded
+whenever the continuation already resolves to `listening` or
+`listening-local`. The `personal` request group uses `Promise.allSettled` over
+six independently-wrapped calls instead of per-call `optional()`, and rejects
+only when every one of them failed. `worldCard` takes
+`leadPrefix`/`leadTitle`/`leadSuffix`/`leadLang` instead of one pre-formatted
+`leadLabel` string. Regression coverage lives in `test_orena_home_h1.mjs`
+(blocks 15-19).
+
+**Supersedes / Superseded by:** Corrects the H1/H1.1 implementation of
+D-051/D-052; does not change either decision's own scope (Home's composition,
+the product-component contract, or the practice-outcome status set).
+
+## D-054 - Home's screen-lifecycle guard covers shared state, not only the DOM
+
+**Date:** 2026-09-04
+
+**Status:** Accepted (audit correction to D-053's Home lifecycle guard)
+
+**Decision:** `root._cleanupScreen`'s disposal signal is authoritative for
+every effect a progressive Home request can still have after it fires, not
+only for `paint()`. A request that resolves after cleanup must not write into
+`state.dashboard`, `state.memory`, `state.practiceRecommendation` or
+`state.latestPracticeOutcome` - these are shared learner state, not local to
+one render, and a late write reaches whatever screen or learning language is
+current when the promise settles, not the one it was requested for. The check
+runs at the moment of mutation, not at request time, and is joined by an
+independent check on the learning language the render started with: a result
+must not apply if that language is no longer current, even in a hypothetical
+path that changes it without a full screen cleanup. Separately,
+`root._cleanupScreen` now resolves a disposal promise that joins the same
+`Promise.race` as the section-settle budget, so cleanup unblocks a render's
+outstanding lifecycle immediately rather than leaving it to expire against
+the budget after another screen has already started.
+
+**Reason:** D-053 gave Home a screen-lifecycle guard, but only for the DOM:
+`paint()` checked disposal, and nothing else did. A request already in flight
+when the learner navigates away still resolves afterward, and its mutations
+of shared state landed regardless - so a stale personal recommendation, a
+stale learning-memory payload, or a stale dashboard snapshot could silently
+overwrite what a *different* screen, or the learner's *new* learning
+language, should have seen. Racing disposal into the section-budget wait
+closes a smaller but related gap: without it, a render that has already been
+cleaned up would still hold the app-level render lifecycle open for whatever
+budget remained.
+
+**Consequences:** `renderHome` snapshots `renderLanguage` and exposes a
+`stale()` check; the `chrome` and `personal` request groups evaluate it
+immediately before their respective `state.*` writes and skip the write when
+stale. `root._cleanupScreen` resolves a `disposal` promise included in the
+existing `Promise.race([settled, budget, disposal])`. Regression coverage
+lives in `test_orena_home_h1.mjs` (blocks 20-22).
+
+**Supersedes / Superseded by:** Corrects the H1.2 implementation of D-053;
+does not change D-053's own scope (the disposal contract and bounded
+provider budget both stand, just applied more completely).

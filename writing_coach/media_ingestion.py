@@ -93,6 +93,11 @@ class MediaAcquisition:
 
     media_object: MediaLearningObject
     playback: MediaPlayback
+    # Why the transcript is what it is. "" keeps every existing constructor
+    # working; the adapter fills it in. The distinction that matters is between
+    # a source that genuinely has no captions and one whose caption request
+    # failed - deferral must not turn the second into the first.
+    transcript_status: str = ""
 
 
 class MediaProviderAdapter(Protocol):

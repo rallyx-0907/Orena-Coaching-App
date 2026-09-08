@@ -47,12 +47,15 @@ for(const locale of ['en','vi','zh']){
   }
   clearSharedMediaSession('en');
   api.crossSkillCue=async()=>({available:true,state:'transfer',source:'reading',evidence:{},action:{kind:'reading',session_id:7}});
-  const empty=rootFactory(); await renderHome(empty); assert.match(empty.innerHTML,/data-cross-skill-state="none"/);
+  /* H1.1: on Home an invalid cue is simply not rendered - absence is the empty
+     state. Journey keeps the explicit "none" card, asserted below, and both
+     screens still share one validator (normalizeCrossSkillCue). */
+  const empty=rootFactory(); await renderHome(empty); assert.doesNotMatch(empty.innerHTML,/data-cross-skill-state/);
   api.crossSkillCue=async()=>({available:true,state:'transfer',source:'reading',evidence:'stale',action:{kind:'speaking',asset_id:{},segment_id:'x'}});
   const malformed=rootFactory(); await renderJourney(malformed); assert.match(malformed.innerHTML,/data-cross-skill-state="none"/);
   api.crossSkillCue=async()=>cues.speaking;
   clearSharedMediaSession('en');
-  const noSession=rootFactory(); await renderHome(noSession); assert.match(noSession.innerHTML,/data-cross-skill-state="none"/);
+  const noSession=rootFactory(); await renderHome(noSession); assert.doesNotMatch(noSession.innerHTML,/data-cross-skill-state/);
   setSharedMediaSession({learning_language:'en',payload:{asset:{asset_id:'unrelated'},transcript:{segments:[{segment_id:'seg-1'}]}}});
   const unrelated=rootFactory(); await renderJourney(unrelated); assert.match(unrelated.innerHTML,/data-cross-skill-state="none"/);
   clearSharedMediaSession('en');

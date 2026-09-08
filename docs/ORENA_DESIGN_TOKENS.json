@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json.schemastore.org/stylelintrc.json",
+  "meta": {
+    "name": "Orena Design Tokens",
+    "version": "0.1.0",
+    "direction": "Warm Language Adventure",
+    "status": "foundation"
+  },
+  "color": {
+    "light": {
+      "canvas": "#FFF9F2",
+      "canvasAlt": "#F7F4EE",
+      "surface": "#FFFFFF",
+      "surfaceWarm": "#FFF3E8",
+      "surfaceMuted": "#F3F1ED",
+      "inkStrong": "#171513",
+      "ink": "#35312D",
+      "inkMuted": "#777069",
+      "borderSubtle": "#E8E1D8",
+      "borderStrong": "#D6CCC1"
+    },
+    "dark": {
+      "canvas": "#171512",
+      "canvasAlt": "#1E1B17",
+      "surface": "#24201B",
+      "surfaceWarm": "#2C2118",
+      "surfaceMuted": "#2B2824",
+      "inkStrong": "#FFF9F2",
+      "ink": "#E8E1D8",
+      "inkMuted": "#AFA69C",
+      "borderSubtle": "#3A342D",
+      "borderStrong": "#4B433A"
+    },
+    "brand": {
+      "orange700": "#D94E08",
+      "orange600": "#F45D0B",
+      "orange500": "#FF721F",
+      "orange300": "#FFA160",
+      "orange100": "#FFE4CF"
+    },
+    "semantic": {
+      "listening": "#2FA8A0",
+      "speaking": "#EF6F61",
+      "writing": "#8A62C7",
+      "reading": "#4F76C7",
+      "grammar": "#D99A2B",
+      "review": "#4FAE7A",
+      "positive": "#3B9B68",
+      "attention": "#D89924",
+      "danger": "#D95C4A",
+      "info": "#4B78C5"
+    }
+  },
+  "font": {
+    "displayLatin": "Inter, system-ui, sans-serif",
+    "uiLatin": "Inter, system-ui, sans-serif",
+    "cjk": "Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif",
+    "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+  },
+  "fontSize": {
+    "meta": "12px",
+    "caption": "13px",
+    "ui": "14px",
+    "body": "16px",
+    "bodyLarge": "18px",
+    "h4": "20px",
+    "h3": "24px",
+    "h2": "30px",
+    "h1": "40px",
+    "display": "52px"
+  },
+  "lineHeight": {
+    "tight": 1.1,
+    "heading": 1.2,
+    "body": 1.55,
+    "cjk": 1.65
+  },
+  "fontWeight": {
+    "regular": 400,
+    "medium": 500,
+    "semibold": 600,
+    "bold": 700
+  },
+  "spacing": {
+    "0": "0px",
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "8": "32px",
+    "10": "40px",
+    "12": "48px",
+    "16": "64px",
+    "20": "80px",
+    "24": "96px"
+  },
+  "radius": {
+    "small": "8px",
+    "control": "12px",
+    "card": "16px",
+    "surface": "20px",
+    "hero": "24px",
+    "round": "999px"
+  },
+  "shadow": {
+    "none": "none",
+    "soft": "0 2px 10px rgba(44,33,24,.06), 0 1px 2px rgba(44,33,24,.05)",
+    "raised": "0 10px 30px rgba(44,33,24,.10), 0 2px 8px rgba(44,33,24,.06)",
+    "floating": "0 18px 48px rgba(28,20,14,.16)"
+  },
+  "motion": {
+    "micro": "140ms",
+    "standard": "220ms",
+    "reveal": "320ms",
+    "reward": "520ms",
+    "easingStandard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "easingPress": "cubic-bezier(0.4, 0, 0.2, 1)"
+  },
+  "breakpoint": {
+    "mobileMax": "639px",
+    "tabletMin": "640px",
+    "tabletMax": "1199px",
+    "desktopMin": "1200px",
+    "wideMin": "1440px"
+  },
+  "layout": {
+    "contentMax": "1440px",
+    "desktopSidebar": "224px",
+    "desktopGutter": "32px",
+    "tabletGutter": "24px",
+    "mobileGutter": "16px",
+    "sectionGapDesktop": "32px",
+    "sectionGapMobile": "24px",
+    "touchTargetMin": "44px"
+  },
+  "artwork": {
+    "worldCardDesktopAspect": "4 / 3",
+    "worldCardMobileAspect": "16 / 10",
+    "heroDesktopAspect": "16 / 6",
+    "heroTabletAspect": "16 / 7",
+    "heroMobileAspect": "4 / 3",
+    "safeSubjectInset": "12%"
+  },
+  "zIndex": {
+    "base": 0,
+    "raised": 10,
+    "sticky": 20,
+    "overlay": 40,
+    "modal": 60,
+    "toast": 80
+  },
+  "rules": {
+    "defaultTheme": "light",
+    "homeAnalyticsAllowed": false,
+    "productionEmojiIconsAllowed": false,
+    "arbitraryGradientAllowed": false,
+    "glassmorphismDefaultAllowed": false,
+    "newTokenWithoutReviewAllowed": false
+  }
+}

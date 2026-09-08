@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 GENERATOR = "scripts/build_listening_dev_catalog.py"
@@ -81,6 +81,7 @@ def file_digest(path) -> str:
 def verify_manifest_integrity(
     manifest: Mapping[str, Any],
     content_dir=None,
+    expected_source_lists: Sequence[str] | None = None,
 ) -> str:
     """Why this artifact is not trustworthy, or an empty string when intact.
 
@@ -110,9 +111,19 @@ def verify_manifest_integrity(
 
     entries = manifest.get("source_lists") or []
     names = [str(entry.get("name") or "") for entry in entries]
-    missing = [name for name in EXPECTED_SOURCE_LISTS if name not in names]
+    # WHICH lists are required depends on the artifact. The committed L3 dev
+    # snapshot must come from the two development packs; a preview artifact is
+    # generated from whatever pilot pack it names. Tamper-evidence - generator,
+    # version, content hash and every recorded digest - is identical either way,
+    # so this parameter relaxes provenance expectations, never integrity.
+    required = EXPECTED_SOURCE_LISTS if expected_source_lists is None else expected_source_lists
+    missing = [name for name in required if name not in names]
     if missing:
         return f"generated catalog does not record source lists {missing}; regenerate it"
+    if not names:
+        # Even when no particular list is required, an artifact must say what it
+        # was generated from, or its provenance is unverifiable.
+        return "generated catalog records no source lists; regenerate it"
 
     if content_dir is None:
         return ""

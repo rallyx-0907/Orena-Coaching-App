@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Orena Home PAGE-010 harness</title>
+    <link rel="stylesheet" href="/static/becoming/orena/product-components.css" />
+    <style>
+        :root {
+            --bg: #f7f4ee;
+            --surface: #fffaf5;
+            --surface-strong: #ffffff;
+            --ink: #171513;
+            --ink-soft: #35312d;
+            --muted: #777069;
+            --border: #e8e1d8;
+            --warm: #fff3e8;
+            --orange: #f45d0b;
+            --shadow: 0 10px 28px rgba(29, 22, 17, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Inter, system-ui, sans-serif;
+            line-height: 1.45;
+        }
+
+        .harness-lab {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+        }
+
+        .harness-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .fixture-banner {
+            flex: 1 1 420px;
+            margin: 0;
+            padding: 10px 14px;
+            border: 1px dashed #d6ccc1;
+            border-radius: 12px;
+            background: var(--warm);
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--ink-soft);
+        }
+
+        .fixture-banner strong {
+            color: var(--ink);
+        }
+
+        .lang-toggle {
+            display: inline-flex;
+            background: var(--surface-strong);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 6px;
+            box-shadow: var(--shadow);
+        }
+
+        .lang-toggle button {
+            appearance: none;
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: 180ms ease;
+        }
+
+        .lang-toggle button.active {
+            background: #171513;
+            color: #fff9f2;
+        }
+
+        #app {
+            min-width: 0;
+        }
+
+        .harness-surface {
+            background: transparent;
+        }
+
+        .harness-shell {
+            display: grid;
+            gap: 28px;
+        }
+
+        .harness-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+            gap: 32px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .harness-lab {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .harness-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 390px) {
+            .harness-lab {
+                padding: 16px 12px 32px;
+            }
+
+            .fixture-banner {
+                font-size: 12px;
+            }
+
+            .lang-toggle {
+                width: 100%;
+            }
+
+            .lang-toggle button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="harness-lab">
+        <div class="harness-toolbar">
+            <p class="fixture-banner"><strong>FIXTURE DATA ONLY</strong> — isolated Orena PAGE-010 Home visual harness
+                for review; not production Home and no learner data is mutated.</p>
+            <div class="lang-toggle" aria-label="Language selector">
+                <button type="button" class="active" data-lang="en">EN</button>
+                <button type="button" data-lang="zh">ZH</button>
+            </div>
+        </div>
+        <div id="app" class="harness-main"></div>
+    </div>
+
+    <script type="module">
+        import {
+            journeyHero,
+            continueJourneyCard,
+            worldCard,
+            worldRail,
+            recommendationTile,
+            recommendationRail,
+            challengeCard,
+            discoveryCard,
+            discoveryRail,
+        } from '/static/becoming/orena/product-components.js';
+
+        const locales = {
+            en: {
+                heroEyebrow: 'Good morning',
+                heroTitle: 'Keep the spark alive',
+                heroLead: 'Resume a real lesson, discover a place worth exploring, and continue with something that feels meaningful.',
+                heroPrimary: 'Continue',
+                continueKicker: 'Continue',
+                continueTitle: 'Night Market Adventures',
+                continueSubtitle: 'Lesson 03 · Ordering food',
+                continueState: 'Resume at segment 4',
+                continueAction: 'Resume',
+                worldsTitle: 'Explore worlds',
+                worldsLead: 'Start where the language feels real and useful.',
+                world1: { title: 'Food & Culture', description: 'Order, taste, and understand how people talk about food in real settings.', count: '4 journeys', prefix: 'Start with', lead: 'Your first order', suffix: 'for today' },
+                world2: { title: 'City Life', description: 'Daily routines, public spaces, and the way people talk in motion.', count: '3 journeys', prefix: 'Try', lead: 'Weekend plans' },
+                world3: { title: 'Stories & Media', description: 'Short stories, lively conversations, and practical listening cues.', count: '5 journeys', prefix: 'Pick', lead: 'A short scene' },
+                world4: { title: 'Study & Work', description: 'Professional language that still sounds natural and useful in context.', count: '3 journeys', prefix: 'Open', lead: 'Quick meeting prep' },
+                forYouTitle: 'For you',
+                forYouLead: 'A small set of useful next steps, chosen for momentum.',
+                action1Title: 'Shadow the restaurant reply',
+                action1Subtitle: 'Practice natural rhythm and clarity in a real exchange.',
+                action2Title: 'Scan the short menu story',
+                action2Subtitle: 'Match the meaning to the surrounding context.',
+                challengeKicker: 'Challenge',
+                challengeTitle: 'Listen for 20 minutes today',
+                challengeLead: 'Keep your listening momentum going with one short session.',
+                challengeReward: 'A practical daily habit that builds real listening confidence.',
+                challengeAction: 'Start',
+                discoveryTitle: 'Continue exploring',
+                discoveryLead: 'Fresh places to keep moving without a forced dashboard.',
+                discover1: { kicker: 'Continue exploring', title: 'Market phrases', description: 'Practical phrases for ordering in busy spaces.', meta: '4 min' },
+                discover2: { kicker: 'Fresh pick', title: 'Short conversation set', description: 'Listen once, then respond with a quick follow-up.', meta: '5 min' },
+                discover3: { kicker: 'New in this world', title: 'City café scene', description: 'A realistic situation with small phrases that travel well.', meta: '3 min' },
+            },
+            zh: {
+                heroEyebrow: '早安',
+                heroTitle: '把学习热度留住',
+                heroLead: '继续一段真实的课程，发现一个值得探索的场景，并保留持续前进的动机。',
+                heroPrimary: '继续',
+                continueKicker: '继续学习',
+                continueTitle: '夜市冒险',
+                continueSubtitle: '第 3 课 · 点餐',
+                continueState: '从第 4 段继续',
+                continueAction: '继续',
+                worldsTitle: '探索世界',
+                worldsLead: '从真实、可用的语言场景开始。',
+                world1: { title: '饮食与文化', description: '在真实情境中点单、品尝和理解人们如何表达食物相关内容。', count: '4 个旅程', prefix: '从', lead: '你的第一单', suffix: '开始' },
+                world2: { title: '城市生活', description: '日常节奏、公共空间，以及人们在移动中如何交流。', count: '3 个旅程', prefix: '试试', lead: '周末计划' },
+                world3: { title: '故事与媒体', description: '简短故事、生动对话，以及实用的听力线索。', count: '5 个旅程', prefix: '挑选', lead: '一个短场景' },
+                world4: { title: '学习与工作', description: '专业语境里自然、实用的表达方式。', count: '3 个旅程', prefix: '打开', lead: '会议准备' },
+                forYouTitle: '为你推荐',
+                forYouLead: '一组小而实用的下一步，帮助学习保持 momentum。',
+                action1Title: '跟读餐馆回复',
+                action1Subtitle: '练习真实对话中的节奏和自然表达。',
+                action2Title: '阅读菜单短文',
+                action2Subtitle: '在语境中理解意思并建立联系。',
+                challengeKicker: '挑战',
+                challengeTitle: '今天听 20 分钟',
+                challengeLead: '用一段短练习保持听力进度。',
+                challengeReward: '一个能真正提升听力信心的日常习惯。',
+                challengeAction: '开始',
+                discoveryTitle: '继续探索',
+                discoveryLead: '寻找新场景，让页面保持有真实的学习方向。',
+                discover1: { kicker: '继续探索', title: '市场用语', description: '在忙碌场景里点餐的实用表达。', meta: '4 分钟' },
+                discover2: { kicker: '新鲜推荐', title: '简短对话集', description: '先听一遍，再用一句话快速回应。', meta: '5 分钟' },
+                discover3: { kicker: '这个世界的新内容', title: '城市咖啡馆场景', description: '一个真实但简短的场景，帮助习得高频表达。', meta: '3 分钟' },
+            }
+        };
+
+        function buildLocale(locale = 'en') {
+            const text = locales[locale] || locales.en;
+            return {
+                hero: {
+                    eyebrow: text.heroEyebrow,
+                    title: text.heroTitle,
+                    supportingText: text.heroLead,
+                    primaryAction: { id: 'home-primary', label: text.heroPrimary },
+                    continuation: continueJourneyCard({
+                        journeyId: 'night-market',
+                        kicker: text.continueKicker,
+                        title: text.continueTitle,
+                        titleLang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        subtitle: text.continueSubtitle,
+                        progressLabel: text.continueState,
+                        artwork: 'night-market',
+                        accentFamily: 'listening',
+                        resumeLabel: text.continueAction,
+                        actionAttributes: { 'data-home-continue': 'listening' },
+                    }),
+                },
+                worlds: [
+                    {
+                        worldId: 'food-culture',
+                        title: text.world1.title,
+                        description: text.world1.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        artwork: 'food-world',
+                        accentFamily: 'listening',
+                        countLabel: text.world1.count,
+                        leadPrefix: text.world1.prefix,
+                        leadTitle: text.world1.lead,
+                        leadSuffix: text.world1.suffix || '',
+                        leadLang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        variant: 'featured',
+                    },
+                    {
+                        worldId: 'city-life',
+                        title: text.world2.title,
+                        description: text.world2.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        artwork: 'city-life',
+                        accentFamily: 'reading',
+                        countLabel: text.world2.count,
+                        leadPrefix: text.world2.prefix,
+                        leadTitle: text.world2.lead,
+                        leadLang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        variant: 'standard',
+                    },
+                    {
+                        worldId: 'stories-media',
+                        title: text.world3.title,
+                        description: text.world3.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        artwork: 'stories',
+                        accentFamily: 'speaking',
+                        countLabel: text.world3.count,
+                        leadPrefix: text.world3.prefix,
+                        leadTitle: text.world3.lead,
+                        leadLang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        variant: 'standard',
+                    },
+                    {
+                        worldId: 'work-life',
+                        title: text.world4.title,
+                        description: text.world4.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        artwork: 'work',
+                        accentFamily: 'writing',
+                        countLabel: text.world4.count,
+                        leadPrefix: text.world4.prefix,
+                        leadTitle: text.world4.lead,
+                        leadLang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        variant: 'compact',
+                    },
+                ],
+                forYou: [
+                    recommendationTile({
+                        contentId: 'activity-1',
+                        contentKind: 'practice',
+                        title: text.action1Title,
+                        subtitle: text.action1Subtitle,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        reason: locale === 'zh' ? '为你推荐' : 'For you',
+                        note: { text: locale === 'zh' ? '2 分钟活动 · 适合语音练习' : '2 minute activity · voice friendly', attributes: { 'data-variant': 'support' } },
+                        accentFamily: 'speaking',
+                        actionLabel: locale === 'zh' ? '开始' : 'Start',
+                        actionAttributes: { 'data-home-action': 'start-speech' },
+                    }),
+                    recommendationTile({
+                        contentId: 'activity-2',
+                        contentKind: 'reading',
+                        title: text.action2Title,
+                        subtitle: text.action2Subtitle,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        reason: locale === 'zh' ? '下一步' : 'Useful next',
+                        note: { text: locale === 'zh' ? '阅读练习 · 4 分钟' : 'Reading practice · 4 minutes', attributes: { 'data-variant': 'support' } },
+                        accentFamily: 'reading',
+                        actionLabel: locale === 'zh' ? '打开' : 'Open',
+                        actionAttributes: { 'data-home-action': 'open-reading' },
+                    }),
+                ],
+                challenge: challengeCard({
+                    challengeId: 'listening-habit',
+                    kicker: text.challengeKicker,
+                    title: text.challengeTitle,
+                    description: text.challengeLead,
+                    lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                    current: 12,
+                    target: 20,
+                    unitLabel: locale === 'zh' ? '分钟' : 'minutes',
+                    rewardCopy: text.challengeReward,
+                    accentFamily: 'listening',
+                    actionLabel: text.challengeAction,
+                    actionAttributes: { 'data-home-action': 'start-listening' },
+                }),
+                discovery: [
+                    discoveryCard({
+                        contentId: 'discover-1',
+                        kicker: text.discover1.kicker,
+                        title: text.discover1.title,
+                        description: text.discover1.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        meta: text.discover1.meta,
+                        accentFamily: 'listening',
+                    }),
+                    discoveryCard({
+                        contentId: 'discover-2',
+                        kicker: text.discover2.kicker,
+                        title: text.discover2.title,
+                        description: text.discover2.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        meta: text.discover2.meta,
+                        accentFamily: 'speaking',
+                    }),
+                    discoveryCard({
+                        contentId: 'discover-3',
+                        kicker: text.discover3.kicker,
+                        title: text.discover3.title,
+                        description: text.discover3.description,
+                        lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                        meta: text.discover3.meta,
+                        accentFamily: 'writing',
+                    }),
+                ],
+            };
+        }
+
+        const app = document.getElementById('app');
+        let currentLocale = 'en';
+
+        function render(locale) {
+            currentLocale = locale;
+            const page = buildLocale(locale);
+            document.documentElement.lang = locale === 'zh' ? 'zh-Hans' : 'en';
+            app.innerHTML = `
+        <div class="harness-shell" data-orena-ui="v2">
+          ${journeyHero({
+                eyebrow: page.hero.eyebrow,
+                title: page.hero.title,
+                supportingText: page.hero.supportingText,
+                artwork: 'home-hero',
+                artworkLabel: 'Home hero artwork',
+                accentFamily: 'listening',
+                lang: locale === 'zh' ? 'zh-Hans' : 'en',
+                primaryAction: page.hero.primaryAction,
+                continuation: page.hero.continuation,
+            })}
+
+          ${worldRail({
+                id: 'worlds',
+                title: textFor(locale, 'worldsTitle', 'Explore worlds'),
+                description: textFor(locale, 'worldsLead', 'Start where the language feels real and useful.'),
+                cards: page.worlds.map((world) => worldCard(world)),
+                empty: 'No worlds available right now.',
+                state: 'ready',
+            })}
+
+          <div class="harness-row">
+            ${recommendationRail({
+                id: 'for-you',
+                title: textFor(locale, 'forYouTitle', 'For you'),
+                description: textFor(locale, 'forYouLead', 'A small set of useful next steps, chosen for momentum.'),
+                tiles: page.forYou,
+                empty: 'No recommendations yet.',
+                state: 'ready',
+            })}
+            ${page.challenge}
+          </div>
+
+          ${discoveryRail({
+                id: 'continue-exploring',
+                title: textFor(locale, 'discoveryTitle', 'Continue exploring'),
+                description: textFor(locale, 'discoveryLead', 'Fresh places to keep moving without a forced dashboard.'),
+                cards: page.discovery,
+                empty: 'Nothing new yet.',
+                state: 'ready',
+            })}
+        </div>
+      `;
+        }
+
+        function textFor(locale, key, fallback) {
+            const text = locales[locale] || locales.en;
+            return text[key] || fallback;
+        }
+
+        document.querySelectorAll('[data-lang]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const next = button.dataset.lang;
+                document.querySelectorAll('[data-lang]').forEach((btn) => btn.classList.toggle('active', btn === button));
+                render(next);
+            });
+        });
+
+        render(currentLocale);
+    </script>
+</body>
+
+</html>

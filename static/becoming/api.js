@@ -130,6 +130,9 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify({...payload,compact:true}),
   }),
+  // Worlds are the discovery layer above lessons. Availability and counts are
+  // measured server-side against the real catalog; the client never derives them.
+  worlds:(language)=>request(`/api/worlds?language=${encodeURIComponent(language||'')}`),
   listeningLibrary:(language,filters={})=>{
     const params=new URLSearchParams({language:String(language||'')});
     if(filters.level)params.set('level',String(filters.level));

@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "note": "Editorial Orena World definitions. A World is a place a learner enters, not a folder. Membership is by canonical lesson topic so a lesson belongs to one world rather than appearing in several through loose tags. Availability and every count are computed at runtime from the real curated catalog - nothing here asserts that content exists.",
+  "worlds": [
+    {
+      "world_id": "en-daily-life",
+      "learning_language": "en",
+      "order": 1,
+      "topics": ["daily-life"],
+      "artwork": "daily-life",
+      "accent_family": "listening",
+      "title": {
+        "en": "Daily Life",
+        "zh": "日常生活",
+        "vi": "Đời sống thường ngày"
+      },
+      "description": {
+        "en": "The small exchanges that fill an ordinary day.",
+        "zh": "填满平常一天的简短对话。",
+        "vi": "Những trao đổi ngắn lấp đầy một ngày bình thường."
+      }
+    },
+    {
+      "world_id": "en-travel",
+      "learning_language": "en",
+      "order": 2,
+      "topics": ["travel"],
+      "artwork": "travel",
+      "accent_family": "reading",
+      "title": {
+        "en": "Travel",
+        "zh": "旅行",
+        "vi": "Du lịch"
+      },
+      "description": {
+        "en": "Getting somewhere, and talking your way through it.",
+        "zh": "在路上，并用语言解决问题。",
+        "vi": "Đi đến một nơi và nói chuyện để xoay xở."
+      }
+    },
+    {
+      "world_id": "en-thinking-ideas",
+      "learning_language": "en",
+      "order": 3,
+      "topics": ["science", "technology", "ideas"],
+      "artwork": "science",
+      "accent_family": "grammar",
+      "title": {
+        "en": "Thinking & Ideas",
+        "zh": "思考与观点",
+        "vi": "Tư duy & Ý tưởng"
+      },
+      "description": {
+        "en": "Longer explanations worth following all the way through.",
+        "zh": "值得完整听完的长篇讲解。",
+        "vi": "Những lời giải thích dài đáng nghe đến cùng."
+      }
+    },
+    {
+      "world_id": "en-study-work",
+      "learning_language": "en",
+      "order": 4,
+      "topics": ["study-work", "education", "work"],
+      "artwork": "study-work",
+      "accent_family": "writing",
+      "title": {
+        "en": "Study & Work",
+        "zh": "学习与工作",
+        "vi": "Học tập & Công việc"
+      },
+      "description": {
+        "en": "Classrooms, colleagues and the language they run on.",
+        "zh": "教室、同事，以及支撑它们的语言。",
+        "vi": "Lớp học, đồng nghiệp và ngôn ngữ vận hành chúng."
+      }
+    },
+    {
+      "world_id": "en-stories-media",
+      "learning_language": "en",
+      "order": 5,
+      "topics": ["stories", "media", "film"],
+      "artwork": "stories",
+      "accent_family": "speaking",
+      "title": {
+        "en": "Stories & Media",
+        "zh": "故事与影视",
+        "vi": "Câu chuyện & Truyền thông"
+      },
+      "description": {
+        "en": "Scenes and storytelling, heard the way they were made.",
+        "zh": "以原本的样子听见的场景与叙事。",
+        "vi": "Những cảnh phim và cách kể chuyện, nghe đúng như nguyên bản."
+      }
+    },
+    {
+      "world_id": "en-social",
+      "learning_language": "en",
+      "order": 6,
+      "topics": ["social-life", "social"],
+      "artwork": "social",
+      "accent_family": "review",
+      "title": {
+        "en": "Social English",
+        "zh": "社交英语",
+        "vi": "Tiếng Anh giao tiếp"
+      },
+      "description": {
+        "en": "Meeting people, and keeping a conversation going.",
+        "zh": "认识别人，并把对话继续下去。",
+        "vi": "Gặp gỡ mọi người và duy trì cuộc trò chuyện."
+      }
+    },
+
+    {
+      "world_id": "zh-everyday",
+      "learning_language": "zh",
+      "order": 1,
+      "topics": ["conversations", "daily-life"],
+      "artwork": "conversations",
+      "accent_family": "listening",
+      "title": {
+        "en": "Everyday Chinese",
+        "zh": "日常会话",
+        "vi": "Tiếng Trung hằng ngày"
+      },
+      "description": {
+        "en": "The exchanges you need before anything else.",
+        "zh": "最先用得上的那些对话。",
+        "vi": "Những mẩu hội thoại cần trước tiên."
+      }
+    },
+    {
+      "world_id": "zh-culture",
+      "learning_language": "zh",
+      "order": 2,
+      "topics": ["culture"],
+      "artwork": "culture",
+      "accent_family": "grammar",
+      "title": {
+        "en": "Culture & People",
+        "zh": "文化与人",
+        "vi": "Văn hoá & Con người"
+      },
+      "description": {
+        "en": "Where people are from, and how they say so.",
+        "zh": "人们来自哪里，又如何说出口。",
+        "vi": "Người ta đến từ đâu và nói về điều đó ra sao."
+      }
+    },
+    {
+      "world_id": "zh-technology",
+      "learning_language": "zh",
+      "order": 3,
+      "topics": ["technology"],
+      "artwork": "technology",
+      "accent_family": "reading",
+      "title": {
+        "en": "Tech & The Internet",
+        "zh": "科技与网络",
+        "vi": "Công nghệ & Internet"
+      },
+      "description": {
+        "en": "Explaining how something works, step by step.",
+        "zh": "一步一步讲清楚一件事怎么运作。",
+        "vi": "Giải thích từng bước cách một thứ vận hành."
+      }
+    },
+    {
+      "world_id": "zh-food",
+      "learning_language": "zh",
+      "order": 4,
+      "topics": ["food"],
+      "artwork": "food",
+      "accent_family": "speaking",
+      "title": {
+        "en": "Food & Cooking",
+        "zh": "美食与烹饪",
+        "vi": "Ẩm thực & Nấu ăn"
+      },
+      "description": {
+        "en": "Ordering, cooking, and arguing about what is best.",
+        "zh": "点菜、下厨，以及争论什么最好吃。",
+        "vi": "Gọi món, nấu ăn và tranh luận xem món nào ngon nhất."
+      }
+    },
+    {
+      "world_id": "zh-city-life",
+      "learning_language": "zh",
+      "order": 5,
+      "topics": ["city-life", "travel"],
+      "artwork": "city-life",
+      "accent_family": "writing",
+      "title": {
+        "en": "City Life",
+        "zh": "城市生活",
+        "vi": "Cuộc sống đô thị"
+      },
+      "description": {
+        "en": "Streets, transport and the noise of getting around.",
+        "zh": "街道、交通，以及出行时的种种声音。",
+        "vi": "Đường phố, giao thông và âm thanh của việc đi lại."
+      }
+    },
+    {
+      "world_id": "zh-festivals",
+      "learning_language": "zh",
+      "order": 6,
+      "topics": ["festivals"],
+      "artwork": "festivals",
+      "accent_family": "review",
+      "title": {
+        "en": "Festivals",
+        "zh": "节日",
+        "vi": "Lễ hội"
+      },
+      "description": {
+        "en": "The days a year is measured by, and what is said on them.",
+        "zh": "一年由这些日子标记，以及那时人们说的话。",
+        "vi": "Những ngày làm nên một năm và điều người ta nói khi ấy."
+      }
+    }
+  ]
+}

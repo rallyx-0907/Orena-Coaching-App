@@ -15,6 +15,24 @@ not authoritative. Orena is the active product, `/` is canonical, and
 current product direction. Follow `PROJECT_MEMORY.md`'s separate product-intent
 and implementation-fact precedence models.
 
+### Orena learner UI startup
+
+For learner-facing Web or native UI work, read `docs/project/DESIGN_CONTRACT.md`
+and then:
+
+```text
+docs/ORENA_PRODUCT_DNA.md
+docs/ORENA_DESIGN_TOKENS.json
+docs/ORENA_COMPONENT_CONTRACT.md
+docs/ORENA_RESPONSIVE_COMPOSITION.md
+the relevant docs/ORENA_*_GOLDEN_SPEC.md
+```
+
+Do not redesign a migrated screen from a blank canvas. Use approved Orena
+product components and composition recipes first. For migrated screens, the
+ORENA_* UI/product grammar supersedes legacy BECOMING visual direction; legacy
+release, persistence, security and functional contracts remain binding.
+
 ## Test and validation runtime
 
 The operator's Python 3.11 has **no project dependencies** (no pytest,

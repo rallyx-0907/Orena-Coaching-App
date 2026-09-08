@@ -152,7 +152,12 @@ def test_curated_and_my_media_share_one_recovery_policy() -> None:
     app_source = (REPO / "app.py").read_text(encoding="utf-8")
     importer = (REPO / "scripts/build_listening_dev_catalog.py").read_text(encoding="utf-8")
     assert "build_youtube_adapter()" in app_source
-    assert "build_youtube_adapter()" in importer
+    # The importer builds it through the shared factory too. It is reached via a
+    # default argument (so tests can inject a fake adapter) rather than a literal
+    # call site, so the invariant to assert is that the shared factory is what it
+    # falls back to - together with the "no adapter of its own" check below.
+    assert "from writing_coach.media_recovery_policy import build_youtube_adapter" in importer
+    assert "adapter_factory or build_youtube_adapter" in importer
     assert "YouTubeMediaProviderAdapter(" not in app_source, "runtime must not build its own policy"
     assert "YouTubeMediaProviderAdapter(" not in importer, "importer must not build its own policy"
 

@@ -12,6 +12,41 @@ from urllib.parse import urlsplit
 LOCAL_ORIGIN = "http://127.0.0.1:8000"
 CALLBACK_PATH = "/auth/google/callback"
 
+# APP_ENV and the deployment tier answer two different questions, and conflating
+# them is how unreviewed content reaches production learners:
+#
+#   APP_ENV                 runtime and security posture (HTTPS, auth, cookies,
+#                           fail-fast guards). Preview runs APP_ENV=production
+#                           precisely so it exercises real security.
+#   ORENA_DEPLOYMENT_TIER   product publication tier: which catalog content this
+#                           deployment may expose at all.
+#
+# A preview deployment is production-like runtime behaviour with restricted
+# unreviewed content. It is NOT production publication.
+DEPLOYMENT_TIER_ENV = "ORENA_DEPLOYMENT_TIER"
+TIER_PRODUCTION = "production"
+TIER_PREVIEW = "preview"
+DEPLOYMENT_TIERS = frozenset({TIER_PRODUCTION, TIER_PREVIEW})
+
+
+def resolve_deployment_tier(env: Mapping[str, str] | None = None) -> str:
+    """The product deployment tier, defaulting safely to production.
+
+    Unset means production: the safe answer, so a deployment that forgets the
+    variable shows reviewed content only. An unrecognised value is refused at
+    startup rather than quietly coerced, because a typo like "Preview " must not
+    silently decide what learners can see - in either direction.
+    """
+
+    values = os.environ if env is None else env
+    raw = str(values.get(DEPLOYMENT_TIER_ENV, "")).strip().casefold()
+    if not raw:
+        return TIER_PRODUCTION
+    if raw not in DEPLOYMENT_TIERS:
+        raise RuntimeError(
+            f"{DEPLOYMENT_TIER_ENV} must be one of {sorted(DEPLOYMENT_TIERS)}.")
+    return raw
+
 
 @dataclass(frozen=True)
 class DeploymentConfig:
@@ -20,10 +55,17 @@ class DeploymentConfig:
     google_redirect_uri: str
     auth_enabled: bool
     cookie_secure: bool
+    tier: str = TIER_PRODUCTION
 
     @property
     def production(self) -> bool:
         return self.app_env == "production"
+
+    @property
+    def preview(self) -> bool:
+        """Whether this deployment may expose designated preview content."""
+
+        return self.tier == TIER_PREVIEW
 
 
 def _parse_http_url(value: str, *, label: str):
@@ -123,4 +165,5 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
         google_redirect_uri=google_redirect_uri,
         auth_enabled=auth_enabled,
         cookie_secure=urlsplit(public_base_url).scheme == "https",
+        tier=resolve_deployment_tier(values),
     )

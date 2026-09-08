@@ -1,0 +1,595 @@
+/* Orena product components — v2 namespace.
+ *
+ * Everything here is scoped to `[data-orena-ui="v2"]`. That is the migration
+ * boundary: Home opts in, and Writing, Grammar, Review and the rest keep the
+ * visual system they were built against until each one is migrated
+ * deliberately. No selector in this file may reach outside that attribute, and
+ * no rule here may edit a shared token, because that would restyle every
+ * screen at once.
+ *
+ * Values come from docs/ORENA_DESIGN_TOKENS.json v0.1. They are re-declared
+ * locally as `--oc-*` rather than written into the shared token file for the
+ * same reason.
+ */
+
+[data-orena-ui="v2"]{
+  /* colour — light */
+  --oc-canvas:#FFF9F2;
+  --oc-canvas-alt:#F7F4EE;
+  --oc-surface:#FFFFFF;
+  --oc-surface-warm:#FFF3E8;
+  --oc-surface-muted:#F3F1ED;
+  --oc-ink-strong:#171513;
+  --oc-ink:#35312D;
+  --oc-ink-muted:#777069;
+  --oc-border:#E8E1D8;
+  --oc-border-strong:#D6CCC1;
+
+  --oc-orange-700:#D94E08;
+  --oc-orange-600:#F45D0B;
+  --oc-orange-500:#FF721F;
+  --oc-orange-300:#FFA160;
+  --oc-orange-100:#FFE4CF;
+
+  --oc-listening:#2FA8A0;
+  --oc-speaking:#EF6F61;
+  --oc-writing:#8A62C7;
+  --oc-reading:#4F76C7;
+  --oc-grammar:#D99A2B;
+  --oc-review:#4FAE7A;
+
+  /* type */
+  --oc-font:Inter,system-ui,sans-serif;
+  --oc-font-cjk:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --oc-text-meta:12px;
+  --oc-text-caption:13px;
+  --oc-text-ui:14px;
+  --oc-text-body:16px;
+  --oc-text-h4:20px;
+  --oc-text-h3:24px;
+  --oc-text-h2:30px;
+  --oc-text-h1:40px;
+  --oc-line-heading:1.2;
+  --oc-line-body:1.55;
+  --oc-line-cjk:1.65;
+
+  /* space, shape, motion */
+  --oc-space-1:4px;
+  --oc-space-2:8px;
+  --oc-space-3:12px;
+  --oc-space-4:16px;
+  --oc-space-5:20px;
+  --oc-space-6:24px;
+  --oc-space-8:32px;
+  --oc-space-10:40px;
+  --oc-radius-control:12px;
+  --oc-radius-card:16px;
+  --oc-radius-surface:20px;
+  --oc-radius-hero:24px;
+  --oc-radius-round:999px;
+  --oc-shadow-soft:0 2px 10px rgba(44,33,24,.06),0 1px 2px rgba(44,33,24,.05);
+  --oc-shadow-raised:0 10px 30px rgba(44,33,24,.10),0 2px 8px rgba(44,33,24,.06);
+  --oc-motion-micro:140ms;
+  --oc-motion-standard:220ms;
+  --oc-ease:cubic-bezier(0.2,0.8,0.2,1);
+
+  --oc-section-gap:32px;
+  --oc-touch-min:44px;
+  --oc-safe-inset:12%;
+
+  display:grid;
+  gap:var(--oc-section-gap);
+  align-content:start;
+  font-family:var(--oc-font);
+  color:var(--oc-ink);
+  /* A migrated screen must not overflow horizontally at any width. Rails
+     scroll inside themselves; the page never does. */
+  min-width:0;
+}
+
+html[data-theme="dark"] [data-orena-ui="v2"]{
+  --oc-canvas:#171512;
+  --oc-canvas-alt:#1E1B17;
+  --oc-surface:#24201B;
+  --oc-surface-warm:#2C2118;
+  --oc-surface-muted:#2B2824;
+  --oc-ink-strong:#FFF9F2;
+  --oc-ink:#E8E1D8;
+  --oc-ink-muted:#AFA69C;
+  --oc-border:#3A342D;
+  --oc-border-strong:#4B433A;
+  --oc-shadow-soft:0 2px 10px rgba(0,0,0,.36),0 1px 2px rgba(0,0,0,.30);
+  --oc-shadow-raised:0 10px 30px rgba(0,0,0,.44),0 2px 8px rgba(0,0,0,.30);
+}
+
+/* Accent resolution. A component declares a semantic family; the family
+   resolves to one colour here so no component hardcodes a hex value. */
+[data-orena-ui="v2"] [data-accent="listening"]{--oc-accent:var(--oc-listening)}
+[data-orena-ui="v2"] [data-accent="speaking"]{--oc-accent:var(--oc-speaking)}
+[data-orena-ui="v2"] [data-accent="writing"]{--oc-accent:var(--oc-writing)}
+[data-orena-ui="v2"] [data-accent="reading"]{--oc-accent:var(--oc-reading)}
+[data-orena-ui="v2"] [data-accent="grammar"]{--oc-accent:var(--oc-grammar)}
+[data-orena-ui="v2"] [data-accent="review"]{--oc-accent:var(--oc-review)}
+
+/* ============================================================ atoms ====== */
+
+[data-orena-ui="v2"] .oc-kicker{
+  margin:0;
+  font-size:var(--oc-text-meta);
+  font-weight:600;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--oc-accent,var(--oc-orange-600));
+}
+
+[data-orena-ui="v2"] .oc-meta{
+  font-size:var(--oc-text-caption);
+  color:var(--oc-ink-muted);
+}
+
+[data-orena-ui="v2"] .oc-empty[data-oc-notice="loading"]{
+  border-style:solid;
+  color:var(--oc-ink-muted);
+  opacity:.75;
+}
+
+[data-orena-ui="v2"] .oc-empty{
+  margin:0;
+  padding:var(--oc-space-5);
+  border:1px dashed var(--oc-border-strong);
+  border-radius:var(--oc-radius-card);
+  background:var(--oc-canvas-alt);
+  color:var(--oc-ink-muted);
+  font-size:var(--oc-text-ui);
+}
+
+[data-orena-ui="v2"] .oc-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:var(--oc-space-2);
+  min-height:var(--oc-touch-min);
+  padding:0 var(--oc-space-5);
+  border:1px solid var(--oc-border-strong);
+  border-radius:var(--oc-radius-round);
+  background:var(--oc-surface);
+  color:var(--oc-ink-strong);
+  font:inherit;
+  font-size:var(--oc-text-ui);
+  font-weight:600;
+  cursor:pointer;
+  transition:transform var(--oc-motion-micro) var(--oc-ease),
+             box-shadow var(--oc-motion-micro) var(--oc-ease),
+             background-color var(--oc-motion-micro) var(--oc-ease);
+}
+[data-orena-ui="v2"] .oc-btn svg{width:18px;height:18px;flex:0 0 auto}
+[data-orena-ui="v2"] .oc-btn--compact{min-height:var(--oc-touch-min);padding:0 var(--oc-space-4)}
+[data-orena-ui="v2"] .oc-btn--primary{
+  border-color:transparent;
+  background:linear-gradient(180deg,var(--oc-orange-500),var(--oc-orange-600));
+  color:#fff;
+  box-shadow:var(--oc-shadow-soft);
+}
+[data-orena-ui="v2"] .oc-btn:hover{box-shadow:var(--oc-shadow-raised)}
+[data-orena-ui="v2"] .oc-btn:active{transform:translateY(1px)}
+[data-orena-ui="v2"] .oc-btn:focus-visible,
+[data-orena-ui="v2"] .oc-world-open:focus-visible,
+[data-orena-ui="v2"] .oc-discovery-open:focus-visible{
+  outline:2px solid var(--oc-orange-600);
+  outline-offset:2px;
+}
+
+[data-orena-ui="v2"] .oc-meter{
+  height:6px;
+  border-radius:var(--oc-radius-round);
+  background:var(--oc-surface-muted);
+  overflow:hidden;
+}
+[data-orena-ui="v2"] .oc-meter span{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:var(--oc-accent,var(--oc-orange-500));
+}
+
+/* CJK typography is attached to the TEXT, not to the screen. Components emit
+   `lang` on the element carrying the string, so a Chinese lesson title reads
+   correctly inside an English interface and an English button does not pick up
+   CJK metrics because the learner happens to study Chinese. `:lang()` does the
+   work; `.cjk` is kept as the explicit hook for the same elements. */
+[data-orena-ui="v2"] .cjk,
+[data-orena-ui="v2"] [lang="zh"],
+[data-orena-ui="v2"] [lang^="zh-"]{
+  font-family:var(--oc-font-cjk);
+  line-height:var(--oc-line-cjk);
+  letter-spacing:0;
+}
+
+/* ========================================================== artwork ====== */
+
+/* A real container with a stable ratio and a controlled crop. H2 replaces what
+   is inside it with production artwork; the geometry does not change. */
+[data-orena-ui="v2"] .oc-artwork{
+  --oc-artwork-ratio:4 / 3;
+  position:relative;
+  border-radius:var(--oc-radius-card);
+  overflow:hidden;
+  background:var(--oc-surface-muted);
+}
+[data-orena-ui="v2"] .oc-artwork[data-artwork-ratio="hero"]{--oc-artwork-ratio:16 / 6}
+[data-orena-ui="v2"] .oc-artwork[data-artwork-ratio="world"]{--oc-artwork-ratio:4 / 3}
+[data-orena-ui="v2"] .oc-artwork[data-artwork-ratio="tile"]{--oc-artwork-ratio:16 / 10}
+
+[data-orena-ui="v2"] .oc-artwork-frame{
+  aspect-ratio:var(--oc-artwork-ratio);
+  /* Development stand-in: a textless tonal wash keyed to the accent family.
+     It carries no meaning, no mascot and no baked-in copy. Production artwork
+     replaces the contents of this frame in H2. */
+  background:
+    radial-gradient(120% 90% at 18% 12%,color-mix(in srgb,var(--oc-accent,var(--oc-orange-500)) 34%,transparent),transparent 68%),
+    radial-gradient(110% 100% at 88% 96%,color-mix(in srgb,var(--oc-orange-300) 40%,transparent),transparent 62%),
+    var(--oc-surface-warm);
+}
+[data-orena-ui="v2"] .oc-artwork-image{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  /* The subject stays inside the safe inset when the frame crops. */
+  object-fit:cover;
+  object-position:center calc(50% - var(--oc-safe-inset) / 4);
+}
+
+/* ========================================================== section ====== */
+
+[data-orena-ui="v2"] .oc-section{display:grid;gap:var(--oc-space-5);min-width:0}
+[data-orena-ui="v2"] .oc-section-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:var(--oc-space-4);
+  flex-wrap:wrap;
+}
+[data-orena-ui="v2"] .oc-section-titles{display:grid;gap:var(--oc-space-1);min-width:0}
+[data-orena-ui="v2"] .oc-section-title{
+  margin:0;
+  font-size:var(--oc-text-h3);
+  font-weight:700;
+  line-height:var(--oc-line-heading);
+  letter-spacing:-.01em;
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-section-lede{
+  margin:0;
+  max-width:56ch;
+  font-size:var(--oc-text-ui);
+  line-height:var(--oc-line-body);
+  color:var(--oc-ink-muted);
+}
+
+/* ============================================================= hero ====== */
+
+[data-orena-ui="v2"] .oc-hero{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  grid-template-areas:"body art" "continue art";
+  align-items:center;
+  gap:var(--oc-space-8);
+  padding:var(--oc-space-8);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-hero);
+  background:linear-gradient(160deg,var(--oc-surface-warm),var(--oc-surface));
+  box-shadow:var(--oc-shadow-soft);
+  overflow:hidden;
+}
+[data-orena-ui="v2"] .oc-hero-body{grid-area:body;display:grid;gap:var(--oc-space-4);min-width:0;align-content:center}
+[data-orena-ui="v2"] .oc-hero-art{grid-area:art;min-width:0}
+[data-orena-ui="v2"] .oc-hero-continue{grid-area:continue;min-width:0}
+[data-orena-ui="v2"] .oc-hero-eyebrow{
+  margin:0;
+  font-size:var(--oc-text-ui);
+  color:var(--oc-ink-muted);
+}
+[data-orena-ui="v2"] .oc-hero-title{
+  margin:0;
+  /* Line length, not viewport width, is what makes a hero readable in EN and
+     unforced in ZH. */
+  max-width:20ch;
+  font-size:clamp(28px,3.2vw,var(--oc-text-h1));
+  font-weight:700;
+  line-height:var(--oc-line-heading);
+  letter-spacing:-.02em;
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-hero-title.cjk{letter-spacing:0;line-height:1.3;max-width:16em}
+[data-orena-ui="v2"] .oc-hero-lede{
+  margin:0;
+  max-width:46ch;
+  font-size:var(--oc-text-body);
+  line-height:var(--oc-line-body);
+  color:var(--oc-ink-muted);
+}
+[data-orena-ui="v2"] .oc-hero-actions{display:flex;flex-wrap:wrap;gap:var(--oc-space-3)}
+
+/* ========================================================= continue ====== */
+
+[data-orena-ui="v2"] .oc-continue{
+  display:grid;
+  grid-template-columns:132px minmax(0,1fr) auto;
+  align-items:center;
+  gap:var(--oc-space-4);
+  padding:var(--oc-space-4);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-card);
+  background:var(--oc-surface);
+  box-shadow:var(--oc-shadow-soft);
+}
+[data-orena-ui="v2"] .oc-continue-body{display:grid;gap:var(--oc-space-1);min-width:0}
+[data-orena-ui="v2"] .oc-continue-title{
+  margin:0;
+  font-size:var(--oc-text-h4);
+  font-weight:600;
+  line-height:var(--oc-line-heading);
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-continue-sub,
+[data-orena-ui="v2"] .oc-continue-state{margin:0;font-size:var(--oc-text-caption);color:var(--oc-ink-muted)}
+
+/* ============================================================ worlds ===== */
+
+[data-orena-ui="v2"] .oc-world-rail{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:var(--oc-space-5);
+}
+[data-orena-ui="v2"] .oc-world{min-width:0;display:grid}
+[data-orena-ui="v2"] .oc-world-open{
+  display:grid;
+  gap:var(--oc-space-3);
+  width:100%;
+  /* Cards in a mosaic row share the row's height, so a taller featured card
+     must not leave its neighbours floating in white space. */
+  height:100%;
+  align-content:start;
+  padding:var(--oc-space-3);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-surface);
+  background:var(--oc-surface);
+  box-shadow:var(--oc-shadow-soft);
+  text-align:left;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  transition:transform var(--oc-motion-standard) var(--oc-ease),
+             box-shadow var(--oc-motion-standard) var(--oc-ease);
+}
+/* Hover lift is a pointer affordance only; nothing on a touch device depends
+   on it (ORENA_RESPONSIVE_COMPOSITION §13). */
+@media (hover:hover){
+  [data-orena-ui="v2"] .oc-world-open:hover{transform:translateY(-3px);box-shadow:var(--oc-shadow-raised)}
+}
+[data-orena-ui="v2"] .oc-world-open:active{transform:translateY(0)}
+[data-orena-ui="v2"] .oc-world-body{display:grid;gap:var(--oc-space-2);padding:0 var(--oc-space-2) var(--oc-space-2)}
+[data-orena-ui="v2"] .oc-world-title{
+  font-size:var(--oc-text-h4);
+  font-weight:700;
+  line-height:var(--oc-line-heading);
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-world-lede{
+  font-size:var(--oc-text-caption);
+  line-height:var(--oc-line-body);
+  color:var(--oc-ink-muted);
+}
+[data-orena-ui="v2"] .oc-world-meta{display:flex;flex-wrap:wrap;gap:var(--oc-space-1) var(--oc-space-3)}
+[data-orena-ui="v2"] .oc-meta--lead{color:var(--oc-ink)}
+
+/* The featured world gets the wide slot on a canvas that can afford one. */
+@media (min-width:1200px){
+  [data-orena-ui="v2"] .oc-world-rail{grid-template-columns:repeat(4,minmax(0,1fr))}
+  [data-orena-ui="v2"] .oc-world[data-variant="featured"]{grid-column:span 2}
+  /* Wider, not taller. A two-column card earns a cinematic crop; letting it
+     grow vertically instead would set the height of the whole row. */
+  [data-orena-ui="v2"] .oc-world[data-variant="featured"] .oc-artwork{--oc-artwork-ratio:21 / 9}
+  [data-orena-ui="v2"] .oc-world[data-variant="featured"] .oc-world-title{font-size:var(--oc-text-h3)}
+}
+
+/* ======================================================== for you ======== */
+
+[data-orena-ui="v2"] .oc-tile-rail{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:var(--oc-space-4);
+}
+[data-orena-ui="v2"] .oc-tile{
+  display:grid;
+  grid-template-rows:1fr auto;
+  gap:var(--oc-space-4);
+  padding:var(--oc-space-5);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-card);
+  background:var(--oc-surface);
+  box-shadow:var(--oc-shadow-soft);
+  min-width:0;
+}
+[data-orena-ui="v2"] .oc-tile-body{display:grid;gap:var(--oc-space-2);align-content:start;min-width:0}
+[data-orena-ui="v2"] .oc-tile-title{
+  margin:0;
+  font-size:var(--oc-text-h4);
+  font-weight:600;
+  line-height:var(--oc-line-heading);
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-tile-sub{
+  margin:0;
+  font-size:var(--oc-text-ui);
+  line-height:var(--oc-line-body);
+  color:var(--oc-ink-muted);
+}
+[data-orena-ui="v2"] .oc-quote{
+  margin:0;
+  padding-left:var(--oc-space-3);
+  border-left:3px solid var(--oc-accent,var(--oc-orange-300));
+  font-size:var(--oc-text-ui);
+  color:var(--oc-ink);
+}
+[data-orena-ui="v2"] .oc-tile-actions{display:flex;flex-wrap:wrap;gap:var(--oc-space-2);align-items:center}
+[data-orena-ui="v2"] .oc-link{
+  min-height:var(--oc-touch-min);
+  padding:0 var(--oc-space-2);
+  border:0;
+  background:none;
+  color:var(--oc-orange-700);
+  font:inherit;
+  font-size:var(--oc-text-ui);
+  font-weight:600;
+  text-decoration:underline;
+  cursor:pointer;
+}
+
+/* ======================================================= challenge ======= */
+
+[data-orena-ui="v2"] .oc-challenge{
+  display:grid;
+  gap:var(--oc-space-4);
+  align-content:start;
+  padding:var(--oc-space-6);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-surface);
+  background:linear-gradient(165deg,var(--oc-surface-warm),var(--oc-surface));
+  box-shadow:var(--oc-shadow-soft);
+  min-width:0;
+}
+[data-orena-ui="v2"] .oc-challenge-body{display:grid;gap:var(--oc-space-2);min-width:0}
+[data-orena-ui="v2"] .oc-challenge-title{
+  margin:0;
+  font-size:var(--oc-text-h4);
+  font-weight:700;
+  line-height:var(--oc-line-heading);
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-challenge-copy{
+  margin:0;
+  font-size:var(--oc-text-ui);
+  line-height:var(--oc-line-body);
+  color:var(--oc-ink-muted);
+}
+[data-orena-ui="v2"] .oc-challenge .oc-btn{justify-self:start}
+
+/* A vertical run of product components inside a section. */
+[data-orena-ui="v2"] .oc-stack{display:grid;gap:var(--oc-space-4)}
+
+/* ======================================================== discovery ====== */
+
+[data-orena-ui="v2"] .oc-discovery-rail{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:var(--oc-space-4);
+}
+[data-orena-ui="v2"] .oc-discovery{min-width:0}
+[data-orena-ui="v2"] .oc-discovery-open{
+  display:grid;
+  gap:var(--oc-space-3);
+  width:100%;
+  padding:var(--oc-space-3);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-card);
+  background:var(--oc-surface);
+  text-align:left;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  transition:transform var(--oc-motion-standard) var(--oc-ease),
+             box-shadow var(--oc-motion-standard) var(--oc-ease);
+}
+@media (hover:hover){
+  [data-orena-ui="v2"] .oc-discovery-open:hover{transform:translateY(-2px);box-shadow:var(--oc-shadow-raised)}
+}
+[data-orena-ui="v2"] .oc-discovery-body{display:grid;gap:var(--oc-space-1);padding:0 var(--oc-space-2) var(--oc-space-2)}
+[data-orena-ui="v2"] .oc-discovery-title{
+  font-size:var(--oc-text-body);
+  font-weight:600;
+  line-height:var(--oc-line-heading);
+  color:var(--oc-ink-strong);
+}
+[data-orena-ui="v2"] .oc-discovery-lede{font-size:var(--oc-text-caption);color:var(--oc-ink-muted)}
+
+/* ===================================================== composition ======= */
+
+/* Desktop 1440: For You and Challenge share a row, because a wide canvas
+   should increase simultaneous visibility rather than stretch one column. */
+@media (min-width:1200px){
+  [data-orena-ui="v2"] .oc-home-row{
+    display:grid;
+    grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+    gap:var(--oc-space-8);
+    align-items:start;
+  }
+  /* When there is no truthful challenge to make, the Challenge section is not
+     rendered at all, and the row must not hold an empty column open for it. */
+  [data-orena-ui="v2"] .oc-home-row[data-columns="1"]{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Tablet 1024: the hero stacks, worlds fall to two columns, supporting
+   sections stack. Composed for the width, not a squeezed desktop. */
+@media (max-width:1199px){
+  [data-orena-ui="v2"]{--oc-section-gap:24px}
+  [data-orena-ui="v2"] .oc-hero{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"art" "body" "continue";
+    gap:var(--oc-space-5);
+    padding:var(--oc-space-5);
+  }
+  /* The hero stacks here, so its artwork is no longer sharing a row with the
+     copy and an untamed 16/7 band would push the invitation below the fold.
+     Cap the height and let the crop do the work. */
+  [data-orena-ui="v2"] .oc-artwork[data-artwork-ratio="hero"]{--oc-artwork-ratio:16 / 7}
+  [data-orena-ui="v2"] .oc-hero-art .oc-artwork-frame{aspect-ratio:auto;height:220px}
+  [data-orena-ui="v2"] .oc-world-rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+  [data-orena-ui="v2"] .oc-home-row{display:grid;gap:var(--oc-space-6)}
+}
+
+/* Mobile 390: worlds and discovery become horizontal rails so artwork keeps
+   its scale, and the page itself never scrolls sideways. Progressive
+   discovery, not a shrunken desktop. */
+@media (max-width:639px){
+  [data-orena-ui="v2"] .oc-hero{padding:var(--oc-space-4);border-radius:var(--oc-radius-surface)}
+  [data-orena-ui="v2"] .oc-artwork[data-artwork-ratio="hero"]{--oc-artwork-ratio:4 / 3}
+  [data-orena-ui="v2"] .oc-hero-art .oc-artwork-frame{aspect-ratio:auto;height:170px}
+  [data-orena-ui="v2"] .oc-hero-title{font-size:var(--oc-text-h2);max-width:none}
+  [data-orena-ui="v2"] .oc-hero-actions .oc-btn{width:100%}
+
+  [data-orena-ui="v2"] .oc-continue{grid-template-columns:96px minmax(0,1fr);row-gap:var(--oc-space-3)}
+  [data-orena-ui="v2"] .oc-continue .oc-btn{grid-column:1 / -1}
+
+  [data-orena-ui="v2"] .oc-world-rail,
+  [data-orena-ui="v2"] .oc-discovery-rail{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:78%;
+    grid-template-columns:none;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    /* The rail bleeds to the page edge so a card can be half-visible and
+       invite the swipe, while the page keeps its gutter. */
+    margin-inline:calc(var(--oc-space-4) * -1);
+    padding-inline:var(--oc-space-4);
+    padding-bottom:var(--oc-space-2);
+    scrollbar-width:none;
+  }
+  [data-orena-ui="v2"] .oc-world-rail::-webkit-scrollbar,
+  [data-orena-ui="v2"] .oc-discovery-rail::-webkit-scrollbar{display:none}
+  [data-orena-ui="v2"] .oc-world,
+  [data-orena-ui="v2"] .oc-discovery{scroll-snap-align:start}
+  [data-orena-ui="v2"] .oc-world[data-variant="featured"]{grid-column:auto}
+
+  [data-orena-ui="v2"] .oc-tile-rail{grid-template-columns:minmax(0,1fr)}
+  [data-orena-ui="v2"] .oc-tile-actions .oc-btn{flex:1 1 auto}
+}
+
+@media (prefers-reduced-motion:reduce){
+  [data-orena-ui="v2"] *{transition-duration:1ms !important}
+  [data-orena-ui="v2"] .oc-world-open:hover,
+  [data-orena-ui="v2"] .oc-discovery-open:hover{transform:none}
+}

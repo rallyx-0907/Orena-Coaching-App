@@ -40,17 +40,17 @@
     "expected_development_branch": "claude/integration-v2",
     "lane": "orena_integration"
   },
-  "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
-  "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
+  "last_verified_application_commit": "817429407f158c40d84d0555497802d325ea47a9",
+  "last_verified_batch": "golden_home_h1_3_lifecycle_closeout",
   "current_program_stage": {
     "id": "R21",
     "name": "Mobile Release Readiness",
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "listening_real_media_catalog",
+    "id": "orena_golden_web_home",
     "status": "in_progress",
-    "next_task": "Finish L2.5 real cold Supadata acceptance first (one run, fixture iSTlFeW-Z9M); then Batch L3 full EN/ZH candidate import."
+    "next_task": "H2 Golden Home: replace the development artwork wash with approved production artwork inside the containers H1/H1.1/H1.2/H1.3 built, render the signed-in Home at 1440/1024/390, compare against ORENA_HOME_GOLDEN_SPEC.md and fix the three largest gaps at the highest shared level. Do not redesign the composition or re-open the H1.1/H1.2/H1.3 audit fixes. Deferred and preserved: HUMAN applies Alembic 20260903_0005 to the dogfood DB (still 20260828_0004) then dogfood-accepts lesson-scoped progress; L3 ingestion; Listening mode persistence."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -160,7 +160,12 @@
     "most_l1_discovery_rails_are_empty_until_l3_loads_real_content",
     "dev_generated_catalog_is_unreviewed_development_content_never_production",
     "generated_excerpts_are_proposed_candidates_needing_human_curation",
-    "generated_lesson_ids_are_provisional_and_can_move_if_captions_are_retimed"
+    "generated_lesson_ids_are_provisional_and_can_move_if_captions_are_retimed",
+    "home_h1_artwork_is_a_textless_development_placeholder_h2_owns_production_artwork",
+    "home_h1_was_not_rendered_signed_in_because_dogfood_login_is_a_human_gate",
+    "no_explore_route_exists_so_a_world_card_opens_its_lead_lesson",
+    "eight_mjs_tests_fail_at_the_previous_head_and_are_outside_ci",
+    "test_r12_listening_goal_editor_mjs_fails_on_a_pre_existing_harness_gap_not_in_ci"
   ],
-  "last_verified_at": "2026-09-02"
+  "last_verified_at": "2026-09-04"
 }

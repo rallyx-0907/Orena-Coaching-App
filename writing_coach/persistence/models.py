@@ -224,13 +224,27 @@ class ListeningProgress(Base):
 
     __tablename__ = "listening_progress"
     __table_args__ = (
+        # Progress belongs to a LESSON, not to the media it was cut from. One
+        # source can carry several excerpts, and finishing 00:30-01:05 says
+        # nothing about 02:10-02:55; keying on asset_id made the second excerpt
+        # look already started.
         UniqueConstraint(
-            "user_id", "language_code", "asset_id", "segment_id",
-            name="uq_listening_progress_scope_segment",
+            "user_id", "language_code", "lesson_id", "segment_id",
+            name="uq_listening_progress_scope_lesson_segment",
         ),
+        Index(
+            "ix_listening_progress_user_language_lesson",
+            "user_id", "language_code", "lesson_id",
+        ),
+        # asset_id stays indexed: it is still real provenance, and the by-asset
+        # read path predates lesson scoping.
         Index(
             "ix_listening_progress_user_language_asset",
             "user_id", "language_code", "asset_id",
+        ),
+        Index(
+            "ix_listening_progress_user_language_updated",
+            "user_id", "language_code", "updated_at",
         ),
     )
 
@@ -240,6 +254,9 @@ class ListeningProgress(Base):
     )
     language_code: Mapped[str] = mapped_column(String(20), nullable=False)
     asset_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    # "" means legacy/unassigned: a historical row whose lesson could not be
+    # determined without guessing. It is never filled in speculatively.
+    lesson_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     segment_id: Mapped[str] = mapped_column(String(255), nullable=False)
     presentation: Mapped[str] = mapped_column(String(20), default="prompt", nullable=False)
     revealed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -255,9 +272,15 @@ class ShadowingProgress(Base):
 
     __tablename__ = "shadowing_progress"
     __table_args__ = (
+        # Same rule as Listening: shadowing one excerpt is not shadowing another
+        # excerpt of the same film.
         UniqueConstraint(
-            "user_id", "language_code", "asset_id", "segment_id",
-            name="uq_shadowing_progress_scope_segment",
+            "user_id", "language_code", "lesson_id", "segment_id",
+            name="uq_shadowing_progress_scope_lesson_segment",
+        ),
+        Index(
+            "ix_shadowing_progress_user_language_lesson",
+            "user_id", "language_code", "lesson_id",
         ),
         Index(
             "ix_shadowing_progress_user_language_asset",
@@ -271,6 +294,7 @@ class ShadowingProgress(Base):
     )
     language_code: Mapped[str] = mapped_column(String(20), nullable=False)
     asset_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    lesson_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     segment_id: Mapped[str] = mapped_column(String(255), nullable=False)
     completed_rounds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

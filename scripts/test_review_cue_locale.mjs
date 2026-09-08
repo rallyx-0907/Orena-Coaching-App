@@ -105,8 +105,11 @@ for(const locale of ['en','vi','zh']){
   state.supportLanguage=locale;
   const empty=fakeRoot();
   await renderHome(empty);
-  assert.match(empty.innerHTML,/data-review-cue-state="none"/);
-  assert.ok(empty.innerHTML.includes(locale==='en'?'No actionable':locale==='vi'?'Chưa có đủ':'目前还没有足够'));
+  /* H1.1: Home is discovery-first. An unavailable cue renders no tile at all
+     rather than a card explaining that there is nothing to review. Review
+     itself still renders its own empty state, asserted above. */
+  assert.doesNotMatch(empty.innerHTML,/data-review-cue-state/);
+  assert.doesNotMatch(empty.innerHTML,new RegExp(locale==='en'?'No actionable':locale==='vi'?'Chưa có đủ':'目前还没有足够'));
 }
 
 console.log('Review cue EN/VI/ZH contract: PASS');

@@ -2,110 +2,120 @@
 
 ## Governance
 
-**Purpose:** current execution state only. **Authority:** updated by the active
-agent after verified evidence. **Change when:** branch/lane, verified batch,
-status, blocker, human gate, or exact next task changes. **Do not store:**
-durable product philosophy, historical closeouts, implementation inventories,
-or secret values.
+**Purpose:** current execution state only. **Authority:** active agent after
+verified evidence. **Change when:** branch/lane, verified batch, status,
+blocker, human gate, or exact next task changes. **Do not store:** durable
+product philosophy, historical closeouts, implementation inventories, secrets.
 
 ## Current branch / lane
 
-- Branch: `claude/integration-v2`. PR #54 is merged (`main` = `8d04c44`,
-  through `cbdedfd`). **PR #55 is OPEN** and carries everything since — L1, L2,
-  L2.5, catalog loader, YouTube provider, CI, tests. `main` has none of it.
-- Lane: Orena integration, Listening real-media catalog.
-- Read live HEAD with `git rev-parse HEAD`. The verified application baseline is
-  `a97c4eab0406e5c5e0a291184d90d74973c1eb7e`, the latest application-changing
-  commit, verified by CI at its docs-only descendant `73794c8`. Commits after
-  `a97c4ea` are governance-only; earlier SHAs in old handoffs are stale.
-- That baseline ALREADY CONTAINS L2.5 application work — do not re-implement it:
-  support-language separation (`ed9acc7`), curated meaning with a persistent
-  translation cache (`6af33fc`), Groq token sizing and the single language
-  registry (`017c91e`), background transcript-recovery orchestration
-  (`4d03773`), and the atomic provider-poll claim (`a97c4ea`).
-- This field goes stale on EVERY application commit. Whoever lands one updates
-  it and the YAML in the same batch, or the next agent rebuilds finished work.
+- Branch: `claude/integration-v2`; work sits on **draft PR #56** (`main` =
+  `e8e2d70`). CI runs only on `push: [main]`/`pull_request` — no open PR means
+  NO CI; check PR before claiming CI.
+- Lane: Orena integration — Product UI Foundation + Golden Web Home;
+  Listening catalog lane preserved, deferred.
+- Read live HEAD via `git rev-parse HEAD`. Verified application baseline:
+  `817429407f158c40d84d0555497802d325ea47a9`.
+- Baseline ALREADY CONTAINS, do not re-implement: support-language
+  separation, curated meaning+translation cache, background recovery
+  orchestration, atomic provider-poll claim, L3 import pipeline,
+  curated-transcript contract (D-046), offline transcript producer, preview
+  tier (D-047/D-048), lesson-scoped progress + Continue Learning (D-049), and
+  the Orena product layer + Home H1-H1.3 (D-051-D-054).
+- Goes stale on EVERY commit — update it and the YAML together.
 
 ## Last verified batch
 
-- Real EN/ZH playback verified by browser decode through Orena's own player:
-  transcript sync, Dictation, Shadowing handoff. Automated evidence, not human
-  acceptance.
-- CI + Mobile validation green at `73794c8` (run 33643021072), the newest
-  verified state; also green at `cbdedfd` and `077dd46`. Local: 769 backend
-  passing, 11 web contracts, mobile validate clean. The 4 local admin/reference
-  failures are the documented Compose-OAuth gotcha (401, not a regression); CI
-  passes them.
+- **H1.3 lifecycle closeout**, local: no Python touched (866 backend
+  unchanged), 31/31 CI-gated `.mjs` contracts, ESM graph (55 modules) and
+  `validate_architecture` OK. Same 8 pre-H1 `.mjs` failures plus the isolated
+  goal-editor gap; none in CI.
+- Real EN/ZH playback verified by browser decode, not by a human.
 
-## DEPLOYED FOR QA — read before touching the runtime
+## RUNTIME — ONE local Orena, read before touching Docker
 
-- `orena.chillpickle.org` runs `cbdedfd` (in `main` via PR #54). L1/L2/L2.5 are
-  NOT deployed. It is `APP_ENV=production` + PostgreSQL, so the dev overlay is
-  refused there by design — do not weaken that guard.
-- No CD. A push deploys nothing; the domain changes only when someone runs
-  `docker compose --profile public up -d --build writing-coach` on the host.
-  Three worktrees share one Docker runtime; the public stack is `-claudecode`.
-- Check no other lane is mid-batch before operating Docker.
-- OPEN HUMAN QA there: sign in, open Listening, exercise
-  `en-science-cosmic-calendar` and `zh-technology-search-wikipedia` for poster,
-  playback, transcript sync, Dictation, Shadowing, progress/resume.
-- A human-approved production PostgreSQL migration ran 2026-09-02 to
-  `20260828_0004`; that covered one run, the gate stays `approval_required`.
+- **D-048: ONE long-lived runtime.** `ai-writing-coach-writing-coach-1` on
+  `127.0.0.1:8000`, `ai-writing-coach-postgres-1`, one cloudflared. Never a
+  second container/DB/image/port/tunnel/Compose project or feature volume.
+- Bind-mounted source: `docker compose restart writing-coach` suffices for
+  Python/JS/CSS/catalog changes; rebuild ONLY for Dockerfile/requirements/
+  system packages; env changes need `up -d`.
+- Images: CURRENT `ai-writing-coach:local`, ROLLBACK
+  `orena-rollback:pre-realmedia`. No QA/feature/milestone/test images.
+- **D-047 tier**: `APP_ENV`=runtime/security, `ORENA_DEPLOYMENT_TIER`=content
+  visibility (default production). Preview needs platform-admin, enforced
+  server-side on listing AND lesson endpoints, per-USER. `compose.preview.yaml`
+  is optional isolated staging only.
+- 8 unused `orena-postgres-preview-data-*` volumes remain; deletion is a
+  HUMAN GATE, reported not removed. `orena.chillpickle.org` runs `cbdedfd`,
+  does NOT follow `main`, no CD.
+- Three worktrees share one Docker runtime; check no other lane is mid-batch.
 
 ## IN PROGRESS
 
-- Listening batches from `docs/product/AGENT_IMPLEMENTATION_ORDER.md`. **L1
-  (discovery, web) and L2 (importer) are implemented**; L2.5 is one live check
-  from done. Human QA of the two real lessons is open (see OPEN HUMAN QA).
+- H2 Golden Home: production artwork/visual fidelity. H1 shipped real
+  artwork containers/ratios/crop rules with a textless development wash.
+- Listening preserved: L1/L2 done, L2.5 one live check from done, L3 blocked
+  on ingestion. Deferred, not invalidated.
 
 ## DONE
 
 - R0-R20 preserved. Listening ENGINE locally accepted; Writing (`beta`),
   Speaking, Reading (`internal`) complete locally — do not rebuild them.
-- REAL MEDIA CATALOG PARTIAL: two rights-cleared video lessons; five seed audio.
-  One reviewed-media URL rule on server, web and native; direct playback
-  Commons-only. L1 media-first discovery is web only: 16:9 poster, rails from
-  topic/tags, real video leads every rail.
-- L2 importer reuses the YouTube adapter and canonical Media Learning Object:
-  deterministic ids, excerpts on real transcript boundaries only, failures never
-  end a batch. Content is `DEV_CANDIDATE` / `rights_review` / `proposed`.
-- Artifact strategy implemented, NO snapshot committed: `SNAPSHOT_REQUIRED=False`,
-  `--check` SKIPs, fingerprint binds provenance and body, enforced both ways.
+- REAL MEDIA CATALOG PARTIAL: 2 rights-cleared video lessons, 5 seed audio.
+  L2/L3 importer reuses the YouTube adapter and canonical Media Learning
+  Object; a failed caption request is never "no captions".
+- L2.5 (D-042/D-044): support/learning language and UI locale distinct;
+  meaning editorial → cached → live → truthful unavailable. Groq key VALID —
+  that 403 was Cloudflare 1010.
+- **D-049**: progress keyed by (user, language, LESSON, segment) for
+  Dictation/Shadowing; Continue Learning built server-side from real
+  PostgreSQL progress with discovery's visibility boundary.
+- **D-051 (H1)**: `orena/product-components.{js,css}`, first reusable Orena
+  layer (`data-orena-ui="v2"`). Home: Hero→Continue→Worlds→For You→
+  Challenge→Continue Exploring; Writing dashboard/streak off Home. Worlds:
+  versioned source (`orena_worlds.v1.json`+`world_catalog.py`+
+  `GET /api/worlds`) MEASURED: EN 3/6, ZH 3/6.
+- **D-052/D-053/D-054 (H1.1-H1.3)**: Home audit corrections — real
+  practice-outcome statuses (not 4 invented); empty sections show real
+  starters, no double-listing, independent repaint; components dropped
+  `bodyHtml`/`secondaryActions`; `lang` split from content language.
+  `renderHome` honors `root._cleanupScreen` + a bounded settle budget (no
+  stale repaint, no permanent `aria-busy`, no waiting past cleanup) and now
+  gates every shared-state write, not only `paint()`. Next Practice no
+  longer duplicates a Listening continuation; a total personal outage reads
+  unavailable not empty; a World's lead label splits UI from content
+  language.
 
-## L2.5 STATUS
+## CURATED TRANSCRIPT RUNTIME — done, proven in a browser
 
-- Support/learning language and UI locale are distinct; one rule in
-  `core/support_languages.py`, persistent in the profile, twelve languages, nine
-  Vietnamese defaults gone. One recovery policy shared by My Media and the
-  importer; `transcript_origin` on every response.
-- Curated meaning: editorial → cached → live → truthful unavailable, keyed by
-  asset+segment+text fingerprint+language+provider. PROVEN live — ja and es
-  generate once then serve `cached-generated` at 0 cost; ZH adds Pinyin.
-- Groq key is VALID; never replace it. HTTP 403 does NOT mean a bad key (that
-  403 was Cloudflare 1010 refusing a `Python-urllib` UA). FIXED:
-  `max_completion_tokens` 2048 replaces `max_tokens: 8000` which equalled the
-  org ceiling; 413 splits the batch; the private vi/en/zh map is gone.
-- No-caption recovery PROVEN warm on `iVk7Ft6gl5w`: 10 canonical timestamped
-  segments, `transcript_origin: supadata_generated`, Japanese meaning, four
-  modes, "generated automatically" disclosure, never "unsupported".
-- Orchestration FIXED: the Orena job is created BEFORE the provider call, so the
-  learner gets `provider_starting` + a handle immediately and the ~93s provider
-  start runs on a bounded worker. Cold initial response **1.36s**, was 90s.
-- Poll path genuinely thread-safe — the earlier "registry thread-safe" claim
-  covered the container, not the record. The right to poll the paid provider is
-  claimed atomically and the service only gets immutable snapshots, so
-  concurrent status requests make ONE provider call; the rest get
-  `poll_in_flight`. `MEDIA_FALLBACK_START_WORKERS` is bounded-validated.
+- **D-046**: transcript acquisition is INGESTION-time; a lesson never calls a
+  provider on open. `tests/test_curated_transcript_contract.py` makes every
+  provider raise and opens real EN/ZH lessons: **10ms**, 0 calls.
+- Provenance travels with the text; older lessons default UNSPECIFIED: a
+  PERSISTED CANONICAL TRANSCRIPT ARTIFACT, not "JSON forever".
+
+## L3 SHORT-FORM PILOT — gated on ingestion
+
+- 0 transcripts acquired; nothing invented. Three causes: transcript body →
+  `IpBlocked`; Supadata → **429**; Groq ASR → yt-dlp resolves 1/11 EN sources
+  and Groq 400s on googlevideo's 302.
+- `scripts/acquire_listening_transcripts.py` produces the offline handoff;
+  `SNAPSHOT_REQUIRED` stays False; pilot packs unchanged (D-045).
 
 ## PENDING
 
-- Finish L2.5, then L3 content, L4 Dictation, L5 handoffs, L6 native, L7 QA.
-- Human playback acceptance of the two real lessons.
+- H2 artwork, then the shell/navigation migration. No Explore/Progress route
+  yet, so a World card opens its lead lesson via the autostart handoff.
+- Listening human migration/dogfood, ingestion work, and human playback
+  acceptance of the two real lessons all stay preserved.
 
 ## BLOCKED
 
-- No code blocker. Enabling Supadata in production is a paid-provider human
-  gate and has NOT been done; it is on for the local preview only.
+- L3 content: YouTube IP ban (above). L2.5 cold acceptance: Supadata quota,
+  paid-provider human gate. Home NOT rendered signed-in: dogfood requires
+  Google sign-in, a human gate — verified instead against real
+  components/CSS in sized frames.
 
 ## OPEN P0
 
@@ -113,35 +123,33 @@ or secret values.
 
 ## OPEN P1
 
-- **Supadata plan quota is exhausted**, so the cold end-to-end transcript is
-  still unproven: a direct call returns HTTP 429 `limit-exceeded`. Orena handled
-  it correctly — truthful `provider_failure`, playback intact, never
-  "unsupported" — but final cold acceptance needs quota. Do not spend more
-  quota on code batches; save it for the one run.
-- Registry is process-local: resume handles do not survive a restart or span
-  replicas. Future architecture concern, deliberately not expanded.
-- Real catalog breadth: one EN and one ZH real lesson; spec 3.23 waits on L3.
-- L1 is web only; native needs the L6 port. Native curated video verified by
-  tests and prebuild, not on a device; iOS VP9/WebM decode unproven (the fix
-  would be an H.264 derivative).
-- Generated excerpts are `proposed` candidates; ids are provisional.
+- **L2_5_REAL_COLD_ACCEPTANCE=PENDING_EXTERNAL_PROVIDER_QUOTA** on
+  `iSTlFeW-Z9M` (Supadata 429, D-044, L2.5 NOT done). L3 content blocked (see
+  L3 SHORT-FORM PILOT above).
+- **Listening MODE not persisted**: Continue Learning resumes lesson/segment,
+  not the prior mode. **Migration `20260903_0005` NOT applied** to dogfood DB
+  (still `20260828_0004`); applying it is a human step.
+- `test_r12_listening_goal_editor.mjs` and eight pre-H1 `.mjs` tests fail,
+  none in CI (goal-editor: harness never resolves the library load before
+  asserting).
+- `orena/home.css` is largely dead, kept until the shell migration proves
+  nothing depends on it. Registry is process-local: resume handles don't
+  survive a restart. L1 is web only; native needs L6; iOS VP9/WebM unproven.
 
 ## HUMAN GATES
 
-- Production auth/provider validation, AI activation, PostgreSQL
-  migration/mutation, backup/restore, rollback.
-- Credentials/secrets, Cloudflare/DNS, billing, paid providers, deployment.
-- Mobile signing, real-device matrix, store publication; learner-skill/public
-  release and catalog publication approval.
+- Standing list: AGENTS.md §15 (production data/runtime, secrets, DNS, paid
+  providers, deployment, mobile signing, publication, volume deletion).
+  Signing in to dogfood; deleting 8 legacy volumes.
 
 ## NEXT EXACT TASK
 
-Finish L2.5. Code is done and measured; only the real cold acceptance remains,
-blocked on Supadata plan quota (429 `limit-exceeded`). When quota resets, run
-ONE cold import of `iSTlFeW-Z9M`: `provider_starting` → provider job id →
-queued/processing → completed → real canonical transcript →
-`transcript_origin=supadata_generated` → meaning in the support language →
-Dictation and Shadowing. Then web/native visual QA. Then Batch L3: importer over
-the full EN/ZH pack, curate the proposed excerpts, commit the snapshot and flip
-`SNAPSHOT_REQUIRED` True in the same commit. L3 content is QA'd on a local
-development runtime, never on the production domain — see **D-043**.
+**H2 Golden Home.** H1.1-H1.3 audit corrections are done — do not re-open
+them. Replace the development artwork wash with approved production artwork
+inside the containers H1 already built, render the signed-in Home at
+1440/1024/390, compare against `ORENA_HOME_GOLDEN_SPEC.md`, fix the three
+largest gaps at the highest shared level, and render again. Do not redesign
+H1's composition.
+
+Listening migration/dogfood and L3 ingestion stay preserved deferred work. Do
+not run production/database mutation while executing UI work.
