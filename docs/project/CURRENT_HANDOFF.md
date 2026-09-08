@@ -32,11 +32,10 @@ ORENA_WEB_EXTENSION_GUIDE.md records what a surface inherits.
 recovery needs is where the invariants live:
 
 - **Listening** `ui/encounter.js` - Follow opens no practice panel; a question
-  pauses the voice; "the end" is the end of the excerpt, not the asset.
+  pauses the voice; "the end" is the excerpt's end, not the asset's.
 - **Reading** `content/reading.js` - `readable()` is the gate every adapter
   ends at; `reading-library.js` admits a published text only with cleared
-  rights, an https evidence URL, a verification date, edition and changes.
-  Comprehension is optional and its absence is stated, never fabricated.
+  rights and evidence. Comprehension is optional; its absence is stated.
 - **Writing** `ui/writing-review.js` - renders the evaluator payload and
   `revision_delta()`. A quote not in the learner's text is dropped; the stated
   task reaches the evaluator.
@@ -63,16 +62,13 @@ recovery needs is where the invariants live:
 ## Last verified batch
 
 Local execution only; no CI claim.
-- Thirty Node gates plus the reference gate PASS. ESM graph: 48 modules.
-  Both validators OK.
+- 31 CI-registered Node gates PASS. ESM graph: 51 modules. Both validators OK.
 - Full Python in the app image: 790 passed / 20 failed (see below). The rich
-  provider paths - registers, spoken coaching, generated reading, contextual
-  explanation - run against an injected provider; their grounding rules were
-  mutation-checked.
-- Browser at 390/1440/1920 in EN and ZH, light/dark on representative rooms:
-  no overflow, no pointer target under 24px, no dead controls.
-- Journeys driven in the browser: see the ledger's "Functional core", which
-  records what is real, what is provider-held, and the evidence for each.
+  provider paths run against an injected provider, mutation-checked.
+- Browser at 390/800/1440/1920, EN and ZH, light and dark: no overflow, no
+  room repeating the practice map, no dead controls.
+- Journeys: see the ledger's "Functional core" and "Reference architecture
+  packages" for what is real, what is provider-held, and the evidence.
 
 ## Runtime / safety
 
@@ -96,23 +92,24 @@ context/outcome boundaries and ordered implementation packages. Proposed
 interfaces are not deployed facts or human acceptance. Preserve the restored
 eleven destinations; Collection remains deferred.
 
-Codex next: define the account/evidence architecture package and cross-domain
-contracts identified in section 8, without schema/runtime changes. Opus next:
-finish the Encounter WIP, then implement reference compositions and canonical
-journeys against the blueprint. Provider/microphone and final human visual
-acceptance remain held; neither a small feature fix nor a review replaces the
-Golden Star mission.
+Codex next: the account/evidence architecture package and section 8 contracts,
+without schema/runtime changes. Opus next: package D (continuation
+integration); A, B and C are done. Provider/microphone and final human visual
+acceptance remain held; neither a small fix nor a review replaces the mission.
 
 ## IN PROGRESS
 
 Golden Star is IMPLEMENTING. The three earlier capability findings are closed.
-The Encounter close-look WIP is finished and human-approved as "khá ổn":
-EN/ZH with pinyin on and off, both themes, 390/1440, keyboard, retry, and a
-Dictation regression all verified; token targets measure 27.8x53.2 (EN) and
-24.0x45.2 (ZH), so the 23.984px note was sub-pixel rounding, not a breach.
-Packages A and B of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
-rejection at both named consumers, and a shared capability outcome that tells an
-absent provider apart from a failed request. C and D remain Opus's.
+The Encounter close-look WIP is finished and human-approved: EN/ZH with pinyin
+on and off, both themes, 390/1440, keyboard, retry and a Dictation regression
+verified; token targets are 27.8x53.2 (EN) and 24.0x45.2 (ZH), so the 23.984px
+note was sub-pixel rounding.
+
+Packages A, B and C of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
+rejection at both named consumers; a capability outcome telling an absent
+provider from a failed request; and all ten canonical journeys walked, fixing a
+phrase kept from the learner's own writing that led to Practice rather than that
+writing. Evidence in the ledger. D remains.
 
 ## PENDING
 
@@ -129,6 +126,11 @@ None identified.
 
 ## OPEN P1
 
+- `#/language` renders "temporarily unavailable" only inside a long multi-room
+  sweep at short dwell (4/4 at 700ms/14 routes; 2/2 at 750ms/13 rooms, both
+  themes). Never in isolation, from a single predecessor, or at 300-2600ms
+  dwells. Self-recovers, no error captured; two focused passes did not isolate
+  it. Dedicated debugging slice, not a speculative rewrite.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard, so it
   is inert. Preserve it without restoring the historical shell.
@@ -136,13 +138,11 @@ None identified.
   `grammar-shelf.js` rather than a second syllabus.
 - Cross-device continuity: device memory by design; the account architecture is
   a reserved hold (AGENTS.md, "Architecture holds").
-- Reading library breadth: contract, rights fields and admission gate are in
-  place with two seed texts. Growing the catalogue is a rights decision per
-  text. Without a provider the API answers every request with one built-in
-  passage per language, labelled as such.
-- Non-CI r8/r10/r11 matrices refer to deleted learner wrappers; admin gates to
-  the missing operator host; r20 is frozen native. Do not weaken active tests
-  for them.
+- Reading library breadth: contract, rights fields and admission gate exist
+  with two seed texts; growing it is a rights decision per text. Without a
+  provider the API returns one built-in passage per language, labelled.
+- Non-CI r8/r10/r11 matrices refer to deleted learner wrappers; r20 is frozen
+  native. Do not weaken active tests for them.
 
 ## Baseline test evidence
 

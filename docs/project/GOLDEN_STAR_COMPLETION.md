@@ -163,6 +163,31 @@ are genuinely usable now, and the ones that need one are complete up to the
 provider call. What this runtime cannot show is generated language content, not
 missing product.
 
+## Reference architecture packages
+
+- **A. Context and transition seam - done.** Late-answer rejection at both named
+  consumers. The explanation panel gives each ask a ticket so a slow earlier
+  answer cannot land against a newer question; forced ordering proves the stale
+  answer arrives last and is dropped. Reading to Writing already carried source,
+  draft, context and a resolver-built return path, verified rather than assumed.
+- **B. Capability outcomes - done.** `capabilities/outcome.js` adds the
+  discriminated outcome. An `available:false` payload is real news and becomes
+  unavailable with no retry; a thrown request becomes failed and offers one.
+  The two now read differently in the panel, and keeping a phrase survives both.
+- **C. Reference compositions - journeys verified, one break fixed.** All ten
+  canonical journeys of section 6 were walked. `sourceLink` sent a phrase kept
+  from the learner's own writing to the Practice room, dropping its work
+  reference and reopening unrelated content; it now resolves to that writing
+  with the draft intact. Everything else held, including Dictation opening on
+  the same line the learner selected, in EN and ZH.
+- **D. Continuation integration - not started.**
+
+Evidence for C: 26 room/theme combinations clean at 390, 1440 and 1920 in EN
+and at 1920 in ZH; 800 covered at the same HEAD. No room repeats the practice
+map. The only sweep flags were the known `#/language` flake below and one false
+positive in the probe itself, where a page shorter than the viewport reports a
+negative overflow.
+
 ## Rulings
 
 2026-09-08 human role ruling: Codex owns the large Orena architecture; Opus
