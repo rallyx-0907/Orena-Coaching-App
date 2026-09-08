@@ -400,7 +400,7 @@ export async function renderEncounter(root, ctx) {
       labels: { noun:c.wordThings, verb:c.wordActions, detail:c.wordDetails },
     }) : null;
     if (closely) original.innerHTML = closely;
-    original.dataset.closeLook = closely ? 'on' : 'off';
+    original.dataset.closeLookState = closely ? 'on' : 'off';
     moment.querySelector('.close-look-guide').hidden = !closeLook || gap;
     moment.querySelector('[data-word-legend]').hidden = !closely;
     const pending = annotating.has(s.segment_id);
@@ -495,7 +495,7 @@ export async function renderEncounter(root, ctx) {
     showAllMeaning(true);
     focusRegion(transcript.querySelector('h2'));
   };
-  const closeLookToggle = root.querySelector('[data-close-look]');
+  const closeLookToggle = root.querySelector('input[data-close-look]');
   closeLookToggle.onchange = () => {
     closeLook = closeLookToggle.checked;
     // Pause to explore without replacing the focused word while it is read.

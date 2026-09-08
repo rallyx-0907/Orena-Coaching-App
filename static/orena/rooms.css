@@ -483,7 +483,7 @@
   min-height: 44px;
   vertical-align: baseline;
 }
-.follow-moment .spoken[data-close-look='on'] .token {
+.follow-moment .spoken[data-close-look-state='on'] .token {
   border-bottom-color: var(--line);
 }
 .follow-moment .spoken .token:hover,
@@ -505,13 +505,13 @@
 }
 /* Chinese reads with its sound above the character it belongs to, which is
    where a learner expects it - not on a separate line to reconcile. */
-.follow-moment .spoken[data-close-look='on'] .token[data-reading] {
+.follow-moment .spoken[data-close-look-state='on'] .token[data-reading] {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   line-height: 1.35;
 }
-.follow-moment .spoken[data-close-look='on'] .token[data-reading]::before {
+.follow-moment .spoken[data-close-look-state='on'] .token[data-reading]::before {
   content: attr(data-reading);
   font-size: 0.62em;
   color: var(--muted);
