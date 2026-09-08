@@ -41,6 +41,7 @@ from sqlalchemy.engine import Engine
 from writing_coach.persistence.mutation_commit import (
     MutationOutcome,
     MutationRefused,
+    ResourceState,
     commit_mutation,
 )
 from writing_coach.reference_backbone import Scope
@@ -82,9 +83,18 @@ def focus_digest(focus: str) -> str:
 
 
 def occurrence_digest(
-    saved_word_id: str, reason: str, source: dict[str, str], focus: str
+    saved_word_id: str,
+    reason: str,
+    source: dict[str, str],
+    focus: str,
+    availability: str,
 ) -> str:
     """The semantic content of one attachment, for the receipt's reuse guard.
+
+    Every input that ends up written to the row is in here. `availability` was
+    not, and it is state: reusing an operation id with a changed availability
+    would have matched the digest and replayed, reporting success for a value
+    that was never stored.
 
     This catches an operation id being replayed with different content. It is
     not the occurrence's identity - identical content under a different
@@ -97,6 +107,7 @@ def occurrence_digest(
             'reason': reason,
             'source': {k: source.get(k, '') for k in ('kind', 'id', 'revision')},
             'focus': focus,
+            'availability': availability,
         },
         sort_keys=True,
         ensure_ascii=False,
@@ -156,9 +167,29 @@ class PostgresProvenanceRepository:
                 raise MutationRefused('cross_account_saved_word')
             if str(parent['language_code']) != str(scope.language):
                 raise MutationRefused('cross_language_saved_word')
-            # An occurrence is created once and never versioned upward by this
-            # path, so the resource is always absent before it.
-            return 0, False, None
+            # And the occurrence itself. Reporting version 0 unconditionally
+            # assumed the id was free, so a distinct operation reusing an
+            # existing occurrence id went to the insert and failed on the
+            # primary key instead of being answered.
+            existing = connection.execute(
+                text(
+                    'SELECT p.incarnation_id, p.language_code, p.version, i.user_id '
+                    'FROM language_provenance p '
+                    'JOIN account_incarnations i ON i.id = p.incarnation_id '
+                    'WHERE p.id = :id FOR UPDATE OF p'
+                ),
+                {'id': occurrence_id},
+            ).mappings().first()
+            if existing is None:
+                return ResourceState(0, False, scope, None)
+            owner = Scope(
+                str(existing['user_id']),
+                str(existing['incarnation_id']),
+                str(existing['language_code']),
+            )
+            # In our scope this is a version conflict against a creation; in
+            # another scope it is a denial. Either way it is an answer.
+            return ResourceState(int(existing['version']), False, owner, None)
 
         def write(connection, version, sequence, now, state):
             connection.execute(
@@ -193,7 +224,7 @@ class PostgresProvenanceRepository:
             scope=scope,
             domain=PROVENANCE_DOMAIN,
             operation_id=operation_id,
-            digest=occurrence_digest(saved_word_id, reason, source, focus),
+            digest=occurrence_digest(saved_word_id, reason, source, focus, availability),
             expected_version=0,
             resource_id=occurrence_id,
             load=load,

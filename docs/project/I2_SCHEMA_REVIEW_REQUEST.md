@@ -13,6 +13,49 @@ Review was conducted outside the repository. Recorded here per AGENTS.md
 "Architecture review authority": reviewer identity, reviewed commit and outcome
 must be in Git.
 
+## Final re-review of `728a8df`: CHANGES REQUIRED BEFORE STEP 3
+
+Two blockers, both addressed. **The migration is unchanged this round** — both
+were in the adapters. Step 3 stays blocked; no caller is activated.
+
+### Blocker 1 — the provenance digest was incomplete
+
+`availability` is written to the occurrence and was not in `occurrence_digest`.
+An operation id reused with a changed availability therefore matched the digest
+and replayed, reporting success for a value that was never stored. It is in the
+canonical digest now, and the regression proves the reuse returns
+`operation_conflict` and that the stored availability is still the first one.
+
+A companion test holds the other side: an identical retry still replays, so the
+guard did not turn every retry into a conflict.
+
+### Blocker 2 — resource scope and existence now come from persisted state
+
+The envelope passed the *request's* scope as `resource_scope`, so
+`mutation_decision`'s first check compared a value with itself and
+`scope_denied` was unreachable. `load` now returns a `ResourceState` carrying
+the resource's own version, deletion and scope, read from its row and joined to
+`account_incarnations` so the owning account is persisted fact rather than a
+claim.
+
+What that fixes, concretely:
+
+| Situation | Before | Now |
+| --- | --- | --- |
+| Work id owned by another incarnation | looked absent, creation proceeded, primary key error | `scope_denied`, and nothing of theirs moves |
+| Work id in another language of the same account | same | `scope_denied` |
+| Existing same-scope work, distinct operation at creation version | primary key error | `conflict` with `current_version` and the server's payload |
+| Provenance occurrence id already used | version reported 0 unconditionally, primary key error | inspected: `conflict` in scope, `scope_denied` out of it |
+
+Two smaller things came with it. `write` decided insert-versus-update on
+`state is None`, which became ambiguous once a cross-scope resource also
+reported no state; it now tests `version == 1`, which is creation and nothing
+else. And a cross-scope resource returns before any lifecycle rule is applied,
+because no lifecycle rule applies to a resource that is not ours.
+
+`FOR SHARE` is unchanged, as directed. The PostgreSQL file is now 42 cases,
+still skipped without `ORENA_TEST_POSTGRES_URL` and still not executed.
+
 ## Re-review of `0a1a0a5`: CHANGES REQUIRED BEFORE STEP 3
 
 Six corrections, all addressed. Step 3 stays blocked; the migration stays in

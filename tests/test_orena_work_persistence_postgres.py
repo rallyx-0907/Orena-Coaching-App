@@ -491,6 +491,12 @@ def _saved_word(engine, account, language, word):
     return str(word_id)
 
 
+def _other_scope(engine):
+    """A second account with its own incarnation and stream."""
+    account = _account(engine)
+    return Scope(account, PostgresIncarnationRepository(engine).ensure_active(account), 'en')
+
+
 def test_the_same_word_in_one_source_with_different_focus_is_two_occurrences(engine, scope):
     """The shape the first proposal could not represent."""
     repo = PostgresProvenanceRepository(engine)
@@ -839,3 +845,150 @@ def test_provenance_remains_a_valid_global_mutation_domain(engine, scope):
     word = _saved_word(engine, scope.account, scope.language, 'still-valid')
     result = attach(repo, scope, op='op-global', occurrence=str(uuid.uuid4()), word=word)
     assert result['status'] == 'committed'
+
+
+# ---------------------------------------------------------------------------
+# Final re-review corrections.
+# ---------------------------------------------------------------------------
+
+
+def test_a_changed_availability_under_the_same_operation_conflicts(engine, scope):
+    """Blocker 1: availability is state, so it belongs in the digest.
+
+    Same operation, same occurrence, same word, source and focus - only the
+    availability differs. Left out of the digest, this matched and replayed,
+    reporting success for a value that was never stored.
+    """
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'availability')
+    occurrence = str(uuid.uuid4())
+    source = {'kind': 'story', 'id': 'last-train'}
+
+    first = repo.attach_occurrence(
+        scope=scope, occurrence_id=occurrence, operation_id='op-avail',
+        saved_word_id=word, reason='from_reading', source=source,
+        focus='a line', availability='unknown',
+    )
+    assert first['status'] == 'committed'
+
+    changed = repo.attach_occurrence(
+        scope=scope, occurrence_id=occurrence, operation_id='op-avail',
+        saved_word_id=word, reason='from_reading', source=source,
+        focus='a line', availability='available',
+    )
+    assert changed['status'] == 'rejected'
+    assert changed['reason'] == 'operation_conflict'
+
+    stored = repo.occurrences_for(scope, word)
+    assert len(stored) == 1
+    assert stored[0]['availability'] == 'unknown', 'the unwritten value was reported'
+
+
+def test_an_identical_retry_still_replays_after_the_digest_change(engine, scope):
+    """The guard must not have turned every retry into a conflict."""
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'retry-ok')
+    occurrence = str(uuid.uuid4())
+    for _ in range(2):
+        outcome = repo.attach_occurrence(
+            scope=scope, occurrence_id=occurrence, operation_id='op-same',
+            saved_word_id=word, reason='looked_up', availability='available',
+        )
+    assert outcome['status'] == 'replay'
+    assert len(repo.occurrences_for(scope, word)) == 1
+
+
+def test_a_work_id_owned_by_another_account_is_denied_not_created(engine, scope):
+    """Blocker 2: an existing id in another account is not an absent resource."""
+    repo = PostgresWorkRepository(engine)
+    stranger_scope = _other_scope(engine)
+    work_id = str(uuid.uuid4())
+    assert commit(repo, stranger_scope, op='op-theirs', expected=0,
+                  work_id=work_id, text_value='Theirs.')['status'] == 'committed'
+
+    intruder = commit(repo, scope, op='op-mine', expected=0, work_id=work_id,
+                      text_value='Mine now.')
+    assert intruder['status'] == 'rejected'
+    assert intruder['reason'] == 'scope_denied'
+
+    # And nothing of theirs moved.
+    with engine.connect() as connection:
+        owner, version = connection.execute(
+            text('SELECT incarnation_id, version FROM works WHERE id = :id'),
+            {'id': work_id},
+        ).one()
+    assert str(owner) == stranger_scope.incarnation
+    assert version == 1
+
+
+def test_a_work_id_in_another_language_of_the_same_account_is_denied(engine, scope):
+    """The same account, the other language. Still a different resource scope."""
+    repo = PostgresWorkRepository(engine)
+    work_id = str(uuid.uuid4())
+    zh = Scope(scope.account, scope.incarnation, 'zh')
+    assert commit(repo, zh, op='op-zh-own', expected=0, work_id=work_id,
+                  text_value='中文草稿。')['status'] == 'committed'
+
+    crossed = commit(repo, scope, op='op-en-cross', expected=0, work_id=work_id,
+                     text_value='English please.')
+    assert crossed['status'] == 'rejected'
+    assert crossed['reason'] == 'scope_denied'
+
+    with engine.connect() as connection:
+        language = connection.execute(
+            text('SELECT language_code FROM works WHERE id = :id'), {'id': work_id},
+        ).scalar_one()
+    assert language == 'zh'
+
+
+def test_a_second_operation_on_an_existing_work_conflicts_on_version(engine, scope):
+    """Same scope, existing id, creation version. A conflict, not a raw key error."""
+    repo = PostgresWorkRepository(engine)
+    work_id = str(uuid.uuid4())
+    commit(repo, scope, op='op-first', expected=0, work_id=work_id, text_value='First.')
+
+    second = commit(repo, scope, op='op-second', expected=0, work_id=work_id,
+                    text_value='Second.')
+    assert second['status'] == 'conflict'
+    assert second['current_version'] == 1
+    assert second['server_payload']['text'] == 'First.'
+
+
+def test_a_distinct_operation_reusing_an_occurrence_id_conflicts(engine, scope):
+    """Blocker 2, provenance: the id is inspected rather than assumed free."""
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'reused-id')
+    occurrence = str(uuid.uuid4())
+
+    first = repo.attach_occurrence(
+        scope=scope, occurrence_id=occurrence, operation_id='op-one',
+        saved_word_id=word, reason='looked_up',
+    )
+    assert first['status'] == 'committed'
+
+    reused = repo.attach_occurrence(
+        scope=scope, occurrence_id=occurrence, operation_id='op-two',
+        saved_word_id=word, reason='looked_up',
+    )
+    assert reused['status'] == 'conflict', reused
+    assert reused['current_version'] == 1
+    assert len(repo.occurrences_for(scope, word)) == 1
+
+
+def test_an_occurrence_id_owned_by_another_account_is_denied(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    stranger_scope = _other_scope(engine)
+    theirs = _saved_word(engine, stranger_scope.account, stranger_scope.language, 'theirs')
+    occurrence = str(uuid.uuid4())
+    assert repo.attach_occurrence(
+        scope=stranger_scope, occurrence_id=occurrence, operation_id='op-theirs',
+        saved_word_id=theirs, reason='looked_up',
+    )['status'] == 'committed'
+
+    mine = _saved_word(engine, scope.account, scope.language, 'mine')
+    intruder = repo.attach_occurrence(
+        scope=scope, occurrence_id=occurrence, operation_id='op-mine',
+        saved_word_id=mine, reason='looked_up',
+    )
+    assert intruder['status'] == 'rejected'
+    assert intruder['reason'] == 'scope_denied'

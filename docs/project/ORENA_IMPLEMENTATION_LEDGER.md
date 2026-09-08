@@ -279,6 +279,30 @@ The account is now re-resolved from the incarnation row and a mismatch is
 refused before any receipt is read, so a request cannot supply the account half
 of the identity its own replay is compared against.
 
+### Final re-review corrections
+
+`728a8df` came back CHANGES REQUIRED on two blockers, both in the adapters
+rather than the schema, so the migration did not change.
+
+**The provenance digest was missing `availability`.** It is written to the row,
+so an operation id reused with a different availability matched the digest and
+replayed - reporting success for a value that was never stored. Every input
+that reaches the row is in the digest now.
+
+**And resource scope was assumed rather than read.** The envelope passed the
+request's own scope in as the resource's, so the scope check compared a value
+with itself and could never fire: a work id owned by another incarnation looked
+absent, creation went ahead, and the answer a caller got was a primary key
+violation. `load` now returns the resource's persisted version, deletion and
+scope - joined to `account_incarnations` so the owning account is fact rather
+than claim - and the four cases separate properly: another account's id is
+denied, another language's id is denied, an existing id in the caller's own
+scope is a version conflict carrying the server's payload, and a reused
+provenance occurrence id is inspected instead of assumed free.
+
+A raw integrity error is not an answer. Every one of those situations now
+returns something a caller can act on.
+
 ### Still blocked on the gate
 
 Drafts, conversation turns and continuation live only in device memory today;
