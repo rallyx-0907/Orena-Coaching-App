@@ -162,7 +162,43 @@ empty database, which is the behaviour the architecture forbids; the rewrite
 holds all four states and both "no bootstrap" cases. 14 pass. Full suite 797
 passed / 20 failed, failure set byte-identical to a clean `git archive HEAD`.
 
-### Next: the additive schema proposal
+### The additive schema proposal — delivered, awaiting review
+
+`ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 2 is done and handed over in
+`I2_SCHEMA_REVIEW_REQUEST.md`. Seven additive tables in
+`migrations/proposed/20260908_0005_account_work_backbone.py`: account
+incarnation with its deletion barrier, the per-incarnation stream head,
+mutation receipts, change records, the work aggregate, work turns, kept-language
+provenance and projection checkpoints. `work_contract.py` holds the decisions
+around the aggregate (26 stdlib counterexamples, CI registered) and reuses
+`reference_backbone.mutation_decision` rather than restating it;
+`persistence/work_repository.py` is the transactional seam and no caller is
+wired to it.
+
+**The proposal is deliberately not in `migrations/versions/`.** Startup now
+refuses any database that is not at the expected head, so merging an unapproved
+migration into the live chain would make every environment refuse on its next
+restart — approving it by accident, in exactly the way the verification exists
+to prevent. Alembic does not read `migrations/proposed/`; the live head is still
+`20260828_0004`, and the sandbox was restarted against real PostgreSQL to prove
+it. The PostgreSQL test fixture reaches the proposal by adding that directory to
+`version_locations` explicitly, which is the only place it is ever applied.
+Approving it is one `git mv`.
+
+Ten concurrency cases in `tests/test_orena_work_persistence_postgres.py` cover
+the I2 rows of the acceptance matrix — two edits from one version, lost
+acknowledgment replay, operation-id reuse, a stalled transaction holding the
+stream head, snapshot-plus-changes covering exactly once, the stream not being
+language-filtered, writes after deletion, and a recreated incarnation starting
+its own stream. They skip unless `ORENA_TEST_POSTGRES_URL` is set and have not
+been executed: running them is §6 step 3, which follows the review.
+
+Two questions are raised for the reviewer rather than decided: whether
+`works.kind` and `mutation_receipts.domain` should be enumerated in the schema,
+and whether a receipt should store the expected version it was issued against
+instead of that being reconstructed.
+
+### Still blocked on the gate
 
 Drafts, conversation turns and continuation live only in device memory today;
 `Essay`/`EssayRevision` already own the immutable submitted snapshot and its
@@ -170,8 +206,8 @@ evaluator result, and the architecture is explicit that those evidence owners
 do not move. So the work aggregate, mutation receipts, change records and the
 per-incarnation stream head are genuinely absent and need additive tables.
 
-`ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 puts a gate in the middle of this package:
-Opus proposes additive Alembic changes and adapters, **Codex reviews**
-constraints, parent isolation, transactional receipts and indexes, and explicit
-schema authorization comes before any activation. The proposal is the next
-deliverable; activation is not Opus's to declare.
+Codex review of constraints, parent isolation, transactional receipts and
+indexes (§6 step 2), then §6 step 3 against a throwaway database, then explicit
+human schema/runtime authorization (§6 step 4). Until the schema exists, work
+still lives in device memory and no learner-visible behaviour has changed.
+Activation is not Opus's to declare.

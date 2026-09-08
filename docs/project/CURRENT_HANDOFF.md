@@ -46,12 +46,12 @@ behavior and evidence. Current invariants/owners:
 
 Opus application evidence below is preserved, not rerun by Codex.
 Local execution only; no CI claim.
-- 32 CI Node gates PASS. ESM graph 51. Both validators OK. Two stdlib
-  contract gates (backbone, account profile) PASS.
+- 32 CI Node gates PASS. ESM graph 51. Both validators OK. Four stdlib
+  contract gates PASS.
 - Full Python in the app image: 799 passed / 20 failed (see below). The rich
   provider paths run against an injected provider, mutation-checked.
-- Browser at 390/800/1440/1920, EN and ZH, light and dark: no overflow, no
-  room repeating the practice map, no dead controls.
+- Browser at 390/800/1440/1920, EN and ZH, all themes: no overflow, no room
+  repeating the practice map, no dead controls.
 - Journeys: see the ledger's "Functional core" and "Reference architecture
   packages" for what is real, what is provider-held, and the evidence.
 
@@ -86,8 +86,7 @@ Inspect live HEAD and WIP every cycle; all active Opus files/domains are reserve
 ## IN PROGRESS
 
 Golden Star is IMPLEMENTING. The three capability findings are closed.
-The Encounter close-look WIP is finished and human-approved; the 23.984px note
-was sub-pixel rounding.
+The Encounter close-look WIP is finished and human-approved.
 
 Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
 rejection, truthful capability outcomes, ten canonical journeys walked, and
@@ -102,16 +101,17 @@ component was touched. Ember deferred. The brand asset set was replaced and the
 runtime library remapped to it.
 
 Backbone implementation runs against the locked GPT-6 architecture at `27edeb0`
-in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 (account, profile,
-preferences) is done: server-owned scope with an incarnation, settings as
-`{value, source, version}`, and a patch changing only what it names against the
-version it read. Evidence and storage-gated limits in
-`ORENA_IMPLEMENTATION_LEDGER.md`. I2 next.
+in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 is done: server-owned
+scope with an incarnation, settings as `{value, source, version}`, and a patch
+changing only what it names against the version it read. I2 landed its
+startup-schema fix; its schema proposal waits in `migrations/proposed/`, outside
+the live chain, for Codex review per `I2_SCHEMA_REVIEW_REQUEST.md`. Evidence and
+gated limits: `ORENA_IMPLEMENTATION_LEDGER.md`.
 
 ## PENDING
 
-Microphone hardware and live-provider validation remain pending; deterministic
-provider-injected coverage does not establish live prompt quality.
+Microphone hardware and live-provider validation remain pending; injected
+provider coverage does not establish live prompt quality.
 
 ## BLOCKED
 
