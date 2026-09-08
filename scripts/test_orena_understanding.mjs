@@ -112,6 +112,44 @@ assert.ok(
   'the sheet prose colour must not outrank a panel that carries its own ink',
 );
 
+/* --- A late answer cannot land against a newer question ---
+
+   The selection and its passage are fixed when the panel opens, so those cannot
+   drift. The question can: asking "why this way" and then "when would I use it"
+   puts two requests in flight, and without a guard whichever returns last owns
+   the panel - which may be the answer to the question the learner already moved
+   past. Each ask takes a ticket; only the newest may paint.
+
+   This is the Package A boundary rule at a real consumer: a source focus is
+   captured before the request, and a late response is dropped rather than
+   applied to whatever happens to be current when it arrives. */
+assert.match(
+  understanding,
+  /let asking = 0;/,
+  'the panel must know which question it is waiting for',
+);
+assert.match(
+  understanding,
+  /const ticket = \+\+asking;/,
+  'every ask takes a ticket',
+);
+assert.match(
+  understanding,
+  /const current = \(\) => alive\(\) && ticket === asking;/,
+  'a paint is allowed only while its ticket is still the newest',
+);
+// Both the success and the failure paint are gated; a late failure must not
+// wipe a newer answer either.
+assert.equal(
+  (understanding.match(/if \(!current\(\)\) return;/g) || []).length,
+  2,
+  'both the result and the error path check the ticket',
+);
+assert.ok(
+  !/if \(!alive\(\)\) return;\s*if \(!result\.available/.test(understanding),
+  'the result path must not fall back to the bare liveness check',
+);
+
 console.log(
-  'Contextual understanding: shared judgement vocabulary EN/ZH, context-preserving follow-ups, and no invented authority PASS',
+  'Contextual understanding: shared judgement vocabulary EN/ZH, context-preserving follow-ups, late-answer rejection, and no invented authority PASS',
 );

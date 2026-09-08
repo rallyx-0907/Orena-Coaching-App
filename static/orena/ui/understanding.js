@@ -137,7 +137,19 @@ export function openUnderstanding(
       .forEach((button) => (button.onclick = () => run(button.textContent)));
   };
 
+  /* Which question this panel is currently waiting for.
+
+     The selection and its passage are fixed when the panel opens, so they
+     cannot drift. The question can: a learner who asks "why this way" and then
+     "when would I use it" has two requests in flight, and whichever returns
+     last wins the panel - which may be the answer to the question they already
+     moved on from. Each ask takes a ticket, and only the newest one is allowed
+     to paint. A late answer is dropped, not shown against the wrong question. */
+  let asking = 0;
+
   async function run(asked) {
+    const ticket = ++asking;
+    const current = () => alive() && ticket === asking;
     body.textContent = c.loading;
     askForm.hidden = true;
     suggestions.innerHTML = '';
@@ -149,7 +161,7 @@ export function openUnderstanding(
         context: passage,
         question: String(asked || '').trim(),
       });
-      if (!alive()) return;
+      if (!current()) return;
       if (!result.available || result.selected_text !== source) {
         // Say what is missing rather than showing an empty explanation. The
         // learner can still keep the phrase with a note of their own, which is
@@ -170,7 +182,7 @@ export function openUnderstanding(
           .join('\n\n');
       focusRegion(body);
     } catch {
-      if (!alive()) return;
+      if (!current()) return;
       body.innerHTML = `<p class="notice">${esc(c.understandingUnavailable)}</p>`;
       askForm.hidden = false;
       paintSuggestions([]);
