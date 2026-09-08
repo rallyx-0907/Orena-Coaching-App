@@ -109,3 +109,69 @@ Runtime seam in `writing_coach/becoming_memory.py`, `PATCH
 
 Nothing blocking. Two contract items are storage-gated rather than unclear, and
 are named above so the migration slice knows what is waiting for it.
+
+
+---
+
+## I2 — Work persistence, sync and lifecycle
+
+**Specification:** `ORENA_ACCOUNT_DATA_ARCHITECTURE` §§3-7.
+**Exit gate:** I1; reviewed additive schema, receipts, cursor/snapshot and
+PostgreSQL concurrency proof.
+**Status:** in progress. Migration-order item 1 is done; the schema proposal
+that the rest depends on is the next deliverable and carries a review gate.
+
+### Item 1 — startup verifies the schema, it does not create one
+
+`_verify_runtime_readiness` ran `alembic upgrade head` whenever it found an
+empty database. The first process to connect therefore built a schema wherever
+it was pointed, so a deployment aimed at the wrong database created one there
+instead of refusing, and no operator ever chose the moment. This is the tracked
+P1 named as item 1 of the migration order, and it contradicted both the
+architecture ("Startup only verifies schema", "Add schema through an operator
+command") and the standing persistence invariant against automatic startup
+Alembic.
+
+Startup now classifies what it found and refuses everything except a database
+already at the expected revision:
+
+| State | What it means | What happens |
+| --- | --- | --- |
+| `ready` | revision matches the build | serve |
+| `empty` | no revision and no tables | refuse, naming the operator command |
+| `mismatch` | wrong revision, or tables with no revision at all | refuse, reporting both revisions and saying to check which database this is |
+| `unavailable` | could not be read | refuse, and say it is connectivity, not schema |
+
+Tables without an Alembic revision are a mismatch rather than an empty
+database: that is somebody else's schema, or a half-applied one, and creating
+tables on top of it is the worst available move. Only the empty refusal names
+the bootstrap command, because it is the only state where creating a schema is
+the right next step.
+
+`scripts/bootstrap_runtime_schema.py` is that command. It reports before it
+acts, requires `--confirm`, refuses anything that is not empty, and verifies
+the result. Existing operator tooling is untouched: `postgres_shadow.py` still
+builds a shadow database and the cutover rehearsal still verifies the head.
+
+**Evidence.** `scripts/test_orena_runtime_schema.py` — 13 stdlib cases, CI
+registered: the four states, that each refusal says the right thing and only
+the empty one points at the command, and that `runtime.py` contains no
+migration call at all. `tests/test_persistence_runtime.py` was rewritten to the
+new contract — the previous version asserted that startup *did* migrate an
+empty database, which is the behaviour the architecture forbids; the rewrite
+holds all four states and both "no bootstrap" cases. 14 pass. Full suite 797
+passed / 20 failed, failure set byte-identical to a clean `git archive HEAD`.
+
+### Next: the additive schema proposal
+
+Drafts, conversation turns and continuation live only in device memory today;
+`Essay`/`EssayRevision` already own the immutable submitted snapshot and its
+evaluator result, and the architecture is explicit that those evidence owners
+do not move. So the work aggregate, mutation receipts, change records and the
+per-incarnation stream head are genuinely absent and need additive tables.
+
+`ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 puts a gate in the middle of this package:
+Opus proposes additive Alembic changes and adapters, **Codex reviews**
+constraints, parent isolation, transactional receipts and indexes, and explicit
+schema authorization comes before any activation. The proposal is the next
+deliverable; activation is not Opus's to declare.

@@ -1,6 +1,7 @@
 from pathlib import Path
 import pytest
 from writing_coach.persistence.runtime import build_runtime
+from writing_coach.runtime_schema import SchemaNotReady
 from writing_coach.persistence.auth_repository import SQLiteAuthRepository
 from writing_coach.persistence.platform_repository import SQLitePlatformRepository
 from writing_coach.product.repository import SQLiteProductRepository
@@ -56,55 +57,64 @@ def test_postgres_runtime_shared_engine_and_no_sqlite_fallback(tmp_path, monkeyp
 def test_real_runtime_readiness_connectivity_failure():
     class Engine:
         def connect(self): raise OSError('offline')
-    with pytest.raises(RuntimeError,match='PostgreSQL runtime unavailable'):
+    with pytest.raises(SchemaNotReady) as caught:
         runtime_module._verify_runtime_readiness(Engine())
+    assert caught.value.state == 'unavailable'
+    # A database that cannot be reached is not a schema problem, and the
+    # refusal must not send an operator off to migrate something.
+    assert 'bootstrap_runtime_schema' not in str(caught.value)
 
-def test_real_runtime_readiness_success_mismatch_and_empty_bootstrap(monkeypatch):
+
+def test_startup_verifies_the_schema_and_never_creates_one(monkeypatch):
+    """The four database states, and the three that refuse.
+
+    An empty database used to be migrated to head right here by whichever
+    process connected first, so a deployment pointed at the wrong database
+    built a schema in it instead of stopping. Creating the schema is now an
+    operator command; startup only says which state it found.
+    """
     engine = object()
     monkeypatch.setattr(
         runtime_module.ScriptDirectory,
         'from_config',
-        lambda cfg:type('S',(),{'get_current_head':lambda self:'head-123'})(),
+        lambda cfg: type('S', (), {'get_current_head': lambda self: 'head-123'})(),
     )
+    state = lambda value: current[0]  # noqa: E731
+    current = [None]
+    monkeypatch.setattr(runtime_module, '_read_runtime_state', state)
 
-    monkeypatch.setattr(
-        runtime_module,
-        '_read_runtime_state',
-        lambda value: ('head-123', {'alembic_version', 'users'}),
-    )
+    # At the expected revision: the only state that starts.
+    current[0] = ('head-123', {'alembic_version', 'users'})
     assert runtime_module._verify_runtime_readiness(engine) is None
 
-    monkeypatch.setattr(
-        runtime_module,
-        '_read_runtime_state',
-        lambda value: ('old-456', {'alembic_version', 'users'}),
-    )
-    with pytest.raises(RuntimeError,match='expected head-123, actual old-456'):
+    # A different revision: refuse, and report both so the operator can tell
+    # which database this is.
+    current[0] = ('old-456', {'alembic_version', 'users'})
+    with pytest.raises(SchemaNotReady) as caught:
         runtime_module._verify_runtime_readiness(engine)
+    assert caught.value.state == 'mismatch'
+    assert 'head-123' in str(caught.value) and 'old-456' in str(caught.value)
 
-    states = iter([
-        (None, set()),
-        ('head-123', {'alembic_version', 'users'}),
-    ])
-    bootstrap_calls = []
-    monkeypatch.setattr(runtime_module, '_read_runtime_state', lambda value: next(states))
-    monkeypatch.setattr(
-        runtime_module,
-        '_bootstrap_empty_runtime',
-        lambda: bootstrap_calls.append('upgrade'),
-    )
-    assert runtime_module._verify_runtime_readiness(engine) is None
-    assert bootstrap_calls == ['upgrade']
-
-    monkeypatch.setattr(
-        runtime_module,
-        '_read_runtime_state',
-        lambda value: (None, {'users'}),
-    )
-    bootstrap_calls.clear()
-    with pytest.raises(RuntimeError,match='expected head-123, actual None'):
+    # Empty: refuse and name the command, rather than silently building it.
+    current[0] = (None, set())
+    with pytest.raises(SchemaNotReady) as caught:
         runtime_module._verify_runtime_readiness(engine)
-    assert bootstrap_calls == []
+    assert caught.value.state == 'empty'
+    assert 'bootstrap_runtime_schema' in str(caught.value)
+
+    # Tables but no revision is somebody else's schema, or a half-applied one.
+    # It is a mismatch, and it is never bootstrapped over.
+    current[0] = (None, {'users'})
+    with pytest.raises(SchemaNotReady) as caught:
+        runtime_module._verify_runtime_readiness(engine)
+    assert caught.value.state == 'mismatch'
+    assert 'bootstrap_runtime_schema' not in str(caught.value)
+
+
+def test_the_runtime_module_holds_no_migration_call():
+    source = Path(runtime_module.__file__).read_text(encoding='utf-8')
+    assert 'command.upgrade' not in source
+
 
 @pytest.mark.parametrize('url',[None,'sqlite:///wrong.db','postgresql://missing-psycopg'])
 def test_runtime_url_missing_or_invalid_fails_before_engine(tmp_path,monkeypatch,url):
