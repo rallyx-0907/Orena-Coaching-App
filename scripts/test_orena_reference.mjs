@@ -116,4 +116,68 @@ assert.ok(
   'the full map primitive remains for surfaces that want it',
 );
 
-console.log('Golden Star: approved destinations, intact intent contract, local in-room navigation, row composition and room measures: PASS');
+/* --- Reaching the eleven destinations on a phone ---
+
+   The rail becomes a header below 900px, and the whole list used to be laid
+   out across it: three groups wrapping onto three lines, each line wider than
+   the screen. That cost 228px of an 844px phone and left Listening, Patterns &
+   meaning and Recall off the right edge, where nothing could reach them.
+
+   The list now sits behind one control that names where the learner is. These
+   hold the parts that would silently undo it. */
+const { navigationToggle, referenceNavigation } = await import('../static/orena/ui/reference.js');
+const shellCtx = (ui, location) => ({ ui, location, memory: { value: { continuation: [] } } });
+
+for (const ui of ['en', 'zh']) {
+  assert.ok(referenceCopy[ui].destinations, `${ui}: the control needs a name`);
+  // Closed, it still answers "where am I" - that is why it is not a hamburger.
+  for (const [hash, id] of [['#/', 'discover'], ['#/continue', 'continue'], ['#/language', 'language']]) {
+    const toggle = navigationToggle(shellCtx(ui, route(hash)));
+    const label = entryPoints(ui).find((x) => x.id === id).label;
+    assert.ok(
+      toggle.includes(`>${label}<`),
+      `${ui} ${hash}: the control must name the destination the learner is in`,
+    );
+  }
+  const toggle = navigationToggle(shellCtx(ui, route('#/')));
+  assert.match(toggle, /aria-expanded="false"/, 'it reports its own state');
+  assert.match(toggle, /aria-controls="shellNav"/, 'it names what it opens');
+  assert.ok(
+    toggle.includes(referenceCopy[ui].destinations),
+    'the accessible name says it opens the destinations, not only where you are',
+  );
+  // Every approved destination is still in the list behind it.
+  const nav = referenceNavigation(shellCtx(ui, route('#/')));
+  assert.match(nav, /id="shellNav"/, 'the control has something to point at');
+  for (const entry of entryPoints(ui))
+    assert.ok(nav.includes(`href="${entry.href}"`), `${ui}: ${entry.id} left the list`);
+  assert.equal((nav.match(/<a /g) || []).length, 11, `${ui}: all eleven destinations`);
+  assert.equal((nav.match(/aria-current="page"/g) || []).length, 1, 'exactly one is current');
+}
+
+// Desktop is untouched: the control does not exist there, and the rail still
+// shows every destination at once.
+assert.match(
+  referenceCss,
+  /\.nav-toggle \{ display: none; \}/,
+  'the rail must not render a menu control',
+);
+const phoneNav = referenceCss.slice(referenceCss.indexOf('@media(max-width:900px)'));
+/* Closed, the list is out of the page rather than merely invisible - hiding it
+   with opacity or a clip would leave eleven links in the tab order and read
+   out by a screen reader while the sheet is shut. */
+assert.match(phoneNav, /#shell nav \{ display:none; \}/, 'the sheet is closed, not just hidden');
+assert.match(
+  phoneNav,
+  /#shell\[data-menu='open'\] nav \{ display:flex;/,
+  'and opens on the shell state the control sets',
+);
+// The group headings come back in the sheet; the flattened strip had dropped
+// them, so eleven destinations arrived as one undifferentiated run.
+assert.match(phoneNav, /\.nav-group > small \{ display:block; \}/);
+assert.match(phoneNav, /\.nav-group \{ flex-direction:column;/);
+// Touch targets are not the thing that gives when space is short.
+assert.match(phoneNav, /\.nav-toggle \{[^}]*min-height:46px/);
+assert.doesNotMatch(phoneNav, /#shell nav a \{[^}]*font-size:1[0-2]px/);
+
+console.log('Golden Star: approved destinations, intact intent contract, local in-room navigation, row composition, phone-reachable destinations and room measures: PASS');

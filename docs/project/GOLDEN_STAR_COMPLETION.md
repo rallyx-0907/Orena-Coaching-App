@@ -264,6 +264,41 @@ every registered theme rather than for two, and holds the single-owner rule.
 
 Ember stays deferred with its extracted values recorded and unshipped.
 
+## Phone navigation
+
+Below 900px the rail becomes a header, and the eleven destinations were laid
+out across it: three groups wrapping onto three lines, each line wider than the
+screen. At 390x844 that header measured 228px - 27% of the viewport - and
+Listening, Patterns & meaning and Recall rendered past the right edge, where
+nothing could reach them. Three approved destinations were unreachable on a
+phone.
+
+The list now sits behind one control, and that control names where the learner
+currently is rather than being an anonymous hamburger: closed it still answers
+"where am I", open it shows every destination under its group heading, which
+the flattened strip had dropped. It has its own full-width row because squeezed
+beside the wordmark and the two utilities there was room for about four
+characters, and "D.." is not an answer to that question.
+
+Closed, the sheet is `display:none` rather than merely invisible, so its eleven
+links are not in the tab order and not read out while it is shut. It closes on
+Escape with focus returned to the control, and on choosing a destination -
+the shell is rebuilt per route, so that needs no state of its own.
+
+Desktop is untouched and verified so: the 224px fixed rail, eleven destinations
+in a column, three group headings, `#main` still offset by the rail, and the
+control `display:none`. Two composition bugs surfaced on the way: the mobile
+grid sized the brand column last so "orena" broke across three lines, and
+`world.css` still carried `margin-left:auto` on the actions cluster from the
+pre-rail flexbox header, which cancels stretch on a grid item and pushed the
+cluster off the right edge.
+
+Header 228px -> 131px, content starting at 131px instead of 228px. Verified at
+390, 430, 800 and 1440 across all four themes and in EN and ZH: no horizontal
+overflow in any combination, all eleven destinations reachable, 44px minimum
+touch target, one `aria-current` per route, and the control's label complete at
+every width. Nothing was solved by shrinking type or touch targets.
+
 ## Brand asset set replaced
 
 The approved artwork was replaced wholesale and the runtime library was remapped

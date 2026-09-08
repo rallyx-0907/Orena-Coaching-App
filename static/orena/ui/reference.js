@@ -25,6 +25,7 @@ export const referenceCopy = {
     writing: 'Writing', speaking: 'Speaking', understanding: 'Patterns & meaning',
     language: 'My language', recall: 'Recall', continue: 'Continue', content: 'My content',
     world: 'A bigger world', make: 'Make it yours', keep: 'Your growing world',
+    destinations: 'Destinations', closeDestinations: 'Close destinations',
     invitation: 'A little curiosity.\nA bigger world.',
     welcome: 'Come for a story. Stay for what it opens up.',
     note: 'Listen closely. Wander through a story. Find something you want to say.',
@@ -65,6 +66,7 @@ export const referenceCopy = {
     discover: '发现', practice: '练习', reading: '阅读', listening: '聆听', writing: '写作',
     speaking: '表达', understanding: '句式与含义', language: '我的语言', recall: '回想',
     continue: '继续', content: '我的内容', world: '走进更大的世界', make: '用自己的方式表达', keep: '慢慢积累的世界',
+    destinations: '去处', closeDestinations: '收起去处',
     invitation: '一点好奇，\n一个更大的世界。', welcome: '从一个故事开始，看看它会带你去哪里。',
     note: '听见一种声音，走进一个故事，找到自己想说的话。',
     featured: '打开另一扇窗', readNext: '在字里行间',
@@ -123,7 +125,26 @@ export function entryIcon(name) {
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui], active = experienceFor(ctx.location), entries = entryPoints(ctx.ui);
   const group = (label, ids) => `<div class="nav-group"><small>${esc(label)}</small>${entries.filter(x=>ids.includes(x.id)).map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</div>`;
-  return `<nav aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}</nav>`;
+  return `<nav id="shellNav" aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}</nav>`;
+}
+
+/* How the eleven destinations are reached on a narrow screen.
+
+   The rail becomes a header there, and the whole list used to be laid out
+   across it: three groups wrapping onto three lines, each line wider than the
+   phone, so the header ate 228px of an 844px screen and Listening, Patterns &
+   meaning and Recall sat off the right edge where nothing could reach them.
+
+   So the list moves behind one control - and that control names where the
+   learner currently is, rather than being an anonymous hamburger. Closed, it
+   still answers "where am I"; open, it shows every destination with its group
+   heading, which the flattened strip had dropped. Desktop never sees it: the
+   rail is unchanged and this button is not rendered there. */
+export function navigationToggle(ctx) {
+  const c = referenceCopy[ctx.ui];
+  const active = experienceFor(ctx.location);
+  const here = entryPoints(ctx.ui).find((x) => x.id === active);
+  return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav">${entryIcon(here?.icon || 'compass')}<span class="nav-toggle-here">${esc(here?.label || c.destinations)}</span><span class="sr-only">, ${esc(c.destinations)}</span><span class="nav-toggle-caret" aria-hidden="true">⌄</span></button>`;
 }
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;

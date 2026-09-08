@@ -36,6 +36,9 @@
 #shell .shell-actions { flex-direction: column; align-items: stretch; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
 #shell .bring-button { white-space: normal; }
 #shell .account-button { justify-content: space-between; gap: 6px; font-size: var(--text-xs); }
+/* The narrow-screen destination control. It belongs to the header composition
+   only - the rail shows every destination at once and needs no affordance. */
+.nav-toggle { display: none; }
 .language-seal { width: 33px; height: 33px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-size: var(--text-xs) !important; }
 #main { margin-left: var(--rail-width); max-width: none; padding: 0 clamp(28px,4.2vw,86px) 60px; min-height: 85vh; }
 #main > * { max-width: 1480px; margin-left: auto; margin-right: auto; }
@@ -131,16 +134,48 @@
 }
 @media(max-width:900px) {
   :root { --rail-width:0px; }
-  #shell { position:sticky; inset:auto; top:0; width:100%; padding:14px 24px 0; display:grid; grid-template-columns:1fr auto; gap:12px; border-right:0; border-bottom:1px solid var(--line); overflow:visible; }
+  /* The brand keeps its own width and the actions take what is left. Sized the
+     other way round, the wordmark is the thing that gives, and "orena" breaks
+     across three lines. */
+  #shell { position:sticky; inset:auto; top:0; width:100%; padding:14px 24px 0; display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; border-right:0; border-bottom:1px solid var(--line); overflow:visible; }
+  .shell-identity { min-width:0; }
+  #shell .brand { white-space:nowrap; }
+  /* world.css still gives this `margin-left:auto` from the pre-rail flexbox
+     header. On a grid item an auto margin cancels the stretch, so the cluster
+     sized itself to its content and ran off the right edge instead of letting
+     the destination control shrink. `justify-content` does the same job here
+     without breaking out of the track. */
+  #shell .shell-actions { min-width:0; margin-inline:0; justify-content:flex-end; }
   .shell-motto { display:none; }
   #shell .brand { font-size:29px; }
   #shell .brand-tail { width:34px; height:34px; }
-  #shell nav { grid-column:1/-1; grid-row:2; flex-direction:row; overflow-x:auto; gap:8px; margin-inline:-24px; padding:0 24px 8px; }
-  .nav-group { flex-direction:row; gap:4px; }
-  .nav-group > small { display:none; }
-  #shell nav a { padding:8px 12px; }
-  #shell nav a svg { width:17px; height:17px; }
-  #shell .shell-actions { flex-direction:row; align-items:center; border:0; padding:0; gap:12px; }
+  /* One compact header row, and the destinations behind the control that names
+     where the learner is. Laid out across the header they wrapped onto three
+     lines, each wider than the screen, which cost 228px of an 844px phone and
+     left three destinations off the right edge entirely. */
+  /* Its own row, full width. Squeezed into the header cluster beside the
+     wordmark and the two utilities there was room for about four characters,
+     and a control whose whole job is to say where the learner is cannot be
+     "D..". A second row of 52px still leaves the header less than half what
+     the wrapped list cost. */
+  .nav-toggle { display:flex; align-items:center; gap:10px; grid-column:1/-1; grid-row:2; width:100%; min-height:46px; margin-bottom:10px; padding:6px 14px; border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--ink); font:inherit; font-size:var(--text-sm); font-weight:600; text-align:left; }
+  .nav-toggle > svg { flex:none; width:18px; height:18px; color:var(--accent); }
+  .nav-toggle-here { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nav-toggle-caret { margin-left:auto; }
+  .nav-toggle-caret { flex:none; color:var(--muted); transition:transform .18s ease; }
+  #shell[data-menu='open'] .nav-toggle { background:var(--sage-surface); color:var(--on-sage); border-color:transparent; }
+  #shell[data-menu='open'] .nav-toggle-caret { transform:rotate(180deg); }
+  #shell[data-menu='open'] .nav-toggle > svg { color:inherit; }
+  /* The sheet. Closed it is not in the page at all, so nothing in it can be
+     reached by tab or read out while it is shut. */
+  #shell nav { display:none; }
+  #shell[data-menu='open'] nav { display:flex; grid-column:1/-1; grid-row:3; flex-direction:column; flex-wrap:nowrap; gap:14px; margin-inline:-24px; padding:14px 24px 20px; border-top:1px solid var(--line); max-height:min(66vh,520px); overflow-y:auto; }
+  .nav-group { flex-direction:column; gap:2px; }
+  .nav-group > small { display:block; }
+  #shell nav a { padding:9px 12px; }
+  #shell nav a svg { width:19px; height:19px; }
+  #shell .shell-actions { flex-direction:row; align-items:center; border:0; padding:0; gap:10px; flex-wrap:nowrap; }
+  #shell .bring-button, #shell .account-button { flex:none; }
   #shell .bring-button { padding:6px 12px; }
   #shell .account-button { font-size:0; gap:0; }
   #shell .account-button > span:last-child { display:none; }
@@ -152,7 +187,9 @@
 }
 @media(max-width:600px) {
   #shell { padding:12px 18px 0; }
-  #shell nav { margin-inline:-18px; padding-inline:18px; }
+  #shell[data-menu='open'] nav { margin-inline:-18px; padding-inline:18px; }
+  #shell .shell-actions { gap:8px; }
+  .nav-toggle { padding-inline:12px; }
   #shell .bring-button span { display:none; }
   #shell .bring-button { font-size:21px; min-width:44px; }
   #shell .brand { font-size:30px; }
