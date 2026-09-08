@@ -408,82 +408,21 @@
   }
 }
 
-/* Practice: four ways of working, each holding what belongs beneath it, then a
-   quieter pair for language already met. Eight equal cards would say these are
-   eight interchangeable features, which is exactly what they are not. */
-.practice-ways {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-6);
-  margin-block: var(--space-6);
-}
-.practice-way {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--space-5);
-}
-.way-lead {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: start;
-  min-height: 44px;
-}
-.way-lead h2 {
-  margin: 0;
-  font-size: var(--text-lead);
-}
-.way-lead p {
-  margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-/* Ways of listening closely, kept visibly beneath listening itself. */
-.way-more {
-  list-style: none;
-  margin: var(--space-4) 0 0;
-  padding: 0 0 0 var(--space-6);
-  border-left: 2px solid var(--line);
-}
-.way-more a {
-  display: grid;
-  gap: 2px;
-  min-height: 44px;
-  align-content: center;
-  padding-block: var(--space-2);
-}
-.way-more span {
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-.practice-aside ul {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-4);
-  margin: 0;
-  padding: var(--space-5) 0 0;
-  border-top: 1px solid var(--line);
-}
-.practice-aside a {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: center;
-  min-height: 44px;
-}
-.practice-aside span {
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-
 /* Where you are inside Practice, and the way back to it. Local, because the
-   whole map belongs to Practice rather than to every room in it. */
+   whole map belongs to Practice rather than to every room in it.
+
+   The bar it replaced carried a rule above and below the room's content, and
+   the composition leaned on that line. Dropping the bar and leaving a floating
+   link in its place would have left the header and the content unseparated, so
+   this keeps the divider and gives up the repetition - the point was never the
+   line, it was the eight labels above it. */
 .practice-return {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
-  margin-block: var(--space-4) var(--space-6);
+  margin-block: var(--space-3) var(--space-5);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
   font-size: var(--text-sm);
 }
 .practice-return a {
@@ -492,6 +431,8 @@
   min-height: 44px;
   color: var(--muted);
 }
+/* The room's own name, carrying the weight the active tab used to. */
 .practice-return [aria-current] {
   font-weight: 600;
+  color: var(--ink);
 }

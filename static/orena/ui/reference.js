@@ -81,16 +81,13 @@ export const referenceCopy = {
     browseAll: '每一种开始', fieldNote: '跟着好奇心走', direct: '选择练习方向', review: '参考体验建设中 · 你的作品属于你',
   },
 };
-/* Four learner-facing destinations: somewhere to explore, somewhere to practise
-   on purpose, somewhere to find things again, and the way back into what you
-   were doing. The skill routes are all still here and still resolve - they
-   stopped being permanent primary destinations, which is not the same as being
-   removed. Practice is where the whole map lives. */
 const paths = [
-  ['discover', 'discover', null, 'compass'],
-  ['practice', 'practice', null, 'focus'],
-  ['collection', 'collection', null, 'folder'],
-  ['continue', 'continue', null, 'return'],
+  ['discover', 'discover', null, 'compass'], ['continue', 'continue', null, 'return'],
+  ['reading', 'practice', 'reading', 'book'], ['listening', 'practice', 'follow', 'sound'],
+  ['practice', 'practice', null, 'focus'], ['writing', 'expression', null, 'pen'],
+  ['speaking', 'practice', 'speaking', 'voice'], ['understanding', 'practice', 'grammar', 'spark'],
+  ['content', 'content', null, 'folder'], ['language', 'language', null, 'leaf'],
+  ['recall', 'practice', 'recall', 'return'],
 ];
 export function entryPoints(ui) {
   const c = referenceCopy[ui] || referenceCopy.en;
@@ -106,7 +103,6 @@ export function experienceFor(location) {
   if (page === 'encounter') return /^(media:|url:)/.test(id) ? 'listening' : 'reading';
   if (page === 'practice' && intent === 'reading') return 'reading';
   if (page === 'practice' && intent === 'follow') return 'listening';
-  if (['collection', 'content', 'language'].includes(page)) return 'collection';
   return page === 'preferences' ? 'discover' : page;
 }
 const strokes = {
@@ -127,7 +123,7 @@ export function entryIcon(name) {
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui], active = experienceFor(ctx.location), entries = entryPoints(ctx.ui);
   const group = (label, ids) => `<div class="nav-group"><small>${esc(label)}</small>${entries.filter(x=>ids.includes(x.id)).map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</div>`;
-  return `<nav aria-label="Orena">${entries.map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</nav>`;
+  return `<nav aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}</nav>`;
 }
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;

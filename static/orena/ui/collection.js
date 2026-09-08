@@ -3,7 +3,15 @@ import { editorialIntro, referenceCopy } from './reference.js';
 import { link, sourceLink, continuationLink } from '../product/intent.js';
 import { keptProvenance } from './patterns.js';
 
-/* Everything the learner has met, kept or made, in one place to retrieve from.
+/* DEFERRED. Reachable at #/collection, deliberately not a primary destination.
+
+   This was built during an IA run whose scope went beyond the change that was
+   actually wanted. It is kept rather than deleted because it works and because
+   the retrieval idea is worth revisiting on purpose - but My content and My
+   language are the approved learner-facing surfaces, and they are unchanged.
+   Do not promote this without a deliberate product decision.
+
+   Everything the learner has met, kept or made, in one place to retrieve from.
 
    My content and My language remain exactly what they were - their routes,
    their stores and their deep views are untouched. This is the retrieval layer

@@ -67,21 +67,24 @@ for (const [selector, measure] of [['.recall-moment', '760px'], ['.provenance', 
     `${selector} must restate its measure above the shell default`,
   );
 
-/* --- Four learner-facing destinations, and the skills beneath them ---
+/* --- The practice map lives in Practice, and nowhere else ---
 
-   Orena is entered by exploring, practising on purpose, finding things again,
-   or picking up where you were. Reading, Listening, Writing and Speaking are
-   how a learner works, not four permanent places to live. They keep every
-   route, and Practice is where the whole map is. */
+   The defect was repetition, not richness: every individual room re-rendered
+   the whole eight-mode map at its top, so a learner already inside Speaking was
+   told again that Orena is eight skills to choose between. The map belongs to
+   Practice, which the learner chose to enter. Inside a room, navigation is
+   local - where you are, and the way back.
+
+   The learner-facing destinations themselves are unchanged, and this gate
+   holds them so a navigation fix cannot quietly become an IA change again. */
 for (const ui of ['en', 'zh']) {
   const ids = entryPoints(ui).map((x) => x.id);
   assert.deepEqual(
     ids,
-    ['discover', 'practice', 'collection', 'continue'],
-    `${ui}: primary navigation must be the four destinations`,
+    ['discover', 'continue', 'reading', 'listening', 'practice', 'writing',
+      'speaking', 'understanding', 'content', 'language', 'recall'],
+    `${ui}: the approved learner-facing destinations must stand`,
   );
-  for (const gone of ['reading', 'listening', 'writing', 'speaking'])
-    assert.ok(!ids.includes(gone), `${ui}: ${gone} must not be a permanent primary destination`);
 }
 
 /* The engine contract is untouched. Every intent still routes, because saved
@@ -89,42 +92,28 @@ for (const ui of ['en', 'zh']) {
 assert.deepEqual(
   practiceIntentions,
   ['follow', 'reading', 'dictation', 'shadowing', 'speaking', 'writing', 'grammar', 'recall'],
-  'the practice-intent contract must survive the navigation change',
+  'the practice-intent contract must survive any navigation change',
 );
 for (const intent of practiceIntentions)
   assert.equal(route(link('practice', { intent })).intent, intent, `${intent} must still resolve`);
-assert.equal(route('#/collection').page, 'collection');
-for (const page of ['content', 'language', 'continue', 'expression', 'encounter', 'conversation'])
-  assert.equal(route(`#/${page}`).page, page, `${page} must still resolve after the IA change`);
+for (const page of ['content', 'language', 'continue', 'expression', 'encounter', 'conversation', 'collection'])
+  assert.equal(route(`#/${page}`).page, page, `${page} must still resolve`);
 
-// Retrieval surfaces orient to Collection; the deep views still exist.
-for (const page of ['collection', 'content', 'language'])
-  assert.equal(experienceFor({ page }), 'collection');
-
-/* The whole practice map belongs to Practice. Inside a mode, navigation is
-   local - and hiding the tab bar in CSS would not have been the same thing. */
-const rooms = ['static/orena/ui/expression.js', 'static/orena/ui/speaking.js', 'static/orena/ui/world.js'];
-for (const path of rooms) {
+/* Removing the repeated bar has to be a composition change. Hiding it in CSS
+   would leave every room still rendering the whole map to assistive
+   technology, which is the same defect wearing a different coat. */
+for (const path of ['static/orena/ui/expression.js', 'static/orena/ui/speaking.js', 'static/orena/ui/world.js']) {
   const src = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
   assert.ok(!/intentNavigation\(/.test(src), `${path} must not repeat the whole practice map`);
   assert.ok(/practiceReturn\(/.test(src), `${path} must offer the way back to Practice`);
 }
+// The primitive itself stays available for a surface that genuinely needs the
+// whole map - Practice is one - so this is removal from rooms, not deletion.
+assert.ok(
+  /export function intentNavigation/.test(
+    readFileSync(new URL('../static/orena/ui/patterns.js', import.meta.url), 'utf8'),
+  ),
+  'the full map primitive remains for surfaces that want it',
+);
 
-/* A skill lens in Collection answers "how did I meet this", from what the
-   learner actually did - never a guess about the content. */
-const { lensesFor } = await import('../static/orena/ui/collection.js');
-assert.ok(lensesFor({ id: 'story:x', intent: 'reading' }).includes('reading'));
-assert.ok(lensesFor({ id: 'media:x', intent: 'follow' }).includes('listening'));
-assert.ok(lensesFor({ id: 'conversation:x' }).includes('speaking'));
-assert.ok(lensesFor({ id: 'expression:x' }).includes('writing'));
-assert.ok(lensesFor({ id: 'language:x', kind: 'language' }).includes('language'));
-// One item met two ways appears under both, without being stored twice.
-const both = lensesFor({ id: 'media:x', intent: 'dictation', why: 'from_writing' });
-assert.ok(both.includes('listening') && both.includes('writing'));
-assert.ok(lensesFor({ id: 'x' }).includes('all'), 'everything is reachable without a lens');
-
-for (const ui of ['en', 'zh'])
-  for (const key of ['collection', 'collectionSearch', 'collectionThreads', 'lens_all', 'lens_reading', 'moreStories'])
-    assert.ok(referenceCopy[ui][key], `${ui}: missing ${key}`);
-
-console.log('Golden Star: four destinations, intact intent contract, local practice navigation, collection lenses, row composition and room measures: PASS');
+console.log('Golden Star: approved destinations, intact intent contract, local in-room navigation, row composition and room measures: PASS');
