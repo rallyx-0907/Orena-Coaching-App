@@ -82,9 +82,23 @@ function threadState(item, memory, c) {
   return item.segment ? c.resumeMoment : c.resumeEncounter;
 }
 
+/* Whether the work behind a thread is still there to return to.
+
+   Conversations are kept to the last twelve and continuation to the last
+   twenty, so the four oldest conversations could sit on the shelf saying
+   "there is more to come back to" and then fail to open. A thread that cannot
+   be resumed is not a thread; it is a promise the product cannot keep. */
+export function resumable(item, memory) {
+  if (item.id.startsWith('conversation:'))
+    return Boolean(memory.value.conversations?.[item.id]);
+  return true;
+}
+
 export function continuationShelf(ctx, limit = 3) {
   const { memory, c, language } = ctx;
-  const entries = memory.value.continuation.slice(0, limit);
+  const entries = memory.value.continuation
+    .filter((item) => resumable(item, memory))
+    .slice(0, limit);
   if (!entries.length) return '';
   return `<section class="thread-shelf" aria-label="${esc(c.continue)}"><div class="section-head"><h2>${esc(c.continue)}</h2><span class="meta">${esc(c.deviceThreads)}</span></div><div class="thread-list">${entries
     .map((item) => {

@@ -2,6 +2,7 @@
 // Practice evidence remains in the existing PostgreSQL-backed capability APIs.
 const volatile = new Map();
 import { restoreConversation } from './conversation.js';
+import { practiceIntentions } from './intent.js';
 
 /* Why a learner kept something. A small, stable vocabulary rather than free
    text, so the collection can say it in either interface language and group by
@@ -86,6 +87,12 @@ export function learnerMemory(storage, owner, language) {
         .filter(
           (x) => x && typeof x.id === 'string' && typeof x.title === 'string',
         )
+        // An intention that is no longer part of the product routes nowhere;
+        // the thread is still worth returning to without it.
+        .map((x) => ({
+          ...x,
+          intent: practiceIntentions.includes(x.intent) ? x.intent : null,
+        }))
         .slice(0, 20);
       /* What a learner actually submitted for review, kept in order. The live
          draft is overwritten as they type; without this, revising a piece
@@ -210,14 +217,27 @@ export function learnerMemory(storage, owner, language) {
       );
       return save();
     },
-    enter({ id, title, segment, intent = null, source_url, excerpt }) {
+    /* An intention survives a later visit that does not name one.
+
+       `segment`, `source_url` and `excerpt` already carried forward from the
+       previous visit; `intent` did not, so any arrival that stayed silent
+       about it erased what the learner had been doing. Reopening the story
+       they had been writing about relabelled their draft "You opened this"
+       and sent Resume back to the story - the shelf showed the draft and then
+       declined to open it.
+
+       The question is whether the caller stated an intention, not what it
+       stated: closing a practice panel passes `intent: null` on purpose, and
+       that still means the learner is back to the encounter itself. */
+    enter(entry) {
+      const { id, title, segment, source_url, excerpt } = entry;
       const previous = value.continuation.find((x) => x.id === id);
       value.continuation = [
         {
           id,
           title,
           segment: segment ?? previous?.segment ?? '',
-          intent,
+          intent: 'intent' in entry ? entry.intent : (previous?.intent ?? null),
           source_url: source_url ?? previous?.source_url ?? '',
           excerpt: String(excerpt ?? previous?.excerpt ?? '').slice(0, 1200),
         },

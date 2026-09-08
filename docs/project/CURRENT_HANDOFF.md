@@ -62,7 +62,8 @@ recovery needs is where the invariants live:
 ## Last verified batch
 
 Local execution only; no CI claim.
-- 31 CI-registered Node gates PASS. ESM graph: 51 modules. Both validators OK.
+- 32 CI Node gates: 31 PASS, brand-library fails on another lane's
+  uncommitted asset deletions. ESM graph 51. Both validators OK.
 - Full Python in the app image: 790 passed / 20 failed (see below). The rich
   provider paths run against an injected provider, mutation-checked.
 - Browser at 390/800/1440/1920, EN and ZH, light and dark: no overflow, no
@@ -100,16 +101,15 @@ acceptance remain held; neither a small fix nor a review replaces the mission.
 ## IN PROGRESS
 
 Golden Star is IMPLEMENTING. The three earlier capability findings are closed.
-The Encounter close-look WIP is finished and human-approved: EN/ZH with pinyin
-on and off, both themes, 390/1440, keyboard, retry and a Dictation regression
-verified; token targets are 27.8x53.2 (EN) and 24.0x45.2 (ZH), so the 23.984px
-note was sub-pixel rounding.
+The Encounter close-look WIP is finished and human-approved: EN/ZH, pinyin on
+and off, both themes, 390/1440, keyboard, retry and a Dictation regression
+verified; the 23.984px note was sub-pixel rounding.
 
-Packages A, B and C of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
-rejection at both named consumers; a capability outcome telling an absent
-provider from a failed request; and all ten canonical journeys walked, fixing a
-phrase kept from the learner's own writing that led to Practice rather than that
-writing. Evidence in the ledger. D remains.
+Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
+rejection; outcomes separating an absent provider from a failed request; ten
+canonical journeys walked; and continuation that keeps the learner's intention
+across re-entry, withholds threads whose work is gone, and stays device-honest.
+Evidence in the ledger. E is Codex's; F is human review.
 
 ## PENDING
 

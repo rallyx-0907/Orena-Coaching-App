@@ -180,7 +180,37 @@ missing product.
   reference and reopening unrelated content; it now resolves to that writing
   with the draft intact. Everything else held, including Dictation opening on
   the same line the learner selected, in EN and ZH.
-- **D. Continuation integration - not started.**
+- **D. Continuation integration - done, three breaks fixed.** `enter()`
+  carried `segment`, `source_url` and `excerpt` forward from a previous visit
+  but reset `intent`, so any later arrival that did not name one erased what
+  the learner had been doing: reopening a passage they had been writing about
+  relabelled their draft "You opened this" and sent Resume back to the passage.
+  The shelf displayed the draft and then declined to open it. Intention now
+  survives a visit that stays silent, while a stated one - including the
+  deliberate `null` of closing a practice panel - still wins, and an intention
+  the product no longer has is dropped on restore rather than routed.
+  Conversations are kept to twelve and continuation to twenty, so the oldest
+  conversation threads offered a return to work that was gone; the shelf no
+  longer offers a thread it cannot open. Continue counted rows instead of
+  asking the shelf, so a filtered shelf left a blank room under a heading
+  promising otherwise, and it alone among memory-backed rooms stayed silent
+  when the device could not remember. Both fixed.
+
+Evidence for D: the story-to-draft-to-return journey verified in the browser -
+the thread names the draft, shows it, opens it, and offers the way back to the
+source. Language scope holds live: switching the learning language resets the
+route and the English draft does not appear in the Chinese session, which
+carries its own threads with every shelf string localized. Forcing localStorage
+to throw makes both the composer and Continue say so. `#/continue` clean at 800
+with no horizontal overflow. New CI gate `test_orena_continuation.mjs` (32
+registered). No new persistence: device memory still reaches no API, and
+`persisted` remains the account's word alone.
+
+The `#/language` flake was measured before and after this package with the
+recorded reproduction - 13 rooms x 2 themes at 750ms dwell, five repetitions -
+and did not reproduce either time: 0/130 at `f68f31a` and 0/130 after. No
+increase and no deterministic trigger, so nothing was handed to Codex; the
+flake remains OPEN P1 on the conditions already recorded.
 
 Evidence for C: 26 room/theme combinations clean at 390, 1440 and 1920 in EN
 and at 1920 in ZH; 800 covered at the same HEAD. No room repeats the practice

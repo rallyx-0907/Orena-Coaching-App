@@ -128,7 +128,15 @@ export function referenceNavigation(ctx) {
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;
 }
+/* The room whose whole subject is coming back.
+
+   It asked the store how many threads it held and trusted the answer, which
+   was wrong twice: a device that cannot remember reported nothing to continue
+   rather than saying it had lost the ability to, and threads the shelf now
+   declines to offer still counted, leaving the room empty under a heading
+   promising otherwise. The shelf decides what can be resumed; this asks it. */
 export function renderContinue(root, ctx) {
   const c = referenceCopy[ctx.ui];
-  root.innerHTML = `${editorialIntro(ctx,{title:c.continueTitle,note:c.continueNote,state:'returning',eyebrow:c.continue})}${ctx.memory.value.continuation.length ? continuationShelf(ctx,ctx.memory.value.continuation.length) : `<section class="continue-empty"><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.discover)} →</a></section>`}`;
+  const threads = continuationShelf(ctx, ctx.memory.value.continuation.length);
+  root.innerHTML = `${editorialIntro(ctx,{title:c.continueTitle,note:c.continueNote,state:'returning',eyebrow:c.continue})}${ctx.memory.available ? '' : `<p class="notice">${esc(ctx.c.memoryUnavailable)}</p>`}${threads || `<section class="continue-empty"><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.discover)} →</a></section>`}`;
 }
