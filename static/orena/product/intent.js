@@ -80,7 +80,12 @@ export function sourceLink(id) {
   if (id.startsWith('conversation:')) return link('conversation', { id });
   if (id.startsWith('voice:'))
     return link('practice', { id, intent: 'speaking' });
-  if (id.startsWith('expression:')) return link('practice');
+  /* A phrase kept from the learner's own writing leads back to that writing.
+     This used to drop the work reference and land on the Practice room, so a
+     card reading "From your own writing - Something you want to say" opened a
+     room the learner had not been in. A way back that reopens unrelated content
+     is worse than none: it looks like the thing it is not. */
+  if (id.startsWith('expression:')) return link('expression', { id });
   if (id.startsWith('grammar:'))
     return link('practice', { id: id.slice(8), intent: 'grammar' });
   return link('encounter', { id });

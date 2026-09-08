@@ -16,6 +16,16 @@ for (const intent of practiceIntentions) {
   assert.equal(route(link('encounter',{id:'media:a',intent})).intent, intent);
 }
 assert.equal(route(continuationLink({id:'expression:free',intent:'writing'})).page,'expression');
+/* Every origin a learner can keep from resolves back to the thing itself, with
+   its work reference intact. An origin that cannot be reopened must not be
+   answered with a room the learner was never in. */
+assert.equal(route(sourceLink('expression:free')).page,'expression');
+assert.equal(route(sourceLink('expression:free')).id,'expression:free');
+assert.equal(route(sourceLink('story:last-train')).page,'encounter');
+assert.equal(route(sourceLink('media:x')).page,'encounter');
+assert.equal(route(sourceLink('conversation:abc')).page,'conversation');
+assert.equal(route(sourceLink('conversation:abc')).id,'conversation:abc');
+assert.equal(route(sourceLink('voice:invitation')).intent,'speaking');
 assert.equal(route(sourceLink('grammar:en_1')).page,'practice');
 assert.equal(route(sourceLink('grammar:en_1')).id,'en_1');
 
