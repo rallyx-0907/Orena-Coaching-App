@@ -13,7 +13,33 @@ Review was conducted outside the repository. Recorded here per AGENTS.md
 "Architecture review authority": reviewer identity, reviewed commit and outcome
 must be in Git.
 
-### Response, per finding
+## Re-review of `0a1a0a5`: CHANGES REQUIRED BEFORE STEP 3
+
+Six corrections, all addressed. Step 3 stays blocked; the migration stays in
+`migrations/proposed/`; no caller is activated.
+
+| # | Correction | How |
+| --- | --- | --- |
+| 1 | Occurrence identity independent of semantic equality | The unique constraint over `(saved_word, source, focus_digest)` is gone. Nothing in `language_provenance` is unique over content; identity is the row id. `focus_digest` survives only as a bounded stand-in for reading. |
+| 2 | Provenance attachment retry-safe | `attach_occurrence` goes through the receipt and change-stream contract: caller-supplied occurrence id, operation id, sequence under the held stream head, receipt, change record. A retry replays its occurrence; a different operation with identical content creates another. |
+| 3 | Receipt account identity not from the retrying request | The envelope re-resolves `account_incarnations.user_id` for the persisted incarnation, rejects `account_incarnation_mismatch` before any receipt is consulted, and builds the historical command's scope from the resolved account. |
+| 4 | Same operation id + payload, changed expected version | `operation_conflict`, never replay — the expected version is part of the persisted command and of the comparison. Regression test added. |
+| 5 | `works.source_revision` without a source | Refused at both layers: `ck_work_revision_needs_source` in the migration and a `ValueError` in the repository before a transaction opens. Both tested. |
+| 6 | Work owner must not accept `provenance` | `WORK_MUTATION_DOMAINS` is the narrower registry the work owner validates against; `MUTATION_DOMAINS` still carries `provenance` globally. Tested in both directions, including that a refused domain opens no transaction. |
+
+`FOR SHARE` is unchanged, as directed.
+
+**One structural consequence worth naming.** Corrections 2 and 3 applied to two
+repositories that each had their own copy of the transaction, so the envelope
+was extracted to `persistence/mutation_commit.py` and both now use it. Writing
+the stream lock, the account re-resolution, the receipt comparison and the
+change record twice would let the two drift, and the half that drifted would be
+the half nobody was looking at. Each domain supplies only `load` and `write`.
+
+The PostgreSQL file is now 35 cases. They still skip without
+`ORENA_TEST_POSTGRES_URL` and still have not been executed.
+
+### Response to the first review, per finding
 
 Recorded against the revision. Nothing is applied; the migration is still in
 `migrations/proposed/` and the live head is still `20260828_0004`.

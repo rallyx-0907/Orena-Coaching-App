@@ -251,6 +251,34 @@ Fifteen further PostgreSQL cases were added for findings 3 and 4, bringing that
 file to 25. They still skip without `ORENA_TEST_POSTGRES_URL` and still have not
 been executed.
 
+### Re-review corrections
+
+`0a1a0a5` came back CHANGES REQUIRED. Six corrections, all made and recorded in
+`I2_SCHEMA_REVIEW_REQUEST.md`. Two changed the design rather than a detail.
+
+**An occurrence is an event, so nothing may be unique over its content.** The
+revision had made provenance unique over saved word, source and focus digest,
+which still collapsed two identical attachments into one. That constraint is
+gone: identity is the row id, and a schema cannot tell a retry from a second
+attachment because they look the same.
+
+**So deduplication became the operation's job.** Attaching provenance is now a
+mutation through the receipt and change-stream contract, with a caller-supplied
+occurrence id and an operation id. A retry replays its occurrence; a genuinely
+different operation with identical content creates another. Both halves are
+true at once, which no constraint could achieve.
+
+That put two repositories on the same transactional path, so the envelope moved
+to `persistence/mutation_commit.py`: stream lock, account re-resolution, receipt
+comparison, decision, then sequence, domain write, change record and receipt.
+Each domain supplies only how to read its state and how to write its row.
+Keeping two copies would have let them drift, and the drifted one would be
+whichever nobody was reading.
+
+The account is now re-resolved from the incarnation row and a mismatch is
+refused before any receipt is read, so a request cannot supply the account half
+of the identity its own replay is compared against.
+
 ### Still blocked on the gate
 
 Drafts, conversation turns and continuation live only in device memory today;

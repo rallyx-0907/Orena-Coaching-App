@@ -19,7 +19,15 @@ from collections.abc import Sequence
 # new kind or domain is a code change and not a migration; registries plus
 # strict validation so that "string" does not quietly mean "anything".
 WORK_KINDS = ('draft', 'response', 'conversation')
+
+# Everything that mutates through the receipt and change-stream contract. This
+# is what may appear in `mutation_receipts.domain`.
 MUTATION_DOMAINS = ('draft', 'response', 'conversation', 'provenance')
+
+# The narrower set the work repository owns. `provenance` mutates like anything
+# else - a sequence, a receipt, a change record - but it is not a kind of work,
+# and the work owner must refuse it rather than write a `works` row for it.
+WORK_MUTATION_DOMAINS = WORK_KINDS
 
 
 class UnknownRegistryValue(ValueError):
@@ -46,6 +54,11 @@ def validate_kind(value: object) -> str:
 
 def validate_domain(value: object) -> str:
     return _validate('mutation_receipts.domain', MUTATION_DOMAINS, value)
+
+
+def validate_work_domain(value: object) -> str:
+    """A domain the work repository will actually write a `works` row for."""
+    return _validate('works.domain', WORK_MUTATION_DOMAINS, value)
 
 
 # The three states in section 3's Work record, and no others.

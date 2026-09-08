@@ -18,9 +18,11 @@ from writing_coach.work_contract import (  # noqa: E402
     LIFECYCLE,
     MUTATION_DOMAINS,
     WORK_KINDS,
+    WORK_MUTATION_DOMAINS,
     UnknownRegistryValue,
     validate_domain,
     validate_kind,
+    validate_work_domain,
     append_decision,
     conflict_branches,
     lifecycle_change,
@@ -76,6 +78,41 @@ class CanonicalRegistries(unittest.TestCase):
             validate_kind(WORK_KINDS[0].upper())
         with self.assertRaises(UnknownRegistryValue):
             validate_domain(f' {MUTATION_DOMAINS[0]} ')
+
+
+class WorkDomainsAreASubsetOfMutationDomains(unittest.TestCase):
+    """Every domain that mutates is not a domain the work repository owns.
+
+    `provenance` is a mutation domain - it takes a sequence, a receipt and a
+    change record like any other - but it is not a kind of work, and the work
+    repository must not accept it. One registry says what may appear in
+    `mutation_receipts.domain`; a narrower one says what this owner will write.
+    """
+
+    def test_provenance_is_a_mutation_domain(self):
+        self.assertIn('provenance', MUTATION_DOMAINS)
+
+    def test_provenance_is_not_a_work_domain(self):
+        self.assertNotIn('provenance', WORK_MUTATION_DOMAINS)
+
+    def test_work_domains_are_a_subset_of_mutation_domains(self):
+        self.assertTrue(set(WORK_MUTATION_DOMAINS) <= set(MUTATION_DOMAINS))
+
+    def test_every_work_kind_has_a_matching_work_domain(self):
+        # A work the repository can create is a work it can address.
+        self.assertEqual(set(WORK_KINDS), set(WORK_MUTATION_DOMAINS))
+
+    def test_the_work_owner_refuses_a_domain_it_does_not_own(self):
+        with self.assertRaises(UnknownRegistryValue) as caught:
+            validate_work_domain('provenance')
+        self.assertEqual(caught.exception.registry, 'works.domain')
+
+    def test_the_work_owner_accepts_its_own_domains(self):
+        for domain in WORK_MUTATION_DOMAINS:
+            self.assertEqual(validate_work_domain(domain), domain)
+
+    def test_the_global_registry_still_accepts_provenance(self):
+        self.assertEqual(validate_domain('provenance'), 'provenance')
 
 
 class WorkLifecycle(unittest.TestCase):

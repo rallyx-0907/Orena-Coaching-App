@@ -4,35 +4,45 @@ PROPOSAL — the table this writes is in `migrations/proposed/20260908_0005`,
 awaiting re-review and schema authorization. No caller is wired to it.
 
 `saved_words` owns the word and its review schedule and has no column for where
-the learner met it, so provenance sits beside it. Two things about that
-relationship needed correcting after review.
+the learner met it, so provenance sits beside it. Three things about that
+relationship needed correcting through review.
 
-An occurrence, not a fact about the pair. Meeting the same word twice in one
-source - two lines of a story, the same word attended to differently - is two
-occurrences, and the first shape could not represent it. Focus is what tells
-them apart, so it is part of the identity.
+**An occurrence is an event, not a fact about the pair.** Meeting the same word
+twice in one source - two lines of a story, the same word attended to twice the
+same way - is two occurrences. The first shape made (saved word, source, focus)
+unique, which collapsed them; the second made it unique over a focus digest,
+which still collapsed the identical pair. Occurrence identity is the row's own
+id and nothing else, because semantic equality is not identity: two distinct
+operations that say the same thing are two things that happened.
 
-And the parent scope is checked here, in the transaction, rather than by the
-database. A composite foreign key would need `saved_words` to carry a matching
-unique constraint on (id, user_id, language_code); adding one means altering an
-existing owner table to manufacture a key for a new dependant, which is not
-this migration's to do. So the key is the saved word's id, and every write
-takes a share lock on that row and compares its account and language against
-the caller's scope before inserting. A saved word belonging to another account,
-or to another language of the same account, is refused - and both are tested,
-because a check that lives in code rather than in a constraint is only as good
-as the test that holds it there.
+**Which makes deduplication the operation's job.** Attaching provenance is a
+mutation like any other - it takes a sequence, a receipt and a change record
+through `mutation_commit`. A retry of the same operation replays the same
+occurrence; a genuinely different operation with identical content creates
+another. That is the only way both halves can be true at once.
+
+**And the parent scope is checked here, in the transaction.** A composite
+foreign key would need `saved_words` to carry a matching unique constraint on
+(id, user_id, language_code); adding one means altering an existing owner table
+to manufacture a key for a new dependant. So the key is the saved word's id,
+and every write takes a share lock on that row and compares its account and
+language against the caller's scope before inserting. `FOR SHARE` rather than
+`FOR UPDATE` because this reads the parent and does not modify it.
 """
 from __future__ import annotations
 
 import hashlib
-import uuid
-from datetime import UTC, datetime
+import json
 from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
+from writing_coach.persistence.mutation_commit import (
+    MutationOutcome,
+    MutationRefused,
+    commit_mutation,
+)
 from writing_coach.reference_backbone import Scope
 
 # The reasons a learner keeps language, matching KEEP_REASONS in the browser
@@ -51,6 +61,8 @@ KEEP_REASONS = (
 UNKNOWN = 'unknown'
 AVAILABILITY = ('available', UNKNOWN, 'unavailable')
 
+PROVENANCE_DOMAIN = 'provenance'
+
 
 class ProvenanceRejected(Exception):
     """A provenance write that must not happen, and why."""
@@ -61,24 +73,60 @@ class ProvenanceRejected(Exception):
 
 
 def focus_digest(focus: str) -> str:
-    """Focus is unbounded text; its identity in an index has to be bounded."""
+    """A bounded stand-in for unbounded focus text, for reading and comparison.
+
+    It is deliberately *not* part of any uniqueness: two occurrences with the
+    same focus are two occurrences.
+    """
     return hashlib.sha256((focus or '').encode('utf-8')).hexdigest()
+
+
+def occurrence_digest(
+    saved_word_id: str, reason: str, source: dict[str, str], focus: str
+) -> str:
+    """The semantic content of one attachment, for the receipt's reuse guard.
+
+    This catches an operation id being replayed with different content. It is
+    not the occurrence's identity - identical content under a different
+    operation id is a second occurrence, on purpose.
+    """
+    material = json.dumps(
+        {
+            'type': 'provenance.attach',
+            'word': saved_word_id,
+            'reason': reason,
+            'source': {k: source.get(k, '') for k in ('kind', 'id', 'revision')},
+            'focus': focus,
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(',', ':'),
+    )
+    return hashlib.sha256(material.encode('utf-8')).hexdigest()
 
 
 class PostgresProvenanceRepository:
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
 
-    def record_occurrence(
+    def attach_occurrence(
         self,
         *,
         scope: Scope,
+        occurrence_id: str,
+        operation_id: str,
         saved_word_id: str,
         reason: str,
         source: dict[str, str] | None = None,
         focus: str = '',
         availability: str = UNKNOWN,
-    ) -> dict[str, Any]:
+    ) -> MutationOutcome:
+        """Record one occurrence, retry-safely.
+
+        `occurrence_id` is supplied by the caller, like a work id: the row's
+        identity has to exist before the transaction so a replay can name what
+        it committed.
+        """
         source = source or {}
         if reason not in KEEP_REASONS:
             raise ProvenanceRejected('unknown_reason')
@@ -89,12 +137,9 @@ class PostgresProvenanceRepository:
         if source.get('revision') and not source.get('id'):
             raise ProvenanceRejected('revision_without_source')
 
-        now = datetime.now(UTC)
-        with self._engine.begin() as connection:
+        def load(connection):
             # The parent, held for the length of this transaction so its scope
-            # cannot change under the check. FOR SHARE rather than FOR UPDATE:
-            # this reads the parent, it does not modify it, and a review
-            # happening concurrently should not be blocked by a bookmark.
+            # cannot change under the check.
             parent = connection.execute(
                 text(
                     'SELECT user_id, language_code FROM saved_words '
@@ -103,27 +148,30 @@ class PostgresProvenanceRepository:
                 {'id': saved_word_id},
             ).mappings().first()
             if parent is None:
-                raise ProvenanceRejected('unknown_saved_word')
-            # The two refusals are separate because they are different
-            # mistakes: one is another person's word, the other is this
-            # person's word in a language this scope does not cover.
+                raise MutationRefused('unknown_saved_word')
+            # Two separate refusals because they are two different mistakes:
+            # another person's word, and this person's word in a language this
+            # scope does not cover.
             if str(parent['user_id']) != str(scope.account):
-                raise ProvenanceRejected('cross_account_saved_word')
+                raise MutationRefused('cross_account_saved_word')
             if str(parent['language_code']) != str(scope.language):
-                raise ProvenanceRejected('cross_language_saved_word')
+                raise MutationRefused('cross_language_saved_word')
+            # An occurrence is created once and never versioned upward by this
+            # path, so the resource is always absent before it.
+            return 0, False, None
 
-            occurrence = uuid.uuid4()
+        def write(connection, version, sequence, now, state):
             connection.execute(
                 text(
                     'INSERT INTO language_provenance (id, incarnation_id, language_code, '
                     'saved_word_id, source_kind, source_id, source_revision, focus, '
                     'focus_digest, reason, version, availability, created_at, updated_at) '
                     'VALUES (:id, :inc, :lang, :word, :source_kind, :source_id, '
-                    ':source_revision, :focus, :digest, :reason, 1, :availability, '
+                    ':source_revision, :focus, :digest, :reason, :version, :availability, '
                     ':now, :now)'
                 ),
                 {
-                    'id': occurrence,
+                    'id': occurrence_id,
                     'inc': scope.incarnation,
                     'lang': scope.language,
                     'word': saved_word_id,
@@ -133,11 +181,24 @@ class PostgresProvenanceRepository:
                     'focus': focus,
                     'digest': focus_digest(focus),
                     'reason': reason,
+                    'version': version,
                     'availability': availability,
                     'now': now,
                 },
             )
-        return {'id': str(occurrence), 'version': 1, 'availability': availability}
+            return 'upsert'
+
+        return commit_mutation(
+            self._engine,
+            scope=scope,
+            domain=PROVENANCE_DOMAIN,
+            operation_id=operation_id,
+            digest=occurrence_digest(saved_word_id, reason, source, focus),
+            expected_version=0,
+            resource_id=occurrence_id,
+            load=load,
+            write=write,
+        )
 
     def occurrences_for(self, scope: Scope, saved_word_id: str) -> list[dict[str, Any]]:
         with self._engine.connect() as connection:

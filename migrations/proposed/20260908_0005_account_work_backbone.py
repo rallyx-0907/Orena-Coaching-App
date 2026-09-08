@@ -197,6 +197,12 @@ def upgrade() -> None:
         sa.CheckConstraint(
             "(source_kind = '') = (source_id = '')", name="ck_work_source_ref_integrity"
         ),
+        # A revision of nothing. The repository refuses this before opening a
+        # transaction; the constraint means nothing else can write it either.
+        sa.CheckConstraint(
+            "source_revision = '' OR source_id <> ''",
+            name="ck_work_revision_needs_source",
+        ),
         sa.CheckConstraint(
             "lifecycle IN ('active','completed','deleted')", name="ck_work_lifecycle"
         ),
@@ -261,11 +267,10 @@ def upgrade() -> None:
     # delete a review.
     #
     # An *occurrence*, not a fact about the pair. Meeting the same word twice
-    # in the same source - two lines of one story, the same word attended to
-    # differently - is two occurrences, and the first shape here could not say
-    # that: it made (saved word, source kind, source id) unique. Focus is what
-    # distinguishes them, so the uniqueness is over the focus as well, and it
-    # is over a digest because focus is unbounded text and an index is not.
+    # in one source is two occurrences, whether or not the focus differs, so
+    # nothing here is unique over content. Identity is the row id; a retry is
+    # made safe by the operation receipt rather than by a constraint that
+    # cannot tell a retry from a second attachment.
     #
     # The foreign key is the saved word's id alone. A composite key on account
     # and language would need `saved_words` to carry a matching unique
@@ -294,7 +299,8 @@ def upgrade() -> None:
         # source it points into rather than silently meaning "the latest".
         sa.Column("source_revision", sa.String(120), nullable=False, server_default=""),
         sa.Column("focus", sa.Text(), nullable=False, server_default=""),
-        # The focus this occurrence is about, hashed so it can be constrained.
+        # A bounded stand-in for unbounded focus text, for reading and
+        # comparison. Deliberately not part of any key.
         sa.Column("focus_digest", sa.String(64), nullable=False),
         sa.Column("reason", sa.String(40), nullable=False),
         # A relation has its own version: an occurrence can be corrected -
@@ -321,16 +327,14 @@ def upgrade() -> None:
             "source_revision = '' OR source_id <> ''",
             name="ck_language_provenance_revision_needs_source",
         ),
-        # One occurrence per saved word, source and focus. The same word in the
-        # same source with a different focus is a second occurrence and is
-        # allowed; the identical occurrence twice is not.
-        sa.UniqueConstraint(
-            "saved_word_id",
-            "source_kind",
-            "source_id",
-            "focus_digest",
-            name="uq_language_provenance_occurrence",
-        ),
+        # No uniqueness over content. An occurrence is an event, and two
+        # distinct operations that say exactly the same thing are two events -
+        # the same word, met twice in one source, attended to the same way.
+        # Deduplication belongs to the operation: the receipt in
+        # `mutation_receipts` makes a *retry* replay its original occurrence,
+        # while a genuinely different operation creates another. A semantic
+        # unique constraint here would collapse the second case into the first
+        # and there would be no way to tell them apart afterwards.
     )
     op.create_index(
         "ix_language_provenance_scope",

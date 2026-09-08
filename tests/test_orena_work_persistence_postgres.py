@@ -497,41 +497,36 @@ def test_the_same_word_in_one_source_with_different_focus_is_two_occurrences(eng
     word = _saved_word(engine, scope.account, scope.language, 'gave way to')
     source = {'kind': 'story', 'id': 'last-train', 'revision': 'r3'}
 
-    first = repo.record_occurrence(
-        scope=scope, saved_word_id=word, reason='from_reading', source=source,
+    first = repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-a',
+        saved_word_id=word, reason='from_reading', source=source,
         focus='the last shops gave way to fields',
     )
-    second = repo.record_occurrence(
-        scope=scope, saved_word_id=word, reason='from_reading', source=source,
+    second = repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-b',
+        saved_word_id=word, reason='from_reading', source=source,
         focus='the light gave way to dusk',
     )
-    assert first['id'] != second['id']
+    assert first['result_ref'] != second['result_ref']
     assert len(repo.occurrences_for(scope, word)) == 2
-
-
-def test_the_identical_occurrence_twice_is_refused(engine, scope):
-    repo = PostgresProvenanceRepository(engine)
-    word = _saved_word(engine, scope.account, scope.language, 'gave way')
-    source = {'kind': 'story', 'id': 'last-train'}
-    repo.record_occurrence(scope=scope, saved_word_id=word, reason='from_reading',
-                           source=source, focus='same line')
-    with pytest.raises(IntegrityError):
-        repo.record_occurrence(scope=scope, saved_word_id=word, reason='from_reading',
-                               source=source, focus='same line')
 
 
 def test_an_unchecked_origin_is_unknown_and_not_available(engine, scope):
     repo = PostgresProvenanceRepository(engine)
     word = _saved_word(engine, scope.account, scope.language, 'quiet')
-    repo.record_occurrence(scope=scope, saved_word_id=word, reason='looked_up')
+    repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-q',
+        saved_word_id=word, reason='looked_up',
+    )
     assert repo.occurrences_for(scope, word)[0]['availability'] == 'unknown'
 
 
 def test_source_revision_is_retained_where_known(engine, scope):
     repo = PostgresProvenanceRepository(engine)
-    word = _saved_word(engine, scope.account, scope.language, 'platform')
-    repo.record_occurrence(
-        scope=scope, saved_word_id=word, reason='from_reading',
+    word = _saved_word(engine, scope.account, scope.language, 'platform-rev')
+    repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-r',
+        saved_word_id=word, reason='from_reading',
         source={'kind': 'story', 'id': 'last-train', 'revision': 'r7'},
     )
     assert repo.occurrences_for(scope, word)[0]['source_revision'] == 'r7'
@@ -539,10 +534,12 @@ def test_source_revision_is_retained_where_known(engine, scope):
 
 def test_an_occurrence_carries_its_own_version(engine, scope):
     repo = PostgresProvenanceRepository(engine)
-    word = _saved_word(engine, scope.account, scope.language, 'carriage')
-    assert repo.record_occurrence(
-        scope=scope, saved_word_id=word, reason='looked_up'
-    )['version'] == 1
+    word = _saved_word(engine, scope.account, scope.language, 'carriage-v')
+    repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-v',
+        saved_word_id=word, reason='looked_up',
+    )
+    assert repo.occurrences_for(scope, word)[0]['version'] == 1
 
 
 def test_another_accounts_saved_word_is_refused(engine, scope):
@@ -550,9 +547,12 @@ def test_another_accounts_saved_word_is_refused(engine, scope):
     repo = PostgresProvenanceRepository(engine)
     stranger = _account(engine)
     theirs = _saved_word(engine, stranger, 'en', 'theirs')
-    with pytest.raises(ProvenanceRejected) as caught:
-        repo.record_occurrence(scope=scope, saved_word_id=theirs, reason='looked_up')
-    assert caught.exception.reason == 'cross_account_saved_word'
+    result = repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-x',
+        saved_word_id=theirs, reason='looked_up',
+    )
+    assert result['status'] == 'rejected'
+    assert result['reason'] == 'cross_account_saved_word'
     with engine.connect() as connection:
         written = connection.execute(
             text('SELECT count(*) FROM language_provenance WHERE saved_word_id = :w'),
@@ -564,9 +564,12 @@ def test_another_accounts_saved_word_is_refused(engine, scope):
 def test_the_same_accounts_word_in_another_language_is_refused(engine, scope):
     repo = PostgresProvenanceRepository(engine)
     chinese_word = _saved_word(engine, scope.account, 'zh', 'quiet-zh')
-    with pytest.raises(ProvenanceRejected) as caught:
-        repo.record_occurrence(scope=scope, saved_word_id=chinese_word, reason='looked_up')
-    assert caught.exception.reason == 'cross_language_saved_word'
+    result = repo.attach_occurrence(
+        scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-l',
+        saved_word_id=chinese_word, reason='looked_up',
+    )
+    assert result['status'] == 'rejected'
+    assert result['reason'] == 'cross_language_saved_word'
 
 
 def test_an_incomplete_source_reference_is_refused(engine, scope):
@@ -574,8 +577,10 @@ def test_an_incomplete_source_reference_is_refused(engine, scope):
     word = _saved_word(engine, scope.account, scope.language, 'fragment')
     for source in ({'kind': 'story'}, {'id': 'last-train'}):
         with pytest.raises(ProvenanceRejected) as caught:
-            repo.record_occurrence(scope=scope, saved_word_id=word,
-                                   reason='looked_up', source=source)
+            repo.attach_occurrence(
+                scope=scope, occurrence_id=str(uuid.uuid4()), operation_id='op-s',
+                saved_word_id=word, reason='looked_up', source=source,
+            )
         assert caught.exception.reason == 'incomplete_source_ref'
 
 
@@ -616,3 +621,221 @@ def test_an_unregistered_work_kind_is_refused_before_anything_is_written(engine,
             scope=scope, domain='billing', operation_id='op-bad-domain',
             digest='d', expected_version=0, work_id=str(uuid.uuid4()), payload={},
         )
+
+
+# ---------------------------------------------------------------------------
+# Re-review corrections.
+# ---------------------------------------------------------------------------
+
+
+def attach(repo, scope, *, op, occurrence, word, focus='', source=None, reason='from_reading'):
+    return repo.attach_occurrence(
+        scope=scope, occurrence_id=occurrence, operation_id=op,
+        saved_word_id=word, reason=reason, source=source, focus=focus,
+    )
+
+
+def test_two_operations_with_identical_content_are_two_occurrences(engine, scope):
+    """Correction 1: occurrence identity is independent of semantic equality.
+
+    The same word, the same source, the same focus, twice - two events, and
+    nothing in the schema may collapse them into one.
+    """
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'gave way')
+    source = {'kind': 'story', 'id': 'last-train'}
+
+    first = attach(repo, scope, op='op-one', occurrence=str(uuid.uuid4()),
+                   word=word, focus='same line', source=source)
+    second = attach(repo, scope, op='op-two', occurrence=str(uuid.uuid4()),
+                    word=word, focus='same line', source=source)
+    assert first['status'] == 'committed'
+    assert second['status'] == 'committed'
+    assert first['result_ref'] != second['result_ref']
+    assert len(repo.occurrences_for(scope, word)) == 2
+
+
+def test_retrying_one_attachment_replays_its_occurrence(engine, scope):
+    """Correction 2: the retry is deduplicated by the operation, not the content."""
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'platform')
+    occurrence = str(uuid.uuid4())
+
+    first = attach(repo, scope, op='op-attach', occurrence=occurrence, word=word,
+                   focus='on the platform')
+    again = attach(repo, scope, op='op-attach', occurrence=occurrence, word=word,
+                   focus='on the platform')
+    assert first['status'] == 'committed'
+    assert again['status'] == 'replay'
+    assert again['result_ref'] == first['result_ref']
+    assert len(repo.occurrences_for(scope, word)) == 1, 'the retry created a second one'
+
+
+def test_attaching_provenance_writes_a_receipt_and_a_change_record(engine, scope):
+    """Correction 2: it is a mutation, not a write beside the contract."""
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'carriage')
+    attach(repo, scope, op='op-stream', occurrence=str(uuid.uuid4()), word=word)
+
+    with engine.connect() as connection:
+        receipt = connection.execute(
+            text("SELECT domain, expected_version FROM mutation_receipts "
+                 "WHERE incarnation_id = :inc AND operation_id = 'op-stream'"),
+            {'inc': scope.incarnation},
+        ).mappings().one()
+        change = connection.execute(
+            text("SELECT object_domain, change_kind FROM change_records "
+                 "WHERE incarnation_id = :inc AND object_domain = 'provenance'"),
+            {'inc': scope.incarnation},
+        ).mappings().one()
+    assert receipt['domain'] == 'provenance'
+    assert receipt['expected_version'] == 0
+    assert change['change_kind'] == 'upsert'
+
+
+def test_provenance_shares_the_account_sequence_with_work(engine, scope):
+    """One stream per account, whatever domain is writing to it."""
+    work_repo = PostgresWorkRepository(engine)
+    prov_repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'shared')
+
+    commit(work_repo, scope, op='op-w1', expected=0, work_id=str(uuid.uuid4()),
+           text_value='A draft.')
+    attach(prov_repo, scope, op='op-p1', occurrence=str(uuid.uuid4()), word=word)
+    commit(work_repo, scope, op='op-w2', expected=0, work_id=str(uuid.uuid4()),
+           text_value='Another draft.')
+
+    with engine.connect() as connection:
+        sequences = [
+            row[0] for row in connection.execute(
+                text('SELECT sequence FROM change_records WHERE incarnation_id = :inc '
+                     'ORDER BY sequence'),
+                {'inc': scope.incarnation},
+            )
+        ]
+    assert sequence_is_contiguous(sequences, after=0), sequences
+    assert len(sequences) == 3
+
+
+def test_an_account_that_does_not_own_the_incarnation_is_refused(engine, scope):
+    """Correction 3: the account is re-resolved from the incarnation row.
+
+    A request that presents someone else's incarnation alongside its own
+    account id must not have its own claim believed.
+    """
+    repo = PostgresWorkRepository(engine)
+    stranger = _account(engine)
+    forged = Scope(stranger, scope.incarnation, scope.language)
+    result = commit(repo, forged, op='op-forged', expected=0,
+                    work_id=str(uuid.uuid4()), text_value='Not mine.')
+    assert result['status'] == 'rejected'
+    assert result['reason'] == 'account_incarnation_mismatch'
+
+    with engine.connect() as connection:
+        written = connection.execute(
+            text('SELECT count(*) FROM works WHERE incarnation_id = :inc'),
+            {'inc': scope.incarnation},
+        ).scalar_one()
+    assert written == 0
+
+
+def test_the_replayed_receipt_identity_does_not_come_from_the_retrying_request(engine, scope):
+    """Correction 3, the other half.
+
+    A retry presenting a mismatched account is refused before any receipt is
+    consulted, so a forged account id cannot become the account half of the
+    identity a replay is compared against.
+    """
+    repo = PostgresWorkRepository(engine)
+    work_id = str(uuid.uuid4())
+    commit(repo, scope, op='op-legit', expected=0, work_id=work_id, text_value='Mine.')
+
+    stranger = _account(engine)
+    forged = Scope(stranger, scope.incarnation, scope.language)
+    result = commit(repo, forged, op='op-legit', expected=0, work_id=work_id,
+                    text_value='Mine.')
+    assert result['status'] == 'rejected'
+    assert result['reason'] == 'account_incarnation_mismatch'
+    assert result.get('result_ref') is None, 'a forged account was replayed a result'
+
+
+def test_the_same_operation_with_a_changed_expected_version_conflicts(engine, scope):
+    """Correction 4: same operation id, same payload, different expected version.
+
+    The payload digest matches, so a comparison that ignored the expected
+    version would call this a retry and replay - handing back a success for a
+    command that was never issued. It is an operation conflict.
+    """
+    repo = PostgresWorkRepository(engine)
+    work_id = str(uuid.uuid4())
+    first = commit(repo, scope, op='op-version', expected=0, work_id=work_id,
+                   text_value='One.')
+    assert first['status'] == 'committed'
+
+    same_payload_new_version = commit(repo, scope, op='op-version', expected=1,
+                                      work_id=work_id, text_value='One.')
+    assert same_payload_new_version['status'] == 'rejected'
+    assert same_payload_new_version['reason'] == 'operation_conflict'
+
+    with engine.connect() as connection:
+        version = connection.execute(
+            text('SELECT version FROM works WHERE id = :id'), {'id': work_id},
+        ).scalar_one()
+    assert version == 1, 'the conflicting operation wrote anyway'
+
+
+def test_a_work_source_revision_without_a_source_is_refused(engine, scope):
+    """Correction 5, in the repository."""
+    repo = PostgresWorkRepository(engine)
+    with pytest.raises(ValueError):
+        repo.commit_mutation(
+            scope=scope, domain='draft', operation_id='op-rev', digest='d',
+            expected_version=0, work_id=str(uuid.uuid4()), payload={},
+            source={'revision': 'r3'},
+        )
+
+
+def test_the_database_also_refuses_a_work_revision_without_a_source(engine, scope):
+    """Correction 5, in the constraint - so nothing else can write it either."""
+    with pytest.raises(IntegrityError):
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    'INSERT INTO works (id, incarnation_id, language_code, kind, '
+                    'source_kind, source_id, source_revision, version, lifecycle, '
+                    "payload, updated_sequence, created_at, updated_at) VALUES "
+                    "(:id, :inc, :lang, 'draft', '', '', 'r3', 1, 'active', "
+                    "CAST('{}' AS JSON), 1, :now, :now)"
+                ),
+                {'id': uuid.uuid4(), 'inc': scope.incarnation, 'lang': scope.language,
+                 'now': datetime.now(UTC)},
+            )
+
+
+def test_the_work_owner_refuses_provenance_as_a_work_domain(engine, scope):
+    """Correction 6: provenance mutates, but it is not a kind of work."""
+    from writing_coach.work_contract import UnknownRegistryValue
+
+    repo = PostgresWorkRepository(engine)
+    with pytest.raises(UnknownRegistryValue) as caught:
+        repo.commit_mutation(
+            scope=scope, domain='provenance', operation_id='op-wrong-owner',
+            digest='d', expected_version=0, work_id=str(uuid.uuid4()), payload={},
+        )
+    assert caught.exception.registry == 'works.domain'
+
+    with engine.connect() as connection:
+        written = connection.execute(
+            text("SELECT count(*) FROM mutation_receipts WHERE incarnation_id = :inc "
+                 "AND operation_id = 'op-wrong-owner'"),
+            {'inc': scope.incarnation},
+        ).scalar_one()
+    assert written == 0, 'a refused domain still opened a transaction'
+
+
+def test_provenance_remains_a_valid_global_mutation_domain(engine, scope):
+    """The narrower work registry does not remove it from the global one."""
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'still-valid')
+    result = attach(repo, scope, op='op-global', occurrence=str(uuid.uuid4()), word=word)
+    assert result['status'] == 'committed'
