@@ -39,7 +39,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from writing_coach.reference_backbone import Mutation, Receipt, Scope, mutation_decision
-from writing_coach.work_contract import lifecycle_change
+from writing_coach.work_contract import lifecycle_change, validate_domain, validate_kind
 
 
 def semantic_digest(command_type: str, references: dict[str, Any], payload: Any) -> str:
@@ -116,6 +116,10 @@ class PostgresWorkRepository:
         source: dict[str, str] | None = None,
     ) -> WorkCommitted:
         source = source or {}
+        # Finding 9: kind and domain stay strings in PostgreSQL, so the
+        # strictness has to be here and has to run before anything is written.
+        validate_kind(kind)
+        validate_domain(domain)
         now = datetime.now(UTC)
         with self._engine.begin() as connection:
             # 1. The stream head, held until this transaction ends. Every
@@ -145,7 +149,8 @@ class PostgresWorkRepository:
             #    against the version its own first attempt produced.
             receipt_row = connection.execute(
                 text(
-                    "SELECT operation_id, request_digest, result_ref, committed_version "
+                    "SELECT language_code, domain, resource_id, operation_id, "
+                    "request_digest, expected_version, result_ref, committed_version "
                     "FROM mutation_receipts WHERE incarnation_id = :inc "
                     "AND domain = :domain AND operation_id = :op"
                 ),
@@ -167,14 +172,22 @@ class PostgresWorkRepository:
             command = Mutation(scope, domain, work_id, operation_id, digest, expected_version)
             receipt = None
             if receipt_row is not None:
+                # Rebuilt entirely from persisted columns. Nothing here comes
+                # from the request that is retrying: a historical command
+                # reconstructed out of current input compares a field against
+                # itself, so a changed one passes as a match.
                 receipt = Receipt(
                     Mutation(
-                        scope, domain, work_id, str(receipt_row['operation_id']),
+                        Scope(
+                            scope.account,
+                            scope.incarnation,
+                            str(receipt_row['language_code']),
+                        ),
+                        str(receipt_row['domain']),
+                        str(receipt_row['resource_id']),
+                        str(receipt_row['operation_id']),
                         str(receipt_row['request_digest']),
-                        # The receipt records what was committed; the expected
-                        # version it was issued against is the committed one
-                        # minus this command's single step.
-                        expected_version,
+                        int(receipt_row['expected_version']),
                     ),
                     str(receipt_row['result_ref']),
                     int(receipt_row['committed_version']),
@@ -261,14 +274,17 @@ class PostgresWorkRepository:
             )
             connection.execute(
                 text(
-                    "INSERT INTO mutation_receipts (id, incarnation_id, domain, "
-                    "operation_id, request_digest, result_ref, committed_version, "
-                    "sequence, created_at) VALUES (:id, :inc, :domain, :op, :digest, "
+                    "INSERT INTO mutation_receipts (id, incarnation_id, language_code, "
+                    "domain, resource_id, operation_id, request_digest, expected_version, "
+                    "result_ref, committed_version, sequence, created_at) VALUES "
+                    "(:id, :inc, :lang, :domain, :resource, :op, :digest, :expected, "
                     ":result_ref, :version, :seq, :now)"
                 ),
                 {
-                    'id': uuid.uuid4(), 'inc': scope.incarnation, 'domain': domain,
-                    'op': operation_id, 'digest': digest, 'result_ref': work_id,
+                    'id': uuid.uuid4(), 'inc': scope.incarnation,
+                    'lang': scope.language, 'domain': domain, 'resource': work_id,
+                    'op': operation_id, 'digest': digest,
+                    'expected': expected_version, 'result_ref': work_id,
                     'version': new_version, 'seq': sequence, 'now': now,
                 },
             )

@@ -17,4 +17,4 @@ after the review and authorization its own docstring names.
 
 | Proposal | For | Waiting on |
 | --- | --- | --- |
-| `20260908_0005_account_work_backbone.py` | I2: account incarnation, mutation receipts, change stream, work aggregate, provenance, projection checkpoints | Codex architecture review (`ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 2), then explicit schema authorization (step 4) |
+| `20260908_0005_account_work_backbone.py` | I2: eight tables — account incarnation, stream head, mutation receipts, change records, work, work turns, kept-language provenance, projection checkpoints | Reviewed at `69ceb53` (APPROVED WITH REQUIRED CHANGES) and revised. Awaiting **re-review**, then §6 step 3, then explicit schema authorization (step 4) |

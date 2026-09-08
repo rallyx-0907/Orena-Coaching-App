@@ -26,6 +26,14 @@ sqlalchemy = pytest.importorskip('sqlalchemy')
 from sqlalchemy import create_engine, text  # noqa: E402
 from sqlalchemy.exc import IntegrityError  # noqa: E402
 
+from writing_coach.persistence.incarnation_repository import (  # noqa: E402
+    DeletionBarrier,
+    PostgresIncarnationRepository,
+)
+from writing_coach.persistence.provenance_repository import (  # noqa: E402
+    PostgresProvenanceRepository,
+    ProvenanceRejected,
+)
 from writing_coach.persistence.work_repository import (  # noqa: E402
     PostgresWorkRepository,
     semantic_digest,
@@ -347,3 +355,264 @@ def test_a_turn_cannot_be_attached_across_a_language(engine, scope):
                 {'id': uuid.uuid4(), 'work': work_id, 'inc': scope.incarnation,
                  'content': 'wrong language', 'now': datetime.now(UTC)},
             )
+
+
+# ---------------------------------------------------------------------------
+# Review finding 3: the persisted incarnation seam.
+# ---------------------------------------------------------------------------
+
+
+def _account(engine):
+    """A user row with no incarnation yet."""
+    user_id = uuid.uuid4()
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                'INSERT INTO users (id, user_key, email, name, picture, role, created_at) '
+                'VALUES (:id, :key, :email, :name, :pic, :role, :now)'
+            ),
+            {'id': user_id, 'key': f'sub-{user_id}', 'email': '', 'name': '',
+             'pic': '', 'role': 'user', 'now': datetime.now(UTC)},
+        )
+    return str(user_id)
+
+
+def test_first_sign_in_bootstraps_one_incarnation_with_its_stream(engine):
+    repo = PostgresIncarnationRepository(engine)
+    account = _account(engine)
+    assert repo.resolve(account) is None, 'resolving must not create one'
+    incarnation = repo.ensure_active(account)
+    assert repo.resolve(account) == incarnation
+
+    with engine.connect() as connection:
+        epoch = connection.execute(
+            text('SELECT epoch FROM account_incarnations WHERE id = :id'),
+            {'id': incarnation},
+        ).scalar_one()
+        head = connection.execute(
+            text('SELECT next_sequence FROM account_streams WHERE incarnation_id = :id'),
+            {'id': incarnation},
+        ).scalar_one()
+    assert epoch == 1
+    assert head == 1, 'an incarnation exists with its stream head, not without it'
+
+
+def test_concurrent_first_use_produces_one_incarnation_not_two(engine):
+    repo = PostgresIncarnationRepository(engine)
+    account = _account(engine)
+    results, barrier = {}, threading.Barrier(4)
+
+    def sign_in(name):
+        barrier.wait()
+        results[name] = repo.ensure_active(account)
+
+    threads = [threading.Thread(target=sign_in, args=(n,)) for n in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert len(set(results.values())) == 1, results
+    with engine.connect() as connection:
+        count = connection.execute(
+            text('SELECT count(*) FROM account_incarnations WHERE user_id = :a'),
+            {'a': account},
+        ).scalar_one()
+    assert count == 1
+
+
+def test_signing_in_after_deletion_is_refused_rather_than_recreated(engine):
+    """The barrier. An ordinary auth upsert must not resurrect an account."""
+    repo = PostgresIncarnationRepository(engine)
+    account = _account(engine)
+    first = repo.ensure_active(account)
+    repo.mark_deleted(first)
+
+    assert repo.resolve(account) is None
+    with pytest.raises(DeletionBarrier):
+        repo.ensure_active(account)
+
+    with engine.connect() as connection:
+        count = connection.execute(
+            text('SELECT count(*) FROM account_incarnations WHERE user_id = :a'),
+            {'a': account},
+        ).scalar_one()
+    assert count == 1, 'the refused sign-in created an incarnation anyway'
+
+
+def test_explicit_re_registration_allocates_the_next_epoch(engine):
+    repo = PostgresIncarnationRepository(engine)
+    account = _account(engine)
+    first = repo.ensure_active(account)
+    repo.mark_deleted(first)
+
+    second = repo.register_new(account)
+    assert second != first
+    with engine.connect() as connection:
+        epochs = [
+            row[0] for row in connection.execute(
+                text('SELECT epoch FROM account_incarnations WHERE user_id = :a '
+                     'ORDER BY epoch'),
+                {'a': account},
+            )
+        ]
+    assert epochs == [1, 2]
+    # And the new one is what an ordinary sign-in now resolves to.
+    assert repo.ensure_active(account) == second
+
+
+def test_re_registration_does_not_duplicate_an_active_incarnation(engine):
+    repo = PostgresIncarnationRepository(engine)
+    account = _account(engine)
+    first = repo.ensure_active(account)
+    # An account that is not deleted has nothing to re-register; the active
+    # incarnation is returned rather than a second one being created.
+    assert repo.register_new(account) == first
+
+
+# ---------------------------------------------------------------------------
+# Review finding 4: provenance occurrences and parent scope.
+# ---------------------------------------------------------------------------
+
+
+def _saved_word(engine, account, language, word):
+    word_id = uuid.uuid4()
+    now = datetime.now(UTC)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                'INSERT INTO saved_words (id, user_id, language_code, word, '
+                'normalized_word, added_at, updated_at) VALUES '
+                '(:id, :user, :lang, :word, :norm, :now, :now)'
+            ),
+            {'id': word_id, 'user': account, 'lang': language, 'word': word,
+             'norm': word.casefold(), 'now': now},
+        )
+    return str(word_id)
+
+
+def test_the_same_word_in_one_source_with_different_focus_is_two_occurrences(engine, scope):
+    """The shape the first proposal could not represent."""
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'gave way to')
+    source = {'kind': 'story', 'id': 'last-train', 'revision': 'r3'}
+
+    first = repo.record_occurrence(
+        scope=scope, saved_word_id=word, reason='from_reading', source=source,
+        focus='the last shops gave way to fields',
+    )
+    second = repo.record_occurrence(
+        scope=scope, saved_word_id=word, reason='from_reading', source=source,
+        focus='the light gave way to dusk',
+    )
+    assert first['id'] != second['id']
+    assert len(repo.occurrences_for(scope, word)) == 2
+
+
+def test_the_identical_occurrence_twice_is_refused(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'gave way')
+    source = {'kind': 'story', 'id': 'last-train'}
+    repo.record_occurrence(scope=scope, saved_word_id=word, reason='from_reading',
+                           source=source, focus='same line')
+    with pytest.raises(IntegrityError):
+        repo.record_occurrence(scope=scope, saved_word_id=word, reason='from_reading',
+                               source=source, focus='same line')
+
+
+def test_an_unchecked_origin_is_unknown_and_not_available(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'quiet')
+    repo.record_occurrence(scope=scope, saved_word_id=word, reason='looked_up')
+    assert repo.occurrences_for(scope, word)[0]['availability'] == 'unknown'
+
+
+def test_source_revision_is_retained_where_known(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'platform')
+    repo.record_occurrence(
+        scope=scope, saved_word_id=word, reason='from_reading',
+        source={'kind': 'story', 'id': 'last-train', 'revision': 'r7'},
+    )
+    assert repo.occurrences_for(scope, word)[0]['source_revision'] == 'r7'
+
+
+def test_an_occurrence_carries_its_own_version(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'carriage')
+    assert repo.record_occurrence(
+        scope=scope, saved_word_id=word, reason='looked_up'
+    )['version'] == 1
+
+
+def test_another_accounts_saved_word_is_refused(engine, scope):
+    """Parent scope, checked in the transaction because no FK can check it."""
+    repo = PostgresProvenanceRepository(engine)
+    stranger = _account(engine)
+    theirs = _saved_word(engine, stranger, 'en', 'theirs')
+    with pytest.raises(ProvenanceRejected) as caught:
+        repo.record_occurrence(scope=scope, saved_word_id=theirs, reason='looked_up')
+    assert caught.exception.reason == 'cross_account_saved_word'
+    with engine.connect() as connection:
+        written = connection.execute(
+            text('SELECT count(*) FROM language_provenance WHERE saved_word_id = :w'),
+            {'w': theirs},
+        ).scalar_one()
+    assert written == 0
+
+
+def test_the_same_accounts_word_in_another_language_is_refused(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    chinese_word = _saved_word(engine, scope.account, 'zh', 'quiet-zh')
+    with pytest.raises(ProvenanceRejected) as caught:
+        repo.record_occurrence(scope=scope, saved_word_id=chinese_word, reason='looked_up')
+    assert caught.exception.reason == 'cross_language_saved_word'
+
+
+def test_an_incomplete_source_reference_is_refused(engine, scope):
+    repo = PostgresProvenanceRepository(engine)
+    word = _saved_word(engine, scope.account, scope.language, 'fragment')
+    for source in ({'kind': 'story'}, {'id': 'last-train'}):
+        with pytest.raises(ProvenanceRejected) as caught:
+            repo.record_occurrence(scope=scope, saved_word_id=word,
+                                   reason='looked_up', source=source)
+        assert caught.exception.reason == 'incomplete_source_ref'
+
+
+def test_a_receipt_is_compared_against_persisted_facts_only(engine, scope):
+    """Review findings 1 and 2, in the database rather than in the docstring."""
+    repo = PostgresWorkRepository(engine)
+    work_id = str(uuid.uuid4())
+    first = commit(repo, scope, op='op-persisted', expected=0, work_id=work_id,
+                   text_value='Once.')
+    assert first['status'] == 'committed'
+
+    with engine.connect() as connection:
+        row = connection.execute(
+            text('SELECT language_code, domain, resource_id, expected_version '
+                 'FROM mutation_receipts WHERE incarnation_id = :inc '
+                 "AND operation_id = 'op-persisted'"),
+            {'inc': scope.incarnation},
+        ).mappings().one()
+    assert row['expected_version'] == 0, 'the issued version was not persisted'
+    assert row['resource_id'] == work_id
+    assert row['language_code'] == scope.language
+    assert row['domain'] == 'draft'
+
+
+def test_an_unregistered_work_kind_is_refused_before_anything_is_written(engine, scope):
+    """Finding 9: strings in the column, strict validation in the application."""
+    from writing_coach.work_contract import UnknownRegistryValue
+
+    repo = PostgresWorkRepository(engine)
+    with pytest.raises(UnknownRegistryValue):
+        repo.commit_mutation(
+            scope=scope, domain='draft', operation_id='op-bad-kind',
+            digest='d', expected_version=0, work_id=str(uuid.uuid4()),
+            kind='screenplay', payload={},
+        )
+    with pytest.raises(UnknownRegistryValue):
+        repo.commit_mutation(
+            scope=scope, domain='billing', operation_id='op-bad-domain',
+            digest='d', expected_version=0, work_id=str(uuid.uuid4()), payload={},
+        )

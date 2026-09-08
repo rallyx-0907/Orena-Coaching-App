@@ -13,6 +13,37 @@ Review was conducted outside the repository. Recorded here per AGENTS.md
 "Architecture review authority": reviewer identity, reviewed commit and outcome
 must be in Git.
 
+### Response, per finding
+
+Recorded against the revision. Nothing is applied; the migration is still in
+`migrations/proposed/` and the live head is still `20260828_0004`.
+
+| # | Done | How |
+| --- | --- | --- |
+| 1 | yes | `mutation_receipts.expected_version` is a column, written from the command and read back on retry. |
+| 2 | yes | The receipt also persists `language_code`, `resource_id` and `domain`, and the historical command is rebuilt from those columns alone — no field comes from the request that is retrying. |
+| 3 | yes | Derivation left the pure layer. `scope_of(account, incarnation, language)` now takes a resolved incarnation and refuses an empty one; `persistence/incarnation_repository.py` owns resolution, bootstrap, concurrent first use, the deletion barrier, explicit re-registration and epoch allocation under an account row lock. |
+| 4 | yes | `language_provenance` is occurrences: uniqueness is over saved word, source and a focus digest; `source_revision` and a relation `version` are columns; availability defaults to `unknown`; parent scope is validated transactionally in `provenance_repository.py` under `FOR SHARE`, with separate cross-account and cross-language refusals, both tested. |
+| 5 | yes | `ck_work_source_ref_integrity`: `(source_kind = '') = (source_id = '')`. |
+| 6 | yes | Non-negative and positive checks on receipt expected/committed versions and sequence, change-record sequence and object version, work updated sequence, turn evidence version, and checkpoint sequence. |
+| 7 | yes | `ix_change_records_pull` removed; the unique constraint provides the index. |
+| 8 | yes | Eight, not seven. The count is corrected wherever it is stated as current. |
+| 9 | yes | `WORK_KINDS` and `MUTATION_DOMAINS` in `work_contract.py`, with `validate_kind`/`validate_domain` refusing anything unregistered — exact match, no case or whitespace forgiveness — called before any write. No PostgreSQL ENUM. |
+
+**Constraint applied to finding 3** (from the human, this revision): the pure
+decision layer must not become a database-reading module. `account_profile.py`
+imports nothing from `sqlalchemy`, `alembic`, `psycopg` or `writing_coach.persistence`,
+and a test asserts that by parsing its imports rather than grepping its text.
+
+**Constraint applied to finding 4** (from the human, this revision): do not
+alter `saved_words` to manufacture a composite foreign key. It carries
+`user_id` and `language_code` but no `UNIQUE (id, user_id, language_code)`, so a
+composite key would require adding one to an existing owner table. The plain id
+foreign key is kept and the parent scope is validated in the repository
+transaction instead. The contract is met without widening the owner; if
+review disagrees that this is safe enough, the schema question comes back
+rather than the table being widened.
+
 ### Required changes, verbatim
 
 1. `mutation_receipts` must persist the command's `expected_version`; it must

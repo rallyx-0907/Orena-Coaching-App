@@ -1,10 +1,12 @@
 """Account incarnation, mutation receipts, change stream and the work aggregate.
 
-PROPOSAL — awaiting Codex architecture review and explicit schema authorization
-per ORENA_ACCOUNT_DATA_ARCHITECTURE section 6. Additive only: it creates new
-tables and touches no existing one, so old readers are unaffected. Nothing
-applies it automatically — startup verifies the schema and refuses, and
-`scripts/bootstrap_runtime_schema.py` is the only thing that migrates.
+PROPOSAL — reviewed at `69ceb53` (APPROVED WITH REQUIRED CHANGES) and revised
+against those nine findings; awaiting re-review and then explicit schema
+authorization per ORENA_ACCOUNT_DATA_ARCHITECTURE section 6. Eight tables.
+Additive only: it creates new tables and touches no existing one, so old
+readers are unaffected. Nothing applies it automatically — startup verifies the
+schema and refuses, and `scripts/bootstrap_runtime_schema.py` is the only thing
+that migrates.
 
 Ordered as the migration list in ORENA_BACKBONE_INTEGRATION_GATES requires:
 incarnation, receipt and stream primitives first, then work and its turns, then
@@ -96,13 +98,27 @@ def upgrade() -> None:
             sa.ForeignKey("account_incarnations.id", ondelete="CASCADE"),
             nullable=False,
         ),
+        # The whole canonical command identity, persisted. A retry is compared
+        # against these columns and against nothing taken from the request that
+        # is retrying: reconstructing any part of a historical command from
+        # current input lets a changed field pass as a match.
+        sa.Column("language_code", sa.String(20), nullable=False),
         sa.Column("domain", sa.String(40), nullable=False),
+        sa.Column("resource_id", sa.String(120), nullable=False),
         sa.Column("operation_id", sa.String(120), nullable=False),
         sa.Column("request_digest", sa.String(128), nullable=False),
+        # The version the command was issued against, stored rather than
+        # inferred. Inferring it assumed one command advances a work by exactly
+        # one, which is true of drafts today and is not a property to rely on.
+        sa.Column("expected_version", sa.Integer(), nullable=False),
         sa.Column("result_ref", sa.String(255), nullable=False),
         sa.Column("committed_version", sa.Integer(), nullable=False),
         sa.Column("sequence", sa.BigInteger(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        # Version 0 is the creation case; a committed version is always real.
+        sa.CheckConstraint("expected_version >= 0", name="ck_mutation_receipt_expected"),
+        sa.CheckConstraint("committed_version >= 1", name="ck_mutation_receipt_committed"),
+        sa.CheckConstraint("sequence >= 1", name="ck_mutation_receipt_sequence"),
         sa.UniqueConstraint(
             "incarnation_id", "domain", "operation_id", name="uq_mutation_receipt_operation"
         ),
@@ -138,16 +154,14 @@ def upgrade() -> None:
         sa.CheckConstraint(
             "change_kind IN ('upsert','delete')", name="ck_change_record_kind"
         ),
-        # The stream's ordering guarantee, enforced rather than assumed.
+        sa.CheckConstraint("sequence >= 1", name="ck_change_record_sequence_positive"),
+        sa.CheckConstraint("object_version >= 1", name="ck_change_record_object_version"),
+        # The stream's ordering guarantee, enforced rather than assumed - and
+        # the pull's index. A separate index on the same two columns would be a
+        # duplicate: the unique constraint already provides one, and the pull
+        # reads the whole account stream because a language filter must not
+        # skip changes in another language.
         sa.UniqueConstraint("incarnation_id", "sequence", name="uq_change_record_sequence"),
-    )
-    # A language filter must not skip changes in another language, so the pull
-    # index is the whole account stream; language is a column to read, not the
-    # leading key.
-    op.create_index(
-        "ix_change_records_pull",
-        "change_records",
-        ["incarnation_id", "sequence"],
     )
 
     # ---- 5. The work aggregate --------------------------------------------
@@ -176,6 +190,13 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("version >= 1", name="ck_work_version"),
+        sa.CheckConstraint("updated_sequence >= 1", name="ck_work_updated_sequence"),
+        # A SourceRef is both halves or neither. A kind with no id names nothing
+        # and an id with no kind cannot be resolved; either alone is a dangling
+        # reference that reads as provenance.
+        sa.CheckConstraint(
+            "(source_kind = '') = (source_id = '')", name="ck_work_source_ref_integrity"
+        ),
         sa.CheckConstraint(
             "lifecycle IN ('active','completed','deleted')", name="ck_work_lifecycle"
         ),
@@ -211,6 +232,10 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("ordinal >= 1", name="ck_work_turn_ordinal"),
         sa.CheckConstraint(
+            "evidence_version IS NULL OR evidence_version >= 1",
+            name="ck_work_turn_evidence_version",
+        ),
+        sa.CheckConstraint(
             "author_role IN ('learner','partner')", name="ck_work_turn_author"
         ),
         sa.CheckConstraint(
@@ -234,6 +259,19 @@ def upgrade() -> None:
     # it: `saved_words` owns the word and its review schedule and has no column
     # for where the learner met it. Deleting provenance does not grade or
     # delete a review.
+    #
+    # An *occurrence*, not a fact about the pair. Meeting the same word twice
+    # in the same source - two lines of one story, the same word attended to
+    # differently - is two occurrences, and the first shape here could not say
+    # that: it made (saved word, source kind, source id) unique. Focus is what
+    # distinguishes them, so the uniqueness is over the focus as well, and it
+    # is over a digest because focus is unbounded text and an index is not.
+    #
+    # The foreign key is the saved word's id alone. A composite key on account
+    # and language would need `saved_words` to carry a matching unique
+    # constraint, and altering that owner table to manufacture one is outside
+    # this migration; parent scope is therefore validated transactionally in
+    # the repository, with cross-account and cross-language rejection tested.
     op.create_table(
         "language_provenance",
         sa.Column("id", sa.Uuid(), primary_key=True),
@@ -252,18 +290,46 @@ def upgrade() -> None:
         ),
         sa.Column("source_kind", sa.String(40), nullable=False, server_default=""),
         sa.Column("source_id", sa.String(200), nullable=False, server_default=""),
+        # Retained where known, so an occurrence can say which revision of a
+        # source it points into rather than silently meaning "the latest".
+        sa.Column("source_revision", sa.String(120), nullable=False, server_default=""),
         sa.Column("focus", sa.Text(), nullable=False, server_default=""),
+        # The focus this occurrence is about, hashed so it can be constrained.
+        sa.Column("focus_digest", sa.String(64), nullable=False),
         sa.Column("reason", sa.String(40), nullable=False),
-        sa.Column("availability", sa.String(20), nullable=False, server_default="available"),
+        # A relation has its own version: an occurrence can be corrected -
+        # its focus refined, its availability changed - and a reader needs to
+        # know which state it saw.
+        sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
+        # Unknown by default. An origin nobody has checked is not the same as
+        # one confirmed reachable, and defaulting to available asserts a fact
+        # the row does not have.
+        sa.Column("availability", sa.String(20), nullable=False, server_default="unknown"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint(
             "availability IN ('available','unknown','unavailable')",
             name="ck_language_provenance_availability",
         ),
-        # One relation per saved object and source; meeting a word again in a
-        # different place is a separate relationship, not an overwrite.
+        sa.CheckConstraint("version >= 1", name="ck_language_provenance_version"),
+        sa.CheckConstraint(
+            "(source_kind = '') = (source_id = '')",
+            name="ck_language_provenance_source_ref_integrity",
+        ),
+        # Source revision without a source is a reference to nothing.
+        sa.CheckConstraint(
+            "source_revision = '' OR source_id <> ''",
+            name="ck_language_provenance_revision_needs_source",
+        ),
+        # One occurrence per saved word, source and focus. The same word in the
+        # same source with a different focus is a second occurrence and is
+        # allowed; the identical occurrence twice is not.
         sa.UniqueConstraint(
-            "saved_word_id", "source_kind", "source_id", name="uq_language_provenance_source"
+            "saved_word_id",
+            "source_kind",
+            "source_id",
+            "focus_digest",
+            name="uq_language_provenance_occurrence",
         ),
     )
     op.create_index(
@@ -287,6 +353,10 @@ def upgrade() -> None:
         sa.Column("policy_version", sa.String(40), primary_key=True),
         sa.Column("consumed_through_sequence", sa.BigInteger(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+        # Nothing consumed yet is 0; a checkpoint never goes negative.
+        sa.CheckConstraint(
+            "consumed_through_sequence >= 0", name="ck_projection_checkpoint_sequence"
+        ),
     )
 
 
@@ -297,7 +367,6 @@ def downgrade() -> None:
     op.drop_table("work_turns")
     op.drop_index("ix_works_scope_sequence", table_name="works")
     op.drop_table("works")
-    op.drop_index("ix_change_records_pull", table_name="change_records")
     op.drop_table("change_records")
     op.drop_index("ix_mutation_receipts_stream", table_name="mutation_receipts")
     op.drop_table("mutation_receipts")

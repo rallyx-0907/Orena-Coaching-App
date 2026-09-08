@@ -16,7 +16,8 @@ rather than being answered by inventing a contract.
 **Specification:** `ORENA_ACCOUNT_DATA_ARCHITECTURE` §§1-3.
 **Exit gate:** scoped read/patch and logout/incarnation scenarios; no theme WIP
 edits.
-**Status:** implemented, ungated adapters only.
+**Status:** implemented, ungated adapters only. Amended by I2 review
+finding 3: incarnation resolution moved out of the decision layer.
 
 ### What a learner gets
 
@@ -35,14 +36,17 @@ learner's decision rather than an automatic overwrite.
 `writing_coach/account_profile.py` — pure decisions, no storage or session:
 
 - **Scope** is `reference_backbone.Scope`, not a second shape meaning the same
-  thing. `scope_of(account_row, language)` derives it from verified identity;
-  a missing account or a missing learning language is refused rather than
-  defaulted, because language-scoped resources authorize on both.
-- **Incarnation** is server-owned. `incarnation_of` derives the access epoch
-  from facts the account row already carries, so a deleted-and-recreated
-  account produces a different epoch and everything scoped to the old one stops
-  matching. This is not the durable deletion barrier, which needs the gated
-  migration; it is the part that can be honest without one.
+  thing. `scope_of(account, incarnation, language)` takes three server-verified
+  facts and infers none of them; any missing one is refused, because
+  language-scoped resources authorize on account and language together.
+- **Incarnation** is server-owned and *resolved elsewhere*. It was originally
+  derived here from the account's id and creation time; review finding 3 was
+  that this made a module with no database the authority on an identity fact it
+  cannot see, and that it could not express the deletion barrier at all,
+  because a barrier is a stored row. Resolution, bootstrap, concurrent first
+  use, the barrier and re-registration now live in
+  `persistence/incarnation_repository.py`, and this layer receives the
+  resolved value.
 - **Effective settings** as `{value, source, version}` with the documented
   precedence — session override, saved preference, declared default. A stored
   value that is no longer valid falls back to the default and *says so* rather
@@ -206,6 +210,46 @@ than the request had proposed: `works.kind` and `mutation_receipts.domain` stay
 PostgreSQL strings backed by canonical application registries and strict
 validation rather than becoming PostgreSQL ENUMs, and a receipt must persist the
 expected version it was issued against rather than have it reconstructed.
+
+### The revision — all nine findings addressed
+
+Two constraints came with the work. The pure decision layer must not become a
+database-reading module, so incarnation resolution went to a persistence
+adapter and `scope_of` receives the resolved value. And `saved_words` must not
+be altered to manufacture a composite foreign key, so provenance keeps the
+plain id key and validates parent scope inside the transaction instead.
+
+- **1, 2 — receipts.** `expected_version`, `language_code`, `resource_id` and
+  `domain` are all persisted, and a retry is compared against those columns
+  alone. Rebuilding any part of a historical command from the request that is
+  retrying compares a field with itself, so a changed one passes as a match.
+- **3 — the incarnation seam.** `writing_coach/persistence/incarnation_repository.py`
+  resolves, bootstraps epoch 1, survives concurrent first use through the
+  partial unique index by reading the winner rather than retrying, refuses a
+  deleted account with `DeletionBarrier` instead of resurrecting it, and
+  allocates the next epoch on explicit re-registration under an account row
+  lock. A new incarnation gets its stream head in the same transaction, because
+  an incarnation without one is an account that cannot be written to.
+- **4 — provenance as occurrences.** Uniqueness over saved word, source and a
+  focus digest, so the same word met twice in one source with different focus
+  is two occurrences and the identical occurrence twice is not. `source_revision`
+  retained where known, relation `version` added, availability defaulting to
+  `unknown` rather than asserting a reachability nobody checked. Parent scope is
+  validated under `FOR SHARE` on the saved word, with cross-account and
+  cross-language refused separately and both tested — a check in code rather
+  than in a constraint is only as good as the test holding it there.
+- **5, 6 — integrity.** A SourceRef is both halves or neither, on `works` and on
+  provenance; versions and sequences carry positive or non-negative checks
+  throughout.
+- **7 — index.** The duplicate removed; the unique constraint is the index.
+- **8 — eight tables**, not seven. The miscount was mine.
+- **9 — registries.** `WORK_KINDS` and `MUTATION_DOMAINS` with exact-match
+  validation called before any write. Strings in the column so a new domain is a
+  code change; strict validation so "string" does not quietly mean "anything".
+
+Fifteen further PostgreSQL cases were added for findings 3 and 4, bringing that
+file to 25. They still skip without `ORENA_TEST_POSTGRES_URL` and still have not
+been executed.
 
 ### Still blocked on the gate
 

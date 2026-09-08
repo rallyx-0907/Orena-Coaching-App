@@ -101,38 +101,30 @@ STORED_SETTINGS: dict[str, Setting] = {
 }
 
 
-def incarnation_of(account_row: Mapping[str, object]) -> str:
-    """The account's access epoch, owned by the server.
+def scope_of(account: object, incarnation: object, language: object) -> Scope:
+    """The scope a request runs in, from three server-verified facts.
 
-    Deleting an account and signing in again produces a different account
-    record, and everything scoped to the old one - commands, receipts, cursors,
-    job scopes, caches - must stop matching. Until an authorized migration adds
-    a durable incarnation column and its deletion barrier, the epoch is derived
-    from facts the account row already carries and that a recreated row cannot
-    reproduce. Derived, so it is stable for a given row and different for a new
-    one; it is not a substitute for the barrier itself, which stays gated.
+    All three are required and none is inferred. The incarnation in particular
+    is *resolved* by the persistence adapter that owns the incarnation row and
+    passed in here; this module used to derive it from the account's id and
+    created_at, which made a pure decision layer the authority on an identity
+    fact it cannot see - and it could not express the deletion barrier at all,
+    because a barrier is a stored row.
+
+    Language is required for the same reason as the account: language-scoped
+    resources are authorized on both, so a missing one is refused rather than
+    defaulted into somebody's English work.
     """
-    identifier = str(account_row.get('id') or '').strip()
-    created = str(account_row.get('created_at') or '').strip()
-    if not identifier:
-        raise ValueError('An account incarnation needs a verified account record')
-    return f'{identifier}@{created}' if created else identifier
-
-
-def scope_of(account_row: Mapping[str, object], language: object) -> Scope:
-    """The scope a request runs in.
-
-    Both halves are required: language-scoped resources are authorized on
-    account *and* learning language, so a missing language is refused rather
-    than defaulted into someone's English work.
-    """
-    identifier = str(account_row.get('id') or '').strip()
+    identifier = str(account or '').strip()
+    epoch = str(incarnation or '').strip()
     code = str(language or '').strip()
     if not identifier:
         raise ValueError('A verified account is required')
+    if not epoch:
+        raise ValueError('A resolved account incarnation is required')
     if not code:
         raise ValueError('A learning language is required')
-    return Scope(identifier, incarnation_of(account_row), code)
+    return Scope(identifier, epoch, code)
 
 
 def result_admissible(captured: Scope, current: Scope) -> bool:

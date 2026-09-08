@@ -16,12 +16,66 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from writing_coach.reference_backbone import Cursor, Scope  # noqa: E402
 from writing_coach.work_contract import (  # noqa: E402
     LIFECYCLE,
+    MUTATION_DOMAINS,
+    WORK_KINDS,
+    UnknownRegistryValue,
+    validate_domain,
+    validate_kind,
     append_decision,
     conflict_branches,
     lifecycle_change,
     page_decision,
     sequence_is_contiguous,
 )
+
+
+class CanonicalRegistries(unittest.TestCase):
+    """`works.kind` and `mutation_receipts.domain` are strings in PostgreSQL.
+
+    Review finding 9: they stay strings backed by canonical application
+    registries and strict validation, not PostgreSQL ENUMs - a new domain
+    should not need a migration, and an ENUM would make it need one. The
+    strictness therefore has to live here, and has to be enforced before a
+    write rather than trusted.
+    """
+
+    def test_the_registries_are_not_empty_and_are_stable_tuples(self):
+        self.assertIsInstance(WORK_KINDS, tuple)
+        self.assertIsInstance(MUTATION_DOMAINS, tuple)
+        self.assertTrue(WORK_KINDS and MUTATION_DOMAINS)
+
+    def test_a_registered_kind_validates(self):
+        for kind in WORK_KINDS:
+            self.assertEqual(validate_kind(kind), kind)
+
+    def test_a_registered_domain_validates(self):
+        for domain in MUTATION_DOMAINS:
+            self.assertEqual(validate_domain(domain), domain)
+
+    def test_an_unregistered_kind_is_refused_by_name(self):
+        with self.assertRaises(UnknownRegistryValue) as caught:
+            validate_kind('screenplay')
+        self.assertEqual(caught.exception.value, 'screenplay')
+        self.assertEqual(caught.exception.registry, 'works.kind')
+
+    def test_an_unregistered_domain_is_refused_by_name(self):
+        with self.assertRaises(UnknownRegistryValue) as caught:
+            validate_domain('billing')
+        self.assertEqual(caught.exception.registry, 'mutation_receipts.domain')
+
+    def test_empty_and_non_string_values_are_refused(self):
+        for value in ('', None, 7, '  '):
+            with self.assertRaises(UnknownRegistryValue):
+                validate_kind(value)
+            with self.assertRaises(UnknownRegistryValue):
+                validate_domain(value)
+
+    def test_validation_is_exact_and_not_case_or_space_forgiving(self):
+        # A near-miss is a bug in the caller, not something to normalise away.
+        with self.assertRaises(UnknownRegistryValue):
+            validate_kind(WORK_KINDS[0].upper())
+        with self.assertRaises(UnknownRegistryValue):
+            validate_domain(f' {MUTATION_DOMAINS[0]} ')
 
 
 class WorkLifecycle(unittest.TestCase):

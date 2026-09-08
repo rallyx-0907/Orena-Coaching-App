@@ -14,6 +14,40 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+# Canonical application registries for the two columns that stay PostgreSQL
+# strings rather than becoming database ENUMs. Strings so that registering a
+# new kind or domain is a code change and not a migration; registries plus
+# strict validation so that "string" does not quietly mean "anything".
+WORK_KINDS = ('draft', 'response', 'conversation')
+MUTATION_DOMAINS = ('draft', 'response', 'conversation', 'provenance')
+
+
+class UnknownRegistryValue(ValueError):
+    """A value that is not in its registry, named so a caller can act on it."""
+
+    def __init__(self, registry: str, value: object):
+        super().__init__(f'{value!r} is not a registered {registry}')
+        self.registry = registry
+        self.value = value
+
+
+def _validate(registry: str, allowed: tuple[str, ...], value: object) -> str:
+    # Exact match only. A near-miss - wrong case, stray whitespace - is a bug
+    # in the caller, and normalising it away would hide the bug and let two
+    # spellings of one domain into the same column.
+    if not isinstance(value, str) or value not in allowed:
+        raise UnknownRegistryValue(registry, value)
+    return value
+
+
+def validate_kind(value: object) -> str:
+    return _validate('works.kind', WORK_KINDS, value)
+
+
+def validate_domain(value: object) -> str:
+    return _validate('mutation_receipts.domain', MUTATION_DOMAINS, value)
+
+
 # The three states in section 3's Work record, and no others.
 LIFECYCLE = ('active', 'completed', 'deleted')
 

@@ -17,7 +17,6 @@ from writing_coach.account_profile import (  # noqa: E402
     LANGUAGE_SETTINGS,
     PatchRejected,
     effective_settings,
-    incarnation_of,
     patch_profile,
     result_admissible,
     scope_of,
@@ -25,33 +24,56 @@ from writing_coach.account_profile import (  # noqa: E402
 
 
 class ScopeIsServerOwned(unittest.TestCase):
+    """Scope is assembled from three server-verified facts and no client field.
+
+    The incarnation is one of them, and it is *resolved* elsewhere - by the
+    persistence adapter that owns the incarnation row - and passed in. This
+    module used to derive it from the account's id and created_at, which made a
+    pure decision layer the authority on an identity fact it could not see.
+    """
+
     def test_scope_is_built_from_verified_identity_not_a_client_field(self):
-        scope = scope_of(
-            {'id': 'acct-1', 'user_key': 'sub-1', 'created_at': '2026-01-01T00:00:00+00:00'},
-            'en',
-        )
+        scope = scope_of('acct-1', 'inc-7f3a', 'en')
         self.assertEqual(scope.account, 'acct-1')
+        self.assertEqual(scope.incarnation, 'inc-7f3a')
         self.assertEqual(scope.language, 'en')
-        self.assertTrue(scope.incarnation)
 
     def test_an_account_without_verified_identity_has_no_scope(self):
-        for row in ({}, {'id': ''}, {'id': None}):
+        for account in ('', None, '   '):
             with self.assertRaises(ValueError):
-                scope_of(row, 'en')
+                scope_of(account, 'inc-1', 'en')
+
+    def test_an_unresolved_incarnation_is_refused_rather_than_derived(self):
+        # No fallback: a caller that has not resolved the incarnation cannot
+        # have one invented for it out of the account row.
+        for incarnation in ('', None, '   '):
+            with self.assertRaises(ValueError):
+                scope_of('acct-1', incarnation, 'en')
 
     def test_a_missing_learning_language_is_not_guessed(self):
         with self.assertRaises(ValueError):
-            scope_of({'id': 'acct-1', 'created_at': 'x'}, '')
+            scope_of('acct-1', 'inc-1', '')
 
-    def test_recreating_a_deleted_account_yields_a_new_incarnation(self):
-        deleted = {'id': 'acct-1', 'created_at': '2026-01-01T00:00:00+00:00'}
-        # An ordinary auth upsert after deletion produces a new account row.
-        recreated = {'id': 'acct-9', 'created_at': '2026-05-05T00:00:00+00:00'}
-        self.assertNotEqual(incarnation_of(deleted), incarnation_of(recreated))
+    def test_this_module_cannot_reach_a_database(self):
+        # Checked on imports rather than on words: "session" is also the name of
+        # a preference source here, and a substring search would fail on the
+        # product's own vocabulary rather than on a storage dependency.
+        import ast
 
-    def test_the_same_account_row_keeps_one_incarnation_across_reads(self):
-        row = {'id': 'acct-1', 'created_at': '2026-01-01T00:00:00+00:00'}
-        self.assertEqual(incarnation_of(row), incarnation_of(dict(row)))
+        source = (Path(__file__).resolve().parents[1]
+                  / 'writing_coach' / 'account_profile.py').read_text(encoding='utf-8')
+        imported = set()
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.add(node.module)
+        for name in imported:
+            self.assertFalse(
+                name.startswith(('sqlalchemy', 'alembic', 'psycopg'))
+                or '.persistence' in name,
+                f'the decision layer imported {name!r}; storage lives in the adapter',
+            )
 
 
 class ResultsCannotCrossAScope(unittest.TestCase):
