@@ -163,15 +163,30 @@ assert.match(
   'the rail must not render a menu control',
 );
 const phoneNav = referenceCss.slice(referenceCss.indexOf('@media(max-width:900px)'));
-/* Closed, the list is out of the page rather than merely invisible - hiding it
-   with opacity or a clip would leave eleven links in the tab order and read
-   out by a screen reader while the sheet is shut. */
-assert.match(phoneNav, /#shell nav \{ display:none; \}/, 'the sheet is closed, not just hidden');
+/* The sheet is a curtain over the room, not a wedge above it. Living in the
+   header's grid meant opening it pushed everything below down and closing it
+   pulled it back - the page reflowed twice for a menu. */
+assert.match(phoneNav, /#shell nav \{[^}]*position:absolute/, 'the sheet must overlay, not displace');
+assert.match(phoneNav, /#shell nav \{[^}]*top:100%/, 'it hangs off the header');
+/* Closed it must be out of the tab order and the accessibility tree, or eleven
+   links stay reachable behind a shut menu. `visibility:hidden` does that and
+   still animates; `opacity:0` alone would not. */
+assert.match(phoneNav, /#shell nav \{[^}]*visibility:hidden/, 'closed means unreachable, not just invisible');
 assert.match(
   phoneNav,
-  /#shell\[data-menu='open'\] nav \{ display:flex;/,
+  /#shell\[data-menu='open'\] nav \{[^}]*visibility:visible/,
   'and opens on the shell state the control sets',
 );
+// Tapping the room behind it closes it, which is the gesture people try first.
+assert.match(phoneNav, /\.nav-backdrop \{/, 'there is something to tap outside');
+assert.match(phoneNav, /#shell\[data-menu='open'\] ~ \.nav-backdrop \{ display:block; \}/);
+assert.match(
+  readFileSync(new URL('../static/orena/app.js', import.meta.url), 'utf8'),
+  /backdrop\.onclick = \(\) => setMenu\(false\)/,
+  'the backdrop must actually close it',
+);
+// Motion is a courtesy, not a requirement.
+assert.match(phoneNav, /prefers-reduced-motion: reduce/, 'the animation can be turned off');
 // The group headings come back in the sheet; the flattened strip had dropped
 // them, so eleven destinations arrived as one undifferentiated run.
 assert.match(phoneNav, /\.nav-group > small \{ display:block; \}/);

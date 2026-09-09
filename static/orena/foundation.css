@@ -301,6 +301,29 @@ textarea {
   border-radius: 7px;
   padding: 12px 14px;
 }
+/* A chevron drawn like the rest of the icons rather than the one the operating
+   system supplies. The native control's arrow is heavier than everything
+   around it and sits low against the text baseline, which reads as a form
+   borrowed from somewhere else. This one is 1.6px stroke and round-capped, the
+   same as `entryIcon`, and it is centred on the field.
+
+   Two declarations because a background image cannot take `currentColor`, and
+   appearance is exactly the thing that decides which of the two is legible -
+   which is what the appearance attribute is for. */
+select {
+  appearance: none;
+  padding-right: 40px;
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23586575' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+[data-appearance='dark'] select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c0ccd4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+select::-ms-expand {
+  display: none;
+}
 textarea {
   width: 100%;
   resize: vertical;

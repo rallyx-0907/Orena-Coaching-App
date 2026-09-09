@@ -161,15 +161,47 @@
   .nav-toggle { display:flex; align-items:center; gap:10px; grid-column:1/-1; grid-row:2; width:100%; min-height:46px; margin-bottom:10px; padding:6px 14px; border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--ink); font:inherit; font-size:var(--text-sm); font-weight:600; text-align:left; }
   .nav-toggle > svg { flex:none; width:18px; height:18px; color:var(--accent); }
   .nav-toggle-here { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .nav-toggle-caret { margin-left:auto; }
-  .nav-toggle-caret { flex:none; color:var(--muted); transition:transform .18s ease; }
+  .nav-toggle-caret { flex:none; margin-left:auto; color:var(--muted); transition:transform .18s ease; }
   #shell[data-menu='open'] .nav-toggle { background:var(--sage-surface); color:var(--on-sage); border-color:transparent; }
   #shell[data-menu='open'] .nav-toggle-caret { transform:rotate(180deg); }
   #shell[data-menu='open'] .nav-toggle > svg { color:inherit; }
-  /* The sheet. Closed it is not in the page at all, so nothing in it can be
-     reached by tab or read out while it is shut. */
-  #shell nav { display:none; }
-  #shell[data-menu='open'] nav { display:flex; grid-column:1/-1; grid-row:3; flex-direction:column; flex-wrap:nowrap; gap:14px; margin-inline:-24px; padding:14px 24px 20px; border-top:1px solid var(--line); max-height:min(66vh,520px); overflow-y:auto; }
+  /* The sheet, as a curtain over the room rather than a wedge above it.
+
+     It used to sit in the header's own grid, so opening it pushed everything
+     below it down and closing it pulled everything back up - the page reflowed
+     twice for a menu. Now it hangs off the header and the room underneath does
+     not move at all.
+
+     Closed it is `visibility: hidden`, which keeps it out of the tab order and
+     out of the accessibility tree exactly as `display: none` did, while still
+     letting it animate. The visibility transition is delayed on the way out so
+     the fade is visible before it leaves. */
+  #shell nav {
+    display:flex; flex-direction:column; flex-wrap:nowrap; gap:14px;
+    position:absolute; top:100%; left:0; right:0; z-index:40;
+    padding:14px 24px 20px;
+    background:var(--surface); border-bottom:1px solid var(--line);
+    max-height:min(66vh,520px); overflow-y:auto;
+    box-shadow:0 18px 40px -24px color-mix(in srgb, var(--ink) 45%, transparent);
+    visibility:hidden; opacity:0; transform:translateY(-10px);
+    transition:opacity .18s ease, transform .18s ease, visibility 0s linear .18s;
+  }
+  #shell[data-menu='open'] nav {
+    visibility:visible; opacity:1; transform:none;
+    transition:opacity .18s ease, transform .18s ease, visibility 0s;
+  }
+  /* Tapping the room behind it closes it, which is the gesture people try
+     first. It is not a scrim: the room stays readable, because this covers a
+     header rather than demanding a decision. */
+  .nav-backdrop {
+    position:fixed; inset:0; z-index:30;
+    background:transparent; border:0; padding:0; margin:0;
+    display:none; cursor:default;
+  }
+  #shell[data-menu='open'] ~ .nav-backdrop { display:block; }
+  @media (prefers-reduced-motion: reduce) {
+    #shell nav, #shell[data-menu='open'] nav { transition:none; transform:none; }
+  }
   .nav-group { flex-direction:column; gap:2px; }
   .nav-group > small { display:block; }
   #shell nav a { padding:9px 12px; }
@@ -187,7 +219,7 @@
 }
 @media(max-width:600px) {
   #shell { padding:12px 18px 0; }
-  #shell[data-menu='open'] nav { margin-inline:-18px; padding-inline:18px; }
+  #shell[data-menu='open'] nav { padding-inline:18px; }
   #shell .shell-actions { gap:8px; }
   .nav-toggle { padding-inline:12px; }
   #shell .bring-button span { display:none; }

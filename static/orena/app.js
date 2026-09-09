@@ -85,12 +85,25 @@ function shell() {
      that it was open - and Escape closes it from the keyboard. */
   const shellEl = document.getElementById('shell');
   const toggle = shellEl.querySelector('[data-nav-toggle]');
+  /* The curtain behind the sheet. A button rather than a div, so closing by
+     tapping away is one thing to a pointer and to a keyboard both, and so it
+     is announced as something that does something. */
+  let backdrop = document.querySelector('.nav-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('button');
+    backdrop.className = 'nav-backdrop';
+    backdrop.type = 'button';
+    backdrop.tabIndex = -1;
+    backdrop.setAttribute('aria-hidden', 'true');
+    shellEl.insertAdjacentElement('afterend', backdrop);
+  }
   const setMenu = (open) => {
     shellEl.dataset.menu = open ? 'open' : 'closed';
     toggle.setAttribute('aria-expanded', String(open));
   };
   setMenu(false);
   toggle.onclick = () => setMenu(shellEl.dataset.menu !== 'open');
+  backdrop.onclick = () => setMenu(false);
   shellEl.onkeydown = (event) => {
     if (event.key !== 'Escape' || shellEl.dataset.menu !== 'open') return;
     setMenu(false);
@@ -256,8 +269,15 @@ function importContent() {
     ctx.go('encounter', { id: `url:${url}` });
   };
 }
+/* The last twenty room failures, for the intermittent `#/language` report that
+   has never reproduced under observation. `window.orenaRenderFailures()` reads
+   them back. Nothing is sent anywhere. */
+const renderFailures = [];
+window.orenaRenderFailures = () => renderFailures.slice();
+
 async function render() {
   const version = ++generation;
+  const startedAt = performance.now();
   cleanup();
   cleanup = () => {};
   document.querySelectorAll('dialog').forEach((x) => x.close());
@@ -266,8 +286,23 @@ async function render() {
   ctx.alive = () => generation === version;
   const scope = { ...ctx, alive: ctx.alive };
   shell();
-  root.innerHTML = `<p class="loading" role="status">${ctx.c.loading}</p>`;
   window.scrollTo(0, 0);
+  /* Announce loading only if there is actually a wait.
+
+     This used to blank the room to a loading line before calling the renderer.
+     Half the rooms render synchronously - Speaking, Continue, a conversation -
+     so the line appeared and was replaced within the same frame, and choosing
+     another starting point looked like the whole page reloading rather than
+     one panel changing. A synchronous render has no latency to announce.
+
+     The timer is a macrotask and a synchronous renderer finishes in a
+     microtask, so it is always cleared before it can fire; a slow one leaves
+     the previous room on screen for a moment and then says it is working,
+     which is the honest order. */
+  const announceLoading = setTimeout(() => {
+    if (scope.alive())
+      root.innerHTML = `<p class="loading" role="status">${ctx.c.loading}</p>`;
+  }, 150);
   try {
     const page = ctx.location.page;
     const result =
@@ -288,6 +323,7 @@ async function render() {
                 : page === 'practice' && ctx.location.intent === 'grammar'
                   ? await renderGrammar(root, scope)
                   : await renderWorld(root, scope);
+    clearTimeout(announceLoading);
     if (!scope.alive()) {
       result?.();
       return;
@@ -296,6 +332,38 @@ async function render() {
     root.querySelector('h1')?.setAttribute('tabindex', '-1');
     root.querySelector('h1')?.focus({ preventScroll: true });
   } catch (error) {
+    clearTimeout(announceLoading);
+    /* Keep what a room was doing when it failed.
+
+       `#/language` has reported "temporarily unavailable" inside long
+       multi-room sweeps and never once in isolation, so the next occurrence is
+       the only chance to learn anything from it - and until now the screen said
+       "unavailable" and the console said nothing at all. This records the route,
+       the language, how long the render had been running, which render
+       generation it was and whether that generation was still current, plus the
+       error itself. It changes no behaviour and fixes nothing: there is no
+       evidence yet for what to fix, and a guess would only make the next
+       occurrence harder to read.
+
+       Kept in memory and on the object, not sent anywhere: this is a device
+       diagnostic, not telemetry. */
+    const failure = {
+      at: new Date().toISOString(),
+      hash: location.hash,
+      page: ctx.location.page,
+      intent: ctx.location.intent,
+      language: ctx.language,
+      generation: version,
+      stillCurrent: scope.alive(),
+      elapsedMs: Math.round(performance.now() - startedAt),
+      name: error?.name,
+      status: error?.status,
+      message: error?.message,
+      stack: String(error?.stack || '').slice(0, 320),
+    };
+    renderFailures.push(failure);
+    if (renderFailures.length > 20) renderFailures.shift();
+    console.error('[orena] room failed to render', failure);
     if (scope.alive()) {
       // Retrying a route that is gone - the wrong language, a removed import,
       // an id that never existed - only fails again, so always offer the way

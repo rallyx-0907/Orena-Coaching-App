@@ -135,8 +135,15 @@ app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 ORENA_ASSET_ROOT = (ROOT / "static" / "orena").resolve()
 
+def _asset_etag(candidate: Path) -> str:
+    """Identity of exactly these bytes: mtime and size, as Starlette does it."""
+    stat = candidate.stat()
+    material = f"{stat.st_mtime_ns}-{stat.st_size}"
+    return '"' + hashlib.md5(material.encode("utf-8")).hexdigest() + '"'
+
+
 @app.get("/orena-assets/{asset_path:path}", include_in_schema=False)
-def orena_asset(asset_path: str):
+def orena_asset(asset_path: str, request: Request):
     candidate = (ORENA_ASSET_ROOT / asset_path).resolve()
     try:
         candidate.relative_to(ORENA_ASSET_ROOT)
@@ -146,7 +153,22 @@ def orena_asset(asset_path: str):
     if not candidate.is_file():
         raise HTTPException(404, "Asset not found")
 
-    return FileResponse(candidate, headers={"Cache-Control": "no-store, max-age=0"})
+    # `no-cache`, not `no-store`, and an answer to the conditional request that
+    # `no-cache` provokes. Both headers keep a learner from ever seeing a stale
+    # build - the browser revalidates before using anything either way. The
+    # difference is what happens when nothing changed: `no-store` forbids
+    # keeping the bytes at all, so every refresh re-downloaded the whole
+    # application. Measured on this shell that was 3.2 MB and 59 requests on
+    # every single refresh, 2.7 MB of it one image nobody had edited.
+    #
+    # Sending the ETag without honouring `If-None-Match` would have been the
+    # same cost with extra ceremony, so the 304 is the point rather than the
+    # header.
+    etag = _asset_etag(candidate)
+    headers = {"Cache-Control": "no-cache", "ETag": etag}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return FileResponse(candidate, headers=headers)
 
 
 # The approved red-panda library is product material, not an archive. Serving it
@@ -685,8 +707,8 @@ def home() -> HTMLResponse:
     # The shell carries the list of stylesheets and modules the app loads, so a
     # cached copy of it keeps loading yesterday's asset list - a stylesheet
     # added since is simply never requested, and the screen renders unstyled.
-    # Every asset already answers `no-store`; the document that names them has
-    # to as well.
+    # It is small, so it stays uncached outright; the assets it names revalidate
+    # instead, which is the same freshness for a fraction of the bytes.
     return HTMLResponse(
         (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-store, max-age=0"},

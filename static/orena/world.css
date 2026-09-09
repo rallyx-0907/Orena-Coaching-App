@@ -20,7 +20,10 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: url('/orena-assets/assets/master.png') -449px -154px/630px 630px;
+  /* The mark is `mark.svg`, set in experiences.css, which loads after this and
+     wins. This rule cropped a 1.7 MB reference sheet down to a 40px circle;
+     the browser never fetched it because the later rule replaced it, but a
+     stylesheet reordering would have made it live again. */
 }
 .brand-small {
   font-size: 25px;
