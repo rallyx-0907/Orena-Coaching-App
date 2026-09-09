@@ -15,6 +15,9 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-| Proposal | For | Waiting on |
-| --- | --- | --- |
-| `20260908_0005_account_work_backbone.py` | I2: eight tables — account incarnation, stream head, mutation receipts, change records, work, work turns, kept-language provenance, projection checkpoints | Reviewed at `69ceb53` (APPROVED WITH REQUIRED CHANGES) and revised. Awaiting **re-review**, then §6 step 3, then explicit schema authorization (step 4) |
+**No proposal is open.** The directory stays because the mechanism is worth
+keeping, not because something is waiting in it.
+
+| Proposal | Outcome |
+| --- | --- |
+| `20260908_0005_account_work_backbone.py` | I2: eight tables — account incarnation, stream head, mutation receipts, change records, work, work turns, kept-language provenance, projection checkpoints. Reviewed at `69ceb53` (APPROVED WITH REQUIRED CHANGES), revised through two re-reviews, approved at `6cc3dc1`, rehearsed under §6 step 3, and moved into `versions/` and applied to the sandbox runtime under §6 step 4. `ORENA_ACCOUNT_BACKBONE` remains off. |

@@ -118,13 +118,21 @@ class TheFlagIsNotWiredToAnythingYet(unittest.TestCase):
                 f'{FLAG}"] = "on"', text, f'{path.name} switches the backbone on'
             )
 
-    def test_the_proposal_is_still_outside_the_live_migration_chain(self):
+    def test_the_schema_is_in_the_live_chain_and_the_flag_is_still_off(self):
+        # Activation is two decisions, taken separately: the schema is applied
+        # (step 7) and the flag is not set (step 9). This is the test that
+        # keeps them separate, so a later change cannot quietly collapse the
+        # second into the first.
         root = Path(__file__).resolve().parents[1]
         versions = {p.name for p in (root / 'migrations' / 'versions').glob('*.py')}
-        self.assertNotIn('20260908_0005_account_work_backbone.py', versions)
-        self.assertTrue(
+        self.assertIn('20260908_0005_account_work_backbone.py', versions)
+        self.assertFalse(
             (root / 'migrations' / 'proposed'
              / '20260908_0005_account_work_backbone.py').exists()
+        )
+        # Schema present, nothing asking for it: still disabled.
+        self.assertEqual(
+            build_backbone(object(), set(BACKBONE_TABLES), env={}).state, DISABLED
         )
 
 

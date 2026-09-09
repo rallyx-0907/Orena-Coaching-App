@@ -179,10 +179,11 @@ was reviewed outside the repository by a **Delegated Independent Architecture
 Reviewer (ChatGPT GPT-5.6 Sol)**, whose outcome was **APPROVED WITH REQUIRED
 CHANGES**. The nine required changes are recorded verbatim in
 `I2_SCHEMA_REVIEW_REQUEST.md`, with the request as submitted retained beneath
-them. **Step 3 remains blocked until the revised proposal is re-reviewed.**
+them. All nine were addressed; two further re-reviews followed, and the final
+verdict at `6cc3dc1` approved step 2 and authorized step 3.
 
 Eight additive tables in
-`migrations/proposed/20260908_0005_account_work_backbone.py`: account
+`migrations/versions/20260908_0005_account_work_backbone.py`: account
 incarnation with its deletion barrier, the per-incarnation stream head,
 mutation receipts, change records, the work aggregate, work turns, kept-language
 provenance and projection checkpoints. `work_contract.py` holds the decisions
@@ -191,23 +192,24 @@ around the aggregate (26 stdlib counterexamples, CI registered) and reuses
 `persistence/work_repository.py` is the transactional seam and no caller is
 wired to it.
 
-**The proposal is deliberately not in `migrations/versions/`.** Startup now
+**It was held outside `migrations/versions/` until it was authorized.** Startup
 refuses any database that is not at the expected head, so merging an unapproved
-migration into the live chain would make every environment refuse on its next
-restart — approving it by accident, in exactly the way the verification exists
-to prevent. Alembic does not read `migrations/proposed/`; the live head is still
-`20260828_0004`, and the sandbox was restarted against real PostgreSQL to prove
-it. The PostgreSQL test fixture reaches the proposal by adding that directory to
-`version_locations` explicitly, which is the only place it is ever applied.
-Approving it is one `git mv`.
+migration into the live chain would have made every environment refuse on its
+next restart — approving it by accident, in exactly the way the verification
+exists to prevent. It sat in `migrations/proposed/`, which Alembic does not
+read, and the PostgreSQL fixture reached it by adding that directory to
+`version_locations` explicitly. Approving it was one `git mv`, and that is what
+step 4 was: the file is in the live chain now, and the fixture runs the
+unmodified chain the way a deployment does.
 
 Ten concurrency cases in `tests/test_orena_work_persistence_postgres.py` cover
 the I2 rows of the acceptance matrix — two edits from one version, lost
 acknowledgment replay, operation-id reuse, a stalled transaction holding the
 stream head, snapshot-plus-changes covering exactly once, the stream not being
 language-filtered, writes after deletion, and a recreated incarnation starting
-its own stream. They skip unless `ORENA_TEST_POSTGRES_URL` is set and have not
-been executed: running them is §6 step 3, which follows the review.
+its own stream. They skip unless `ORENA_TEST_POSTGRES_URL` is set. Executed
+under §6 step 3 against an isolated scratch database, and re-executed against
+the live chain after deployment: 42 cases, all passing.
 
 The two questions raised for the reviewer were both answered, and more strictly
 than the request had proposed: `works.kind` and `mutation_receipts.domain` stay
@@ -352,7 +354,7 @@ the un-migrated refusal names both revisions, every operator safeguard fires,
 the migration applies, the app starts and serves `/`, `/api/learner-profile`
 and `/api/dashboard`, pre-existing rows survive, and the backbone reports
 `disabled` at rest and `active` only with the flag. Both scratch databases were
-dropped; the runtime is still at `20260828_0004` with 19 tables.
+dropped. That rehearsal is what the real deployment then repeated.
 
 **Five policy inputs are absent and every one has defined behaviour** rather
 than a guess. Two of them — restore suppression after deletion, and retention —
@@ -360,20 +362,38 @@ do not block this milestone but must be answered before sync or deletion is
 enabled, because without them a restore can reinstate work a learner deleted
 and nothing is ever purged.
 
-### Still blocked on the gate
+### §6 step 4 — schema deployed to the sandbox, flag off
 
-Drafts, conversation turns and continuation live only in device memory today;
-`Essay`/`EssayRevision` already own the immutable submitted snapshot and its
-evaluator result, and the architecture is explicit that those evidence owners
-do not move. So the work aggregate, mutation receipts, change records and the
-per-incarnation stream head are genuinely absent and need additive tables.
+Authorized by the human as *apply the schema and deploy, but keep
+`ORENA_ACCOUNT_BACKBONE=off`* — deliberately not the same decision as switching
+it on, and deliberately not taken in the same window as the migration.
 
-The current gate is re-review. §6 step 2 is complete and its outcome recorded;
-the nine required changes are being made, after which the revised proposal
-returns to an independent architecture reviewer. Only then does §6 step 3 run
-against a throwaway database, and only then does explicit human schema/runtime
-authorization (§6 step 4) come into scope.
+Done in the runbook's order. Backup captured from the sandbox runtime and
+verified (49,784 bytes, 98 restorable entries), then rehearsed into a separate
+database, which came back matching on revision and on every compared count —
+`users` 1, `user_language_profiles` 2, `saved_words` 5, `speaking_attempts` 2,
+`listening_progress` 10. Then `git mv` into `versions/`,
+`bootstrap_runtime_schema.py --upgrade --from 20260828_0004 --confirm`, which
+applied `20260828_0004 → 20260908_0005` and reported `ready`, and a restart of
+`orena-foundation-web` in the same window.
 
-Until the schema exists, work still lives in device memory and no
-learner-visible behaviour has changed. Activation is not Opus's to declare, and
-neither is the re-review.
+After it: the sandbox serves `/`, `/api/learner-profile` and `/api/dashboard`
+at 200; the head is `20260908_0005`; the 19 pre-existing tables and every
+learner row are unchanged; the eight new tables exist and are empty; the
+backbone reports `disabled`, because nothing sets the flag. The 42 PostgreSQL
+concurrency cases were re-run against the live chain rather than against a
+patched `version_locations`, and pass.
+
+**Sandbox only.** This was applied to `orena-foundation-web` at 127.0.0.1:8011,
+the runtime `CURRENT_HANDOFF.md` names. Production (8000) and preview (8010)
+are human gates, were not named in the authorization, and were not touched.
+
+Drafts, conversation turns and continuation still live only in device memory;
+`Essay`/`EssayRevision` still own the immutable submitted snapshot and its
+evaluator result, and those evidence owners do not move. The tables that would
+hold the rest now exist and nothing writes to them.
+
+The remaining gate is step 9, `ORENA_ACCOUNT_BACKBONE=on`, and the write-path
+integration that follows it. Rollback is free until then and stops being free
+the moment the backbone holds authoritative work. Activation is not Opus's to
+declare.

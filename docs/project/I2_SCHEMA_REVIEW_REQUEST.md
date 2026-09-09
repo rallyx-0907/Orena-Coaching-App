@@ -17,6 +17,14 @@ does not authorize schema deployment, and is not a claim of production
 readiness. Fresh command output is required for every PASS claim, and any
 failing case stops Step 3.
 
+> **Note added after the review, not part of it.** Step 3 ran and passed. Step 4
+> was then authorized separately and directly by the human — apply the schema
+> and deploy, keep `ORENA_ACCOUNT_BACKBONE` off — and `20260908_0005` is now in
+> `migrations/versions/` and applied to the **sandbox** runtime only. That does
+> not come from this verdict, which explicitly withheld it; see
+> `I2_ACTIVATION_RUNBOOK.md`. Everything below is the reviewed artifact and is
+> left as it was written.
+
 ### Step 3 execution — PASS
 
 Run against a disposable database `orena_i2_scratch` inside the sandbox

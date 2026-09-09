@@ -1,13 +1,24 @@
 # I2 activation runbook
 
-Everything reversible that activation needs, prepared ahead of the decision.
-Nothing here has been done to the runtime database, and nothing here authorizes
-doing it. `ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 4 — explicit schema and
-runtime authorization — is the human's, and this document exists so that the
-decision is about the risk rather than about the unknowns.
+Everything activation needs, prepared ahead of the decision and then used for
+it. `ORENA_ACCOUNT_DATA_ARCHITECTURE` §6 step 4 — explicit schema and runtime
+authorization — is the human's, and this document exists so that the decision
+is about the risk rather than about the unknowns.
 
 Architecture review of the proposal is complete: §6 step 2 APPROVED at
 `6cc3dc1`, step 3 executed and passed. See `I2_SCHEMA_REVIEW_REQUEST.md`.
+
+## Status
+
+**Step 7 done, step 9 not.** The human authorized *apply the schema and deploy,
+but keep `ORENA_ACCOUNT_BACKBONE=off`*. The migration is in
+`migrations/versions/`, the **sandbox** runtime (`orena-foundation-web`,
+127.0.0.1:8011) is at `20260908_0005`, and the backbone reports `disabled`. §7
+records the run.
+
+**Production (8000) and preview (8010) were not touched.** They are human gates
+under `ARCHITECTURE_INVARIANTS.md`, the authorization did not name them, and
+deploying there is a separate decision that has not been made or asked for.
 
 ---
 
@@ -62,7 +73,11 @@ drops the target. It refuses to restore over its own source. A backup nobody
 has restored is a hope, not a backup, so the rehearsal is not optional in §5.
 
 Rehearsed against a seeded copy: 41,181-byte dump, 98 restorable entries,
-restore matching the source on revision and on every compared count.
+restore matching the source on revision and on every compared count. Then run
+for real before the deployment: 49,784-byte dump of the sandbox runtime, 98
+entries, restore matching on revision and on all eight counts — `users` 1,
+`user_language_profiles` 2, `saved_words` 5, `speaking_attempts` 2,
+`listening_progress` 10.
 
 What a restore does **not** do: reapply deletion records before serving. That
 needs the policy in §1 and is not implemented. Backups are access-controlled
@@ -146,7 +161,8 @@ migration without touching the existing owners, which is why nothing in
 
 ## 5. Activation checklist
 
-Ordered. Steps 1–6 are reversible; step 7 is the gate.
+Ordered. Steps 1–6 are reversible; step 7 is the gate. Steps 1–8 are **done**
+for the sandbox runtime; step 9 is outstanding.
 
 1. **Policy inputs recorded** — §1 answered, or explicitly deferred with the
    consequence accepted (no purge, no sync, restore unsafe after deletion).
@@ -163,12 +179,13 @@ Ordered. Steps 1–6 are reversible; step 7 is the gate.
    Reversible until deployed.
 7. **HUMAN GATE — apply to the runtime database and deploy together.**
    Irreversible in the sense that matters: from here rollback costs the window,
-   and after activation it costs data.
+   and after activation it costs data. **Done for the sandbox**, migration and
+   restart in one window; §7 has the output.
 8. **Verify at rest** — the backbone reports `disabled`, because the flag is
-   still off. Nothing writes through it.
+   still off. Nothing writes through it. **Confirmed.**
 9. **HUMAN GATE — set `ORENA_ACCOUNT_BACKBONE=on`.** A separate decision from
    the schema, deliberately: the schema can be present and correct for as long
-   as you like before anything uses it.
+   as you like before anything uses it. **Not done, and not asked for.**
 
 Steps 7 and 9 are the two irreversible ones and they are separate on purpose.
 Applying the schema changes nothing a learner sees; the flag does.
@@ -201,6 +218,8 @@ is not there.
 
 ## 7. Compatibility verification
 
+### Rehearsal, before the decision
+
 Run against a throwaway copy of the tree with the migration moved into
 `versions/`, and a scratch database seeded to the live head with data. The real
 repository and the runtime database were not touched.
@@ -222,8 +241,31 @@ repository and the runtime database were not touched.
 Every row is fresh command output from a throwaway copy of the tree with the
 migration moved into `versions/`, against a scratch database seeded to the live
 head. Both databases were dropped afterwards; the real repository and the
-runtime database were not touched, and the runtime is still at
-`20260828_0004` with 19 tables.
+runtime database were not touched.
+
+### The deployment itself
+
+Same sequence, against the real sandbox runtime, under the human authorization
+in the Status section. Fresh output, not the rehearsal's.
+
+| Check | Result |
+| --- | --- |
+| Backup captured | 49,784 bytes from the sandbox runtime |
+| Backup verified | 98 restorable entries |
+| Restore rehearsed into a separate database | Matched on revision and all eight counts; target dropped |
+| `git mv` into `versions/` | The build's expected head becomes `20260908_0005` |
+| `--upgrade --from 20260828_0004 --confirm` | Applied `20260828_0004 → 20260908_0005`, reported `ready` |
+| Restart in the same window | `orena-foundation-web` started; no head refusal |
+| `GET /`, `/api/learner-profile`, `/api/dashboard` | 200, 200, 200 |
+| Head after | `20260908_0005` |
+| Learner rows after | Unchanged: `users` 1, `saved_words` 5, `user_language_profiles` 2, `speaking_attempts` 2, `listening_progress` 10 |
+| The eight new tables | Present, empty |
+| Backbone at rest | `disabled` — the flag is not set |
+| 42 PostgreSQL concurrency cases against the live chain | Pass |
+| Nine rooms walked in the browser, EN and ZH | Render; the learner-profile write path still works |
+
+The 19 pre-existing tables were not altered, which is what makes existing
+readers unaffected: the migration adds and never changes.
 
 ---
 
@@ -233,5 +275,9 @@ Applying the schema to the runtime database; activating authoritative writes;
 enabling sync or import; destructive migration or deletion; production
 credentials or payments; deploying an incompatible schema/runtime boundary.
 
-None of those has been done, and none of them follows from this document
-existing.
+Of those, one has since been authorized separately and done: the schema was
+applied to the **sandbox** runtime under an explicit instruction that named the
+flag and kept it off. Everything else on that list stands — no authoritative
+write is active, no sync or import is enabled, nothing destructive has run, no
+production credential or payment is enabled, and no production or preview
+runtime has been deployed to. None of it follows from this document existing.

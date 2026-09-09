@@ -1,7 +1,8 @@
 """The work aggregate: drafts, responses and conversations.
 
-PROPOSAL — the tables this reads and writes are in migration `20260908_0005`,
-awaiting re-review and schema authorization. No caller is wired to it.
+DEPLOYED, INACTIVE — the tables this reads and writes are in migration
+`20260908_0005`, applied to the sandbox runtime. The `ORENA_ACCOUNT_BACKBONE`
+flag is off, so no caller is wired to it.
 
 The transaction, the sequence, the receipt and the change record are
 `mutation_commit.commit_mutation`, shared with every other account mutation.

@@ -1,7 +1,8 @@
 """One transactional envelope for every account mutation.
 
-PROPOSAL — the tables this touches are in `migrations/proposed/20260908_0005`,
-awaiting re-review and schema authorization. No caller is wired to it.
+DEPLOYED, INACTIVE — the tables this touches are in
+`migrations/versions/20260908_0005`, applied to the sandbox runtime. The
+`ORENA_ACCOUNT_BACKBONE` flag is off, so no caller is wired to it.
 
 Work and provenance are different domains that need identical guarantees: one
 sequence per account allocated under a held lock, one receipt per scoped

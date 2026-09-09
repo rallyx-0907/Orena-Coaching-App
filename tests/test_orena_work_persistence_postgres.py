@@ -54,29 +54,19 @@ TABLES = (
 
 @pytest.fixture(scope='module')
 def engine():
-    """A throwaway database with the proposal applied to it, and only it.
+    """A throwaway database at the live head, which now includes the backbone.
 
-    The proposal lives in `migrations/proposed`, which Alembic does not look at
-    - so it is not a head, and no deployment's startup check sees it. Here it
-    is added to `version_locations` explicitly, which is the only place it is
-    ever applied until it is reviewed and moved into `versions/`.
+    While the migration lived in `migrations/proposed` this fixture had to add
+    that directory to `version_locations`, because it was the only place the
+    tables ever existed. It is in `versions/` now, so plain `head` reaches it -
+    and running the unmodified chain is the stronger check, because that is the
+    chain a deployment applies.
     """
-    from pathlib import Path
-
     from alembic import command
     from writing_coach.persistence.runtime import _runtime_alembic_config
 
-    root = Path(__file__).resolve().parents[1]
     cfg = _runtime_alembic_config()
     cfg.set_main_option('sqlalchemy.url', URL.replace('%', '%%'))
-    # Alembic splits `version_locations` on whitespace and commas unless told
-    # otherwise, so `os.pathsep` alone silently produced an empty script
-    # directory - no heads, and "can't locate revision" from the live head.
-    cfg.set_main_option('version_path_separator', 'os')
-    cfg.set_main_option(
-        'version_locations',
-        f'{root / "migrations" / "versions"}{os.pathsep}{root / "migrations" / "proposed"}',
-    )
     command.upgrade(cfg, 'head')
     engine = create_engine(URL, future=True)
     yield engine

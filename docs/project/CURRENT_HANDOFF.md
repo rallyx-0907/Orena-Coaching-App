@@ -25,6 +25,8 @@ composer, continuation shelf, draft status, progressReporter(). Tinted panels
 carry their own ink in both themes, including secondary text on them - the
 recurring defect is an ambient colour outranking a component's own pairing.
 ORENA_WEB_EXTENSION_GUIDE.md records what a surface inherits.
+`/orena-assets/*` revalidates by ETag; it must never serve `no-store`,
+which re-downloaded 3.2 MB per refresh.
 
 ## Learning capabilities
 
@@ -70,16 +72,14 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Continue the ORENA GOLDEN STAR reference under principal-architect ownership.
-Read `docs/product/ORENA_REFERENCE_ARCHITECTURE.md` and
-`docs/project/ORENA_BACKBONE_EXECUTION.md`; implementation order/acceptance lives
-in `docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` (I1-I7).
-The backbone covers account/profile, commerce/quotas, Collection, content/jobs,
-Growth/achievements and cross-domain migration. It is not merely Package E.
-Codex owns contracts and integration decisions; Opus owns feature/UI execution.
-Backbone design is 8/8 with independent technical review and 18 local contract
-tests; it does not claim I1-I7 runtime implementation or human product approval.
-Start with I1 scoped profile/account adapters; schema/paid activation is gated.
+Backbone write-path integration, then I3. Order and acceptance live in
+`docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` (I1-I7); read
+`docs/product/ORENA_REFERENCE_ARCHITECTURE.md` and
+`docs/project/ORENA_BACKBONE_EXECUTION.md` first. The backbone covers
+account/profile, commerce/quotas, Collection, content/jobs, Growth/achievements
+and cross-domain migration; it is not merely Package E. Codex owns contracts and
+integration decisions; Opus owns feature/UI execution. No I1-I7 claim implies
+human product approval.
 Preserve A-D, eleven destinations and deferred Collection presentation.
 Inspect live HEAD and WIP every cycle; all active Opus files/domains are reserved.
 
@@ -104,10 +104,11 @@ in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 is done. I2 landed
 its startup-schema fix; its proposal at `69ceb53` was reviewed outside the
 repository by a Delegated Independent Architecture Reviewer (ChatGPT GPT-5.6
 Sol): §6 step 2 APPROVED at `6cc3dc1`, step 3 passed. All reversible activation
-preparation is complete - operator migration, backup/restore, inactive wiring,
-deployment and rollback, compatibility dry run: `I2_ACTIVATION_RUNBOOK.md`. The
-migration stays in `migrations/proposed/` and the runtime database is untouched
-at `20260828_0004`. **Awaiting the human's §6 step 4 decision.**
+preparation is complete: `I2_ACTIVATION_RUNBOOK.md`. §6 step 4 was authorized
+as apply-and-deploy with `ORENA_ACCOUNT_BACKBONE=off`, and done: `20260908_0005`
+is in `migrations/versions/` and applied to the **sandbox only**, which is at
+that head and serving. The eight tables are empty, learner rows are unchanged,
+and the backbone reports `disabled`. Production/preview untouched.
 
 ## PENDING
 
@@ -116,8 +117,9 @@ provider coverage does not establish live prompt quality.
 
 ## BLOCKED
 
-I2 §6 step 4 (schema/runtime authorization) and every activation beyond it.
-Step 3 is authorized for an isolated scratch database only.
+I2 §6 step 9 (`ORENA_ACCOUNT_BACKBONE=on`) and every activation beyond it. Any
+deploy to production 8000 or preview 8010 is a separate human gate, was not
+authorized, and has not been asked for.
 
 ## OPEN P0
 
