@@ -120,6 +120,11 @@ Learning capabilities now built on that foundation:
 - **Writing** shows the full review the evaluator returns - weighted
   dimensions, CEFR, strengths quoted from the learner, issues with the reason
   and the rule - and never strikes through words the learner did not write.
+  The final evidence boundary also drops strengths that do not quote the exact
+  submitted text and drops incomplete corrections rather than presenting a
+  label without an explanation or reusable rule. Every canonical English and
+  Chinese feedback category has a learner-readable label in either interface
+  language.
   Revising is where writing is learned, so a new version is compared with the
   last: which problems are gone, which are still there, which arrived, which
   were reworked, and which dimensions moved. The learner can say what they are

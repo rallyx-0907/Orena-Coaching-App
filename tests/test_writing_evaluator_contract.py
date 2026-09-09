@@ -89,6 +89,17 @@ def test_en_zh_shared_result_and_strength_evidence_structure_are_identical() -> 
     assert english_strength["items"]["properties"]["category"]["enum"] == list(RUBRIC_KEYS)
 
 
+def test_schema_requires_nonempty_actionable_feedback_fields() -> None:
+    schema = _english_schema()
+    strength = schema["properties"]["strength_evidence"]["items"]["properties"]
+    error = schema["properties"]["errors"]["items"]["properties"]
+
+    for field in ("fragment", "explanation_vi"):
+        assert strength[field]["minLength"] == 1
+    for field in ("fragment", "explanation_vi", "suggestion", "mini_rule_vi"):
+        assert error[field]["minLength"] == 1
+
+
 def test_en_zh_error_structure_differs_only_by_linguistic_category_enum() -> None:
     english = deepcopy(_english_schema()["properties"]["errors"])
     chinese = deepcopy(_chinese_schema()["properties"]["errors"])

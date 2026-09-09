@@ -135,10 +135,33 @@ def test_learner_facing_text_fields_reject_non_string_provider_values() -> None:
     assert result["summary_vi"] == ""
     assert result["strengths_vi"] == []
     assert result["priorities_vi"] == []
-    assert result["strength_evidence"][0]["explanation_vi"] == ""
-    assert result["errors"][0]["explanation_vi"] == ""
-    assert result["errors"][0]["mini_rule_vi"] == ""
+    assert result["strength_evidence"] == []
+    assert result["errors"] == []
     assert "not learner copy" not in repr(result)
+
+
+def test_feedback_items_require_actionable_explanation_and_rule() -> None:
+    result = _normalize(
+        {
+            "strength_evidence": [
+                _strength(explanation_vi=""),
+                _strength(category="vocabulary", explanation_vi="   "),
+            ],
+            "errors": [
+                _error(explanation_vi=""),
+                _error(category="article", mini_rule_vi="   "),
+            ],
+        }
+    )
+
+    assert result["strength_evidence"] == []
+    assert result["errors"] == []
+
+
+def test_english_feedback_rejects_a_cjk_correction() -> None:
+    result = _normalize({"errors": [_error(suggestion="我有一只狗。")]})
+
+    assert result["errors"] == []
 
 
 def test_strength_evidence_is_bounded() -> None:

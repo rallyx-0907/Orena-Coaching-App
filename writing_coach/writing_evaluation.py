@@ -188,7 +188,7 @@ def _normalize_strength_evidence(
         confidence = _normalized_confidence(item.get("confidence", 1.0))
         if category not in rubric_categories or confidence < CONFIDENCE_THRESHOLD:
             continue
-        if not fragment or fragment not in learner_text:
+        if not fragment or fragment not in learner_text or not explanation:
             continue
         if not allow_cjk and contains_cjk(explanation):
             continue
@@ -233,9 +233,17 @@ def _normalize_errors(
         suggestion = _bounded_text(item.get("suggestion", ""), 1000)
         rule = _bounded_text(item.get("mini_rule_vi", ""), 1500)
         confidence = _normalized_confidence(item.get("confidence", 1.0))
-        if confidence < CONFIDENCE_THRESHOLD or not fragment or fragment not in learner_text:
+        if (
+            confidence < CONFIDENCE_THRESHOLD
+            or not fragment
+            or fragment not in learner_text
+            or not explanation
+            or not rule
+        ):
             continue
-        if not allow_cjk and (contains_cjk(explanation) or contains_cjk(rule)):
+        if not allow_cjk and (
+            contains_cjk(explanation) or contains_cjk(rule) or contains_cjk(suggestion)
+        ):
             continue
         if not suggestion or _normalize_text(suggestion) == _normalize_text(fragment):
             continue

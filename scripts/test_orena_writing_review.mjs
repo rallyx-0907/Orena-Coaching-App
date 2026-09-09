@@ -9,6 +9,7 @@ import { copy } from '../static/orena/ui/copy.js';
 import {
   RUBRIC,
   shownIssues,
+  shownStrengths,
   writingReview,
 } from '../static/orena/ui/writing-review.js';
 import { REGISTERS, registerLabel } from '../static/orena/ui/registers.js';
@@ -38,6 +39,21 @@ for (const ui of ['en', 'zh']) {
     assert.ok(label && label.length > 1, `${ui}: no label for register "${key}"`);
   }
 }
+
+const profileCategories = (path) => [
+  ...read(path)
+    .split('ERROR_CATEGORIES = (')[1]
+    .split(')')[0]
+    .matchAll(/"([a-z_]+)"/g),
+].map((match) => match[1]);
+for (const ui of ['en', 'zh']) {
+  for (const key of new Set([
+    ...profileCategories('writing_coach/languages/english/profile.py'),
+    ...profileCategories('writing_coach/languages/chinese/profile.py'),
+  ])) {
+    assert.ok(copy[ui][`rubric_${key}`], `${ui}: no readable label for feedback category "${key}"`);
+  }
+}
 assert.equal(registerLabel(c, 'not_a_register'), '', 'unknown stays silent');
 
 const text = 'I go to the shop yesterday and buyed some bread for my family.';
@@ -59,6 +75,11 @@ const full = {
       quote: 'for my family',
       why: 'A natural way to say who it was for.',
       category: 'vocabulary',
+    },
+    {
+      quote: 'not in the learner text',
+      why: 'This evidence was invented.',
+      category: 'grammar',
     },
   ],
   issues: [
@@ -82,6 +103,10 @@ const shown = shownIssues(full, text);
 assert.equal(shown.length, 1, 'an issue quoting words the learner never wrote is not shown');
 assert.equal(shown[0].quote, 'go to the shop yesterday');
 assert.deepEqual(shownIssues({}, text), [], 'no issues is not an error');
+const visibleStrengths = shownStrengths(full, text);
+assert.equal(visibleStrengths.length, 1, 'a strength must quote words the learner actually wrote');
+assert.equal(visibleStrengths[0].quote, 'for my family');
+assert.deepEqual(shownStrengths({}, text), [], 'no strengths is not an error');
 
 const html = writingReview(c, full, { language: 'en', text });
 for (const fragment of [
@@ -97,6 +122,7 @@ for (const fragment of [
   assert.ok(html.includes(fragment), `the review dropped "${fragment}"`);
 }
 assert.ok(!html.includes('not in the learner text'), 'a filtered issue must not reach the page');
+assert.ok(!html.includes('This evidence was invented.'), 'invented strength evidence must not reach the page');
 assert.equal(
   (html.match(/data-why=/g) || []).length,
   shown.length,

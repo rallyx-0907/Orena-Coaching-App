@@ -94,8 +94,8 @@ function movement(c, result) {
   )} ${better ? '+' : ''}${Math.round(overall)}</p>`;
 }
 
-function strengths(c, result, language) {
-  const items = (result.strengths || []).filter((x) => x && x.quote);
+function strengths(c, result, language, text) {
+  const items = shownStrengths(result, text);
   if (!items.length) return '';
   return `<section class="review-strengths"><h3>${esc(c.reviewStrengths)}</h3>${items
     .map(
@@ -135,12 +135,16 @@ export function shownIssues(result, text) {
   return (result.issues || []).filter((x) => x && x.quote && text.includes(x.quote));
 }
 
+export function shownStrengths(result, text) {
+  return (result.strengths || []).filter((x) => x && x.quote && text.includes(x.quote));
+}
+
 export function writingReview(c, result, { language, text }) {
   const overall = number(result.overall);
   const level = typeof result.app_cefr === 'string' ? result.app_cefr : '';
   const nothing =
     !shownIssues(result, text).length &&
-    !(result.strengths || []).length &&
+    !shownStrengths(result, text).length &&
     !result.corrected_text;
   return `<h2>${esc(c.review)}</h2>${
     result.evaluator === 'fallback-demo'
@@ -158,5 +162,5 @@ export function writingReview(c, result, { language, text }) {
     result.corrected_text
       ? `<blockquote lang="${esc(language)}">${esc(result.corrected_text)}</blockquote>`
       : ''
-  }${dimensions(c, result)}${comparison(c, result, text)}${strengths(c, result, language)}${issues(c, result, language, text)}${priorities(c, result)}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p>${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div>`;
+  }${dimensions(c, result)}${comparison(c, result, text)}${strengths(c, result, language, text)}${issues(c, result, language, text)}${priorities(c, result)}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p>${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div>`;
 }

@@ -46,16 +46,11 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-Opus application evidence below is preserved, not rerun by Codex.
-Local execution only; no CI claim.
-- 32 CI Node gates PASS. ESM graph 51. Both validators OK. Four stdlib
-  contract gates PASS.
-- Full Python in the app image: 799 passed / 20 failed (see below). The rich
-  provider paths run against an injected provider, mutation-checked.
-- Browser at 390/800/1440/1920, EN and ZH, all themes: no overflow, no room
-  repeating the practice map, no dead controls.
-- Journeys: see the ledger's "Functional core" and "Reference architecture
-  packages" for what is real, what is provider-held, and the evidence.
+No CI/provider claim. R3 evidence hardening
+requires actionable evaluator findings, exact strength/error quotes and readable
+EN/ZH categories: 113 pytest, Writing Review Node gate and 51-module ESM graph
+passed. Prior Opus batch remains 799 passed / 20 inherited failures; its browser
+and journey evidence lives in ORENA_STATUS and GOLDEN_STAR_COMPLETION.
 
 ## Runtime / safety
 
@@ -73,16 +68,14 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Backbone write-path integration, then I3. Order and acceptance live in
-`docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` (I1-I7); read
-`docs/product/ORENA_REFERENCE_ARCHITECTURE.md` and
-`docs/project/ORENA_BACKBONE_EXECUTION.md` first. The backbone covers
-account/profile, commerce/quotas, Collection, content/jobs, Growth/achievements
-and cross-domain migration; it is not merely Package E. Codex owns contracts and
-integration decisions; Opus owns feature/UI execution. No I1-I7 claim implies
-human product approval.
-Preserve A-D, eleven destinations and deferred Collection presentation.
-Inspect live HEAD and WIP every cycle; all active Opus files/domains are reserved.
+Core lane (Codex scheduled R3): verify the browser-visible Write → Evaluate →
+Review path in EN and ZH, including the truthful unavailable/degraded response.
+Use deterministic injected-provider evidence; live provider quality remains a
+human/credential gate and must not be inferred from fixtures.
+
+Parallel Backbone lane (Opus): write-path integration, then I3, under
+`ORENA_BACKBONE_INTEGRATION_GATES.md`. Preserve A-D, eleven destinations and
+all active Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
