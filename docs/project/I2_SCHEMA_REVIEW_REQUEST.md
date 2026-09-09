@@ -1,6 +1,65 @@
 # I2 schema proposal — architecture review
 
-## Outcome: APPROVED WITH REQUIRED CHANGES
+## Final verdict: §6 STEP 2 APPROVED
+
+| | |
+| --- | --- |
+| Reviewer role | Delegated Independent Architecture Reviewer |
+| Reviewer model | ChatGPT GPT-5.6 Sol |
+| Reviewed commit | `6cc3dc15d62c10060af62fdcf6176b5dff30d3ff` |
+| Verdict | **I2 §6 STEP 2 — APPROVED.** The two final blockers are closed at architecture/code-inspection level. |
+| Step 3 | **AUTHORIZED — ISOLATED SCRATCH POSTGRESQL ONLY.** |
+
+Step 3 is authorized against a disposable database only. It does not move
+`20260908_0005` into `migrations/versions/`, does not touch the production or
+runtime database, does not activate a caller, does not enable sync or import,
+does not authorize schema deployment, and is not a claim of production
+readiness. Fresh command output is required for every PASS claim, and any
+failing case stops Step 3.
+
+### Step 3 execution — PASS
+
+Run against a disposable database `orena_i2_scratch` inside the sandbox
+PostgreSQL, created and dropped for this rehearsal. The runtime database
+`postgres` was not touched: it stayed at `20260828_0004` with 19 tables and
+none of the eight, and the sandbox kept serving throughout.
+
+| Check | Result |
+| --- | --- |
+| Scratch database | created, used, dropped |
+| Upgrade from live head | `20260828_0004 -> 20260908_0005`, 19 tables -> 27, 24 check constraints |
+| 42 PostgreSQL cases | 42 passed, from a clean live-head database |
+| Concurrency | 19 named cases pass — two edits from one version, stalled stream head, concurrent first use, snapshot vs concurrent write, shared sequence across domains |
+| Isolation | 10 named cases pass — cross-account and cross-language work and occurrence ids, forged incarnation, deletion barrier, re-registration epoch |
+| Rollback rehearsal | `20260908_0005 -> 20260828_0004`; all eight tables dropped, the 19 pre-existing intact, and `saved_words` and `users` rows survived — the downgrade does not cascade into owner tables |
+| Up/down/up | repeatable; 42 pass again after the cycle |
+| Live chain | unchanged — four files, head `20260828_0004` |
+
+**Two defects were found and fixed, both in the test scaffolding rather than
+the proposal.** Alembic splits `version_locations` on whitespace and commas, so
+the fixture's `os.pathsep` separator produced an empty script directory and
+"can't locate revision `20260828_0004`" — `version_path_separator = os` is now
+set explicitly. And the `saved_words` helper inserted a partial row: that
+table's text and counter columns are NOT NULL with Python-side defaults rather
+than server defaults, which the ORM fills in and raw SQL does not. A third
+issue was mine in the assertions: pytest's `ExceptionInfo` exposes `.value`,
+not unittest's `.exception`.
+
+None of the three was in the migration or the adapters, and the migration was
+not modified during Step 3.
+
+### Review history
+
+| Reviewed commit | Outcome |
+| --- | --- |
+| `69ceb53` | APPROVED WITH REQUIRED CHANGES — nine findings |
+| `0a1a0a5` | CHANGES REQUIRED — six corrections |
+| `728a8df` | CHANGES REQUIRED — two blockers |
+| `6cc3dc1` | **§6 STEP 2 APPROVED; STEP 3 AUTHORIZED** |
+
+---
+
+## First review of `69ceb53`: APPROVED WITH REQUIRED CHANGES
 
 | | |
 | --- | --- |
@@ -12,6 +71,49 @@
 Review was conducted outside the repository. Recorded here per AGENTS.md
 "Architecture review authority": reviewer identity, reviewed commit and outcome
 must be in Git.
+
+## Final re-review of `728a8df`: CHANGES REQUIRED BEFORE STEP 3
+
+Two blockers, both addressed. **The migration is unchanged this round** — both
+were in the adapters. Step 3 stays blocked; no caller is activated.
+
+### Blocker 1 — the provenance digest was incomplete
+
+`availability` is written to the occurrence and was not in `occurrence_digest`.
+An operation id reused with a changed availability therefore matched the digest
+and replayed, reporting success for a value that was never stored. It is in the
+canonical digest now, and the regression proves the reuse returns
+`operation_conflict` and that the stored availability is still the first one.
+
+A companion test holds the other side: an identical retry still replays, so the
+guard did not turn every retry into a conflict.
+
+### Blocker 2 — resource scope and existence now come from persisted state
+
+The envelope passed the *request's* scope as `resource_scope`, so
+`mutation_decision`'s first check compared a value with itself and
+`scope_denied` was unreachable. `load` now returns a `ResourceState` carrying
+the resource's own version, deletion and scope, read from its row and joined to
+`account_incarnations` so the owning account is persisted fact rather than a
+claim.
+
+What that fixes, concretely:
+
+| Situation | Before | Now |
+| --- | --- | --- |
+| Work id owned by another incarnation | looked absent, creation proceeded, primary key error | `scope_denied`, and nothing of theirs moves |
+| Work id in another language of the same account | same | `scope_denied` |
+| Existing same-scope work, distinct operation at creation version | primary key error | `conflict` with `current_version` and the server's payload |
+| Provenance occurrence id already used | version reported 0 unconditionally, primary key error | inspected: `conflict` in scope, `scope_denied` out of it |
+
+Two smaller things came with it. `write` decided insert-versus-update on
+`state is None`, which became ambiguous once a cross-scope resource also
+reported no state; it now tests `version == 1`, which is creation and nothing
+else. And a cross-scope resource returns before any lifecycle rule is applied,
+because no lifecycle rule applies to a resource that is not ours.
+
+`FOR SHARE` is unchanged, as directed. The PostgreSQL file is now 42 cases,
+still skipped without `ORENA_TEST_POSTGRES_URL` and still not executed.
 
 ## Re-review of `0a1a0a5`: CHANGES REQUIRED BEFORE STEP 3
 

@@ -20,6 +20,7 @@ from sqlalchemy.engine import Engine
 from writing_coach.persistence.mutation_commit import (
     MutationOutcome,
     MutationRefused,
+    ResourceState,
     commit_mutation,
 )
 from writing_coach.reference_backbone import Scope
@@ -110,24 +111,43 @@ class PostgresWorkRepository:
             raise ValueError('A source revision needs a source to be a revision of')
 
         def load(connection):
+            # By id alone, and joined to the incarnation so the row can say
+            # which account it belongs to. Scoping the lookup instead - id AND
+            # incarnation AND language - made another incarnation's work look
+            # absent, so a creation went ahead and failed on the primary key
+            # rather than being denied for what it was.
             row = connection.execute(
                 text(
-                    'SELECT version, lifecycle, payload FROM works '
-                    'WHERE id = :id AND incarnation_id = :inc AND language_code = :lang '
-                    'FOR UPDATE'
+                    'SELECT w.incarnation_id, w.language_code, w.version, w.lifecycle, '
+                    'w.payload, i.user_id FROM works w '
+                    'JOIN account_incarnations i ON i.id = w.incarnation_id '
+                    'WHERE w.id = :id FOR UPDATE OF w'
                 ),
-                {'id': work_id, 'inc': scope.incarnation, 'lang': scope.language},
+                {'id': work_id},
             ).mappings().first()
             if row is None:
-                return 0, False, None
+                # Nothing there: creating one in the requester's own scope is
+                # exactly what they are allowed to do.
+                return ResourceState(0, False, scope, None)
+            owner = Scope(
+                str(row['user_id']),
+                str(row['incarnation_id']),
+                str(row['language_code']),
+            )
+            if owner != scope:
+                # Someone else's work, or this account's work in another
+                # language. Report it as it is and let the decision deny it;
+                # no lifecycle rule applies to a resource that is not ours.
+                return ResourceState(int(row['version']), False, owner, None)
             current_lifecycle = str(row['lifecycle'])
             if current_lifecycle != lifecycle and lifecycle_change(
                 current_lifecycle, lifecycle
             ) == 'refused':
                 raise MutationRefused('lifecycle_refused')
-            return (
+            return ResourceState(
                 int(row['version']),
                 current_lifecycle == 'deleted' and lifecycle != 'deleted',
+                owner,
                 dict(row['payload']) if row['payload'] else {},
             )
 
@@ -141,7 +161,11 @@ class PostgresWorkRepository:
                 'source_id': source.get('id', ''),
                 'source_revision': source.get('revision', ''),
             }
-            if state is None:
+            # Version 1 is creation and nothing else: the new version is the
+            # loaded one plus a step, so only an absent resource reaches 1.
+            # Reading it off `state` was ambiguous once a cross-scope resource
+            # also reported no state.
+            if version == 1:
                 connection.execute(
                     text(
                         'INSERT INTO works (id, incarnation_id, language_code, kind, '

@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -37,6 +38,27 @@ from sqlalchemy.engine import Engine
 
 from writing_coach.reference_backbone import Mutation, Receipt, Scope, mutation_decision
 from writing_coach.work_contract import validate_domain
+
+
+@dataclass(frozen=True)
+class ResourceState:
+    """What the database says about the resource a command names.
+
+    `scope` is the resource's own scope, read from its row - not the scope the
+    request claimed. The envelope used to pass the request's scope in as the
+    resource's, which made `mutation_decision`'s first check compare a value
+    with itself: a real scope mismatch could not be detected there, and a
+    resource owned by another incarnation looked simply absent, so creation
+    proceeded and failed on a primary key instead of being denied.
+
+    An absent resource reports the command's own scope, because creating one
+    where nothing exists is exactly what the requester is allowed to do.
+    """
+
+    version: int
+    deleted: bool
+    scope: Scope
+    state: Any = None
 
 
 class MutationOutcome(dict):
@@ -61,15 +83,18 @@ def commit_mutation(
     digest: str,
     expected_version: int,
     resource_id: str,
-    load: Callable[[Any], tuple[int, bool, Any]],
+    load: Callable[[Any], ResourceState],
     write: Callable[..., str],
 ) -> MutationOutcome:
     """Run one mutation. `load` reads domain state; `write` writes the row.
 
-    `load(connection) -> (current_version, deleted, state)`. Version 0 means the
-    resource does not exist yet, matching the creation convention. `load` may
-    raise `MutationRefused` for a domain rule - a parent in another account,
-    say - and nothing will have been written.
+    `load(connection) -> ResourceState`, reporting the resource's *persisted*
+    version, deletion and scope. Version 0 means the resource does not exist,
+    matching the creation convention; a resource that does exist reports the
+    scope it actually belongs to, so a command naming another account's or
+    another language's resource is denied rather than treated as a creation.
+    `load` may raise `MutationRefused` for a domain rule - a parent in another
+    account, say - and nothing will have been written.
 
     `write(connection, version, sequence, now, state) -> change_kind`.
     """
@@ -113,7 +138,7 @@ def commit_mutation(
         ).mappings().first()
 
         try:
-            current_version, deleted, state = load(connection)
+            resource = load(connection)
         except MutationRefused as refusal:
             return MutationOutcome(status='rejected', reason=refusal.reason, **refusal.detail)
 
@@ -139,7 +164,11 @@ def commit_mutation(
                 int(receipt_row['committed_version']),
             )
 
-        verdict = mutation_decision(command, scope, current_version, receipt, deleted=deleted)
+        # The resource's own scope, not the request's. This is the comparison
+        # that makes `scope_denied` reachable at all.
+        verdict = mutation_decision(
+            command, resource.scope, resource.version, receipt, deleted=resource.deleted
+        )
         if verdict == 'replay':
             return MutationOutcome(
                 status='replay',
@@ -148,7 +177,7 @@ def commit_mutation(
             )
         if verdict == 'version_conflict':
             return MutationOutcome(
-                status='conflict', current_version=current_version, state=state
+                status='conflict', current_version=resource.version, state=resource.state
             )
         if verdict != 'commit':
             return MutationOutcome(status='rejected', reason=verdict)
@@ -161,8 +190,8 @@ def commit_mutation(
             ),
             {'next': sequence + 1, 'now': now, 'inc': scope.incarnation},
         )
-        new_version = current_version + 1
-        change_kind = write(connection, new_version, sequence, now, state)
+        new_version = resource.version + 1
+        change_kind = write(connection, new_version, sequence, now, resource.state)
         connection.execute(
             text(
                 'INSERT INTO change_records (id, incarnation_id, sequence, '

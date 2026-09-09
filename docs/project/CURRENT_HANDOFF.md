@@ -101,9 +101,10 @@ Backbone implementation runs against the locked GPT-6 architecture at `27edeb0`
 in the order `ORENA_BACKBONE_INTEGRATION_GATES.md` sets. I1 is done. I2 landed
 its startup-schema fix; its proposal at `69ceb53` was reviewed outside the
 repository by a Delegated Independent Architecture Reviewer (ChatGPT GPT-5.6
-Sol): APPROVED WITH REQUIRED CHANGES, nine recorded verbatim in
-`I2_SCHEMA_REVIEW_REQUEST.md`. The migration stays in `migrations/proposed/`,
-outside the live chain. Evidence: `ORENA_IMPLEMENTATION_LEDGER.md`.
+Sol) over three rounds, ending **§6 step 2 APPROVED at `6cc3dc1`** with step 3
+authorized against an isolated scratch database only. The migration stays in
+`migrations/proposed/`, outside the live chain. Evidence:
+`ORENA_IMPLEMENTATION_LEDGER.md`.
 
 ## PENDING
 
@@ -112,8 +113,8 @@ provider coverage does not establish live prompt quality.
 
 ## BLOCKED
 
-I2 §6 step 3 (apply the proposal to a throwaway database and run the
-concurrency proof) until the revised proposal is re-reviewed.
+I2 §6 step 4 (schema/runtime authorization) and every activation beyond it.
+Step 3 is authorized for an isolated scratch database only.
 
 ## OPEN P0
 
