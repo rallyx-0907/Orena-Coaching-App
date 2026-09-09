@@ -60,8 +60,9 @@ Local execution only; no CI claim.
 ## Runtime / safety
 
 Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
-`orena-foundation-postgres` / network; its database is temporary. Restart it
-after Python changes - the worktree is mounted, uvicorn does not reload. Do not
+`orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it and
+Docker Desktop alone cannot restore it - use `scripts/start_orena_sandbox.ps1`.
+Restart after Python changes - the worktree is mounted, uvicorn does not reload. Do not
 operate production 8000, preview 8010, Cloudflare or volumes. No provider keys:
 the AI surfaces return 503 honestly. Pronunciation may be demo-labelled. No
 microphone acceptance has run; do not claim it.
@@ -106,9 +107,8 @@ repository by a Delegated Independent Architecture Reviewer (ChatGPT GPT-5.6
 Sol): §6 step 2 APPROVED at `6cc3dc1`, step 3 passed. All reversible activation
 preparation is complete: `I2_ACTIVATION_RUNBOOK.md`. §6 step 4 was authorized
 as apply-and-deploy with `ORENA_ACCOUNT_BACKBONE=off`, and done: `20260908_0005`
-is in `migrations/versions/` and applied to the **sandbox only**, which is at
-that head and serving. The eight tables are empty, learner rows are unchanged,
-and the backbone reports `disabled`. Production/preview untouched.
+is in `migrations/versions/`, applied to the **sandbox only**, backbone
+`disabled`. Production/preview untouched.
 
 ## PENDING
 
