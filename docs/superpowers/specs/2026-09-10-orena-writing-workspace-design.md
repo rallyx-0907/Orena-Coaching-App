@@ -1,6 +1,6 @@
 # Orena Writing Workspace
 
-Status: approved in chat for specification; implementation pending written-spec review.
+Status: approved for implementation, including the 2026-09-10 contract tightening.
 
 ## Purpose
 
@@ -30,6 +30,19 @@ generated. The catalogue has stable language-neutral topic and length IDs with
 EN/ZH copy. Future content or provider adapters may extend it without changing
 the Writing room contract.
 
+### Changing context after writing begins
+
+Topic, requested length and Guided/Journal mode never alter learner text. The
+workspace associates the current evaluation context with the draft explicitly.
+If the learner changes that context after entering text, the workspace marks the
+draft as having changed context and shows the new context before evaluation. A
+submission always carries the exact context visible at the moment it is made.
+
+A draft begun for Prompt A therefore cannot silently become evidence for Prompt
+B. Previously evaluated snapshots keep Prompt A even if the editable workspace
+later moves to Prompt B. Changing context may change the invitation; it cannot
+rewrite, clear or silently relabel the learner's words.
+
 ## Evaluation contract
 
 The web client no longer asks for or sends `target_cefr`. The existing request
@@ -56,6 +69,23 @@ scores and exact learner evidence. A useful review exposes:
 - concrete next actions;
 - revision comparison when a previous evaluated draft exists.
 
+Requested length describes only the invitation and never biases the demonstrated
+level. Insufficient evidence is a valid evaluation result. A sample that is too
+short, repetitive or limited may return no demonstrated band while still
+returning grounded language feedback. The result carries an explicit
+`band_status` (`estimated` or `insufficient_evidence`); `app_cefr` is absent for
+the latter. Confidence is displayed only when the provider contract supplies a
+grounded confidence value. The UI explains that the sample did not support a
+defensible band and does not manufacture precision.
+
+Guided and Journal submissions use different evaluation contexts. Guided may
+measure task achievement against its bound prompt. Journal has no task prompt,
+is never penalized for prompt adherence, and omits `task_achievement` as not
+applicable rather than assigning an artificial score. Journal may still assess
+clarity, grammar, vocabulary, cohesion, expression, grounded strengths, issues,
+corrections, reusable rules and next actions. Every evaluator request names the
+submission mode explicitly.
+
 Missing evidence remains missing. A provider failure produces no score, band,
 meaning, correction or learning claim.
 
@@ -77,6 +107,15 @@ At narrow widths, the same route remains one bounded workspace with two views:
 to Write without navigation or losing state. Only the active view is displayed,
 and excess feedback scrolls inside Review rather than extending the document.
 
+Bounded does not mean a rigid `100vh`. The layout uses the dynamic viewport
+(`dvh`) with safe-area insets and may observe the visual viewport where the
+software keyboard requires it. When the keyboard opens, the focused line,
+editing context and submit/retry controls remain reachable and visible. Editor
+and Review surfaces own their overflow, focus is scrolled into the active
+surface, and keyboard users cannot become trapped. Document scrolling is
+avoided during normal use but remains a safe fallback when the actual visual
+viewport is too constrained to preserve access.
+
 No global shell, theme token or brand asset is redesigned. The existing Writing
 paper treatment, Orena palette and editorial typography remain the visual base.
 
@@ -93,6 +132,23 @@ the current draft and makes the changed evaluation context visible.
 Only a successful evaluation creates evaluated revision evidence. A failed or
 unavailable request keeps the exact draft, prompt context and retry action.
 
+### Immutable evaluated submissions
+
+Each successful evaluation binds to an immutable submission snapshot containing
+at minimum:
+
+- exact submitted learner text;
+- Guided prompt plus topic/length parameters, or the Journal context;
+- active learning language and submission mode;
+- evaluation timestamp or equivalent stable submission identity;
+- revision ID, series ID, revision number and parent identity where available;
+- the complete normalized evaluation and grounded evidence returned for it.
+
+The editable workspace may change after submission. The review continues to
+render its bound snapshot and visibly identifies when the editor has moved on.
+Feedback from Draft 1 never appears to describe Draft 2. Revision comparison
+uses two stored evaluated snapshots, never the current mutable editor value.
+
 ## Compatibility and migration
 
 - `EssayIn.target_cefr` becomes optional rather than being deleted.
@@ -104,8 +160,10 @@ unavailable request keeps the exact draft, prompt context and retry action.
 
 ## Verification
 
-Contract tests cover target-free EN/ZH evaluator requests, inferred band output,
-exact evidence, provider failures and compatibility with target-bearing callers.
+Contract tests cover target-free EN/ZH evaluator requests, inferred or
+insufficient band output, mode-specific rubric applicability, exact immutable
+submission evidence, provider failures and compatibility with target-bearing
+callers.
 Browser-module tests cover both entry choices, no target selector, prompt/length
 state, the one-frame layout contract, review switching, actionable feedback and
 retry behavior.
@@ -114,6 +172,8 @@ Fresh browser verification runs the Writing route at narrow, desktop and wide
 widths in EN and ZH. It confirms that drafting and normal feedback need no page
 scroll, overflow is internal when feedback is long, and the visible review shows
 band, correction, reason, rule and next action from provider-returned evidence.
+Narrow verification includes dynamic viewport resizing and a software-keyboard
+equivalent viewport reduction, focus visibility, reachable submit/retry controls
+and freedom from scroll traps.
 Successful live-provider quality remains a credential/activation gate; injected
 providers verify the full result path without being presented as live evidence.
-
