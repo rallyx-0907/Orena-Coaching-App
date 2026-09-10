@@ -46,11 +46,14 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-No CI/provider claim. R3 evidence hardening
-requires actionable evaluator findings, exact strength/error quotes and readable
-EN/ZH categories: 113 pytest, Writing Review Node gate and 51-module ESM graph
-passed. Prior Opus batch remains 799 passed / 20 inherited failures; its browser
-and journey evidence lives in ORENA_STATUS and GOLDEN_STAR_COMPLETION.
+No CI/live-provider claim. R3 evidence hardening requires actionable evaluator
+findings, exact strength/error quotes and readable EN/ZH categories. The 8011
+browser now verifies EN and ZH Write → Evaluate degraded paths: the draft,
+target and task remain intact, transient 503 feedback offers a working retry,
+and each retry resubmits. Writing regression: 123 pytest; Writing Review,
+Foundation and 51-module ESM gates passed. Prior Opus batch remains 799 passed /
+20 inherited failures; its journey evidence lives in ORENA_STATUS and
+GOLDEN_STAR_COMPLETION.
 
 ## Runtime / safety
 
@@ -68,10 +71,10 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core lane (Codex scheduled R3): verify the browser-visible Write → Evaluate →
-Review path in EN and ZH, including the truthful unavailable/degraded response.
-Use deterministic injected-provider evidence; live provider quality remains a
-human/credential gate and must not be inferred from fixtures.
+Core lane (Codex scheduled R3): supplemental EN/ZH evaluator and degraded-state
+checkpoint is REVIEWABLE. Representative live-provider quality and the final
+Write → Evaluate → Review browser result require the provider/credential human
+gate; deterministic fixtures must not be presented as that evidence.
 
 Parallel Backbone lane (Opus): write-path integration, then I3, under
 `ORENA_BACKBONE_INTEGRATION_GATES.md`. Preserve A-D, eleven destinations and

@@ -10,7 +10,7 @@ import {
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
-import { writingReview, shownIssues } from './writing-review.js';
+import { writingReview, writingReviewFailure, shownIssues } from './writing-review.js';
 import {bindRevisionWorkbench} from './revision-workbench.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
@@ -97,7 +97,8 @@ export async function renderExpression(root, ctx) {
   };
   root.querySelector('form').onsubmit = async (event) => {
     event.preventDefault();
-    const button = event.currentTarget.querySelector('button'),
+    const form = event.currentTarget;
+    const button = form.querySelector('button'),
       feedback = root.querySelector('#writingFeedback');
     button.disabled = true;
     feedback.textContent = c.loading;
@@ -163,8 +164,12 @@ export async function renderExpression(root, ctx) {
           });
         };
       });
-    } catch {
-      if (alive()) feedback.textContent = c.reviewUnavailable;
+    } catch (error) {
+      if (alive()) {
+        feedback.innerHTML = writingReviewFailure(c, error);
+        const retry = feedback.querySelector('[data-retry-review]');
+        if (retry) retry.onclick = () => form.requestSubmit();
+      }
     } finally {
       if (alive()) button.disabled = false;
     }

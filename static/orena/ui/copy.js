@@ -177,6 +177,8 @@ const en = {
   develop: 'Develop this response',
   review: 'Review my words',
   revision: 'Try a revision',
+  reviewFailed:
+    'The review did not arrive. Your writing is still kept on this device; try again when you are ready.',
   reviewUnavailable:
     'Feedback is currently unavailable. Your writing is still kept on this device.',
   textTab: 'A piece of writing',
@@ -402,6 +404,7 @@ const zh = {
   develop: '继续写这个回应',
   review: '看看我的表达',
   revision: '再改一稿',
+  reviewFailed: '这次反馈没有送达。你写的文字仍保存在此设备；准备好后可以再试一次。',
   reviewUnavailable: '反馈暂不可用，你写的文字仍保存在此设备。',
   textTab: '一段文字',
   mediaTab: '一个视频或声音',

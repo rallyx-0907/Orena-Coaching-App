@@ -10,6 +10,7 @@ import {
   RUBRIC,
   shownIssues,
   shownStrengths,
+  writingReviewFailure,
   writingReview,
 } from '../static/orena/ui/writing-review.js';
 import { REGISTERS, registerLabel } from '../static/orena/ui/registers.js';
@@ -171,6 +172,19 @@ const injected = writingReview(
 );
 assert.ok(!injected.includes('<img'), 'evaluator text is escaped');
 
+// A transient provider failure is actionable; a permanent/unconfigured state
+// must not invite a retry that cannot help. Both keep the learner's draft.
+const retryableFailure = writingReviewFailure(c, { retryable: true });
+assert.ok(retryableFailure.includes(c.reviewFailed));
+assert.ok(retryableFailure.includes('data-retry-review'));
+const unavailableFailure = writingReviewFailure(c, { retryable: false });
+assert.ok(unavailableFailure.includes(c.reviewUnavailable));
+assert.ok(!unavailableFailure.includes('data-retry-review'));
+for (const ui of ['en', 'zh']) {
+  assert.ok(copy[ui].reviewFailed, `${ui}: missing retryable review failure copy`);
+  assert.ok(copy[ui].reviewUnavailable, `${ui}: missing unavailable review copy`);
+}
+
 /* Revising is where writing is actually learned. `revision_delta()` has always
    worked out which problems went, which stayed, which arrived and which were
    reworked; the surface showed one number. These hold the rendering of it. */
@@ -300,6 +314,21 @@ assert.match(
   expression,
   /openRegisters\(ctx, \{ text, title \}\)/,
   'registers are asked about what the learner wrote',
+);
+assert.match(
+  expression,
+  /data-retry-review/,
+  'a retryable evaluation failure is wired back to the same writing submission',
+);
+assert.match(
+  expression,
+  /const form = event\.currentTarget/,
+  'the form reference is captured before the asynchronous evaluation begins',
+);
+assert.match(
+  expression,
+  /form\.requestSubmit\(\)/,
+  'retry submits the captured form after the original submit event has finished',
 );
 
 console.log('Orena writing review, rubric parity and register comparison: PASS');

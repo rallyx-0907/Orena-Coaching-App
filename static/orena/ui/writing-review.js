@@ -139,6 +139,20 @@ export function shownStrengths(result, text) {
   return (result.strengths || []).filter((x) => x && x.quote && text.includes(x.quote));
 }
 
+/* Preserve the capability envelope's answer about whether another request can
+   help. A network/provider interruption offers one explicit retry; a disabled
+   or invalid capability tells the truth without presenting a dead action. */
+export function writingReviewFailure(c, error) {
+  const retryable = error?.retryable !== false;
+  return `<p class="notice" role="alert">${esc(
+    retryable ? c.reviewFailed : c.reviewUnavailable,
+  )}</p>${
+    retryable
+      ? `<button type="button" class="outline" data-retry-review>${esc(c.retry)}</button>`
+      : ''
+  }`;
+}
+
 export function writingReview(c, result, { language, text }) {
   const overall = number(result.overall);
   const level = typeof result.app_cefr === 'string' ? result.app_cefr : '';
