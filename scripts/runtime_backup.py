@@ -30,10 +30,48 @@ import argparse
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+from datetime import datetime, UTC
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse, urlunparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# Directories that do not outlive the container they are written in. This
+# script is normally run from an ephemeral `docker run --rm`, because the
+# application image has no postgresql-client - so a dump written to one of
+# these is captured, verified, rehearsed, and then gone the moment the
+# container exits. That is not hypothetical: it is how a real pre-migration
+# backup was lost.
+EPHEMERAL_ROOTS = ('/tmp', '/var/tmp', '/dev/shm')
+
+
+def ephemeral_reason(out: Path) -> str | None:
+    """Why this destination will not survive, or None if it will."""
+    candidate = PurePosixPath(Path(out).as_posix())
+    if not candidate.is_absolute():
+        return None
+    for root in EPHEMERAL_ROOTS:
+        base = PurePosixPath(root)
+        if candidate == base or base in candidate.parents:
+            return (
+                f"{out} is under {root}, which does not outlive the container "
+                "this usually runs in - the dump would pass every check and "
+                "then disappear. Write it to a mounted path instead (the "
+                "repository's backups/ directory is the default). Pass "
+                "--allow-ephemeral only when the dump is genuinely being "
+                "copied out before the container exits."
+            )
+    return None
+
+
+def default_out(at: str | None = None) -> Path:
+    """A durable, non-colliding destination, so the operator need not choose.
+
+    Timestamped rather than fixed: overwriting the previous backup with the
+    current one is its own way of having no backup.
+    """
+    stamp = at or datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')
+    return Path(__file__).resolve().parents[1] / 'backups' / f'orena-{stamp}.dump'
 
 # The tables whose row counts a rehearsal compares. Domain-owned evidence and
 # the account rows that scope it: if these come back, the restore is real.
@@ -72,7 +110,13 @@ def _run(argv: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(argv, check=False, capture_output=True, text=True)
 
 
-def capture(url: str, out: Path) -> int:
+def capture(url: str, out: Path, allow_ephemeral: bool = False) -> int:
+    # Checked before pg_dump runs: a backup that lands nowhere is worse than
+    # one that was never attempted, because it looks like it worked.
+    if not allow_ephemeral:
+        reason = ephemeral_reason(out)
+        if reason:
+            raise SystemExit(reason)
     _require_client_tools("pg_dump")
     out.parent.mkdir(parents=True, exist_ok=True)
     result = _run(["pg_dump", "--format=custom", "--file", str(out), _libpq_url(url)])
@@ -175,9 +219,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("capture", "verify", "rehearse"))
     parser.add_argument("--url", default="", help="defaults to POSTGRES_RUNTIME_URL")
-    parser.add_argument("--out", type=Path, help="capture: where to write the dump")
+    parser.add_argument("--out", type=Path,
+                        help="capture: where to write the dump (default: backups/)")
     parser.add_argument("--dump", type=Path, help="verify/rehearse: the dump to read")
     parser.add_argument("--into", default="", help="rehearse: the database to restore into")
+    parser.add_argument("--allow-ephemeral", action="store_true",
+                        help="capture: permit a destination that dies with its container")
     args = parser.parse_args(argv)
 
     if args.mode == "verify":
@@ -187,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
 
     url = args.url or runtime_url()
     if args.mode == "capture":
-        return capture(url, args.out) if args.out else 1
+        return capture(url, args.out or default_out(), args.allow_ephemeral)
     if not args.dump or not args.into:
         print("rehearse needs --dump and --into", file=sys.stderr)
         return 1

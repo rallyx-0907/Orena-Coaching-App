@@ -55,15 +55,39 @@ policies (I6), provider credentials (I5).
 
 **The application image does not ship `postgresql-client`.** It is a Debian
 base without it, so `pg_dump`, `pg_restore` and `psql` are absent and the
-script says so rather than failing with a traceback. Run it from an operator
-environment that has the client tools, or install them into an ephemeral
-container. This is an operational fact worth knowing before the night of a
+script says so rather than failing with a traceback. Install them into an
+ephemeral container, as below, or run from an operator environment that has
+them. This is an operational fact worth knowing before the night of a
 migration rather than during it.
 
+**And a dump written inside that ephemeral container dies with it.** Not
+hypothetical: the real pre-I2 backup was written to `/tmp` in a
+`docker run --rm`. It captured, verified and rehearsed successfully, and
+ceased to exist the moment the container exited — every check passed and the
+backup was still gone. `capture` therefore refuses `/tmp`, `/var/tmp` and
+`/dev/shm` unless `--allow-ephemeral` states the dump is being copied out
+before exit, and with no `--out` it writes a timestamped file under
+`backups/`. That directory is gitignored: a dump holds learner data and is
+never committed.
+
+The repository is mounted read-only, so `backups/` needs its own writable
+mount. Complete, and as actually run:
+
 ```
-python scripts/runtime_backup.py capture  --out backups/pre-i2.dump
-python scripts/runtime_backup.py verify   --dump backups/pre-i2.dump
-python scripts/runtime_backup.py rehearse --dump backups/pre-i2.dump \
+docker run --rm --network orena-foundation-review \
+  -e POSTGRES_RUNTIME_URL="postgresql+psycopg://postgres@orena-foundation-postgres:5432/postgres" \
+  -v "<repo>:/workspace:ro" \
+  -v "<repo>/backups:/workspace/backups" \
+  -w /workspace ai-writing-coach:local \
+  sh -lc "apt-get update -qq && apt-get install -y -qq postgresql-client && \
+          python scripts/runtime_backup.py capture"
+```
+
+Then, against the file it names:
+
+```
+python scripts/runtime_backup.py verify   --dump backups/<file>.dump
+python scripts/runtime_backup.py rehearse --dump backups/<file>.dump \
     --into orena_restore_rehearsal
 ```
 
@@ -78,6 +102,13 @@ for real before the deployment: 49,784-byte dump of the sandbox runtime, 98
 entries, restore matching on revision and on all eight counts — `users` 1,
 `user_language_profiles` 2, `saved_words` 5, `speaking_attempts` 2,
 `listening_progress` 10.
+
+Re-verified after the destination fix, against the deployed sandbox: `capture`
+with no `--out` wrote `backups/orena-20260909T231447Z.dump` (62,478 bytes,
+140 restorable entries — more than the earlier 98 because the eight backbone
+tables now exist), the file was still on the host after the container exited,
+and `capture --out /tmp/...` was refused with the reason instead of silently
+obliging.
 
 What a restore does **not** do: reapply deletion records before serving. That
 needs the policy in §1 and is not implemented. Backups are access-controlled
