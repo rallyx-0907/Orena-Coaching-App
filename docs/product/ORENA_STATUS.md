@@ -175,9 +175,11 @@ Learning capabilities now built on that foundation:
   card is not recall, and a forgotten word never loses the successes it already
   earned.
 
-Microphone and provider paths are unexercised in this runtime and are not
-claimed; with no provider configured, review, explanation, registers and spoken
-coaching all degrade honestly rather than inventing an answer.
+Microphone and successful/live-provider paths are unexercised in this runtime
+and are not claimed. The EN/ZH Writing 503 path is browser-verified: it keeps
+the draft, target and task, distinguishes a retryable interruption, and the
+retry resubmits. With no provider configured, review, explanation, registers
+and spoken coaching degrade honestly rather than inventing an answer.
 
 Operator note: the Platform Admin web surface has no host template since the
 reset removed `templates/index.html`; its API and script remain. Whether Orena
