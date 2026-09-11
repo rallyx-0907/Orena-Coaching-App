@@ -76,15 +76,15 @@ checkpoint is REVIEWABLE. Representative live-provider quality and the final
 Write → Evaluate → Review browser result require the provider/credential human
 gate; deterministic fixtures must not be presented as that evidence.
 
-Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below — the
-runbook wires it only after step 9, not done). Pivoted to I3's authorized
-read-adapter phase (`ORENA_COMMERCE_ARCHITECTURE.md` §5; plan under
-`docs/superpowers/plans/`). Task 1 done: `writing_coach/product/commerce.py`
-(`accountCommerce`/`resolveEntitlement`), additive over `ProductService`, 38
-tests passing. I1's `Scope` still has no production caller, so this keys off
-`user_key`, not incarnation. Next: Task 2 — wire `api.js`'s unused
-`productMe()` into the right destination. Preserve A-D, eleven destinations
-and all active Opus WIP; no I1-I7 claim implies human approval.
+Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). Pivoted
+to I3's read-adapter phase (`ORENA_COMMERCE_ARCHITECTURE.md` §5; plan under
+`docs/superpowers/plans/`), Tasks 1-2 done: `commerce.py` shown read-only in
+the preferences sheet via a new web-only `/api/product/commerce` (`/me` stays
+untouched for the frozen mobile zod schema). Browser-verified, EN+ZH, no
+console errors. I1's `Scope` still has no production caller, so this keys off
+`user_key`. Next: I3's subscription inbox/reconciliation repository, still
+gated from provider credentials. Preserve A-D, eleven destinations and all
+active Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
