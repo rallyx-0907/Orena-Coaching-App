@@ -77,15 +77,15 @@ Write → Evaluate → Review browser result require the provider/credential hum
 gate; deterministic fixtures must not be presented as that evidence.
 
 Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3 read
-adapter done (`commerce.py`, web-only `/api/product/commerce`, `/me` kept for
-frozen mobile). Pure decision for subscription-event reconciliation also
-done: `subscription_event_decision()` in `reference_backbone.py` (25/25 pure
-tests). Next: the subscription inbox *repository* built on it - needs
-independent architecture review before any schema is proposed, same path I2
-took; not started. Also fixed: mobile nav dropdown was unscrollable
-(`.nav-backdrop` z-index tied #shell's, DOM order let it cover the open
-menu). I1's `Scope` still has no production caller. Preserve A-D, eleven
-destinations and all active Opus WIP; no I1-I7 claim implies human approval.
+adapter and the pure reconciliation decision are done. Schema now
+**proposed** (not applied): `migrations/proposed/20260911_0006` (two tables)
+plus `commerce_repository.py`, rehearsed on scratch databases only (chain,
+6/6 postgres cases incl. a real race x5, downgrade, up/down/up) - see
+`I3_SCHEMA_REVIEW_REQUEST.md`. Next: Codex/independent architecture review of
+that request; nothing further until then. Also fixed: mobile nav dropdown
+was unscrollable (`.nav-backdrop` z-index tied #shell's). I1's `Scope` still
+has no production caller. Preserve A-D, eleven destinations and all active
+Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
