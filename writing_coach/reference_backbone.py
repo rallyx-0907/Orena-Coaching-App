@@ -188,6 +188,14 @@ def subscription_event_decision(
     whether doing so is safe. 'unknown' must not be treated as safe to apply -
     "do not promote access or erase known valid state" (§3) - and the caller
     refetches current provider object state before deciding again.
+
+    `current_object_version=None` means no subscription has ever been
+    recorded for this incarnation - there is nothing to be stale against, so
+    a verifiable event applies outright. That is a different situation from
+    the event itself carrying no verifiable version, which is 'unknown'
+    regardless of what current state exists: an unverifiable *new* fact can
+    no more safely promote access than an unverifiable one can safely replace
+    a known-good current fact.
     """
     if incarnation_deleted:
         return 'deleted_incarnation_rejected'
@@ -195,8 +203,8 @@ def subscription_event_decision(
         return 'foreign_incarnation'
     if already_processed:
         return 'duplicate'
-    if event.object_version is None or current_object_version is None:
+    if event.object_version is None:
         return 'unknown'
-    if event.object_version <= current_object_version:
+    if current_object_version is not None and event.object_version <= current_object_version:
         return 'stale'
     return 'apply'

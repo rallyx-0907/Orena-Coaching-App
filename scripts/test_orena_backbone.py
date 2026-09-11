@@ -165,22 +165,29 @@ class BackboneContracts(unittest.TestCase):
             'stale',
         )
 
-    def test_unverifiable_version_is_unknown_never_promoted_or_erased(self):
+    def test_unverifiable_event_is_unknown_regardless_of_current_state(self):
         event = ProviderEvent('evt-3', 'incarnation-1', None)
+        for current_object_version in (1, None):
+            self.assertEqual(
+                subscription_event_decision(
+                    event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                    already_processed=False, current_object_version=current_object_version,
+                ),
+                'unknown',
+            )
+
+    def test_first_ever_verified_event_applies_with_nothing_to_be_stale_against(self):
+        # No subscription has ever been recorded for this incarnation -
+        # current_object_version=None here means "nothing yet", not "unknown".
+        # A never-recorded incarnation is not the same fact as one whose
+        # last-known version could not be read.
+        event = ProviderEvent('evt-4', 'incarnation-1', 5)
         self.assertEqual(
             subscription_event_decision(
                 event, current_incarnation='incarnation-1', incarnation_deleted=False,
-                already_processed=False, current_object_version=1,
-            ),
-            'unknown',
-        )
-        known_event = ProviderEvent('evt-4', 'incarnation-1', 5)
-        self.assertEqual(
-            subscription_event_decision(
-                known_event, current_incarnation='incarnation-1', incarnation_deleted=False,
                 already_processed=False, current_object_version=None,
             ),
-            'unknown',
+            'apply',
         )
 
     def test_newer_verified_event_on_the_current_incarnation_applies(self):
