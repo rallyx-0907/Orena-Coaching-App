@@ -76,15 +76,16 @@ checkpoint is REVIEWABLE. Representative live-provider quality and the final
 Write → Evaluate → Review browser result require the provider/credential human
 gate; deterministic fixtures must not be presented as that evidence.
 
-Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). Pivoted
-to I3's read-adapter phase (`ORENA_COMMERCE_ARCHITECTURE.md` §5; plan under
-`docs/superpowers/plans/`), Tasks 1-2 done: `commerce.py` shown read-only in
-the preferences sheet via a new web-only `/api/product/commerce` (`/me` stays
-untouched for the frozen mobile zod schema). Browser-verified, EN+ZH, no
-console errors. I1's `Scope` still has no production caller, so this keys off
-`user_key`. Next: I3's subscription inbox/reconciliation repository, still
-gated from provider credentials. Preserve A-D, eleven destinations and all
-active Opus WIP; no I1-I7 claim implies human approval.
+Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3 read
+adapter done (`commerce.py`, web-only `/api/product/commerce`, `/me` kept for
+frozen mobile). Pure decision for subscription-event reconciliation also
+done: `subscription_event_decision()` in `reference_backbone.py` (25/25 pure
+tests). Next: the subscription inbox *repository* built on it - needs
+independent architecture review before any schema is proposed, same path I2
+took; not started. Also fixed: mobile nav dropdown was unscrollable
+(`.nav-backdrop` z-index tied #shell's, DOM order let it cover the open
+menu). I1's `Scope` still has no production caller. Preserve A-D, eleven
+destinations and all active Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
