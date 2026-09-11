@@ -159,3 +159,44 @@ def cursor_matches(cursor: Cursor, scope: Scope, filter_digest: str, snapshot: s
     """A match is necessary, not sufficient: adapter validates signature/expiry."""
     return (cursor.scope == scope and cursor.filter_digest == filter_digest
             and cursor.snapshot == snapshot and bool(snapshot))
+
+
+@dataclass(frozen=True)
+class ProviderEvent:
+    """One inbound subscription event or checkout callback, as the adapter saw it.
+
+    `object_version` is the provider's own authoritative revision when the
+    adapter could read one; it is None when it could not, which must reach
+    this decision as an explicit unknown, never as an assumed 0 or a
+    timestamp-derived guess. See ORENA_COMMERCE_ARCHITECTURE.md §3: "Arrival
+    timestamps alone cannot decide which subscription state is newer."
+    """
+    event_id: str
+    incarnation: str
+    object_version: int | None
+
+
+def subscription_event_decision(
+    event: ProviderEvent, *, current_incarnation: str, incarnation_deleted: bool,
+    already_processed: bool, current_object_version: int | None,
+) -> str:
+    """One decision per inbound provider event or checkout callback.
+
+    Returns 'apply', 'duplicate', 'stale', 'unknown', 'foreign_incarnation' or
+    'deleted_incarnation_rejected'. The caller owns idempotent receipt storage
+    and the transactionally locked version compare/write; this only decides
+    whether doing so is safe. 'unknown' must not be treated as safe to apply -
+    "do not promote access or erase known valid state" (§3) - and the caller
+    refetches current provider object state before deciding again.
+    """
+    if incarnation_deleted:
+        return 'deleted_incarnation_rejected'
+    if event.incarnation != current_incarnation:
+        return 'foreign_incarnation'
+    if already_processed:
+        return 'duplicate'
+    if event.object_version is None or current_object_version is None:
+        return 'unknown'
+    if event.object_version <= current_object_version:
+        return 'stale'
+    return 'apply'

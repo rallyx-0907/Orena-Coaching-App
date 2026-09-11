@@ -5,9 +5,10 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from writing_coach.reference_backbone import (  # noqa: E402
-    Scope, Receipt, Mutation, Quota, Evidence, Cursor,
+    Scope, Receipt, Mutation, Quota, Evidence, Cursor, ProviderEvent,
     mutation_decision, reserve_decision, result_is_current,
     job_may_publish, projection_evidence, growth_comparable, cursor_matches,
+    subscription_event_decision,
 )
 
 
@@ -113,6 +114,96 @@ class BackboneContracts(unittest.TestCase):
 
     def test_missing_comparison_metadata_cannot_be_growth(self):
         self.assertFalse(growth_comparable(self.en, self.en, ('writing', '', 'unaided', 'task'), ('writing', '', 'unaided', 'task')))
+
+    def test_deleted_incarnation_rejects_the_callback_outright(self):
+        event = ProviderEvent('evt-1', 'incarnation-1', 3)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=True,
+                already_processed=False, current_object_version=1,
+            ),
+            'deleted_incarnation_rejected',
+        )
+
+    def test_reincarnated_account_rejects_the_old_incarnations_callback(self):
+        # Delete and re-register same external identity: the new incarnation
+        # rejects the old one's command/cursor/job/callback.
+        event = ProviderEvent('evt-1', 'incarnation-old', 3)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-new', incarnation_deleted=False,
+                already_processed=False, current_object_version=1,
+            ),
+            'foreign_incarnation',
+        )
+
+    def test_duplicate_event_id_never_repeats_a_grant(self):
+        event = ProviderEvent('evt-1', 'incarnation-1', 3)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                already_processed=True, current_object_version=1,
+            ),
+            'duplicate',
+        )
+
+    def test_reversed_out_of_order_event_is_stale_not_applied(self):
+        event = ProviderEvent('evt-2', 'incarnation-1', 1)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                already_processed=False, current_object_version=3,
+            ),
+            'stale',
+        )
+        # Equal, not just lower, is also not newer.
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                already_processed=False, current_object_version=1,
+            ),
+            'stale',
+        )
+
+    def test_unverifiable_version_is_unknown_never_promoted_or_erased(self):
+        event = ProviderEvent('evt-3', 'incarnation-1', None)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                already_processed=False, current_object_version=1,
+            ),
+            'unknown',
+        )
+        known_event = ProviderEvent('evt-4', 'incarnation-1', 5)
+        self.assertEqual(
+            subscription_event_decision(
+                known_event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                already_processed=False, current_object_version=None,
+            ),
+            'unknown',
+        )
+
+    def test_newer_verified_event_on_the_current_incarnation_applies(self):
+        event = ProviderEvent('evt-5', 'incarnation-1', 4)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=False,
+                already_processed=False, current_object_version=1,
+            ),
+            'apply',
+        )
+
+    def test_deletion_is_checked_before_incarnation_identity(self):
+        # A deleted incarnation is rejected outright, even if it happens to
+        # equal the (stale) "current" pointer a caller passed in.
+        event = ProviderEvent('evt-6', 'incarnation-1', 9)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=True,
+                already_processed=False, current_object_version=1,
+            ),
+            'deleted_incarnation_rejected',
+        )
 
 
 if __name__ == '__main__':
