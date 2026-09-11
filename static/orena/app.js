@@ -78,7 +78,7 @@ function shell() {
   document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
   document.documentElement.dataset.learning = ctx.language;
   document.getElementById('shell').innerHTML =
-    `<div class="shell-identity"><a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><span class="shell-motto">${esc(referenceCopy[ctx.ui].fieldNote)}</span></div>${referenceNavigation(ctx)}${navigationToggle(ctx)}<div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}"><span class="language-seal">${ctx.language.toUpperCase()}</span> ${c.preferences} <span aria-hidden="true">⌄</span></button></div>`;
+    `<div class="shell-identity"><a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><span class="shell-motto">${esc(referenceCopy[ctx.ui].fieldNote)}</span></div>${referenceNavigation(ctx)}${navigationToggle(ctx)}<div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}"><span class="language-seal">${ctx.language.toUpperCase()}</span> ${c.preferences}</button></div>`;
   document.querySelector('[data-bring]').onclick = importContent;
   document.querySelector('[data-preference]').onclick = () => preferences();
   /* The narrow-screen destination sheet. The shell is rebuilt on every route,

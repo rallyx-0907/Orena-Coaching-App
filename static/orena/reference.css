@@ -35,7 +35,7 @@
 #shell nav a i { height: 6px; width: 6px; border-radius: 50%; background: var(--accent); margin-left: auto; }
 #shell .shell-actions { flex-direction: column; align-items: stretch; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
 #shell .bring-button { white-space: normal; }
-#shell .account-button { justify-content: space-between; gap: 6px; font-size: var(--text-xs); }
+#shell .account-button { gap: 6px; font-size: var(--text-xs); }
 /* The narrow-screen destination control. It belongs to the header composition
    only - the rail shows every destination at once and needs no affordance. */
 .nav-toggle { display: none; }
@@ -210,7 +210,6 @@
   #shell .bring-button, #shell .account-button { flex:none; }
   #shell .bring-button { padding:6px 12px; }
   #shell .account-button { font-size:0; gap:0; }
-  #shell .account-button > span:last-child { display:none; }
   #main { margin-left:0; padding-inline:28px; }
   #footer { margin:24px 28px 0; }
   .editorial-intro { padding-top:32px; }

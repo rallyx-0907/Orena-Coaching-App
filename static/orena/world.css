@@ -77,9 +77,6 @@
   min-height: 44px;
   white-space: nowrap;
 }
-.account-button span {
-  font-size: 21px;
-}
 #main {
   max-width: 1384px;
   margin: auto;
