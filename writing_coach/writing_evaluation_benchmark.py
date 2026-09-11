@@ -478,6 +478,7 @@ def compare_target_level_results(
 
 _SAFE_EVALUATOR_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\Z")
 _REPORT_RESULT_FIELDS = (
+    "band_status",
     "summary_vi",
     "strengths_vi",
     "priorities_vi",
