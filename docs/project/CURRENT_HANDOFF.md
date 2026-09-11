@@ -76,16 +76,17 @@ checkpoint is REVIEWABLE. Representative live-provider quality and the final
 Write → Evaluate → Review browser result require the provider/credential human
 gate; deterministic fixtures must not be presented as that evidence.
 
-Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3 read
-adapter and the pure reconciliation decision are done. Schema now
-**proposed** (not applied): `migrations/proposed/20260911_0006` (two tables)
-plus `commerce_repository.py`, rehearsed on scratch databases only (chain,
-6/6 postgres cases incl. a real race x5, downgrade, up/down/up) - see
-`I3_SCHEMA_REVIEW_REQUEST.md`. Next: Codex/independent architecture review of
-that request; nothing further until then. Also fixed: mobile nav dropdown
-was unscrollable (`.nav-backdrop` z-index tied #shell's). I1's `Scope` still
-has no production caller. Preserve A-D, eleven destinations and all active
-Opus WIP; no I1-I7 claim implies human approval.
+Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3
+schema **proposed** (not applied): `migrations/proposed/20260911_0006` plus
+`commerce_repository.py`. First round reviewed: CHANGES REQUESTED (3xP1,
+1xP2 - reconciliation-retry deadlock, a deletion race, deleted-incarnation
+receipts, external-id uniqueness); all addressed, 10/10 postgres cases,
+60/60 clean-db flakiness runs - see `I3_SCHEMA_REVIEW_REQUEST.md`'s
+finding-by-finding response. Next: re-review of the revised commit; nothing
+further until then. Also fixed: mobile nav dropdown was unscrollable
+(`.nav-backdrop` z-index tied #shell's). I1's `Scope` still has no
+production caller. Preserve A-D, eleven destinations and all active Opus
+WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
