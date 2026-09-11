@@ -199,10 +199,20 @@ def orena_brand_asset(asset_path: str):
     return FileResponse(candidate, headers={"Cache-Control": "public, max-age=3600"})
 
 
+class WritingContextIn(BaseModel):
+    topic_id: str | None = Field(default=None, max_length=80, pattern=r"^[a-z0-9_-]+$")
+    length_id: str | None = Field(default=None, max_length=40, pattern=r"^[a-z0-9_-]+$")
+    prompt_id: str | None = Field(default=None, max_length=120, pattern=r"^[a-z0-9_-]+$")
+    prompt_text: str = Field(default="", max_length=5000)
+    journal_context: str = Field(default="", max_length=1000)
+
+
 class EssayIn(BaseModel):
     prompt: str = Field(default="", max_length=5000)
     text: str = Field(min_length=10, max_length=20000)
-    target_cefr: str = Field(default="B2", min_length=2, max_length=12)
+    target_cefr: str | None = Field(default=None, min_length=2, max_length=12)
+    writing_mode: str = Field(default="guided", pattern=r"^(guided|journal)$")
+    writing_context: WritingContextIn = Field(default_factory=WritingContextIn)
     parent_essay_id: int | None = Field(default=None, ge=1)
     practice_context: PracticeContextIn | None = None
     learning_language: str | None = Field(default=None, min_length=2, max_length=8)

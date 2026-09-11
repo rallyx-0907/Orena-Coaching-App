@@ -27,7 +27,11 @@ def calculate_weighted_overall(
     rubric_weights: Mapping[str, float],
 ) -> float:
     """Calculate the bounded, one-decimal overall score for supplied rubric data."""
-    score = sum(float(result[key]) * weight for key, weight in rubric_weights.items())
+    applicable = [(key, weight) for key, weight in rubric_weights.items() if key in result]
+    total_weight = sum(weight for _, weight in applicable)
+    if total_weight <= 0:
+        return 0.0
+    score = sum(float(result[key]) * weight for key, weight in applicable) / total_weight
     return round(max(0.0, min(100.0, score)), 1)
 
 
@@ -40,6 +44,7 @@ def normalize_writing_evaluation(
     error_categories: Sequence[str],
     allow_cjk: bool,
     learner_text: str,
+    applicable_dimensions: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """Normalize untrusted evaluator output using supplied language policy.
 
@@ -48,15 +53,28 @@ def normalize_writing_evaluation(
     current rubric, proficiency policy, and learner text explicitly.
     """
     text_hash = hashlib.sha256((learner_text or "").encode("utf-8")).hexdigest()
+    dimension_keys = tuple(
+        key for key in rubric_weights
+        if applicable_dimensions is None or key in set(applicable_dimensions)
+    )
     result: dict[str, Any] = {"schema_version": EVALUATION_SCHEMA_VERSION, "text_hash": text_hash}
-    for key in rubric_weights:
+    for key in dimension_keys:
         result[key] = _normalized_score(raw.get(key, 0))
 
     overall = calculate_weighted_overall(result, rubric_weights)
     allowed_level_set = set(allowed_levels)
     default_level = allowed_levels[0] if allowed_levels else ""
+    band_status = str(raw.get("band_status", "estimated"))
+    if band_status not in {"estimated", "insufficient_evidence"}:
+        band_status = "estimated"
+    result["band_status"] = band_status
     estimate = str(raw.get("cefr_estimate", default_level))
-    result["cefr_estimate"] = estimate if estimate in allowed_level_set else score_to_level(overall)
+    if band_status == "insufficient_evidence":
+        result["cefr_estimate"] = ""
+    else:
+        result["cefr_estimate"] = estimate if estimate in allowed_level_set else score_to_level(overall)
+    if "band_confidence" in raw:
+        result["band_confidence"] = round(_normalized_confidence(raw["band_confidence"]), 2)
 
     summary = _bounded_text(raw.get("summary_vi", ""), 4000)
     result["summary_vi"] = summary if allow_cjk or not contains_cjk(summary) else ""
@@ -64,7 +82,7 @@ def normalize_writing_evaluation(
     result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), allow_cjk=allow_cjk)
     result["strength_evidence"] = _normalize_strength_evidence(
         raw.get("strength_evidence", []),
-        rubric_categories=set(rubric_weights),
+        rubric_categories=set(dimension_keys),
         allow_cjk=allow_cjk,
         learner_text=learner_text,
     )
@@ -78,7 +96,7 @@ def normalize_writing_evaluation(
         "headline": result["strengths_vi"][0] if result["strengths_vi"] else "",
         "interpretation": result["summary_vi"],
     }
-    result["dimensions"] = {key: result[key] for key in rubric_weights}
+    result["dimensions"] = {key: result[key] for key in dimension_keys}
     result["issues"] = [_issue_envelope(item, index) for index, item in enumerate(result["errors"])]
     result["strengths"] = [
         {
