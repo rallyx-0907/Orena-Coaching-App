@@ -192,9 +192,17 @@
   }
   /* Tapping the room behind it closes it, which is the gesture people try
      first. It is not a scrim: the room stays readable, because this covers a
-     header rather than demanding a decision. */
+     header rather than demanding a decision.
+
+     z-index must stay below #shell's own 30: #shell and this backdrop are
+     both direct children of body, tied z-index is broken by DOM order, and
+     this element comes later - at 30 it painted over the whole #shell
+     subtree, including the open dropdown, and silently absorbed every
+     scroll/tap meant for the destination list and the account button below
+     it. 20 keeps it above #main/#footer (the actual "room" it should close
+     the menu from) without ever covering #shell's own stacking context. */
   .nav-backdrop {
-    position:fixed; inset:0; z-index:30;
+    position:fixed; inset:0; z-index:20;
     background:transparent; border:0; padding:0; margin:0;
     display:none; cursor:default;
   }
