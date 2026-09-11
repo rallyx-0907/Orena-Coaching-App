@@ -137,4 +137,16 @@ assert.doesNotMatch(app,/applySkillNavigation|sharedMediaSession|ShadowingStudio
 assert.match(app,/languages.support_languages/);
 assert.match(app,/a\.skip[\s\S]{0,160}event\.preventDefault\(\)/,'Skip to content must move focus without rewriting the route');
 assert.match(app,/if \(location\.hash === next\) render\(\)/,'Re-entering the route you are already on must still act');
+
+// Plan/usage (ORENA_COMMERCE_ARCHITECTURE.md §2, §4): read-only, additive to
+// the frozen mobile /me contract, no enforcement, no provider identifier.
+assert.match(app,/api\.productCommerce\(\)\.catch\(/,'A failed plan/usage read must never block boot the way the other three awaits do');
+assert.doesNotMatch(app,/api\.productMe\(\)/,'The web client must read the web-only canonical endpoint, not the frozen mobile one');
+assert.match(app,/onboarding \? '' : planUsageSection\(ctx\)/,'A first-run welcome sheet must not show usage numbers');
+assert.doesNotMatch(app,/external_customer_id|external_subscription_id/,'No provider/customer identifier may reach a learner-facing template');
+const planUsageSource=app.slice(app.indexOf('function planUsageSection'),app.indexOf('function preferences('));
+assert.doesNotMatch(planUsageSource,/checkout|<button|<a /i,'billing_ready is false: no enforcement or checkout call-to-action, read-only markup only');
+for (const key of ['planUsage','planUsageNote','planUsageUnavailable','planUsed','planUnlimited','planNotIncluded']) {
+  assert.ok(copy.en[key] && copy.zh[key], `Missing plan/usage copy: ${key}`);
+}
 console.log('Orena product boundary, intents, owned memory, EN/ZH meaning and truthful evidence: PASS');

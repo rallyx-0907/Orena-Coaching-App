@@ -41,6 +41,7 @@ const ctx = {
   c: copy[ui],
   language: 'en',
   profile: {},
+  commerce: null,
   memory: null,
   location: route(location.hash),
   alive: () => true,
@@ -115,11 +116,40 @@ function shell() {
     .querySelector('[data-account]')
     ?.addEventListener('click', () => preferences());
 }
+/* Read-only account fact, never an access decision - accountCommerce() in
+   writing_coach/product/commerce.py is the one server resolver this renders.
+   billing_ready is false everywhere upstream, so no price, upgrade action or
+   provider identifier belongs here (docs/product/ORENA_COMMERCE_ARCHITECTURE.md
+   §2, §4: "read-only UI badges are not access enforcement"). Omitted from the
+   onboarding sheet - a first-run welcome is not where usage numbers belong. */
+function planUsageSection(scope) {
+  const c = scope.c;
+  const commerce = scope.commerce;
+  if (!commerce || commerce.available === false || commerce.readiness === 'unavailable') {
+    return `<section class="plan-usage"><h2>${c.planUsage}</h2><p>${c.planUsageUnavailable}</p></section>`;
+  }
+  const rows = Object.entries(commerce.features || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, item]) => {
+      const label = c['feature_' + key.replace(/\./g, '_')] || key;
+      const value =
+        item.entitlement_state === 'disabled'
+          ? c.planNotIncluded
+          : item.usage_state === 'unavailable'
+            ? '—'
+            : item.monthly_limit === null
+              ? c.planUnlimited
+              : `${item.used}/${item.monthly_limit} ${c.planUsed}`;
+      return `<li><span>${esc(label)}</span><span>${esc(value)}</span></li>`;
+    })
+    .join('');
+  return `<section class="plan-usage"><h2>${c.planUsage} — ${esc(commerce.plan?.name || '')}</h2><p>${c.planUsageNote}</p><ul>${rows}</ul></section>`;
+}
 function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form><button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
   });
   /* The theme chooser is built from the registry, so registering a theme is
      the whole of adding one - there is no list of themes written out a second
@@ -377,10 +407,13 @@ async function render() {
 }
 async function boot() {
   try {
-    const [user, languages, profile] = await Promise.all([
+    const [user, languages, profile, commerce] = await Promise.all([
       api.me(),
       api.languages(),
       api.learnerProfile(),
+      // Best-effort: a learner's plan/usage read must never block boot or
+      // stand for a real outage the way the other three awaits do.
+      api.productCommerce().catch(() => null),
     ]);
     ctx.supportLanguages = languages.support_languages || [];
     ctx.languageProfiles = languages.languages || [];
@@ -388,6 +421,7 @@ async function boot() {
     ctx.owner = user.email || user.mode || 'local';
     ctx.language = languages.active;
     ctx.profile = profile;
+    ctx.commerce = commerce;
     ctx.support = profile.support_language || profile.native_language || 'en';
     ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
     // New product direction remains internal until the human release gate.

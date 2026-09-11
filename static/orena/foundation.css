@@ -73,6 +73,35 @@ input:focus,
 select:focus {
   border-color: var(--accent);
 }
+/* Read-only plan/usage fact inside the preferences sheet - no price, no
+   upgrade action, so it is styled as plain information, not a form or a
+   call-to-action. */
+.plan-usage {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+}
+.plan-usage h2 {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin: 0 0 var(--space-2);
+}
+.plan-usage ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.plan-usage li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.plan-usage li > span:last-child {
+  color: var(--muted);
+}
 /* Choosing a theme.
 
    Each row shows the theme rather than naming a colour: the sample carries

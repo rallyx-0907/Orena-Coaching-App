@@ -41,6 +41,9 @@ export const api={
   me:()=>request('/api/me'),
   sessionBootstrap:()=>request('/api/session/bootstrap'),
   productMe:()=>request('/api/product/me'),
+  // Canonical read (accountCommerce): full subscription-state vocabulary,
+  // web-only. /me stays byte-for-byte for the frozen mobile contract.
+  productCommerce:()=>request('/api/product/commerce'),
   adminProductAccount:()=>request('/api/product/admin/account'),
   health:()=>request('/api/health'),
   languages:()=>request('/api/platform/languages'),
