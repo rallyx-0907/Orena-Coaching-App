@@ -21,10 +21,14 @@ import pytest
 
 sqlalchemy = pytest.importorskip('sqlalchemy')
 from sqlalchemy import create_engine, text  # noqa: E402
+from sqlalchemy.exc import IntegrityError  # noqa: E402
 
 from writing_coach.persistence.commerce_repository import (  # noqa: E402
     PostgresCommerceRepository,
     SubscriptionUpdate,
+)
+from writing_coach.persistence.incarnation_repository import (  # noqa: E402
+    PostgresIncarnationRepository,
 )
 
 URL = os.getenv('ORENA_TEST_POSTGRES_URL', '')
@@ -34,9 +38,15 @@ pytestmark = pytest.mark.skipif(
 
 TABLES = ('commerce_billing_event_receipts', 'commerce_subscriptions')
 
+# No external_subscription_id here: it is now unique per (provider, id) via
+# uq_commerce_subscription_external, and this fixture is shared by tests that
+# each create their own incarnation - a fixed non-NULL value would collide
+# across them the moment more than one test in the module applies it. Left
+# NULL by default; the one test that actually exercises the uniqueness
+# invariant sets its own explicit, test-local values.
 _UPDATE = SubscriptionUpdate(
-    state='active', plan_id='premium', external_customer_id='cus_1',
-    external_subscription_id='sub_1', paid_through=None, cancel_at_period_end=False,
+    state='active', plan_id='premium', external_customer_id=None,
+    external_subscription_id=None, paid_through=None, cancel_at_period_end=False,
 )
 
 
@@ -150,7 +160,10 @@ def test_unverifiable_version_does_not_overwrite_known_state(engine, incarnation
     assert repo.get_subscription(incarnation)['state'] == 'active'
 
 
-def test_deleted_incarnation_rejects_the_event_and_grants_nothing(engine, incarnation):
+def test_deleted_incarnation_gets_a_durable_receipt_but_no_subscription_row(engine, incarnation):
+    """P1 finding 3: a receipt is idempotency/audit state, not a grant - a
+    deleted incarnation still gets one, durably, but never a subscription
+    row, and redelivery does not create either kind of state."""
     with engine.begin() as connection:
         connection.execute(
             text(
@@ -160,11 +173,25 @@ def test_deleted_incarnation_rejects_the_event_and_grants_nothing(engine, incarn
             {'now': datetime.now(UTC), 'inc': incarnation},
         )
     repo = PostgresCommerceRepository(engine)
-    outcome = repo.record_event(
+    first = repo.record_event(
         incarnation_id=incarnation, provider='stripe', external_event_id='evt-after-delete',
         event_object_version=1, update=_UPDATE,
     )
-    assert outcome['status'] == 'deleted_incarnation_rejected'
+    assert first['status'] == 'deleted_incarnation_rejected'
+    assert repo.get_subscription(incarnation) is None
+    receipt = repo.get_receipt('stripe', 'evt-after-delete')
+    assert receipt is not None, 'the event must be durably retained, not silently dropped'
+    assert receipt['processing_state'] == 'ignored'
+    assert receipt['sanitized_failure_reason'] == 'deleted_incarnation_rejected'
+
+    # Repeated delivery of the same provider event is not a brand-new event:
+    # once terminal, a redelivery is 'duplicate', not re-evaluated against
+    # (still) 'deleted_incarnation_rejected' or anything else.
+    again = repo.record_event(
+        incarnation_id=incarnation, provider='stripe', external_event_id='evt-after-delete',
+        event_object_version=1, update=_UPDATE,
+    )
+    assert again['status'] == 'duplicate'
     assert repo.get_subscription(incarnation) is None
 
 
@@ -200,3 +227,176 @@ def test_two_racing_events_only_the_newer_verified_version_wins(engine, incarnat
     assert statuses <= {'apply', 'stale'}
     assert 'apply' in statuses
     assert repo.get_subscription(incarnation)['object_version'] == 10
+
+
+def test_unknown_event_reconciles_to_apply_then_further_retries_are_duplicate(engine, incarnation):
+    """P1 finding 1, full lifecycle required by review:
+    unknown -> receipt retained -> no state changed -> authoritative version
+    obtained -> same event id reconciles to apply -> further retry duplicate.
+    """
+    repo = PostgresCommerceRepository(engine)
+
+    first = repo.record_event(
+        incarnation_id=incarnation, provider='stripe', external_event_id='evt-reconcile',
+        event_object_version=None, update=_UPDATE,
+    )
+    assert first['status'] == 'unknown'
+    # A neutral placeholder row (state='none') is expected - it exists only
+    # so the next event has something to lock against - but it must never be
+    # a known-good/paid state.
+    placeholder = repo.get_subscription(incarnation)
+    assert placeholder is None or placeholder['state'] == 'none'
+    receipt = repo.get_receipt('stripe', 'evt-reconcile')
+    assert receipt['processing_state'] == 'received', 'non-terminal: must not block reconciliation'
+
+    # Authoritative provider state is later obtained; the same event id is
+    # reconciled by calling record_event() again, now with a real version.
+    reconciled = repo.record_event(
+        incarnation_id=incarnation, provider='stripe', external_event_id='evt-reconcile',
+        event_object_version=3, update=_UPDATE,
+    )
+    assert reconciled['status'] == 'apply'
+    assert repo.get_subscription(incarnation)['object_version'] == 3
+    assert repo.get_receipt('stripe', 'evt-reconcile')['processing_state'] == 'applied'
+
+    # Now terminal: a further retry of the same event id is a duplicate, not
+    # a second reconciliation.
+    again = repo.record_event(
+        incarnation_id=incarnation, provider='stripe', external_event_id='evt-reconcile',
+        event_object_version=3, update=_UPDATE,
+    )
+    assert again['status'] == 'duplicate'
+
+
+def test_billing_callback_serializes_with_incarnation_deletion(engine):
+    """P1 finding 2: record_event() vs incarnation_repository.mark_deleted()
+    must not race. After both finish, a callback can never have applied paid
+    state past the deletion boundary."""
+    now = datetime.now(UTC)
+    user_id, incarnation_id = uuid.uuid4(), uuid.uuid4()
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                'INSERT INTO users (id, user_key, email, name, picture, role, created_at) '
+                'VALUES (:id, :key, :email, :name, :pic, :role, :now)'
+            ),
+            {'id': user_id, 'key': f'sub-{user_id}', 'email': '', 'name': '',
+             'pic': '', 'role': 'user', 'now': now},
+        )
+        connection.execute(
+            text(
+                'INSERT INTO account_incarnations (id, user_id, epoch, status, created_at) '
+                'VALUES (:id, :user, 1, :status, :now)'
+            ),
+            {'id': incarnation_id, 'user': user_id, 'status': 'active', 'now': now},
+        )
+    incarnation_id = str(incarnation_id)
+
+    commerce = PostgresCommerceRepository(engine)
+    incarnations = PostgresIncarnationRepository(engine)
+    results, barrier = {}, threading.Barrier(2)
+
+    def bill():
+        barrier.wait()
+        results['billing'] = commerce.record_event(
+            incarnation_id=incarnation_id, provider='stripe', external_event_id='evt-vs-delete',
+            event_object_version=1, update=_UPDATE,
+        )
+
+    def delete():
+        barrier.wait()
+        incarnations.mark_deleted(incarnation_id)
+
+    threads = [threading.Thread(target=bill), threading.Thread(target=delete)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    with engine.connect() as connection:
+        status = connection.execute(
+            text('SELECT status FROM account_incarnations WHERE id = :id'),
+            {'id': incarnation_id},
+        ).scalar_one()
+    assert status == 'deleted'
+
+    subscription = commerce.get_subscription(incarnation_id)
+    if results['billing']['status'] == 'apply':
+        # Billing's transaction committed first (deletion serialized after
+        # it, on the same row) - a legitimate ordering, but the deletion must
+        # not have left paid state behind it: nothing here re-derives that
+        # invariant automatically, so the case this test exists to catch is
+        # the *other* branch below. Documented, not silently accepted:
+        # activation/downgrade-on-delete policy is a human gate ARCHITECTURE_
+        # INVARIANTS.md §7 reserves, not decided by this proposal.
+        assert subscription is not None and subscription['state'] == 'active'
+    else:
+        # Deletion won the race: billing must see the incarnation as already
+        # deleted and create no subscription state past that boundary.
+        assert results['billing']['status'] == 'deleted_incarnation_rejected'
+        assert subscription is None
+
+
+def test_duplicate_external_subscription_mapping_is_rejected_by_the_database(engine, incarnation):
+    """P2 finding 4: one provider subscription must never map to more than
+    one incarnation - enforced by the schema itself, not caller discipline."""
+    now = datetime.now(UTC)
+    user_id, other_incarnation = uuid.uuid4(), uuid.uuid4()
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                'INSERT INTO users (id, user_key, email, name, picture, role, created_at) '
+                'VALUES (:id, :key, :email, :name, :pic, :role, :now)'
+            ),
+            {'id': user_id, 'key': f'sub-{user_id}', 'email': '', 'name': '',
+             'pic': '', 'role': 'user', 'now': now},
+        )
+        connection.execute(
+            text(
+                'INSERT INTO account_incarnations (id, user_id, epoch, status, created_at) '
+                'VALUES (:id, :user, 1, :status, :now)'
+            ),
+            {'id': other_incarnation, 'user': user_id, 'status': 'active', 'now': now},
+        )
+
+    repo = PostgresCommerceRepository(engine)
+    shared_mapping = SubscriptionUpdate(
+        state='active', plan_id='premium', external_customer_id='cus_shared',
+        external_subscription_id='sub_shared', paid_through=None, cancel_at_period_end=False,
+    )
+    first = repo.record_event(
+        incarnation_id=incarnation, provider='stripe', external_event_id='evt-map-1',
+        event_object_version=1, update=shared_mapping,
+    )
+    assert first['status'] == 'apply'
+
+    with pytest.raises(IntegrityError):
+        repo.record_event(
+            incarnation_id=str(other_incarnation), provider='stripe', external_event_id='evt-map-2',
+            event_object_version=1, update=shared_mapping,
+        )
+
+
+def test_same_event_id_under_concurrent_processing_is_exactly_once(engine, incarnation):
+    """Required regression coverage: the same provider event delivered
+    concurrently (a real double-send, not two distinct events) is exactly
+    one outcome, not an 'apply' racing another 'apply'."""
+    repo = PostgresCommerceRepository(engine)
+    results, barrier = {}, threading.Barrier(2)
+
+    def send(name):
+        barrier.wait()
+        results[name] = repo.record_event(
+            incarnation_id=incarnation, provider='stripe', external_event_id='evt-same-twice',
+            event_object_version=1, update=_UPDATE,
+        )
+
+    threads = [threading.Thread(target=send, args=('a',)), threading.Thread(target=send, args=('b',))]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    statuses = sorted(results[name]['status'] for name in ('a', 'b'))
+    assert statuses == ['apply', 'duplicate']
+    assert repo.get_subscription(incarnation)['object_version'] == 1

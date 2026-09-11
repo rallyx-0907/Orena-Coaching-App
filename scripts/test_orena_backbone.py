@@ -212,6 +212,19 @@ class BackboneContracts(unittest.TestCase):
             'deleted_incarnation_rejected',
         )
 
+    def test_a_terminal_receipt_wins_even_over_a_later_deletion(self):
+        # Redelivery of an event id already fully resolved is 'duplicate'
+        # regardless of what changed since - including the incarnation being
+        # deleted afterward. One consistent answer, not a recomputed one.
+        event = ProviderEvent('evt-7', 'incarnation-1', 9)
+        self.assertEqual(
+            subscription_event_decision(
+                event, current_incarnation='incarnation-1', incarnation_deleted=True,
+                already_processed=True, current_object_version=1,
+            ),
+            'duplicate',
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

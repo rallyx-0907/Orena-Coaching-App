@@ -197,12 +197,18 @@ def subscription_event_decision(
     no more safely promote access than an unverifiable one can safely replace
     a known-good current fact.
     """
+    # A terminal receipt wins over every other check: once an event id has
+    # been fully resolved, a repeat of it is 'duplicate' regardless of what
+    # changed since (including the incarnation being deleted afterward) -
+    # one durable, consistent answer for "was this exact event handled
+    # before", with the original reason preserved in the receipt itself
+    # rather than recomputed differently on each redelivery.
+    if already_processed:
+        return 'duplicate'
     if incarnation_deleted:
         return 'deleted_incarnation_rejected'
     if event.incarnation != current_incarnation:
         return 'foreign_incarnation'
-    if already_processed:
-        return 'duplicate'
     if event.object_version is None:
         return 'unknown'
     if current_object_version is not None and event.object_version <= current_object_version:
