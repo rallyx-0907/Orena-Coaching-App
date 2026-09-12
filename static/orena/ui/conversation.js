@@ -1,5 +1,5 @@
-import { esc, dialog, focusRegion } from './html.js';
-import { pageIntro, progressReporter } from './patterns.js';
+import { esc, dialog, focusRegion, focusWork } from './html.js';
+import { pageIntro, progressReporter, hint } from './patterns.js';
 import { openUnderstanding } from './understanding.js';
 import { loadSpokenCoaching } from './spoken-coaching.js';
 import { mountVoiceResponse, speechConfigured } from './voice-response.js';
@@ -74,7 +74,12 @@ export function renderConversation(root, ctx) {
   const draw = () => {
     const pending = pendingTurn(state),
       full = state.turns.length >= MAX_CONVERSATION_TURNS;
-    root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'speaking' })}">← ${esc(c.speakingName)}</a><span class="meta">${esc(memory.available ? c.conversationLocal : c.memoryUnavailable)}</span></div>${pageIntro({ title: state.title, note: state.situation, eyebrow: c.conversationTitle, scene: 'conversation' })}<p class="notice">${esc(c.conversationTruth)}</p><ol class="conversation-turns">${state.turns.map((turn, index) => `<li class="conversation-turn" data-role="${turn.role}"><small>${esc(turn.role === 'partner' ? c.conversationPartner : turn.origin === 'speech_transcript' ? c.conversationSpoken : c.conversationYou)}</small><p lang="${language}">${esc(turn.text)}</p>${turn.meaning && turn.support === ctx.support ? `<details><summary>${esc(c.conversationMeaning)}</summary><p lang="${esc(turn.support)}">${esc(turn.meaning)}</p></details>` : ''}<button class="quiet" data-inspect-turn="${index}">${esc(c.lookCloser)} ↗</button>${turn.role === 'learner' ? `<button class="quiet" data-coach-turn="${index}">${esc(c.conversationHowItLanded)} ↗</button><div data-turn-coaching="${index}"></div>` : ''}</li>`).join('')}</ol><div class="conversation-composer">${state.ended ? `<h2>${esc(c.conversationEnded)}</h2><p>${esc(c.conversationEndNote)}</p>` : full ? `<p>${esc(c.conversationFull)}</p>` : pending ? `<p>${esc(c.conversationWaiting)}</p><button class="outline" data-retry>${esc(c.retry)}</button>` : `<form data-reply><label for="conversationReply">${esc(c.conversationReply)}</label><textarea id="conversationReply" name="reply" rows="3" maxlength="2400" required lang="${language}">${esc(memory.value.expressions[state.id] || '')}</textarea><div class="button-row"><button class="primary">${esc(c.conversationSend)} →</button><button type="button" class="outline" data-voice>${esc(c.record)}</button></div></form>`}<p role="status" data-conversation-status></p><div class="button-row">${!state.ended ? `<button class="quiet" data-end>${esc(c.conversationEnd)}</button>` : ''}<button class="quiet" data-new>${esc(c.conversationNew)}</button></div></div>`;
+    /* A conversation is something the learner does, so it opens like every
+       other activity room: compact and without artwork, the situation kept as
+       the task. Where the exchange is kept is a status symbol, as a draft's
+       is; that the partner is simulated stays on screen, because it is how
+       every reply below has to be read. */
+    root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'speaking' })}">← ${esc(c.speakingName)}</a><span class="draft-status" data-state="${memory.available ? 'saved' : 'warning'}">${hint(memory.available ? { icon: 'saved', tone: 'quiet', text: c.conversationLocal } : { icon: 'warning', tone: 'warning', text: c.memoryUnavailable })}</span></div>${pageIntro({ title: state.title, note: state.situation, eyebrow: c.conversationTitle, compact: true })}<p class="notice conversation-truth">${esc(c.conversationTruth)}</p><ol class="conversation-turns">${state.turns.map((turn, index) => `<li class="conversation-turn" data-role="${turn.role}"><small>${esc(turn.role === 'partner' ? c.conversationPartner : turn.origin === 'speech_transcript' ? c.conversationSpoken : c.conversationYou)}</small><p lang="${language}">${esc(turn.text)}</p>${turn.meaning && turn.support === ctx.support ? `<details><summary>${esc(c.conversationMeaning)}</summary><p lang="${esc(turn.support)}">${esc(turn.meaning)}</p></details>` : ''}<div class="turn-actions"><button class="quiet" data-inspect-turn="${index}">${esc(c.lookCloser)} ↗</button>${turn.role === 'learner' ? `<button class="quiet" data-coach-turn="${index}">${esc(c.conversationHowItLanded)} ↗</button>` : ''}</div>${turn.role === 'learner' ? `<div data-turn-coaching="${index}"></div>` : ''}</li>`).join('')}</ol><div class="conversation-composer">${state.ended ? `<h2>${esc(c.conversationEnded)}</h2><p>${esc(c.conversationEndNote)}</p>` : full ? `<p>${esc(c.conversationFull)}</p>` : pending ? `<p>${esc(c.conversationWaiting)}</p><button class="outline" data-retry>${esc(c.retry)}</button>` : `<form data-reply><label for="conversationReply">${esc(c.conversationReply)}</label><textarea id="conversationReply" name="reply" rows="3" maxlength="2400" required lang="${language}">${esc(memory.value.expressions[state.id] || '')}</textarea><div class="button-row"><button class="primary">${esc(c.conversationSend)} →</button><button type="button" class="outline" data-voice>${esc(c.record)}</button></div></form>`}<p role="status" data-conversation-status></p><div class="button-row">${!state.ended ? `<button class="quiet" data-end>${esc(c.conversationEnd)}</button>` : ''}<button class="quiet" data-new>${esc(c.conversationNew)}</button></div></div>`;
     root.querySelectorAll('[data-inspect-turn]').forEach(
       (button) =>
         (button.onclick = () => {
@@ -203,6 +208,30 @@ export function renderConversation(root, ctx) {
       state = partnerTurn(state, reply);
       remember();
       draw();
+      /* The reply is the answer to what the learner just did, and the reply
+         box is where they answer it. When either lands out of sight, both are
+         brought into view together - as much of the exchange above them as
+         fits, and never the reply's first line hidden under the header. */
+      const latest = root.querySelector('.conversation-turn:last-child');
+      const answer = root.querySelector('.conversation-composer .button-row');
+      const box = latest?.getBoundingClientRect();
+      if (
+        box &&
+        (box.top < 0 ||
+          box.bottom > window.innerHeight ||
+          (answer?.getBoundingClientRect().bottom ?? 0) > window.innerHeight)
+      ) {
+        focusWork();
+        answer?.scrollIntoView({ block: 'end' });
+        const offset =
+          parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue(
+              '--shell-offset',
+            ),
+          ) || 0;
+        if (latest.getBoundingClientRect().top < offset)
+          latest.scrollIntoView({ block: 'start' });
+      }
       focusRegion(
         root.querySelector('textarea') ||
           root.querySelector('.conversation-composer'),

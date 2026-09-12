@@ -1,4 +1,5 @@
 import { esc } from './html.js';
+import { hint } from './patterns.js';
 import { openUnderstanding } from './understanding.js';
 
 /* An optional check on what a passage left behind. It is offered after the
@@ -15,13 +16,17 @@ import { openUnderstanding } from './understanding.js';
    one quiet line rather than showing nothing, because an absent section and a
    section that failed to load look identical - and nothing is fabricated to
    make every text carry a check. */
+/* The summary already says the check is optional, and what a score does not
+   claim is worth knowing rather than reading before every question - so both
+   notes are hints beside the control and the score they qualify. The claim
+   itself is never dropped: the API calls this a check only, and so does the
+   surface, on demand. */
 export function comprehensionSection(c, questions, latestAttempt) {
   if (!questions?.length)
     return `<p class="meta comprehension-absent">${esc(c.readingOnlyNote)}</p>`;
   return `<details class="comprehension" data-comprehension>
     <summary>${esc(c.comprehension)} · ${esc(c.comprehensionOptional)}</summary>
-    ${latestAttempt ? `<p class="meta">${esc(c.comprehensionDone)} · ${esc(latestAttempt.correct_count)}/${esc(latestAttempt.total)} · ${esc(c.comprehensionClaim)}</p>` : ''}
-    <p class="meta">${esc(c.comprehensionNote)}</p>
+    ${latestAttempt ? `<p class="meta comprehension-before"><span class="heading-with-hint">${esc(c.comprehensionDone)} · ${esc(latestAttempt.correct_count)}/${esc(latestAttempt.total)}${hint({ text: c.comprehensionClaim })}</span></p>` : ''}
     <form data-comprehension-form>${questions
       .map(
         (item, index) => `<fieldset class="comprehension-question">
@@ -35,7 +40,7 @@ export function comprehensionSection(c, questions, latestAttempt) {
       </fieldset>`,
       )
       .join('')}
-      <button class="outline" type="submit">${esc(c.comprehensionCheck)}</button>
+      <div class="button-row"><button class="outline" type="submit">${esc(c.comprehensionCheck)}</button>${hint({ text: c.comprehensionNote })}</div>
       <p role="status" data-comprehension-status></p>
     </form>
     <div data-comprehension-results></div>
@@ -88,7 +93,8 @@ export function bindComprehension(
       return;
     }
     state.textContent = c.saving;
-    form.querySelector('button').disabled = true;
+    const submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
     try {
       const scored = await ctx.mutate(() =>
         api.submitReadingAnswers(sessionId, answers),
@@ -97,7 +103,7 @@ export function bindComprehension(
       if (!scored.valid || !Array.isArray(scored.results))
         throw Error('Reading check unavailable');
       state.textContent = '';
-      output.innerHTML = `<p class="comprehension-score">${esc(c.comprehensionScore)} ${scored.correct_count}/${scored.total}</p><p class="meta">${esc(c.comprehensionClaim)}</p>${(
+      output.innerHTML = `<p class="comprehension-score heading-with-hint">${esc(c.comprehensionScore)} ${scored.correct_count}/${scored.total}${hint({ text: c.comprehensionClaim })}</p>${(
         scored.results || []
       )
         .map((item) => result(c, item, support))
@@ -118,7 +124,7 @@ export function bindComprehension(
     } catch {
       if (alive()) state.textContent = c.comprehensionUnavailable;
     } finally {
-      if (alive()) form.querySelector('button').disabled = false;
+      if (alive()) submit.disabled = false;
     }
   };
 }

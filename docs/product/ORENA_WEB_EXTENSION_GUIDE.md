@@ -191,6 +191,11 @@ What a new surface inherits, and the traps behind each one.
   side, work the other, each scrolling on its own. The practice panel must stay
   a sibling of the media stage, not a child, or nothing can place them apart.
   Narrow, the source becomes a compact sticky strip and the work is scrolled to.
+  While following on a desktop (above 800px, no practice open) the spoken line
+  and the transcript sit in `.follow-column` beside the voice, so the line, its
+  meaning, "look at the words" and its guide are in the first viewport even in
+  a short laptop window; elsewhere the column is `display: contents` and its
+  children keep their own places.
 ### Learning workspace
 
 `foundation.css`, `ui/patterns.js` - the implementation of
@@ -225,8 +230,12 @@ What a new surface inherits, and the traps behind each one.
   `.heading-with-hint`, never inside the heading, so its words do not become
   the heading's name. Instructions the task needs, and consent statements shown
   before data leaves the device, stay as text. A hint inside a form is a
-  button: select the form's action by role (`button.primary`), not as the
-  form's first button.
+  button: select the form's action by role (`button.primary`,
+  `button[type="submit"]`), not as the form's first button. The bubble is
+  centred on its symbol and `placeHint` shifts it (`--hint-shift`) just far
+  enough to stay on screen; do not position bubbles per surface. A claim that
+  qualifies a result - what a comparison or a comprehension score does not
+  measure - sits as a hint beside that result, never dropped.
 ### Narrow header and phone density
 
 `app.js`, `reference.css`, `rooms.css` - Design Contract rule 12 (D-052).
@@ -249,6 +258,13 @@ What a new surface inherits, and the traps behind each one.
   recall and feedback. While following (no practice open) the media stage uses
   `display: contents` so the transcript sits directly under the spoken line and
   the deeper paths follow it; the stage element stays for the player's events.
+  The same block sets the encounter's Shadowing and Speaking panel (line,
+  meaning, guide and both controls in one screen under the sticky strip),
+  Reading comprehension (44px choices, compact results that land under the
+  header), conversation (compact opening, the simulated-partner line kept as
+  text, one row of turn actions; a new reply is brought into view with the
+  reply box), and Discover, My content, Collection and the thread shelf (a
+  short editorial heading, compact rows, a sideways-scrolling lens row).
   New phone rules go there rather than into another breakpoint elsewhere.
 ### Brand`
 

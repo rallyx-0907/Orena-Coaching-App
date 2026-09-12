@@ -80,13 +80,24 @@ export function hint({ text, label = '', icon = 'info', tone = 'info' }) {
   return `<span class="hint" data-tone="${esc(tone)}"><button type="button" class="hint__trigger" aria-expanded="false" aria-describedby="${id}">${symbol(icon)}<span class="sr-only">${esc(label || text)}</span></button><span class="hint__bubble" role="tooltip" id="${id}">${esc(text)}</span></span>`;
 }
 
+/* The bubble is centred on its symbol and then moved just far enough to stay
+   on screen. Flipping it to one edge is not enough: on a phone a symbol near
+   the middle has a bubble wider than the room on either side of it. */
 function placeHint(root) {
   const bubble = root.querySelector('.hint__bubble');
   if (!bubble) return;
-  root.dataset.align = '';
+  root.style.removeProperty('--hint-shift');
   const box = bubble.getBoundingClientRect();
-  if (box.right > window.innerWidth - 8) root.dataset.align = 'end';
-  else if (box.left < 8) root.dataset.align = 'start';
+  if (!box.width) return;
+  const edge = 8,
+    room = document.documentElement.clientWidth;
+  const shift =
+    box.left < edge
+      ? edge - box.left
+      : box.right > room - edge
+        ? room - edge - box.right
+        : 0;
+  if (shift) root.style.setProperty('--hint-shift', `${Math.round(shift)}px`);
 }
 
 export function installHints(doc = document) {

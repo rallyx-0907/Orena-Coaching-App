@@ -51,6 +51,14 @@
   #shell .bring-button:hover { color: var(--ink); border-color: var(--muted); }
   #shell .account-button { min-height: 36px; padding-inline: 4px; }
   #shell .account-button .language-seal { width: 28px; height: 28px; }
+  /* The old top header hid this label below 1100px, where the header was
+     crowded; in the rail it left a bare "+" that says nothing. A destination
+     wider than the narrow rail wraps rather than being cut off. */
+  #shell .bring-button span { display: inline; }
+  #shell nav a { white-space: normal; line-height: 1.25; }
+}
+@media (min-width: 901px) and (max-width: 1150px) {
+  #shell nav a { gap: 10px; padding-inline: 8px; }
 }
 /* The narrow header's curtain. Outside the narrow header it must not exist at
    all: left as an unstyled button it sat in the page flow above every room and

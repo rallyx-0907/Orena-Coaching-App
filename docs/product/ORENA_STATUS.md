@@ -89,6 +89,15 @@ transcript rows are 61px (were 85px). Reading, Grammar, Speaking, Recall and
 feedback are set denser without falling below readable size, and every phone
 control keeps a 44px target. Verified in the running sandbox at 390 and 800 in
 EN and ZH and in Night Ink; Writing through two real local-Ollama reviews.
+The same rules now reach the remaining rooms: Shadowing and Speaking inside a
+lesson fit one phone screen under the voice strip; Reading comprehension has
+44px choices lighter than their question and its score lands below the header;
+a conversation opens without artwork with the reply box in the first screen,
+and a partner's reply arrives in view with the box to answer it; Discover, My
+content and Collection keep their artwork but a two-line heading, compact rows
+and one row of lenses. On a desktop, Follow puts the spoken line and the
+transcript beside the video, so the line, its meaning and "look at the words"
+with its guide are in the first screen from 1024x640 up.
 
 The approved red-panda library is in the product. Fifty-two approved assets
 existed and four were reachable, one of them doing duty as both the arrival and
