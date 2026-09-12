@@ -214,3 +214,63 @@ def subscription_event_decision(
     if current_object_version is not None and event.object_version <= current_object_version:
         return 'stale'
     return 'apply'
+
+
+def settle_decision(*, reservation_state: str | None, admitted_units: int | None,
+                    actual_units: int, prior_actual_units: int | None) -> str:
+    """One decision per settle(operationId, actualUnits, outcomeRef) call.
+
+    Returns 'settle' (move admitted_units of `reserved` to `actual_units` of
+    `consumed`, releasing the unused remainder), 'duplicate' (already settled
+    with this exact actual_units - charge nothing a second time),
+    'payload_conflict' (already settled with a *different* actual_units - a
+    provider cannot revise history by retrying settle with a new number),
+    'already_released' (the reservation was cancelled before dispatch and
+    cannot be settled), 'exceeds_admitted' (actual_units is more than was
+    ever reserved for this operation) or 'unknown_operation' (no reservation
+    exists for this operation ID at all).
+
+    Caller owns atomic locking of the reservation row and bucket update this
+    authorizes; this only decides whether doing so is safe. See
+    ORENA_COMMERCE_ARCHITECTURE.md §4: "settle(operationId, actualUnits,
+    outcomeRef) is idempotent and atomically moves reserved to consumed...
+    Actual units must not exceed the admitted bound."
+    """
+    if not _units(actual_units):
+        raise ValueError('Actual units must be a nonnegative integer')
+    if reservation_state is None:
+        return 'unknown_operation'
+    if reservation_state == 'settled':
+        return 'duplicate' if prior_actual_units == actual_units else 'payload_conflict'
+    if reservation_state == 'released':
+        return 'already_released'
+    if reservation_state != 'reserved':
+        return 'unknown_operation'
+    if admitted_units is not None and actual_units > admitted_units:
+        return 'exceeds_admitted'
+    return 'settle'
+
+
+def release_decision(*, reservation_state: str | None) -> str:
+    """One decision per cancellation-before-dispatch of one reservation.
+
+    Returns 'release' (move admitted_units back out of `reserved`, nothing
+    consumed), 'duplicate' (already released - idempotent, releases nothing
+    twice), 'already_settled' (cannot release a reservation whose units were
+    already consumed; settlement is final) or 'unknown_operation' (no
+    reservation exists for this operation ID at all).
+
+    See ORENA_COMMERCE_ARCHITECTURE.md §4: "Cancellation before dispatch
+    releases reservation." Caller owns atomic locking of the reservation row
+    and bucket update this authorizes; this only decides whether doing so is
+    safe.
+    """
+    if reservation_state is None:
+        return 'unknown_operation'
+    if reservation_state == 'released':
+        return 'duplicate'
+    if reservation_state == 'settled':
+        return 'already_settled'
+    if reservation_state != 'reserved':
+        return 'unknown_operation'
+    return 'release'

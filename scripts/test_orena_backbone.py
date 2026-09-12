@@ -8,7 +8,7 @@ from writing_coach.reference_backbone import (  # noqa: E402
     Scope, Receipt, Mutation, Quota, Evidence, Cursor, ProviderEvent,
     mutation_decision, reserve_decision, result_is_current,
     job_may_publish, projection_evidence, growth_comparable, cursor_matches,
-    subscription_event_decision,
+    subscription_event_decision, settle_decision, release_decision,
 )
 
 
@@ -224,6 +224,75 @@ class BackboneContracts(unittest.TestCase):
             ),
             'duplicate',
         )
+
+    def test_settle_moves_reserved_to_consumed_exactly_once(self):
+        self.assertEqual(
+            settle_decision(reservation_state='reserved', admitted_units=5,
+                            actual_units=3, prior_actual_units=None),
+            'settle',
+        )
+        # A repeat settle with the identical actual_units is a no-op replay,
+        # never a second charge.
+        self.assertEqual(
+            settle_decision(reservation_state='settled', admitted_units=5,
+                            actual_units=3, prior_actual_units=3),
+            'duplicate',
+        )
+
+    def test_settle_retried_with_a_different_number_is_a_conflict(self):
+        # A provider cannot revise history by retrying settle with a new
+        # actual_units for the same operation.
+        self.assertEqual(
+            settle_decision(reservation_state='settled', admitted_units=5,
+                            actual_units=4, prior_actual_units=3),
+            'payload_conflict',
+        )
+
+    def test_settle_cannot_exceed_the_admitted_bound(self):
+        self.assertEqual(
+            settle_decision(reservation_state='reserved', admitted_units=5,
+                            actual_units=6, prior_actual_units=None),
+            'exceeds_admitted',
+        )
+        # Unlimited admission (None) never triggers the bound check.
+        self.assertEqual(
+            settle_decision(reservation_state='reserved', admitted_units=None,
+                            actual_units=1000, prior_actual_units=None),
+            'settle',
+        )
+
+    def test_settle_cannot_apply_to_a_released_or_unknown_operation(self):
+        self.assertEqual(
+            settle_decision(reservation_state='released', admitted_units=5,
+                            actual_units=1, prior_actual_units=None),
+            'already_released',
+        )
+        self.assertEqual(
+            settle_decision(reservation_state=None, admitted_units=None,
+                            actual_units=1, prior_actual_units=None),
+            'unknown_operation',
+        )
+
+    def test_settle_rejects_invalid_actual_units(self):
+        for units in (-1, True, 1.5):
+            with self.assertRaises(ValueError):
+                settle_decision(reservation_state='reserved', admitted_units=5,
+                                actual_units=units, prior_actual_units=None)
+        # Zero actual units is valid - a dispatched operation that consumed
+        # nothing billable still needs to release its reservation via settle.
+        self.assertEqual(
+            settle_decision(reservation_state='reserved', admitted_units=5,
+                            actual_units=0, prior_actual_units=None),
+            'settle',
+        )
+
+    def test_release_returns_reserved_units_exactly_once(self):
+        self.assertEqual(release_decision(reservation_state='reserved'), 'release')
+        self.assertEqual(release_decision(reservation_state='released'), 'duplicate')
+
+    def test_release_cannot_undo_a_settlement_or_apply_to_unknown_operation(self):
+        self.assertEqual(release_decision(reservation_state='settled'), 'already_settled')
+        self.assertEqual(release_decision(reservation_state=None), 'unknown_operation')
 
 
 if __name__ == '__main__':

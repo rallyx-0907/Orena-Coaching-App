@@ -74,12 +74,14 @@ checkpoint is REVIEWABLE. Representative live-provider quality and the final
 Write → Evaluate → Review browser result require the provider/credential human
 gate; deterministic fixtures must not be presented as that evidence.
 
-Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3
-schema **proposed** (not applied): `migrations/proposed/20260911_0006` +
-`commerce_repository.py`. Round 1 reviewed: CHANGES REQUESTED (3xP1, 1xP2),
-all addressed (10/10 postgres cases, 60/60 flakiness runs) - see
-`I3_SCHEMA_REVIEW_REQUEST.md`. Next: re-review; not self-approved/moved/
-activated (AGENTS.md §1). Meanwhile started the next-named track (learner-
+Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3: two
+schemas **proposed**, neither applied - `.../20260911_0006` (subscription
+inbox; round 1 addressed, 10/10 postgres/60/60 flakiness; awaiting
+re-review) and `.../20260912_0007` (quota buckets/reservations; new
+`settle_decision()`/`release_decision()`, 34/34 stdlib; `quota_repository.py`;
+14/14 postgres/10/10 flakiness; not yet reviewed) - see
+`I3_SCHEMA_REVIEW_REQUEST.md`. Neither self-approved/moved/activated
+(AGENTS.md §1). Meanwhile started the next-named track (learner-
 facing content/UI/EN-ZH parity): Discover's generated-fiction catalog grew
 3 -> 4 with a new parity+schema gate (`test_orena_discover_texts.mjs`),
 verified live. UI swept 6+ rooms clean; Platform Admin untouched (hold, not
@@ -100,19 +102,17 @@ Opus implementation work. F is human review, not architecture completion.
 
 Multi-theme system implemented, awaiting visual review: Paper, Night Ink,
 Deep Forest, Sage Field; identity separate from appearance; colour owned
-solely by `theme.css`. Ember deferred; brand asset set replaced, runtime
-library remapped.
+solely by `theme.css`. Ember deferred; brand assets replaced, runtime remapped.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
 approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
 (trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
 
-D-049/D-050 (2026-09-12): Content Architecture amended - five domains, a
-horizontal Understanding Engine (AI-first, context-grounded; support layer
-optional, no mandatory graph), Vocabulary Card + orthography. New:
-`ORENA_UNDERSTANDING_ENGINE.md`, `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence
-in `ROADMAP.md`. Parallel to I1-I7; schema still needs I2/I3 review. Docs-only.
+D-049/D-050 (2026-09-12): Content Architecture amended to five domains, a
+horizontal Understanding Engine (AI-first, context-grounded, optional support
+layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
+`ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
 
 ## PENDING
 
@@ -132,18 +132,18 @@ None identified.
 ## OPEN P1
 
 - `#/language` renders "temporarily unavailable" only in long multi-room
-  sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated, 0/130
-  otherwise. Self-recovers.
-- Platform Admin lost its host when templates/index.html was removed; its APIs
+  sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated (0/130).
+  Self-recovers.
+- Platform Admin lost its host when templates/index.html was removed; APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard.
   Preserve it without restoring the historical shell.
 - Grammar breadth: patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
-  and its policy inputs remain gated.
+  remains gated.
 - Reading/Vocabulary breadth: rights gate per text; D-049 sequence
   (Vocabulary Card, orthography) not yet implemented.
-- Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 is frozen native.
+- Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 frozen native.
 
 ## Baseline test evidence
 

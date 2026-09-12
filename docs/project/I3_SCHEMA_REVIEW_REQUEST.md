@@ -1,5 +1,18 @@
 # I3 schema proposal — architecture review request for Codex/GPT-6
 
+This document now covers two independent proposals under I3 ("Plans,
+subscription and quota", `ORENA_BACKBONE_INTEGRATION_GATES.md`):
+
+1. **Subscription state and the provider-event inbox** — submitted, reviewed
+   once (CHANGES REQUESTED), revised, **awaiting re-review**. Unchanged since
+   that revision. See the section immediately below.
+2. **Quota buckets and reservations** — new in this revision, **first
+   submission**, not yet reviewed at all. See "New: I3 quota buckets and
+   reservations" further down. It has no foreign key into either table from
+   proposal 1 — the two are reviewable independently — but its migration
+   chains on top of proposal 1's (named as an open question in its own
+   section, not hidden).
+
 ## Response to review of `2a7484d9ed3408b19adb0e083d7e5844e4b645bf`: CHANGES REQUESTED, addressed
 
 | | |
@@ -327,10 +340,175 @@ it: reconciling the two is a real question, but not one this narrow
 proposal should decide by quietly renaming or dropping either. Flagging it
 here so it is a decision, not a surprise found later.
 
+---
+
+## New: I3 quota buckets and reservations (first submission)
+
+Raised by Opus, same path as the subscription-inbox proposal above and I2
+before it: additive Alembic changes and a repository against
+`ORENA_COMMERCE_ARCHITECTURE.md`; Codex reviews constraints, parent isolation,
+transactional idempotency and indexes; explicit schema/runtime authorization
+stays separate and belongs to the human. **Nothing is applied.** The migration
+is in `migrations/proposed/`, which Alembic does not read.
+
+### What is being proposed
+
+| File | What it is |
+| --- | --- |
+| `migrations/proposed/20260912_0007_commerce_quota_buckets.py` | Two new tables. Additive only; no existing table is altered. |
+| `writing_coach/reference_backbone.py` | Two new pure decisions: `settle_decision()` and `release_decision()`, alongside the existing `reserve_decision()` (already reviewed as part of the executable backbone contract). 7 new stdlib counterexamples in `scripts/test_orena_backbone.py` (34/34 total). |
+| `writing_coach/persistence/quota_repository.py` | The transactional seam: `reserve()`, `settle()`, `release()`. No caller is wired to it. |
+| `tests/test_orena_quota_persistence_postgres.py` | Fourteen cases against real PostgreSQL, skipped unless `ORENA_TEST_POSTGRES_URL` is set. |
+
+Tables: `commerce_quota_buckets`, `commerce_quota_reservations`.
+
+### Deliberately narrow scope
+
+This covers only §2/§4's `QuotaBucket` and `Reservation` records — the two
+tables `reserve_decision()`, `settle_decision()` and `release_decision()` need
+a caller to read and write. It does **not** propose:
+
+- `PlanVersion` / `PriceReference` (§2) — plan identity stays the existing
+  `writing_coach/product/catalog.py` static `PLANS` dict, the same reasoning
+  the subscription-inbox proposal already applied to
+  `commerce_subscriptions.plan_id`; `meter` is likewise an unconstrained
+  string against `catalog.py`'s entitlement keys (`writing.evaluate`,
+  `dictionary.lookup`, ...), not a foreign key or enum.
+- Any provider adapter, live credential, or enforcement caller. `billing_ready`
+  stays `False` everywhere upstream regardless of this proposal's outcome.
+- A resolver from a real request to `(incarnation_id, meter, window)` — the
+  same "no production caller resolves identity from a raw request yet" gap
+  the subscription-inbox proposal already named for incarnation resolution.
+
+### Rehearsed, not just written
+
+Against disposable scratch databases (`orena_i3quota_scratch` /
+`orena_i3quota_rollback` inside the sandbox's own PostgreSQL, both dropped
+after — the runtime database was never touched):
+
+| Check | Result |
+| --- | --- |
+| Full chain from `20260811_0001` through `20260912_0007` | Applies clean |
+| `test_orena_quota_persistence_postgres.py`, fresh database | 14/14 passed |
+| The two concurrency cases, 5 repeated fresh-database runs each (flakiness check) | 5/5 passed each time (10/10) |
+| Downgrade `20260912_0007 -> 20260911_0006` | Both new tables dropped; rest of the chain untouched |
+| Up / down / up | Repeatable |
+| Full existing suite (`test_app.py` + `tests`, `PERSISTENCE_BACKEND=sqlite`) | 824 passed / 20 failed (unchanged documented inherited baseline) / 66 skipped (52 + 14 new Postgres-only cases) |
+| `ruff` | clean on every touched file |
+| `python scripts/test_orena_backbone.py` | 34/34 (7 new cases for `settle_decision()`/`release_decision()`) |
+
+No defect was found while writing this proof — unlike both prior proposals,
+which each surfaced at least one real bug during rehearsal. Named here so
+that absence itself is visible, not silently assumed.
+
+### The four things review is asked to check
+
+#### 1. Constraints
+
+- `commerce_quota_buckets.unit_limit`: nullable, `None` = explicitly
+  unlimited (never a guessed number), `CHECK (unit_limit IS NULL OR
+  unit_limit >= 0)`.
+- `commerce_quota_buckets`: `CHECK (window_end > window_start)`,
+  `UNIQUE (incarnation_id, meter, window_id)` — one bucket per account per
+  meter per window, matching §2's bucket identity exactly.
+- `commerce_quota_reservations.state`: `CHECK IN ('reserved','settled',
+  'released')` against the exact literal list in the migration, not an
+  import from application code — same reasoning `20260908_0005` and
+  `20260911_0006` already established.
+- `commerce_quota_reservations`: `UNIQUE (operation_id)` — global, not scoped
+  to a bucket, because an operation identifies one specific attempted unit of
+  work regardless of which bucket it belongs to (same reasoning
+  `commerce_billing_event_receipts.external_event_id` already uses for a
+  provider's event id).
+- Both tables: `incarnation_id`/`bucket_id` are `ON DELETE RESTRICT`, matching
+  the deletion-barrier pattern both prior migrations established.
+
+**Question for review:** a rejected `reserve()` attempt (`denied`,
+`exhausted`, `unknown`) writes no reservation row at all — see "Deliberately
+narrow scope" reasoning in the migration's own docstring: nothing was
+admitted, so a later retry of the same `operation_id` must be free to
+succeed once capacity exists, and there is no double-charge risk to guard
+against. Is that the right call, or does a rejected attempt need its own
+durable audit row for observability, the way a genuinely undecided
+(`'unknown'`) billing event does?
+
+#### 2. Parent isolation
+
+Both tables scope to `incarnation_id` (`commerce_quota_reservations`
+transitively, through `bucket_id`), never `user_id` — a recreated account
+inherits no quota history, same reasoning both prior migrations applied.
+
+#### 3. Transactional idempotency
+
+`reserve()`'s order: lock the incarnation (deleted -> `entitlement='denied'`,
+reusing `reserve_decision()`'s existing vocabulary rather than a second one)
+-> placeholder-insert and lock the reservation row for this exact
+`operation_id` (`ON CONFLICT (operation_id) DO NOTHING`) so a concurrent
+retry of the same operation is exactly-once even the first time it is ever
+seen -> if found, compare `requested_units` and return `'duplicate'` or
+`'payload_conflict'` without touching any bucket -> otherwise
+placeholder-insert and lock the bucket row (same "concurrent first use"
+pattern) -> decide with `reserve_decision()` -> on `'admit'` only, write the
+reservation and update the bucket in the same transaction.
+
+`settle()`/`release()`: lock the reservation row by `operation_id`, decide
+with `settle_decision()`/`release_decision()`, write nothing at all unless
+the verdict is `'settle'`/`'release'`.
+
+**Question for review, named rather than resolved:** like the subscription
+proposal's `foreign_incarnation` gap, `reserve()` takes `incarnation_id` as a
+trusted input — resolving which incarnation and which bucket window a real
+request belongs to is a lookup this proposal does not perform. Is that
+acceptable to carry forward, or does identity/window resolution need to land
+before either I3 proposal is approved?
+
+#### 4. Indexes
+
+- `ix_commerce_reservations_bucket (bucket_id)` — reading one bucket's
+  reservation history in order. No other query pattern exists yet in this
+  proposal's scope to index for.
+
+#### 5. Concurrency and migration safety
+
+Rehearsed above. The acceptance-matrix row this covers: "Quota has one unit,
+EN and ZH submit concurrently -> one reservation, one exhausted; same shared
+bucket" (`ORENA_BACKBONE_INTEGRATION_GATES.md`), proven under a real thread
+race, 5/5 repeated clean runs. Migration safety: additive only, single
+linear head once moved, `downgrade()` drops both tables in dependency order,
+rehearsed up/down/up.
+
+### Chain position, named rather than hidden
+
+This migration's `down_revision` is `20260911_0006` (still awaiting
+re-review), not `20260908_0005` directly — a chain-linearity choice so the
+"point `version_locations` at both `versions/` and `proposed/`" testing
+technique keeps working with a single head, not a data dependency: neither
+new table has any foreign key into `commerce_subscriptions` or
+`commerce_billing_event_receipts`. If the subscription-inbox proposal is
+revised again before this one is approved, rebasing this migration onto its
+new revision id is a mechanical follow-up, not a redesign.
+
+### What Opus is not deciding
+
+Which meters actually enforce a limit versus stay diagnostic-only, any
+specific `unit_limit` value, retention for settled/released reservations, or
+whether/when `ORENA_ACCOUNT_BACKBONE`-style activation applies to quota.
+Absent policy leaves enforcement disabled, as the architecture requires.
+
+### A pre-existing table worth naming, not proposing to touch
+
+`writing_coach/persistence/models.py` already has a `UsageEvent` ORM table
+(`user_id`-scoped, backing the same legacy `/api/product/me` read path named
+above for `Subscription`). It coexists with `commerce_quota_buckets` /
+`commerce_quota_reservations` in this proposal rather than being unified
+with it, for the same reason: reconciling the two is a real question, not
+one this narrow proposal should decide by quietly renaming or dropping
+either.
+
 ## Requested outcome
 
-Approve, or name the constraint, isolation, receipt, index, or scope
-changes wanted. On approval, the same path I2 took: move the migration into
-`migrations/versions/`, rehearse against a copy of the real database, then
-return to the human for schema/runtime authorization before anything is
-applied anywhere real.
+Approve each proposal independently, or name the constraint, isolation,
+receipt, index, or scope changes wanted for either. On approval, the same
+path I2 took: move the approved migration(s) into `migrations/versions/`,
+rehearse against a copy of the real database, then return to the human for
+schema/runtime authorization before anything is applied anywhere real.

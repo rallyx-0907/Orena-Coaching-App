@@ -15,12 +15,13 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**One proposal is open:** `20260911_0006_commerce_subscription_inbox.py`,
-awaiting the review `docs/project/I3_SCHEMA_REVIEW_REQUEST.md` asks for.
-Rehearsed against a disposable scratch database only; the runtime database
-was never touched and nothing here is applied anywhere real.
+**Two proposals are open**, both awaiting the review
+`docs/project/I3_SCHEMA_REVIEW_REQUEST.md` asks for. Rehearsed against
+disposable scratch databases only; the runtime database was never touched and
+nothing here is applied anywhere real.
 
 | Proposal | Outcome |
 | --- | --- |
 | `20260908_0005_account_work_backbone.py` | I2: eight tables — account incarnation, stream head, mutation receipts, change records, work, work turns, kept-language provenance, projection checkpoints. Reviewed at `69ceb53` (APPROVED WITH REQUIRED CHANGES), revised through two re-reviews, approved at `6cc3dc1`, rehearsed under §6 step 3, and moved into `versions/` and applied to the sandbox runtime under §6 step 4. `ORENA_ACCOUNT_BACKBONE` remains off. |
-| `20260911_0006_commerce_subscription_inbox.py` | I3: two tables — `commerce_subscriptions`, `commerce_billing_event_receipts`. Rehearsed (chain, 6 concurrency cases incl. a real thread race x5 for flakiness, downgrade, up/down/up) against scratch databases only. Not yet reviewed. See `I3_SCHEMA_REVIEW_REQUEST.md`. |
+| `20260911_0006_commerce_subscription_inbox.py` | I3: two tables — `commerce_subscriptions`, `commerce_billing_event_receipts`. Reviewed once (CHANGES REQUESTED — 3xP1, 1xP2), revised against all four findings (10/10 postgres cases, 60/60 flakiness runs). **Awaiting re-review.** See `I3_SCHEMA_REVIEW_REQUEST.md`. |
+| `20260912_0007_commerce_quota_buckets.py` | I3: two tables — `commerce_quota_buckets`, `commerce_quota_reservations`. First submission, rehearsed (chain, 14 concurrency/idempotency cases incl. two real thread races x5 for flakiness, downgrade, up/down/up) against scratch databases only. **Not yet reviewed.** Chains on top of `20260911_0006` (linearity only — no shared foreign key). See `I3_SCHEMA_REVIEW_REQUEST.md`. |
