@@ -1237,3 +1237,23 @@ Object.assign(copy.zh, {
   register_academic: '学术',
   register_technical: '技术',
 });
+
+/* The learning workspace: the activity and its result share one frame. */
+Object.assign(copy.en, {
+  reviewWaiting: 'Your review will appear here.',
+  reviewBack: 'Back to writing',
+  reviewYouWrote: 'You wrote',
+  reviewCorrection: 'Correction',
+  reviewWhy: 'Why',
+  reviewRule: 'Rule',
+  reviewWholePiece: 'One way to say the whole piece',
+});
+Object.assign(copy.zh, {
+  reviewWaiting: '评估结果会显示在这里。',
+  reviewBack: '返回修改',
+  reviewYouWrote: '你写的',
+  reviewCorrection: '改为',
+  reviewWhy: '原因',
+  reviewRule: '规则',
+  reviewWholePiece: '整篇的一种写法',
+});

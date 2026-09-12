@@ -339,32 +339,6 @@
   gap: var(--space-4);
   margin-top: var(--space-4);
 }
-.expression-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(240px, 1fr);
-  align-items: start;
-  gap: var(--space-12);
-}
-.expression-room {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-}
-.expression-room .page-intro {
-  padding-top: var(--space-8);
-}
-.expression-room .page-intro h1 {
-  font-size: clamp(2rem, 3.7vw, 3rem);
-}
-.expression-room textarea {
-  background: var(--surface);
-  background-image: none;
-  padding: var(--space-6);
-  font-size: var(--text-reading);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  line-height: 1.9;
-}
 .expression-tools {
   gap: var(--space-4);
   flex-wrap: wrap;
@@ -459,10 +433,6 @@
   #shell nav {
     gap: 24px;
   }
-  .expression-layout {
-    gap: var(--space-8);
-    grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
-  }
 }
 @media (max-width: 800px) {
   #shell {
@@ -471,11 +441,6 @@
   #shell nav {
     justify-content: space-between;
     gap: 16px;
-  }
-  .expression-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
   }
   .expression-context {
     margin-top: var(--space-6);
@@ -928,17 +893,37 @@
   margin: var(--space-2) 0;
 }
 
-/* A writing review reads as work on a piece, not as a report card: the score
-   is present but the reasoning carries the page. */
+/* A writing review is work on a piece, not a report card. The score is present
+   but the corrections carry the page, and each correction keeps four things
+   apart that used to read as one block of text: what the learner wrote, what
+   to write instead, why it is wrong, and the rule worth keeping. The result
+   panel is a fixed frame, so the whole review is a compact vertical rhythm
+   rather than a long page. */
+.review {
+  display: grid;
+  gap: var(--space-5);
+}
+.review > p {
+  margin: 0;
+}
+.review .button-row {
+  margin: 0;
+}
+.review-title {
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
 .review-headline {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-  margin: var(--space-4) 0 var(--space-2);
 }
 .review-headline b {
   font-family: var(--display-font);
-  font-size: 2.5rem;
+  font-size: 2.1rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -949,7 +934,7 @@
   color: var(--muted);
 }
 .review-delta {
-  margin: 0;
+  margin-left: auto;
   font-size: var(--text-xs);
   font-weight: 750;
 }
@@ -960,34 +945,38 @@
   color: var(--muted);
 }
 .review-summary {
-  font-size: var(--text-lead);
-  line-height: 1.7;
+  font-size: var(--text-base);
+  line-height: 1.6;
   max-width: var(--measure);
+}
+.review-none {
+  color: var(--muted);
 }
 .review-dimensions h3,
 .review-strengths h3,
 .review-issues h3,
 .review-next h3,
+.review-corrected h3,
 .register-changes h3 {
-  font-size: var(--text-sm);
-  letter-spacing: 0.06em;
+  font-size: var(--text-xs);
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-top: var(--space-8);
 }
 .review-dimensions dl {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-2) 0 0;
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 .review-dimension {
   display: grid;
-  grid-template-columns: minmax(9rem, 14rem) 1fr auto;
+  grid-template-columns: minmax(6.5rem, 9rem) 1fr auto;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  font-size: var(--text-sm);
 }
 .review-dimension dt {
-  font-weight: 650;
+  font-weight: 600;
 }
 .review-dimension dd {
   margin: 0;
@@ -995,7 +984,7 @@
 }
 .review-bar {
   display: block;
-  height: 6px;
+  height: 5px;
   border-radius: 3px;
   background: var(--line);
   overflow: hidden;
@@ -1011,31 +1000,112 @@
   min-inline-size: 2.5ch;
   text-align: right;
 }
-.review-strengths article {
+.review-strengths .strength {
   border-left: 3px solid var(--sage);
-  padding-left: var(--space-4);
-  margin: var(--space-4) 0;
+  padding-left: var(--space-3);
+  margin: var(--space-2) 0;
 }
-.review-strengths small,
-.review-issues .correction > small {
+.review-strengths blockquote {
+  font-size: var(--text-base);
+}
+.review-strengths p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+}
+.review-strengths small {
   display: block;
   color: var(--muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+/* One correction, read top to bottom: the learner's own words struck through,
+   the replacement, the reason, then the rule in its own tinted panel so it is
+   the thing that survives the scroll. */
+.review-issues .correction {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sun);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-3);
+}
 .review-issues .correction[data-priority='high'] {
-  border-left: 3px solid var(--coral);
-  padding-left: var(--space-4);
+  border-left-color: var(--coral);
+}
+.correction__category,
+.review-issues .correction > small {
+  display: block;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.correction__row,
+.correction__rule {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, max-content) minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+.correction__label {
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.correction__wrote del {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--coral);
+  font-weight: 600;
+}
+.correction__fix strong {
+  font-weight: 750;
+  color: var(--accent);
+}
+.correction__rule {
+  padding: var(--space-2) var(--space-3);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.correction__rule .correction__label {
+  color: var(--on-sage-muted);
+}
+.review-issues .button-row {
+  margin: var(--space-2) 0 0;
 }
 .review-why {
   max-width: var(--measure);
 }
 .review-next ol {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-2) 0 0;
   padding-left: var(--space-6);
 }
 .review-next li {
-  margin: var(--space-2) 0;
+  margin: var(--space-1) 0;
+  font-size: var(--text-sm);
+}
+.review-corrected blockquote {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-base);
+}
+.review-persisted {
+  color: var(--muted);
+}
+/* The quiet state before the first review. It names what will appear without
+   spending the workspace on prompt copy. */
+.review-waiting {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+}
+.review-waiting small {
+  color: var(--accent);
+}
+.review-waiting p {
+  margin: 0;
+  color: var(--muted);
 }
 
 /* One meaning across registers. Each version is a card of reasoning, never a

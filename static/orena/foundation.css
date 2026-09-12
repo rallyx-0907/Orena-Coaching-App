@@ -464,6 +464,77 @@ input[type='radio'] {
 }
 
 /* ---------------------------------------------------------------------------
+   Learning workspace.
+
+   One rule for every skill that asks the learner to do something and then
+   answers it - Writing review, Reading comprehension, dictation, Speaking
+   coaching, Grammar practice. The activity and its immediate result share a
+   single viewport-sized desktop frame: the work on one side, the answer on the
+   other, and a long result scrolls inside its own region instead of growing
+   the page. Secondary material - starters, history, further paths - stays
+   below the frame.
+
+   Wide screens show both regions at once. Narrow screens take them one frame
+   at a time: the activity first, then the result, so the learner is never left
+   halfway between a page of writing and a page of feedback. A surface sets
+   --workspace-inset to the room its own heading needs.
+   --------------------------------------------------------------------------- */
+.learning-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: stretch;
+  min-block-size: 0;
+}
+.workspace-activity,
+.workspace-result {
+  min-inline-size: 0;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+}
+.workspace-result {
+  overflow: hidden;
+}
+.workspace-result__bar {
+  display: none;
+  align-items: center;
+}
+.workspace-result__scroll {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.workspace-secondary {
+  display: grid;
+  gap: var(--space-8);
+}
+@media (min-width: 1001px) {
+  .learning-workspace {
+    block-size: clamp(24rem, calc(100svh - var(--workspace-inset, 16rem)), 54rem);
+  }
+}
+@media (max-width: 1000px) {
+  .learning-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .learning-workspace[data-workspace='activity'] .workspace-result,
+  .learning-workspace[data-workspace='result'] .workspace-activity {
+    display: none;
+  }
+  .learning-workspace[data-workspace='result'] {
+    block-size: clamp(20rem, calc(100svh - var(--workspace-inset, 16rem)), 60rem);
+  }
+  .workspace-result__bar {
+    display: flex;
+    padding-block: var(--space-2);
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Motion.
 
    Movement is here to say something: this arrived, this is the line being

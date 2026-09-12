@@ -10,7 +10,12 @@ import {
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
-import { writingReview, writingReviewFailure, shownIssues } from './writing-review.js';
+import {
+  writingReview,
+  writingReviewFailure,
+  writingReviewWaiting,
+  shownIssues,
+} from './writing-review.js';
 import {bindRevisionWorkbench} from './revision-workbench.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
@@ -49,7 +54,26 @@ export async function renderExpression(root, ctx) {
   const invitations = contentFor(language).slice(0, 2);
   const levels =
     ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div><div class="expression-layout"><section class="expression-room">${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<form id="expressionForm" class="writing-sheet"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><label class="writing-task"><span>${esc(c.writingTask)}</span><input name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"><small>${esc(c.writingTaskNote)}</small></label></form><section id="writingFeedback" aria-live="polite"></section><section class="revision-history" data-revisions></section></section><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><label class="writing-task"><span>${esc(c.writingTask)}</span><input name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"><small>${esc(c.writingTaskNote)}</small></label></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<small>${c.expressionGuide}</small><p>${c.expressionGuideNote}</p><div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  /* The activity and its result share one frame. Wide screens show both at
+     once, so the result is beside the writing rather than below it. Narrow
+     screens take them one frame at a time, and the learner is placed at the
+     start of the result frame instead of halfway down the page. */
+  const workspace = root.querySelector('.learning-workspace');
+  const showResult = () => {
+    workspace.dataset.workspace = 'result';
+    if (window.matchMedia('(max-width: 1000px)').matches) {
+      root.querySelector('#writingFeedback')?.scrollTo({ top: 0 });
+      workspace.scrollIntoView({ block: 'start' });
+    }
+  };
+  const backToWriting = root.querySelector('[data-back-to-writing]');
+  if (backToWriting)
+    backToWriting.onclick = () => {
+      workspace.dataset.workspace = 'activity';
+      root.querySelector('#expressionText')?.focus();
+      workspace.scrollIntoView({ block: 'start' });
+    };
   const paintRevisions = () => {
     const list = revisionsOf();
     const host = root.querySelector('[data-revisions]');
@@ -102,6 +126,10 @@ export async function renderExpression(root, ctx) {
       feedback = root.querySelector('#writingFeedback');
     button.disabled = true;
     feedback.textContent = c.loading;
+    /* The result is the point of pressing Review, so its frame opens at once -
+       loading, feedback or an honest failure - instead of leaving the learner
+       to discover it below the writing area. */
+    showResult();
     try {
       const text = root.querySelector('textarea').value;
       /* What the learner is actually writing. A lab report, a support email

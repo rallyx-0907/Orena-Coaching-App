@@ -36,35 +36,71 @@
 }
 .reading-volume .voice-description { max-width: 62ch; }
 
-[data-experience='writing'] .expression-layout {
-  gap: var(--space-8);
-  grid-template-columns: minmax(0, 2.4fr) minmax(220px, 1fr);
+[data-experience='writing'] .page-intro { padding-block: 0 var(--space-4); }
+[data-experience='writing'] .back-row { padding-block: var(--space-2) var(--space-1); }
+[data-experience='writing'] .back-row > a { min-height: 24px; }
+[data-experience='writing'] .page-intro h1 {
+  font-size: clamp(1.7rem, 2.2vw, 2.4rem);
+  margin: var(--space-1) 0;
 }
-[data-experience='writing'] .expression-room .page-intro { padding-top: 0; }
+[data-experience='writing'] .page-intro p {
+  font-size: var(--text-base);
+  max-width: 76ch;
+  margin: 0;
+}
+
+/* The writing workspace: the sheet on one side, the review on the other, both
+   inside one frame. The sheet fills its region and the review scrolls in its
+   own, so feedback never lengthens the page. */
+[data-experience='writing'] .writing-workspace { --workspace-inset: 17rem; }
 [data-experience='writing'] .writing-sheet {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
   border-top: 4px solid var(--accent);
-  padding: var(--space-6);
+  padding: var(--space-4) var(--space-5);
   box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
 }
 [data-experience='writing'] .writing-sheet textarea {
+  flex: 1;
+  min-block-size: 9rem;
   border: 0;
   border-radius: 0;
-  padding: var(--space-4) 0;
-  min-height: 24rem;
-  resize: vertical;
+  padding: var(--space-2) 0;
+  resize: none;
+  background: transparent;
   font-family: Georgia, 'Noto Serif SC', serif;
   font-size: var(--text-reading);
+  line-height: 1.7;
 }
 [data-experience='writing'] .expression-tools {
   border-top: 1px solid var(--line);
-  padding-top: var(--space-4);
+  padding-top: var(--space-3);
+  gap: var(--space-3);
 }
+[data-experience='writing'] .writing-task { margin-top: var(--space-3); }
+[data-experience='writing'] .writing-result {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
+}
+[data-experience='writing'] .writing-result .workspace-result__scroll {
+  padding: var(--space-4) var(--space-5);
+}
+[data-experience='writing'] .writing-result .workspace-result__bar {
+  padding-inline: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+[data-experience='writing'] .workspace-secondary { margin-top: var(--space-8); }
 [data-experience='writing'] .expression-context {
-  margin-top: var(--space-8);
-  padding: var(--space-6);
+  margin-top: 0;
+  padding: var(--space-5) var(--space-6);
   background: var(--sage-surface);
   color: var(--on-sage);
   border: 0;
@@ -75,7 +111,7 @@
 }
 [data-experience='writing'] .expression-context :is(a, a > span) { color: var(--on-sage); }
 [data-experience='writing'] .expression-context .expression-starters a { border-color: var(--on-sage-muted); }
-[data-experience='writing'] .revision-history { margin-top: var(--space-12); }
+[data-experience='writing'] .revision-history { margin-top: 0; }
 
 [data-experience='speaking'] .voice-room {
   gap: var(--space-12);
@@ -158,9 +194,23 @@
 }
 
 @media (max-width: 1000px) {
-  [data-experience='writing'] .expression-layout,
   [data-experience='speaking'] .voice-room { grid-template-columns: minmax(0, 1fr); }
+  [data-experience='writing'] .writing-workspace { --workspace-inset: 12rem; }
+  [data-experience='writing'] .writing-sheet textarea {
+    flex: none;
+    block-size: 9rem;
+    min-block-size: 0;
+  }
   [data-experience='writing'] .expression-context { margin-top: 0; }
+}
+@media (max-width: 900px) {
+  [data-experience='writing'] .page-intro { padding-block: 0 var(--space-2); }
+  [data-experience='writing'] .page-intro h1 { font-size: 1.5rem; }
+  [data-experience='writing'] .page-intro p { font-size: var(--text-sm); }
+  [data-experience='writing'] .writing-workspace { --workspace-inset: 8.75rem; }
+  [data-experience='writing'] .writing-workspace[data-workspace='result'] {
+    scroll-margin-block-start: 8.5rem;
+  }
 }
 @media (max-width: 600px) {
   .reading-volume { grid-template-columns: 60px minmax(0, 1fr) 20px; gap: var(--space-4); }
@@ -169,7 +219,12 @@
   .language-cabinet article,
   [data-experience='speaking'] .voice-situation,
   [data-experience='speaking'] .voice-exchange > [data-voice],
-  [data-experience='writing'] .writing-sheet { padding: var(--space-4); }
+  [data-experience='writing'] .writing-sheet,
+  [data-experience='writing'] .writing-result .workspace-result__scroll { padding: var(--space-3) var(--space-4); }
+  [data-experience='writing'] .writing-sheet textarea { block-size: 7rem; }
+  [data-experience='writing'] .expression-tools { gap: var(--space-2); }
+  [data-experience='writing'] .writing-task { gap: 0; margin-top: var(--space-2); }
+  [data-experience='writing'] .writing-task small { font-size: var(--text-xs); line-height: 1.4; }
   [data-experience='speaking'] .voice-prompt { margin-right: 0; padding: var(--space-4); }
 }
 @media (prefers-reduced-motion: no-preference) {

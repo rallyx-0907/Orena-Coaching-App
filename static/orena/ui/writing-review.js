@@ -100,7 +100,7 @@ function strengths(c, result, language, text) {
   return `<section class="review-strengths"><h3>${esc(c.reviewStrengths)}</h3>${items
     .map(
       (item) =>
-        `<article><blockquote lang="${esc(language)}">${esc(item.quote)}</blockquote>${item.why ? `<p>${esc(item.why)}</p>` : ''}<small>${esc(c[`rubric_${item.category}`] || item.category)}</small></article>`,
+        `<article class="strength"><blockquote lang="${esc(language)}">${esc(item.quote)}</blockquote>${item.why ? `<p>${esc(item.why)}</p>` : ''}<small>${esc(c[`rubric_${item.category}`] || item.category)}</small></article>`,
     )
     .join('')}</section>`;
 }
@@ -109,14 +109,12 @@ function strengths(c, result, language, text) {
    a problem, and the rule behind it. Each one can be taken further through the
    shared explanation surface, which is what `data-why` is for. */
 function issues(c, result, language, text) {
-  const items = (result.issues || []).filter(
-    (x) => x && x.quote && text.includes(x.quote),
-  );
+  const items = shownIssues(result, text);
   if (!items.length) return '';
   return `<section class="review-issues"><h3>${esc(c.reviewIssues)}</h3>${items
     .map(
       (item, index) =>
-        `<article class="correction" data-priority="${esc(item.priority || 'medium')}"><small>${esc(c[`rubric_${item.category}`] || item.category)}</small><del lang="${esc(language)}">${esc(item.quote)}</del>${item.suggestion ? `<p lang="${esc(language)}">${esc(item.suggestion)}</p>` : ''}${item.why ? `<p class="review-why">${esc(item.why)}</p>` : ''}${item.how ? `<p class="meta">${esc(item.how)}</p>` : ''}<button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></article>`,
+        `<article class="correction" data-priority="${esc(item.priority || 'medium')}"><small class="correction__category">${esc(c[`rubric_${item.category}`] || item.category)}</small><p class="correction__row correction__wrote"><span class="correction__label">${esc(c.reviewYouWrote)}</span><del lang="${esc(language)}">${esc(item.quote)}</del></p>${item.suggestion ? `<p class="correction__row correction__fix"><span class="correction__label">${esc(c.reviewCorrection)}</span><strong lang="${esc(language)}">${esc(item.suggestion)}</strong></p>` : ''}${item.why ? `<p class="correction__row correction__why"><span class="correction__label">${esc(c.reviewWhy)}</span><span>${esc(item.why)}</span></p>` : ''}${item.how ? `<p class="correction__rule"><span class="correction__label">${esc(c.reviewRule)}</span><span>${esc(item.how)}</span></p>` : ''}<div class="button-row"><button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></div></article>`,
     )
     .join('')}</section>`;
 }
@@ -153,6 +151,19 @@ export function writingReviewFailure(c, error) {
   }`;
 }
 
+/* The whole-piece rewrite, when the evaluator offered one. It is one way to
+   say it rather than the answer, so it sits after the individual corrections. */
+function corrected(c, result, language) {
+  if (!result.corrected_text) return '';
+  return `<section class="review-corrected"><h3>${esc(c.reviewWholePiece)}</h3><blockquote lang="${esc(language)}">${esc(result.corrected_text)}</blockquote></section>`;
+}
+
+/* Before the first review the result region stays quiet: it names what will
+   appear there without spending the workspace on prompt copy. */
+export function writingReviewWaiting(c) {
+  return `<div class="review-waiting"><small>${esc(c.review)}</small><p>${esc(c.reviewWaiting)}</p></div>`;
+}
+
 export function writingReview(c, result, { language, text }) {
   const overall = number(result.overall);
   const level = typeof result.app_cefr === 'string' ? result.app_cefr : '';
@@ -160,7 +171,7 @@ export function writingReview(c, result, { language, text }) {
     !shownIssues(result, text).length &&
     !shownStrengths(result, text).length &&
     !result.corrected_text;
-  return `<h2>${esc(c.review)}</h2>${
+  return `<div class="review"><h2 class="review-title">${esc(c.review)}</h2>${
     result.evaluator === 'fallback-demo'
       ? `<p class="notice">${esc(c.demoMeasurement)}</p>`
       : ''
@@ -172,9 +183,5 @@ export function writingReview(c, result, { language, text }) {
     result.summary?.interpretation
       ? `<p class="review-summary">${esc(result.summary.interpretation)}</p>`
       : ''
-  }${nothing ? `<p>${esc(c.noCorrections)}</p>` : ''}${
-    result.corrected_text
-      ? `<blockquote lang="${esc(language)}">${esc(result.corrected_text)}</blockquote>`
-      : ''
-  }${dimensions(c, result)}${comparison(c, result, text)}${strengths(c, result, language, text)}${issues(c, result, language, text)}${priorities(c, result)}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p>${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div>`;
+  }${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${dimensions(c, result)}${comparison(c, result, text)}${strengths(c, result, language, text)}${issues(c, result, language, text)}${corrected(c, result, language)}${priorities(c, result)}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
 }

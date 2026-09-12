@@ -186,6 +186,20 @@ What a new surface inherits, and the traps behind each one.
   side, work the other, each scrolling on its own. The practice panel must stay
   a sibling of the media stage, not a child, or nothing can place them apart.
   Narrow, the source becomes a compact sticky strip and the work is scrolled to.
+### Learning workspace
+
+`foundation.css`, `ui/expression.js` - a skill that asks the learner to do
+  something and then answers it keeps both inside one desktop frame: the
+  activity on one side, its result on the other, and the result scrolls inside
+  its own region instead of lengthening the page. Writing is the first surface
+  to follow the rule; Reading comprehension, dictation, Speaking coaching and
+  Grammar practice owe it the same shape. Give the surface a `--workspace-inset`
+  equal to the room its own heading needs. Secondary material - starters,
+  history, further paths - stays below the frame, never in the result column.
+  Narrow, the two regions become two frames: the activity, then the result the
+  learner is placed at the start of, with a way back to the editor.
+  `scripts/verify_writing_workspace_browser.mjs` measures the running product
+  for exactly that.
 ### Brand`
 
 `content/brand-library.js`, `ui/brand.js` - approved artwork is
