@@ -33,7 +33,10 @@ export function dialog({ title, body, onReady }) {
   element.className = 'sheet';
   const titleId = `orena-sheet-title-${++dialogSequence}`;
   element.setAttribute('aria-labelledby', titleId);
-  element.innerHTML = `<form method="dialog"><button class="close" aria-label="Close / 关闭">×</button></form><h2 id="${titleId}">${esc(title)}</h2>${body}`;
+  // The close control speaks the interface language the shell recorded, not
+  // two languages at once.
+  const closeLabel = document.documentElement.dataset.close || 'Close';
+  element.innerHTML = `<form method="dialog"><button class="close" aria-label="${esc(closeLabel)}">×</button></form><h2 id="${titleId}">${esc(title)}</h2>${body}`;
   document.body.append(element);
   element.addEventListener(
     'close',

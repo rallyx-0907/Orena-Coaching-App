@@ -126,8 +126,10 @@ export async function renderWorld(root, ctx) {
     const r = referenceCopy[ctx.ui];
     const intro = !intent || intent === 'follow'
       ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
-      : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c.practice, INTENT_SCENE[intent] || '');
-    root.innerHTML = `${intro}${intent ? practiceReturn(c, intent) : practiceOverview(ctx)}${
+      : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
+    /* The way back sits above the heading, and the heading's eyebrow names
+       the room - the way back already says "Practice". */
+    root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
         ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
             c,

@@ -1390,3 +1390,65 @@ storage — still follows the existing architecture-review gate (`AGENTS.md`
 Language-Knowledge-Graph-as-prerequisite claims only. Does not supersede
 D-049's other decisions, D-045, D-044, R5 Grammar, M1 Media Learning, or any
 accepted backbone architecture contract.
+
+## D-051 — One-frame learning loop, symbol-first optional guidance, coherent interface language
+
+**Status:** Accepted by explicit human instruction, 2026-09-12.
+
+**Decision:** Orena's learner-facing web experience follows a durable set of
+design rules, recorded in `docs/project/DESIGN_CONTRACT.md` ("Learner-facing
+experience rules"):
+
+- every visible element must help the learner understand, act, understand the
+  result, improve or continue, or it is removed, compressed, symbolised,
+  demoted or moved after the learning loop;
+- on desktop the core learning loop - source needed now, activity, learner
+  work, essential controls, submit, immediate result and primary feedback -
+  shares one viewport-sized frame wherever the experience can support it, with
+  long content scrolling inside its own region;
+- on narrow screens the same loop becomes sequential frames: the activity, then
+  the result the learner is placed at the start of, with a natural way back;
+- secondary material (history, earlier attempts, deeper theory, alternative
+  starting points, continuation) comes after the loop;
+- rooms where the learner works open compactly; atmosphere and artwork belong
+  to entry, discovery, completion and empty states;
+- supplementary guidance and minor status use a semantic symbol whose words
+  appear on hover, focus or tap, while essential instructions and consent or
+  privacy statements stay visible;
+- information roles (material, instruction, input, error, correction,
+  explanation, rule, result, next action, help, metadata) are visually
+  distinguishable;
+- learner-facing scaffolding follows the interface language through the shared
+  localisation architecture, with no single-language special case;
+- one design language with distinct experience compositions, solved in shared
+  primitives rather than copied markup.
+
+**Reason:** Surfaces kept revisiting the same basic problems - activity rooms
+opening like entry pages, immediate results landing below the fold, optional
+explanations and device metadata occupying layout as prose, and a result
+column holding alternative starting points instead of the answer. Fixing them
+page by page would keep reopening layout, hierarchy, helper text and feedback
+placement instead of letting later work concentrate on content, pedagogy,
+Understanding, Vocabulary and learning capabilities. A durable contract makes
+the rule the default for every new surface.
+
+**Consequences:** The web foundation gains shared primitives used by the rooms
+that now follow the rule (`ui/patterns.js`: `hint`, `installHints`,
+`workspaceFrames`, a symbol-form `draftStatus`, a compact `pageIntro`; a
+back-row `practiceReturn`; `ui/symbols.js`), described in
+`docs/product/ORENA_WEB_EXTENSION_GUIDE.md`. Writing, Speaking, Dictation,
+Grammar lessons and Recall are brought under the rule in the same batch;
+remaining surfaces are named as follow-up in `docs/project/CURRENT_HANDOFF.md`.
+Native, when it thaws, ports these rules with the rest of the approved web.
+
+This preserves the Product Constitution, Content Architecture, D-046's
+experience-centred reset, the five content domains and horizontal
+Understanding Engine (D-049/D-050), evidence ownership, the Speaking
+distinction between measured evidence and coaching, Listening's synchronized
+Follow composition, the canonical multi-theme system and the approved brand.
+It changes no persistence, account, commerce, provider or capability semantics.
+
+**Supersedes / Superseded by:** Adds to `DESIGN_CONTRACT.md`; supersedes no
+earlier durable decision. It replaces the practice-room convention of naming
+the current room in a divider row below the heading (an implementation
+convention, not a recorded decision).

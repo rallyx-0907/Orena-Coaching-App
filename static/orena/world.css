@@ -949,11 +949,8 @@
 .expression-tools .meta {
   max-width: 470px;
 }
-.expression-tools button {
+.expression-tools > button {
   flex: none;
-}
-#writingFeedback {
-  margin-top: 45px;
 }
 .correction {
   border-top: 1px solid var(--line);
@@ -1616,7 +1613,7 @@
   .expression-tools {
     gap: 20px;
   }
-  .expression-tools button {
+  .expression-tools > button {
     width: 100%;
   }
   .pattern-list > a {
@@ -1824,13 +1821,20 @@
     overscroll-behavior: contain;
     scrollbar-width: thin;
   }
-  /* The practice leaves the media column and becomes the other half. */
+  /* The practice leaves the media column and becomes the other half. It is
+     bounded to the first viewport and scrolls inside itself, so the answer to
+     "compare with the original" arrives inside the frame beside the source
+     instead of below it, where the learner would have to go looking. */
   .media-encounter:has(.practice-space:not([hidden])) .practice-space {
     grid-column: 2;
     grid-row: 1;
     margin: 0;
     border-radius: var(--radius);
     border-bottom: 2px solid var(--sun);
+    max-block-size: clamp(24rem, calc(100svh - 18rem), 60rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
   /* The transcript is a third thing; while practising it steps aside rather
      than competing for the width the work needs. */
@@ -1954,7 +1958,8 @@
 
 /* The sticky source strip must not cover the top of the work it sits above. */
 @media (max-width: 1079px) {
-  .practice-space {
+  .practice-space,
+  .comparison {
     scroll-margin-top: 34vh;
   }
 }

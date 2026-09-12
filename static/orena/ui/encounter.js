@@ -4,6 +4,7 @@ import {
   bindComposer,
   progressReporter,
   savedLanguageLink,
+  hint,
 } from './patterns.js';
 import { esc, safeExternal, dialog, status, focusRegion } from './html.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
@@ -319,7 +320,7 @@ export async function renderEncounter(root, ctx) {
       excerpt: model.current?.original_text,
     });
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small><h1 lang="${language}">${esc(item.title)}</h1></div><p>${c.followNote}</p></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button><label class="close-look"><input type="checkbox" data-close-look><span>${esc(c.closeLook)}</span></label><div class="close-look-guide" hidden><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span></div><p class="meta" data-annotation-status role="status"></p><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button></div></section><div class="moment-actions"><span>${location.intent === 'follow' ? c.followOptional : c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><label class="meaning-toggle"><input type="checkbox" data-all-meaning><span>${esc(c.showAllMeaning)}</span></label></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><p class="meta" data-meaning-note hidden>${esc(c.allMeaningNote)}</p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><div class="heading-with-hint"><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small>${hint({ text: c.followNote })}</div><h1 lang="${language}">${esc(item.title)}</h1></div></header><div class="media-encounter"><section class="media-stage"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label><section class="follow-moment" aria-label="${c.follow}"><small>${c.current}</small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button><label class="close-look"><input type="checkbox" data-close-look><span>${esc(c.closeLook)}</span></label><div class="close-look-guide" hidden><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span></div><p class="meta" data-annotation-status role="status"></p><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button></div></section><div class="moment-actions"><span>${location.intent === 'follow' ? c.followOptional : c.deeper}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><label class="meaning-toggle"><input type="checkbox" data-all-meaning><span>${esc(c.showAllMeaning)}</span></label></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><p class="meta" data-meaning-note hidden>${esc(c.allMeaningNote)}</p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -703,6 +704,27 @@ export async function renderEncounter(root, ctx) {
     paintFollow();
     remember();
   }
+  /* The answer to "compare" or "show the original" is the thing the learner
+     just asked for, so it is brought into view rather than left below the
+     hint. Wide, the practice panel is bounded to the frame and scrolls on its
+     own: it moves only as far as the answer needs, keeping as much of the
+     learner's attempt on screen as fits. Narrow, the page carries the work
+     below a sticky source strip, and the answer is scrolled to. */
+  function revealAnswer(answer) {
+    if (!answer?.isConnected) return;
+    const panel = practiceRoot;
+    // A scroll container is the wide composition; the page is never moved
+    // there, only the panel, and only if the answer does not already fit.
+    if (getComputedStyle(panel).overflowY === 'visible') {
+      answer.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    const frame = panel.getBoundingClientRect();
+    const box = answer.getBoundingClientRect();
+    const below = box.bottom - frame.bottom + 16;
+    if (below > 0)
+      panel.scrollTop += Math.min(below, box.top - frame.top - 16);
+  }
   async function openPractice(intent) {
     if (recording) return;
     voiceCleanup();
@@ -742,7 +764,7 @@ export async function renderEncounter(root, ctx) {
       openPractice(intent);
     };
     if (intent === 'dictation') {
-      body.innerHTML = `<button class="outline" data-listen>${c.replay} ↺</button><form id="dictationForm"><label for="reconstruction">${c.dictatePrompt}</label><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="3" required></textarea><div class="button-row"><button class="primary">${c.check}</button><button type="button" data-hint>${c.hint}</button><button type="button" data-reveal>${c.reveal}</button></div></form><section class="hint-line" data-hint-panel hidden></section><div class="comparison" aria-live="polite"></div><p class="meta">${c.comparisonNote}</p><p data-evidence-status role="status"></p>`;
+      body.innerHTML = `<button class="outline" data-listen>${c.replay} ↺</button><form id="dictationForm"><label for="reconstruction">${c.dictatePrompt}</label><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="3" required></textarea><div class="button-row"><button class="primary">${c.check}</button><button type="button" data-hint>${c.hint}</button><button type="button" data-reveal>${c.reveal}</button></div></form><div class="comparison" aria-live="polite"></div><p data-evidence-status role="status"></p><section class="hint-line" data-hint-panel hidden></section>`;
       body.querySelector('[data-listen]').onclick = playLine;
       /* The hint is a working aid, not an outcome: it lives for this visit
          only and never becomes evidence. Revealing the answer stays the
@@ -837,7 +859,8 @@ export async function renderEncounter(root, ctx) {
         try {
           const { result, diff } = dictation.compare(answer.value.trim());
           body.querySelector('.comparison').innerHTML =
-            `<h3>${result.accuracy_percent}% ${c.match}</h3><div class="diff" lang="${language}">${diff.map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`).join('')}</div><p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p><div class="button-row"><button data-again>${c.tryAgain} ↺</button><button data-understand>${c.inspect} ↗</button></div>`;
+            `<div class="heading-with-hint"><h3>${result.accuracy_percent}% ${c.match}</h3>${hint({ text: c.comparisonNote })}</div><div class="diff" lang="${language}">${diff.map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`).join('')}</div><p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p><div class="button-row"><button data-again>${c.tryAgain} ↺</button><button data-understand>${c.inspect} ↗</button></div>`;
+          revealAnswer(body.querySelector('.comparison'));
           body.querySelector('[data-understand]').onclick = () =>
             inspectPhrase(
               ctx,
@@ -860,6 +883,7 @@ export async function renderEncounter(root, ctx) {
         dictation.reveal();
         body.querySelector('.comparison').innerHTML =
           `<p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p>`;
+        revealAnswer(body.querySelector('.comparison'));
         persist();
       };
       playLine();

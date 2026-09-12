@@ -200,17 +200,8 @@ select:focus {
   text-wrap: pretty;
 }
 .draft-status {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.draft-status::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--muted);
-  flex: none;
+  display: inline-flex;
+  align-items: center;
 }
 button,
 input,
@@ -532,6 +523,168 @@ input[type='radio'] {
     display: flex;
     padding-block: var(--space-2);
   }
+}
+/* Below 900px the shell becomes a sticky header, so a result frame the learner
+   is moved to has to start below it rather than underneath it. */
+@media (max-width: 900px) {
+  .learning-workspace[data-workspace='result'] {
+    scroll-margin-block-start: 8.5rem;
+  }
+}
+
+/* A result region that has not answered yet names what will appear there, in
+   the quiet voice of something waiting, rather than spending the workspace on
+   prompt copy. */
+.result-waiting {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-4);
+  color: var(--muted);
+}
+.result-waiting > small {
+  color: var(--accent);
+}
+.result-waiting > p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   A room the learner is about to work in opens compactly.
+
+   The heading orients - what this is, where it sits - and then yields the
+   first viewport to the activity. No artwork here: during active learning the
+   learner's text, media and work are what the page is about. Doubled classes
+   so this outranks the entry-page scale later stylesheets set on .page-intro.
+   --------------------------------------------------------------------------- */
+.page-intro.page-intro--compact {
+  padding-block: var(--space-2) var(--space-4);
+}
+.page-intro.page-intro--compact h1 {
+  font-size: clamp(1.6rem, 2.2vw, 2.25rem);
+  margin: var(--space-1) 0;
+}
+.page-intro.page-intro--compact p {
+  font-size: var(--text-base);
+  max-width: 76ch;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .page-intro.page-intro--compact {
+    padding-block: 0 var(--space-2);
+  }
+  .page-intro.page-intro--compact h1 {
+    font-size: 1.5rem;
+  }
+  .page-intro.page-intro--compact p {
+    font-size: var(--text-sm);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Supplementary information: a symbol, and its words on demand.
+
+   For what a learner may want to know - an optional field's purpose, where a
+   draft lives, what a comparison does not measure - never for what they need
+   to do the task. The symbol sits beside the thing it explains and recedes;
+   hover, keyboard focus or a tap brings up a short explanation on the night
+   panel, which carries its own ink in every theme.
+   --------------------------------------------------------------------------- */
+.hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+.hint__trigger {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  min-block-size: 24px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: help;
+}
+.hint__trigger:hover,
+.hint[data-open] .hint__trigger {
+  color: var(--ink);
+}
+.hint[data-tone='warning'] .hint__trigger {
+  color: var(--accent);
+}
+.hint__bubble {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  inline-size: max-content;
+  max-inline-size: min(18rem, calc(100vw - 2rem));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--night-surface);
+  color: var(--on-night);
+  /* On a dark theme the night panel sits close to the page; its own line
+     keeps the edge legible without inventing a colour. */
+  border: 1px solid var(--on-night-line);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: start;
+  white-space: normal;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+}
+.hint[data-align='end'] .hint__bubble {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  translate: none;
+}
+.hint[data-align='start'] .hint__bubble {
+  inset-inline-start: 0;
+  translate: none;
+}
+.hint:hover .hint__bubble,
+.hint:focus-within .hint__bubble,
+.hint[data-open] .hint__bubble {
+  display: block;
+}
+/* A small screen is a touch screen: the target grows to a thumb without the
+   symbol growing, and without pushing the line it sits on apart. */
+@media (max-width: 480px) {
+  .hint__trigger {
+    inline-size: 44px;
+    block-size: 44px;
+    min-block-size: 44px;
+    margin-block: -10px;
+    margin-inline: -10px;
+  }
+}
+/* A heading, label or result line that carries a hint keeps it on its own
+   baseline rather than wrapping it onto a line by itself. */
+:is(h2, h3, label, summary, .section-head) > .hint {
+  margin-inline-start: var(--space-1);
+}
+/* Beside a section heading, the hint belongs to the heading rather than to
+   the far edge of the row. */
+.section-head > h2 + .hint {
+  margin-inline-end: auto;
+}
+/* A heading that carries a hint keeps it on the heading's line, outside the
+   heading itself so the hint's words never become part of its name. */
+.heading-with-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.heading-with-hint > :is(h2, h3) {
+  margin-block: 0;
 }
 
 /* ---------------------------------------------------------------------------

@@ -14,6 +14,10 @@ import {
   renderLanguage,
   renderGrammar,
 } from './ui/expression.js';
+import { installHints } from './ui/patterns.js';
+
+// Every hint in every room is one delegated behaviour, installed once.
+installHints(document);
 
 let generation = 0,
   cleanup = () => {},
@@ -77,6 +81,13 @@ function shell() {
   const c = ctx.c;
   document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
   document.documentElement.dataset.learning = ctx.language;
+  // Shared plumbing such as a dialog's close control reads its label from the
+  // interface language rather than carrying every language at once.
+  document.documentElement.dataset.close = c.close;
+  // The template names the skip link in both languages because it paints
+  // before any language is known; once one is, it speaks only that one.
+  const skip = document.querySelector('a.skip');
+  if (skip) skip.textContent = c.skipToContent;
   document.getElementById('shell').innerHTML =
     `<div class="shell-identity"><a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><span class="shell-motto">${esc(referenceCopy[ctx.ui].fieldNote)}</span></div>${referenceNavigation(ctx)}${navigationToggle(ctx)}<div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}"><span class="language-seal">${ctx.language.toUpperCase()}</span> ${c.preferences}</button></div>`;
   document.querySelector('[data-bring]').onclick = importContent;

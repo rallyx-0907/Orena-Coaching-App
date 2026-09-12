@@ -1,4 +1,10 @@
-import { pageIntro, practiceReturn, continuationShelf } from './patterns.js';
+import {
+  pageIntro,
+  practiceReturn,
+  continuationShelf,
+  hint,
+  workspaceFrames,
+} from './patterns.js';
 import { esc, dialog } from './html.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { link } from '../product/intent.js';
@@ -23,7 +29,18 @@ export function renderSpeaking(root, ctx) {
     (!location.id ? invitations[0] : null);
   if (!picked) throw Error(c.unavailable);
   const id = picked.own ? location.id : `voice:${picked.key}`;
-  root.innerHTML = `${pageIntro({ title: c.voiceTitle, note: c.voiceIntro, eyebrow: c.speakingName, scene: 'speaking' })}${practiceReturn(c, 'speaking')}<div class="voice-room"><section class="voice-exchange"><header class="voice-situation"><small>${esc(c.voiceSituation)}</small><h2 lang="${language}">${esc(picked.title)}</h2></header><div data-voice></div></section><aside class="voice-directions"><h2>${esc(c.voiceChoose)}</h2>${invitations.map((x) => `<a ${x.key === picked.key ? 'aria-current="true"' : ''} lang="${language}" href="${link('practice', { intent: 'speaking', id: `voice:${x.key}` })}">${esc(x.title)} ↗</a>`).join('')}<p lang="${language}">${esc(picked.cue)}</p><p class="meta">${esc(c.voiceSource)}</p></aside></div>${continuationShelf(ctx, 2)}`;
+  /* Speaking follows the learning workspace: the situation and the take on
+     one side, what was heard - evidence, then coaching - on the other, inside
+     one desktop frame. Other starting points and other shapes of speaking are
+     choices for afterwards, so they sit below the frame rather than in the
+     column the answer needs. */
+  const waiting = `<div class="result-waiting"><small>${esc(c.heard)}</small><p>${esc(c.voiceWaiting)}</p></div>`;
+  root.innerHTML = `${practiceReturn(c, 'speaking')}${pageIntro({ title: c.voiceTitle, eyebrow: c.speakingName, compact: true })}<section class="learning-workspace voice-workspace" data-workspace="activity"><div class="workspace-activity voice-exchange"><header class="voice-situation"><small>${esc(c.voiceSituation)}</small><h2 lang="${language}">${esc(picked.title)}</h2></header><div data-voice></div></div><section class="workspace-result voice-result" aria-label="${esc(c.heard)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-workspace-back>← ${esc(c.voiceBack)}</button></div><div class="workspace-result__scroll" data-voice-result-host aria-live="polite">${waiting}</div></section></section><div class="workspace-secondary"><aside class="voice-directions"><div class="heading-with-hint"><h2>${esc(c.voiceChoose)}</h2>${hint({ text: picked.own ? c.voiceOwnSource : c.voiceSource })}</div>${invitations.map((x) => `<a ${x.key === picked.key ? 'aria-current="true"' : ''} lang="${language}" href="${link('practice', { intent: 'speaking', id: `voice:${x.key}` })}">${esc(x.title)} ↗</a>`).join('')}<p lang="${language}">${esc(picked.cue)}</p></aside></div>${continuationShelf(ctx, 2)}`;
+  const frames = workspaceFrames(root.querySelector('.voice-workspace'), {
+    back: root.querySelector('[data-workspace-back]'),
+    focus: () => root.querySelector('[data-record]'),
+    result: root.querySelector('[data-voice-result-host]'),
+  });
   // Opening a situation is continuity, never a completed speaking attempt.
   const own = document.createElement('button');
   const talk = document.createElement('button');
@@ -55,9 +72,6 @@ export function renderSpeaking(root, ctx) {
       ctx.go('practice', { id, intent: 'speaking' });
     };
   };
-  if (picked.own)
-    root.querySelector('.voice-directions > .meta').textContent =
-      c.voiceOwnSource;
   memory.enter({
     id,
     title: picked.title,
@@ -68,5 +82,8 @@ export function renderSpeaking(root, ctx) {
     id,
     title: picked.title,
     prompt: picked.prompt,
+    resultHost: root.querySelector('[data-voice-result-host]'),
+    resultIdle: waiting,
+    onResult: frames.showResult,
   });
 }

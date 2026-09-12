@@ -124,44 +124,78 @@
 }
 [data-experience='writing'] .revision-history { margin-top: 0; }
 
-[data-experience='speaking'] .voice-room {
-  gap: var(--space-12);
-  grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr);
+/* The speaking workspace: the situation and the take on one side, what was
+   heard - evidence, then coaching - on the other, inside one frame. Both
+   regions scroll on their own, so a long transcript or coaching never
+   lengthens the page, and other starting points wait below the frame. */
+[data-experience='speaking'] .voice-workspace { --workspace-inset: 14rem; }
+[data-experience='speaking'] .voice-exchange {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--space-4) var(--space-4) 0 0;
+  background: var(--surface);
 }
 [data-experience='speaking'] .voice-situation {
-  padding: var(--space-8);
+  padding: var(--space-4) var(--space-5);
   background: var(--night-surface);
   color: var(--on-night);
-  border-radius: var(--space-6) var(--space-6) 0 0;
 }
 [data-experience='speaking'] .voice-situation > small { color: var(--on-night-muted); }
 [data-experience='speaking'] .voice-situation h2 {
-  font-size: clamp(1.7rem, 3vw, 2.7rem);
+  font-size: clamp(1.35rem, 2vw, 1.9rem);
   line-height: 1.25;
-  margin: var(--space-3) 0 0;
+  margin: var(--space-1) 0 0;
 }
 [data-experience='speaking'] .voice-exchange > [data-voice] {
-  padding: var(--space-8);
-  background: var(--surface);
+  padding: var(--space-4) var(--space-5);
   color: var(--ink);
-  border: 1px solid var(--line);
-  border-top: 0;
 }
 [data-experience='speaking'] .voice-prompt {
   border: 0;
   border-radius: 0 var(--space-6) var(--space-6) var(--space-6);
-  margin-right: var(--space-6);
+  margin: 0 var(--space-6) var(--space-3) 0;
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-lead);
 }
-[data-experience='speaking'] .voice-directions { border-left: 0; padding-left: 0; }
-[data-experience='speaking'] .voice-directions > h2 { font-size: var(--text-lead); }
+[data-experience='speaking'] .voice-response > p { margin-block: var(--space-2); }
+[data-experience='speaking'] .voice-response .button-row { align-items: center; }
+[data-experience='speaking'] .voice-history { margin-top: var(--space-4); }
+[data-experience='speaking'] .voice-result {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+}
+[data-experience='speaking'] .voice-result .workspace-result__scroll {
+  padding: var(--space-4) var(--space-5);
+}
+[data-experience='speaking'] .voice-result .workspace-result__bar {
+  padding-inline: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+[data-experience='speaking'] .voice-result h3 { font-size: var(--text-lead); }
+[data-experience='speaking'] .voice-result .voice-transcript {
+  font-size: var(--text-lead);
+  margin-block: var(--space-2) var(--space-3);
+}
+[data-experience='speaking'] .workspace-secondary { margin-top: var(--space-8); }
+[data-experience='speaking'] .voice-directions {
+  max-inline-size: 44rem;
+  border-left: 0;
+  border-top: 1px solid var(--line);
+  padding: var(--space-4) 0 0;
+}
+[data-experience='speaking'] .voice-directions h2 { font-size: var(--text-lead); }
+[data-experience='speaking'] .voice-directions a { padding-block: var(--space-3); }
 [data-experience='speaking'] .voice-directions a[aria-current] {
   border-left: 3px solid var(--accent);
   padding-left: var(--space-4);
 }
+[data-experience='speaking'] .voice-directions > p { color: var(--muted); }
 [data-experience='speaking'] .voice-directions > button {
-  display: block;
-  margin-top: var(--space-4);
-  width: 100%;
+  display: inline-flex;
+  margin: var(--space-3) var(--space-3) 0 0;
 }
 
 :is([data-experience='language'], [data-experience='recall']) .language-summary {
@@ -205,7 +239,8 @@
 }
 
 @media (max-width: 1000px) {
-  [data-experience='speaking'] .voice-room { grid-template-columns: minmax(0, 1fr); }
+  [data-experience='speaking'] .voice-workspace { --workspace-inset: 10rem; }
+  [data-experience='speaking'] .voice-exchange { overflow: visible; }
   [data-experience='writing'] .writing-workspace { --workspace-inset: 12rem; }
   [data-experience='writing'] .writing-sheet textarea {
     flex: none;
@@ -219,9 +254,6 @@
   [data-experience='writing'] .page-intro h1 { font-size: 1.5rem; }
   [data-experience='writing'] .page-intro p { font-size: var(--text-sm); }
   [data-experience='writing'] .writing-workspace { --workspace-inset: 8.75rem; }
-  [data-experience='writing'] .writing-workspace[data-workspace='result'] {
-    scroll-margin-block-start: 8.5rem;
-  }
 }
 @media (max-width: 600px) {
   .reading-volume { grid-template-columns: 60px minmax(0, 1fr) 20px; gap: var(--space-4); }
@@ -235,7 +267,6 @@
   [data-experience='writing'] .writing-sheet textarea { block-size: 7rem; }
   [data-experience='writing'] .expression-tools { gap: var(--space-2); }
   [data-experience='writing'] .writing-task { gap: 0; margin-top: var(--space-2); }
-  [data-experience='writing'] .writing-task small { font-size: var(--text-xs); line-height: 1.4; }
   [data-experience='speaking'] .voice-prompt { margin-right: 0; padding: var(--space-4); }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -474,21 +505,15 @@
   }
 }
 
-/* Where you are inside Practice, and the way back to it. Local, because the
-   whole map belongs to Practice rather than to every room in it.
-
-   The bar it replaced carried a rule above and below the room's content, and
-   the composition leaned on that line. Dropping the bar and leaving a floating
-   link in its place would have left the header and the content unseparated, so
-   this keeps the divider and gives up the repetition - the point was never the
-   line, it was the eight labels above it. */
+/* The way back to Practice. Local, because the whole map belongs to Practice
+   rather than to every room in it. It sits above the heading like every other
+   room's way back; the room's own name is the heading's eyebrow, so repeating
+   it here under a divider only pushed the activity further down. */
 .practice-return {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-block: var(--space-3) var(--space-5);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--line);
+  padding-block: var(--space-2) var(--space-1);
   font-size: var(--text-sm);
 }
 .practice-return a {
@@ -496,11 +521,6 @@
   align-items: center;
   min-height: 44px;
   color: var(--muted);
-}
-/* The room's own name, carrying the weight the active tab used to. */
-.practice-return [aria-current] {
-  font-weight: 600;
-  color: var(--ink);
 }
 
 /* Looking closely at the spoken line.

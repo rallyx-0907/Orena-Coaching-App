@@ -58,6 +58,24 @@ first viewport, each scrolling on its own. Narrow, the source becomes a compact
 sticky strip and the work is brought to the learner rather than left below a
 screenful of media.
 
+One-frame learning loop (D-051, `DESIGN_CONTRACT.md`): on a 1440 desktop the
+activity and its immediate result now share the first viewport in Writing
+(draft beside its review), Speaking (situation and take beside what was heard,
+evidence and coaching - other starting points moved below) and Dictation
+(source beside the work; the comparison arrives inside the practice panel, no
+page scroll). At 800 and 390 the same rooms take the activity, then the result
+the learner is placed at the start of, below the sticky header, with a way
+back. Activity rooms open compactly without artwork; the way back to Practice
+sits above the heading instead of repeating the room name under it. Optional
+notes - draft kept on this device, what the task field is for, where a
+recording lives, what a comparison does not measure, possible mishearing - are
+now symbols whose words appear on hover, focus or tap; instructions and the
+consent statement before a recording is sent stay as text. Browser-verified in
+the running sandbox: Writing against local Ollama (two real reviews), Speaking
+with a fake microphone and an injected transcript fixture (placement, not
+recognition quality), Dictation with real comparison, all four themes, EN and
+ZH, 1440 / 800 / 390 without horizontal overflow.
+
 The approved red-panda library is in the product. Fifty-two approved assets
 existed and four were reachable, one of them doing duty as both the arrival and
 the empty state; thirty are now addressed by what a moment means - discovery,

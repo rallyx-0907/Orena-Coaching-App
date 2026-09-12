@@ -43,11 +43,14 @@ From `ui/patterns.js`:
 
 | Primitive | Use it for |
 |---|---|
-| `pageIntro({title, note, eyebrow})` | Every page heading. |
+| `pageIntro({title, note, eyebrow, scene, compact})` | Every page heading. `compact: true` for a room where the learner works: smaller title, no artwork. |
+| `practiceReturn(c)` | The way back to Practice, placed above a room's heading. |
 | `intentNavigation(c, current)` | The Practice intention row. |
 | `continuationShelf(ctx, limit)` | "Pick up a thread" on any surface that can send a learner onward. |
 | `responseComposer(ctx, {id, prompt})` + `bindComposer` | Writing that grows out of something. Never submits a practice attempt. |
-| `draftStatus(ctx)` | Whether the draft is on the device. |
+| `draftStatus(ctx)` + `refreshDraftStatus(node, ctx)` | Whether the draft is kept, as a status symbol whose words are a hint; a draft that cannot be kept takes the warning symbol. |
+| `hint({text, label, icon, tone})` | Supplementary information as a symbol with its words on demand. |
+| `workspaceFrames(workspace, {back, focus, result})` | The narrow-screen frame switch of a learning workspace. |
 | `progressReporter(element, ctx, alive)` | Anything that leaves the device. |
 | `savedLanguageLink(c)` | The hand-off from keeping language to meeting it again. |
 
@@ -168,6 +171,8 @@ unfinished work, `sourceLink(id)` for the way back to where it started.
 1. `node scripts/test_orena_foundation.mjs` and `node scripts/test_orena_product.mjs`.
 2. `node --experimental-vm-modules scripts/validate_browser_esm_graph.mjs`.
 3. Open it at 1440, 800 and 390 in light and dark, in English and Chinese.
+   Submit something: the result must land inside the desktop frame and at the
+   start of the narrow result frame (`DESIGN_CONTRACT.md`, D-051).
 4. Check what it says when the network fails, not only when it succeeds.
 5. Confirm no text falls below its contrast threshold and no pointer target is
    under 24px (44px below 480px).
@@ -188,18 +193,40 @@ What a new surface inherits, and the traps behind each one.
   Narrow, the source becomes a compact sticky strip and the work is scrolled to.
 ### Learning workspace
 
-`foundation.css`, `ui/expression.js` - a skill that asks the learner to do
-  something and then answers it keeps both inside one desktop frame: the
-  activity on one side, its result on the other, and the result scrolls inside
-  its own region instead of lengthening the page. Writing is the first surface
-  to follow the rule; Reading comprehension, dictation, Speaking coaching and
-  Grammar practice owe it the same shape. Give the surface a `--workspace-inset`
-  equal to the room its own heading needs. Secondary material - starters,
-  history, further paths - stays below the frame, never in the result column.
-  Narrow, the two regions become two frames: the activity, then the result the
-  learner is placed at the start of, with a way back to the editor.
-  `scripts/verify_writing_workspace_browser.mjs` measures the running product
-  for exactly that.
+`foundation.css`, `ui/patterns.js` - the implementation of
+  `DESIGN_CONTRACT.md` rule 2-4. A skill that asks the learner to do something
+  and then answers it keeps both inside one desktop frame:
+  `.learning-workspace` with `.workspace-activity` and `.workspace-result`
+  (`.workspace-result__bar` holds the way back, `.workspace-result__scroll` the
+  answer), `data-workspace="activity|result"` on the workspace, and a
+  `.result-waiting` block naming what will appear before anything has.
+  `workspaceFrames` switches the frames and places a narrow screen at the start
+  of the result, below the sticky header; `onResult`/`showResult` is called
+  when the answer arrives. Give the surface a `--workspace-inset` equal to the
+  room its own heading needs. Secondary material - starters, history, other
+  starting points, further paths - goes in `.workspace-secondary` below the
+  frame, never in the result column.
+  Writing (`ui/expression.js`) and Speaking (`ui/speaking.js`, which hands
+  `mountVoiceResponse` a `resultHost`) use it directly. Dictation keeps the
+  encounter's source-and-work composition, with the practice panel bounded to
+  the frame and the comparison brought into view inside it. Reading
+  comprehension and Grammar practice still owe it a check.
+  `scripts/verify_writing_workspace_browser.mjs` measures the running Writing
+  surface for exactly that.
+### Supplementary information
+
+`ui/patterns.js` `hint`, `ui/symbols.js` - rule 6-7 of the Design Contract.
+  Optional-field purposes, where a draft or recording lives, what a comparison
+  does not measure, where a list comes from: a symbol beside the thing it
+  explains, its words in a night-panel bubble on hover, keyboard focus or tap.
+  `installHints` is installed once in `app.js`. Use `tone: 'warning'` and the
+  `warning` symbol for the case that matters (a draft that cannot be kept, a
+  transcript that may be misheard). Put a hint beside a heading with
+  `.heading-with-hint`, never inside the heading, so its words do not become
+  the heading's name. Instructions the task needs, and consent statements shown
+  before data leaves the device, stay as text. A hint inside a form is a
+  button: select the form's action by role (`button.primary`), not as the
+  form's first button.
 ### Brand`
 
 `content/brand-library.js`, `ui/brand.js` - approved artwork is
@@ -225,3 +252,7 @@ Everything is inside `@media (prefers-reduced-motion: no-preference)`.
 `pageIntro({ scene })` is the one page opening. Name a state from
 `content/brand-library.js`; never a file path. A surface with nothing worth
 illustrating passes no state and shows none - content is the protagonist.
+A room where the learner works passes `compact: true`: the heading orients and
+yields the first viewport to the activity, and no artwork is drawn even if a
+scene is named. `practiceReturn(c)` or a `.back-row` sits above it; the eyebrow
+names the room, so the way back never repeats it.

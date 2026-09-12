@@ -370,3 +370,30 @@ This is local-model execution evidence, not a browser or CI claim. The final
 Write → Evaluate → Review browser pass still requires the running app runtime;
 the degraded 503-retry / 502-no-retry contracts remain covered by
 `test_provider_failures_use_canonical_learner_safe_evaluation_envelope`.
+
+## D-051 learner-facing UI foundation: verification evidence
+
+Evidence only; the rules themselves live in `docs/project/DESIGN_CONTRACT.md`.
+Running sandbox 8011, headless Chrome via Playwright, local execution (no CI):
+
+- Writing, `scripts/verify_writing_workspace_browser.mjs`, two real reviews
+  through local Ollama (`qwen3:8b`), HTTP 200 each: desktop 1440x900 keeps the
+  draft and review in one frame (workspace bottom 833 of 900, review scrolls
+  internally, no page scroll, no horizontal overflow); 390x844 shows the
+  activity only, then the result at 136px below the sticky header with a way
+  back that refocuses the draft. Correction labels unchanged.
+- Speaking, fake microphone plus an injected transcript fixture (placement,
+  not recognition quality): 1440 keeps the take (record button bottom 583) and
+  what was heard side by side in the first viewport; 800 and 390 move to the
+  result frame at 136px with the way back refocusing the record control.
+- Dictation, real comparison: at 1440 the page does not scroll and the
+  comparison lands inside the bounded practice panel beside the source; at 800
+  and 390 it is scrolled into view below the sticky source strip.
+- Every route at 1440/800/390 in EN and ZH: no horizontal overflow. Hint bubble
+  ink/surface pairing checked in Paper, Night Ink, Deep Forest and Sage Field.
+- 33 CI `.mjs` gates and the browser ESM graph pass; pytest
+  (`PERSISTENCE_BACKEND=sqlite`) 824 passed / 20 inherited failures / 66
+  skipped.
+
+Not claimed: live speech recognition, microphone hardware, human product
+approval.

@@ -45,6 +45,7 @@ Domain owners:
 | --- | --- |
 | Learner-facing product, UX, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
 | Content, discovery, import, learner content | `docs/product/ORENA_CONTENT_ARCHITECTURE.md` |
+| Durable learner-facing design rules, web and native | `docs/project/DESIGN_CONTRACT.md` |
 | What a web surface inherits and owes | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
 | Brand, mascot, illustration, generated art | `assets/brand/orena/` |
 | Current capability behaviour and review state | `docs/product/ORENA_STATUS.md` |

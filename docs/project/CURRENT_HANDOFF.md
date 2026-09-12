@@ -66,14 +66,13 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core lane (Codex): R3 evaluator checkpoint REVIEWABLE (live-provider quality
-needs the provider/credential gate). Writing's one-frame workspace shipped at
-`1e73047`, then refined: dropped decorative starter copy and the long
-revision-history sentence via existing `section-head`/`:not(:has())`
-patterns, no new components. Verified: Playwright + real local Ollama
-200/200; 33 .mjs gates; 824/20/66 pytest unchanged. NEXT: same rule for
-Reading/Listening/Speaking/Grammar - not started; check each layout first,
-no blind migration.
+Core lane: R3 evaluator REVIEWABLE (live quality needs the provider gate).
+D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints
+(`hint`, `ui/symbols.js`), compact activity openings, `workspaceFrames`.
+Writing, Speaking, Dictation, Grammar lesson, Recall migrated and browser-
+verified 1440/800/390, EN/ZH, 4 themes. NEXT: Reading comprehension, Shadowing
+and encounter-Speaking panels, conversation turns, Discover/Collection copy
+density - check each composition first; no blind migration.
 
 Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3: two
 schemas **proposed**, neither applied - `.../20260911_0006` (subscription
@@ -82,12 +81,8 @@ re-review) and `.../20260912_0007` (quota buckets/reservations; new
 `settle_decision()`/`release_decision()`, 34/34 stdlib; `quota_repository.py`;
 14/14 postgres/10/10 flakiness; not yet reviewed) - see
 `I3_SCHEMA_REVIEW_REQUEST.md`. Neither self-approved/moved/activated
-(AGENTS.md §1). Meanwhile started the next-named track (learner-
-facing content/UI/EN-ZH parity): Discover's generated-fiction catalog grew
-3 -> 4 with a new parity+schema gate (`test_orena_discover_texts.mjs`),
-verified live. UI swept 6+ rooms clean; Platform Admin untouched (hold, not
-bug). Fixed: mobile nav dropdown unscrollable (`.nav-backdrop` z-index tied
-#shell's). I1's `Scope` still has no production caller. Preserve A-D, eleven
+(AGENTS.md §1). Discover catalog 3 -> 4 with a parity gate; mobile nav
+scroll fixed. I1's `Scope` still has no production caller. Preserve A-D, eleven
 destinations and all active Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
@@ -145,6 +140,9 @@ None identified.
 - Reading/Vocabulary breadth: rights gate per text; D-049 sequence
   (Vocabulary Card, orthography) not yet implemented.
 - Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 frozen native.
+- Language coherence: interface is en/zh; evaluator/grammar explanations follow
+  the support language (12; sandbox profile vi) - EN/ZH labels over VI text is a
+  product decision (more interface locales, or explain in UI language).
 
 ## Baseline test evidence
 

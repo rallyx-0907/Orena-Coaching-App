@@ -1,5 +1,5 @@
 import { esc, focusRegion } from './html.js';
-import { progressReporter } from './patterns.js';
+import { progressReporter, hint } from './patterns.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
 import { loadSpokenCoaching } from './spoken-coaching.js';
@@ -43,6 +43,13 @@ export function mountVoiceResponse(
     onRecording = () => {},
     recorder = createLocalAudioRecorder(),
     onUse = null,
+    /* A room composed as a learning workspace hands in its result region, so
+       what was heard lands beside the take instead of under it; `resultIdle`
+       is what that region says before a take has been answered, and
+       `onResult` lets the room move a narrow screen to it. */
+    resultHost = null,
+    resultIdle = '',
+    onResult = () => {},
   },
 ) {
   const { c, api, language, memory } = ctx;
@@ -52,10 +59,13 @@ export function mountVoiceResponse(
     takeId = '',
     busy = false;
   const alive = () => !disposed && ctx.alive() && root.isConnected;
-  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt" lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button><span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div><p class="meta">${esc(c.localAudio)}</p><section data-voice-result></section><details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
+  /* Where the recording lives is worth knowing and not worth reading before
+     every take, so it sits beside the control as a hint. What to do - reply
+     in your own words, within two minutes - stays on screen. */
+  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt" lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button>${hint({ text: c.localAudio })}<span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
   const record = root.querySelector('[data-record]');
   const state = root.querySelector('[data-record-status]');
-  const result = root.querySelector('[data-voice-result]');
+  const result = resultHost || root.querySelector('[data-voice-result]');
   const history = root.querySelector('[data-voice-history]');
   const report = progressReporter(state, ctx, alive);
   let ticker, startedAt;
@@ -92,7 +102,7 @@ export function mountVoiceResponse(
   });
   const showResult = (value) => {
     const resultTakeId = takeId;
-    result.innerHTML = `<h3>${esc(c.heard)}</h3><p class="meta">${esc(c.voiceTranscriptNote)}</p><p class="voice-transcript" lang="${language}" data-heard>${esc(value.heard)}</p><div class="button-row"><button class="outline" data-understand>${esc(c.lookCloser)} ↗</button><button class="outline" data-develop>${esc(c.develop)} ↗</button></div><details><summary>${esc(c.measuredHere)}</summary>${voiceEvidence(c, value.evaluation, language)}</details><div data-coaching></div><p role="status" data-saved></p><p class="meta">${esc(c.voiceReflect)}</p>`;
+    result.innerHTML = `<div class="heading-with-hint"><h3>${esc(c.heard)}</h3>${hint({ text: c.voiceTranscriptNote, tone: 'warning', icon: 'warning' })}</div><p class="voice-transcript" lang="${language}" data-heard>${esc(value.heard)}</p><div class="button-row"><button class="outline" data-understand>${esc(c.lookCloser)} ↗</button><button class="outline" data-develop>${esc(c.develop)} ↗</button></div><details><summary>${esc(c.measuredHere)}</summary>${voiceEvidence(c, value.evaluation, language)}</details><div data-coaching></div><p role="status" data-saved></p><p class="meta">${esc(c.voiceReflect)}</p>`;
     const saved = progressReporter(
       result.querySelector('[data-saved]'),
       ctx,
@@ -139,6 +149,7 @@ export function mountVoiceResponse(
       memory.enter({ id: draftId, title, intent: 'writing', excerpt: prompt });
       window.location.hash = link('expression', { id: draftId });
     };
+    onResult();
     focusRegion(result.querySelector('h3'));
     if (onUse) {
       const use = document.createElement('button');
@@ -205,7 +216,7 @@ export function mountVoiceResponse(
         root.querySelector('[data-feedback]').onclick = feedback;
         report.note(c.voiceReady);
       } else {
-        result.innerHTML = '';
+        result.innerHTML = resultIdle;
         root.querySelector('[data-take]').innerHTML = '';
         take = null;
         onRecording(true);

@@ -308,14 +308,18 @@
   padding: var(--space-8);
 }
 .practice-space h2 {
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+  margin-bottom: var(--space-3);
 }
 .comparison:empty {
   display: none;
 }
+.comparison > .heading-with-hint {
+  margin-block: 0 var(--space-2);
+}
 .comparison:not(:empty) {
-  padding-top: var(--space-6);
-  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
 .diff {
@@ -346,7 +350,7 @@
 .expression-tools .meta {
   flex: auto;
 }
-.expression-tools button {
+.expression-tools > button {
   margin-left: auto;
 }
 .expression-context {
@@ -552,7 +556,7 @@
   .composer-footer .outline {
     width: 100%;
   }
-  .expression-tools button {
+  .expression-tools > button {
     width: 100%;
   }
   #footer {
@@ -1580,9 +1584,15 @@
   margin-top: var(--space-4);
   max-width: var(--measure);
 }
-.writing-task > span {
+.writing-task__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: var(--text-sm);
   font-weight: 600;
+}
+.writing-task__label > label {
+  margin: 0;
 }
 .writing-task input {
   padding: var(--space-3);
@@ -1591,11 +1601,6 @@
   background: var(--surface);
   color: inherit;
   font: inherit;
-}
-.writing-task small {
-  color: var(--muted);
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 /* A pattern is easier to hold onto against the thing it is not. The contrast

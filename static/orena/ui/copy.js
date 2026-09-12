@@ -946,8 +946,6 @@ Object.assign(copy.en, {
   voiceBegin: 'Start with this',
   voiceOwnSource:
     'Your chosen context, kept on this device. Speak in your own words.',
-  voiceIntro:
-    'A person to speak to. An idea to put into words. Start here, without a clip or a script.',
   voiceSituation: 'Your situation',
   voiceChoose: 'Another starting point',
   voiceSource:
@@ -1058,8 +1056,6 @@ Object.assign(copy.zh, {
   voiceOwnNote: '你想对谁说？想告诉对方什么？',
   voiceBegin: '从这里开始',
   voiceOwnSource: '你选择的语境，保存在此设备上。用自己的话说出来。',
-  voiceIntro:
-    '想象一个倾听的人，把想法说出来。不需要先选视频，也不用照着稿子念。',
   voiceSituation: '此刻的情境',
   voiceChoose: '换个话题开始',
   voiceSource: 'Orena 编写的表达邀请，没有需要复述的标准答案。',
@@ -1249,4 +1245,19 @@ Object.assign(copy.zh, {
   reviewWhy: '原因',
   reviewRule: '规则',
   reviewWholePiece: '整篇的一种写法',
+});
+
+/* Result regions that have not answered yet, and the way back to the work, in
+   the rooms that follow the one-frame learning workspace. */
+Object.assign(copy.en, {
+  skipToContent: 'Skip to content',
+  voiceWaiting: 'What you said, the evidence and coaching on it will appear here.',
+  voiceBack: 'Back to your take',
+  dictationWaiting: 'Your comparison with the line will appear here.',
+});
+Object.assign(copy.zh, {
+  skipToContent: '跳至内容',
+  voiceWaiting: '你说的内容、测得的证据和针对它的建议会显示在这里。',
+  voiceBack: '返回录音',
+  dictationWaiting: '你的听写与原句的对照会显示在这里。',
 });
