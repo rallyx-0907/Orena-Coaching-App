@@ -1204,3 +1204,89 @@ Ordinary architecture milestones may proceed continuously. This does not grant
 destructive migration, schema/runtime activation, credentials, billing policy,
 production operations or human Golden Star approval. No approved learner-facing
 direction, theme/brand implementation or completed Opus feature is superseded.
+
+## D-049 — Content domains, Understanding Engine, and Vocabulary Cards
+
+**Status:** Accepted by explicit human instruction, 2026-09-12.
+
+**Decision:** Orena's content architecture is amended per
+`docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md`. Reading,
+Writing, Listening, Speaking, Vocabulary, and Language Knowledge are separate
+canonical learning domains, each with its own content model, sharing common
+infrastructure for ingestion, provenance, publishing, indexing, recommendation,
+moderation, and search. Do not force them into one universal content schema.
+
+Orena adds a shared **Understanding Engine**: a cross-domain capability that
+explains language through mental models, intuition, contrasts, and verified
+knowledge rather than defaulting to translation-only or rule-memorization
+answers, reusable from Reading, Listening, Speaking, Writing, and Vocabulary
+alike. It must clearly distinguish a useful mental model or mnemonic from
+verified linguistic fact.
+
+Orena adds a reusable **Language Knowledge Graph** supporting that engine, and
+a richer **Orena Vocabulary Card** specification — beyond `word ->
+translation` — including pronunciation, meaning, usage, examples, semantic
+connections, and, for Chinese and future scripts, a first-class
+**orthography** capability (radicals, components, stroke order, tracing),
+built as a general capability rather than hard-coded per script.
+
+Discover/Home must distribute content from the domain libraries; they must
+not own hard-coded canonical content. The target is substantial curated
+default libraries over time, not one or two sample items kept small
+indefinitely.
+
+The durable contracts are:
+
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md` (amended)
+`docs/product/ORENA_UNDERSTANDING_ENGINE.md` (new)
+`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md` (new)
+`docs/product/ORENA_PRODUCT_CONSTITUTION.md` §31 (new)
+
+**Reason:** Without this amendment, future agents could keep reducing content
+work to "add a sample item to Discover's array" and vocabulary work to "a
+flat saved-word list," as the existing implementation and even a same-session
+task had just done. The Constitution and Content Architecture already implied
+a content-rich world (D-045) and already named `Understanding` as an evidence-
+owning capability (`ORENA_EVIDENCE_ARCHITECTURE.md` §1) and a canonical
+Experience Composition (`ORENA_REFERENCE_ARCHITECTURE.md` §6, `ui/
+understanding.js`), but neither the explanation philosophy, the Language
+Knowledge Graph, nor a real Vocabulary Card model existed as a durable
+contract. This decision names them explicitly so the gap cannot be mistaken
+for "not yet gotten to" versus "not yet specified."
+
+**Consequences:** `ORENA_CONTENT_ARCHITECTURE.md` is restructured: Vocabulary
+and Language Knowledge become their own sections instead of a brief joint
+mention with Grammar; Discover's distribution-not-storage role and a content
+scale philosophy (batch/incremental growth, not hand-edited arrays) are made
+explicit; the shared-infrastructure section is reworded to foreclose reading
+it as one universal schema.
+
+This does not reopen or re-litigate any CLOSED subsystem (R5 Grammar, M1
+Media Learning) or any already-accepted backbone contract
+(`ORENA_BACKBONE_CONTRACTS.md`, `ORENA_EVIDENCE_ARCHITECTURE.md`,
+`ORENA_COLLECTION_ARCHITECTURE.md`, `ORENA_CONTENT_EXECUTION_ARCHITECTURE.md`).
+The Understanding Engine deepens the existing `Understanding` capability and
+the Language Knowledge Graph extends the existing Language Knowledge domain
+ownership (`ORENA_BACKBONE_CONTRACTS.md` §1); neither replaces stable Grammar
+Concept IDs. The Vocabulary Card model sits on top of the existing saved-word/
+`LanguageItemRef` identity (`ORENA_COLLECTION_ARCHITECTURE.md`) without
+changing how saving, occurrence identity, or review scheduling work.
+
+No new persistence, schema, provider activation, or production change is
+authorized by this decision. Any schema the eventual implementation needs
+follows the existing architecture-review gate (`AGENTS.md` §1) — an
+implementer does not self-approve it, matching the standard already applied
+to the I2/I3 backbone schema proposals.
+
+The already-committed small growth of the Discover generated-fiction array
+(`da0e0b2`) is not reverted: the content itself remains valid under §2's
+`origin: generated`, and existing hand-authored arrays are an acceptable
+starting seam per §18. What changes going forward is the strategy — hand-
+editing that array is not the target end-state, and Discover ceasing to own
+it directly is (§3, and the tombstone recorded in `LEGACY_TOMBSTONES.md`).
+
+**Supersedes / Superseded by:** Extends D-045 and D-044. Retires the implicit
+interpretation that a small hard-coded Discover array or a flat saved-word
+list is the completed Vocabulary/Discover product, recorded as a tombstone in
+`docs/project/LEGACY_TOMBSTONES.md`. Does not supersede R5 Grammar, M1 Media
+Learning, or any accepted backbone architecture contract.

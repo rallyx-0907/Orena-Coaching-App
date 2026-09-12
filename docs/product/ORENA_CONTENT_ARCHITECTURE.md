@@ -11,7 +11,16 @@ It operates under:
 
 The Constitution defines why Orena exists and what the product should feel like.
 
-This document defines the durable content model that supports that experience.
+This document defines the durable content model that supports that experience,
+together with two companion contracts it depends on:
+
+- `docs/product/ORENA_UNDERSTANDING_ENGINE.md` — the shared mental-model
+  explanation capability and Language Knowledge Graph;
+- `docs/product/ORENA_VOCABULARY_ARCHITECTURE.md` — the Vocabulary Library and
+  Orena Vocabulary Card model, including orthography.
+
+Amended by D-049 (`docs/project/DECISION_LOG.md`), integrating
+`docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md`.
 
 ---
 
@@ -46,6 +55,21 @@ disconnected products.
 Where technically and pedagogically appropriate, both should use the same
 learning capabilities, learner memory, evidence, vocabulary, grammar,
 progression, and continuation model.
+
+### Orena is not one universal content schema
+
+Orena contains **multiple canonical learning-content domains** — Reading,
+Writing, Listening, Speaking, Vocabulary, and Language Knowledge — each with
+its own content model and learner experience, sharing common platform
+infrastructure for ingestion, provenance, publishing, indexing, recommendation,
+moderation, and search.
+
+> Separate learning domains, shared platform infrastructure, one shared
+> Understanding Engine.
+
+Do not force Reading, Writing, Listening, Speaking, and Vocabulary into one
+universal content schema. They are different learning objects. §4 defines what
+they actually share.
 
 ---
 
@@ -138,6 +162,17 @@ Discovery may be shaped by:
 
 Discovery should not feel like browsing a catalog of learning features.
 
+### Discover and Home are distribution surfaces, not canonical storage
+
+Discover and Home must surface publishable content from the domain libraries
+in §5-§10. They must not own hard-coded canonical content of their own — a
+fixed list of sample items baked into the entry surface is a temporary
+implementation seam, never the target content strategy. `ORENA_EVIDENCE_
+ARCHITECTURE.md` §4 already establishes that Discover ranks/filters existing
+evidence-backed candidates rather than inventing them; the same rule applies
+to which items exist to be ranked. See `docs/project/LEGACY_TOMBSTONES.md`
+for the specific superseded pattern this corrects.
+
 ## Bring your own
 
 The learner may introduce content that matters to them.
@@ -151,12 +186,43 @@ It must not become a disconnected utility mode.
 
 ---
 
-# 4. Shared content model
+# 4. Shared infrastructure, separate domains
 
-Content should be represented in ways that allow appropriate learning
-capabilities to reuse it without duplicating the source.
+Reading, Writing, Listening, Speaking, Vocabulary, and Language Knowledge keep
+their own content models (§5-§10). They may share infrastructure such as:
 
-A content object may include, where relevant:
+- source/rights registry and provenance tracking (§2, §17);
+- the ingestion and admission contract
+  (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, already covering origin/
+  access/readiness axes and admission checks for any source type, not only
+  media);
+- the expensive-operation/job contract for anything requiring generation or
+  external acquisition (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §3);
+- moderation and review before publication;
+- search, tagging, level estimation, and recommendation;
+- user collections (`ORENA_COLLECTION_ARCHITECTURE.md`);
+- asset storage for media, images, and audio;
+- feed/distribution surfaces (§3).
+
+Conceptually:
+
+```text
+                     ORENA CONTENT PLATFORM
+                              |
+      --------------------------------------------------
+      |     shared: ingestion / rights / search / feed  |
+      --------------------------------------------------
+        |        |         |         |          |
+     Reading  Writing   Listening  Speaking  Vocabulary
+                                                   |
+                                        Language Knowledge
+                                                   |
+                                       Understanding Engine
+                                    (docs/product/ORENA_UNDERSTANDING_ENGINE.md)
+```
+
+"Shared infrastructure" never means "one universal content schema." A content
+object may include, where relevant to its own domain:
 
 - stable identity;
 - title;
@@ -180,34 +246,41 @@ A content object may include, where relevant:
 - relevant metadata;
 - learner relationship such as saved / started / completed.
 
-Not every content type requires every field.
+This is the set infrastructure (search, indexing, feeds) may need to read
+across domains — it is not a schema every domain must fully populate, and a
+domain's own object may carry fields this list does not name (§5-§10). Do not
+invent metadata merely to fill a shared field.
 
-Do not invent metadata merely to fill a schema.
+Cross-domain relationships between separate objects are allowed and expected
+(§14); a shared field list is not a reason to merge two domains into one
+object.
 
 ---
 
-# 5. Writing content
+# 5. Writing content — the Writing Prompt Bank
 
-Writing should provide meaningful reasons to express something.
+Writing does not primarily need a large media library. It needs a
+high-quality **Prompt Bank**.
 
 Orena should contain a discoverable world of writing opportunities rather than
 only a form for selecting an exercise type.
 
-Possible Orena-provided writing experiences include:
+A Writing Prompt may include, where relevant:
 
-- real-life situations;
-- opinion and ideas;
-- messages;
-- email;
-- storytelling;
-- reflection;
-- journaling;
-- description;
-- creative prompts;
-- cultural questions;
-- responses to something the learner has read or heard;
-- exam-oriented practice where useful;
-- personalized continuation from learner evidence.
+- topic;
+- context;
+- learner goal;
+- optional hints;
+- expected length (an invitation, never a target the demonstrated band is
+  forced toward);
+- mode or genre;
+- constraints where relevant;
+- an evaluation profile/rubric reference.
+
+Possible categories include journal, story, reflection, argument, email,
+workplace writing, academic writing, description, and exam-style tasks where
+appropriate — alongside the existing situations, opinions, messages, and
+personalized-continuation prompts already part of the product.
 
 Writing should also support learner-owned starting points such as:
 
@@ -217,10 +290,8 @@ Writing should also support learner-owned starting points such as:
 - something the learner wants to reply to;
 - continuation of an existing draft.
 
-Existing internal Writing modes may support these experiences.
-
-They should not automatically define the learner-facing information
-architecture.
+Existing internal Writing modes may support these experiences. They should not
+automatically define the learner-facing information architecture.
 
 A Writing experience should be able to create evidence useful for later:
 
@@ -231,40 +302,54 @@ A Writing experience should be able to create evidence useful for later:
 - speaking;
 - future personalized content.
 
+Writing prompts help the learner know **what to express**; evaluation stays
+grounded in the exact submitted text and the intended writing mode, per the
+existing R3/R4 evaluator contract.
+
 ---
 
-# 6. Reading content
+# 6. Reading content — the Reading Library
 
-Reading should expose learners to language and ideas worth reading.
+Reading should be a real library, not a handful of hard-coded stories kept
+"deliberately small" indefinitely.
 
-Orena's Reading world may contain, where sourcing and rights permit:
+Where sourcing and rights permit, it may contain:
 
-- short stories;
+- books;
+- book chapters;
+- news, newspapers, and magazine-style articles;
+- blogs;
 - essays;
-- articles;
-- current-interest material;
-- news-related material;
-- appropriately licensed or public-domain book excerpts;
-- culture;
-- people;
-- places;
-- conversations;
-- written dialogue;
+- short stories and literature;
+- learner-friendly articles;
+- appropriately licensed or public-domain excerpts;
+- culture, people, places, conversations, and written dialogue;
 - quotes or short thoughts;
 - level-appropriate collections;
-- generated or adapted reading material.
+- generated or adapted reading material;
+- user-imported documents.
 
-Generated text is one source of Reading content.
+A Reading item should preserve, where applicable:
 
-It must not be treated as the whole Reading product.
+- title;
+- author;
+- publisher/source;
+- language;
+- genre;
+- topic;
+- reading level;
+- estimated reading time;
+- body/chapter structure;
+- images and footnotes where applicable;
+- publication date;
+- rights/provenance.
 
-Reading should also support learner-owned content where technically appropriate,
-such as:
+Generated text is one source of Reading content. It must not be treated as the
+whole Reading product.
 
-- pasted text;
-- imported article URLs;
-- saved external material;
-- personal text or documents supported by the product.
+Reading content should be searchable, filterable, recommendable, collectible,
+and publishable into Orena's learner-facing feeds through the shared
+infrastructure in §4, not a Reading-only mechanism.
 
 A Reading experience may naturally lead into:
 
@@ -278,34 +363,37 @@ read
 → learner evidence
 → recall.
 
+Reading should not exist only as text followed by disconnected multiple-choice
+questions.
+
 ---
 
-# 7. Listening content
+# 7. Listening content — the Listening Library
 
-Listening should provide a discoverable media world.
+Listening is its own media domain. It must not be treated as merely "Reading
+with audio."
 
-Media also supports intentional practice and continuation. Every prepared
-media encounter must offer synchronized Follow: playback selects the current
-timestamped original segment and its support-language meaning together;
-transcript selection seeks, and replay and speed changes preserve alignment.
-Chinese is primary, with optional contextual Pinyin. Follow remains usable
-without requiring an exercise. Deeper practice uses that same source and segment
-identity rather than creating Listening-mode or Studio-specific sessions.
+Listening should provide a discoverable media world. Media also supports
+intentional practice and continuation. Every prepared media encounter must
+offer synchronized Follow: playback selects the current timestamped original
+segment and its support-language meaning together; transcript selection
+seeks, and replay and speed changes preserve alignment. Chinese is primary,
+with optional contextual Pinyin. Follow remains usable without requiring an
+exercise. Deeper practice uses that same source and segment identity rather
+than creating Listening-mode or Studio-specific sessions.
 
-Possible Orena-provided or appropriately sourced media experiences include:
+Where sourcing and rights permit, Listening may contain:
 
-- short conversations;
-- everyday speech;
-- stories;
+- short conversations, everyday speech, stories;
 - animation moments;
-- film / television moments where legally usable;
-- podcasts;
-- interviews;
-- speeches;
-- cultural material;
-- meaningful or emotional moments;
+- film/television moments where legally usable;
+- podcasts, interviews, speeches, news audio;
+- short-form video, including platform-style short clips where rights and
+  integration allow;
+- cultural or emotionally meaningful moments;
 - practical situations;
-- other useful short-form media.
+- other useful short-form media;
+- user-imported media.
 
 A discoverable media item should support relevant metadata such as:
 
@@ -315,11 +403,15 @@ A discoverable media item should support relevant metadata such as:
 - content type;
 - source;
 - duration;
+- speakers;
+- accent;
+- speech speed;
+- noise level;
 - thumbnail;
 - transcript;
 - timestamped segments;
 - provenance;
-- rights / license information where applicable.
+- rights/license information where applicable.
 
 The media experience may naturally support:
 
@@ -335,53 +427,49 @@ listen / watch
 → speaking / response
 → future recall.
 
-Learners should also be able to bring supported media into Orena.
-
-For example:
+Learners should also be able to bring supported media into Orena:
 
 supported media URL
 → media preparation
 → transcript / segments
 → same Listening experience.
 
-"Add a video" is therefore an input path into Listening.
-
-It is not the definition of Listening itself.
+"Add a video" is therefore an input path into Listening. It is not the
+definition of Listening itself.
 
 ---
 
-# 8. Speaking content
+# 8. Speaking content — the Speaking Library
 
-Speaking should provide meaningful things to say, imitate, respond to, retell,
-or express.
+Speaking is not just Listening reused. It should contain its own learning
+objects, such as:
+
+- example dialogues;
+- role-play situations;
+- guided speaking tasks;
+- pronunciation exercises;
+- situational conversations;
+- shadowing exercises;
+- model speaking videos;
+- speaking prompts.
 
 Speaking should reuse the shared media/content world where appropriate rather
-than creating an unnecessary parallel media repository.
+than creating an unnecessary parallel media repository — but the domain
+relationship is a **reference**, not an identity merge:
 
-Possible source contexts include:
+`SpeakingExercise -> may reference ListeningItem`
 
-- conversations;
-- dialogue;
-- character lines;
-- interviews;
-- speeches;
-- everyday situations;
-- stories;
-- learner-imported media;
-- content encountered through Listening or Reading;
-- personalized prompts.
+not:
 
-Possible Speaking experiences include:
+`SpeakingLibrary = ListeningLibrary`
 
-- shadowing;
-- imitation;
-- repetition with variation;
-- response;
-- role-play;
-- retelling;
-- description;
-- conversation;
-- free expression.
+Possible source contexts include conversations, dialogue, character lines,
+interviews, speeches, everyday situations, stories, learner-imported media,
+content encountered through Listening or Reading, and personalized prompts.
+
+Possible Speaking experiences include shadowing, imitation, repetition with
+variation, response, role-play, retelling, description, conversation, and free
+expression.
 
 For shared media, the same content identity should be able to support:
 
@@ -396,14 +484,20 @@ Learner-imported media should participate in this same flow where supported.
 
 ---
 
-# 9. Grammar and vocabulary
+# 9. Vocabulary content — the Vocabulary Library
 
-Grammar and vocabulary are not separate content worlds that must compete with
-Reading, Listening, Writing, or Speaking.
+Vocabulary is a real curated library, not only a flat word list or a byproduct
+of saving words while reading.
 
-They should frequently emerge from real learner encounters.
+The full model — Orena Vocabulary Cards, topic collections, orthography for
+Chinese and future scripts, and the relationship to existing saved-word
+identity — is defined in:
 
-A useful pattern remains:
+`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`
+
+The pattern below still governs how vocabulary connects to real use, and
+remains valid for both dedicated Vocabulary practice and vocabulary that
+emerges from encounters in other domains:
 
 Encounter
 → Notice
@@ -413,14 +507,68 @@ Encounter
 → Recall
 → Master.
 
-Dedicated Grammar and Vocabulary experiences may exist where valuable.
-
-They should remain connected to actual language, learner evidence, and future
-use whenever possible.
+Vocabulary must be able to grow independently of Reading and Listening
+content, per `ORENA_VOCABULARY_ARCHITECTURE.md` §1 and §6.
 
 ---
 
-# 10. Explore, My Content, My Language, and Recall
+# 10. Language Knowledge — the shared explanation layer
+
+Orena maintains a reusable knowledge layer for language concepts: words,
+phrases, grammar patterns, particles, prepositions, phrasal verbs, semantic
+contrasts, pronunciation concepts, writing conventions, and usage differences.
+
+This is the Language Knowledge Graph, and it supports the Understanding
+Engine so explanations are not improvised from scratch every time. The full
+model is defined in:
+
+`docs/product/ORENA_UNDERSTANDING_ENGINE.md`
+
+Language Knowledge is shared infrastructure per §4: every domain may read it,
+and grammar, vocabulary, reading, listening, writing, and speaking may each
+contribute concepts to it without forking a private copy. It does not replace
+stable Grammar Concept IDs (R5, `ARCHITECTURE_INVARIANTS.md`); it adds the
+explanatory layer around them and around concepts R5 never covered.
+
+---
+
+# 11. The Orena Understanding Engine
+
+Orena should eventually let a learner ask about almost anything in the target
+language and receive an explanation designed to build a mental model rather
+than a memorized translation or rule — reusable from Reading, Listening,
+Speaking, Writing, and Vocabulary alike, through the same source-bound
+explanation seam already named `Understanding` in
+`ORENA_REFERENCE_ARCHITECTURE.md` §6-7 and `ORENA_EVIDENCE_ARCHITECTURE.md`
+§1.
+
+The full explanation philosophy, the accuracy rule separating verified fact
+from mnemonic, and the Language Knowledge Graph it draws on are defined in:
+
+`docs/product/ORENA_UNDERSTANDING_ENGINE.md`
+
+Media libraries answer "what can I learn from?" Vocabulary Cards answer "how
+do I retain and reuse what I learned?" The Understanding Engine answers "why
+does this language work like this?" These are complementary, distinct
+capabilities; Orena combines all three rather than collapsing them into one.
+
+---
+
+# 12. Grammar
+
+Grammar and vocabulary are not separate content worlds that must compete with
+Reading, Listening, Writing, or Speaking. They frequently emerge from real
+learner encounters, following the same Encounter → Notice → Understand → Use
+→ Re-encounter → Recall → Master pattern named in §9.
+
+Dedicated Grammar practice may exist where valuable. It remains connected to
+actual language, learner evidence, and future use whenever possible, and
+stays anchored to the closed R5 stable Grammar Concept IDs
+(`ARCHITECTURE_INVARIANTS.md`, "Closed-stage protection").
+
+---
+
+# 13. Explore, My Content, My Language, and Recall
 
 These concepts must remain distinct.
 
@@ -450,14 +598,15 @@ Language the learner has collected or demonstrated through learning.
 
 Examples:
 
-- vocabulary;
+- vocabulary (Orena Vocabulary Cards and saved words alike);
 - phrases;
 - collocations;
 - idioms;
 - grammar patterns;
 - recurring mistakes;
 - pronunciation evidence;
-- useful expressions.
+- useful expressions;
+- saved Understanding Engine explanations.
 
 ## Recall
 
@@ -470,12 +619,29 @@ the conceptual separation must remain clear.
 
 ---
 
-# 11. Cross-capability continuity
+# 14. Cross-domain relationships
 
 Content should be able to participate naturally in more than one learning
-capability when doing so improves the experience.
+capability when doing so improves the experience, and separate domain objects
+may reference each other explicitly:
 
-Example:
+- a Speaking shadowing activity may reference a Listening clip;
+- a Vocabulary Card may reference a sentence from a Reading item;
+- a Reading item may expose words into a learner's Vocabulary collection;
+- a Writing prompt may reference a Reading topic;
+- an Understanding explanation may be saved into the learner's Language
+  Knowledge collection;
+- a Listening transcript may provide examples for Vocabulary.
+
+The relationship is:
+
+> linked learning objects
+
+not:
+
+> the same object forced to serve every learning domain.
+
+Example continuity, unchanged from the existing product model:
 
 A short conversation
 → listen
@@ -488,23 +654,12 @@ A short conversation
 → recall it
 → use it independently.
 
-Another example:
-
-An article
-→ read
-→ inspect vocabulary
-→ understand an expression
-→ respond in writing
-→ discuss it aloud
-→ encounter useful language later.
-
 Do not mechanically force every capability into every content object.
-
 Integration must have a learner reason.
 
 ---
 
-# 12. Personalization
+# 15. Personalization
 
 Orena may use learner evidence to influence discovery.
 
@@ -524,37 +679,30 @@ Relevant evidence may include:
 - recent Speaking;
 - previous content choices.
 
-Personalization should reduce friction and create meaningful continuation.
-
-It should not require the learner to configure a large recommendation system
+Personalization should reduce friction and create meaningful continuation. It
+should not require the learner to configure a large recommendation system
 manually.
 
 ---
 
-# 13. English and Chinese
+# 16. English and Chinese
 
 English and Chinese are first-class throughout the content system.
 
-Equivalent product quality is required for:
-
-- discovery;
-- curated or provided content;
-- generated content;
-- imported content where the source type is supported;
-- metadata;
-- learner collections;
-- continuation;
-- cross-capability learning.
+Equivalent product quality is required for discovery, curated or provided
+content, generated content, imported content where the source type is
+supported, metadata, learner collections, continuation, and cross-capability
+learning — and, per D-049, for Vocabulary Card depth, orthography support, and
+Understanding Engine explanation quality alike.
 
 Equivalent quality does not require identical content catalogs or linguistic
-processing.
-
-Language-specific differences should be handled through appropriate language
-behavior rather than by creating two disconnected products.
+processing. Language-specific differences should be handled through
+appropriate language behavior rather than by creating two disconnected
+products.
 
 ---
 
-# 14. Provenance and rights
+# 17. Provenance and rights
 
 Orena must represent external content truthfully.
 
@@ -582,7 +730,45 @@ Do not present generated content as externally published content.
 
 ---
 
-# 15. Product acceptance contract
+# 18. Content scale philosophy
+
+The target is not "add one or two example items." Orena should eventually
+feel like it has a substantial learning world to explore, with each domain
+capable of containing hundreds or thousands of useful items over time.
+
+This requires, at the shared-infrastructure level (§4,
+`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md`):
+
+- batch ingestion;
+- incremental publishing;
+- pagination/cursor loading (`ORENA_COLLECTION_ARCHITECTURE.md` §3 already
+  specifies this for retrieval; content growth must not outrun it);
+- background processing;
+- failure isolation and retryable jobs (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md`
+  §3's job states already define this);
+- rights/provenance tracking (§17);
+- deduplication;
+- moderation/review before publication;
+- scalable asset storage.
+
+However, scale must not be achieved by filling the product with low-quality
+content:
+
+> A smaller curated library is better than a massive noisy dump.
+
+A hand-authored array of a few sample items (as every domain's current
+implementation still is, in whole or in part) is a legitimate *starting
+seam*, not the target end-state. Growing a domain's library is expected to
+move to the batch/reviewed pipeline above as curation capacity allows, not to
+continue indefinitely as one-at-a-time manual edits. See
+`docs/project/LEGACY_TOMBSTONES.md` for the specific pattern this retires as a
+strategy (owning hard-coded content in the Discover/Home entry surface); it
+does not retire hand-authored generated content itself, which remains a valid
+`origin: generated` source under §2.
+
+---
+
+# 19. Product acceptance contract
 
 A mature Orena content experience should answer both:
 
@@ -604,7 +790,7 @@ their own interests and materials to the learning system.
 
 ---
 
-# 16. Implementation principle
+# 20. Implementation principle
 
 Existing code proves current implementation state.
 
@@ -627,8 +813,12 @@ Examples include:
 - Listening reconstruction;
 - Shadowing;
 - Speaking evaluation;
-- Vocabulary / Library;
-- Grammar concepts;
+- Vocabulary / Library — today's saved-word/recall implementation is the
+  seam `ORENA_VOCABULARY_ARCHITECTURE.md` builds Vocabulary Cards on top of,
+  not a system to discard;
+- Grammar concepts and the static Grammar KB — the seam
+  `ORENA_UNDERSTANDING_ENGINE.md`'s Language Knowledge Graph extends;
+- `ui/understanding.js` — the seam the Understanding Engine deepens;
 - learner memory and progress.
 
 Do not rebuild these merely to satisfy this document.
@@ -638,7 +828,7 @@ described here.
 
 ---
 
-# 17. Review question
+# 21. Review question
 
 For meaningful learner-facing content work, ask:
 
@@ -647,3 +837,7 @@ while also making it possible for the learner to connect language they
 personally care about?
 
 If it only exposes another learning tool, the experience is incomplete.
+
+Does this content live in its owning domain's library, or did it get added
+directly to an entry-surface array because that was the fastest path? If the
+latter, it needs to move (§3, §18).

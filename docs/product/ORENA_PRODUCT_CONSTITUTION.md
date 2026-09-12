@@ -794,7 +794,59 @@ The detailed durable content contract is defined in:
 
 ---
 
-# 31. Constitution change policy
+# 31. Understanding, and the six learning domains
+
+Orena contains multiple canonical learning-content domains — Reading, Writing,
+Listening, Speaking, Vocabulary, and Language Knowledge — each with its own
+content model, sharing common infrastructure for ingestion, provenance,
+publishing, indexing, recommendation, moderation, and search.
+
+Do not force these domains into one universal content schema. They are
+different learning objects and should remain different, connected by explicit
+references rather than collapsed into one shape.
+
+One of Orena's most important differentiators is a shared **Understanding
+Engine**: the capability, reachable from every domain, that explains language
+by building a mental model, intuition, or useful contrast rather than
+defaulting to translation-only answers or rule memorization. The question it
+tries to answer is:
+
+> What mental model would make this usage feel natural?
+
+The engine must clearly distinguish a useful mental model or mnemonic from
+verified linguistic fact, and must never present the former as the latter
+merely because it is memorable.
+
+Vocabulary is a real curated library of Orena Vocabulary Cards — richer than
+`word -> translation` — not only a flat saved-word list. For writing systems
+where visual form matters to learning, such as Chinese, orthography (radicals,
+components, stroke order, tracing practice) is a first-class part of a card,
+built as a general capability rather than hard-coded to one script.
+
+Discover and Home distribute content from these domain libraries. They must
+not own hard-coded canonical content themselves.
+
+The target is substantial curated default libraries over time in each domain,
+not one or two sample items kept small indefinitely. A smaller curated library
+remains better than a large noisy one; smallness is not itself the goal once
+curation capacity exists.
+
+The detailed durable contracts are defined in:
+
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md`
+`docs/product/ORENA_UNDERSTANDING_ENGINE.md`
+`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`
+
+This section amends the Constitution per D-049
+(`docs/project/DECISION_LOG.md`), integrating
+`docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md`. It does not
+change the durable content model described in §30; it extends it with the
+Understanding Engine and Vocabulary Card depth that model already pointed
+toward without yet naming.
+
+---
+
+# 32. Constitution change policy
 
 Human-authorized product-layer reset (D-046): historical learner-facing skill
 dashboards, module shells, Listening mode destinations, Shadowing Studio, and

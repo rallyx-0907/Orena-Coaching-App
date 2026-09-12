@@ -45,6 +45,45 @@ removed merely because current code conflicts with them.
 - **Replacement:** `templates/orena/index.html` at `/`.
 - **Must not happen:** restoring the old learner shell or competing root template.
 
+## Discover/Home owning hard-coded canonical content
+
+- **Status:** RETIRED (D-049).
+- **Current replacement:** Domain libraries (`docs/product/
+  ORENA_CONTENT_ARCHITECTURE.md` §5-§10); Discover/Home distribute from them
+  (§3).
+- **Why retired:** Growing the entry surface by hand-editing a small array
+  directly in `static/orena/content/texts.js` (or an equivalent per-domain
+  array) reads as fast content growth but is the exact pattern D-049 exists to
+  stop: it never scales past a hand-curated handful and keeps the strategic
+  content problem looking solved when it is not.
+- **What may remain:** The existing hand-authored `origin: generated` items
+  already in such arrays are valid content under
+  `ORENA_CONTENT_ARCHITECTURE.md` §2 and are not deleted; a hand-authored
+  array remains an acceptable **starting seam** for a domain that has no
+  pipeline yet (§18). What must not happen is treating further one-at-a-time
+  edits to that array as the ongoing content-growth strategy.
+- **What must not happen:** New agents must not "grow Discover" by adding more
+  literal entries to a hard-coded array and calling it library growth. New
+  content growth targets the owning domain's library and its shared
+  ingestion/admission/moderation pipeline
+  (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, §3), with Discover/Home
+  reading from it, not authoring it.
+
+## Vocabulary as a flat saved-word list
+
+- **Status:** RETIRED as the target model (D-049).
+- **Current replacement:** Orena Vocabulary Cards
+  (`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`).
+- **Why retired:** `word -> translation` plus a recall-review schedule is the
+  correct baseline (`ORENA_COLLECTION_ARCHITECTURE.md`'s existing saved-word/
+  `LanguageItemRef` seam) but is not a complete Vocabulary product.
+- **What may remain:** The existing saved-word identity, occurrence
+  provenance, and Active Recall scheduling are the foundation a Vocabulary
+  Card is built on, unchanged (`ORENA_VOCABULARY_ARCHITECTURE.md` §3).
+- **What must not happen:** Treating the current flat list as Vocabulary's
+  finished end-state, or building a second, disconnected "card" system instead
+  of enriching the existing saved-word object.
+
 ## `writing_coach/becoming_*`
 
 - **Status:** LEGACY TECHNICAL NAMESPACE

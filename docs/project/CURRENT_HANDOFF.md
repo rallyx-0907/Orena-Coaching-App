@@ -57,12 +57,11 @@ GOLDEN_STAR_COMPLETION.
 ## Runtime / safety
 
 Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
-`orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it and
-Docker Desktop alone cannot restore it - use `scripts/start_orena_sandbox.ps1`.
-Restart after Python changes - the worktree is mounted, uvicorn does not reload. Do not
-operate production 8000, preview 8010, Cloudflare or volumes. No provider keys:
-the AI surfaces return 503 honestly. Pronunciation may be demo-labelled. No
-microphone acceptance has run; do not claim it.
+`orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it;
+`scripts/start_orena_sandbox.ps1` restores it. Restart after Python changes -
+uvicorn does not reload. Do not operate production 8000, preview 8010,
+Cloudflare or volumes. No provider keys: AI surfaces return 503 honestly.
+Pronunciation may be demo-labelled. No microphone acceptance has run.
 
 Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
 four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
@@ -110,6 +109,12 @@ Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
 (trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
 
+D-049 (2026-09-12): Content Architecture amended - six canonical domains,
+Understanding Engine, Language Knowledge Graph, Vocabulary Card + orthography.
+New: `ORENA_UNDERSTANDING_ENGINE.md`, `ORENA_VOCABULARY_ARCHITECTURE.md`;
+sequence in `ROADMAP.md`. Parallel to I1-I7, not a stage of it; any schema
+still needs the I2/I3 review gate. Docs-only.
+
 ## PENDING
 
 Microphone hardware and live-provider validation remain pending; injected
@@ -127,29 +132,25 @@ None identified.
 
 ## OPEN P1
 
-- `#/language` renders "temporarily unavailable" only in a long multi-room
-  sweep at short dwell (4/4@700ms/14 routes; 2/2@750ms/13 rooms). Never
-  isolated, from one predecessor, or at 300-2600ms; 0/130 before/after
-  Package D. Self-recovers, no error captured. Needs a dedicated slice.
+- `#/language` renders "temporarily unavailable" only in long multi-room
+  sweeps at short dwell (4/4@700ms/14 routes; 2/2@750ms/13 rooms); never
+  isolated or at 300-2600ms; 0/130 before/after Package D. Self-recovers.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard.
   Preserve it without restoring the historical shell.
 - Grammar breadth: authored patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
-- Cross-device continuity: device memory remains current; I2 schema/sync
-  activation and its policy inputs remain gated.
-- Reading library breadth: contract, rights fields and admission gate exist;
-  growing it is a rights decision per text. Without a provider the API returns
-  one built-in passage per language, labelled.
+- Cross-device continuity: device memory current; I2 schema/sync activation
+  and its policy inputs remain gated.
+- Reading/Vocabulary library breadth: rights gate per text (Reading); D-049
+  content-domain sequence (Vocabulary Card, orthography) not yet implemented.
 - Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 is frozen native.
-  Do not weaken active tests for them.
 
 ## Baseline test evidence
 
-The 20 Python failures are inherited: baselines 5827f6a and f966b28 show the
-same ones in test_governance_contract.py, test_media_ingestion.py and
-test_media_learning.py (historical prose/source-format assertions). Never claim
-an all-green suite.
+20 Python failures are inherited (baselines 5827f6a, f966b28): same ones in
+test_governance_contract.py, test_media_ingestion.py, test_media_learning.py.
+Never claim an all-green suite.
 
 ## HUMAN GATES
 

@@ -724,3 +724,103 @@ R21 completion requires:
 
 R21 does not mark any learner skill PUBLIC merely because a mobile binary
 builds. Existing product release gates remain authoritative.
+
+## Golden Star / Content Domain program (current active track)
+
+**R0-R21 above is the historical BECOMING-era numbered sequence**, preserved
+for traceability per D-046 and this file's own operating rule ("R0-R21 remain
+structurally unchanged"). It predates the D-046 product-layer reset and the
+Golden Star mission and is **not** where current work is tracked. The living
+execution trackers for the current mission are:
+
+- `docs/product/ORENA_STATUS.md` — current milestone and capability state;
+- `docs/project/CURRENT_HANDOFF.md` — exact next task, blockers, human gates;
+- `docs/project/ORENA_BACKBONE_EXECUTION.md` and
+  `docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` — the I1-I7
+  account/commerce/collection/execution/evidence backbone, in progress
+  (I1 done, I2 schema deployed sandbox-only flag-off, I3 read adapter done
+  and subscription-inbox schema in independent review as of this entry).
+
+This section adds the sequence D-049 requires — Understanding Engine,
+Language Knowledge Graph, Vocabulary Cards, orthography, per-domain content
+schemas, shared ingestion/publishing, default libraries, and Discover/Home
+distribution — coordinated against that backbone rather than duplicating it.
+
+### Relationship to I1-I7
+
+The content-domain track is a **parallel content backbone**, not a stage of
+I1-I7: I1-I7 own account, commerce, collection/retrieval, content execution
+(admission/jobs), and evidence/growth. The content-domain track owns what
+those execution/admission contracts move — the actual Reading, Writing,
+Listening, Speaking, Vocabulary, and Language Knowledge objects. It depends
+on, and must not duplicate:
+
+- `ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` (I5) for admission and the
+  expensive-operation/job contract every domain's ingestion reuses;
+- `ORENA_COLLECTION_ARCHITECTURE.md` (I4) for the existing saved-word/
+  `LanguageItemRef` retrieval seam Vocabulary Cards sit on top of;
+- `ORENA_EVIDENCE_ARCHITECTURE.md` (I6) for the existing `Understanding`
+  evidence row and Discover's evidence-ranked-candidate model;
+- the I2 account/incarnation backbone for any persistence a later phase
+  proposes, the same way the I3 commerce proposal did.
+
+Any new persistence this track needs (Vocabulary Card storage, Language
+Knowledge Graph storage, per-domain content tables beyond the existing Media
+Learning/Reading models) is a **separate schema proposal** through the
+existing architecture-review gate (`AGENTS.md` §1), following the exact
+propose → rehearse → independent review → human schema/runtime authorization
+path I2 and I3 already established. This roadmap entry does not itself
+authorize any schema.
+
+### Sequence
+
+Ordered by dependency, not strict serial execution — later phases may start
+once their specific dependency is ready, per this file's existing "dependency-
+aware order" rule used for R13-R18:
+
+1. **Understanding Engine foundation** — pure decision layer for what an
+   explanation request needs before generation (exact selection, context
+   containment, mental-model-vs-fact response shape), reusing the existing
+   `ui/understanding.js` seam and `ExperienceContext`
+   (`ORENA_REFERENCE_ARCHITECTURE.md` §3). No schema; extends an existing
+   capability.
+2. **Language Knowledge Graph** — read-through lookup before generation, so
+   an already-explained concept is reused rather than regenerated
+   inconsistently. First implementation may be a bounded read model over
+   existing Grammar Concept IDs before any new schema is proposed.
+3. **Orena Vocabulary Card specification, implemented** — enrich the
+   existing saved-word object per `ORENA_VOCABULARY_ARCHITECTURE.md` §2-3;
+   depends on (2) for the optional core-semantic-image field.
+4. **Orthography / stroke-order support** — the general `orthography`
+   capability on top of (3), Chinese first.
+5. **Canonical per-domain content schemas** — Reading Library, Writing
+   Prompt Bank, Listening Library, Speaking Library fields per
+   `ORENA_CONTENT_ARCHITECTURE.md` §5-§8, reusing existing Media Learning/
+   reading models where they already satisfy a field rather than replacing
+   them.
+6. **Shared ingestion/publishing infrastructure** — largely already
+   specified (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, §3); this phase
+   is extending its admission/job contract to Writing Prompts, Vocabulary
+   Cards, and Language Knowledge entries as content types, not building a
+   new pipeline.
+7. **Default library bootstrapping** — batch/incremental growth of each
+   domain toward `ORENA_CONTENT_ARCHITECTURE.md` §18's scale target, through
+   (6)'s pipeline rather than hand-edited arrays.
+8. **Discover/Home distribution** — Discover/Home read from the domain
+   libraries built in (5)-(7) instead of owning content directly
+   (`ORENA_CONTENT_ARCHITECTURE.md` §3); depends on at least one domain
+   having library depth worth distributing.
+9. **Cross-domain learning loops** — the linked-object relationships in
+   `ORENA_CONTENT_ARCHITECTURE.md` §14 (Speaking references Listening,
+   Vocabulary references Reading sentences, and so on), once the domains
+   they link exist independently.
+
+### What this does not authorize
+
+No production change, no new schema, no provider activation, and no claim
+that phases 1-2 (which touch existing capabilities without new persistence)
+imply approval for phases 3+ (which likely do need new persistence and
+therefore the architecture-review gate). Human product-direction approval for
+learner-visible results from this track remains the same browser-review gate
+every Golden Star milestone requires
+(`ORENA_PRODUCT_CONSTITUTION.md` §27-28).

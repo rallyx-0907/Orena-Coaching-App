@@ -48,6 +48,24 @@ requires it to evolve.
   contracts.
 - `docs/visual-references/**` remains untouched unless explicitly scoped.
 
+## Content and learning domains
+
+- Reading, Writing, Listening, Speaking, Vocabulary, and Language Knowledge
+  are separate canonical domains (D-049). Do not force them into one
+  universal content schema; they share infrastructure (ingestion, rights,
+  search, feed) through `docs/product/ORENA_CONTENT_ARCHITECTURE.md` §4, not
+  a merged object model.
+- Discover/Home distribute content from domain libraries; they must not own
+  hard-coded canonical content
+  (`docs/project/LEGACY_TOMBSTONES.md`, "Discover/Home owning hard-coded
+  canonical content").
+- The Understanding Engine (`docs/product/ORENA_UNDERSTANDING_ENGINE.md`)
+  must always distinguish a mental model/mnemonic from verified linguistic
+  fact; it must never present the former as the latter.
+- Orthography (stroke order and equivalents) is implemented as a general
+  `orthography` capability, never hard-coded to one script
+  (`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md` §4).
+
 ## Multilingual product
 
 - Shared product behavior applies to EN and ZH.
