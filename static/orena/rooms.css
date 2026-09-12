@@ -52,7 +52,7 @@
 /* The writing workspace: the sheet on one side, the review on the other, both
    inside one frame. The sheet fills its region and the review scrolls in its
    own, so feedback never lengthens the page. */
-[data-experience='writing'] .writing-workspace { --workspace-inset: 17rem; }
+[data-experience='writing'] .writing-workspace { --workspace-inset: 11rem; }
 [data-experience='writing'] .writing-sheet {
   display: flex;
   flex-direction: column;
@@ -128,7 +128,7 @@
    heard - evidence, then coaching - on the other, inside one frame. Both
    regions scroll on their own, so a long transcript or coaching never
    lengthens the page, and other starting points wait below the frame. */
-[data-experience='speaking'] .voice-workspace { --workspace-inset: 14rem; }
+[data-experience='speaking'] .voice-workspace { --workspace-inset: 11rem; }
 [data-experience='speaking'] .voice-exchange {
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -625,6 +625,43 @@
 }
 @media (max-width: 480px) {
   .follow-moment .spoken .token { min-width: 44px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Desktop: the room starts at the top, and following a voice keeps the
+   spoken line and its meaning in the first viewport.
+
+   The way back and the heading orient in two short lines instead of a band of
+   whitespace. While following, the video yields height rather than the line:
+   it keeps its 16:9 shape and narrows until the transport, the current line
+   and its meaning fit under it, so a learner never scrolls to read the
+   subtitle of the moment they are watching. A practice keeps its own
+   side-by-side composition and is not affected.
+   --------------------------------------------------------------------------- */
+@media (min-width: 901px) {
+  .back-row { padding: var(--space-4) 0 var(--space-1); }
+  .encounter-heading { padding: var(--space-1) 0 var(--space-4); }
+  .encounter-heading h1 { font-size: clamp(1.75rem, 2.4vw, 2.5rem); margin-top: var(--space-1); }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .player-wrap :is(video, iframe) {
+    inline-size: min(100%, calc((100svh - var(--follow-reserve, 29rem)) * 16 / 9));
+    margin-inline: auto;
+  }
+  .transport { padding-block: var(--space-2); }
+  .seek-line { padding-block: var(--space-1); }
+  .follow-moment {
+    min-height: 0;
+    padding: var(--space-4) var(--space-5);
+  }
+  .follow-moment .spoken {
+    font-size: clamp(1.35rem, 1.9vw, 1.9rem);
+    line-height: 1.45;
+    margin: var(--space-2) 0 var(--space-1);
+  }
+  .follow-moment .meaning { margin-top: var(--space-1); line-height: 1.6; }
+  .follow-moment .close-look { margin-top: var(--space-2); }
+  .transcript-panel { padding-top: var(--space-3); }
+  .transcript-panel .section-head { margin: 0 0 var(--space-2); }
+  .transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
 }
 
 /* ---------------------------------------------------------------------------

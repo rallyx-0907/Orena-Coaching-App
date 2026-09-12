@@ -1831,7 +1831,7 @@
     margin: 0;
     border-radius: var(--radius);
     border-bottom: 2px solid var(--sun);
-    max-block-size: clamp(24rem, calc(100svh - 18rem), 60rem);
+    max-block-size: clamp(24rem, calc(100svh - 12rem), 60rem);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;

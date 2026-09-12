@@ -425,3 +425,27 @@ headless Chrome via Playwright at 390x844 (and 800x844), local execution:
 
 Not claimed: real-device testing, iOS Safari address-bar behaviour, human
 approval.
+
+## Desktop rail, top gap and Follow first viewport: verification evidence
+
+Running sandbox 8011, headless Chrome, local execution. Defects reported by the
+human: the rail scrolled and hid "Your Orena", "Bring something in" was
+oversized, and a band of space above every room pushed Listening's current
+line and meaning below the fold.
+
+- The top band was the narrow header's backdrop button, styled only below
+  900px and left in page flow on desktop (44px + margin, content started at
+  51px). It is now `display: none` outside the narrow header; content starts
+  at the top.
+- The rail no longer scrolls at 1280x720, 1366x768, 1440x900 or 1920x1080:
+  identity and account are fixed, destinations take the middle and scroll only
+  in a window too short for them. "Your Orena" sits at 670-706px at 720 high
+  (was 871-915px, off screen). "Bring something in" is a 36px quiet row.
+- Follow, 0:46 video lesson: spoken line and meaning now inside the first
+  viewport at all four sizes (meaning bottom 706 / 733 / 818 / 968 px; before
+  1040 / 1038 / 1014 / 1149 px). The video keeps 16:9 and narrows when the
+  window is short. Writing and Speaking workspaces use the height given back
+  (bottom 878 / 885 px at 900 high).
+- Narrow header states and the narrow destination sheet's backdrop unchanged;
+  no horizontal overflow on any route at 1440/800/390 in EN or ZH; 33 CI
+  `.mjs` gates and the ESM graph pass.
