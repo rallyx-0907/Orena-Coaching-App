@@ -261,8 +261,21 @@ assert.ok(
   /task && `\$\{c\.writingTask\} \$\{task\}`/.test(expressionSource),
   'the stated task must travel with the text as the writing task',
 );
+/* Proficiency is optional guidance, not a prerequisite. `c778005` made the
+   request target optional, so the surface must let a learner write and press
+   Review with nothing chosen and let the evaluator infer the demonstrated
+   band; an unchosen target has to travel as null, never as an empty string. */
+assert.ok(
+  !/name="target"\s+required/.test(expressionSource),
+  'the feedback target must not be a required field',
+);
+assert.match(
+  expressionSource,
+  /\[name=target\]'\)\.value\s*\|\|\s*null/,
+  'an unchosen target must travel as null so the evaluator infers the level',
+);
 for (const ui of ['en', 'zh']) {
-  for (const key of ['writingTask', 'writingTaskNote', 'reviewSinceLast', 'reviewFixed', 'reviewStill', 'reviewArrived', 'reviewReworked'])
+  for (const key of ['writingTask', 'writingTaskNote', 'chooseTarget', 'reviewSinceLast', 'reviewFixed', 'reviewStill', 'reviewArrived', 'reviewReworked'])
     assert.ok(copy[ui][key], `${ui}: missing copy for "${key}"`);
 }
 

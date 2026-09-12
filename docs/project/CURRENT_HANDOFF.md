@@ -60,8 +60,8 @@ Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
 `orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it;
 `scripts/start_orena_sandbox.ps1` restores it. Restart after Python changes -
 uvicorn does not reload. Do not operate production 8000/preview 8010/
-Cloudflare/volumes. No provider keys: AI surfaces return 503 honestly;
-pronunciation may be demo-labelled; no microphone acceptance run.
+Cloudflare/volumes. Writing evaluation runs on local Ollama; ASR and
+pronunciation stay unconfigured. No microphone acceptance run.
 
 Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
 four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.

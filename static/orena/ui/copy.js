@@ -1,6 +1,6 @@
 const en = {
   reviewTarget: 'Feedback target',
-  chooseTarget: 'Choose a level',
+  chooseTarget: 'Let Orena infer the level',
   voiceResponse: 'You are part of the conversation.',
   speakingGuide:
     'Imagine you are there. What would you say next? Try a reply, a question, or a story of your own.',
@@ -264,7 +264,7 @@ const en = {
 };
 const zh = {
   reviewTarget: '反馈目标',
-  chooseTarget: '选择一个等级',
+  chooseTarget: '让 Orena 自动判断等级',
   voiceResponse: '这次对话，也有你的一份。',
   speakingGuide:
     '想象你就在现场。接下来你会说什么？试着回应、提问，或讲讲自己的故事。',

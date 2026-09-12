@@ -109,7 +109,9 @@ from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("WRITING_DB", ROOT / "data" / "writing.db"))
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
+# Docker host alias, matching .env.example and compose.yaml. The app is only
+# ever run in a container, where 127.0.0.1 would be the container itself.
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 REQUEST_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "180"))
 ALLOW_FALLBACK = os.getenv("ALLOW_FALLBACK", "false").lower() in {"1", "true", "yes", "on"}
