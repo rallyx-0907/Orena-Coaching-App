@@ -50,18 +50,25 @@ requires it to evolve.
 
 ## Content and learning domains
 
-- Reading, Writing, Listening, Speaking, Vocabulary, and Language Knowledge
-  are separate canonical domains (D-049). Do not force them into one
-  universal content schema; they share infrastructure (ingestion, rights,
-  search, feed) through `docs/product/ORENA_CONTENT_ARCHITECTURE.md` §4, not
-  a merged object model.
+- Reading, Writing, Listening, Speaking, and Vocabulary are Orena's five
+  separate canonical content domains (D-049, corrected by D-050). Do not
+  force them into one universal content schema; they share infrastructure
+  (ingestion, rights, search, feed) through
+  `docs/product/ORENA_CONTENT_ARCHITECTURE.md` §4, not a merged object model.
+- The Understanding Engine is a horizontal capability shared across all five
+  domains (`docs/product/ORENA_UNDERSTANDING_ENGINE.md` §1) — it is not a
+  sixth domain, and it must not be built on a required precomputed knowledge
+  store; it generates from the learner's exact context (D-050,
+  `docs/project/LEGACY_TOMBSTONES.md`, "Language Knowledge modeled as a sixth
+  content domain / mandatory precomputed graph").
 - Discover/Home distribute content from domain libraries; they must not own
   hard-coded canonical content
   (`docs/project/LEGACY_TOMBSTONES.md`, "Discover/Home owning hard-coded
   canonical content").
-- The Understanding Engine (`docs/product/ORENA_UNDERSTANDING_ENGINE.md`)
-  must always distinguish a mental model/mnemonic from verified linguistic
-  fact; it must never present the former as the latter.
+- The Understanding Engine (`docs/product/ORENA_UNDERSTANDING_ENGINE.md`) must
+  always distinguish four things — mental model, mnemonic, linguistic
+  explanation, and verified etymology/history — and never present an invented
+  mental model or mnemonic as verified linguistic fact.
 - Orthography (stroke order and equivalents) is implemented as a general
   `orthography` capability, never hard-coded to one script
   (`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md` §4).

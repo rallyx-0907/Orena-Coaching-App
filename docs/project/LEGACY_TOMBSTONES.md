@@ -49,7 +49,7 @@ removed merely because current code conflicts with them.
 
 - **Status:** RETIRED (D-049).
 - **Current replacement:** Domain libraries (`docs/product/
-  ORENA_CONTENT_ARCHITECTURE.md` §5-§10); Discover/Home distribute from them
+  ORENA_CONTENT_ARCHITECTURE.md` §5-§9); Discover/Home distribute from them
   (§3).
 - **Why retired:** Growing the entry surface by hand-editing a small array
   directly in `static/orena/content/texts.js` (or an equivalent per-domain
@@ -60,7 +60,7 @@ removed merely because current code conflicts with them.
   already in such arrays are valid content under
   `ORENA_CONTENT_ARCHITECTURE.md` §2 and are not deleted; a hand-authored
   array remains an acceptable **starting seam** for a domain that has no
-  pipeline yet (§18). What must not happen is treating further one-at-a-time
+  pipeline yet (§17). What must not happen is treating further one-at-a-time
   edits to that array as the ongoing content-growth strategy.
 - **What must not happen:** New agents must not "grow Discover" by adding more
   literal entries to a hard-coded array and calling it library growth. New
@@ -83,6 +83,41 @@ removed merely because current code conflicts with them.
 - **What must not happen:** Treating the current flat list as Vocabulary's
   finished end-state, or building a second, disconnected "card" system instead
   of enriching the existing saved-word object.
+
+## Language Knowledge modeled as a sixth content domain / mandatory precomputed graph
+
+- **Status:** RETIRED (D-050, correcting an over-modeling introduced by D-049's
+  first integration).
+- **Current replacement:** The Understanding Engine is a horizontal capability
+  shared across Orena's five content domains — Reading, Writing, Listening,
+  Speaking, Vocabulary — not a sixth learner-facing library
+  (`docs/product/ORENA_UNDERSTANDING_ENGINE.md` §1). It is AI-first and
+  context-grounded: explanations generate from the learner's exact context
+  through the Orena Explanation Contract, not from a required precomputed
+  knowledge store (`ORENA_UNDERSTANDING_ENGINE.md` §2-3). An optional
+  explanation support layer (caching, retrieval, trusted references) may be
+  added later only once real usage justifies it (`ORENA_UNDERSTANDING_ENGINE.md`
+  §5); a structured knowledge graph is a possible optimization inside that
+  layer, never a prerequisite.
+- **Why retired:** The first pass integrating
+  `docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md` (whose own
+  §2.6/§7/§16 still carry this framing as a historical artifact) modeled
+  "Language Knowledge" as a peer of Reading/Writing/Listening/Speaking/
+  Vocabulary and treated a Language Knowledge Graph as something the
+  Understanding Engine needed before it could work. Neither claim was the
+  intended product model.
+- **What may remain:** Everything else D-049 established — five domains as
+  domains, the Orena Vocabulary Card spec and orthography, the Discover/Home
+  distribution correction, and the content scale philosophy — is unaffected
+  and stays in force.
+- **What must not happen:** New agents reading the amendment document directly
+  must not reintroduce a sixth "Language Knowledge" domain, a learner-browsable
+  Understanding/Language-Knowledge screen, or a database that must be
+  pre-populated before an explanation can be generated. Treat the amendment
+  document as historical context for *why* the Understanding Engine and
+  Vocabulary Card work exist, not as the current section-numbering or
+  domain-count authority — `ORENA_CONTENT_ARCHITECTURE.md` and
+  `ORENA_UNDERSTANDING_ENGINE.md` are.
 
 ## `writing_coach/becoming_*`
 

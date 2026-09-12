@@ -14,13 +14,16 @@ The Constitution defines why Orena exists and what the product should feel like.
 This document defines the durable content model that supports that experience,
 together with two companion contracts it depends on:
 
-- `docs/product/ORENA_UNDERSTANDING_ENGINE.md` — the shared mental-model
-  explanation capability and Language Knowledge Graph;
+- `docs/product/ORENA_UNDERSTANDING_ENGINE.md` — the horizontal mental-model
+  explanation capability shared across every domain below;
 - `docs/product/ORENA_VOCABULARY_ARCHITECTURE.md` — the Vocabulary Library and
   Orena Vocabulary Card model, including orthography.
 
-Amended by D-049 (`docs/project/DECISION_LOG.md`), integrating
-`docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md`.
+Amended by D-049, corrected by D-050 (`docs/project/DECISION_LOG.md`),
+integrating `docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md`.
+D-050 corrects an over-modeling in the first integration: Orena has **five**
+canonical content domains, not six — Understanding is a horizontal capability
+over them, not a domain of its own. See §10.
 
 ---
 
@@ -58,13 +61,18 @@ progression, and continuation model.
 
 ### Orena is not one universal content schema
 
-Orena contains **multiple canonical learning-content domains** — Reading,
-Writing, Listening, Speaking, Vocabulary, and Language Knowledge — each with
-its own content model and learner experience, sharing common platform
-infrastructure for ingestion, provenance, publishing, indexing, recommendation,
-moderation, and search.
+Orena contains **five canonical learning-content domains** — Reading,
+Writing, Listening, Speaking, and Vocabulary — each with its own content
+model and learner experience, sharing common platform infrastructure for
+ingestion, provenance, publishing, indexing, recommendation, moderation, and
+search.
 
-> Separate learning domains, shared platform infrastructure, one shared
+A shared **Understanding Engine** (§10) sits horizontally across all five,
+answering "why does this work" questions with a mental model rather than a
+memorized translation or rule. It is a capability every domain calls, not a
+sixth library a learner browses.
+
+> Separate learning domains, shared platform infrastructure, one horizontal
 > Understanding Engine.
 
 Do not force Reading, Writing, Listening, Speaking, and Vocabulary into one
@@ -165,7 +173,7 @@ Discovery should not feel like browsing a catalog of learning features.
 ### Discover and Home are distribution surfaces, not canonical storage
 
 Discover and Home must surface publishable content from the domain libraries
-in §5-§10. They must not own hard-coded canonical content of their own — a
+in §5-§9. They must not own hard-coded canonical content of their own — a
 fixed list of sample items baked into the entry surface is a temporary
 implementation seam, never the target content strategy. `ORENA_EVIDENCE_
 ARCHITECTURE.md` §4 already establishes that Discover ranks/filters existing
@@ -188,10 +196,10 @@ It must not become a disconnected utility mode.
 
 # 4. Shared infrastructure, separate domains
 
-Reading, Writing, Listening, Speaking, Vocabulary, and Language Knowledge keep
-their own content models (§5-§10). They may share infrastructure such as:
+Reading, Writing, Listening, Speaking, and Vocabulary keep their own content
+models (§5-§9). They may share infrastructure such as:
 
-- source/rights registry and provenance tracking (§2, §17);
+- source/rights registry and provenance tracking (§2, §16);
 - the ingestion and admission contract
   (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, already covering origin/
   access/readiness axes and admission checks for any source type, not only
@@ -204,7 +212,9 @@ their own content models (§5-§10). They may share infrastructure such as:
 - asset storage for media, images, and audio;
 - feed/distribution surfaces (§3).
 
-Conceptually:
+The five domains sit beside one shared horizontal capability — the
+Understanding Engine (§10) — which every domain calls rather than each
+building its own explanation logic:
 
 ```text
                      ORENA CONTENT PLATFORM
@@ -214,11 +224,10 @@ Conceptually:
       --------------------------------------------------
         |        |         |         |          |
      Reading  Writing   Listening  Speaking  Vocabulary
-                                                   |
-                                        Language Knowledge
-                                                   |
-                                       Understanding Engine
-                                    (docs/product/ORENA_UNDERSTANDING_ENGINE.md)
+        |________|_________|_________|__________|
+                              |
+                    Understanding Engine (horizontal)
+                 (docs/product/ORENA_UNDERSTANDING_ENGINE.md)
 ```
 
 "Shared infrastructure" never means "one universal content schema." A content
@@ -248,11 +257,11 @@ object may include, where relevant to its own domain:
 
 This is the set infrastructure (search, indexing, feeds) may need to read
 across domains — it is not a schema every domain must fully populate, and a
-domain's own object may carry fields this list does not name (§5-§10). Do not
+domain's own object may carry fields this list does not name (§5-§9). Do not
 invent metadata merely to fill a shared field.
 
 Cross-domain relationships between separate objects are allowed and expected
-(§14); a shared field list is not a reason to merge two domains into one
+(§13); a shared field list is not a reason to merge two domains into one
 object.
 
 ---
@@ -512,27 +521,7 @@ content, per `ORENA_VOCABULARY_ARCHITECTURE.md` §1 and §6.
 
 ---
 
-# 10. Language Knowledge — the shared explanation layer
-
-Orena maintains a reusable knowledge layer for language concepts: words,
-phrases, grammar patterns, particles, prepositions, phrasal verbs, semantic
-contrasts, pronunciation concepts, writing conventions, and usage differences.
-
-This is the Language Knowledge Graph, and it supports the Understanding
-Engine so explanations are not improvised from scratch every time. The full
-model is defined in:
-
-`docs/product/ORENA_UNDERSTANDING_ENGINE.md`
-
-Language Knowledge is shared infrastructure per §4: every domain may read it,
-and grammar, vocabulary, reading, listening, writing, and speaking may each
-contribute concepts to it without forking a private copy. It does not replace
-stable Grammar Concept IDs (R5, `ARCHITECTURE_INVARIANTS.md`); it adds the
-explanatory layer around them and around concepts R5 never covered.
-
----
-
-# 11. The Orena Understanding Engine
+# 10. The Orena Understanding Engine (horizontal, not a domain)
 
 Orena should eventually let a learner ask about almost anything in the target
 language and receive an explanation designed to build a mental model rather
@@ -542,8 +531,16 @@ explanation seam already named `Understanding` in
 `ORENA_REFERENCE_ARCHITECTURE.md` §6-7 and `ORENA_EVIDENCE_ARCHITECTURE.md`
 §1.
 
-The full explanation philosophy, the accuracy rule separating verified fact
-from mnemonic, and the Language Knowledge Graph it draws on are defined in:
+**This is a horizontal capability, not a sixth content domain.** It has no
+learner-browsable library of its own; a learner reaches it by asking about
+something inside Reading, Writing, Listening, Speaking, or Vocabulary, never
+by opening "Understanding" as a destination. It is AI-first and
+context-grounded — generated live from the learner's exact context — not
+built on a required precomputed knowledge store. The full explanation
+philosophy, the Orena Explanation Contract, the four-way accuracy rule
+(mental model / mnemonic / linguistic explanation / verified etymology, never
+blurred), and the optional (not required) explanation support layer are
+defined in:
 
 `docs/product/ORENA_UNDERSTANDING_ENGINE.md`
 
@@ -554,7 +551,7 @@ capabilities; Orena combines all three rather than collapsing them into one.
 
 ---
 
-# 12. Grammar
+# 11. Grammar
 
 Grammar and vocabulary are not separate content worlds that must compete with
 Reading, Listening, Writing, or Speaking. They frequently emerge from real
@@ -564,11 +561,13 @@ learner encounters, following the same Encounter → Notice → Understand → U
 Dedicated Grammar practice may exist where valuable. It remains connected to
 actual language, learner evidence, and future use whenever possible, and
 stays anchored to the closed R5 stable Grammar Concept IDs
-(`ARCHITECTURE_INVARIANTS.md`, "Closed-stage protection").
+(`ARCHITECTURE_INVARIANTS.md`, "Closed-stage protection"). The Understanding
+Engine (§10) may draw on Grammar Concept IDs to ground a linguistic
+explanation; it does not duplicate or replace the curriculum.
 
 ---
 
-# 13. Explore, My Content, My Language, and Recall
+# 12. Explore, My Content, My Language, and Recall
 
 These concepts must remain distinct.
 
@@ -619,7 +618,7 @@ the conceptual separation must remain clear.
 
 ---
 
-# 14. Cross-domain relationships
+# 13. Cross-domain relationships
 
 Content should be able to participate naturally in more than one learning
 capability when doing so improves the experience, and separate domain objects
@@ -629,8 +628,8 @@ may reference each other explicitly:
 - a Vocabulary Card may reference a sentence from a Reading item;
 - a Reading item may expose words into a learner's Vocabulary collection;
 - a Writing prompt may reference a Reading topic;
-- an Understanding explanation may be saved into the learner's Language
-  Knowledge collection;
+- an Understanding Engine explanation may be saved into the learner's My
+  Language collection;
 - a Listening transcript may provide examples for Vocabulary.
 
 The relationship is:
@@ -659,7 +658,7 @@ Integration must have a learner reason.
 
 ---
 
-# 15. Personalization
+# 14. Personalization
 
 Orena may use learner evidence to influence discovery.
 
@@ -685,15 +684,15 @@ manually.
 
 ---
 
-# 16. English and Chinese
+# 15. English and Chinese
 
 English and Chinese are first-class throughout the content system.
 
 Equivalent product quality is required for discovery, curated or provided
 content, generated content, imported content where the source type is
 supported, metadata, learner collections, continuation, and cross-capability
-learning — and, per D-049, for Vocabulary Card depth, orthography support, and
-Understanding Engine explanation quality alike.
+learning — and, per D-049/D-050, for Vocabulary Card depth, orthography
+support, and Understanding Engine explanation quality alike.
 
 Equivalent quality does not require identical content catalogs or linguistic
 processing. Language-specific differences should be handled through
@@ -702,7 +701,7 @@ products.
 
 ---
 
-# 17. Provenance and rights
+# 16. Provenance and rights
 
 Orena must represent external content truthfully.
 
@@ -730,7 +729,7 @@ Do not present generated content as externally published content.
 
 ---
 
-# 18. Content scale philosophy
+# 17. Content scale philosophy
 
 The target is not "add one or two example items." Orena should eventually
 feel like it has a substantial learning world to explore, with each domain
@@ -746,7 +745,7 @@ This requires, at the shared-infrastructure level (§4,
 - background processing;
 - failure isolation and retryable jobs (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md`
   §3's job states already define this);
-- rights/provenance tracking (§17);
+- rights/provenance tracking (§16);
 - deduplication;
 - moderation/review before publication;
 - scalable asset storage.
@@ -766,9 +765,14 @@ strategy (owning hard-coded content in the Discover/Home entry surface); it
 does not retire hand-authored generated content itself, which remains a valid
 `origin: generated` source under §2.
 
+This same "do not pre-build ahead of evidence" discipline applies to the
+Understanding Engine's optional support layer (`ORENA_UNDERSTANDING_ENGINE.md`
+§5): generate from context first, add caching/reference structure only once
+real usage justifies it.
+
 ---
 
-# 19. Product acceptance contract
+# 18. Product acceptance contract
 
 A mature Orena content experience should answer both:
 
@@ -790,7 +794,7 @@ their own interests and materials to the learning system.
 
 ---
 
-# 20. Implementation principle
+# 19. Implementation principle
 
 Existing code proves current implementation state.
 
@@ -816,8 +820,9 @@ Examples include:
 - Vocabulary / Library — today's saved-word/recall implementation is the
   seam `ORENA_VOCABULARY_ARCHITECTURE.md` builds Vocabulary Cards on top of,
   not a system to discard;
-- Grammar concepts and the static Grammar KB — the seam
-  `ORENA_UNDERSTANDING_ENGINE.md`'s Language Knowledge Graph extends;
+- Grammar concepts and the static Grammar KB — existing linguistic behavior
+  the Understanding Engine's explanations may ground against
+  (`ORENA_UNDERSTANDING_ENGINE.md` §5), not a system it forks;
 - `ui/understanding.js` — the seam the Understanding Engine deepens;
 - learner memory and progress.
 
@@ -828,7 +833,7 @@ described here.
 
 ---
 
-# 21. Review question
+# 20. Review question
 
 For meaningful learner-facing content work, ask:
 
@@ -840,4 +845,9 @@ If it only exposes another learning tool, the experience is incomplete.
 
 Does this content live in its owning domain's library, or did it get added
 directly to an entry-surface array because that was the fastest path? If the
-latter, it needs to move (§3, §18).
+latter, it needs to move (§3, §17).
+
+If this introduces an "Understanding" or "Language Knowledge" screen a
+learner browses directly, or a database that must be populated before
+explanations can work, it has drifted from §10 — Understanding is a
+capability every domain calls, not a destination.

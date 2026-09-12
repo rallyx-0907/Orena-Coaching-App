@@ -51,9 +51,10 @@ available material, a card may hold:
 - pronunciation audio;
 - meaning(s), with sense boundaries kept distinct rather than merged into one
   string;
-- a core semantic image or mental model, drawn from the Language Knowledge
-  Graph (`docs/product/ORENA_UNDERSTANDING_ENGINE.md` §5) when one exists and
-  genuinely helps — a card is not required to invent one;
+- a core semantic image or mental model, generated on demand by the
+  Understanding Engine (`docs/product/ORENA_UNDERSTANDING_ENGINE.md` §3) when
+  one genuinely helps — a card is not required to invent one, and this field
+  is not a lookup into a precomputed store;
 - natural examples;
 - collocations;
 - related or contrasting expressions;
@@ -165,13 +166,13 @@ its own capability identity.
 The target is a substantial default library over time — hundreds to
 thousands of cards across curated collections — not one or two sample
 collections kept "deliberately small" indefinitely. See
-`docs/product/ORENA_CONTENT_ARCHITECTURE.md` §18 (Content scale) for the
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md` §17 (Content scale) for the
 shared principle: a smaller curated library is better than a large noisy one,
 but smallness is not itself a goal once curation capacity exists.
 
 Growing the library is batch/incremental work, not a one-card-at-a-time
 manual edit to a hardcoded array — the same infrastructure principle
-`ORENA_CONTENT_ARCHITECTURE.md` §18 sets for every domain.
+`ORENA_CONTENT_ARCHITECTURE.md` §17 sets for every domain.
 
 ---
 

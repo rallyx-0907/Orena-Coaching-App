@@ -59,9 +59,9 @@ GOLDEN_STAR_COMPLETION.
 Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
 `orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it;
 `scripts/start_orena_sandbox.ps1` restores it. Restart after Python changes -
-uvicorn does not reload. Do not operate production 8000, preview 8010,
-Cloudflare or volumes. No provider keys: AI surfaces return 503 honestly.
-Pronunciation may be demo-labelled. No microphone acceptance has run.
+uvicorn does not reload. Do not operate production 8000/preview 8010/
+Cloudflare/volumes. No provider keys: AI surfaces return 503 honestly;
+pronunciation may be demo-labelled; no microphone acceptance run.
 
 Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
 four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
@@ -82,11 +82,10 @@ all addressed (10/10 postgres cases, 60/60 flakiness runs) - see
 activated (AGENTS.md §1). Meanwhile started the next-named track (learner-
 facing content/UI/EN-ZH parity): Discover's generated-fiction catalog grew
 3 -> 4 with a new parity+schema gate (`test_orena_discover_texts.mjs`),
-verified live. UI swept across 6+ rooms - clean; Platform Admin left alone
-(architecture hold, not a bug). Also fixed: mobile nav dropdown was
-unscrollable (`.nav-backdrop` z-index tied #shell's). I1's `Scope` still has
-no production caller. Preserve A-D, eleven destinations and all active Opus
-WIP; no I1-I7 claim implies human approval.
+verified live. UI swept 6+ rooms clean; Platform Admin untouched (hold, not
+bug). Fixed: mobile nav dropdown unscrollable (`.nav-backdrop` z-index tied
+#shell's). I1's `Scope` still has no production caller. Preserve A-D, eleven
+destinations and all active Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
@@ -99,21 +98,21 @@ continuation that keeps the learner's intention and stays device-honest.
 Backbone contracts/pure policies are specified; runtime integration I1-I7 remains
 Opus implementation work. F is human review, not architecture completion.
 
-Multi-theme system implemented, awaiting visual review: Paper, Night Ink, Deep
-Forest and Sage Field from a registry; identity separate from appearance;
-colour owned solely by `theme.css`. Ember deferred. The brand asset set was
-replaced and the runtime library remapped to it.
+Multi-theme system implemented, awaiting visual review: Paper, Night Ink,
+Deep Forest, Sage Field; identity separate from appearance; colour owned
+solely by `theme.css`. Ember deferred; brand asset set replaced, runtime
+library remapped.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
 approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
 (trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
 
-D-049 (2026-09-12): Content Architecture amended - six canonical domains,
-Understanding Engine, Language Knowledge Graph, Vocabulary Card + orthography.
-New: `ORENA_UNDERSTANDING_ENGINE.md`, `ORENA_VOCABULARY_ARCHITECTURE.md`;
-sequence in `ROADMAP.md`. Parallel to I1-I7, not a stage of it; any schema
-still needs the I2/I3 review gate. Docs-only.
+D-049/D-050 (2026-09-12): Content Architecture amended - five domains, a
+horizontal Understanding Engine (AI-first, context-grounded; support layer
+optional, no mandatory graph), Vocabulary Card + orthography. New:
+`ORENA_UNDERSTANDING_ENGINE.md`, `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence
+in `ROADMAP.md`. Parallel to I1-I7; schema still needs I2/I3 review. Docs-only.
 
 ## PENDING
 
@@ -133,22 +132,22 @@ None identified.
 ## OPEN P1
 
 - `#/language` renders "temporarily unavailable" only in long multi-room
-  sweeps at short dwell (4/4@700ms/14 routes; 2/2@750ms/13 rooms); never
-  isolated or at 300-2600ms; 0/130 before/after Package D. Self-recovers.
+  sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated, 0/130
+  otherwise. Self-recovers.
 - Platform Admin lost its host when templates/index.html was removed; its APIs
   and static/admin.js remain but admin.js bails at its #page-admin guard.
   Preserve it without restoring the historical shell.
-- Grammar breadth: authored patterns joined by stable Concept ID, extended by
+- Grammar breadth: patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
   and its policy inputs remain gated.
-- Reading/Vocabulary library breadth: rights gate per text (Reading); D-049
-  content-domain sequence (Vocabulary Card, orthography) not yet implemented.
+- Reading/Vocabulary breadth: rights gate per text; D-049 sequence
+  (Vocabulary Card, orthography) not yet implemented.
 - Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 is frozen native.
 
 ## Baseline test evidence
 
-20 Python failures are inherited (baselines 5827f6a, f966b28): same ones in
+20 Python failures are inherited (baselines 5827f6a, f966b28) in
 test_governance_contract.py, test_media_ingestion.py, test_media_learning.py.
 Never claim an all-green suite.
 

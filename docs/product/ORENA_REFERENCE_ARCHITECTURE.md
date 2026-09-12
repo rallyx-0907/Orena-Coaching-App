@@ -210,7 +210,7 @@ let the learner's actual text or media dominate while working.
 | Source/focus | `product/encounter.js`, content adapters | Adapt context at the caller boundary; preserve canonical payloads |
 | Work and continuation | `product/memory.js`, `conversation.js`, `revision.js` | Retain scoped identity and lifecycle; keep storage behind existing adapter |
 | Capability execution | `capabilities/`, `infrastructure/api.js` | Normalize outcomes without changing domain claims |
-| Shared understanding | `ui/understanding.js`; deepened by the Understanding Engine and Language Knowledge Graph (D-049, `ORENA_UNDERSTANDING_ENGINE.md`) | All experiences pass exact source context through one interface |
+| Shared understanding | `ui/understanding.js`; deepened by the horizontal Understanding Engine and its Orena Explanation Contract (D-049/D-050, `ORENA_UNDERSTANDING_ENGINE.md`) | All experiences pass exact source context through one interface |
 | Evidence | `product/evidence.js`, backend learning domains | Preserve ownership and acknowledged-write semantics |
 | Composition | `ui/`, theme and room CSS, semantic brand library | Extract reusable composition roles; avoid page-specific design systems |
 

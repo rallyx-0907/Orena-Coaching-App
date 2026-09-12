@@ -49,16 +49,19 @@ learner progress, and feature UI are not implied by this foundational boundary.
 Chinese Pinyin may be added later through a language adapter; it is not the
 canonical original transcript.
 
-### Shared Language Knowledge / Understanding boundary
+### Shared Understanding boundary
 
-The Understanding Engine and Language Knowledge Graph
-(`docs/product/ORENA_UNDERSTANDING_ENGINE.md`) are shared the same way Media
-Learning is shared: Reading, Listening, Speaking, Writing, Grammar, and
-Vocabulary / Library consume one explanation capability and one knowledge
-layer rather than each building its own. Vocabulary / Library's canonical
-learning-object model (the Orena Vocabulary Card) is defined in
-`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`; orthography/stroke-order is
-part of that model, not a separate subdomain.
+The Understanding Engine (`docs/product/ORENA_UNDERSTANDING_ENGINE.md`) is
+shared the same way Media Learning is shared: Reading, Listening, Speaking,
+Writing, Grammar, and Vocabulary / Library all call one horizontal
+explanation capability rather than each building its own. It is not a
+separate "Language Knowledge" domain or subdomain, and it does not require a
+precomputed knowledge store — explanations generate from the learner's exact
+context; any optional caching/reference layer is infrastructure behind the
+same shared capability, not a domain of its own (D-050). Vocabulary /
+Library's canonical learning-object model (the Orena Vocabulary Card) is
+defined in `docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`; orthography/
+stroke-order is part of that model, not a separate subdomain.
 
 ## 3. AI Platform
 

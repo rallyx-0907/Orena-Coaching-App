@@ -31,11 +31,14 @@ imported media alike. Shared APIs own vocabulary, recall and practice evidence.
 Current drafts/collections/continuation are device-local and owner/language scoped;
 they do not imply account-wide persistence, completed learning or mastery.
 
-Reading, Writing, Listening, Speaking, Vocabulary and Language Knowledge are
-separate canonical domains sharing ingestion/rights/search/feed infrastructure,
-not one content schema (D-049, `docs/product/ORENA_CONTENT_ARCHITECTURE.md`).
-The Understanding Engine and Orena Vocabulary Card are durable capabilities
-defined in `docs/product/ORENA_UNDERSTANDING_ENGINE.md` and
+Reading, Writing, Listening, Speaking and Vocabulary are Orena's five separate
+canonical content domains, sharing ingestion/rights/search/feed infrastructure,
+not one content schema (D-049, corrected by D-050,
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md`). The Understanding Engine is a
+horizontal capability shared across all five, not a sixth domain, and
+generates from the learner's exact context rather than a required precomputed
+store; it and the Orena Vocabulary Card are durable capabilities defined in
+`docs/product/ORENA_UNDERSTANDING_ENGINE.md` and
 `docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`. Discover/Home distribute from
 domain libraries; they do not own canonical content.
 

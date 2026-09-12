@@ -741,9 +741,10 @@ execution trackers for the current mission are:
   (I1 done, I2 schema deployed sandbox-only flag-off, I3 read adapter done
   and subscription-inbox schema in independent review as of this entry).
 
-This section adds the sequence D-049 requires — Understanding Engine,
-Language Knowledge Graph, Vocabulary Cards, orthography, per-domain content
-schemas, shared ingestion/publishing, default libraries, and Discover/Home
+This section adds the sequence D-049 requires and D-050 corrects —
+Understanding Engine, the Orena Explanation Contract, an optional explanation
+support layer, Vocabulary Cards, orthography, per-domain content schemas,
+shared ingestion/publishing, default libraries, and Discover/Home
 distribution — coordinated against that backbone rather than duplicating it.
 
 ### Relationship to I1-I7
@@ -752,8 +753,9 @@ The content-domain track is a **parallel content backbone**, not a stage of
 I1-I7: I1-I7 own account, commerce, collection/retrieval, content execution
 (admission/jobs), and evidence/growth. The content-domain track owns what
 those execution/admission contracts move — the actual Reading, Writing,
-Listening, Speaking, Vocabulary, and Language Knowledge objects. It depends
-on, and must not duplicate:
+Listening, Speaking, and Vocabulary objects, plus the horizontal Understanding
+Engine explanation capability that reads across all five
+(`ORENA_UNDERSTANDING_ENGINE.md`). It depends on, and must not duplicate:
 
 - `ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` (I5) for admission and the
   expensive-operation/job contract every domain's ingestion reuses;
@@ -764,9 +766,10 @@ on, and must not duplicate:
 - the I2 account/incarnation backbone for any persistence a later phase
   proposes, the same way the I3 commerce proposal did.
 
-Any new persistence this track needs (Vocabulary Card storage, Language
-Knowledge Graph storage, per-domain content tables beyond the existing Media
-Learning/Reading models) is a **separate schema proposal** through the
+Any new persistence this track needs (Vocabulary Card storage, an optional
+explanation support layer's caching/reference storage if evidence justifies
+one, per-domain content tables beyond the existing Media Learning/Reading
+models) is a **separate schema proposal** through the
 existing architecture-review gate (`AGENTS.md` §1), following the exact
 propose → rehearse → independent review → human schema/runtime authorization
 path I2 and I3 already established. This roadmap entry does not itself
@@ -778,19 +781,30 @@ Ordered by dependency, not strict serial execution — later phases may start
 once their specific dependency is ready, per this file's existing "dependency-
 aware order" rule used for R13-R18:
 
-1. **Understanding Engine foundation** — pure decision layer for what an
-   explanation request needs before generation (exact selection, context
-   containment, mental-model-vs-fact response shape), reusing the existing
-   `ui/understanding.js` seam and `ExperienceContext`
+1. **Understanding Engine + Orena Explanation Contract** — pure decision
+   layer for what an explanation request needs before generation (exact
+   selection, context containment, the Explanation Contract's field shape),
+   reusing the existing `ui/understanding.js` seam and `ExperienceContext`
    (`ORENA_REFERENCE_ARCHITECTURE.md` §3). No schema; extends an existing
-   capability.
-2. **Language Knowledge Graph** — read-through lookup before generation, so
-   an already-explained concept is reused rather than regenerated
-   inconsistently. First implementation may be a bounded read model over
-   existing Grammar Concept IDs before any new schema is proposed.
+   capability; every answer is generated from the learner's exact context,
+   never looked up from a precomputed store (`ORENA_UNDERSTANDING_ENGINE.md`
+   §2-3).
+2. **Explanation support layer** — optional infrastructure, added only once
+   real repeated-question evidence justifies it, per
+   `ORENA_UNDERSTANDING_ENGINE.md` §5:
+   - trusted linguistic references;
+   - dictionary/corpus/etymology sources where needed;
+   - reusable explanation patterns;
+   - caching;
+   - retrieval;
+   - quality/grounding validation.
+
+   A structured knowledge graph is a possible later optimization inside this
+   layer; it is never a prerequisite for (1).
 3. **Orena Vocabulary Card specification, implemented** — enrich the
    existing saved-word object per `ORENA_VOCABULARY_ARCHITECTURE.md` §2-3;
-   depends on (2) for the optional core-semantic-image field.
+   depends on (2) only for the optional core-semantic-image field, and that
+   field may instead be generated on demand by (1) directly.
 4. **Orthography / stroke-order support** — the general `orthography`
    capability on top of (3), Chinese first.
 5. **Canonical per-domain content schemas** — Reading Library, Writing
@@ -801,17 +815,17 @@ aware order" rule used for R13-R18:
 6. **Shared ingestion/publishing infrastructure** — largely already
    specified (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, §3); this phase
    is extending its admission/job contract to Writing Prompts, Vocabulary
-   Cards, and Language Knowledge entries as content types, not building a
-   new pipeline.
+   Cards, and explanation support layer entries (if and when (2) is built) as
+   content types, not building a new pipeline.
 7. **Default library bootstrapping** — batch/incremental growth of each
-   domain toward `ORENA_CONTENT_ARCHITECTURE.md` §18's scale target, through
+   domain toward `ORENA_CONTENT_ARCHITECTURE.md` §17's scale target, through
    (6)'s pipeline rather than hand-edited arrays.
 8. **Discover/Home distribution** — Discover/Home read from the domain
    libraries built in (5)-(7) instead of owning content directly
    (`ORENA_CONTENT_ARCHITECTURE.md` §3); depends on at least one domain
    having library depth worth distributing.
 9. **Cross-domain learning loops** — the linked-object relationships in
-   `ORENA_CONTENT_ARCHITECTURE.md` §14 (Speaking references Listening,
+   `ORENA_CONTENT_ARCHITECTURE.md` §13 (Speaking references Listening,
    Vocabulary references Reading sentences, and so on), once the domains
    they link exist independently.
 

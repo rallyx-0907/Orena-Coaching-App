@@ -794,27 +794,31 @@ The detailed durable content contract is defined in:
 
 ---
 
-# 31. Understanding, and the six learning domains
+# 31. Understanding, and Orena's five learning domains
 
-Orena contains multiple canonical learning-content domains — Reading, Writing,
-Listening, Speaking, Vocabulary, and Language Knowledge — each with its own
-content model, sharing common infrastructure for ingestion, provenance,
-publishing, indexing, recommendation, moderation, and search.
+Orena contains five canonical learning-content domains — Reading, Writing,
+Listening, Speaking, and Vocabulary — each with its own content model, sharing
+common infrastructure for ingestion, provenance, publishing, indexing,
+recommendation, moderation, and search.
 
 Do not force these domains into one universal content schema. They are
 different learning objects and should remain different, connected by explicit
 references rather than collapsed into one shape.
 
 One of Orena's most important differentiators is a shared **Understanding
-Engine**: the capability, reachable from every domain, that explains language
-by building a mental model, intuition, or useful contrast rather than
-defaulting to translation-only answers or rule memorization. The question it
-tries to answer is:
+Engine**: a horizontal capability, reachable from every domain, that explains
+language by building a mental model, intuition, or useful contrast rather than
+defaulting to translation-only answers or rule memorization. It is not a sixth
+domain a learner browses, and it is AI-first and context-grounded rather than
+built on a required precomputed knowledge store: it generates its answer from
+the learner's exact context, through the Orena Explanation Contract. The
+question it tries to answer is:
 
 > What mental model would make this usage feel natural?
 
-The engine must clearly distinguish a useful mental model or mnemonic from
-verified linguistic fact, and must never present the former as the latter
+The engine must clearly distinguish four things — a mental model, a mnemonic,
+a linguistic explanation, and verified etymology/history — and must never
+present an invented mental model or mnemonic as verified linguistic fact
 merely because it is memorable.
 
 Vocabulary is a real curated library of Orena Vocabulary Cards — richer than
@@ -837,12 +841,16 @@ The detailed durable contracts are defined in:
 `docs/product/ORENA_UNDERSTANDING_ENGINE.md`
 `docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`
 
-This section amends the Constitution per D-049
+This section amends the Constitution per D-049, corrected by D-050
 (`docs/project/DECISION_LOG.md`), integrating
 `docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md`. It does not
 change the durable content model described in §30; it extends it with the
 Understanding Engine and Vocabulary Card depth that model already pointed
-toward without yet naming.
+toward without yet naming. D-050 corrects this section's first wording, which
+over-modeled Language Knowledge as a sixth domain and implied a mandatory
+precomputed Language Knowledge Graph; neither was the intended product model
+(`docs/project/LEGACY_TOMBSTONES.md`, "Language Knowledge modeled as a sixth
+content domain / mandatory precomputed graph").
 
 ---
 

@@ -1290,3 +1290,103 @@ interpretation that a small hard-coded Discover array or a flat saved-word
 list is the completed Vocabulary/Discover product, recorded as a tombstone in
 `docs/project/LEGACY_TOMBSTONES.md`. Does not supersede R5 Grammar, M1 Media
 Learning, or any accepted backbone architecture contract.
+
+## D-050 — Correcting D-049: Understanding is horizontal, not a sixth domain
+
+**Status:** Accepted by explicit human instruction, 2026-09-12.
+
+**Decision:** D-049's first integration over-modeled two things that were not
+the intended product model, and this decision corrects them without reopening
+the rest of D-049:
+
+1. D-049 stated "Reading, Writing, Listening, Speaking, Vocabulary, and
+   Language Knowledge are separate canonical learning domains." This is
+   wrong. Orena has **five** canonical content domains — Reading, Writing,
+   Listening, Speaking, Vocabulary. The Understanding Engine is a **horizontal
+   capability** shared across all five, not a sixth learner-facing content
+   domain or library a learner browses directly.
+2. D-049 stated "Orena adds a reusable Language Knowledge Graph supporting
+   that engine." This is wrong as a requirement. The Understanding Engine is
+   **AI-first and context-grounded**: it receives the learner's exact context
+   (the source sentence, media segment, or writing/speaking sample) and
+   generates an explanation through the **Orena Explanation Contract**, not by
+   looking an answer up in a precomputed store. An **explanation support
+   layer** — trusted linguistic references, dictionary/corpus/etymology
+   sources where needed, reusable explanation patterns, caching, retrieval,
+   and quality/grounding validation — may be added later, but only as an
+   **optional optimization once real repeated-question evidence justifies
+   it**, never as a prerequisite or a canonical product domain. A structured
+   knowledge graph, if ever built, is one possible shape that layer's
+   caching/reference storage could take — it is not a required component.
+
+The corrected explanation-generation model is:
+
+```text
+context -> cache/retrieval check -> AI explanation -> validation -> response
+-> reusable cache where appropriate
+```
+
+Exact-context questions must still be generated from the learner's real
+sentence/media/writing/speaking context; the flow above never substitutes a
+pre-stored generic answer for that.
+
+The Orena Explanation Contract's expected fields are: core idea; mental model
+/ intuitive image; why the form works in the current context; related usages
+where useful; contrasts; common learner misunderstanding; natural examples;
+an optional quick check.
+
+The accuracy rule is sharpened from a two-way distinction to a four-way one:
+a mental model, a mnemonic, a linguistic explanation, and verified
+etymology/history are four different things. An invented mnemonic or
+explanatory story must never be presented as historical linguistic fact.
+
+**Reason:** The human reviewing the D-049 integration identified that treating
+Language Knowledge as a sixth content domain, and requiring a precomputed
+Language Knowledge Graph as a prerequisite for the Understanding Engine, does
+not match Orena's intended product model. The Understanding Engine is meant to
+be reachable from within Reading, Writing, Listening, Speaking, and
+Vocabulary — never a destination of its own — and meant to scale by generating
+explanations live from context, not by pre-storing answers for every possible
+question in a growing knowledge base ahead of actual need.
+
+**Consequences:** `docs/product/ORENA_UNDERSTANDING_ENGINE.md` is rewritten:
+its diagram shows the five domains pointing into one horizontal engine; its
+principle section states AI-first/context-grounded/format-constrained/
+cache-retrieval-assisted explicitly; the Orena Explanation Contract and the
+four-way accuracy rule are defined as their own sections; the former
+"Language Knowledge Graph" section is replaced by an "explanation support
+layer" section that is explicitly optional. `docs/product/
+ORENA_CONTENT_ARCHITECTURE.md` drops its "Language Knowledge" section
+entirely (renumbering every following section down by one) and restates the
+domain count as five with the Understanding Engine shown as horizontal.
+`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`,
+`docs/product/ORENA_PRODUCT_CONSTITUTION.md` §31,
+`docs/project/ROADMAP.md`'s Golden Star / Content Domain sequence,
+`docs/project/ARCHITECTURE_INVARIANTS.md`, `docs/project/PRODUCT_MAP.md`,
+`docs/project/DOMAIN_BOUNDARIES.md`, `docs/product/ORENA_BACKBONE_CONTRACTS.md`,
+and `docs/product/ORENA_REFERENCE_ARCHITECTURE.md` are corrected to match. The
+roadmap's sequence items 1-2 become "Understanding Engine + Orena Explanation
+Contract" and "Explanation support layer" (trusted linguistic references;
+dictionary/corpus/etymology sources where needed; reusable explanation
+patterns; caching; retrieval; quality/grounding validation) — a knowledge
+graph is no longer named as its own roadmap phase, only as a possible later
+optimization inside the support layer. A new tombstone,
+"Language Knowledge modeled as a sixth content domain / mandatory precomputed
+graph," is recorded in `docs/project/LEGACY_TOMBSTONES.md` so an agent reading
+the original amendment document directly does not reintroduce this framing.
+
+This does not reopen or weaken the parts of D-049 that remain correct: five
+domains existing as real canonical domains, the Orena Vocabulary Card
+specification and its orthography capability, the Discover/Home
+distribution-not-storage correction, the content-scale philosophy (batch/
+incremental growth over hand-edited arrays), or the two tombstones D-049
+already recorded. No new persistence, schema, provider activation, or
+production change is authorized by this decision; any schema a later
+implementation needs — including any future explanation support layer
+storage — still follows the existing architecture-review gate (`AGENTS.md`
+§1).
+
+**Supersedes / Superseded by:** Corrects D-049's domain-count and
+Language-Knowledge-Graph-as-prerequisite claims only. Does not supersede
+D-049's other decisions, D-045, D-044, R5 Grammar, M1 Media Learning, or any
+accepted backbone architecture contract.
