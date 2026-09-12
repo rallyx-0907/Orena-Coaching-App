@@ -50,6 +50,13 @@ export function dialog({ title, body, onReady }) {
   onReady?.(element);
   return element;
 }
+/* Ask the shell for its working height before moving the learner to their
+   work on a narrow screen, so the destination clears the header it will have.
+   An event rather than an import: html.js sits below every room and must not
+   know the shell. */
+export function focusWork() {
+  document.dispatchEvent(new CustomEvent('orena:work'));
+}
 let announcementTimer;
 export function status(message) {
   const region = document.getElementById('announcement');

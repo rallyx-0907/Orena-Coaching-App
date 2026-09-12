@@ -84,6 +84,26 @@ evidence meaning or capability semantics.
     atmosphere belongs to discovery, entry, transitions, completion and empty
     states, and never displaces the learner's text, media, work or feedback.
 
+12. **Phone: the screen belongs to the learning (D-052).** Priority is learning
+    content and learner work, then controls, then navigation and secondary
+    chrome. The narrow layout is adapted, not the desktop shrunk:
+    - the header is expanded on arrival, near the top and while navigating,
+      and compacts while the learner scrolls into the room - to the smallest
+      state that still reaches every destination - releasing real viewport
+      height rather than overlaying content; a deliberate scroll up, the top,
+      or tapping the navigation expands it again;
+    - controls keep a full touch target (44px) but no desktop padding; rows,
+      labels, selectors, media controls and cards take only the room they need;
+    - learning content itself is set denser - type, line height, paragraph and
+      block spacing, media and transcript framing - while staying comfortable
+      to read; decorative margins go first;
+    - a sticky source, a result frame or any destination the learner is moved
+      to clears the header at its current height, never sits underneath it;
+    - Listening shows the current line, its meaning and a run of the transcript
+      together; Writing gives the editor the frame; Reading keeps a readable
+      line and loses oversized framing; action rooms keep activity, input and
+      action in Frame 1, the result in Frame 2, secondary material after.
+
 How the current web implements these rules is described, not governed, in
 `docs/product/ORENA_WEB_EXTENSION_GUIDE.md`.
 

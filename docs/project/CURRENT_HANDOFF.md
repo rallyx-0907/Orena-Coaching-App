@@ -67,12 +67,12 @@ Switch learning language in-page. Stage task files only, never visual references
 ## NEXT EXACT TASK
 
 Core lane: R3 evaluator REVIEWABLE (live quality needs the provider gate).
-D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints
-(`hint`, `ui/symbols.js`), compact activity openings, `workspaceFrames`.
-Writing, Speaking, Dictation, Grammar lesson, Recall migrated and browser-
-verified 1440/800/390, EN/ZH, 4 themes. NEXT: Reading comprehension, Shadowing
-and encounter-Speaking panels, conversation turns, Discover/Collection copy
-density - check each composition first; no blind migration.
+D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints,
+compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
+Grammar lesson, Recall migrated. D-052 phone space: compacting header
+(`--shell-offset`, `focusWork()`), phone density block in `rooms.css`.
+Browser-verified 1440/800/390, EN/ZH, themes. NEXT: Reading comprehension,
+Shadowing/encounter-Speaking panels, conversation, Discover/Collection density.
 
 Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3: two
 schemas **proposed**, neither applied - `.../20260911_0006` (subscription

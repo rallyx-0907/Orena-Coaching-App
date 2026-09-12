@@ -397,3 +397,31 @@ Running sandbox 8011, headless Chrome via Playwright, local execution (no CI):
 
 Not claimed: live speech recognition, microphone hardware, human product
 approval.
+
+## D-052 phone learning space: verification evidence
+
+Evidence only; the rule is `DESIGN_CONTRACT.md` rule 12. Running sandbox 8011,
+headless Chrome via Playwright at 390x844 (and 800x844), local execution:
+
+- Header: 131px expanded, 57px compact after scrolling into a room; a 30px
+  bounce does not expand it, a deliberate scroll up, tapping the destination
+  control (which opens the sheet) and the top of the page do. `--shell-offset`
+  follows (131px / 57px); content keeps its place across both changes. Same in
+  ZH, Night Ink, and at 800px (133px / 57px).
+- Writing: editor 112px -> 339px EN at rest (311px ZH), Review in the first
+  screen; two real local-Ollama reviews, HTTP 200; result frame 65-840px (was
+  136-840px); back refocuses the draft.
+- Listening: an audio lesson's voice card 174px -> 80px (a video keeps its
+  16:9 frame, 188px); in the 0:46 lesson, once scrolled, the spoken line with
+  its meaning and four transcript rows share one screen; before, even the 0:09
+  lesson showed no transcript row at rest or scrolled. Rows 85px -> 61px.
+- Speaking result frame 65-840px at 390 and 800; Dictation source strip now
+  sticks below the header instead of under it, comparison visible after
+  "compare".
+- Reading: visible passage at rest 361px -> 470px of text.
+- No horizontal overflow on any route at 1440/800/390 in EN or ZH; no phone
+  control under 44px on Writing, Listening, Speaking, Dictation or Grammar.
+- 33 CI `.mjs` gates and the ESM graph pass.
+
+Not claimed: real-device testing, iOS Safari address-bar behaviour, human
+approval.

@@ -663,7 +663,7 @@
   color: var(--muted);
   margin-bottom: 7px;
 }
-.moment-actions button {
+.moment-actions > button {
   font-size: var(--text-sm);
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
@@ -1790,7 +1790,7 @@
   .transport > button:nth-child(2) {
     min-height: 44px;
   }
-  .moment-actions button {
+  .moment-actions > button {
     min-height: 44px;
   }
 }
@@ -1879,7 +1879,7 @@
      is not context gets out of the way. */
   .media-encounter:has(.practice-space:not([hidden])) .media-stage {
     position: sticky;
-    top: 0;
+    top: var(--shell-offset, 0px);
     z-index: 20;
     background: var(--paper);
     padding-block-end: var(--space-2);
@@ -1960,6 +1960,6 @@
 @media (max-width: 1079px) {
   .practice-space,
   .comparison {
-    scroll-margin-top: 34vh;
+    scroll-margin-top: calc(var(--shell-offset, 0px) + var(--source-strip, 12rem));
   }
 }

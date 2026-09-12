@@ -19,6 +19,72 @@ import { installHints } from './ui/patterns.js';
 // Every hint in every room is one delegated behaviour, installed once.
 installHints(document);
 
+/* On a narrow screen the header retreats while the learner works.
+
+   Expanded it orients - wordmark, bring and account actions, the control that
+   names where the learner is. Scrolling down into a room collapses it to that
+   control alone, and the header really gets shorter: the room reflows upward
+   into the height it gives back rather than scrolling underneath a bar that
+   only looks smaller. A deliberate scroll up, the top of the page, opening the
+   destinations, or a new room brings it back.
+
+   `--shell-offset` is the header's current height, written synchronously on
+   every change so a sticky source strip or a result frame scrolled to in the
+   same task already clears it. Shrinking the header moves the page by that
+   difference; the scroll that follows is the browser keeping the learner's
+   place, not the learner scrolling, so it is ignored. */
+const header = (() => {
+  const narrow = window.matchMedia('(max-width: 900px)');
+  let compact = false,
+    lastY = window.scrollY,
+    travel = 0,
+    quietUntil = 0;
+  const shellEl = () => document.getElementById('shell');
+  const measure = () => {
+    const el = shellEl();
+    if (!el) return;
+    document.documentElement.style.setProperty(
+      '--shell-offset',
+      narrow.matches ? `${el.offsetHeight}px` : '0px',
+    );
+  };
+  const set = (next) => {
+    const el = shellEl();
+    if (!el) return;
+    next = Boolean(next) && narrow.matches;
+    if (next === compact) return measure();
+    compact = next;
+    if (next) el.dataset.compact = '';
+    else delete el.dataset.compact;
+    measure();
+    quietUntil = performance.now() + 350;
+    travel = 0;
+    lastY = window.scrollY;
+  };
+  window.addEventListener(
+    'scroll',
+    () => {
+      const y = window.scrollY;
+      const dy = y - lastY;
+      lastY = y;
+      if (!narrow.matches || performance.now() < quietUntil) return;
+      if (shellEl()?.dataset.menu === 'open') return;
+      if (y < 48) return set(false);
+      travel = Math.sign(dy) === Math.sign(travel) ? travel + dy : dy;
+      if (travel > 24 && y > 96) set(true);
+      else if (travel < -72) set(false);
+    },
+    { passive: true },
+  );
+  narrow.addEventListener('change', () => set(false));
+  window.addEventListener('resize', measure, { passive: true });
+  /* A room that moves the learner to their work - a result frame, a practice
+     opened below the source - asks for the working header first, so the place
+     it scrolls to is computed against the height the header will have. */
+  document.addEventListener('orena:work', () => set(true));
+  return { set, measure };
+})();
+
 let generation = 0,
   cleanup = () => {},
   pendingWrites = 0,
@@ -110,6 +176,8 @@ function shell() {
     shellEl.insertAdjacentElement('afterend', backdrop);
   }
   const setMenu = (open) => {
+    // Looking for somewhere else to go is navigating, not working.
+    if (open) header.set(false);
     shellEl.dataset.menu = open ? 'open' : 'closed';
     toggle.setAttribute('aria-expanded', String(open));
   };
@@ -328,6 +396,7 @@ async function render() {
   const scope = { ...ctx, alive: ctx.alive };
   shell();
   window.scrollTo(0, 0);
+  header.set(false);
   /* Announce loading only if there is actually a wait.
 
      This used to blank the room to a loading line before calling the renderer.

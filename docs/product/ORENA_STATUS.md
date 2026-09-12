@@ -76,6 +76,20 @@ with a fake microphone and an injected transcript fixture (placement, not
 recognition quality), Dictation with real comparison, all four themes, EN and
 ZH, 1440 / 800 / 390 without horizontal overflow.
 
+Phone learning space (D-052): below 900px the header compacts from 131px to
+57px while the learner scrolls into a room and returns on a deliberate scroll
+up, near the top or when opening the destinations; sticky source strips and
+result frames sit below it at its current height. At 390px the Writing editor
+grows from 112px to about 310px with the whole activity and its action still in
+the first screen, and a Writing or Speaking result frame now runs from 65px to
+the bottom of the screen. Listening shows the voice as an 80px strip (was 174px)
+and puts the transcript directly under the spoken line and its meaning, so the
+current line, its meaning and several transcript lines share one screen;
+transcript rows are 61px (were 85px). Reading, Grammar, Speaking, Recall and
+feedback are set denser without falling below readable size, and every phone
+control keeps a 44px target. Verified in the running sandbox at 390 and 800 in
+EN and ZH and in Night Ink; Writing through two real local-Ollama reviews.
+
 The approved red-panda library is in the product. Fifty-two approved assets
 existed and four were reachable, one of them doing duty as both the arrival and
 the empty state; thirty are now addressed by what a moment means - discovery,

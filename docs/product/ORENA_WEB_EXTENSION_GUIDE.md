@@ -227,6 +227,29 @@ What a new surface inherits, and the traps behind each one.
   before data leaves the device, stay as text. A hint inside a form is a
   button: select the form's action by role (`button.primary`), not as the
   form's first button.
+### Narrow header and phone density
+
+`app.js`, `reference.css`, `rooms.css` - Design Contract rule 12 (D-052).
+  Below 900px the shell is a sticky header with two states. `app.js` sets
+  `#shell[data-compact]` when the learner scrolls down into a room (24px of
+  travel past 96px) and removes it on a deliberate scroll up (72px), near the
+  top, on opening the destinations, and on every new room. Compact keeps the
+  mark and the destination control, and the header really is shorter; the
+  browser keeps the learner's place while the page reflows, and the scroll
+  that causes is ignored. The live height is `--shell-offset` on the root,
+  written synchronously on each change: use it for anything sticky below the
+  header and for the scroll margin of anything the learner is moved to. Before
+  moving the learner to their work programmatically, call `focusWork()` from
+  `ui/html.js` so the destination is computed against the working header;
+  `workspaceFrames` and the encounter's narrow practice already do.
+  The last block of `rooms.css` (`max-width: 600px`) is where phone density
+  lives: controls at 44px with no desktop padding, the encounter's voice card
+  as a strip, one-row transport, a compact spoken line, dense transcript rows,
+  reading at line height 1.7 (1.85 for Chinese), compact grammar, speaking,
+  recall and feedback. While following (no practice open) the media stage uses
+  `display: contents` so the transcript sits directly under the spoken line and
+  the deeper paths follow it; the stage element stays for the player's events.
+  New phone rules go there rather than into another breakpoint elsewhere.
 ### Brand`
 
 `content/brand-library.js`, `ui/brand.js` - approved artwork is

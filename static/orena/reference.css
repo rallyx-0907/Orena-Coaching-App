@@ -207,6 +207,16 @@
     display:none; cursor:default;
   }
   #shell[data-menu='open'] ~ .nav-backdrop { display:block; }
+  /* The working header. Scrolled into a room, the header keeps only the mark
+     that leads home and the control that names where the learner is and opens
+     every destination; the wordmark, bring and account actions return with the
+     expanded header. It is genuinely one row shorter - the room reflows up into
+     the height it gives back - and the control keeps a full touch target. */
+  #shell[data-compact] { grid-template-columns:auto minmax(0,1fr); align-items:center; padding-block:6px; }
+  #shell[data-compact] .shell-actions { display:none; }
+  #shell[data-compact] .brand { font-size:0; gap:0; }
+  #shell[data-compact] .brand-tail { width:30px; height:30px; }
+  #shell[data-compact] .nav-toggle { grid-column:2; grid-row:1; margin-bottom:0; min-height:44px; }
   @media (prefers-reduced-motion: reduce) {
     #shell nav, #shell[data-menu='open'] nav { transition:none; transform:none; }
   }

@@ -1,6 +1,6 @@
 // Shared experience patterns, not a catalog of historical skill screens.
 // The caller owns state and effects; these functions render escaped content.
-import { esc } from './html.js';
+import { esc, focusWork } from './html.js';
 import { scene } from './brand.js';
 import { symbol } from './symbols.js';
 import {
@@ -131,14 +131,18 @@ export function workspaceFrames(workspace, { back, focus, result } = {}) {
   const showResult = () => {
     workspace.dataset.workspace = 'result';
     if (narrow()) {
+      focusWork();
       result?.scrollTo?.({ top: 0 });
       workspace.scrollIntoView({ block: 'start' });
     }
   };
   const showActivity = () => {
     workspace.dataset.workspace = 'activity';
-    focus?.()?.focus?.();
-    if (narrow()) workspace.scrollIntoView({ block: 'start' });
+    focus?.()?.focus?.({ preventScroll: true });
+    if (narrow()) {
+      focusWork();
+      workspace.scrollIntoView({ block: 'start' });
+    }
   };
   if (back) back.onclick = showActivity;
   return { showResult, showActivity };

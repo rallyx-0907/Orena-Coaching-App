@@ -516,8 +516,11 @@ input[type='radio'] {
   .learning-workspace[data-workspace='result'] .workspace-activity {
     display: none;
   }
+  /* The result frame is the screen below the header: the learner is moved to
+     its start with the header already in its working height, so the frame can
+     take everything under it. */
   .learning-workspace[data-workspace='result'] {
-    block-size: clamp(20rem, calc(100svh - var(--workspace-inset, 16rem)), 60rem);
+    block-size: clamp(20rem, calc(100svh - var(--shell-offset, 8rem) - var(--space-3)), 60rem);
   }
   .workspace-result__bar {
     display: flex;
@@ -525,10 +528,11 @@ input[type='radio'] {
   }
 }
 /* Below 900px the shell becomes a sticky header, so a result frame the learner
-   is moved to has to start below it rather than underneath it. */
+   is moved to has to start below it rather than underneath it - at whatever
+   height the header currently has (`--shell-offset`, kept by app.js). */
 @media (max-width: 900px) {
   .learning-workspace[data-workspace='result'] {
-    scroll-margin-block-start: 8.5rem;
+    scroll-margin-block-start: calc(var(--shell-offset, 8.5rem) + var(--space-2));
   }
 }
 

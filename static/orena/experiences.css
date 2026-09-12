@@ -280,13 +280,13 @@
   font-size: var(--text-xs);
   letter-spacing: 0.05em;
 }
-.moment-actions button {
+.moment-actions > button {
   padding-inline: 12px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);
 }
-.moment-actions button:hover {
+.moment-actions > button:hover {
   border-color: var(--accent);
 }
 .transcript-panel {
@@ -547,7 +547,7 @@
   .moment-actions {
     gap: 8px;
   }
-  .moment-actions button {
+  .moment-actions > button {
     font-size: var(--text-sm);
   }
   .response {

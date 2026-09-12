@@ -1452,3 +1452,43 @@ It changes no persistence, account, commerce, provider or capability semantics.
 earlier durable decision. It replaces the practice-room convention of naming
 the current room in a divider row below the heading (an implementation
 convention, not a recorded decision).
+
+## D-052 — On a phone the screen belongs to the learning
+
+**Status:** Accepted by explicit human instruction, 2026-09-12.
+
+**Decision:** Narrow and mobile web adapt navigation, controls and the
+learning content itself so the learner sees and works with substantially more
+useful information per frame, in the priority learning content and learner work,
+then controls, then navigation and secondary chrome. Recorded as rule 12 of the
+Design Contract's learner-facing experience rules: an adaptive header that
+compacts while the learner scrolls into a room and releases real height;
+compact controls that keep full touch targets; denser but readable learning
+typography and spacing; destinations that clear the header at its current
+height; experience-specific priorities for Listening, Writing, Reading and the
+action rooms.
+
+**Reason:** At 390px the full header held 131px of an 844px screen at all
+times, the Writing editor was 112px tall, a Listening voice card and its
+controls filled the first screen before the spoken line and none of the
+transcript was visible, and a source strip that stuck to the top of the page
+slid underneath the header. D-051 fixed where results land; this fixes how much
+of the phone the learning actually gets.
+
+**Consequences:** The narrow shell gains a compact state (`#shell[data-compact]`)
+driven by scroll intent in `app.js`, with its live height published as
+`--shell-offset` and requested before any programmatic move to the learner's
+work (`focusWork()` in `ui/html.js`). A phone density block in `rooms.css`
+settles controls, encounter media, transcript, reading, grammar, speaking,
+recall and feedback spacing, and while following a voice the transcript moves
+directly under the spoken line. Implementation guidance is in
+`docs/product/ORENA_WEB_EXTENSION_GUIDE.md`.
+
+This preserves every D-051 rule, all destinations and the navigation sheet,
+44px touch targets, theme and language behaviour, and every experience's
+content; no learning information is removed to gain space. It changes no
+product domain, capability or persistence.
+
+**Supersedes / Superseded by:** Extends D-051. Replaces the narrow header's
+fixed two-row height as the only narrow state (an implementation, not a
+recorded decision).
