@@ -352,3 +352,21 @@ The human explicitly reprioritized Golden Star implementation over the review
 findings. That supersedes the previous next-task ordering, without invalidating
 the findings. This is one reference milestone; no capability breadth, native,
 new learner persistence or external provider activation is introduced.
+
+## R3 supplemental evaluator: local Ollama verification
+
+Representative EN/ZH evaluator quality is verified live against the configured
+local model (`qwen3:8b`, the `OLLAMA_URL`/`OLLAMA_MODEL` default when no `.env`
+overrides them). `scripts/verify_live_writing_evaluator.mjs` replays the
+application's structured schema and language prompts through Ollama's
+`/api/chat` and asserts the returned results are grounded: every strength/error
+fragment is a literal substring of the learner text, every category belongs to
+the active language taxonomy, every suggestion differs from its fragment,
+explanations and reusable rules are non-empty, and confidence stays within the
+threshold. Both EN and ZH pass, and short samples correctly return
+`insufficient_evidence` without a fabricated band.
+
+This is local-model execution evidence, not a browser or CI claim. The final
+Write → Evaluate → Review browser pass still requires the running app runtime;
+the degraded 503-retry / 502-no-retry contracts remain covered by
+`test_provider_failures_use_canonical_learner_safe_evaluation_envelope`.
