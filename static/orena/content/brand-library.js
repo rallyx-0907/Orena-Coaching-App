@@ -37,7 +37,7 @@ const SCENE = 'scene';
 const library = {
   // The three editorial heroes. These are the only places a full 16:9 scene
   // is given room, so each one goes to the scene that names that room.
-  discovery: { file: 'scenes/exploreing-the-world.png', kind: SCENE, width: 264, height: 149 },
+  discovery: { file: 'scenes/exploring-the-world.png', kind: SCENE, width: 264, height: 149 },
   returning: { file: 'scenes/a-brighter-tomorrow.png', kind: SCENE, width: 264, height: 149 },
   together: { file: 'scenes/learning-at-home.png', kind: SCENE, width: 264, height: 149 },
   // Rooms composed around a scene of their own.
