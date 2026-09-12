@@ -22,11 +22,10 @@ surfaces converge on static/orena. PostgreSQL APIs remain.
 
 Golden Star foundation: shared page intro, intention navigation, response
 composer, continuation shelf, draft status, progressReporter(). Tinted panels
-carry their own ink in both themes, including secondary text on them - the
-recurring defect is an ambient colour outranking a component's own pairing.
-ORENA_WEB_EXTENSION_GUIDE.md records what a surface inherits.
-`/orena-assets/*` revalidates by ETag; it must never serve `no-store`,
-which re-downloaded 3.2 MB per refresh.
+carry their own ink in both themes - the recurring defect is an ambient
+colour outranking a component's own pairing. ORENA_WEB_EXTENSION_GUIDE.md
+records what a surface inherits. `/orena-assets/*` revalidates by ETag; never
+`no-store`, which re-downloaded 3.2 MB per refresh.
 
 ## Learning capabilities
 
@@ -77,15 +76,17 @@ Write → Evaluate → Review browser result require the provider/credential hum
 gate; deterministic fixtures must not be presented as that evidence.
 
 Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3
-schema **proposed** (not applied): `migrations/proposed/20260911_0006` plus
-`commerce_repository.py`. First round reviewed: CHANGES REQUESTED (3xP1,
-1xP2 - reconciliation-retry deadlock, a deletion race, deleted-incarnation
-receipts, external-id uniqueness); all addressed, 10/10 postgres cases,
-60/60 clean-db flakiness runs - see `I3_SCHEMA_REVIEW_REQUEST.md`'s
-finding-by-finding response. Next: re-review of the revised commit; nothing
-further until then. Also fixed: mobile nav dropdown was unscrollable
-(`.nav-backdrop` z-index tied #shell's). I1's `Scope` still has no
-production caller. Preserve A-D, eleven destinations and all active Opus
+schema **proposed** (not applied): `migrations/proposed/20260911_0006` +
+`commerce_repository.py`. Round 1 reviewed: CHANGES REQUESTED (3xP1, 1xP2),
+all addressed (10/10 postgres cases, 60/60 flakiness runs) - see
+`I3_SCHEMA_REVIEW_REQUEST.md`. Next: re-review; not self-approved/moved/
+activated (AGENTS.md §1). Meanwhile started the next-named track (learner-
+facing content/UI/EN-ZH parity): Discover's generated-fiction catalog grew
+3 -> 4 with a new parity+schema gate (`test_orena_discover_texts.mjs`),
+verified live. UI swept across 6+ rooms - clean; Platform Admin left alone
+(architecture hold, not a bug). Also fixed: mobile nav dropdown was
+unscrollable (`.nav-backdrop` z-index tied #shell's). I1's `Scope` still has
+no production caller. Preserve A-D, eleven destinations and all active Opus
 WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
@@ -104,11 +105,10 @@ Forest and Sage Field from a registry; identity separate from appearance;
 colour owned solely by `theme.css`. Ember deferred. The brand asset set was
 replaced and the runtime library remapped to it.
 
-Backbone implementation runs against the locked GPT-6 architecture at `27edeb0`
-in `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema was
-independently reviewed and approved (full trail in `I2_ACTIVATION_RUNBOOK.md`
-§6) and applied to the **sandbox only** at `20260908_0005`, flag `off`.
-Production/preview untouched.
+Backbone runs against locked GPT-6 architecture at `27edeb0`, in
+`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
+approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
+(trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
 
 ## PENDING
 
