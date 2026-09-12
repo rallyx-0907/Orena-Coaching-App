@@ -49,6 +49,7 @@ jobs:
           node scripts/test_orena_writing_review.mjs
           node scripts/test_orena_voice_evidence.mjs
           node scripts/test_orena_reading.mjs
+          node scripts/test_orena_discover_texts.mjs
           node scripts/test_orena_free_voice.mjs
           node scripts/test_orena_voice_interaction.mjs
           node scripts/test_orena_spoken_coaching.mjs

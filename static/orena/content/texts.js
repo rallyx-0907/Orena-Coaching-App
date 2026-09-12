@@ -125,6 +125,53 @@ export const collection = {
       thought:
         'The street has changed from a route into a place with meaning. Which detail creates that change for you?',
     },
+    {
+      id: 'shared-umbrella',
+      kind: 'story',
+      title: 'The umbrella she left behind',
+      subtitle: 'A small object, an unexpected return.',
+      topic: 'Unexpected kindness',
+      level: 'B1–B2',
+      time: '3 min',
+      art: 'umbrella',
+      origin: 'generated',
+      paragraphs: [
+        'The rain had started without warning, and Wen had nothing but a folded newspaper over her bag. At the bus stop, an older man held out a second umbrella. “Take it,” he said. “I have another at home.”',
+        '“I don’t know your name,” Wen said, trying to give it back. He was already walking away. “Then you’ll have to keep it until you do,” he called over his shoulder.',
+        'She meant to return it. Every week she planned a different route past the bus stop, hoping to see him, until autumn made her forget the plan entirely.',
+        'Months later, on the same corner, a boy tapped her arm. “My grandfather said you might still have this,” he said, holding out a second umbrella, red where hers was blue. “He said one good turn deserves a matching pair.”',
+        'Wen laughed and took it, wondering how long a stranger had been keeping track of a debt she’d never meant to owe.',
+      ],
+      phrases: [
+        {
+          word: 'without warning',
+          paragraph: 0,
+          definition:
+            'Suddenly, with nothing beforehand to suggest it was coming.',
+          example: 'The meeting was cancelled without warning.',
+        },
+        {
+          word: 'a matching pair',
+          paragraph: 3,
+          definition:
+            'Two things that go together by design. The boy plays on the idiom "one good turn deserves another" - here the return is literally a matching umbrella.',
+          example: 'The two chairs were bought as a matching pair.',
+        },
+        {
+          word: 'keeping track of',
+          paragraph: 4,
+          definition:
+            'Continuing to remember or record something over time, so it is not forgotten.',
+          example: 'She kept track of everyone who had helped her that year.',
+        },
+      ],
+      prompt:
+        'Think of a small kindness a stranger once showed you. What would you want to say if you saw them again?',
+      question:
+        'Why does the grandfather send his grandson instead of returning the umbrella himself?',
+      thought:
+        'There is no single right answer. Consider what it means that the debt is remembered by two people, not just one.',
+    },
   ],
   zh: [
     {
@@ -252,6 +299,53 @@ export const collection = {
       question: '为什么“我”最后终于看了路牌？',
       thought:
         '一条经过的路，变成了一个有意义的地方。是哪个细节让你感受到这种变化？',
+    },
+    {
+      id: 'shared-umbrella',
+      kind: 'story',
+      title: '借伞的陌生人',
+      subtitle: '一件小东西，一次没想到的归还。',
+      topic: '意外的善意',
+      level: 'HSK 4–5',
+      time: '3 分钟',
+      art: 'umbrella',
+      origin: 'generated',
+      paragraphs: [
+        '雨说下就下，小雯的包上只盖着一张折起来的报纸。车站旁，一位老人递给她一把伞。“拿着吧，”他说，“我家里还有一把。”',
+        '“我还不知道您的名字，”小雯想把伞还给他，可他已经转身走远。“那你就得留着它，直到你知道为止，”他回头喊道。',
+        '她本想把伞还回去，每个星期都计划走不同的路线经过那个车站，希望能再遇见他，直到秋天来了，这个计划也渐渐被忘在一边。',
+        '几个月后，在同一个街角，一个男孩拍了拍她的肩膀。“我爷爷说您可能还留着这个，”他说着，递上另一把伞——红色的，和她那把蓝色的正好配成一对。“他说，一份好意，该配上一份同样的好意。”',
+        '小雯笑着接过伞，心想：一个陌生人，到底记着这份从未打算欠下的情谊，记了多久。',
+      ],
+      phrases: [
+        {
+          word: '说下就下',
+          paragraph: 0,
+          phonetic: 'shuō xià jiù xià',
+          definition:
+            '事情毫无预兆、突然发生，这里指雨来得很突然。',
+          example: '夏天的雨说下就下，一点儿准备都没有。',
+        },
+        {
+          word: '配成一对',
+          paragraph: 3,
+          phonetic: 'pèi chéng yí duì',
+          definition:
+            '两件东西正好合在一起，成为一对。这里既指两把伞颜色相配，也暗示两次善意配成了一对。',
+          example: '这两只杯子配成一对，是一起买的。',
+        },
+        {
+          word: '记着',
+          paragraph: 4,
+          phonetic: 'jì zhe',
+          definition: '一直放在心上，没有忘记。',
+          example: '他一直记着朋友帮过他的那件小事。',
+        },
+      ],
+      prompt: '想一想曾经有陌生人对你做过的一件小小的善事。如果你们再次相遇，你会想对他说什么？',
+      question: '为什么老人的孙子代替爷爷来还伞，而不是老人自己？',
+      thought:
+        '没有唯一正确的答案。想一想：这份“欠着的情谊”被两个人一起记住，而不只是一个人，这意味着什么？',
     },
   ],
 };
