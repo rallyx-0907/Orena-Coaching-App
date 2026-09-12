@@ -45,14 +45,11 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-No CI/live-provider claim. R3 evidence hardening requires actionable evaluator
-findings, exact strength/error quotes and readable EN/ZH categories. The 8011
-browser now verifies EN and ZH Write → Evaluate degraded paths: the draft,
-target and task remain intact, transient 503 feedback offers a working retry,
-and each retry resubmits. Writing regression: 123 pytest; Writing Review,
-Foundation and 51-module ESM gates passed. Prior Opus batch remains 799 passed /
-20 inherited failures; its journey evidence lives in ORENA_STATUS and
-GOLDEN_STAR_COMPLETION.
+No CI/live-provider claim. 8011 browser verifies EN/ZH Write → Evaluate
+degraded paths (draft/target/task intact, working 503 retry). Writing
+regression: 123 pytest; Writing Review/Foundation/51-module ESM gates passed.
+Prior Opus batch: 799 passed/20 inherited failures (ORENA_STATUS,
+GOLDEN_STAR_COMPLETION).
 
 ## Runtime / safety
 
@@ -69,10 +66,14 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core lane (Codex scheduled R3): supplemental EN/ZH evaluator and degraded-state
-checkpoint is REVIEWABLE. Representative live-provider quality and the final
-Write → Evaluate → Review browser result require the provider/credential human
-gate; deterministic fixtures must not be presented as that evidence.
+Core lane (Codex): R3 evaluator checkpoint REVIEWABLE (live-provider quality
+needs the provider/credential gate). Writing's one-frame workspace shipped at
+`1e73047`, then refined: dropped decorative starter copy and the long
+revision-history sentence via existing `section-head`/`:not(:has())`
+patterns, no new components. Verified: Playwright + real local Ollama
+200/200; 33 .mjs gates; 824/20/66 pytest unchanged. NEXT: same rule for
+Reading/Listening/Speaking/Grammar - not started; check each layout first,
+no blind migration.
 
 Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3: two
 schemas **proposed**, neither applied - `.../20260911_0006` (subscription

@@ -364,14 +364,15 @@
   max-height: 360px;
   overflow: auto;
 }
-.expression-context > p {
-  font-size: var(--text-lead);
-}
 .expression-starters {
-  margin-top: var(--space-8);
+  margin-top: 0;
 }
 .expression-starters h2 {
-  font-size: 1.25rem;
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+.expression-starters > p {
+  margin-top: var(--space-1);
 }
 .expression-starters a {
   display: block;

@@ -42,9 +42,6 @@ const en = {
   practiceContext:
     'The intention is yours. The language comes from somewhere real.',
   expressionContext: 'What you are responding to',
-  expressionGuide: 'Make a thought travel.',
-  expressionGuideNote:
-    'Picture one person. What would you like them to understand?',
   expressionStarters: 'Need a starting point?',
   expressionStarterNote:
     'Choose a situation, or simply start with your own words.',
@@ -299,8 +296,6 @@ const zh = {
   chooseMoment: '找到你的起点',
   practiceContext: '带着自己的目标，从有来处的语言开始。',
   expressionContext: '你正在回应的内容',
-  expressionGuide: '让一个念头抵达。',
-  expressionGuideNote: '想象一个具体的人。你希望对方明白什么？',
   expressionStarters: '想找一点灵感？',
   expressionStarterNote: '选一个情境，或直接写下你自己的话。',
   usePrompt: '从这个情境写起',
@@ -667,15 +662,13 @@ Object.assign(copy.zh, {
 
 Object.assign(copy.en, {
   revisionHistory: 'What you have written before',
-  revisionNote:
-    'Each version you sent for review is kept on this device. Opening one brings it back into the editor; the words you are working on now are kept too.',
+  revisionNote: 'Kept on this device',
   revisionLabel: 'Version',
   revisionRestored: 'Earlier version brought back.',
 });
 Object.assign(copy.zh, {
   revisionHistory: '你之前写过的版本',
-  revisionNote:
-    '每次送去点评的版本都保存在此设备。打开其中一个会把它放回编辑框；你正在写的内容也会一并保留。',
+  revisionNote: '保存在此设备',
   revisionLabel: '第',
   revisionRestored: '已取回较早的版本。',
 });

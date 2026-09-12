@@ -98,7 +98,10 @@
   border-bottom: 1px solid var(--line);
 }
 [data-experience='writing'] .workspace-secondary { margin-top: var(--space-8); }
-[data-experience='writing'] .expression-context {
+/* Responding to an actual source is real context, worth a highlighted panel.
+   Starting from nothing is just a helper toward the same textarea the sheet
+   above already offers - it stays quiet microcopy, not a colored block. */
+[data-experience='writing'] .expression-context:has(blockquote) {
   margin-top: 0;
   padding: var(--space-5) var(--space-6);
   background: var(--sage-surface);
@@ -106,11 +109,19 @@
   border: 0;
   border-top: 1px solid var(--on-sage-muted);
 }
-[data-experience='writing'] .expression-context :is(.meta, small) {
+[data-experience='writing'] .expression-context:has(blockquote) :is(.meta, small) {
   color: var(--on-sage-muted);
 }
-[data-experience='writing'] .expression-context :is(a, a > span) { color: var(--on-sage); }
-[data-experience='writing'] .expression-context .expression-starters a { border-color: var(--on-sage-muted); }
+[data-experience='writing'] .expression-context:has(blockquote) :is(a, a > span) { color: var(--on-sage); }
+[data-experience='writing'] .expression-context:not(:has(blockquote)) {
+  margin-top: 0;
+  padding-top: var(--space-4);
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+[data-experience='writing'] .expression-context:not(:has(blockquote)) h2 {
+  color: var(--muted);
+}
 [data-experience='writing'] .revision-history { margin-top: 0; }
 
 [data-experience='speaking'] .voice-room {
