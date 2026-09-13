@@ -1,21 +1,30 @@
 /* A Writing draft kept with the account, when the deployment keeps work there.
 
+   A draft is a snapshot: the words and the Writing task they answer
+   ({text, task}). The two travel together everywhere - agreement, adoption,
+   conflict and both conflict choices - so a draft is never shown, kept or sent
+   under another task than its own.
+
    The device always keeps the draft too (learner memory), so nothing here can
    lose words: the account copy is added when `/api/account-backbone` says
-   `active`, and the room says which of the two is true. Anything else -
-   `disabled`, `unavailable`, a network failure - leaves the draft on this
-   device and the room says exactly that, never "saved to your account".
+   `active`. The room says "kept with your account" only when this exact
+   snapshot is known to be the account's copy - a save the server acknowledged,
+   or a read that showed the server already holds it. Until then, and whenever
+   anything fails, it says "on this device".
 
    Versions decide, not clocks. The device remembers the version it last
-   agreed with the server and a digest of the text it agreed on:
+   agreed with the server and a digest of the snapshot it agreed on, plus the
+   digests of saves it sent whose answer has not arrived:
 
-   - the server has nothing yet: a draft already in the box is sent;
-   - the device has not changed the text since it last agreed: the server's
-     text is simply the draft (another device may have moved it on);
-   - the device changed it and the server did not move: the device's text is
-     sent;
-   - both moved: the learner is shown the other device's version and chooses.
-     Nothing is merged, and the text in the box is never replaced silently. */
+   - the server has nothing yet: a draft already on the device is sent;
+   - the device's snapshot is the one it last agreed on: the server's is the
+     draft (another device may have moved it on);
+   - the server holds a save this device sent but never heard back about: that
+     is this device's own predecessor, agreed on, and anything typed since is
+     sent on top of it - not a conflict;
+   - the device changed and the server did not move: the device's is sent;
+   - both moved: the learner is shown the other device's snapshot and
+     chooses. Nothing is merged, and the box is never replaced silently. */
 
 let statePromise = null;
 
@@ -34,7 +43,7 @@ export function forgetAccountWorkState() {
 }
 
 /* FNV-1a over the UTF-16 code units: small, stable and enough to tell "the
-   same text I last agreed on" from "something else". Not a security digest. */
+   snapshot I last agreed on" from "something else". Not a security digest. */
 export function textDigest(text) {
   let hash = 0x811c9dc5;
   const value = String(text || '');
@@ -45,7 +54,19 @@ export function textDigest(text) {
   return hash.toString(16).padStart(8, '0');
 }
 
+export const snapshot = (text = '', task = '') => ({
+  text: String(text || ''),
+  task: String(task || '').slice(0, 240),
+});
+// The unit separator cannot be typed into either field, so no pair of
+// (text, task) spells another pair.
+const SEPARATOR = String.fromCharCode(31);
+export const snapshotDigest = (value) => textDigest(`${value.text}${SEPARATOR}${value.task}`);
+const same = (a, b) => a.text === b.text && a.task === b.task;
+const isEmpty = (value) => !value.text.trim() && !value.task.trim();
+
 const syncKey = (id) => `${id}::sync`;
+const pendingKey = (id) => `${id}::pending`;
 
 export function readAgreement(memory, id) {
   const raw = memory.value.expressions[syncKey(id)] || '';
@@ -55,19 +76,52 @@ export function readAgreement(memory, id) {
     : { version: 0, digest: '' };
 }
 
-function agree(memory, id, version, text) {
+/* Saves sent from one agreed version and not yet answered: the base version
+   and the digests of what was sent. Kept on the device so a reload after a
+   lost answer still recognises its own write. */
+export function readPending(memory, id) {
+  const raw = memory.value.expressions[pendingKey(id)] || '';
+  const match = /^(\d+):((?:[0-9a-f]{8},?){1,8})$/.exec(raw);
+  return match
+    ? { version: Number(match[1]), digests: match[2].split(',').filter(Boolean) }
+    : { version: -1, digests: [] };
+}
+
+function remember(memory, key, value) {
   try {
-    memory.write(syncKey(id), `${version}:${textDigest(text)}`);
+    memory.write(key, value);
   } catch {
-    // Device memory refused; the account copy still stands.
+    // Device memory refused; the account copy still stands on its own.
   }
+}
+
+function agree(memory, id, version, value) {
+  remember(memory, syncKey(id), `${version}:${snapshotDigest(value)}`);
+  remember(memory, pendingKey(id), '');
+}
+
+function markSent(memory, id, version, value) {
+  const pending = readPending(memory, id);
+  const digests = pending.version === version ? pending.digests : [];
+  const digest = snapshotDigest(value);
+  const next = [...digests.filter((d) => d !== digest), digest].slice(-8);
+  remember(memory, pendingKey(id), `${version}:${next.join(',')}`);
+}
+
+// Is `server` a save this device sent from `pending.version`?
+function ownPredecessor(memory, id, server) {
+  const pending = readPending(memory, id);
+  return (
+    pending.version >= 0 &&
+    server.version === pending.version + 1 &&
+    pending.digests.includes(snapshotDigest(server))
+  );
 }
 
 export function draftSync({
   api,
   memory,
   id,
-  task = () => '',
   onWhere = () => {},
   onElsewhere = () => {},
   delay = 1200,
@@ -83,26 +137,33 @@ export function draftSync({
 
   const say = (where) => onWhere(where);
 
-  async function send(text) {
+  function showElsewhere(server) {
+    elsewhere = server;
+    say('device');
+    onElsewhere(server);
+  }
+
+  async function send(value) {
     if (sending) {
-      queued = text;
+      queued = value;
       return sending;
     }
     const { version } = readAgreement(memory, id);
-    // The same words from the same version are the same operation: a retry
+    // The same snapshot from the same version is the same operation: a retry
     // after a lost answer replays instead of conflicting with itself.
-    if (!attempt || attempt.version !== version || attempt.text !== text)
-      attempt = { version, text, operationId: `op-${crypto.randomUUID()}` };
+    if (!attempt || attempt.version !== version || !same(attempt.value, value))
+      attempt = { version, value, operationId: `op-${crypto.randomUUID()}` };
+    markSent(memory, id, version, value);
     const body = {
       operationId: attempt.operationId,
       expectedVersion: version,
-      text,
-      task: String(task() || '').slice(0, 240),
+      text: value.text,
+      task: value.task,
     };
     sending = api
       .saveDraft(id, body)
       .then((answer) => {
-        agree(memory, id, answer.version, text);
+        agree(memory, id, answer.version, value);
         attempt = null;
         say('account');
       })
@@ -110,18 +171,27 @@ export function draftSync({
         if (error?.status === 409 && error.context) {
           const server = {
             version: Number(error.context.serverVersion) || 0,
-            text: String(error.context.serverText || ''),
+            ...snapshot(error.context.serverText, error.context.serverTask),
           };
-          // Our own earlier write, whose answer never arrived.
-          if (server.text === text) {
-            agree(memory, id, server.version, text);
+          if (same(server, value)) {
+            // This very save landed earlier; its answer never came back.
+            agree(memory, id, server.version, value);
+            attempt = null;
             say('account');
             return;
           }
-          elsewhere = server;
-          onElsewhere(server);
+          if (ownPredecessor(memory, id, server)) {
+            // An earlier save of ours landed and its answer was lost while
+            // the learner kept typing: agree on it and send what is newer.
+            agree(memory, id, server.version, server);
+            attempt = null;
+            if (queued === null) queued = value;
+            return;
+          }
+          showElsewhere(server);
           return;
         }
+        // Not answered: the words are on this device, and only there.
         say('device');
       })
       .finally(() => {
@@ -142,9 +212,11 @@ export function draftSync({
     get elsewhere() {
       return elsewhere;
     },
-    /* Returns the text the box should show when the account's copy is the
-       draft, or null when the box is already right. */
-    async open(localText) {
+    /* `local` is the device's snapshot. Returns the snapshot the room should
+       show when the account's copy is the draft, or null when the room is
+       already right. */
+    async open(local) {
+      local = snapshot(local?.text, local?.task);
       const state = await accountWorkState(api);
       if (state !== 'active') {
         say('device');
@@ -152,7 +224,8 @@ export function draftSync({
       }
       let server = null;
       try {
-        server = (await api.draft(id)).draft;
+        const answer = (await api.draft(id)).draft;
+        server = { version: Number(answer.version) || 0, ...snapshot(answer.text, answer.task) };
       } catch (error) {
         if (error?.status !== 404) {
           say('device');
@@ -160,60 +233,66 @@ export function draftSync({
         }
       }
       active = true;
-      const local = String(localText || '');
-      const agreed = readAgreement(memory, id);
       if (!server) {
-        say('account');
-        if (local.trim()) await send(local);
+        // Nothing kept with the account yet. An empty room has nothing to
+        // claim; a draft on the device is sent, and only its answer may say
+        // "account".
+        say('device');
+        if (!isEmpty(local)) await send(local);
         return null;
       }
-      const untouched = !local.trim() || textDigest(local) === agreed.digest;
-      if (untouched) {
-        agree(memory, id, server.version, server.text);
-        say('account');
-        return server.text === local ? null : server.text;
-      }
-      if (agreed.version === server.version) {
-        say('account');
-        await send(local);
-        return null;
-      }
-      if (server.text === local) {
+      if (ownPredecessor(memory, id, server)) agree(memory, id, server.version, server);
+      const current = readAgreement(memory, id);
+      if (same(server, local)) {
         agree(memory, id, server.version, local);
         say('account');
         return null;
       }
-      elsewhere = { version: server.version, text: server.text };
-      onElsewhere(elsewhere);
+      if (isEmpty(local) || snapshotDigest(local) === current.digest) {
+        agree(memory, id, server.version, server);
+        say('account');
+        return { text: server.text, task: server.task };
+      }
+      if (current.version === server.version) {
+        say('device');
+        await send(local);
+        return null;
+      }
+      showElsewhere(server);
       return null;
     },
-    edit(text) {
+    edit(value) {
       if (!active || elsewhere) return;
+      // Changed and not yet acknowledged: on this device until it is.
+      say('device');
       if (timer) cancel(timer);
+      const next = snapshot(value?.text, value?.task);
       timer = schedule(() => {
         timer = null;
-        send(String(text));
+        send(next);
       }, delay);
     },
-    // The learner takes the other device's version: it is now the draft.
+    // The learner takes the other device's snapshot - its words and its task.
     useElsewhere() {
       if (!elsewhere) return null;
       const chosen = elsewhere;
       elsewhere = null;
-      agree(memory, id, chosen.version, chosen.text);
+      agree(memory, id, chosen.version, chosen);
       say('account');
-      return chosen.text;
+      return { text: chosen.text, task: chosen.task };
     },
-    // The learner keeps this device's words: they become the next version.
-    keepHere(text) {
-      if (!elsewhere) return;
+    // The learner keeps this device's snapshot: it becomes the next version.
+    keepHere(value) {
+      if (!elsewhere) return Promise.resolve();
       const over = elsewhere;
       elsewhere = null;
-      agree(memory, id, over.version, over.text);
-      return send(String(text));
+      agree(memory, id, over.version, over);
+      say('device');
+      return send(snapshot(value?.text, value?.task));
     },
-    flush() {
-      return sending || Promise.resolve();
+    // Settles once nothing is in flight, including a save queued behind one.
+    async flush() {
+      while (sending) await sending;
     },
   };
 }

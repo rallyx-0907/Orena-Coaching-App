@@ -140,7 +140,7 @@ export async function renderExpression(root, ctx) {
           memory.recordRevision(id, { text: current.value });
         current.value = entry.text;
         memory.write(id, entry.text);
-        sync.edit(entry.text);
+        sync.edit(draftNow());
         updateCount();
         paintRevisions();
         current.focus();
@@ -198,53 +198,70 @@ export async function renderExpression(root, ctx) {
      device always. The status says which is true, and a version changed on
      another device is shown for the learner to choose, never merged. */
   const box = root.querySelector('#expressionText');
+  const taskInput = root.querySelector('[name=task]');
   const elsewhereNode = root.querySelector('[data-draft-elsewhere]');
+  // The draft is the words and the task they answer, always together.
+  function draftNow() {
+    return { text: box.value, task: taskInput.value };
+  }
+  const showDraft = (draft) => {
+    box.value = draft.text;
+    taskInput.value = draft.task;
+    memory.write(id, draft.text);
+    memory.write(`${id}::task`, draft.task);
+    updateCount();
+  };
   const sync = draftSync({
     api,
     memory,
     id,
-    task: () => root.querySelector('[name=task]')?.value || '',
     onWhere: (where) => {
       if (alive()) refreshDraftStatus(root.querySelector('[data-draft-status]'), ctx, where);
     },
     onElsewhere: (other) => {
       if (!alive()) return;
-      elsewhereNode.innerHTML = `<p>${esc(c.draftElsewhere)}</p><blockquote lang="${esc(language)}">${esc(other.text.slice(0, 280))}${other.text.length > 280 ? '…' : ''}</blockquote><div class="draft-elsewhere__actions"><button type="button" class="quiet" data-use-elsewhere>${esc(c.draftUseElsewhere)}</button><button type="button" class="quiet" data-keep-here>${esc(c.draftKeepHere)}</button></div>`;
+      elsewhereNode.innerHTML = `<p>${esc(c.draftElsewhere)}</p><blockquote lang="${esc(language)}">${esc(other.text.slice(0, 280))}${other.text.length > 280 ? '…' : ''}</blockquote>${other.task ? `<p class="draft-elsewhere__task"><span>${esc(c.writingTask)}</span> ${esc(other.task)}</p>` : ''}<div class="draft-elsewhere__actions"><button type="button" class="quiet" data-use-elsewhere>${esc(c.draftUseElsewhere)}</button><button type="button" class="quiet" data-keep-here>${esc(c.draftKeepHere)}</button></div>`;
       elsewhereNode.hidden = false;
       elsewhereNode.querySelector('[data-use-elsewhere]').onclick = () => {
         // The words in the box are kept as a version first, never lost.
         if (box.value.trim()) memory.recordRevision(id, { text: box.value });
-        const text = sync.useElsewhere();
-        if (text != null) {
-          box.value = text;
-          memory.write(id, text);
-          updateCount();
+        const chosen = sync.useElsewhere();
+        if (chosen) {
+          showDraft(chosen);
           paintRevisions();
         }
         elsewhereNode.hidden = true;
         box.focus();
       };
       elsewhereNode.querySelector('[data-keep-here]').onclick = () => {
-        sync.keepHere(box.value);
+        sync.keepHere(draftNow());
         elsewhereNode.hidden = true;
         box.focus();
       };
     },
   });
-  const openedWith = box.value;
-  sync.open(memory.value.expressions[id] || '').then((text) => {
-    // Only a box the learner has not touched since it opened takes the
-    // account's copy; typed words are never replaced under them.
-    if (!alive() || text == null || box.value !== openedWith) return;
-    box.value = text;
-    memory.write(id, text);
-    updateCount();
+  const openedWith = draftNow();
+  sync
+    .open({
+      text: memory.value.expressions[id] || '',
+      task: memory.value.expressions[`${id}::task`] || '',
+    })
+    .then((draft) => {
+      // Only a room the learner has not touched since it opened takes the
+      // account's copy; typed words and task are never replaced under them.
+      const now = draftNow();
+      if (!alive() || !draft || now.text !== openedWith.text || now.task !== openedWith.task) return;
+      showDraft(draft);
+    });
+  taskInput.addEventListener('input', () => {
+    memory.write(`${id}::task`, taskInput.value);
+    sync.edit(draftNow());
   });
   box.oninput = (event) => {
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing', excerpt });
     refreshDraftStatus(root.querySelector('[data-draft-status]'), ctx);
-    sync.edit(event.target.value);
+    sync.edit(draftNow());
     updateCount();
   };
   root.querySelector('form').onsubmit = async (event) => {

@@ -1,8 +1,9 @@
 """Where a kept word was met, as occurrences rather than as one fact.
 
-DEPLOYED, INACTIVE — the table this writes is in
-`migrations/versions/20260908_0005`, applied to the sandbox runtime. The
-`ORENA_ACCOUNT_BACKBONE` flag is off, so no caller is wired to it.
+DEPLOYED, NOT YET CALLED — the table this writes is in
+`migrations/versions/20260908_0005`. The sandbox runs with the backbone
+`active`, but no route writes kept-language provenance through this yet; kept
+language's provenance still lives on the device.
 
 `saved_words` owns the word and its review schedule and has no column for where
 the learner met it, so provenance sits beside it. Three things about that

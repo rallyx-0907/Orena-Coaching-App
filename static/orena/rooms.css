@@ -81,6 +81,7 @@
   color: var(--on-sage-muted);
   white-space: pre-wrap;
 }
+[data-experience='writing'] .draft-elsewhere__task span { font-weight: 600; }
 [data-experience='writing'] .draft-elsewhere__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 [data-experience='writing'] .writing-sheet textarea {
   flex: 1;

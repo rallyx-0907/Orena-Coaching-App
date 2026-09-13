@@ -237,3 +237,39 @@ def test_a_draft_over_the_rooms_limits_is_refused(engine, active):
         'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 0, 'text': 'x' * (work_api.DRAFT_TEXT_LIMIT + 1)})
     assert too_long.status_code == 422
     assert client.get('/api/drafts/expression:free').status_code == 404
+
+
+@postgres
+def test_a_new_incarnation_starts_with_no_draft_and_never_reaches_the_old_one(engine, active):
+    """Review P1: the draft id left out the incarnation, so an explicit
+    re-registration would have derived the old incarnation's work id."""
+    from sqlalchemy import text
+
+    key = f'work-{uuid.uuid4()}'
+    account = _user(engine, key)
+    client, _ = _client(active, user=key)
+    piece = 'story:last-train'
+    assert client.put(f'/api/drafts/{piece}', json={
+        'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 0, 'text': 'old words', 'task': 'old task'}).status_code == 200
+    old_incarnation = active.incarnations.resolve(account)
+
+    active.incarnations.mark_deleted(old_incarnation)
+    assert client.get(f'/api/drafts/{piece}').status_code == 403, 'the barrier holds'
+    new_incarnation = active.incarnations.register_new(account)
+    assert new_incarnation != old_incarnation
+
+    assert client.get(f'/api/drafts/{piece}').status_code == 404, 'nothing of the old draft'
+    fresh = client.put(f'/api/drafts/{piece}', json={
+        'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 0, 'text': 'new words', 'task': ''})
+    assert fresh.status_code == 200 and fresh.json() == {'status': 'committed', 'version': 1}
+    assert client.get(f'/api/drafts/{piece}').json()['draft'] == {'text': 'new words', 'task': '', 'version': 1}
+
+    with engine.connect() as connection:
+        rows = connection.execute(
+            text("SELECT incarnation_id, payload, version FROM works "
+                 "WHERE source_kind = 'item' AND source_id = :piece AND incarnation_id IN (:old, :new)"),
+            {'piece': piece, 'old': old_incarnation, 'new': new_incarnation},
+        ).mappings().all()
+    by_incarnation = {str(row['incarnation_id']): row for row in rows}
+    assert by_incarnation[old_incarnation]['payload'] == {'text': 'old words', 'task': 'old task'}
+    assert by_incarnation[new_incarnation]['version'] == 1, 'two rows; the old one never attached'

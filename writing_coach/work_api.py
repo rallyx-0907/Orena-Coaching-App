@@ -192,9 +192,11 @@ def put_work(work_id: str, body: WorkMutation) -> dict[str, Any]:
 #
 # The Writing room knows a piece by its item key (`essay:6`, `story:…`,
 # `expression:free`), not by a work UUID. The work id is derived on the server
-# from the account, the learning language and the key, so the same piece meets
-# the same draft on every device, and two accounts writing about the same item
-# can never touch each other's row.
+# from the account's incarnation, the learning language and the key, so the
+# same piece meets the same draft on every device; two accounts writing about
+# the same item never touch each other's row; and an explicit re-registration
+# (a new incarnation) starts with no draft at all - `works.id` is globally
+# unique, and an id without the incarnation would name the old one's row.
 
 DRAFT_TEXT_LIMIT = 12_000
 DRAFT_TASK_LIMIT = 240
@@ -214,7 +216,7 @@ def _draft_key(key: str) -> str:
 
 
 def _draft_work_id(scope: Scope, key: str) -> str:
-    return str(stable_uuid('work', scope.account, scope.language, 'draft', key))
+    return str(stable_uuid('work', scope.account, scope.incarnation, scope.language, 'draft', key))
 
 
 @router.get('/drafts/{key}')

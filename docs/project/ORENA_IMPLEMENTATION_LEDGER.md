@@ -459,6 +459,49 @@ interface shows the ZH status.
 
 ---
 
+### Review of `f52cf05` - required changes made
+
+A review of the client half found four required changes before human browser
+approval; all made.
+
+- **P1, the draft is {text, task}.** The server kept both but draft-sync
+  reconciled the text alone, so a second device could load words without their
+  task and then overwrite the task. Agreement, adoption, conflict and both
+  choices now carry the pair; the digest covers both (joined by a character
+  neither field can hold); the task field writes device memory and syncs on
+  input; the other-device notice shows the task. Never a draft under another
+  task.
+- **P1, the draft id is incarnation-scoped.** `_draft_work_id` omitted the
+  incarnation while `works.id` is global, so an explicit re-registration would
+  have derived the old incarnation's row. Now `stable_uuid('work', account,
+  incarnation, language, 'draft', piece)`. PostgreSQL counterexample: draft →
+  deletion barrier (403) → `register_new` → the piece is absent, version 1
+  created cleanly, the old row untouched (fails with the old id).
+- **P1, truthful status.** "Kept with your account" only after an
+  acknowledged save of that snapshot, or a read showing the server holds it. An
+  empty room over a 404 says "on this device"; a refused first save never says
+  "account"; every change is "on this device" until acknowledged.
+- **P2, a lost answer while typing on.** Sent-but-unanswered saves are
+  remembered on the device (base version and snapshot digests). A 409 - or a
+  reopen - that shows one of them at base + 1 is this device's own
+  predecessor: agreed on, and what was typed since is sent on top. No false
+  conflict, no second write of A, B never lost; a genuinely later write from
+  another device is still shown as one.
+- Stale docstrings updated: the I2 repositories and `account_backbone.py` no
+  longer say the flag is off or the schema awaits review.
+
+Local execution: `scripts/test_orena_draft_sync.mjs` 13 cases; all 34 CI node
+gates; ESM graph 54 modules; `tests/test_work_api.py` 10 and the backbone
+PostgreSQL suites 125 on a scratch database; hermetic suite 901 passed. Browser
+against the restarted sandbox, two contexts: empty room says "device"; task and
+words reach the phone together; a task-only change syncs; the notice shows the
+other pair; "Use that version" and "Keep this one" each keep a whole pair; the
+phone reloads into the laptop's pair; 390 without overflow; ZH. Drafts saved
+before this change used the old id and are not found by the new one (sandbox
+test data only).
+
+---
+
 ## I4 — My Content, My Language and Collection retrieval
 
 **Specification:** `ORENA_COLLECTION_ARCHITECTURE` §§2-5.

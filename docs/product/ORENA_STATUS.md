@@ -242,12 +242,15 @@ Learning capabilities now built on that foundation:
   earned.
 
 Writing drafts kept with the account (I2, REVIEWABLE on the sandbox only,
-where the account backbone is `active`): the draft follows its piece to another
-browser of the same account and learning language, the status says "kept with
-your account" only when the account acknowledged it and "kept on this device"
-otherwise, and a version changed on another device is shown above the box for
-the learner to take or to keep their own - never merged, never replaced under
-their typing, and the replaced words stay in the version list. Elsewhere, and
+where the account backbone is `active`): the draft - the words together with
+the Writing task they answer - follows its piece to another browser of the same
+account and learning language. The status says "kept with your account" only
+for a draft the account acknowledged or is shown to hold, and "kept on this
+device" otherwise (including before the first save and while a change is
+unacknowledged). A draft changed on another device is shown above the box,
+words and task, for the learner to take or to keep their own - never merged,
+never replaced under their typing, and the replaced words stay in the version
+list. A save whose answer was lost is recognised as this device's own. Elsewhere, and
 wherever the backbone is off, drafts stay on the device as before. Walked in
 two browsers at 1280 and 390, EN and ZH.
 
