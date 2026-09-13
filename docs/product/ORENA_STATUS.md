@@ -95,9 +95,20 @@ lesson fit one phone screen under the voice strip; Reading comprehension has
 a conversation opens without artwork with the reply box in the first screen,
 and a partner's reply arrives in view with the box to answer it; Discover, My
 content and Collection keep their artwork but a two-line heading, compact rows
-and one row of lenses. On a desktop, Follow puts the spoken line and the
-transcript beside the video, so the line, its meaning and "look at the words"
-with its guide are in the first screen from 1024x640 up.
+and one row of lenses.
+
+Follow and the whole conversation are one panel. Beside the video on a
+desktop - under it, filling the screen, on a phone - a single card keeps one
+height inside the first screen; the line being spoken is the list's current
+entry, opened where it sits with its meaning and the word guide, so a long
+sentence no longer pushes the list up and down, and the list scrolls on its
+own to read ahead. From 1100x700 up every line of the 0:46 lesson, with "look
+at the words" on, is fully in view without a page scroll; at 1024x640 the
+longest line needs 20px of the list's own scroll. Dictation is one frame with
+nothing scrolled: the shape of the line, the question, the attempt, Compare
+and its two aids, then the result with its actions in its heading row - the
+whole loop, including the 129-character line's comparison, fits at 1280x720
+and up, and at 390 the panel after comparing ends at 794px (it ran to 1179px).
 
 The approved red-panda library is in the product. Fifty-two approved assets
 existed and four were reachable, one of them doing duty as both the arrival and

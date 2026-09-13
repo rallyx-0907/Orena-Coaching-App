@@ -493,3 +493,35 @@ conversation, and Discover/Collection.
   gates and the ESM graph pass. pytest 824 passed / 20 inherited / 66 skipped.
 
 Not claimed: real devices, microphone, human approval.
+
+## Follow as one panel and Dictation in one frame: verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright, local execution. Human
+report: Dictation's practice panel still needed scrolling to see the rest; the
+spoken line beside the video grew and shrank with each sentence and pushed the
+transcript up and down - merge it into "The whole conversation", in the follow
+moment's style, fitting the viewport, the list scrolling to read ahead rather
+than the page.
+
+- Follow panel, 0:46 video lesson, "look at the words" on, every segment: one
+  panel height per window (500 / 480 / 554 / 599 / 729 / 903 px at 1024x640,
+  1280x620, 1280x720, 1366x768, 1440x900, 1920x1080), panel inside the
+  window, page never scrolled; the opened line, its meaning and the word guide
+  fully in view for every segment from 1100x700 up and at 1280x620; at
+  1024x640 the longest line needs 20px of the list's own scroll. Playing for
+  24 seconds: height constant at 599px, the current entry advancing, the pause
+  between lines keeping the last line. ZH, Night Ink, Deep Forest; audio lesson.
+- Phone 390 and 800: the panel fills the screen under the compact header
+  (775px), every segment's opened line, meaning and guide in view.
+- Dictation, longest line (129 characters) and a short one, before and after
+  "compare": nothing scrolled - neither the page, the panel nor its result
+  region - at 1280x720, 1366x768, 1440x900, 1536x864 and 1920x1080, EN and ZH.
+  Before this change the panel's content reached 924-1419px against a
+  576-745px frame. At 390 the panel after comparing ends at 794px (1179px).
+- Shadowing and Speaking panels share the new top row (both ways out); on the
+  last line the duplicate "Return to Follow" is gone.
+- No horizontal overflow on any route at 1440/800/390, EN and ZH; 104 hints
+  opened, none off screen; 33 CI `.mjs` gates and the ESM graph pass; pytest
+  824 passed / 20 inherited / 66 skipped.
+
+Not claimed: real devices, microphone, human approval.

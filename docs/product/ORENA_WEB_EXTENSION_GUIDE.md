@@ -191,11 +191,27 @@ What a new surface inherits, and the traps behind each one.
   side, work the other, each scrolling on its own. The practice panel must stay
   a sibling of the media stage, not a child, or nothing can place them apart.
   Narrow, the source becomes a compact sticky strip and the work is scrolled to.
-  While following on a desktop (above 800px, no practice open) the spoken line
-  and the transcript sit in `.follow-column` beside the voice, so the line, its
-  meaning, "look at the words" and its guide are in the first viewport even in
-  a short laptop window; elsewhere the column is `display: contents` and its
-  children keep their own places.
+  Following, the transcript panel is the follow panel: one card, one fixed
+  height from the top of the encounter to the bottom of the first screen
+  (`--encounter-top`, measured by the encounter), its list scrolling inside it.
+  The line being spoken is not a block above the list - that grew and shrank
+  with every sentence and pushed the list about - but the list's current
+  entry: `paintFollow` moves `.follow-moment` into the active `<li>`
+  (`li[data-current]`) and hides that row's own button while it is open.
+  `keepCurrentInView` scrolls only the list, keeps the line before as context
+  when the entry still fits, and stands down while the pointer or focus is in
+  the list. Between two lines the entry stays and says so (`data-gap`).
+  "Look at the words" and "meaning for every line" sit in `.follow-tools`
+  under the title. Beside the voice above 800px; under it, filling the screen
+  below the header, on a phone.
+  Dictation is one frame with nothing scrolled: the shape of the line, the
+  question (its replay beside it; narrow, the strip above carries it), the
+  attempt, Compare with the two quiet aids stacked beside it, then
+  `.dictation-result`, which takes the height left. The result heading
+  carries its own actions, the comparison replaces the shape of the line
+  rather than stacking under it, and the pre-attempt instruction yields its
+  row once there is a result. Both ways out of a practice sit in
+  `.practice-nav` in the panel's top row.
 ### Learning workspace
 
 `foundation.css`, `ui/patterns.js` - the implementation of
@@ -213,8 +229,8 @@ What a new surface inherits, and the traps behind each one.
   frame, never in the result column.
   Writing (`ui/expression.js`) and Speaking (`ui/speaking.js`, which hands
   `mountVoiceResponse` a `resultHost`) use it directly. Dictation keeps the
-  encounter's source-and-work composition, with the practice panel bounded to
-  the frame and the comparison brought into view inside it. Reading
+  encounter's source-and-work composition, with the whole loop fitting the
+  practice panel's frame (see Workspace above). Reading
   comprehension and Grammar practice still owe it a check.
   `scripts/verify_writing_workspace_browser.mjs` measures the running Writing
   surface for exactly that.

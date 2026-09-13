@@ -628,50 +628,235 @@
 }
 
 /* ---------------------------------------------------------------------------
-   The follow column: the spoken line and the transcript it belongs to.
+   The follow panel: the whole conversation, with the line being spoken opened
+   up inside it.
 
-   `.follow-column` holds the current line and the whole transcript. It draws
-   no box of its own by default, so a practice and a narrow screen see the line
-   and the transcript as separate items exactly as before. Where the encounter
-   has two columns and the learner is following, it becomes the right-hand
-   column: the line being spoken, its meaning and the close-look controls at
-   the top, the transcript under them scrolling in the height that is left.
-   The video no longer has to share its column's height with the caption, so a
-   short laptop window shows the video, the line, the meaning and the
-   close-look guide together.
+   The current line used to be a block of its own above the list, and its
+   height changed with every sentence, pushing the list up and down. Now the
+   list is the panel - a card in the follow moment's colours, one fixed height
+   inside the first screen - and the line being spoken is its own entry,
+   opened where it sits: when it was said, the line at reading size, its
+   meaning and the word guide. The list scrolls on its own, so the
+   learner can read ahead without the page moving.
    --------------------------------------------------------------------------- */
-.follow-column { display: contents; }
+.transcript-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-4) var(--space-4) 0;
+  background: var(--surface);
+  border-top: 0;
+  border-bottom: 2px solid var(--coral);
+  border-radius: var(--radius);
+}
+.transcript-panel .section-head { flex: none; margin: 0 0 var(--space-1); align-items: center; }
+.transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
+/* How to read the list: the words of the line being spoken, the meaning of
+   every line. One row of switches under the title, not one inside each line. */
+.follow-tools {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+  margin: 0 0 var(--space-2);
+}
+.follow-tools :is(.close-look, .meaning-toggle) { margin: 0; min-height: 32px; font-size: var(--text-xs); gap: var(--space-2); }
+.follow-tools input { margin: 0; }
+/* A pointer needs 24px, not a thumb's 44px; the phone rules keep 44. */
 @media (min-width: 801px) {
-  /* Following, the caption column gets the measure a spoken line needs; the
-     video keeps 16:9 in the rest. */
+  .follow-tools input { min-height: 24px; block-size: 20px; inline-size: 20px; margin: 0; }
+}
+/* Practising, no line is opened, so there are no words to look at. */
+.transcript-panel:not(:has(.follow-moment:not([hidden]))) .follow-tools .close-look { display: none; }
+.transcript-panel ol { flex: 1 1 auto; min-height: 0; padding-bottom: var(--space-3); }
+.transcript-panel [data-meaning-note] { flex: none; margin: 0 0 var(--space-3); }
+/* The entry being spoken: the follow moment, opened inside the list. */
+.transcript-panel li[data-current] { margin-block: var(--space-1) var(--space-2); }
+.transcript-panel .follow-moment {
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: inset 3px 0 var(--coral), 0 1px 0 var(--line);
+}
+/* A transcript row is a full-width button; the words and quiet controls inside
+   the opened entry are not rows and keep their own shape. */
+.transcript-panel .follow-moment button {
+  display: inline-block;
+  width: auto;
+  padding: var(--space-1) 0;
+  line-height: inherit;
+  border-radius: 0;
+  text-align: start;
+}
+.transcript-panel .follow-moment > small { font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
+.transcript-panel .follow-moment .spoken { margin: var(--space-2) 0 var(--space-1); }
+.transcript-panel .follow-moment .meaning { margin-top: var(--space-1); }
+.transcript-panel .close-look-guide { margin-top: var(--space-2); padding-top: var(--space-2); }
+.transcript-panel .close-look-guide .meta { margin: var(--space-1) 0 0; line-height: 1.45; }
+.transcript-panel .word-legend { gap: var(--space-1) var(--space-3); }
+/* Between two spoken lines the entry stays, quieter, and says so. */
+.follow-moment[data-gap='true'] > small { color: var(--muted); }
+.follow-moment[data-gap='true'] .spoken { opacity: 0.55; }
+
+@media (min-width: 801px) {
+  /* Following, the panel gets the measure a spoken line needs; the video
+     keeps 16:9 in the rest. The panel runs from the top of the encounter to
+     the bottom of the first screen and never grows past it. */
   .media-encounter:not(:has(.practice-space:not([hidden]))) {
-    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 1fr);
   }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .follow-column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    min-width: 0;
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
     position: sticky;
-    top: var(--space-4);
+    top: calc(var(--shell-offset, 0px) + var(--space-4));
     align-self: start;
-    max-block-size: calc(100svh - var(--space-8));
+    block-size: calc(100svh - var(--encounter-top, 10rem) - var(--space-4));
+    min-block-size: 22rem;
   }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .follow-column .follow-moment {
-    flex: none;
-    border-radius: var(--radius);
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
+    max-height: none;
   }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .follow-column .transcript-panel {
-    position: static;
-    flex: 1 1 auto;
-    min-height: 12rem;
+}
+/* A short laptop window: the opened line a step smaller, so the longest line,
+   its meaning and the word guide still fit the list's height. */
+@media (min-width: 801px) and (max-height: 760px) {
+  .transcript-panel .follow-moment .spoken { font-size: 1.15rem; line-height: 1.4; }
+  .transcript-panel .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.5; }
+}
+/* A small laptop keeps the rail, so the panel takes an equal share of what is
+   left rather than its minimum, and a long line wraps less. */
+@media (min-width: 801px) and (max-width: 1100px) {
+  .media-encounter:not(:has(.practice-space:not([hidden]))) {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
+  }
+  .transcript-panel .follow-moment .spoken { font-size: 1.1rem; line-height: 1.4; }
+}
+@media (max-width: 800px) {
+  /* One column: the panel follows the voice and fills the screen under the
+     header once scrolled to, its list scrolling inside it. At the end of the
+     list a swipe carries on down the page. */
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
+    block-size: calc(100svh - var(--shell-offset, 0px) - var(--space-3));
+    min-block-size: 20rem;
+    scroll-margin-top: calc(var(--shell-offset, 0px) + var(--space-2));
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
+    max-height: none;
+    overscroll-behavior: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dictation: one frame, nothing scrolled.
+
+   The work reads top to bottom in the height beside the source: the shape of
+   the line, the question with its replay, the attempt, the actions, and a
+   result region that takes what is left. Both ways out sit in the top row.
+   The comparison replaces the shape of the line instead of stacking under it.
+   --------------------------------------------------------------------------- */
+.practice-top { flex-wrap: wrap; row-gap: var(--space-1); }
+.practice-nav { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-inline-start: auto; }
+.practice-top { align-items: center; }
+.practice-nav { align-items: center; }
+.practice-nav > button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
+@media (max-width: 1079px) {
+  /* Narrow, the source strip above already carries "hear this line again",
+     so the question keeps its line to itself; the two ways out share a row. */
+  .dictation-ask [data-listen] { display: none; }
+  .practice-nav { flex-basis: 100%; justify-content: space-between; margin-inline-start: 0; }
+}
+.dictation-ask {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-1) 0;
+}
+.practice-space .dictation-ask label { margin: 0; }
+.dictation-ask [data-listen] { min-height: 32px; font-size: var(--text-sm); white-space: nowrap; }
+#dictationForm textarea { min-block-size: 3.5rem; padding: var(--space-2) var(--space-3); line-height: 1.5; }
+#dictationForm .button-row { margin: var(--space-2) 0 0; gap: var(--space-1) var(--space-4); align-items: center; }
+#dictationForm .button-row button:not(.primary) { font-size: var(--text-sm); }
+.practice-space .hint-line { padding: var(--space-2) var(--space-4) var(--space-3); margin: 0 0 var(--space-2); }
+.hint-line__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.hint-line__head small { letter-spacing: 0.06em; }
+.hint-line__head .meta { margin: 0; font-size: var(--text-xs); }
+.hint-line .hint__trigger { color: var(--on-sage-muted); }
+.practice-space .hint-slots { font-size: 1.05rem; line-height: 1.75; margin: var(--space-1) 0 0; }
+.dictation-result .comparison:not(:empty) { padding-top: var(--space-2); margin-top: var(--space-2); }
+/* The result says how close the attempt was and offers what to do next in one
+   row; the words themselves follow. */
+.comparison-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+}
+.dictation-result .comparison h3 { font-size: 1rem; margin: 0; white-space: nowrap; }
+.dictation-result .comparison-head .button-row { margin: 0; gap: var(--space-1) var(--space-3); flex-wrap: nowrap; }
+.dictation-result .comparison-head .button-row button { white-space: nowrap; padding-inline: 0; }
+.dictation-result .comparison-head .button-row button { font-size: var(--text-sm); }
+/* Once there is a result, the instruction for before the attempt has done its
+   work and yields its row. */
+.practice-space:has(.dictation-result .comparison:not(:empty)) > h2 { display: none; }
+.dictation-aids { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
+.dictation-result .diff { font-size: var(--text-base); gap: 4px; margin: 0 0 var(--space-2); }
+.dictation-result .diff > span { padding: 1px 6px; }
+.dictation-result .diff > span { line-height: 1.5; }
+/* The original line, then what it means - quieter, because it supports it. */
+.dictation-result .comparison > p { font-size: var(--text-base); line-height: 1.5; margin: var(--space-1) 0; }
+.dictation-result .comparison > p + p { font-size: var(--text-sm); color: var(--muted); }
+.dictation-result [data-evidence-status] { font-size: var(--text-xs); color: var(--muted); margin: var(--space-1) 0 0; }
+.dictation-result [data-evidence-status]:empty { display: none; }
+
+@media (min-width: 1080px) {
+  /* The work gets more of the width than the source, so a long line's
+     comparison wraps into fewer rows. */
+  .media-encounter:has(.practice-space:not([hidden])) {
+    grid-template-columns: minmax(0, 0.8fr) minmax(420px, 1fr);
+  }
+  /* A pointer does not need 44px under a quiet action; the attempt's own
+     button keeps its full size. */
+  #dictationForm .button-row button:not(.primary),
+  .dictation-result .comparison .button-row button { min-height: 24px; padding-block: 0; }
+  /* The two quiet aids stack beside the attempt's own button rather than
+     wrapping onto a row of their own. */
+  .dictation-actions { flex-wrap: nowrap; }
+  .dictation-aids { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+  .media-encounter:has(.practice-space:not([hidden])) .practice-space {
     display: flex;
     flex-direction: column;
+    padding: var(--space-3) var(--space-5);
+    max-block-size: calc(100svh - var(--encounter-top, 10rem) - var(--space-3));
+    scrollbar-gutter: auto;
   }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .follow-column .transcript-panel ol {
+  .media-encounter:has(.practice-space:not([hidden])) .practice-space > * { flex: none; }
+  .practice-space h2 { font-size: 1.15rem; line-height: 1.35; margin: 0 0 var(--space-2); }
+  .practice-top { margin-bottom: var(--space-1); }
+  /* Practising, the heading orients in one short line. */
+  main:has(.practice-space:not([hidden])) .encounter-heading { padding-bottom: var(--space-3); }
+  main:has(.practice-space:not([hidden])) .encounter-heading h1 { font-size: 1.5rem; margin: 0; }
+  /* The lesson's topic and length are for choosing it; while practising,
+     the title is enough. */
+  main:has(.practice-space:not([hidden])) .encounter-heading .heading-with-hint { display: none; }
+  .practice-space:has(#dictationForm) > [data-practice-body] {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
-    max-height: none;
+  }
+  .practice-space:has(#dictationForm) [data-practice-body] > * { flex: none; }
+  /* Only an unusually long line can outgrow the region; it then scrolls
+     there, never the page and never the attempt above it. */
+  .practice-space:has(#dictationForm) .dictation-result {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
@@ -682,7 +867,7 @@
    The way back and the heading orient in two short lines instead of a band of
    whitespace. The video keeps 16:9 and narrows only if a short window could
    not otherwise show it with its transport under the heading. The spoken line
-   sits in the follow column beside it, set to that column's measure.
+   is the current entry of the follow panel beside it, set to that measure.
    --------------------------------------------------------------------------- */
 @media (min-width: 901px) {
   .back-row { padding: var(--space-4) 0 var(--space-1); }
@@ -817,7 +1002,7 @@
   .transcript-panel .line-original { font-size: var(--text-base); }
   .practice-space { padding: var(--space-4); }
   .practice-space h2 { font-size: 1.15rem; margin-bottom: var(--space-2); }
-  .practice-top { margin-bottom: var(--space-2); }
+  .practice-top { margin-bottom: var(--space-1); }
   .practice-space label { margin: var(--space-2) 0 var(--space-1); }
   /* Shadowing and Speaking inside an encounter: the line to say, what it
      means, what to do, and the two controls - one screen, not three. */
@@ -831,7 +1016,6 @@
   .practice-space .practice-guide { font-size: var(--text-sm); line-height: 1.6; }
   .practice-space .button-row { margin-block: var(--space-3) var(--space-2); align-items: center; }
   .practice-space [data-take] h3 { margin: var(--space-3) 0 var(--space-2); font-size: var(--text-lead); }
-  .practice-space [data-next-moment] { margin-top: var(--space-2); }
   .practice-space .voice-history { margin-top: var(--space-3); padding-top: var(--space-2); }
 
   /* Reading comprehension: the questions close together, every choice still a
