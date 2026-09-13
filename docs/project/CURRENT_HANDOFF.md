@@ -83,8 +83,9 @@ re-review) and `.../20260912_0007` (quota buckets/reservations; new
 14/14 postgres/10/10 flakiness; not yet reviewed) - see
 `I3_SCHEMA_REVIEW_REQUEST.md`. Neither self-approved/moved/activated
 (AGENTS.md §1). Discover catalog 3 -> 4 with a parity gate; mobile nav
-scroll fixed. I1's `Scope` still has no production caller. Preserve A-D, eleven
-destinations and all active Opus WIP; no I1-I7 claim implies human approval.
+scroll fixed. I1 `Scope` has no production caller. I4 step 1, read-only
+`/api/collection` (ledger). Keep A-D, 11 destinations, Opus WIP; no
+I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 

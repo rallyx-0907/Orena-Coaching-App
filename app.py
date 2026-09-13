@@ -71,6 +71,7 @@ from writing_coach.speech_api import (
     router as speech_router,
 )
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
+from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
 from writing_coach.listening_api import (
     configure_listening_progress,
     configure_listening_translation_cache,
@@ -368,6 +369,15 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
+# Collection retrieval (I4 step 1): one read over the owners that exist, each
+# read through what it already serves. No surface calls it yet.
+configure_collection(runtime_owners(
+    library=list_library_vocabulary,
+    reading=list_reading_sessions,
+    essays=_learning_repository.list_latest_series,
+    specialized=_specialized_learning_repository,
+))
+app.include_router(collection_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)

@@ -397,3 +397,78 @@ The remaining gate is step 9, `ORENA_ACCOUNT_BACKBONE=on`, and the write-path
 integration that follows it. Rollback is free until then and stops being free
 the moment the backbone holds authoritative work. Activation is not Opus's to
 declare.
+
+---
+
+## I4 — My Content, My Language and Collection retrieval
+
+**Specification:** `ORENA_COLLECTION_ARCHITECTURE` §§2-5.
+**Exit gate:** I1-I2; private membership/provenance, query pagination; no
+implicit navigation promotion.
+**Status:** step 1 implemented - typed query adapters over existing stores,
+ungated and read-only. Steps 2-3 (account membership/provenance repositories
+after the schema gate, then connecting My Content / My Language) not started.
+
+### What was built
+
+`writing_coach/collection_query.py` - `query_collection(scope, owners, …)`, the
+spec's `queryCollection`, as a projection that owns nothing. Each owner is read
+through the read it already serves and holds no copy: saved words
+(`list_library_vocabulary`), reading sessions (`list_reading_sessions`, bound
+30), essay series (`list_latest_series`), listening progress
+(`list_recent_listening_progress_records`, bound 100) and Speaking takes
+(`list_speaking_attempt_records`, bound 50). `writing_coach/collection_api.py`
+serves it as `GET /api/collection?query&kinds&cursor&limit`; no surface calls
+it yet, and `#/collection` stays the deferred presentation.
+
+- **Domain refs.** Every entry is `{domain, id}`: reading session 1 and essay
+  series 1 stay two objects.
+- **Real destinations only.** Actions are the strings `intent.js` builds; a
+  listening row reaches its lesson through the catalog by source and by the
+  segment falling inside the excerpt, because one source backs two lessons.
+  Server essays and free Speaking takes have no route that reopens them, so
+  they carry no action and say `no_route`; progress no lesson claims is
+  `unavailable`, not guessed.
+- **Honest completeness.** A failing owner makes the result `partial`, names
+  it in `unavailableOwners` and logs its domain and error type; an owner read
+  that fills its bound is `truncated`. Either makes the total `unknown`.
+- **Scope before search.** An entry whose owner row is another language never
+  reaches search, counts or snippets.
+- **Cursor bound to its query.** HMAC-signed (session secret, else per
+  process); binds account, incarnation, language, filters, sort and a snapshot
+  of the ordered result. Another query, another scope, a forged token or a
+  changed result is refused - the last as `refresh_required` (409), so paging
+  never skips or repeats silently.
+- **Declared search.** Title and snippet, NFKC + case-folded substring; a CJK
+  query also matches across whitespace; no semantic search, no romanisation.
+
+### Verified
+
+`tests/test_collection_query.py`, 23 cases, hermetic: mixed owners, ID
+collision, real routes, shared-source lesson grouping, unclaimed progress,
+owner outage, truncated owner, foreign-language row, EN/ZH search, paging once
+through, concurrent addition → refresh, cursor/query mismatch, cursor from
+another account/language/incarnation, forged cursor, bad limits/kinds/query.
+Full suite 847 passed / 20 inherited / 66 skipped; ruff clean on the new files.
+
+Live on the sandbox (PostgreSQL, 127.0.0.1:8011): EN result complete, 34
+entries - two lessons resolved through the catalog and a reading session, each
+opened in the browser to the room with the matching title; ZH scope returns its
+own essay and finds it by `想说`; a second page, a reused cursor (422
+`cursor_query_mismatch`), a forged cursor (422 `cursor_invalid`) and an unknown
+kind (422) answer in the canonical envelope. On the SQLite test backend the
+listening and Speaking owners are unavailable by design and the result says so.
+
+### Deliberately not done
+
+- **Incarnation.** No production caller resolves one from a request (the same
+  gap `product/commerce.py` names), so cursors bind `incarnation=None`; the
+  matrix row "delete and re-register rejects the old cursor" stays pending
+  until I2 activation wires resolution.
+- **Device memory.** Kept content, continuation, drafts and kept-language
+  provenance live in the browser; merging them is the client's job or awaits
+  the membership schema. Repeated phrase with two origins and private-source
+  revocation need provenance and membership records that do not exist yet.
+- **Writing route.** 31 of the sandbox's 34 entries are essays with no action,
+  because the Writing room cannot reopen a server essay series by id. A route
+  for that is the next UI slice, not something this adapter invents.
