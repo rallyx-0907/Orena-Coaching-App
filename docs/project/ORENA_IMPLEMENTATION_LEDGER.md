@@ -469,6 +469,62 @@ listening and Speaking owners are unavailable by design and the result says so.
   provenance live in the browser; merging them is the client's job or awaits
   the membership schema. Repeated phrase with two origins and private-source
   revocation need provenance and membership records that do not exist yet.
-- **Writing route.** 31 of the sandbox's 34 entries are essays with no action,
-  because the Writing room cannot reopen a server essay series by id. A route
-  for that is the next UI slice, not something this adapter invents.
+- ~~**Writing route.**~~ Done in the follow-up below.
+
+### Follow-up — the Writing room reopens a server essay series
+
+`#/expression?id=essay:<series>` loads the series through `/api/essays/{id}`
+(scoped to the account and learning language, so another's or another
+language's is not found and the room says it is unavailable rather than
+opening empty). The latest version is in the box unless a device draft is
+waiting, the server's versions are the history - a device record is merged in,
+never allowed to hide them - the latest review is already beside it, and the
+next review joins the same series. `essay_detail` now returns `app_cefr`, the
+same level the review showed when new. Collection's essay entries carry
+`resume_work` to that route; intent.js routes `essay:` ids to the room.
+
+Verified in the browser against the sandbox and local Ollama: `essay:6` opened
+with its latest text, 7 versions and its review; two revisions submitted from
+the reopened room came back as series 6, revisions 8 and 9, with the history
+at 9 after a reload; `essay:999999` said unavailable; in ZH `essay:1` opened
+with its ZH title and the EN `essay:6` was refused; no overflow at 390.
+
+---
+
+## I6 — Profile, Growth and achievement views
+
+**Specification:** `ORENA_EVIDENCE_ARCHITECTURE` §§1-5.
+**Exit gate:** I2/I4; justified domain claims; commerce read decisions for any
+gated operation.
+**Status:** read step implemented - `LearnerSummary` over existing evidence,
+ungated and read-only. Projections, Growth trends and achievement policies not
+started (they need assistance-mode evidence and approved policies).
+
+### What was built
+
+`writing_coach/learner_summary.py` - `learner_summary(language, sources,
+window)`, policy `learner-summary/1`, served as `GET /api/learner-summary?window=
+7d|30d|90d|all` by `learner_summary_api.py`. Six domains read through what the
+app already serves: essays (all revisions), reading sessions (bound 30),
+listening progress (bound 100), Speaking takes (bound 50), completed grammar,
+kept language. No surface calls it yet.
+
+- Domains are reported separately; there is no universal score.
+- Activity is a labelled count (`submitted_versions`, `lines_reconstructed`,
+  ...), never renamed progress.
+- Observations carry their ref, producer and time; a line reconstructed after
+  reveal is `assisted`, a `fallback-demo` evaluator is `synthetic`, and Speaking
+  keeps measured, not-applicable and not-measured apart.
+- Unknown is not zero: an owner that fails makes its domain `unavailable` and
+  the summary `partial`; a record with no observation time is `undated`, never
+  placed in a window; a read that fills its bound makes counts `at_least`.
+- No domain claims a trend: nothing recorded says whether a piece was assisted,
+  so each domain's growth is `unavailable` with its reason.
+- No approved achievement policy: the catalogue is `unavailable`, empty.
+
+### Verified
+
+`tests/test_learner_summary.py`, 12 hermetic cases. Live on the sandbox (EN):
+`current`, writing 35 versions, reading one check `undated`, listening 5 lines,
+speaking 8 takes, grammar and language `empty`, achievements `unavailable`; an
+unknown window is refused 422 in the canonical envelope.

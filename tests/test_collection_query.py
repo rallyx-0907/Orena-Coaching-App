@@ -108,10 +108,11 @@ def test_every_action_is_a_real_route_or_none():
     assert result[('language', 'harbour')]['action']['route'] == '#/language'
     assert result[('media', 'lesson-one')]['action']['route'] == '#/encounter?id=media%3Alesson-one&intent=dictation'
     assert result[('speaking', 'take-lesson')]['action']['route'] == '#/encounter?id=media%3Aknown-lesson&intent=speaking'
-    # No route reopens a server essay or a free take yet: no action, and it says why.
-    for ref in (('writing', '1'), ('speaking', 'take-free')):
-        assert result[ref]['action'] is None
-        assert result[ref]['detail']['actionUnavailable'] == 'no_route'
+    # An essay series reopens in the Writing room, continued.
+    assert result[('writing', '1')]['action'] == {'kind': 'resume_work', 'route': '#/expression?id=essay%3A1'}
+    # No route reopens a free take yet: no action, and it says why.
+    assert result[('speaking', 'take-free')]['action'] is None
+    assert result[('speaking', 'take-free')]['detail']['actionUnavailable'] == 'no_route'
     assert route('discover') == '#/'
 
 

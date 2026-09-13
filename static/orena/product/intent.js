@@ -70,7 +70,7 @@ export function continuationLink(item) {
     return link('practice', { id: item.id, intent: 'speaking' });
   if (item.id.startsWith('voice:'))
     return link('practice', { id: item.id, intent: 'speaking' });
-  if (item.intent === 'writing' || item.id.startsWith('expression:'))
+  if (item.intent === 'writing' || /^(expression|essay):/.test(item.id))
     return link('expression', { id: item.id });
   if (item.id.startsWith('grammar:'))
     return link('practice', { id: item.id.slice(8), intent: 'grammar' });
@@ -85,7 +85,8 @@ export function sourceLink(id) {
      card reading "From your own writing - Something you want to say" opened a
      room the learner had not been in. A way back that reopens unrelated content
      is worse than none: it looks like the thing it is not. */
-  if (id.startsWith('expression:')) return link('expression', { id });
+  if (id.startsWith('expression:') || id.startsWith('essay:'))
+    return link('expression', { id });
   if (id.startsWith('grammar:'))
     return link('practice', { id: id.slice(8), intent: 'grammar' });
   return link('encounter', { id });

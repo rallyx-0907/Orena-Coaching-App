@@ -72,6 +72,7 @@ from writing_coach.speech_api import (
 )
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
 from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
+from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
     configure_listening_progress,
     configure_listening_translation_cache,
@@ -378,6 +379,16 @@ configure_collection(runtime_owners(
     specialized=_specialized_learning_repository,
 ))
 app.include_router(collection_router)
+# Learner summary (I6 read step): each domain's own evidence, side by side,
+# through the reads the app already serves. No surface calls it yet.
+configure_learner_summary(runtime_sources(
+    essays=lambda: _learning_repository.list_essays(0, ascending=True),
+    reading=list_reading_sessions,
+    grammar=_learning_repository.completed_grammar_ids,
+    library=list_library_vocabulary,
+    specialized=_specialized_learning_repository,
+))
+app.include_router(learner_summary_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
@@ -1783,6 +1794,9 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     d = row_to_dict(row, detail=True)
     d["revisions"] = series_rows
     d["delta"] = revision_delta(d, previous)
+    # The same level the review showed when it was new, so a reopened piece
+    # does not come back without it.
+    d["app_cefr"] = app_cefr(float(d.get("overall") or 0))
     return d
 
 @app.delete("/api/essays/{essay_id}")

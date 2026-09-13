@@ -14,8 +14,9 @@ What it answers, and the rules each answer keeps:
   bare id.
 - **Every action is a real destination or none.** An entry opens through the
   current routing contract (`static/orena/product/intent.js`) or carries no
-  action; nothing is guessed from a title. Server essays and free Speaking
-  takes have no route that reopens them yet, so they say so.
+  action; nothing is guessed from a title. An essay series reopens in the
+  Writing room; a free Speaking take has no route that reopens it yet, so it
+  says so.
 - **An owner that fails is named, not hidden.** A result missing an owner is
   `partial` with that owner in `unavailableOwners`, never an empty collection.
   An owner read that reached its bound may have more, so it makes the count
@@ -217,9 +218,8 @@ def reading_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[Co
 def writing_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
     """The latest revision of each essay series, from the Writing owner.
 
-    The Writing room is keyed by device ids and has no route that reopens a
-    server essay series yet, so these carry no action rather than a link to a
-    room the learner was not in.
+    Each reopens its series in the Writing room (`essay:<series>`): the latest
+    version, its history and its review, continued rather than restarted.
     """
     entries = []
     for row in rows:
@@ -236,8 +236,8 @@ def writing_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[Co
             learning_language=_language_of(row, language),
             relationship='submitted',
             updated_at=str(row.get('created_at') or ''),
-            action=None,
-            detail={'revisions': int(row.get('revision_no') or 1), 'actionUnavailable': 'no_route'},
+            action=_action('resume_work', route('expression', id=f'essay:{int(series)}')),
+            detail={'revisions': int(row.get('revision_no') or 1)},
         ))
     return entries
 

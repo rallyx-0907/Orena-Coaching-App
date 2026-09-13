@@ -33,19 +33,64 @@ import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
 import { scene } from './brand.js';
 
+/* A piece the learner already submitted, reopened by its series.
+
+   `essay:<series>` is the Writing room's server identity, where every other
+   id here is the device's. It loads the series the server keeps - scoped to
+   this account and learning language, so another's or another language's is
+   simply not found - and continues it: the latest version in the box unless a
+   draft is waiting, the versions as the history, the next review joining the
+   same series, and the latest review already beside it. */
+async function serverSeries(api, id) {
+  const series = /^essay:(\d+)$/.exec(id);
+  if (!series) return null;
+  const root = await api.essay(Number(series[1]));
+  const revisions = [...(root.revisions || [])].sort(
+    (a, b) => Number(a.revision_no || 0) - Number(b.revision_no || 0),
+  );
+  const latest = revisions.at(-1) || root;
+  const detail = latest.id === root.id ? root : await api.essay(latest.id);
+  return { revisions, latest: detail };
+}
+
 export async function renderExpression(root, ctx) {
   const { c, language, api, memory, alive } = ctx,
     id = ctx.location.id || 'expression:free';
+  const series = await serverSeries(api, id).catch(() => undefined);
+  if (!alive()) return;
+  // Asked for by id and not found here: say so, rather than opening an empty
+  // room that looks like the piece.
+  if (series === undefined) throw Error(c.unavailable);
   const source =
     memory.value.continuation.find((x) => x.id === id) ||
     memory.value.imports.find((x) => x.id === id) ||
     contentFor(language).find((x) => `story:${x.id}` === id);
-  const revisionsOf = () => memory.value.revisions?.[id] || [];
+  const serverRevisions = (series?.revisions || []).map((entry) => ({
+    text: String(entry.text || ''),
+    essay_id: Number.isInteger(entry.id) ? entry.id : null,
+    revision_no: Number.isInteger(entry.revision_no) ? entry.revision_no : null,
+    overall: Number.isFinite(entry.overall) ? entry.overall : null,
+    level: typeof entry.level_estimate === 'string' ? entry.level_estimate : '',
+  }));
+  // A reopened series keeps the server's versions and adds what this device
+  // recorded since; a device record is never allowed to hide them.
+  const revisionsOf = () => {
+    const own = memory.value.revisions?.[id] || [];
+    if (!serverRevisions.length) return own;
+    const known = new Set(serverRevisions.map((entry) => entry.essay_id));
+    return [
+      ...serverRevisions,
+      ...own.filter((entry) => !entry.essay_id || !known.has(entry.essay_id)),
+    ];
+  };
   // Continue the server's series across visits instead of starting a new one
   // every time the learner comes back to the same piece.
   let parentId =
     [...revisionsOf()].reverse().find((x) => x.essay_id)?.essay_id ?? null;
-  const title = source?.title || c.freeTitle;
+  const seriesTitle = series
+    ? String(series.latest.prompt || '').split('\n')[0].trim()
+    : '';
+  const title = source?.title || seriesTitle || c.freeTitle;
   const hasSource = source && !id.startsWith('expression:');
   const original = contentFor(language).find((x) => 'story:' + x.id === id);
   const excerpt =
@@ -57,7 +102,7 @@ export async function renderExpression(root, ctx) {
   const invitations = contentFor(language).slice(0, 2);
   const levels =
     ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count aria-live="polite"></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><div class="writing-task"><span class="writing-task__label"><label for="writingTask">${esc(c.writingTask)}</label>${hint({ text: c.writingTaskNote })}</span><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"></div></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count aria-live="polite"></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><div class="writing-task"><span class="writing-task__label"><label for="writingTask">${esc(c.writingTask)}</label>${hint({ text: c.writingTaskNote })}</span><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"></div></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
@@ -112,6 +157,41 @@ export async function renderExpression(root, ctx) {
   };
   updateCount();
   paintRevisions();
+  const presentReview = (result, text) => {
+    const feedback = root.querySelector('#writingFeedback');
+    // Only show a finding whose wording is genuinely in what the learner
+    // wrote, so a struck-through phrase is always one of their own.
+    const corrections = shownIssues(result, text);
+    feedback.innerHTML = writingReview(c, result, { language, text });
+    bindRevisionWorkbench(feedback,ctx,{issues:corrections,reviewedText:text,draft:root.querySelector('#expressionText'),id,title});
+    feedback.querySelector('[data-revise]').onclick = () =>
+      root.querySelector('textarea').focus();
+    feedback.querySelector('[data-registers]').onclick = () =>
+      openRegisters(ctx, { text, title });
+    // "Why?" opens the same explanation surface reading and listening use,
+    // with the learner's own sentence as the context it reasons about.
+    feedback.querySelectorAll('[data-why]').forEach((button) => {
+      button.onclick = () => {
+        const issue = corrections[Number(button.dataset.why)];
+        if (!issue) return;
+        const sentence =
+          text
+            .split(/(?<=[.!?。！？])\s+/)
+            .find((part) => part.includes(issue.quote)) || text;
+        openUnderstanding(ctx, {
+          selection: issue.quote,
+          context: sentence.slice(0, 2400),
+          title,
+          question: c.askWhy,
+          origin: { id, where: title, why: 'from_writing' },
+        });
+      };
+    });
+  };
+  // Reopened, the latest review is already there: the piece comes back with
+  // what was said about it, not as a blank result frame.
+  if (series?.latest && Array.isArray(series.latest.issues))
+    presentReview(series.latest, String(series.latest.text || ''));
   root.querySelector('textarea').oninput = (event) => {
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing', excerpt });
@@ -165,34 +245,7 @@ export async function renderExpression(root, ctx) {
         level: typeof result.app_cefr === 'string' ? result.app_cefr : '',
       });
       paintRevisions();
-      // Only show a finding whose wording is genuinely in what the learner
-      // wrote, so a struck-through phrase is always one of their own.
-      const corrections = shownIssues(result, text);
-      feedback.innerHTML = writingReview(c, result, { language, text });
-      bindRevisionWorkbench(feedback,ctx,{issues:corrections,reviewedText:text,draft:root.querySelector('#expressionText'),id,title});
-      feedback.querySelector('[data-revise]').onclick = () =>
-        root.querySelector('textarea').focus();
-      feedback.querySelector('[data-registers]').onclick = () =>
-        openRegisters(ctx, { text, title });
-      // "Why?" opens the same explanation surface reading and listening use,
-      // with the learner's own sentence as the context it reasons about.
-      feedback.querySelectorAll('[data-why]').forEach((button) => {
-        button.onclick = () => {
-          const issue = corrections[Number(button.dataset.why)];
-          if (!issue) return;
-          const sentence =
-            text
-              .split(/(?<=[.!?。！？])\s+/)
-              .find((part) => part.includes(issue.quote)) || text;
-          openUnderstanding(ctx, {
-            selection: issue.quote,
-            context: sentence.slice(0, 2400),
-            title,
-            question: c.askWhy,
-            origin: { id, where: title, why: 'from_writing' },
-          });
-        };
-      });
+      presentReview(result, text);
     } catch (error) {
       if (alive()) {
         feedback.innerHTML = writingReviewFailure(c, error);
