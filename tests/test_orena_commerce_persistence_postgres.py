@@ -343,6 +343,21 @@ def test_a_reused_event_id_with_other_content_changes_nothing(engine, incarnatio
     assert _record(repo, incarnation, 'digest', 2, upd(), payload_digest='a' * 64)['status'] == 'apply'
 
 
+def test_a_conflicting_payload_does_not_move_someone_elses_receipt(engine, incarnation):
+    """Round-3 P2 (H1): a call for A's undecided event with another digest,
+    claiming a subscription mapped to D, used to hand the receipt to D."""
+    repo = PostgresCommerceRepository(engine)
+    assert _record(repo, incarnation, 'h1', None, upd('active', 'x'), payload_digest='a' * 64)['status'] == 'unknown'
+    other = _account(engine)[1]
+    assert _record(repo, other, 'h1-z', 1, upd('active', 'z'))['status'] == 'apply'
+    clash = _record(repo, other, 'h1', 1, upd('active', 'z'), payload_digest='b' * 64)
+    assert clash == {'status': 'payload_conflict'}
+    receipt = repo.get_receipt('stripe', ev('h1'))
+    assert str(receipt['incarnation_id']) == incarnation and receipt['processing_state'] == 'received'
+    assert repo.reconciliation_state(incarnation) == 'pending'
+    assert repo.reconciliation_state(other) == 'current'
+
+
 def test_the_database_keeps_a_terminal_receipt_final(engine, incarnation):
     repo = PostgresCommerceRepository(engine)
     _record(repo, incarnation, 'final', 1, upd())

@@ -262,6 +262,14 @@ class PostgresCommerceRepository:
                 {'provider': provider, 'event': external_event_id},
             ).mappings().one()
             receipt_incarnation = receipt['incarnation_id']
+            # First, before anything can be written: a reused event id carrying
+            # other content changes nothing - not even whose receipt it is
+            # (review round 3).
+            payload_matches = not (
+                receipt['payload_digest'] and payload_digest and receipt['payload_digest'] != payload_digest
+            )
+            if not payload_matches:
+                return CommerceOutcome(status='payload_conflict')
 
             # Whose event this is: the incarnation a committed mapping names
             # for its subscription (permanent once committed, so an unlocked
@@ -288,9 +296,6 @@ class PostgresCommerceRepository:
             receipt_is_ours = _same(receipt_incarnation, incarnation_id)
             belongs_to = incarnation_id if receipt_is_ours else str(receipt_incarnation)
             already_processed = receipt['processing_state'] in _TERMINAL_RECEIPT_STATES
-            payload_matches = not (
-                receipt['payload_digest'] and payload_digest and receipt['payload_digest'] != payload_digest
-            )
 
             subscription_version = None
             decidable = (receipt_is_ours and not incarnation_deleted and not already_processed

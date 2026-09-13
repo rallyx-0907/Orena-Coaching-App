@@ -4,14 +4,41 @@ This document now covers two independent proposals under I3 ("Plans,
 subscription and quota", `ORENA_BACKBONE_INTEGRATION_GATES.md`):
 
 1. **Subscription state and the provider-event inbox** (`20260911_0006`) —
-   delegated review round 2: **APPROVED WITH REQUIRED CHANGES**. The required
-   changes are made (below); one column was removed doing so, so that part
-   returns for confirmation. Not yet moved.
-2. **Quota buckets and reservations** (`20260912_0007`) — round 2: CHANGES
-   REQUESTED (one P1); fixed, **awaiting re-review**. It has no foreign key
-   into proposal 1's tables but chains on top of its migration.
+   delegated review round 3: **APPROVED WITH REQUIRED CHANGES** - schema
+   approved (including the removed column), one code reorder required before
+   the move and needing no further schema review. Made, with its test.
+2. **Quota buckets and reservations** (`20260912_0007`) — round 3:
+   **APPROVED**. It has no foreign key into proposal 1's tables but chains on
+   top of its migration.
 
 The latest round is first, below; the earlier history follows it.
+
+## Delegated review round 3 of `7020925b4ae0f92e074e2ded4b9218ae6846ef76`
+
+| | |
+| --- | --- |
+| Reviewer | Delegated Independent Architecture Reviewer — the same fresh Claude subagent (Opus 5), no implementation context, round 3 |
+| Reviewed commit | `7020925b4ae0f92e074e2ded4b9218ae6846ef76` |
+| Verdicts | 0007 **APPROVED**. 0006 **APPROVED WITH REQUIRED CHANGES** (one P2: the payload check before the receipt hand-over; schema approved, no further schema review). D-054 unchanged APPROVED; its P3 tidy-up regressed nothing. |
+| Reviewer's evidence | 500 suite runs without a flake; the one-unit race `('admit', 'duplicate')` 40/40 (was `exhausted` 40/40); the deadlock matrix 0 in all six configurations, twice; a 12-thread misrouting + deletion stress over 1,000 events with 0 errors and no NULL-version mapping surviving; migration rehearsal 3/3 (column gone, trigger on UPDATE and DELETE, up/down/up clean). |
+
+**The required change.** A call whose payload digest conflicted still handed
+someone else's undecided receipt to the subscription it claimed (H1), so the
+owner read `current` with an event waiting and another account read a
+spurious `pending`. `payload_matches` is now the first thing decided after the
+receipt is locked, and a mismatch returns `payload_conflict` before any
+hand-over - it changes nothing, as the module says. Test:
+`test_a_conflicting_payload_does_not_move_someone_elses_receipt` (fails on
+`7020925`). Commerce 23 + quota 28 = 51/51, three times on one database.
+
+**Recorded, not done (P3, recommended).** Which subscription a non-final
+receipt is handed to is decided by the subscription the latest consistent
+caller claims. Tightening it - hand over only when the claim matches what the
+receipt first recorded - needs the event's subscription stored on the
+receipt, a column; it belongs with the webhook resolver, which does not exist
+yet, and is named in that work's review. The round-3 note that a settle
+arriving before its own reserve commits answers `unknown_operation` (and is
+retried) is correct at that boundary and needs nothing.
 
 ## Delegated review round 2 of `4dc27cbc4c4160ef3f7efdff7806a8f04cea6330`: addressed
 
