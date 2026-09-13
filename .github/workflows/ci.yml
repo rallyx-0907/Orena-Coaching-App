@@ -71,6 +71,7 @@ jobs:
           node scripts/test_real_media_catalog_contract.mjs
           node scripts/test_media_status_compact_accessor.mjs
           node scripts/test_orena_reference.mjs
+          node scripts/test_orena_room_navigation_cancellation.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite

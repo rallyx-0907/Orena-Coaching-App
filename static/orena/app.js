@@ -15,6 +15,7 @@ import {
   renderGrammar,
 } from './ui/expression.js';
 import { installHints } from './ui/patterns.js';
+import { beginNavigation } from './infrastructure/navigation.js';
 
 // Every hint in every room is one delegated behaviour, installed once.
 installHints(document);
@@ -378,14 +379,19 @@ function importContent() {
     ctx.go('encounter', { id: `url:${url}` });
   };
 }
-/* The last twenty room failures, for the intermittent `#/language` report that
-   has never reproduced under observation. `window.orenaRenderFailures()` reads
-   them back. Nothing is sent anywhere. */
+/* The last twenty genuine room failures - a superseded room's cancelled fetch
+   is not one of them, see the render() catch block below.
+   `window.orenaRenderFailures()` reads them back. Nothing is sent anywhere. */
 const renderFailures = [];
 window.orenaRenderFailures = () => renderFailures.slice();
 
 async function render() {
   const version = ++generation;
+  // Abort whatever the room being left is still waiting on. Without this a
+  // rapid multi-room sweep piles up requests no one reads any more, which
+  // contends with the current room's own fetches for the same origin's
+  // connection budget - see infrastructure/navigation.js.
+  beginNavigation();
   const startedAt = performance.now();
   cleanup();
   cleanup = () => {};
@@ -443,37 +449,42 @@ async function render() {
     root.querySelector('h1')?.focus({ preventScroll: true });
   } catch (error) {
     clearTimeout(announceLoading);
-    /* Keep what a room was doing when it failed.
-
-       `#/language` has reported "temporarily unavailable" inside long
-       multi-room sweeps and never once in isolation, so the next occurrence is
-       the only chance to learn anything from it - and until now the screen said
-       "unavailable" and the console said nothing at all. This records the route,
-       the language, how long the render had been running, which render
-       generation it was and whether that generation was still current, plus the
-       error itself. It changes no behaviour and fixes nothing: there is no
-       evidence yet for what to fix, and a guess would only make the next
-       occurrence harder to read.
+    /* `#/language` reported "temporarily unavailable" inside long multi-room
+       sweeps at short dwell and never once in isolation. The cause was a
+       missing cancellation: leaving a room never stopped its fetches, so a
+       fast sweep piled up requests no one was reading any more, contending
+       with the current room's own for the same origin's connection budget -
+       `beginNavigation()` in infrastructure/navigation.js now cancels a room's
+       requests the moment its render is superseded. A superseded room's
+       fetches therefore reject with an expected `AbortError`, which is not a
+       failure worth keeping - recording it would make the next genuine
+       occurrence harder to spot in this same diagnostic. Everything else is
+       kept exactly as before: the route, the language, how long the render had
+       been running, the render generation and whether it was still current,
+       and the error itself.
 
        Kept in memory and on the object, not sent anywhere: this is a device
        diagnostic, not telemetry. */
-    const failure = {
-      at: new Date().toISOString(),
-      hash: location.hash,
-      page: ctx.location.page,
-      intent: ctx.location.intent,
-      language: ctx.language,
-      generation: version,
-      stillCurrent: scope.alive(),
-      elapsedMs: Math.round(performance.now() - startedAt),
-      name: error?.name,
-      status: error?.status,
-      message: error?.message,
-      stack: String(error?.stack || '').slice(0, 320),
-    };
-    renderFailures.push(failure);
-    if (renderFailures.length > 20) renderFailures.shift();
-    console.error('[orena] room failed to render', failure);
+    const superseded = error?.name === 'AbortError' && !scope.alive();
+    if (!superseded) {
+      const failure = {
+        at: new Date().toISOString(),
+        hash: location.hash,
+        page: ctx.location.page,
+        intent: ctx.location.intent,
+        language: ctx.language,
+        generation: version,
+        stillCurrent: scope.alive(),
+        elapsedMs: Math.round(performance.now() - startedAt),
+        name: error?.name,
+        status: error?.status,
+        message: error?.message,
+        stack: String(error?.stack || '').slice(0, 320),
+      };
+      renderFailures.push(failure);
+      if (renderFailures.length > 20) renderFailures.shift();
+      console.error('[orena] room failed to render', failure);
+    }
     if (scope.alive()) {
       // Retrying a route that is gone - the wrong language, a removed import,
       // an id that never existed - only fails again, so always offer the way
