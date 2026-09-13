@@ -113,9 +113,12 @@ desktop - under it, filling the screen, on a phone - a single card keeps one
 height inside the first screen; the line being spoken is the list's current
 entry, opened where it sits with its meaning and the word guide, so a long
 sentence no longer pushes the list up and down, and the list scrolls on its
-own to read ahead. From 1100x700 up every line of the 0:46 lesson, with "look
-at the words" on, is fully in view without a page scroll; at 1024x640 the
-longest line needs 20px of the list's own scroll. Dictation is one frame with
+own to read ahead. From 1024x640 up every line of the 0:46 lesson, with "look
+at the words" on, is fully in view without a page scroll. On a phone the voice
+rides at the top under the header and the panel fills the rest, so the line
+being spoken stays on screen as the voice moves on - with "look at the words"
+and every line's meaning on - and the two switches are small symbols on the
+panel's title row whose words show on hover, focus or tap. Dictation is one frame with
 nothing scrolled: the shape of the line, the question, the attempt, Compare
 and its two aids, then the result with its actions in its heading row - the
 whole loop, including the 129-character line's comparison, fits at 1280x720

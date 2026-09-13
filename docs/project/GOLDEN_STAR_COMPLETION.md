@@ -558,3 +558,34 @@ interactive, on every phone screen.
   route at 1440/800/390, EN and ZH; 33 CI `.mjs` gates and the ESM graph pass.
 
 Not claimed: real devices, microphone, human approval.
+
+## Follow on a phone: the line being spoken stays on screen - verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright with touch and mobile
+emulation, local execution. Human report: on a phone the opened line and the
+list ran off the screen and, as the voice reached later lines, the line being
+spoken disappeared - worst with "look at the words" and "show meaning for
+every line" on; the two checkboxes were large and should be small symbols on
+one row with a tooltip.
+
+- Cause 1: the list stopped following while the pointer hovered it or focus
+  was inside it. The two checkboxes sat inside the panel, and a tap on a phone
+  leaves both hover and focus behind, so after turning either on the list
+  never followed again. Following now stands down only for a real gesture in
+  the list (swipe, wheel, scrollbar, key) for four seconds.
+- Cause 2: on a phone the panel was a screen tall but started below the video.
+  Now the voice strip is sticky under the header and the panel is the rest of
+  the screen; pressing play brings that view together.
+- Tapping both switches on, tapping play, sampling every second for 26s at
+  390x844 and 360x740: the spoken line and its whole opened entry on screen at
+  every sample through four lines; panel 340-841 / 323-736, strip under the
+  57px header. An audio lesson in ZH: same. Switches 32x32 symbols.
+- Desktop: every Follow panel size from 1024x640 to 1920x1080 passes, now
+  including the longest line at 1024x640; with the pointer resting on the list
+  playback keeps following, a wheel scroll holds the reader's place until the
+  next line. Dictation unchanged at 390 and 1440.
+- Phone audit of 18 rooms at 390/360 clean; no overflow on any route at
+  1440/800/390 EN/ZH; 104 hints on screen; 33 CI `.mjs` gates and the ESM
+  graph pass.
+
+Not claimed: real devices, microphone, human approval.

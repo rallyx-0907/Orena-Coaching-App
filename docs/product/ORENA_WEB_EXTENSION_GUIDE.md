@@ -198,12 +198,20 @@ What a new surface inherits, and the traps behind each one.
   with every sentence and pushed the list about - but the list's current
   entry: `paintFollow` moves `.follow-moment` into the active `<li>`
   (`li[data-current]`) and hides that row's own button while it is open.
-  `keepCurrentInView` scrolls only the list, keeps the line before as context
-  when the entry still fits, and stands down while the pointer or focus is in
-  the list. Between two lines the entry stays and says so (`data-gap`).
-  "Look at the words" and "meaning for every line" sit in `.follow-tools`
-  under the title. Beside the voice above 800px; under it, filling the screen
-  below the header, on a phone.
+  `keepCurrentInView` scrolls only the list and keeps the line before as
+  context when the entry still fits. It stands down only while the learner is
+  moving through the list - a swipe, wheel, scrollbar drag or key there holds
+  it for four seconds, tabbing along the lines holds it while there - never
+  for hover or focus, which a tap on a phone leaves behind. Between two lines
+  the entry stays and says so (`data-gap`). "Look at the words" and "meaning
+  for every line" are `followToggle` symbol switches in `.follow-tools` on the
+  title row: real checkboxes named by their words, the words shown on hover,
+  focus or briefly on tap; the note on where the meanings come from is a hint
+  there. Beside the voice above 800px. At 800px and below, following, the
+  voice (`.media-source`: player, play row, timeline) is sticky under the
+  header and the panel's height is the screen less the header and that strip
+  (`--source-block`, measured by the encounter), so the line being spoken
+  cannot leave the screen; pressing play brings that view together.
   Dictation is one frame with nothing scrolled: the shape of the line, the
   question (its replay beside it; narrow, the strip above carries it), the
   attempt, Compare with the two quiet aids stacked beside it, then

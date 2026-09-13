@@ -647,28 +647,94 @@
   border-bottom: 2px solid var(--coral);
   border-radius: var(--radius);
 }
-.transcript-panel .section-head { flex: none; margin: 0 0 var(--space-1); align-items: center; flex-wrap: wrap; gap: 0 var(--space-4); }
+.transcript-panel .section-head { flex: none; margin: 0 0 var(--space-2); align-items: center; flex-wrap: nowrap; gap: var(--space-2); }
 .transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
-/* How to read the list: the words of the line being spoken beside the title,
-   the meaning of every line under it - switches for the panel, not one inside
-   each line. */
+/* How to read the list - the words of the line being spoken, the meaning of
+   every line - as two small switches on the title row: a symbol each, filled
+   when on. Each is a real checkbox named by its words for assistive
+   technology; the words show on hover or keyboard focus, and briefly on a tap,
+   then step aside so they never sit over the line being read. */
 .follow-tools {
-  flex: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-5);
-  margin: 0 0 var(--space-2);
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
 }
-.transcript-panel :is(.close-look, .meaning-toggle) { margin: 0; min-height: 32px; font-size: var(--text-xs); gap: var(--space-2); }
-.transcript-panel :is(.close-look, .meaning-toggle) input { margin: 0; }
-/* A pointer needs 24px, not a thumb's 44px; the phone scale sets its own. */
-@media (min-width: 801px) {
-  .transcript-panel :is(.close-look, .meaning-toggle) input { min-height: 24px; block-size: 20px; inline-size: 20px; margin: 0; }
+.follow-toggle {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 32px;
+  min-height: 32px;
+  block-size: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.follow-toggle input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.follow-toggle__mark { display: inline-grid; place-items: center; pointer-events: none; }
+.follow-toggle__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.follow-toggle:hover { color: var(--ink); border-color: var(--muted); }
+.follow-toggle:has(input:checked) {
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--sage-surface);
+}
+.follow-toggle:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.follow-toggle::after {
+  content: attr(data-tip);
+  display: none;
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-end: 0;
+  inline-size: max-content;
+  max-inline-size: 14rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  background: var(--night-surface);
+  color: var(--on-night);
+  border: 1px solid var(--on-night-line);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.follow-toggle:has(input:focus-visible)::after { display: block; }
+@media (hover: hover) {
+  .follow-toggle:hover::after { display: block; }
+}
+@media (hover: none) {
+  .follow-toggle:has(input:focus)::after { display: block; animation: follow-tip 1.8s ease-out forwards; }
+}
+@keyframes follow-tip {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
 }
 /* Practising, no line is opened, so there are no words to look at. */
 .transcript-panel:not(:has(.follow-moment:not([hidden]))) .close-look { display: none; }
 .transcript-panel ol { flex: 1 1 auto; min-height: 0; padding-bottom: var(--space-3); }
-.transcript-panel [data-meaning-note] { flex: none; margin: 0 0 var(--space-3); }
+.transcript-panel [data-meaning-note] { display: inline-flex; margin-inline-end: var(--space-1); }
 /* The entry being spoken: the follow moment, opened inside the list. */
 .transcript-panel li[data-current] { margin-block: var(--space-1) var(--space-2); }
 .transcript-panel .follow-moment {
@@ -733,13 +799,28 @@
   .transcript-panel .follow-moment .spoken { font-size: 1.1rem; line-height: 1.4; }
 }
 @media (max-width: 800px) {
-  /* One column: the panel follows the voice and fills the screen under the
-     header once scrolled to, its list scrolling inside it. At the end of the
-     list a swipe carries on down the page. */
+  /* One column. Following, the voice - video or voice card, play and the
+     timeline - rides at the top under the header, and the panel fills exactly
+     the rest of the screen with its list scrolling inside it, so the line being
+     spoken never leaves the screen while the voice moves on. The deeper paths
+     come after the panel. At the end of the list a swipe carries on down the
+     page. The stage keeps its element - events and players are wired to it -
+     and only stops drawing a box of its own. */
+  .media-encounter:not(:has(.practice-space:not([hidden]))) {
+    row-gap: var(--space-2);
+    scroll-margin-top: var(--shell-offset, 0px);
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-stage { display: contents; }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) :is(.moment-actions, .reached-the-end) { order: 2; }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-source {
+    position: sticky;
+    top: var(--shell-offset, 0px);
+    z-index: 6;
+    background: var(--paper);
+  }
   .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
-    block-size: calc(100svh - var(--shell-offset, 0px) - var(--space-3));
-    min-block-size: 20rem;
-    scroll-margin-top: calc(var(--shell-offset, 0px) + var(--space-2));
+    block-size: calc(100svh - var(--shell-offset, 0px) - var(--source-block, 0px) - var(--space-3));
+    min-block-size: 16rem;
   }
   .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
     max-height: none;
@@ -996,7 +1077,6 @@
   .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.55; margin: var(--space-1) 0 0; }
   .transcript-panel .close-look-guide { margin-top: var(--space-1); padding-top: var(--space-1); }
   .transcript-panel .word-legend { font-size: var(--text-xs); }
-  .close-look { min-height: var(--tap-quiet); }
   .moment-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1005,19 +1085,9 @@
   }
   .moment-actions > span { grid-column: 1 / -1; margin-bottom: 0; font-size: var(--text-xs); }
   .moment-actions > button { padding: 0 var(--space-2); min-height: var(--tap); font-size: var(--text-sm); }
-  /* While following, the transcript comes straight after the spoken line: the
-     line, its meaning and the lines around it are one reading, and the deeper
-     paths wait after them. The stage keeps its element - events and players
-     are wired to it - and only stops drawing a box of its own. */
-  .media-encounter:not(:has(.practice-space:not([hidden]))) { row-gap: 0; }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-stage { display: contents; }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) :is(.moment-actions, .reached-the-end) { order: 2; }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel { margin-top: var(--space-2); }
   .transcript-panel { padding: var(--space-3) var(--space-3) 0; }
   .transcript-panel .section-head { margin: 0; align-items: center; }
   .transcript-panel h2 { font-size: var(--text-base); margin: 0; }
-  .follow-tools { gap: 0 var(--space-3); margin: 0 0 var(--space-1); }
-  .transcript-panel :is(.close-look, .meaning-toggle) { min-height: var(--tap-quiet); font-size: var(--text-xs); gap: 6px; }
   .transcript-panel ol { max-height: min(420px, 62svh); }
   .transcript-panel li { margin-bottom: 0; }
   .transcript-panel button { padding: var(--space-1) var(--space-2); line-height: 1.45; gap: 0; }
