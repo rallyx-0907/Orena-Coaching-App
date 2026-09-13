@@ -1,0 +1,313 @@
+/* Golden Star composition rails. Capabilities retain their own state and
+   controls; the shell and experience identity give them a coherent place. */
+/* Colour lives in theme.css, which is the single owner. This block used to
+   restate half the palette and win by <link> order, which is how --paper came
+   to be on-brand while --sage was still a pre-brand mint. */
+:root {
+  --rail-width: 224px;
+  --story-font: Georgia, 'Noto Serif SC', 'Songti SC', serif;
+}
+/* The rail fits the window. Identity at the top and the account at the foot
+   always show; the destinations between them take what is left and scroll on
+   their own only if a very short window cannot hold them - the account control
+   is never the thing pushed out of sight. */
+#shell {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--rail-width);
+  padding: 20px 16px 14px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  border-bottom: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  overflow: hidden;
+  z-index: 30;
+}
+.shell-identity { padding-inline: 8px; flex: none; }
+.shell-motto { display: block; color: var(--muted); font-size: var(--text-xs); margin-top: 4px; line-height: 1.5; }
+#shell .brand { font-size: 30px; letter-spacing: -1.6px; }
+#shell nav { display: flex; flex-direction: column; align-items: stretch; gap: 12px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.nav-group { display: flex; flex-direction: column; gap: 1px; }
+.nav-group > small { color: var(--muted); letter-spacing: .04em; text-transform: none; padding: 0 12px 2px; line-height: 1.6; }
+#shell nav a { display: flex; gap: 12px; align-items: center; padding: 8px 12px; min-height: 43px; border-radius: 7px; font-size: var(--text-sm); color: var(--muted); }
+#shell nav a svg { flex: none; }
+#shell nav a[aria-current] { background: var(--sage-surface); color: var(--on-sage); }
+#shell nav a[aria-current]:after { display: none; }
+#shell nav a:hover { background: var(--paper); color: var(--ink); }
+#shell nav a i { height: 6px; width: 6px; border-radius: 50%; background: var(--accent); margin-left: auto; }
+#shell .shell-actions { flex: none; flex-direction: column; align-items: stretch; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
+#shell .bring-button { white-space: normal; }
+#shell .account-button { gap: 6px; font-size: var(--text-xs); }
+/* The rail itself, on a pointer screen: destinations at a pointer's height
+   rather than a thumb's, and bringing something in as a utility - one quiet
+   line the size of a destination, not the rail's headline. The narrow header
+   keeps its own touch-sized rules. */
+@media (min-width: 901px) {
+  #shell nav a { padding: 6px 12px; min-height: 36px; }
+  #shell .shell-actions { gap: 4px; padding-top: 10px; }
+  #shell .bring-button { white-space: nowrap; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; border: 1px dashed var(--line); border-radius: 7px; font-size: var(--text-xs); font-weight: 600; color: var(--muted); }
+  #shell .bring-button:hover { color: var(--ink); border-color: var(--muted); }
+  #shell .account-button { min-height: 36px; padding-inline: 4px; }
+  #shell .account-button .language-seal { width: 28px; height: 28px; }
+  /* The old top header hid this label below 1100px, where the header was
+     crowded; in the rail it left a bare "+" that says nothing. A destination
+     wider than the narrow rail wraps rather than being cut off. */
+  #shell .bring-button span { display: inline; }
+  #shell nav a { white-space: normal; line-height: 1.25; }
+}
+@media (min-width: 901px) and (max-width: 1150px) {
+  #shell nav a { gap: 10px; padding-inline: 8px; }
+}
+/* The narrow header's curtain. Outside the narrow header it must not exist at
+   all: left as an unstyled button it sat in the page flow above every room and
+   pushed the content down by its own 44px. */
+.nav-backdrop { display: none; }
+/* The narrow-screen destination control. It belongs to the header composition
+   only - the rail shows every destination at once and needs no affordance. */
+.nav-toggle { display: none; }
+.language-seal { width: 33px; height: 33px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-size: var(--text-xs) !important; }
+#main { margin-left: var(--rail-width); max-width: none; padding: 0 clamp(28px,4.2vw,86px) 60px; min-height: 85vh; }
+#main > * { max-width: 1480px; margin-left: auto; margin-right: auto; }
+#footer { margin: 20px 40px 0 calc(var(--rail-width) + 40px); max-width: none; }
+.editorial-intro { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 30px; padding: 45px 0 32px; }
+.editorial-intro h1 { font-size: clamp(38px,4.2vw,70px); line-height: 1.06; letter-spacing: -.055em; margin: 17px 0; }
+.editorial-intro p { color: var(--muted); max-width: 52ch; margin: 0; }
+.editorial-intro small { color: var(--accent); }
+.editorial-intro .brand-art { width: clamp(150px,19vw,265px); margin: 0; border-radius: 46% 46% 12px 12px; transform: rotate(2deg); }
+.editorial-intro .brand-art img { object-fit: contain; }
+.wayfinding { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-block: 1px solid var(--line); margin-bottom: 32px; }
+.wayfinding a { display:flex; align-items:center; gap: 14px; min-height: 68px; padding: 12px 22px; font-weight: 600; }
+.wayfinding a + a { border-left: 1px solid var(--line); }
+.wayfinding a span:last-child { margin-left: auto; color: var(--accent); }
+.wayfinding a:hover { background: var(--surface); }
+.editorial-spread { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(230px,.85fr); gap: 32px; }
+.feature-window { min-width: 0; background: var(--night-surface); color: var(--on-night); border-radius: 14px; overflow: hidden; }
+.feature-image { display: block; position: relative; aspect-ratio: 16 / 8; background: var(--night-surface); overflow:hidden; }
+.feature-image > img { width:100%; height:100%; object-fit: cover; }
+.feature-caption { padding: 24px 28px 28px; }
+.feature-caption h2 { font-size: clamp(27px,2.5vw,40px); margin-top: 8px; }
+.feature-caption p { color:var(--on-night-muted); margin:10px 0; max-width: 58ch; }
+.feature-caption small, .feature-caption .byline { color:var(--on-night-muted); }
+.reading-window { padding: 20px 24px 26px; background:var(--sage-surface); color:var(--on-sage); border-radius: 12px 12px 60px 12px; min-width:0; }
+.reading-window > small { display:block; margin-bottom:16px; }
+.reading-window-art { aspect-ratio: 1.4; overflow:hidden; border-radius: 45% 45% 3px 3px; margin-bottom:20px; }
+.reading-window-art img { width:100%; height:100%; object-fit:cover; }
+.reading-window h2 { font-family:var(--story-font); font-weight:500; font-size:clamp(25px,2.5vw,36px); line-height:1.16; }
+.reading-window p, .reading-window .byline { color:var(--on-sage-muted); }
+.studio-spread { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:48px; }
+.studio-spread article { position:relative; padding:32px; min-height:320px; overflow:hidden; }
+.studio-spread h2 { max-width:14ch; margin-top:16px; font-size:clamp(28px,2.8vw,42px); }
+.studio-spread p { max-width:29ch; position:relative; z-index:1; }
+.studio-spread a { position:relative; z-index:1; margin-top:10px; }
+.practice-poster { background:var(--sun-surface); color:var(--on-sun); border-radius:6px 45px 6px 6px; }
+.practice-poster .brand-art { position:absolute; width:110px; right:18px; bottom:20px; }
+.practice-poster .primary { background:var(--on-sun); color:var(--sun-surface); }
+.writing-poster { background:var(--surface); border:1px solid var(--line); border-radius:6px; }
+.writing-poster h2 { font-family:var(--story-font); font-weight:500; }
+.writing-poster .brand-art { position:absolute; width:135px; right:20px; bottom:24px; transform:rotate(-5deg); }
+.story-walk { margin-top:50px; }
+.story-path { display:grid; grid-template-columns:60px 1fr 30px; align-items:center; border-bottom:1px solid var(--line); padding:24px 0; gap:20px; }
+.story-path h3 { font-family:var(--story-font); font-weight:500; font-size:26px; }
+.story-path p { margin:6px 0; color:var(--muted); }
+.path-number { font-family:var(--story-font); font-size:38px; color:var(--accent); }
+.thread-shelf { padding:28px 0; margin-top:30px; border-block:1px solid var(--line); }
+.thread-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; }
+.thread { border:0; border-left:2px solid var(--accent); border-radius:0; padding:8px 22px; background:none; }
+.thread + .thread { border-left:1px solid var(--line); }
+.thread small { color:var(--accent); }
+.thread p { max-width:55ch; }
+.thread strong { font-size:var(--text-reading); }
+.practice-workbench { display:grid; grid-template-columns:minmax(170px,.65fr) 2fr; gap:36px; margin:32px auto; }
+.workbench-note { padding:24px; background:var(--sun-surface); color:var(--on-sun); border-radius:70px 5px 5px 5px; align-self:start; }
+.workbench-note .brand-art { width:100px; margin:0 auto 25px; }
+.practice-options a { display:flex; align-items:center; gap:20px; padding:23px 6px; border-bottom:1px solid var(--line); }
+.practice-options a > svg { flex:none; color:var(--accent); }
+.practice-options a > div { flex:1; }
+.practice-options h2 { font-size:23px; }
+.practice-options p { color:var(--muted); margin:5px 0 0; }
+.option-number { font-size:var(--text-xs); color:var(--muted); }
+.practice-options a:hover { background:var(--surface); }
+[data-experience='listening'] > .editorial-intro { border-bottom:1px solid var(--line); }
+[data-experience='listening'] .voices { counter-reset:voice; }
+[data-experience='listening'] .voice-row { padding:25px 0; grid-template-columns:140px minmax(0,1fr) 30px; }
+[data-experience='listening'] .voice-cover { aspect-ratio:1.3; border-radius:50% 50% 8px 8px; overflow:hidden; }
+[data-experience='listening'] .voice-row strong { font-size:clamp(24px,2.5vw,34px); line-height:1.2; }
+[data-experience='listening'] .voice-description { max-width:55ch; }
+[data-experience='listening'] .intent-nav { margin-block:22px; }
+[data-experience='continue'] .thread-list { grid-template-columns:1fr; }
+[data-experience='continue'] .thread { padding:26px 32px; border-left:2px solid var(--accent); border-bottom:1px solid var(--line); }
+[data-experience='continue'] .thread-action { margin-top:8px; }
+.continue-empty { padding:50px 0; border-top:1px solid var(--line); }
+.continue-empty h2 { margin-bottom:25px; }
+[data-experience='content'] .collection-row { background:var(--surface); padding:22px; margin-block:12px; }
+[data-experience='understanding'] .page-intro { border-bottom:2px solid var(--accent); }
+.understanding-source { background:var(--night-surface); color:var(--on-night); padding:22px; border-radius:8px; }
+.understanding-source small, .understanding-source p { color:var(--on-night-muted); }
+@media (prefers-reduced-motion:no-preference) {
+  .editorial-intro,.editorial-spread,.practice-workbench { animation:orena-arrive 350ms ease-out both; }
+  .wayfinding a,.practice-options a { transition:background-color 160ms ease; }
+  .feature-image > img { transition:transform 450ms ease; }
+  .feature-image:hover > img { transform:scale(1.025); }
+}
+@media(min-width:1800px) { #main { padding-inline:7vw; } }
+@media(max-width:1150px) {
+  :root { --rail-width:194px; }
+  #shell { padding-inline:12px; }
+  .editorial-spread { grid-template-columns:minmax(0,1.4fr) minmax(200px,1fr); gap:20px; }
+  .editorial-intro .brand-art { width:160px; }
+  .studio-spread article { padding:25px; }
+  .studio-spread .brand-art { display:none; }
+}
+@media(max-width:900px) {
+  :root { --rail-width:0px; }
+  /* The brand keeps its own width and the actions take what is left. Sized the
+     other way round, the wordmark is the thing that gives, and "orena" breaks
+     across three lines. */
+  #shell { position:sticky; inset:auto; top:0; width:100%; padding:14px 24px 0; display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; border-right:0; border-bottom:1px solid var(--line); overflow:visible; }
+  .shell-identity { min-width:0; }
+  #shell .brand { white-space:nowrap; }
+  /* world.css still gives this `margin-left:auto` from the pre-rail flexbox
+     header. On a grid item an auto margin cancels the stretch, so the cluster
+     sized itself to its content and ran off the right edge instead of letting
+     the destination control shrink. `justify-content` does the same job here
+     without breaking out of the track. */
+  #shell .shell-actions { min-width:0; margin-inline:0; justify-content:flex-end; }
+  .shell-motto { display:none; }
+  #shell .brand { font-size:29px; }
+  #shell .brand-tail { width:34px; height:34px; }
+  /* One compact header row, and the destinations behind the control that names
+     where the learner is. Laid out across the header they wrapped onto three
+     lines, each wider than the screen, which cost 228px of an 844px phone and
+     left three destinations off the right edge entirely. */
+  /* Its own row, full width. Squeezed into the header cluster beside the
+     wordmark and the two utilities there was room for about four characters,
+     and a control whose whole job is to say where the learner is cannot be
+     "D..". A second row of 52px still leaves the header less than half what
+     the wrapped list cost. */
+  .nav-toggle { display:flex; align-items:center; gap:10px; grid-column:1/-1; grid-row:2; width:100%; min-height:46px; margin-bottom:10px; padding:6px 14px; border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--ink); font:inherit; font-size:var(--text-sm); font-weight:600; text-align:left; }
+  .nav-toggle > svg { flex:none; width:18px; height:18px; color:var(--accent); }
+  .nav-toggle-here { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nav-toggle-caret { flex:none; margin-left:auto; color:var(--muted); transition:transform .18s ease; }
+  #shell[data-menu='open'] .nav-toggle { background:var(--sage-surface); color:var(--on-sage); border-color:transparent; }
+  #shell[data-menu='open'] .nav-toggle-caret { transform:rotate(180deg); }
+  #shell[data-menu='open'] .nav-toggle > svg { color:inherit; }
+  /* The sheet, as a curtain over the room rather than a wedge above it.
+
+     It used to sit in the header's own grid, so opening it pushed everything
+     below it down and closing it pulled everything back up - the page reflowed
+     twice for a menu. Now it hangs off the header and the room underneath does
+     not move at all.
+
+     Closed it is `visibility: hidden`, which keeps it out of the tab order and
+     out of the accessibility tree exactly as `display: none` did, while still
+     letting it animate. The visibility transition is delayed on the way out so
+     the fade is visible before it leaves. */
+  #shell nav {
+    display:flex; flex-direction:column; flex-wrap:nowrap; gap:14px;
+    position:absolute; top:100%; left:0; right:0; z-index:40;
+    padding:14px 24px 20px;
+    background:var(--surface); border-bottom:1px solid var(--line);
+    max-height:min(66vh,520px); overflow-y:auto;
+    box-shadow:0 18px 40px -24px color-mix(in srgb, var(--ink) 45%, transparent);
+    visibility:hidden; opacity:0; transform:translateY(-10px);
+    transition:opacity .18s ease, transform .18s ease, visibility 0s linear .18s;
+  }
+  #shell[data-menu='open'] nav {
+    visibility:visible; opacity:1; transform:none;
+    transition:opacity .18s ease, transform .18s ease, visibility 0s;
+  }
+  /* Tapping the room behind it closes it, which is the gesture people try
+     first. It is not a scrim: the room stays readable, because this covers a
+     header rather than demanding a decision.
+
+     z-index must stay below #shell's own 30: #shell and this backdrop are
+     both direct children of body, tied z-index is broken by DOM order, and
+     this element comes later - at 30 it painted over the whole #shell
+     subtree, including the open dropdown, and silently absorbed every
+     scroll/tap meant for the destination list and the account button below
+     it. 20 keeps it above #main/#footer (the actual "room" it should close
+     the menu from) without ever covering #shell's own stacking context. */
+  .nav-backdrop {
+    position:fixed; inset:0; z-index:20;
+    background:transparent; border:0; padding:0; margin:0;
+    display:none; cursor:default;
+  }
+  #shell[data-menu='open'] ~ .nav-backdrop { display:block; }
+  /* The working header. Scrolled into a room, the header keeps only the mark
+     that leads home and the control that names where the learner is and opens
+     every destination; the wordmark, bring and account actions return with the
+     expanded header. It is genuinely one row shorter - the room reflows up into
+     the height it gives back - and the control keeps a full touch target. */
+  #shell[data-compact] { grid-template-columns:auto minmax(0,1fr); align-items:center; padding-block:6px; }
+  #shell[data-compact] .shell-actions { display:none; }
+  #shell[data-compact] .brand { font-size:0; gap:0; }
+  #shell[data-compact] .brand-tail { width:30px; height:30px; }
+  #shell[data-compact] .nav-toggle { grid-column:2; grid-row:1; margin-bottom:0; min-height:44px; }
+  @media (prefers-reduced-motion: reduce) {
+    #shell nav, #shell[data-menu='open'] nav { transition:none; transform:none; }
+  }
+  .nav-group { flex-direction:column; gap:2px; }
+  .nav-group > small { display:block; }
+  #shell nav a { padding:9px 12px; }
+  #shell nav a svg { width:19px; height:19px; }
+  #shell .shell-actions { flex-direction:row; align-items:center; border:0; padding:0; gap:10px; flex-wrap:nowrap; }
+  #shell .bring-button, #shell .account-button { flex:none; }
+  #shell .bring-button { padding:6px 12px; }
+  #shell .account-button { font-size:0; gap:0; }
+  #main { margin-left:0; padding-inline:28px; }
+  #footer { margin:24px 28px 0; }
+  .editorial-intro { padding-top:32px; }
+  .editorial-intro h1 { font-size:46px; }
+  .wayfinding a { padding-inline:15px; gap:8px; }
+}
+@media(max-width:600px) {
+  /* The phone scale (D-053): the brand row is chrome, so it is no larger than
+     the controls in the room below it. The destination control keeps its own
+     full target. */
+  #shell { padding:10px 16px 0; }
+  #shell[data-menu='open'] nav { padding-inline:16px; }
+  #shell .shell-actions { gap:8px; }
+  .nav-toggle { padding-inline:12px; }
+  #shell .bring-button span { display:none; }
+  #shell .bring-button { font-size:18px; min-width:var(--tap); min-height:var(--tap); padding:0 8px; }
+  #shell .account-button { min-height:var(--tap); }
+  #shell .account-button .language-seal { width:30px; height:30px; }
+  #shell .brand { font-size:26px; }
+  #shell .brand-tail { width:30px; height:30px; }
+  #main { padding-inline:20px; padding-bottom:30px; }
+  #footer { margin-inline:20px; gap:16px; flex-wrap:wrap; }
+  .editorial-intro { grid-template-columns:1fr; gap:0; padding:28px 0 24px; position:relative; }
+  .editorial-intro h1 { font-size:40px; line-height:1.12; }
+  .editorial-intro .brand-art { width:92px; position:absolute; right:0; top:25px; opacity:1; }
+  .editorial-intro:has(.brand-art) > div { padding-top:80px; }
+  .editorial-intro small { position:absolute; top:30px; left:0; max-width:55%; }
+  .editorial-intro p { font-size:var(--text-sm); }
+  .wayfinding { grid-template-columns:1fr; margin-bottom:24px; }
+  .wayfinding a { min-height:51px; padding-inline:4px; }
+  .wayfinding a + a { border-left:0; border-top:1px solid var(--line); }
+  .editorial-spread { grid-template-columns:1fr; gap:24px; }
+  .feature-image { aspect-ratio:1.6; }
+  .feature-caption { padding:23px; }
+  .reading-window { padding:24px; display:grid; grid-template-columns:1fr; }
+  .reading-window-art { aspect-ratio:1.9; }
+  .studio-spread { grid-template-columns:1fr; gap:20px; margin-top:28px; }
+  .studio-spread article { min-height:0; padding:26px; }
+  .studio-spread h2 { font-size:32px; }
+  .studio-spread .brand-art { display:block; width:85px; right:12px; bottom:22px; }
+  .studio-spread p { max-width:26ch; }
+  .thread-list { grid-template-columns:1fr; gap:22px; }
+  .thread + .thread { border-left:2px solid var(--accent); }
+  .thread-shelf .section-head { align-items:flex-start; flex-direction:column; gap:8px; }
+  .story-path { grid-template-columns:32px 1fr 20px; gap:12px; }
+  .path-number { font-size:28px; }
+  .story-path h3 { font-size:24px; }
+  .practice-workbench { grid-template-columns:1fr; gap:16px; }
+  .workbench-note { display:none; }
+  .practice-options a { gap:12px; }
+  .practice-options .option-number { display:none; }
+  [data-experience='listening'] .voice-row { grid-template-columns:84px minmax(0,1fr); gap:16px; }
+  [data-experience='listening'] .voice-row > span:last-child { display:none; }
+  [data-experience='listening'] .voice-row strong { font-size:23px; }
+}

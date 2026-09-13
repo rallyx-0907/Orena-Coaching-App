@@ -89,6 +89,17 @@ def test_en_zh_shared_result_and_strength_evidence_structure_are_identical() -> 
     assert english_strength["items"]["properties"]["category"]["enum"] == list(RUBRIC_KEYS)
 
 
+def test_schema_requires_nonempty_actionable_feedback_fields() -> None:
+    schema = _english_schema()
+    strength = schema["properties"]["strength_evidence"]["items"]["properties"]
+    error = schema["properties"]["errors"]["items"]["properties"]
+
+    for field in ("fragment", "explanation_vi"):
+        assert strength[field]["minLength"] == 1
+    for field in ("fragment", "explanation_vi", "suggestion", "mini_rule_vi"):
+        assert error[field]["minLength"] == 1
+
+
 def test_en_zh_error_structure_differs_only_by_linguistic_category_enum() -> None:
     english = deepcopy(_english_schema()["properties"]["errors"])
     chinese = deepcopy(_chinese_schema()["properties"]["errors"])
@@ -171,6 +182,59 @@ def test_request_contract_is_explicit_about_evidence_and_target_level_semantics(
     assert "actual demonstrated performance" in request
     assert "Do not force the proficiency estimate upward" in request
     assert "inflate scores" in request and "deflate scores" in request
+
+
+def test_target_free_guided_request_keeps_length_out_of_level_calibration() -> None:
+    request = build_writing_evaluator_request(
+        language_name="English",
+        target_level=None,
+        task_prompt="Describe a place that changed how you think.",
+        learner_text="The library near my home changed my habits.",
+        free_writing_context="Free English writing.",
+        writing_mode="guided",
+        writing_context={"topic_id": "places", "length_id": "short"},
+    )
+
+    assert "SUBMISSION MODE: guided" in request
+    assert "REQUESTED LENGTH (INVITATION ONLY): short" in request
+    assert "must not affect scores or the demonstrated band" in request
+    assert "TASK ACHIEVEMENT: applicable" in request
+    assert "TARGET LEVEL" not in request
+    assert "Infer only the band demonstrated by this sample" in request
+
+
+def test_journal_request_has_no_task_adherence_or_prompt_penalty() -> None:
+    request = build_writing_evaluator_request(
+        language_name="Chinese",
+        target_level=None,
+        task_prompt="",
+        learner_text="今天我和朋友一起吃饭。",
+        free_writing_context="Reflective journal entry.",
+        writing_mode="journal",
+        writing_context={"journal_context": "A personal reflection"},
+    )
+
+    assert "SUBMISSION MODE: journal" in request
+    assert "TASK ACHIEVEMENT: not applicable" in request
+    assert "Do not score prompt adherence" in request
+    assert "<WRITING_TASK>" not in request
+    assert "TARGET LEVEL" not in request
+
+
+def test_journal_schema_omits_task_score_and_allows_insufficient_band() -> None:
+    schema = build_writing_evaluator_schema(
+        rubric_weights=ENGLISH_RUBRIC_WEIGHTS,
+        allowed_levels=ENGLISH_PROFILE.levels,
+        score_to_level=english_score_to_level,
+        error_categories=ENGLISH_ERROR_CATEGORIES,
+        writing_mode="journal",
+    )
+
+    assert "task_achievement" not in schema["properties"]
+    assert "task_achievement" not in schema["required"]
+    assert schema["properties"]["band_status"]["enum"] == ["estimated", "insufficient_evidence"]
+    assert "" in schema["properties"]["cefr_estimate"]["enum"]
+    assert "band_status" in schema["required"]
 
 
 @pytest.mark.parametrize(

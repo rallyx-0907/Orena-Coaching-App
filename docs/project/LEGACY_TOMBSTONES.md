@@ -33,25 +33,91 @@ removed merely because current code conflicts with them.
 
 ## `static/becoming/**`
 
-- **Status:** LEGACY TECHNICAL NAMESPACE
-- **Current replacement:** Orena product behavior served at `/`; migration of
-  the namespace itself is not currently required.
-- **Why retired:** the path predates the active product identity.
-- **What may remain:** current Orena web implementation files while technically
-  required.
-- **What must not happen:** the directory name must not be interpreted as an
-  active product route or authorization to revive BECOMING.
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-046).
+- **Replacement:** new Orena product in `static/orena/`.
+- **Must not happen:** restoring skill dashboards, old Listening/Shadowing shells,
+  mode routers or screen/session handoffs, even under new names. Extract independent
+  capabilities; Git preserves the obsolete implementation.
 
 ## `templates/becoming/**`
 
-- **Status:** LEGACY TECHNICAL NAMESPACE
-- **Current replacement:** Orena root shell.
-- **Why retired:** the template path is historical; its active rendered product
-  is Orena.
-- **What may remain:** the canonical Orena shell template and compatibility
-  asset references.
-- **What must not happen:** no new `/becoming` product shell or branding may be
-  inferred from this path.
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-046).
+- **Replacement:** `templates/orena/index.html` at `/`.
+- **Must not happen:** restoring the old learner shell or competing root template.
+
+## Discover/Home owning hard-coded canonical content
+
+- **Status:** RETIRED (D-049).
+- **Current replacement:** Domain libraries (`docs/product/
+  ORENA_CONTENT_ARCHITECTURE.md` §5-§9); Discover/Home distribute from them
+  (§3).
+- **Why retired:** Growing the entry surface by hand-editing a small array
+  directly in `static/orena/content/texts.js` (or an equivalent per-domain
+  array) reads as fast content growth but is the exact pattern D-049 exists to
+  stop: it never scales past a hand-curated handful and keeps the strategic
+  content problem looking solved when it is not.
+- **What may remain:** The existing hand-authored `origin: generated` items
+  already in such arrays are valid content under
+  `ORENA_CONTENT_ARCHITECTURE.md` §2 and are not deleted; a hand-authored
+  array remains an acceptable **starting seam** for a domain that has no
+  pipeline yet (§17). What must not happen is treating further one-at-a-time
+  edits to that array as the ongoing content-growth strategy.
+- **What must not happen:** New agents must not "grow Discover" by adding more
+  literal entries to a hard-coded array and calling it library growth. New
+  content growth targets the owning domain's library and its shared
+  ingestion/admission/moderation pipeline
+  (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, §3), with Discover/Home
+  reading from it, not authoring it.
+
+## Vocabulary as a flat saved-word list
+
+- **Status:** RETIRED as the target model (D-049).
+- **Current replacement:** Orena Vocabulary Cards
+  (`docs/product/ORENA_VOCABULARY_ARCHITECTURE.md`).
+- **Why retired:** `word -> translation` plus a recall-review schedule is the
+  correct baseline (`ORENA_COLLECTION_ARCHITECTURE.md`'s existing saved-word/
+  `LanguageItemRef` seam) but is not a complete Vocabulary product.
+- **What may remain:** The existing saved-word identity, occurrence
+  provenance, and Active Recall scheduling are the foundation a Vocabulary
+  Card is built on, unchanged (`ORENA_VOCABULARY_ARCHITECTURE.md` §3).
+- **What must not happen:** Treating the current flat list as Vocabulary's
+  finished end-state, or building a second, disconnected "card" system instead
+  of enriching the existing saved-word object.
+
+## Language Knowledge modeled as a sixth content domain / mandatory precomputed graph
+
+- **Status:** RETIRED (D-050, correcting an over-modeling introduced by D-049's
+  first integration).
+- **Current replacement:** The Understanding Engine is a horizontal capability
+  shared across Orena's five content domains — Reading, Writing, Listening,
+  Speaking, Vocabulary — not a sixth learner-facing library
+  (`docs/product/ORENA_UNDERSTANDING_ENGINE.md` §1). It is AI-first and
+  context-grounded: explanations generate from the learner's exact context
+  through the Orena Explanation Contract, not from a required precomputed
+  knowledge store (`ORENA_UNDERSTANDING_ENGINE.md` §2-3). An optional
+  explanation support layer (caching, retrieval, trusted references) may be
+  added later only once real usage justifies it (`ORENA_UNDERSTANDING_ENGINE.md`
+  §5); a structured knowledge graph is a possible optimization inside that
+  layer, never a prerequisite.
+- **Why retired:** The first pass integrating
+  `docs/product/ORENA_PHILOSOPHY_AMENDMENT_CONTENT_UNDERSTANDING.md` (whose own
+  §2.6/§7/§16 still carry this framing as a historical artifact) modeled
+  "Language Knowledge" as a peer of Reading/Writing/Listening/Speaking/
+  Vocabulary and treated a Language Knowledge Graph as something the
+  Understanding Engine needed before it could work. Neither claim was the
+  intended product model.
+- **What may remain:** Everything else D-049 established — five domains as
+  domains, the Orena Vocabulary Card spec and orthography, the Discover/Home
+  distribution correction, and the content scale philosophy — is unaffected
+  and stays in force.
+- **What must not happen:** New agents reading the amendment document directly
+  must not reintroduce a sixth "Language Knowledge" domain, a learner-browsable
+  Understanding/Language-Knowledge screen, or a database that must be
+  pre-populated before an explanation can be generated. Treat the amendment
+  document as historical context for *why* the Understanding Engine and
+  Vocabulary Card work exist, not as the current section-numbering or
+  domain-count authority — `ORENA_CONTENT_ARCHITECTURE.md` and
+  `ORENA_UNDERSTANDING_ENGINE.md` are.
 
 ## `writing_coach/becoming_*`
 

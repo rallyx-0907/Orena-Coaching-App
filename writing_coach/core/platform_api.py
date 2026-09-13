@@ -11,6 +11,7 @@ from writing_coach.core.language_registry import (
 )
 from writing_coach.core.request_context import current_language_code
 from writing_coach.core.skill_registry import all_skills
+from writing_coach.core.support_languages import all_support_languages
 
 router = APIRouter()
 
@@ -28,6 +29,7 @@ def api_platform_languages(request: Request) -> dict[str, object]:
         "api_version": 1,
         "active": active,
         "data_isolation": "user+language",
+        "support_languages": [{"code": item.code, "label": item.translation_label} for item in all_support_languages()],
         "languages": [item.public_dict() for item in all_languages()],
     }
 

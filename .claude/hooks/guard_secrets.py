@@ -29,9 +29,22 @@ RULES = [
      "test presence without printing the value."),
     (rf"\b(echo|printf|Write-Host|Write-Output)\b[^|;&]*\$\{{?{SECRET_VARS}",
      "This echoes a secret value (AGENTS.md 16). Report only that the variable is set."),
-    (r"\bdocker\s+compose\s+exec\b[^|;&]*\b(printenv|env)\b(?![^|;&]*\|)",
+    # `docker exec` reaches a container just as well as `docker compose exec`.
+    (r"\bdocker\s+(compose\s+)?exec\b[^|;&]*\b(printenv|env)\b(?![^|;&]*\|)",
      "Dumping the container environment exposes secret values (AGENTS.md 16). Query a "
      "single variable's presence instead."),
+    # A live API key reached a transcript through
+    # `docker inspect --format '{{range .Config.Env}}...'`. The env block is the
+    # same secret material as `.env`, however it is reached.
+    (r"\bdocker\s+inspect\b[^|;&]*\.Env\b",
+     "Formatting a container's env block prints secret values (AGENTS.md 16). Ask for "
+     "the field you actually need, or test one variable's presence without printing "
+     "it."),
+    # No --format means the whole config document, env block included.
+    (r"\bdocker\s+inspect\b(?![^|;&]*(--format|-f\b))",
+     "A bare `docker inspect` dumps the entire container config, including the env "
+     "block and its secret values (AGENTS.md 16). Name the field instead, e.g. "
+     "`docker inspect NAME --format '{{.HostConfig.PortBindings}}'`."),
     (rf"\b{READERS}\b[^|;&]*\b(auth\.json|credentials\.json|id_rsa|\.pem)\b",
      "This prints credential material (AGENTS.md 16)."),
 ]

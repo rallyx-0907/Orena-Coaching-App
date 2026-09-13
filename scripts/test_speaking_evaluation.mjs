@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {evaluateSpeechTranscript,speechLearningTokens} from '../static/becoming/domain/speaking-evaluation.js';
+import {evaluateSpeechTranscript,speechLearningTokens} from '../static/orena/capabilities/speech-comparison.js';
 
 assert.deepEqual(speechLearningTokens("Hello, world!"),["hello","world"]);
 assert.deepEqual(speechLearningTokens("你好世界"),["你","好","世","界"]);

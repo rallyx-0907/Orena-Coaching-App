@@ -37,20 +37,20 @@
     }
   ],
   "active_branch_or_lane": {
-    "expected_development_branch": "claude/integration-v2",
-    "lane": "orena_integration"
+    "expected_development_branch": "codex/work",
+    "lane": "orena_golden_star_reference_architecture"
   },
-  "last_verified_application_commit": "817429407f158c40d84d0555497802d325ea47a9",
-  "last_verified_batch": "golden_home_h1_3_lifecycle_closeout",
+  "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
+  "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
   "current_program_stage": {
     "id": "R21",
     "name": "Mobile Release Readiness",
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "orena_golden_web_home",
+    "id": "orena_web_golden_star",
     "status": "in_progress",
-    "next_task": "H2 Golden Home: replace the development artwork wash with approved production artwork inside the containers H1/H1.1/H1.2/H1.3 built, render the signed-in Home at 1440/1024/390, compare against ORENA_HOME_GOLDEN_SPEC.md and fix the three largest gaps at the highest shared level. Do not redesign the composition or re-open the H1.1/H1.2/H1.3 audit fixes. Deferred and preserved: HUMAN applies Alembic 20260903_0005 to the dogfood DB (still 20260828_0004) then dogfood-accepts lesson-scoped progress; L3 ingestion; Listening mode persistence."
+    "next_task": "Complete Orena Golden Star under principal architecture ownership. A-D and Encounter WIP are completed by Opus. Read ORENA_REFERENCE_ARCHITECTURE.md, docs/project/ORENA_BACKBONE_EXECUTION.md and ORENA_BACKBONE_INTEGRATION_GATES.md. Backbone contracts cover account/profile, commerce/entitlements/quotas, Collection/My Content/My Language, execution, Growth/achievements and migration. Codex owns architecture and integration; Opus implements I1-I7 under these contracts. No deployed sync, billing activation or human product approval is implied. Preserve eleven destinations and all Opus WIP, especially theme/brand."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -58,12 +58,20 @@
     "native_may_redesign_product": false
   },
   "languages": {
-    "first_class": ["en", "zh"],
+    "first_class": [
+      "en",
+      "zh"
+    ],
     "shared_features_require_same_batch_parity": true
   },
   "skills": {
     "architecture": "connected_learning_system",
-    "core": ["listening", "speaking", "reading", "writing"],
+    "core": [
+      "listening",
+      "speaking",
+      "reading",
+      "writing"
+    ],
     "shared_infrastructure": [
       "library_active_recall",
       "grammar",
@@ -115,7 +123,10 @@
     "user_import_role": "secondary",
     "shared_learning_engine": true,
     "curated_and_imported_share_media_contract": true,
-    "first_class_languages": ["en", "zh"],
+    "first_class_languages": [
+      "en",
+      "zh"
+    ],
     "real_media_catalog": {
       "status": "real_content_partial",
       "real_playable_en_evidence": true,
@@ -139,33 +150,51 @@
     "public_skills": []
   },
   "human_gates": [
-    {"id": "production_authentication", "status": "approval_required"},
-    {"id": "live_ai_provider_validation", "status": "approval_required"},
-    {"id": "production_ai_activation", "status": "approval_required"},
-    {"id": "production_postgresql_migration_or_mutation", "status": "approval_required"},
-    {"id": "backup_restore_and_rollback", "status": "approval_required"},
-    {"id": "secrets_credentials_cloudflare_dns", "status": "approval_required"},
-    {"id": "billing_subscription_enforcement", "status": "approval_required"},
-    {"id": "mobile_signing_store_release", "status": "approval_required"},
-    {"id": "learner_skill_or_catalog_publication", "status": "approval_required"}
+    {
+      "id": "production_authentication",
+      "status": "approval_required"
+    },
+    {
+      "id": "live_ai_provider_validation",
+      "status": "approval_required"
+    },
+    {
+      "id": "production_ai_activation",
+      "status": "approval_required"
+    },
+    {
+      "id": "production_postgresql_migration_or_mutation",
+      "status": "approval_required"
+    },
+    {
+      "id": "backup_restore_and_rollback",
+      "status": "approval_required"
+    },
+    {
+      "id": "secrets_credentials_cloudflare_dns",
+      "status": "approval_required"
+    },
+    {
+      "id": "billing_subscription_enforcement",
+      "status": "approval_required"
+    },
+    {
+      "id": "mobile_signing_store_release",
+      "status": "approval_required"
+    },
+    {
+      "id": "learner_skill_or_catalog_publication",
+      "status": "approval_required"
+    }
   ],
   "current_p0": [],
   "current_p1": [
-    "listening_real_media_catalog_has_one_en_and_one_zh_lesson_only",
-    "listening_durable_progress_tables_exist_but_saving_is_unconfirmed_until_human_qa",
-    "native_curated_video_verified_by_tests_and_prebuild_not_on_a_real_device",
-    "ios_vp9_webm_decode_unproven_both_real_lessons_are_vp9_transcodes",
-    "memory_commits_on_branch_are_not_yet_in_main_pr54_already_merged",
-    "l1_discovery_shipped_on_web_only_native_still_renders_the_old_card",
-    "most_l1_discovery_rails_are_empty_until_l3_loads_real_content",
-    "dev_generated_catalog_is_unreviewed_development_content_never_production",
-    "generated_excerpts_are_proposed_candidates_needing_human_curation",
-    "generated_lesson_ids_are_provisional_and_can_move_if_captions_are_retimed",
-    "home_h1_artwork_is_a_textless_development_placeholder_h2_owns_production_artwork",
-    "home_h1_was_not_rendered_signed_in_because_dogfood_login_is_a_human_gate",
-    "no_explore_route_exists_so_a_world_card_opens_its_lead_lesson",
-    "eight_mjs_tests_fail_at_the_previous_head_and_are_outside_ci",
-    "test_r12_listening_goal_editor_mjs_fails_on_a_pre_existing_harness_gap_not_in_ci"
+    "platform_admin_host_remains_a_human_hold",
+    "grammar_breadth_remains_a_human_review_question",
+    "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
+    "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
+    "reading_library_breadth_requires_rights_decisions_per_text",
+    "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native"
   ],
-  "last_verified_at": "2026-09-04"
+  "last_verified_at": "2026-09-02"
 }

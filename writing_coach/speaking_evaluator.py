@@ -184,6 +184,8 @@ def build_speaking_evaluation(
     transcript = _text(transcript_text, "transcript_text", max_chars=2400)
     confidence = _score(transcription_confidence, "transcription_confidence")
     match_score, missing_tokens, extra_tokens = _content_evidence(content_match)
+    if not reference and (match_score is not None or missing_tokens or extra_tokens):
+        raise SpeakingEvaluationInvalid("Content alignment requires reference text.")
     pronunciation_evidence, pronunciation_scores = _pronunciation_evidence(pronunciation)
     synthetic_demo = pronunciation_evidence["score_kind"] == "synthetic_demo"
     pronunciation_source = "synthetic_demo" if synthetic_demo else pronunciation_evidence["provider"]
@@ -198,7 +200,17 @@ def build_speaking_evaluation(
     }
     provenance = {
         "transcription_confidence": "speech_asr" if confidence is not None else None,
-        "content_match": "deterministic_reference_alignment" if match_score is not None else None,
+        # Free expression has no line to match, which is not the same as an
+        # alignment that was attempted and failed. Saying "not measured" there
+        # would describe a missing measurement rather than a dimension that
+        # does not apply to what the learner was asked to do.
+        "content_match": (
+            "deterministic_reference_alignment"
+            if match_score is not None
+            else "not_applicable"
+            if not reference
+            else None
+        ),
         "pronunciation": pronunciation_source if pronunciation_scores["pronunciation"] is not None else None,
         "fluency": pronunciation_source if pronunciation_scores["fluency"] is not None else None,
         "proficiency": "not_assessed",

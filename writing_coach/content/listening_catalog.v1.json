@@ -110,7 +110,8 @@
           "translations": {
             "vi": "Vương Minh: Đây là gì? Lý Hồng: Đây là sách. Kia là gì? Kia là bút máy. Kia là tạp chí à? Không, đó không phải tạp chí. Đó là từ điển.",
             "en": "Wang Ming: What's this? Li Hong: This is a book. What's that? That's a pen. Is that a magazine? No, that's not a magazine. That's a dictionary."
-          }
+          },
+          "spoken_text": "这是什么？这是书。那是什么？那是钢笔。那是杂志吗？不，那不是杂志。那是字典。"
         }
       ]
     },
@@ -145,7 +146,8 @@
           "translations": {
             "vi": "Ginny: Họ là ai?",
             "en": "Ginny: Who are they?"
-          }
+          },
+          "spoken_text": "他们是谁？"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:001",
@@ -156,7 +158,8 @@
           "translations": {
             "vi": "Owen: Cô ấy là Amy, người Trung Quốc. Anh ấy là Tony, người Mỹ.",
             "en": "Owen: She is Amy, and she is Chinese. He is Tony, and he is American."
-          }
+          },
+          "spoken_text": "她是艾美，她是中国人。他是东尼，他是美国人。"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:002",
@@ -167,7 +170,8 @@
           "translations": {
             "vi": "Ginny: Bạn cũng là người Mỹ à?",
             "en": "Ginny: Are you also American?"
-          }
+          },
+          "spoken_text": "你也是美国人吗？"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:003",
@@ -178,7 +182,8 @@
           "translations": {
             "vi": "Owen: Không, tôi là người Anh. Còn bạn? Bạn là người nước nào?",
             "en": "Owen: No, I'm British. How about you? What nationality are you?"
-          }
+          },
+          "spoken_text": "不是，我是英国人。你呢？你是哪国人？"
         },
         {
           "segment_id": "commons-zh-lesson-1-dialogue-2:004",
@@ -189,7 +194,8 @@
           "translations": {
             "vi": "Ginny: Tôi là người Pháp.",
             "en": "Ginny: I'm French."
-          }
+          },
+          "spoken_text": "我是法国人。"
         }
       ]
     },
@@ -207,7 +213,7 @@
         "kind": "video",
         "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.480p.vp9.webm"
       },
-      "poster_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/960px--Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.jpg",
+      "poster_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/960px--Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.jpg",
       "rights": {
         "license_name": "CC BY 3.0",
         "license_url": "https://creativecommons.org/licenses/by/3.0/",
@@ -222,7 +228,7 @@
           "end_ms": 6500,
           "original_text": "With the big bang starting the year and as cheering new year's eve one year later",
           "translations": {
-            "vi": "Vu No Lon mo dau nam, va mot nam sau ta reo ho don giao thua.",
+            "vi": "Vụ Nổ Lớn mở đầu năm, và một năm sau ta reo hò đón giao thừa.",
             "zh": "宇宙大爆炸拉开这一年的序幕，一年后我们欢呼迎接新年前夜。"
           }
         },
@@ -232,7 +238,7 @@
           "end_ms": 12500,
           "original_text": "Using this scale the universe slowed and cooled for the first few days of January",
           "translations": {
-            "vi": "Theo ti le nay, vu tru cham lai va nguoi di trong vai ngay dau thang Gieng.",
+            "vi": "Theo tỉ lệ này, vũ trụ chậm lại và nguội đi trong vài ngày đầu tháng Giêng.",
             "zh": "按这个比例，宇宙在一月的头几天里减速并冷却。"
           }
         },
@@ -242,7 +248,7 @@
           "end_ms": 19000,
           "original_text": "The first stars formed on the 5th of January and the first galaxies formed on the 9th",
           "translations": {
-            "vi": "Nhung ngoi sao dau tien hinh thanh ngay 5 thang Gieng, thien ha dau tien ngay 9.",
+            "vi": "Những ngôi sao đầu tiên hình thành ngày 5 tháng Giêng, thiên hà đầu tiên ngày 9.",
             "zh": "第一批恒星在1月5日形成，第一批星系在1月9日形成。"
           }
         },
@@ -252,7 +258,7 @@
           "end_ms": 27600,
           "original_text": "For the thin disk of the Milky Way Galaxy didn't form until May Our Solar System and Earth formed in September",
           "translations": {
-            "vi": "Dia mong cua Ngan Ha mai den thang Nam moi hinh thanh. He Mat Troi va Trai Dat hinh thanh vao thang Chin.",
+            "vi": "Đĩa mỏng của Ngân Hà mãi đến tháng Năm mới hình thành. Hệ Mặt Trời và Trái Đất hình thành vào tháng Chín.",
             "zh": "银河系的薄盘直到五月才形成。太阳系和地球形成于九月。"
           }
         },
@@ -262,7 +268,7 @@
           "end_ms": 34500,
           "original_text": "Dinosaurs evolved on the 25th of December and were already extinct by the 30th",
           "translations": {
-            "vi": "Khung long tien hoa ngay 25 thang Chap va da tuyet chung truoc ngay 30.",
+            "vi": "Khủng long tiến hóa ngày 25 tháng Chạp và đã tuyệt chủng trước ngày 30.",
             "zh": "恐龙在12月25日演化出现，到12月30日就已经灭绝了。"
           }
         },
@@ -272,7 +278,7 @@
           "end_ms": 47000,
           "original_text": "The first known cave paintings date from 90 seconds to midnight on New Year's Eve and the pyramids were built only 12 seconds ago",
           "translations": {
-            "vi": "Nhung buc ve hang dong som nhat co tu 90 giay truoc nua dem giao thua, con kim tu thap chi moi duoc xay cach day 12 giay.",
+            "vi": "Những bức vẽ hang động sớm nhất có từ 90 giây trước nửa đêm giao thừa, còn kim tự tháp chỉ mới được xây cách đây 12 giây.",
             "zh": "已知最早的洞穴壁画出现在除夕午夜前90秒，而金字塔只是在12秒前才建成的。"
           }
         }
@@ -292,7 +298,7 @@
         "kind": "video",
         "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.480p.vp9.webm"
       },
-      "poster_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/960px--%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.jpg",
+      "poster_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/960px--%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.jpg",
       "rights": {
         "license_name": "CC BY-SA 3.0",
         "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
@@ -309,7 +315,7 @@
           "pinyin": "Xiànzài kàndào de shì Zhōngwén Wéijī Bǎkē de shǒuyè (Vector bǎn)",
           "translations": {
             "en": "What you see now is the Chinese Wikipedia home page (Vector skin).",
-            "vi": "Day la trang chu Wikipedia tieng Trung (giao dien Vector)."
+            "vi": "Đây là trang chủ Wikipedia tiếng Trung (giao diện Vector)."
           }
         },
         {
@@ -320,7 +326,7 @@
           "pinyin": "Nǐ kěyǐ shūrù nǐ zhǎo de nèiróng",
           "translations": {
             "en": "You can type in what you are looking for.",
-            "vi": "Ban co the nhap noi dung ban dang tim."
+            "vi": "Bạn có thể nhập nội dung bạn đang tìm."
           }
         },
         {
@@ -331,7 +337,7 @@
           "pinyin": "Xiāngguān tiáomù huì zài xiàfāng zhǎnkāi",
           "translations": {
             "en": "Related articles appear below.",
-            "vi": "Cac muc tu lien quan se hien ra ben duoi."
+            "vi": "Các mục từ liên quan sẽ hiện ra bên dưới."
           }
         },
         {
@@ -342,7 +348,7 @@
           "pinyin": "Yě kě zài zuì xiàfāng xuǎnzé 「bāohán...」 lái sōuxún suǒyǒu xiāngguān tiáomù",
           "translations": {
             "en": "You can also choose Contains at the bottom to search every related article.",
-            "vi": "Ban cung co the chon Chua o duoi cung de tim moi muc tu lien quan."
+            "vi": "Bạn cũng có thể chọn Chứa ở dưới cùng để tìm mọi mục từ liên quan."
           }
         },
         {
@@ -353,7 +359,7 @@
           "pinyin": "Àn 「fàngdàjìng」 kěyǐ zhíjiē zhǎo nǐ shūrù de tiáomù",
           "translations": {
             "en": "Press the magnifying glass to go straight to the article you typed.",
-            "vi": "Nhan kinh lup de vao thang muc tu ban da nhap."
+            "vi": "Nhấn kính lúp để vào thẳng mục từ bạn đã nhập."
           }
         },
         {
@@ -364,7 +370,7 @@
           "pinyin": "Zhèyàng, nǐ biàn kěyǐ zhǎdào suǒ xū de tiáomù le",
           "translations": {
             "en": "This way, you can find the article you need.",
-            "vi": "Nhu vay, ban co the tim duoc muc tu minh can."
+            "vi": "Như vậy, bạn có thể tìm được mục từ mình cần."
           }
         },
         {
@@ -375,7 +381,7 @@
           "pinyin": "Lìngwài yòng MonoBook、MySkin děng bǎnběn yě yǒu xiāngtóng gōngnéng",
           "translations": {
             "en": "Other skins such as MonoBook and MySkin have the same feature.",
-            "vi": "Ngoai ra cac giao dien nhu MonoBook, MySkin cung co chuc nang tuong tu."
+            "vi": "Ngoài ra các giao diện như MonoBook, MySkin cũng có chức năng tương tự."
           }
         }
       ]

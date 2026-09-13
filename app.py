@@ -57,8 +57,6 @@ from writing_coach.media_ingestion import MediaIngestionService
 from writing_coach.media_providers.supadata import SupadataTranscriptClient
 from writing_coach.media_recovery_policy import build_youtube_adapter
 from writing_coach.media_providers.youtube_audio import YtDlpYouTubeAudioUrlResolver
-from writing_coach.listening_api import preview_visible
-from writing_coach.world_api import router as world_router
 from writing_coach.media_timing import MediaTimingService
 from writing_coach.media_translation import (
     GroqTranslationProvider,
@@ -73,6 +71,8 @@ from writing_coach.speech_api import (
     router as speech_router,
 )
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
+from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
+from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
     configure_listening_progress,
     configure_listening_translation_cache,
@@ -93,7 +93,7 @@ from writing_coach.persistence.learning_repository import (
     SQLiteLearningRepository,
 )
 from writing_coach.persistence.specialized_repository import SQLiteSpecializedLearningRepository
-from writing_coach.becoming_memory import (LearnerProfileIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, put_learner_profile)
+from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
 from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, delete_library_vocabulary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
@@ -111,7 +111,9 @@ from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("WRITING_DB", ROOT / "data" / "writing.db"))
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
+# Docker host alias, matching .env.example and compose.yaml. The app is only
+# ever run in a container, where 127.0.0.1 would be the container itself.
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 REQUEST_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "180"))
 ALLOW_FALLBACK = os.getenv("ALLOW_FALLBACK", "false").lower() in {"1", "true", "yes", "on"}
@@ -135,27 +137,86 @@ async def validation_error_response(request: Request, exc: RequestValidationErro
     return response
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
-BECOMING_ASSET_ROOT = (ROOT / "static" / "becoming").resolve()
+ORENA_ASSET_ROOT = (ROOT / "static" / "orena").resolve()
 
-@app.get("/becoming-assets/{asset_path:path}", include_in_schema=False)
-def becoming_asset(asset_path: str):
-    # Dedicated BECOMING asset route, isolated from the legacy /static mount.
-    candidate = (BECOMING_ASSET_ROOT / asset_path).resolve()
+def _asset_etag(candidate: Path) -> str:
+    """Identity of exactly these bytes: mtime and size, as Starlette does it."""
+    stat = candidate.stat()
+    material = f"{stat.st_mtime_ns}-{stat.st_size}"
+    return '"' + hashlib.md5(material.encode("utf-8")).hexdigest() + '"'
+
+
+@app.get("/orena-assets/{asset_path:path}", include_in_schema=False)
+def orena_asset(asset_path: str, request: Request):
+    candidate = (ORENA_ASSET_ROOT / asset_path).resolve()
     try:
-        candidate.relative_to(BECOMING_ASSET_ROOT)
+        candidate.relative_to(ORENA_ASSET_ROOT)
     except ValueError as exc:
         raise HTTPException(404, "Asset not found") from exc
 
     if not candidate.is_file():
         raise HTTPException(404, "Asset not found")
 
-    return FileResponse(candidate, headers={"Cache-Control": "no-store, max-age=0"})
+    # `no-cache`, not `no-store`, and an answer to the conditional request that
+    # `no-cache` provokes. Both headers keep a learner from ever seeing a stale
+    # build - the browser revalidates before using anything either way. The
+    # difference is what happens when nothing changed: `no-store` forbids
+    # keeping the bytes at all, so every refresh re-downloaded the whole
+    # application. Measured on this shell that was 3.2 MB and 59 requests on
+    # every single refresh, 2.7 MB of it one image nobody had edited.
+    #
+    # Sending the ETag without honouring `If-None-Match` would have been the
+    # same cost with extra ceremony, so the 304 is the point rather than the
+    # header.
+    etag = _asset_etag(candidate)
+    headers = {"Cache-Control": "no-cache", "ETag": etag}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return FileResponse(candidate, headers=headers)
+
+
+# The approved red-panda library is product material, not an archive. Serving it
+# from where it lives keeps one canonical copy: duplicating the artwork into the
+# web tree is how a brand quietly forks.
+ORENA_BRAND_ROOT = (ROOT / "assets" / "brand" / "orena").resolve()
+# The reference sheets are design authority for people, not runtime imagery -
+# several megabytes each, and never something to put in front of a learner.
+ORENA_BRAND_SERVED = ("actions", "expressions", "scenes")
+
+@app.get("/orena-brand/{asset_path:path}", include_in_schema=False)
+def orena_brand_asset(asset_path: str):
+    candidate = (ORENA_BRAND_ROOT / asset_path).resolve()
+    try:
+        relative = candidate.relative_to(ORENA_BRAND_ROOT)
+    except ValueError as exc:
+        raise HTTPException(404, "Asset not found") from exc
+
+    if relative.parts[:1] not in [(name,) for name in ORENA_BRAND_SERVED]:
+        raise HTTPException(404, "Asset not found")
+    if candidate.suffix.lower() not in {".png", ".svg", ".webp"}:
+        raise HTTPException(404, "Asset not found")
+    if not candidate.is_file():
+        raise HTTPException(404, "Asset not found")
+
+    # Approved artwork changes only by an explicit brand decision, so it may be
+    # cached; the learner-facing app bundle deliberately is not.
+    return FileResponse(candidate, headers={"Cache-Control": "public, max-age=3600"})
+
+
+class WritingContextIn(BaseModel):
+    topic_id: str | None = Field(default=None, max_length=80, pattern=r"^[a-z0-9_-]+$")
+    length_id: str | None = Field(default=None, max_length=40, pattern=r"^[a-z0-9_-]+$")
+    prompt_id: str | None = Field(default=None, max_length=120, pattern=r"^[a-z0-9_-]+$")
+    prompt_text: str = Field(default="", max_length=5000)
+    journal_context: str = Field(default="", max_length=1000)
 
 
 class EssayIn(BaseModel):
     prompt: str = Field(default="", max_length=5000)
     text: str = Field(min_length=10, max_length=20000)
-    target_cefr: str = Field(default="B2", min_length=2, max_length=12)
+    target_cefr: str | None = Field(default=None, min_length=2, max_length=12)
+    writing_mode: str = Field(default="guided", pattern=r"^(guided|journal)$")
+    writing_context: WritingContextIn = Field(default_factory=WritingContextIn)
     parent_essay_id: int | None = Field(default=None, ge=1)
     practice_context: PracticeContextIn | None = None
     learning_language: str | None = Field(default=None, min_length=2, max_length=8)
@@ -309,9 +370,49 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
-# Worlds are the discovery layer above lessons; they read the same curated
-# catalog and the same preview-visibility rule, so nothing new is authorised.
-app.include_router(world_router)
+# Collection retrieval (I4 step 1): one read over the owners that exist, each
+# read through what it already serves. No surface calls it yet.
+configure_collection(runtime_owners(
+    library=list_library_vocabulary,
+    reading=list_reading_sessions,
+    essays=_learning_repository.list_latest_series,
+    specialized=_specialized_learning_repository,
+))
+app.include_router(collection_router)
+# Learner summary (I6 read step): each domain's own evidence, side by side,
+# through the reads the app already serves. No surface calls it yet.
+configure_learner_summary(runtime_sources(
+    essays=lambda: _learning_repository.list_essays(0, ascending=True),
+    reading=list_reading_sessions,
+    grammar=_learning_repository.completed_grammar_ids,
+    library=list_library_vocabulary,
+    specialized=_specialized_learning_repository,
+))
+app.include_router(learner_summary_router)
+
+# Account work (I2 write path). Built from the flag and the schema, both
+# required: off is `disabled`, on without the tables is `unavailable`, and only
+# `active` constructs the repositories. The tables are read only when asked.
+from writing_coach.account_backbone import build_backbone, requested as _backbone_requested  # noqa: E402
+from writing_coach.work_api import configure_work, router as work_router  # noqa: E402
+
+
+def _backbone_tables():
+    if not _backbone_requested() or _persistence_runtime.engine is None:
+        return None
+    from sqlalchemy import inspect as _inspect
+
+    try:
+        return _inspect(_persistence_runtime.engine).get_table_names()
+    except Exception:  # unreadable is not absent; build_backbone says unavailable
+        import logging
+
+        logging.getLogger(__name__).warning('account backbone: could not read the runtime tables', exc_info=True)
+        return None
+
+
+configure_work(build_backbone(_persistence_runtime.engine, _backbone_tables()))
+app.include_router(work_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
@@ -553,20 +654,36 @@ def revision_delta(current: dict[str, Any], previous: dict[str, Any] | None) -> 
         for item in previous.get("errors", [])
         if isinstance(item, dict)
     }
-    current_keys = set(current_items)
-    previous_keys = set(previous_items)
+    # An issue present in both drafts is the same issue, and no reasoning about
+    # a revision can make it otherwise. Exact matches are settled first, so a
+    # category-level guess can never claim the learner fixed a problem and
+    # introduced that same problem in one revision.
+    persistent_keys = sorted(set(current_items) & set(previous_items))
+    unmatched_previous = sorted(set(previous_items) - set(current_items))
+    unmatched_current = sorted(set(current_items) - set(previous_items))
+
+    # What remains may hold a genuine revision: the same problem, reworded. That
+    # can only be claimed where the correspondence is unambiguous - exactly one
+    # unmatched issue on each side of a category. With several, which became
+    # which is not knowable, and pairing them by category alone would tell the
+    # learner something about their own writing that is not true. Those are
+    # reported plainly as gone and arrived instead.
     changed: list[dict[str, Any]] = []
-    for category in sorted({key[0] for key in current_keys} & {key[0] for key in previous_keys}):
-        old = next((key for key in previous_keys if key[0] == category), None)
-        new = next((key for key in current_keys if key[0] == category), None)
-        if old and new and old != new:
-            changed.append({"before": previous_items[old], "after": current_items[new]})
-            previous_keys.discard(old)
-            current_keys.discard(new)
+    shared_categories = sorted(
+        {key[0] for key in unmatched_previous} & {key[0] for key in unmatched_current}
+    )
+    for category in shared_categories:
+        olds = [key for key in unmatched_previous if key[0] == category]
+        news = [key for key in unmatched_current if key[0] == category]
+        if len(olds) == 1 and len(news) == 1:
+            changed.append({"before": previous_items[olds[0]], "after": current_items[news[0]]})
+            unmatched_previous.remove(olds[0])
+            unmatched_current.remove(news[0])
+
     out["issues"] = {
-        "removed": [previous_items[key] for key in sorted(previous_keys - current_keys)],
-        "persistent": [current_items[key] for key in sorted(current_keys & previous_keys)],
-        "new": [current_items[key] for key in sorted(current_keys - previous_keys)],
+        "removed": [previous_items[key] for key in unmatched_previous],
+        "persistent": [current_items[key] for key in persistent_keys],
+        "new": [current_items[key] for key in unmatched_current],
         "changed": changed,
     }
     return out
@@ -643,28 +760,16 @@ def startup() -> None:
 
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request = None) -> HTMLResponse:  # type: ignore[assignment]
+def home() -> HTMLResponse:
     # The shell carries the list of stylesheets and modules the app loads, so a
     # cached copy of it keeps loading yesterday's asset list - a stylesheet
     # added since is simply never requested, and the screen renders unstyled.
-    # Every asset already answers `no-store`; the document that names them has
-    # to as well.
-    shell = (ROOT / "templates" / "becoming" / "index.html").read_text(encoding="utf-8")
-    # The marker is scoped to the people who can actually see preview content,
-    # not to the deployment. One runtime serves normal learners and admin
-    # dogfooding at the same time, so a deployment-wide badge would tell every
-    # learner they are using a preview when, for them, they are not: they see
-    # the ordinary product. Server-rendered against the same admin check that
-    # gates the content, so a client cannot summon it and the pinned session
-    # contract is untouched.
-    if preview_visible(request):
-        shell = shell.replace(
-            "</body>",
-            '<div class="orena-preview-badge" role="status" aria-label="Preview deployment">'
-            "Preview</div></body>",
-            1,
-        )
-    return HTMLResponse(shell, headers={"Cache-Control": "no-store, max-age=0"})
+    # It is small, so it stays uncached outright; the assets it names revalidate
+    # instead, which is the same freshness for a fraction of the bytes.
+    return HTMLResponse(
+        (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 
@@ -673,11 +778,6 @@ def home(request: Request = None) -> HTMLResponse:  # type: ignore[assignment]
 @app.get("/becoming/", response_class=HTMLResponse)
 def becoming_preview() -> RedirectResponse:
     return RedirectResponse("/", status_code=302)
-@app.get("/static/style.css")
-def style() -> HTMLResponse:
-    return HTMLResponse((ROOT / "static" / "style.css").read_text(encoding="utf-8"), media_type="text/css")
-
-
 @app.get("/static/account.js")
 def account_script() -> HTMLResponse:
     return HTMLResponse(
@@ -1368,10 +1468,19 @@ def _grammar_storage_key(lesson: dict[str, Any]) -> str:
 @app.get("/api/library/grammar")
 def api_grammar_library() -> dict[str, Any]:
     course = active_grammar_course()
+    knowledge_by_id = active_grammar_knowledge_by_id()
     completed = _learning_repository.completed_grammar_ids()
     lessons = []
     for item in course:
         row = dict(item)
+        # A real example is the learner-facing entry into a concept. Preserve
+        # the catalog's identity/title while avoiding a second authored syllabus.
+        examples = (knowledge_by_id.get(str(item['id']), {}).get('lesson') or {}).get('examples') or []
+        example = next((x for x in examples if x.get('target') or x.get('en') or x.get('zh')), None)
+        row['preview'] = {
+            'text': str(example.get('target') or example.get('en') or example.get('zh')),
+            'pinyin': str(example.get('pinyin') or ''),
+        } if example else None
         row["completed"] = _grammar_storage_key(row) in completed
         lessons.append(row)
     return {
@@ -1709,6 +1818,9 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     d = row_to_dict(row, detail=True)
     d["revisions"] = series_rows
     d["delta"] = revision_delta(d, previous)
+    # The same level the review showed when it was new, so a reopened piece
+    # does not come back without it.
+    d["app_cefr"] = app_cefr(float(d.get("overall") or 0))
     return d
 
 @app.delete("/api/essays/{essay_id}")
@@ -1832,7 +1944,18 @@ def becoming_learner_profile_get() -> dict[str, Any]:
 
 @app.put("/api/learner-profile", name="becoming_learner_profile_put")
 def becoming_learner_profile_put(payload: LearnerProfileIn) -> dict[str, Any]:
+    """Whole-profile replace, kept for the frozen native client.
+
+    Every field carries a default, so a caller that sends less than the whole
+    profile resets the rest. New callers use PATCH below, which changes only
+    what it names and refuses a write made against a version it did not read.
+    """
     return put_learner_profile(payload)
+
+
+@app.patch("/api/learner-profile", name="becoming_learner_profile_patch")
+def becoming_learner_profile_patch(payload: ProfilePatchIn) -> dict[str, Any]:
+    return patch_learner_profile(payload)
 
 @app.get("/api/learning-memory", name="becoming_learning_memory_get")
 def becoming_learning_memory_get() -> dict[str, Any]:

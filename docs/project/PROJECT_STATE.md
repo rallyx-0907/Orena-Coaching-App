@@ -1,3 +1,22 @@
+> **Authority scope**
+>
+> This document records verified implementation, runtime, operational, release,
+> and technical state.
+>
+> It does not define Orena's Product North Star or learner-facing information
+> architecture.
+>
+> Current learner-facing product direction is defined by:
+>
+> `docs/product/ORENA_PRODUCT_CONSTITUTION.md`
+>
+> and:
+>
+> `docs/product/ORENA_CONTENT_ARCHITECTURE.md`
+>
+> Existing UI and historical release sequencing are implementation evidence,
+> not permanent learner-facing product authority.
+
 # Verified Project State
 
 ## Provider credential configuration
@@ -166,16 +185,15 @@ authority.
   language-scoped contracts with explicit insufficient, unavailable, and
   no-actionable-evidence states. Provider activation and live credentialed
   validation remain deferred.
-
-	- R17 — Product Analytics & Operational Observability: **COMPLETE / LOCAL
-	  ACCEPTANCE PASS**. Admin-only activity, return, source-specific funnel,
-	  cost, learner-impact failure/degraded aggregates, and operational readiness
-	  evidence use bounded PostgreSQL/configuration records, redact learner
-	  identifiers and raw content, and expose explicit ready, degraded,
-	  insufficient, unavailable, or deferred states without learner-event writes
-	  or entitlement enforcement. The authenticated route boundary and
-	  aggregate-only redaction are covered by the mounted ASGI regression;
-	  live/production release gates remain deferred.
+  - R17 — Product Analytics & Operational Observability: **COMPLETE / LOCAL
+    ACCEPTANCE PASS**. Admin-only activity, return, source-specific funnel,
+    cost, learner-impact failure/degraded aggregates, and operational readiness
+    evidence use bounded PostgreSQL/configuration records, redact learner
+    identifiers and raw content, and expose explicit ready, degraded,
+    insufficient, unavailable, or deferred states without learner-event writes
+    or entitlement enforcement. The authenticated route boundary and
+    aggregate-only redaction are covered by the mounted ASGI regression;
+    live/production release gates remain deferred.
 
 - R18 — Mobile/API Readiness: **COMPLETE / LOCAL ACCEPTANCE PASS**. The
   deterministic Chinese stroke-order endpoint now returns source/version
@@ -199,12 +217,12 @@ authority.
 
 Current learner skill truth:
 
-| Skill | Release state | Source | Internal | Public |
-| --- | --- | --- | --- | --- |
-| Writing | BETA | available | available | no |
-| Speaking | DEVELOPMENT | available | available | no |
-| Reading | DEVELOPMENT | available | available | no |
-| Listening | DEVELOPMENT | available | available | no |
+| Skill     | Release state | Source    | Internal  | Public |
+| --------- | ------------- | --------- | --------- | ------ |
+| Writing   | BETA          | available | available | no     |
+| Speaking  | DEVELOPMENT   | available | available | no     |
+| Reading   | DEVELOPMENT   | available | available | no     |
+| Listening | DEVELOPMENT   | available | available | no     |
 
 The first public product gate requires all four conditions:
 

@@ -25,29 +25,52 @@ jobs:
       - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
       - run: python scripts/validate_project_memory.py
       - run: python scripts/validate_architecture.py
+      - run: python scripts/test_orena_backbone.py
+      - run: python scripts/test_orena_account_profile.py
+      - run: python scripts/test_orena_runtime_schema.py
+      - run: python scripts/test_orena_work_contract.py
+      - run: python scripts/test_orena_account_backbone.py
+      - run: python scripts/test_runtime_backup.py
       - run: python scripts/build_listening_dev_catalog.py --check
       - run: node --experimental-vm-modules scripts/validate_browser_esm_graph.mjs
+      # The D-046 reset deleted the old Listening-mode/Shadowing-Studio gates
+      # along with the product they guarded. These are their replacements at the
+      # new product boundary: the encounter/practice-intent layer, the shared
+      # capability primitives, and the media contracts that outlived the reset.
       - run: |
-          node scripts/test_interactive_transcript_contract.mjs
-          node scripts/test_listening_player_lifecycle_contract.mjs
-          node scripts/test_listening_smart_follow_contract.mjs
-          node scripts/test_listening_ui.mjs
+          node scripts/test_orena_primitives.mjs
+          node scripts/test_orena_product.mjs
+          node scripts/test_orena_foundation.mjs
+          node scripts/test_orena_follow_clock.mjs
+          node scripts/test_orena_word_follow.mjs
+          node scripts/test_orena_close_look.mjs
+          node scripts/test_orena_dictation_hints.mjs
+          node scripts/test_orena_understanding.mjs
+          node scripts/test_orena_writing_review.mjs
+          node scripts/test_orena_voice_evidence.mjs
+          node scripts/test_orena_reading.mjs
+          node scripts/test_orena_discover_texts.mjs
+          node scripts/test_orena_free_voice.mjs
+          node scripts/test_orena_voice_interaction.mjs
+          node scripts/test_orena_spoken_coaching.mjs
+          node scripts/test_orena_pure_listening.mjs
+          node scripts/test_orena_grammar.mjs
+          node scripts/test_orena_conversation.mjs
+          node scripts/test_orena_learner_memory.mjs
+          node scripts/test_orena_continuation.mjs
+          node scripts/test_orena_brand_library.mjs
+          node scripts/test_orena_workspace.mjs
+          node scripts/test_orena_reading_library.mjs
+          node scripts/test_orena_extension_patterns.mjs
           node scripts/test_transcript_display_units.mjs
           node scripts/test_transcript_playback.mjs
-          node scripts/test_active_listening.mjs
-          node scripts/test_shadowing_practice.mjs
+          node scripts/test_dictation_evaluator.mjs
+          node scripts/test_audio_recorder.mjs
+          node scripts/test_m3_pronunciation_contract.mjs
           node scripts/test_media_learning_quality.mjs
           node scripts/test_real_media_catalog_contract.mjs
-          node scripts/test_listening_discovery_contract.mjs
-          node scripts/test_orena_home_h1.mjs
-          node scripts/test_home_personalized_practice_flow.mjs
-          node scripts/test_home_practice_outcome_shape.mjs
-          node scripts/test_home_library_review_handoff.mjs
-          node scripts/test_r12_next_practice_plan.mjs
-          node scripts/test_r12_listening_habit_home.mjs
-          node scripts/test_r12_listening_return.mjs
-          node scripts/test_review_cue_locale.mjs
-          node scripts/test_cross_skill_transfer_locale.mjs
+          node scripts/test_media_status_compact_accessor.mjs
+          node scripts/test_orena_reference.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite

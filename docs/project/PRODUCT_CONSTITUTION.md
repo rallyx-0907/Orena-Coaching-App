@@ -2,16 +2,38 @@
 
 ## Governance
 
-**Purpose:** define durable, high-authority Orena product intent.
+**Purpose:** preserve durable compatibility, technical-product, routing,
+multilingual, media-learning, persistence, and native-parity invariants inherited
+by the current Orena implementation.
 
-**Authority:** human-governed. Agents must treat this file as read-only unless
-the human explicitly changes product direction. A change requires an appended
-Decision Log entry, explicit supersession of any prior accepted decision, and
-matching state/validator updates.
+This file is NOT the canonical learner-facing Product North Star.
 
-**Change when:** an explicit human decision changes a durable product
-principle. **Do not store:** implementation status, temporary workarounds,
-backlog, historical narrative, or claims made only to match current code.
+Current learner-facing product direction is defined by:
+
+`docs/product/ORENA_PRODUCT_CONSTITUTION.md`
+
+Current content-world direction is defined by:
+
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md`
+
+Approved Orena visual identity is defined by:
+
+`assets/brand/orena/`
+
+**Authority:** subordinate to explicit current human instruction,
+`docs/product/ORENA_PRODUCT_CONSTITUTION.md`, and
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md` for learner-facing product intent.
+
+This file remains authoritative only for compatible technical/product invariants
+that have not been superseded by those higher-authority sources or an accepted
+Decision Log entry.
+
+**Change when:** an explicit accepted decision changes one of these durable
+compatibility or technical-product invariants.
+
+**Do not store:** current visual direction, temporary implementation status,
+backlog, historical narrative, or product philosophy that belongs in the
+canonical Orena Product Constitution.
 
 ## Product identity and routing
 
@@ -19,75 +41,31 @@ backlog, historical narrative, or claims made only to match current code.
 - The canonical Orena web route is `/`.
 - `/becoming` is deprecated and compatibility-only. No new learner feature may
   target it.
-- Historical paths such as `static/becoming/**`, `templates/becoming/**`, and
-  `writing_coach/becoming_*` may remain while technically required. Their names
-  are implementation history, not current product direction.
+- D-046 retires the historical learner-product implementation. Git is the archive.
+  Stable `writing_coach/becoming_*` capability and persistence contracts may remain.
 - A legacy namespace, filename, symbol, branch, screenshot, comment, or archived
   document never authorizes revival of the BECOMING product identity or route.
 
-## Learner-facing experience model
-
-- Orena's discovery surface is world-first rather than skill-menu-first.
-- The canonical content relationship is:
-
-```text
-Language → World → Zone → Journey → Lesson → Activity
-```
-
-- Listening, Speaking, Reading, Writing, Grammar, Vocabulary/Dictionary, and
-  Review remain connected learning mechanisms. They do not have to dominate
-  Home or Explore as a flat feature taxonomy.
-- **Home** exists for motivation, discovery, and real continuation.
-- **Progress** is a separate destination for reflection and learning analytics.
-  Home may show progress attached to a specific journey or lightweight global
-  cues, but it must not become a KPI/analytics dashboard.
-- Discovery surfaces should make the learner want to start something; focused
-  learning surfaces should reduce competing visual noise; completion/reward
-  moments may become more expressive again.
-
 ## Design and native parity
 
-- Orena launches Web first. The approved **responsive Orena web product** is the
-  visual, functional, interaction, and product-meaning source of truth.
-- Responsive approval is not a single desktop screenshot. Golden learner
-  surfaces are deliberately composed and reviewed at desktop, tablet, and
-  mobile-web reference widths.
+- The approved responsive Orena web product is the visual, functional, and
+  interaction source of truth.
 - Native mobile is a **full native port** of the same Orena product. It is not a
-  redesign, simplified edition, WebView shell, generic Expo interpretation,
-  generic Material interpretation, or generic iOS interpretation.
-- The cross-platform rule is **shared meaning, adaptive composition**.
-  Native preserves feature access, learner outcomes, content/state identity,
-  navigation meaning, interaction intent, progress semantics, EN/ZH behavior,
-  design tokens, visual DNA, and state behavior.
-- Native and narrow Web do **not** have to preserve desktop simultaneous
-  visibility, column count, exact card dimensions, chrome placement, or
-  pixel-for-pixel composition. Smaller surfaces may progressively reveal the
-  same information through scroll, rails, sheets, tabs, or other appropriate
-  native composition.
-- Desktop must not simply be shrunk into mobile, and mobile must not rediscover
-  or simplify the product.
+  redesign, simplified edition, generic Expo interpretation, generic Material
+  interpretation, or generic iOS interpretation.
+- Native preserves the approved UI, UX, functionality, navigation,
+  interaction/animation intent, state behavior, EN/ZH behavior, light/dark
+  behavior, and learner flows. Only necessary platform mechanics may differ.
 
 ## Connected learning system
 
-Orena is not four isolated skill applications. Its core learning system is:
+Orena is experience-centered, not discovery-only (D-046). Discovery, intentional
+Practice, continuation, learner-owned content and learner memory are valid entry
+intentions. They converge on shared capabilities and learner evidence.
 
-```text
-Listening ↔ Speaking ↔ Reading ↔ Writing
-```
-
-Library / Active Recall, Grammar, Dictionary, Progress, and Media Learning are
-shared infrastructure. Evidence and content should move meaningfully between
-skills rather than being trapped inside a module.
-
-Canonical continuity includes:
-
-```text
-Listen → Dictation → Read transcript → Dictionary / Vocabulary
-→ Shadow → Speaking feedback → Writing response → Active Recall
-```
-
-Do not create parallel media, progress, dictionary, vocabulary, scoring, or
-learning-evidence systems per skill or per client.
+Do not restore historical skill dashboards, Listening shells, Shadowing Studio,
+mode hierarchies, or screen-oriented handoffs. Extract useful primitives before
+deleting mixed modules. Do not create separate learning engines per entry intent.
 
 ## Languages
 
@@ -98,16 +76,13 @@ learning-evidence systems per skill or per client.
 
 ## Listening and Media Learning
 
-- Listening is content-library-first. Curated, interesting learning content is
-  the primary experience; learner media import is secondary.
-- Curated and learner-imported media use the same Listening Engine.
-- Normal Listening, Active Listening, Dictation, Shadowing, transcript,
-  dictionary, translation, Pinyin, progress, and resume share canonical media
-  contracts.
-- One canonical Media Learning Object powers relevant downstream learning
-  experiences. Do not build skill-specific media pipelines.
-- Rights and provenance belong to the canonical source/media object and follow
-  downstream Listening, Speaking, Reading, and Writing use.
+- Follow is first-class: synchronized playback, active original subtitle and
+  same-segment support-language meaning. Seek, selection, replay and speed changes
+  preserve that relationship. Chinese is primary; Pinyin is contextual.
+- Learners can stay in Follow without doing Dictation or Shadowing.
+- Curated and learner-imported media use the same capability primitives and
+  canonical Media Learning Object. Rights and provenance travel with the content.
+- Practice can begin directly or emerge from an encounter; evidence stays shared.
 
 ## Persistence
 

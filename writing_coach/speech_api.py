@@ -127,7 +127,9 @@ def _normalize_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
     take_id = _attempt_text(payload.take_id, "take_id", max_chars=120)
     asset_id = _attempt_text(payload.asset_id, "asset_id", max_chars=255, required=False)
     segment_id = _attempt_text(payload.segment_id, "segment_id", max_chars=255)
-    reference = _attempt_text(payload.reference_text, "reference_text", max_chars=1200)
+    # Free expression has no reference line. It uses the same audio-free
+    # evidence record, with alignment explicitly unmeasured; no new schema.
+    reference = _attempt_text(payload.reference_text, "reference_text", max_chars=1200, required=False)
     transcript = _attempt_text(payload.transcript_text, "transcript_text", max_chars=2400)
     evaluation = payload.evaluation
     if not isinstance(evaluation, dict):
@@ -172,7 +174,7 @@ def _normalize_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
     normalized_evidence: dict[str, Any] = {}
     for key in ("reference_text", "recognized_text"):
         if key in evidence:
-            normalized_evidence[key] = _attempt_text(evidence[key], f"evidence.{key}", max_chars=2400)
+            normalized_evidence[key] = _attempt_text(evidence[key], f"evidence.{key}", max_chars=2400, required=key != "reference_text")
     content = evidence.get("content")
     if content is not None:
         if not isinstance(content, dict) or set(content) - {"missing_tokens", "extra_tokens"}:
@@ -181,6 +183,10 @@ def _normalize_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
             "missing_tokens": text_list(content.get("missing_tokens", []), "evidence.content.missing_tokens", 20),
             "extra_tokens": text_list(content.get("extra_tokens", []), "evidence.content.extra_tokens", 20),
         }
+    if not reference and (bounded_dimensions.get("content_match") is not None or
+                          (normalized_evidence.get("content") or {}).get("missing_tokens") or
+                          (normalized_evidence.get("content") or {}).get("extra_tokens")):
+        raise SpeakingEvaluationInvalid("Content alignment requires reference text.")
     pronunciation = evidence.get("pronunciation")
     if pronunciation is not None:
         allowed_pronunciation = {"provider", "score_kind", "locale", "accuracy_score", "completeness_score", "prosody_score", "words"}

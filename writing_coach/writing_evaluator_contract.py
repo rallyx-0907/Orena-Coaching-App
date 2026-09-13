@@ -21,6 +21,7 @@ class WritingEvaluatorContractInvalid(ValueError):
 
 
 SHARED_RESULT_FIELDS = (
+    "band_status",
     "cefr_estimate",
     "summary_vi",
     "strengths_vi",
@@ -114,40 +115,83 @@ def validate_writing_evaluator_policy(
 def build_writing_evaluator_request(
     *,
     language_name: str,
-    target_level: str,
+    target_level: str | None,
     task_prompt: str,
     learner_text: str,
     free_writing_context: str,
+    writing_mode: str = "guided",
+    writing_context: Mapping[str, Any] | None = None,
 ) -> str:
     """Build the language-neutral evaluator request from explicit learner context."""
-    task_context = task_prompt or free_writing_context
-    return (
-        f"TARGET LANGUAGE: {language_name}\n"
-        f"TARGET LEVEL (LEARNING CONTEXT ONLY): {target_level}\n"
-        "TARGET LEVEL POLICY:\n"
-        "The target level guides pedagogical relevance and expected sophistication. "
-        "Estimate the learner's actual demonstrated performance. Do not force the proficiency "
-        "estimate upward, inflate scores, or deflate scores merely to match the target level.\n\n"
-        "<WRITING_TASK>\n"
-        f"{task_context}\n"
-        "</WRITING_TASK>\n\n"
-        "<LEARNER_TEXT>\n"
-        f"{learner_text}\n"
-        "</LEARNER_TEXT>\n\n"
-        "EVALUATION AND EVIDENCE CONTRACT:\n"
-        "- Evaluate the ORIGINAL learner text, not a rewritten version.\n"
-        "- Never invent learner evidence. Every returned `fragment` must occur literally in "
-        "LEARNER_TEXT.\n"
-        "- Every strength_evidence item must describe a genuine strength visible in its exact fragment.\n"
-        "- Identify 1-3 exact learner fragments that demonstrate genuine strengths.\n"
-        "- Every errors item must describe a genuine problem visible in its exact fragment.\n"
-        "- Every error suggestion must meaningfully differ from the erroneous fragment.\n"
-        "- If uncertain whether something is wrong, omit it. Fewer high-confidence findings are "
-        "preferable to many doubtful findings.\n"
-        f"- Return evidence only when confidence >= {CONFIDENCE_THRESHOLD:.2f}.\n"
-        "- Focus on recurring or reusable learning points, not only isolated typos.\n"
-        "Return one complete JSON object matching the supplied structured schema."
+    if writing_mode not in {"guided", "journal"}:
+        raise WritingEvaluatorContractInvalid("Writing mode must be 'guided' or 'journal'.")
+    context = writing_context or {}
+    parts = [f"TARGET LANGUAGE: {language_name}\n", f"SUBMISSION MODE: {writing_mode}\n"]
+    if target_level:
+        parts.extend(
+            [
+                f"TARGET LEVEL (LEARNING CONTEXT ONLY): {target_level}\n",
+                "TARGET LEVEL POLICY:\n",
+                "The target level guides pedagogical relevance and expected sophistication. ",
+                "Estimate the learner's actual demonstrated performance. Do not force the proficiency ",
+                "estimate upward, inflate scores, or deflate scores merely to match the target level.\n",
+            ]
+        )
+    parts.extend(
+        [
+            "DEMONSTRATED BAND POLICY:\n",
+            "Infer only the band demonstrated by this sample. Requested length must not affect scores ",
+            "or the demonstrated band. If the sample is too short, repetitive, or otherwise too limited ",
+            "for a defensible estimate, return band_status='insufficient_evidence' and an empty ",
+            "cefr_estimate while retaining only grounded language feedback.\n",
+        ]
     )
+    if writing_mode == "guided":
+        task_context = task_prompt or free_writing_context
+        length_id = str(context.get("length_id", "")).strip()
+        parts.extend(
+            [
+                "TASK ACHIEVEMENT: applicable\n",
+                *( [f"REQUESTED LENGTH (INVITATION ONLY): {length_id}\n"] if length_id else [] ),
+                "<WRITING_TASK>\n",
+                f"{task_context}\n",
+                "</WRITING_TASK>\n",
+            ]
+        )
+    else:
+        journal_context = str(context.get("journal_context") or free_writing_context).strip()
+        parts.extend(
+            [
+                "TASK ACHIEVEMENT: not applicable\n",
+                "Do not score prompt adherence or task achievement for reflective/free writing.\n",
+                "<JOURNAL_CONTEXT>\n",
+                f"{journal_context}\n",
+                "</JOURNAL_CONTEXT>\n",
+            ]
+        )
+    parts.extend(
+        [
+            "\n<LEARNER_TEXT>\n",
+            f"{learner_text}\n",
+            "</LEARNER_TEXT>\n\n",
+            "EVALUATION AND EVIDENCE CONTRACT:\n",
+            "- Evaluate the ORIGINAL learner text, not a rewritten version.\n",
+            "- Never invent learner evidence. Every returned `fragment` must occur literally in ",
+            "LEARNER_TEXT.\n",
+            "- Every strength_evidence item must describe a genuine strength visible in its exact fragment.\n",
+            "- Identify 1-3 exact learner fragments that demonstrate genuine strengths.\n",
+            "- Every errors item must describe a genuine problem visible in its exact fragment.\n",
+            "- Every error suggestion must meaningfully differ from the erroneous fragment.\n",
+            "- If uncertain whether something is wrong, omit it. Fewer high-confidence findings are ",
+            "preferable to many doubtful findings.\n",
+            f"- Return evidence only when confidence >= {CONFIDENCE_THRESHOLD:.2f}.\n",
+            "- Focus on recurring or reusable learning points, not only isolated typos.\n",
+            "Return one complete JSON object matching the supplied structured schema.",
+        ]
+    )
+    # Keep construction explicit so learner text and authored context are never
+    # interpolated into evaluator policy statements.
+    return "".join(parts)
 
 
 def build_writing_evaluator_schema(
@@ -156,6 +200,7 @@ def build_writing_evaluator_schema(
     allowed_levels: Sequence[str],
     score_to_level: Callable[[float], str],
     error_categories: Sequence[str],
+    writing_mode: str = "guided",
 ) -> dict[str, Any]:
     """Build the one authoritative structured response schema for a language policy."""
     validate_writing_evaluator_policy(
@@ -164,13 +209,17 @@ def build_writing_evaluator_schema(
         score_to_level=score_to_level,
         error_categories=error_categories,
     )
-    rubric_keys = tuple(rubric_weights)
+    if writing_mode not in {"guided", "journal"}:
+        raise WritingEvaluatorContractInvalid("Writing mode must be 'guided' or 'journal'.")
+    rubric_keys = tuple(
+        key for key in rubric_weights if writing_mode == "guided" or key != "task_achievement"
+    )
     strength_schema = {
         "type": "object",
         "properties": {
             "category": {"type": "string", "enum": list(rubric_keys)},
-            "fragment": {"type": "string"},
-            "explanation_vi": {"type": "string"},
+            "fragment": {"type": "string", "minLength": 1},
+            "explanation_vi": {"type": "string", "minLength": 1},
             "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         },
         "required": list(STRENGTH_EVIDENCE_FIELDS),
@@ -179,10 +228,10 @@ def build_writing_evaluator_schema(
         "type": "object",
         "properties": {
             "category": {"type": "string", "enum": list(error_categories)},
-            "fragment": {"type": "string"},
-            "explanation_vi": {"type": "string"},
-            "suggestion": {"type": "string"},
-            "mini_rule_vi": {"type": "string"},
+            "fragment": {"type": "string", "minLength": 1},
+            "explanation_vi": {"type": "string", "minLength": 1},
+            "suggestion": {"type": "string", "minLength": 1},
+            "mini_rule_vi": {"type": "string", "minLength": 1},
             "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         },
         "required": list(ERROR_FIELDS),
@@ -193,7 +242,11 @@ def build_writing_evaluator_schema(
     }
     properties.update(
         {
-            "cefr_estimate": {"type": "string", "enum": list(allowed_levels)},
+            "band_status": {
+                "type": "string",
+                "enum": ["estimated", "insufficient_evidence"],
+            },
+            "cefr_estimate": {"type": "string", "enum": ["", *allowed_levels]},
             "summary_vi": {"type": "string"},
             "strengths_vi": {
                 "type": "array",

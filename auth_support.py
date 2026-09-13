@@ -419,7 +419,7 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
             or path == "/api/auth/native/exchange"
             or path.startswith("/auth/")
             or path.startswith("/static/")
-            or path.startswith("/becoming-assets/")
+            or path.startswith("/orena-assets/")
             or path == "/favicon.ico"
         )
 

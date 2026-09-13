@@ -103,7 +103,7 @@ def test_real_video_lessons_carry_playable_media_and_a_poster() -> None:
         metadata = lesson_metadata(lesson)
 
         assert metadata["playback_kind"] == "video"
-        assert metadata["poster_url"].startswith("https://upload.wikimedia.org/")
+        assert metadata["poster_url"].startswith("https://thumb.wikimedia.org/")
         assert lesson.playback.url.startswith("https://upload.wikimedia.org/")
         assert lesson.playback.url.endswith(".webm")
 

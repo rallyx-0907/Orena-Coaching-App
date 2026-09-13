@@ -17,10 +17,17 @@ from writing_coach.core.support_languages import (
 )
 from writing_coach.linguistic_annotation import ALLOWED_POS as _SHARED_POS
 from writing_coach.linguistic_annotation import annotate as _annotate
+from writing_coach.conversation import ConversationIn, respond as conversation_reply
 
 
 router = APIRouter()
 contextual_router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
+
+
+@contextual_router.post('/conversation-turn')
+def continue_conversation(payload: ConversationIn):
+    return conversation_reply(payload, language=_validated_source_language(payload.source_language),
+                              support=_support_language(payload.target_language), generate=_run_structured)
 
 _ALLOWED_POS = _SHARED_POS
 _SUPPORT_LANGUAGE_NAMES = {
@@ -49,6 +56,9 @@ class MediaExplainIn(BaseModel):
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
     context: str = Field(default="", max_length=2400)
+    # A follow-up is not a new lookup: the learner's question rides along with
+    # the selection and the context it is about.
+    question: str = Field(default="", max_length=400)
 
     @field_validator("target_language")
     @classmethod
@@ -60,6 +70,43 @@ class ContextualDictionaryIn(MediaExplainIn):
     """A dictionary request grounded in the exact visible learner context."""
 
     context: str = Field(min_length=1, max_length=2400)
+
+
+class SpokenResponseIn(BaseModel):
+    """A transcribed spoken response, and the situation it answered."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    transcript: str = Field(min_length=1, max_length=2400)
+    source_language: str = Field(min_length=2, max_length=32)
+    target_language: str = Field(min_length=2, max_length=32)
+    # What the learner was asked to do. Without it, coaching has to guess at the
+    # task and ends up marking ordinary choices as omissions.
+    situation: str = Field(default="", max_length=1200)
+
+    @field_validator("target_language")
+    @classmethod
+    def normalize_spoken_target(cls, value: str) -> str:
+        return value.strip().casefold()
+
+
+class RegisterExploreIn(BaseModel):
+    """One meaning, asked for across the registers a learner needs to tell apart."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=2400)
+    source_language: str = Field(min_length=2, max_length=32)
+    target_language: str = Field(min_length=2, max_length=32)
+    # What the learner is writing for. It steers which registers are worth
+    # contrasting; a lab report and a message to a landlord are not the same
+    # kind of formal.
+    situation: str = Field(default="", max_length=240)
+
+    @field_validator("target_language")
+    @classmethod
+    def normalize_register_target(cls, value: str) -> str:
+        return value.strip().casefold()
 
 
 def _primary_language(value: str) -> str:
@@ -166,6 +213,43 @@ def annotate_media_text(payload: MediaAnnotateIn) -> dict[str, Any]:
     }
 
 
+# The one vocabulary the product uses to say what kind of problem a piece of
+# language has. "Wrong" collapses six different things a learner needs to tell
+# apart, so the model must choose one and the UI labels whichever it picks.
+USAGE_JUDGEMENTS = (
+    "natural",
+    "possible_but_unnatural",
+    "contextually_inappropriate",
+    "wrong_for_intended_meaning",
+    "register_mismatch",
+    "uncommon_but_legitimate",
+    "grammatically_impossible",
+)
+
+
+def _judgement(value: Any) -> str:
+    candidate = str(value or "").strip().casefold()
+    return candidate if candidate in USAGE_JUDGEMENTS else "natural"
+
+
+def _examples(raw: Any, *, with_judgement: bool = False) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        entry: dict[str, Any] = {
+            "text": text[:400],
+            "note": str(item.get("note") or "").strip()[:600],
+        }
+        if with_judgement:
+            entry["judgement"] = _judgement(item.get("judgement"))
+        items.append(entry)
+    return items[:4]
+
+
 def _explanation_schema() -> dict[str, Any]:
     return {
         "type": "object",
@@ -192,6 +276,39 @@ def _explanation_schema() -> dict[str, Any]:
                 },
             },
             "usage_note": {"type": "string"},
+            "judgement": {"type": "string", "enum": list(USAGE_JUDGEMENTS)},
+            "judgement_reason": {"type": "string"},
+            "register": {"type": "string"},
+            "examples": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string"},
+                        "note": {"type": "string"},
+                    },
+                    "required": ["text", "note"],
+                },
+            },
+            "counter_examples": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string"},
+                        "note": {"type": "string"},
+                        "judgement": {"type": "string", "enum": list(USAGE_JUDGEMENTS)},
+                    },
+                    "required": ["text", "note", "judgement"],
+                },
+            },
+            "follow_ups": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {"type": "string"},
+            },
         },
         "required": [
             "summary",
@@ -199,13 +316,25 @@ def _explanation_schema() -> dict[str, Any]:
             "grammar_notes",
             "vocabulary",
             "usage_note",
+            "judgement",
+            "judgement_reason",
+            "register",
+            "examples",
+            "counter_examples",
+            "follow_ups",
         ],
     }
 
 
 @router.post("/explain")
 def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
-    """Explain selected transcript text in learner-selected support language."""
+    """Explain selected text, optionally answering the learner's own question.
+
+    One explanation contract serves reading, listening, writing and practice.
+    A follow-up is this same call carrying a question, so going deeper never
+    loses the selection or the context it came from.
+    """
+    question = str(payload.question or "").strip()
     language = _validated_source_language(payload.source_language)
     target = _support_language(payload.target_language)
     target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
@@ -225,6 +354,17 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         f"The learner is studying {source_name}. Explain in {target_name}. "
         "Be concise, concrete, and tied to the supplied context. "
         "Do not invent cultural claims or grammar rules. "
+        "Say what kind of usage this is by choosing one judgement: natural; "
+        "possible_but_unnatural; contextually_inappropriate; "
+        "wrong_for_intended_meaning; register_mismatch; uncommon_but_legitimate; "
+        "grammatically_impossible. Wrong alone is not useful to a learner, so "
+        "name which of these it is and say why in judgement_reason. "
+        "Give examples of the form used well, and counter-examples a learner "
+        "would plausibly produce or misread, each labelled with its own "
+        "judgement. Counter-examples must be realistic mistakes, not absurd ones. "
+        "Offer follow_ups the learner might ask next, phrased as their question. "
+        "Never cite a source, rule number, dictionary or corpus you were not "
+        "given; explain from the language itself instead. "
         + language_specific
     )
     user = (
@@ -233,6 +373,14 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         "Explain what the selected text means here, why it is phrased this way, "
         "and the most useful vocabulary/grammar to notice."
     )
+    if question:
+        user = (
+            f"SELECTED TEXT:\n{source}\n\n"
+            f"CONTEXT:\n{context or source}\n\n"
+            f"THE LEARNER ASKS:\n{question}\n\n"
+            "Answer their question about the selected text, staying inside this "
+            "context and this selection."
+        )
     raw = _run_structured(
         "learner_dictionary",
         messages=[
@@ -264,7 +412,273 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             if isinstance(item, dict) and str(item.get("fragment") or "").strip()
         ][:8],
         "usage_note": str(raw.get("usage_note") or "").strip()[:1600],
+        "judgement": _judgement(raw.get("judgement")),
+        "judgement_reason": str(raw.get("judgement_reason") or "").strip()[:1200],
+        "register": str(raw.get("register") or "").strip()[:600],
+        "examples": _examples(raw.get("examples")),
+        "counter_examples": _examples(raw.get("counter_examples"), with_judgement=True),
+        "follow_ups": [
+            str(item).strip()[:200]
+            for item in raw.get("follow_ups", [])
+            if str(item).strip()
+        ][:4],
+        "question": question,
         "claim": "contextual_ai_explanation",
+    }
+
+
+def _spoken_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "carried": {
+                "type": "array",
+                "maxItems": 3,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "quote": {"type": "string"},
+                        "why": {"type": "string"},
+                    },
+                    "required": ["quote", "why"],
+                },
+            },
+            "landed_differently": {
+                "type": "array",
+                "maxItems": 3,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "quote": {"type": "string"},
+                        "why": {"type": "string"},
+                        "instead": {"type": "string"},
+                        "judgement": {"type": "string", "enum": list(USAGE_JUDGEMENTS)},
+                    },
+                    "required": ["quote", "why", "instead", "judgement"],
+                },
+            },
+            "another_way": {"type": "string"},
+            "next_attempt": {"type": "string"},
+        },
+        "required": ["carried", "landed_differently", "another_way", "next_attempt"],
+    }
+
+
+@contextual_router.post("/spoken-response")
+def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
+    """Coach what a learner said, from the words recognition returned.
+
+    This is coaching, not measurement, and the surface must keep the two apart.
+    Nothing here heard the audio: pronunciation, pace and intonation are not
+    knowable from a transcript, and the prompt forbids commenting on them. What
+    is knowable is the language the learner reached for, so that is what comes
+    back - quoted from their own words, in the same judgement vocabulary the
+    rest of the product uses to say what kind of problem something is.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    transcript = payload.transcript.strip()
+    situation = payload.situation.strip()
+    if not transcript:
+        raise HTTPException(422, "A transcript is required.")
+
+    system = (
+        f"You are a speaking tutor. The learner speaks {source_name}; explain in "
+        f"{target_name}. You are reading a speech-recognition transcript of what "
+        "they said. You did NOT hear the audio: never comment on pronunciation, "
+        "accent, pace, volume or intonation, and never say how they sounded. "
+        "Recognition can mishear; if a fragment looks like a recognition error "
+        "rather than a learner choice, leave it alone. Spoken language is not "
+        "written language: false starts, contractions, fillers and short "
+        "sentences are normal speech, not mistakes. Quote only words that appear "
+        "in the transcript. Name at most three things that carried the meaning "
+        "and at most three that would land differently, each with the reason. "
+        "Give one alternative way to say part of it, not a rewrite of the whole "
+        "response, and one concrete thing to try in the next attempt. Do not "
+        "score, grade or estimate a level. Never cite a source you were not given."
+    )
+    user = (
+        (f"THE SITUATION:\n{situation}\n\n" if situation else "")
+        + f"WHAT RECOGNITION HEARD:\n{transcript}\n\n"
+        + "Coach this spoken response."
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        schema=_spoken_schema(),
+        max_output_tokens=1400,
+    )
+
+    def _grounded(items: Any, *, with_alternative: bool) -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = []
+        for item in items if isinstance(items, list) else ():
+            if not isinstance(item, dict):
+                continue
+            quote = str(item.get("quote") or "").strip()
+            why = str(item.get("why") or "").strip()
+            # A quotation the learner did not say is the one thing coaching
+            # must never show: they cannot tell a tutor's slip from their own.
+            if not quote or not why or quote not in transcript:
+                continue
+            entry = {"quote": quote[:400], "why": why[:900]}
+            if with_alternative:
+                entry["instead"] = str(item.get("instead") or "").strip()[:400]
+                entry["judgement"] = _judgement(item.get("judgement"))
+            found.append(entry)
+        return found[:3]
+
+    carried = _grounded(raw.get("carried"), with_alternative=False)
+    landed = _grounded(raw.get("landed_differently"), with_alternative=True)
+    return {
+        "source_language": language,
+        "target_language": target,
+        "transcript": transcript,
+        "situation": situation,
+        "carried": carried,
+        "landed_differently": landed,
+        "another_way": str(raw.get("another_way") or "").strip()[:600],
+        "next_attempt": str(raw.get("next_attempt") or "").strip()[:400],
+        "available": bool(carried or landed),
+        # Said in the payload as well as in the copy: this is derived from a
+        # transcript, and it is not a measurement of speech.
+        "claim": "spoken_response_coaching_from_transcript",
+    }
+
+
+# The registers Orena contrasts. Naming them keeps the answer comparable across
+# requests, and keeps "formal" from meaning something different every time.
+REGISTERS = (
+    "conversational",
+    "concise_professional",
+    "formal",
+    "academic",
+    "technical",
+)
+
+
+def _register_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "meaning": {"type": "string"},
+            "versions": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "register": {"type": "string", "enum": list(REGISTERS)},
+                        "text": {"type": "string"},
+                        "why": {"type": "string"},
+                        "signals": {
+                            "type": "array",
+                            "maxItems": 4,
+                            "items": {"type": "string"},
+                        },
+                        "use_when": {"type": "string"},
+                        "avoid_when": {"type": "string"},
+                    },
+                    "required": [
+                        "register",
+                        "text",
+                        "why",
+                        "signals",
+                        "use_when",
+                        "avoid_when",
+                    ],
+                },
+            },
+            "what_changes": {"type": "string"},
+        },
+        "required": ["meaning", "versions", "what_changes"],
+    }
+
+
+# Mounted beside the contextual explanation because it is the same family of
+# question - what does this language do, and why - asked about a whole piece
+# rather than a selection. `router` itself is not included by the app.
+@contextual_router.post("/registers")
+def explore_registers(payload: RegisterExploreIn) -> dict[str, Any]:
+    """Show one meaning across registers, and teach what moves between them.
+
+    This is deliberately not a rewrite endpoint. Every version must be
+    accompanied by the signals that put it in that register and by when it
+    would be the wrong choice, because the learning is in the difference rather
+    than in any single sentence.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    source = payload.text.strip()
+    situation = payload.situation.strip()
+    if not source:
+        raise HTTPException(422, "Text is required.")
+
+    system = (
+        f"You are a writing tutor. The learner writes {source_name}; explain in "
+        f"{target_name}. Express the SAME meaning in each register: "
+        "conversational, concise_professional, formal, academic, technical. "
+        "Keep the learner's meaning; do not add claims, details or opinions "
+        "they did not write. For each version give the concrete signals that "
+        "place it in that register - word choice, sentence length, hedging, "
+        "agency, terminology - and say when it would be the wrong choice. "
+        "Teach what moves between the versions in what_changes. Do not present "
+        "one version as correct and the others as mistakes; each is right "
+        "somewhere. Never cite a style guide, standard or corpus you were not "
+        "given."
+    )
+    user = (
+        f"LEARNER TEXT:\n{source}\n\n"
+        + (f"WRITING FOR:\n{situation}\n\n" if situation else "")
+        + "Show this meaning in each register and teach the differences."
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        schema=_register_schema(),
+        max_output_tokens=2000,
+    )
+    versions = []
+    for item in raw.get("versions", []) if isinstance(raw.get("versions"), list) else ():
+        if not isinstance(item, dict):
+            continue
+        register = str(item.get("register") or "").strip().casefold()
+        text = str(item.get("text") or "").strip()
+        if register not in REGISTERS or not text:
+            continue
+        versions.append(
+            {
+                "register": register,
+                "text": text[:1200],
+                "why": str(item.get("why") or "").strip()[:900],
+                "signals": [
+                    str(signal).strip()[:180]
+                    for signal in item.get("signals", [])
+                    if str(signal).strip()
+                ][:4],
+                "use_when": str(item.get("use_when") or "").strip()[:400],
+                "avoid_when": str(item.get("avoid_when") or "").strip()[:400],
+            }
+        )
+    return {
+        "source_language": language,
+        "target_language": target,
+        "text": source,
+        "situation": situation,
+        "meaning": str(raw.get("meaning") or "").strip()[:1200],
+        "what_changes": str(raw.get("what_changes") or "").strip()[:1600],
+        "versions": versions,
+        "available": bool(versions),
+        "claim": "register_comparison" if versions else "register_comparison_unavailable",
     }
 
 

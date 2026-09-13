@@ -2,7 +2,7 @@ import {useEffect, useRef} from 'react';
 import {Animated, Easing, StyleSheet, Text, View, type StyleProp, type ViewStyle} from 'react-native';
 import {useI18n} from '../i18n/I18nProvider';
 import {useTheme} from '../theme/ThemeProvider';
-import {PanelCopy} from './orena';
+function PanelCopy({children}: React.PropsWithChildren) {const {tokens}=useTheme();return <Text style={{color:tokens.colors.mutedText,fontSize:15,lineHeight:24}}>{children}</Text>;}
 
 /**
  * The shared loading / error / empty states, ported from `loadingBlock()` and

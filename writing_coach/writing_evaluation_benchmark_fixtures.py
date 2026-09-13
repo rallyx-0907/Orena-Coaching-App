@@ -369,6 +369,7 @@ def known_passing_result(case: WritingBenchmarkCase) -> dict[str, object]:
     )
     return {
         **scores,
+        "band_status": "estimated",
         "cefr_estimate": level,
         "summary_vi": "Bài viết được đánh giá theo bằng chứng trong văn bản.",
         "strengths_vi": [],

@@ -1,0 +1,818 @@
+@charset "UTF-8";
+:root {
+  --text-xs: 0.875rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1rem;
+  --text-lead: 1.125rem;
+  --text-reading: 1.25rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --display-font:
+    'Nunito Sans', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
+  --radius: 0.625rem;
+  --measure: 68ch;
+  --font:
+    'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
+    sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: var(--text-base) / 1.7 var(--font);
+}
+html {
+  scrollbar-gutter: stable;
+}
+::selection {
+  background: var(--sun-surface);
+  color: var(--on-sun);
+}
+:where(button, input, select, summary) {
+  min-height: var(--tap, 44px);
+}
+:where(button, a, input, textarea, summary) {
+  overflow-wrap: anywhere;
+}
+:where(p, blockquote, textarea)[lang^='zh'],
+:lang(zh) {
+  line-break: strict;
+}
+:where(h1, h2, h3)[lang^='zh'] {
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+button:hover:not(:disabled),
+summary:hover {
+  color: var(--accent);
+}
+.primary:hover:not(:disabled) {
+  color: var(--paper);
+}
+button:active:not(:disabled),
+.primary:active:not(:disabled),
+.outline:active:not(:disabled) {
+  transform: translateY(1px);
+}
+details > summary {
+  cursor: pointer;
+  padding-block: 10px;
+}
+textarea:focus,
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+/* Read-only plan/usage fact inside the preferences sheet - no price, no
+   upgrade action, so it is styled as plain information, not a form or a
+   call-to-action. */
+.plan-usage {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+}
+.plan-usage h2 {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin: 0 0 var(--space-2);
+}
+.plan-usage ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.plan-usage li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.plan-usage li > span:last-child {
+  color: var(--muted);
+}
+/* Choosing a theme.
+
+   Each row shows the theme rather than naming a colour: the sample carries
+   `data-theme` itself, so it is painted by the same tokens the whole product
+   would be painted by. Nothing here knows a hex value, and a theme added to
+   the registry arrives with its own preview already correct. */
+.theme-control {
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: var(--space-6) 0 0;
+  margin: var(--space-6) 0 0;
+  min-inline-size: 0;
+}
+.theme-control > legend {
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.theme-choices {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.theme-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.theme-choice:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.theme-choice:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.theme-choice-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* A sentence, not an eyebrow: <small> is this product's uppercase label, so
+   the description is a plain span and reads as prose. */
+.theme-choice-text > span {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+/* The sample is a canvas, a card on it, two lines of text and an accent -
+   the smallest composition that still shows what a room would feel like. */
+.theme-sample {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  inline-size: 52px;
+  block-size: 36px;
+  padding: 5px;
+  border-radius: 6px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.theme-sample-card {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 3px;
+  background: var(--surface);
+}
+.theme-sample-card b {
+  block-size: 3px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+.theme-sample-card i {
+  block-size: 2px;
+  inline-size: 70%;
+  border-radius: 2px;
+  background: var(--muted);
+}
+.theme-sample-accent {
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.meta {
+  text-wrap: pretty;
+}
+.draft-status {
+  display: inline-flex;
+  align-items: center;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+a,
+input,
+textarea,
+select,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+a,
+button {
+  touch-action: manipulation;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+/* A region moved to for a screen reader is not a control the learner tabbed
+   to. Anything with tabindex="-1" is a programmatic focus target by
+   definition, so it should not wear a focus ring - while real keyboard focus
+   still shows one through :focus-visible above. */
+[tabindex='-1']:focus:not(:focus-visible),
+h1:focus,
+main:focus {
+  outline: 0;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  font-weight: 800;
+  font-family: var(--display-font);
+}
+h1 {
+  font-size: clamp(34px, 4.5vw, 64px);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+h2 {
+  font-size: clamp(24px, 2.5vw, 34px);
+  letter-spacing: -0.025em;
+}
+h3 {
+  font-size: 22px;
+}
+p {
+  margin: 14px 0;
+  line-height: 1.8;
+}
+small {
+  font-size: var(--text-xs);
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  font-weight: 700;
+  line-height: 1.8;
+}
+blockquote {
+  margin: 22px 0;
+  padding: 10px 0 10px 22px;
+  border-left: 3px solid var(--coral);
+  font-size: var(--text-lead);
+  line-height: 1.85;
+}
+blockquote small {
+  display: block;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+label {
+  display: grid;
+  gap: 7px;
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+input,
+select,
+textarea {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 12px 14px;
+}
+/* A chevron drawn like the rest of the icons rather than the one the operating
+   system supplies. The native control's arrow is heavier than everything
+   around it and sits low against the text baseline, which reads as a form
+   borrowed from somewhere else. This one is 1.6px stroke and round-capped, the
+   same as `entryIcon`, and it is centred on the field.
+
+   Two declarations because a background image cannot take `currentColor`, and
+   appearance is exactly the thing that decides which of the two is legible -
+   which is what the appearance attribute is for. */
+select {
+  appearance: none;
+  padding-right: 40px;
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23586575' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+[data-appearance='dark'] select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c0ccd4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+select::-ms-expand {
+  display: none;
+}
+textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.9;
+}
+/* A choice control is a pointer target, and the browser default is 13px wide.
+   Wrapping it in a label gives a larger target, but the control itself should
+   not be the small thing a learner has to hit. */
+input[type='checkbox'],
+input[type='radio'] {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+   The phone scale (D-053, Design Contract rule 12).
+
+   Carried over unchanged, the desktop's type, spacing and 44px targets made a
+   phone wrap every line into four to six and turned each control into the
+   largest thing on screen. On a phone the type steps down one size and stays
+   readable, the larger spaces tighten, controls stay tappable at 36px (32px
+   for quiet inline ones), and a checkbox or radio is sized to the text beside
+   it - its label is the target. Rooms read `--tap` and `--tap-quiet` rather
+   than repeating a number.
+   --------------------------------------------------------------------------- */
+:root {
+  --tap: 44px;
+  --tap-quiet: 44px;
+}
+@media (max-width: 600px) {
+  :root {
+    --text-xs: 0.75rem;
+    --text-sm: 0.8125rem;
+    --text-base: 0.9375rem;
+    --text-lead: 1rem;
+    --text-reading: 1.0625rem;
+    --space-5: 1rem;
+    --space-6: 1.25rem;
+    --space-8: 1.5rem;
+    --space-12: 2.25rem;
+    --space-16: 3rem;
+    --tap: 36px;
+    --tap-quiet: 32px;
+  }
+  body {
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.5rem;
+    letter-spacing: -0.03em;
+  }
+  h2 {
+    font-size: 1.2rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+  }
+  p {
+    margin: 10px 0;
+    line-height: 1.65;
+  }
+  blockquote {
+    margin: 14px 0;
+    padding: 6px 0 6px 14px;
+    line-height: 1.65;
+  }
+  small {
+    line-height: 1.6;
+  }
+  label {
+    gap: 4px;
+  }
+  details > summary {
+    padding-block: 6px;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 20px;
+    height: 20px;
+    min-height: 0;
+    margin: 0;
+    flex: none;
+  }
+  input,
+  select,
+  textarea {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+[hidden] {
+  display: none !important;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.skip {
+  position: fixed;
+  top: -100px;
+  left: 10px;
+  z-index: 100;
+  background: var(--surface);
+  padding: 12px;
+}
+.skip:focus {
+  top: 10px;
+}
+.meta,
+.byline {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.8;
+}
+.primary,
+.outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 12px 22px;
+  border-radius: 7px;
+  font-size: var(--text-sm);
+  font-weight: 750;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.primary {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+}
+.outline {
+  border: 1px solid var(--muted);
+}
+.primary:hover:not(:disabled),
+.outline:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+/* A disabled control answers nothing: no lift, no pointer, no underline. */
+:where(.primary, .outline, .quiet):disabled {
+  transform: none;
+  text-decoration: none;
+}
+.quiet {
+  min-height: var(--tap-quiet, 44px);
+  padding: 8px 0;
+  font-size: var(--text-sm);
+}
+.button-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.button-row > button:not(.primary):not(.outline) {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.notice {
+  padding: 18px;
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-radius: 7px;
+}
+.notice button {
+  text-decoration: underline;
+}
+.loading {
+  padding: 80px 0;
+}
+.empty {
+  max-width: 700px;
+  text-align: center;
+  margin: 60px auto;
+  padding: 35px;
+}
+.empty p {
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Learning workspace.
+
+   One rule for every skill that asks the learner to do something and then
+   answers it - Writing review, Reading comprehension, dictation, Speaking
+   coaching, Grammar practice. The activity and its immediate result share a
+   single viewport-sized desktop frame: the work on one side, the answer on the
+   other, and a long result scrolls inside its own region instead of growing
+   the page. Secondary material - starters, history, further paths - stays
+   below the frame.
+
+   Wide screens show both regions at once. Narrow screens take them one frame
+   at a time: the activity first, then the result, so the learner is never left
+   halfway between a page of writing and a page of feedback. A surface sets
+   --workspace-inset to the room its own heading needs.
+   --------------------------------------------------------------------------- */
+.learning-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: stretch;
+  min-block-size: 0;
+}
+.workspace-activity,
+.workspace-result {
+  min-inline-size: 0;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+}
+.workspace-result {
+  overflow: hidden;
+}
+.workspace-result__bar {
+  display: none;
+  align-items: center;
+}
+.workspace-result__scroll {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.workspace-secondary {
+  display: grid;
+  gap: var(--space-8);
+}
+@media (min-width: 1001px) {
+  .learning-workspace {
+    block-size: clamp(24rem, calc(100svh - var(--workspace-inset, 16rem)), 54rem);
+  }
+}
+@media (max-width: 1000px) {
+  .learning-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .learning-workspace[data-workspace='activity'] .workspace-result,
+  .learning-workspace[data-workspace='result'] .workspace-activity {
+    display: none;
+  }
+  /* The result frame is the screen below the header: the learner is moved to
+     its start with the header already in its working height, so the frame can
+     take everything under it. */
+  .learning-workspace[data-workspace='result'] {
+    block-size: clamp(20rem, calc(100svh - var(--shell-offset, 8rem) - var(--space-3)), 60rem);
+  }
+  .workspace-result__bar {
+    display: flex;
+    padding-block: var(--space-2);
+  }
+}
+/* Below 900px the shell becomes a sticky header, so a result frame the learner
+   is moved to has to start below it rather than underneath it - at whatever
+   height the header currently has (`--shell-offset`, kept by app.js). */
+@media (max-width: 900px) {
+  .learning-workspace[data-workspace='result'] {
+    scroll-margin-block-start: calc(var(--shell-offset, 8.5rem) + var(--space-2));
+  }
+}
+
+/* A result region that has not answered yet names what will appear there, in
+   the quiet voice of something waiting, rather than spending the workspace on
+   prompt copy. */
+.result-waiting {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-4);
+  color: var(--muted);
+}
+.result-waiting > small {
+  color: var(--accent);
+}
+.result-waiting > p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   A room the learner is about to work in opens compactly.
+
+   The heading orients - what this is, where it sits - and then yields the
+   first viewport to the activity. No artwork here: during active learning the
+   learner's text, media and work are what the page is about. Doubled classes
+   so this outranks the entry-page scale later stylesheets set on .page-intro.
+   --------------------------------------------------------------------------- */
+.page-intro.page-intro--compact {
+  padding-block: var(--space-2) var(--space-4);
+}
+.page-intro.page-intro--compact h1 {
+  font-size: clamp(1.6rem, 2.2vw, 2.25rem);
+  margin: var(--space-1) 0;
+}
+.page-intro.page-intro--compact p {
+  font-size: var(--text-base);
+  max-width: 76ch;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .page-intro.page-intro--compact {
+    padding-block: 0 var(--space-2);
+  }
+  .page-intro.page-intro--compact h1 {
+    font-size: 1.5rem;
+  }
+  .page-intro.page-intro--compact p {
+    font-size: var(--text-sm);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Supplementary information: a symbol, and its words on demand.
+
+   For what a learner may want to know - an optional field's purpose, where a
+   draft lives, what a comparison does not measure - never for what they need
+   to do the task. The symbol sits beside the thing it explains and recedes;
+   hover, keyboard focus or a tap brings up a short explanation on the night
+   panel, which carries its own ink in every theme.
+   --------------------------------------------------------------------------- */
+.hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+.hint__trigger {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  min-block-size: 24px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: help;
+}
+.hint__trigger:hover,
+.hint[data-open] .hint__trigger {
+  color: var(--ink);
+}
+.hint[data-tone='warning'] .hint__trigger {
+  color: var(--accent);
+}
+.hint__bubble {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 50%;
+  /* Centred on the symbol; `placeHint` supplies the shift that keeps it on
+     screen near an edge. */
+  translate: calc(-50% + var(--hint-shift, 0px)) 0;
+  inline-size: max-content;
+  max-inline-size: min(18rem, calc(100vw - 2rem));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--night-surface);
+  color: var(--on-night);
+  /* On a dark theme the night panel sits close to the page; its own line
+     keeps the edge legible without inventing a colour. */
+  border: 1px solid var(--on-night-line);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: start;
+  white-space: normal;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+}
+.hint:hover .hint__bubble,
+.hint:focus-within .hint__bubble,
+.hint[data-open] .hint__bubble {
+  display: block;
+}
+/* A small screen is a touch screen: the target grows to a thumb without the
+   symbol growing, and without pushing the line it sits on apart. */
+@media (max-width: 480px) {
+  .hint__trigger {
+    inline-size: var(--tap-quiet);
+    block-size: var(--tap-quiet);
+    min-block-size: var(--tap-quiet);
+    margin-block: -6px;
+    margin-inline: -6px;
+  }
+}
+/* A heading, label or result line that carries a hint keeps it on its own
+   baseline rather than wrapping it onto a line by itself. */
+:is(h2, h3, label, summary, .section-head) > .hint {
+  margin-inline-start: var(--space-1);
+}
+/* Beside a section heading, the hint belongs to the heading rather than to
+   the far edge of the row. */
+.section-head > h2 + .hint {
+  margin-inline-end: auto;
+}
+/* A heading that carries a hint keeps it on the heading's line, outside the
+   heading itself so the hint's words never become part of its name. */
+.heading-with-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.heading-with-hint > :is(h2, h3) {
+  margin-block: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion.
+
+   Movement is here to say something: this arrived, this is the line being
+   spoken, this followed from what you just did. Anything that does not carry
+   meaning is noise, so there is no ambient drift, no floating, and nothing
+   moves that the learner did not cause.
+
+   Everything below is off entirely under prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* Something answered: an explanation, a comparison, a partner's turn, a
+     panel that was not there a moment ago. It settles rather than appears. */
+  .practice-space:not([hidden]),
+  .conversation-turn,
+  .comprehension-result,
+  .spoken-coaching,
+  .review-comparison,
+  .hint-line,
+  .sheet .understanding {
+    animation: orena-settle 0.28s ease-out both;
+  }
+  /* Turns arrive one after another rather than as a block, which is what makes
+     an exchange read as an exchange. */
+  .conversation-turn:nth-last-child(1) {
+    animation-delay: 0.04s;
+  }
+  /* The line being spoken. A change of line is a real event in the media, so
+     it is worth marking - once, briefly. */
+  .follow-moment .spoken {
+    transition: opacity 0.2s ease-out;
+  }
+  .transcript-panel button {
+    transition:
+      background 0.18s ease-out,
+      color 0.18s ease-out;
+  }
+  /* A word that has just become an anchor: the learner earned it. */
+  .hint-word[data-kind='anchor'],
+  .hint-word[data-kind='partial'] {
+    transition: border-color 0.25s ease-out;
+  }
+  .brand-art img {
+    animation: orena-settle 0.4s ease-out both;
+  }
+}
+@keyframes orena-settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
