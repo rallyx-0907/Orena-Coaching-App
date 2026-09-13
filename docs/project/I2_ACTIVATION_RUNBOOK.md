@@ -121,19 +121,28 @@ bring the account back. Two more modes carry that:
 python scripts/runtime_backup.py deletions --out backups/deletions-<when>.json
 python scripts/runtime_backup.py suppress  --into <restored database> \
     --deletions backups/deletions-<when>.json [--deletions <older journal> ...]
+python scripts/runtime_backup.py suppress  --into <restored database> --check \
+    --deletions backups/deletions-<when>.json [--deletions <older journal> ...]
 ```
 
 The order of an incident restore is fixed: **export the deletion journal from
 the database being replaced, restore, `suppress`, verify, and only then
 serve.** `deletions` writes every deleted incarnation (opaque ids and times,
 no content) to a journal outside any database, so the restore cannot take it
-back; keep it with the same access control as backups. `suppress` marks each
-one deleted again in the restored database in a single transaction - all or
-nothing - and reports `reapplied`, `already_deleted` and `absent` (created
-after the backup, so nothing of it is there). It never sets anything active,
-and it stops without changing anything if a journal is unreadable or names an
-incarnation that belongs to another account. `rehearse --deletions <journal>`
-does the same inside a rehearsal.
+back; keep it with the same access control as backups. `suppress` makes each
+record hold in the restored database in a single transaction - all or
+nothing - and reports `reapplied` (active there, deleted again),
+`already_deleted`, `barrier_restored` (the account is there but the
+incarnation row is not, as in a backup older than the account's incarnation
+rows; the barrier row is put back with the same id, epoch and times, so sign-in
+meets it instead of starting a fresh incarnation) and `absent` (the account is
+not in the restore at all, so nothing of it can be served or signed in as). It
+never sets anything active, and it stops without changing anything if a
+journal is unreadable, or names an incarnation under another account or epoch,
+or an epoch the restore gives to a different incarnation. The verify step is
+`suppress --check`: it writes nothing, prints each record that does not hold,
+and exits non-zero until none remain; serve only after it exits 0.
+`rehearse --deletions <journal>` suppresses inside a rehearsal.
 
 If the database being replaced cannot be read at all, the journal is only as
 recent as its last copy - which is why the account-deletion workflow, when it
@@ -141,15 +150,17 @@ is built, must also append each deletion to an out-of-database journal as it
 happens. That workflow (removing an account's rows from owner tables keyed by
 account, not incarnation) is not built and is a destructive lifecycle change
 that needs its own independent review; after a restore it must be replayed
-too. Until it exists there is no learner-facing account deletion, so there is
-nothing yet for it to replay.
+too. Until both exist no runtime path deletes or re-registers an account -
+the hard gate in `ORENA_BACKBONE_INTEGRATION_GATES.md`, enforced by a test.
 
 Proven against a scratch database (`tests/test_deletion_journal.py`): an
 incarnation deleted after the backup comes back `active` in the restore and is
-deleted again by `suppress`; sign-in then still meets the deletion barrier;
-re-registration still gets a new incarnation that the journal does not touch;
-a journal naming an incarnation the restore never had reports it `absent`; an
-identity disagreement changes nothing. Backups are access-controlled
+deleted again by `suppress`; an account restored without its incarnation row
+gets its barrier back; `--check` reports both before and nothing after; sign-in
+then meets the deletion barrier; re-registration still gets a new incarnation
+that the journal does not touch; a journal naming an account the restore never
+had reports it `absent`; an identity disagreement (another account, another
+epoch, an epoch taken) changes nothing. Backups are access-controlled
 operational copies and are never account sync authority.
 
 ---

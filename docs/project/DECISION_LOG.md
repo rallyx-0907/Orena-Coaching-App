@@ -1567,3 +1567,28 @@ Production gates are unchanged.
 **Supersedes / Superseded by:** Answers the I2 activation policy inputs
 "restore suppression" and "deletion barrier retention"; narrows the runtime
 activation and schema gates to production/preview for work inside this lane.
+
+## D-055 — D-054's re-registration holds only behind two preconditions
+
+**Status:** Accepted as the technical resolution of the independent review of
+D-054 (round 1, CHANGES REQUESTED), 2026-09-13. No product policy changes.
+
+**Decision:** D-054 says re-registration is a new incarnation that inherits
+nothing. The review found that owner tables (essays, saved words, ...) are keyed
+by account, not incarnation, so a new incarnation would read the deleted one's
+rows until the account-deletion workflow removes them, and that a point-in-time
+deletion journal can miss deletions made after its last copy. Therefore no
+runtime path may delete or re-register an account until (a) each deletion is
+appended to an out-of-database journal as it happens and (b) the owner-table
+deletion workflow exists and is replayed after a restore - both independently
+reviewed. A test enforces the gate. Restore suppression now also puts back the
+barrier row of an account restored without its incarnation, and
+`runtime_backup.py suppress --check` is the verify step before serving.
+
+**Consequences:** `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §§1, 5,
+`ORENA_BACKBONE_INTEGRATION_GATES.md` (hard gate), `I2_ACTIVATION_RUNBOOK.md`
+§2. I2 sandbox activation is unaffected: turning the flag on neither deletes
+nor re-registers.
+
+**Supersedes / Superseded by:** Qualifies D-054's "inherits nothing" wording;
+the product policy (deletion is permanent, nothing is restored) is unchanged.

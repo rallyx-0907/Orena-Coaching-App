@@ -32,8 +32,14 @@ that incarnation. Old sessions and pending uploads cannot target the new one;
 external provider callbacks for the old incarnation may settle historical usage
 under policy but cannot grant access to the new account. Deletion is permanent
 (D-054): a deleted incarnation is never reactivated or restored, and
-re-registration with the same external identity is a new incarnation that
-inherits nothing. The barrier is therefore kept for the life of the deployment;
+re-registration with the same external identity is a new incarnation to which
+nothing of the deleted one is served. That holds only once two preconditions
+exist, and until they do no runtime path may delete or re-register an account
+(a test enforces it): each deletion is appended to an out-of-database journal
+as it happens, and the account-deletion workflow below removes the account's
+rows from owner tables keyed by account rather than incarnation (essays, saved
+words, ...), which a new incarnation would otherwise read. The barrier is
+therefore kept for the life of the deployment;
 deletion cannot discard it while old credentials, jobs or operations could still
 be accepted. No production identity change here.
 
@@ -182,8 +188,10 @@ receipt/tombstone horizon, backup expiry and restore suppression; missing policy
 disables destructive purge and blocks sync activation if replay safety cannot
 be maintained. Restore must reapply deletion records before serving learners:
 every incarnation deleted after the backup was taken is marked deleted again in
-the restored database, so its data is never served and it cannot be reactivated
-(D-054). Retention durations for backups and logs are a separate
+the restored database, and where the restore has the account but not the
+incarnation its barrier row is put back, so its data is never served and it
+cannot be reactivated (D-054). The owner-table deletions of the workflow above
+are replayed too, once it exists. Retention durations for backups and logs are a separate
 operational/legal policy; absent, destructive purge stays disabled and nothing
 deleted is ever served.
 Backups are access-controlled operational copies, never account sync authority.

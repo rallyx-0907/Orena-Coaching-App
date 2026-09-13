@@ -15,13 +15,19 @@ and two more for the one thing a restore must never undo - a deletion (D-054):
         --deletions backups/deletions.json
 
 `deletions` exports every deleted incarnation from the database being
-replaced into a journal that lives outside any database. `suppress` marks each
-of them deleted again in the restored database, in one transaction, before it
-is served. `rehearse --deletions FILE` does the same inside a rehearsal.
+replaced into a journal that lives outside any database. `suppress` makes each
+of them hold in the restored database, in one transaction, before it is
+served: deleted again where the restore has it active, its barrier row put
+back where the restore has the account but not the incarnation.
+`suppress --check` writes nothing and exits non-zero while any record does not
+hold - the verify step before serving. `rehearse --deletions FILE` suppresses
+inside a rehearsal.
 
 `capture` writes a custom-format `pg_dump`. `rehearse` restores it into a
 *separate* database and compares revision and row counts against the source -
-never over the runtime database, which this script has no mode for touching.
+never over its source. `suppress` writes to the database it names, and only
+incarnation status rows: in an incident that is the restored runtime database,
+which is why it is its own deliberate mode.
 `verify` re-reads a dump's own listing without a server.
 
 Backups are access-controlled operational copies and are never account sync
@@ -205,10 +211,10 @@ def create_engine_for_url(url: str):
     return create_engine(url, future=True)
 
 
-def suppress(url: str, into: str, journals: list[Path]) -> int:
+def suppress(url: str, into: str, journals: list[Path], check: bool = False) -> int:
     """Reapply deletions to a restored database before it serves."""
     from writing_coach.persistence.deletion_journal import (
-        JournalInvalid, merge, read_journal, reapply_deletions,
+        JournalInvalid, merge, read_journal, reapply_deletions, verify_suppressed,
     )
 
     if not journals:
@@ -220,6 +226,15 @@ def suppress(url: str, into: str, journals: list[Path]) -> int:
         print(f"refusing: {error}", file=sys.stderr)
         return 1
     engine = _engine_for(url, into)
+    if check:
+        try:
+            problems = verify_suppressed(engine, body)
+        finally:
+            engine.dispose()
+        for problem in problems:
+            print(f"not suppressed: {problem}", file=sys.stderr)
+        print(f"{into}: {len(body['records'])} journal record(s), {len(problems)} not holding")
+        return 1 if problems else 0
     try:
         summary = reapply_deletions(engine, body)
     except JournalInvalid as error:
@@ -229,7 +244,8 @@ def suppress(url: str, into: str, journals: list[Path]) -> int:
         engine.dispose()
     print(
         f"deletions reapplied to {into}: {summary['reapplied']} reapplied, "
-        f"{summary['already_deleted']} already deleted, {summary['absent']} absent (created after the backup)"
+        f"{summary['barrier_restored']} barrier(s) restored, {summary['already_deleted']} already deleted, "
+        f"{summary['absent']} absent (account not in this database)"
     )
     return 0
 
@@ -296,6 +312,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--into", default="", help="rehearse/suppress: the restored database")
     parser.add_argument("--deletions", type=Path, action="append", default=[],
                         help="suppress/rehearse: a deletion journal (repeatable)")
+    parser.add_argument("--check", action="store_true",
+                        help="suppress: write nothing; exit non-zero while any record does not hold")
     parser.add_argument("--allow-ephemeral", action="store_true",
                         help="capture: permit a destination that dies with its container")
     args = parser.parse_args(argv)
@@ -317,7 +335,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.into:
             print("suppress needs --into", file=sys.stderr)
             return 1
-        return suppress(url, args.into, args.deletions)
+        return suppress(url, args.into, args.deletions, args.check)
     if not args.dump or not args.into:
         print("rehearse needs --dump and --into", file=sys.stderr)
         return 1

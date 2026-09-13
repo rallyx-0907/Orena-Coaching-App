@@ -81,6 +81,17 @@ These are adapter-level requirements, pending until real implementations exist.
 7. Exercise the matrix, load profile, migration and restore gates. Activate a
    coherent domain with all its direct/contextual paths, not a partial bypass.
 
+**Hard gate - deletion and re-registration (D-054, D-055).** No runtime path
+may call `mark_deleted` or `register_new` (enforced by
+`tests/test_deletion_journal.py::test_no_runtime_code_deletes_or_re_registers_an_account_yet`)
+until both exist and have passed independent review: (a) each deletion is
+appended, as it happens, to a journal outside the database, so a restore after
+losing the database still knows it; (b) the account-deletion workflow removes
+the account's rows from owner tables keyed by account rather than incarnation,
+and is replayed after a restore. Restore suppression (`runtime_backup.py
+suppress`) covers incarnation barriers only. Lifting the gate is a reviewed
+change to this paragraph and that test together.
+
 Deployment gate inputs: approved schema, retention/deletion policy values,
 commercial plan/price/grace/meter policies, any achievement/pedagogical policies,
 provider credentials, measured workload/SLO and recovery objectives, backup/restore
