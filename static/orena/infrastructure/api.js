@@ -256,4 +256,7 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(body),
   }),
+  // A read-only glance at the learner's own recorded evidence (I6). `window`
+  // is one of 7d/30d/90d/all; the caller decides which, this never guesses.
+  learnerSummary:(window)=>request(`/api/learner-summary?window=${encodeURIComponent(window)}`),
 };

@@ -58,6 +58,7 @@ jobs:
           node scripts/test_orena_conversation.mjs
           node scripts/test_orena_learner_memory.mjs
           node scripts/test_orena_draft_sync.mjs
+          node scripts/test_orena_growth_summary.mjs
           node scripts/test_orena_continuation.mjs
           node scripts/test_orena_brand_library.mjs
           node scripts/test_orena_workspace.mjs

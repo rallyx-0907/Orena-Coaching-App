@@ -241,18 +241,28 @@ Learning capabilities now built on that foundation:
   card is not recall, and a forgotten word never loses the successes it already
   earned.
 
-Writing drafts kept with the account (I2, REVIEWABLE on the sandbox only,
-where the account backbone is `active`): the draft - the words together with
-the Writing task they answer - follows its piece to another browser of the same
-account and learning language. The status says "kept with your account" only
-for a draft the account acknowledged or is shown to hold, and "kept on this
-device" otherwise (including before the first save and while a change is
-unacknowledged). A draft changed on another device is shown above the box,
-words and task, for the learner to take or to keep their own - never merged,
-never replaced under their typing, and the replaced words stay in the version
-list. A save whose answer was lost is recognised as this device's own. Elsewhere, and
-wherever the backbone is off, drafts stay on the device as before. Walked in
-two browsers at 1280 and 390, EN and ZH.
+Writing drafts kept with the account (I2, human-approved by browser review on
+the sandbox, where the account backbone is `active`): the draft - the words
+together with the Writing task they answer - follows its piece to another
+browser of the same account and learning language. The status says "kept with
+your account" only for a draft the account acknowledged or is shown to hold,
+and "kept on this device" otherwise (including before the first save and while
+a change is unacknowledged). A draft changed on another device is shown above
+the box, words and task, for the learner to take or to keep their own - never
+merged, never replaced under their typing, and the replaced words stay in the
+version list. A save whose answer was lost is recognised as this device's own.
+Elsewhere, and wherever the backbone is off, drafts stay on the device as
+before. Walked in two browsers at 1280 and 390, EN and ZH.
+
+"Your growth" (I6, REVIEWABLE): a read-only glance at the learner's own
+recorded evidence - Writing, Reading, Listening, Speaking, Patterns & meaning
+and My language, each its own count in its own words - inside the existing
+preferences sheet (no new destination). Never a score, a rank or an invented
+trend: a domain with nothing to compare says why, as a hint on its label, and
+achievements always say there is no approved way to award them yet, not an
+empty list pretending to be a feature. Walked in two widths and both
+interface languages against real sandbox data (37 Writing versions, 1 Reading
+check, 5 Listening lines, 8 Speaking takes).
 
 Microphone and successful/live-provider paths are unexercised in this runtime
 and are not claimed. The EN/ZH Writing 503 path is browser-verified: it keeps

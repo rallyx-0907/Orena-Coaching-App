@@ -598,9 +598,11 @@ with its ZH title and the EN `essay:6` was refused; no overflow at 390.
 **Specification:** `ORENA_EVIDENCE_ARCHITECTURE` §§1-5.
 **Exit gate:** I2/I4; justified domain claims; commerce read decisions for any
 gated operation.
-**Status:** read step implemented - `LearnerSummary` over existing evidence,
-ungated and read-only. Projections, Growth trends and achievement policies not
-started (they need assistance-mode evidence and approved policies).
+**Status:** read step implemented and now surfaced - `LearnerSummary` over
+existing evidence, ungated and read-only, shown inside the existing
+preferences sheet (no new destination; 11 stays 11). Growth trends and
+achievement policies not started (they need assistance-mode evidence and
+approved policies) - the surface says so honestly rather than inventing them.
 
 ### What was built
 
@@ -624,9 +626,34 @@ kept language. No surface calls it yet.
   so each domain's growth is `unavailable` with its reason.
 - No approved achievement policy: the catalogue is `unavailable`, empty.
 
+### The surface - "Your growth" in the preferences sheet
+
+`static/orena/ui/growth-summary.js` renders `GET /api/learner-summary?window=
+all` (fetched best-effort at boot, same pattern as `productCommerce()`) inside
+the existing preferences dialog, beneath Plan & usage - no new nav destination.
+`all` rather than a default window: grammar completion carries no timestamp
+(`_grammar`'s `tally.add(None)`), so its whole count lives in `activity.undated`,
+and any bounded window would show it as `undated`-and-excluded, reading as "no
+activity" when there is some. Every domain sums `count + undated` for this
+reason. Renders exactly the states the read model can return - `unavailable`
+per domain (owner failed), `empty` (nothing recorded), a count with its
+activity label (English inflects "1 check answered" vs "5 checks answered";
+Chinese's count word does not, so its `_one` copy repeats the plural, kept only
+for EN/ZH key parity), `at_least` shown as a lower bound, the domain's own
+"why no trend yet" as a hint on its label, and achievements always
+`unavailable, no_approved_policy` - never an invented list. A partial outcome
+(any domain unavailable or truncated) adds one note; nothing else changes.
+
 ### Verified
 
-`tests/test_learner_summary.py`, 12 hermetic cases. Live on the sandbox (EN):
-`current`, writing 35 versions, reading one check `undated`, listening 5 lines,
-speaking 8 takes, grammar and language `empty`, achievements `unavailable`; an
-unknown window is refused 422 in the canonical envelope.
+`tests/test_learner_summary.py`, 12 hermetic cases. `scripts/test_orena_
+growth_summary.mjs` (in CI): every domain/activity-label/reason the surface
+can render is cross-checked against `learner_summary.py`'s own `DOMAINS`,
+activity labels and `GROWTH_UNAVAILABLE` so neither side can drift unnoticed,
+plus EN/ZH completeness, the singular/plural case, `at_least`, `unavailable`
+vs `empty`, a null fetch, and a partial outcome. Live on the sandbox (EN):
+`current`, writing 37 versions, reading 1 check, listening 5 lines, speaking 8
+takes, grammar and language `empty`; achievements `unavailable`; an unknown
+window is refused 422 in the canonical envelope. Walked in the browser at
+1280 and 390 (no overflow) and in ZH: all six domains, the hint tooltip, and
+the achievements line render correctly and match the fixtures above.

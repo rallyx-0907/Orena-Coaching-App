@@ -78,9 +78,11 @@ Follow is one fixed-height panel; Dictation fits one frame; phone scale D-053
 Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
 approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
 chain `20260912_0007`, flag on, backbone `active` (runbook §7). Writing
-drafts kept with the account there (`f52cf05`, REVIEWABLE); billing/quota off. Deletion gated (D-055). I4
-`/api/collection`, I6 `/api/learner-summary`. Keep A-D, 11 destinations,
-Opus WIP; no I1-I7 claim implies human approval.
+drafts kept with the account there, human-approved by browser review
+(`4e1f0a5`); billing/quota off. "Your growth" read glance in preferences
+(I6, REVIEWABLE, not yet human-reviewed). Deletion gated (D-055). I4
+`/api/collection`. Keep A-D, 11 destinations, Opus WIP; no I1-I7 claim
+implies human approval.
 
 ## IN PROGRESS
 

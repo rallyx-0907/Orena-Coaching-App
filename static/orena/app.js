@@ -15,6 +15,7 @@ import {
   renderGrammar,
 } from './ui/expression.js';
 import { installHints } from './ui/patterns.js';
+import { growthSummarySection } from './ui/growth-summary.js';
 
 // Every hint in every room is one delegated behaviour, installed once.
 installHints(document);
@@ -228,7 +229,7 @@ function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
   });
   /* The theme chooser is built from the registry, so registering a theme is
      the whole of adding one - there is no list of themes written out a second
@@ -487,13 +488,16 @@ async function render() {
 }
 async function boot() {
   try {
-    const [user, languages, profile, commerce] = await Promise.all([
+    const [user, languages, profile, commerce, growth] = await Promise.all([
       api.me(),
       api.languages(),
       api.learnerProfile(),
       // Best-effort: a learner's plan/usage read must never block boot or
       // stand for a real outage the way the other three awaits do.
       api.productCommerce().catch(() => null),
+      // Same reasoning for the growth glance: `all` so an undated record
+      // (grammar has no completion timestamp) is never silently excluded.
+      api.learnerSummary('all').catch(() => null),
     ]);
     ctx.supportLanguages = languages.support_languages || [];
     ctx.languageProfiles = languages.languages || [];
@@ -502,6 +506,7 @@ async function boot() {
     ctx.language = languages.active;
     ctx.profile = profile;
     ctx.commerce = commerce;
+    ctx.growth = growth;
     ctx.support = profile.support_language || profile.native_language || 'en';
     ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
     // New product direction remains internal until the human release gate.
