@@ -1492,3 +1492,37 @@ product domain, capability or persistence.
 **Supersedes / Superseded by:** Extends D-051. Replaces the narrow header's
 fixed two-row height as the only narrow state (an implementation, not a
 recorded decision).
+
+## D-053 — A phone scale: type a step smaller, targets sized to the phone
+
+**Status:** Accepted by explicit human instruction, 2026-09-13.
+
+**Decision:** On a phone (up to 600px) Orena uses its own scale rather than
+the desktop's carried over. Type steps down one size and stays readable - body
+15px, nothing the learner reads below 12px, the line being learned the largest
+text in its frame. The larger spaces tighten. Controls stay tappable at 36px
+(`--tap`), quiet inline controls at 32px (`--tap-quiet`), and an inline target
+such as a word in a spoken line is at least 24px (WCAG 2.5.8) by its height and
+the space around it, never widened to a thumb. A checkbox or radio is sized to
+the text beside it and its label is the target. Recorded in rule 12 of the
+Design Contract.
+
+**Reason:** The human reported that Listening and Dictation on a phone kept the
+desktop's checkbox, element and font sizes, so content did not fit and a spoken
+line wrapped into four to six lines that were hard to follow, and asked for
+roughly half the size while staying readable and interactive, across every
+phone screen. Measured at 390px: each word of "look at the words" was a 44px
+target, so the longest line of a lesson took 308px in eleven rows; checkboxes
+were 44px tall; the body was 16px with 1.7 line height.
+
+**Consequences:** The phone tokens (`--text-*`, larger `--space-*`, `--tap`,
+`--tap-quiet`) are set once in `foundation.css`; the global control height reads
+`--tap`, which stays 44px above 600px. The phone block at the end of `rooms.css`
+sets each room to the scale, and the narrow header's brand row follows it. The
+destination control keeps its 46px target. Desktop and tablet are unchanged.
+
+This supersedes the "full touch target (44px)" clause of D-052 on phones only;
+every other D-052 and D-051 rule stands, and no learning information is removed.
+It changes no product domain, capability or persistence.
+
+**Supersedes / Superseded by:** Amends D-052 (phone touch-target size).

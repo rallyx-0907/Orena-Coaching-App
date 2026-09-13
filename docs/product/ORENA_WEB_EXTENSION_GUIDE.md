@@ -267,8 +267,16 @@ What a new surface inherits, and the traps behind each one.
   moving the learner to their work programmatically, call `focusWork()` from
   `ui/html.js` so the destination is computed against the working header;
   `workspaceFrames` and the encounter's narrow practice already do.
+  A phone has its own scale (Design Contract rule 12, D-053), set once in
+  `foundation.css`: the `--text-*` tokens a step smaller (body 15px), the
+  larger `--space-*` tighter, and `--tap` 36px / `--tap-quiet` 32px, which the
+  global control height and the rooms read - 44px above 600px. Use the tokens,
+  not a number: a new control on a phone takes `--tap`, a quiet inline one
+  `--tap-quiet`; a word or other inline target is at least 24px by height and
+  spacing and is never widened to a thumb; a checkbox or radio is sized to its
+  text and its label is the target. Nothing the learner reads goes below 12px.
   The last block of `rooms.css` (`max-width: 600px`) is where phone density
-  lives: controls at 44px with no desktop padding, the encounter's voice card
+  lives: controls at the phone targets with no desktop padding, the encounter's voice card
   as a strip, one-row transport, a compact spoken line, dense transcript rows,
   reading at line height 1.7 (1.85 for Chinese), compact grammar, speaking,
   recall and feedback. While following (no practice open) the media stage uses

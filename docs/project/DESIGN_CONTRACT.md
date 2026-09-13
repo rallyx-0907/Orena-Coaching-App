@@ -84,7 +84,7 @@ evidence meaning or capability semantics.
     atmosphere belongs to discovery, entry, transitions, completion and empty
     states, and never displaces the learner's text, media, work or feedback.
 
-12. **Phone: the screen belongs to the learning (D-052).** Priority is learning
+12. **Phone: the screen belongs to the learning (D-052, D-053).** Priority is learning
     content and learner work, then controls, then navigation and secondary
     chrome. The narrow layout is adapted, not the desktop shrunk:
     - the header is expanded on arrival, near the top and while navigating,
@@ -92,11 +92,17 @@ evidence meaning or capability semantics.
       state that still reaches every destination - releasing real viewport
       height rather than overlaying content; a deliberate scroll up, the top,
       or tapping the navigation expands it again;
-    - controls keep a full touch target (44px) but no desktop padding; rows,
+    - a phone has its own scale, not the desktop's carried over (D-053): type
+      a step smaller and still readable (body 15px, nothing the learner reads
+      below 12px, the line being learned the largest text in its frame);
+      controls tappable at 36px, quiet inline controls at 32px, inline targets
+      such as words at least 24px by height and spacing, never widened to a
+      thumb; a checkbox or radio sized to its text, its label the target; rows,
       labels, selectors, media controls and cards take only the room they need;
     - learning content itself is set denser - type, line height, paragraph and
       block spacing, media and transcript framing - while staying comfortable
-      to read; decorative margins go first;
+      to read, so a spoken line wraps into two to four lines, not six;
+      decorative margins go first;
     - a sticky source, a result frame or any destination the learner is moved
       to clears the header at its current height, never sits underneath it;
     - Listening shows the current line, its meaning and a run of the transcript

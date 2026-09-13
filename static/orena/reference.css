@@ -263,13 +263,19 @@
   .wayfinding a { padding-inline:15px; gap:8px; }
 }
 @media(max-width:600px) {
-  #shell { padding:12px 18px 0; }
-  #shell[data-menu='open'] nav { padding-inline:18px; }
+  /* The phone scale (D-053): the brand row is chrome, so it is no larger than
+     the controls in the room below it. The destination control keeps its own
+     full target. */
+  #shell { padding:10px 16px 0; }
+  #shell[data-menu='open'] nav { padding-inline:16px; }
   #shell .shell-actions { gap:8px; }
   .nav-toggle { padding-inline:12px; }
   #shell .bring-button span { display:none; }
-  #shell .bring-button { font-size:21px; min-width:44px; }
-  #shell .brand { font-size:30px; }
+  #shell .bring-button { font-size:18px; min-width:var(--tap); min-height:var(--tap); padding:0 8px; }
+  #shell .account-button { min-height:var(--tap); }
+  #shell .account-button .language-seal { width:30px; height:30px; }
+  #shell .brand { font-size:26px; }
+  #shell .brand-tail { width:30px; height:30px; }
   #main { padding-inline:20px; padding-bottom:30px; }
   #footer { margin-inline:20px; gap:16px; flex-wrap:wrap; }
   .editorial-intro { grid-template-columns:1fr; gap:0; padding:28px 0 24px; position:relative; }

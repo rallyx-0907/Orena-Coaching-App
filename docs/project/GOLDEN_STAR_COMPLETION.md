@@ -525,3 +525,36 @@ than the page.
   824 passed / 20 inherited / 66 skipped.
 
 Not claimed: real devices, microphone, human approval.
+
+## Phone scale (D-053): verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright with touch, local
+execution. Human report: on a phone Listening and Dictation kept the desktop's
+checkbox, element and font sizes, content did not fit and a spoken line wrapped
+into four to six lines; scale down roughly twice while staying readable and
+interactive, on every phone screen.
+
+- Before, at 390: body 16px / 1.7; checkboxes 44px tall; each word of "look at
+  the words" a 44px box, so the longest line of the 0:46 lesson took 308px in
+  eleven rows. After: body 15px / 1.6, checkboxes 20px (label 32px target),
+  words 28px targets - the longest line 4 lines (142px with the word targets),
+  shorter lines 3; the whole six-line transcript fits the follow panel beside
+  the opened line, legend and guide.
+- Follow panel at 390x844 and 360x740, EN and ZH: one height, every segment's
+  opened line, meaning and guide in view. Desktop 1280x720 and 1440x900 still
+  pass the Follow panel and Dictation one-frame checks unchanged.
+- Dictation at 390, longest line (129 characters): the panel runs 243-826px
+  after comparing - attempt, match, diff, original, meaning and save status in
+  one screen. At 360x740 only the save status needs a scroll.
+- Audit of 18 phone rooms (Discover, Practice, Writing, Speaking, Grammar,
+  Recall, My language, My content, Collection, Continue, the reading and
+  listening lists, a reading passage with its check, a story, Follow,
+  Dictation, Shadowing, Speaking in a lesson) at 390 and 360: no horizontal
+  overflow, no target under 24px, smallest text 12px. Discover 3521 -> 2447px;
+  conversation send button 674 -> 549px; comprehension questions 216-240 ->
+  165-184px, results 239-322 -> 176-225px.
+- Writing verifier: two real local-Ollama reviews, HTTP 200; phone result frame
+  65-840px as before. 104 hints opened, none off screen; no overflow on any
+  route at 1440/800/390, EN and ZH; 33 CI `.mjs` gates and the ESM graph pass.
+
+Not claimed: real devices, microphone, human approval.

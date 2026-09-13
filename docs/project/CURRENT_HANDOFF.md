@@ -72,8 +72,8 @@ compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
 Grammar lesson, Recall migrated. D-052 phone space: compacting header
 (`--shell-offset`, `focusWork()`), phone density block in `rooms.css`, now
 covering comprehension, encounter practice, conversation, Discover/Collection;
-Follow is one fixed-height panel; Dictation fits one frame. Verified in
-browser 1024-1920/800/390, EN/ZH. NEXT: human review; Grammar one-frame.
+Follow is one fixed-height panel; Dictation fits one frame; phone scale D-053
+(`--tap`). Verified 1024-1920/800/390/360, EN/ZH. NEXT: human review.
 
 Parallel Backbone lane (Opus): I2 write-path is BLOCKED (see below). I3: two
 schemas **proposed**, neither applied - `.../20260911_0006` (subscription

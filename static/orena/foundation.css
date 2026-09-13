@@ -39,7 +39,7 @@ html {
   color: var(--on-sun);
 }
 :where(button, input, select, summary) {
-  min-height: 44px;
+  min-height: var(--tap, 44px);
 }
 :where(button, a, input, textarea, summary) {
   overflow-wrap: anywhere;
@@ -358,6 +358,82 @@ input[type='radio'] {
   height: 24px;
   accent-color: var(--accent);
 }
+
+/* ---------------------------------------------------------------------------
+   The phone scale (D-053, Design Contract rule 12).
+
+   Carried over unchanged, the desktop's type, spacing and 44px targets made a
+   phone wrap every line into four to six and turned each control into the
+   largest thing on screen. On a phone the type steps down one size and stays
+   readable, the larger spaces tighten, controls stay tappable at 36px (32px
+   for quiet inline ones), and a checkbox or radio is sized to the text beside
+   it - its label is the target. Rooms read `--tap` and `--tap-quiet` rather
+   than repeating a number.
+   --------------------------------------------------------------------------- */
+:root {
+  --tap: 44px;
+  --tap-quiet: 44px;
+}
+@media (max-width: 600px) {
+  :root {
+    --text-xs: 0.75rem;
+    --text-sm: 0.8125rem;
+    --text-base: 0.9375rem;
+    --text-lead: 1rem;
+    --text-reading: 1.0625rem;
+    --space-5: 1rem;
+    --space-6: 1.25rem;
+    --space-8: 1.5rem;
+    --space-12: 2.25rem;
+    --space-16: 3rem;
+    --tap: 36px;
+    --tap-quiet: 32px;
+  }
+  body {
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.5rem;
+    letter-spacing: -0.03em;
+  }
+  h2 {
+    font-size: 1.2rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+  }
+  p {
+    margin: 10px 0;
+    line-height: 1.65;
+  }
+  blockquote {
+    margin: 14px 0;
+    padding: 6px 0 6px 14px;
+    line-height: 1.65;
+  }
+  small {
+    line-height: 1.6;
+  }
+  label {
+    gap: 4px;
+  }
+  details > summary {
+    padding-block: 6px;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 20px;
+    height: 20px;
+    min-height: 0;
+    margin: 0;
+    flex: none;
+  }
+  input,
+  select,
+  textarea {
+    padding: var(--space-2) var(--space-3);
+  }
+}
 [hidden] {
   display: none !important;
 }
@@ -418,7 +494,7 @@ input[type='radio'] {
   text-decoration: none;
 }
 .quiet {
-  min-height: 44px;
+  min-height: var(--tap-quiet, 44px);
   padding: 8px 0;
   font-size: var(--text-sm);
 }
@@ -656,11 +732,11 @@ input[type='radio'] {
    symbol growing, and without pushing the line it sits on apart. */
 @media (max-width: 480px) {
   .hint__trigger {
-    inline-size: 44px;
-    block-size: 44px;
-    min-block-size: 44px;
-    margin-block: -10px;
-    margin-inline: -10px;
+    inline-size: var(--tap-quiet);
+    block-size: var(--tap-quiet);
+    min-block-size: var(--tap-quiet);
+    margin-block: -6px;
+    margin-inline: -6px;
   }
 }
 /* A heading, label or result line that carries a hint keeps it on its own

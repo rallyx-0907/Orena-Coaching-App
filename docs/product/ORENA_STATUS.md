@@ -87,15 +87,26 @@ and puts the transcript directly under the spoken line and its meaning, so the
 current line, its meaning and several transcript lines share one screen;
 transcript rows are 61px (were 85px). Reading, Grammar, Speaking, Recall and
 feedback are set denser without falling below readable size, and every phone
-control keeps a 44px target. Verified in the running sandbox at 390 and 800 in
+control keeps a comfortable target (sized by the D-053 phone scale below). Verified in the running sandbox at 390 and 800 in
 EN and ZH and in Night Ink; Writing through two real local-Ollama reviews.
 The same rules now reach the remaining rooms: Shadowing and Speaking inside a
 lesson fit one phone screen under the voice strip; Reading comprehension has
-44px choices lighter than their question and its score lands below the header;
+label-sized choices lighter than their question and its score lands below the header;
 a conversation opens without artwork with the reply box in the first screen,
 and a partner's reply arrives in view with the box to answer it; Discover, My
 content and Collection keep their artwork but a two-line heading, compact rows
 and one row of lenses.
+
+Phone scale (D-053): a phone no longer carries the desktop's sizes. Type is a
+step smaller (body 15px, nothing read below 12px), controls are 36px (quiet ones
+32px) instead of 44px, checkboxes are sized to their text, and a word in "look
+at the words" is a 28px target by its height rather than a 44px box - so the
+longest line of the 0:46 lesson takes four lines instead of eleven rows and the
+whole six-line transcript fits the panel with it. At 390 the Dictation loop for
+that line, attempt to comparison, fits one screen; Discover is 2447px (3521px),
+a conversation's send button sits at 549px (674px), comprehension questions
+are 165-184px (216-240px). Every phone room at 390 and 360 was audited: no
+horizontal overflow, no target under 24px. Desktop and tablet are unchanged.
 
 Follow and the whole conversation are one panel. Beside the video on a
 desktop - under it, filling the screen, on a phone - a single card keeps one
