@@ -75,15 +75,14 @@ covering comprehension, encounter practice, conversation, Discover/Collection;
 Follow is one fixed-height panel; Dictation fits one frame; phone scale D-053
 (`--tap`). Verified 1024-1920/800/390/360, EN/ZH. NEXT: human review.
 
-Parallel Backbone lane (Opus), under D-054's delegated workflow: delegated
-review of `313e70f` = CHANGES REQUESTED for 0006, 0007 and D-054; all
-resolved (`92cd63e` D-054/D-055, `4dc27cb` I3; trail in
-`I3_SCHEMA_REVIEW_REQUEST.md`), round 2 re-review pending. 0006/0007 stay
-**proposed**, unapplied. I2 flag stays `off` until D-054 review is clean;
-then sandbox only. Deletion/re-registration gated by test (D-055). I1
-`Scope` has no production caller. I4 step 1 `/api/collection`, I6 read
-`/api/learner-summary` (ledger). Keep A-D, 11 destinations, Opus WIP; no
-I1-I7 claim implies human approval.
+Parallel Backbone lane (Opus), D-054 delegated workflow, three review rounds
+(`I3_SCHEMA_REVIEW_REQUEST.md`): D-054 APPROVED; 0007 APPROVED; 0006 APPROVED
+WITH REQUIRED CHANGES, change made (`6c4131a`). Both still in `proposed/`:
+the move/apply and the sandbox flag switch were refused by the harness
+permission classifier and wait for the human. `/api/works` server half
+inert until the flag (`9b58618`). Deletion/re-registration gated by test
+(D-055). I4 `/api/collection`, I6 `/api/learner-summary` (ledger). Keep
+A-D, 11 destinations, Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
