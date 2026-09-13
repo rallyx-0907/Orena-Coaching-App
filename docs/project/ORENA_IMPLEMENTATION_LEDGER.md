@@ -400,6 +400,34 @@ declare.
 
 ---
 
+### Write path, server half - `/api/works`, inert until the flag
+
+D-054 applied and approved by the delegated reviewer (round 2 of `4dc27cb`),
+so the sandbox flag may be switched on under D-054's delegation. The switch
+itself (recreating `orena-foundation-web` with `ORENA_ACCOUNT_BACKBONE=on`,
+the old container kept for rollback) was not run: the harness's permission
+classifier refused the container swap, so it waits for the human. Backup
+captured before it anyway: `backups/orena-20260913T053647Z.dump` (94,721
+bytes, 140 entries), restore rehearsed matching on revision and every count.
+
+`writing_coach/work_api.py`, wired in `app.py`:
+
+- `GET /api/account-backbone` - `disabled`, `unavailable` or `active`.
+- `GET /api/works/{id}`, `PUT /api/works/{id}`, `GET /api/works/changes` -
+  only when `active`. Account from the request's user key, incarnation from
+  `ensure_active` on every request (a deleted account gets 403
+  `account_deleted`, never a new incarnation; a missing user row 409
+  `account_not_ready`, never invented). A PUT is one `commit_mutation`:
+  committed/replay 200 with the same version, a stale edit 409 with the
+  server's text and version, another account's or language's work 404.
+
+Verified: `tests/test_work_api.py` - disabled/unavailable refuse everything
+(hermetic); against scratch PostgreSQL, create/read/replay/conflict, language
+and account isolation, the change stream, the deletion barrier, bad input and
+a missing user row (7 passed). Full hermetic suite 877 passed / 20 inherited.
+
+---
+
 ## I4 — My Content, My Language and Collection retrieval
 
 **Specification:** `ORENA_COLLECTION_ARCHITECTURE` §§2-5.

@@ -389,6 +389,30 @@ configure_learner_summary(runtime_sources(
     specialized=_specialized_learning_repository,
 ))
 app.include_router(learner_summary_router)
+
+# Account work (I2 write path). Built from the flag and the schema, both
+# required: off is `disabled`, on without the tables is `unavailable`, and only
+# `active` constructs the repositories. The tables are read only when asked.
+from writing_coach.account_backbone import build_backbone, requested as _backbone_requested  # noqa: E402
+from writing_coach.work_api import configure_work, router as work_router  # noqa: E402
+
+
+def _backbone_tables():
+    if not _backbone_requested() or _persistence_runtime.engine is None:
+        return None
+    from sqlalchemy import inspect as _inspect
+
+    try:
+        return _inspect(_persistence_runtime.engine).get_table_names()
+    except Exception:  # unreadable is not absent; build_backbone says unavailable
+        import logging
+
+        logging.getLogger(__name__).warning('account backbone: could not read the runtime tables', exc_info=True)
+        return None
+
+
+configure_work(build_backbone(_persistence_runtime.engine, _backbone_tables()))
+app.include_router(work_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)

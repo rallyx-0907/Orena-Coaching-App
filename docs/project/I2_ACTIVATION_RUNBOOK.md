@@ -298,10 +298,14 @@ Both halves are required. A migration applied ahead of a deploy leaves the
 backbone `disabled` and changes nothing on its own — which is what makes step 7
 and step 9 separable.
 
-No caller reads the backbone yet. Wiring it into the learner-facing write paths
-is I2's remaining work and it happens **after** activation, not before, because
-a write path that is present and inert is harder to reason about than one that
-is not there.
+The server half of the first write path exists and follows the state:
+`app.py` builds the backbone at startup (the tables are read only when the
+flag asks), `GET /api/account-backbone` reports the state, and `/api/works`
+(`writing_coach/work_api.py`) answers only when `active` - otherwise 503 with
+`account_backbone_disabled` / `account_backbone_unavailable`, never "saved".
+No surface calls it yet: the client half (a draft kept with the account when
+`active`, on the device otherwise, and saying which) is the next slice, after
+the flag is on in the sandbox so it can be walked in a browser.
 
 ---
 
