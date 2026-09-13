@@ -232,7 +232,17 @@ def test_governance_records_the_shared_media_learning_direction() -> None:
 
     for slice_name in ("M1.1", "M1.2", "M1.3", "M1.4", "M1.5", "M1.6"):
         assert slice_name in roadmap
-    assert "| M1 | Media Learning Foundation (cross-cutting) | CLOSED / FOUNDATION COMPLETE |" in roadmap
+    roadmap_m1 = next(
+        tuple(cell.strip() for cell in line.strip().strip("|").split("|"))
+        for line in roadmap.splitlines()
+        if line.lstrip().startswith("|")
+        and line.strip().strip("|").split("|")[0].strip() == "M1"
+    )
+    assert roadmap_m1 == (
+        "M1",
+        "Media Learning Foundation (cross-cutting)",
+        "CLOSED / FOUNDATION COMPLETE",
+    )
     assert "M1 — Media Learning Foundation: **CLOSED / FOUNDATION COMPLETE**" in project_state
     assert "m1 is **closed / foundation complete**" in normalized_state
     assert "one imported media source is represented once" in normalized_state
@@ -250,7 +260,13 @@ def test_governance_records_the_shared_media_learning_direction() -> None:
     assert "pv-2 / oren-10 internal listening workspace" in normalized_handoff
     assert "pv-3 / oren-11" in normalized_handoff
 
-    assert "| Listening | DEVELOPMENT | available | available | no |" in project_state
+    listening_row = next(
+        tuple(cell.strip() for cell in line.strip().strip("|").split("|"))
+        for line in project_state.splitlines()
+        if line.lstrip().startswith("|")
+        and line.strip().strip("|").split("|")[0].strip().casefold() == "listening"
+    )
+    assert listening_row == ("Listening", "DEVELOPMENT", "available", "available", "no")
     assert "no current learner skill is public" in normalized_state
     assert "R11 remains the Listening completion and public-release-readiness gate" in roadmap
     assert "Media Learning (shared)" in boundaries
