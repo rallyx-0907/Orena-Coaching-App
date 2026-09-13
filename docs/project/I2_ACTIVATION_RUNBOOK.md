@@ -10,11 +10,14 @@ Architecture review of the proposal is complete: §6 step 2 APPROVED at
 
 ## Status
 
-**Step 7 done, step 9 not.** The human authorized *apply the schema and deploy,
-but keep `ORENA_ACCOUNT_BACKBONE=off`*. The migration is in
-`migrations/versions/`, the **sandbox** runtime (`orena-foundation-web`,
-127.0.0.1:8011) is at `20260908_0005`, and the backbone reports `disabled`. §7
-records the run.
+**Steps 7 and 9 done for the sandbox.** The human first authorized *apply the
+schema and deploy, but keep `ORENA_ACCOUNT_BACKBONE=off`*; D-054 (2026-09-13)
+then delegated the sandbox flag and independently approved additive
+migrations to the agent. On 2026-09-13, after the delegated review approved
+D-054 and I3's `20260911_0006`/`20260912_0007`, the **sandbox** runtime
+(`orena-foundation-web`, 127.0.0.1:8011) was migrated `20260908_0005 →
+20260912_0007` and recreated with the flag on; the backbone reports `active`.
+§7 records both runs.
 
 **Production (8000) and preview (8010) were not touched.** They are human gates
 under `ARCHITECTURE_INVARIANTS.md`, the authorization did not name them, and
@@ -272,9 +275,11 @@ for the sandbox runtime; step 9 is outstanding.
    restart in one window; §7 has the output.
 8. **Verify at rest** — the backbone reports `disabled`, because the flag is
    still off. Nothing writes through it. **Confirmed.**
-9. **HUMAN GATE — set `ORENA_ACCOUNT_BACKBONE=on`.** A separate decision from
-   the schema, deliberately: the schema can be present and correct for as long
-   as you like before anything uses it. **Not done, and not asked for.**
+9. **Set `ORENA_ACCOUNT_BACKBONE=on`.** A separate decision from the schema,
+   deliberately: the schema can be present and correct for as long as you like
+   before anything uses it. A human gate everywhere except the sandbox, where
+   D-054 delegates it. **Done for the sandbox** (§7); production and preview
+   untouched.
 
 Steps 7 and 9 are the two irreversible ones and they are separate on purpose.
 Applying the schema changes nothing a learner sees; the flag does.
@@ -359,6 +364,32 @@ in the Status section. Fresh output, not the rehearsal's.
 
 The 19 pre-existing tables were not altered, which is what makes existing
 readers unaffected: the migration adds and never changes.
+
+---
+
+### I3 migrations and the flag, in one sandbox window (2026-09-13)
+
+| Check | Result |
+| --- | --- |
+| Backup captured | `backups/orena-20260913T092856Z.dump`, 94,721 bytes |
+| Backup verified | 140 restorable entries |
+| Restore rehearsed into a separate database | Matched on revision and every count; target dropped |
+| Upgrade rehearsed on a restored copy | `20260908_0005 → 20260912_0007`, `ready`; `users` 1, `essays` 36, `speaking_attempts` 8, `listening_progress` 5 unchanged; copy dropped |
+| `git mv` of 0006/0007 into `versions/` | The build's expected head becomes `20260912_0007` |
+| `--upgrade --from 20260908_0005 --confirm` on the runtime | `after migration: ready (expected 20260912_0007, found 20260912_0007)` |
+| Web container recreated with the flag on | Old container stopped and kept as `orena-foundation-web-before-i2-20260913T093006Z` for rollback; the new one has the same image, mounts, tmpfs, port and environment plus `ORENA_ACCOUNT_BACKBONE=on` (the Groq key piped across, never printed) |
+| `GET /`, `/api/learner-profile`, `/api/dashboard` | 200, 200, 200 |
+| `GET /api/account-backbone` | `{"state":"active"}` |
+| `/api/works` smoke | create → `committed` v1; same operation → `replay` v1; stale edit → 409; lifecycle `deleted` → `committed` v2; change stream shows both |
+| PostgreSQL suites against the live chain | 122 passed (commerce, quota, deletion journal, work persistence, work API) |
+
+The first attempt at the container swap failed after stopping the old
+container (Docker Desktop could not open a Git-Bash `/tmp` env-file path); the
+sandbox was down for about a minute and was recovered by starting the old
+container only long enough to pipe its key, then running the new one with a
+Windows-path env file. Rollback: remove the new container, rename the old one
+back and start it - the schema stays at `20260912_0007`, which the old
+container's mounted code also expects.
 
 ---
 

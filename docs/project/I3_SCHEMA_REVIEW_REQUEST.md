@@ -11,6 +11,12 @@ subscription and quota", `ORENA_BACKBONE_INTEGRATION_GATES.md`):
    **APPROVED**. It has no foreign key into proposal 1's tables but chains on
    top of its migration.
 
+**Applied (2026-09-13):** both moved into `migrations/versions/` and applied
+to the sandbox runtime only, under D-054's delegation, after a verified backup,
+a restore rehearsal and an upgrade rehearsed on a restored copy
+(`I2_ACTIVATION_RUNBOOK.md` §7). Production and preview untouched. No caller is
+wired; billing and quota enforcement stay off.
+
 The latest round is first, below; the earlier history follows it.
 
 ## Delegated review round 3 of `7020925b4ae0f92e074e2ded4b9218ae6846ef76`

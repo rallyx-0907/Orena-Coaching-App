@@ -1,11 +1,8 @@
 """I3 subscription-inbox concurrency proof. Real PostgreSQL, real races.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a throwaway database. The
-migration this exercises is `migrations/proposed/20260911_0006` — still
-awaiting review — so the fixture points Alembic's `version_locations` at
-both `versions/` and `proposed/` rather than plain `head`, the same
-technique `migrations/proposed/README.md` describes and the way
-`test_orena_work_persistence_postgres.py` ran while I2 was still proposed.
+migration this exercises is `migrations/versions/20260911_0006` (approved by
+delegated review); the fixture upgrades to the live chain's head.
 
 Every event and provider-subscription id is unique per run, so the file can
 be re-run against the same database.
@@ -67,26 +64,11 @@ def upd(state: str = 'active', subscription: str | None = 'x', *, customer: str 
 
 @pytest.fixture(scope='module')
 def engine():
-    from pathlib import Path
-
     from alembic import command
     from writing_coach.persistence.runtime import _runtime_alembic_config
 
-    root = Path(__file__).resolve().parents[1]
     cfg = _runtime_alembic_config()
     cfg.set_main_option('sqlalchemy.url', URL.replace('%', '%%'))
-    # `path_separator=os` means "split on os.pathsep" (':' on Linux, ';' on
-    # Windows) - not a literal space. Joining with anything else here is
-    # exactly the defect I2_ACTIVATION_RUNBOOK.md §7 already names: a
-    # mismatched separator silently produces a one-element, nonexistent path
-    # and every revision in it goes undiscovered rather than erroring loudly.
-    import os as _os
-
-    cfg.set_main_option(
-        'version_locations',
-        _os.pathsep.join([str(root / 'migrations' / 'versions'), str(root / 'migrations' / 'proposed')]),
-    )
-    cfg.set_main_option('path_separator', 'os')
     command.upgrade(cfg, 'head')
     engine = create_engine(URL, future=True)
     yield engine

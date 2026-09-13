@@ -75,14 +75,12 @@ covering comprehension, encounter practice, conversation, Discover/Collection;
 Follow is one fixed-height panel; Dictation fits one frame; phone scale D-053
 (`--tap`). Verified 1024-1920/800/390/360, EN/ZH. NEXT: human review.
 
-Parallel Backbone lane (Opus), D-054 delegated workflow, three review rounds
-(`I3_SCHEMA_REVIEW_REQUEST.md`): D-054 APPROVED; 0007 APPROVED; 0006 APPROVED
-WITH REQUIRED CHANGES, change made (`6c4131a`). Both still in `proposed/`:
-the move/apply and the sandbox flag switch were refused by the harness
-permission classifier and wait for the human. `/api/works` server half
-inert until the flag (`9b58618`). Deletion/re-registration gated by test
-(D-055). I4 `/api/collection`, I6 `/api/learner-summary` (ledger). Keep
-A-D, 11 destinations, Opus WIP; no I1-I7 claim implies human approval.
+Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
+approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
+chain `20260912_0007`, flag on, backbone `active` (runbook §7). `/api/works`
+live, no surface yet; billing/quota off. Deletion gated (D-055). I4
+`/api/collection`, I6 `/api/learner-summary`. Keep A-D, 11 destinations,
+Opus WIP; no I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
