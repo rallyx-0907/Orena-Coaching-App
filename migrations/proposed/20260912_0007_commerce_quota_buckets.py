@@ -31,22 +31,41 @@ way.
 Revision ID: 20260912_0007
 Revises: 20260911_0006
 
-Reservation lifecycle this schema exists to serve, per §4:
+Reservation lifecycle this schema exists to serve, per §4 (revised after
+review round 1, which asked for the states to be decided before the CHECK
+constraint is fixed):
 
     reserve(operation_id, requested_units) -> one reservation row, state
     'reserved', admitted_units = requested_units; bucket.reserved +=
-    admitted_units. Idempotent: retrying the same operation_id with the same
-    requested_units returns the existing row's outcome; retrying it with a
-    *different* requested_units is a payload conflict, decided by the
-    repository comparing the stored admitted_units before ever calling
-    reserve_decision() again for that operation_id.
+    admitted_units. Only inside the bucket's window [start, end) by server
+    time. Idempotent: retrying the same operation_id for the same
+    incarnation, meter, window and units returns the original admission
+    (same reservation id); the same operation_id with any of those different
+    is a payload conflict that names none of the other reservation's
+    identifiers. operation_id is globally unique, and the insert is
+    `ON CONFLICT (operation_id) DO NOTHING`, so two concurrent first uses -
+    even from two incarnations - resolve to one admission and one
+    duplicate/conflict, never an integrity error.
 
-    settle(operation_id, actual_units) -> state 'settled', actual_units
-    recorded; bucket.reserved -= admitted_units, bucket.consumed +=
-    actual_units. Idempotent per settle_decision().
+    dispatch(operation_id, dispatch_ref) -> state 'dispatched': the work has
+    been handed to a provider and may still finish. From here the
+    reservation cannot be released - "dispatched/unknown-outcome work retains
+    its reservation until reconciliation" - only settled.
 
-    release(operation_id) -> state 'released'; bucket.reserved -=
-    admitted_units, nothing consumed. Idempotent per release_decision().
+    settle(operation_id, actual_units, outcome_ref) -> from 'reserved' or
+    'dispatched' to 'settled', actual_units and outcome_ref recorded;
+    bucket.reserved -= admitted_units, bucket.consumed += actual_units. A
+    failed outcome that policy says consumes nothing settles 0. Idempotent per
+    settle_decision(): a replay must carry the same units and outcome_ref.
+    Settles against the original window even after it has ended.
+
+    release(operation_id) -> 'reserved' to 'released' (cancelled before
+    dispatch); bucket.reserved -= admitted_units, nothing consumed.
+    Idempotent per release_decision().
+
+The database backs the arithmetic up, not only the code: consumed + reserved
+never exceeds a finite limit, a reservation has actual units exactly when it
+is settled, and never more than it admitted.
 
 A rejected reserve() attempt (denied / exhausted / unknown entitlement) never
 writes a reservation row at all - nothing was admitted, so there is nothing
@@ -70,7 +89,7 @@ depends_on = None
 # review checklist, not a shared import - a migration must not import
 # application code that can change under it after being applied, the same
 # reasoning 20260908_0005 and 20260911_0006 already established.
-RESERVATION_STATES = ("reserved", "settled", "released")
+RESERVATION_STATES = ("reserved", "dispatched", "settled", "released")
 
 
 def _in_list(values: tuple[str, ...]) -> str:
@@ -118,6 +137,12 @@ def upgrade() -> None:
             "unit_limit IS NULL OR unit_limit >= 0", name="ck_commerce_quota_bucket_limit"
         ),
         sa.CheckConstraint("window_end > window_start", name="ck_commerce_quota_bucket_window"),
+        # Backstop for reserve_decision(): even a faulty caller cannot
+        # admit past a finite limit.
+        sa.CheckConstraint(
+            "unit_limit IS NULL OR consumed + reserved <= unit_limit",
+            name="ck_commerce_quota_bucket_within_limit",
+        ),
         # RESTRICT, matching the deletion-barrier pattern 20260908_0005 and
         # 20260911_0006 both established: a deleted incarnation's quota
         # history must keep denying reactivation, not disappear with it.
@@ -149,16 +174,25 @@ def upgrade() -> None:
         sa.Column("actual_units", sa.BigInteger(), nullable=True),
         sa.Column("state", sa.String(20), nullable=False, server_default="reserved"),
         sa.Column("policy_version", sa.String(40), nullable=False),
-        # Opaque dispatch/result reference (e.g. a job or evaluation id) per
-        # §2 - never a raw provider/job payload, same discipline
+        # Opaque dispatch and result references (e.g. a job or evaluation
+        # id) per §2 - never a raw provider/job payload, same discipline
         # `commerce_billing_event_receipts.external_object_reference` already
         # follows.
+        sa.Column("dispatch_ref", sa.String(200), nullable=True),
         sa.Column("outcome_ref", sa.String(200), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("admitted_units >= 1", name="ck_commerce_reservation_admitted"),
         sa.CheckConstraint(
             "actual_units IS NULL OR actual_units >= 0", name="ck_commerce_reservation_actual"
+        ),
+        sa.CheckConstraint(
+            "actual_units IS NULL OR actual_units <= admitted_units",
+            name="ck_commerce_reservation_within_admitted",
+        ),
+        sa.CheckConstraint(
+            "(state = 'settled') = (actual_units IS NOT NULL)",
+            name="ck_commerce_reservation_settled_units",
         ),
         sa.CheckConstraint(
             f"state IN ({_in_list(RESERVATION_STATES)})",

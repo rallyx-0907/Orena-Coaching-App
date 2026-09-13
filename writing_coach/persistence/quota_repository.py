@@ -1,4 +1,4 @@
-"""Quota buckets and the reserve/settle/release transactional seam.
+"""Quota buckets and the reserve/dispatch/settle/release transactional seam.
 
 PROPOSAL, NOT DEPLOYED — the tables this reads and writes are in
 `migrations/proposed/20260912_0007`, not `migrations/versions/`. Nothing here
@@ -8,30 +8,46 @@ this either way.
 
 Division of responsibility, matching `commerce_repository.py`: this file
 never computes a policy decision itself. `writing_coach.reference_backbone`'s
-`reserve_decision()`, `settle_decision()` and `release_decision()` decide;
-this file only supplies the atomic locking, idempotency lookups and row
-writes those decisions assume a caller already has.
+`reserve_decision()`, `dispatch_decision()`, `settle_decision()` and
+`release_decision()` decide; this file supplies the locking, idempotency
+lookups and row writes those decisions assume a caller already has.
 
 Idempotency shape, deliberately narrow (see the migration's own docstring):
-a *rejected* reserve() attempt (denied / exhausted / unknown entitlement)
-writes no reservation row at all, so a caller may safely retry the same
-operation_id later without ever risking a double admission — nothing was
-admitted the first time. Only an *admitted* reservation is durable, exactly
-the same asymmetry `commerce_billing_event_receipts` already has for
-`'unknown'` versus a terminal outcome.
+a *rejected* reserve() attempt (denied / exhausted / unknown entitlement /
+closed window) writes no reservation row at all, so a caller may safely retry
+the same operation_id later without ever risking a double admission — nothing
+was admitted the first time. Only an *admitted* reservation is durable, and a
+replay of it is recognised by its whole identity: the same operation for the
+same incarnation, meter, window and units is the original admission again
+(same reservation id); anything else under that operation id is a
+`payload_conflict` that names nothing of the other reservation.
 
-Incarnation lifecycle: this file does not give `reserve_decision()` its own
-notion of a deleted incarnation — that decision already has a clean hook for
-it. A deleted incarnation is mapped to `entitlement='denied'` before calling
-`reserve_decision()`, reusing its existing vocabulary rather than inventing a
-parallel one. `settle()` and `release()` act on a reservation already on file
-and do not re-check incarnation status: the admission decision is the one
-place a deleted incarnation is turned away, matching "no new-account grant"
-for a already-admitted operation would rewrite history, not honor it.
+Exactly once, and how: operation ids are globally unique and the reservation
+insert is `ON CONFLICT (operation_id) DO NOTHING`. Two concurrent first uses
+of one operation - from one incarnation or two - therefore resolve inside the
+database to one admission and one replay; the loser's bucket is never
+touched. The incarnation row is held `FOR SHARE` for the whole admission:
+enough to make `mark_deleted()`'s `UPDATE` wait (so an admission and a
+deletion cannot interleave), without serialising unrelated reservations of
+the same learner, which serialise on their bucket row instead.
+
+Incarnation lifecycle: a deleted incarnation is `denied` with
+`reason='incarnation_deleted'`, reusing reserve_decision()'s vocabulary, and
+nothing at all is written for it - not even a bucket. `dispatch()` is turned
+away the same way (a deleted account starts no new provider work; its caller
+releases instead). `settle()` and `release()` act on a reservation already on
+file and do not re-check the incarnation: honouring an already-admitted
+operation's accounting is not a new grant.
+
+Windows: server time decides. A reserve outside the bucket's `[start, end)` -
+the stored bucket's once it exists, the caller's for its first use - is
+`window_closed`. Settlement is against the original window even after it has
+ended (§4), so settle does not check it.
 """
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -39,14 +55,22 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from writing_coach.reference_backbone import Quota, reserve_decision, settle_decision, release_decision
+from writing_coach.reference_backbone import (
+    Quota,
+    dispatch_decision,
+    release_decision,
+    reserve_decision,
+    settle_decision,
+)
 
 
 class QuotaOutcome(dict):
-    """`status` is one of reserve_decision()/settle_decision()/
-    release_decision()'s outcomes, or `unknown_incarnation`/
-    `deleted_incarnation_rejected` for an admission this repository will not
-    even attempt."""
+    """`status` is one decision's verdict. reserve(): `admit`, `exhausted`,
+    `denied` (with `reason='incarnation_deleted'` for a deleted incarnation),
+    `unknown`, `window_closed`, `duplicate` (the original admission, with its
+    `reservation_id`), `payload_conflict` or `unknown_incarnation`.
+    dispatch()/settle()/release(): their decision's verdicts, plus `denied`
+    for dispatching a deleted incarnation's work."""
 
 
 @dataclass(frozen=True)
@@ -67,9 +91,23 @@ class BucketWindow:
     unit_limit: int | None
 
 
+def _open(start: datetime, end: datetime, now: datetime) -> bool:
+    return start <= now < end
+
+
+def _same_incarnation(a: Any, b: Any) -> bool:
+    try:
+        return uuid.UUID(str(a)) == uuid.UUID(str(b))
+    except ValueError:
+        return False
+
+
 class PostgresQuotaRepository:
-    def __init__(self, engine: Engine) -> None:
+    def __init__(self, engine: Engine, *, clock: Callable[[], datetime] | None = None) -> None:
         self._engine = engine
+        # Server time decides windows; a controlled clock is for the
+        # period-boundary proofs only.
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     def get_bucket(self, incarnation_id: str, meter: str, window_id: str) -> dict[str, Any] | None:
         with self._engine.connect() as connection:
@@ -87,12 +125,45 @@ class PostgresQuotaRepository:
         with self._engine.connect() as connection:
             row = connection.execute(
                 text(
-                    'SELECT bucket_id, admitted_units, actual_units, state, policy_version, '
-                    'outcome_ref FROM commerce_quota_reservations WHERE operation_id = :op'
+                    'SELECT id, bucket_id, admitted_units, actual_units, state, policy_version, '
+                    'dispatch_ref, outcome_ref FROM commerce_quota_reservations WHERE operation_id = :op'
                 ),
                 {'op': operation_id},
             ).mappings().first()
         return dict(row) if row else None
+
+    @staticmethod
+    def _recorded(connection, operation_id: str) -> dict[str, Any] | None:
+        row = connection.execute(
+            text(
+                'SELECT r.id, r.bucket_id, r.admitted_units, r.state, '
+                'b.incarnation_id, b.meter, b.window_id '
+                'FROM commerce_quota_reservations r '
+                'JOIN commerce_quota_buckets b ON b.id = r.bucket_id '
+                'WHERE r.operation_id = :op'
+            ),
+            {'op': operation_id},
+        ).mappings().first()
+        return dict(row) if row else None
+
+    @staticmethod
+    def _replay(recorded: dict[str, Any], *, incarnation_id: str, meter: str,
+                window_id: str, units: int) -> QuotaOutcome:
+        same = (
+            _same_incarnation(recorded['incarnation_id'], incarnation_id)
+            and recorded['meter'] == meter
+            and recorded['window_id'] == window_id
+            and recorded['admitted_units'] == units
+        )
+        if not same:
+            # Nothing of the other reservation - not its bucket, not its
+            # incarnation - is returned.
+            return QuotaOutcome(status='payload_conflict')
+        return QuotaOutcome(
+            status='duplicate', reservation_id=str(recorded['id']),
+            bucket_id=str(recorded['bucket_id']), admitted_units=recorded['admitted_units'],
+            state=recorded['state'],
+        )
 
     def reserve(
         self, *, incarnation_id: str, meter: str, window: BucketWindow,
@@ -100,71 +171,69 @@ class PostgresQuotaRepository:
     ) -> QuotaOutcome:
         """One admission attempt, or one idempotent replay of a prior one.
 
-        Order: lock the incarnation (deleted -> denied, reusing
-        reserve_decision()'s existing vocabulary rather than a parallel one)
-        -> placeholder-insert and lock the reservation row for this exact
-        operation_id, so concurrent retries of the same operation are
-        exactly-once even the first time it is ever seen -> if a reservation
-        already exists, compare requested_units and return 'duplicate' or
-        'payload_conflict' without touching any bucket -> otherwise
-        placeholder-insert and lock the bucket row (first-use races the same
-        way) -> decide with reserve_decision() -> on 'admit', write the
-        reservation and update the bucket in the same transaction; on any
-        other verdict, write nothing durable at all.
+        Order: hold the incarnation `FOR SHARE` (deleted -> denied, nothing
+        written) -> a recorded reservation for this operation is replayed or
+        refused by its whole identity -> entitlement other than allowed ->
+        its verdict, nothing written -> lock the bucket, creating it first if
+        this is its first use and its window is open -> window closed by
+        server time -> `window_closed` -> reserve_decision() -> on 'admit',
+        insert the reservation `ON CONFLICT (operation_id) DO NOTHING`; if a
+        concurrent first use won, replay against it and leave the bucket
+        alone; otherwise add the units to the bucket, same transaction.
         """
-        now = datetime.now(UTC)
+        # Validates the units (and entitlement vocabulary) before any SQL;
+        # 'admit' here only means "entitlement allows asking".
+        asked = reserve_decision(Quota(None, 0, 0), requested_units, entitlement=entitlement)
+        now = self._clock()
         with self._engine.begin() as connection:
             owner = connection.execute(
-                text('SELECT status FROM account_incarnations WHERE id = :inc FOR UPDATE'),
+                text('SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE'),
                 {'inc': incarnation_id},
             ).mappings().first()
             if owner is None:
                 return QuotaOutcome(status='unknown_incarnation')
             if owner['status'] != 'active':
-                entitlement = 'denied'
+                return QuotaOutcome(status='denied', reason='incarnation_deleted')
 
-            existing = connection.execute(
-                text(
-                    'SELECT bucket_id, admitted_units, state FROM commerce_quota_reservations '
-                    'WHERE operation_id = :op FOR UPDATE'
-                ),
-                {'op': operation_id},
-            ).mappings().first()
-            if existing is not None:
-                if existing['admitted_units'] != requested_units:
-                    return QuotaOutcome(status='payload_conflict')
-                return QuotaOutcome(
-                    status='duplicate', bucket_id=str(existing['bucket_id']), state=existing['state']
-                )
+            identity = {'incarnation_id': incarnation_id, 'meter': meter,
+                        'window_id': window.window_id, 'units': requested_units}
+            recorded = self._recorded(connection, operation_id)
+            if recorded is not None:
+                return self._replay(recorded, **identity)
+            if asked != 'admit':
+                return QuotaOutcome(status=asked)
 
-            # Same "concurrent first use" problem the subscription/receipt
-            # tables already solve the same way: FOR UPDATE locks nothing
-            # against a row that does not exist yet.
-            connection.execute(
-                text(
-                    'INSERT INTO commerce_quota_buckets '
-                    '(id, incarnation_id, meter, window_id, window_start, window_end, '
-                    'policy_version, unit_limit, consumed, reserved, created_at, updated_at) '
-                    'VALUES (:id, :inc, :meter, :window_id, :start, :end, :policy, :limit, '
-                    '0, 0, :now, :now) '
-                    'ON CONFLICT (incarnation_id, meter, window_id) DO NOTHING'
-                ),
-                {
-                    'id': uuid.uuid4(), 'inc': incarnation_id, 'meter': meter,
-                    'window_id': window.window_id, 'start': window.window_start,
-                    'end': window.window_end, 'policy': window.policy_version,
-                    'limit': window.unit_limit, 'now': now,
-                },
+            select_bucket = text(
+                'SELECT id, window_start, window_end, policy_version, unit_limit, consumed, reserved '
+                'FROM commerce_quota_buckets '
+                'WHERE incarnation_id = :inc AND meter = :meter AND window_id = :window_id '
+                'FOR UPDATE'
             )
-            bucket = connection.execute(
-                text(
-                    'SELECT id, policy_version, unit_limit, consumed, reserved '
-                    'FROM commerce_quota_buckets '
-                    'WHERE incarnation_id = :inc AND meter = :meter AND window_id = :window_id '
-                    'FOR UPDATE'
-                ),
-                {'inc': incarnation_id, 'meter': meter, 'window_id': window.window_id},
-            ).mappings().first()
+            key = {'inc': incarnation_id, 'meter': meter, 'window_id': window.window_id}
+            bucket = connection.execute(select_bucket, key).mappings().first()
+            if bucket is None:
+                if not _open(window.window_start, window.window_end, now):
+                    return QuotaOutcome(status='window_closed')
+                # FOR UPDATE locks nothing against a row that does not exist
+                # yet, so a first use inserts first and then locks.
+                connection.execute(
+                    text(
+                        'INSERT INTO commerce_quota_buckets '
+                        '(id, incarnation_id, meter, window_id, window_start, window_end, '
+                        'policy_version, unit_limit, consumed, reserved, created_at, updated_at) '
+                        'VALUES (:id, :inc, :meter, :window_id, :start, :end, :policy, :limit, '
+                        '0, 0, :now, :now) '
+                        'ON CONFLICT (incarnation_id, meter, window_id) DO NOTHING'
+                    ),
+                    {
+                        **key, 'id': uuid.uuid4(), 'start': window.window_start,
+                        'end': window.window_end, 'policy': window.policy_version,
+                        'limit': window.unit_limit, 'now': now,
+                    },
+                )
+                bucket = connection.execute(select_bucket, key).mappings().first()
+            if not _open(bucket['window_start'], bucket['window_end'], now):
+                return QuotaOutcome(status='window_closed')
 
             verdict = reserve_decision(
                 Quota(bucket['unit_limit'], bucket['consumed'], bucket['reserved']),
@@ -173,19 +242,22 @@ class PostgresQuotaRepository:
             if verdict != 'admit':
                 return QuotaOutcome(status=verdict, bucket_id=str(bucket['id']))
 
-            reservation_id = uuid.uuid4()
-            connection.execute(
+            reservation_id = connection.execute(
                 text(
                     'INSERT INTO commerce_quota_reservations '
                     '(id, bucket_id, operation_id, admitted_units, state, policy_version, '
-                    "created_at, updated_at) VALUES "
-                    "(:id, :bucket, :op, :units, 'reserved', :policy, :now, :now)"
+                    'created_at, updated_at) VALUES '
+                    "(:id, :bucket, :op, :units, 'reserved', :policy, :now, :now) "
+                    'ON CONFLICT (operation_id) DO NOTHING RETURNING id'
                 ),
                 {
-                    'id': reservation_id, 'bucket': bucket['id'], 'op': operation_id,
+                    'id': uuid.uuid4(), 'bucket': bucket['id'], 'op': operation_id,
                     'units': requested_units, 'policy': bucket['policy_version'], 'now': now,
                 },
-            )
+            ).scalar_one_or_none()
+            if reservation_id is None:
+                # A concurrent first use of this operation committed first.
+                return self._replay(self._recorded(connection, operation_id), **identity)
             connection.execute(
                 text(
                     'UPDATE commerce_quota_buckets SET reserved = reserved + :units, '
@@ -193,17 +265,54 @@ class PostgresQuotaRepository:
                 ),
                 {'units': requested_units, 'now': now, 'bucket': bucket['id']},
             )
-            return QuotaOutcome(status='admit', bucket_id=str(bucket['id']), reservation_id=str(reservation_id))
+            return QuotaOutcome(
+                status='admit', reservation_id=str(reservation_id), bucket_id=str(bucket['id']),
+                admitted_units=requested_units, state='reserved',
+            )
+
+    def dispatch(self, *, operation_id: str, dispatch_ref: str | None = None) -> QuotaOutcome:
+        """The reservation's work has been handed to a provider: from now on
+        it can only be settled, never released. Writes nothing unless the
+        verdict is 'dispatch'; a deleted incarnation's work is not dispatched."""
+        now = self._clock()
+        with self._engine.begin() as connection:
+            reservation = connection.execute(
+                text(
+                    'SELECT r.state, r.dispatch_ref, i.status AS incarnation_status '
+                    'FROM commerce_quota_reservations r '
+                    'JOIN commerce_quota_buckets b ON b.id = r.bucket_id '
+                    'JOIN account_incarnations i ON i.id = b.incarnation_id '
+                    'WHERE r.operation_id = :op FOR UPDATE OF r FOR SHARE OF i'
+                ),
+                {'op': operation_id},
+            ).mappings().first()
+            verdict = dispatch_decision(
+                reservation_state=reservation['state'] if reservation else None,
+                dispatch_ref=dispatch_ref,
+                prior_dispatch_ref=reservation['dispatch_ref'] if reservation else None,
+            )
+            if verdict == 'dispatch' and reservation['incarnation_status'] != 'active':
+                return QuotaOutcome(status='denied', reason='incarnation_deleted')
+            if verdict != 'dispatch':
+                return QuotaOutcome(status=verdict)
+            connection.execute(
+                text(
+                    "UPDATE commerce_quota_reservations SET state = 'dispatched', "
+                    'dispatch_ref = :ref, updated_at = :now WHERE operation_id = :op'
+                ),
+                {'ref': dispatch_ref, 'now': now, 'op': operation_id},
+            )
+            return QuotaOutcome(status='dispatch')
 
     def settle(self, *, operation_id: str, actual_units: int, outcome_ref: str | None = None) -> QuotaOutcome:
         """Idempotent per settle_decision(). Writes nothing at all unless the
         verdict is 'settle' — a duplicate, conflicting or otherwise invalid
         settle call touches neither the reservation nor its bucket."""
-        now = datetime.now(UTC)
+        now = self._clock()
         with self._engine.begin() as connection:
             reservation = connection.execute(
                 text(
-                    'SELECT bucket_id, admitted_units, actual_units, state '
+                    'SELECT bucket_id, admitted_units, actual_units, state, outcome_ref '
                     'FROM commerce_quota_reservations WHERE operation_id = :op FOR UPDATE'
                 ),
                 {'op': operation_id},
@@ -214,6 +323,8 @@ class PostgresQuotaRepository:
                 admitted_units=reservation['admitted_units'] if reservation else None,
                 actual_units=actual_units,
                 prior_actual_units=reservation['actual_units'] if reservation else None,
+                outcome_ref=outcome_ref,
+                prior_outcome_ref=reservation['outcome_ref'] if reservation else None,
             )
             if verdict != 'settle':
                 return QuotaOutcome(status=verdict)
@@ -241,8 +352,8 @@ class PostgresQuotaRepository:
 
     def release(self, *, operation_id: str) -> QuotaOutcome:
         """Idempotent per release_decision(). Writes nothing unless the
-        verdict is 'release'."""
-        now = datetime.now(UTC)
+        verdict is 'release' — dispatched work keeps its reservation."""
+        now = self._clock()
         with self._engine.begin() as connection:
             reservation = connection.execute(
                 text(

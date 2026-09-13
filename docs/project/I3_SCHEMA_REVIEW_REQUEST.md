@@ -3,15 +3,124 @@
 This document now covers two independent proposals under I3 ("Plans,
 subscription and quota", `ORENA_BACKBONE_INTEGRATION_GATES.md`):
 
-1. **Subscription state and the provider-event inbox** — submitted, reviewed
-   once (CHANGES REQUESTED), revised, **awaiting re-review**. Unchanged since
-   that revision. See the section immediately below.
-2. **Quota buckets and reservations** — new in this revision, **first
-   submission**, not yet reviewed at all. See "New: I3 quota buckets and
-   reservations" further down. It has no foreign key into either table from
-   proposal 1 — the two are reviewable independently — but its migration
-   chains on top of proposal 1's (named as an open question in its own
-   section, not hidden).
+1. **Subscription state and the provider-event inbox** (`20260911_0006`) —
+   reviewed twice (CHANGES REQUESTED both times), revised against both,
+   **awaiting re-review**.
+2. **Quota buckets and reservations** (`20260912_0007`) — reviewed once
+   (CHANGES REQUESTED), revised, **awaiting re-review**. It has no foreign key
+   into proposal 1's tables but chains on top of its migration.
+
+The latest round is first, below; the earlier history follows it.
+
+## Delegated review round 1 of `313e70f767e1dc93eada9136947bb2d1f7069b0d`: CHANGES REQUESTED, addressed
+
+| | |
+| --- | --- |
+| Reviewer | Delegated Independent Architecture Reviewer — a fresh Claude subagent (Opus 5) with no implementation context, under `AGENTS.md` "Architecture review authority" and D-054's delegated workflow |
+| Reviewed commit | `313e70f767e1dc93eada9136947bb2d1f7069b0d` |
+| Verdicts | 0006 CHANGES REQUESTED (2×P1, 3×P2, P3 notes; prior P1-1/P1-2/P1-3 confirmed fixed, P2-4 enforced). 0007 CHANGES REQUESTED (1×P1, 4×P2, P3 notes; scope and migration shape fine). D-054 application CHANGES REQUESTED — resolved separately in `92cd63e` (D-055). |
+| Reviewer's evidence | Every P1 reproduced with its own probes against scratch PostgreSQL; backbone 34/34; 0006+0007 suites 24/24 on 7 fresh databases; migration up/down/up clean. |
+| Migrations | Still in `migrations/proposed/`, unmoved, unapplied anywhere. No caller wired. Commerce not activated. |
+
+### 0006 — what changed
+
+- **P1-A, an old incarnation's event was moved onto the new one.** The
+  receipt's stored incarnation is now authoritative and never updated. A call
+  for any other incarnation is `foreign_incarnation` and writes nothing, so
+  it can neither take the event over nor close the owner's pending
+  reconciliation. Test: `test_an_old_incarnations_event_is_never_moved_onto_the_new_one`
+  (the reviewer's reproduction: A `unknown` → delete → re-register B →
+  `record_event(B, v3)` is `foreign_incarnation`, the receipt stays A's and
+  `received`, B has no paid state; A's own reconciliation then closes it as
+  `deleted_incarnation_rejected`).
+- **P1-B, versions compared across provider subscriptions.** New table
+  `commerce_provider_subscriptions`: one row per provider subscription, its
+  own last version, state and owning incarnation. An event is compared only
+  with its own subscription's version. Whether it changes the incarnation's
+  current subscription is a new pure decision,
+  `current_subscription_decision()`: a resubscription replaces an ended (or
+  never-set) one; another ended subscription's history moves without
+  touching the live one (`current: kept`); two live subscriptions are
+  `unknown` and nothing advances. Tests:
+  `test_a_resubscription_after_an_ended_subscription_applies`,
+  `test_a_late_event_of_the_old_subscription_never_overwrites_the_new_one`,
+  and backbone counterexamples.
+- **P2-c, mapping conflict lost the receipt.** The provider-subscription row
+  is the permanent mapping; a subscription mapped to another incarnation is
+  decided (`foreign_incarnation`, terminal `ignored` receipt with that
+  reason) before anything else is written. Test:
+  `test_a_subscription_mapped_elsewhere_gets_a_terminal_receipt_not_an_error`.
+- **P2-d, a missing id erased the mapping.** An event naming no provider
+  subscription is `unknown` (it cannot be versioned or attributed); an
+  applied event without a customer id keeps the stored one. Tests:
+  `test_an_event_naming_no_subscription_is_unknown_and_erases_nothing`,
+  `test_an_applied_event_without_a_customer_id_keeps_the_stored_one`.
+- **P2-e, the race test accepted the pre-fix outcome.** Replaced by a
+  deterministic test that holds the deletion open, asserts the callback
+  waits, then asserts `deleted_incarnation_rejected` and no commerce row:
+  `test_a_billing_callback_waits_for_an_open_deletion_and_is_then_rejected`.
+- **P3.** Stale text corrected (this document's §3 and the migration
+  docstring). The incarnation is held `FOR SHARE` - enough to make
+  `mark_deleted()` wait, without blocking foreign-key checks or unrelated
+  readers. Terminal receipts are immutable in the database (a trigger).
+  A reused event id with a different payload digest is `payload_conflict`.
+  `commerce_subscriptions` now keeps `provider_state` (the provider's own
+  state name, §3) and `reconciliation_state` (`pending` while an event is
+  undecidable, §2).
+
+### 0007 — what changed
+
+- **P1-A, a replay was compared on units only.** A recorded reservation is
+  joined to its bucket and compared on incarnation, meter, window and units;
+  any difference is `payload_conflict` with no identifiers of the other
+  reservation. A true replay returns the original admission, reservation id
+  included (matrix row 49). Tests:
+  `test_another_incarnation_replaying_an_operation_id_gets_a_conflict_and_nothing_of_it`,
+  `test_the_same_operation_under_another_meter_or_window_is_a_conflict`,
+  `test_duplicate_operation_id_replays_without_double_reserving`.
+- **P2, a bucket row for a deleted incarnation.** A deleted incarnation is
+  `denied` (`reason: incarnation_deleted`) before any write; so is an
+  entitlement other than allowed. Tests:
+  `test_deleted_incarnation_is_denied_and_reserves_nothing`,
+  `test_a_reserve_waits_for_an_open_deletion_and_is_then_denied`.
+- **P2, expired windows admitted.** Server time must fall in the bucket's
+  half-open `[start, end)` - the stored bucket's once it exists, so a caller
+  cannot stretch it - or the result is `window_closed`, nothing written.
+  Settlement still lands after the window ends (§4). Tests:
+  `test_a_closed_window_admits_nothing_and_writes_nothing`,
+  `test_the_stored_window_decides_and_settlement_still_lands_after_it_ends`
+  (controlled clock).
+- **P2, exactly-once was not what the text said.** The reservation insert is
+  now `ON CONFLICT (operation_id) DO NOTHING RETURNING id`; a lost race
+  replays against the winner and leaves its bucket alone. The incarnation is
+  held `FOR SHARE`. Test:
+  `test_the_same_operation_from_two_incarnations_at_once_is_one_admission_and_no_error`
+  (was `['IntegrityError', 'admit']`).
+- **P2, no dispatched state.** Decided now: `reserved → dispatched →
+  settled`, `reserved → released`, `reserved → settled`. Dispatched work
+  cannot be released (`dispatched_retained`); it ends only by settlement,
+  zero units when policy says a failed outcome consumes nothing. A deleted
+  incarnation's work is not dispatched. New `dispatch_ref` column and pure
+  `dispatch_decision()`. Tests:
+  `test_dispatched_work_keeps_its_reservation_until_settled`,
+  `test_a_deleted_incarnations_work_is_not_dispatched`.
+- **P3.** Database checks for `consumed + reserved <= unit_limit`,
+  `(state = 'settled') = (actual_units IS NOT NULL)` and
+  `actual_units <= admitted_units` (test:
+  `test_the_database_refuses_arithmetic_the_code_would_never_write`); the
+  outcome docstring names what the code returns; a settle replay must carry
+  the same `outcome_ref`; every test uses fresh operation ids, so the file
+  re-runs against the same database.
+
+### Evidence for this revision (local execution)
+
+- `scripts/test_orena_backbone.py`: 38/38.
+- Scratch PostgreSQL in the sandbox server: commerce 17 + quota 25 = 42/42,
+  then the same 42 five times against one database (210/210, rerunnable).
+- Chain `0005 → 0006 → 0007`, one head; up, down to 0006, down to 0005, up
+  again - clean, trigger created and dropped with its table.
+- The runtime database was not touched; the live chain's head is still 0005.
+
 
 ## Response to review of `2a7484d9ed3408b19adb0e083d7e5844e4b645bf`: CHANGES REQUESTED, addressed
 
@@ -277,25 +386,29 @@ account-identity path.
 
 ### 3. Transactional receipts / idempotency
 
-`record_event()`'s order: verify the incarnation is active (reject
-outright, write nothing, if not) → placeholder-insert the subscription row
-if absent (`ON CONFLICT (incarnation_id) DO NOTHING`, safe because the
-unique constraint lets exactly one concurrent attempt win) → lock that row
-`FOR UPDATE` → check the receipt table for this exact `(provider,
-external_event_id)` → decide with `subscription_event_decision()` → write
-the receipt (skipped only for `'duplicate'`, where one already exists) and,
-on `'apply'` only, update the now-locked subscription row.
+`record_event()`'s order (current, after round 1): hold the incarnation
+`FOR SHARE` → placeholder-insert and lock the receipt for this exact
+`(provider, external_event_id)`; its stored incarnation is whose event it
+is → placeholder-insert and lock the provider subscription the event names;
+its stored incarnation is who it maps to → decide with
+`subscription_event_decision()` against that subscription's own version →
+on `'apply'`, lock the current subscription row and ask
+`current_subscription_decision()` whether it changes → write the receipt
+(never its incarnation; not at all when it belongs to another incarnation,
+or for `duplicate`/`payload_conflict`), the provider subscription's version,
+and the current row when it is replaced. A deleted incarnation gets a
+terminal `ignored` receipt and no other row.
 
 **Question for review, named rather than resolved:** `record_event()` takes
 `incarnation_id` as a trusted input. A real provider webhook names an
 external customer/subscription id, not an incarnation id — resolving which
 incarnation a webhook belongs to is a lookup this proposal does not
 perform, the same gap I1's incarnation resolution already has (no
-production caller resolves one from a request yet). Until that lookup
-exists, `subscription_event_decision()`'s `foreign_incarnation` branch is
-reachable only when a caller passes a stale/cached incarnation, never from
-a genuinely misrouted webhook. Is that gap acceptable to carry into this
-proposal, or does identity resolution need to land first?
+production caller resolves one from a request yet). The reviewer's answer
+(round 1): acceptable, provided the repository checks its own stored
+identity - which it now does, through the receipt and the
+provider-subscription mapping, so `foreign_incarnation` is reachable from a
+misrouted call.
 
 ### 4. Indexes
 
@@ -440,20 +553,20 @@ inherits no quota history, same reasoning both prior migrations applied.
 
 #### 3. Transactional idempotency
 
-`reserve()`'s order: lock the incarnation (deleted -> `entitlement='denied'`,
-reusing `reserve_decision()`'s existing vocabulary rather than a second one)
--> placeholder-insert and lock the reservation row for this exact
-`operation_id` (`ON CONFLICT (operation_id) DO NOTHING`) so a concurrent
-retry of the same operation is exactly-once even the first time it is ever
-seen -> if found, compare `requested_units` and return `'duplicate'` or
-`'payload_conflict'` without touching any bucket -> otherwise
-placeholder-insert and lock the bucket row (same "concurrent first use"
-pattern) -> decide with `reserve_decision()` -> on `'admit'` only, write the
-reservation and update the bucket in the same transaction.
+`reserve()`'s order (current, after round 1): hold the incarnation
+`FOR SHARE` (deleted → `denied`, nothing written) → a recorded reservation
+for this operation is replayed (same incarnation, meter, window and units:
+the original admission) or refused (`payload_conflict`) → entitlement other
+than allowed → its verdict, nothing written → lock the bucket, creating it
+first only if its window is open → window closed by server time →
+`window_closed` → `reserve_decision()` → on `'admit'`, insert the
+reservation `ON CONFLICT (operation_id) DO NOTHING RETURNING id`; a lost
+race replays against the winner; otherwise add the units to the bucket.
 
-`settle()`/`release()`: lock the reservation row by `operation_id`, decide
-with `settle_decision()`/`release_decision()`, write nothing at all unless
-the verdict is `'settle'`/`'release'`.
+`dispatch()`/`settle()`/`release()`: lock the reservation row by
+`operation_id`, decide with `dispatch_decision()`/`settle_decision()`/
+`release_decision()`, write nothing unless the verdict is
+`'dispatch'`/`'settle'`/`'release'`.
 
 **Question for review, named rather than resolved:** like the subscription
 proposal's `foreign_incarnation` gap, `reserve()` takes `incarnation_id` as a
@@ -508,7 +621,8 @@ either.
 ## Requested outcome
 
 Approve each proposal independently, or name the constraint, isolation,
-receipt, index, or scope changes wanted for either. On approval, the same
-path I2 took: move the approved migration(s) into `migrations/versions/`,
-rehearse against a copy of the real database, then return to the human for
-schema/runtime authorization before anything is applied anywhere real.
+receipt, index, or scope changes wanted for either. On approval: move the
+approved migration(s) into `migrations/versions/`, rehearse against a copy
+of the sandbox database, and apply to the **sandbox** only - delegated by
+D-054. Production and preview stay human gates, and approval activates no
+commerce enforcement, provider or caller.

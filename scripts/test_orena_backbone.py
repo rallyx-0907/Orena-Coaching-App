@@ -8,7 +8,8 @@ from writing_coach.reference_backbone import (  # noqa: E402
     Scope, Receipt, Mutation, Quota, Evidence, Cursor, ProviderEvent,
     mutation_decision, reserve_decision, result_is_current,
     job_may_publish, projection_evidence, growth_comparable, cursor_matches,
-    subscription_event_decision, settle_decision, release_decision,
+    subscription_event_decision, settle_decision, release_decision, dispatch_decision,
+    current_subscription_decision,
 )
 
 
@@ -293,6 +294,62 @@ class BackboneContracts(unittest.TestCase):
     def test_release_cannot_undo_a_settlement_or_apply_to_unknown_operation(self):
         self.assertEqual(release_decision(reservation_state='settled'), 'already_settled')
         self.assertEqual(release_decision(reservation_state=None), 'unknown_operation')
+
+    def test_an_event_without_its_subscription_or_with_other_content_is_not_applied(self):
+        event = ProviderEvent('evt-9', 'incarnation-1', 4)
+        common = dict(current_incarnation='incarnation-1', incarnation_deleted=False,
+                      already_processed=False, current_object_version=None)
+        self.assertEqual(subscription_event_decision(event, subscription_known=False, **common), 'unknown')
+        self.assertEqual(subscription_event_decision(event, payload_matches=False, **common),
+                         'payload_conflict')
+        self.assertEqual(subscription_event_decision(event, **{**common, 'already_processed': True},
+                                                     payload_matches=False), 'payload_conflict')
+
+    def test_a_resubscription_replaces_an_ended_one_and_a_late_event_never_overwrites_a_live_one(self):
+        decide = current_subscription_decision
+        self.assertEqual(decide(current_subscription=None, current_state='none',
+                                event_subscription='sub_x', event_state='active'), 'replace')
+        self.assertEqual(decide(current_subscription='sub_x', current_state='active',
+                                event_subscription='sub_x', event_state='past_due'), 'replace')
+        # sub_x ended; the learner resubscribes as sub_y.
+        self.assertEqual(decide(current_subscription='sub_x', current_state='ended',
+                                event_subscription='sub_y', event_state='active'), 'replace')
+        # sub_y is live; sub_x's own history moves on without touching it.
+        self.assertEqual(decide(current_subscription='sub_y', current_state='active',
+                                event_subscription='sub_x', event_state='ended'), 'keep')
+        # Two live subscriptions: refetch, never guess.
+        self.assertEqual(decide(current_subscription='sub_y', current_state='active',
+                                event_subscription='sub_x', event_state='active'), 'unknown')
+
+    def test_dispatched_work_keeps_its_reservation_until_settled(self):
+        # Commerce §4: dispatched/unknown-outcome work retains its
+        # reservation until reconciliation; only a settlement ends it.
+        self.assertEqual(dispatch_decision(reservation_state='reserved'), 'dispatch')
+        self.assertEqual(dispatch_decision(reservation_state='dispatched', dispatch_ref='job-1',
+                                           prior_dispatch_ref='job-1'), 'duplicate')
+        self.assertEqual(dispatch_decision(reservation_state='dispatched', dispatch_ref='job-2',
+                                           prior_dispatch_ref='job-1'), 'payload_conflict')
+        self.assertEqual(dispatch_decision(reservation_state='released'), 'already_released')
+        self.assertEqual(dispatch_decision(reservation_state='settled'), 'already_settled')
+        self.assertEqual(dispatch_decision(reservation_state=None), 'unknown_operation')
+        self.assertEqual(release_decision(reservation_state='dispatched'), 'dispatched_retained')
+        self.assertEqual(
+            settle_decision(reservation_state='dispatched', admitted_units=5,
+                            actual_units=0, prior_actual_units=None),
+            'settle',
+        )
+
+    def test_a_settle_replay_must_carry_the_same_outcome_reference(self):
+        self.assertEqual(
+            settle_decision(reservation_state='settled', admitted_units=5, actual_units=2,
+                            prior_actual_units=2, outcome_ref='job-1', prior_outcome_ref='job-1'),
+            'duplicate',
+        )
+        self.assertEqual(
+            settle_decision(reservation_state='settled', admitted_units=5, actual_units=2,
+                            prior_actual_units=2, outcome_ref='job-2', prior_outcome_ref='job-1'),
+            'payload_conflict',
+        )
 
 
 if __name__ == '__main__':

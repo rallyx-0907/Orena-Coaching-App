@@ -179,23 +179,33 @@ class ProviderEvent:
 def subscription_event_decision(
     event: ProviderEvent, *, current_incarnation: str, incarnation_deleted: bool,
     already_processed: bool, current_object_version: int | None,
+    subscription_known: bool = True, payload_matches: bool = True,
 ) -> str:
     """One decision per inbound provider event or checkout callback.
 
-    Returns 'apply', 'duplicate', 'stale', 'unknown', 'foreign_incarnation' or
-    'deleted_incarnation_rejected'. The caller owns idempotent receipt storage
-    and the transactionally locked version compare/write; this only decides
-    whether doing so is safe. 'unknown' must not be treated as safe to apply -
-    "do not promote access or erase known valid state" (§3) - and the caller
-    refetches current provider object state before deciding again.
+    Returns 'apply', 'duplicate', 'stale', 'unknown', 'foreign_incarnation',
+    'deleted_incarnation_rejected' or 'payload_conflict'. The caller owns
+    idempotent receipt storage and the transactionally locked version
+    compare/write; this only decides whether doing so is safe. 'unknown' must
+    not be treated as safe to apply - "do not promote access or erase known
+    valid state" (§3) - and the caller refetches current provider object state
+    before deciding again.
 
-    `current_object_version=None` means no subscription has ever been
-    recorded for this incarnation - there is nothing to be stale against, so
-    a verifiable event applies outright. That is a different situation from
-    the event itself carrying no verifiable version, which is 'unknown'
-    regardless of what current state exists: an unverifiable *new* fact can
-    no more safely promote access than an unverifiable one can safely replace
-    a known-good current fact.
+    `event.incarnation` is the incarnation the event belongs to - once a
+    receipt exists, the one stored on it, never the caller's current one.
+    `current_object_version` is the last version recorded for *the event's own
+    provider subscription*: versions are the provider's revision of one
+    object and are never compared across subscriptions ("serialize
+    reconciliation per subscription", §3). None means that subscription has
+    never been recorded - nothing to be stale against, so a verifiable event
+    applies to it outright. That is a different situation from the event
+    itself carrying no verifiable version, or naming no provider subscription
+    (`subscription_known=False`): both are 'unknown' regardless of what
+    current state exists, because an unverifiable *new* fact can no more
+    safely promote access than it can safely replace a known-good one. A
+    reused event id whose content digest differs is 'payload_conflict'.
+    Whether an applied event changes the incarnation's *current*
+    subscription is `current_subscription_decision()`'s question.
     """
     # A terminal receipt wins over every other check: once an event id has
     # been fully resolved, a repeat of it is 'duplicate' regardless of what
@@ -203,28 +213,90 @@ def subscription_event_decision(
     # one durable, consistent answer for "was this exact event handled
     # before", with the original reason preserved in the receipt itself
     # rather than recomputed differently on each redelivery.
+    if not payload_matches:
+        return 'payload_conflict'
     if already_processed:
         return 'duplicate'
     if incarnation_deleted:
         return 'deleted_incarnation_rejected'
     if event.incarnation != current_incarnation:
         return 'foreign_incarnation'
-    if event.object_version is None:
+    if event.object_version is None or not subscription_known:
         return 'unknown'
     if current_object_version is not None and event.object_version <= current_object_version:
         return 'stale'
     return 'apply'
 
 
+# A current subscription in one of these can be superseded by another
+# provider subscription; one in any other state cannot, without refetching.
+SUPERSEDABLE_SUBSCRIPTION_STATES = ('none', 'ended')
+
+
+def current_subscription_decision(*, current_subscription: str | None, current_state: str,
+                                  event_subscription: str, event_state: str) -> str:
+    """After an event applied to its own provider subscription: does it
+    change the incarnation's current subscription?
+
+    Returns 'replace' (the event's subscription is, or now becomes, the
+    current one), 'keep' (another, ended subscription's history moved; the
+    current one is untouched) or 'unknown' (two live provider subscriptions
+    for one incarnation - refetch rather than guess which one grants access).
+    A resubscription after an ended one replaces it; a late event from an
+    older subscription never overwrites the live one.
+    """
+    if current_subscription is None or current_subscription == event_subscription:
+        return 'replace'
+    if current_state in SUPERSEDABLE_SUBSCRIPTION_STATES:
+        return 'replace'
+    if event_state in SUPERSEDABLE_SUBSCRIPTION_STATES:
+        return 'keep'
+    return 'unknown'
+
+
+RESERVATION_STATES = ('reserved', 'dispatched', 'settled', 'released')
+
+
+def dispatch_decision(*, reservation_state: str | None,
+                      dispatch_ref: str | None = None, prior_dispatch_ref: str | None = None) -> str:
+    """One decision per "this reservation's work has been handed to a provider".
+
+    Returns 'dispatch' (reserved -> dispatched), 'duplicate' (already
+    dispatched with this dispatch reference), 'payload_conflict' (already
+    dispatched with another), 'already_settled', 'already_released' or
+    'unknown_operation'.
+    Once dispatched, the reservation can no longer be released: only a
+    settlement (possibly of zero units, when policy says a failed outcome
+    consumes nothing) ends it. See ORENA_COMMERCE_ARCHITECTURE.md §4:
+    "Dispatched/unknown-outcome work retains its reservation until
+    reconciliation; TTL alone cannot release allowance while an expensive
+    request may still finish."
+    """
+    if reservation_state is None:
+        return 'unknown_operation'
+    if reservation_state == 'reserved':
+        return 'dispatch'
+    if reservation_state == 'dispatched':
+        return 'duplicate' if prior_dispatch_ref == dispatch_ref else 'payload_conflict'
+    if reservation_state == 'settled':
+        return 'already_settled'
+    if reservation_state == 'released':
+        return 'already_released'
+    return 'unknown_operation'
+
+
 def settle_decision(*, reservation_state: str | None, admitted_units: int | None,
-                    actual_units: int, prior_actual_units: int | None) -> str:
+                    actual_units: int, prior_actual_units: int | None,
+                    outcome_ref: str | None = None, prior_outcome_ref: str | None = None) -> str:
     """One decision per settle(operationId, actualUnits, outcomeRef) call.
 
-    Returns 'settle' (move admitted_units of `reserved` to `actual_units` of
-    `consumed`, releasing the unused remainder), 'duplicate' (already settled
-    with this exact actual_units - charge nothing a second time),
-    'payload_conflict' (already settled with a *different* actual_units - a
-    provider cannot revise history by retrying settle with a new number),
+    Settles a reservation that is `reserved` or `dispatched`. Returns 'settle'
+    (move admitted_units of `reserved` to `actual_units` of `consumed`,
+    releasing the unused remainder), 'duplicate' (already settled with this
+    exact actual_units and outcome reference - charge nothing a second time),
+    'payload_conflict' (already settled with a *different* actual_units or
+    outcome reference - a provider cannot revise history by retrying settle
+    with a new number or result),
     'already_released' (the reservation was cancelled before dispatch and
     cannot be settled), 'exceeds_admitted' (actual_units is more than was
     ever reserved for this operation) or 'unknown_operation' (no reservation
@@ -241,10 +313,11 @@ def settle_decision(*, reservation_state: str | None, admitted_units: int | None
     if reservation_state is None:
         return 'unknown_operation'
     if reservation_state == 'settled':
-        return 'duplicate' if prior_actual_units == actual_units else 'payload_conflict'
+        same = prior_actual_units == actual_units and prior_outcome_ref == outcome_ref
+        return 'duplicate' if same else 'payload_conflict'
     if reservation_state == 'released':
         return 'already_released'
-    if reservation_state != 'reserved':
+    if reservation_state not in {'reserved', 'dispatched'}:
         return 'unknown_operation'
     if admitted_units is not None and actual_units > admitted_units:
         return 'exceeds_admitted'
@@ -256,7 +329,9 @@ def release_decision(*, reservation_state: str | None) -> str:
 
     Returns 'release' (move admitted_units back out of `reserved`, nothing
     consumed), 'duplicate' (already released - idempotent, releases nothing
-    twice), 'already_settled' (cannot release a reservation whose units were
+    twice), 'dispatched_retained' (the work was handed to a provider and may
+    still finish; its reservation stays until a settlement reconciles it),
+    'already_settled' (cannot release a reservation whose units were
     already consumed; settlement is final) or 'unknown_operation' (no
     reservation exists for this operation ID at all).
 
@@ -269,6 +344,8 @@ def release_decision(*, reservation_state: str | None) -> str:
         return 'unknown_operation'
     if reservation_state == 'released':
         return 'duplicate'
+    if reservation_state == 'dispatched':
+        return 'dispatched_retained'
     if reservation_state == 'settled':
         return 'already_settled'
     if reservation_state != 'reserved':
