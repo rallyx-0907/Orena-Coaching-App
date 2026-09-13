@@ -43,7 +43,7 @@ def test_a_journal_records_opaque_ids_and_times_in_order_of_the_instant():
     later = record(deleted_at='2026-09-13T15:30:00+07:00')   # 08:30 UTC
     earlier = record(deleted_at='2026-09-13T08:10:00+00:00')
     body = journal([later, earlier])
-    assert body['kind'] == JOURNAL_KIND and body['version'] == 1
+    assert body['kind'] == JOURNAL_KIND and body['version'] == 2
     assert [row['id'] for row in body['records']] == [earlier['id'], later['id']], 'instants, not spellings'
     assert body['records'][1]['deleted_at'] == '2026-09-13T08:30:00+00:00', 'one offset'
     assert set(body['records'][0]) == {'id', 'user_id', 'epoch', 'created_at', 'deleted_at'}, 'no content'
@@ -95,7 +95,7 @@ def test_a_journal_round_trips_and_a_foreign_file_is_refused(tmp_path):
     body = journal([record(), record()])
     write_journal(path, body)
     assert read_journal(path)['records'] == body['records']
-    for content in ({'kind': 'something-else'}, {'kind': JOURNAL_KIND, 'version': 2, 'records': []},
+    for content in ({'kind': 'something-else'}, {'kind': JOURNAL_KIND, 'version': 1, 'records': []},
                     {'kind': JOURNAL_KIND, 'version': 1, 'records': 'x', 'exported_at': body['exported_at']}):
         path.write_text(json.dumps(content), encoding='utf-8')
         with pytest.raises(JournalInvalid):
@@ -280,16 +280,25 @@ def test_no_runtime_code_deletes_or_re_registers_an_account_yet():
     not built, so no runtime path may call `mark_deleted` or `register_new`.
     Lifting this is a reviewed change to the gate, not an edit to this list."""
     import ast
+    import re
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    allowed = {root / 'writing_coach' / 'persistence' / 'incarnation_repository.py'}
+    repository = root / 'writing_coach' / 'persistence' / 'incarnation_repository.py'
+    journal_module = root / 'writing_coach' / 'persistence' / 'deletion_journal.py'
+    # A raw write of a deleted status, the way round the repository methods.
+    raw_delete = re.compile(r"account_incarnations\s+SET\s+status\s*=\s*'deleted'", re.IGNORECASE)
     callers = []
     for path in [root / 'app.py', *(root / 'writing_coach').rglob('*.py'), *(root / 'scripts').rglob('*.py')]:
-        if path in allowed:
+        if path == repository:
             continue
         for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
             if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                    and node.func.attr in {'mark_deleted', 'register_new'}):
+                    and node.func.attr in {'mark_deleted', 'register_new', '_allocate'}):
                 callers.append(f'{path.relative_to(root)}:{node.lineno}')
+            # Restore suppression re-marks deletions that already happened;
+            # that one module may write the status, nothing else may.
+            if (path != journal_module and isinstance(node, ast.Constant)
+                    and isinstance(node.value, str) and raw_delete.search(node.value)):
+                callers.append(f'{path.relative_to(root)}:{node.lineno} (raw SQL)')
     assert callers == []

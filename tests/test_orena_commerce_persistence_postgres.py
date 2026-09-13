@@ -249,20 +249,89 @@ def test_a_late_event_of_the_old_subscription_never_overwrites_the_new_one(engin
     assert repo.get_provider_subscription('stripe', sub('x'))['object_version'] == 9, 'not advanced'
 
 
-def test_a_subscription_mapped_elsewhere_gets_a_terminal_receipt_not_an_error(engine, incarnation):
+def test_a_subscription_mapped_elsewhere_is_refused_without_an_error_or_a_lost_receipt(engine, incarnation):
     """Round-1 P2-c: the mapping conflict used to raise and roll back the
     receipt, so every webhook retry raised again."""
     repo = PostgresCommerceRepository(engine)
     assert _record(repo, incarnation, 'map-1', 1, upd(customer='cus_shared'))['status'] == 'apply'
     other = _account(engine)[1]
     for _ in range(2):
-        outcome = _record(repo, other, 'map-2', 1, upd(customer='cus_shared'))
-        assert outcome['status'] in {'foreign_incarnation', 'duplicate'}
+        assert _record(repo, other, 'map-2', 1, upd(customer='cus_shared')) == {'status': 'foreign_incarnation'}
     receipt = repo.get_receipt('stripe', ev('map-2'))
-    assert receipt['processing_state'] == 'ignored'
-    assert receipt['sanitized_failure_reason'] == 'foreign_incarnation'
+    assert receipt is not None and str(receipt['incarnation_id']) == incarnation
     assert (repo.get_subscription(other) or {}).get('external_subscription_id') is None
     assert str(repo.get_provider_subscription('stripe', sub('x'))['incarnation_id']) == incarnation
+
+
+def test_a_misrouted_first_delivery_leaves_the_event_for_its_owner(engine, incarnation):
+    """Round-2 P2-1 (N1): A owns sub_X at v1; v2 is first routed to C. It used
+    to be filed under C as final `ignored`, so A's own delivery was a
+    `duplicate` and A's update was lost."""
+    repo = PostgresCommerceRepository(engine)
+    _record(repo, incarnation, 'n1-v1', 1, upd('active'))
+    stranger = _account(engine)[1]
+    assert _record(repo, stranger, 'n1-v2', 2, upd('past_due')) == {'status': 'foreign_incarnation'}
+    receipt = repo.get_receipt('stripe', ev('n1-v2'))
+    assert str(receipt['incarnation_id']) == incarnation and receipt['processing_state'] == 'received'
+    assert _record(repo, incarnation, 'n1-v2', 2, upd('past_due'))['status'] == 'apply'
+    assert repo.get_provider_subscription('stripe', sub('x'))['object_version'] == 2
+    assert repo.get_subscription(incarnation)['state'] == 'past_due'
+
+
+def test_an_undecided_event_first_filed_under_a_stranger_is_handed_to_the_owner(engine, incarnation):
+    repo = PostgresCommerceRepository(engine)
+    _record(repo, incarnation, 'n1b-v1', 1, upd('active'))
+    stranger = _account(engine)[1]
+    # No version yet: the stranger's call is `foreign_incarnation` all the same.
+    assert _record(repo, stranger, 'n1b-v2', None, upd('past_due'))['status'] == 'foreign_incarnation'
+    assert str(repo.get_receipt('stripe', ev('n1b-v2'))['incarnation_id']) == incarnation
+    assert _record(repo, incarnation, 'n1b-v2', 2, upd('past_due'))['status'] == 'apply'
+
+
+def test_an_undecided_event_maps_no_subscription(engine, incarnation):
+    """Round-2 P3 (N2): an event that ends `unknown` used to commit a
+    permanent mapping of its subscription, with no version."""
+    repo = PostgresCommerceRepository(engine)
+    _record(repo, incarnation, 'n2-y', 1, upd('active', 'y'))
+    # sub_Z live while sub_Y is live: undecided.
+    assert _record(repo, incarnation, 'n2-z', 1, upd('active', 'z'))['status'] == 'unknown'
+    assert repo.get_provider_subscription('stripe', sub('z')) is None
+    # Nothing was claimed, so another account's verified event for sub_Z is
+    # decided on its own merits.
+    other = _account(engine)[1]
+    assert _record(repo, other, 'n2-z-other', 1, upd('active', 'z'))['status'] == 'apply'
+
+
+def test_reconciliation_is_pending_exactly_while_an_event_waits(engine, incarnation):
+    """Round-2 P2-2: the flag stuck at `pending` after the waiting event was
+    decided as `kept` (N3), and cleared while another still waited (N4)."""
+    repo = PostgresCommerceRepository(engine)
+    _record(repo, incarnation, 'r-x1', 1, upd('active', 'x'))
+    _record(repo, incarnation, 'r-x2', 2, upd('ended', 'x', plan='free'))
+    _record(repo, incarnation, 'r-y1', 1, upd('active', 'y'))
+    # N3: an undecided event for the ended sub_X, later decided as `kept`.
+    assert _record(repo, incarnation, 'r-x3', None, upd('ended', 'x'))['status'] == 'unknown'
+    assert repo.get_subscription(incarnation)['reconciliation_state'] == 'pending'
+    assert _record(repo, incarnation, 'r-x3', 3, upd('ended', 'x'))['current'] == 'kept'
+    assert repo.get_subscription(incarnation)['reconciliation_state'] == 'current'
+    # N4: a `replace` does not clear it while another event still waits.
+    assert _record(repo, incarnation, 'r-y-wait', None, upd('past_due', 'y'))['status'] == 'unknown'
+    assert _record(repo, incarnation, 'r-y2', 2, upd('active', 'y'))['current'] == 'replaced'
+    assert repo.get_subscription(incarnation)['reconciliation_state'] == 'pending'
+    assert _record(repo, incarnation, 'r-y-wait', 3, upd('past_due', 'y'))['status'] == 'apply'
+    assert repo.get_subscription(incarnation)['reconciliation_state'] == 'current'
+
+
+def test_a_known_paid_through_date_is_kept_but_not_inherited(engine, incarnation):
+    repo = PostgresCommerceRepository(engine)
+    until = datetime(2026, 10, 13, tzinfo=UTC)
+    dated = SubscriptionUpdate('active', 'premium', None, sub('x'), until, False)
+    _record(repo, incarnation, 'pt-1', 1, dated)
+    _record(repo, incarnation, 'pt-2', 2, upd('active', 'x'))
+    assert repo.get_subscription(incarnation)['paid_through'] == until
+    _record(repo, incarnation, 'pt-3', 3, upd('ended', 'x', plan='free'))
+    _record(repo, incarnation, 'pt-y', 1, upd('active', 'y'))
+    assert repo.get_subscription(incarnation)['paid_through'] is None, 'a new subscription starts clean'
 
 
 def test_a_reused_event_id_with_other_content_changes_nothing(engine, incarnation):
@@ -277,13 +346,15 @@ def test_a_reused_event_id_with_other_content_changes_nothing(engine, incarnatio
 def test_the_database_keeps_a_terminal_receipt_final(engine, incarnation):
     repo = PostgresCommerceRepository(engine)
     _record(repo, incarnation, 'final', 1, upd())
-    with pytest.raises(DBAPIError):
-        with engine.begin() as connection:
-            connection.execute(
-                text("UPDATE commerce_billing_event_receipts SET processing_state = 'received' "
-                     'WHERE provider = :p AND external_event_id = :e'),
-                {'p': 'stripe', 'e': ev('final')},
-            )
+    for statement in (
+        "UPDATE commerce_billing_event_receipts SET processing_state = 'received' "
+        'WHERE provider = :p AND external_event_id = :e',
+        # Round-2 P3 (N9): the trigger covered UPDATE only.
+        'DELETE FROM commerce_billing_event_receipts WHERE provider = :p AND external_event_id = :e',
+    ):
+        with pytest.raises(DBAPIError):
+            with engine.begin() as connection:
+                connection.execute(text(statement), {'p': 'stripe', 'e': ev('final')})
     assert repo.get_receipt('stripe', ev('final'))['processing_state'] == 'applied'
 
 
@@ -310,8 +381,8 @@ def test_two_racing_events_only_the_newer_verified_version_wins(engine, incarnat
 def test_unknown_event_reconciles_to_apply_then_further_retries_are_duplicate(engine, incarnation):
     repo = PostgresCommerceRepository(engine)
     assert _record(repo, incarnation, 'reconcile', None, upd())['status'] == 'unknown'
-    placeholder = repo.get_subscription(incarnation)
-    assert placeholder['state'] == 'none', 'a neutral placeholder is never a paid state'
+    assert repo.get_subscription(incarnation) is None, 'an undecided event creates no subscription state'
+    assert repo.reconciliation_state(incarnation) == 'pending'
     assert repo.get_receipt('stripe', ev('reconcile'))['processing_state'] == 'received'
 
     reconciled = _record(repo, incarnation, 'reconcile', 3, upd())

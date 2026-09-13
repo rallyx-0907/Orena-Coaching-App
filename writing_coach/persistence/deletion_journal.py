@@ -26,7 +26,10 @@ It works in two halves, and the halves live in different places on purpose:
         (`barrier_restored`) - without it, an ordinary sign-in would create a
         fresh incarnation for a deleted account;
       - one whose account the restore does not have at all is `absent`:
-        nothing of that account exists there to serve or to sign in as.
+        nothing of that account exists there to serve. (Signing in with the
+        same external identity would then create a new, empty account - no
+        barrier to meet, but nothing of the deleted one either, so D-054's
+        "nothing is restored" still holds.)
 
 Nothing here can set an incarnation active. A journal that disagrees with the
 restore about identity - the same id under another account or epoch, or an
@@ -52,7 +55,9 @@ from typing import Any
 import uuid
 
 JOURNAL_KIND = 'orena.deletion_journal'
-JOURNAL_VERSION = 1
+# 2: records carry `created_at` (needed to put a barrier row back). A version-1
+# journal is refused by name rather than as "malformed".
+JOURNAL_VERSION = 2
 
 
 class JournalInvalid(ValueError):

@@ -46,10 +46,13 @@ Changes from the re-review (round 1 of the delegated review):
   anything is written and gets a terminal receipt instead of an integrity
   error that rolled the receipt back.
 - `commerce_subscriptions` keeps the provider's original state name
-  (`provider_state`, §3 "retain the original state internally") and whether
-  it is waiting on reconciliation (`reconciliation_state`, §2).
+  (`provider_state`, §3 "retain the original state internally"). Whether it
+  waits on reconciliation (§2) is derived when read - any `received`
+  receipt for the incarnation - not stored, so it cannot go stale (round 2).
 - A terminal receipt is immutable in the database, not only by convention:
-  a trigger refuses any update of an `applied`/`ignored` receipt.
+  a trigger refuses any update or delete of an `applied`/`ignored` receipt.
+  Receipt compaction under a future retention policy is a reviewed
+  migration that changes this trigger, not a quiet DELETE.
 """
 from __future__ import annotations
 
@@ -73,9 +76,6 @@ SUBSCRIPTION_STATES = (
 # the only two states a repeat delivery of the same event id is compared
 # against for idempotency.
 RECEIPT_PROCESSING_STATES = ("received", "applied", "ignored")
-# 'pending': an event for this incarnation was undecidable ('unknown') and
-# waits on authoritative provider state; 'current': nothing is waiting.
-RECONCILIATION_STATES = ("current", "pending")
 
 
 def _in_list(values: tuple[str, ...]) -> str:
@@ -109,13 +109,8 @@ def upgrade() -> None:
         # The provider's own state name, as received - normalized `state` is
         # what everything reads; this is retained for audit and remapping.
         sa.Column("provider_state", sa.String(60), nullable=True),
-        sa.Column("reconciliation_state", sa.String(20), nullable=False, server_default="current"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.CheckConstraint(
-            f"reconciliation_state IN ({_in_list(RECONCILIATION_STATES)})",
-            name="ck_commerce_subscription_reconciliation",
-        ),
         # RESTRICT, matching account_incarnations' own deletion-barrier design
         # in 20260908_0005: a deleted incarnation's subscription row must
         # keep denying reactivation, not disappear with it.
@@ -166,8 +161,9 @@ def upgrade() -> None:
         ),
         sa.Column("provider", sa.String(40), nullable=False),
         sa.Column("external_subscription_id", sa.String(200), nullable=False),
-        # NULL only between the placeholder insert that makes a first use
-        # lockable and the write that records the first applied event.
+        # NULL only inside the transaction that placed it to make a first
+        # use lockable: an applied event sets it, and anything else deletes
+        # the placeholder again, so no committed row has NULL here.
         sa.Column("object_version", sa.BigInteger(), nullable=True),
         sa.Column("state", sa.String(20), nullable=False, server_default="none"),
         sa.Column("provider_state", sa.String(60), nullable=True),
@@ -253,7 +249,7 @@ def upgrade() -> None:
         )
         op.execute(
             "CREATE TRIGGER commerce_receipt_terminal_is_final "
-            "BEFORE UPDATE ON commerce_billing_event_receipts FOR EACH ROW "
+            "BEFORE UPDATE OR DELETE ON commerce_billing_event_receipts FOR EACH ROW "
             "WHEN (OLD.processing_state IN ('applied', 'ignored')) "
             "EXECUTE FUNCTION commerce_receipt_terminal_is_final()"
         )

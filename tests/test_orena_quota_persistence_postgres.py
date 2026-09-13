@@ -78,7 +78,7 @@ def engine():
     )
     cfg.set_main_option('path_separator', 'os')
     command.upgrade(cfg, 'head')
-    engine = create_engine(URL, future=True)
+    engine = create_engine(URL, future=True, pool_size=20, max_overflow=5)
     yield engine
     engine.dispose()
 
@@ -524,3 +524,82 @@ def test_the_database_refuses_arithmetic_the_code_would_never_write(engine, inca
         with pytest.raises(IntegrityError):
             with engine.begin() as connection:
                 connection.execute(text(statement[0]), statement[1])
+
+
+# --- Review round 2 (0007): the last unit, and no deadlock ------------------
+
+def test_a_retry_racing_its_original_on_the_last_unit_replays_it(engine, incarnation):
+    """Round-2 P1 (a): on a one-unit bucket the retry used to be judged against
+    the bucket its twin had just filled and answered `exhausted` while the
+    work was admitted and charged."""
+    repo = PostgresQuotaRepository(engine)
+    for round_ in range(20):
+        window = _window(1, window_id=f'last-{round_}')
+        same, results, barrier = op(f'last-{round_}'), {}, threading.Barrier(2)
+
+        def send(name, same=same, window=window, results=results, barrier=barrier):
+            barrier.wait()
+            results[name] = repo.reserve(incarnation_id=incarnation, meter='writing.evaluate',
+                                         window=window, operation_id=same, requested_units=1)
+
+        threads = [threading.Thread(target=send, args=(name,)) for name in ('a', 'b')]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        assert sorted(r['status'] for r in results.values()) == ['admit', 'duplicate'], round_
+        assert results['a']['reservation_id'] == results['b']['reservation_id']
+        assert repo.get_bucket(incarnation, 'writing.evaluate', window.window_id)['reserved'] == 1
+
+
+@pytest.mark.parametrize('with_deletion', [False, True])
+def test_reserve_retries_mixed_with_dispatch_settle_release_never_deadlock(engine, with_deletion):
+    """Round-2 P1 (b), the reviewer's matrix: a reserve retry held the bucket
+    and waited on the reservation while settle/release held the reservation
+    and waited on the bucket (up to 25 deadlocks per run before the fix)."""
+    import random
+    import time
+
+    from writing_coach.persistence.incarnation_repository import PostgresIncarnationRepository
+
+    incarnations, repo = PostgresIncarnationRepository(engine), PostgresQuotaRepository(engine)
+    errors = []
+    for round_ in range(8):
+        incarnation = _second_incarnation(engine)
+        ids = [op(f'stress-{round_}-{n}') for n in range(10)]
+        window = _window(6)
+        barrier = threading.Barrier(13 if with_deletion else 12)
+
+        def worker(seed, incarnation=incarnation, ids=ids, window=window, barrier=barrier):
+            barrier.wait()
+            rnd = random.Random(seed)
+            for _ in range(25):
+                ident, action = rnd.choice(ids), rnd.choice(('reserve', 'dispatch', 'settle', 'release'))
+                try:
+                    if action == 'reserve':
+                        repo.reserve(incarnation_id=incarnation, meter='m', window=window,
+                                     operation_id=ident, requested_units=1)
+                    elif action == 'dispatch':
+                        repo.dispatch(operation_id=ident, dispatch_ref='d')
+                    elif action == 'settle':
+                        repo.settle(operation_id=ident, actual_units=rnd.choice((0, 1)))
+                    else:
+                        repo.release(operation_id=ident)
+                except Exception as error:  # a deadlock is what this test exists to catch
+                    errors.append(f'{action}: {type(error).__name__}: {" | ".join(str(error).splitlines()[:6])[:700]}')
+
+        def delete(incarnation=incarnation, barrier=barrier):
+            barrier.wait()
+            time.sleep(random.random() * 0.2)
+            incarnations.mark_deleted(incarnation)
+
+        threads = [threading.Thread(target=worker, args=(round_ * 100 + k,)) for k in range(12)]
+        if with_deletion:
+            threads.append(threading.Thread(target=delete))
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        bucket = repo.get_bucket(incarnation, 'm', window.window_id)
+        assert bucket is None or bucket['consumed'] + bucket['reserved'] <= 6
+    assert errors == []

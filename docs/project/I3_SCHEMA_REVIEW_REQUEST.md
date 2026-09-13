@@ -4,13 +4,90 @@ This document now covers two independent proposals under I3 ("Plans,
 subscription and quota", `ORENA_BACKBONE_INTEGRATION_GATES.md`):
 
 1. **Subscription state and the provider-event inbox** (`20260911_0006`) —
-   reviewed twice (CHANGES REQUESTED both times), revised against both,
-   **awaiting re-review**.
-2. **Quota buckets and reservations** (`20260912_0007`) — reviewed once
-   (CHANGES REQUESTED), revised, **awaiting re-review**. It has no foreign key
+   delegated review round 2: **APPROVED WITH REQUIRED CHANGES**. The required
+   changes are made (below); one column was removed doing so, so that part
+   returns for confirmation. Not yet moved.
+2. **Quota buckets and reservations** (`20260912_0007`) — round 2: CHANGES
+   REQUESTED (one P1); fixed, **awaiting re-review**. It has no foreign key
    into proposal 1's tables but chains on top of its migration.
 
 The latest round is first, below; the earlier history follows it.
+
+## Delegated review round 2 of `4dc27cbc4c4160ef3f7efdff7806a8f04cea6330`: addressed
+
+| | |
+| --- | --- |
+| Reviewer | Delegated Independent Architecture Reviewer — the same fresh Claude subagent (Opus 5), no implementation context, round 2 |
+| Reviewed commit | `4dc27cbc4c4160ef3f7efdff7806a8f04cea6330` |
+| Verdicts | 0006 APPROVED WITH REQUIRED CHANGES (2×P2 to land with tests before the move; a column change returns for review). 0007 CHANGES REQUESTED (1×P1). D-054 application APPROVED. |
+| Reviewer's evidence | Every round-1 fix reproduced; 462 suite runs without a flake; FOR SHARE checked both ways against `mark_deleted`; a 16-thread stress of `record_event` without a deadlock; a six-configuration quota deadlock matrix (up to 25 deadlocks per run); new probes N1-N10. |
+
+### 0007 — P1, the replay was checked before the bucket lock
+
+Two defects with one cause. (a) A retry racing its original on a one-unit
+bucket answered `exhausted` while the original was admitted - it was judged
+against the bucket its twin had just filled (40/40). (b) A reserve retry held
+the bucket and waited on the reservation while settle/release held the
+reservation and waited on the bucket - deadlocks.
+
+- The recorded reservation is looked for again once the bucket lock is held;
+  a twin on the same bucket has committed by then and is replayed.
+- One lock order everywhere: incarnation → bucket → reservation. `settle()`
+  and `release()` lock the bucket first; `dispatch()` locks the incarnation
+  before the reservation (taking the reservation first deadlocked behind a
+  queued `mark_deleted()`); an operation with no reservation at the first,
+  unlocked look answers `unknown_operation` instead of locking one that
+  appears in between without its bucket.
+- Tests: `test_a_retry_racing_its_original_on_the_last_unit_replays_it` (20
+  one-unit races; fails on `4dc27cb`),
+  `test_reserve_retries_mixed_with_dispatch_settle_release_never_deadlock`
+  (the reviewer's matrix as a test, with and without a deletion; fails on
+  `4dc27cb`). The reviewer's own `test_review_deadlock.py`: 0 deadlocks in all
+  six configurations, twice.
+
+### 0006 — the two required P2s, and the P3s
+
+- **P2-1, a misrouted first delivery closed the owner's event (N1).** Whose
+  event it is now comes from the provider-subscription mapping, else the
+  receipt: a call from anyone else is `foreign_incarnation`, and a non-final
+  receipt it created - or an earlier misrouted call left - is handed to the
+  mapped owner, still `received`, so the owner's own delivery decides it.
+  That hand-over of a non-final receipt is the only update a receipt's
+  incarnation ever gets. Tests:
+  `test_a_misrouted_first_delivery_leaves_the_event_for_its_owner`,
+  `test_an_undecided_event_first_filed_under_a_stranger_is_handed_to_the_owner`.
+- **P2-2, `reconciliation_state` stuck and cleared wrongly (N3, N4).** The
+  column is removed: whether an incarnation waits is whether any of its
+  receipts is still `received`, read when asked (`get_subscription()` and
+  `reconciliation_state()`, over the existing
+  `(incarnation_id, received_at)` index). **Schema change - returns for
+  review.** Test: `test_reconciliation_is_pending_exactly_while_an_event_waits`.
+- **P3, an undecided event claimed its subscription (N2).** Only an applied
+  event maps a subscription; a placeholder nothing applied to is deleted in
+  the same transaction, so no committed row has a NULL version. Test:
+  `test_an_undecided_event_maps_no_subscription`.
+- **P3, terminal receipts could be deleted (N9).** The trigger is
+  `BEFORE UPDATE OR DELETE`. Receipt compaction under a future retention
+  policy is a reviewed migration that changes it.
+- **P3, `paid_through` erased on replace.** Kept for the same subscription
+  when an event lacks it; not inherited by a new subscription. Test:
+  `test_a_known_paid_through_date_is_kept_but_not_inherited`.
+- The five new 0006 tests fail on `4dc27cb`.
+
+### D-054 P3s (approved; tidied)
+
+`JOURNAL_VERSION` is 2 (records carry `created_at`; a version-1 journal is
+refused by name). The gate test also refuses `_allocate` calls and raw
+`account_incarnations SET status = 'deleted'` SQL outside the repository and
+restore suppression. The `absent` wording no longer claims sign-in is
+impossible. The runbook says what the operator does when `suppress` stops.
+
+### Evidence for this revision (local execution)
+
+- `scripts/test_orena_backbone.py`: 38/38.
+- Scratch PostgreSQL: commerce 22 + quota 28 = 50/50, five times against one
+  database (250/250); D-054 + I2 64/64.
+- Migrations still proposed and unapplied; the live chain's head is 0005.
 
 ## Delegated review round 1 of `313e70f767e1dc93eada9136947bb2d1f7069b0d`: CHANGES REQUESTED, addressed
 

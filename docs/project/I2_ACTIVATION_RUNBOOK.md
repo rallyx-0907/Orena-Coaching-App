@@ -144,6 +144,15 @@ or an epoch the restore gives to a different incarnation. The verify step is
 and exits non-zero until none remain; serve only after it exits 0.
 `rehearse --deletions <journal>` suppresses inside a rehearsal.
 
+When `suppress` stops on a disagreement, the restore is not served. The
+message names the incarnation or account and what disagrees: the same id
+under another account or epoch means the journal and the backup are from
+different deployments (check which database each came from); an epoch taken
+by a different id means someone signed in to the restored database before
+suppression ran, which the fixed order above forbids - stop serving it,
+restore again, and suppress before anything else touches it. Do not edit a
+journal to make it pass; it is the one record of the deletion.
+
 If the database being replaced cannot be read at all, the journal is only as
 recent as its last copy - which is why the account-deletion workflow, when it
 is built, must also append each deletion to an out-of-database journal as it

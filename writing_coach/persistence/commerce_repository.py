@@ -17,12 +17,17 @@ Revised against two rounds of review (docs/project/I3_SCHEMA_REVIEW_REQUEST.md):
    rather than racing it, without serializing unrelated readers.
 3. A deleted incarnation still gets a durable, terminal receipt (`ignored`,
    reason `deleted_incarnation_rejected`) and no subscription row of any kind.
-4. **A receipt's stored incarnation is authoritative.** Once a receipt
-   exists, the event belongs to the incarnation stored on it; that column is
-   never updated. A call for another incarnation - a new incarnation after
-   delete and re-register, or a misrouted webhook - is `foreign_incarnation`
-   and writes nothing, so it can neither take the event over nor close the
-   owner's pending reconciliation.
+4. **Whose event it is comes from stored identity, never the caller.**
+   The provider-subscription mapping names the owner of every event about
+   that subscription; failing that, the receipt's stored incarnation does. A
+   call for another incarnation - a new incarnation after delete and
+   re-register, or a misrouted webhook - is `foreign_incarnation`. It can
+   neither take the event over nor close it: a receipt that belongs to
+   someone else is not written at all, and a receipt this call created (or
+   an earlier misrouted call left non-final) is handed to the incarnation the
+   mapping names and left `received`, so the owner's own delivery still
+   decides it (review round 2, P2-1). That hand-over of a non-final receipt
+   is the only update its incarnation column ever gets.
 5. **Versions are per provider subscription.** Each provider subscription has
    its own row (`commerce_provider_subscriptions`) with its last applied
    version and its owning incarnation. An event is compared only against its
@@ -32,14 +37,19 @@ Revised against two rounds of review (docs/project/I3_SCHEMA_REVIEW_REQUEST.md):
    one never overwrites a live one; two live ones are 'unknown').
 6. **A mapping conflict is decided, not raised.** A provider subscription
    already mapped to another incarnation makes the event
-   `foreign_incarnation`, recorded as a terminal `ignored` receipt before
-   anything else is written - no integrity error, no lost receipt, no retry
-   loop.
+   `foreign_incarnation` before anything else is written - no integrity
+   error, no lost receipt, no retry loop. A mapping is committed only by an
+   applied event; an undecided one leaves none behind (round 2, P3).
 7. An applied event never erases known state: a missing customer id keeps
    the stored one, and an event that names no provider subscription is
    'unknown' (it cannot be versioned or attributed), never applied.
 8. A reused event id whose content digest differs from the stored one is
    `payload_conflict` and changes nothing.
+9. Whether an incarnation waits on reconciliation is not stored: it is
+   whether any of its receipts is still `received`, read when asked, so it
+   can neither stick after the event is decided nor clear while another still
+   waits (round 2, P2-2). `paid_through` is kept when an event of the same
+   subscription does not carry one.
 
 Still out of scope, named: resolving *which* incarnation a raw webhook
 belongs to. The caller passes an incarnation; the receipt and the
@@ -65,12 +75,13 @@ _TERMINAL_RECEIPT_STATES = ('applied', 'ignored')
 
 # Every verdict's receipt state. 'unknown' stays 'received' (non-terminal);
 # 'duplicate' and 'payload_conflict' write nothing at all.
+# 'foreign_incarnation' is absent on purpose: another incarnation's event is
+# never closed by this call.
 _RECEIPT_STATE = {
     'apply': 'applied',
     'unknown': 'received',
     'stale': 'ignored',
     'deleted_incarnation_rejected': 'ignored',
-    'foreign_incarnation': 'ignored',
 }
 
 
@@ -116,12 +127,28 @@ class PostgresCommerceRepository:
                 text(
                     'SELECT provider, external_customer_id, external_subscription_id, '
                     'plan_id, state, object_version, paid_through, cancel_at_period_end, '
-                    'provider_state, reconciliation_state '
-                    'FROM commerce_subscriptions WHERE incarnation_id = :inc'
+                    'provider_state, '
+                    "CASE WHEN EXISTS (SELECT 1 FROM commerce_billing_event_receipts r "
+                    "WHERE r.incarnation_id = s.incarnation_id AND r.processing_state = 'received') "
+                    "THEN 'pending' ELSE 'current' END AS reconciliation_state "
+                    'FROM commerce_subscriptions s WHERE incarnation_id = :inc'
                 ),
                 {'inc': incarnation_id},
             ).mappings().first()
         return dict(row) if row else None
+
+    def reconciliation_state(self, incarnation_id: str) -> str:
+        """`pending` while any event of this incarnation is undecided, else
+        `current` - also for an incarnation with no subscription row yet."""
+        with self._engine.connect() as connection:
+            waiting = connection.execute(
+                text(
+                    'SELECT EXISTS (SELECT 1 FROM commerce_billing_event_receipts '
+                    "WHERE incarnation_id = :inc AND processing_state = 'received')"
+                ),
+                {'inc': incarnation_id},
+            ).scalar_one()
+        return 'pending' if waiting else 'current'
 
     def get_provider_subscription(self, provider: str, external_subscription_id: str) -> dict[str, Any] | None:
         with self._engine.connect() as connection:
@@ -147,6 +174,20 @@ class PostgresCommerceRepository:
                 {'provider': provider, 'event': external_event_id},
             ).mappings().first()
         return dict(row) if row else None
+
+    @staticmethod
+    def _hand_over(connection, provider: str, external_event_id: str, owner: Any) -> None:
+        """A non-final receipt goes to the incarnation its subscription maps
+        to. The only update a receipt's incarnation ever gets; a terminal
+        receipt is left exactly as it is (and the database refuses otherwise)."""
+        connection.execute(
+            text(
+                'UPDATE commerce_billing_event_receipts SET incarnation_id = :owner '
+                'WHERE provider = :provider AND external_event_id = :event '
+                "AND processing_state = 'received'"
+            ),
+            {'owner': owner, 'provider': provider, 'event': external_event_id},
+        )
 
     @staticmethod
     def _current_row(connection, incarnation_id: str, now: datetime) -> dict[str, Any]:
@@ -220,9 +261,32 @@ class PostgresCommerceRepository:
                 ),
                 {'provider': provider, 'event': external_event_id},
             ).mappings().one()
-            # The stored incarnation is whose event this is - never the caller's.
-            receipt_is_ours = _same(receipt['incarnation_id'], incarnation_id)
-            belongs_to = incarnation_id if receipt_is_ours else str(receipt['incarnation_id'])
+            receipt_incarnation = receipt['incarnation_id']
+
+            # Whose event this is: the incarnation a committed mapping names
+            # for its subscription (permanent once committed, so an unlocked
+            # read is stable), else the receipt's stored one - never the
+            # caller's. A non-final receipt filed under anyone else goes to
+            # the mapped owner, still `received`.
+            mapped_owner = None
+            if subscription_id is not None:
+                mapped_owner = connection.execute(
+                    text(
+                        'SELECT incarnation_id FROM commerce_provider_subscriptions '
+                        'WHERE provider = :provider AND external_subscription_id = :sub '
+                        'AND object_version IS NOT NULL'
+                    ),
+                    {'provider': provider, 'sub': subscription_id},
+                ).scalar_one_or_none()
+            if (mapped_owner is not None and receipt['processing_state'] == 'received'
+                    and not _same(receipt_incarnation, mapped_owner)):
+                self._hand_over(connection, provider, external_event_id, mapped_owner)
+                receipt_incarnation = mapped_owner
+            if mapped_owner is not None and not _same(mapped_owner, incarnation_id):
+                return CommerceOutcome(status='foreign_incarnation')
+
+            receipt_is_ours = _same(receipt_incarnation, incarnation_id)
+            belongs_to = incarnation_id if receipt_is_ours else str(receipt_incarnation)
             already_processed = receipt['processing_state'] in _TERMINAL_RECEIPT_STATES
             payload_matches = not (
                 receipt['payload_digest'] and payload_digest and receipt['payload_digest'] != payload_digest
@@ -252,10 +316,10 @@ class PostgresCommerceRepository:
                     {'provider': provider, 'sub': subscription_id},
                 ).mappings().one()
                 if not _same(mapped['incarnation_id'], incarnation_id):
-                    # Mapped to another incarnation for good: decided here,
-                    # before anything is written, never left to an
-                    # integrity error.
-                    belongs_to = str(mapped['incarnation_id'])
+                    # Mapped by a transaction that committed after the read
+                    # above: the same answer, now under its lock.
+                    self._hand_over(connection, provider, external_event_id, mapped['incarnation_id'])
+                    return CommerceOutcome(status='foreign_incarnation')
                 subscription_version = mapped['object_version']
 
             verdict = subscription_event_decision(
@@ -279,14 +343,16 @@ class PostgresCommerceRepository:
                 )
                 if current_change == 'unknown':
                     verdict = 'unknown'
-            if verdict == 'unknown' and receipt_is_ours and not incarnation_deleted:
-                self._current_row(connection, incarnation_id, now)
+            if decidable and verdict != 'apply' and subscription_version is None:
+                # Only an applied event maps a subscription. A placeholder that
+                # nothing applied to goes again, so an undecided event claims
+                # nothing (a NULL version never survives a commit).
                 connection.execute(
                     text(
-                        "UPDATE commerce_subscriptions SET reconciliation_state = 'pending', "
-                        'updated_at = :now WHERE incarnation_id = :inc'
+                        'DELETE FROM commerce_provider_subscriptions WHERE provider = :provider '
+                        'AND external_subscription_id = :sub AND object_version IS NULL'
                     ),
-                    {'now': now, 'inc': incarnation_id},
+                    {'provider': provider, 'sub': subscription_id},
                 )
 
             # Written only when the receipt is this incarnation's and the
@@ -330,14 +396,20 @@ class PostgresCommerceRepository:
                         'UPDATE commerce_subscriptions SET provider = :provider, '
                         'external_customer_id = COALESCE(:customer, external_customer_id), '
                         'external_subscription_id = :sub, plan_id = :plan, state = :state, '
-                        'object_version = :version, paid_through = :paid_through, '
+                        'object_version = :version, '
+                        # Right-hand sides read the row as it was: the same
+                        # subscription keeps a known paid-through date an
+                        # event does not carry; a new subscription does not
+                        # inherit the old one's.
+                        'paid_through = CASE WHEN external_subscription_id = :same_sub '
+                        'THEN COALESCE(:paid_through, paid_through) ELSE :paid_through END, '
                         'cancel_at_period_end = :cancel, provider_state = :provider_state, '
-                        "reconciliation_state = 'current', updated_at = :now "
-                        'WHERE incarnation_id = :inc'
+                        'updated_at = :now WHERE incarnation_id = :inc'
                     ),
                     {
                         'inc': incarnation_id, 'provider': provider,
                         'customer': update.external_customer_id, 'sub': subscription_id,
+                        'same_sub': subscription_id,
                         'plan': update.plan_id, 'state': update.state,
                         'version': event_object_version, 'paid_through': update.paid_through,
                         'cancel': update.cancel_at_period_end,

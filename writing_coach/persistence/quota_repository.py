@@ -22,14 +22,24 @@ same incarnation, meter, window and units is the original admission again
 (same reservation id); anything else under that operation id is a
 `payload_conflict` that names nothing of the other reservation.
 
-Exactly once, and how: operation ids are globally unique and the reservation
-insert is `ON CONFLICT (operation_id) DO NOTHING`. Two concurrent first uses
-of one operation - from one incarnation or two - therefore resolve inside the
-database to one admission and one replay; the loser's bucket is never
-touched. The incarnation row is held `FOR SHARE` for the whole admission:
-enough to make `mark_deleted()`'s `UPDATE` wait (so an admission and a
-deletion cannot interleave), without serialising unrelated reservations of
-the same learner, which serialise on their bucket row instead.
+Exactly once, and how: operation ids are globally unique, and the recorded
+reservation is looked for again *after* the bucket lock is held, before
+deciding. Two concurrent uses of one operation on one bucket serialise on that
+bucket, so the second finds the first's committed reservation and replays it
+- it never decides against a bucket its twin just filled (review round 2:
+`admit` + `exhausted` on a one-unit bucket). Across two buckets (another
+meter, window or incarnation) the reservation insert is
+`ON CONFLICT (operation_id) DO NOTHING`, so the loser replays or conflicts and
+its bucket is never touched.
+
+Lock order is the same everywhere, so nothing here can deadlock with itself:
+incarnation (`FOR SHARE`) -> bucket -> reservation. `settle()` and `release()`
+read the reservation's bucket id unlocked (it never changes), lock the bucket,
+then the reservation; `dispatch()` locks the incarnation, then the
+reservation, and touches no bucket. The incarnation is held
+`FOR SHARE` for the whole admission: enough to make `mark_deleted()`'s `UPDATE`
+wait (so an admission and a deletion cannot interleave), without serialising
+unrelated reservations of the same learner.
 
 Incarnation lifecycle: a deleted incarnation is `denied` with
 `reason='incarnation_deleted'`, reusing reserve_decision()'s vocabulary, and
@@ -147,6 +157,27 @@ class PostgresQuotaRepository:
         return dict(row) if row else None
 
     @staticmethod
+    def _lock_bucket_of(connection, operation_id: str) -> bool:
+        """Bucket before reservation, the order reserve() takes them in.
+
+        False when the operation has no reservation at this moment. The caller
+        then answers `unknown_operation` without reading the reservation
+        again: one committed in between would otherwise be locked and changed
+        without its bucket held (review round 2 stress).
+        """
+        bucket_id = connection.execute(
+            text('SELECT bucket_id FROM commerce_quota_reservations WHERE operation_id = :op'),
+            {'op': operation_id},
+        ).scalar_one_or_none()
+        if bucket_id is None:
+            return False
+        connection.execute(
+            text('SELECT id FROM commerce_quota_buckets WHERE id = :id FOR UPDATE'),
+            {'id': bucket_id},
+        )
+        return True
+
+    @staticmethod
     def _replay(recorded: dict[str, Any], *, incarnation_id: str, meter: str,
                 window_id: str, units: int) -> QuotaOutcome:
         same = (
@@ -234,6 +265,12 @@ class PostgresQuotaRepository:
                 bucket = connection.execute(select_bucket, key).mappings().first()
             if not _open(bucket['window_start'], bucket['window_end'], now):
                 return QuotaOutcome(status='window_closed')
+            # Again, under the bucket lock: a twin of this operation on this
+            # bucket has committed by now, and replaying it is the only
+            # truthful answer.
+            recorded = self._recorded(connection, operation_id)
+            if recorded is not None:
+                return self._replay(recorded, **identity)
 
             verdict = reserve_decision(
                 Quota(bucket['unit_limit'], bucket['consumed'], bucket['reserved']),
@@ -276,13 +313,29 @@ class PostgresQuotaRepository:
         verdict is 'dispatch'; a deleted incarnation's work is not dispatched."""
         now = self._clock()
         with self._engine.begin() as connection:
+            # Incarnation first, then the reservation - the global order. Taking
+            # the reservation first and the incarnation second deadlocks behind
+            # a queued mark_deleted() (review round 2 stress).
+            owner = connection.execute(
+                text(
+                    'SELECT b.incarnation_id FROM commerce_quota_reservations r '
+                    'JOIN commerce_quota_buckets b ON b.id = r.bucket_id '
+                    'WHERE r.operation_id = :op'
+                ),
+                {'op': operation_id},
+            ).scalar_one_or_none()
+            if owner is None:
+                # No reservation at this moment - and not one to lock later
+                # without its incarnation held first.
+                return QuotaOutcome(status='unknown_operation')
+            incarnation_status = connection.execute(
+                text('SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE'),
+                {'inc': owner},
+            ).scalar_one()
             reservation = connection.execute(
                 text(
-                    'SELECT r.state, r.dispatch_ref, i.status AS incarnation_status '
-                    'FROM commerce_quota_reservations r '
-                    'JOIN commerce_quota_buckets b ON b.id = r.bucket_id '
-                    'JOIN account_incarnations i ON i.id = b.incarnation_id '
-                    'WHERE r.operation_id = :op FOR UPDATE OF r FOR SHARE OF i'
+                    'SELECT state, dispatch_ref FROM commerce_quota_reservations '
+                    'WHERE operation_id = :op FOR UPDATE'
                 ),
                 {'op': operation_id},
             ).mappings().first()
@@ -291,7 +344,7 @@ class PostgresQuotaRepository:
                 dispatch_ref=dispatch_ref,
                 prior_dispatch_ref=reservation['dispatch_ref'] if reservation else None,
             )
-            if verdict == 'dispatch' and reservation['incarnation_status'] != 'active':
+            if verdict == 'dispatch' and incarnation_status != 'active':
                 return QuotaOutcome(status='denied', reason='incarnation_deleted')
             if verdict != 'dispatch':
                 return QuotaOutcome(status=verdict)
@@ -310,6 +363,8 @@ class PostgresQuotaRepository:
         settle call touches neither the reservation nor its bucket."""
         now = self._clock()
         with self._engine.begin() as connection:
+            if not self._lock_bucket_of(connection, operation_id):
+                return QuotaOutcome(status='unknown_operation')
             reservation = connection.execute(
                 text(
                     'SELECT bucket_id, admitted_units, actual_units, state, outcome_ref '
@@ -355,6 +410,8 @@ class PostgresQuotaRepository:
         verdict is 'release' — dispatched work keeps its reservation."""
         now = self._clock()
         with self._engine.begin() as connection:
+            if not self._lock_bucket_of(connection, operation_id):
+                return QuotaOutcome(status='unknown_operation')
             reservation = connection.execute(
                 text(
                     'SELECT bucket_id, admitted_units, state '

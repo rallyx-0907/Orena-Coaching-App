@@ -42,10 +42,14 @@ constraint is fixed):
     incarnation, meter, window and units returns the original admission
     (same reservation id); the same operation_id with any of those different
     is a payload conflict that names none of the other reservation's
-    identifiers. operation_id is globally unique, and the insert is
+    identifiers. operation_id is globally unique. The recorded reservation
+    is looked for again once the bucket lock is held, so a twin on the same
+    bucket - even the last unit of it - replays rather than being judged
+    against the bucket it filled; across buckets the insert is
     `ON CONFLICT (operation_id) DO NOTHING`, so two concurrent first uses -
     even from two incarnations - resolve to one admission and one
-    duplicate/conflict, never an integrity error.
+    duplicate/conflict, never an integrity error. Lock order everywhere:
+    incarnation, bucket, reservation.
 
     dispatch(operation_id, dispatch_ref) -> state 'dispatched': the work has
     been handed to a provider and may still finish. From here the
