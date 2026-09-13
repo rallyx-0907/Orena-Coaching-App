@@ -1,3 +1,5 @@
+import { isTransientRequestError, retryOnce } from './retry.js';
+
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
 async function request(url, options={}){
@@ -99,7 +101,10 @@ export const api={
     body:JSON.stringify(payload||{}),
   }),
   chineseStrokeOrder:(word)=>request(`/api/chinese/stroke-order?word=${encodeURIComponent(word)}`),
-  libraryVocabulary:()=>request('/api/library/vocabulary'),
+  libraryVocabulary:()=>retryOnce(
+    ()=>request('/api/library/vocabulary'),
+    isTransientRequestError,
+  ),
   saveLibraryVocabulary:(payload)=>request('/api/library/vocabulary',{
     method:'POST',
     headers:JSON_HEADERS,
