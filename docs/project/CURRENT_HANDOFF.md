@@ -48,8 +48,8 @@ behavior and evidence. Current invariants/owners:
 No CI/live-provider claim. 8011 browser verifies EN/ZH Write → Evaluate
 degraded paths (draft/target/task intact, working 503 retry). Writing
 regression: 123 pytest; Writing Review/Foundation/51-module ESM gates passed.
-Latest local suite: 824 passed/20 inherited failures/66 skipped
-(GOLDEN_STAR_COMPLETION).
+Latest local suite: 901 passed/0 failures/104 skipped/5 warnings
+(GOLDEN_STAR_COMPLETION; local execution, not a CI claim).
 
 ## Runtime / safety
 
@@ -145,9 +145,12 @@ None identified.
 
 ## Baseline test evidence
 
-20 Python failures are inherited (baselines 5827f6a, f966b28) in
-test_governance_contract.py, test_media_ingestion.py, test_media_learning.py.
-Never claim an all-green suite.
+The 20 inherited Python failures in `test_governance_contract.py`,
+`test_media_ingestion.py`, and `test_media_learning.py` were reconciled against
+the current Orena architecture: 17 assertions now validate canonical documents
+and paths, while the three R10/R12/R20 matrix tests were retired with the
+removed legacy wrappers and frozen-native scope. The exact local suite now
+passes with `901 passed, 104 skipped, 5 warnings`; this is not a CI claim.
 
 ## HUMAN GATES
 
