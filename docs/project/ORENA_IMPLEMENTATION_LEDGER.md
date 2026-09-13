@@ -428,6 +428,37 @@ a missing user row (7 passed). Full hermetic suite 877 passed / 20 inherited.
 
 ---
 
+### Write path, client half - the Writing room keeps its draft with the account
+
+Sandbox activation done (runbook §7): chain `20260912_0007`, flag on, backbone
+`active`. Then the first surface:
+
+- `GET/PUT /api/drafts/{piece}` (`work_api.py`) - the work id is
+  `stable_uuid('work', account, language, 'draft', piece)`, so the same piece
+  meets the same draft on every device and two accounts cannot touch each
+  other's; text 12,000 and task 240 characters, the room's own limits.
+- `static/orena/product/draft-sync.js` - decides by versions, not clocks: the
+  device remembers the version it last agreed with and a digest of that text.
+  Server empty → send what is in the box; device untouched since agreeing →
+  the server's text is the draft; device changed and server did not → send;
+  both moved → show the other version and let the learner choose. A retry of
+  the same words from the same version reuses its operation id (replay).
+- The draft status gains "Draft kept with your account" / "草稿已随你的账户保存",
+  shown only after an acknowledgment; any failure says "on this device". The
+  other-device notice offers "Use that version" (the words in the box are kept
+  as a version first) and "Keep this one" (they become the next version).
+
+Verified: `scripts/test_orena_draft_sync.mjs` (9 groups, in CI);
+`tests/test_work_api.py` 9 against scratch PostgreSQL; all 34 CI node gates;
+ESM graph 54 modules. In the browser against the sandbox, two contexts on one
+account: laptop typed → phone opened with it → phone added a line → the laptop's
+next keystrokes showed the notice (server unchanged until it chose) → "Keep
+this one" made v3 → the phone reloaded into v3 → at 390 the notice fits with no
+overflow, and "Use that version" kept the phone's words in its version list; ZH
+interface shows the ZH status.
+
+---
+
 ## I4 — My Content, My Language and Collection retrieval
 
 **Specification:** `ORENA_COLLECTION_ARCHITECTURE` §§2-5.

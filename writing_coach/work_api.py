@@ -186,3 +186,72 @@ def put_work(work_id: str, body: WorkMutation) -> dict[str, Any]:
         # same answer a read gives, rather than a hint that it exists.
         raise orena_http_error(404, 'work_not_found', 'No such work here.', retryable=False)
     raise orena_http_error(422, reason, 'This change was not accepted.', retryable=False)
+
+
+# --- Drafts by the item they belong to ---------------------------------------
+#
+# The Writing room knows a piece by its item key (`essay:6`, `story:…`,
+# `expression:free`), not by a work UUID. The work id is derived on the server
+# from the account, the learning language and the key, so the same piece meets
+# the same draft on every device, and two accounts writing about the same item
+# can never touch each other's row.
+
+DRAFT_TEXT_LIMIT = 12_000
+DRAFT_TASK_LIMIT = 240
+
+
+class DraftSave(BaseModel):
+    operationId: str = Field(min_length=8, max_length=120)
+    expectedVersion: int = Field(ge=0)
+    text: str = Field(default='', max_length=DRAFT_TEXT_LIMIT)
+    task: str = Field(default='', max_length=DRAFT_TASK_LIMIT)
+
+
+def _draft_key(key: str) -> str:
+    if not key or len(key) > 200 or any(ord(ch) < 32 for ch in key):
+        raise orena_http_error(422, 'draft_key_invalid', 'Not a piece this room knows.', retryable=False)
+    return key
+
+
+def _draft_work_id(scope: Scope, key: str) -> str:
+    return str(stable_uuid('work', scope.account, scope.language, 'draft', key))
+
+
+@router.get('/drafts/{key}')
+def get_draft(key: str) -> dict[str, Any]:
+    key = _draft_key(key)
+    scope = _scope()
+    row = _backbone.work.get_work(scope, _draft_work_id(scope, key))
+    if row is None or row['lifecycle'] == 'deleted':
+        raise orena_http_error(404, 'draft_not_found', 'No draft kept for this piece.', retryable=False)
+    payload = row['payload'] or {}
+    return {'draft': {'text': str(payload.get('text', '')), 'task': str(payload.get('task', '')),
+                      'version': int(row['version'])}}
+
+
+@router.put('/drafts/{key}')
+def put_draft(key: str, body: DraftSave) -> dict[str, Any]:
+    key = _draft_key(key)
+    scope = _scope()
+    ident = _draft_work_id(scope, key)
+    payload = {'text': body.text, 'task': body.task}
+    source = {'kind': 'item', 'id': key, 'revision': ''}
+    references = {'work': ident, 'kind': 'draft', 'lifecycle': 'active', 'source': source}
+    outcome = _backbone.work.commit_mutation(
+        scope=scope, domain='draft', operation_id=body.operationId,
+        digest=semantic_digest('draft', references, payload),
+        expected_version=body.expectedVersion, work_id=ident, kind='draft',
+        payload=payload, lifecycle='active', source=source,
+    )
+    status = outcome.get('status')
+    if status in {'committed', 'replay'}:
+        return {'status': status, 'version': outcome.get('version')}
+    if status == 'conflict':
+        server = outcome.get('server_payload') or {}
+        raise orena_http_error(
+            409, 'draft_conflict', 'This draft changed on another device.', retryable=False,
+            context={'serverVersion': outcome.get('current_version'),
+                     'serverText': str(server.get('text', '')), 'serverTask': str(server.get('task', ''))},
+        )
+    raise orena_http_error(422, str(outcome.get('reason') or 'rejected'), 'This draft was not kept.',
+                           retryable=False)

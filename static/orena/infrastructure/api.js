@@ -247,4 +247,13 @@ export const api={
     body:JSON.stringify(payload),
   }),
   logout:()=>request('/auth/logout',{method:'POST'}),
+  // Whether this deployment keeps work with the account (I2): active,
+  // disabled or unavailable. Drafts stay on the device unless active.
+  accountBackbone:()=>request('/api/account-backbone'),
+  draft:(key)=>request(`/api/drafts/${encodeURIComponent(key)}`),
+  saveDraft:(key,body)=>request(`/api/drafts/${encodeURIComponent(key)}`,{
+    method:'PUT',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
 };

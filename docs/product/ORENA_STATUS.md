@@ -241,6 +241,16 @@ Learning capabilities now built on that foundation:
   card is not recall, and a forgotten word never loses the successes it already
   earned.
 
+Writing drafts kept with the account (I2, REVIEWABLE on the sandbox only,
+where the account backbone is `active`): the draft follows its piece to another
+browser of the same account and learning language, the status says "kept with
+your account" only when the account acknowledged it and "kept on this device"
+otherwise, and a version changed on another device is shown above the box for
+the learner to take or to keep their own - never merged, never replaced under
+their typing, and the replaced words stay in the version list. Elsewhere, and
+wherever the backbone is off, drafts stay on the device as before. Walked in
+two browsers at 1280 and 390, EN and ZH.
+
 Microphone and successful/live-provider paths are unexercised in this runtime
 and are not claimed. The EN/ZH Writing 503 path is browser-verified: it keeps
 the draft, target and task, distinguishes a retryable interruption, and the

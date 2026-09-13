@@ -308,9 +308,11 @@ The server half of the first write path exists and follows the state:
 flag asks), `GET /api/account-backbone` reports the state, and `/api/works`
 (`writing_coach/work_api.py`) answers only when `active` - otherwise 503 with
 `account_backbone_disabled` / `account_backbone_unavailable`, never "saved".
-No surface calls it yet: the client half (a draft kept with the account when
-`active`, on the device otherwise, and saying which) is the next slice, after
-the flag is on in the sandbox so it can be walked in a browser.
+The Writing room is the first surface on it: `/api/drafts/{piece}` keys a
+draft by the piece (the work id is derived on the server from account,
+language and piece), and `static/orena/product/draft-sync.js` keeps the device
+copy, adds the account copy when `active`, and shows a version changed on
+another device for the learner to choose. Other composers stay device-only.
 
 ---
 

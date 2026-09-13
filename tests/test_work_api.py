@@ -188,3 +188,52 @@ def test_an_account_without_its_user_row_is_not_invented(engine, active):
     client, _ = _client(active, user=f'nobody-{uuid.uuid4()}')
     response = client.get(f'/api/works/{uuid.uuid4()}')
     assert response.status_code == 409 and response.json()['detail']['category'] == 'account_not_ready'
+
+
+@postgres
+def test_a_draft_follows_its_piece_across_devices_and_nowhere_else(engine, active):
+    owner, stranger = f'work-{uuid.uuid4()}', f'work-{uuid.uuid4()}'
+    _user(engine, owner)
+    _user(engine, stranger)
+    # One route configuration; `who` is whoever the next request is from.
+    client, who = _client(active, user=owner)
+    key = f'essay:{uuid.uuid4().int % 10_000}'
+    assert client.get(f'/api/drafts/{key}').status_code == 404
+
+    body = {'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 0, 'text': 'Dear Anna,', 'task': 'a letter'}
+    assert client.put(f'/api/drafts/{key}', json=body).json() == {'status': 'committed', 'version': 1}
+    assert client.put(f'/api/drafts/{key}', json=body).json() == {'status': 'replay', 'version': 1}
+
+    # Another device of the same account and language reads the same draft
+    # (the server, not the device, knows which work it is) and moves it on.
+    assert client.get(f'/api/drafts/{key}').json() == {
+        'draft': {'text': 'Dear Anna,', 'task': 'a letter', 'version': 1}}
+    assert client.put(f'/api/drafts/{key}', json={
+        'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 1, 'text': 'Dear Anna, hi'}).status_code == 200
+
+    # The first device, still at version 1, is told what the other wrote.
+    stale = client.put(f'/api/drafts/{key}', json={
+        'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 1, 'text': 'Dear Anna, hello'})
+    assert stale.status_code == 409
+    assert stale.json()['detail']['context'] == {'serverVersion': 2, 'serverText': 'Dear Anna, hi', 'serverTask': ''}
+
+    # Another language of the same account, and another account: their own.
+    who['language'] = 'zh'
+    assert client.get(f'/api/drafts/{key}').status_code == 404
+    who.update(user=stranger, language='en')
+    assert client.get(f'/api/drafts/{key}').status_code == 404
+    assert client.put(f'/api/drafts/{key}', json={
+        'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 0, 'text': 'mine'}).json()['version'] == 1
+    who['user'] = owner
+    assert client.get(f'/api/drafts/{key}').json()['draft']['text'] == 'Dear Anna, hi'
+
+
+@postgres
+def test_a_draft_over_the_rooms_limits_is_refused(engine, active):
+    key = f'work-{uuid.uuid4()}'
+    _user(engine, key)
+    client, _ = _client(active, user=key)
+    too_long = client.put('/api/drafts/expression:free', json={
+        'operationId': f'op-{uuid.uuid4()}', 'expectedVersion': 0, 'text': 'x' * (work_api.DRAFT_TEXT_LIMIT + 1)})
+    assert too_long.status_code == 422
+    assert client.get('/api/drafts/expression:free').status_code == 404
