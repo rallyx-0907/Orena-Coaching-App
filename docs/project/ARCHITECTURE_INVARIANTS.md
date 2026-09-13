@@ -192,3 +192,8 @@ Alembic work, Cloudflare/DNS/OAuth/secret changes, paid-provider or billing
 decisions, destructive Git, volume deletion, public release, rollback-path
 removal, ambiguous architecture decisions, unresolved P0 findings, or repeated
 P1 findings that require broader redesign.
+
+Delegated by D-054, inside the assigned lane and the **sandbox only**:
+applying an independently approved additive migration and switching
+`ORENA_ACCOUNT_BACKBONE` on, under the runbook's safety gates. Production
+(8000) and preview (8010) keep every gate above.

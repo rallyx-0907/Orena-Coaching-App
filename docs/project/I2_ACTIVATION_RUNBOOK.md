@@ -24,24 +24,25 @@ deploying there is a separate decision that has not been made or asked for.
 
 ## 1. Policy inputs
 
-These are values only the human can supply. **Every one of them is absent
-today**, and the code's behaviour with them absent is defined rather than
-guessed — that is what makes activation a decision rather than a rush.
+These are values only the human can supply. **D-054 (2026-09-13) answered the
+two that gated activation**: deletion is permanent, a restore never brings a
+deleted account back, and re-registration is a new incarnation. The retention
+durations are decoupled as operational/legal policy and do not block I2; while
+absent, the behaviour below stands.
 
 | Input | Needed for | Behaviour while absent |
 | --- | --- | --- |
 | Retention period by data class | destructive purge of deleted work | Purge is not implemented and cannot run. Deletion writes a tombstone and increments a version; nothing is erased. |
 | Receipt/tombstone horizon | receipt compaction | No compaction. Receipts accumulate, which is correct but unbounded — see the operational note below. |
-| Backup expiry and restore-suppression policy | restoring after a deletion | `runtime_backup.py` captures and rehearses. Applying deletion records before serving a restored database is **not implemented**; a restore today is only safe if no deletion happened after the dump. |
-| Deletion barrier retention | how long a deleted incarnation blocks reactivation | The barrier row is kept indefinitely. It cannot be dropped while old credentials, jobs or operations could still be accepted. |
+| Restore suppression — **answered, D-054** | restoring after a deletion | Never restore a deleted account. Before a restored database serves, every incarnation deleted after the backup is marked deleted again (`runtime_backup.py` restore path). Backup expiry itself is retention, below. |
+| Deletion barrier retention — **answered, D-054** | how long a deleted incarnation blocks reactivation | Permanent for that incarnation. Re-registration allocates a new one. |
 | Legal/regulatory retention obligations | all of the above | None assumed. No duration is invented anywhere in the code. |
 
-**Two of these gate activation rather than merely limiting it.** Without a
-restore-suppression policy, a restore can reinstate work a learner deleted.
-Without a retention policy, nothing is ever purged. Neither blocks *this*
-milestone, because neither destructive purge nor sync is being switched on —
-but both must be answered before sync or deletion is enabled, and the account
-architecture says so.
+**The input that gated activation is answered.** Without a
+restore-suppression policy a restore could reinstate work a learner deleted;
+D-054 settles it as never. Without retention durations nothing is purged,
+which is safe: deleted data is never served, only kept until an
+operational/legal retention policy exists to purge it.
 
 Not required for I2 and listed so their absence is not mistaken for an
 oversight: plan/price/grace/meter policies (I3), achievement and pedagogical
@@ -51,7 +52,8 @@ policies (I6), provider credentials (I5).
 
 ## 2. Backup and restore
 
-`scripts/runtime_backup.py`, three modes: `capture`, `verify`, `rehearse`.
+`scripts/runtime_backup.py`, five modes: `capture`, `verify`, `rehearse`, and the
+two that keep deletions deleted, `deletions` and `suppress` (below).
 
 **The application image does not ship `postgresql-client`.** It is a Debian
 base without it, so `pg_dump`, `pg_restore` and `psql` are absent and the
@@ -110,8 +112,44 @@ tables now exist), the file was still on the host after the container exited,
 and `capture --out /tmp/...` was refused with the reason instead of silently
 obliging.
 
-What a restore does **not** do: reapply deletion records before serving. That
-needs the policy in §1 and is not implemented. Backups are access-controlled
+### A restore reapplies every deletion before it serves (D-054)
+
+Deleting an account is permanent, so a backup taken before a deletion must not
+bring the account back. Two more modes carry that:
+
+```
+python scripts/runtime_backup.py deletions --out backups/deletions-<when>.json
+python scripts/runtime_backup.py suppress  --into <restored database> \
+    --deletions backups/deletions-<when>.json [--deletions <older journal> ...]
+```
+
+The order of an incident restore is fixed: **export the deletion journal from
+the database being replaced, restore, `suppress`, verify, and only then
+serve.** `deletions` writes every deleted incarnation (opaque ids and times,
+no content) to a journal outside any database, so the restore cannot take it
+back; keep it with the same access control as backups. `suppress` marks each
+one deleted again in the restored database in a single transaction - all or
+nothing - and reports `reapplied`, `already_deleted` and `absent` (created
+after the backup, so nothing of it is there). It never sets anything active,
+and it stops without changing anything if a journal is unreadable or names an
+incarnation that belongs to another account. `rehearse --deletions <journal>`
+does the same inside a rehearsal.
+
+If the database being replaced cannot be read at all, the journal is only as
+recent as its last copy - which is why the account-deletion workflow, when it
+is built, must also append each deletion to an out-of-database journal as it
+happens. That workflow (removing an account's rows from owner tables keyed by
+account, not incarnation) is not built and is a destructive lifecycle change
+that needs its own independent review; after a restore it must be replayed
+too. Until it exists there is no learner-facing account deletion, so there is
+nothing yet for it to replay.
+
+Proven against a scratch database (`tests/test_deletion_journal.py`): an
+incarnation deleted after the backup comes back `active` in the restore and is
+deleted again by `suppress`; sign-in then still meets the deletion barrier;
+re-registration still gets a new incarnation that the journal does not touch;
+a journal naming an incarnation the restore never had reports it `absent`; an
+identity disagreement changes nothing. Backups are access-controlled
 operational copies and are never account sync authority.
 
 ---

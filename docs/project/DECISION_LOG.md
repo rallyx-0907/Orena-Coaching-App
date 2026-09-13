@@ -1526,3 +1526,44 @@ every other D-052 and D-051 rule stands, and no learning information is removed.
 It changes no product domain, capability or persistence.
 
 **Supersedes / Superseded by:** Amends D-052 (phone touch-target size).
+
+## D-054 — Permanent account deletion, and a delegated technical workflow
+
+**Status:** Accepted by explicit human instruction, 2026-09-13.
+
+**Decision (product policy):** Deleting an account is permanent. A deleted
+account and its data are never restored to the learner - not through support,
+not through a database restore, not through signing in again with the same
+external identity. Registering again creates a completely new account
+incarnation that inherits nothing from the deleted one. How long backups and
+logs physically persist is a separate operational/legal retention policy; it
+does not change what a learner can recover (nothing) and does not block I2.
+
+**Decision (workflow):** Technical review is not a human question. Schema and
+migration proposals (starting with I3's `20260911_0006` and `20260912_0007`)
+go to an independent technical reviewer under `AGENTS.md` "Architecture review
+authority"; the implementing agent resolves the findings itself and reports
+the outcome (APPROVED / CHANGES REQUESTED) to the human. Once this deletion
+policy is in the contracts and the technical review is clean, the agent may
+apply independently approved additive migrations to the **sandbox** and set
+`ORENA_ACCOUNT_BACKBONE=on` there to test integration, following the existing
+runbook safety gates, without asking again. I4/I5/I6 continue in dependency
+order without asking about implementation details.
+
+**Still the human's:** a genuinely new product policy (plans, prices, quota or
+entitlement values, retention durations, achievement or pedagogical policy);
+an irreversible architecture decision; anything touching production (8000) or
+preview (8010), credentials, providers or billing.
+
+**Consequences:** `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §§1, 5 state the
+policy: the deletion barrier is permanent for that incarnation, restore must
+reapply every deletion recorded after the backup before serving, and
+re-registration is a new incarnation. `I2_ACTIVATION_RUNBOOK.md` §1 records the
+restore-suppression and barrier inputs as answered and the retention inputs as
+decoupled (purge stays disabled until they exist; nothing deleted is ever
+served). `ARCHITECTURE_INVARIANTS.md` human gates name the sandbox delegation.
+Production gates are unchanged.
+
+**Supersedes / Superseded by:** Answers the I2 activation policy inputs
+"restore suppression" and "deletion barrier retention"; narrows the runtime
+activation and schema gates to production/preview for work inside this lane.

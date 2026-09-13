@@ -30,9 +30,12 @@ reactivation until an explicit re-registration flow creates a new incarnation.
 Commands, receipts, private references, job scopes, caches and sync cursors include
 that incarnation. Old sessions and pending uploads cannot target the new one;
 external provider callbacks for the old incarnation may settle historical usage
-under policy but cannot grant access to the new account. The barrier's retention
-is an activation-policy input; deletion cannot discard it while old credentials,
-jobs or operations could still be accepted. No production identity change here.
+under policy but cannot grant access to the new account. Deletion is permanent
+(D-054): a deleted incarnation is never reactivated or restored, and
+re-registration with the same external identity is a new incarnation that
+inherits nothing. The barrier is therefore kept for the life of the deployment;
+deletion cannot discard it while old credentials, jobs or operations could still
+be accepted. No production identity change here.
 
 ### Learner profile, preferences and state
 
@@ -177,7 +180,12 @@ execution require approved policy and operator gate. Do not invent retention
 days or legal obligations. A versioned policy supplies retention by data class,
 receipt/tombstone horizon, backup expiry and restore suppression; missing policy
 disables destructive purge and blocks sync activation if replay safety cannot
-be maintained. Restore must reapply deletion records before serving learners.
+be maintained. Restore must reapply deletion records before serving learners:
+every incarnation deleted after the backup was taken is marked deleted again in
+the restored database, so its data is never served and it cannot be reactivated
+(D-054). Retention durations for backups and logs are a separate
+operational/legal policy; absent, destructive purge stays disabled and nothing
+deleted is ever served.
 Backups are access-controlled operational copies, never account sync authority.
 
 Receipt compaction must preserve deduplication for all still-valid operations.

@@ -8,15 +8,27 @@ and the middle one is not optional in the checklist:
         --into orena_restore_rehearsal
     python scripts/runtime_backup.py verify --dump backups/pre-i2.dump
 
+and two more for the one thing a restore must never undo - a deletion (D-054):
+
+    python scripts/runtime_backup.py deletions --out backups/deletions.json
+    python scripts/runtime_backup.py suppress --into orena_restored \\
+        --deletions backups/deletions.json
+
+`deletions` exports every deleted incarnation from the database being
+replaced into a journal that lives outside any database. `suppress` marks each
+of them deleted again in the restored database, in one transaction, before it
+is served. `rehearse --deletions FILE` does the same inside a rehearsal.
+
 `capture` writes a custom-format `pg_dump`. `rehearse` restores it into a
 *separate* database and compares revision and row counts against the source -
 never over the runtime database, which this script has no mode for touching.
 `verify` re-reads a dump's own listing without a server.
 
 Backups are access-controlled operational copies and are never account sync
-authority: restoring one reinstates a database, and the deletion records inside
-it still apply before anything is served. That rule belongs to the account
-architecture; this script only makes the copy and proves it can come back.
+authority. Deleting an account is permanent (D-054), so restoring one
+reinstates a database *and then* the deletions made since it was taken: the
+restore is not served until `suppress` has run. The journal holds opaque ids
+and times, no content, and is kept with the same access control as backups.
 
 Requires `pg_dump`, `pg_restore` and `psql` on PATH. **The application image
 does not ship them** - it is a Debian base without `postgresql-client` - so
@@ -167,7 +179,62 @@ def _counts(url: str, database: str) -> dict[str, int | None]:
     return counts
 
 
-def rehearse(url: str, dump: Path, into: str) -> int:
+def _engine_for(url: str, database: str):
+    from sqlalchemy import create_engine
+
+    parsed = urlparse(url)
+    return create_engine(urlunparse(parsed._replace(path=f"/{database}")), future=True)
+
+
+def export_journal(url: str, out: Path) -> int:
+    from writing_coach.persistence.deletion_journal import export_deletions, write_journal
+
+    engine = create_engine_for_url(url)
+    try:
+        body = export_deletions(engine)
+    finally:
+        engine.dispose()
+    write_journal(out, body)
+    print(f"exported {len(body['records'])} deleted incarnation(s) to {out}")
+    return 0
+
+
+def create_engine_for_url(url: str):
+    from sqlalchemy import create_engine
+
+    return create_engine(url, future=True)
+
+
+def suppress(url: str, into: str, journals: list[Path]) -> int:
+    """Reapply deletions to a restored database before it serves."""
+    from writing_coach.persistence.deletion_journal import (
+        JournalInvalid, merge, read_journal, reapply_deletions,
+    )
+
+    if not journals:
+        print("suppress needs at least one --deletions journal", file=sys.stderr)
+        return 1
+    try:
+        body = merge(*(read_journal(path) for path in journals))
+    except JournalInvalid as error:
+        print(f"refusing: {error}", file=sys.stderr)
+        return 1
+    engine = _engine_for(url, into)
+    try:
+        summary = reapply_deletions(engine, body)
+    except JournalInvalid as error:
+        print(f"refusing: {error}; nothing was changed", file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+    print(
+        f"deletions reapplied to {into}: {summary['reapplied']} reapplied, "
+        f"{summary['already_deleted']} already deleted, {summary['absent']} absent (created after the backup)"
+    )
+    return 0
+
+
+def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None) -> int:
     """Restore into a separate database and compare it with the source.
 
     The target is created and dropped here. It is never the runtime database:
@@ -198,6 +265,10 @@ def rehearse(url: str, dump: Path, into: str) -> int:
         print(result.stderr, file=sys.stderr)
         return 1
 
+    if journals and suppress(url, into, journals) != 0:
+        _run(["psql", "-v", "ON_ERROR_STOP=1", "-c", f'DROP DATABASE IF EXISTS "{into}"', admin])
+        return 1
+
     before, after = _counts(url, source), _counts(url, into)
     print(f"{'table':<26}{'source':>12}{'restored':>12}")
     mismatched = []
@@ -217,12 +288,14 @@ def rehearse(url: str, dump: Path, into: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("capture", "verify", "rehearse"))
+    parser.add_argument("mode", choices=("capture", "verify", "rehearse", "deletions", "suppress"))
     parser.add_argument("--url", default="", help="defaults to POSTGRES_RUNTIME_URL")
     parser.add_argument("--out", type=Path,
                         help="capture: where to write the dump (default: backups/)")
     parser.add_argument("--dump", type=Path, help="verify/rehearse: the dump to read")
-    parser.add_argument("--into", default="", help="rehearse: the database to restore into")
+    parser.add_argument("--into", default="", help="rehearse/suppress: the restored database")
+    parser.add_argument("--deletions", type=Path, action="append", default=[],
+                        help="suppress/rehearse: a deletion journal (repeatable)")
     parser.add_argument("--allow-ephemeral", action="store_true",
                         help="capture: permit a destination that dies with its container")
     args = parser.parse_args(argv)
@@ -235,10 +308,20 @@ def main(argv: list[str] | None = None) -> int:
     url = args.url or runtime_url()
     if args.mode == "capture":
         return capture(url, args.out or default_out(), args.allow_ephemeral)
+    if args.mode == "deletions":
+        if not args.out:
+            print("deletions needs --out", file=sys.stderr)
+            return 1
+        return export_journal(url, args.out)
+    if args.mode == "suppress":
+        if not args.into:
+            print("suppress needs --into", file=sys.stderr)
+            return 1
+        return suppress(url, args.into, args.deletions)
     if not args.dump or not args.into:
         print("rehearse needs --dump and --into", file=sys.stderr)
         return 1
-    return rehearse(url, args.dump, args.into)
+    return rehearse(url, args.dump, args.into, args.deletions)
 
 
 if __name__ == "__main__":
