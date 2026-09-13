@@ -1,0 +1,42 @@
+{
+  "core_learning": [
+    "learn",
+    "practice",
+    "listen",
+    "speak",
+    "write",
+    "take-notes",
+    "grow"
+  ],
+  "discovery": [
+    "explore",
+    "travel",
+    "discover",
+    "plan",
+    "idea",
+    "create"
+  ],
+  "continuity": [
+    "rest",
+    "relax",
+    "care",
+    "hello"
+  ],
+  "reward": [
+    "celebrate",
+    "achieve"
+  ],
+  "expressions": [
+    "happy",
+    "excited",
+    "curious",
+    "thinking",
+    "proud",
+    "laughing",
+    "surprised",
+    "winking",
+    "calm",
+    "cheering"
+  ],
+  "rule": "Reuse the closest existing action first. Generate a new pose only when no existing action communicates the intended learner moment."
+}

@@ -102,12 +102,12 @@ def test_support_language_is_distinct_from_ui_locale() -> None:
 def test_no_vietnamese_default_survives_in_the_web_client() -> None:
     """The four defaults the audit named must stay gone."""
 
-    store = (REPO / "static/becoming/store.js").read_text(encoding="utf-8")
-    api = (REPO / "static/becoming/api.js").read_text(encoding="utf-8")
+    store = (REPO / "static/orena/app.js").read_text(encoding="utf-8")
+    api = (REPO / "static/orena/infrastructure/api.js").read_text(encoding="utf-8")
     assert "||'vi'" not in store and '|| "vi"' not in store
     assert "||'vi'" not in api and '|| "vi"' not in api
     assert "['vi','en','zh']" not in store, "the three-language enum must not come back"
-    assert "AVAILABLE_SUPPORT_LANGUAGES" in store
+    assert "languages.support_languages" in store
 
     listening_api = (REPO / "writing_coach/listening_api.py").read_text(encoding="utf-8")
     assert 'Query(default="vi"' not in listening_api
@@ -152,12 +152,7 @@ def test_curated_and_my_media_share_one_recovery_policy() -> None:
     app_source = (REPO / "app.py").read_text(encoding="utf-8")
     importer = (REPO / "scripts/build_listening_dev_catalog.py").read_text(encoding="utf-8")
     assert "build_youtube_adapter()" in app_source
-    # The importer builds it through the shared factory too. It is reached via a
-    # default argument (so tests can inject a fake adapter) rather than a literal
-    # call site, so the invariant to assert is that the shared factory is what it
-    # falls back to - together with the "no adapter of its own" check below.
-    assert "from writing_coach.media_recovery_policy import build_youtube_adapter" in importer
-    assert "adapter_factory or build_youtube_adapter" in importer
+    assert "build_youtube_adapter()" in importer
     assert "YouTubeMediaProviderAdapter(" not in app_source, "runtime must not build its own policy"
     assert "YouTubeMediaProviderAdapter(" not in importer, "importer must not build its own policy"
 

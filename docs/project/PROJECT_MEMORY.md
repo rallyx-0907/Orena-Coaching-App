@@ -25,14 +25,20 @@ git log -5 --oneline
 
 Then read only this canonical sequence:
 
+Then read this canonical sequence:
+
 1. `docs/project/PROJECT_MEMORY.md`
-2. `docs/project/PRODUCT_CONSTITUTION.md`
-3. `docs/project/CURRENT_PRODUCT_STATE.yaml`
-4. `docs/project/LEGACY_TOMBSTONES.md`
-5. `docs/project/CURRENT_HANDOFF.md`
-6. only the relevant section of `docs/project/PRODUCT_MAP.md`
-7. only the relevant section of `docs/project/ROADMAP.md`
-8. relevant code and tests for the current task
+2. `docs/product/ORENA_PRODUCT_CONSTITUTION.md`
+3. `docs/product/ORENA_CONTENT_ARCHITECTURE.md`
+4. `assets/brand/orena/README.md` for learner-facing visual/brand work
+5. `docs/project/PRODUCT_CONSTITUTION.md`
+6. `docs/project/CURRENT_PRODUCT_STATE.yaml`
+7. `docs/project/LEGACY_TOMBSTONES.md`
+8. `docs/product/ORENA_STATUS.md`
+9. `docs/project/CURRENT_HANDOFF.md`
+10. only the relevant section of `docs/project/PRODUCT_MAP.md`
+11. only the relevant section of `docs/project/ROADMAP.md`
+12. relevant code and tests for the current task
 
 Consult `docs/project/DECISION_LOG.md` only when a durable product or
 architecture decision is relevant. Read `docs/project/DESIGN_CONTRACT.md` for
@@ -45,16 +51,16 @@ the live Git checks above.
 
 ## Memory topology
 
-| File | Purpose | Authority / editor | Change trigger | Never store |
-| --- | --- | --- | --- | --- |
-| `PRODUCT_CONSTITUTION.md` | Durable Orena product intent | Human-governed; agents only with explicit human instruction | Accepted durable principle change | Current task status or implementation excuses |
-| `CURRENT_PRODUCT_STATE.yaml` | Compact machine-readable verified truth | Agents after verification; schema-enforced | Verified current truth changes | Narrative history, secrets, unverified success |
-| `LEGACY_TOMBSTONES.md` | Retired or forbidden directions | Human-governed | Explicit accepted retirement/supersession | Ordinary backlog or temporary bugs |
-| `CURRENT_HANDOFF.md` | Current execution state only | Active agent after verification | Lane, status, gates, blocker, or next task changes | Product philosophy or historical closeouts |
-| `PRODUCT_MAP.md` | Current learner/product architecture | Human-governed for product direction; agents for accepted contract clarification | Accepted architecture relationship changes | Source inventory or implementation history |
-| `DESIGN_CONTRACT.md` | Durable web/native experience rules | Human-governed | Explicit accepted design-direction change | Page-specific polish notes |
-| `DECISION_LOG.md` | Append-only durable decisions | Agent may append only after explicit human direction/accepted decision | Durable decision changes | Rewritten history |
-| `ROADMAP.md` | Approved staged program | Human-approved status transitions | Roadmap or stage transition | Session notes |
+| File                         | Purpose                                 | Authority / editor                                                               | Change trigger                                     | Never store                                    |
+| ---------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------- |
+| `PRODUCT_CONSTITUTION.md`    | Durable Orena product intent            | Human-governed; agents only with explicit human instruction                      | Accepted durable principle change                  | Current task status or implementation excuses  |
+| `CURRENT_PRODUCT_STATE.yaml` | Compact machine-readable verified truth | Agents after verification; schema-enforced                                       | Verified current truth changes                     | Narrative history, secrets, unverified success |
+| `LEGACY_TOMBSTONES.md`       | Retired or forbidden directions         | Human-governed                                                                   | Explicit accepted retirement/supersession          | Ordinary backlog or temporary bugs             |
+| `CURRENT_HANDOFF.md`         | Current execution state only            | Active agent after verification                                                  | Lane, status, gates, blocker, or next task changes | Product philosophy or historical closeouts     |
+| `PRODUCT_MAP.md`             | Current learner/product architecture    | Human-governed for product direction; agents for accepted contract clarification | Accepted architecture relationship changes         | Source inventory or implementation history     |
+| `DESIGN_CONTRACT.md`         | Durable web/native experience rules     | Human-governed                                                                   | Explicit accepted design-direction change          | Page-specific polish notes                     |
+| `DECISION_LOG.md`            | Append-only durable decisions           | Agent may append only after explicit human direction/accepted decision           | Durable decision changes                           | Rewritten history                              |
+| `ROADMAP.md`                 | Approved staged program                 | Human-approved status transitions                                                | Roadmap or stage transition                        | Session notes                                  |
 
 `PROJECT_STATE.md`, `ARCHITECTURE_INVARIANTS.md`, `DOMAIN_BOUNDARIES.md`, release
 matrices, and archived handoffs remain supporting evidence. They are not part
@@ -65,8 +71,12 @@ of every startup context.
 Product intent precedence:
 
 ```text
-PRODUCT_CONSTITUTION
+explicit current human instruction
+→ docs/product/ORENA_PRODUCT_CONSTITUTION.md
+→ docs/product/ORENA_CONTENT_ARCHITECTURE.md
+→ assets/brand/orena/ for brand / mascot / visual identity work
 → accepted DECISION_LOG entries
+→ docs/project/PRODUCT_CONSTITUTION.md for non-superseded compatibility invariants
 → DESIGN_CONTRACT and LEGACY_TOMBSTONES
 → CURRENT_PRODUCT_STATE
 → CURRENT_HANDOFF

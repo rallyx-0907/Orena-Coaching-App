@@ -12,7 +12,7 @@ def require(condition, message):
 
 version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-index = (ROOT / "templates" / "index.html").read_text(encoding="utf-8")
+index = (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8")
 app = (ROOT / "app.py").read_text(encoding="utf-8")
 auth = (ROOT / "auth_support.py").read_text(encoding="utf-8")
 
@@ -26,9 +26,10 @@ require("languages.english.grammar_course import" not in app, "English grammar c
 require("GRAMMAR_LIBRARY = [" not in app, "Dead embedded GRAMMAR_LIBRARY must not return")
 require('translation_vi = excluded.translation_vi,\n              translation_vi' not in app, "Duplicate vocabulary SQL assignment exists")
 require("<script>\nconst $=" not in index, "Large inline app JavaScript must stay extracted")
-require('/static/app.js?v=' in index, "index.html must load static/app.js")
-require('/static/language.js?v=' in index, "index.html must load language.js")
-require('/static/chinese.js?v=' in index, "index.html must load chinese.js")
+require('/orena-assets/app.js' in index, 'Root must load the Orena product')
+require('/orena-assets/world.css' in index, 'Root must load the shared presentation foundation')
+require(not (ROOT / 'static/becoming').exists(), 'Retired learner product must stay physically absent')
+require('/orena-assets/' in auth, 'New product assets must pass the auth asset boundary')
 require("LANGUAGE_CODE_CTX" in auth, "Auth middleware must set language context")
 require("resolve_language_db_path" in auth, "Auth must resolve DB by user + language")
 

@@ -200,6 +200,13 @@ def evaluate_benchmark_result(
             failures.append(
                 BenchmarkFinding("category_validity", "strength evidence uses an unknown rubric category")
             )
+        if not isinstance(item.get("explanation_vi"), str) or not item["explanation_vi"].strip():
+            failures.append(
+                BenchmarkFinding(
+                    "actionable_feedback",
+                    "strength evidence must explain what the learner did well",
+                )
+            )
         confidence = item.get("confidence")
         if not _is_number(confidence) or not CONFIDENCE_THRESHOLD <= float(confidence) <= 1:
             failures.append(
@@ -247,6 +254,20 @@ def evaluate_benchmark_result(
                 BenchmarkFinding(
                     "correction_usefulness",
                     "correction must be non-empty and materially differ from evidence",
+                )
+            )
+        if not isinstance(item.get("explanation_vi"), str) or not item["explanation_vi"].strip():
+            failures.append(
+                BenchmarkFinding(
+                    "actionable_feedback",
+                    "error evidence must explain the problem",
+                )
+            )
+        if not isinstance(item.get("mini_rule_vi"), str) or not item["mini_rule_vi"].strip():
+            failures.append(
+                BenchmarkFinding(
+                    "actionable_feedback",
+                    "error evidence must include a reusable rule",
                 )
             )
 
@@ -457,6 +478,7 @@ def compare_target_level_results(
 
 _SAFE_EVALUATOR_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\Z")
 _REPORT_RESULT_FIELDS = (
+    "band_status",
     "summary_vi",
     "strengths_vi",
     "priorities_vi",

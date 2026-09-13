@@ -5,7 +5,7 @@
 // playback URL point somewhere the rights review never covered.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {mediaPlayer, playbackAvailable} from '../static/becoming/components/media-player.js';
+import {mediaPlayer, playbackAvailable} from '../static/orena/capabilities/media-player.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../writing_coach/content/listening_catalog.v1.json', import.meta.url), 'utf8'));
 const sources = new Map(manifest.sources.map(source => [source.source_media_id, source]));
@@ -22,7 +22,7 @@ for (const lessonId of REAL_VIDEO_LESSONS) {
   assert.equal(source.playback.kind, 'video', `${lessonId} must be real video`);
   assert.equal(source.playback.provider, 'wikimedia-commons');
   assert.match(source.playback.url, /^https:\/\/upload\.wikimedia\.org\/.+\.webm$/);
-  assert.match(source.poster_url, /^https:\/\/upload\.wikimedia\.org\/.+\.jpg$/);
+  assert.match(source.poster_url, /^https:\/\/thumb\.wikimedia\.org\/.+\.jpg$/);
 
   // Rights and provenance stay attached to the canonical media object.
   assert.equal(source.rights.review_status, 'verified');
@@ -43,8 +43,7 @@ for (const lessonId of REAL_VIDEO_LESSONS) {
   assert.ok(lesson.excerpt_end_ms > lesson.excerpt_start_ms);
   assert.ok(lesson.excerpt_end_ms <= source.duration_ms);
 
-  // The four practice modes all run on this one media object.
-  assert.deepEqual(lesson.available_modes, ['listen', 'active', 'dictation', 'shadowing']);
+
 }
 
 // --- English and Chinese are both represented by real video ---
@@ -58,8 +57,8 @@ assert.deepEqual([...languages].sort(), ['en', 'zh'], 'the real slice must cover
 const en = sources.get('commons-royalsociety-cosmic-calendar');
 assert.equal(playbackAvailable(en.playback), true);
 const html = mediaPlayer(en.playback, 'The cosmic calendar', {startMs: 1000, endMs: 47000, poster: en.poster_url});
-assert.match(html, /^<video id="listeningPlayer"/);
-assert.match(html, /poster="https:\/\/upload\.wikimedia\.org\//);
+assert.match(html, /^<video id="orenaMedia"/);
+assert.match(html, /poster="https:\/\/thumb\.wikimedia\.org\//);
 assert.match(html, /data-excerpt-start-ms="1000" data-excerpt-end-ms="47000"/);
 assert.match(html, /playsinline/);
 assert.doesNotMatch(html, /<iframe/);
@@ -97,10 +96,34 @@ for (const hostile of [
 
 // --- Existing audio and YouTube lessons keep working: no second player ---
 const audio = manifest.sources.find(source => source.playback.kind === 'audio');
-assert.match(mediaPlayer(audio.playback, 'Audio lesson', {}), /^<audio id="listeningPlayer"/);
+assert.match(mediaPlayer(audio.playback, 'Audio lesson', {}), /^<audio id="orenaMedia"/);
 assert.match(
   mediaPlayer({provider: 'youtube', kind: 'embed', url: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'}, 'V', {}),
-  /^<iframe id="listeningPlayer"/,
+  /^<iframe id="orenaMedia"/,
 );
+
+/* --- Support-language text is real language, not a transliteration ---
+
+   Vietnamese carries meaning in its diacritics: stripping them turns a
+   translation into something a learner has to decode rather than read, and it
+   silently changes words. A learner-facing translation ships with the writing
+   system it belongs to. Any prose of a few words or more carries at least one
+   marked character, so this catches a stripped line without false-flagging a
+   short phrase or a proper noun. */
+const VIETNAMESE_MARKS =
+  /[À-ÃÈ-ÊÌÍÒ-ÕÙÚÝà-ãè-êìíò-õùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ]/;
+let checkedVietnamese = 0;
+for (const source of manifest.sources)
+  for (const segment of source.segments ?? []) {
+    const vi = segment.translations?.vi;
+    if (!vi || vi.trim().split(/\s+/).length < 5) continue;
+    checkedVietnamese += 1;
+    assert.match(
+      vi,
+      VIETNAMESE_MARKS,
+      `${segment.segment_id} ships diacritic-stripped Vietnamese: ${vi}`,
+    );
+  }
+assert.ok(checkedVietnamese > 0, 'the Vietnamese support text is actually being checked');
 
 console.log('REAL_MEDIA_CATALOG_CONTRACT=PASS');

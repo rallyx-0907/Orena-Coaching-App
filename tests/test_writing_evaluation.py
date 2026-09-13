@@ -31,6 +31,7 @@ def _normalize(
     error_categories: tuple[str, ...] = ENGLISH_ERROR_CATEGORIES,
     allow_cjk: bool = False,
     learner_text: str = LEARNER_TEXT,
+    applicable_dimensions: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     return normalize_writing_evaluation(
         raw,
@@ -40,6 +41,7 @@ def _normalize(
         error_categories=error_categories,
         allow_cjk=allow_cjk,
         learner_text=learner_text,
+        applicable_dimensions=applicable_dimensions,
     )
 
 
@@ -135,10 +137,33 @@ def test_learner_facing_text_fields_reject_non_string_provider_values() -> None:
     assert result["summary_vi"] == ""
     assert result["strengths_vi"] == []
     assert result["priorities_vi"] == []
-    assert result["strength_evidence"][0]["explanation_vi"] == ""
-    assert result["errors"][0]["explanation_vi"] == ""
-    assert result["errors"][0]["mini_rule_vi"] == ""
+    assert result["strength_evidence"] == []
+    assert result["errors"] == []
     assert "not learner copy" not in repr(result)
+
+
+def test_feedback_items_require_actionable_explanation_and_rule() -> None:
+    result = _normalize(
+        {
+            "strength_evidence": [
+                _strength(explanation_vi=""),
+                _strength(category="vocabulary", explanation_vi="   "),
+            ],
+            "errors": [
+                _error(explanation_vi=""),
+                _error(category="article", mini_rule_vi="   "),
+            ],
+        }
+    )
+
+    assert result["strength_evidence"] == []
+    assert result["errors"] == []
+
+
+def test_english_feedback_rejects_a_cjk_correction() -> None:
+    result = _normalize({"errors": [_error(suggestion="我有一只狗。")]})
+
+    assert result["errors"] == []
 
 
 def test_strength_evidence_is_bounded() -> None:
@@ -297,6 +322,45 @@ def test_chinese_policy_allows_cjk_learner_facing_content() -> None:
     assert result["priorities_vi"] == ["\u4e2d\u6587"]
     assert len(result["strength_evidence"]) == 1
     assert len(result["errors"]) == 1
+
+
+def test_insufficient_evidence_has_no_band_but_keeps_grounded_feedback() -> None:
+    result = _normalize(
+        {
+            "band_status": "insufficient_evidence",
+            "cefr_estimate": "",
+            "errors": [_error(fragment="I has", suggestion="I have")],
+        },
+        learner_text="I has a dog.",
+    )
+
+    assert result["band_status"] == "insufficient_evidence"
+    assert result["cefr_estimate"] == ""
+    assert result["issues"][0]["quote"] == "I has"
+
+
+def test_journal_normalization_omits_task_achievement_dimension() -> None:
+    result = _normalize(
+        {"grammar": 70, "vocabulary": 68, "coherence": 72, "naturalness": 66},
+        applicable_dimensions=("grammar", "vocabulary", "coherence", "naturalness"),
+    )
+
+    assert "task_achievement" not in result
+    assert "task_achievement" not in result["dimensions"]
+
+
+def test_canonical_writing_input_does_not_require_a_target() -> None:
+    import app
+
+    payload = app.EssayIn(
+        text="I wrote enough words for the evaluator to inspect this sample.",
+        writing_mode="journal",
+        writing_context={"journal_context": "A personal reflection"},
+    )
+
+    assert payload.target_cefr is None
+    assert payload.writing_mode == "journal"
+    assert payload.writing_context.journal_context == "A personal reflection"
 
 
 def test_response_shape_is_backward_compatible_and_excludes_internal_learner_text() -> None:

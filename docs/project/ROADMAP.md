@@ -1,3 +1,16 @@
+> This roadmap describes implementation sequencing and program state.
+>
+> It does not define Orena's durable product identity or learner-facing
+> information architecture.
+>
+> Current product direction is defined by:
+>
+> `docs/product/ORENA_PRODUCT_CONSTITUTION.md`
+>
+> and:
+>
+> `docs/product/ORENA_CONTENT_ARCHITECTURE.md`
+
 # Canonical Multi-Agent Roadmap
 
 This is the canonical program sequence for coordinated work. Status changes
@@ -24,31 +37,31 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 
 ## Program status
 
-| Stage | Scope | Status |
-| --- | --- | --- |
-| R0 | Product Release Architecture | CLOSED |
-| R1 | Production Staging + Cloudflare + Google OAuth | CLOSED |
-| R2 | AI Capability Control Plane | HUMAN GATE / READY, NOT PRODUCT-BLOCKING |
-| M1 | Media Learning Foundation (cross-cutting) | CLOSED / FOUNDATION COMPLETE |
-| R3 | Writing Evaluation Completion | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R4 | Writing Learning Loop + Grammar Transfer | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R5 | Grammar Knowledge System | CLOSED |
-| R6 | Speaking Core | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R7 | Speaking Evaluation + Pronunciation Completion | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R8 | Public Product Gate: Writing + Speaking EN/ZH | PLANNED |
-| R9 | Speaking Advanced / Shadowing Studio | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R10 | Reading Completion → separate public release | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R11 | Listening Completion → separate public release | PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE |
-| R12 | Retention & Growth | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R13 | Platform Admin Completion | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R14 | AI Usage, Cost, Quota & Provider Operations | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R15 | SaaS Plans, Entitlements & Usage Policy | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R16 | Advanced Learning Intelligence | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R17 | Product Analytics & Operational Observability | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R18 | Mobile/API Readiness | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R19 | Native Mobile App Foundation | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R20 | Mobile Learning Experience Parity | COMPLETE / LOCAL ACCEPTANCE PASS |
-| R21 | Mobile Release Readiness | PLANNED / HUMAN STORE-RELEASE GATE |
+| Stage | Scope                                          | Status                                            |
+| ----- | ---------------------------------------------- | ------------------------------------------------- |
+| R0    | Product Release Architecture                   | CLOSED                                            |
+| R1    | Production Staging + Cloudflare + Google OAuth | CLOSED                                            |
+| R2    | AI Capability Control Plane                    | HUMAN GATE / READY, NOT PRODUCT-BLOCKING          |
+| M1    | Media Learning Foundation (cross-cutting)      | CLOSED / FOUNDATION COMPLETE                      |
+| R3    | Writing Evaluation Completion                  | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R4    | Writing Learning Loop + Grammar Transfer       | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R5    | Grammar Knowledge System                       | CLOSED                                            |
+| R6    | Speaking Core                                  | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R7    | Speaking Evaluation + Pronunciation Completion | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R8    | Public Product Gate: Writing + Speaking EN/ZH  | PLANNED                                           |
+| R9    | Speaking Advanced / Shadowing Studio           | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R10   | Reading Completion → separate public release   | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R11   | Listening Completion → separate public release | PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE |
+| R12   | Retention & Growth                             | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R13   | Platform Admin Completion                      | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R14   | AI Usage, Cost, Quota & Provider Operations    | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R15   | SaaS Plans, Entitlements & Usage Policy        | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R16   | Advanced Learning Intelligence                 | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R17   | Product Analytics & Operational Observability  | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R18   | Mobile/API Readiness                           | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R19   | Native Mobile App Foundation                   | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R20   | Mobile Learning Experience Parity              | COMPLETE / LOCAL ACCEPTANCE PASS                  |
+| R21   | Mobile Release Readiness                       | PLANNED / HUMAN STORE-RELEASE GATE                |
 
 ## Historical execution order
 
@@ -330,7 +343,6 @@ R12 focuses on return-to-practice, useful progress visibility, habit support,
 onboarding/activation, and growth without weakening learning quality,
 accessibility, multilingual behavior, or the closed contracts established by
 earlier stages.
-
 
 ## Post-R12 roadmap extension — preserve existing product sequence
 
@@ -712,3 +724,117 @@ R21 completion requires:
 
 R21 does not mark any learner skill PUBLIC merely because a mobile binary
 builds. Existing product release gates remain authoritative.
+
+## Golden Star / Content Domain program (current active track)
+
+**R0-R21 above is the historical BECOMING-era numbered sequence**, preserved
+for traceability per D-046 and this file's own operating rule ("R0-R21 remain
+structurally unchanged"). It predates the D-046 product-layer reset and the
+Golden Star mission and is **not** where current work is tracked. The living
+execution trackers for the current mission are:
+
+- `docs/product/ORENA_STATUS.md` — current milestone and capability state;
+- `docs/project/CURRENT_HANDOFF.md` — exact next task, blockers, human gates;
+- `docs/project/ORENA_BACKBONE_EXECUTION.md` and
+  `docs/project/ORENA_BACKBONE_INTEGRATION_GATES.md` — the I1-I7
+  account/commerce/collection/execution/evidence backbone, in progress
+  (I1 done, I2 schema deployed sandbox-only flag-off, I3 read adapter done
+  and subscription-inbox schema in independent review as of this entry).
+
+This section adds the sequence D-049 requires and D-050 corrects —
+Understanding Engine, the Orena Explanation Contract, an optional explanation
+support layer, Vocabulary Cards, orthography, per-domain content schemas,
+shared ingestion/publishing, default libraries, and Discover/Home
+distribution — coordinated against that backbone rather than duplicating it.
+
+### Relationship to I1-I7
+
+The content-domain track is a **parallel content backbone**, not a stage of
+I1-I7: I1-I7 own account, commerce, collection/retrieval, content execution
+(admission/jobs), and evidence/growth. The content-domain track owns what
+those execution/admission contracts move — the actual Reading, Writing,
+Listening, Speaking, and Vocabulary objects, plus the horizontal Understanding
+Engine explanation capability that reads across all five
+(`ORENA_UNDERSTANDING_ENGINE.md`). It depends on, and must not duplicate:
+
+- `ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` (I5) for admission and the
+  expensive-operation/job contract every domain's ingestion reuses;
+- `ORENA_COLLECTION_ARCHITECTURE.md` (I4) for the existing saved-word/
+  `LanguageItemRef` retrieval seam Vocabulary Cards sit on top of;
+- `ORENA_EVIDENCE_ARCHITECTURE.md` (I6) for the existing `Understanding`
+  evidence row and Discover's evidence-ranked-candidate model;
+- the I2 account/incarnation backbone for any persistence a later phase
+  proposes, the same way the I3 commerce proposal did.
+
+Any new persistence this track needs (Vocabulary Card storage, an optional
+explanation support layer's caching/reference storage if evidence justifies
+one, per-domain content tables beyond the existing Media Learning/Reading
+models) is a **separate schema proposal** through the
+existing architecture-review gate (`AGENTS.md` §1), following the exact
+propose → rehearse → independent review → human schema/runtime authorization
+path I2 and I3 already established. This roadmap entry does not itself
+authorize any schema.
+
+### Sequence
+
+Ordered by dependency, not strict serial execution — later phases may start
+once their specific dependency is ready, per this file's existing "dependency-
+aware order" rule used for R13-R18:
+
+1. **Understanding Engine + Orena Explanation Contract** — pure decision
+   layer for what an explanation request needs before generation (exact
+   selection, context containment, the Explanation Contract's field shape),
+   reusing the existing `ui/understanding.js` seam and `ExperienceContext`
+   (`ORENA_REFERENCE_ARCHITECTURE.md` §3). No schema; extends an existing
+   capability; every answer is generated from the learner's exact context,
+   never looked up from a precomputed store (`ORENA_UNDERSTANDING_ENGINE.md`
+   §2-3).
+2. **Explanation support layer** — optional infrastructure, added only once
+   real repeated-question evidence justifies it, per
+   `ORENA_UNDERSTANDING_ENGINE.md` §5:
+   - trusted linguistic references;
+   - dictionary/corpus/etymology sources where needed;
+   - reusable explanation patterns;
+   - caching;
+   - retrieval;
+   - quality/grounding validation.
+
+   A structured knowledge graph is a possible later optimization inside this
+   layer; it is never a prerequisite for (1).
+3. **Orena Vocabulary Card specification, implemented** — enrich the
+   existing saved-word object per `ORENA_VOCABULARY_ARCHITECTURE.md` §2-3;
+   depends on (2) only for the optional core-semantic-image field, and that
+   field may instead be generated on demand by (1) directly.
+4. **Orthography / stroke-order support** — the general `orthography`
+   capability on top of (3), Chinese first.
+5. **Canonical per-domain content schemas** — Reading Library, Writing
+   Prompt Bank, Listening Library, Speaking Library fields per
+   `ORENA_CONTENT_ARCHITECTURE.md` §5-§8, reusing existing Media Learning/
+   reading models where they already satisfy a field rather than replacing
+   them.
+6. **Shared ingestion/publishing infrastructure** — largely already
+   specified (`ORENA_CONTENT_EXECUTION_ARCHITECTURE.md` §1, §3); this phase
+   is extending its admission/job contract to Writing Prompts, Vocabulary
+   Cards, and explanation support layer entries (if and when (2) is built) as
+   content types, not building a new pipeline.
+7. **Default library bootstrapping** — batch/incremental growth of each
+   domain toward `ORENA_CONTENT_ARCHITECTURE.md` §17's scale target, through
+   (6)'s pipeline rather than hand-edited arrays.
+8. **Discover/Home distribution** — Discover/Home read from the domain
+   libraries built in (5)-(7) instead of owning content directly
+   (`ORENA_CONTENT_ARCHITECTURE.md` §3); depends on at least one domain
+   having library depth worth distributing.
+9. **Cross-domain learning loops** — the linked-object relationships in
+   `ORENA_CONTENT_ARCHITECTURE.md` §13 (Speaking references Listening,
+   Vocabulary references Reading sentences, and so on), once the domains
+   they link exist independently.
+
+### What this does not authorize
+
+No production change, no new schema, no provider activation, and no claim
+that phases 1-2 (which touch existing capabilities without new persistence)
+imply approval for phases 3+ (which likely do need new persistence and
+therefore the architecture-review gate). Human product-direction approval for
+learner-visible results from this track remains the same browser-review gate
+every Golden Star milestone requires
+(`ORENA_PRODUCT_CONSTITUTION.md` §27-28).

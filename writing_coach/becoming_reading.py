@@ -579,8 +579,12 @@ def get_reading_session(session_id: int) -> dict[str, Any]:
 def list_reading_sessions(limit: int = 8) -> dict[str, Any]:
     limit=min(max(int(limit or 8),1),30); rows=_repo().list_reading_session_records(limit); items=[]
     for row in rows:
+        # How many optional questions a passage carries, so a list can say
+        # whether a check is waiting without fetching the whole session. Pure
+        # reading is valid, and a passage with none must be able to say so.
         item={"id":int(row["id"]),"created_at":str(row["created_at"]),"target_level":str(row["target_level"]),"topic":str(row["topic"]),
-              "title":str(row["title"]),"recycled_words":_safe_json(row["recycled_words_json"],[]),"generation_mode":str(row["generation_mode"]),"latest_attempt":None}
+              "title":str(row["title"]),"recycled_words":_safe_json(row["recycled_words_json"],[]),"generation_mode":str(row["generation_mode"]),
+              "question_count":len(_safe_json(row["questions_json"],[])),"latest_attempt":None}
         if row.get("last_total") is not None:
             item["latest_attempt"]={"correct_count":int(row["last_correct"]),"total":int(row["last_total"])}
         items.append(item)

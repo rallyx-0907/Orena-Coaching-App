@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const recorder=fs.readFileSync(
-  new URL('../static/becoming/components/audio-recorder.js',import.meta.url),
+  new URL('../static/orena/capabilities/audio-recorder.js',import.meta.url),
   'utf8',
 );
 

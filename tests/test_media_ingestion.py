@@ -742,5 +742,11 @@ def test_canonical_state_marks_m15_and_m16_closed() -> None:
     assert "pv-3 / oren-11" in normalized_handoff
 
     assert "R2 — AI Capability Control Plane: **HUMAN GATE / READY, NOT PRODUCT-BLOCKING**" in handoff
-    assert "| Listening | DEVELOPMENT | available | available | no |" in project_state
+    listening_row = next(
+        tuple(cell.strip() for cell in line.strip().strip("|").split("|"))
+        for line in project_state.splitlines()
+        if line.lstrip().startswith("|")
+        and line.strip().strip("|").split("|")[0].strip().casefold() == "listening"
+    )
+    assert listening_row == ("Listening", "DEVELOPMENT", "available", "available", "no")
     assert "listening and speaking remain non-public" in normalized_handoff

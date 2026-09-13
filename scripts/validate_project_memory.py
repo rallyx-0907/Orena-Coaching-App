@@ -335,8 +335,8 @@ def validate_memory_documents(root: Path) -> list[str]:
         "`/becoming` is deprecated and compatibility-only",
         "full native port",
         "English and Chinese are equally first-class",
-        "Listening is content-library-first",
-        "same Listening Engine",
+        "experience-centered, not discovery-only",
+        "Follow is first-class",
         "PostgreSQL is authoritative",
     ):
         if required not in constitution:
@@ -409,9 +409,9 @@ def scan_active_regressions(root: Path) -> list[str]:
         re.compile(r">\s*BECOMING\s*<", re.IGNORECASE),
         re.compile(r"[\"']BECOMING(?:\s+(?:navigation|home))?[\"']", re.IGNORECASE),
     )
-    product_sources = [root / "templates/becoming/index.html"]
+    product_sources = [root / "templates/orena/index.html"]
     product_sources.extend(
-        path for path in _walk_product_files(root / "static/becoming")
+        path for path in _walk_product_files(root / "static/orena")
         if path.suffix == ".js"
     )
     product_sources.extend(

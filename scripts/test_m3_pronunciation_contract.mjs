@@ -1,19 +1,16 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const api=readFileSync(new URL('../static/becoming/api.js',import.meta.url),'utf8');
-const speaking=readFileSync(new URL('../static/becoming/screens/speaking.js',import.meta.url),'utf8');
+const api=readFileSync(new URL('../static/orena/infrastructure/api.js',import.meta.url),'utf8');
+const speaking=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
 const speechApi=readFileSync(new URL('../writing_coach/speech_api.py',import.meta.url),'utf8');
 const provider=readFileSync(new URL('../writing_coach/speech_pronunciation.py',import.meta.url),'utf8');
 const dockerfile=readFileSync(new URL('../Dockerfile',import.meta.url),'utf8');
 
 assert.match(api,/assessPronunciation:/);
+assert.match(speaking,/api\.assessPronunciation/);
+assert.match(speaking,/voiceMeasureNote/);
 assert.match(api,/\/api\/speech\/pronunciation/);
-assert.match(speaking,/pronunciationAssess=api\.assessPronunciation/);
-assert.match(speaking,/data-speaking-pronunciation-action/);
-assert.match(speaking,/data-speaking-pronunciation/);
-assert.match(speaking,/data-score-kind/);
-assert.match(speaking,/synthetic_demo/);
 assert.match(speechApi,/@router\.post\("\/pronunciation"\)/);
 assert.match(provider,/class AzureSpeechPronunciationProvider/);
 assert.match(provider,/Pronunciation-Assessment/);

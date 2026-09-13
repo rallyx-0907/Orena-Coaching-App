@@ -10,6 +10,13 @@ from pydantic import BaseModel, Field
 from writing_coach.languages.runtime import active_profile
 from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
 from writing_coach.core.support_languages import resolve_support_language
+from writing_coach.account_profile import (
+    LANGUAGE_SETTINGS,
+    PatchRejected,
+    STORED_SETTINGS,
+    effective_settings,
+    patch_profile,
+)
 
 
 _repository: SpecializedLearningRepository | None = None
@@ -54,35 +61,123 @@ def _normalized_category(value: Any) -> str:
     return raw[:80] or "other"
 
 
-def _profile_defaults() -> dict[str, Any]:
-    return {
-        "exists": False,
-        "language": active_profile().code,
-        "goal": "everyday",
-        "style": "guided",
-        "pinyin": "auto",
-        "native_language": "",
-        # The resolved SUPPORT language, so every client reads one answer
-        # instead of re-implementing the rule and drifting apart. Empty storage
-        # means the learner has not chosen yet, not that they speak Vietnamese.
-        "support_language": resolve_support_language(),
-        "theme_preset": "editorial",
-        "updated_at": "",
-    }
+# The profile record predates the settings registry, so one name differs: the
+# column is `native_language`, the setting is `support_language`. Mapping it in
+# one place keeps the column where it is - renaming it is a migration - while
+# the contract says what the setting actually means.
+_RECORD_NAMES = {"support_language": "native_language"}
 
 
-def get_learner_profile() -> dict[str, Any]:
-    row = _repo().get_profile_record()
+def _saved_settings(row: dict[str, Any] | None) -> dict[str, Any]:
+    """The stored answers, addressed by setting name rather than column name."""
     if not row:
-        return _profile_defaults()
+        return {}
+    saved: dict[str, Any] = {}
+    for name in STORED_SETTINGS:
+        value = row.get(_RECORD_NAMES.get(name, name))
+        if value not in (None, ""):
+            saved[name] = str(value)
+    return saved
+
+
+def _profile_version(row: dict[str, Any] | None) -> str:
+    """The token a writer must present to change the profile.
+
+    There is no version column and none is authorized yet, so the record's own
+    last-updated stamp serves: it changes on every write, which is all an
+    expected-version check needs. An absent profile has the empty token, which
+    is the creation case.
+    """
+    return str((row or {}).get("updated_at") or "")
+
+
+def _profile_payload(row: dict[str, Any] | None, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
+    version = _profile_version(row)
+    settings = effective_settings(_saved_settings(row), version=version, overrides=overrides)
+    flat = {name: settings[name]["value"] for name in LANGUAGE_SETTINGS}
     return {
-        "exists": True, "language": active_profile().code, "goal": str(row["goal"]),
-        "style": str(row["style"]), "pinyin": str(row["pinyin"]),
-        "native_language": str(row.get("native_language") or ""),
-        "support_language": resolve_support_language(row.get("native_language")),
-        "theme_preset": str(row.get("theme_preset") or "editorial"),
-        "updated_at": str(row.get("updated_at") or ""),
+        "exists": bool(row),
+        "language": active_profile().code,
+        **flat,
+        "native_language": str((row or {}).get("native_language") or ""),
+        # The resolved SUPPORT language, so every client reads one answer
+        # instead of re-implementing the rule and drifting apart.
+        "support_language": resolve_support_language((row or {}).get("native_language")),
+        # Presentation is the theme registry's, not this domain's. It is read
+        # and written back untouched.
+        "theme_preset": str((row or {}).get("theme_preset") or "editorial"),
+        "updated_at": version,
+        # Each setting with where its current value came from, so a surface can
+        # tell a saved choice from a product default without guessing.
+        "settings": settings,
+        "version": version,
     }
+
+
+def get_learner_profile(overrides: dict[str, Any] | None = None) -> dict[str, Any]:
+    return _profile_payload(_repo().get_profile_record(), overrides)
+
+
+class ProfilePatchIn(BaseModel):
+    """Named settings to change, and the version the client believes is current.
+
+    Every field is optional and absent means absent: the whole-profile PUT this
+    replaces defaulted each field, so a client sending only the setting it
+    meant to change reset the others to the product defaults.
+    """
+
+    expected_version: str = ""
+    goal: str | None = None
+    style: str | None = None
+    pinyin: str | None = None
+    support_language: str | None = None
+    declared_level: str | None = None
+    interface_language: str | None = None
+    theme_preset: str | None = None
+
+
+_PATCH_STATUS = {"version_conflict": 409, "not_yet_stored": 501}
+
+
+def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
+    """Change the named settings, or change nothing and say why."""
+    from fastapi import HTTPException
+
+    row = _repo().get_profile_record()
+    patch = {
+        name: value
+        for name, value in payload.model_dump(exclude={"expected_version"}).items()
+        if value is not None
+    }
+    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    try:
+        merged, version = patch_profile(
+            _saved_settings(row),
+            patch,
+            expected_version=payload.expected_version,
+            current_version=_profile_version(row),
+            next_version=now,
+        )
+    except PatchRejected as rejected:
+        raise HTTPException(
+            status_code=_PATCH_STATUS.get(rejected.reason, 400),
+            detail={
+                "reason": rejected.reason,
+                "field": rejected.field,
+                "current_version": rejected.current_version,
+            },
+        ) from rejected
+    _repo().upsert_profile_record({
+        "goal": merged.get("goal", LANGUAGE_SETTINGS["goal"].default),
+        "style": merged.get("style", LANGUAGE_SETTINGS["style"].default),
+        "pinyin": merged.get("pinyin", LANGUAGE_SETTINGS["pinyin"].default),
+        "native_language": merged.get("support_language", ""),
+        # Untouched: presentation belongs to the theme registry.
+        "theme_preset": str((row or {}).get("theme_preset") or "editorial"),
+        "created_at": str((row or {}).get("created_at") or now),
+        "updated_at": version,
+    })
+    return get_learner_profile()
 
 def put_learner_profile(payload: LearnerProfileIn) -> dict[str, Any]:
     now = datetime.now().astimezone().isoformat(timespec="seconds")

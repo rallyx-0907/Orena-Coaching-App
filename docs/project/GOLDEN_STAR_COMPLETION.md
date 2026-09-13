@@ -1,0 +1,591 @@
+# Golden Star reference completion
+
+Status: IMPLEMENTING. Authority: current human instruction, Product Constitution,
+Content Architecture and approved Orena brand. This is execution scope and its
+completion ledger, not a new product constitution. Human acceptance is pending.
+
+## Experience design
+
+Complete the reference product by extending committed primitives. The existing
+uniform headings, paragraphs and cards do not meet the Golden Star bar.
+Use a persistent orientation shell with immediate Discover, intentional
+Practice, Reading, Listening, Writing, Speaking, My Content, My Language and
+Continue entry. Keep contextual understanding attached to the source.
+
+Discover is an editorial spread: an invitation into the world, one prominent
+real encounter, a contrasting reading invitation, purposeful practice paths,
+and actual continuation. Reading is a shelf and a quiet page; Listening is a
+stage with synchronized text and optional work; Practice is an intention
+workbench; Writing is a desk with source and revision; Speaking is a situation
+and exchange; My Language is a collection; Recall is retrieval; Continue is an
+actual thread history. Different compositions share navigation, typography,
+color pairs, content identities, explanations, evidence and state primitives.
+
+Use approved illustration through the semantic brand library. No invented
+content availability, progress, upcoming-feature buttons or mastery. Future
+capabilities inherit explicit experience identities and composition contracts,
+not a separate skill application. Motion explains arrival, selection and focus,
+and respects reduced motion. EN/ZH use the same structure. Existing local-device
+memory, PostgreSQL contracts and all operational holds remain unchanged.
+
+## Implementation plan and completion ledger
+
+- [x] Shell and multi-entry orientation: `ui/reference.js`, `product/intent.js`,
+  `app.js`, `reference.css`. Add Continue as a route using continuationLink;
+  route tests must reject silent fall-through. All navigation links resolve to
+  existing capabilities, including direct Reading/Listening/Speaking/Writing.
+- [x] Editorial Discover and Practice: `ui/world.js`, `reference.css`.
+  Compose real content with contrasting scale, image, type and background;
+  retain import, provenance, unavailable states and shared library filtering.
+- [x] Distinct learning rooms: `ui/reading.js`, `ui/speaking.js`,
+  `ui/expression.js`, `rooms.css`. Preserve API and event contracts, use quiet
+  content/work zones and purposeful illustration, no large mascot in editors.
+- [~] Deep journeys (Speaking blocked on ASR; explanation content on the
+  provider hold): media Follow -> Dictation -> understanding -> keep ->
+  Recall; Reading -> selection -> understanding -> response -> Writing ->
+  Continue; Speaking situation -> own turn -> coaching -> writing; Grammar ->
+  example -> understanding -> My Language. Exercise available paths in browser;
+  label provider/hardware-limited steps honestly rather than simulating success.
+- [x] Completion findings: all three **closed** - Recall answer exposure (P1),
+  Writing revision classification (P1), long-turn contextual explanation (P2). See `CAPABILITY_DIRECTION_REVIEW.md`. They do not replace this mission.
+  Correct within the relevant experience and validate before acceptance.
+  - Recall: `blankContext` returned the passage split on the phrase and rejoined
+    with it, so every occurrence after the first was printed back; it now
+    returns the segments between occurrences and a surface renders a blank at
+    each boundary. Separately the say/reuse/meaning branch printed the source
+    sentence whole while the heading above it was hidden, which handed over the
+    answer it was concealing. Both paths now share one `withheld()` renderer, so
+    the sentence is masked whenever it contains the phrase and restored on
+    reveal, in EN and ZH. Verified against the finding's own input in the
+    running module, and through the reveal cycle in the browser.
+  - Writing revision: `revision_delta` paired issues by category using `next()`
+    over a set, before exact matches were preserved - so with previous grammar
+    A/B and current A/C it could report A removed and A new while pairing A to
+    C. Exact common issues are now settled first, and a revision is claimed only
+    where the correspondence is unambiguous: exactly one unmatched issue on each
+    side of a category. Several on either side are reported as gone and arrived
+    rather than paired on a guess. The finding's own case now returns A
+    persistent and B changed to C, identically under PYTHONHASHSEED 0/1/2/3/42.
+  - Conversation context: asking about a turn sent the first 2400 characters of
+    the preceding and current turns joined, so a preceding turn long enough to
+    fill the budget evicted the very turn holding the selection, and the server
+    refused it. `turnContext()` now budgets around the selection: its own turn
+    is never trimmed, and the room left goes to the end of what came before,
+    nearest the selection. Verified against the running server - the old
+    construction returns 422 "Selected text must come from the supplied learner
+    context", the new one returns 200.
+- [x] Validate Node contracts and ESM, project-memory and architecture gates;
+  run CI-defined Python gate when Docker ownership is established. Evaluate
+  light/dark, EN/ZH at 390, 800, 1440 and 1920 widths in the actual browser.
+  Check keyboard, overflow, readable ink, truthful states and route restoration.
+  Done: all gates green; 390/800/1440/1920 swept with no overflow, nothing
+  escaping the viewport and no sub-24px target; 800 swept across all eleven
+  routes in both themes (22 combinations, zero problems, body ground painted in
+  both); EN and ZH both exercised.
+- [ ] Record evidence, extend ORENA_WEB_EXTENSION_GUIDE with reusable rails,
+  update current status and checkpoint explicit files. Present browser-reviewable
+  result. Only the human may establish Golden Star acceptance.
+
+## Functional core: what is real, and where the boundary is
+
+Established by driving the running product in a browser, not by reading code.
+Each line below was exercised as a learner would.
+
+**Real end to end, no provider required.**
+
+- *Listening / Follow* - playback advances the active segment; seeking moves it;
+  clicking a transcript segment seeks playback to it; changing speed keeps
+  synchronisation (1.5x advanced 5.2 media-seconds in 3.5s wall time with the
+  active segment still correct); replay returns to the line being worked on.
+  Each segment is one block carrying its own support-language meaning.
+- *Dictation* - hear, reconstruct, compare, see the perception gap, reveal.
+  Dropping one word from the target line produced the hint
+  `With the big **** starting the...` and a comparison reading 94% with
+  "Not heard: bang". Reveal is a separate action. Evidence is recorded.
+- *Learner continuity* - keeping a phrase from inside the reading explanation
+  wrote provenance to device memory (origin, where, why, the exact sentence)
+  **and** the word to the account library; My Language then showed it as "From
+  something you read - The last train home" with a route back; Continue listed
+  the real threads that activity produced; Recall withholds the phrase until
+  reveal.
+- *Reading* - a real passage, genuine text selection, and inquiry carrying the
+  exact selection plus the sentence it sat in.
+- *Writing* - draft persistence ("Draft kept on this device"), required level
+  targeting, revision recording and truthful comparison.
+- *Shell* - across all eleven entry routes, zero dead controls: every button
+  has a handler. No horizontal overflow and no sub-24px target at 390, 800,
+  1440 or 1920; at 800 all eleven routes were checked in both themes, 22
+  combinations with nothing escaping the viewport; content occupies 88% of a
+  1920 viewport, so there is no dead desktop margin.
+- *EN/ZH parity* - the same Dictation flow in Chinese masks one unit per Han
+  character: dropping 输 from 你可以输入你找的内容 gives 你可以*入你找的内容.
+
+**Rooms given real structure or a stated boundary in this run.**
+
+- *Grammar* - two layers instead of one flat wall. Six levels holding four to
+  seven named families each, read from the syllabus the data already declares,
+  with real counts and a real line from each family; entering one opens the
+  catalogue narrowed to it. The catalogue keeps search and the level filter and
+  stays closed until asked for. Nothing is recommended or marked as learned:
+  `completed` is false throughout and every completion policy is named
+  "not_mastery", so no such evidence exists to claim. Chinese resolves to its
+  own seven levels and twenty families through the same contract.
+- *Speaking and conversation* - both rooms ask `/api/speech/status` before
+  inviting a take. Where no provider is attached the recorder is disabled with
+  the reason stated, and the typed reply, sending and conversation paths stay
+  open. The check fails open, so an unreadable answer never hides a working
+  recorder.
+- *Recall* - asks its own question ("Does it come back?") rather than repeating
+  its navigation label, and its card holds the 760px measure it always asked
+  for.
+
+**Provider holds - implemented and wired, content unavailable in this runtime.**
+
+These are not gaps in the product. Each path reaches its capability, and each
+reports the boundary truthfully rather than simulating a result. Activating a
+paid provider is a human gate, so they are recorded rather than resolved.
+
+- *Contextual explanation* - `POST /api/dictionary/contextual` answers
+  `{"available": false, "claim": "contextual_dictionary_unavailable"}` and the
+  panel says "This explanation is unavailable right now. Nothing has been
+  guessed in its place." This gates explanation **content** for Reading,
+  Writing, Grammar and Vocabulary alike; the shared surface, the origin it
+  carries and the follow-up questions are all real.
+- *Writing evaluation* - `POST /api/evaluate` answers 503
+  `evaluation_unavailable`, and the room renders "Feedback is currently
+  unavailable. Your writing is still kept on this device." in EN and ZH.
+- *Speech* - `GET /api/speech/status` reports `configured: false,
+  provider: null`, so record -> ASR -> spoken evidence cannot run here. No
+  pronunciation evidence or audio analysis is invented in its place.
+
+The consequence worth stating plainly: the learning loops that need no provider
+are genuinely usable now, and the ones that need one are complete up to the
+provider call. What this runtime cannot show is generated language content, not
+missing product.
+
+## Reference architecture packages
+
+- **A. Context and transition seam - done.** Late-answer rejection at both named
+  consumers. The explanation panel gives each ask a ticket so a slow earlier
+  answer cannot land against a newer question; forced ordering proves the stale
+  answer arrives last and is dropped. Reading to Writing already carried source,
+  draft, context and a resolver-built return path, verified rather than assumed.
+- **B. Capability outcomes - done.** `capabilities/outcome.js` adds the
+  discriminated outcome. An `available:false` payload is real news and becomes
+  unavailable with no retry; a thrown request becomes failed and offers one.
+  The two now read differently in the panel, and keeping a phrase survives both.
+- **C. Reference compositions - journeys verified, one break fixed.** All ten
+  canonical journeys of section 6 were walked. `sourceLink` sent a phrase kept
+  from the learner's own writing to the Practice room, dropping its work
+  reference and reopening unrelated content; it now resolves to that writing
+  with the draft intact. Everything else held, including Dictation opening on
+  the same line the learner selected, in EN and ZH.
+- **D. Continuation integration - done, three breaks fixed.** `enter()`
+  carried `segment`, `source_url` and `excerpt` forward from a previous visit
+  but reset `intent`, so any later arrival that did not name one erased what
+  the learner had been doing: reopening a passage they had been writing about
+  relabelled their draft "You opened this" and sent Resume back to the passage.
+  The shelf displayed the draft and then declined to open it. Intention now
+  survives a visit that stays silent, while a stated one - including the
+  deliberate `null` of closing a practice panel - still wins, and an intention
+  the product no longer has is dropped on restore rather than routed.
+  Conversations are kept to twelve and continuation to twenty, so the oldest
+  conversation threads offered a return to work that was gone; the shelf no
+  longer offers a thread it cannot open. Continue counted rows instead of
+  asking the shelf, so a filtered shelf left a blank room under a heading
+  promising otherwise, and it alone among memory-backed rooms stayed silent
+  when the device could not remember. Both fixed.
+
+Evidence for D: the story-to-draft-to-return journey verified in the browser -
+the thread names the draft, shows it, opens it, and offers the way back to the
+source. Language scope holds live: switching the learning language resets the
+route and the English draft does not appear in the Chinese session, which
+carries its own threads with every shelf string localized. Forcing localStorage
+to throw makes both the composer and Continue say so. `#/continue` clean at 800
+with no horizontal overflow. New CI gate `test_orena_continuation.mjs` (32
+registered). No new persistence: device memory still reaches no API, and
+`persisted` remains the account's word alone.
+
+The `#/language` flake was measured before and after this package with the
+recorded reproduction - 13 rooms x 2 themes at 750ms dwell, five repetitions -
+and did not reproduce either time: 0/130 at `f68f31a` and 0/130 after. No
+increase and no deterministic trigger, so nothing was handed to Codex; the
+flake remains OPEN P1 on the conditions already recorded.
+
+Evidence for C: 26 room/theme combinations clean at 390, 1440 and 1920 in EN
+and at 1920 in ZH; 800 covered at the same HEAD. No room repeats the practice
+map. The only sweep flags were the known `#/language` flake below and one false
+positive in the probe itself, where a page shorter than the viewport reports a
+negative overflow.
+
+## Multi-theme visual system
+
+Approved and implemented: Orena carries a registry of named themes, not a
+light/dark switch. Identity (`paper`, `night-ink`, `deep-forest`, `sage-field`)
+and appearance (`light`/`dark`) are separate attributes on the root element.
+
+Palette extraction preceded implementation and was reviewed. Every image under
+`assets/brand/` was decoded and sampled; the canonical six come from the Color
+Palette block of `references/01_ACTIONS_AND_SYSTEM_REFERENCE.png`, agreeing
+exactly with `tokens/brand-tokens.json`. Fifteen further values were sampled
+from approved artwork and grouped by family - Forest, Sky, Ink, Earth/Moss,
+Paper/Ember. `pattern/color-pallate.png` was ruled exploratory reference, not
+the canonical palette: it holds eight glossy gradient tiles, four of them the
+purple/blue that `visual_rules.avoid` names, and none of the Orena neutrals.
+No colour was taken from it.
+
+Colour now has one owner, `static/orena/theme.css`, in two layers: a foundation
+layer naming the approved palette, and a semantic block per theme. The two
+competing `:root` blocks in `foundation.css` and `reference.css` are gone -
+which one won had been decided by `<link>` order, and that is why `--paper` was
+on-brand while `--sage` was still a pre-brand mint. Components were not changed:
+they already read semantic names, so all four themes run one component set.
+
+Paper and Night Ink reproduce their previous values exactly, captured live
+before the change. Orena Orange stays canonical at `#FF7A3D` and is now
+reachable as `--brand` for fills; it measures 2.34 on Paper Ivory, so
+`--accent` keeps the contrast-safe partner it already had.
+
+Three defects fixed on the way. The browser chrome colour was a hardcoded pair
+still serving the pre-brand green against an ivory page; it now reads the
+resolved token. `--space-5` was consumed by `rooms.css` and never declared. The
+part-of-speech inks were keyed to `data-theme='dark'`, which stopped matching
+once themes had names - they follow `data-appearance` now and so serve both new
+themes without change.
+
+Evidence: 2,072 rendered text elements measured across four themes and eight
+rooms in EN, and 1,464 across six rooms in ZH - no WCAG AA failure at either.
+No horizontal overflow at 390, 800 or 1440 in any theme. The theme chooser is
+built from the registry and each row previews itself by carrying `data-theme`,
+so a preview cannot drift from the theme it previews. Registering a theme is a
+block in `theme.css`, an entry in `theme.js` and a name in `copy.js` for both
+languages; `test_orena_foundation.mjs` now enforces the contrast pairings for
+every registered theme rather than for two, and holds the single-owner rule.
+
+Ember stays deferred with its extracted values recorded and unshipped.
+
+## Phone navigation
+
+Below 900px the rail becomes a header, and the eleven destinations were laid
+out across it: three groups wrapping onto three lines, each line wider than the
+screen. At 390x844 that header measured 228px - 27% of the viewport - and
+Listening, Patterns & meaning and Recall rendered past the right edge, where
+nothing could reach them. Three approved destinations were unreachable on a
+phone.
+
+The list now sits behind one control, and that control names where the learner
+currently is rather than being an anonymous hamburger: closed it still answers
+"where am I", open it shows every destination under its group heading, which
+the flattened strip had dropped. It has its own full-width row because squeezed
+beside the wordmark and the two utilities there was room for about four
+characters, and "D.." is not an answer to that question.
+
+Closed, the sheet is `display:none` rather than merely invisible, so its eleven
+links are not in the tab order and not read out while it is shut. It closes on
+Escape with focus returned to the control, and on choosing a destination -
+the shell is rebuilt per route, so that needs no state of its own.
+
+Desktop is untouched and verified so: the 224px fixed rail, eleven destinations
+in a column, three group headings, `#main` still offset by the rail, and the
+control `display:none`. Two composition bugs surfaced on the way: the mobile
+grid sized the brand column last so "orena" broke across three lines, and
+`world.css` still carried `margin-left:auto` on the actions cluster from the
+pre-rail flexbox header, which cancels stretch on a grid item and pushed the
+cluster off the right edge.
+
+Header 228px -> 131px, content starting at 131px instead of 228px. Verified at
+390, 430, 800 and 1440 across all four themes and in EN and ZH: no horizontal
+overflow in any combination, all eleven destinations reachable, 44px minimum
+touch target, one `aria-current` per route, and the control's label complete at
+every width. Nothing was solved by shrinking type or touch targets.
+
+## Brand asset set replaced
+
+The approved artwork was replaced wholesale and the runtime library was remapped
+to it. Twelve of thirty references pointed at files that no longer exist. The
+new set is uniform where the old one was not - every scene 1672x941, every
+character 1254x1254, no printed caption strips - so the caption-cropping frame
+is no longer exercised. Six scenes now exist where ten states wanted one, so the
+scenes went to the three editorial heroes and the three rooms composed around
+one, and the remaining states took the character artwork that says the same
+thing: `reading` to `learn` (with a book), `writing` to `take-notes` (with a
+notebook), `perspective` to `discover` (with a telescope), `remembering` to
+`grow`. Four expressions with no artwork were dropped rather than substituted;
+`laughing` and `winking` keep their meaning and point at the renamed files.
+27 approved assets are reachable, 2 unused.
+
+`tokens/action-index.json` still lists assets that were removed (`travel`,
+`rest`, `relax`, `write`, and four expressions). It is inside the brand
+directory the human is editing, so it was left alone rather than edited under
+them.
+
+## Rulings
+
+2026-09-08 human role ruling: Codex owns the large Orena architecture; Opus
+implements feature detail against it. `docs/product/ORENA_REFERENCE_ARCHITECTURE.md`
+defines the proposed engineering boundaries and implementation packages.
+The Golden Star mission continues; Codex does not take over small room fixes.
+
+### Encounter WIP handed to Opus
+
+Starting point: `8af067f07bc3b0ea1e1df3f979ea4779b16e647f` added token exploration.
+Codex stopped feature work when the human clarified ownership. Follow-up files:
+`ui/encounter.js`, `ui/annotated-line.js`, `ui/copy.js`, `rooms.css`,
+`scripts/test_orena_close_look.mjs`, `.github/workflows/ci.yml` (UI paths under
+`static/orena`). Preserve this partial work; it is not accepted completion.
+
+Implemented in that follow-up: request the selected segment lazily, preserve
+timed word spans and exact Unicode text, honor Pinyin-off, pause for inquiry,
+and pair token ink with each theme. Add loading/unavailable/retry and role labels.
+Local checks passed: close-look, word-follow, pure-listening, workspace,
+foundation; ESM linked 50 modules. A bounded code review found no P0/P1.
+EN browser verified two segments and token inquiry holding playback, retaining
+context and reporting the provider boundary honestly. No fresh full suite.
+
+Opus must finish: Chinese browser/Pinyin-on-off, dark and narrow/wide checks,
+keyboard/focus continuity, unavailable/retry behavior, Dictation regression,
+and the final visual pass. One measured desktop token width was 23.984px against
+a 24px rule; inspect browser rounding before calling target-size acceptance.
+Do not count this WIP as a completed Golden Star milestone.
+
+The human explicitly reprioritized Golden Star implementation over the review
+findings. That supersedes the previous next-task ordering, without invalidating
+the findings. This is one reference milestone; no capability breadth, native,
+new learner persistence or external provider activation is introduced.
+
+## R3 supplemental evaluator: local Ollama verification
+
+Representative EN/ZH evaluator quality is verified live against the configured
+local model (`qwen3:8b`, the `OLLAMA_URL`/`OLLAMA_MODEL` default when no `.env`
+overrides them). `scripts/verify_live_writing_evaluator.mjs` replays the
+application's structured schema and language prompts through Ollama's
+`/api/chat` and asserts the returned results are grounded: every strength/error
+fragment is a literal substring of the learner text, every category belongs to
+the active language taxonomy, every suggestion differs from its fragment,
+explanations and reusable rules are non-empty, and confidence stays within the
+threshold. Both EN and ZH pass, and short samples correctly return
+`insufficient_evidence` without a fabricated band.
+
+This is local-model execution evidence, not a browser or CI claim. The final
+Write → Evaluate → Review browser pass still requires the running app runtime;
+the degraded 503-retry / 502-no-retry contracts remain covered by
+`test_provider_failures_use_canonical_learner_safe_evaluation_envelope`.
+
+## D-051 learner-facing UI foundation: verification evidence
+
+Evidence only; the rules themselves live in `docs/project/DESIGN_CONTRACT.md`.
+Running sandbox 8011, headless Chrome via Playwright, local execution (no CI):
+
+- Writing, `scripts/verify_writing_workspace_browser.mjs`, two real reviews
+  through local Ollama (`qwen3:8b`), HTTP 200 each: desktop 1440x900 keeps the
+  draft and review in one frame (workspace bottom 833 of 900, review scrolls
+  internally, no page scroll, no horizontal overflow); 390x844 shows the
+  activity only, then the result at 136px below the sticky header with a way
+  back that refocuses the draft. Correction labels unchanged.
+- Speaking, fake microphone plus an injected transcript fixture (placement,
+  not recognition quality): 1440 keeps the take (record button bottom 583) and
+  what was heard side by side in the first viewport; 800 and 390 move to the
+  result frame at 136px with the way back refocusing the record control.
+- Dictation, real comparison: at 1440 the page does not scroll and the
+  comparison lands inside the bounded practice panel beside the source; at 800
+  and 390 it is scrolled into view below the sticky source strip.
+- Every route at 1440/800/390 in EN and ZH: no horizontal overflow. Hint bubble
+  ink/surface pairing checked in Paper, Night Ink, Deep Forest and Sage Field.
+- 33 CI `.mjs` gates and the browser ESM graph pass; pytest
+  (`PERSISTENCE_BACKEND=sqlite`) 824 passed / 20 inherited failures / 66
+  skipped.
+
+Not claimed: live speech recognition, microphone hardware, human product
+approval.
+
+## D-052 phone learning space: verification evidence
+
+Evidence only; the rule is `DESIGN_CONTRACT.md` rule 12. Running sandbox 8011,
+headless Chrome via Playwright at 390x844 (and 800x844), local execution:
+
+- Header: 131px expanded, 57px compact after scrolling into a room; a 30px
+  bounce does not expand it, a deliberate scroll up, tapping the destination
+  control (which opens the sheet) and the top of the page do. `--shell-offset`
+  follows (131px / 57px); content keeps its place across both changes. Same in
+  ZH, Night Ink, and at 800px (133px / 57px).
+- Writing: editor 112px -> 339px EN at rest (311px ZH), Review in the first
+  screen; two real local-Ollama reviews, HTTP 200; result frame 65-840px (was
+  136-840px); back refocuses the draft.
+- Listening: an audio lesson's voice card 174px -> 80px (a video keeps its
+  16:9 frame, 188px); in the 0:46 lesson, once scrolled, the spoken line with
+  its meaning and four transcript rows share one screen; before, even the 0:09
+  lesson showed no transcript row at rest or scrolled. Rows 85px -> 61px.
+- Speaking result frame 65-840px at 390 and 800; Dictation source strip now
+  sticks below the header instead of under it, comparison visible after
+  "compare".
+- Reading: visible passage at rest 361px -> 470px of text.
+- No horizontal overflow on any route at 1440/800/390 in EN or ZH; no phone
+  control under 44px on Writing, Listening, Speaking, Dictation or Grammar.
+- 33 CI `.mjs` gates and the ESM graph pass.
+
+Not claimed: real-device testing, iOS Safari address-bar behaviour, human
+approval.
+
+## Desktop rail, top gap and Follow first viewport: verification evidence
+
+Running sandbox 8011, headless Chrome, local execution. Defects reported by the
+human: the rail scrolled and hid "Your Orena", "Bring something in" was
+oversized, and a band of space above every room pushed Listening's current
+line and meaning below the fold.
+
+- The top band was the narrow header's backdrop button, styled only below
+  900px and left in page flow on desktop (44px + margin, content started at
+  51px). It is now `display: none` outside the narrow header; content starts
+  at the top.
+- The rail no longer scrolls at 1280x720, 1366x768, 1440x900 or 1920x1080:
+  identity and account are fixed, destinations take the middle and scroll only
+  in a window too short for them. "Your Orena" sits at 670-706px at 720 high
+  (was 871-915px, off screen). "Bring something in" is a 36px quiet row.
+- Follow, 0:46 video lesson: spoken line and meaning now inside the first
+  viewport at all four sizes (meaning bottom 706 / 733 / 818 / 968 px; before
+  1040 / 1038 / 1014 / 1149 px). The video keeps 16:9 and narrows when the
+  window is short. Writing and Speaking workspaces use the height given back
+  (bottom 878 / 885 px at 900 high).
+- Narrow header states and the narrow destination sheet's backdrop unchanged;
+  no horizontal overflow on any route at 1440/800/390 in EN or ZH; 33 CI
+  `.mjs` gates and the ESM graph pass.
+
+## Follow column and phone density for the remaining rooms: verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright, local execution. Human
+report: on desktop Listening still hid part of the current line and meaning,
+and "look at the words" with its guide needed a scroll; the phone density rules
+were to reach Reading comprehension, the encounter's Shadowing and Speaking,
+conversation, and Discover/Collection.
+
+- Follow: the spoken line and transcript now sit in a column beside the video.
+  With "look at the words" on, stepping through every segment of the 0:46
+  video lesson, the whole moment - line, meaning, legend, guide - stays inside
+  the first viewport with no page scroll at 1024x640, 1280x620, 1280x720,
+  1366x657, 1440x780, 1536x730, 1440x900 and 1920x960 (worst bottom 618 at
+  640 high; 546-596 elsewhere); same in ZH. An audio lesson fits as well.
+  Dictation, Shadowing and Speaking keep the source-and-work composition;
+  Dictation still compares with no page scroll at 1440.
+- Encounter Shadowing at 390: the whole panel 243-735px (the note and the way
+  on were below 844 before); where the recording lives is a hint by the
+  controls. Speaking panel 243-681px. ZH fits.
+- Reading comprehension, with a passage generated by local Ollama: choices
+  47px (were 55px, bolder than the question), questions 216-240px (248-272px),
+  the score lands under the compact header (it was behind it), result blocks
+  239-322px. "Optional" note and "not a measure of your reading" are hints; the
+  claim stays beside the score. EN, ZH, Night Ink, 390/800/1440.
+- Conversation at 390: reply box and send in the first screen (send 948 ->
+  674px), no artwork; after a real local-Ollama partner reply both turns, the
+  reply box and send share the screen (reply box was 1412px down). 1440/800
+  place the reply and composer together too. EN, ZH, Deep Forest.
+- Discover/My content/Collection at 390: heading 3 lines -> 2 (h1 219-290px),
+  Discover's story numbers no longer break ("0" / "2"), "Bring something in"
+  stacks instead of a 3-line heading, content rows ~140 -> ~100px, thread
+  cards ~180 -> ~150px, Collection's lenses one row (was two). Discover 4132 ->
+  3521px, My content 2234 -> 1727px.
+- Shared: a hint bubble near the middle of a phone overflowed the right edge
+  (and the page) in ZH; bubbles now shift to stay on screen - 102 hints opened
+  across 9 rooms, EN/ZH, 390/800/1440, none off screen. The rail at 901-1100px
+  shows "Bring something in" (it was a bare "+") and wraps "Patterns &
+  meaning" instead of cutting it.
+- No horizontal overflow on any route at 1440/800/390, EN and ZH. Writing
+  verifier: two real local-Ollama reviews, same frame metrics. 33 CI `.mjs`
+  gates and the ESM graph pass. pytest 824 passed / 20 inherited / 66 skipped.
+
+Not claimed: real devices, microphone, human approval.
+
+## Follow as one panel and Dictation in one frame: verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright, local execution. Human
+report: Dictation's practice panel still needed scrolling to see the rest; the
+spoken line beside the video grew and shrank with each sentence and pushed the
+transcript up and down - merge it into "The whole conversation", in the follow
+moment's style, fitting the viewport, the list scrolling to read ahead rather
+than the page.
+
+- Follow panel, 0:46 video lesson, "look at the words" on, every segment: one
+  panel height per window (500 / 480 / 554 / 599 / 729 / 903 px at 1024x640,
+  1280x620, 1280x720, 1366x768, 1440x900, 1920x1080), panel inside the
+  window, page never scrolled; the opened line, its meaning and the word guide
+  fully in view for every segment from 1100x700 up and at 1280x620; at
+  1024x640 the longest line needs 20px of the list's own scroll. Playing for
+  24 seconds: height constant at 599px, the current entry advancing, the pause
+  between lines keeping the last line. ZH, Night Ink, Deep Forest; audio lesson.
+- Phone 390 and 800: the panel fills the screen under the compact header
+  (775px), every segment's opened line, meaning and guide in view.
+- Dictation, longest line (129 characters) and a short one, before and after
+  "compare": nothing scrolled - neither the page, the panel nor its result
+  region - at 1280x720, 1366x768, 1440x900, 1536x864 and 1920x1080, EN and ZH.
+  Before this change the panel's content reached 924-1419px against a
+  576-745px frame. At 390 the panel after comparing ends at 794px (1179px).
+- Shadowing and Speaking panels share the new top row (both ways out); on the
+  last line the duplicate "Return to Follow" is gone.
+- No horizontal overflow on any route at 1440/800/390, EN and ZH; 104 hints
+  opened, none off screen; 33 CI `.mjs` gates and the ESM graph pass; pytest
+  824 passed / 20 inherited / 66 skipped.
+
+Not claimed: real devices, microphone, human approval.
+
+## Phone scale (D-053): verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright with touch, local
+execution. Human report: on a phone Listening and Dictation kept the desktop's
+checkbox, element and font sizes, content did not fit and a spoken line wrapped
+into four to six lines; scale down roughly twice while staying readable and
+interactive, on every phone screen.
+
+- Before, at 390: body 16px / 1.7; checkboxes 44px tall; each word of "look at
+  the words" a 44px box, so the longest line of the 0:46 lesson took 308px in
+  eleven rows. After: body 15px / 1.6, checkboxes 20px (label 32px target),
+  words 28px targets - the longest line 4 lines (142px with the word targets),
+  shorter lines 3; the whole six-line transcript fits the follow panel beside
+  the opened line, legend and guide.
+- Follow panel at 390x844 and 360x740, EN and ZH: one height, every segment's
+  opened line, meaning and guide in view. Desktop 1280x720 and 1440x900 still
+  pass the Follow panel and Dictation one-frame checks unchanged.
+- Dictation at 390, longest line (129 characters): the panel runs 243-826px
+  after comparing - attempt, match, diff, original, meaning and save status in
+  one screen. At 360x740 only the save status needs a scroll.
+- Audit of 18 phone rooms (Discover, Practice, Writing, Speaking, Grammar,
+  Recall, My language, My content, Collection, Continue, the reading and
+  listening lists, a reading passage with its check, a story, Follow,
+  Dictation, Shadowing, Speaking in a lesson) at 390 and 360: no horizontal
+  overflow, no target under 24px, smallest text 12px. Discover 3521 -> 2447px;
+  conversation send button 674 -> 549px; comprehension questions 216-240 ->
+  165-184px, results 239-322 -> 176-225px.
+- Writing verifier: two real local-Ollama reviews, HTTP 200; phone result frame
+  65-840px as before. 104 hints opened, none off screen; no overflow on any
+  route at 1440/800/390, EN and ZH; 33 CI `.mjs` gates and the ESM graph pass.
+
+Not claimed: real devices, microphone, human approval.
+
+## Follow on a phone: the line being spoken stays on screen - verification evidence
+
+Running sandbox 8011, headless Chrome via Playwright with touch and mobile
+emulation, local execution. Human report: on a phone the opened line and the
+list ran off the screen and, as the voice reached later lines, the line being
+spoken disappeared - worst with "look at the words" and "show meaning for
+every line" on; the two checkboxes were large and should be small symbols on
+one row with a tooltip.
+
+- Cause 1: the list stopped following while the pointer hovered it or focus
+  was inside it. The two checkboxes sat inside the panel, and a tap on a phone
+  leaves both hover and focus behind, so after turning either on the list
+  never followed again. Following now stands down only for a real gesture in
+  the list (swipe, wheel, scrollbar, key) for four seconds.
+- Cause 2: on a phone the panel was a screen tall but started below the video.
+  Now the voice strip is sticky under the header and the panel is the rest of
+  the screen; pressing play brings that view together.
+- Tapping both switches on, tapping play, sampling every second for 26s at
+  390x844 and 360x740: the spoken line and its whole opened entry on screen at
+  every sample through four lines; panel 340-841 / 323-736, strip under the
+  57px header. An audio lesson in ZH: same. Switches 32x32 symbols.
+- Desktop: every Follow panel size from 1024x640 to 1920x1080 passes, now
+  including the longest line at 1024x640; with the pointer resting on the list
+  playback keeps following, a wheel scroll holds the reader's place until the
+  next line. Dictation unchanged at 390 and 1440.
+- Phone audit of 18 rooms at 390/360 clean; no overflow on any route at
+  1440/800/390 EN/ZH; 104 hints on screen; 33 CI `.mjs` gates and the ESM
+  graph pass.
+
+Not claimed: real devices, microphone, human approval.

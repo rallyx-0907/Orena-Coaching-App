@@ -67,6 +67,7 @@ _LANGUAGE_POLICY = {
 }
 _REPLAY_ROOT_FIELDS = frozenset({"benchmark_version", "evaluator_label", "results"})
 _NORMALIZED_RESULT_FIELD_TYPES = {
+    "band_status": str,
     "cefr_estimate": str,
     "summary_vi": str,
     "strengths_vi": list,

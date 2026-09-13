@@ -11,3 +11,6 @@ backups/
 # Updater backups
 *.v*-backup-*
 .upgrade_backups/
+
+# Playwright MCP scratch output from local browser acceptance runs.
+.playwright-mcp/

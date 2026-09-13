@@ -11,101 +11,141 @@ to fit an implementation.
 an approved product surface establishes a new shared contract. **Do not store:**
 page-specific polish lists, temporary defects, or generic framework guidance.
 
+## Current human direction (D-046)
+
+The historical learner product is retired. Current mainline UI is technical
+history, not design authority. The Product Constitution, Content Architecture
+and approved brand govern the new web foundation. Experience-centered does not
+mean discovery-only; direct practice must converge with contextual practice.
+
+Native mobile is frozen by explicit human scope update on 2026-09-06. No further
+native work belongs to this mission. Its existing working-tree state is retained.
+A future native mission follows coherent, human-approved web direction. Nothing
+in the older full-port rule authorizes rebuilding the deleted product.
+
+## Learner-facing experience rules (D-051)
+
+Explicit human direction, 2026-09-12. These govern every learner surface on the
+responsive web and therefore the native port. They sit under the Product
+Constitution and Content Architecture; they do not change domain ownership,
+evidence meaning or capability semantics.
+
+1. **Every visible element earns its place.** It must help the learner
+   understand the content or the task, do the task, understand the result,
+   improve, or continue. Otherwise remove it, compress it, turn it into a
+   symbol, lower its priority, or move it after the learning loop. Existing UI
+   is evidence of what was built, not a reason to keep it.
+2. **Desktop: the core learning loop is one frame.** The source needed now, the
+   activity, the learner's work, its essential controls, the submit action, the
+   immediate result and the primary feedback share one viewport-sized
+   workspace wherever the experience can support it. Long content scrolls inside
+   its own region; the page does not scroll just because feedback arrived, and
+   the learner never loses their work to see its result.
+3. **Narrow: sequential frames of the same loop.** Frame 1 is the activity with
+   its controls; after submission the learner is placed at the start of Frame 2,
+   the result and primary feedback, never halfway between the two, with a
+   natural way back to edit or retry. Long results scroll inside Frame 2.
+4. **Secondary material comes after the loop.** History, earlier attempts,
+   deeper theory, extra examples, alternative starting points, related content
+   and continuation shelves sit below the desktop frame (Frame 3+ on narrow
+   screens) and never take space the activity or its immediate feedback needs.
+5. **Rooms where the learner works open compactly.** Entry, discovery and empty
+   states may carry full openings and approved artwork; an activity room's
+   heading orients and yields the first viewport to the work. The way back sits
+   above the heading and does not repeat it.
+6. **Supplementary guidance is a symbol with words on demand.** Optional-field
+   explanations, minor status (such as where a draft is kept), secondary
+   annotations and minor warnings use a semantic symbol from Orena's icon
+   language that reveals a short explanation on hover, keyboard focus or tap.
+   The control is labelled for assistive technology, touch-sized on small
+   screens, theme-safe, and never relies on colour alone.
+7. **Essential instructions stay visible as text.** Anything the learner needs
+   to understand or complete the task, and any consent or privacy statement that
+   must be read before data leaves the device, is never hidden behind a symbol.
+8. **Roles are distinguishable at a glance.** Title, learning material, task
+   instruction, learner input, the learner's original error, correction,
+   explanation, reusable rule, score or result, next action, optional help,
+   metadata and secondary content each read differently through Orena's type
+   scale, weight, semantic colour, surface, spacing and grouping. Supporting
+   information recedes; not everything becomes an equally weighted card.
+9. **One interface language.** Navigation, controls, headings, instructions,
+   helper text, errors, feedback scaffolding and labels follow the interface
+   language; the learning language governs the material learned or produced.
+   Learning, support and interface language remain distinct concepts
+   internally, and coherence comes from the shared localisation architecture,
+   never from a special case for one language.
+10. **One design language, distinct compositions.** Writing, Reading,
+    Listening/Follow, Speaking, Dictation, Grammar, Recall and Vocabulary keep
+    their own attention shapes and learning logic; they share Orena's
+    primitives, tokens, themes and the single Understanding surface. Solve a
+    repeated problem in the shared layer; do not copy one room's markup into
+    another or build page-local design systems.
+11. **Learning content is the protagonist during active learning.** Brand
+    atmosphere belongs to discovery, entry, transitions, completion and empty
+    states, and never displaces the learner's text, media, work or feedback.
+
+12. **Phone: the screen belongs to the learning (D-052, D-053).** Priority is learning
+    content and learner work, then controls, then navigation and secondary
+    chrome. The narrow layout is adapted, not the desktop shrunk:
+    - the header is expanded on arrival, near the top and while navigating,
+      and compacts while the learner scrolls into the room - to the smallest
+      state that still reaches every destination - releasing real viewport
+      height rather than overlaying content; a deliberate scroll up, the top,
+      or tapping the navigation expands it again;
+    - a phone has its own scale, not the desktop's carried over (D-053): type
+      a step smaller and still readable (body 15px, nothing the learner reads
+      below 12px, the line being learned the largest text in its frame);
+      controls tappable at 36px, quiet inline controls at 32px, inline targets
+      such as words at least 24px by height and spacing, never widened to a
+      thumb; a checkbox or radio sized to its text, its label the target; rows,
+      labels, selectors, media controls and cards take only the room they need;
+    - learning content itself is set denser - type, line height, paragraph and
+      block spacing, media and transcript framing - while staying comfortable
+      to read, so a spoken line wraps into two to four lines, not six;
+      decorative margins go first;
+    - a sticky source, a result frame or any destination the learner is moved
+      to clears the header at its current height, never sits underneath it;
+    - Listening shows the current line, its meaning and a run of the transcript
+      together; Writing gives the editor the frame; Reading keeps a readable
+      line and loses oversized framing; action rooms keep activity, input and
+      action in Frame 1, the result in Frame 2, secondary material after.
+
+How the current web implements these rules is described, not governed, in
+`docs/product/ORENA_WEB_EXTENSION_GUIDE.md`.
+
 ## Source of truth
 
 ```text
 APPROVED RESPONSIVE ORENA WEB
-→ shared product semantics + Orena UI contracts
-→ adaptive native implementation mapping
+→ native implementation mapping
 → SAME ORENA PRODUCT EXPERIENCE
 ```
 
-Responsive web is the approved product design source of truth. Web is composed
-for the space it has; native is a full native port, not a redesign, simplified
-version, WebView shell, or generic Expo/Material/iOS reinterpretation.
-
-For learner-facing UI/native work, read in this order after this contract:
-
-1. `docs/ORENA_PRODUCT_DNA.md`
-2. `docs/ORENA_DESIGN_TOKENS.json`
-3. `docs/ORENA_COMPONENT_CONTRACT.md`
-4. `docs/ORENA_RESPONSIVE_COMPOSITION.md`
-5. the relevant `docs/ORENA_*_GOLDEN_SPEC.md` when one exists
-
-For a screen explicitly migrated to the Orena Product UI System, these
-`ORENA_*` documents govern its UI/product grammar. Legacy BECOMING visual
-documents may remain implementation/history evidence, but they do not override
-the migrated Orena screen contract.
+Responsive web is the approved product design source of truth. Native is a full
+native port, not a redesign, simplified version, WebView shell, or generic
+Expo/Material/iOS reinterpretation.
 
 ## Required parity
 
 Native must preserve, where the web experience exists:
 
-- product meaning, feature access, learner outcomes, information architecture,
-  content identity, progress identity, and cross-skill handoffs;
-- Orena design tokens, visual DNA, typography hierarchy, surface grammar,
-  interaction intent, focus/selection behavior, and semantic component roles;
+- design tokens, colors, typography, hierarchy, spacing, surfaces, cards,
+  borders, elevation, and navigation identity;
+- feature behavior, information architecture, interactions, animation intent,
+  focus/selection behavior, progress, and cross-skill handoffs;
 - loading, empty, degraded, error, retry, offline, and authentication states;
+- responsive intent across supported phone/tablet layouts;
 - accessibility, reduced motion, system text sizing, keyboard/safe-area
   behavior, EN/ZH parity, and light/dark parity.
 
-Parity does **not** require the same number of objects to be visible at the same
-time. Desktop may show more useful information simultaneously. Tablet/mobile
-may change columns, rails, stacking, chrome placement, artwork crop, or reveal
-order while preserving access and priority.
-
-Platform mechanics may differ when native APIs require it: permissions, secure
-storage, audio/microphone, deep links, system navigation, and equivalent
+Platform mechanics may differ only when native APIs require it: permissions,
+secure storage, audio/microphone, deep links, system navigation, and equivalent
 accessibility controls. Those differences must preserve the same learner
 outcome and truthful state.
-
-Golden learner surfaces are reviewed at:
-
-```text
-1440px desktop
-1024px tablet
-390px mobile web
-```
-
-The goal is not pixel identity across these widths. The goal is one product
-with deliberate composition at each width.
-
-## Home and Progress boundary
-
-- Home is motivation + discovery + continuation.
-- Progress is reflection + learning analytics.
-- Progress attached to a specific journey may appear on Home when it helps the
-  next action.
-- Analytics walls, skill radar charts, weekly KPI panels, and equivalent
-  reflection surfaces belong to Progress, not Home.
-
-## Product-component rule
-
-Agents do not design learner pages from a blank canvas when an approved Orena
-component/recipe exists.
-
-Required reasoning order:
-
-```text
-tokens
-→ primitives
-→ Orena product components
-→ approved composition recipe
-→ page content
-```
-
-Before implementing a migrated screen, the agent must state the composition
-recipe, reused product components, any genuinely new component, semantic backend
-data, and 1440/1024/390 adaptation.
 
 ## Review rule
 
 Native review asks whether the implementation faithfully ports approved Orena
-web behavior and meaning—not whether a reviewer prefers a different mobile
-design. A native-only flow, reduced feature set, contradictory navigation, or
-separate state/domain model is a product-memory regression.
-
-A major migrated learner screen is not visually complete from source inspection.
-It must be rendered, compared against its Golden Spec, have the three largest
-visual gaps corrected at the highest shared level possible, and be rendered
-again.
+web behavior—not whether a reviewer prefers a different mobile design. A
+native-only flow, reduced feature set, contradictory navigation, or separate
+state/domain model is a product-memory regression.

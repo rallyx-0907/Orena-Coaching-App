@@ -1,0 +1,32 @@
+{
+  "name": "Orena",
+  "brand_direction": "Friendly exploratory learning companion",
+  "master_reference": "references/00_MASTER_REFERENCE_APPROVED.png",
+  "colors": {
+    "orena_orange": "#FF7A3D",
+    "sunset_red": "#E24A2D",
+    "forest_ink": "#0E2A47",
+    "paper_ivory": "#F8F3E9",
+    "sage": "#8CA8A1",
+    "warm_ochre": "#F2C572"
+  },
+  "typography_direction": {
+    "primary": "Poppins Rounded or a visually equivalent rounded humanist sans",
+    "secondary": "Inter or a visually equivalent neutral UI sans",
+    "wordmark": "lowercase 'orena', rounded and friendly; no trailing period"
+  },
+  "visual_rules": {
+    "style": "flat vector with soft controlled shading",
+    "shape_language": "rounded, friendly, geometric-organic",
+    "texture": "minimal; light paper/print texture only in world scenes",
+    "avoid": [
+      "photorealism",
+      "3D mascot rendering",
+      "purple/blue AI gradients",
+      "generic fox proportions",
+      "overly childish chibi proportions",
+      "heavy outlines",
+      "mascot holding a book in every context"
+    ]
+  }
+}

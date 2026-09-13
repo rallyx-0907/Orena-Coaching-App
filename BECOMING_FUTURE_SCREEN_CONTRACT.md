@@ -1,3 +1,17 @@
+> **Historical/supporting implementation contract**
+>
+> This document contains useful learner-first implementation constraints from an
+> earlier Orena presentation system.
+>
+> It is not the authoritative Orena product model.
+>
+> Current product direction is defined by:
+>
+> `docs/product/ORENA_PRODUCT_CONSTITUTION.md`
+>
+> Use this document only where its implementation guidance remains compatible
+> with the current Constitution.
+
 # BECOMING — Future Screen UI Contract
 
 This contract is enforced in code by:

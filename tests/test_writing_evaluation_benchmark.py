@@ -218,6 +218,18 @@ def test_correction_must_be_nonempty_and_materially_different():
     assert _evaluate(case, result).passed
 
 
+def test_feedback_must_explain_the_evidence_and_the_reusable_rule():
+    case = benchmark_case("en-obvious-agreement")
+    result = known_passing_result(case)
+    result["errors"][0]["explanation_vi"] = ""
+    result["errors"][0]["mini_rule_vi"] = ""
+
+    evaluation = _evaluate(case, result)
+
+    assert not evaluation.passed
+    assert "actionable_feedback" in _checks(evaluation)
+
+
 def test_rubric_scores_are_complete_bounded_and_respect_broad_case_bands():
     case = benchmark_case("en-task-one-reason")
     result = known_passing_result(case)

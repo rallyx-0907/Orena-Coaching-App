@@ -1,0 +1,1283 @@
+/* Learning rooms share the shell's ink and spacing, but each working surface
+   is composed for its activity. No shell or global primitive is restyled here. */
+.reading-volume {
+  grid-template-columns: 88px minmax(0, 1fr) 24px;
+  gap: var(--space-8);
+  padding-block: var(--space-8);
+}
+.reading-volume .reading-mark {
+  width: 88px;
+  aspect-ratio: 3 / 4;
+  border-radius: 2px 7px 7px 2px;
+  border-left: 9px double var(--on-sage-muted);
+  border-bottom: 5px double var(--on-sage-muted);
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 2.5rem;
+  box-shadow: 4px 4px 0 var(--line);
+}
+.reading-volume:nth-of-type(3n + 2) .reading-mark {
+  background: var(--coral-surface);
+  color: var(--on-coral);
+  border-color: var(--on-coral-muted);
+}
+.reading-volume:nth-of-type(3n) .reading-mark {
+  background: var(--night-surface);
+  color: var(--on-night);
+  border-color: var(--on-night-line);
+}
+.reading-volume-copy { min-width: 0; }
+.reading-volume .reading-volume-copy > strong {
+  display: block;
+  margin-block: var(--space-2);
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-weight: 500;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  line-height: 1.4;
+}
+.reading-volume .voice-description { max-width: 62ch; }
+
+[data-experience='writing'] .page-intro { padding-block: 0 var(--space-4); }
+[data-experience='writing'] .back-row { padding-block: var(--space-2) var(--space-1); }
+[data-experience='writing'] .back-row > a { min-height: 24px; }
+[data-experience='writing'] .page-intro h1 {
+  font-size: clamp(1.7rem, 2.2vw, 2.4rem);
+  margin: var(--space-1) 0;
+}
+[data-experience='writing'] .page-intro p {
+  font-size: var(--text-base);
+  max-width: 76ch;
+  margin: 0;
+}
+
+/* The writing workspace: the sheet on one side, the review on the other, both
+   inside one frame. The sheet fills its region and the review scrolls in its
+   own, so feedback never lengthens the page. */
+[data-experience='writing'] .writing-workspace { --workspace-inset: 11rem; }
+[data-experience='writing'] .writing-sheet {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
+}
+[data-experience='writing'] .writing-sheet textarea {
+  flex: 1;
+  min-block-size: 9rem;
+  border: 0;
+  border-radius: 0;
+  padding: var(--space-2) 0;
+  resize: none;
+  background: transparent;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: var(--text-reading);
+  line-height: 1.7;
+}
+[data-experience='writing'] .expression-tools {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+  gap: var(--space-3);
+}
+[data-experience='writing'] .writing-task { margin-top: var(--space-3); }
+[data-experience='writing'] .writing-result {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
+}
+[data-experience='writing'] .writing-result .workspace-result__scroll {
+  padding: var(--space-4) var(--space-5);
+}
+[data-experience='writing'] .writing-result .workspace-result__bar {
+  padding-inline: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+[data-experience='writing'] .workspace-secondary { margin-top: var(--space-8); }
+/* Responding to an actual source is real context, worth a highlighted panel.
+   Starting from nothing is just a helper toward the same textarea the sheet
+   above already offers - it stays quiet microcopy, not a colored block. */
+[data-experience='writing'] .expression-context:has(blockquote) {
+  margin-top: 0;
+  padding: var(--space-5) var(--space-6);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border: 0;
+  border-top: 1px solid var(--on-sage-muted);
+}
+[data-experience='writing'] .expression-context:has(blockquote) :is(.meta, small) {
+  color: var(--on-sage-muted);
+}
+[data-experience='writing'] .expression-context:has(blockquote) :is(a, a > span) { color: var(--on-sage); }
+[data-experience='writing'] .expression-context:not(:has(blockquote)) {
+  margin-top: 0;
+  padding-top: var(--space-4);
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+[data-experience='writing'] .expression-context:not(:has(blockquote)) h2 {
+  color: var(--muted);
+}
+[data-experience='writing'] .revision-history { margin-top: 0; }
+
+/* The speaking workspace: the situation and the take on one side, what was
+   heard - evidence, then coaching - on the other, inside one frame. Both
+   regions scroll on their own, so a long transcript or coaching never
+   lengthens the page, and other starting points wait below the frame. */
+[data-experience='speaking'] .voice-workspace { --workspace-inset: 11rem; }
+[data-experience='speaking'] .voice-exchange {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--space-4) var(--space-4) 0 0;
+  background: var(--surface);
+}
+[data-experience='speaking'] .voice-situation {
+  padding: var(--space-4) var(--space-5);
+  background: var(--night-surface);
+  color: var(--on-night);
+}
+[data-experience='speaking'] .voice-situation > small { color: var(--on-night-muted); }
+[data-experience='speaking'] .voice-situation h2 {
+  font-size: clamp(1.35rem, 2vw, 1.9rem);
+  line-height: 1.25;
+  margin: var(--space-1) 0 0;
+}
+[data-experience='speaking'] .voice-exchange > [data-voice] {
+  padding: var(--space-4) var(--space-5);
+  color: var(--ink);
+}
+[data-experience='speaking'] .voice-prompt {
+  border: 0;
+  border-radius: 0 var(--space-6) var(--space-6) var(--space-6);
+  margin: 0 var(--space-6) var(--space-3) 0;
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-lead);
+}
+[data-experience='speaking'] .voice-response > p { margin-block: var(--space-2); }
+[data-experience='speaking'] .voice-response .button-row { align-items: center; }
+[data-experience='speaking'] .voice-history { margin-top: var(--space-4); }
+[data-experience='speaking'] .voice-result {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+}
+[data-experience='speaking'] .voice-result .workspace-result__scroll {
+  padding: var(--space-4) var(--space-5);
+}
+[data-experience='speaking'] .voice-result .workspace-result__bar {
+  padding-inline: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+[data-experience='speaking'] .voice-result h3 { font-size: var(--text-lead); }
+[data-experience='speaking'] .voice-result .voice-transcript {
+  font-size: var(--text-lead);
+  margin-block: var(--space-2) var(--space-3);
+}
+[data-experience='speaking'] .workspace-secondary { margin-top: var(--space-8); }
+[data-experience='speaking'] .voice-directions {
+  max-inline-size: 44rem;
+  border-left: 0;
+  border-top: 1px solid var(--line);
+  padding: var(--space-4) 0 0;
+}
+[data-experience='speaking'] .voice-directions h2 { font-size: var(--text-lead); }
+[data-experience='speaking'] .voice-directions a { padding-block: var(--space-3); }
+[data-experience='speaking'] .voice-directions a[aria-current] {
+  border-left: 3px solid var(--accent);
+  padding-left: var(--space-4);
+}
+[data-experience='speaking'] .voice-directions > p { color: var(--muted); }
+[data-experience='speaking'] .voice-directions > button {
+  display: inline-flex;
+  margin: var(--space-3) var(--space-3) 0 0;
+}
+
+:is([data-experience='language'], [data-experience='recall']) .language-summary {
+  border-block: 1px solid var(--line);
+  padding-block: var(--space-4);
+}
+.language-cabinet {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+.language-cabinet article {
+  position: relative;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--sage);
+  padding: var(--space-8);
+}
+.language-cabinet article:nth-child(even) { border-top-color: var(--coral); }
+.language-cabinet article h2 {
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-weight: 500;
+}
+.language-cabinet article blockquote {
+  border-left: 0;
+  padding-left: 0;
+  font-size: var(--text-lead);
+}
+:is([data-experience='language'], [data-experience='recall']) .recall-moment {
+  border-radius: 0;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--accent);
+  margin: var(--space-12) auto;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  box-shadow: 0 8px 0 -3px var(--paper), 0 9px 0 -3px var(--line);
+}
+:is([data-experience='language'], [data-experience='recall']) .recall-moment > small {
+  display: block;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 1000px) {
+  [data-experience='speaking'] .voice-workspace { --workspace-inset: 10rem; }
+  [data-experience='speaking'] .voice-exchange { overflow: visible; }
+  [data-experience='writing'] .writing-workspace { --workspace-inset: 12rem; }
+  /* Frame 1 is the page below the expanded header and the room's opening:
+     the sheet fills it and the editor takes whatever the controls leave, so
+     drafting happens in a real writing area rather than a leftover strip. A
+     constant, not the live header height, so the editor does not change size
+     under the learner's fingers as the header retreats. */
+  [data-experience='writing'] .writing-workspace[data-workspace='activity'] {
+    block-size: clamp(22rem, calc(100svh - 8.25rem - var(--writing-opening, 10.25rem)), 46rem);
+  }
+  [data-experience='writing'] .writing-sheet textarea {
+    flex: 1;
+    block-size: auto;
+    min-block-size: 8rem;
+  }
+  [data-experience='writing'] .expression-context { margin-top: 0; }
+}
+@media (max-width: 900px) {
+  [data-experience='writing'] .page-intro { padding-block: 0 var(--space-2); }
+  [data-experience='writing'] .page-intro h1 { font-size: 1.5rem; }
+  [data-experience='writing'] .page-intro p { font-size: var(--text-sm); }
+  [data-experience='writing'] .writing-workspace { --workspace-inset: 8.75rem; }
+}
+@media (max-width: 600px) {
+  .reading-volume { grid-template-columns: 60px minmax(0, 1fr) 20px; gap: var(--space-4); }
+  .reading-volume .reading-mark { width: 60px; font-size: 2rem; }
+  .language-cabinet { grid-template-columns: minmax(0, 1fr); }
+  .language-cabinet article,
+  [data-experience='speaking'] .voice-situation,
+  [data-experience='speaking'] .voice-exchange > [data-voice],
+  [data-experience='writing'] .writing-sheet,
+  [data-experience='writing'] .writing-result .workspace-result__scroll { padding: var(--space-3) var(--space-4); }
+  [data-experience='writing'] .writing-sheet textarea { font-size: var(--text-lead); line-height: 1.6; }
+  /* Two short rows instead of three tall ones: the target beside its own
+     label, then the draft state and the one action. The action keeps its full
+     touch height; it no longer spans the screen to prove it is important. */
+  [data-experience='writing'] .expression-tools {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+  }
+  [data-experience='writing'] .review-target {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+  }
+  [data-experience='writing'] .review-target select { flex: 1; min-width: 0; padding-block: var(--space-2); }
+  [data-experience='writing'] .expression-tools > .draft-status { grid-row: 2; grid-column: 1; }
+  [data-experience='writing'] .expression-tools > [data-character-count] { grid-row: 2; grid-column: 2; font-size: var(--text-xs); }
+  [data-experience='writing'] .expression-tools > button { grid-row: 2; grid-column: 3; width: auto; margin: 0; }
+  [data-experience='writing'] .writing-task { gap: var(--space-1); margin-top: var(--space-2); }
+  [data-experience='writing'] .writing-task input { padding: var(--space-2) var(--space-3); }
+  [data-experience='speaking'] .voice-prompt { margin-right: 0; padding: var(--space-4); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reading-volume .reading-mark { transition: transform 160ms ease; }
+  .reading-volume:is(:hover, :focus-visible) .reading-mark { transform: translateY(-3px); }
+}
+
+/* Grammar has two ways in, and they should not look alike. The syllabus above
+   is a structure to walk into; the catalogue below is a drawer to open when
+   the learner already knows the name of what they want. */
+.grammar-syllabus {
+  display: grid;
+  gap: var(--space-8);
+  margin-block: var(--space-8) var(--space-12);
+}
+.syllabus-level > header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: var(--space-4);
+}
+.syllabus-level > header h2 {
+  font-size: var(--text-reading);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+.syllabus-level > header small {
+  color: var(--muted);
+}
+/* Families are read across, not down: a level holds four to seven of them, and
+   a stack of full-width rows would read as another flat list. */
+.family-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-3);
+}
+.family-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  text-align: left;
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+}
+.family-card small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.family-card h3 {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.35;
+}
+/* One real line from the family, quieter than its name: enough to recognise
+   what the family is about without competing with it. */
+.family-card p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.family-card:hover,
+.family-card:focus-visible {
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--sage-surface);
+}
+.family-card:hover small,
+.family-card:hover p,
+.family-card:focus-visible small,
+.family-card:focus-visible p {
+  color: var(--on-sage-muted);
+}
+.grammar-browse {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+}
+.grammar-browse > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  cursor: pointer;
+  font-size: var(--text-lead);
+}
+.grammar-browse > summary small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.family-active {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+@media (max-width: 800px) {
+  .family-row {
+    grid-template-columns: 1fr;
+  }
+  .grammar-syllabus {
+    gap: var(--space-6);
+  }
+}
+
+/* Retrieval is one question at a time, and the sentence the phrase is missing
+   from is the whole task - so it is set at reading size rather than at the
+   size of a list item.
+
+   The shell gives every direct child of #main a 1480px default measure. That
+   is an ID-specificity rule, so the 760px this card asks for in experiences.css
+   never applied and one recalled sentence ran the full width of a desk built
+   for side-by-side work. Restating it at the shell's own specificity is how a
+   room says it is narrower than the default. */
+#main > .recall-moment {
+  max-width: 760px;
+}
+/* The rights and source line under a passage is fine print, and fine print set
+   across 1080px is unreadable. Same shell default, same correction. */
+#main > .provenance {
+  max-width: 800px;
+}
+:is([data-experience='language'], [data-experience='recall']) .recall-gap {
+  font-size: var(--text-reading);
+  line-height: 1.9;
+}
+
+/* The scope a search is running inside, and the way out of it. Both belong on
+   one line above the results, because the count below is only truthful in
+   relation to the scope stated here. */
+.family-active {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.family-active button {
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Leaving an encounter is the most-used control on a phone and was a 24px
+   line of text. The type stays where it is; the target around it grows to a
+   comfortable 44px without the link becoming a button. Applied at every width,
+   since a small pointer target helps nobody. */
+.back-row > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline-end: var(--space-2);
+}
+/* The featured invitation on Discover is the page's primary way into content,
+   so its title carries a full target rather than a text-height one. */
+.editorial-spread h2 > a,
+.editorial-spread > a[href*='encounter'] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Collection is for retrieval, so density matters more than drama. Shelves sit
+   side by side where there is width for them: a learner scanning for something
+   they saw last week should see several kinds of thing at once rather than
+   scrolling past one narrow column. */
+.collection-find {
+  margin-block: var(--space-6) var(--space-3);
+}
+.collection-find input {
+  width: 100%;
+  max-width: 620px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+/* Lenses are how the learner met a thing, not modules to enter. They read as a
+   row of quiet switches rather than buttons competing with the content. */
+.lens-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.lens-row button {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.lens-row button[aria-current] {
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--sage-surface);
+}
+.collection-shelves {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-6) var(--space-8);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+.collection-shelf ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.collection-shelf li + li {
+  border-top: 1px solid var(--line);
+}
+.collection-shelf li a {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  align-content: center;
+  padding-block: var(--space-2);
+}
+.collection-shelf li small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+@media (max-width: 800px) {
+  .collection-shelves {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+}
+
+/* The way back to Practice. Local, because the whole map belongs to Practice
+   rather than to every room in it. It sits above the heading like every other
+   room's way back; the room's own name is the heading's eyebrow, so repeating
+   it here under a divider only pushed the activity further down. */
+.practice-return {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2) var(--space-1);
+  font-size: var(--text-sm);
+}
+.practice-return a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+}
+
+/* Looking closely at the spoken line.
+
+   Only the classes that carry the meaning of a sentence are tinted - what
+   things are, what happens, and what kind. Function words keep the ink they
+   already had, because a learner has to be able to hold the system in their
+   head for it to be a reading aid rather than decoration. Three colours drawn
+   from the existing palette, never a colour per part of speech. */
+.close-look {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  cursor: pointer;
+}
+.close-look-guide { border-top: 1px solid var(--line); padding-top: var(--space-3); }
+.close-look-guide .meta { margin: var(--space-2) 0; }
+.word-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-xs); }
+.word-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.word-legend span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.word-legend [data-role='noun'] { color: var(--word-thing); }
+.word-legend [data-role='verb'] { color: var(--word-action); }
+.word-legend [data-role='detail'] { color: var(--word-detail); }
+.follow-moment .spoken .token {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  min-width: 24px;
+  min-height: 44px;
+  vertical-align: baseline;
+}
+.follow-moment .spoken[data-close-look-state='on'] .token {
+  border-bottom-color: var(--line);
+}
+.follow-moment .spoken .token:hover,
+.follow-moment .spoken .token:focus-visible {
+  border-bottom-color: var(--accent);
+}
+.follow-moment .spoken .token[data-pos='noun'],
+.follow-moment .spoken .token[data-pos='proper_noun'] {
+  color: var(--word-thing);
+  font-weight: 600;
+}
+.follow-moment .spoken .token[data-pos='verb'] {
+  color: var(--word-action);
+  font-weight: 600;
+}
+.follow-moment .spoken .token[data-pos='adjective'],
+.follow-moment .spoken .token[data-pos='adverb'] {
+  color: var(--word-detail);
+}
+/* Chinese reads with its sound above the character it belongs to, which is
+   where a learner expects it - not on a separate line to reconcile. */
+.follow-moment .spoken[data-close-look-state='on'] .token[data-reading] {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.35;
+}
+.follow-moment .spoken[data-close-look-state='on'] .token[data-reading]::before {
+  content: attr(data-reading);
+  font-size: 0.62em;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+
+/* ---------------------------------------------------------------------------
+   The follow panel: the whole conversation, with the line being spoken opened
+   up inside it.
+
+   The current line used to be a block of its own above the list, and its
+   height changed with every sentence, pushing the list up and down. Now the
+   list is the panel - a card in the follow moment's colours, one fixed height
+   inside the first screen - and the line being spoken is its own entry,
+   opened where it sits: when it was said, the line at reading size, its
+   meaning and the word guide. The list scrolls on its own, so the
+   learner can read ahead without the page moving.
+   --------------------------------------------------------------------------- */
+.transcript-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-4) var(--space-4) 0;
+  background: var(--surface);
+  border-top: 0;
+  border-bottom: 2px solid var(--coral);
+  border-radius: var(--radius);
+}
+.transcript-panel .section-head { flex: none; margin: 0 0 var(--space-2); align-items: center; flex-wrap: nowrap; gap: var(--space-2); }
+.transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
+/* How to read the list - the words of the line being spoken, the meaning of
+   every line - as two small switches on the title row: a symbol each, filled
+   when on. Each is a real checkbox named by its words for assistive
+   technology; the words show on hover or keyboard focus, and briefly on a tap,
+   then step aside so they never sit over the line being read. */
+.follow-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}
+.follow-toggle {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 32px;
+  min-height: 32px;
+  block-size: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.follow-toggle input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.follow-toggle__mark { display: inline-grid; place-items: center; pointer-events: none; }
+.follow-toggle__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.follow-toggle:hover { color: var(--ink); border-color: var(--muted); }
+.follow-toggle:has(input:checked) {
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-color: var(--sage-surface);
+}
+.follow-toggle:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.follow-toggle::after {
+  content: attr(data-tip);
+  display: none;
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-end: 0;
+  inline-size: max-content;
+  max-inline-size: 14rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  background: var(--night-surface);
+  color: var(--on-night);
+  border: 1px solid var(--on-night-line);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.follow-toggle:has(input:focus-visible)::after { display: block; }
+@media (hover: hover) {
+  .follow-toggle:hover::after { display: block; }
+}
+@media (hover: none) {
+  .follow-toggle:has(input:focus)::after { display: block; animation: follow-tip 1.8s ease-out forwards; }
+}
+@keyframes follow-tip {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+/* Practising, no line is opened, so there are no words to look at. */
+.transcript-panel:not(:has(.follow-moment:not([hidden]))) .close-look { display: none; }
+.transcript-panel ol { flex: 1 1 auto; min-height: 0; padding-bottom: var(--space-3); }
+.transcript-panel [data-meaning-note] { display: inline-flex; margin-inline-end: var(--space-1); }
+/* The entry being spoken: the follow moment, opened inside the list. */
+.transcript-panel li[data-current] { margin-block: var(--space-1) var(--space-2); }
+.transcript-panel .follow-moment {
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: inset 3px 0 var(--coral), 0 1px 0 var(--line);
+}
+/* A transcript row is a full-width button; the words and quiet controls inside
+   the opened entry are not rows and keep their own shape. */
+.transcript-panel .follow-moment button {
+  display: inline-block;
+  width: auto;
+  padding: var(--space-1) 0;
+  line-height: inherit;
+  border-radius: 0;
+  text-align: start;
+}
+.transcript-panel .follow-moment > small { font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
+.transcript-panel .follow-moment .spoken { margin: var(--space-2) 0 var(--space-1); }
+.transcript-panel .follow-moment .meaning { margin-top: var(--space-1); }
+.transcript-panel .close-look-guide { margin-top: var(--space-2); padding-top: var(--space-2); }
+.transcript-panel .close-look-guide .meta { margin: var(--space-1) 0 0; line-height: 1.45; }
+.transcript-panel .word-legend { gap: var(--space-1) var(--space-3); }
+/* Between two spoken lines the entry stays, quieter, and says so. */
+.follow-moment[data-gap='true'] > small { color: var(--muted); }
+.follow-moment[data-gap='true'] .spoken { opacity: 0.55; }
+
+@media (min-width: 801px) {
+  /* Following, the panel gets the measure a spoken line needs; the video
+     keeps 16:9 in the rest. The panel runs from the top of the encounter to
+     the bottom of the first screen and never grows past it. */
+  .media-encounter:not(:has(.practice-space:not([hidden]))) {
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 1fr);
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
+    position: sticky;
+    top: calc(var(--shell-offset, 0px) + var(--space-4));
+    align-self: start;
+    block-size: calc(100svh - var(--encounter-top, 10rem) - var(--space-4));
+    min-block-size: 22rem;
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
+    max-height: none;
+  }
+}
+/* A short laptop window: the opened line a step smaller, so the longest line,
+   its meaning and the word guide still fit the list's height. */
+@media (min-width: 801px) and (max-height: 760px) {
+  .transcript-panel .follow-moment .spoken { font-size: 1.15rem; line-height: 1.4; }
+  .transcript-panel .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.5; }
+}
+/* A small laptop keeps the rail, so the panel takes an equal share of what is
+   left rather than its minimum, and a long line wraps less. */
+@media (min-width: 801px) and (max-width: 1100px) {
+  .media-encounter:not(:has(.practice-space:not([hidden]))) {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
+  }
+  .transcript-panel .follow-moment .spoken { font-size: 1.1rem; line-height: 1.4; }
+}
+@media (max-width: 800px) {
+  /* One column. Following, the voice - video or voice card, play and the
+     timeline - rides at the top under the header, and the panel fills exactly
+     the rest of the screen with its list scrolling inside it, so the line being
+     spoken never leaves the screen while the voice moves on. The deeper paths
+     come after the panel. At the end of the list a swipe carries on down the
+     page. The stage keeps its element - events and players are wired to it -
+     and only stops drawing a box of its own. */
+  .media-encounter:not(:has(.practice-space:not([hidden]))) {
+    row-gap: var(--space-2);
+    scroll-margin-top: var(--shell-offset, 0px);
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-stage { display: contents; }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) :is(.moment-actions, .reached-the-end) { order: 2; }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-source {
+    position: sticky;
+    top: var(--shell-offset, 0px);
+    z-index: 6;
+    background: var(--paper);
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
+    block-size: calc(100svh - var(--shell-offset, 0px) - var(--source-block, 0px) - var(--space-3));
+    min-block-size: 16rem;
+  }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
+    max-height: none;
+    overscroll-behavior: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dictation: one frame, nothing scrolled.
+
+   The work reads top to bottom in the height beside the source: the shape of
+   the line, the question with its replay, the attempt, the actions, and a
+   result region that takes what is left. Both ways out sit in the top row.
+   The comparison replaces the shape of the line instead of stacking under it.
+   --------------------------------------------------------------------------- */
+.practice-top { flex-wrap: wrap; row-gap: var(--space-1); }
+.practice-nav { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-inline-start: auto; }
+.practice-top { align-items: center; }
+.practice-nav { align-items: center; }
+.practice-nav > button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
+@media (max-width: 1079px) {
+  /* Narrow, the source strip above already carries "hear this line again",
+     so the question keeps its line to itself; the two ways out share a row. */
+  .dictation-ask [data-listen] { display: none; }
+  .practice-nav { flex-basis: 100%; justify-content: space-between; margin-inline-start: 0; }
+}
+.dictation-ask {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-1) 0;
+}
+.practice-space .dictation-ask label { margin: 0; }
+.dictation-ask [data-listen] { min-height: 32px; font-size: var(--text-sm); white-space: nowrap; }
+#dictationForm textarea { min-block-size: 3.5rem; padding: var(--space-2) var(--space-3); line-height: 1.5; }
+#dictationForm .button-row { margin: var(--space-2) 0 0; gap: var(--space-1) var(--space-4); align-items: center; }
+#dictationForm .button-row button:not(.primary) { font-size: var(--text-sm); }
+.practice-space .hint-line { padding: var(--space-2) var(--space-4) var(--space-3); margin: 0 0 var(--space-2); }
+.hint-line__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.hint-line__head small { letter-spacing: 0.06em; }
+.hint-line__head .meta { margin: 0; font-size: var(--text-xs); }
+.hint-line .hint__trigger { color: var(--on-sage-muted); }
+.practice-space .hint-slots { font-size: 1.05rem; line-height: 1.75; margin: var(--space-1) 0 0; }
+.dictation-result .comparison:not(:empty) { padding-top: var(--space-2); margin-top: var(--space-2); }
+/* The result says how close the attempt was and offers what to do next in one
+   row; the words themselves follow. */
+.comparison-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+}
+.dictation-result .comparison h3 { font-size: 1rem; margin: 0; white-space: nowrap; }
+.dictation-result .comparison-head .button-row { margin: 0; gap: var(--space-1) var(--space-3); flex-wrap: nowrap; }
+.dictation-result .comparison-head .button-row button { white-space: nowrap; padding-inline: 0; }
+.dictation-result .comparison-head .button-row button { font-size: var(--text-sm); }
+/* Once there is a result, the instruction for before the attempt has done its
+   work and yields its row. */
+.practice-space:has(.dictation-result .comparison:not(:empty)) > h2 { display: none; }
+.dictation-aids { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
+.dictation-result .diff { font-size: var(--text-base); gap: 4px; margin: 0 0 var(--space-2); }
+.dictation-result .diff > span { padding: 1px 6px; }
+.dictation-result .diff > span { line-height: 1.5; }
+/* The original line, then what it means - quieter, because it supports it. */
+.dictation-result .comparison > p { font-size: var(--text-base); line-height: 1.5; margin: var(--space-1) 0; }
+.dictation-result .comparison > p + p { font-size: var(--text-sm); color: var(--muted); }
+.dictation-result [data-evidence-status] { font-size: var(--text-xs); color: var(--muted); margin: var(--space-1) 0 0; }
+.dictation-result [data-evidence-status]:empty { display: none; }
+
+@media (min-width: 1080px) {
+  /* The work gets more of the width than the source, so a long line's
+     comparison wraps into fewer rows. */
+  .media-encounter:has(.practice-space:not([hidden])) {
+    grid-template-columns: minmax(0, 0.8fr) minmax(420px, 1fr);
+  }
+  /* A pointer does not need 44px under a quiet action; the attempt's own
+     button keeps its full size. */
+  #dictationForm .button-row button:not(.primary),
+  .dictation-result .comparison .button-row button { min-height: 24px; padding-block: 0; }
+  /* The two quiet aids stack beside the attempt's own button rather than
+     wrapping onto a row of their own. */
+  .dictation-actions { flex-wrap: nowrap; }
+  .dictation-aids { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+  .media-encounter:has(.practice-space:not([hidden])) .practice-space {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-3) var(--space-5);
+    max-block-size: calc(100svh - var(--encounter-top, 10rem) - var(--space-3));
+    scrollbar-gutter: auto;
+  }
+  .media-encounter:has(.practice-space:not([hidden])) .practice-space > * { flex: none; }
+  .practice-space h2 { font-size: 1.15rem; line-height: 1.35; margin: 0 0 var(--space-2); }
+  .practice-top { margin-bottom: var(--space-1); }
+  /* Practising, the heading orients in one short line. */
+  main:has(.practice-space:not([hidden])) .encounter-heading { padding-bottom: var(--space-3); }
+  main:has(.practice-space:not([hidden])) .encounter-heading h1 { font-size: 1.5rem; margin: 0; }
+  /* The lesson's topic and length are for choosing it; while practising,
+     the title is enough. */
+  main:has(.practice-space:not([hidden])) .encounter-heading .heading-with-hint { display: none; }
+  .practice-space:has(#dictationForm) > [data-practice-body] {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .practice-space:has(#dictationForm) [data-practice-body] > * { flex: none; }
+  /* Only an unusually long line can outgrow the region; it then scrolls
+     there, never the page and never the attempt above it. */
+  .practice-space:has(#dictationForm) .dictation-result {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Desktop: the room starts at the top, and the source and its caption share
+   the first viewport.
+
+   The way back and the heading orient in two short lines instead of a band of
+   whitespace. The video keeps 16:9 and narrows only if a short window could
+   not otherwise show it with its transport under the heading. The spoken line
+   is the current entry of the follow panel beside it, set to that measure.
+   --------------------------------------------------------------------------- */
+@media (min-width: 901px) {
+  .back-row { padding: var(--space-4) 0 var(--space-1); }
+  .encounter-heading { padding: var(--space-1) 0 var(--space-4); }
+  .encounter-heading h1 { font-size: clamp(1.75rem, 2.4vw, 2.5rem); margin-top: var(--space-1); }
+  .media-encounter:not(:has(.practice-space:not([hidden]))) .player-wrap :is(video, iframe) {
+    inline-size: min(100%, calc((100svh - 16rem) * 16 / 9));
+    margin-inline: auto;
+  }
+  .transport { padding-block: var(--space-2); }
+  .seek-line { padding-block: var(--space-1); }
+  .follow-moment {
+    min-height: 0;
+    padding: var(--space-4) var(--space-5);
+  }
+  .follow-moment .spoken {
+    font-size: clamp(1.25rem, 1.55vw, 1.65rem);
+    line-height: 1.45;
+    margin: var(--space-2) 0 var(--space-1);
+  }
+  .follow-moment .meaning { margin-top: var(--space-1); line-height: 1.6; font-size: var(--text-base); }
+  .follow-moment .close-look { margin-top: var(--space-2); }
+  /* A pointer does not need a thumb's 44px per word; the line keeps its own
+     height and every word stays a comfortable 24px target. */
+  .follow-moment .spoken .token { min-height: 24px; }
+  .transcript-panel { padding-top: var(--space-3); }
+  .transcript-panel .section-head { margin: 0 0 var(--space-2); }
+  .transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
+}
+
+/* A small laptop or a tablet held sideways: the rail stays, so the caption
+   column is narrow and the line wraps more. It is set a step smaller there. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .follow-moment { padding: var(--space-3) var(--space-4); }
+  .follow-moment .spoken { font-size: 1.1rem; line-height: 1.4; }
+  .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.5; }
+}
+/* A short window - a small laptop with its browser chrome - gives the heading
+   less room, so the line being spoken keeps it. */
+@media (min-width: 901px) and (max-height: 700px) {
+  .back-row { padding-block: var(--space-2) 0; }
+  .encounter-heading { padding-bottom: var(--space-3); }
+  .encounter-heading h1 { font-size: 1.6rem; margin-top: 0; }
+}
+
+/* A comprehension result is brought into view when it arrives; below 900px it
+   must land under the sticky header, not behind it. */
+[data-comprehension-results],
+.conversation-turn { scroll-margin-top: calc(var(--shell-offset, 0px) + var(--space-3)); }
+
+/* What can be done with a turn sits on one line under it. */
+.turn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin-top: var(--space-2);
+}
+
+/* ---------------------------------------------------------------------------
+   Phone: the screen belongs to the learning.
+
+   Not the desktop carried over. The phone scale in `foundation.css` sets the
+   type a step smaller and targets at `--tap` (36px) and `--tap-quiet` (32px);
+   this block sets each room to it, so a spoken line wraps into two or three
+   lines rather than six, a control is no bigger than what it does, and the
+   learner's text, the spoken line, the transcript and the passage get the
+   screen. Type stays readable: nothing the learner reads goes below 13px, and
+   the line they are learning from stays the largest thing in its frame. This
+   file loads last, so these rules settle what earlier narrow rules left
+   generous.
+   --------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+  #main { padding-inline: var(--space-4); }
+  /* Actions: found at a glance, touched without aiming, not billboard-sized. */
+  .primary,
+  .outline {
+    min-height: var(--tap);
+    padding: var(--space-1) var(--space-3);
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+  .quiet { min-height: var(--tap-quiet); padding-block: var(--space-1); }
+  .button-row { gap: var(--space-2); }
+  .section-head { margin: var(--space-3) 0 var(--space-2); }
+  .section-head h2 { font-size: 1.05rem; }
+  .back-row { padding-block: var(--space-2) 0; }
+  :is(.back-row > a, .practice-return a) { min-height: var(--tap-quiet); }
+  #main .page-intro { padding-block: var(--space-3) var(--space-3); }
+  #main .page-intro h1 { font-size: 1.35rem; }
+  #main .page-intro p { font-size: var(--text-sm); }
+
+  /* Listening and every media encounter. The voice's identity card becomes a
+     strip, the transport one row, and the spoken line with its meaning a
+     compact block - so the current line, its meaning and a run of the
+     transcript fit in the same frame instead of the controls filling it. */
+  .encounter-heading { padding-block: var(--space-1) var(--space-2); }
+  .encounter-heading h1 { font-size: 1.2rem; margin: 0; }
+  .encounter-heading small { font-size: var(--text-xs); }
+  .audio-identity {
+    min-height: 0;
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-3);
+  }
+  .audio-identity .voice-orbit { width: 32px; height: 32px; box-shadow: none; }
+  .audio-identity .voice-orbit > span { width: 20px; height: 20px; border-width: 5px; box-shadow: none; }
+  .audio-identity small { font-size: var(--text-xs); }
+  .audio-identity p { font-size: var(--text-sm); margin: 0; }
+  .audio-identity > div > span { display: none; }
+  .transport { padding-block: var(--space-1); gap: var(--space-2); }
+  .transport > button:first-child { width: 40px; height: var(--tap); }
+  .transport > button:nth-child(2) { min-height: var(--tap); font-size: var(--text-sm); }
+  .transport select { min-height: var(--tap); padding: 0 var(--space-2); }
+  .seek-line { padding-block: 0; gap: var(--space-2); }
+  .seek-line input { min-height: 24px; }
+  .follow-moment { min-height: 0; padding: var(--space-2) var(--space-3); }
+  .follow-moment > small { font-size: var(--text-xs); }
+  /* The line is the largest text in its frame, and wraps like text: a word is
+     a comfortable target by its height and the gap around it, not by being
+     widened to a thumb. */
+  .follow-moment .spoken {
+    font-size: 1rem;
+    line-height: 1.55;
+    font-weight: 650;
+    margin: var(--space-1) 0;
+  }
+  .follow-moment .spoken .token { min-width: 0; min-height: 28px; padding: 0 1px; }
+  .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.55; margin: var(--space-1) 0 0; }
+  .transcript-panel .close-look-guide { margin-top: var(--space-1); padding-top: var(--space-1); }
+  .transcript-panel .word-legend { font-size: var(--text-xs); }
+  .moment-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-block: var(--space-2);
+    gap: var(--space-2);
+  }
+  .moment-actions > span { grid-column: 1 / -1; margin-bottom: 0; font-size: var(--text-xs); }
+  .moment-actions > button { padding: 0 var(--space-2); min-height: var(--tap); font-size: var(--text-sm); }
+  .transcript-panel { padding: var(--space-3) var(--space-3) 0; }
+  .transcript-panel .section-head { margin: 0; align-items: center; }
+  .transcript-panel h2 { font-size: var(--text-base); margin: 0; }
+  .transcript-panel ol { max-height: min(420px, 62svh); }
+  .transcript-panel li { margin-bottom: 0; }
+  .transcript-panel button { padding: var(--space-1) var(--space-2); line-height: 1.45; gap: 0; }
+  .transcript-panel time { font-size: var(--text-xs); }
+  .transcript-panel .line-original { font-size: 0.875rem; }
+  .transcript-panel .line-meaning { font-size: var(--text-xs); }
+
+  /* Practice inside an encounter. */
+  .media-encounter:has(.practice-space:not([hidden])) .player-wrap :is(video, iframe) { block-size: 15vh; }
+  .practice-space { padding: var(--space-3); }
+  .practice-space h2 { font-size: var(--text-base); margin-bottom: var(--space-1); }
+  .practice-top { margin-bottom: 0; }
+  .practice-top small { font-size: var(--text-xs); }
+  .practice-nav > button { min-height: var(--tap-quiet); font-size: var(--text-xs); }
+  .practice-space label { margin: var(--space-1) 0; }
+  /* Dictation: the shape of the line, the attempt and the answer, one screen. */
+  .practice-space .hint-line { padding: var(--space-2) var(--space-3); margin: 0 0 var(--space-1); }
+  .practice-space .hint-slots { font-size: 0.9375rem; line-height: 1.55; }
+  .hint-line__head small { font-size: var(--text-xs); }
+  #dictationForm textarea { min-block-size: 3.25rem; font-size: var(--text-base); }
+  #dictationForm .button-row { margin-top: var(--space-2); }
+  #dictationForm .button-row button:not(.primary),
+  .dictation-result .comparison .button-row button { min-height: var(--tap-quiet); font-size: var(--text-xs); padding-block: 0; }
+  .dictation-result .comparison h3 { font-size: var(--text-base); }
+  .dictation-result .diff { font-size: var(--text-sm); gap: 3px; }
+  .dictation-result .diff > span { padding: 0 4px; }
+  .dictation-result .comparison > p { font-size: var(--text-sm); }
+  .dictation-result .comparison > p + p { font-size: var(--text-xs); }
+  /* Shadowing and Speaking inside an encounter: the line to say, what it
+     means, what to do, and the two controls - one screen, not three. */
+  .practice-space blockquote {
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    margin: 0 0 var(--space-1);
+    padding: var(--space-1) var(--space-3);
+  }
+  .practice-space :is(.practice-meaning, .practice-guide, .voice-response > p) { margin: var(--space-1) 0; font-size: var(--text-sm); }
+  .practice-space .practice-guide { line-height: 1.55; }
+  .practice-space .button-row { margin-block: var(--space-2) var(--space-1); align-items: center; }
+  .practice-space [data-take] h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-base); }
+  .practice-space .voice-history { margin-top: var(--space-2); padding-top: var(--space-1); }
+
+  /* Reading comprehension: the questions close together, every choice a
+     label-sized target, the result one compact block per question. */
+  .comprehension { margin-block: var(--space-4) var(--space-5); padding-top: var(--space-3); }
+  .comprehension > summary { min-height: var(--tap); display: flex; align-items: center; }
+  .comprehension form { margin-top: var(--space-1); }
+  .comprehension-question { margin-bottom: var(--space-3); gap: 0; }
+  .comprehension-question legend { margin-bottom: 2px; line-height: 1.45; font-size: var(--text-sm); }
+  .comprehension-question label {
+    min-height: var(--tap);
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-2);
+    line-height: 1.45;
+    font-size: var(--text-sm);
+  }
+  .comprehension-score { font-size: 1.1rem; }
+  .comprehension-result { margin-block: var(--space-3); padding-left: var(--space-3); }
+  .comprehension-result > p { margin: var(--space-1) 0; font-size: var(--text-sm); }
+  .comprehension-result blockquote {
+    margin: var(--space-1) 0;
+    padding-block: 2px;
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  /* Conversation: the exchange is the page. The simulated-partner line stays
+     on screen but as a line, not a panel; a turn is its words and one row of
+     what can be done with them; the reply box arrives while the situation is
+     still in view. */
+  .conversation-truth {
+    padding: var(--space-2) var(--space-3);
+    margin-block: var(--space-2);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+  }
+  .conversation-turns { margin: var(--space-3) auto; }
+  .conversation-turn { padding: var(--space-2) var(--space-3); margin-block: var(--space-2); }
+  .conversation-turn > p { font-size: var(--text-base); line-height: 1.55; margin: 2px 0; }
+  .conversation-turn > small { font-size: var(--text-xs); }
+  .conversation-turn details { margin-top: 0; font-size: var(--text-sm); }
+  .turn-actions { margin-top: 0; column-gap: var(--space-4); }
+  .turn-actions > button { min-height: var(--tap-quiet); padding-inline: 0; font-size: var(--text-xs); }
+  .conversation-composer { margin: var(--space-3) auto var(--space-5); }
+  .conversation-composer textarea { margin-block: var(--space-1); }
+
+  /* Discover, My content, Collection and the thread shelf. These openings keep
+     their artwork - atmosphere is doing real work here - but not a banner:
+     the invitation is a short heading, and what the learner came for starts
+     inside the first screen. */
+  .editorial-intro { padding-block: var(--space-3); }
+  .editorial-intro h1 { font-size: 1.6rem; line-height: 1.15; margin: var(--space-1) 0; }
+  .editorial-intro .brand-art { width: 60px; top: var(--space-2); }
+  .editorial-intro small { top: var(--space-4); max-width: 66%; font-size: var(--text-xs); }
+  .editorial-intro:has(.brand-art) > div { padding-top: 52px; }
+  .editorial-intro p { font-size: var(--text-sm); }
+  .wayfinding { margin-bottom: var(--space-3); }
+  .wayfinding a { min-height: 40px; font-size: var(--text-sm); }
+  .editorial-spread { gap: var(--space-3); }
+  .feature-caption { padding: var(--space-3) var(--space-4) var(--space-4); }
+  .feature-caption p { margin: var(--space-1) 0; font-size: var(--text-sm); }
+  :is(.feature-caption, .reading-window) h2 { font-size: 1.25rem; }
+  .editorial-spread h2 > a { min-height: var(--tap); }
+  .reading-window { padding: var(--space-4); }
+  .reading-window > small { margin-bottom: var(--space-2); }
+  .reading-window-art { margin-bottom: var(--space-2); }
+  .reading-window p { font-size: var(--text-sm); }
+  .studio-spread { gap: var(--space-3); margin-top: var(--space-5); }
+  .studio-spread article { padding: var(--space-4); }
+  .studio-spread h2 { font-size: 1.3rem; margin-top: var(--space-1); }
+  .studio-spread p { font-size: var(--text-sm); }
+  .studio-spread .brand-art { width: 64px; }
+  .story-walk { margin-top: var(--space-6); }
+  /* The number is a mark beside the title and never breaks inside itself. */
+  .story-path { grid-template-columns: auto minmax(0, 1fr) 16px; gap: var(--space-3); padding-block: var(--space-3); }
+  .path-number { font-size: 1.15rem; min-width: 1.5rem; white-space: nowrap; }
+  .story-path h3 { font-size: 1.1rem; }
+  .story-path p { font-size: var(--text-sm); margin: 2px 0; }
+  .bring-invitation {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin: var(--space-6) 0 var(--space-3);
+  }
+  .bring-invitation h2 { font-size: 1.2rem; }
+  .thread-shelf { padding-block: var(--space-4); margin-block: var(--space-4); }
+  .thread-shelf .section-head { display: flex; flex-direction: row; align-items: center; gap: var(--space-1); margin: 0 0 var(--space-2); }
+  .thread-list { gap: var(--space-3); }
+  .thread { padding: 2px 0 2px var(--space-3); }
+  .thread strong { font-size: 1rem; margin-top: 2px; }
+  .thread p { margin: 2px 0 0; }
+  .thread-action { justify-content: flex-start; gap: var(--space-2); min-height: var(--tap-quiet); }
+  [data-experience='content'] .collection-row { padding: var(--space-2) var(--space-3); margin-block: var(--space-2); }
+  .collection-row { grid-template-columns: 52px minmax(0, 1fr) var(--tap); gap: var(--space-3); padding-block: var(--space-2); }
+  .collection-art { height: 52px; }
+  .collection-row small { letter-spacing: 0.02em; line-height: 1.4; font-size: var(--text-xs); }
+  .collection-row h2 { font-size: 1rem; line-height: 1.3; margin-top: 2px; text-wrap: pretty; }
+  .collection-row h2 a { min-height: var(--tap-quiet); }
+  .collection-row [data-remove] { min-width: var(--tap); min-height: var(--tap); padding: 0; }
+  /* Collection's lenses are one row that scrolls sideways, not a second
+     block of controls above the things being looked for. */
+  .collection-find { margin-block: var(--space-2) var(--space-2); }
+  .lens-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .lens-row::-webkit-scrollbar { display: none; }
+  .lens-row button { flex: none; min-height: var(--tap-quiet); padding: 0 var(--space-3); font-size: var(--text-xs); }
+  .collection-shelves { margin-top: var(--space-2); gap: var(--space-3); }
+  .collection-shelf .section-head { margin: var(--space-2) 0 var(--space-1); }
+  .collection-shelf li a { min-height: var(--tap); padding-block: var(--space-1); }
+  :is(.intent-nav a, .intent-ribbon > a) { min-height: var(--tap); padding: var(--space-1) var(--space-3); }
+  .understanding-suggestions button { min-height: var(--tap); }
+  .side-story > a h2 { min-height: var(--tap); }
+
+  /* Reading keeps a comfortable line; it loses the double spacing and the
+     banner-sized title that kept most of the passage below the fold. */
+  .text-heading { margin: var(--space-2) auto var(--space-3); }
+  .text-heading h1 { font-size: 1.4rem; margin: var(--space-1) 0; }
+  .text-heading p { margin: 0; font-size: var(--text-sm); }
+  .passage { font-size: 1rem; line-height: 1.65; }
+  .passage > p { line-height: 1.65; margin: 0 0 0.8em; }
+  :root[data-learning='zh'] .passage,
+  :root[data-learning='zh'] .passage > p { line-height: 1.8; }
+
+  /* Grammar: the pattern, its examples and its contrast, each a compact block. */
+  .pattern-focus { padding: var(--space-3); }
+  .pattern-parts { gap: var(--space-1); margin: var(--space-2) 0; }
+  .pattern-parts span { padding: var(--space-1) var(--space-2); font-size: var(--text-base); }
+  .grammar-encounter h2,
+  .pattern-contrast h2 { font-size: 1.05rem; margin-block: var(--space-3) var(--space-1); }
+  .grammar-encounter blockquote { padding: var(--space-2) var(--space-3); margin: var(--space-2) 0; }
+  .grammar-encounter blockquote > p { margin: 2px 0; }
+
+  /* Speaking and Recall: the situation, the prompt, the card - not the frame. */
+  [data-experience='speaking'] .voice-situation { padding: var(--space-3) var(--space-4); }
+  [data-experience='speaking'] .voice-situation h2 { font-size: 1.1rem; }
+  [data-experience='speaking'] .voice-prompt { font-size: var(--text-base); line-height: 1.55; padding: var(--space-3); }
+  :is([data-experience='language'], [data-experience='recall']) .recall-moment {
+    margin: var(--space-3) auto;
+    padding: var(--space-3);
+  }
+
+  /* Feedback: the same hierarchy, closer together. A dimension is one line -
+     its name, its bar, its number - rather than a stack of three. */
+  .review-headline b { font-size: 1.4rem; }
+  .review-dimension { grid-template-columns: minmax(6rem, 7.5rem) 1fr auto; gap: var(--space-2); font-size: var(--text-sm); }
+  .review-bar { grid-column: auto; order: 0; }
+  .review-strengths blockquote {
+    margin: 2px 0;
+    padding-block: 2px;
+    line-height: 1.55;
+  }
+  .review-issues .correction { padding: var(--space-2) var(--space-3); }
+}

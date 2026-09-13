@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from alembic import command
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
@@ -35,6 +34,12 @@ from writing_coach.persistence.specialized_repository import (
     SQLiteSpecializedLearningRepository,
 )
 from writing_coach.persistence.config import create_runtime_engine, runtime_url
+from writing_coach.runtime_schema import (
+    UNAVAILABLE,
+    SchemaNotReady,
+    describe_readiness,
+    readiness,
+)
 
 
 @dataclass(frozen=True)
@@ -64,29 +69,35 @@ def _read_runtime_state(engine) -> tuple[str | None, set[str]]:
     return revision, tables
 
 
-def _bootstrap_empty_runtime() -> None:
-    command.upgrade(_runtime_alembic_config(include_runtime_url=True), "head")
+def runtime_head() -> str:
+    """The Alembic revision this build expects. Shared with the operator command."""
+    return ScriptDirectory.from_config(_runtime_alembic_config()).get_current_head()
 
 
 def _verify_runtime_readiness(engine) -> None:
-    expected = ScriptDirectory.from_config(_runtime_alembic_config()).get_current_head()
+    """Verify, and only verify.
+
+    An empty database used to be migrated to head right here, by whichever
+    process happened to connect first. A deployment pointed at the wrong
+    database therefore built a schema in it instead of refusing, and no
+    operator ever chose the moment. Creating the schema is now an explicit
+    command; startup reports which of the four states it found and stops.
+    """
+    expected = runtime_head()
     try:
         actual, tables = _read_runtime_state(engine)
     except Exception as exc:
-        raise RuntimeError("PostgreSQL runtime unavailable") from exc
-
-    if actual is None and not tables:
-        try:
-            _bootstrap_empty_runtime()
-            actual, tables = _read_runtime_state(engine)
-        except Exception as exc:
-            raise RuntimeError("PostgreSQL empty-runtime bootstrap failed") from exc
-
-    if actual != expected:
-        raise RuntimeError(
-            f"PostgreSQL runtime Alembic revision mismatch: "
-            f"expected {expected}, actual {actual}"
-        )
+        raise SchemaNotReady(
+            UNAVAILABLE,
+            describe_readiness(UNAVAILABLE, expected=expected, actual=None),
+            expected=expected,
+            actual=None,
+        ) from exc
+    SchemaNotReady.raise_for(
+        readiness(actual=actual, tables=tables, expected=expected),
+        expected=expected,
+        actual=actual,
+    )
 
 
 def build_runtime(

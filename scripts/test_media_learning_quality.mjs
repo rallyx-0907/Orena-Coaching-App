@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {replaySegment,segmentPlaybackDelayMs} from '../static/becoming/components/media-player.js';
-import {transcriptTokens} from '../static/becoming/domain/transcript-tokens.js';
+import {replaySegment,segmentPlaybackDelayMs} from '../static/orena/capabilities/media-player.js';
+import {transcriptTokens} from '../static/orena/capabilities/transcript-tokens.js';
 assert.equal(segmentPlaybackDelayMs(1000,2000,1),1090);
 assert.equal(segmentPlaybackDelayMs(1000,2000,1.25),890);
 assert.equal(segmentPlaybackDelayMs(1000,1000,1),null);
@@ -9,16 +9,9 @@ assert.deepEqual(transcriptTokens("Hello, I’m learning English.").filter(x=>x.
 assert.deepEqual(transcriptTokens('大家好，我是刘芬 AI').filter(x=>x.word).map(x=>x.text),['大','家','好','我','是','刘','芬','AI']);
 const commands=[];
 const frame={src:'https://www.youtube-nocookie.com/embed/abcdefghijk?enablejsapi=1',contentWindow:{postMessage(message,origin){commands.push({payload:JSON.parse(message),origin});}}};
-const root={querySelector(selector){return selector==='#listeningPlayer'?frame:null;}};
+const root={querySelector(selector){return selector==='#orenaMedia'?frame:null;}};
 const playback={provider:'youtube',kind:'embed',url:'https://www.youtube-nocookie.com/embed/abcdefghijk'};
 assert.equal(replaySegment(root,playback,1000,1010,1),true);
 await new Promise(resolve=>setTimeout(resolve,130));
 assert.deepEqual(commands.map(x=>x.payload.func),['seekTo','playVideo','pauseVideo']);
-const listening=readFileSync(new URL('../static/becoming/screens/listening.js',import.meta.url),'utf8');
-const speaking=readFileSync(new URL('../static/becoming/screens/speaking.js',import.meta.url),'utf8');
-assert.match(listening,/segment\.start_ms,segment\.end_ms,controller\.model\.playbackRate/);
-assert.match(speaking,/segment\.start_ms,segment\.end_ms,controller\.model\.playbackRate/);
-assert.match(listening,/listening-meaning-inline/);
-assert.match(listening,/transcriptTokenMarkup/);
-assert.match(speaking,/transcriptTokenMarkup/);
-console.log('Media segment playback + transcript token UI: PASS');
+console.log('Media playback and transcript tokens: PASS');

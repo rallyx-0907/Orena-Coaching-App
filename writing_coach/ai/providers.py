@@ -218,8 +218,13 @@ class OllamaProvider:
     def __init__(self, credential_override: dict[str, Any] | None = None) -> None:
         credential_override = credential_override or {}
         override_url = credential_override.get("base_url")
+        # The application runs in Docker, where 127.0.0.1 is the container
+        # itself and can never be the host's Ollama. Compose and .env.example
+        # both default the endpoint to the Docker host alias, so the code
+        # default matches the documented deployment instead of pointing at
+        # nothing and degrading every evaluation to 503.
         self.base_url = str(
-            override_url if isinstance(override_url, str) and override_url.strip() else os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
+            override_url if isinstance(override_url, str) and override_url.strip() else os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
         ).strip().rstrip("/")
         self.default_model = str(
             credential_override.get("default_model") or os.getenv("OLLAMA_MODEL", "qwen3:8b")
