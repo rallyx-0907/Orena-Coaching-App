@@ -115,8 +115,8 @@ layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 
 ## PENDING
 
-Microphone hardware and live-provider validation remain pending; injected
-provider coverage does not establish live prompt quality.
+R3 local gate passes grounding/schema; `qwen3:8b` intermittently leaks target
+ script in nested support explanations. Provider quality pending.
 
 ## BLOCKED
 
