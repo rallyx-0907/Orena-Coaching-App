@@ -1,10 +1,10 @@
 """Subscription state and the provider-event inbox for I3.
 
-PROPOSAL — CHANGES REQUESTED at review and again at re-review (round 1 of
-the delegated review, commit 313e70f); revised against both; awaiting
-re-review. Not applied anywhere. Alembic does not read
-`migrations/proposed/`, so this file is not part of the revision chain and no
-running deployment's startup check sees it. Two tables. Additive only.
+APPROVED - delegated independent review, round 3 of `7020925` (APPROVED
+WITH REQUIRED CHANGES; the required code reorder made in `6c4131a`); trail in
+`docs/project/I3_SCHEMA_REVIEW_REQUEST.md`. In the live chain; applied to the
+sandbox runtime only, under D-054's delegation. Additive only. Nothing here
+enables billing or wires a caller.
 
 Scope, deliberately narrow: this covers only ORENA_COMMERCE_ARCHITECTURE.md
 §3's subscription state and inbound-event reconciliation - the two tables

@@ -1,8 +1,9 @@
 """The work aggregate: drafts, responses and conversations.
 
-DEPLOYED, INACTIVE — the tables this reads and writes are in migration
-`20260908_0005`, applied to the sandbox runtime. The `ORENA_ACCOUNT_BACKBONE`
-flag is off, so no caller is wired to it.
+LIVE ON THE SANDBOX ONLY — the tables this reads and writes are in
+migration `20260908_0005`. The sandbox runtime runs with
+`ORENA_ACCOUNT_BACKBONE=on`, and `work_api` serves the Writing room's drafts
+through this; production and preview do not run it.
 
 The transaction, the sequence, the receipt and the change record are
 `mutation_commit.commit_mutation`, shared with every other account mutation.

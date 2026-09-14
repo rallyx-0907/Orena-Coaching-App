@@ -32,6 +32,7 @@ import { recallShape, blankContext } from '../product/recall.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
 import { scene } from './brand.js';
+import { draftSync } from '../product/draft-sync.js';
 
 /* A piece the learner already submitted, reopened by its series.
 
@@ -102,7 +103,7 @@ export async function renderExpression(root, ctx) {
   const invitations = contentFor(language).slice(0, 2);
   const levels =
     ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count aria-live="polite"></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><div class="writing-task"><span class="writing-task__label"><label for="writingTask">${esc(c.writingTask)}</label>${hint({ text: c.writingTaskNote })}</span><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"></div></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count aria-live="polite"></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><div class="writing-task"><span class="writing-task__label"><label for="writingTask">${esc(c.writingTask)}</label>${hint({ text: c.writingTaskNote })}</span><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"></div></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
@@ -139,6 +140,7 @@ export async function renderExpression(root, ctx) {
           memory.recordRevision(id, { text: current.value });
         current.value = entry.text;
         memory.write(id, entry.text);
+        sync.edit(draftNow());
         updateCount();
         paintRevisions();
         current.focus();
@@ -192,10 +194,74 @@ export async function renderExpression(root, ctx) {
   // what was said about it, not as a blank result frame.
   if (series?.latest && Array.isArray(series.latest.issues))
     presentReview(series.latest, String(series.latest.text || ''));
-  root.querySelector('textarea').oninput = (event) => {
+  /* Kept with the account when this deployment keeps work there; on this
+     device always. The status says which is true, and a version changed on
+     another device is shown for the learner to choose, never merged. */
+  const box = root.querySelector('#expressionText');
+  const taskInput = root.querySelector('[name=task]');
+  const elsewhereNode = root.querySelector('[data-draft-elsewhere]');
+  // The draft is the words and the task they answer, always together.
+  function draftNow() {
+    return { text: box.value, task: taskInput.value };
+  }
+  const showDraft = (draft) => {
+    box.value = draft.text;
+    taskInput.value = draft.task;
+    memory.write(id, draft.text);
+    memory.write(`${id}::task`, draft.task);
+    updateCount();
+  };
+  const sync = draftSync({
+    api,
+    memory,
+    id,
+    onWhere: (where) => {
+      if (alive()) refreshDraftStatus(root.querySelector('[data-draft-status]'), ctx, where);
+    },
+    onElsewhere: (other) => {
+      if (!alive()) return;
+      elsewhereNode.innerHTML = `<p>${esc(c.draftElsewhere)}</p><blockquote lang="${esc(language)}">${esc(other.text.slice(0, 280))}${other.text.length > 280 ? '…' : ''}</blockquote>${other.task ? `<p class="draft-elsewhere__task"><span>${esc(c.writingTask)}</span> ${esc(other.task)}</p>` : ''}<div class="draft-elsewhere__actions"><button type="button" class="quiet" data-use-elsewhere>${esc(c.draftUseElsewhere)}</button><button type="button" class="quiet" data-keep-here>${esc(c.draftKeepHere)}</button></div>`;
+      elsewhereNode.hidden = false;
+      elsewhereNode.querySelector('[data-use-elsewhere]').onclick = () => {
+        // The words in the box are kept as a version first, never lost.
+        if (box.value.trim()) memory.recordRevision(id, { text: box.value });
+        const chosen = sync.useElsewhere();
+        if (chosen) {
+          showDraft(chosen);
+          paintRevisions();
+        }
+        elsewhereNode.hidden = true;
+        box.focus();
+      };
+      elsewhereNode.querySelector('[data-keep-here]').onclick = () => {
+        sync.keepHere(draftNow());
+        elsewhereNode.hidden = true;
+        box.focus();
+      };
+    },
+  });
+  const openedWith = draftNow();
+  sync
+    .open({
+      text: memory.value.expressions[id] || '',
+      task: memory.value.expressions[`${id}::task`] || '',
+    })
+    .then((draft) => {
+      // Only a room the learner has not touched since it opened takes the
+      // account's copy; typed words and task are never replaced under them.
+      const now = draftNow();
+      if (!alive() || !draft || now.text !== openedWith.text || now.task !== openedWith.task) return;
+      showDraft(draft);
+    });
+  taskInput.addEventListener('input', () => {
+    memory.write(`${id}::task`, taskInput.value);
+    sync.edit(draftNow());
+  });
+  box.oninput = (event) => {
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing', excerpt });
     refreshDraftStatus(root.querySelector('[data-draft-status]'), ctx);
+    sync.edit(draftNow());
     updateCount();
   };
   root.querySelector('form').onsubmit = async (event) => {

@@ -1,8 +1,9 @@
 """One transactional envelope for every account mutation.
 
-DEPLOYED, INACTIVE — the tables this touches are in
-`migrations/versions/20260908_0005`, applied to the sandbox runtime. The
-`ORENA_ACCOUNT_BACKBONE` flag is off, so no caller is wired to it.
+LIVE ON THE SANDBOX ONLY — the tables this touches are in
+`migrations/versions/20260908_0005`. The sandbox runtime runs with
+`ORENA_ACCOUNT_BACKBONE=on`; `work_api` (the Writing room's drafts) is the
+caller. Production and preview do not run it.
 
 Work and provenance are different domains that need identical guarantees: one
 sequence per account allocated under a held lock, one receipt per scoped

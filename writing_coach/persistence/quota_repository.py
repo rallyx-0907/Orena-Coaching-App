@@ -1,10 +1,8 @@
 """Quota buckets and the reserve/dispatch/settle/release transactional seam.
 
-PROPOSAL, NOT DEPLOYED — the tables this reads and writes are in
-`migrations/proposed/20260912_0007`, not `migrations/versions/`. Nothing here
-runs against any real database until that migration is reviewed, approved and
-moved, mirroring I2 and the I3 subscription-inbox path. No caller is wired to
-this either way.
+DEPLOYED, INACTIVE — the tables this reads and writes are in
+`migrations/versions/20260912_0007`, approved by delegated review and applied
+to the sandbox runtime. No caller is wired to it; enforcement stays off.
 
 Division of responsibility, matching `commerce_repository.py`: this file
 never computes a policy decision itself. `writing_coach.reference_backbone`'s

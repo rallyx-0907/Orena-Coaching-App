@@ -256,20 +256,25 @@ export function savedLanguageLink(c) {
    hears. A draft that could not be kept is the one case that matters, so it
    takes the warning symbol and tone - shape and colour both, never colour
    alone. */
-function draftStatusState(ctx) {
-  return ctx.memory.available
-    ? { icon: 'saved', tone: 'quiet', text: ctx.c.draftSaved }
-    : { icon: 'warning', tone: 'warning', text: ctx.c.memoryUnavailable };
+// Kept with the account is true only when the account said so (draft-sync);
+// everything else is the device, and a device that cannot keep it warns.
+function draftStatusState(ctx, where = 'device') {
+  if (where !== 'account' && !ctx.memory.available)
+    return { icon: 'warning', tone: 'warning', text: ctx.c.memoryUnavailable };
+  return where === 'account'
+    ? { icon: 'saved', tone: 'quiet', text: ctx.c.draftKeptAccount }
+    : { icon: 'saved', tone: 'quiet', text: ctx.c.draftSaved };
 }
 export function draftStatus(ctx) {
   const state = draftStatusState(ctx);
-  return `<span class="draft-status" role="status" data-draft-status data-state="${state.icon}">${hint(state)}</span>`;
+  return `<span class="draft-status" role="status" data-draft-status data-state="${state.icon}" data-where="device">${hint(state)}</span>`;
 }
-export function refreshDraftStatus(node, ctx) {
+export function refreshDraftStatus(node, ctx, where = node?.dataset.where || 'device') {
   if (!node) return;
-  const state = draftStatusState(ctx);
-  if (node.dataset.state === state.icon) return;
+  const state = draftStatusState(ctx, where);
+  if (node.dataset.state === state.icon && node.dataset.where === where) return;
   node.dataset.state = state.icon;
+  node.dataset.where = where;
   node.innerHTML = hint(state);
 }
 

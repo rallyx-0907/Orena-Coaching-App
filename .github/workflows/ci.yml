@@ -29,6 +29,7 @@ jobs:
       - run: python scripts/test_orena_account_profile.py
       - run: python scripts/test_orena_runtime_schema.py
       - run: python scripts/test_orena_work_contract.py
+      - run: python scripts/test_orena_job_contract.py
       - run: python scripts/test_orena_account_backbone.py
       - run: python scripts/test_runtime_backup.py
       - run: python scripts/build_listening_dev_catalog.py --check
@@ -57,6 +58,8 @@ jobs:
           node scripts/test_orena_grammar.mjs
           node scripts/test_orena_conversation.mjs
           node scripts/test_orena_learner_memory.mjs
+          node scripts/test_orena_draft_sync.mjs
+          node scripts/test_orena_growth_summary.mjs
           node scripts/test_orena_continuation.mjs
           node scripts/test_orena_brand_library.mjs
           node scripts/test_orena_workspace.mjs

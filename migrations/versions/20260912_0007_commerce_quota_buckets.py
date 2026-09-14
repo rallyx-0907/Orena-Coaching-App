@@ -1,10 +1,9 @@
 """Quota buckets and reservations for I3.
 
-PROPOSAL — awaiting review, following the same path
-`20260911_0006_commerce_subscription_inbox.py` is on. Not applied anywhere.
-Alembic does not read `migrations/proposed/`, so this file is not part of the
-revision chain and no running deployment's startup check sees it. Two tables.
-Additive only.
+APPROVED - delegated independent review, round 3 of `7020925`; trail in
+`docs/project/I3_SCHEMA_REVIEW_REQUEST.md`. In the live chain; applied to the
+sandbox runtime only, under D-054's delegation. Two tables. Additive only.
+Nothing here enables enforcement or wires a caller.
 
 Scope, deliberately narrow: this covers only ORENA_COMMERCE_ARCHITECTURE.md
 §2/§4's QuotaBucket and Reservation records - the two tables

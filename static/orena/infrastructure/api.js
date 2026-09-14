@@ -249,4 +249,16 @@ export const api={
     body:JSON.stringify(payload),
   }),
   logout:()=>request('/auth/logout',{method:'POST'}),
+  // Whether this deployment keeps work with the account (I2): active,
+  // disabled or unavailable. Drafts stay on the device unless active.
+  accountBackbone:()=>request('/api/account-backbone'),
+  draft:(key)=>request(`/api/drafts/${encodeURIComponent(key)}`),
+  saveDraft:(key,body)=>request(`/api/drafts/${encodeURIComponent(key)}`,{
+    method:'PUT',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
+  // A read-only glance at the learner's own recorded evidence (I6). `window`
+  // is one of 7d/30d/90d/all; the caller decides which, this never guesses.
+  learnerSummary:(window)=>request(`/api/learner-summary?window=${encodeURIComponent(window)}`),
 };

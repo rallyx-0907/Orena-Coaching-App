@@ -102,6 +102,52 @@ select:focus {
 .plan-usage li > span:last-child {
   color: var(--muted);
 }
+/* Read-only growth glance, same treatment as plan/usage above it: plain
+   information inside the preferences sheet, not a form or a call-to-action.
+   The domain label may carry a hint icon explaining why it has no trend yet -
+   see growthSummarySection() in app.js. */
+.growth-summary {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+}
+.growth-summary h2 {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin: 0 0 var(--space-2);
+}
+.growth-summary > p.meta {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  margin: 0 0 var(--space-2);
+}
+.growth-summary ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.growth-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.growth-summary li > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.growth-summary li > span:last-child {
+  color: var(--muted);
+  text-align: right;
+}
+.growth-achievements {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
 /* Choosing a theme.
 
    Each row shows the theme rather than naming a colour: the sample carries
