@@ -345,6 +345,7 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   };
   const pronunciation = String(item.phonetic || '').trim();
   if (pronunciation && pinyinAllowed) card.pronunciation = pronunciation;
+  if (item.orthography) card.orthography = item.orthography;
   return card;
 }
 export async function renderLanguage(root, ctx) {
