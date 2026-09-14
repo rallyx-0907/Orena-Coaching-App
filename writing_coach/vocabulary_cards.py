@@ -11,6 +11,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from writing_coach.orthography import orthography_for_word
+
 
 def _text(row: Mapping[str, Any], key: str) -> str:
     return str(row.get(key) or "").strip()
@@ -76,8 +78,9 @@ def vocabulary_card_from_saved_word(
     part_of_speech = _text(row, "part_of_speech")
     if part_of_speech:
         card["part_of_speech"] = part_of_speech
-    if orthography is not None:
-        card["orthography"] = dict(orthography)
+    resolved_orthography = orthography if orthography is not None else orthography_for_word(headword, language)
+    if resolved_orthography is not None:
+        card["orthography"] = dict(resolved_orthography)
     return card
 
 
@@ -120,6 +123,7 @@ def vocabulary_card_from_catalog_entry(
     topic = _text(entry, "topic")
     if topic:
         card["topic"] = topic
-    if orthography is not None:
-        card["orthography"] = dict(orthography)
+    resolved_orthography = orthography if orthography is not None else orthography_for_word(headword, language)
+    if resolved_orthography is not None:
+        card["orthography"] = dict(resolved_orthography)
     return card

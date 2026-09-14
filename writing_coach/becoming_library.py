@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, Field
+from writing_coach.core.request_context import current_language_code
+from writing_coach.orthography import orthography_for_word
 from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
 
 
@@ -77,8 +79,10 @@ def _stage_label(stage: int) -> str:
 
 def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
     stage = int(row["review_stage"] or 0)
-    return {
-        "word": str(row["word"]),
+    word = str(row["word"])
+    orthography = orthography_for_word(word, current_language_code())
+    item = {
+        "word": word,
         "phonetic": str(row["phonetic"] or ""),
         "part_of_speech": str(row["part_of_speech"] or ""),
         "definition": str(row["definition"] or ""),
@@ -96,6 +100,9 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
         "next_review_at": str(row["next_review_at"] or ""),
         "due": _due(str(row["next_review_at"] or "")),
     }
+    if orthography is not None:
+        item["orthography"] = orthography
+    return item
 
 
 def list_library_vocabulary() -> dict[str, Any]:

@@ -244,9 +244,28 @@ def test_feed_candidate_card_has_no_memory_or_source_encounters_fields() -> None
     assert "source_encounters" not in card
 
 
-def test_feed_candidate_card_omits_orthography_key_when_not_supplied() -> None:
+def test_feed_candidate_card_projects_orthography_for_zh_when_available() -> None:
+    # Task G: the Daily Feed candidate card projects the same Chinese
+    # stroke-order capability the saved-word and catalog-collection cards do,
+    # for ZH candidates the vendored pack actually covers.
     candidates = daily_feed_candidates(
         "zh",
+        learner_context=_context(),
+        exclude_normalized=set(),
+        count=1,
+        on_date=_ON_DATE,
+    )
+    card = vocabulary_card_from_feed_candidate(candidates[0])
+    assert card["orthography"]["script"] == "han"
+    assert card["orthography"]["source"] == "make-me-a-hanzi"
+    assert [entry["character"] for entry in card["orthography"]["characters"]] == list(
+        candidates[0]["word"]
+    )
+
+
+def test_feed_candidate_card_omits_orthography_key_for_en() -> None:
+    candidates = daily_feed_candidates(
+        "en",
         learner_context=_context(),
         exclude_normalized=set(),
         count=1,
