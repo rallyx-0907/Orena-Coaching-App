@@ -31,6 +31,7 @@ from writing_coach.core.support_languages import (
     is_available,
     normalize_language_tag,
     resolve_support_language,
+    support_language_uses_cjk,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -97,6 +98,12 @@ def test_support_language_is_distinct_from_ui_locale() -> None:
     # support language regardless of what the interface is set to.
     assert resolve_support_language("ja") == "ja"
     assert resolve_support_language("ja", "en") == "ja"
+
+
+def test_support_language_script_family_is_owned_by_the_registry() -> None:
+    assert support_language_uses_cjk("zh") is True
+    assert support_language_uses_cjk("ja") is True
+    assert support_language_uses_cjk("en") is False
 
 
 def test_no_vietnamese_default_survives_in_the_web_client() -> None:

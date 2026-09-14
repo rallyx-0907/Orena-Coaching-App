@@ -83,6 +83,11 @@ from writing_coach.speech_pronunciation import build_speech_pronunciation_provid
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.platform_api import router as platform_router
 from writing_coach.core.language_registry import is_enabled
+from writing_coach.core.support_languages import (
+    resolve_support_language,
+    support_language,
+    support_language_uses_cjk,
+)
 from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProviderUnavailable
 from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
 from writing_coach.ai.control_plane import AIControlPlane
@@ -458,6 +463,10 @@ def extract_json(text: str) -> dict[str, Any]:
     )
 
 def validate_result(raw: dict[str, Any]) -> dict[str, Any]:
+    options: dict[str, Any] = {}
+    support_code = raw.get("__support_language")
+    if isinstance(support_code, str) and support_code:
+        options["allow_explanation_cjk"] = support_language_uses_cjk(support_code)
     return normalize_writing_evaluation(
         raw,
         rubric_weights=active_rubric_weights(),
@@ -466,10 +475,26 @@ def validate_result(raw: dict[str, Any]) -> dict[str, Any]:
         error_categories=active_error_categories(),
         allow_cjk=is_chinese(),
         learner_text=str(raw.get("__learner_text", "")),
+        **options,
     )
+
+
+def _resolved_writing_support_language() -> tuple[str, str]:
+    profile = get_learner_profile()
+    code = resolve_support_language(
+        profile.get("support_language"),
+        profile.get("native_language"),
+    )
+    definition = support_language(code)
+    if definition is None:
+        code = resolve_support_language()
+        definition = support_language(code)
+    assert definition is not None
+    return code, definition.translation_label
 
 def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
     target_level = validate_target_level(payload.target_cefr)
+    support_code, support_name = _resolved_writing_support_language()
     free_writing_context = (
         "(Free Chinese writing — evaluate clarity, language control and naturalness.)"
         if is_chinese()
@@ -477,6 +502,7 @@ def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
     )
     user_prompt = build_writing_evaluator_request(
         language_name=active_profile().name,
+        support_language_name=support_name,
         target_level=target_level,
         task_prompt=payload.prompt,
         learner_text=payload.text,
@@ -501,14 +527,42 @@ def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
     )
     raw = dict(ai.data)
     raw["__learner_text"] = payload.text
+    raw["__support_language"] = support_code
     result = validate_result(raw)
     result["_runtime"] = ai.runtime
     result["_ai_provider"] = ai.provider
     result["_ai_model"] = ai.model
     return result
 
+_WRITING_FALLBACK_COPY: dict[str, dict[str, Any]] = {
+    "en": {
+        "summary": "A temporary local evaluation is shown because AI Coach could not produce a full evaluation.",
+        "strength": "Your writing has enough content to save a progress record.",
+        "priority": "Use this result as a preview; run again when AI Coach is available for a full evaluation.",
+        "agreement": (
+            "The verb should agree with subject I.",
+            "I goes with have.",
+        ),
+    },
+    "ja": {
+        "summary": "AI Coach が完全な評価を作成できなかったため、一時的なローカル評価を表示しています。",
+        "strength": "進捗記録に保存できる十分な内容があります。",
+        "priority": "これはプレビューです。AI Coach が利用可能になったら再実行してください。",
+        "agreement": ("主語 I に動詞を一致させます。", "I には have を使います。"),
+    },
+    "zh": {
+        "summary": "由于 AI Coach 尚未生成完整评估，这里显示的是临时本地评估。",
+        "strength": "你的写作内容足够，可以保存进步记录。",
+        "priority": "这是预览结果；AI Coach 可用后请重新运行完整评估。",
+        "agreement": ("动词需要与主语 I 保持一致。", "I 要和 have 搭配。"),
+    },
+}
+
+
 def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
     text = payload.text.strip()
+    support_code, _ = _resolved_writing_support_language()
+    copy = _WRITING_FALLBACK_COPY.get(support_code)
     words = re.findall(r"\b[\w'-]+\b", text)
     sentences = [s for s in re.split(r"[.!?]+", text) if s.strip()]
     wc = max(1, len(words))
@@ -522,11 +576,15 @@ def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
     }
     overall = weighted_overall(scores)
     errors: list[dict[str, Any]] = []
+    agreement_explanation, agreement_rule = (
+        copy["agreement"] if copy else
+        ("The verb should agree with subject I.", "I goes with have.")
+    )
     if not is_chinese():
         for pattern, suggestion, explanation, rule in (
-            (r"\bI has\b", "I have", "The verb should agree with subject I.", "I goes with have."),
-            (r"\bhe have\b", "he has", "The verb should agree with subject he.", "He goes with has."),
-            (r"\bShe have\b", "She has", "The verb should agree with subject she.", "She goes with has."),
+            (r"\bI has\b", "I have", agreement_explanation, agreement_rule),
+            (r"\bhe have\b", "he has", agreement_explanation, agreement_rule),
+            (r"\bShe have\b", "She has", agreement_explanation, agreement_rule),
         ):
             match = re.search(pattern, text, flags=re.IGNORECASE)
             if match:
@@ -535,16 +593,25 @@ def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
                     "suggestion": suggestion, "explanation_vi": explanation,
                     "mini_rule_vi": rule, "confidence": 0.99,
                 })
+    fallback_copy = copy or (
+        {
+            "summary": "Đánh giá cục bộ tạm thời vì AI Coach chưa tạo được đánh giá đầy đủ có thể sử dụng. Phần điểm và bằng chứng này chỉ để kiểm tra luồng.",
+            "strength": "Bài viết có đủ nội dung để lưu vào hồ sơ tiến bộ.",
+            "priority": "Dùng phần bằng chứng này như bản xem thử; hãy chạy lại khi AI Coach tạo được đánh giá đầy đủ.",
+        }
+        if support_code == "vi"
+        else _WRITING_FALLBACK_COPY["en"]
+    )
     raw = {
         **scores,
         "cefr_estimate": app_cefr(overall),
-        "summary_vi": "Đánh giá cục bộ tạm thời vì AI Coach chưa tạo được đánh giá đầy đủ có thể sử dụng. Phần điểm và bằng chứng này chỉ để kiểm tra luồng.",
-        "strengths_vi": ["Bài viết có đủ nội dung để lưu vào hồ sơ tiến bộ."],
+        "summary_vi": fallback_copy["summary"],
+        "strengths_vi": [fallback_copy["strength"]],
         "strength_evidence": [],
-        "priorities_vi": ["Dùng phần bằng chứng này như bản xem thử; hãy chạy lại khi AI Coach tạo được đánh giá đầy đủ."],
+        "priorities_vi": [fallback_copy["priority"]],
         "errors": errors,
     }
-    return validate_result({**raw, "__learner_text": text})
+    return validate_result({**raw, "__learner_text": text, "__support_language": support_code})
 
 
 def evaluate(payload: EssayIn) -> tuple[dict[str, Any], str]:

@@ -60,7 +60,7 @@ DIMENSIONS
 - naturalness: idiomatic, native-like phrasing appropriate to context.
 
 LANGUAGE AND ACCURACY RULES — MANDATORY
-1. All explanations, summaries, strengths, priorities and mini-rules MUST be written in Vietnamese using the Latin alphabet. NEVER output Chinese Han characters, Japanese kana, Korean Hangul, or Chinese terminology.
+1. All explanations, summaries, strengths, priorities and mini-rules MUST be written in the SUPPORT LANGUAGE specified by the application. Never use another language for explanatory fields.
 2. English learner fragments and English corrections remain in English. Do not translate them.
 3. The value of `fragment` MUST be copied EXACTLY from the learner's original text and MUST occur verbatim in that text.
 4. Report an item only when you are confident it is genuinely incorrect or clearly unnatural at the requested target level. Fewer accurate corrections are better than many doubtful corrections.

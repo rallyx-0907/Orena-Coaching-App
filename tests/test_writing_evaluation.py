@@ -324,6 +324,38 @@ def test_chinese_policy_allows_cjk_learner_facing_content() -> None:
     assert len(result["errors"]) == 1
 
 
+def test_support_language_script_policy_is_independent_from_target_language() -> None:
+    result = normalize_writing_evaluation(
+        {
+            "grammar": 70,
+            "vocabulary": 70,
+            "summary_vi": "この文章は明確です。",
+            "strengths_vi": ["この表現は自然です。"],
+            "priorities_vi": ["次は時制を確認しましょう。"],
+            "strength_evidence": [
+                _strength(explanation_vi="この強みは本文に表れています。"),
+            ],
+            "errors": [
+                _error(
+                    explanation_vi="主語に合わせて動詞を変えます。",
+                    mini_rule_vi="I には have を使います。",
+                ),
+            ],
+        },
+        rubric_weights=RUBRIC_WEIGHTS,
+        allowed_levels=("A1", "B2"),
+        score_to_level=_en_level,
+        error_categories=ENGLISH_ERROR_CATEGORIES,
+        allow_cjk=False,
+        allow_explanation_cjk=True,
+        learner_text=LEARNER_TEXT,
+    )
+
+    assert result["summary_vi"] == "この文章は明確です。"
+    assert result["strengths_vi"] == ["この表現は自然です。"]
+    assert result["errors"][0]["suggestion"] == "I have a dog."
+
+
 def test_insufficient_evidence_has_no_band_but_keeps_grounded_feedback() -> None:
     result = _normalize(
         {
@@ -445,6 +477,7 @@ def test_invalid_provider_response_uses_the_same_explicit_demo_fallback(monkeypa
 
     monkeypatch.setattr(app, "evaluate_with_ai", invalid_provider)
     monkeypatch.setattr(app, "ALLOW_FALLBACK", True)
+    monkeypatch.setattr(app, "get_learner_profile", lambda: {"support_language": "en"})
 
     result, evaluator = app.evaluate(app.EssayIn(text=LEARNER_TEXT, prompt="Test prompt"))
 
@@ -454,8 +487,72 @@ def test_invalid_provider_response_uses_the_same_explicit_demo_fallback(monkeypa
     assert "Kết nối AI Coach" not in result["priorities_vi"][0]
     # The degraded notice must say the evaluation is provisional. The priority
     # line carries the re-run cue; the "chưa tạo được" phrasing lives in the summary.
-    assert "chạy lại khi AI Coach tạo được đánh giá đầy đủ" in result["priorities_vi"][0]
-    assert "chưa tạo được đánh giá đầy đủ" in result["summary_vi"]
+    assert "run again when AI Coach is available" in result["priorities_vi"][0]
+    assert "could not produce a full evaluation" in result["summary_vi"]
+
+
+@pytest.mark.parametrize(
+    ("support_language", "support_label", "summary"),
+    (
+        ("en", "English", "The writing is clear."),
+        ("ja", "Japanese", "この文章は明確です。"),
+        ("zh", "Simplified Chinese", "这篇文章很清楚。"),
+    ),
+)
+def test_writing_evaluator_uses_profile_support_language_for_prompt_and_output(
+    monkeypatch: pytest.MonkeyPatch,
+    support_language: str,
+    support_label: str,
+    summary: str,
+) -> None:
+    import app
+    from writing_coach.ai.base import AIResult
+    from writing_coach.languages.english.profile import (
+        ERROR_CATEGORIES,
+        PROFILE,
+        RUBRIC_WEIGHTS,
+        score_to_level,
+    )
+
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(app, "get_learner_profile", lambda: {"support_language": support_language})
+    monkeypatch.setattr(app, "active_profile", lambda: PROFILE)
+    monkeypatch.setattr(app, "active_levels", lambda: PROFILE.levels)
+    monkeypatch.setattr(app, "active_rubric_weights", lambda: RUBRIC_WEIGHTS)
+    monkeypatch.setattr(app, "active_score_to_level", score_to_level)
+    monkeypatch.setattr(app, "active_error_categories", lambda: ERROR_CATEGORIES)
+    monkeypatch.setattr(app, "active_system_prompt", lambda: "fixture system prompt")
+    monkeypatch.setattr(app, "is_chinese", lambda: False)
+
+    def generate_structured(**kwargs: Any) -> AIResult:
+        captured.update(kwargs)
+        return AIResult(
+            data={
+                **{key: 70 for key in RUBRIC_WEIGHTS},
+                "cefr_estimate": "B2",
+                "summary_vi": summary,
+                "strengths_vi": [],
+                "strength_evidence": [],
+                "priorities_vi": [],
+                "errors": [],
+            },
+            provider="fixture",
+            model="test",
+            runtime={},
+        )
+
+    monkeypatch.setattr(app, "generate_structured", generate_structured)
+    result = app.evaluate_with_ai(
+        app.EssayIn(
+            text="I write every day.",
+            prompt="Describe a useful habit.",
+            target_cefr="B2",
+        )
+    )
+
+    user_prompt = captured["messages"][1]["content"]
+    assert f"SUPPORT LANGUAGE: {support_label}" in user_prompt
+    assert result["summary_vi"] == summary
 
 
 @pytest.mark.parametrize(
@@ -637,6 +734,25 @@ def test_heuristic_fallback_keeps_high_confidence_feedback_and_v2_envelope(monke
     assert result["errors"][0]["fragment"] == "I has"
     assert result["errors"][0]["suggestion"] == "I have"
     assert result["issues"][0]["span"] == {"start": 0, "end": 5}
+
+
+@pytest.mark.parametrize(
+    ("support_language", "expected_marker"),
+    (("ja", "AI Coach が完全な評価を作成できなかった"), ("zh", "由于 AI Coach 尚未生成完整评估")),
+)
+def test_heuristic_fallback_uses_the_resolved_support_language(
+    monkeypatch: pytest.MonkeyPatch,
+    support_language: str,
+    expected_marker: str,
+) -> None:
+    import app
+
+    monkeypatch.setattr(app, "get_learner_profile", lambda: {"support_language": support_language})
+    monkeypatch.setattr(app, "is_chinese", lambda: False)
+
+    result = app.heuristic_fallback(app.EssayIn(text="I has a dog."))
+
+    assert expected_marker in result["summary_vi"]
 
 
 @pytest.mark.parametrize(

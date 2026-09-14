@@ -115,6 +115,7 @@ def validate_writing_evaluator_policy(
 def build_writing_evaluator_request(
     *,
     language_name: str,
+    support_language_name: str | None = None,
     target_level: str | None,
     task_prompt: str,
     learner_text: str,
@@ -127,6 +128,15 @@ def build_writing_evaluator_request(
         raise WritingEvaluatorContractInvalid("Writing mode must be 'guided' or 'journal'.")
     context = writing_context or {}
     parts = [f"TARGET LANGUAGE: {language_name}\n", f"SUBMISSION MODE: {writing_mode}\n"]
+    if support_language_name:
+        parts.extend(
+            [
+                f"SUPPORT LANGUAGE: {support_language_name}\n",
+                "SUPPORT LANGUAGE POLICY:\n",
+                f"Write explanations, summaries, strengths, priorities and reusable rules in {support_language_name}.\n",
+                "Keep learner fragments, corrections and target-language examples in the TARGET LANGUAGE.\n",
+            ]
+        )
     if target_level:
         parts.extend(
             [

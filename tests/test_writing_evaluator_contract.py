@@ -221,6 +221,20 @@ def test_journal_request_has_no_task_adherence_or_prompt_penalty() -> None:
     assert "TARGET LEVEL" not in request
 
 
+def test_request_contract_declares_the_resolved_support_language() -> None:
+    request = build_writing_evaluator_request(
+        language_name="English",
+        support_language_name="Japanese",
+        target_level="B2",
+        task_prompt="Describe a useful habit.",
+        learner_text="I write every day.",
+        free_writing_context="Free English writing.",
+    )
+
+    assert "SUPPORT LANGUAGE: Japanese" in request
+    assert "Write explanations, summaries, strengths, priorities and reusable rules in Japanese." in request
+
+
 def test_journal_schema_omits_task_score_and_allows_insufficient_band() -> None:
     schema = build_writing_evaluator_schema(
         rubric_weights=ENGLISH_RUBRIC_WEIGHTS,
@@ -274,8 +288,8 @@ def test_language_specific_error_categories_and_explanation_policies_are_preserv
     )
     assert "other" in ENGLISH_ERROR_CATEGORIES
     assert "other" in CHINESE_ERROR_CATEGORIES
-    assert "Vietnamese using the Latin alphabet" in ENGLISH_SYSTEM_PROMPT
-    assert "primarily in Vietnamese" in CHINESE_SYSTEM_PROMPT
+    assert "SUPPORT LANGUAGE specified by the application" in ENGLISH_SYSTEM_PROMPT
+    assert "SUPPORT LANGUAGE specified by the application" in CHINESE_SYSTEM_PROMPT
     assert "INTERNAL learning estimate" in CHINESE_SYSTEM_PROMPT
     assert "not an official HSK exam score" in CHINESE_SYSTEM_PROMPT
 

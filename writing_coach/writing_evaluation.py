@@ -45,6 +45,7 @@ def normalize_writing_evaluation(
     allow_cjk: bool,
     learner_text: str,
     applicable_dimensions: Sequence[str] | None = None,
+    allow_explanation_cjk: bool | None = None,
 ) -> dict[str, Any]:
     """Normalize untrusted evaluator output using supplied language policy.
 
@@ -52,6 +53,7 @@ def normalize_writing_evaluation(
     routing, persistence, or web-framework behavior.  The caller supplies the
     current rubric, proficiency policy, and learner text explicitly.
     """
+    explanation_allow_cjk = allow_cjk if allow_explanation_cjk is None else allow_explanation_cjk
     text_hash = hashlib.sha256((learner_text or "").encode("utf-8")).hexdigest()
     dimension_keys = tuple(
         key for key in rubric_weights
@@ -77,19 +79,21 @@ def normalize_writing_evaluation(
         result["band_confidence"] = round(_normalized_confidence(raw["band_confidence"]), 2)
 
     summary = _bounded_text(raw.get("summary_vi", ""), 4000)
-    result["summary_vi"] = summary if allow_cjk or not contains_cjk(summary) else ""
-    result["strengths_vi"] = _clean_learner_list(raw.get("strengths_vi", []), allow_cjk=allow_cjk)
-    result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), allow_cjk=allow_cjk)
+    result["summary_vi"] = summary if explanation_allow_cjk or not contains_cjk(summary) else ""
+    result["strengths_vi"] = _clean_learner_list(raw.get("strengths_vi", []), allow_cjk=explanation_allow_cjk)
+    result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), allow_cjk=explanation_allow_cjk)
     result["strength_evidence"] = _normalize_strength_evidence(
         raw.get("strength_evidence", []),
         rubric_categories=set(dimension_keys),
         allow_cjk=allow_cjk,
+        allow_explanation_cjk=explanation_allow_cjk,
         learner_text=learner_text,
     )
     result["errors"] = _normalize_errors(
         raw.get("errors", []),
         error_categories=set(error_categories),
         allow_cjk=allow_cjk,
+        allow_explanation_cjk=explanation_allow_cjk,
         learner_text=learner_text,
     )
     result["summary"] = {
@@ -192,7 +196,9 @@ def _normalize_strength_evidence(
     rubric_categories: set[str],
     allow_cjk: bool,
     learner_text: str,
+    allow_explanation_cjk: bool | None = None,
 ) -> list[dict[str, Any]]:
+    explanation_allow_cjk = allow_cjk if allow_explanation_cjk is None else allow_explanation_cjk
     if not isinstance(items, list):
         return []
     output: list[dict[str, Any]] = []
@@ -208,7 +214,7 @@ def _normalize_strength_evidence(
             continue
         if not fragment or fragment not in learner_text or not explanation:
             continue
-        if not allow_cjk and contains_cjk(explanation):
+        if not explanation_allow_cjk and contains_cjk(explanation):
             continue
         identity = (category, fragment)
         if identity in seen:
@@ -235,7 +241,9 @@ def _normalize_errors(
     error_categories: set[str],
     allow_cjk: bool,
     learner_text: str,
+    allow_explanation_cjk: bool | None = None,
 ) -> list[dict[str, Any]]:
+    explanation_allow_cjk = allow_cjk if allow_explanation_cjk is None else allow_explanation_cjk
     if not isinstance(items, list):
         return []
     output: list[dict[str, Any]] = []
@@ -259,9 +267,9 @@ def _normalize_errors(
             or not rule
         ):
             continue
-        if not allow_cjk and (
-            contains_cjk(explanation) or contains_cjk(rule) or contains_cjk(suggestion)
-        ):
+        if not explanation_allow_cjk and (contains_cjk(explanation) or contains_cjk(rule)):
+            continue
+        if not allow_cjk and contains_cjk(suggestion):
             continue
         if not suggestion or _normalize_text(suggestion) == _normalize_text(fragment):
             continue
