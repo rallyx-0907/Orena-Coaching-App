@@ -1,0 +1,263 @@
+"""Task B: the static curated Vocabulary Library catalog.
+
+Covers the four seed collections (`toeic-600-essential`, `common-3000`,
+`hsk-1`, `hsk-2`), cross-language aggregation, load-time denormalization, the
+word-to-collection index, structural validation failures, and
+card-projection compatibility with `vocabulary_card_from_catalog_entry`
+(Task A).
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+import pytest
+
+from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
+from writing_coach.vocabulary_library import (
+    VocabularyCatalogInvalid,
+    all_vocabulary_entries,
+    collection_ids_for_word,
+    get_vocabulary_collection,
+    list_vocabulary_collections,
+    normalize_vocabulary_word,
+    validate_vocabulary_collections,
+)
+
+
+def _valid_collection(**overrides: object) -> dict[str, object]:
+    collection = {
+        "id": "sample-collection",
+        "language_code": "en",
+        "framework": "cefr-internal",
+        "level": "A1",
+        "topic": None,
+        "title": "Sample Collection",
+        "provenance": {"origin": "curated", "note": "Test fixture."},
+        "entries": [
+            {
+                "word": "sample",
+                "definition": "an example used for illustration",
+                "support_translations": {"vi": "mẫu"},
+                "level": "A1",
+                "topic": "everyday",
+            }
+        ],
+    }
+    collection.update(overrides)
+    return collection
+
+
+# --- Collection presence and metadata --------------------------------------
+
+
+def test_lists_both_english_collections_with_positive_item_counts() -> None:
+    summaries = list_vocabulary_collections("en")
+    ids = {summary["id"] for summary in summaries}
+    assert ids == {"toeic-600-essential", "common-3000"}
+    for summary in summaries:
+        assert summary["language_code"] == "en"
+        assert summary["item_count"] >= 30
+        assert summary["provenance"]["origin"] == "curated"
+
+
+def test_lists_both_chinese_collections_with_positive_item_counts() -> None:
+    summaries = list_vocabulary_collections("zh")
+    ids = {summary["id"] for summary in summaries}
+    assert ids == {"hsk-1", "hsk-2"}
+    for summary in summaries:
+        assert summary["language_code"] == "zh"
+        assert summary["item_count"] >= 30
+
+
+def test_list_vocabulary_collections_sorted_by_framework_then_level_then_title() -> None:
+    summaries = list_vocabulary_collections("zh")
+    keys = [(summary["framework"], summary["level"], summary["title"]) for summary in summaries]
+    assert keys == sorted(keys)
+
+
+def test_unknown_language_returns_empty_list() -> None:
+    assert list_vocabulary_collections("fr") == []
+
+
+# --- get_vocabulary_collection: denormalization -----------------------------
+
+
+def test_get_toeic_collection_entries_carry_denormalized_metadata() -> None:
+    collection = get_vocabulary_collection("toeic-600-essential")
+    assert collection is not None
+    assert collection["id"] == "toeic-600-essential"
+    entries = collection["entries"]
+    assert len(entries) >= 30
+    for entry in entries:
+        assert entry["language_code"] == "en"
+        assert entry["framework"] == "toeic"
+        assert entry["collection_id"] == "toeic-600-essential"
+        assert entry["origin"] == "curated"
+        assert entry["support_translations"]
+
+
+def test_get_hsk1_collection_entries_carry_denormalized_metadata() -> None:
+    collection = get_vocabulary_collection("hsk-1")
+    assert collection is not None
+    entries = collection["entries"]
+    assert len(entries) >= 30
+    for entry in entries:
+        assert entry["language_code"] == "zh"
+        assert entry["framework"] == "hsk"
+        assert entry["collection_id"] == "hsk-1"
+        assert entry["origin"] == "curated"
+        assert entry["support_translations"]
+
+
+def test_get_vocabulary_collection_unknown_id_returns_none() -> None:
+    assert get_vocabulary_collection("no-such-collection") is None
+
+
+# --- all_vocabulary_entries: language filtering -----------------------------
+
+
+def test_all_vocabulary_entries_covers_every_english_collection() -> None:
+    entries = all_vocabulary_entries("en")
+    collection_ids = {entry["collection_id"] for entry in entries}
+    assert collection_ids == {"toeic-600-essential", "common-3000"}
+    assert all(entry["language_code"] == "en" for entry in entries)
+
+
+def test_all_vocabulary_entries_covers_every_chinese_collection() -> None:
+    entries = all_vocabulary_entries("zh")
+    collection_ids = {entry["collection_id"] for entry in entries}
+    assert collection_ids == {"hsk-1", "hsk-2"}
+    assert all(entry["language_code"] == "zh" for entry in entries)
+
+
+def test_all_vocabulary_entries_unknown_language_is_empty() -> None:
+    assert all_vocabulary_entries("de") == []
+
+
+# --- collection_ids_for_word: load-time index -------------------------------
+
+
+def test_collection_ids_for_word_finds_known_hsk1_word() -> None:
+    assert collection_ids_for_word("zh", "你好") == ["hsk-1"]
+
+
+def test_collection_ids_for_word_normalizes_before_lookup() -> None:
+    assert collection_ids_for_word("en", "  Client ") == ["toeic-600-essential"]
+
+
+def test_collection_ids_for_word_returns_empty_for_unknown_word() -> None:
+    assert collection_ids_for_word("zh", "some-word-not-in-any-seed") == []
+
+
+def test_collection_ids_for_word_does_not_cross_languages() -> None:
+    assert collection_ids_for_word("en", "你好") == []
+
+
+# --- normalize_vocabulary_word ----------------------------------------------
+
+
+def test_normalize_vocabulary_word_strips_and_casefolds() -> None:
+    assert normalize_vocabulary_word("  Client ") == "client"
+    assert normalize_vocabulary_word("你好") == "你好"
+    assert normalize_vocabulary_word(None) == ""
+
+
+# --- validate_vocabulary_collections: acceptance ----------------------------
+
+
+def test_validate_accepts_the_current_english_catalog() -> None:
+    from writing_coach.languages.english.vocabulary_collections import (
+        VOCABULARY_COLLECTIONS as ENGLISH_COLLECTIONS,
+    )
+
+    assert validate_vocabulary_collections(ENGLISH_COLLECTIONS) is None
+
+
+def test_validate_accepts_the_current_chinese_catalog() -> None:
+    from writing_coach.languages.chinese.vocabulary_collections import (
+        VOCABULARY_COLLECTIONS as CHINESE_COLLECTIONS,
+    )
+
+    assert validate_vocabulary_collections(CHINESE_COLLECTIONS) is None
+
+
+def test_validate_accepts_a_well_formed_fixture() -> None:
+    assert validate_vocabulary_collections([_valid_collection()]) is None
+
+
+# --- validate_vocabulary_collections: rejections ----------------------------
+
+
+def test_validate_rejects_duplicate_collection_ids() -> None:
+    collections = [_valid_collection(), _valid_collection()]
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections(collections)
+
+
+def test_validate_rejects_empty_entries() -> None:
+    collection = _valid_collection(entries=[])
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_missing_required_collection_field() -> None:
+    collection = _valid_collection()
+    del collection["title"]
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_non_string_framework() -> None:
+    collection = _valid_collection(framework=123)
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_empty_level() -> None:
+    collection = _valid_collection(level="   ")
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_duplicate_words_within_one_collection() -> None:
+    collection = _valid_collection()
+    collection["entries"] = [
+        deepcopy(collection["entries"][0]),
+        deepcopy(collection["entries"][0]),
+    ]
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_missing_support_translations() -> None:
+    collection = _valid_collection()
+    del collection["entries"][0]["support_translations"]
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_non_mapping_support_translations() -> None:
+    collection = _valid_collection()
+    collection["entries"][0]["support_translations"] = "vi: mau"
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections([collection])
+
+
+def test_validate_rejects_non_mapping_collection() -> None:
+    with pytest.raises(VocabularyCatalogInvalid):
+        validate_vocabulary_collections(["not-a-mapping"])
+
+
+# --- Card-projection compatibility ------------------------------------------
+
+
+@pytest.mark.parametrize("language_code", ["en", "zh"])
+def test_every_catalog_entry_round_trips_through_card_projection(language_code: str) -> None:
+    entries = all_vocabulary_entries(language_code)
+    assert entries
+    for entry in entries:
+        card = vocabulary_card_from_catalog_entry(entry)
+        assert card["headword"] == entry["word"]
+        assert card["identity"]["language"] == language_code
+        assert card["meanings"]
