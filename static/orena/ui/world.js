@@ -18,6 +18,7 @@ import {
   filterReadings,
 } from '../content/reading-library.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
+import { renderVocabularyCard } from './vocabulary-card.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -36,6 +37,267 @@ function mediaItem(item, intent, c) {
 }
 function contentRow(item, intent, c) {
   return `<article class="collection-row"><a class="collection-art" aria-label="${esc(item.title)}" href="${link('encounter', { id: item.id, intent })}">${art(item)}</a><div><small>${esc(origin(item, c))}</small><h2><a lang="${item.language || ''}" href="${link('encounter', { id: item.id, intent })}">${esc(item.title)} ↗</a></h2></div><button class="quiet" data-remove="${esc(item.id)}" aria-label="${esc(c.remove + ': ' + item.title)}">×</button></article>`;
+}
+
+/* Vocabulary Library and Daily Feed - two Discover sections over the curated
+   catalog (writing_coach/vocabulary_library.py), distinct from My Language's
+   own saved/review state. Both render through the one shared Vocabulary Card
+   renderer and the one shared save path
+   (docs/superpowers/plans/2026-09-14-vocabulary-experience.md Task E). */
+
+/* A projected Vocabulary Card folds every authored support translation into
+   `meanings` alongside the target-language definition
+   (writing_coach/vocabulary_cards.py's `_meanings_from`) rather than carrying
+   a separate `support_translations` field on the wire. This reconstructs that
+   mapping from `meanings` for the learner's chosen support language, falling
+   back to Vietnamese - the same compatibility boundary the plan documents for
+   the existing `translation_vi` field - and finally to no translation at all,
+   rather than inventing one. */
+export function mapVocabularySupportTranslation(card, supportLanguage) {
+  const meanings = Array.isArray(card?.meanings) ? card.meanings : [];
+  const targetLanguage = String(card?.identity?.language || '');
+  const bySupport = {};
+  for (const meaning of meanings) {
+    const lang = String(meaning?.language || '');
+    if (lang && lang !== targetLanguage && !(lang in bySupport)) {
+      bySupport[lang] = String(meaning?.text || '');
+    }
+  }
+  return bySupport[supportLanguage] || bySupport.vi || '';
+}
+
+function vocabularyCardDefinition(card) {
+  const meanings = Array.isArray(card?.meanings) ? card.meanings : [];
+  const targetLanguage = String(card?.identity?.language || '');
+  const own = meanings.find((m) => String(m?.language || '') === targetLanguage);
+  return String((own || meanings[0])?.text || '');
+}
+
+/* The one payload shape both "keep" actions send to the existing
+   POST /api/library/vocabulary - only `source_kind` tells them apart. No new
+   save endpoint, no second card shape. */
+export function vocabularyKeepPayload(card, sourceKind, supportLanguage) {
+  return {
+    word: card.headword,
+    phonetic: card.pronunciation || '',
+    part_of_speech: card.part_of_speech || '',
+    definition: vocabularyCardDefinition(card),
+    translation_vi: mapVocabularySupportTranslation(card, supportLanguage),
+    source_kind: sourceKind,
+  };
+}
+
+// Grouped in the order frameworks first appear, preserving the API's
+// framework/level/title sort within each group.
+export function groupVocabularyCollectionsByFramework(collections) {
+  const order = [];
+  const groups = new Map();
+  for (const collection of Array.isArray(collections) ? collections : []) {
+    const framework = String(collection?.framework || '');
+    if (!groups.has(framework)) {
+      groups.set(framework, []);
+      order.push(framework);
+    }
+    groups.get(framework).push(collection);
+  }
+  return order.map((framework) => ({ framework, collections: groups.get(framework) }));
+}
+
+// `framework` is open-ended content, not a fixed UI enum (see the plan's
+// Level/framework/topic metadata section) - a framework with no authored
+// label still shows its own name, truthfully, rather than disappearing.
+function vocabularyFrameworkLabel(c, framework) {
+  const key = `vocabularyFramework_${String(framework || '').replace(/[^a-z0-9]/gi, '').toLowerCase()}`;
+  return c[key] || framework;
+}
+
+function vocabularyLibraryCollectionRow(c, collection) {
+  return `<button class="story-path" data-open-collection="${esc(collection.id)}"><span class="path-number" aria-hidden="true">${esc(collection.level || '')}</span><div><h3>${esc(collection.title)}</h3><p>${esc(collection.item_count)} ${esc(c.vocabularyWordCount)}</p></div><span aria-hidden="true">↗</span></button>`;
+}
+
+// A saved catalog card never offers a second save affordance - it says,
+// plainly, that it is already in My Language.
+export function vocabularyLibraryCardAfterSlot(c, card, index) {
+  if (card?.saved) {
+    return `<span class="meta" data-vocabulary-kept>${esc(c.vocabularyAlreadyKept)}</span>`;
+  }
+  return `<button class="quiet" data-library-keep="${index}">${esc(c.keep)} ＋</button>`;
+}
+
+export function vocabularyFeedCardAfterSlot(c, index) {
+  return `<button class="quiet" data-feed-keep="${index}">${esc(c.keep)} ＋</button>`;
+}
+
+/* Inner content only - the caller owns the permanent
+   <section data-vocabulary-library> wrapper so a state repaint never
+   double-nests it. */
+export function vocabularyLibrarySection(c, state = {}) {
+  const { collections, error, open } = state;
+  const heading = `<div class="section-head"><h2>${esc(c.vocabularyLibraryTitle)}</h2></div><p class="meta">${esc(c.vocabularyLibraryNote)}</p>`;
+  let body;
+  if (open) {
+    if (open.error) {
+      body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-library-retry>${esc(c.retry)}</button></p>`;
+    } else if (!open.items) {
+      body = `<p class="loading" role="status">${esc(c.vocabularyLibraryLoading)}</p>`;
+    } else {
+      body = `<button class="quiet" data-close-collection>${esc(c.vocabularyLibraryBack)}</button><h3>${esc(open.title || '')}</h3><section class="word-collection language-cabinet">${open.items
+        .map((card, index) => renderVocabularyCard(c, card, { after: vocabularyLibraryCardAfterSlot(c, card, index) }))
+        .join('')}</section>`;
+    }
+  } else if (error) {
+    body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-library-retry>${esc(c.retry)}</button></p>`;
+  } else if (!collections) {
+    body = `<p class="loading" role="status">${esc(c.vocabularyLibraryLoading)}</p>`;
+  } else if (!collections.length) {
+    body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyLibraryEmpty)}</p></div>`;
+  } else {
+    body = groupVocabularyCollectionsByFramework(collections)
+      .map(
+        (group) =>
+          `<h3>${esc(vocabularyFrameworkLabel(c, group.framework))}</h3>${group.collections
+            .map((collection) => vocabularyLibraryCollectionRow(c, collection))
+            .join('')}`,
+      )
+      .join('');
+  }
+  return `${heading}${body}`;
+}
+
+export function vocabularyFeedSection(c, state = {}) {
+  const { items, error } = state;
+  const heading = `<div class="section-head"><h2>${esc(c.vocabularyFeedTitle)}</h2></div><p class="meta">${esc(c.vocabularyFeedNote)}</p>`;
+  let body;
+  if (error) {
+    body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-feed-retry>${esc(c.retry)}</button></p>`;
+  } else if (!items) {
+    body = `<p class="loading" role="status">${esc(c.vocabularyFeedLoading)}</p>`;
+  } else if (!items.length) {
+    body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyFeedEmpty)}</p></div>`;
+  } else {
+    body = `<section class="word-collection language-cabinet">${items
+      .map((card, index) => renderVocabularyCard(c, card, { after: vocabularyFeedCardAfterSlot(c, index) }))
+      .join('')}</section>`;
+  }
+  return `${heading}${body}`;
+}
+
+/* Both controllers repaint only their own container - opening a collection or
+   keeping a Feed word never reloads the rest of Discover. */
+async function paintVocabularyLibrary(container, ctx) {
+  if (!container) return;
+  const { api, c, language, alive, support } = ctx;
+  let collections = null;
+  let error = false;
+  let open = null;
+  function paint() {
+    if (!alive()) return;
+    container.innerHTML = vocabularyLibrarySection(c, { collections, error, open });
+    container.querySelectorAll('[data-open-collection]').forEach((button) => {
+      button.onclick = () => loadCollection(button.dataset.openCollection);
+    });
+    container.querySelector('[data-close-collection]')?.addEventListener('click', () => {
+      open = null;
+      paint();
+    });
+    container.querySelector('[data-library-retry]')?.addEventListener('click', () => {
+      if (open) loadCollection(open.id);
+      else loadList();
+    });
+    container.querySelectorAll('[data-library-keep]').forEach((button) => {
+      button.onclick = () => keep(button, Number(button.dataset.libraryKeep));
+    });
+  }
+  async function loadList() {
+    collections = null;
+    error = false;
+    open = null;
+    paint();
+    try {
+      const data = await api.vocabularyLibraryCollections(language);
+      if (!alive()) return;
+      collections = data.items || [];
+    } catch {
+      if (!alive()) return;
+      error = true;
+    }
+    paint();
+  }
+  async function loadCollection(id) {
+    open = { id, items: null, error: false };
+    paint();
+    try {
+      const detail = await api.vocabularyLibraryCollection(id);
+      if (!alive()) return;
+      open = { id, title: detail.title, items: detail.items || [], error: false };
+    } catch {
+      if (!alive()) return;
+      open = { id, items: null, error: true };
+    }
+    paint();
+  }
+  async function keep(button, index) {
+    const card = open?.items?.[index];
+    if (!card) return;
+    button.disabled = true;
+    try {
+      await api.saveLibraryVocabulary(vocabularyKeepPayload(card, 'collection', support));
+      if (!alive()) return;
+      open.items[index] = { ...card, saved: true };
+      paint();
+    } catch {
+      if (!alive()) return;
+      button.disabled = false;
+    }
+  }
+  await loadList();
+}
+
+async function paintVocabularyFeed(container, ctx) {
+  if (!container) return;
+  const { api, c, language, alive, support } = ctx;
+  let items = null;
+  let error = false;
+  function paint() {
+    if (!alive()) return;
+    container.innerHTML = vocabularyFeedSection(c, { items, error });
+    container.querySelector('[data-feed-retry]')?.addEventListener('click', load);
+    container.querySelectorAll('[data-feed-keep]').forEach((button) => {
+      button.onclick = () => keep(button, Number(button.dataset.feedKeep));
+    });
+  }
+  async function load() {
+    items = null;
+    error = false;
+    paint();
+    try {
+      const data = await api.dailyVocabularyFeed(language);
+      if (!alive()) return;
+      items = data.items || [];
+    } catch {
+      if (!alive()) return;
+      error = true;
+    }
+    paint();
+  }
+  // Feed Keep removes the kept word from the local list optimistically - no
+  // full reload, and no second save endpoint: the same POST
+  // /api/library/vocabulary Library browsing uses, tagged source_kind 'feed'.
+  async function keep(button, index) {
+    const card = items?.[index];
+    if (!card) return;
+    button.disabled = true;
+    try {
+      await api.saveLibraryVocabulary(vocabularyKeepPayload(card, 'feed', support));
+      if (!alive()) return;
+      items = items.filter((_, i) => i !== index);
+      paint();
+    } catch {
+      if (!alive()) return;
+      button.disabled = false;
+    }
+  }
+  await load();
 }
 export async function renderWorld(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
@@ -158,7 +420,12 @@ export async function renderWorld(root, ctx) {
     );
     root.innerHTML = `${editorialIntro(ctx,{title:referenceCopy[ctx.ui].collectionTitle,note:referenceCopy[ctx.ui].collectionNote,state:'together',eyebrow:referenceCopy[ctx.ui].content})}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
   } else {
-    root.innerHTML = discoverySpread(ctx, {media, text, catalogError});
+    // Vocabulary Library and Daily Feed are two sections inside this same
+    // Discover destination, not a new destination - each mounts and repaints
+    // independently once the rest of Discover is on the page.
+    root.innerHTML = `${discoverySpread(ctx, {media, text, catalogError})}<section class="voices" data-vocabulary-library aria-label="${esc(c.vocabularyLibraryTitle)}"></section><section class="voices" data-vocabulary-feed aria-label="${esc(c.vocabularyFeedTitle)}"></section>`;
+    paintVocabularyLibrary(root.querySelector('[data-vocabulary-library]'), ctx);
+    paintVocabularyFeed(root.querySelector('[data-vocabulary-feed]'), ctx);
   }
   root
     .querySelectorAll('[data-bring]')

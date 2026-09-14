@@ -237,6 +237,26 @@ const en = {
   noWords: 'The first expression is waiting.',
   noWordsNote:
     'Keep a phrase from a story, transcript, or your own text. It will return with its context.',
+  // Vocabulary Library: a browsable curated catalog (TOEIC, HSK, ...), distinct
+  // from My Language above, which is the learner's own saved/review state. See
+  // docs/superpowers/plans/2026-09-14-vocabulary-experience.md Task E.
+  vocabularyLibraryTitle: 'Vocabulary Library',
+  vocabularyLibraryNote:
+    'Curated word collections you can open and read before you keep anything.',
+  vocabularyLibraryLoading: 'Opening the Vocabulary Library…',
+  vocabularyLibraryEmpty: 'No curated collections yet for this language.',
+  vocabularyLibraryBack: '← All collections',
+  vocabularyWordCount: 'words',
+  vocabularyAlreadyKept: 'Already in My Language',
+  vocabularyFramework_toeic: 'TOEIC',
+  vocabularyFramework_hsk: 'HSK',
+  vocabularyFramework_cefrinternal: 'Common Vocabulary',
+  // Daily Vocabulary Feed: a filtered, day-seeded view over that same catalog.
+  // Keeping a word here reuses the same save path Library browsing uses.
+  vocabularyFeedTitle: 'Daily Vocabulary Feed',
+  vocabularyFeedNote: 'A few curated words to meet today.',
+  vocabularyFeedLoading: 'Gathering today’s words…',
+  vocabularyFeedEmpty: 'No new words in today’s feed. Check back tomorrow.',
   due: 'ready to revisit',
   showMeaning: 'Bring the meaning back',
   again: 'Again',
@@ -543,6 +563,20 @@ const zh = {
   wordsIntro: '你注意到的词，遇见它们的时刻，还有一次重逢的理由。',
   noWords: '第一个表达，正等着你。',
   noWordsNote: '从故事、字幕或自己的文字中留下一个表达，它会带着语境回到这里。',
+  vocabularyLibraryTitle: '词汇库',
+  vocabularyLibraryNote: '精选词汇合集，收藏之前就能先打开阅读。',
+  vocabularyLibraryLoading: '正在打开词汇库…',
+  vocabularyLibraryEmpty: '这个语言还没有精选合集。',
+  vocabularyLibraryBack: '← 所有合集',
+  vocabularyWordCount: '个词',
+  vocabularyAlreadyKept: '已在「我的语言」中',
+  vocabularyFramework_toeic: 'TOEIC',
+  vocabularyFramework_hsk: 'HSK',
+  vocabularyFramework_cefrinternal: '常用词汇',
+  vocabularyFeedTitle: '每日词汇推荐',
+  vocabularyFeedNote: '今天为你准备的几个精选词。',
+  vocabularyFeedLoading: '正在准备今天的词汇…',
+  vocabularyFeedEmpty: '今天的推荐词汇已经看完了，明天再来看看。',
   due: '项可再次回想',
   showMeaning: '想想它的意思',
   again: '还要再想想',

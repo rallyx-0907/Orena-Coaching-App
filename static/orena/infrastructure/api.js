@@ -119,6 +119,12 @@ export const api={
   deleteLibraryVocabulary:(word)=>request(`/api/library/vocabulary/${encodeURIComponent(word)}`,{
     method:'DELETE',
   }),
+  // The curated Vocabulary Library catalog and Daily Feed (Discover surface):
+  // read-only, distinct from the saved/review state above. "Keep" from either
+  // reuses saveLibraryVocabulary with source_kind 'collection' or 'feed'.
+  vocabularyLibraryCollections:(languageCode)=>request(`/api/vocabulary/library/collections?language_code=${encodeURIComponent(languageCode)}`),
+  vocabularyLibraryCollection:(collectionId)=>request(`/api/vocabulary/library/collections/${encodeURIComponent(collectionId)}`),
+  dailyVocabularyFeed:(languageCode,targetLevel)=>request(`/api/vocabulary/feed?language_code=${encodeURIComponent(languageCode)}${targetLevel?`&target_level=${encodeURIComponent(targetLevel)}`:''}`),
   grammarLibrary:()=>request('/api/library/grammar'),
   grammarLesson:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}`),
   grammarReference:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/reference`),
