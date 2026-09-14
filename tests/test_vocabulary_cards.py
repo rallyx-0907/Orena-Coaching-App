@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from writing_coach.vocabulary_cards import vocabulary_card_from_saved_word
+from writing_coach.vocabulary_cards import (
+    vocabulary_card_from_catalog_entry,
+    vocabulary_card_from_saved_word,
+)
 
 
 def test_card_keeps_saved_word_identity_and_distinct_meanings() -> None:
@@ -72,3 +75,65 @@ def test_card_accepts_verified_chinese_orthography_without_relabeling_it() -> No
 
     assert card["orthography"] == orthography
     assert card["identity"]["language"] == "zh"
+
+
+def test_catalog_entry_card_carries_every_support_translation_in_stable_order() -> None:
+    entry = {
+        "word": "你好",
+        "language_code": "zh",
+        "phonetic": "nǐ hǎo",
+        "part_of_speech": "phrase",
+        "definition": "hello",
+        "support_translations": {"vi": "xin chào", "en": "hello"},
+        "level": "HSK1",
+        "framework": "hsk",
+        "topic": "greetings",
+    }
+
+    card = vocabulary_card_from_catalog_entry(entry)
+
+    assert card["identity"] == {"language": "zh", "normalized": "你好"}
+    assert card["headword"] == "你好"
+    assert card["pronunciation"] == "nǐ hǎo"
+    assert card["part_of_speech"] == "phrase"
+    assert card["meanings"] == [
+        {"language": "zh", "text": "hello"},
+        {"language": "vi", "text": "xin chào"},
+        {"language": "en", "text": "hello"},
+    ]
+    assert card["level"] == "HSK1"
+    assert card["framework"] == "hsk"
+    assert card["topic"] == "greetings"
+
+
+def test_catalog_entry_card_has_no_memory_or_source_encounters() -> None:
+    entry = {
+        "word": "curious",
+        "language_code": "en",
+        "definition": "wanting to know more",
+        "support_translations": {"vi": "tò mò"},
+    }
+
+    card = vocabulary_card_from_catalog_entry(entry)
+
+    assert "memory" not in card
+    assert "source_encounters" not in card
+
+
+def test_catalog_entry_card_does_not_invent_optional_fields() -> None:
+    entry = {
+        "word": "curious",
+        "language_code": "en",
+        "definition": "wanting to know more",
+        "support_translations": {},
+    }
+
+    card = vocabulary_card_from_catalog_entry(entry)
+
+    assert card["meanings"] == [{"language": "en", "text": "wanting to know more"}]
+    assert "pronunciation" not in card
+    assert "part_of_speech" not in card
+    assert "level" not in card
+    assert "framework" not in card
+    assert "topic" not in card
+    assert "orthography" not in card
