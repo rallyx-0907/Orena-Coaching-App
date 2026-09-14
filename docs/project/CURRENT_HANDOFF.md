@@ -49,11 +49,7 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-No CI/live-provider claim. 8011 browser verifies EN/ZH Write → Evaluate
-degraded paths (draft/target/task intact, working 503 retry). Writing
-regression: 123 pytest; Writing Review/Foundation/51-module ESM gates passed.
-Latest local suite: 901 passed/0 failures/104 skipped/5 warnings
-(GOLDEN_STAR_COMPLETION; local, not CI).
+No CI claim. Gemini R3 gate: 4/4 EN/ZH/support cases pass via schema.
 
 ## Runtime / safety
 
@@ -61,8 +57,9 @@ Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
 `orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it;
 `scripts/start_orena_sandbox.ps1` restores it. Restart after Python changes -
 uvicorn does not reload. Do not operate production 8000/preview 8010/
-Cloudflare/volumes. Writing evaluation runs on local Ollama; ASR and
-pronunciation stay unconfigured. No microphone acceptance run.
+Cloudflare/volumes. Writing evaluation can run on explicitly selected local
+Ollama or credentialed Gemini for the manual gate; ASR and pronunciation stay
+unconfigured. No microphone acceptance run.
 
 Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
 four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
@@ -70,7 +67,7 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core lane: R3 evaluator REVIEWABLE (live quality needs the provider gate).
+Core lane: R3 evaluator REVIEWABLE (Gemini provider gate verified; human product review remains separate).
 D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints,
 compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
 Grammar lesson, Recall migrated. D-052 phone space: compacting header
@@ -115,8 +112,10 @@ layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 
 ## PENDING
 
-R3 local gate passes grounding/schema; `qwen3:8b` intermittently leaks target
- script in nested support explanations. Provider quality pending.
+R3 Gemini live gate verified 4/4 representative EN/ZH/support-language cases
+with native structured output, grounded evidence, valid levels and script
+separation. The Ollama fallback remains a lower-quality local option: `qwen3:8b`
+intermittently leaks target script in nested support explanations.
 
 ## BLOCKED
 

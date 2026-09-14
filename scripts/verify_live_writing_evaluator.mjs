@@ -1,15 +1,27 @@
-// Live EN/ZH Writing evaluator verification against the configured local
-// Ollama model. This mirrors the application's evaluator request exactly:
-// the same structured schema from writing_evaluator_contract.py, the same
-// language system prompts from the profiles, the same SUPPORT LANGUAGE block
-// the T12 request contract adds, and the same Ollama /api/chat contract the
-// OllamaProvider sends. It is a manual/local gate, not CI: CI has no Ollama
-// and must never depend on a live model.
+// Live EN/ZH Writing evaluator verification against a configured Ollama or
+// Gemini model. It mirrors the application's evaluator contract: the same
+// structured schema from writing_evaluator_contract.py, the same language
+// system prompts from the profiles, and the same SUPPORT LANGUAGE block the
+// T12 request contract adds. Ollama uses the application's /api/chat shape;
+// Gemini uses its native structured-output endpoint because the compatibility
+// endpoint does not accept this schema shape reliably. It is a manual/local
+// gate, not CI: CI has no live provider and must never depend on one.
 import { readFileSync } from 'node:fs';
 
-// Same configuration the application reads, with the same defaults.
+// Same provider configuration the application reads, with the same defaults.
+// R3_PROVIDER is deliberately explicit so a credentialed provider can be
+// smoke-tested without changing the application's active provider selection.
+const R3_PROVIDER = (process.env.R3_PROVIDER || 'ollama').trim().toLowerCase();
+const R3_TIMEOUT_MS = Number.parseInt(process.env.R3_TIMEOUT_MS || '240000', 10);
 const OLLAMA_URL = (process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/+$/, '');
 const OLLAMA_MODEL = (process.env.OLLAMA_MODEL || 'qwen3:8b').trim();
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
+const GEMINI_BASE_URL = (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai').replace(/\/+$/, '');
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || '')
+  .split(',')
+  .map((model) => model.trim())
+  .filter(Boolean);
+let ACTIVE_MODEL = R3_PROVIDER === 'gemini' ? GEMINI_MODELS[0] || '' : OLLAMA_MODEL;
 
 const RUBRIC = ['grammar', 'vocabulary', 'coherence', 'task_achievement', 'naturalness'];
 // CJK ideographs plus Hiragana/Katakana, matching the script the registry
@@ -190,32 +202,207 @@ function assertSupportLanguageContract(prompt, supportName) {
   }
 }
 
-async function evaluate({ name, language, system, errors, levels, target, text, supportName }) {
+function verificationError(message, failureClass = 'TASK_FAILURE') {
+  const error = new Error(message);
+  error.failureClass = failureClass;
+  return error;
+}
+
+function assertEndpoint(value, label) {
+  try {
+    const endpoint = new URL(value);
+    if (!['http:', 'https:'].includes(endpoint.protocol)) throw new Error('unsupported protocol');
+  } catch {
+    throw verificationError(`${label} is not a valid HTTP(S) endpoint`, 'INFRA_FAILURE');
+  }
+}
+
+function httpFailureClass(status) {
+  return status === 400 ? 'TASK_FAILURE' : 'INFRA_FAILURE';
+}
+
+async function requestJson(url, options, label, failureClass = 'INFRA_FAILURE') {
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(R3_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw verificationError(`${label} request failed: ${error.name}`, failureClass);
+  }
+  if (!response.ok) {
+    const rawDetail = await response.text();
+    const redactedDetail = GEMINI_API_KEY ? rawDetail.replaceAll(GEMINI_API_KEY, '[redacted]') : rawDetail;
+    const safeDetail = redactedDetail
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 1200);
+    throw verificationError(
+      `${label} returned HTTP ${response.status}${safeDetail ? `: ${safeDetail}` : ''}`,
+      failureClass === 'INFRA_FAILURE' ? 'INFRA_FAILURE' : httpFailureClass(response.status),
+    );
+  }
+  try {
+    return await response.json();
+  } catch (error) {
+    throw verificationError(`${label} returned invalid JSON: ${error.name}`, failureClass);
+  }
+}
+
+function catalogModelIds(envelope) {
+  return Array.isArray(envelope?.data)
+    ? envelope.data.map((item) => String(item?.id || '')).filter(Boolean)
+    : [];
+}
+
+function isGeminiTextModel(model) {
+  const lowered = model.toLowerCase();
+  return lowered.startsWith('gemini-') && !/(embedding|imagen|veo|live|audio|tts)/.test(lowered);
+}
+
+function geminiNativeBaseUrl() {
+  const endpoint = new URL(GEMINI_BASE_URL);
+  endpoint.pathname = endpoint.pathname.replace(/\/openai\/?$/, '') || '/';
+  return endpoint.toString().replace(/\/+$/, '');
+}
+
+function geminiStructuredSchema(levels, errors) {
+  const schema = buildSchema(levels, errors);
+  // Gemini rejects an empty string inside an enum. The application contract
+  // intentionally permits '' when evidence is insufficient, so leave this
+  // property as a string at transport time and retain the strict semantic
+  // check below in check().
+  schema.properties.cefr_estimate = { type: 'string' };
+  const supportedKeys = new Set(['type', 'properties', 'required', 'items', 'enum']);
+  const removeUnsupported = (value) => {
+    if (Array.isArray(value)) return value.map(removeUnsupported);
+    if (!value || typeof value !== 'object') return value;
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => supportedKeys.has(key))
+        .map(([key, child]) => [
+          key,
+          key === 'properties' && child && typeof child === 'object'
+            ? Object.fromEntries(Object.entries(child).map(([name, schema]) => [name, removeUnsupported(schema)]))
+            : removeUnsupported(child),
+        ]),
+    );
+  };
+  return removeUnsupported(schema);
+}
+
+async function preflightProvider() {
+  if (!['ollama', 'gemini'].includes(R3_PROVIDER)) {
+    throw verificationError(`Unsupported R3_PROVIDER '${R3_PROVIDER}'`, 'INFRA_FAILURE');
+  }
+  if (!Number.isFinite(R3_TIMEOUT_MS) || R3_TIMEOUT_MS <= 0) {
+    throw verificationError('R3_TIMEOUT_MS must be a positive integer', 'INFRA_FAILURE');
+  }
+
+  if (R3_PROVIDER === 'ollama') {
+    assertEndpoint(OLLAMA_URL, 'OLLAMA_URL');
+    if (!OLLAMA_MODEL) throw verificationError('OLLAMA_MODEL is empty', 'INFRA_FAILURE');
+    const envelope = await requestJson(`${OLLAMA_URL}/api/tags`, {}, 'Ollama preflight');
+    const available = Array.isArray(envelope?.models)
+      ? envelope.models.map((item) => String(item?.name || '')).filter(Boolean)
+      : [];
+    if (!available.includes(OLLAMA_MODEL)) {
+      throw verificationError(`OLLAMA_MODEL '${OLLAMA_MODEL}' is not available`, 'INFRA_FAILURE');
+    }
+    ACTIVE_MODEL = OLLAMA_MODEL;
+    return;
+  }
+
+  if (!GEMINI_API_KEY) throw verificationError('GEMINI_API_KEY is not configured', 'INFRA_FAILURE');
+  assertEndpoint(GEMINI_BASE_URL, 'GEMINI_BASE_URL');
+  const envelope = await requestJson(
+    `${GEMINI_BASE_URL}/models`,
+    { headers: { Authorization: `Bearer ${GEMINI_API_KEY}` } },
+    'Gemini preflight',
+  );
+  const catalog = catalogModelIds(envelope).filter(isGeminiTextModel);
+  if (!ACTIVE_MODEL) ACTIVE_MODEL = catalog[0] || '';
+  if (!ACTIVE_MODEL) throw verificationError('No Gemini text model is available', 'INFRA_FAILURE');
+  if (catalog.length && !catalog.includes(ACTIVE_MODEL)) {
+    throw verificationError(`Configured Gemini model '${ACTIVE_MODEL}' is not available`, 'INFRA_FAILURE');
+  }
+}
+
+function assertUtf8Transport(prompt, label) {
+  const encoded = new TextEncoder().encode(prompt);
+  if (!encoded.length || encoded.length !== Buffer.byteLength(prompt, 'utf8')) {
+    throw verificationError(`${label} prompt failed UTF-8 transport preflight`, 'INFRA_FAILURE');
+  }
+}
+
+async function evaluate({ name, language, system, errors, levels, target, text, supportName, supportCjk }) {
   const taskPrompt = 'Write one short practice response.';
   const prompt = buildUserPrompt(language, supportName, target, taskPrompt, text);
   assertSupportLanguageContract(prompt, supportName);
-  const body = {
-    model: OLLAMA_MODEL,
-    stream: false,
-    think: false,
-    keep_alive: '30m',
-    format: buildSchema(levels, errors),
-    options: { temperature: 0.0, num_ctx: 4096, num_predict: 2200, seed: 42 },
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: prompt },
-    ],
-  };
-  const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(240000),
-  });
-  const envelope = await response.json();
-  const content = envelope?.message?.content;
+  assertUtf8Transport(prompt, `${name} user`);
+  const messages = [
+    { role: 'system', content: system },
+    { role: 'user', content: prompt },
+  ];
+  let envelope;
+  let content;
+  if (R3_PROVIDER === 'gemini') {
+    // Gemini's native endpoint accepts the evaluator schema in the documented
+    // structured-output shape. The OpenAI-compatible endpoint is kept for the
+    // application's provider adapter, but its raw REST response_format shape
+    // is not reliable for this nested contract.
+    const schema = geminiStructuredSchema(levels, errors);
+    const supportOutputConstraint = supportCjk
+      ? `Use ${supportName} consistently in every explanatory field; do not mix in Vietnamese or another support language.`
+      : `Use ${supportName} consistently in every explanatory field; use Latin script there and do not include target-language CJK examples, even quoted examples. This verification rule overrides any earlier permission to include target-language examples; describe them in English instead.`;
+    const body = {
+      systemInstruction: {
+        parts: [{
+          text: `${system}\n${supportOutputConstraint}\nThe cefr_estimate value must be one of ${levels.join(', ')} or the empty string; never use a level outside that list.\nReturn exactly one valid JSON object matching this JSON Schema:\n${JSON.stringify(schema)}`,
+        }],
+      },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.0,
+        maxOutputTokens: 2200,
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+      },
+    };
+    envelope = await requestJson(
+      `${geminiNativeBaseUrl()}/models/${encodeURIComponent(ACTIVE_MODEL)}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'x-goog-api-key': GEMINI_API_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+      `${name}: Gemini`,
+      'TASK_FAILURE',
+    );
+    content = envelope?.candidates?.[0]?.content?.parts
+      ?.map((part) => part?.text)
+      .find((part) => typeof part === 'string' && part.trim());
+  } else {
+    const body = {
+      model: ACTIVE_MODEL,
+      stream: false,
+      think: false,
+      keep_alive: '30m',
+      format: buildSchema(levels, errors),
+      options: { temperature: 0.0, num_ctx: 4096, num_predict: 2200, seed: 42 },
+      messages,
+    };
+    envelope = await requestJson(
+      `${OLLAMA_URL}/api/chat`,
+      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) },
+      `${name}: Ollama`,
+      'TASK_FAILURE',
+    );
+    content = envelope?.message?.content;
+  }
   if (typeof content !== 'string' || !content.trim()) {
-    throw new Error(`${name}: Ollama returned no message content`);
+    throw verificationError(`${name}: ${R3_PROVIDER} returned no message content`, 'TASK_FAILURE');
   }
   const parsed = JSON.parse(content);
   return { name, parsed, done_reason: envelope.done_reason, contentLength: content.length };
@@ -239,6 +426,7 @@ function explanatoryStrings(p) {
 function check(result, text, errors, levels, supportCjk) {
   const p = result.parsed;
   const explanations = explanatoryStrings(p);
+  const scriptViolations = explanations.filter((s) => supportCjk ? !CJK_PATTERN.test(s) : CJK_PATTERN.test(s));
   return {
     requiredKeys: [...RUBRIC, 'band_status', 'cefr_estimate', 'summary_vi', 'strengths_vi', 'strength_evidence', 'priorities_vi', 'errors'].every((key) => key in p),
     scoresInRange: RUBRIC.every((key) => typeof p[key] === 'number' && p[key] >= 0 && p[key] <= 100),
@@ -263,8 +451,8 @@ function check(result, text, errors, levels, supportCjk) {
     // language's script — this is exactly the allow_explanation_cjk/allow_cjk
     // decoupling T12 introduced.
     explanationsNonEmpty: explanations.length > 0,
-    explanationScriptMatchesSupportLanguage: explanations.every((s) =>
-      supportCjk ? CJK_PATTERN.test(s) : !CJK_PATTERN.test(s)),
+    explanationScriptMatchesSupportLanguage: scriptViolations.length === 0,
+    scriptViolations: scriptViolations.slice(0, 3),
   };
 }
 
@@ -329,31 +517,64 @@ const cases = [
   },
 ];
 
-const results = [];
-for (const item of cases) {
-  const result = await evaluate(item);
-  results.push({
-    name: result.name,
-    requestedSupportLanguage: { code: item.supportCode, name: item.supportName, cjk: item.supportCjk },
-    done_reason: result.done_reason,
-    contentLength: result.contentLength,
-    checks: check(result, item.text, item.errors, item.levels, item.supportCjk),
-    summary: {
-      band: result.parsed.band_status,
-      level: result.parsed.cefr_estimate,
-      scores: Object.fromEntries(RUBRIC.map((key) => [key, result.parsed[key]])),
-      errors: (result.parsed.errors || []).map((e) => ({ category: e.category, fragment: e.fragment, suggestion: e.suggestion })),
-      strengths: (result.parsed.strength_evidence || []).map((s) => ({ category: s.category, fragment: s.fragment })),
-      // A sample so a script-consistency failure can be read directly from
-      // the report instead of requiring a re-run.
-      summary_vi: result.parsed.summary_vi,
-    },
-  });
+function terminationReason(error) {
+  const message = String(error?.message || '');
+  if (error?.name === 'TimeoutError' || /timeout/i.test(message)) return 'timeout';
+  if (/HTTP 401|HTTP 403/.test(message)) return 'permission';
+  if (/HTTP 429/.test(message)) return 'quota';
+  if (error?.failureClass === 'INFRA_FAILURE') return 'launcher_error';
+  return 'task/test failure';
 }
 
-console.log(JSON.stringify(results, null, 2));
+async function run() {
+  // Validate every generated prompt before the first provider request. This
+  // catches source/encoding drift without spending model quota.
+  for (const item of cases) {
+    const prompt = buildUserPrompt(item.language, item.supportName, item.target, 'Write one short practice response.', item.text);
+    assertSupportLanguageContract(prompt, item.supportName);
+    assertUtf8Transport(prompt, `${item.name} preflight`);
+  }
+  await preflightProvider();
 
-const allChecksPass = results.every((r) =>
-  Object.values(r.checks).every((value) => value === true),
-);
-process.exitCode = allChecksPass ? 0 : 1;
+  const results = [];
+  for (const item of cases) {
+    const result = await evaluate(item);
+    const evaluationChecks = check(result, item.text, item.errors, item.levels, item.supportCjk);
+    const { scriptViolations, ...checks } = evaluationChecks;
+    results.push({
+      name: result.name,
+      requestedSupportLanguage: { code: item.supportCode, name: item.supportName, cjk: item.supportCjk },
+      done_reason: result.done_reason,
+      contentLength: result.contentLength,
+      checks,
+      diagnostics: { scriptViolations },
+      summary: {
+        keys: Object.keys(result.parsed),
+        band: result.parsed.band_status,
+        level: result.parsed.cefr_estimate,
+        scores: Object.fromEntries(RUBRIC.map((key) => [key, result.parsed[key]])),
+        errors: (result.parsed.errors || []).map((e) => ({ category: e.category, fragment: e.fragment, suggestion: e.suggestion })),
+        strengths: (result.parsed.strength_evidence || []).map((s) => ({ category: s.category, fragment: s.fragment })),
+        // A sample so a script-consistency failure can be read directly from
+        // the report instead of requiring a re-run.
+        summary_vi: result.parsed.summary_vi,
+      },
+    });
+  }
+
+  console.log(JSON.stringify({ provider: R3_PROVIDER, model: ACTIVE_MODEL, results }, null, 2));
+
+  const allChecksPass = results.every((r) =>
+    Object.values(r.checks).every((value) => value === true),
+  );
+  process.exitCode = allChecksPass ? 0 : 1;
+}
+
+run().catch((error) => {
+  console.error(JSON.stringify({
+    failure_class: error.failureClass || 'TASK_FAILURE',
+    termination_reason: terminationReason(error),
+    message: error.message,
+  }, null, 2));
+  process.exitCode = 1;
+});
