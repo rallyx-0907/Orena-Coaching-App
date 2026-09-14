@@ -33,6 +33,7 @@ export function route(hash = '') {
       'conversation',
       'continue',
       'collection',
+      'admin',
     ].includes(path)
       ? path
       : 'discover',

@@ -23,7 +23,7 @@ export const referenceCopy = {
     threadLabel: 'A thread', contentLabel: 'Yours', languageLabel: 'Kept',
     discover: 'Discover', practice: 'Practice', reading: 'Reading', listening: 'Listening',
     writing: 'Writing', speaking: 'Speaking', understanding: 'Patterns & meaning',
-    language: 'My language', recall: 'Recall', continue: 'Continue', content: 'My content',
+    language: 'My language', recall: 'Recall', continue: 'Continue', content: 'My content', admin: 'Platform Admin',
     world: 'A bigger world', make: 'Make it yours', keep: 'Your growing world',
     destinations: 'Destinations', closeDestinations: 'Close destinations',
     invitation: 'A little curiosity.\nA bigger world.',
@@ -49,6 +49,7 @@ export const referenceCopy = {
     direct: 'Choose your intention', review: 'Reference in progress · your work stays yours',
   },
   zh: {
+    admin: '\u5e73\u53f0\u7ba1\u7406',
     collection: '收藏',
     moreStories: '更多可读的',
     collectionSearch: '找回你留下的东西',
@@ -125,7 +126,8 @@ export function entryIcon(name) {
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui], active = experienceFor(ctx.location), entries = entryPoints(ctx.ui);
   const group = (label, ids) => `<div class="nav-group"><small>${esc(label)}</small>${entries.filter(x=>ids.includes(x.id)).map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</div>`;
-  return `<nav id="shellNav" aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}</nav>`;
+  const adminEntry = ctx.user?.is_admin === true ? `<div class="nav-group"><small>${esc(c.admin)}</small><a href="${link('admin')}" ${active === 'admin' ? 'aria-current="page"' : ''}>${entryIcon('spark')}<span>${esc(c.admin)}</span></a></div>` : '';
+  return `<nav id="shellNav" aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}${adminEntry}</nav>`;
 }
 
 /* How the eleven destinations are reached on a narrow screen.
@@ -143,7 +145,9 @@ export function referenceNavigation(ctx) {
 export function navigationToggle(ctx) {
   const c = referenceCopy[ctx.ui];
   const active = experienceFor(ctx.location);
-  const here = entryPoints(ctx.ui).find((x) => x.id === active);
+  const here = active === 'admin' && ctx.user?.is_admin === true
+    ? { id: 'admin', label: c.admin, icon: 'spark' }
+    : entryPoints(ctx.ui).find((x) => x.id === active);
   return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav">${entryIcon(here?.icon || 'compass')}<span class="nav-toggle-here">${esc(here?.label || c.destinations)}</span><span class="sr-only">, ${esc(c.destinations)}</span><svg class="nav-toggle-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`;
 }
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {

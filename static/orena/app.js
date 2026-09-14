@@ -16,6 +16,7 @@ import {
 } from './ui/expression.js';
 import { installHints } from './ui/patterns.js';
 import { growthSummarySection } from './ui/growth-summary.js';
+import { renderAdmin } from './ui/admin.js';
 
 // Every hint in every room is one delegated behaviour, installed once.
 installHints(document);
@@ -419,6 +420,8 @@ async function render() {
     const result =
       page === 'collection'
         ? renderCollection(root, scope)
+        : page === 'admin'
+          ? await renderAdmin(root, scope)
         : page === 'continue'
         ? renderContinue(root, scope)
         : page === 'encounter'

@@ -47,6 +47,7 @@ export const api={
   // web-only. /me stays byte-for-byte for the frozen mobile contract.
   productCommerce:()=>request('/api/product/commerce'),
   adminProductAccount:()=>request('/api/product/admin/account'),
+  adminReadinessSummary:()=>request('/api/admin/readiness-summary'),
   health:()=>request('/api/health'),
   languages:()=>request('/api/platform/languages'),
   skills:()=>request('/api/platform/skills'),

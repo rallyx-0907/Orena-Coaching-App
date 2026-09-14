@@ -31,6 +31,15 @@
 #shell nav { display: flex; flex-direction: column; align-items: stretch; gap: 12px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .nav-group { display: flex; flex-direction: column; gap: 1px; }
 .nav-group > small { color: var(--muted); letter-spacing: .04em; text-transform: none; padding: 0 12px 2px; line-height: 1.6; }
+.admin-summary { margin-top: var(--space-4); }
+.admin-summary .section-head { align-items: flex-start; gap: var(--space-4); }
+.admin-summary .section-head p { color: var(--muted); margin: 0; }
+.admin-indicators { display: grid; gap: 0; margin: var(--space-4) 0; padding: 0; list-style: none; }
+.admin-indicators li { display: grid; grid-template-columns: minmax(12rem, 1fr) auto; gap: 4px var(--space-3); padding: var(--space-3) 0 var(--space-3) var(--space-3); border-left: 2px solid var(--accent); border-bottom: 1px solid var(--line); }
+.admin-indicators li span { color: var(--accent); font-weight: 600; }
+.admin-indicators li small { grid-column: 1 / -1; color: var(--muted); }
+.admin-indicators li p { grid-column: 1 / -1; margin: 4px 0 0; color: var(--muted); font-size: var(--text-sm); }
+.admin-summary > .meta { color: var(--muted); font-size: var(--text-sm); }
 #shell nav a { display: flex; gap: 12px; align-items: center; padding: 8px 12px; min-height: 43px; border-radius: 7px; font-size: var(--text-sm); color: var(--muted); }
 #shell nav a svg { flex: none; }
 #shell nav a[aria-current] { background: var(--sage-surface); color: var(--on-sage); }
@@ -250,6 +259,8 @@
   }
   .nav-group { flex-direction:column; gap:2px; }
   .nav-group > small { display:block; }
+  .admin-summary .section-head { flex-direction:column; gap:var(--space-1); }
+  .admin-indicators li { grid-template-columns:1fr; }
   #shell nav a { padding:9px 12px; }
   #shell nav a svg { width:19px; height:19px; }
   #shell .shell-actions { flex-direction:row; align-items:center; border:0; padding:0; gap:10px; flex-wrap:nowrap; }
