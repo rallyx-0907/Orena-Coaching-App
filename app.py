@@ -83,10 +83,22 @@ from writing_coach.speech_pronunciation import build_speech_pronunciation_provid
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.platform_api import router as platform_router
 from writing_coach.core.language_registry import is_enabled
+from writing_coach.core.request_context import LANGUAGE_CODE_CTX
 from writing_coach.core.support_languages import (
     resolve_support_language,
     support_language,
     support_language_uses_cjk,
+)
+from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
+from writing_coach.vocabulary_feed import (
+    LearnerFeedContext,
+    daily_feed_candidates,
+    vocabulary_card_from_feed_candidate,
+)
+from writing_coach.vocabulary_library import (
+    get_vocabulary_collection,
+    list_vocabulary_collections,
+    normalize_vocabulary_word,
 )
 from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProviderUnavailable
 from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
@@ -2209,6 +2221,101 @@ def becoming_library_vocabulary_review(
 def becoming_library_vocabulary_delete(word: str) -> dict[str, Any]:
     return delete_library_vocabulary(word)
 # === BECOMING VOCABULARY LIBRARY ROUTES END ===
+
+# === BECOMING VOCABULARY LIBRARY CATALOG ROUTES START ===
+# The static curated Vocabulary Library catalog (writing_coach/vocabulary_library.py):
+# named collections (TOEIC, HSK, ...) a learner browses before saving anything.
+# Distinct from the "BECOMING VOCABULARY LIBRARY ROUTES" block above, which is
+# the learner's own saved/review state at /api/library/vocabulary — do not
+# rename or merge these blocks. Browsing a collection never creates a
+# SavedWord-equivalent row; "saved" below is a per-request cross-reference
+# against the learner's existing saved words, not stored membership. "Keep"
+# from this catalog reuses the existing POST /api/library/vocabulary with
+# source_kind="collection" — no new save endpoint is added here.
+
+
+def _require_vocabulary_language_code(language_code: str) -> str:
+    code = str(language_code or "").strip().casefold()
+    if not code:
+        raise HTTPException(422, "language_code is required.")
+    if not is_enabled(code):
+        raise HTTPException(422, f"Unsupported language_code '{language_code}'.")
+    return code
+
+
+@app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
+def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
+    code = _require_vocabulary_language_code(language_code)
+    return {"items": list_vocabulary_collections(code)}
+
+
+@app.get(
+    "/api/vocabulary/library/collections/{collection_id}",
+    name="becoming_vocabulary_library_collection_detail",
+)
+def becoming_vocabulary_library_collection_detail(collection_id: str) -> dict[str, Any]:
+    collection = get_vocabulary_collection(collection_id)
+    if collection is None:
+        raise HTTPException(404, "Vocabulary collection not found.")
+    entries = collection.pop("entries")
+    language_token = LANGUAGE_CODE_CTX.set(collection["language_code"])
+    try:
+        saved_normalized_words = {
+            normalize_vocabulary_word(row.get("word"))
+            for row in _specialized_learning_repository.list_library_records()
+        }
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    items = []
+    for entry in entries:
+        card = vocabulary_card_from_catalog_entry(entry)
+        card["saved"] = entry["normalized_word"] in saved_normalized_words
+        items.append(card)
+    collection["items"] = items
+    return collection
+# === BECOMING VOCABULARY LIBRARY CATALOG ROUTES END ===
+
+# === BECOMING VOCABULARY FEED ROUTES START ===
+# The Daily Vocabulary Feed (writing_coach/vocabulary_feed.py): a filtered,
+# day-seeded view over the same static catalog the collection routes above
+# browse directly. "Keep" from this feed reuses the existing
+# POST /api/library/vocabulary with source_kind="feed" — no new save endpoint
+# is added here.
+#
+# `_VOCABULARY_FEED_SANDBOX_LEARNER_KEY` is a documented, fixed sandbox
+# learner identity, not a multi-user architecture decision: this route
+# surface has no per-request account/session identity today (see
+# writing_coach/vocabulary_feed.py's module docstring and
+# docs/superpowers/plans/2026-09-14-vocabulary-experience.md §5). It is a
+# request-scoped Python constant only, never persisted, and is trivially
+# replaced once a durable account identity exists.
+_VOCABULARY_FEED_SANDBOX_LEARNER_KEY = "sandbox-learner"
+
+
+@app.get("/api/vocabulary/feed", name="becoming_vocabulary_feed")
+def becoming_vocabulary_feed(
+    language_code: str = Query(default=""),
+    target_level: str = Query(default=""),
+) -> dict[str, Any]:
+    code = _require_vocabulary_language_code(language_code)
+    declared_level = target_level.strip() or None
+    language_token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        exclude_normalized = {
+            normalize_vocabulary_word(item.get("word"))
+            for item in list_library_vocabulary()["items"]
+        }
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    learner_context = LearnerFeedContext(
+        learner_key=_VOCABULARY_FEED_SANDBOX_LEARNER_KEY, target_level=declared_level
+    )
+    candidates = daily_feed_candidates(
+        code, learner_context=learner_context, exclude_normalized=exclude_normalized
+    )
+    items = [vocabulary_card_from_feed_candidate(entry) for entry in candidates]
+    return {"items": items, "date": datetime.now().astimezone().date().isoformat()}
+# === BECOMING VOCABULARY FEED ROUTES END ===
 
 # === BECOMING READING STUDIO ROUTES START ===
 @app.get("/api/reading/sessions", name="becoming_reading_sessions")
