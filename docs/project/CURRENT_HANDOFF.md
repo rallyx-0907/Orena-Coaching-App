@@ -70,11 +70,12 @@ Switch learning language in-page. Stage task files only, never visual references
 Core: R3 + T15 Card human PASS. Vocabulary plan was independently
 architecture-reviewed and executed without a schema change: T17 foundation,
 T18 static catalog, T19 deterministic learner-aware feed selector, T20 API/save
-handoff, and T21 Discover UI are implemented. T21 checkpoint commit is
-`013241b`; the independent UI review is PASS_WITH_LIMITATIONS and the live
-sandbox at `http://127.0.0.1:8011/#/` serves the new routes. NEXT: human UX
-review of the Vocabulary Library and Daily Vocabulary Feed. Do not start
-orthography (Task G) until this checkpoint is accepted.
+handoff, T21 Discover UI, and T22 Chinese orthography projection are
+implemented. T22 core is `3aa9a88` + review fix `dbb908b`; CI regression wiring
+is `418576e`. Independent review passed with limitations; the live sandbox at
+`http://127.0.0.1:8011/#/` serves the routes. NEXT: one human UX review of the
+Vocabulary Library, Daily Feed and Chinese orthography rendering across
+Discover/My Language. No persistence proposal is required for this MVP.
 D-051/D-052 UI and phone-density foundations are implemented and verified at
 1024-1920/800/390/360 in EN/ZH; human review remains pending.
 
@@ -133,8 +134,9 @@ None identified.
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
   remains gated.
-- Reading breadth: rights gate. Vocabulary Library/Feed MVP is reviewable at
-  the checkpoint above; orthography remains pending after human UX review.
+- Reading breadth: rights gate. Vocabulary Library/Feed and Chinese orthography
+  are technically reviewable at the checkpoint above; human UX acceptance is
+  still pending.
 - Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
   r20 remains frozen native.
 - Language coherence: interface is en/zh; evaluator/grammar explanations follow
