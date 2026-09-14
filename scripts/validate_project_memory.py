@@ -257,7 +257,7 @@ def _validate_real_media_catalog(state: dict[str, Any], skill_state: dict[str, A
 
     Human QA confirmed the built-in lessons are still seed/synthetic, so the
     catalog carries its own readiness, its own per-language playable evidence,
-    and its own acceptance and publication gates. Behavioural pre-public matrix
+    and its own acceptance and publication gates. Behavioural acceptance
     completion says nothing about any of them.
     """
 

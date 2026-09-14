@@ -441,11 +441,11 @@ The post-R5 roadmap uses one primary learner-visible lane.
   explicit. Completed evaluator envelopes now persist as audio-free,
   learner-scoped Speaking attempts with bounded history/progress retrieval;
   public activation and broader release remain deferred.
-- **R8 — Public Product Gate: Writing + Speaking EN/ZH: PRE-PUBLIC MATRIX
-  COMPLETE / HUMAN PROMOTION GATE.** The deterministic EN/ZH Writing and
-  Speaking matrix, degraded-state checks, and browser module graph pass locally;
-  persistence/runtime boundaries are recorded as static inspections alongside
-  separately executed backend contracts in `docs/project/R8_PRE_PUBLIC_MATRIX.json`.
+- **R8 — Public Product Gate: Writing + Speaking EN/ZH: PRE-PUBLIC / HUMAN
+  PROMOTION GATE.** The EN/ZH Writing and Speaking contracts, degraded-state
+  checks, and browser module graph pass locally. Persistence/runtime boundaries
+  remain explicit release evidence alongside separately executed backend
+  contracts.
   Provider credentialed validation, production migration, capability activation,
   and public promotion remain explicitly deferred.
 - **R9 — Speaking Advanced / Shadowing Studio: COMPLETE / LOCAL ACCEPTANCE PASS.**
@@ -459,17 +459,14 @@ The post-R5 roadmap uses one primary learner-visible lane.
   EN/ZH Reading contract verifies session creation, comprehension answers tied
   to exact passage evidence, learner-scoped history reopening, saved-word
   handoff to Library, and contextual dictionary lookup with explicit
-  unavailable states. The deterministic pre-public matrix is recorded in
-  `R10_PRE_PUBLIC_MATRIX.json`; provider credentials, production mutation, and
-  public Reading promotion remain deferred.
-- **R11 — Listening Completion: PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION
-  GATE.** The deterministic EN/ZH matrix covers mounted Active reconstruction
-  resume, Shadowing round resume, Shadowing-to-Speaking feedback continuity,
-  localized unavailable/failure states, and the browser module graph. Its
-  canonical report distinguishes behavioral passes from PostgreSQL-only,
-  language/asset/segment scope, and audio-free static inspections. Production
-  migration, capability activation, and public Listening promotion remain
-  deferred.
+  unavailable states. Provider credentials, production mutation, and public
+  Reading promotion remain deferred.
+- **R11 — Listening Completion: COMPLETE / LOCAL ACCEPTANCE PASS / HUMAN
+  PROMOTION GATE.** The EN/ZH Active reconstruction resume, Shadowing round
+  resume, Shadowing-to-Speaking feedback continuity, localized
+  unavailable/failure states, and browser module graph are locally accepted
+  through the existing capability contracts and checks. Production migration,
+  capability activation, and public Listening promotion remain deferred.
 - **R12 — Retention & Growth: COMPLETE / LOCAL ACCEPTANCE PASS.** Home now offers
   a localized return-to-Listening cue only for a recent language-scoped lesson;
   the handoff carries a source URL and bounded segment/mode context, and

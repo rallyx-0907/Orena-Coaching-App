@@ -51,7 +51,7 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 | R8    | Public Product Gate: Writing + Speaking EN/ZH  | PLANNED                                           |
 | R9    | Speaking Advanced / Shadowing Studio           | COMPLETE / LOCAL ACCEPTANCE PASS                  |
 | R10   | Reading Completion → separate public release   | COMPLETE / LOCAL ACCEPTANCE PASS                  |
-| R11   | Listening Completion → separate public release | PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE |
+| R11   | Listening Completion → separate public release | COMPLETE / LOCAL ACCEPTANCE PASS / HUMAN PROMOTION GATE |
 | R12   | Retention & Growth                             | COMPLETE / LOCAL ACCEPTANCE PASS                  |
 | R13   | Platform Admin Completion                      | COMPLETE / LOCAL ACCEPTANCE PASS                  |
 | R14   | AI Usage, Cost, Quota & Provider Operations    | COMPLETE / LOCAL ACCEPTANCE PASS                  |
@@ -286,7 +286,7 @@ Public release requires all four conditions:
 - Chinese PASS.
 
 In the revised sequence this means R3 + R4 Writing acceptance and R6 + R7
-Speaking acceptance must be closed, with a reviewed EN/ZH release matrix and
+Speaking acceptance must be closed, with reviewed EN/ZH acceptance evidence and
 production readiness. Only an explicit human-approved release-gate action may
 promote Writing and Speaking to PUBLIC.
 
@@ -313,11 +313,12 @@ public promotion remain explicit human gates.
 
 ## R11 — Listening Completion → separate public release
 
-**PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE.**
+**COMPLETE / LOCAL ACCEPTANCE PASS / HUMAN PROMOTION GATE.**
 
 The EN/ZH Active Listening reconstruction, Shadowing rounds,
 Shadowing-to-Speaking feedback continuity, and truthful restore/degraded states
-are locally accepted through the deterministic pre-public matrix. Durable
+are locally accepted through the existing Listening and Shadowing contracts and
+browser module checks. Durable
 progress remains learner-scoped and audio-free, and imported media remains
 shared with Speaking Shadowing.
 

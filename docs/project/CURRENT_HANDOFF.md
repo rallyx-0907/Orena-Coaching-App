@@ -138,7 +138,8 @@ None identified.
   remains gated.
 - Reading/Vocabulary breadth: rights gate per text; D-049 sequence
   (Vocabulary Card, orthography) not yet implemented.
-- Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 frozen native.
+- Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
+  r20 remains frozen native.
 - Language coherence: interface is en/zh; evaluator/grammar explanations follow
   the support language (12; sandbox profile vi) - EN/ZH labels over VI text is a
   product decision (more interface locales, or explain in UI language).
@@ -148,7 +149,7 @@ None identified.
 The 20 inherited Python failures in `test_governance_contract.py`,
 `test_media_ingestion.py`, and `test_media_learning.py` were reconciled against
 the current Orena architecture: 17 assertions now validate canonical documents
-and paths, while the three R10/R12/R20 matrix tests were retired with the
+and paths, while the five R8/R10/R11/R12/R20 matrix tests were retired with the
 removed legacy wrappers and frozen-native scope. The exact local suite now
 passes with `901 passed, 104 skipped, 5 warnings`; this is not a CI claim.
 
