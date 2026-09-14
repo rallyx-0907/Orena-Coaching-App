@@ -49,7 +49,7 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-No CI claim. Gemini R3 gate: 4/4 EN/ZH/support cases pass via schema.
+Gemini R3 4/4 EN/ZH/support pass; one transient miss passed on rerun. No CI claim.
 
 ## Runtime / safety
 
@@ -67,7 +67,7 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core lane: R3 evaluator REVIEWABLE (Gemini provider gate verified; human product review remains separate).
+Core: R3 + T15 Vocabulary Card REVIEWABLE; human UX review pending.
 D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints,
 compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
 Grammar lesson, Recall migrated. D-052 phone space: compacting header

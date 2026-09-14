@@ -12,6 +12,7 @@ import {
   refreshDraftStatus,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
+import { renderVocabularyCard } from './vocabulary-card.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import {
   writingReview,
@@ -323,6 +324,29 @@ export async function renderExpression(root, ctx) {
     }
   };
 }
+/* The saved-word list already carries what `writing_coach/vocabulary_cards.py`
+   shapes into a Vocabulary Card server-side for other surfaces; this mirrors
+   that same mapping here so the list renders through the one card contract
+   instead of a second, page-local one. Definition and kept translation are
+   distinct meanings, not one paragraph choosing between them. */
+function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
+  const meanings = [];
+  const definition = String(item.definition || '').trim();
+  const translation = String(item.translation_vi || '').trim();
+  if (definition) meanings.push({ language, text: definition });
+  if (translation) meanings.push({ language: 'vi', text: translation });
+  const kind = String(item.source_kind || '').trim();
+  const fragment = String(item.source_fragment || '').trim();
+  const card = {
+    identity: { language, normalized: String(item.word || '').toLowerCase() },
+    headword: item.word,
+    meanings,
+    source_encounters: kind && fragment ? [{ kind, fragment }] : [],
+  };
+  const pronunciation = String(item.phonetic || '').trim();
+  if (pronunciation && pinyinAllowed) card.pronunciation = pronunciation;
+  return card;
+}
 export async function renderLanguage(root, ctx) {
   const { api, c, language, alive, memory } = ctx;
   const data = await api.libraryVocabulary();
@@ -355,7 +379,16 @@ export async function renderLanguage(root, ctx) {
                 revealed
                   ? `${shape === 'say' ? '' : `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${keptProvenance(c, keptNow)}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>`
                   : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
-              }<p role="status" data-recall-status></p></section>` : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection language-cabinet">${items.map((x) => `<article>${keptProvenance(c, memory.value.keptLanguage?.[x.word]) || `<small>${esc(x.focus_note || c.sourceContext)}</small>`}<h2 lang="${language}">${esc(x.word)}</h2>${x.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(x.phonetic)}</p>` : ''}<blockquote lang="${language}">${esc(x.source_fragment || '')}</blockquote><details><summary>${c.meaning}</summary><p>${esc(x.definition || x.translation_vi || '')}</p></details>${x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : ''}</article>`).join('')}</section>` : `<section class="empty">${scene('empty', { size: 'medium' })}<h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
+              }<p role="status" data-recall-status></p></section>` : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection language-cabinet">${items
+              .map((x) => {
+                const pinyinAllowed = language !== 'zh' || ctx.profile.pinyin !== 'off';
+                const card = vocabularyCardFromLibraryItem(x, language, { pinyinAllowed });
+                return renderVocabularyCard(c, card, {
+                  before: keptProvenance(c, memory.value.keptLanguage?.[x.word]) || `<small>${esc(x.focus_note || c.sourceContext)}</small>`,
+                  after: x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : '',
+                });
+              })
+              .join('')}</section>` : `<section class="empty">${scene('empty', { size: 'medium' })}<h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
     /* A kept word already carries the sentence it came from, which is exactly
        the context the shared explanation needs. Without this, the collection
        is a list to reread rather than something a learner can question - the

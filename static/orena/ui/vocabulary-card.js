@@ -37,8 +37,16 @@ function orthographyMarkup(orthography, strokeCountLabel) {
   return `<section class="vocabulary-card__orthography" data-orthography-script="${esc(orthography.script)}"><ul>${characters}</ul></section>`;
 }
 
-/** Render a Vocabulary Card projection without creating or mutating storage. */
-export function renderVocabularyCard(copy, card) {
+/**
+ * Render a Vocabulary Card projection without creating or mutating storage.
+ *
+ * `slots.before` / `slots.after` are trusted, already-built HTML a caller
+ * needs inside the same card boundary (provenance, a look-closer action) so
+ * the card stays the one bordered surface a collection grid lays out and
+ * alternates - a wrapper element around this article would put that content
+ * outside the card it is meant to belong to.
+ */
+export function renderVocabularyCard(copy, card, slots = {}) {
   const headword = text(card?.headword);
   if (!headword) throw new Error('Vocabulary Card requires a headword');
   const language = text(card?.identity?.language) || 'en';
@@ -49,5 +57,7 @@ export function renderVocabularyCard(copy, card) {
     card.orthography,
     text(copy?.strokeCount),
   );
-  return `<article class="vocabulary-card" data-vocabulary-language="${esc(language)}"><header><h2 lang="${esc(language)}">${esc(headword)}</h2>${pronunciation ? `<p class="pinyin">${esc(pronunciation)}</p>` : ''}</header>${meanings ? `<section><h3>${esc(copy?.meaning)}</h3>${meanings}</section>` : ''}${orthography}${sources ? `<section><h3>${esc(copy?.sourceContext)}</h3>${sources}</section>` : ''}</article>`;
+  const before = typeof slots.before === 'string' ? slots.before : '';
+  const after = typeof slots.after === 'string' ? slots.after : '';
+  return `<article class="vocabulary-card" data-vocabulary-language="${esc(language)}">${before}<header><h2 lang="${esc(language)}">${esc(headword)}</h2>${pronunciation ? `<p class="pinyin">${esc(pronunciation)}</p>` : ''}</header>${meanings ? `<details><summary>${esc(copy?.meaning)}</summary>${meanings}</details>` : ''}${orthography}${sources ? `<section><h3>${esc(copy?.sourceContext)}</h3>${sources}</section>` : ''}${after}</article>`;
 }
