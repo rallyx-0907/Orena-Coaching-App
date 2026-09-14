@@ -68,16 +68,13 @@ Switch learning language in-page. Stage task files only.
 
 ## NEXT EXACT TASK
 
-Core: R3 + T15 Card human PASS. Vocabulary plan was independently
-architecture-reviewed and executed without a schema change: T17 foundation,
-T18 static catalog, T19 deterministic learner-aware feed selector, T20 API/save
-handoff, T21 Discover UI, and T22 Chinese orthography projection are
-implemented. T22 core is `3aa9a88` + review fix `dbb908b`; CI regression wiring
-is `418576e`. Independent review passed with limitations; the live sandbox at
-`http://127.0.0.1:8011/#/` and the machine LAN address on port 8011 serve the
-routes. NEXT: one human UX review of the
-Vocabulary Library, Daily Feed and Chinese orthography rendering across
-Discover/My Language.
+Core: R3 + T15 Card human PASS. Vocabulary foundation/catalog/feed/save
+handoff and Chinese orthography projection are implemented without a schema
+change. The consolidated Vocabulary UX redesign is now
+`READY_FOR_HUMAN_UX_REVIEW`: Overview, compact Library management, Daily Feed
+discovery and focused Study share the canonical card/save/review path. Review
+at `http://127.0.0.1:8011/#/language` or the machine LAN address on port 8011;
+check EN/ZH and Chinese orthography across Discover/My Language.
 D-051/D-052 UI and phone-density foundations are implemented and verified at
 1024-1920/800/390/360 in EN/ZH; human review remains pending.
 
@@ -109,6 +106,9 @@ D-049/D-050 (2026-09-12): Content Architecture amended to five domains, a
 horizontal Understanding Engine (AI-first, context-grounded, optional support
 layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
+
+Vocabulary UX redesign is technically verified and awaits human visual/usage
+acceptance; no persistence/schema decision was introduced.
 
 ## PENDING
 
@@ -152,7 +152,7 @@ The 20 inherited Python failures in `test_governance_contract.py`,
 the current Orena architecture: 17 assertions now validate canonical documents
 and paths, while the five R8/R10/R11/R12/R20 matrix tests were retired with the
 removed legacy wrappers and frozen-native scope. The exact local suite now
-passes with `901 passed, 104 skipped, 5 warnings`; this is not a CI claim.
+passes with `991 passed, 107 skipped, 4 warnings`; this is not a CI claim.
 
 ## HUMAN GATES
 

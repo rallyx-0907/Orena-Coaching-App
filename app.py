@@ -2246,7 +2246,39 @@ def _require_vocabulary_language_code(language_code: str) -> str:
 @app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
 def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
     code = _require_vocabulary_language_code(language_code)
-    return {"items": list_vocabulary_collections(code)}
+    language_token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        saved_items = list_library_vocabulary()["items"]
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    saved_by_word = {
+        normalize_vocabulary_word(item.get("word")): item for item in saved_items
+    }
+    summaries = []
+    for summary in list_vocabulary_collections(code):
+        catalog = get_vocabulary_collection(summary["id"]) or {"entries": []}
+        summary = dict(summary)
+        summary["progress"] = _vocabulary_collection_progress(
+            catalog.get("entries", []), saved_by_word
+        )
+        summaries.append(summary)
+    return {"items": summaries}
+
+
+def _vocabulary_collection_progress(
+    entries: list[dict[str, Any]], saved_by_word: dict[str, dict[str, Any]]
+) -> dict[str, int]:
+    matched = [
+        saved_by_word[entry["normalized_word"]]
+        for entry in entries
+        if entry.get("normalized_word") in saved_by_word
+    ]
+    return {
+        "learned_count": len(matched),
+        "learning_count": sum(1 for item in matched if int(item.get("review_stage") or 0) < 3),
+        "due_count": sum(1 for item in matched if item.get("due")),
+        "mastered_count": sum(1 for item in matched if int(item.get("review_stage") or 0) >= 3),
+    }
 
 
 @app.get(
@@ -2260,18 +2292,24 @@ def becoming_vocabulary_library_collection_detail(collection_id: str) -> dict[st
     entries = collection.pop("entries")
     language_token = LANGUAGE_CODE_CTX.set(collection["language_code"])
     try:
-        saved_normalized_words = {
-            normalize_vocabulary_word(row.get("word"))
-            for row in _specialized_learning_repository.list_library_records()
-        }
+        saved_items = list_library_vocabulary()["items"]
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
+    saved_by_word = {
+        normalize_vocabulary_word(item.get("word")): item for item in saved_items
+    }
     items = []
     for entry in entries:
         card = vocabulary_card_from_catalog_entry(entry)
-        card["saved"] = entry["normalized_word"] in saved_normalized_words
+        saved = saved_by_word.get(entry["normalized_word"])
+        card["saved"] = saved is not None
+        card["review_stage"] = int(saved.get("review_stage") or 0) if saved else 0
+        card["due"] = bool(saved.get("due")) if saved else False
+        card["successful_recalls"] = int(saved.get("successful_recalls") or 0) if saved else 0
+        card["lapse_count"] = int(saved.get("lapse_count") or 0) if saved else 0
         items.append(card)
     collection["items"] = items
+    collection["progress"] = _vocabulary_collection_progress(entries, saved_by_word)
     return collection
 # === BECOMING VOCABULARY LIBRARY CATALOG ROUTES END ===
 

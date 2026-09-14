@@ -89,6 +89,37 @@ def test_collection_detail_marks_a_saved_word_and_an_unsaved_word_correctly() ->
     assert other["saved"] is False
 
 
+def test_collection_detail_exposes_derived_review_state_for_management_views() -> None:
+    _seed_saved_word("en", "invoice")
+
+    response = _get("/api/vocabulary/library/collections/toeic-600-essential")
+    assert response.status_code == 200
+    body = response.json()
+    invoice = next(item for item in body["items"] if item["headword"].casefold() == "invoice")
+    assert invoice["saved"] is True
+    assert invoice["review_stage"] == 0
+    assert invoice["due"] is True
+    assert invoice["successful_recalls"] == 0
+    assert invoice["lapse_count"] == 0
+    assert body["progress"]["learned_count"] >= 1
+    assert body["progress"]["learning_count"] >= 1
+    assert body["progress"]["due_count"] >= 1
+    assert body["progress"]["mastered_count"] == 0
+
+
+def test_saved_vocabulary_summary_exposes_overview_state_counts() -> None:
+    _seed_saved_word("en", "invoice")
+
+    response = _get("/api/library/vocabulary")
+    assert response.status_code == 200
+    summary = response.json()["summary"]
+    assert summary["total"] >= 1
+    assert summary["saved"] == summary["total"]
+    assert summary["learning"] >= 1
+    assert summary["mastered"] == 0
+    assert summary["due"] >= 1
+
+
 def test_collection_detail_never_leaks_an_internal_file_path() -> None:
     response = _get("/api/vocabulary/library/collections/hsk-1")
     assert response.status_code == 200

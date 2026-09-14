@@ -108,7 +108,17 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
 def list_library_vocabulary() -> dict[str, Any]:
     items = [_row_to_item(row) for row in _repo().list_library_records()]
     items.sort(key=lambda item: (0 if item["due"] else 1, item["next_review_at"] or item["added_at"], item["word"].casefold()))
-    return {"items": items, "summary": {"total": len(items), "due": sum(1 for item in items if item["due"]), "available": sum(1 for item in items if item["review_stage"] >= 3)}}
+    return {
+        "items": items,
+        "summary": {
+            "total": len(items),
+            "saved": len(items),
+            "due": sum(1 for item in items if item["due"]),
+            "learning": sum(1 for item in items if item["review_stage"] < 3),
+            "mastered": sum(1 for item in items if item["review_stage"] >= 3),
+            "available": sum(1 for item in items if item["review_stage"] >= 3),
+        },
+    }
 
 
 def save_library_vocabulary(payload: LibraryVocabularyIn) -> dict[str, Any]:

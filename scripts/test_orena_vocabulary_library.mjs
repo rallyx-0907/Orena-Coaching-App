@@ -96,15 +96,15 @@ for (const ui of ['en', 'zh']) {
   assert.match(list, /data-open-collection="toeic-600-essential"/);
   assert.match(list, /data-open-collection="common-3000"/);
 
-  // Opening a collection reuses the one shared Vocabulary Card renderer.
+  // Opening a collection is a compact management view over the same card data.
   const detail = vocabularyLibrarySection(c, {
     open: { id: 'common-3000', title: '3000 Common Words', items: [cardEN, { ...cardEN, saved: true }] },
   });
-  assert.match(detail, /class="vocabulary-card"/, 'Library reuses renderVocabularyCard');
+  assert.match(detail, /class="vocabulary-row"/, 'Library uses compact vocabulary rows');
   assert.match(detail, /take off/);
   assert.match(detail, /data-close-collection/);
-  assert.match(detail, /data-library-keep="0"/, 'the unsaved card offers a keep action');
-  assert.match(detail, new RegExp(c.vocabularyAlreadyKept), 'the saved card shows it is already kept');
+  assert.match(detail, /data-library-keep="0"/, 'the unsaved row offers a save action');
+  assert.match(detail, new RegExp(c.vocabularySaved), 'the saved row shows it is already saved');
 
   // Opening a collection can itself fail, or still be loading.
   assert.match(
@@ -144,7 +144,7 @@ assert.equal(requested.at(-1), '/api/vocabulary/library/collections/hsk%201', 'c
 
 // --- Wiring: the Discover surface actually calls this contract, not a copy ---
 const world = read('static/orena/ui/world.js');
-assert.match(world, /renderVocabularyCard/);
+assert.match(world, /renderVocabularyRow/);
 assert.match(world, /api\.vocabularyLibraryCollections\(language\)/);
 assert.match(world, /api\.vocabularyLibraryCollection\(id\)/);
 assert.match(world, /vocabularyKeepPayload\(card, 'collection', support\)/);

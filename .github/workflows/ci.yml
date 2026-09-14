@@ -75,6 +75,7 @@ jobs:
           node scripts/test_orena_reference.mjs
           node scripts/test_orena_admin_entry.mjs
           node scripts/test_orena_vocabulary_card.mjs
+          node scripts/test_orena_vocabulary_experience.mjs
           node scripts/test_orena_vocabulary_library.mjs
           node scripts/test_orena_vocabulary_feed.mjs
           node scripts/test_orena_vocabulary_saved_card.mjs

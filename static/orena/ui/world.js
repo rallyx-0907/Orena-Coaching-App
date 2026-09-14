@@ -18,7 +18,12 @@ import {
   filterReadings,
 } from '../content/reading-library.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
-import { renderVocabularyCard } from './vocabulary-card.js';
+import {
+  renderVocabularyCollectionCard,
+  renderVocabularyFeedPreview,
+  renderVocabularyRow,
+  vocabularyKeepPayload as sharedVocabularyKeepPayload,
+} from './vocabulary-experience.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -77,13 +82,22 @@ function vocabularyCardDefinition(card) {
    POST /api/library/vocabulary - only `source_kind` tells them apart. No new
    save endpoint, no second card shape. */
 export function vocabularyKeepPayload(card, sourceKind, supportLanguage) {
+  return sharedVocabularyKeepPayload(card, sourceKind, supportLanguage);
+}
+
+function vocabularyDiscoverCopy(c, supportLanguage) {
   return {
-    word: card.headword,
-    phonetic: card.pronunciation || '',
-    part_of_speech: card.part_of_speech || '',
-    definition: vocabularyCardDefinition(card),
-    translation_vi: mapVocabularySupportTranslation(card, supportLanguage),
-    source_kind: sourceKind,
+    ...c,
+    supportLanguage,
+    save: c.vocabularySave || c.keep,
+    saved: c.vocabularySaved || c.saved,
+    study: c.vocabularyStudy || c.lookCloser,
+    open: c.vocabularyOpen || c.lookCloser,
+    words: c.vocabularyWordCount,
+    learning: c.vocabularyLearningState,
+    due: c.vocabularyDueState,
+    mastered: c.vocabularyMasteredState,
+    newWord: c.vocabularyNew,
   };
 }
 
@@ -111,8 +125,8 @@ function vocabularyFrameworkLabel(c, framework) {
   return c[key] || framework;
 }
 
-function vocabularyLibraryCollectionRow(c, collection) {
-  return `<button class="story-path" data-open-collection="${esc(collection.id)}"><span class="path-number" aria-hidden="true">${esc(collection.level || '')}</span><div><h3>${esc(collection.title)}</h3><p>${esc(collection.item_count)} ${esc(c.vocabularyWordCount)}</p></div><span aria-hidden="true">↗</span></button>`;
+function vocabularyLibraryCollectionRow(c, collection, index, supportLanguage = 'en') {
+  return renderVocabularyCollectionCard(vocabularyDiscoverCopy(c, supportLanguage), collection, { index });
 }
 
 // A saved catalog card never offers a second save affordance - it says,
@@ -132,7 +146,7 @@ export function vocabularyFeedCardAfterSlot(c, index) {
    <section data-vocabulary-library> wrapper so a state repaint never
    double-nests it. */
 export function vocabularyLibrarySection(c, state = {}) {
-  const { collections, error, open } = state;
+  const { collections, error, open, supportLanguage = 'en' } = state;
   const heading = `<div class="section-head"><h2>${esc(c.vocabularyLibraryTitle)}</h2></div><p class="meta">${esc(c.vocabularyLibraryNote)}</p>`;
   let body;
   if (open) {
@@ -141,8 +155,8 @@ export function vocabularyLibrarySection(c, state = {}) {
     } else if (!open.items) {
       body = `<p class="loading" role="status">${esc(c.vocabularyLibraryLoading)}</p>`;
     } else {
-      body = `<button class="quiet" data-close-collection>${esc(c.vocabularyLibraryBack)}</button><h3>${esc(open.title || '')}</h3><section class="word-collection language-cabinet">${open.items
-        .map((card, index) => renderVocabularyCard(c, card, { after: vocabularyLibraryCardAfterSlot(c, card, index) }))
+      body = `<button class="quiet" data-close-collection>${esc(c.vocabularyLibraryBack)}</button><h3>${esc(open.title || '')}</h3><section class="vocabulary-row-list vocabulary-card">${open.items
+        .map((card, index) => renderVocabularyRow(vocabularyDiscoverCopy(c, supportLanguage), card, { index, saveAttribute: 'data-library-keep' }))
         .join('')}</section>`;
     }
   } else if (error) {
@@ -156,7 +170,7 @@ export function vocabularyLibrarySection(c, state = {}) {
       .map(
         (group) =>
           `<h3>${esc(vocabularyFrameworkLabel(c, group.framework))}</h3>${group.collections
-            .map((collection) => vocabularyLibraryCollectionRow(c, collection))
+            .map((collection, index) => vocabularyLibraryCollectionRow(c, collection, index, supportLanguage))
             .join('')}`,
       )
       .join('');
@@ -165,7 +179,7 @@ export function vocabularyLibrarySection(c, state = {}) {
 }
 
 export function vocabularyFeedSection(c, state = {}) {
-  const { items, error } = state;
+  const { items, error, supportLanguage = 'en' } = state;
   const heading = `<div class="section-head"><h2>${esc(c.vocabularyFeedTitle)}</h2></div><p class="meta">${esc(c.vocabularyFeedNote)}</p>`;
   let body;
   if (error) {
@@ -175,8 +189,8 @@ export function vocabularyFeedSection(c, state = {}) {
   } else if (!items.length) {
     body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyFeedEmpty)}</p></div>`;
   } else {
-    body = `<section class="word-collection language-cabinet">${items
-      .map((card, index) => renderVocabularyCard(c, card, { after: vocabularyFeedCardAfterSlot(c, index) }))
+    body = `<section class="vocabulary-feed-preview">${items
+      .map((card, index) => renderVocabularyFeedPreview(vocabularyDiscoverCopy(c, supportLanguage), card, { index, saveAttribute: 'data-feed-keep' }))
       .join('')}</section>`;
   }
   return `${heading}${body}`;
@@ -192,7 +206,7 @@ async function paintVocabularyLibrary(container, ctx) {
   let open = null;
   function paint() {
     if (!alive()) return;
-    container.innerHTML = vocabularyLibrarySection(c, { collections, error, open });
+    container.innerHTML = vocabularyLibrarySection(c, { collections, error, open, supportLanguage: support });
     container.querySelectorAll('[data-open-collection]').forEach((button) => {
       button.onclick = () => loadCollection(button.dataset.openCollection);
     });
@@ -206,6 +220,9 @@ async function paintVocabularyLibrary(container, ctx) {
     });
     container.querySelectorAll('[data-library-keep]').forEach((button) => {
       button.onclick = () => keep(button, Number(button.dataset.libraryKeep));
+    });
+    container.querySelectorAll('[data-vocabulary-study]').forEach((button) => {
+      button.onclick = () => { location.hash = '#/language'; };
     });
   }
   async function loadList() {
@@ -260,10 +277,13 @@ async function paintVocabularyFeed(container, ctx) {
   let error = false;
   function paint() {
     if (!alive()) return;
-    container.innerHTML = vocabularyFeedSection(c, { items, error });
+    container.innerHTML = vocabularyFeedSection(c, { items, error, supportLanguage: support });
     container.querySelector('[data-feed-retry]')?.addEventListener('click', load);
     container.querySelectorAll('[data-feed-keep]').forEach((button) => {
       button.onclick = () => keep(button, Number(button.dataset.feedKeep));
+    });
+    container.querySelectorAll('[data-vocabulary-study]').forEach((button) => {
+      button.onclick = () => { location.hash = '#/language'; };
     });
   }
   async function load() {

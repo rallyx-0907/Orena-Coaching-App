@@ -56,9 +56,9 @@ for (const ui of ['en', 'zh']) {
   assert.match(empty, new RegExp(c.vocabularyFeedEmpty));
   assert.doesNotMatch(empty, /data-feed-retry/, 'an empty feed is not treated as an error');
 
-  // A real feed reuses the one shared Vocabulary Card renderer and offers keep.
+  // A real feed is a compact discovery surface and offers save.
   const withItems = vocabularyFeedSection(c, { items: [cardZH] });
-  assert.match(withItems, /class="vocabulary-card"/, 'Feed reuses renderVocabularyCard');
+  assert.match(withItems, /class="vocabulary-feed-item"/, 'Feed uses compact discovery items');
   assert.match(withItems, /休息/);
   assert.match(withItems, /data-feed-keep="0"/);
 }
