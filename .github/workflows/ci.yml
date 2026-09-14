@@ -77,6 +77,7 @@ jobs:
           node scripts/test_orena_vocabulary_card.mjs
           node scripts/test_orena_vocabulary_library.mjs
           node scripts/test_orena_vocabulary_feed.mjs
+          node scripts/test_orena_vocabulary_saved_card.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite
