@@ -53,17 +53,18 @@ Gemini R3 4/4 EN/ZH/support pass; one transient miss passed on rerun. No CI clai
 
 ## Runtime / safety
 
-Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
-`orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it;
-`scripts/start_orena_sandbox.ps1` restores it. Restart after Python changes -
-uvicorn does not reload. Do not operate production 8000/preview 8010/
-Cloudflare/volumes. Writing evaluation can run on explicitly selected local
-Ollama or credentialed Gemini for the manual gate; ASR and pronunciation stay
-unconfigured. No microphone acceptance run.
+Operate only isolated `orena-foundation-web` at 8011 with its PG/network. It is
+published on `0.0.0.0:8011` for private-LAN review; use Ethernet IPv4.
+PGDATA is tmpfs; the start script restores it. Restart after
+Python changes; uvicorn does not reload. Do not operate production 8000/preview
+8010/Cloudflare/volumes. Loopback and LAN self-checks pass. Firewall was not
+added from this non-elevated shell; if peer access is blocked, add TCP 8011
+scoped to `LocalSubnet` from Administrator PowerShell. AI eval uses selected
+local/provider credentials; ASR remains unconfigured.
 
 Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
 four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
-Switch learning language in-page. Stage task files only, never visual references.
+Switch learning language in-page. Stage task files only.
 
 ## NEXT EXACT TASK
 
@@ -73,9 +74,10 @@ T18 static catalog, T19 deterministic learner-aware feed selector, T20 API/save
 handoff, T21 Discover UI, and T22 Chinese orthography projection are
 implemented. T22 core is `3aa9a88` + review fix `dbb908b`; CI regression wiring
 is `418576e`. Independent review passed with limitations; the live sandbox at
-`http://127.0.0.1:8011/#/` serves the routes. NEXT: one human UX review of the
+`http://127.0.0.1:8011/#/` and the machine LAN address on port 8011 serve the
+routes. NEXT: one human UX review of the
 Vocabulary Library, Daily Feed and Chinese orthography rendering across
-Discover/My Language. No persistence proposal is required for this MVP.
+Discover/My Language.
 D-051/D-052 UI and phone-density foundations are implemented and verified at
 1024-1920/800/390/360 in EN/ZH; human review remains pending.
 
