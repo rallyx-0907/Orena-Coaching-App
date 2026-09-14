@@ -67,7 +67,7 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core: R3 + T15 Vocabulary Card REVIEWABLE; human UX review pending.
+Core: R3 + T15 Card human PASS. Next: Vocabulary plan.
 D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints,
 compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
 Grammar lesson, Recall migrated. D-052 phone space: compacting header
@@ -136,8 +136,7 @@ None identified.
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
   remains gated.
-- Reading/Vocabulary breadth: rights gate per text; D-049 sequence
-  (Vocabulary Card, orthography) not yet implemented.
+- Reading breadth: rights gate; Library/Feed plan and orthography remain pending.
 - Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
   r20 remains frozen native.
 - Language coherence: interface is en/zh; evaluator/grammar explanations follow
