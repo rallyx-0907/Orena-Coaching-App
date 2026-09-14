@@ -116,9 +116,9 @@ provider coverage does not establish live prompt quality.
 
 ## BLOCKED
 
-I2 §6 step 9 (`ORENA_ACCOUNT_BACKBONE=on`) and every activation beyond it. Any
-deploy to production 8000 or preview 8010 is a separate human gate, was not
-authorized, and has not been asked for.
+I2 §6 step 9 (`ORENA_ACCOUNT_BACKBONE=on`) is done, sandbox only (chain
+`20260912_0007`, runbook §7). Production/preview deploy and activation past
+sandbox stay blocked: separate human gate, not authorized, not asked for.
 
 ## OPEN P0
 
