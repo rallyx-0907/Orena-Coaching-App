@@ -38,7 +38,7 @@ behavior and evidence. Current invariants/owners:
 
 - Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
 - Reading: content/reading.js readable contract; reading-library.js rights gate.
-- Writing: ui/writing-review.js; exact submitted snapshot and grounded revision.
+- Writing: ui/writing-review.js; exact snapshot and grounded revision; T12 evaluator in `c71c644`.
 - Speaking: product/conversation.js; own turns, no absent-reference alignment.
 - Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
 - Kept language: product/memory.js; provenance device sidecar after account save.
@@ -53,7 +53,7 @@ No CI/live-provider claim. 8011 browser verifies EN/ZH Write → Evaluate
 degraded paths (draft/target/task intact, working 503 retry). Writing
 regression: 123 pytest; Writing Review/Foundation/51-module ESM gates passed.
 Latest local suite: 901 passed/0 failures/104 skipped/5 warnings
-(GOLDEN_STAR_COMPLETION; local execution, not a CI claim).
+(GOLDEN_STAR_COMPLETION; local, not CI).
 
 ## Runtime / safety
 
