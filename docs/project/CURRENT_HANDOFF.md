@@ -67,14 +67,16 @@ Switch learning language in-page. Stage task files only, never visual references
 
 ## NEXT EXACT TASK
 
-Core: R3 + T15 Card human PASS. Next: Vocabulary plan.
-D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints,
-compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
-Grammar lesson, Recall migrated. D-052 phone space: compacting header
-(`--shell-offset`, `focusWork()`), phone density block in `rooms.css`, now
-covering comprehension, encounter practice, conversation, Discover/Collection;
-Follow is one fixed-height panel; Dictation fits one frame; phone scale D-053
-(`--tap`). Verified 1024-1920/800/390/360, EN/ZH. NEXT: human review.
+Core: R3 + T15 Card human PASS. Vocabulary plan was independently
+architecture-reviewed and executed without a schema change: T17 foundation,
+T18 static catalog, T19 deterministic learner-aware feed selector, T20 API/save
+handoff, and T21 Discover UI are implemented. T21 checkpoint commit is
+`013241b`; the independent UI review is PASS_WITH_LIMITATIONS and the live
+sandbox at `http://127.0.0.1:8011/#/` serves the new routes. NEXT: human UX
+review of the Vocabulary Library and Daily Vocabulary Feed. Do not start
+orthography (Task G) until this checkpoint is accepted.
+D-051/D-052 UI and phone-density foundations are implemented and verified at
+1024-1920/800/390/360 in EN/ZH; human review remains pending.
 
 Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
 approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
@@ -87,14 +89,9 @@ implies human approval.
 
 ## IN PROGRESS
 
-Golden Star is IMPLEMENTING. The three capability findings are closed.
-The Encounter close-look WIP is finished and human-approved.
-
-Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
-rejection, truthful capability outcomes, ten canonical journeys walked, and
-continuation that keeps the learner's intention and stays device-honest.
-Backbone contracts/pure policies are specified; runtime integration I1-I7 remains
-Opus implementation work. F is human review, not architecture completion.
+Golden Star capability findings are closed; Packages A-D of
+`ORENA_REFERENCE_ARCHITECTURE.md` are done. Backbone runtime integration I1-I7
+remains Opus implementation work; F is human review, not architecture completion.
 
 Multi-theme system implemented, awaiting visual review: Paper, Night Ink,
 Deep Forest, Sage Field; identity separate from appearance; colour owned
@@ -136,7 +133,8 @@ None identified.
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
   remains gated.
-- Reading breadth: rights gate; Library/Feed plan and orthography remain pending.
+- Reading breadth: rights gate. Vocabulary Library/Feed MVP is reviewable at
+  the checkpoint above; orthography remains pending after human UX review.
 - Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
   r20 remains frozen native.
 - Language coherence: interface is en/zh; evaluator/grammar explanations follow
