@@ -27,6 +27,10 @@ colour outranking a component's own pairing. ORENA_WEB_EXTENSION_GUIDE.md
 records what a surface inherits. `/orena-assets/*` revalidates by ETag; never
 `no-store`, which re-downloaded 3.2 MB per refresh.
 
+Platform Admin has a host again via `#/admin` (`04a56c4`); human review
+confirmed the UI matches Orena's design, resolving the "lost its host" P1.
+APIs and `static/admin.js` stay preserved.
+
 ## Learning capabilities
 
 Preserved Opus implementation; ORENA_STATUS and GOLDEN_STAR_COMPLETION hold
@@ -129,9 +133,6 @@ None identified.
 - `#/language` renders "temporarily unavailable" only in long multi-room
   sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated (0/130).
   Self-recovers.
-- Platform Admin lost its host when templates/index.html was removed; APIs
-  and static/admin.js remain but admin.js bails at its #page-admin guard.
-  Preserve it without restoring the historical shell.
 - Grammar breadth: patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
