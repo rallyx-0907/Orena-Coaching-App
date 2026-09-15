@@ -215,7 +215,7 @@ Node ESM contract tests, existing Docker-backed Python/pytest gate.
   Saved management → Feed, in EN and ZH where available; inspect desktop,
   tablet, mobile, Paper, and Night Ink behavior and keyboard focus.
 
-- [ ] **Step 5: Commit only the coherent task files with message**
+- [x] **Step 5: Commit only the coherent task files with message**
   `feat(vocabulary): replace stretched browse rows with compact cards`.
 
 - [x] **Step 6: Leave the learner-facing milestone at
