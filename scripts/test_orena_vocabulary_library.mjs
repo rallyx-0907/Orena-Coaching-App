@@ -100,7 +100,7 @@ for (const ui of ['en', 'zh']) {
   const detail = vocabularyLibrarySection(c, {
     open: { id: 'common-3000', title: '3000 Common Words', items: [cardEN, { ...cardEN, saved: true }] },
   });
-  assert.match(detail, /class="vocabulary-row"/, 'Library uses compact vocabulary rows');
+  assert.match(detail, /class="vocabulary-browse-card"/, 'Library uses compact browse cards');
   assert.match(detail, /take off/);
   assert.match(detail, /data-close-collection/);
   assert.match(detail, /data-library-keep="0"/, 'the unsaved row offers a save action');
@@ -144,7 +144,7 @@ assert.equal(requested.at(-1), '/api/vocabulary/library/collections/hsk%201', 'c
 
 // --- Wiring: the Discover surface actually calls this contract, not a copy ---
 const world = read('static/orena/ui/world.js');
-assert.match(world, /renderVocabularyRow/);
+assert.match(world, /renderVocabularyBrowseCard/);
 assert.match(world, /api\.vocabularyLibraryCollections\(language\)/);
 assert.match(world, /api\.vocabularyLibraryCollection\(id\)/);
 assert.match(world, /vocabularyKeepPayload\(card, 'collection', support\)/);

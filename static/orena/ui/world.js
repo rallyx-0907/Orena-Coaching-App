@@ -20,8 +20,8 @@ import {
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import {
   renderVocabularyCollectionCard,
+  renderVocabularyBrowseCard,
   renderVocabularyFeedPreview,
-  renderVocabularyRow,
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
 
@@ -135,11 +135,11 @@ export function vocabularyLibraryCardAfterSlot(c, card, index) {
   if (card?.saved) {
     return `<span class="meta" data-vocabulary-kept>${esc(c.vocabularyAlreadyKept)}</span>`;
   }
-  return `<button class="quiet" data-library-keep="${index}">${esc(c.keep)} ＋</button>`;
+  return `<button class="quiet" data-library-keep="${index}">${esc(c.vocabularySave || c.keep)} ＋</button>`;
 }
 
 export function vocabularyFeedCardAfterSlot(c, index) {
-  return `<button class="quiet" data-feed-keep="${index}">${esc(c.keep)} ＋</button>`;
+  return `<button class="quiet" data-feed-keep="${index}">${esc(c.vocabularySave || c.keep)} ＋</button>`;
 }
 
 /* Inner content only - the caller owns the permanent
@@ -155,8 +155,8 @@ export function vocabularyLibrarySection(c, state = {}) {
     } else if (!open.items) {
       body = `<p class="loading" role="status">${esc(c.vocabularyLibraryLoading)}</p>`;
     } else {
-      body = `<button class="quiet" data-close-collection>${esc(c.vocabularyLibraryBack)}</button><h3>${esc(open.title || '')}</h3><section class="vocabulary-row-list vocabulary-card">${open.items
-        .map((card, index) => renderVocabularyRow(vocabularyDiscoverCopy(c, supportLanguage), card, { index, saveAttribute: 'data-library-keep' }))
+      body = `<button class="quiet" data-close-collection>${esc(c.vocabularyLibraryBack)}</button><h3>${esc(open.title || '')}</h3><section class="vocabulary-browse-grid vocabulary-card">${open.items
+        .map((card, index) => renderVocabularyBrowseCard(vocabularyDiscoverCopy(c, supportLanguage), card, { index, saveAttribute: 'data-library-keep', source: 'collection' }))
         .join('')}</section>`;
     }
   } else if (error) {

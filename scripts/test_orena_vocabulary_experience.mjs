@@ -1,15 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   masteryStars,
   compactSupportMeaning,
   rankForVocabulary,
   renderVocabularyCollectionCard,
+  renderVocabularyBrowseCard,
   renderVocabularyFeedPreview,
   renderVocabularyRow,
   renderVocabularyStudyCard,
   supportMeaning,
   vocabularyStatus,
 } from '../static/orena/ui/vocabulary-experience.js';
+import { vocabularyInteractionItems } from '../static/orena/ui/expression.js';
 
 const copy = {
   save: 'Save',
@@ -53,6 +56,7 @@ const card = {
 
 assert.equal(rankForVocabulary({ level: 'B1' }), 'B');
 assert.equal(rankForVocabulary({ level: 'HSK2' }), 'C');
+assert.equal(rankForVocabulary({ level: 'HSK 2' }), 'C');
 assert.equal(rankForVocabulary({ level: 'unknown' }), 'D');
 assert.equal(masteryStars({ review_stage: 0 }), '★☆☆');
 assert.equal(masteryStars({ review_stage: 2 }), '★★☆');
@@ -61,6 +65,15 @@ assert.equal(vocabularyStatus({ saved: false }), 'new');
 assert.equal(vocabularyStatus({ saved: true, review_stage: 0, due: true }), 'due');
 assert.equal(vocabularyStatus({ saved: true, review_stage: 1, due: false }), 'learning');
 assert.equal(vocabularyStatus({ saved: true, review_stage: 3, due: false }), 'mastered');
+const studyItems = [card];
+assert.equal(
+  vocabularyInteractionItems('study', { studyItems }),
+  studyItems,
+  'Study actions must bind to the focused study item pool',
+);
+const expressionSource = readFileSync(new URL('../static/orena/ui/expression.js', import.meta.url), 'utf8');
+assert.match(expressionSource, /const management = \(title, note = '', withBack = false\)/, 'management views expose an in-content return affordance');
+assert.match(expressionSource, /view === 'saved' \? management\(c\.vocabularyManage, c\.vocabularyOverviewNote, true\)/, 'Saved management can return to Vocabulary Overview');
 assert.equal(supportMeaning(card, 'vi'), 'phân bổ / cấp phát');
 assert.equal(compactSupportMeaning({ meanings: [{ language: 'vi', text: `Một nghĩa ngắn. ${'Một phần giải thích dài hơn để kiểm tra việc rút gọn nội dung. '.repeat(5)}` }] }, 'vi'), 'Một nghĩa ngắn.');
 
@@ -78,7 +91,31 @@ assert.match(collection, /class="vocabulary-rank-token"/);
 
 const feed = renderVocabularyFeedPreview(copy, card, { index: 2 });
 assert.match(feed, /data-vocabulary-rank="B"/);
+assert.match(feed, /class="vocabulary-browse-card"/);
 assert.match(feed, /data-vocabulary-feed-item="2"/);
+
+const browse = renderVocabularyBrowseCard(copy, { ...card, saved: false }, { index: 4 });
+assert.match(browse, /class="vocabulary-browse-card"/);
+assert.match(browse, /data-vocabulary-browse-card="4"/);
+assert.match(browse, /B1 · B/);
+assert.match(browse, /allocate/);
+assert.match(browse, /phân bổ \/ cấp phát/);
+assert.match(browse, /<p class="vocabulary-browse-card__pronunciation" lang="en">\/ˈæləkeɪt\/<\/p>/);
+assert.match(browse, /★★☆/);
+assert.match(browse, />Study<\/button>/);
+assert.match(browse, />\+ Save<\/button>/);
+assert.match(browse, /data-vocabulary-study="4"/);
+assert.match(browse, /data-vocabulary-save="4"/);
+
+const savedBrowse = renderVocabularyBrowseCard(copy, card, { index: 5 });
+assert.match(savedBrowse, />Saved ✓<\/button>/);
+assert.match(savedBrowse, /aria-label="Saved ✓"/);
+assert.match(savedBrowse, /aria-pressed="true"/);
+assert.doesNotMatch(savedBrowse, /vocabulary-feed-item__actions/);
+
+const unranked = renderVocabularyRow(copy, { ...card, level: '' }, { index: 6 });
+assert.match(unranked, />—<\/span>/, 'missing proficiency metadata stays visibly unknown');
+assert.doesNotMatch(unranked, /— · D/, 'missing proficiency must not imply the lowest rank');
 
 const row = renderVocabularyRow(copy, card, { index: 3 });
 assert.match(row, /class="vocabulary-row"/);
@@ -88,6 +125,7 @@ assert.match(row, /★★☆/);
 assert.match(row, /Due/);
 assert.match(row, /data-vocabulary-study="3"/);
 assert.match(row, /data-vocabulary-save="3"/);
+assert.match(row, /aria-label="Saved ✓"/);
 
 const study = renderVocabularyStudyCard(copy, card, { index: 0 });
 assert.match(study, /class="vocabulary-study-card"/);
@@ -96,7 +134,11 @@ assert.match(study, /data-study-back/);
 assert.match(study, /data-study-flip/);
 assert.match(study, /data-study-grade="again"/);
 assert.match(study, /phân bổ \/ cấp phát/);
-assert.match(study, /aria-label="Saved"/);
+assert.match(study, /aria-label="Saved ✓"/);
+assert.match(study, />Saved ✓<\/button>/);
 assert.doesNotMatch(study, /Keep for later/);
+
+const unrankedStudy = renderVocabularyStudyCard(copy, { ...card, level: '' }, { index: 7 });
+assert.doesNotMatch(unrankedStudy, /— · D/, 'Study must not invent a rank for an ungraded saved word');
 
 console.log('Orena Vocabulary Experience helpers: rank, mastery, compact row, study card PASS');

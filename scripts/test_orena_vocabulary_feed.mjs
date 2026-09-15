@@ -58,7 +58,7 @@ for (const ui of ['en', 'zh']) {
 
   // A real feed is a compact discovery surface and offers save.
   const withItems = vocabularyFeedSection(c, { items: [cardZH] });
-  assert.match(withItems, /class="vocabulary-feed-item"/, 'Feed uses compact discovery items');
+  assert.match(withItems, /class="vocabulary-browse-card"/, 'Feed uses compact discovery cards');
   assert.match(withItems, /休息/);
   assert.match(withItems, /data-feed-keep="0"/);
 }

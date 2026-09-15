@@ -20,7 +20,7 @@ function value(input) {
 }
 
 export function rankForVocabulary(card = {}) {
-  const level = value(card.level).toUpperCase();
+  const level = value(card.level).toUpperCase().replace(/\s+/g, '');
   return RANKS[level] || 'D';
 }
 
@@ -97,10 +97,10 @@ function statusLabel(copy, status) {
 
 function metadata(copy, card) {
   const level = value(card.level) || '—';
-  const rank = rankForVocabulary(card);
+  const rank = value(card.level) ? rankForVocabulary(card) : '';
   const framework = frameworkLabel(copy, card.framework);
   const status = vocabularyStatus(card);
-  return `<span class="vocabulary-meta"><span>${esc(level)} · ${esc(rank)}</span>${framework ? `<span>${esc(framework)}</span>` : ''}<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span><span class="vocabulary-state vocabulary-state--${esc(status)}">${esc(statusLabel(copy, status))}</span></span>`;
+  return `<span class="vocabulary-meta">${rank ? `<span>${esc(level)} · ${esc(rank)}</span>` : `<span>${esc(level)}</span>`}${framework ? `<span>${esc(framework)}</span>` : ''}<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span><span class="vocabulary-state vocabulary-state--${esc(status)}">${esc(statusLabel(copy, status))}</span></span>`;
 }
 
 export function renderVocabularyCollectionCard(copy, collection, { index = 0 } = {}) {
@@ -110,14 +110,39 @@ export function renderVocabularyCollectionCard(copy, collection, { index = 0 } =
   const percent = total ? Math.round((learned / total) * 100) : 0;
   const rank = rankForVocabulary(collection);
   const framework = frameworkLabel(copy, collection.framework);
-  return `<article class="vocabulary-collection-card" data-vocabulary-rank="${esc(rank)}" data-vocabulary-collection-card="${esc(index)}"><button class="vocabulary-collection-card__open" data-vocabulary-collection="${esc(collection.id)}" data-open-collection="${esc(collection.id)}"><span class="vocabulary-collection-card__cap"><span class="vocabulary-collection-card__eyebrow">${esc(collection.level || '')} · ${esc(framework)}</span><span class="vocabulary-rank-token" aria-label="${esc(copy.rank || 'Rank')} ${esc(rank)}">${esc(rank)}</span></span><h3>${esc(collection.title || '')}</h3>${collection.topic ? `<p>${esc(collection.topic)}</p>` : ''}<div class="vocabulary-collection-card__progress"><span>${esc(learned)} / ${esc(total)} ${esc(copy.words || 'words')}</span><span>${esc(percent)}%</span></div><div class="vocabulary-progress" aria-hidden="true"><span style="width:${percent}%"></span></div><div class="vocabulary-collection-card__stats"><span>${esc(progress.learning_count || 0)} ${esc(copy.learning || 'Learning')}</span><span>${esc(progress.due_count || 0)} ${esc(copy.due || 'Due')}</span><span>${esc(progress.mastered_count || 0)} ${esc(copy.mastered || 'Mastered')}</span></div></button></article>`;
+  return `<article class="vocabulary-collection-card" data-vocabulary-rank="${esc(rank)}" data-vocabulary-collection-card="${esc(index)}"><button class="vocabulary-collection-card__open" data-vocabulary-collection="${esc(collection.id)}" data-open-collection="${esc(collection.id)}"><span class="vocabulary-collection-card__cap"><span class="vocabulary-collection-card__eyebrow">${esc(collection.level || '')} · ${esc(framework)}</span><span class="vocabulary-rank-token" aria-label="${esc(copy.rank || 'Rank')} ${esc(rank)}">${esc(rank)}</span></span><h3>${esc(collection.title || '')}</h3>${collection.topic ? `<p>${esc(collection.topic)}</p>` : ''}<div class="vocabulary-collection-card__progress"><span>${esc(learned)} / ${esc(total)} ${esc(copy.words || 'words')}</span><span>${esc(percent)}%</span></div><div class="vocabulary-progress" aria-hidden="true"><span style="width:${percent}%"></span></div><div class="vocabulary-collection-card__stats"><span>${esc(progress.learning_count || 0)} ${esc(copy.learning || 'Learning')}</span><span>${esc(progress.due_count || 0)} ${esc(copy.due || 'Due')}</span><span>${esc(progress.mastered_count || 0)} ${esc(copy.mastered || 'Mastered')}</span></div><span class="vocabulary-collection-card__footer">${esc(copy.open || 'Open')} <span aria-hidden="true">→</span></span></button></article>`;
+}
+
+function browseMetadata(copy, card) {
+  const parts = [];
+  const partOfSpeech = value(card.part_of_speech);
+  const framework = frameworkLabel(copy, card.framework);
+  const topic = value(card.topic);
+  if (partOfSpeech) parts.push(partOfSpeech);
+  if (framework) parts.push(framework);
+  if (topic) parts.push(topic);
+  if (!parts.length) return '';
+  return `<p class="vocabulary-browse-card__meta">${parts.map((part) => `<span>${esc(part)}</span>`).join('<span aria-hidden="true">·</span>')}</p>`;
+}
+
+export function renderVocabularyBrowseCard(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save', source = 'browse' } = {}) {
+  const language = value(card.identity?.language) || 'en';
+  const headword = value(card.headword);
+  const meaning = compactSupportMeaning(card, copy.supportLanguage);
+  const pronunciation = value(card.pronunciation);
+  const level = value(card.level);
+  const rank = level ? rankForVocabulary(card) : '';
+  const stars = masteryStars(card);
+  const state = vocabularyStatus(card);
+  const saved = Boolean(card.saved);
+  const sourceAttr = source ? ` data-vocabulary-source="${esc(source)}"` : '';
+  const feedAttr = source === 'feed' ? ` data-vocabulary-feed-item="${esc(index)}"` : '';
+  const saveLabel = saved ? `${copy.saved || 'Saved'} ✓` : `+ ${copy.save || 'Save'}`;
+  return `<article class="vocabulary-browse-card" data-vocabulary-rank="${esc(rank || 'unknown')}" data-vocabulary-browse-card="${esc(index)}"${sourceAttr}${feedAttr}><div class="vocabulary-browse-card__top"><span class="vocabulary-browse-card__level">${esc(level ? `${level} · ${rank}` : '—')}</span>${rank ? `<span class="vocabulary-rank-token" aria-label="${esc(copy.rank || 'Rank')} ${esc(rank)}">${esc(rank)}</span>` : ''}</div><div class="vocabulary-browse-card__content"><h3 lang="${esc(language)}">${esc(headword)}</h3><p class="vocabulary-browse-card__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(meaning)}</p>${pronunciation ? `<p class="vocabulary-browse-card__pronunciation" lang="${esc(language)}">${esc(pronunciation)}</p>` : ''}${browseMetadata(copy, card)}</div><div class="vocabulary-browse-card__status"><span class="vocabulary-stars" aria-label="${esc(stars)}">${esc(stars)}</span><span class="vocabulary-state vocabulary-state--${esc(state)}">${esc(statusLabel(copy, state))}</span></div><div class="vocabulary-browse-card__actions"><button class="primary vocabulary-browse-card__study" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="outline vocabulary-browse-card__save" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" aria-pressed="${saved ? 'true' : 'false'}" ${saved ? 'disabled' : ''}>${esc(saveLabel)}</button></div></article>`;
 }
 
 export function renderVocabularyFeedPreview(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {
-  const language = value(card.identity?.language) || 'en';
-  const meaning = compactSupportMeaning(card, copy.supportLanguage);
-  const rank = rankForVocabulary(card);
-  return `<article class="vocabulary-feed-item" data-vocabulary-rank="${esc(rank)}" data-vocabulary-feed-item="${esc(index)}"><div class="vocabulary-feed-item__content"><span class="vocabulary-feed-item__level">${esc(value(card.level) || '—')} · ${esc(rank)}</span><h3 lang="${esc(language)}">${esc(card.headword)}</h3><p lang="${esc(copy.supportLanguage || 'en')}">${esc(meaning)}</p></div><div class="vocabulary-feed-item__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(card.saved ? copy.saved : copy.save)}" ${card.saved ? 'disabled aria-pressed="true"' : ''}>${esc(card.saved ? copy.saved : copy.save)}</button></div></article>`;
+  return renderVocabularyBrowseCard(copy, card, { index, saveAttribute, source: 'feed' });
 }
 
 export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {
@@ -126,7 +151,9 @@ export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'da
   const translation = compactSupportMeaning(card, copy.supportLanguage);
   const pronunciation = value(card.pronunciation);
   const saved = Boolean(card.saved);
-  return `<article class="vocabulary-row" data-vocabulary-rank="${esc(rankForVocabulary(card))}" data-vocabulary-row="${esc(index)}"><div class="vocabulary-row__word"><strong lang="${esc(language)}">${esc(headword)}</strong>${pronunciation ? `<span class="vocabulary-row__pronunciation">${esc(pronunciation)}</span>` : ''}</div><div class="vocabulary-row__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(translation || targetMeaning(card))}</div>${metadata(copy, card)}<div class="vocabulary-row__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(saved ? copy.saved : copy.save)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saved ? copy.saved : copy.save)}</button></div></article>`;
+  const saveLabel = saved ? `${copy.saved} ✓` : copy.save;
+  const rank = value(card.level) ? rankForVocabulary(card) : '';
+  return `<article class="vocabulary-row" data-vocabulary-rank="${esc(rank || 'unknown')}" data-vocabulary-row="${esc(index)}"><div class="vocabulary-row__word"><strong lang="${esc(language)}">${esc(headword)}</strong>${pronunciation ? `<span class="vocabulary-row__pronunciation">${esc(pronunciation)}</span>` : ''}</div><div class="vocabulary-row__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(translation || targetMeaning(card))}</div>${metadata(copy, card)}<div class="vocabulary-row__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div></article>`;
 }
 
 function orthography(card, copy) {
@@ -150,5 +177,8 @@ export function renderVocabularyStudyCard(copy, card, { index = 0 } = {}) {
   const definition = targetMeaning(card);
   const saved = Boolean(card.saved);
   const status = vocabularyStatus(card);
-  return `<article class="vocabulary-study-card" data-vocabulary-rank="${esc(rankForVocabulary(card))}" data-vocabulary-index="${esc(index)}" data-study-state="front"><div class="vocabulary-study-card__front" data-study-front><div class="vocabulary-study-card__top"><span>${esc(value(card.level) || '—')}</span><span class="vocabulary-rank-badge">${esc(rankForVocabulary(card))}</span><span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span></div><div class="vocabulary-study-card__target"><h2 lang="${esc(language)}">${esc(headword)}</h2>${pronunciation ? `<p>${esc(pronunciation)} <button class="icon-button" data-study-audio aria-label="${esc(copy.audio || 'Play audio')}">◖</button></p>` : ''}</div><p class="vocabulary-study-card__prompt">${esc(copy.flip)}</p><button class="quiet" data-study-flip>${esc(copy.flip)}</button></div><div class="vocabulary-study-card__back" data-study-back hidden><div class="vocabulary-study-card__top"><span>${esc(value(card.level) || '—')} · ${esc(rankForVocabulary(card))}</span><span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span></div><h2 lang="${esc(language)}">${esc(headword)}</h2>${card.part_of_speech || pronunciation ? `<p class="vocabulary-study__pronunciation">${esc(value(card.part_of_speech))}${card.part_of_speech && pronunciation ? ' · ' : ''}${esc(pronunciation)}</p>` : ''}<p class="vocabulary-study__support" lang="${esc(copy.supportLanguage || 'en')}">${esc(support)}</p>${definition && definition !== support ? `<p class="vocabulary-study__definition" lang="${esc(language)}">${esc(definition)}</p>` : ''}${card.example ? `<section><h3>${esc(copy.example)}</h3><p lang="${esc(language)}">${esc(card.example)}</p></section>` : ''}${card.usage ? `<section><h3>${esc(copy.usage)}</h3><p lang="${esc(language)}">${esc(card.usage)}</p></section>` : ''}${orthography(card, copy)}<div class="vocabulary-study-card__actions"><button class="quiet" data-study-flip>${esc(copy.front || copy.flip)}</button><button class="quiet" data-vocabulary-save="${esc(index)}" aria-label="${esc(saved ? copy.saved : copy.save)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saved ? copy.saved : copy.save)}</button></div>${saved ? `<div class="vocabulary-study-card__grades" aria-label="${esc(copy.review)}"><button class="outline" data-study-grade="again">${esc(copy.again)}</button><button class="primary" data-study-grade="got_it">${esc(copy.gotIt)}</button></div>` : ''}<span class="vocabulary-state vocabulary-state--${esc(status)}">${esc(statusLabel(copy, status))}</span></div></article>`;
+  const level = value(card.level);
+  const rank = level ? rankForVocabulary(card) : '';
+  const saveLabel = saved ? `${copy.saved} ✓` : copy.save;
+  return `<article class="vocabulary-study-card" data-vocabulary-rank="${esc(rank || 'unknown')}" data-vocabulary-index="${esc(index)}" data-study-state="front"><div class="vocabulary-study-card__front" data-study-front><div class="vocabulary-study-card__top"><span>${esc(level || '—')}</span>${rank ? `<span class="vocabulary-rank-badge">${esc(rank)}</span>` : ''}<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span></div><div class="vocabulary-study-card__target"><h2 lang="${esc(language)}">${esc(headword)}</h2>${pronunciation ? `<p lang="${esc(language)}">${esc(pronunciation)} <button class="icon-button" data-study-audio aria-label="${esc(copy.audio || 'Play audio')}">◖</button></p>` : ''}</div><p class="vocabulary-study-card__prompt">${esc(copy.flip)}</p><button class="quiet" data-study-flip>${esc(copy.flip)}</button></div><div class="vocabulary-study-card__back" data-study-back hidden><div class="vocabulary-study-card__top"><span>${esc(level ? `${level} · ${rank}` : '—')}</span><span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span></div><h2 lang="${esc(language)}">${esc(headword)}</h2>${card.part_of_speech || pronunciation ? `<p class="vocabulary-study__pronunciation" lang="${esc(language)}">${esc(value(card.part_of_speech))}${card.part_of_speech && pronunciation ? ' · ' : ''}${esc(pronunciation)}</p>` : ''}<p class="vocabulary-study__support" lang="${esc(copy.supportLanguage || 'en')}">${esc(support)}</p>${definition && definition !== support ? `<p class="vocabulary-study__definition" lang="${esc(language)}">${esc(definition)}</p>` : ''}${card.example ? `<section><h3>${esc(copy.example)}</h3><p lang="${esc(language)}">${esc(card.example)}</p></section>` : ''}${card.usage ? `<section><h3>${esc(copy.usage)}</h3><p lang="${esc(language)}">${esc(card.usage)}</p></section>` : ''}${orthography(card, copy)}<div class="vocabulary-study-card__actions"><button class="quiet" data-study-flip>${esc(copy.front || copy.flip)}</button><button class="quiet" data-vocabulary-save="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div>${saved ? `<div class="vocabulary-study-card__grades" aria-label="${esc(copy.review)}"><button class="outline" data-study-grade="again">${esc(copy.again)}</button><button class="primary" data-study-grade="got_it">${esc(copy.gotIt)}</button></div>` : ''}<span class="vocabulary-state vocabulary-state--${esc(status)}">${esc(statusLabel(copy, status))}</span></div></article>`;
 }
