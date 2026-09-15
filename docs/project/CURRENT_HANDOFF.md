@@ -64,7 +64,8 @@ local/provider credentials; ASR remains unconfigured.
 
 Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
 four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
-Switch learning language in-page. Stage task files only.
+Runner note: app cwd is `/app` (not `/workspace`); image lacks pytest, so install
+it only in the ephemeral gate. Switch learning language in-page; stage task files.
 
 ## NEXT EXACT TASK
 
@@ -147,12 +148,9 @@ None identified.
 
 ## Baseline test evidence
 
-The 20 inherited Python failures in `test_governance_contract.py`,
-`test_media_ingestion.py`, and `test_media_learning.py` were reconciled against
-the current Orena architecture: 17 assertions now validate canonical documents
-and paths, while the five R8/R10/R11/R12/R20 matrix tests were retired with the
-removed legacy wrappers and frozen-native scope. The exact local suite now
-passes with `991 passed, 107 skipped, 4 warnings`; this is not a CI claim.
+Baseline suite now passes locally with `995 passed, 107 skipped, 4 warnings`;
+this is not a CI claim. Inherited governance/media failures were reconciled
+against the current architecture; retired legacy matrix tests are not regressions.
 
 ## HUMAN GATES
 
