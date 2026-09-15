@@ -527,7 +527,8 @@ function vocabularyStatusMatches(card, filter) {
 }
 
 function vocabularyLevelOrder(level) {
-  const normalized = String(level || '').toUpperCase();
+  const normalized = String(level || '').toUpperCase().replace(/[–—]/g, '-').replace(/\s+/g, '');
+  if (normalized === 'HSK7-9') return 7;
   const match = normalized.match(/^(?:HSK)?([1-6])$/);
   if (match) return Number(match[1]);
   return { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 }[normalized] || 0;

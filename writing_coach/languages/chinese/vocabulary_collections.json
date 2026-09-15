@@ -91,5 +91,90 @@
       {"word": "认识", "phonetic": "rènshi", "part_of_speech": "verb", "definition": "对人或事物有印象和了解", "support_translations": {"vi": "quen biết", "en": "to know (someone)"}, "level": "HSK2", "topic": "relationships", "examples": [{"language": "zh", "text": "我认识一个在北京工作的朋友。"}]},
       {"word": "准备", "phonetic": "zhǔnbèi", "part_of_speech": "verb", "definition": "为某事事先安排", "support_translations": {"vi": "chuẩn bị", "en": "to prepare"}, "level": "HSK2", "topic": "everyday", "examples": [{"language": "zh", "text": "我正在准备明天的考试。"}]}
     ]
+  },
+  {
+    "id": "hsk-3",
+    "language_code": "zh",
+    "framework": "hsk",
+    "level": "HSK3",
+    "topic": null,
+    "title": "HSK 3",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated HSK 3 vocabulary for the intermediate learning-flow seed batch. This is not licensed or sourced HSK test material."
+    },
+    "entries": [
+      {"word": "重要", "phonetic": "zhòngyào", "part_of_speech": "adjective", "definition": "有很大意义或作用", "support_translations": {"vi": "quan trọng", "en": "important"}, "level": "HSK3", "topic": "everyday", "examples": [{"language": "zh", "text": "这次考试对我来说很重要。"}]},
+      {"word": "习惯", "phonetic": "xíguàn", "part_of_speech": "noun/verb", "definition": "长期形成的行为方式；逐渐适应", "support_translations": {"vi": "thói quen; quen với", "en": "habit; to get used to"}, "level": "HSK3", "topic": "everyday", "examples": [{"language": "zh", "text": "我已经习惯每天早起了。"}]},
+      {"word": "影响", "phonetic": "yǐngxiǎng", "part_of_speech": "noun/verb", "definition": "对人或事物产生作用", "support_translations": {"vi": "ảnh hưởng", "en": "influence; to affect"}, "level": "HSK3", "topic": "everyday", "examples": [{"language": "zh", "text": "睡眠会影响第二天的学习效果。"}]}
+    ]
+  },
+  {
+    "id": "hsk-4",
+    "language_code": "zh",
+    "framework": "hsk",
+    "level": "HSK4",
+    "topic": null,
+    "title": "HSK 4",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated HSK 4 vocabulary for the upper-intermediate learning-flow seed batch. This is not licensed or sourced HSK test material."
+    },
+    "entries": [
+      {"word": "适合", "phonetic": "shìhé", "part_of_speech": "verb", "definition": "适宜，符合某人的需要或情况", "support_translations": {"vi": "phù hợp", "en": "to suit; to be suitable"}, "level": "HSK4", "topic": "everyday", "examples": [{"language": "zh", "text": "这本书很适合初学者。"}]},
+      {"word": "复杂", "phonetic": "fùzá", "part_of_speech": "adjective", "definition": "事物的部分多而难以理解或处理", "support_translations": {"vi": "phức tạp", "en": "complicated; complex"}, "level": "HSK4", "topic": "ideas", "examples": [{"language": "zh", "text": "这个问题没有你想的那么复杂。"}]},
+      {"word": "负责", "phonetic": "fùzé", "part_of_speech": "verb/adjective", "definition": "承担责任；认真可靠", "support_translations": {"vi": "phụ trách; có trách nhiệm", "en": "to be responsible for; responsible"}, "level": "HSK4", "topic": "work", "examples": [{"language": "zh", "text": "她负责安排这次活动。"}]}
+    ]
+  },
+  {
+    "id": "hsk-5",
+    "language_code": "zh",
+    "framework": "hsk",
+    "level": "HSK5",
+    "topic": null,
+    "title": "HSK 5",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated HSK 5 vocabulary for advanced reading and discussion seed coverage. This is not licensed or sourced HSK test material."
+    },
+    "entries": [
+      {"word": "逐渐", "phonetic": "zhújiàn", "part_of_speech": "adverb", "definition": "渐渐地，一点一点地", "support_translations": {"vi": "dần dần", "en": "gradually"}, "level": "HSK5", "topic": "change", "examples": [{"language": "zh", "text": "随着春天到来，天气逐渐变暖了。"}]},
+      {"word": "维持", "phonetic": "wéichí", "part_of_speech": "verb", "definition": "使继续保持原来的状态", "support_translations": {"vi": "duy trì", "en": "to maintain"}, "level": "HSK5", "topic": "relationships", "examples": [{"language": "zh", "text": "我们需要维持良好的合作关系。"}]},
+      {"word": "观点", "phonetic": "guāndiǎn", "part_of_speech": "noun", "definition": "对事物的看法或认识", "support_translations": {"vi": "quan điểm", "en": "viewpoint; opinion"}, "level": "HSK5", "topic": "ideas", "examples": [{"language": "zh", "text": "我理解你的观点，但我的看法不同。"}]}
+    ]
+  },
+  {
+    "id": "hsk-6",
+    "language_code": "zh",
+    "framework": "hsk",
+    "level": "HSK6",
+    "topic": null,
+    "title": "HSK 6",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated HSK 6 vocabulary for advanced reading and nuanced discussion seed coverage. This is not licensed or sourced HSK test material."
+    },
+    "entries": [
+      {"word": "诠释", "phonetic": "quánshì", "part_of_speech": "verb", "definition": "解释说明，尤其是对意义进行说明", "support_translations": {"vi": "diễn giải", "en": "to interpret; to explain"}, "level": "HSK6", "topic": "ideas", "examples": [{"language": "zh", "text": "这部电影重新诠释了这个古老的故事。"}]},
+      {"word": "辩证", "phonetic": "biànzhèng", "part_of_speech": "adjective", "definition": "全面联系地分析事物的方式", "support_translations": {"vi": "biện chứng", "en": "dialectical"}, "level": "HSK6", "topic": "ideas", "examples": [{"language": "zh", "text": "我们应该用辩证的眼光看待这个问题。"}]},
+      {"word": "兼顾", "phonetic": "jiāngù", "part_of_speech": "verb", "definition": "同时照顾到几个方面", "support_translations": {"vi": "cân nhắc đồng thời", "en": "to take into account; to balance"}, "level": "HSK6", "topic": "planning", "examples": [{"language": "zh", "text": "这份计划兼顾了效率和质量。"}]}
+    ]
+  },
+  {
+    "id": "hsk-7-9",
+    "language_code": "zh",
+    "framework": "hsk",
+    "level": "HSK7-9",
+    "topic": null,
+    "title": "HSK 7-9",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated HSK 7-9 vocabulary for the highest advanced learning-flow seed coverage. This is not licensed or sourced HSK test material."
+    },
+    "entries": [
+      {"word": "斟酌", "phonetic": "zhēnzhuó", "part_of_speech": "verb", "definition": "反复考虑事情是否妥当", "support_translations": {"vi": "cân nhắc kỹ", "en": "to deliberate; to consider carefully"}, "level": "HSK7-9", "topic": "ideas", "examples": [{"language": "zh", "text": "这件事关系重大，请你再斟酌一下。"}]},
+      {"word": "迭代", "phonetic": "diédài", "part_of_speech": "verb/noun", "definition": "重复进行改进或更新的过程", "support_translations": {"vi": "lặp và cải tiến", "en": "to iterate; iteration"}, "level": "HSK7-9", "topic": "technology", "examples": [{"language": "zh", "text": "产品需要通过不断迭代来改进。"}]},
+      {"word": "权衡", "phonetic": "quánhéng", "part_of_speech": "verb", "definition": "比较不同方面的利弊后作出选择", "support_translations": {"vi": "cân nhắc được mất", "en": "to weigh; to balance"}, "level": "HSK7-9", "topic": "decisions", "examples": [{"language": "zh", "text": "在速度和准确性之间，我们必须权衡利弊。"}]}
+    ]
   }
 ]

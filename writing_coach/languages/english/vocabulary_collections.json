@@ -96,5 +96,53 @@
       {"word": "memory", "part_of_speech": "noun", "definition": "the faculty by which the mind stores and recalls information", "support_translations": {"vi": "trí nhớ"}, "level": "A2", "topic": "everyday", "phonetic": "/ˈmeməri/", "examples": [{"language": "en", "text": "That song brings back a happy memory."}]},
       {"word": "imagination", "part_of_speech": "noun", "definition": "the ability to form new ideas or images not present to the senses", "support_translations": {"vi": "trí tưởng tượng"}, "level": "B1", "topic": "everyday", "phonetic": "/ɪˌmædʒəˈneɪʃən/", "examples": [{"language": "en", "text": "Stories give children space to use their imagination."}]}
     ]
+  },
+  {
+    "id": "cefr-b2",
+    "language_code": "en",
+    "framework": "cefr-internal",
+    "level": "B2",
+    "topic": "academic",
+    "title": "B2 Precision",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated B2 vocabulary for precise discussion and analysis. This is a small visual and learning-flow seed batch, not a complete CEFR word list."
+    },
+    "entries": [
+      {"word": "substantial", "part_of_speech": "adjective", "definition": "large in amount, size, or importance", "support_translations": {"vi": "đáng kể / lớn"}, "level": "B2", "topic": "academic", "phonetic": "/səbˈstænʃəl/", "examples": [{"language": "en", "text": "The redesign produced a substantial improvement in reading time."}]},
+      {"word": "coherent", "part_of_speech": "adjective", "definition": "logical, consistent, and easy to understand", "support_translations": {"vi": "mạch lạc / nhất quán"}, "level": "B2", "topic": "academic", "phonetic": "/koʊˈhɪrənt/", "examples": [{"language": "en", "text": "Her argument is coherent and easy to follow."}]}
+    ]
+  },
+  {
+    "id": "cefr-c1",
+    "language_code": "en",
+    "framework": "cefr-internal",
+    "level": "C1",
+    "topic": "academic",
+    "title": "C1 Academic",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated C1 vocabulary for nuanced academic and professional expression. This is a small visual and learning-flow seed batch, not a complete CEFR word list."
+    },
+    "entries": [
+      {"word": "meticulous", "part_of_speech": "adjective", "definition": "very careful and precise about details", "support_translations": {"vi": "tỉ mỉ / kỹ lưỡng"}, "level": "C1", "topic": "academic", "phonetic": "/məˈtɪkjələs/", "examples": [{"language": "en", "text": "She kept meticulous records of every experiment."}]},
+      {"word": "nuanced", "part_of_speech": "adjective", "definition": "showing subtle differences or distinctions", "support_translations": {"vi": "tinh tế / có sắc thái"}, "level": "C1", "topic": "academic", "phonetic": "/ˈnuːɑːnst/", "examples": [{"language": "en", "text": "The report gives a nuanced account of the policy change."}]}
+    ]
+  },
+  {
+    "id": "cefr-c2",
+    "language_code": "en",
+    "framework": "cefr-internal",
+    "level": "C2",
+    "topic": "academic",
+    "title": "C2 Academic",
+    "provenance": {
+      "origin": "curated",
+      "note": "Orena-curated C2 vocabulary for highly advanced reading and discussion. This is a small visual and learning-flow seed batch, not a complete CEFR word list."
+    },
+    "entries": [
+      {"word": "ubiquitous", "part_of_speech": "adjective", "definition": "present, appearing, or found everywhere", "support_translations": {"vi": "phổ biến khắp nơi / hiện diện ở mọi nơi"}, "level": "C2", "topic": "academic", "phonetic": "/juːˈbɪkwɪtəs/", "examples": [{"language": "en", "text": "Smartphones have become ubiquitous in modern life."}]},
+      {"word": "paradigm", "part_of_speech": "noun", "definition": "a typical model or pattern of something", "support_translations": {"vi": "mô hình / hệ hình"}, "level": "C2", "topic": "academic", "phonetic": "/ˈpærədaɪm/", "examples": [{"language": "en", "text": "The discovery shifted the scientific paradigm."}]}
+    ]
   }
 ]

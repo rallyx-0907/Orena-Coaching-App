@@ -13,13 +13,14 @@ membership join here — see
 catalog, not schema" for why none is needed.
 
 **Seed size is intentionally partial.** ``toeic-600-essential`` and
-``common-3000`` ship 35 authored entries each; ``hsk-1`` ships 33 and
-``hsk-2`` ships 32. None of these is the full 600/3000/official-HSK breadth
-named by the collection title — growing a collection toward that breadth is
-incremental content authoring against its JSON file, not a later code task.
-Provenance on every collection states this and states, truthfully, that the
-content is Orena-curated vocabulary organized to match a well-known
-framework's publicly known scope, not licensed or reproduced test material.
+``common-3000`` ship 35 authored entries each; ``hsk-1`` and ``hsk-2`` ship
+the larger first seed batches, while the added CEFR B2/C1/C2 and HSK3–HSK7-9
+collections are small level-coverage batches for the current card experience.
+None of these is the full breadth named by its collection title — growing a
+collection is incremental content authoring against its JSON file, not a
+later code task. Provenance on every collection states truthfully that the
+content is Orena-curated vocabulary organized to match a public framework's
+scope, not licensed or reproduced test material.
 """
 
 from __future__ import annotations

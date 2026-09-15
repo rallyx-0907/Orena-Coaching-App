@@ -1,10 +1,9 @@
 """Task B: the static curated Vocabulary Library catalog.
 
-Covers the four seed collections (`toeic-600-essential`, `common-3000`,
-`hsk-1`, `hsk-2`), cross-language aggregation, load-time denormalization, the
-word-to-collection index, structural validation failures, and
-card-projection compatibility with `vocabulary_card_from_catalog_entry`
-(Task A).
+Covers the English/Chinese seed collections, cross-language aggregation,
+load-time denormalization, the word-to-collection index, structural validation
+failures, and card-projection compatibility with
+`vocabulary_card_from_catalog_entry` (Task A).
 """
 
 from __future__ import annotations
@@ -54,20 +53,28 @@ def _valid_collection(**overrides: object) -> dict[str, object]:
 def test_lists_both_english_collections_with_positive_item_counts() -> None:
     summaries = list_vocabulary_collections("en")
     ids = {summary["id"] for summary in summaries}
-    assert ids == {"toeic-600-essential", "common-3000"}
+    assert ids == {
+        "toeic-600-essential",
+        "common-3000",
+        "cefr-b2",
+        "cefr-c1",
+        "cefr-c2",
+    }
     for summary in summaries:
         assert summary["language_code"] == "en"
-        assert summary["item_count"] >= 30
+        minimum = 30 if summary["id"] in {"toeic-600-essential", "common-3000"} else 2
+        assert summary["item_count"] >= minimum
         assert summary["provenance"]["origin"] == "curated"
 
 
 def test_lists_both_chinese_collections_with_positive_item_counts() -> None:
     summaries = list_vocabulary_collections("zh")
     ids = {summary["id"] for summary in summaries}
-    assert ids == {"hsk-1", "hsk-2"}
+    assert ids == {"hsk-1", "hsk-2", "hsk-3", "hsk-4", "hsk-5", "hsk-6", "hsk-7-9"}
     for summary in summaries:
         assert summary["language_code"] == "zh"
-        assert summary["item_count"] >= 30
+        minimum = 30 if summary["id"] in {"hsk-1", "hsk-2"} else 3
+        assert summary["item_count"] >= minimum
 
 
 def test_list_vocabulary_collections_sorted_by_framework_then_level_then_title() -> None:
@@ -120,14 +127,20 @@ def test_get_vocabulary_collection_unknown_id_returns_none() -> None:
 def test_all_vocabulary_entries_covers_every_english_collection() -> None:
     entries = all_vocabulary_entries("en")
     collection_ids = {entry["collection_id"] for entry in entries}
-    assert collection_ids == {"toeic-600-essential", "common-3000"}
+    assert collection_ids == {
+        "toeic-600-essential",
+        "common-3000",
+        "cefr-b2",
+        "cefr-c1",
+        "cefr-c2",
+    }
     assert all(entry["language_code"] == "en" for entry in entries)
 
 
 def test_all_vocabulary_entries_covers_every_chinese_collection() -> None:
     entries = all_vocabulary_entries("zh")
     collection_ids = {entry["collection_id"] for entry in entries}
-    assert collection_ids == {"hsk-1", "hsk-2"}
+    assert collection_ids == {"hsk-1", "hsk-2", "hsk-3", "hsk-4", "hsk-5", "hsk-6", "hsk-7-9"}
     assert all(entry["language_code"] == "zh" for entry in entries)
 
 
@@ -272,3 +285,13 @@ def test_seed_catalog_supports_pronunciation_and_context_examples(language_code:
         assert entry["examples"]
         assert entry["examples"][0]["language"] == language_code
         assert entry["examples"][0]["text"]
+
+
+def test_seed_catalog_covers_the_requested_english_level_range() -> None:
+    levels = {entry["level"] for entry in all_vocabulary_entries("en")}
+    assert {"A1", "A2", "B1", "B2", "C1", "C2"} <= levels
+
+
+def test_seed_catalog_covers_the_requested_hsk_level_range() -> None:
+    levels = {entry["level"] for entry in all_vocabulary_entries("zh")}
+    assert {"HSK1", "HSK2", "HSK3", "HSK4", "HSK5", "HSK6", "HSK7-9"} <= levels

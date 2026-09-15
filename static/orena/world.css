@@ -1690,28 +1690,22 @@
   gap: 14px;
 }
 .vocabulary-collection-card {
-  --vocabulary-rank-color: var(--line);
+  --vocabulary-level-color: var(--line);
   position: relative;
   overflow: hidden;
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--vocabulary-rank-color) 55%, var(--line));
-  border-top: 3px solid var(--vocabulary-rank-color);
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 55%, var(--line));
+  border-top: 3px solid var(--vocabulary-level-color);
   border-radius: 10px;
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--vocabulary-rank-color) 12%, transparent), transparent 42%), var(--surface);
+  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--vocabulary-level-color) 12%, transparent), transparent 42%), var(--surface);
 }
-.vocabulary-collection-card[data-vocabulary-rank="D"],
-.vocabulary-study-card[data-vocabulary-rank="D"] { --vocabulary-rank-color: var(--coral); }
-.vocabulary-collection-card[data-vocabulary-rank="C"],
-.vocabulary-study-card[data-vocabulary-rank="C"] { --vocabulary-rank-color: var(--muted); }
-.vocabulary-collection-card[data-vocabulary-rank="B"],
-.vocabulary-study-card[data-vocabulary-rank="B"] { --vocabulary-rank-color: var(--sun); }
-.vocabulary-collection-card[data-vocabulary-rank="A"],
-.vocabulary-study-card[data-vocabulary-rank="A"] { --vocabulary-rank-color: var(--sage); }
-.vocabulary-collection-card[data-vocabulary-rank="S"],
-.vocabulary-study-card[data-vocabulary-rank="S"] { --vocabulary-rank-color: var(--accent); }
-.vocabulary-collection-card[data-vocabulary-rank="S+"],
-.vocabulary-study-card[data-vocabulary-rank="S+"] { --vocabulary-rank-color: var(--coral); }
-.vocabulary-study-card[data-vocabulary-rank="S+"] { background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--coral) 20%, transparent), transparent 42%), radial-gradient(circle at 0 100%, color-mix(in srgb, var(--sage) 14%, transparent), transparent 38%), var(--surface); }
+[data-vocabulary-skin="bronze"] { --vocabulary-level-color: var(--coral); --vocabulary-level-secondary: var(--coral); }
+[data-vocabulary-skin="silver"] { --vocabulary-level-color: var(--muted); --vocabulary-level-secondary: var(--muted); }
+[data-vocabulary-skin="gold"] { --vocabulary-level-color: var(--sun); --vocabulary-level-secondary: var(--sun); }
+[data-vocabulary-skin="platinum"] { --vocabulary-level-color: var(--sage); --vocabulary-level-secondary: var(--sage); }
+[data-vocabulary-skin="violet"] { --vocabulary-level-color: var(--accent); --vocabulary-level-secondary: var(--accent); }
+[data-vocabulary-skin="aurora"] { --vocabulary-level-color: var(--accent); --vocabulary-level-secondary: var(--coral); }
+[data-vocabulary-skin="neutral"] { --vocabulary-level-color: var(--accent); --vocabulary-level-secondary: var(--accent); }
 .vocabulary-collection-card__cap { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .vocabulary-collection-card__open {
   display: grid;
@@ -1728,18 +1722,6 @@
 .vocabulary-collection-card__open:hover,
 .vocabulary-collection-card__open:focus-visible { background: var(--sage-surface); }
 .vocabulary-collection-card__eyebrow { color: var(--muted); font-size: var(--text-xs); }
-.vocabulary-rank-token {
-  display: inline-grid;
-  min-width: 29px;
-  min-height: 25px;
-  place-items: center;
-  padding: 2px 6px;
-  color: var(--ink);
-  border: 1px solid var(--vocabulary-rank-color);
-  border-radius: 7px;
-  font-size: var(--text-xs);
-  font-weight: 800;
-}
 .vocabulary-collection-card h3 { margin: 0; font-size: 19px; }
 .vocabulary-collection-card p { margin: 0; color: var(--muted); font-size: var(--text-sm); }
 .vocabulary-collection-card__progress,
@@ -1808,23 +1790,29 @@
 .vocabulary-study-card {
   position: relative;
   overflow: hidden;
-  --vocabulary-rank-color: var(--accent);
   min-height: 500px;
   margin-top: 18px;
   padding: 26px;
   background:
-    linear-gradient(118deg, color-mix(in srgb, var(--vocabulary-rank-color) 19%, var(--surface)) 0%, var(--surface) 21%, color-mix(in srgb, var(--vocabulary-rank-color) 24%, var(--surface)) 47%, var(--surface) 75%, color-mix(in srgb, var(--vocabulary-rank-color) 14%, var(--surface)) 100%);
-  border: 4px solid color-mix(in srgb, var(--vocabulary-rank-color) 78%, var(--line));
+    linear-gradient(116deg,
+      color-mix(in srgb, var(--vocabulary-level-color) 44%, var(--surface)) 0%,
+      color-mix(in srgb, var(--surface) 84%, var(--vocabulary-level-color)) 15%,
+      color-mix(in srgb, var(--vocabulary-level-color) 22%, var(--surface)) 30%,
+      color-mix(in srgb, var(--surface) 95%, var(--vocabulary-level-secondary)) 45%,
+      color-mix(in srgb, var(--vocabulary-level-secondary) 37%, var(--surface)) 59%,
+      color-mix(in srgb, var(--surface) 84%, var(--vocabulary-level-color)) 76%,
+      color-mix(in srgb, var(--vocabulary-level-color) 34%, var(--surface)) 100%);
+  border: 4px solid color-mix(in srgb, var(--vocabulary-level-color) 84%, var(--line));
   border-radius: 18px;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-rank-color) 44%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface) 78%, transparent), 0 18px 38px color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 54%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 14%, transparent), 0 18px 38px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 .vocabulary-study-card::before {
   position: absolute;
-  inset: 8px;
+  inset: 7px;
   z-index: 0;
   content: '';
-  border: 1px solid color-mix(in srgb, var(--vocabulary-rank-color) 38%, transparent);
-  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 52%, transparent);
+  border-radius: 11px;
   pointer-events: none;
 }
 .vocabulary-study-card::after {
@@ -1832,8 +1820,30 @@
   inset: 0;
   z-index: 0;
   content: '';
-  background: linear-gradient(124deg, transparent 0 35%, color-mix(in srgb, var(--surface) 22%, transparent) 43%, transparent 51%);
+  background:
+    linear-gradient(116deg,
+      transparent 0 23%,
+      color-mix(in srgb, var(--surface) 52%, transparent) 31%,
+      color-mix(in srgb, var(--surface) 17%, transparent) 36%,
+      transparent 44%),
+    linear-gradient(116deg,
+      transparent 0 63%,
+      color-mix(in srgb, var(--ink) 8%, transparent) 71%,
+      transparent 79%);
+  opacity: .9;
   pointer-events: none;
+}
+.vocabulary-study-card[data-vocabulary-skin="aurora"] {
+  background:
+    linear-gradient(116deg,
+      color-mix(in srgb, var(--accent) 44%, var(--surface)) 0%,
+      color-mix(in srgb, var(--surface) 84%, var(--accent)) 15%,
+      color-mix(in srgb, var(--coral) 28%, var(--surface)) 30%,
+      color-mix(in srgb, var(--surface) 94%, var(--coral)) 45%,
+      color-mix(in srgb, var(--sage) 30%, var(--surface)) 60%,
+      color-mix(in srgb, var(--surface) 84%, var(--sage)) 76%,
+      color-mix(in srgb, var(--accent) 38%, var(--surface)) 100%);
+  border-color: color-mix(in srgb, var(--accent) 84%, var(--line));
 }
 .vocabulary-study-card__front,
 .vocabulary-study-card__back {
@@ -1846,7 +1856,14 @@
 }
 .vocabulary-study-card__top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: var(--text-sm); }
 .vocabulary-study-card__top > span:first-child { margin-right: auto; }
-.vocabulary-rank-badge { display: inline-grid; place-items: center; min-width: 32px; min-height: 32px; color: var(--ink); background: color-mix(in srgb, var(--vocabulary-rank-color) 28%, var(--surface)); border: 1px solid var(--vocabulary-rank-color); border-radius: 50%; font-weight: 700; }
+.vocabulary-study-card__top > span:first-child {
+  padding: 4px 9px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--vocabulary-level-color) 18%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 65%, var(--line));
+  border-radius: 99px;
+  font-weight: 750;
+}
 .vocabulary-study-card__target { display: grid; place-items: center; flex: 1; text-align: center; }
 .vocabulary-study-card h2 { margin: 0; font-family: var(--font-story, Georgia, serif); font-size: clamp(46px, 8vw, 82px); line-height: 1.05; }
 .vocabulary-study-card__target p,
@@ -1854,7 +1871,7 @@
 .vocabulary-study-card__prompt { margin: 0; color: var(--muted); text-align: center; }
 .vocabulary-study-card__front > [data-study-flip] { align-self: center; margin-top: 10px; }
 .vocabulary-study-card__back { overflow: hidden; }
-.vocabulary-study-card__back-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--vocabulary-rank-color) 70%, var(--line)) transparent; }
+.vocabulary-study-card__back-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--vocabulary-level-color) 70%, var(--line)) transparent; }
 .vocabulary-study-card__back h2 { margin: 8px 0 4px; overflow-wrap: anywhere; font-size: clamp(32px, 5vw, 48px); }
 .vocabulary-study__support { margin: 14px 0 4px; color: var(--accent); font-size: 22px; font-weight: 650; }
 .vocabulary-study__definition { margin: 0 0 10px; color: var(--muted); }
@@ -1862,8 +1879,8 @@
 .vocabulary-study__usage {
   margin-top: 10px;
   padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--vocabulary-rank-color) 42%, var(--line));
-  border-left: 3px solid var(--vocabulary-rank-color);
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 42%, var(--line));
+  border-left: 3px solid var(--vocabulary-level-color);
   border-radius: 10px;
   background: color-mix(in srgb, var(--surface) 74%, transparent);
 }
@@ -1940,7 +1957,8 @@
   margin-top: 24px;
 }
 .vocabulary-browse-card {
-  --vocabulary-rank-color: var(--accent);
+  --vocabulary-level-wash: color-mix(in srgb, var(--vocabulary-level-color) 18%, transparent);
+  --vocabulary-level-wash-secondary: transparent;
   position: relative;
   display: flex;
   min-width: 0;
@@ -1948,12 +1966,19 @@
   flex-direction: column;
   overflow: hidden;
   padding: 17px;
-  border: 3px solid color-mix(in srgb, var(--vocabulary-rank-color) 72%, var(--line));
+  border: 3px solid color-mix(in srgb, var(--vocabulary-level-color) 72%, var(--line));
   border-radius: 16px;
   background:
-    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--vocabulary-rank-color) 14%, transparent), transparent 46%),
+    linear-gradient(116deg,
+      color-mix(in srgb, var(--vocabulary-level-color) 22%, var(--surface)) 0%,
+      color-mix(in srgb, var(--surface) 94%, var(--vocabulary-level-color)) 22%,
+      color-mix(in srgb, var(--vocabulary-level-color) 11%, var(--surface)) 47%,
+      color-mix(in srgb, var(--surface) 96%, var(--vocabulary-level-color)) 68%,
+      color-mix(in srgb, var(--vocabulary-level-color) 18%, var(--surface)) 100%),
+    radial-gradient(circle at 100% 0, var(--vocabulary-level-wash), transparent 46%),
+    radial-gradient(circle at 0 100%, var(--vocabulary-level-wash-secondary), transparent 38%),
     var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-rank-color) 38%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface) 80%, transparent), 0 10px 24px color-mix(in srgb, var(--ink) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 48%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 24px color-mix(in srgb, var(--ink) 13%, transparent);
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 .vocabulary-browse-card::before {
@@ -1961,9 +1986,17 @@
   inset: 7px;
   z-index: 0;
   content: '';
-  border: 1px solid color-mix(in srgb, var(--vocabulary-rank-color) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 48%, transparent);
   border-radius: 10px;
-  background: linear-gradient(124deg, transparent 0 35%, color-mix(in srgb, var(--vocabulary-rank-color) 13%, transparent) 43%, transparent 51%);
+  background: linear-gradient(116deg,
+    transparent 0 25%,
+    color-mix(in srgb, var(--surface) 42%, transparent) 33%,
+    color-mix(in srgb, var(--surface) 12%, transparent) 38%,
+    transparent 46%,
+    transparent 67%,
+    color-mix(in srgb, var(--ink) 6%, transparent) 73%,
+    transparent 80%);
+  opacity: .9;
   pointer-events: none;
 }
 .vocabulary-browse-card::after {
@@ -1973,45 +2006,27 @@
   width: 78px;
   height: 78px;
   content: '';
-  border: 2px solid color-mix(in srgb, var(--vocabulary-rank-color) 34%, transparent);
+  border: 2px solid color-mix(in srgb, var(--vocabulary-level-color) 34%, transparent);
   border-radius: 50%;
   pointer-events: none;
 }
 .vocabulary-browse-card:hover {
   transform: translateY(-2px);
-  border-color: var(--vocabulary-rank-color);
+  border-color: var(--vocabulary-level-color);
   box-shadow: 0 14px 30px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 .vocabulary-browse-card:focus-within {
-  border-color: var(--vocabulary-rank-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vocabulary-rank-color) 24%, transparent), 0 12px 28px color-mix(in srgb, var(--ink) 10%, transparent);
+  border-color: var(--vocabulary-level-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vocabulary-level-color) 24%, transparent), 0 12px 28px color-mix(in srgb, var(--ink) 10%, transparent);
 }
-.vocabulary-browse-card[data-vocabulary-rank="D"] {
-  --vocabulary-rank-color: var(--coral);
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--coral) 19%, transparent), transparent 46%), linear-gradient(135deg, color-mix(in srgb, var(--coral) 7%, var(--surface)), var(--surface));
-}
-.vocabulary-browse-card[data-vocabulary-rank="C"] {
-  --vocabulary-rank-color: var(--muted);
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--muted) 19%, transparent), transparent 46%), linear-gradient(135deg, color-mix(in srgb, var(--muted) 7%, var(--surface)), var(--surface));
-}
-.vocabulary-browse-card[data-vocabulary-rank="B"] {
-  --vocabulary-rank-color: var(--sun);
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--sun) 19%, transparent), transparent 46%), linear-gradient(135deg, color-mix(in srgb, var(--sun) 7%, var(--surface)), var(--surface));
-}
-.vocabulary-browse-card[data-vocabulary-rank="A"] {
-  --vocabulary-rank-color: var(--sage);
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--sage) 19%, transparent), transparent 46%), linear-gradient(135deg, color-mix(in srgb, var(--sage) 7%, var(--surface)), var(--surface));
-}
-.vocabulary-browse-card[data-vocabulary-rank="S"] {
-  --vocabulary-rank-color: var(--accent);
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--accent) 19%, transparent), transparent 46%), linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, var(--surface)), var(--surface));
-}
-.vocabulary-browse-card[data-vocabulary-rank="S+"] {
-  --vocabulary-rank-color: var(--coral);
-  background:
-    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--coral) 20%, transparent), transparent 44%),
-    radial-gradient(circle at 0 100%, color-mix(in srgb, var(--sage) 15%, transparent), transparent 38%),
-    var(--surface);
+[data-vocabulary-skin="bronze"] { --vocabulary-level-wash: color-mix(in srgb, var(--coral) 20%, transparent); }
+[data-vocabulary-skin="silver"] { --vocabulary-level-wash: color-mix(in srgb, var(--muted) 20%, transparent); }
+[data-vocabulary-skin="gold"] { --vocabulary-level-wash: color-mix(in srgb, var(--sun) 20%, transparent); }
+[data-vocabulary-skin="platinum"] { --vocabulary-level-wash: color-mix(in srgb, var(--sage) 20%, transparent); }
+[data-vocabulary-skin="violet"] { --vocabulary-level-wash: color-mix(in srgb, var(--accent) 20%, transparent); }
+[data-vocabulary-skin="aurora"] {
+  --vocabulary-level-wash: color-mix(in srgb, var(--coral) 21%, transparent);
+  --vocabulary-level-wash-secondary: color-mix(in srgb, var(--sage) 16%, transparent);
 }
 .vocabulary-browse-card__top {
   position: relative;
@@ -2022,14 +2037,15 @@
   gap: 8px;
 }
 .vocabulary-browse-card__level {
-  color: var(--muted);
+  padding: 4px 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--vocabulary-level-color) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 56%, var(--line));
+  border-radius: 99px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 12%, transparent);
   font-size: var(--text-xs);
   font-weight: 750;
   letter-spacing: .03em;
-}
-.vocabulary-browse-card .vocabulary-rank-token {
-  background: color-mix(in srgb, var(--vocabulary-rank-color) 16%, var(--surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-rank-color) 12%, transparent);
 }
 .vocabulary-browse-card__content {
   position: relative;
