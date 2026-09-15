@@ -108,8 +108,10 @@ horizontal Understanding Engine (AI-first, context-grounded, optional support
 layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
 
-Vocabulary UX verified at `64d9f65`: EN/ZH pronunciation/examples, contained
-status, and metallic rank frame. Human UX acceptance pending; no schema change.
+Vocabulary UX `639b03d`: EN/ZH cards show real proficiency levels only; CEFR
+B2/C1/C2 and HSK3–HSK7-9 cover high-level skins. Pronunciation/examples,
+contained review status, and metallic frame verified. Human UX pending; no
+schema change.
 
 ## PENDING
 
@@ -148,7 +150,7 @@ None identified.
 
 ## Baseline test evidence
 
-Baseline suite now passes locally with `995 passed, 107 skipped, 4 warnings`;
+Baseline suite now passes locally with `997 passed, 107 skipped, 4 warnings`;
 this is not a CI claim. Inherited governance/media failures were reconciled
 against the current architecture; retired legacy matrix tests are not regressions.
 
