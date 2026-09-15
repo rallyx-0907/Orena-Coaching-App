@@ -120,6 +120,20 @@ def test_saved_vocabulary_summary_exposes_overview_state_counts() -> None:
     assert summary["due"] >= 1
 
 
+def test_saved_catalog_word_reuses_static_card_content_without_new_persistence() -> None:
+    _seed_saved_word("en", "invoice")
+
+    response = _get("/api/library/vocabulary")
+    assert response.status_code == 200
+    invoice = next(item for item in response.json()["items"] if item["word"] == "invoice")
+    assert invoice["level"] == "B1"
+    assert invoice["framework"] == "toeic"
+    assert invoice["phonetic"] == "/ˈɪnvɔɪs/"
+    assert invoice["examples"] == [
+        {"language": "en", "text": "Please send the invoice before Friday."}
+    ]
+
+
 def test_collection_detail_never_leaks_an_internal_file_path() -> None:
     response = _get("/api/vocabulary/library/collections/hsk-1")
     assert response.status_code == 200

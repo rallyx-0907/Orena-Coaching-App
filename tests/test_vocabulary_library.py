@@ -261,3 +261,14 @@ def test_every_catalog_entry_round_trips_through_card_projection(language_code: 
         assert card["headword"] == entry["word"]
         assert card["identity"]["language"] == language_code
         assert card["meanings"]
+
+
+@pytest.mark.parametrize("language_code", ["en", "zh"])
+def test_seed_catalog_supports_pronunciation_and_context_examples(language_code: str) -> None:
+    entries = all_vocabulary_entries(language_code)
+    assert entries
+    for entry in entries:
+        assert entry["phonetic"]
+        assert entry["examples"]
+        assert entry["examples"][0]["language"] == language_code
+        assert entry["examples"][0]["text"]

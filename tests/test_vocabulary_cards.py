@@ -106,6 +106,32 @@ def test_catalog_entry_card_carries_every_support_translation_in_stable_order() 
     assert card["topic"] == "greetings"
 
 
+def test_catalog_entry_card_preserves_natural_examples() -> None:
+    entry = {
+        "word": "invoice",
+        "language_code": "en",
+        "phonetic": "/ˈɪnvɔɪs/",
+        "part_of_speech": "noun",
+        "definition": "a document listing goods or services provided and the amount owed",
+        "support_translations": {"vi": "hóa đơn"},
+        "examples": [
+            {
+                "language": "en",
+                "text": "Please send the invoice before Friday.",
+            }
+        ],
+    }
+
+    card = vocabulary_card_from_catalog_entry(entry)
+
+    assert card["examples"] == [
+        {
+            "language": "en",
+            "text": "Please send the invoice before Friday.",
+        }
+    ]
+
+
 def test_catalog_entry_card_has_no_memory_or_source_encounters() -> None:
     entry = {
         "word": "curious",

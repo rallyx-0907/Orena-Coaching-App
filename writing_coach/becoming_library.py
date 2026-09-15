@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from writing_coach.core.request_context import current_language_code
 from writing_coach.orthography import orthography_for_word
 from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
+from writing_coach.vocabulary_library import all_vocabulary_entries, normalize_vocabulary_word
 
 
 _repository: SpecializedLearningRepository | None = None
@@ -77,10 +78,27 @@ def _stage_label(stage: int) -> str:
     return STAGE_LABELS.get(max(0, min(4, int(stage or 0))), "New")
 
 
+def _catalog_entry_for(word: str) -> dict[str, Any] | None:
+    normalized = normalize_vocabulary_word(word)
+    if not normalized:
+        return None
+    language = current_language_code().strip().casefold()
+    return next(
+        (
+            entry
+            for entry in all_vocabulary_entries(language)
+            if entry.get("normalized_word") == normalized
+        ),
+        None,
+    )
+
+
 def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
     stage = int(row["review_stage"] or 0)
     word = str(row["word"])
-    orthography = orthography_for_word(word, current_language_code())
+    language = current_language_code().strip().casefold()
+    catalog_entry = _catalog_entry_for(word)
+    orthography = orthography_for_word(word, language)
     item = {
         "word": word,
         "phonetic": str(row["phonetic"] or ""),
@@ -100,6 +118,15 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
         "next_review_at": str(row["next_review_at"] or ""),
         "due": _due(str(row["next_review_at"] or "")),
     }
+    if catalog_entry is not None:
+        for field in ("level", "framework", "topic"):
+            if catalog_entry.get(field):
+                item[field] = catalog_entry[field]
+        if not item["phonetic"] and catalog_entry.get("phonetic"):
+            item["phonetic"] = str(catalog_entry["phonetic"])
+        examples = catalog_entry.get("examples")
+        if isinstance(examples, list) and examples:
+            item["examples"] = [dict(example) for example in examples if isinstance(example, dict)]
     if orthography is not None:
         item["orthography"] = orthography
     return item

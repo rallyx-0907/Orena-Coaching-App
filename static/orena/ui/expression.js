@@ -356,6 +356,10 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   };
   const pronunciation = String(item.phonetic || '').trim();
   if (pronunciation && pinyinAllowed) card.pronunciation = pronunciation;
+  if (Array.isArray(item.examples)) card.examples = item.examples;
+  for (const field of ['level', 'framework', 'topic']) {
+    if (item[field]) card[field] = item[field];
+  }
   if (item.orthography) card.orthography = item.orthography;
   return card;
 }

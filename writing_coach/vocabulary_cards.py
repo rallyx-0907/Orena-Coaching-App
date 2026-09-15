@@ -45,6 +45,25 @@ def _source_encounters(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [encounter]
 
 
+def _examples_from(row: Mapping[str, Any], language: str) -> list[dict[str, str]]:
+    """Keep authored, target-language examples in the canonical card shape."""
+
+    raw_examples = row.get("examples")
+    if not isinstance(raw_examples, list):
+        return []
+    examples: list[dict[str, str]] = []
+    for raw_example in raw_examples:
+        if isinstance(raw_example, Mapping):
+            text = _text(raw_example, "text")
+            example_language = _text(raw_example, "language") or language or "unknown"
+        else:
+            text = str(raw_example or "").strip()
+            example_language = language or "unknown"
+        if text:
+            examples.append({"language": example_language, "text": text})
+    return examples
+
+
 def vocabulary_card_from_saved_word(
     row: Mapping[str, Any], *, orthography: Mapping[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -61,7 +80,7 @@ def vocabulary_card_from_saved_word(
         "identity": {"language": language or "unknown", "normalized": normalized},
         "headword": headword,
         "meanings": _meanings_from(_text(row, "definition"), language, support_translations),
-        "examples": [],
+        "examples": _examples_from(row, language),
         "collocations": [],
         "related": [],
         "learner_traps": [],
@@ -103,7 +122,7 @@ def vocabulary_card_from_catalog_entry(
         "identity": {"language": language or "unknown", "normalized": normalized},
         "headword": headword,
         "meanings": _meanings_from(_text(entry, "definition"), language, support_translations),
-        "examples": [],
+        "examples": _examples_from(entry, language),
         "collocations": [],
         "related": [],
         "learner_traps": [],
