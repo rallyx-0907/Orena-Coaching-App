@@ -107,9 +107,8 @@ horizontal Understanding Engine (AI-first, context-grounded, optional support
 layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
 
-Vocabulary UX is verified at commit
-`a6b1f6d5c7a56c3639d710ebc93a98350e217ce5`; human visual/usage acceptance is
-pending and no schema change was introduced.
+Vocabulary UX verified at `64d9f65`: EN/ZH pronunciation/examples, contained
+status, and metallic rank frame. Human UX acceptance pending; no schema change.
 
 ## PENDING
 
