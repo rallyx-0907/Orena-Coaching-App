@@ -71,12 +71,13 @@ it only in the ephemeral gate. Switch learning language in-page; stage task file
 
 Core: R3 + T15 Card human PASS. Vocabulary foundation/catalog/feed/save
 handoff and Chinese orthography projection are implemented without a schema
-change. The consolidated Vocabulary UX redesign is now
-`READY_FOR_HUMAN_UX_REVIEW`: Overview, compact Library management, Daily Feed
-discovery and focused Study share the canonical card/save/review path. Review
+change. The progressive-disclosure Vocabulary UX correction is now
+`READY_FOR_HUMAN_UX_REVIEW` in `5a5219b`: Overview, compact Library
+management, single-row Daily Feed discovery and focused Study share the
+canonical card/save/review path. Review
 at `http://127.0.0.1:8011/#/language` or the machine LAN address on port 8011;
 check EN/ZH and Chinese orthography across Discover/My Language.
-D-051/D-052 UI and phone-density foundations are implemented and verified at
+D-051/D-052 UI/phone-density foundations are implemented and verified at
 1024-1920/800/390/360 in EN/ZH; human review remains pending.
 
 Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
