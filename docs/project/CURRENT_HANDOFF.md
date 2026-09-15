@@ -105,7 +105,7 @@ horizontal Understanding Engine (AI-first, context-grounded, optional support
 layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
 
-Vocabulary UX `639b03d` plus correction: EN/ZH cards show real levels only
+Vocabulary UX `639b03d` plus correction `2e591c3`: EN/ZH cards show real levels only
 (CEFR A1–C2, HSK1–HSK7-9), pronunciation/examples, contained review status
 and metallic frame. Public Library has an explicit gate; current packs are
 seed-only, so local Library is truthfully empty until a complete pack is
