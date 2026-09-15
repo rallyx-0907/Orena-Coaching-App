@@ -16,7 +16,8 @@ import { renderVocabularyCard } from './vocabulary-card.js';
 import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
-  renderVocabularyFeedPreview,
+  renderVocabularyFeedCarousel,
+  bindVocabularyFeedCarousel,
   renderVocabularyRow,
   renderVocabularyStudyCard,
   compactSupportMeaning,
@@ -596,18 +597,27 @@ export async function renderLanguage(root, ctx) {
 
   const overview = () => {
     const dueItems = savedCards.filter((item) => item.due);
-    const recent = [...savedCards].sort((a, b) => String(b.added_at || '').localeCompare(String(a.added_at || ''))).slice(0, 5);
+    const recent = [...savedCards].sort((a, b) => String(b.added_at || '').localeCompare(String(a.added_at || ''))).slice(0, 3);
     const libraryBody = collectionError
       ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="collections">${esc(c.retry)}</button></p>`
       : collections.length
-        ? `<div class="vocabulary-collection-grid">${collections.map((collection, index) => renderVocabularyCollectionCard(copy, collection, { index })).join('')}</div>`
+        ? `<div class="vocabulary-collection-grid vocabulary-collection-grid--preview">${collections.slice(0, 3).map((collection, index) => renderVocabularyCollectionCard(copy, collection, { index })).join('')}</div>`
         : `<p class="meta">${esc(c.vocabularyLibraryEmpty)}</p>`;
     const feedBody = feedError
       ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>`
       : feedCards.length
-        ? `<div class="vocabulary-feed-preview">${feedCards.slice(0, 4).map((card, index) => renderVocabularyFeedPreview(copy, card, { index })).join('')}</div>`
+        ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5 })
         : `<p class="meta">${esc(c.vocabularyFeedEmpty)}</p>`;
-    return `${pageIntro({ title: c.vocabularyTitle, note: c.vocabularyOverviewNote, eyebrow: c.language, scene: 'remembering' })}<section class="vocabulary-overview-hero"><div>${statusSummary}<div class="button-row">${dueItems.length ? `<button class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)} →</button>` : ''}<button class="outline" data-vocabulary-manage>${esc(c.vocabularyManage)}</button></div></div><div class="vocabulary-overview-callout"><small>${esc(c.vocabularyDueCount)}</small><strong>${dueItems.length ? esc(dueItems[0].headword) : esc(c.allDone)}</strong><p>${dueItems.length ? esc(compactSupportMeaning(dueItems[0], support)) : esc(c.allDoneNote)}</p></div></section><section class="vocabulary-overview-section"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2></div><button class="quiet" data-vocabulary-library>${esc(c.vocabularyOpenLibrary)} →</button></div>${libraryBody}</section><section class="vocabulary-overview-section"><div class="section-head"><div><small>${esc(c.vocabularyFeedTitle)}</small><h2>${esc(c.vocabularyOpenFeed)}</h2></div><button class="quiet" data-vocabulary-feed>${esc(c.vocabularyOpenFeed)} →</button></div>${feedBody}</section>${recent.length ? `<section class="vocabulary-overview-section vocabulary-recent"><div class="section-head"><h2>${esc(c.vocabularyRecent)}</h2><button class="quiet" data-vocabulary-manage>${esc(c.vocabularyManage)} →</button></div><div class="vocabulary-row-list">${recent.map((card) => renderVocabularyRow(copy, card, { index: savedCards.indexOf(card) })).join('')}</div></section>` : ''}${savedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="saved">${esc(c.retry)}</button></p>` : ''}`;
+    return `${pageIntro({ title: c.vocabularyTitle, note: c.vocabularyOverviewNote, eyebrow: c.language, compact: true })}<section class="vocabulary-overview-hero"><div>${statusSummary}<div class="button-row">${dueItems.length ? `<button class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)} →</button>` : ''}<button class="outline" data-vocabulary-manage>${esc(c.vocabularyManage)}</button></div></div><div class="vocabulary-overview-callout"><small>${esc(c.vocabularyDueCount)}</small><strong>${dueItems.length ? esc(dueItems[0].headword) : esc(c.allDone)}</strong><p>${dueItems.length ? esc(compactSupportMeaning(dueItems[0], support)) : esc(c.allDoneNote)}</p></div></section><section class="vocabulary-overview-section"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2></div><button class="quiet" data-vocabulary-library>${esc(c.vocabularyOpenLibrary)} →</button></div>${libraryBody}</section><section class="vocabulary-overview-section"><div class="section-head"><div><small>${esc(c.vocabularyFeedTitle)}</small><h2>${esc(c.vocabularyOpenFeed)}</h2></div><button class="quiet" data-vocabulary-feed>${esc(c.vocabularyOpenFeed)} →</button></div>${feedBody}</section>${recent.length ? `<section class="vocabulary-overview-section vocabulary-recent"><div class="section-head"><h2>${esc(c.vocabularyRecent)}</h2><button class="quiet" data-vocabulary-manage>${esc(c.vocabularyManage)} →</button></div><div class="vocabulary-row-list">${recent.map((card) => renderVocabularyRow(copy, card, { index: savedCards.indexOf(card) })).join('')}</div></section>` : ''}${savedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="saved">${esc(c.retry)}</button></p>` : ''}`;
+  };
+
+  const libraryView = () => {
+    const body = collectionError
+      ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="collections">${esc(c.retry)}</button></p>`
+      : collections.length
+        ? `<div class="vocabulary-collection-grid vocabulary-collection-grid--full">${collections.map((collection, index) => renderVocabularyCollectionCard(copy, collection, { index })).join('')}</div>`
+        : `<p class="meta">${esc(c.vocabularyLibraryEmpty)}</p>`;
+    return `${pageIntro({ title: c.vocabularyLibraryTitle, note: c.vocabularyLibraryNote, eyebrow: c.vocabularyTitle, compact: true })}<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button><section class="vocabulary-overview-section vocabulary-library-view"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2></div></div>${body}</section>`;
   };
 
   const management = (title, note = '', withBack = false) => {
@@ -631,7 +641,7 @@ export async function renderLanguage(root, ctx) {
     return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options"><label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}`;
   };
 
-  const feedView = () => `${pageIntro({ title: c.vocabularyFeedTitle, note: c.vocabularyFeedNote, eyebrow: c.vocabularyTitle, compact: true })}<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>${feedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>` : feedCards.length ? `<section class="vocabulary-feed-preview vocabulary-feed-preview--full">${feedCards.map((card, index) => renderVocabularyFeedPreview(copy, card, { index })).join('')}</section>` : `<section class="empty"><h2>${esc(c.vocabularyFeedEmpty)}</h2></section>`}`;
+  const feedView = () => `${pageIntro({ title: c.vocabularyFeedTitle, note: c.vocabularyFeedNote, eyebrow: c.vocabularyTitle, compact: true })}<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>${feedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>` : feedCards.length ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5, full: true }) : `<section class="empty"><h2>${esc(c.vocabularyFeedEmpty)}</h2></section>`}`;
 
   const studyView = () => {
     const card = studyItems[studyIndex];
@@ -643,7 +653,7 @@ export async function renderLanguage(root, ctx) {
 
   const paint = () => {
     if (!alive()) return;
-    root.innerHTML = view === 'overview' ? overview() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionView() : view === 'feed' ? feedView() : studyView();
+    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionView() : view === 'feed' ? feedView() : studyView();
     bind();
   };
 
@@ -696,7 +706,7 @@ export async function renderLanguage(root, ctx) {
 
   const bind = () => {
     root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => { activeItems = savedCards; query = ''; filter = 'all'; sort = 'recommended'; view = 'saved'; paint(); }));
-    root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => root.querySelector('.vocabulary-collection-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })));
+    root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => { view = 'library'; paint(); }));
     root.querySelectorAll('[data-vocabulary-feed]').forEach((button) => (button.onclick = () => { view = 'feed'; paint(); }));
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
     root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : 'overview'; paint(); }));
@@ -705,7 +715,7 @@ export async function renderLanguage(root, ctx) {
     root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => { filter = button.dataset.vocabularyFilter; paint(); }));
     root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => { sort = event.target.value; paint(); });
     const interactionPool = () => vocabularyInteractionItems(view, { feedCards, visibleItems, savedCards, studyItems });
-    root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularyStudy); setStudy(interactionPool(), index); }));
+    root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularyStudy); const pool = button.dataset.vocabularyStudySource === 'feed' ? feedCards.slice(0, 5) : interactionPool(); setStudy(pool, index); }));
     root.querySelectorAll('[data-vocabulary-save]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularySave); saveCard(interactionPool()[index], view === 'feed' ? 'feed' : view === 'collection' ? 'collection' : 'manual'); }));
     root.querySelectorAll('[data-study-flip]').forEach((button) => (button.onclick = () => { const card = root.querySelector('.vocabulary-study-card'); const front = root.querySelector('[data-study-front]'); const back = root.querySelector('[data-study-back]'); const showingBack = card.dataset.studyState === 'back'; card.dataset.studyState = showingBack ? 'front' : 'back'; front.hidden = !showingBack; back.hidden = showingBack; }));
     root.querySelector('[data-study-prev]')?.addEventListener('click', () => { if (studyIndex > 0) { studyIndex -= 1; paint(); } });
@@ -713,6 +723,7 @@ export async function renderLanguage(root, ctx) {
     root.querySelector('[data-study-audio]')?.addEventListener('click', () => { const word = studyItems[studyIndex]?.headword; if (word && 'speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(word)); });
     root.querySelectorAll('[data-study-grade]').forEach((button) => (button.onclick = async () => { const card = studyItems[studyIndex]; button.disabled = true; try { const result = await ctx.mutate(() => api.reviewLibraryVocabulary(card.headword, button.dataset.studyGrade)); if (result.item) { const updated = vocabularyCardFromSavedItem(result.item, language, support, pinyinAllowed); studyItems[studyIndex] = updated; const savedIndex = savedCards.findIndex((item) => item.headword.toLowerCase() === card.headword.toLowerCase()); if (savedIndex >= 0) savedCards[savedIndex] = updated; savedData.items = savedData.items.map((item) => item.word.toLowerCase() === card.headword.toLowerCase() ? result.item : item); savedData.summary = { ...summary(), due: savedCards.filter((item) => item.due).length, learning: savedCards.filter((item) => (Number(item.review_stage) || 0) < 3).length, mastered: savedCards.filter((item) => (Number(item.review_stage) || 0) >= 3).length }; } paint(); } catch { button.disabled = false; } }));
     root.querySelectorAll('[data-vocabulary-retry]').forEach((button) => (button.onclick = () => location.reload()));
+    bindVocabularyFeedCarousel(root);
   };
 
   paint();

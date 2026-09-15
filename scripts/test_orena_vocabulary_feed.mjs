@@ -61,9 +61,12 @@ for (const ui of ['en', 'zh']) {
   assert.match(withItems, /class="vocabulary-browse-card"/, 'Feed uses compact discovery cards');
   assert.match(withItems, /休息/);
   assert.match(withItems, /data-feed-keep="0"/);
+  assert.match(withItems, /data-vocabulary-feed-carousel/);
+  assert.match(withItems, /data-vocabulary-feed-track/);
+  assert.doesNotMatch(withItems, /vocabulary-feed-preview--grid/);
 }
 
-for (const key of ['vocabularyFeedTitle', 'vocabularyFeedNote', 'vocabularyFeedLoading', 'vocabularyFeedEmpty'])
+for (const key of ['vocabularyFeedTitle', 'vocabularyFeedPrevious', 'vocabularyFeedNext', 'vocabularyFeedNote', 'vocabularyFeedLoading', 'vocabularyFeedEmpty'])
   for (const ui of ['en', 'zh']) assert.ok(copy[ui][key], `${ui}.${key} is missing`);
 
 // --- API URL construction, target_level only appended when provided ---
@@ -88,5 +91,7 @@ assert.match(
   'a kept Feed word is removed from the local list, not reloaded from the server',
 );
 assert.match(world, /data-vocabulary-feed/);
+assert.match(world, /renderVocabularyFeedCarousel/);
+assert.match(world, /bindVocabularyFeedCarousel/);
 
 console.log('Daily Vocabulary Feed: shared card/save path, source_kind feed, truthful empty/error states, EN/ZH PASS');

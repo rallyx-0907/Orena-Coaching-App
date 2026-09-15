@@ -254,6 +254,8 @@ const en = {
   // Daily Vocabulary Feed: a filtered, day-seeded view over that same catalog.
   // Keeping a word here reuses the same save path Library browsing uses.
   vocabularyFeedTitle: 'Daily Vocabulary Feed',
+  vocabularyFeedPrevious: 'Previous words',
+  vocabularyFeedNext: 'Next words',
   vocabularyFeedNote: 'A few curated words to meet today.',
   vocabularyFeedLoading: 'Gathering today’s words…',
   vocabularyFeedEmpty: 'No new words in today’s feed. Check back tomorrow.',
@@ -621,6 +623,8 @@ const zh = {
   vocabularyFramework_hsk: 'HSK',
   vocabularyFramework_cefrinternal: '常用词汇',
   vocabularyFeedTitle: '每日词汇推荐',
+  vocabularyFeedPrevious: '上一个词',
+  vocabularyFeedNext: '下一个词',
   vocabularyFeedNote: '今天为你准备的几个精选词。',
   vocabularyFeedLoading: '正在准备今天的词汇…',
   vocabularyFeedEmpty: '今天的推荐词汇已经看完了，明天再来看看。',

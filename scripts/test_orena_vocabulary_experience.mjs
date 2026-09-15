@@ -8,6 +8,7 @@ import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
   renderVocabularyFeedPreview,
+  renderVocabularyFeedCarousel,
   renderVocabularyRow,
   renderVocabularyStudyCard,
   supportMeaning,
@@ -79,8 +80,20 @@ assert.equal(
   'Study actions must bind to the focused study item pool',
 );
 const expressionSource = readFileSync(new URL('../static/orena/ui/expression.js', import.meta.url), 'utf8');
+const vocabularyExperienceSource = readFileSync(new URL('../static/orena/ui/vocabulary-experience.js', import.meta.url), 'utf8');
 assert.match(expressionSource, /const management = \(title, note = '', withBack = false\)/, 'management views expose an in-content return affordance');
 assert.match(expressionSource, /view === 'saved' \? management\(c\.vocabularyManage, c\.vocabularyOverviewNote, true\)/, 'Saved management can return to Vocabulary Overview');
+assert.match(expressionSource, /view === 'library' \? libraryView\(\)/, 'Library is an expanded view rather than an in-page scroll target');
+assert.match(expressionSource, /collections\.slice\(0, 3\)/, 'Overview bounds the collection preview');
+assert.match(expressionSource, /savedCards[\s\S]*?slice\(0, 3\)/, 'Overview bounds the saved preview');
+assert.match(expressionSource, /renderVocabularyFeedCarousel/, 'Overview uses the shared Feed carousel');
+assert.doesNotMatch(expressionSource, /vocabulary-collection-grid'\)\?\.scrollIntoView/, 'View all collections must navigate to Library');
+assert.match(expressionSource, /dataset\.vocabularyStudySource === 'feed'[\s\S]*?feedCards\.slice\(0, 5\)/, 'Overview Feed Study actions use the Feed pool');
+assert.match(vocabularyExperienceSource, /getBoundingClientRect/, 'carousel position uses viewport geometry');
+assert.doesNotMatch(vocabularyExperienceSource, /slide\.offsetLeft/, 'carousel position does not rely on offsetParent geometry');
+assert.match(vocabularyExperienceSource, /let activeIndex = 0;/, 'carousel keeps an explicit active position during controlled navigation');
+assert.match(vocabularyExperienceSource, /activeIndex = bounded;/, 'carousel updates the active position before smooth scrolling');
+assert.match(vocabularyExperienceSource, /track\.addEventListener\('scroll', \(\) => update\(\)/, 'scroll events do not pass the event object as the carousel index');
 assert.match(expressionSource, /if \(Array\.isArray\(item\.examples\)\) card\.examples = item\.examples;/, 'saved cards keep catalog context examples');
 assert.equal(supportMeaning(card, 'vi'), 'phân bổ / cấp phát');
 assert.equal(compactSupportMeaning({ meanings: [{ language: 'vi', text: `Một nghĩa ngắn. ${'Một phần giải thích dài hơn để kiểm tra việc rút gọn nội dung. '.repeat(5)}` }] }, 'vi'), 'Một nghĩa ngắn.');
@@ -102,6 +115,24 @@ const feed = renderVocabularyFeedPreview(copy, card, { index: 2 });
 assert.match(feed, /data-vocabulary-level="B1"/);
 assert.match(feed, /class="vocabulary-browse-card"/);
 assert.match(feed, /data-vocabulary-feed-item="2"/);
+assert.match(feed, /data-vocabulary-study-source="feed"/);
+
+const carouselCards = Array.from({ length: 6 }, (_, index) => ({
+  ...card,
+  headword: `word-${index}`,
+}));
+const carousel = renderVocabularyFeedCarousel(copy, carouselCards, { limit: 5 });
+assert.match(carousel, /data-vocabulary-feed-carousel/);
+assert.match(carousel, /data-vocabulary-feed-track/);
+assert.match(carousel, /data-vocabulary-feed-prev/);
+assert.match(carousel, /data-vocabulary-feed-next/);
+assert.match(carousel, /data-vocabulary-feed-position/);
+assert.match(carousel, /data-vocabulary-feed-dot="0"/);
+assert.equal(
+  (carousel.match(/class="vocabulary-browse-card"/g) || []).length,
+  5,
+  'Feed carousel keeps the overview/session limit instead of rendering every candidate',
+);
 
 const browse = renderVocabularyBrowseCard(copy, { ...card, saved: false }, { index: 4 });
 assert.match(browse, /class="vocabulary-browse-card"/);
@@ -185,6 +216,18 @@ assert.match(worldCss, /\.vocabulary-study-card__status\s*\{[\s\S]*align-self:\s
 assert.match(worldCss, /\.vocabulary-browse-card\s*\{[\s\S]*border:\s*3px solid/);
 assert.match(worldCss, /data-vocabulary-skin="bronze"/);
 assert.match(worldCss, /data-vocabulary-skin="aurora"/);
+assert.match(worldCss, /\.vocabulary-feed-carousel\s*\{[\s\S]*display:\s*grid/);
+assert.match(worldCss, /\.vocabulary-feed-preview\s*\{[\s\S]*display:\s*flex/);
+assert.match(worldCss, /\.vocabulary-feed-preview\s*\{[\s\S]*overflow-x:\s*auto/);
+assert.match(worldCss, /scroll-snap-type:\s*x\s*mandatory/);
+assert.match(worldCss, /\.vocabulary-feed-preview\s*>\s*\.vocabulary-browse-card\s*\{[\s\S]*flex:\s*0 0/);
+assert.match(worldCss, /@media \(max-width: 700px\)[\s\S]*\.vocabulary-feed-preview\s*>\s*\.vocabulary-browse-card[\s\S]*100vw/);
+const feedDotCss = worldCss.match(/\.vocabulary-feed-carousel__dot\s*\{([\s\S]*?)\n\}/)?.[1] || '';
+assert.match(feedDotCss, /min-height:\s*44px/, 'carousel dots keep a compact visual dot with an accessible hit area');
+assert.match(worldCss, /\.vocabulary-feed-carousel__dot::before\s*\{/, 'carousel dots render their visual mark independently from the hit area');
+const collectionOpenCss = worldCss.match(/\.vocabulary-collection-card__open\s*\{([\s\S]*?)\n\}/)?.[1] || '';
+assert.match(collectionOpenCss, /height:\s*190px/);
+assert.match(collectionOpenCss, /min-height:\s*0/);
 assert.doesNotMatch(worldCss, /vocabulary-rank|data-vocabulary-rank/);
 
 console.log('Orena Vocabulary Experience helpers: level, mastery, compact row, study card PASS');

@@ -21,7 +21,8 @@ import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
-  renderVocabularyFeedPreview,
+  renderVocabularyFeedCarousel,
+  bindVocabularyFeedCarousel,
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
 
@@ -169,9 +170,9 @@ export function vocabularyLibrarySection(c, state = {}) {
     body = groupVocabularyCollectionsByFramework(collections)
       .map(
         (group) =>
-          `<h3>${esc(vocabularyFrameworkLabel(c, group.framework))}</h3>${group.collections
+          `<h3>${esc(vocabularyFrameworkLabel(c, group.framework))}</h3><div class="vocabulary-collection-grid vocabulary-collection-grid--full">${group.collections
             .map((collection, index) => vocabularyLibraryCollectionRow(c, collection, index, supportLanguage))
-            .join('')}`,
+            .join('')}</div>`,
       )
       .join('');
   }
@@ -189,9 +190,7 @@ export function vocabularyFeedSection(c, state = {}) {
   } else if (!items.length) {
     body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyFeedEmpty)}</p></div>`;
   } else {
-    body = `<section class="vocabulary-feed-preview">${items
-      .map((card, index) => renderVocabularyFeedPreview(vocabularyDiscoverCopy(c, supportLanguage), card, { index, saveAttribute: 'data-feed-keep' }))
-      .join('')}</section>`;
+    body = renderVocabularyFeedCarousel(vocabularyDiscoverCopy(c, supportLanguage), items, { limit: 5, saveAttribute: 'data-feed-keep', full: true });
   }
   return `${heading}${body}`;
 }
@@ -224,6 +223,7 @@ async function paintVocabularyLibrary(container, ctx) {
     container.querySelectorAll('[data-vocabulary-study]').forEach((button) => {
       button.onclick = () => { location.hash = '#/language'; };
     });
+    bindVocabularyFeedCarousel(container);
   }
   async function loadList() {
     collections = null;
@@ -285,6 +285,7 @@ async function paintVocabularyFeed(container, ctx) {
     container.querySelectorAll('[data-vocabulary-study]').forEach((button) => {
       button.onclick = () => { location.hash = '#/language'; };
     });
+    bindVocabularyFeedCarousel(container);
   }
   async function load() {
     items = null;

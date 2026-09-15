@@ -160,11 +160,95 @@ export function renderVocabularyBrowseCard(copy, card, { index = 0, saveAttribut
   const sourceAttr = source ? ` data-vocabulary-source="${esc(source)}"` : '';
   const feedAttr = source === 'feed' ? ` data-vocabulary-feed-item="${esc(index)}"` : '';
   const saveLabel = saved ? `${copy.saved || 'Saved'} ✓` : `+ ${copy.save || 'Save'}`;
-  return `<article class="vocabulary-browse-card" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-browse-card="${esc(index)}"${sourceAttr}${feedAttr}><div class="vocabulary-browse-card__top"><span class="vocabulary-browse-card__level">${esc(level || '—')}</span></div><div class="vocabulary-browse-card__content"><h3 lang="${esc(language)}">${esc(headword)}</h3><p class="vocabulary-browse-card__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(meaning)}</p>${pronunciation ? `<p class="vocabulary-browse-card__pronunciation" lang="${esc(language)}">${esc(pronunciation)}</p>` : ''}${browseMetadata(copy, card)}</div><div class="vocabulary-browse-card__status"><span class="vocabulary-stars" aria-label="${esc(stars)}">${esc(stars)}</span><span class="vocabulary-state vocabulary-state--${esc(state)}">${esc(statusLabel(copy, state))}</span></div><div class="vocabulary-browse-card__actions"><button class="primary vocabulary-browse-card__study" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="outline vocabulary-browse-card__save" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" aria-pressed="${saved ? 'true' : 'false'}" ${saved ? 'disabled' : ''}>${esc(saveLabel)}</button></div></article>`;
+  return `<article class="vocabulary-browse-card" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-browse-card="${esc(index)}"${sourceAttr}${feedAttr}><div class="vocabulary-browse-card__top"><span class="vocabulary-browse-card__level">${esc(level || '—')}</span></div><div class="vocabulary-browse-card__content"><h3 lang="${esc(language)}">${esc(headword)}</h3><p class="vocabulary-browse-card__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(meaning)}</p>${pronunciation ? `<p class="vocabulary-browse-card__pronunciation" lang="${esc(language)}">${esc(pronunciation)}</p>` : ''}${browseMetadata(copy, card)}</div><div class="vocabulary-browse-card__status"><span class="vocabulary-stars" aria-label="${esc(stars)}">${esc(stars)}</span><span class="vocabulary-state vocabulary-state--${esc(state)}">${esc(statusLabel(copy, state))}</span></div><div class="vocabulary-browse-card__actions"><button class="primary vocabulary-browse-card__study" data-vocabulary-study="${esc(index)}" data-vocabulary-study-source="${esc(source)}">${esc(copy.study || copy.open)}</button><button class="outline vocabulary-browse-card__save" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" aria-pressed="${saved ? 'true' : 'false'}" ${saved ? 'disabled' : ''}>${esc(saveLabel)}</button></div></article>`;
 }
 
 export function renderVocabularyFeedPreview(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {
   return renderVocabularyBrowseCard(copy, card, { index, saveAttribute, source: 'feed' });
+}
+
+export function renderVocabularyFeedCarousel(
+  copy,
+  cards,
+  { limit = 5, saveAttribute = 'data-vocabulary-save', full = false } = {},
+) {
+  const count = Math.max(0, Number(limit) || 0);
+  const items = Array.isArray(cards) ? cards.slice(0, count) : [];
+  if (!items.length) return '';
+  const title = value(copy.vocabularyFeedTitle) || 'Daily Vocabulary';
+  const previous = value(copy.vocabularyFeedPrevious) || 'Previous words';
+  const next = value(copy.vocabularyFeedNext) || 'Next words';
+  const fullClass = full ? ' vocabulary-feed-carousel--full' : '';
+  const dots = items
+    .map(
+      (_, index) =>
+        `<button type="button" class="vocabulary-feed-carousel__dot${index === 0 ? ' is-active' : ''}" data-vocabulary-feed-dot="${index}" aria-label="${esc(`${title} ${index + 1}`)}" aria-current="${index === 0 ? 'true' : 'false'}"></button>`,
+    )
+    .join('');
+  return `<div class="vocabulary-feed-carousel${fullClass}" data-vocabulary-feed-carousel role="region" aria-roledescription="carousel" aria-label="${esc(title)}"><div class="vocabulary-feed-carousel__viewport"><button type="button" class="vocabulary-feed-carousel__control" data-vocabulary-feed-prev aria-label="${esc(previous)}" ${items.length < 2 ? 'disabled' : ''}>←</button><section class="vocabulary-feed-preview" data-vocabulary-feed-track role="list" tabindex="0" aria-label="${esc(title)}">${items.map((card, index) => renderVocabularyFeedPreview(copy, card, { index, saveAttribute })).join('')}</section><button type="button" class="vocabulary-feed-carousel__control" data-vocabulary-feed-next aria-label="${esc(next)}" ${items.length < 2 ? 'disabled' : ''}>→</button></div><div class="vocabulary-feed-carousel__rail"><span class="vocabulary-feed-carousel__position" data-vocabulary-feed-position role="status">1 / ${items.length}</span><span class="vocabulary-feed-carousel__dots" role="tablist" aria-label="${esc(title)}">${dots}</span></div></div>`;
+}
+
+export function bindVocabularyFeedCarousel(root) {
+  if (!root?.querySelectorAll) return;
+  root.querySelectorAll('[data-vocabulary-feed-carousel]').forEach((carousel) => {
+    const track = carousel.querySelector('[data-vocabulary-feed-track]');
+    const slides = track ? [...track.children] : [];
+    const previousButton = carousel.querySelector('[data-vocabulary-feed-prev]');
+    const nextButton = carousel.querySelector('[data-vocabulary-feed-next]');
+    const position = carousel.querySelector('[data-vocabulary-feed-position]');
+    const dots = [...carousel.querySelectorAll('[data-vocabulary-feed-dot]')];
+    if (!track || !slides.length) return;
+    const reducedMotion = () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let activeIndex = 0;
+    const currentIndex = () => {
+      let nearest = 0;
+      let distance = Number.POSITIVE_INFINITY;
+      const trackStart = track.getBoundingClientRect().left;
+      slides.forEach((slide, index) => {
+        const nextDistance = Math.abs(slide.getBoundingClientRect().left - trackStart);
+        if (nextDistance < distance) {
+          distance = nextDistance;
+          nearest = index;
+        }
+      });
+      return nearest;
+    };
+    const update = (index = currentIndex()) => {
+      activeIndex = index;
+      if (position) position.textContent = `${index + 1} / ${slides.length}`;
+      if (previousButton) previousButton.disabled = index === 0;
+      if (nextButton) nextButton.disabled = index >= slides.length - 1;
+      dots.forEach((dot, dotIndex) => {
+        const active = dotIndex === index;
+        dot.classList.toggle('is-active', active);
+        dot.setAttribute('aria-current', active ? 'true' : 'false');
+      });
+    };
+    const goTo = (index) => {
+      const bounded = Math.max(0, Math.min(index, slides.length - 1));
+      const slide = slides[bounded];
+      if (!slide) return;
+      activeIndex = bounded;
+      const targetLeft =
+        slide.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft;
+      track.scrollTo({ left: targetLeft, behavior: reducedMotion() ? 'auto' : 'smooth' });
+      update(bounded);
+    };
+    previousButton?.addEventListener('click', () => goTo(activeIndex - 1));
+    nextButton?.addEventListener('click', () => goTo(activeIndex + 1));
+    dots.forEach((dot, index) => dot.addEventListener('click', () => goTo(index)));
+    track.addEventListener('scroll', () => update(), { passive: true });
+    track.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        goTo(activeIndex + (event.key === 'ArrowRight' ? 1 : -1));
+      }
+    });
+    update();
+  });
 }
 
 export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {
