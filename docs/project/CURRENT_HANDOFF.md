@@ -49,7 +49,7 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-Gemini R3 4/4 EN/ZH/support pass; one transient miss passed on rerun. No CI claim.
+Gemini R3 4/4 EN/ZH/support pass; no CI claim.
 
 ## Runtime / safety
 
@@ -62,23 +62,19 @@ added from this non-elevated shell; if peer access is blocked, add TCP 8011
 scoped to `LocalSubnet` from Administrator PowerShell. AI eval uses selected
 local/provider credentials; ASR remains unconfigured.
 
-Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
-four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
-Runner note: app cwd is `/app` (not `/workspace`); image lacks pytest, so install
-it only in the ephemeral gate. Switch learning language in-page; stage task files.
+Dependency-heavy tests use `ai-writing-coach:local`, read-only repo and tmpfs;
+command in AGENTS.md. SQLite is test-only. App cwd is `/app`; image lacks
+pytest (install only in the ephemeral gate). Switch language in-page.
 
 ## NEXT EXACT TASK
 
-Core: R3 + T15 Card human PASS. Vocabulary foundation/catalog/feed/save
-handoff and Chinese orthography projection are implemented without a schema
-change. The progressive-disclosure Vocabulary UX correction is now
-`READY_FOR_HUMAN_UX_REVIEW` in `5a5219b`: Overview, compact Library
-management, single-row Daily Feed discovery and focused Study share the
-canonical card/save/review path. Review
+Core: R3/T15 Card human PASS. Vocabulary foundation/catalog/feed/save and
+Chinese orthography are schema-free. Vocabulary correction is `IMPLEMENTING`:
+only complete/published packs show in Library; current 35/33-word seeds stay
+hidden. A published pack folds internal level extensions. Feed is a bounded
+one-card deck with drag/swipe, keys, snap and reduced-motion support. Review
 at `http://127.0.0.1:8011/#/language` or the machine LAN address on port 8011;
 check EN/ZH and Chinese orthography across Discover/My Language.
-D-051/D-052 UI/phone-density foundations are implemented and verified at
-1024-1920/800/390/360 in EN/ZH; human review remains pending.
 
 Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
 approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
@@ -109,10 +105,11 @@ horizontal Understanding Engine (AI-first, context-grounded, optional support
 layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 `ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
 
-Vocabulary UX `639b03d`: EN/ZH cards show real proficiency levels only; CEFR
-B2/C1/C2 and HSK3–HSK7-9 cover high-level skins. Pronunciation/examples,
-contained review status, and metallic frame verified. Human UX pending; no
-schema change.
+Vocabulary UX `639b03d` plus correction: EN/ZH cards show real levels only
+(CEFR A1–C2, HSK1–HSK7-9), pronunciation/examples, contained review status
+and metallic frame. Public Library has an explicit gate; current packs are
+seed-only, so local Library is truthfully empty until a complete pack is
+authored/published. No schema change.
 
 ## PENDING
 
@@ -140,9 +137,9 @@ None identified.
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
   remains gated.
-- Reading breadth: rights gate. Vocabulary Library/Feed and Chinese orthography
-  are technically reviewable at the checkpoint above; human UX acceptance is
-  still pending.
+- Reading breadth: rights gate. Vocabulary Library content is gated until a
+  complete pack is authored/published; Feed and Chinese orthography remain
+  technically reviewable. Human UX acceptance is still pending.
 - Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
   r20 remains frozen native.
 - Language coherence: interface is en/zh; evaluator/grammar explanations follow

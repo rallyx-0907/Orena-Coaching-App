@@ -1,6 +1,7 @@
 [
   {
     "id": "toeic-600-essential",
+    "catalog_status": "seed",
     "language_code": "en",
     "framework": "toeic",
     "level": "B1",
@@ -50,6 +51,7 @@
   },
   {
     "id": "common-3000",
+    "catalog_status": "seed",
     "language_code": "en",
     "framework": "cefr-internal",
     "level": "A1",
@@ -99,6 +101,8 @@
   },
   {
     "id": "cefr-b2",
+    "parent_collection_id": "common-3000",
+    "catalog_status": "seed",
     "language_code": "en",
     "framework": "cefr-internal",
     "level": "B2",
@@ -115,6 +119,8 @@
   },
   {
     "id": "cefr-c1",
+    "parent_collection_id": "common-3000",
+    "catalog_status": "seed",
     "language_code": "en",
     "framework": "cefr-internal",
     "level": "C1",
@@ -131,6 +137,8 @@
   },
   {
     "id": "cefr-c2",
+    "parent_collection_id": "common-3000",
+    "catalog_status": "seed",
     "language_code": "en",
     "framework": "cefr-internal",
     "level": "C2",

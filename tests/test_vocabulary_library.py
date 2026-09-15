@@ -15,10 +15,14 @@ import pytest
 from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
 from writing_coach.vocabulary_library import (
     VocabularyCatalogInvalid,
+    _build_catalog,
+    _build_learner_catalog,
     all_vocabulary_entries,
     collection_ids_for_word,
     get_vocabulary_collection,
+    get_vocabulary_source_collection,
     list_vocabulary_collections,
+    list_vocabulary_source_collections,
     normalize_vocabulary_word,
     validate_vocabulary_collections,
 )
@@ -50,35 +54,82 @@ def _valid_collection(**overrides: object) -> dict[str, object]:
 # --- Collection presence and metadata --------------------------------------
 
 
-def test_lists_both_english_collections_with_positive_item_counts() -> None:
+def test_library_does_not_publish_incomplete_english_seed_packs() -> None:
     summaries = list_vocabulary_collections("en")
-    ids = {summary["id"] for summary in summaries}
-    assert ids == {
+    assert summaries == []
+    assert get_vocabulary_collection("cefr-b2") is None
+
+
+def test_library_does_not_publish_incomplete_chinese_seed_packs() -> None:
+    summaries = list_vocabulary_collections("zh")
+    assert summaries == []
+    assert get_vocabulary_collection("hsk-1") is None
+
+
+def test_source_catalog_keeps_seed_coverage_outside_the_public_library() -> None:
+    english = list_vocabulary_source_collections("en")
+    chinese = list_vocabulary_source_collections("zh")
+    assert {summary["id"] for summary in english} == {
         "toeic-600-essential",
         "common-3000",
         "cefr-b2",
         "cefr-c1",
         "cefr-c2",
     }
-    for summary in summaries:
-        assert summary["language_code"] == "en"
-        minimum = 30 if summary["id"] in {"toeic-600-essential", "common-3000"} else 2
-        assert summary["item_count"] >= minimum
-        assert summary["provenance"]["origin"] == "curated"
+    assert {summary["id"] for summary in chinese} == {
+        "hsk-1",
+        "hsk-2",
+        "hsk-3",
+        "hsk-4",
+        "hsk-5",
+        "hsk-6",
+        "hsk-7-9",
+    }
+    assert get_vocabulary_source_collection("toeic-600-essential")["catalog_status"] == "seed"
 
 
-def test_lists_both_chinese_collections_with_positive_item_counts() -> None:
-    summaries = list_vocabulary_collections("zh")
-    ids = {summary["id"] for summary in summaries}
-    assert ids == {"hsk-1", "hsk-2", "hsk-3", "hsk-4", "hsk-5", "hsk-6", "hsk-7-9"}
-    for summary in summaries:
-        assert summary["language_code"] == "zh"
-        minimum = 30 if summary["id"] in {"hsk-1", "hsk-2"} else 3
-        assert summary["item_count"] >= minimum
+def test_published_pack_folds_internal_level_extensions_without_new_tile() -> None:
+    parent = _valid_collection(
+        id="common-3000",
+        title="3000 Common Words",
+        catalog_status="published",
+        entries=[
+            {
+                "word": "common",
+                "definition": "shared by many people",
+                "support_translations": {"vi": "phổ biến"},
+                "level": "A1",
+            }
+        ],
+    )
+    extension = _valid_collection(
+        id="cefr-b2",
+        title="Common Words B2 extension",
+        parent_collection_id="common-3000",
+        catalog_status="internal",
+        entries=[
+            {
+                "word": "substantial",
+                "definition": "large in amount or importance",
+                "support_translations": {"vi": "đáng kể"},
+                "level": "B2",
+            }
+        ],
+    )
+
+    learner_catalog = _build_learner_catalog(_build_catalog([parent, extension]))
+
+    assert set(learner_catalog) == {"common-3000"}
+    assert learner_catalog["common-3000"]["levels"] == ["A1", "B2"]
+    assert learner_catalog["common-3000"]["level_range"] == "A1–B2"
+    assert [entry["word"] for entry in learner_catalog["common-3000"]["entries"]] == [
+        "common",
+        "substantial",
+    ]
 
 
 def test_list_vocabulary_collections_sorted_by_framework_then_level_then_title() -> None:
-    summaries = list_vocabulary_collections("zh")
+    summaries = list_vocabulary_source_collections("zh")
     keys = [(summary["framework"], summary["level"], summary["title"]) for summary in summaries]
     assert keys == sorted(keys)
 
@@ -91,7 +142,7 @@ def test_unknown_language_returns_empty_list() -> None:
 
 
 def test_get_toeic_collection_entries_carry_denormalized_metadata() -> None:
-    collection = get_vocabulary_collection("toeic-600-essential")
+    collection = get_vocabulary_source_collection("toeic-600-essential")
     assert collection is not None
     assert collection["id"] == "toeic-600-essential"
     entries = collection["entries"]
@@ -105,7 +156,7 @@ def test_get_toeic_collection_entries_carry_denormalized_metadata() -> None:
 
 
 def test_get_hsk1_collection_entries_carry_denormalized_metadata() -> None:
-    collection = get_vocabulary_collection("hsk-1")
+    collection = get_vocabulary_source_collection("hsk-1")
     assert collection is not None
     entries = collection["entries"]
     assert len(entries) >= 30

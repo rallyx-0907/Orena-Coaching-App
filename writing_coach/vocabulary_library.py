@@ -1,6 +1,4 @@
-"""Static curated Vocabulary Library catalog: cross-language aggregation and
-structural validation over per-language ``vocabulary_collections.json`` seed
-content.
+"""Static curated Vocabulary Library catalog.
 
 This module mirrors ``writing_coach/grammar_catalog.py``'s role over
 ``GRAMMAR_COURSE``/``GRAMMAR_BY_ID``: the JSON files colocated with each
@@ -12,15 +10,18 @@ membership join here — see
 ``docs/superpowers/plans/2026-09-14-vocabulary-experience.md`` §2 "Static
 catalog, not schema" for why none is needed.
 
-**Seed size is intentionally partial.** ``toeic-600-essential`` and
-``common-3000`` ship 35 authored entries each; ``hsk-1`` and ``hsk-2`` ship
-the larger first seed batches, while the added CEFR B2/C1/C2 and HSK3–HSK7-9
-collections are small level-coverage batches for the current card experience.
-None of these is the full breadth named by its collection title — growing a
-collection is incremental content authoring against its JSON file, not a
-later code task. Provenance on every collection states truthfully that the
-content is Orena-curated vocabulary organized to match a public framework's
-scope, not licensed or reproduced test material.
+The JSON files may contain authored seed material before a pack is ready for
+learner-facing Library publication.  ``list_vocabulary_collections`` and
+``get_vocabulary_collection`` deliberately expose only collections whose
+explicit ``catalog_status`` is ``published``.  This prevents a 35-word seed
+from being presented as a finished ``3000 Common Words`` or ``600 TOEIC
+Essential`` pack.  ``all_vocabulary_entries`` remains the raw static catalog
+for deterministic Feed/content tooling; it is not the public Library list.
+
+Level coverage is a property of a collection's entries, not an instruction to
+make one top-level Library card per level.  The small CEFR coverage sources are
+reserved as internal extensions of ``common-3000`` when content authors mark
+them ``catalog_status: internal``; they are never independently listed.
 """
 
 from __future__ import annotations
@@ -168,9 +169,96 @@ def _build_catalog(raw_collections: Sequence[Mapping[str, Any]]) -> dict[str, di
             "topic": collection.get("topic"),
             "title": collection["title"],
             "provenance": collection["provenance"],
+            "parent_collection_id": collection.get("parent_collection_id"),
             "item_count": len(entries),
             "entries": entries,
+            "catalog_status": _catalog_status(collection),
         }
+    return catalog
+
+
+def _level_sort_key(level: object) -> tuple[int, int, str]:
+    normalized = str(level or "").strip().upper().replace("–", "-").replace("—", "-")
+    if normalized.startswith("HSK"):
+        suffix = normalized.removeprefix("HSK")
+        if suffix == "7-9":
+            return (1, 7, normalized)
+        if suffix.isdigit():
+            return (1, int(suffix), normalized)
+    if normalized in {"A1", "A2", "B1", "B2", "C1", "C2"}:
+        return (0, {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6}[normalized], normalized)
+    return (2, 0, normalized)
+
+
+def _catalog_levels(entries: Sequence[Mapping[str, Any]], fallback: object) -> list[str]:
+    levels = {str(entry.get("level") or "").strip() for entry in entries if entry.get("level")}
+    if not levels and fallback:
+        levels.add(str(fallback).strip())
+    return sorted(levels, key=_level_sort_key)
+
+
+def _catalog_level_range(levels: Sequence[str]) -> str:
+    if len(levels) < 2:
+        return levels[0] if levels else ""
+    first, last = levels[0], levels[-1]
+    return f"{first}–{last}"
+
+
+def _catalog_status(collection: Mapping[str, Any]) -> str:
+    status = collection.get("catalog_status")
+    if not status and isinstance(collection.get("provenance"), Mapping):
+        status = collection["provenance"].get("catalog_status")
+    return str(status or "seed").strip().casefold()
+
+
+def _build_learner_catalog(
+    raw_catalog: Mapping[str, Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Return only complete/published top-level packs.
+
+    A missing status is intentionally treated as ``seed``.  Publication is an
+    explicit content-authoring decision, so adding a new JSON collection can
+    never accidentally leak unfinished fixture data into the product.
+    """
+
+    catalog: dict[str, dict[str, Any]] = {}
+    for collection_id, collection in raw_catalog.items():
+        if collection.get("parent_collection_id"):
+            continue
+        if collection.get("catalog_status") != "published":
+            continue
+        catalog[collection_id] = {
+            **collection,
+            "entries": [dict(entry) for entry in collection["entries"]],
+        }
+
+    # Internal extensions are folded into an already-published parent.  Their
+    # own status must still be explicit; a seed level batch is never silently
+    # counted as part of a finished collection.
+    for extension in raw_catalog.values():
+        parent_id = extension.get("parent_collection_id")
+        if not parent_id:
+            continue
+        parent = catalog.get(parent_id)
+        if not extension or not parent or extension.get("catalog_status") != "internal":
+            continue
+        existing = {entry["normalized_word"] for entry in parent["entries"]}
+        for raw_entry in extension["entries"]:
+            entry = dict(raw_entry)
+            if entry["normalized_word"] in existing:
+                continue
+            entry["language_code"] = parent["language_code"]
+            entry["framework"] = parent["framework"]
+            entry["collection_id"] = parent_id
+            entry["origin"] = parent["provenance"].get("origin", "curated")
+            existing.add(entry["normalized_word"])
+            parent["entries"].append(entry)
+
+    for collection in catalog.values():
+        levels = _catalog_levels(collection["entries"], collection.get("level"))
+        collection["levels"] = levels
+        collection["level_range"] = _catalog_level_range(levels)
+        collection["item_count"] = len(collection["entries"])
     return catalog
 
 
@@ -190,6 +278,7 @@ def _build_word_index(
 
 _RAW_COLLECTIONS: list[Mapping[str, Any]] = [*_ENGLISH_COLLECTIONS, *_CHINESE_COLLECTIONS]
 _CATALOG_BY_ID = _build_catalog(_RAW_COLLECTIONS)
+_LEARNER_CATALOG_BY_ID = _build_learner_catalog(_CATALOG_BY_ID)
 _WORD_INDEX = _build_word_index(_CATALOG_BY_ID)
 
 
@@ -202,13 +291,37 @@ def _summary(collection: Mapping[str, Any]) -> dict[str, Any]:
         "topic": collection.get("topic"),
         "title": collection["title"],
         "item_count": collection["item_count"],
+        "levels": list(collection.get("levels", [])),
+        "level_range": collection.get("level_range", collection.get("level", "")),
         "provenance": collection["provenance"],
     }
 
 
 def list_vocabulary_collections(language_code: str) -> list[dict[str, Any]]:
-    """Summaries for every collection in ``language_code``, sorted by
-    ``framework``, then ``level``, then ``title``."""
+    """Published top-level packs for ``language_code``.
+
+    Unpublished seed/fixture sources are intentionally absent.  A collection
+    with several proficiency levels returns one summary with ``levels`` and
+    ``level_range`` metadata rather than one card per level.
+    """
+
+    language = str(language_code or "").strip().casefold()
+    summaries = [
+        _summary(collection)
+        for collection in _LEARNER_CATALOG_BY_ID.values()
+        if collection["language_code"] == language
+    ]
+    summaries.sort(key=lambda summary: (summary["framework"], summary["level"], summary["title"]))
+    return summaries
+
+
+def list_vocabulary_source_collections(language_code: str) -> list[dict[str, Any]]:
+    """Return raw source summaries for authoring and non-learner tooling.
+
+    This is intentionally separate from the Library contract.  It lets
+    validation/feed tests inspect seed coverage without making that coverage
+    look like a finished product pack.
+    """
 
     language = str(language_code or "").strip().casefold()
     summaries = [
@@ -220,11 +333,27 @@ def list_vocabulary_collections(language_code: str) -> list[dict[str, Any]]:
     return summaries
 
 
-def get_vocabulary_collection(collection_id: str) -> dict[str, Any] | None:
-    """The collection summary plus its raw denormalized ``entries``, or
-    ``None`` when ``collection_id`` is not a known collection."""
+def get_vocabulary_source_collection(collection_id: str) -> dict[str, Any] | None:
+    """Return an unpublished static source for authoring/test inspection."""
 
     collection = _CATALOG_BY_ID.get(str(collection_id or "").strip())
+    if collection is None:
+        return None
+    summary = _summary(collection)
+    summary["entries"] = [dict(entry) for entry in collection["entries"]]
+    summary["catalog_status"] = collection["catalog_status"]
+    return summary
+
+
+def get_vocabulary_collection(collection_id: str) -> dict[str, Any] | None:
+    """A published collection plus denormalized entries, or ``None``.
+
+    Keeping unpublished ids out of this accessor closes the HTTP detail route
+    as well as the list route; a guessed seed id cannot bypass the product
+    publication gate.
+    """
+
+    collection = _LEARNER_CATALOG_BY_ID.get(str(collection_id or "").strip())
     if collection is None:
         return None
     summary = _summary(collection)

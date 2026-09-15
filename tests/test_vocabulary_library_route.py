@@ -60,12 +60,11 @@ def test_collections_list_rejects_unsupported_language_code(language_code: str) 
 def test_collections_list_is_language_filtered() -> None:
     en = _get("/api/vocabulary/library/collections?language_code=en").json()
     zh = _get("/api/vocabulary/library/collections?language_code=zh").json()
-    assert en["items"], "the English catalog should not be empty"
-    assert zh["items"], "the Chinese catalog should not be empty"
-    assert {item["language_code"] for item in en["items"]} == {"en"}
-    assert {item["language_code"] for item in zh["items"]} == {"zh"}
-    assert {item["id"] for item in en["items"]} >= {"toeic-600-essential", "common-3000"}
-    assert {item["id"] for item in zh["items"]} >= {"hsk-1", "hsk-2"}
+    # Current JSON packs are explicitly seed-sized.  The learner route must
+    # stay empty until a content owner marks a coherent pack published,
+    # rather than presenting 2/3/35 entries as finished collections.
+    assert en["items"] == []
+    assert zh["items"] == []
 
 
 def test_unknown_collection_id_is_a_clean_404() -> None:
@@ -73,38 +72,9 @@ def test_unknown_collection_id_is_a_clean_404() -> None:
     assert response.status_code == 404
 
 
-def test_collection_detail_marks_a_saved_word_and_an_unsaved_word_correctly() -> None:
-    _seed_saved_word("en", "invoice")
-
+def test_unpublished_collection_detail_is_not_learner_visible() -> None:
     response = _get("/api/vocabulary/library/collections/toeic-600-essential")
-    assert response.status_code == 200
-    body = response.json()
-    assert body["id"] == "toeic-600-essential"
-    assert body["language_code"] == "en"
-    assert "entries" not in body, "the summary+items shape must not also carry the raw 'entries' key"
-
-    by_word = {item["headword"].casefold(): item for item in body["items"]}
-    assert by_word["invoice"]["saved"] is True
-    other = next(item for word, item in by_word.items() if word != "invoice")
-    assert other["saved"] is False
-
-
-def test_collection_detail_exposes_derived_review_state_for_management_views() -> None:
-    _seed_saved_word("en", "invoice")
-
-    response = _get("/api/vocabulary/library/collections/toeic-600-essential")
-    assert response.status_code == 200
-    body = response.json()
-    invoice = next(item for item in body["items"] if item["headword"].casefold() == "invoice")
-    assert invoice["saved"] is True
-    assert invoice["review_stage"] == 0
-    assert invoice["due"] is True
-    assert invoice["successful_recalls"] == 0
-    assert invoice["lapse_count"] == 0
-    assert body["progress"]["learned_count"] >= 1
-    assert body["progress"]["learning_count"] >= 1
-    assert body["progress"]["due_count"] >= 1
-    assert body["progress"]["mastered_count"] == 0
+    assert response.status_code == 404
 
 
 def test_saved_vocabulary_summary_exposes_overview_state_counts() -> None:
@@ -134,9 +104,9 @@ def test_saved_catalog_word_reuses_static_card_content_without_new_persistence()
     ]
 
 
-def test_collection_detail_never_leaks_an_internal_file_path() -> None:
+def test_unpublished_collection_detail_never_leaks_an_internal_file_path() -> None:
     response = _get("/api/vocabulary/library/collections/hsk-1")
-    assert response.status_code == 200
+    assert response.status_code == 404
     serialized = response.text
     assert "vocabulary_collections.json" not in serialized
     assert "vocabulary_collections.py" not in serialized

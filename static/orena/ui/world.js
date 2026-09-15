@@ -94,6 +94,8 @@ function vocabularyDiscoverCopy(c, supportLanguage) {
     saved: c.vocabularySaved || c.saved,
     study: c.vocabularyStudy || c.lookCloser,
     open: c.vocabularyOpen || c.lookCloser,
+    vocabularyFeedSoundOn: c.vocabularyFeedSoundOn,
+    vocabularyFeedSoundOff: c.vocabularyFeedSoundOff,
     words: c.vocabularyWordCount,
     learning: c.vocabularyLearningState,
     due: c.vocabularyDueState,
