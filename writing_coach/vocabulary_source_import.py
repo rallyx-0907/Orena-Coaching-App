@@ -225,7 +225,7 @@ _FIELD_ALIASES: dict[str, tuple[tuple[str, int], ...]] = {
     ),
     "short_meaning": (
         ("shortmeaning", 100), ("gloss", 96), ("translation", 92),
-        ("meaning", 90), ("vietnamese", 88), ("native", 80), ("meaningvi", 100),
+        ("meaning", 90), ("meanings", 90), ("vietnamese", 88), ("native", 80), ("meaningvi", 100),
         ("translationvi", 100), ("meaningzh", 92),
     ),
     "detailed_definition": (
@@ -326,6 +326,65 @@ def _list_value(value: Any) -> list[str]:
     if isinstance(decoded, Mapping):
         return _list_value(decoded)
     return [part.strip() for part in re.split(r"\s*[;|]\s*", text) if part.strip()]
+
+
+def _localized_text_values(value: Any, fallback_language: str) -> list[dict[str, str]]:
+    """Normalize scalar/list/object meanings without losing source languages.
+
+    Simple CSV cells still use the row-level fallback language.  JSON sources
+    may provide either localized objects (``{"language": "vi", "text":
+    "..."}``) or a language map (``{"vi": "...", "en": "..."}``).  The
+    importer preserves those distinctions instead of flattening every meaning
+    into the row's default language.
+    """
+
+    fallback = _clean_text(fallback_language).casefold() or "unknown"
+    decoded: Any = value
+    if not isinstance(value, (Mapping, list, tuple)):
+        text = _clean_text(value)
+        if not text:
+            return []
+        try:
+            decoded = json.loads(text)
+        except json.JSONDecodeError:
+            decoded = value
+
+    if isinstance(decoded, Mapping):
+        language = _clean_text(
+            decoded.get("language")
+            or decoded.get("lang")
+            or decoded.get("language_code")
+            or decoded.get("meaning_language")
+            or decoded.get("locale")
+        ).casefold()
+        selected = next(
+            (
+                decoded.get(key)
+                for key in ("text", "value", "term", "meaning", "definition", "gloss")
+                if decoded.get(key) is not None
+            ),
+            None,
+        )
+        if selected is not None:
+            return _localized_text_values(selected, language or fallback)
+
+        localized: list[dict[str, str]] = []
+        for key, nested in decoded.items():
+            key_language = _clean_text(key).casefold()
+            nested_fallback = key_language if _LANGUAGE_CODE_RE.fullmatch(key_language) else fallback
+            localized.extend(_localized_text_values(nested, nested_fallback))
+        return localized
+
+    if isinstance(decoded, Sequence) and not isinstance(decoded, (str, bytes)):
+        localized = []
+        for item in decoded:
+            localized.extend(_localized_text_values(item, fallback))
+        return localized
+
+    return [
+        {"language": fallback, "text": text, "origin": "source"}
+        for text in _list_value(decoded)
+    ]
 
 
 def _json_value(value: Any) -> Any:
@@ -453,8 +512,21 @@ def normalize_vocabulary_rows(
             )
             continue
         pos = _clean_text(_mapping_value(row, mapping, "part_of_speech"))
-        short_texts = _list_value(_mapping_value(row, mapping, "short_meaning"))
-        detailed_texts = _list_value(_mapping_value(row, mapping, "detailed_definition"))
+        row_meaning_language = (
+            _clean_text(_mapping_value(row, mapping, "meaning_language"))
+            or _clean_text(meaning_language)
+            or ""
+        ).casefold()
+        short_meanings = _localized_text_values(
+            _mapping_value(row, mapping, "short_meaning"),
+            row_meaning_language,
+        )
+        detailed_definitions = _localized_text_values(
+            _mapping_value(row, mapping, "detailed_definition"),
+            target_language,
+        )
+        short_texts = [item["text"] for item in short_meanings]
+        detailed_texts = [item["text"] for item in detailed_definitions]
         explicit_sense = _clean_text(_mapping_value(row, mapping, "sense_key"))
         sense_seed = explicit_sense or (short_texts[0] if short_texts else (detailed_texts[0] if detailed_texts else ""))
         identity_key = canonical_vocabulary_identity(
@@ -470,11 +542,6 @@ def normalize_vocabulary_rows(
         row_level = _clean_text(_mapping_value(row, mapping, "level")) or _clean_text(collection_level)
         row_framework = _clean_text(_mapping_value(row, mapping, "framework")) or _clean_text(collection_framework)
         row_topic = _clean_text(_mapping_value(row, mapping, "topic")) or _clean_text(collection_topic)
-        row_meaning_language = (
-            _clean_text(_mapping_value(row, mapping, "meaning_language"))
-            or _clean_text(meaning_language)
-            or ""
-        ).casefold()
         pronunciation = _list_value(_mapping_value(row, mapping, "pronunciation"))
         readings = _list_value(_mapping_value(row, mapping, "reading"))
         examples = [
@@ -517,14 +584,8 @@ def normalize_vocabulary_rows(
                 {"text": text, "kind": "reading", "origin": "source"}
                 for text in readings
             ],
-            "short_meanings": [
-                {"language": row_meaning_language or "unknown", "text": text, "origin": "source"}
-                for text in short_texts
-            ],
-            "detailed_definitions": [
-                {"language": target_language, "text": text, "origin": "source"}
-                for text in detailed_texts
-            ],
+            "short_meanings": short_meanings,
+            "detailed_definitions": detailed_definitions,
             "part_of_speech": pos,
             "examples": examples,
             "usage_notes": usage_notes,

@@ -492,6 +492,19 @@ class SQLAlchemyVocabularyRepository:
                         }
                     )
                     continue
+                entry_has_published_membership = False
+                if entry is not None:
+                    entry_has_published_membership = session.scalar(
+                        select(VocabularyCollectionMembership.id)
+                        .join(
+                            VocabularyCollection,
+                            VocabularyCollection.id == VocabularyCollectionMembership.collection_id,
+                        )
+                        .where(
+                            VocabularyCollectionMembership.entry_id == entry.id,
+                            VocabularyCollection.catalog_status == "published",
+                        )
+                    ) is not None
                 if entry is None:
                     entry = VocabularyEntry(
                         id=uuid.uuid4(),
@@ -520,8 +533,19 @@ class SQLAlchemyVocabularyRepository:
                     session.flush()
                 else:
                     duplicate_count += 1
-                    _merge_existing_entry(entry, record, warnings)
-                    entry.updated_at = now
+                    if entry_has_published_membership:
+                        # A pending source may share a lexical identity with a
+                        # published collection, but it must not enrich or
+                        # mutate the published content projection.  The new
+                        # membership and source receipt still preserve the
+                        # pending import for a later reviewed publication.
+                        warnings.append(
+                            f"Existing published entry '{entry.term}' was kept unchanged; "
+                            "source data was not merged."
+                        )
+                    else:
+                        _merge_existing_entry(entry, record, warnings)
+                        entry.updated_at = now
 
                 membership = session.scalar(
                     select(VocabularyCollectionMembership).where(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 
 import pytest
 
@@ -60,6 +61,51 @@ def test_json_and_txt_sources_accept_different_shapes() -> None:
     txt_source = parse_vocabulary_source("hsk.txt", "学习\n复习\n".encode())
     assert txt_source.headers == ("term",)
     assert [row["term"] for row in txt_source.rows] == ["学习", "复习"]
+
+
+def test_json_meaning_objects_preserve_each_source_language() -> None:
+    source = parse_vocabulary_source(
+        "localized.json",
+        json.dumps(
+            {
+                "entries": [
+                    {
+                        "term": "abandon",
+                        "meanings": [
+                            {"language": "vi", "text": "bỏ, từ bỏ"},
+                            {"language": "en", "text": "leave completely"},
+                        ],
+                        "details": [
+                            {"language": "en", "text": "to leave a person or place permanently"},
+                            {"language": "vi", "text": "rời bỏ một người hoặc nơi nào đó"},
+                        ],
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ).encode("utf-8"),
+    )
+    detected = detect_vocabulary_mapping(source)
+    assert detected.mapping["short_meaning"] == "meanings"
+
+    normalized = normalize_vocabulary_rows(
+        source,
+        mapping={
+            **detected.mapping,
+            "detailed_definition": "details",
+        },
+        language_code="en",
+        meaning_language="vi",
+    )
+    record = normalized["records"][0]
+    assert [(item["language"], item["text"]) for item in record["short_meanings"]] == [
+        ("vi", "bỏ, từ bỏ"),
+        ("en", "leave completely"),
+    ]
+    assert [(item["language"], item["text"]) for item in record["detailed_definitions"]] == [
+        ("en", "to leave a person or place permanently"),
+        ("vi", "rời bỏ một người hoặc nơi nào đó"),
+    ]
 
 
 def test_tsv_source_is_parsed_with_the_same_mapping_contract() -> None:

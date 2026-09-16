@@ -240,6 +240,68 @@ def test_published_admission_and_provenance_survive_pending_reimport(tmp_path) -
     assert repository.list_collections("en")[0]["item_count"] == 1
 
 
+def test_pending_import_cannot_enrich_entry_visible_in_published_collection(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "published-entry-guard.db")
+    repository.initialize()
+    _, published_mapping, published_normalized = _source(
+        "published.csv",
+        "word,meaning,pronunciation\nlead,guide,/old/\n",
+    )
+    repository.import_source(
+        collection={
+            "id": "published-pack",
+            "title": "Published Pack",
+            "language_code": "en",
+            "catalog_status": "published",
+            "origin": "imported",
+            "provenance": {
+                "admission": {
+                    "review_status": "approved",
+                    "publication_attested": True,
+                    "attested_by": "publisher",
+                    "rights_status": "internal_curated",
+                    "completeness": "complete",
+                }
+            },
+        },
+        source=published_normalized,
+        records=published_normalized["records"],
+        mapping=published_mapping,
+        imported_by="publisher",
+    )
+
+    _, pending_mapping, pending_normalized = _source(
+        "pending.csv",
+        "word,meaning,pronunciation\nlead,guide,/new/\n",
+    )
+    pending_result = repository.import_source(
+        collection={
+            "id": "pending-pack",
+            "title": "Pending Pack",
+            "language_code": "en",
+            "catalog_status": "pending_review",
+            "origin": "imported",
+            "provenance": {},
+        },
+        source=pending_normalized,
+        records=pending_normalized["records"],
+        mapping=pending_mapping,
+        imported_by="pending-importer",
+    )
+
+    assert pending_result["imported"] == 1
+    assert pending_result["duplicates"] == 1
+    assert any("kept unchanged" in warning for warning in pending_result["warnings"])
+    published_detail = repository.get_collection("published-pack")
+    assert published_detail is not None
+    assert published_detail["entries"][0]["pronunciations"] == [
+        {"text": "/old/", "kind": "pronunciation", "origin": "source"}
+    ]
+    assert repository.find_entry("en", "lead")["pronunciations"] == [
+        {"text": "/old/", "kind": "pronunciation", "origin": "source"}
+    ]
+
+
 def test_find_entry_hides_unpublished_entries(tmp_path) -> None:
     repository = sqlite_vocabulary_repository(tmp_path / "pending-visibility.db")
     repository.initialize()
