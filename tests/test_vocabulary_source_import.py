@@ -106,6 +106,20 @@ def test_json_meaning_objects_preserve_each_source_language() -> None:
         ("en", "to leave a person or place permanently"),
         ("vi", "rời bỏ một người hoặc nơi nào đó"),
     ]
+    language_map_source = parse_vocabulary_source(
+        "language-map.json",
+        json.dumps({"term": "guide", "meanings": {"vi": "hướng dẫn", "en": "guide"}}, ensure_ascii=False).encode("utf-8"),
+    )
+    language_map = normalize_vocabulary_rows(
+        language_map_source,
+        mapping={"term": "term", "short_meaning": "meanings"},
+        language_code="en",
+        meaning_language="vi",
+    )
+    assert [(item["language"], item["text"]) for item in language_map["records"][0]["short_meanings"]] == [
+        ("vi", "hướng dẫn"),
+        ("en", "guide"),
+    ]
 
 
 def test_tsv_source_is_parsed_with_the_same_mapping_contract() -> None:

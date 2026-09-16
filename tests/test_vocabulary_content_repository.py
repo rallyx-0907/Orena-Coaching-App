@@ -300,6 +300,26 @@ def test_pending_import_cannot_enrich_entry_visible_in_published_collection(tmp_
     assert repository.find_entry("en", "lead")["pronunciations"] == [
         {"text": "/old/", "kind": "pronunciation", "origin": "source"}
     ]
+    repository.finalize_collection_publication(
+        "pending-pack",
+        admission={
+            "review_status": "approved",
+            "publication_attested": True,
+            "attested_by": "reviewer",
+            "rights_status": "internal_curated",
+            "completeness": "complete",
+        },
+    )
+    pending_detail = repository.get_collection("pending-pack")
+    assert pending_detail is not None
+    assert pending_detail["entries"][0]["pronunciations"] == [
+        {"text": "/new/", "kind": "pronunciation", "origin": "source"}
+    ]
+    # The collection-level snapshot makes the reviewed pending source
+    # visible without mutating the entry already published in another pack.
+    assert repository.get_collection("published-pack")["entries"][0]["pronunciations"] == [
+        {"text": "/old/", "kind": "pronunciation", "origin": "source"}
+    ]
 
 
 def test_find_entry_hides_unpublished_entries(tmp_path) -> None:

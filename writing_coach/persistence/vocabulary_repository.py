@@ -74,6 +74,26 @@ _VOCABULARY_PUBLISHABLE_RIGHTS = {
     "internal_curated",
 }
 _VOCABULARY_CATALOG_STATUSES = {"pending_review", "published"}
+_VOCABULARY_CONTENT_SNAPSHOT_FIELDS = (
+    "term",
+    "language_code",
+    "normalized_term",
+    "identity_key",
+    "sense_key",
+    "pronunciations",
+    "readings",
+    "short_meanings",
+    "detailed_definitions",
+    "part_of_speech",
+    "examples",
+    "usage_notes",
+    "orthography",
+    "level",
+    "framework",
+    "topic",
+    "content_origins",
+    "provenance",
+)
 
 
 def _vocabulary_revision_is_usable(current_revision: str) -> bool:
@@ -221,6 +241,43 @@ def _merge_list(existing: Any, incoming: Any) -> list[Any]:
             current.append(_copy_json(item, item))
             seen.add(marker)
     return current
+
+
+def _source_content_snapshot(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep a source-owned membership projection when a shared entry is immutable."""
+
+    return {
+        field: _copy_json(record.get(field), record.get(field))
+        for field in _VOCABULARY_CONTENT_SNAPSHOT_FIELDS
+        if field in record
+    }
+
+
+def _apply_content_snapshot(item: dict[str, Any], snapshot: Any) -> None:
+    """Project collection-scoped source content without mutating the shared entry."""
+
+    if not isinstance(snapshot, Mapping):
+        return
+    for field in _VOCABULARY_CONTENT_SNAPSHOT_FIELDS:
+        if field in snapshot:
+            item[field] = _copy_json(snapshot[field], item.get(field))
+    if "term" in snapshot:
+        item["word"] = item["term"]
+    if "normalized_term" in snapshot:
+        item["normalized_word"] = item["normalized_term"]
+    short_meanings = item.get("short_meanings")
+    item["support_translations"] = {
+        meaning.get("language"): meaning.get("text")
+        for meaning in (short_meanings if isinstance(short_meanings, list) else [])
+        if isinstance(meaning, Mapping) and meaning.get("language") and meaning.get("text")
+    }
+    pronunciations = item.get("pronunciations")
+    first_pronunciation = pronunciations[0] if isinstance(pronunciations, list) and pronunciations else ""
+    item["phonetic"] = (
+        first_pronunciation.get("text", "")
+        if isinstance(first_pronunciation, Mapping)
+        else first_pronunciation
+    )
 
 
 def _entry_dict(entry: VocabularyEntry) -> dict[str, Any]:
@@ -492,8 +549,13 @@ class SQLAlchemyVocabularyRepository:
                         }
                     )
                     continue
+                # A newly imported collection may share identity with an
+                # already-published lexical entry, but a published entry is
+                # an immutable snapshot.  The collection membership below
+                # carries a source projection for this case; it is not a
+                # second learner-owned vocabulary object.
                 entry_has_published_membership = False
-                if entry is not None:
+                if not collection_was_published and entry is not None:
                     entry_has_published_membership = session.scalar(
                         select(VocabularyCollectionMembership.id)
                         .join(
@@ -554,24 +616,40 @@ class SQLAlchemyVocabularyRepository:
                     )
                 )
                 if membership is not None:
+                    if entry_has_published_membership:
+                        membership_metadata = _copy_json(membership.membership_metadata, {}) or {}
+                        membership_metadata["content_snapshot"] = _source_content_snapshot(record)
+                        membership_metadata["content_snapshot_origin"] = "source"
+                        membership_metadata["content_snapshot_reason"] = "published_entry_immutable"
+                        membership.source_import_id = source_id
+                        membership.membership_metadata = membership_metadata
                     skipped_count += 1
                     skipped_details.append(
                         {"position": source_position, "reason": "already a member of collection", "term": entry.term}
                     )
                     continue
+                membership_metadata = {
+                    "source_row": record.get("provenance", {}).get("row"),
+                    "origin": "source",
+                    "level": _text(record.get("level")),
+                    "framework": _text(record.get("framework")),
+                    "topic": _text(record.get("topic")),
+                }
+                if entry_has_published_membership:
+                    membership_metadata.update(
+                        {
+                            "content_snapshot": _source_content_snapshot(record),
+                            "content_snapshot_origin": "source",
+                            "content_snapshot_reason": "published_entry_immutable",
+                        }
+                    )
                 membership = VocabularyCollectionMembership(
                     id=uuid.uuid4(),
                     collection_id=collection_id,
                     entry_id=entry.id,
                     source_import_id=source_id,
                     position=next_position + 1,
-                    membership_metadata={
-                        "source_row": record.get("provenance", {}).get("row"),
-                        "origin": "source",
-                        "level": _text(record.get("level")),
-                        "framework": _text(record.get("framework")),
-                        "topic": _text(record.get("topic")),
-                    },
+                    membership_metadata=membership_metadata,
                 )
                 session.add(membership)
                 imported_count += 1
@@ -914,6 +992,7 @@ class SQLAlchemyVocabularyRepository:
             item["collection_id"] = collection_id
             item["position"] = membership.position
             membership_metadata = _copy_json(membership.membership_metadata, {}) or {}
+            _apply_content_snapshot(item, membership_metadata.get("content_snapshot"))
             for field in ("level", "framework", "topic"):
                 if membership_metadata.get(field):
                     item[field] = membership_metadata[field]
