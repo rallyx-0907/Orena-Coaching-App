@@ -195,20 +195,22 @@ export function resumable(item, memory) {
   return true;
 }
 
-export function continuationShelf(ctx, limit = 3) {
+export function continuationShelf(ctx, limit = 3, options = {}) {
   const { memory, c, language } = ctx;
+  const { title = c.continue, compact = false } = options;
   const entries = memory.value.continuation
     .filter((item) => resumable(item, memory))
     .slice(0, limit);
   if (!entries.length) return '';
-  return `<section class="thread-shelf" aria-label="${esc(c.continue)}"><div class="section-head"><h2>${esc(c.continue)}</h2>${hint({ text: c.deviceThreads })}</div><div class="thread-list">${entries
+  return `<section class="thread-shelf${compact ? ' thread-shelf--compact' : ''}" aria-label="${esc(title)}"><div class="section-head"><h2>${esc(title)}</h2>${hint({ text: c.deviceThreads })}</div><div class="thread-list">${entries
     .map((item) => {
       const draft = memory.value.expressions[item.id]?.trim();
       const action =
         draft && item.intent === 'writing'
           ? c.draftLabel
           : threadShape(item, c);
-      return `<a class="thread" href="${continuationLink(item)}"><small>${esc(action)}</small><strong lang="${language}">${esc(item.title)}</strong>${draft ? `<p lang="${language}">${esc(draft)}</p>` : `<p>${esc(threadState(item, memory, c))}</p>`}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
+      const state = compact ? '' : draft ? `<p lang="${language}">${esc(draft)}</p>` : `<p>${esc(threadState(item, memory, c))}</p>`;
+      return `<a class="thread" href="${continuationLink(item)}"><small>${esc(action)}</small><strong lang="${language}">${esc(item.title)}</strong>${state}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
     })
     .join('')}</div></section>`;
 }

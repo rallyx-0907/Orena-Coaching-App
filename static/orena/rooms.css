@@ -1214,17 +1214,6 @@
   .reading-window > small { margin-bottom: var(--space-2); }
   .reading-window-art { margin-bottom: var(--space-2); }
   .reading-window p { font-size: var(--text-sm); }
-  .studio-spread { gap: var(--space-3); margin-top: var(--space-5); }
-  .studio-spread article { padding: var(--space-4); }
-  .studio-spread h2 { font-size: 1.3rem; margin-top: var(--space-1); }
-  .studio-spread p { font-size: var(--text-sm); }
-  .studio-spread .brand-art { width: 64px; }
-  .story-walk { margin-top: var(--space-6); }
-  /* The number is a mark beside the title and never breaks inside itself. */
-  .story-path { grid-template-columns: auto minmax(0, 1fr) 16px; gap: var(--space-3); padding-block: var(--space-3); }
-  .path-number { font-size: 1.15rem; min-width: 1.5rem; white-space: nowrap; }
-  .story-path h3 { font-size: 1.1rem; }
-  .story-path p { font-size: var(--text-sm); margin: 2px 0; }
   .bring-invitation {
     flex-direction: column;
     align-items: flex-start;

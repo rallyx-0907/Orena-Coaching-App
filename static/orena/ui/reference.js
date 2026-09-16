@@ -45,12 +45,7 @@ export const referenceCopy = {
     continueNote: 'The stories you enter and the words you work on leave a way back. These threads stay on this device.',
     collectionTitle: 'A world with\nyour fingerprints on it.',
     collectionNote: 'Things you brought in and chose to keep. Ready for another look.',
-    browseAll: 'All the ways in', fieldNote: 'Follow your curiosity',
-    startHere: 'Start here', startNote: 'See the ways to learn in Orena.',
-    goReadNote: 'Read in context', goListenNote: 'Follow a voice', goSpeakNote: 'Start speaking',
-    practiceShort: 'Try a focused activity', writingShort: 'Put it into words',
-    vocabularyShort: 'Browse words and review', continueShort: 'Pick up where you left off',
-    discoverMore: 'Explore more',
+    browseAll: 'All the ways in', fieldNote: 'Follow your curiosity', continueLearning: 'Continue learning',
     direct: 'Choose your intention', review: 'Reference in progress · your work stays yours',
   },
   zh: {
@@ -86,12 +81,7 @@ export const referenceCopy = {
     continueTitle: '上次的故事，\n等你接着往下走。', continueEmpty: '下次回来，从这里继续。',
     continueNote: '读过的故事、写到一半的话，都留下一条回来的路。这些记录保存在当前设备。',
     collectionTitle: '这个世界里，\n有你留下的印记。', collectionNote: '你带来的、你选择留下的内容。随时可以再看看。',
-    browseAll: '每一种开始', fieldNote: '跟着好奇心走',
-    startHere: '从这里开始', startNote: '看看在 Orena 里可以怎样学习。',
-    goReadNote: '在语境中阅读', goListenNote: '跟随一种声音', goSpeakNote: '开始表达',
-    practiceShort: '做一个专注练习', writingShort: '把想法写下来',
-    vocabularyShort: '浏览词汇并复习', continueShort: '从上次停下的地方继续',
-    discoverMore: '查看更多',
+    browseAll: '每一种开始', fieldNote: '跟着好奇心走', continueLearning: '继续学习',
     direct: '选择练习方向', review: '参考体验建设中 · 你的作品属于你',
   },
 };
@@ -114,7 +104,7 @@ export function experienceFor(location) {
   if (page === 'expression') return 'writing';
   if (page === 'practice' && intent === 'grammar') return 'understanding';
   if (['dictation','shadowing','speaking'].includes(intent) && page === 'encounter') return 'practice';
-  if (page === 'encounter') return /^(media:|url:)/.test(id) ? 'listening' : 'reading';
+  if (page === 'encounter') return /^(media:|url:|upload:)/.test(id) ? 'listening' : 'reading';
   if (page === 'practice' && intent === 'reading') return 'reading';
   if (page === 'practice' && intent === 'follow') return 'listening';
   return page === 'preferences' ? 'discover' : page;
