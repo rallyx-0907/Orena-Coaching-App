@@ -2268,20 +2268,28 @@ async def admin_vocabulary_source_import(
         collection_metadata.get("framework", ""),
     )
     imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
-    catalog_status, admission = _vocabulary_admission(
+    requested_catalog_status, admission = _vocabulary_admission(
         collection_metadata,
         imported_by=imported_by,
     )
+    # Every source in a batch is imported into a non-published collection.
+    # Publication is a finalization step below, so a later failed file cannot
+    # expose the earlier successful files to learners.
+    pending_admission = {
+        **admission,
+        "review_status": "pending_review",
+        "publication_attested": False,
+    }
     provenance = {
         **collection_metadata.get("provenance", {}),
         "origin": "imported",
-        "catalog_status": catalog_status,
-        "admission": admission,
+        "catalog_status": "pending_review",
+        "admission": pending_admission,
     }
     collection = {
         **collection_metadata,
         "id": collection_id,
-        "catalog_status": catalog_status,
+        "catalog_status": "pending_review",
         "origin": "imported",
         "provenance": provenance,
     }
@@ -2377,20 +2385,45 @@ async def admin_vocabulary_source_import(
             # A single malformed or concurrently conflicting source must not
             # abort the rest of a batch.  The source result remains explicit so
             # an administrator can retry only this file after inspection.
-            results.append(failed_source_result(
-                filename=filename,
-                raw=raw,
-                source=source,
-                mapping=mapping,
-                reason=f"import failed: {exc}",
+            results.append(
+                failed_source_result(
+                    filename=filename,
+                    raw=raw,
+                    source=source,
+                    mapping=mapping,
+                    reason=f"import failed: {exc}",
+                )
             )
+    batch_failed = any(
+        item.get("status") == "failed" or int(item.get("failed") or 0) > 0
+        for item in results
+    )
+    publication_failure = ""
+    published_collection: dict[str, Any] | None = None
+    if requested_catalog_status == "published" and collection_persisted and not batch_failed:
+        try:
+            published_collection = repository.finalize_collection_publication(
+                collection_id,
+                admission=admission,
             )
+        except Exception as exc:  # pragma: no cover - provider-specific guard
+            # Keep the imported content pending when final admission cannot be
+            # committed.  The source receipts remain truthful and an admin can
+            # retry publication after the provider/infrastructure is repaired.
+            publication_failure = str(exc) or "publication finalization failed"
+    collection_result = {
+        "id": collection_id,
+        "title": collection["title"],
+        "catalog_status": (
+            "published"
+            if published_collection is not None
+            else ("pending_review" if collection_persisted else "not_created")
+        ),
+    }
+    if publication_failure:
+        collection_result["publication_failure"] = publication_failure
     return {
-        "collection": {
-            "id": collection_id,
-            "title": collection["title"],
-            "catalog_status": catalog_status if collection_persisted else "not_created",
-        },
+        "collection": collection_result,
         "items": results,
     }
 # === ADMIN VOCABULARY SOURCE IMPORT ROUTES END ===

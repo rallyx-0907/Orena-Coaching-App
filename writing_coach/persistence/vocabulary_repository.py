@@ -34,6 +34,10 @@ from writing_coach.persistence.models import (
     VocabularyEntry,
     VocabularySourceImport,
 )
+from writing_coach.vocabulary_source_import import (
+    canonical_vocabulary_identity,
+    canonical_vocabulary_normalized_term,
+)
 
 
 VOCABULARY_TABLES = (
@@ -117,6 +121,9 @@ class VocabularyRepository(Protocol):
         failure_reason: str,
         imported_by: str = "",
     ) -> dict[str, Any]: ...
+    def finalize_collection_publication(
+        self, collection_id: str, *, admission: Mapping[str, Any]
+    ) -> dict[str, Any]: ...
     def list_collections(self, language_code: str) -> list[dict[str, Any]]: ...
     def get_collection(
         self,
@@ -178,6 +185,30 @@ def _level_range(levels: list[str], fallback: str = "") -> str:
 
 def _text(value: Any) -> str:
     return " ".join(str(value or "").split()).strip()
+
+
+def _publication_admission(provenance: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the complete admission record required for publication."""
+
+    raw_admission = provenance.get("admission")
+    if not isinstance(raw_admission, Mapping):
+        raise ValueError(
+            "A vocabulary collection needs an approved admission before publication."
+        )
+    admission = dict(raw_admission)
+    if (
+        _text(admission.get("review_status")).casefold() != "approved"
+        or admission.get("publication_attested") is not True
+        or _text(admission.get("rights_status")).casefold()
+        not in _VOCABULARY_PUBLISHABLE_RIGHTS
+        or _text(admission.get("completeness")).casefold() != "complete"
+        or not _text(admission.get("attested_by"))
+    ):
+        raise ValueError(
+            "A vocabulary collection needs an approved rights/completeness admission "
+            "with a reviewer identity before publication."
+        )
+    return admission
 
 
 def _merge_list(existing: Any, incoming: Any) -> list[Any]:
@@ -303,17 +334,10 @@ class SQLAlchemyVocabularyRepository:
         if catalog_status not in _VOCABULARY_CATALOG_STATUSES:
             raise ValueError(f"Unsupported vocabulary catalog status '{catalog_status}'.")
         collection_provenance = _copy_json(collection.get("provenance"), {}) or {}
+        if not isinstance(collection_provenance, Mapping):
+            raise ValueError("Vocabulary collection provenance must be an object.")
         if catalog_status == "published":
-            admission = collection_provenance.get("admission")
-            if not isinstance(admission, Mapping) or (
-                admission.get("review_status") != "approved"
-                or admission.get("publication_attested") is not True
-                or _text(admission.get("rights_status")) not in _VOCABULARY_PUBLISHABLE_RIGHTS
-                or _text(admission.get("completeness")).casefold() != "complete"
-            ):
-                raise ValueError(
-                    "A vocabulary collection needs an approved rights/completeness admission before publication."
-                )
+            _publication_admission(collection_provenance)
         now = _now()
         rows = list(records)
         source_id = uuid.uuid4()
@@ -359,7 +383,12 @@ class SQLAlchemyVocabularyRepository:
                         continue
                     if value:
                         setattr(collection_row, field, value)
-                collection_row.provenance = _merge_list([], [collection.get("provenance", {})])[0]
+                # Once a collection is published, its admission and source
+                # provenance are immutable.  A later pending re-import may
+                # add entries, but it must never replace the evidence that
+                # made the collection learner-visible.
+                if collection_row.catalog_status != "published":
+                    collection_row.provenance = _copy_json(collection_provenance, {})
                 collection_row.updated_at = now
 
             import_row = VocabularySourceImport(
@@ -389,11 +418,44 @@ class SQLAlchemyVocabularyRepository:
             )
             for source_position, raw_record in enumerate(rows, start=1):
                 record = dict(raw_record)
+                term = _text(record.get("term"))
+                record_language = _text(record.get("language_code")).casefold()
+                if not term:
+                    raise ValueError(
+                        f"Vocabulary source row {source_position} is missing a term."
+                    )
+                if record_language and record_language != language_code:
+                    raise ValueError(
+                        f"Vocabulary source row {source_position} targets language "
+                        f"'{record_language}', not collection language '{language_code}'."
+                    )
+                part_of_speech = _text(record.get("part_of_speech"))
+                sense_key = _text(record.get("sense_key"))
+                expected_normalized_term = canonical_vocabulary_normalized_term(
+                    language_code=language_code, term=term
+                )
+                expected_identity_key = canonical_vocabulary_identity(
+                    language_code=language_code,
+                    term=term,
+                    part_of_speech=part_of_speech,
+                    sense_key=sense_key,
+                )
                 identity_key = _text(record.get("identity_key"))
                 if not identity_key:
-                    skipped_count += 1
-                    skipped_details.append({"position": source_position, "reason": "missing identity key"})
-                    continue
+                    raise ValueError(
+                        f"Vocabulary source row {source_position} is missing its canonical identity key."
+                    )
+                if identity_key != expected_identity_key:
+                    raise ValueError(
+                        f"Vocabulary source row {source_position} has an identity key that "
+                        "does not match its term, language, part of speech, or sense."
+                    )
+                normalized_term = _text(record.get("normalized_term"))
+                if normalized_term != expected_normalized_term:
+                    raise ValueError(
+                        f"Vocabulary source row {source_position} has a normalized term "
+                        "that does not match the canonical language-aware normalization."
+                    )
                 entry = session.scalar(
                     select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key)
                 )
@@ -401,10 +463,10 @@ class SQLAlchemyVocabularyRepository:
                     entry = VocabularyEntry(
                         id=uuid.uuid4(),
                         language_code=language_code,
-                        term=_text(record.get("term")),
-                        normalized_term=_text(record.get("normalized_term")),
+                        term=term,
+                        normalized_term=normalized_term,
                         identity_key=identity_key,
-                        sense_key=_text(record.get("sense_key")),
+                        sense_key=sense_key,
                         pronunciations=_copy_json(record.get("pronunciations"), []),
                         readings=_copy_json(record.get("readings"), []),
                         short_meanings=_copy_json(record.get("short_meanings"), []),
@@ -492,6 +554,35 @@ class SQLAlchemyVocabularyRepository:
             "failed": 0,
             "failure_reason": "",
         }
+
+    def finalize_collection_publication(
+        self, collection_id: str, *, admission: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        """Publish a fully imported collection in one explicit final step."""
+
+        self._require_available()
+        clean_collection_id = _text(collection_id)
+        if not clean_collection_id:
+            raise ValueError("A collection id is required for publication.")
+        final_admission = _publication_admission({"admission": admission})
+        now = _now()
+        with Session(self.engine) as session, session.begin():
+            collection = session.get(VocabularyCollection, clean_collection_id)
+            if collection is None:
+                raise ValueError(f"Vocabulary collection '{clean_collection_id}' was not imported.")
+            if collection.catalog_status != "published":
+                existing_provenance = _copy_json(collection.provenance, {}) or {}
+                if not isinstance(existing_provenance, Mapping):
+                    existing_provenance = {}
+                collection.catalog_status = "published"
+                collection.provenance = {
+                    **dict(existing_provenance),
+                    "catalog_status": "published",
+                    "admission": _copy_json(final_admission, {}),
+                }
+                collection.updated_at = now
+            levels, item_count = self._collection_stats(session, clean_collection_id)
+            return _collection_summary(collection, levels, item_count)
 
     def record_source_failure(
         self,

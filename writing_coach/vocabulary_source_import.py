@@ -342,6 +342,13 @@ def _normalize_term(term: str, language_code: str) -> str:
     return normalized.casefold() if language_code not in {"zh", "ja", "ko"} else normalized
 
 
+def canonical_vocabulary_normalized_term(*, language_code: str, term: str) -> str:
+    """Return the normalized term used by the shared vocabulary identity."""
+
+    language = _clean_text(language_code).casefold()
+    return _normalize_term(_clean_text(term), language)
+
+
 def canonical_vocabulary_identity(
     *, language_code: str, term: str, part_of_speech: str = "", sense_key: str = ""
 ) -> str:
@@ -355,7 +362,9 @@ def canonical_vocabulary_identity(
     """
 
     language = _clean_text(language_code).casefold()
-    normalized_term = _normalize_term(_clean_text(term), language)
+    normalized_term = canonical_vocabulary_normalized_term(
+        language_code=language, term=term
+    )
     pos = _field_token(part_of_speech)
     sense = _normalize_term(_clean_text(sense_key), language)[:240]
     return "|".join((language, normalized_term, pos, sense))
@@ -414,6 +423,28 @@ def normalize_vocabulary_rows(
         if not term:
             skipped.append({"row": row_number, "reason": "term is empty"})
             continue
+        # Validate the row's target language before deriving identity or
+        # updating the source-local deduplication set.  An invalid first row
+        # must not suppress a valid later row with the same term.
+        target_language = _clean_text(_mapping_value(row, mapping, "target_language")).casefold() or language
+        if not _LANGUAGE_CODE_RE.fullmatch(target_language):
+            skipped.append(
+                {
+                    "row": row_number,
+                    "reason": f"target language '{target_language}' is not a valid language code",
+                    "term": term,
+                }
+            )
+            continue
+        if target_language != language:
+            skipped.append(
+                {
+                    "row": row_number,
+                    "reason": f"target language '{target_language}' does not match collection language '{language}'",
+                    "term": term,
+                }
+            )
+            continue
         pos = _clean_text(_mapping_value(row, mapping, "part_of_speech"))
         short_texts = _list_value(_mapping_value(row, mapping, "short_meaning"))
         detailed_texts = _list_value(_mapping_value(row, mapping, "detailed_definition"))
@@ -437,25 +468,6 @@ def normalize_vocabulary_rows(
             or _clean_text(meaning_language)
             or ""
         ).casefold()
-        target_language = _clean_text(_mapping_value(row, mapping, "target_language")).casefold() or language
-        if not _LANGUAGE_CODE_RE.fullmatch(target_language):
-            skipped.append(
-                {
-                    "row": row_number,
-                    "reason": f"target language '{target_language}' is not a valid language code",
-                    "term": term,
-                }
-            )
-            continue
-        if target_language != language:
-            skipped.append(
-                {
-                    "row": row_number,
-                    "reason": f"target language '{target_language}' does not match collection language '{language}'",
-                    "term": term,
-                }
-            )
-            continue
         pronunciation = _list_value(_mapping_value(row, mapping, "pronunciation"))
         readings = _list_value(_mapping_value(row, mapping, "reading"))
         examples = [
@@ -486,7 +498,10 @@ def normalize_vocabulary_rows(
             "language_code": language,
             "normalized_term": _normalize_term(term, language),
             "identity_key": identity_key,
-            "sense_key": explicit_sense,
+            # Persist the exact sense seed used to derive identity.  This is
+            # explicit source sense data when available, otherwise the
+            # source-provided short meaning/definition fingerprint.
+            "sense_key": sense_seed,
             "pronunciations": [
                 {"text": text, "kind": "pronunciation", "origin": "source"}
                 for text in pronunciation

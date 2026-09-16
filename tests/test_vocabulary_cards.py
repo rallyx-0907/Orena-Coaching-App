@@ -132,6 +132,55 @@ def test_catalog_entry_card_preserves_natural_examples() -> None:
     ]
 
 
+def test_imported_english_and_chinese_cards_preserve_source_orthography_and_layers() -> None:
+    english = vocabulary_card_from_catalog_entry(
+        {
+            "term": "allocate",
+            "language_code": "en",
+            "normalized_term": "allocate",
+            "short_meanings": [
+                {"language": "vi", "text": "phân bổ", "origin": "source"}
+            ],
+            "detailed_definitions": [
+                {"language": "en", "text": "give for a purpose", "origin": "source"}
+            ],
+            "pronunciations": [
+                {"text": "/ˈæləkeɪt/", "origin": "source"}
+            ],
+            "examples": [
+                {"language": "en", "text": "Allocate funds carefully."}
+            ],
+        }
+    )
+    chinese_orthography = {
+        "script": "han",
+        "characters": [{"character": "学习", "stroke_count": 16}],
+        "source": "source-file",
+    }
+    chinese = vocabulary_card_from_catalog_entry(
+        {
+            "term": "学习",
+            "language_code": "zh",
+            "normalized_term": "学习",
+            "readings": [{"text": "xuéxí", "origin": "source"}],
+            "short_meanings": [
+                {"language": "vi", "text": "học, học tập", "origin": "source"}
+            ],
+            "orthography": chinese_orthography,
+        }
+    )
+
+    assert english["short_meanings"] == [{"language": "vi", "text": "phân bổ"}]
+    assert english["detailed_definitions"] == [
+        {"language": "en", "text": "give for a purpose"}
+    ]
+    assert english["examples"] == [
+        {"language": "en", "text": "Allocate funds carefully."}
+    ]
+    assert chinese["pronunciation"] == "xuéxí"
+    assert chinese["orthography"] == chinese_orthography
+
+
 def test_catalog_entry_card_has_no_memory_or_source_encounters() -> None:
     entry = {
         "word": "curious",

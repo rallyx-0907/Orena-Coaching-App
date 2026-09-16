@@ -134,6 +134,11 @@ def _examples_from(row: Mapping[str, Any], language: str) -> list[dict[str, str]
     return examples
 
 
+def _provided_orthography(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    value = row.get("orthography")
+    return value if isinstance(value, Mapping) and value else None
+
+
 def vocabulary_card_from_saved_word(
     row: Mapping[str, Any], *, orthography: Mapping[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -194,7 +199,11 @@ def vocabulary_card_from_saved_word(
     usage_notes = _structured_texts(row.get("usage_notes"))
     if usage_notes:
         card["usage"] = usage_notes[0]
-    resolved_orthography = orthography if orthography is not None else orthography_for_word(headword, language)
+    resolved_orthography = (
+        _provided_orthography(row)
+        or orthography
+        or orthography_for_word(headword, language)
+    )
     if resolved_orthography is not None:
         card["orthography"] = dict(resolved_orthography)
     return card
@@ -267,7 +276,11 @@ def vocabulary_card_from_catalog_entry(
     usage_notes = _structured_texts(entry.get("usage_notes"))
     if usage_notes:
         card["usage"] = usage_notes[0]
-    resolved_orthography = orthography if orthography is not None else orthography_for_word(headword, language)
+    resolved_orthography = (
+        _provided_orthography(entry)
+        or orthography
+        or orthography_for_word(headword, language)
+    )
     if resolved_orthography is not None:
         card["orthography"] = dict(resolved_orthography)
     return card

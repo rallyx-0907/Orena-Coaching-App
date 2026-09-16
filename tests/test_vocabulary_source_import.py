@@ -99,3 +99,19 @@ def test_row_target_language_must_match_the_collection_language() -> None:
     assert len(normalized["skipped"]) == 2
     assert "does not match collection language" in normalized["skipped"][0]["reason"]
     assert "valid language code" in normalized["skipped"][1]["reason"]
+
+
+def test_invalid_target_language_does_not_hide_a_later_valid_duplicate() -> None:
+    source = parse_vocabulary_source(
+        "ordered.csv",
+        b"word,target_language\nhello,not-a-language\nhello,en\n",
+    )
+    normalized = normalize_vocabulary_rows(
+        source,
+        mapping={"term": "word", "target_language": "target_language"},
+        language_code="en",
+        meaning_language="vi",
+    )
+
+    assert [record["term"] for record in normalized["records"]] == ["hello"]
+    assert normalized["skipped"][0]["reason"].endswith("is not a valid language code")

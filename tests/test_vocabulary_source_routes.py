@@ -77,6 +77,7 @@ def test_admin_preview_and_import_are_real_vertical_slice(tmp_path, monkeypatch)
     result = imported.json()["items"][0]
     assert result["status"] == "imported"
     assert result["imported"] == 2
+    assert imported.json()["collection"]["catalog_status"] == "published"
 
     collections = _request(
         "GET", "/api/vocabulary/library/collections?language_code=en"
@@ -222,4 +223,7 @@ def test_batch_import_keeps_a_bad_source_isolated(monkeypatch, tmp_path) -> None
     assert results["good.csv"]["status"] == "imported"
     assert results["bad.csv"]["status"] == "failed"
     assert results["bad.csv"]["source_import_id"]
-    assert repository.list_collections("en")[0]["item_count"] == 1
+    # A partial batch remains pending; successful files must not become
+    # learner-visible merely because a later source failed.
+    assert response.json()["collection"]["catalog_status"] == "pending_review"
+    assert repository.list_collections("en") == []

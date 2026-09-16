@@ -46,6 +46,7 @@ def test_sqlite_content_repository_persists_membership_and_replays_duplicates(tm
             "admission": {
                 "review_status": "approved",
                 "publication_attested": True,
+                "attested_by": "test-admin",
                 "rights_status": "internal_curated",
                 "completeness": "complete",
             },
@@ -106,6 +107,7 @@ def test_one_entry_can_belong_to_two_collections_without_copying_lexical_content
             "admission": {
                 "review_status": "approved",
                 "publication_attested": True,
+                "attested_by": "test-admin",
                 "rights_status": "internal_curated",
                 "completeness": "complete",
             }
@@ -146,6 +148,7 @@ def test_collection_search_and_pagination_are_applied_before_fetching_rows(tmp_p
                 "admission": {
                     "review_status": "approved",
                     "publication_attested": True,
+                    "attested_by": "test-admin",
                     "rights_status": "internal_curated",
                     "completeness": "complete",
                 }
@@ -160,6 +163,86 @@ def test_collection_search_and_pagination_are_applied_before_fetching_rows(tmp_p
     assert detail is not None
     assert detail["pagination"] == {"limit": 1, "offset": 0, "total": 1, "has_more": False}
     assert [entry["term"] for entry in detail["entries"]] == ["gamma"]
+
+
+def test_published_admission_and_provenance_survive_pending_reimport(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "immutable-provenance.db")
+    repository.initialize()
+    _, detected, normalized = _source("first.csv", "word,meaning\nhello,greeting\n")
+    approved = {
+        "review_status": "approved",
+        "publication_attested": True,
+        "attested_by": "original-reviewer",
+        "rights_status": "internal_curated",
+        "completeness": "complete",
+    }
+    repository.import_source(
+        collection={
+            "id": "immutable-pack",
+            "title": "Immutable Pack",
+            "language_code": "en",
+            "catalog_status": "published",
+            "origin": "imported",
+            "provenance": {"publisher": "original", "admission": approved},
+        },
+        source=normalized,
+        records=normalized["records"],
+        mapping=detected.mapping,
+        imported_by="original-reviewer",
+    )
+
+    repository.import_source(
+        collection={
+            "id": "immutable-pack",
+            "title": "Immutable Pack",
+            "language_code": "en",
+            "catalog_status": "pending_review",
+            "origin": "imported",
+            "provenance": {
+                "publisher": "untrusted-reimport",
+                "admission": {
+                    "review_status": "pending_review",
+                    "publication_attested": False,
+                    "rights_status": "unknown",
+                    "completeness": "partial",
+                },
+            },
+        },
+        source={**normalized, "filename": "second.csv"},
+        records=normalized["records"],
+        mapping=detected.mapping,
+        imported_by="untrusted-reimport",
+    )
+
+    summary = repository.list_collections("en")[0]
+    assert summary["catalog_status"] == "published"
+    assert summary["provenance"]["publisher"] == "original"
+    assert summary["provenance"]["admission"] == approved
+
+
+def test_repository_rejects_caller_supplied_identity_mismatch(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "identity-ingress.db")
+    repository.initialize()
+    _, detected, normalized = _source("identity.csv", "word,meaning\nhello,greeting\n")
+    record = {**normalized["records"][0], "identity_key": "en|tampered|||"}
+    try:
+        repository.import_source(
+            collection={
+                "id": "identity-pack",
+                "title": "Identity Pack",
+                "language_code": "en",
+                "catalog_status": "pending_review",
+                "origin": "imported",
+                "provenance": {},
+            },
+            source=normalized,
+            records=[record],
+            mapping=detected.mapping,
+        )
+    except ValueError as exc:
+        assert "identity key" in str(exc)
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("tampered identity was accepted")
 
 
 def test_failed_source_receipt_is_persisted_without_lexical_content(tmp_path) -> None:
