@@ -26,6 +26,7 @@ import {
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
 import { paintLibraryGrid } from './library.js';
+import { paintMediaLibrary } from './media-library.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -191,7 +192,7 @@ export function vocabularyLibrarySection(c, state = {}) {
 
 export function vocabularyFeedSection(c, state = {}) {
   const { items, error, supportLanguage = 'en' } = state;
-  const heading = `<div class="section-head"><h2>${esc(c.vocabularyFeedTitle)}</h2></div><p class="meta">${esc(c.vocabularyFeedNote)}</p>`;
+  const heading = `<div class="section-head"><h2>${esc(c.vocabularyFeedTitle)}</h2></div>`;
   let body;
   if (error) {
     body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-feed-retry>${esc(c.retry)}</button></p>`;
@@ -442,14 +443,27 @@ export async function renderWorld(root, ctx) {
             readable.map((x) => readingRow(x, c)).join('') ||
             `<p>${c.empty}</p>`
           }</div></section>`
-        : `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
-            practiceMedia
-              .filter((x) => supports(x, intent))
-              .map((x) => mediaItem(x, intent, c))
-              .join('') || `<p>${c.noCatalog}</p>`
-          }</section>`
+        : (() => {
+            /* Listening is a media library, not a list of documents. The shared
+               catalogue, what an administrator imported and what the learner
+               brought in are one shelf read by thumbnail, so the surface a
+               learner browses is the content itself rather than its
+               description. Dictation, shadowing and speaking keep the filtered
+               list: those are practice modes over a source, not browsing. */
+            if (!intent || intent === 'follow')
+              // The library owns its own section headings; this row only carries
+              // the one action that is not browsing.
+              return `<section class="media-shelf">${catalogError}<div class="button-row"><button class="quiet" data-bring>＋ ${esc(c.bring)}</button></div><div data-media-library></div></section>`;
+            return `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
+              practiceMedia
+                .filter((x) => supports(x, intent))
+                .map((x) => mediaItem(x, intent, c))
+                .join('') || `<p>${c.noCatalog}</p>`
+            }</section>`;
+          })()
     }${continuation}`;
     if (intent === 'reading') paintLibraryGrid(root.querySelector('[data-library-grid]'), ctx);
+    if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
   } else if (location.page === 'content') {
     const kept = all.filter(
       (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',

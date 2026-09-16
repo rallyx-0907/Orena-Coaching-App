@@ -1,0 +1,268 @@
+/* Listening = media library: a thumbnail-first grid of cards.
+
+   Deliberately not a fourth layout language. It is the same shelf idea the
+   Shared Reading Library already uses in `world.css` - fluid auto-fill so the
+   column count follows the space it has rather than jumping at fixed steps -
+   with two differences that come from the media itself: the frame is 16:9
+   because a video preview is, and the title is allowed exactly two lines
+   because a media title is a name, not a paragraph.
+
+   Colour comes only from `theme.css`. Nothing here names a palette value, so
+   every theme and both appearances are covered without a second ruleset. */
+
+.media-shelf {
+  margin-block: var(--space-6);
+}
+
+.media-shelf > .section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* Search and filters stay one compact line. This is a browse aid, not a
+   dashboard: the primary interaction remains looking at thumbnails. */
+.media-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+}
+
+.media-filter select,
+.media-filter input[type='search'] {
+  font-size: var(--text-sm);
+}
+
+.media-find {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.media-find input {
+  width: 100%;
+}
+
+.media-grid {
+  display: grid;
+  /* ~3 columns at a tablet width and 4 on a desktop, with no breakpoint of its
+     own; a viewport that only fits two gets two. */
+  grid-template-columns: repeat(auto-fill, minmax(clamp(9rem, 22vw, 15rem), 1fr));
+  gap: var(--space-4) var(--space-3);
+  align-items: start;
+}
+
+/* The continuation rail is the one horizontal shelf on this surface, and only
+   because "keep going" is a short, ordered list rather than a catalogue. */
+.media-grid--rail {
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(11rem, 30vw, 15rem);
+  grid-template-columns: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: var(--space-2);
+}
+
+.media-grid--rail > * {
+  scroll-snap-align: start;
+}
+
+.media-card {
+  min-width: 0;
+}
+
+.media-card__wrap {
+  min-width: 0;
+}
+
+.media-card__visual {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  background: var(--night-surface);
+  color: var(--on-night);
+}
+
+.media-card__visual > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A source with no poster of its own keeps Orena's own media artwork rather
+   than an invented image; it fills the same frame so the grid stays even. */
+.media-card__visual .sound-art,
+.media-card__visual .text-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.media-card__duration,
+.media-card__kind {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.15em 0.45em;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--night-surface) 82%, transparent);
+  color: var(--on-night);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.media-card__duration {
+  right: var(--space-2);
+  bottom: var(--space-2);
+}
+
+.media-card__kind {
+  left: var(--space-2);
+  top: var(--space-2);
+}
+
+.media-card__body {
+  display: block;
+  margin-top: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+.media-card__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.media-card__meta {
+  display: block;
+  margin-top: 0.15em;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  /* One line of provenance, never a second paragraph. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.media-card__body:hover .media-card__title,
+.media-card__body:focus-visible .media-card__title {
+  text-decoration: underline;
+}
+
+/* Admin Media Source Importer: operational detail that must never reach the
+   learner-facing grid. */
+.admin-media-grid {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 620px;
+}
+
+.admin-media-grid textarea {
+  width: 100%;
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.admin-media-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.admin-media-thumb {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  background: var(--night-surface);
+  color: var(--on-night);
+}
+
+.admin-media-thumb > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-media-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.admin-media-source {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-media-results ul {
+  padding-left: 1.1em;
+}
+
+.admin-media-result small {
+  color: var(--muted);
+  margin-left: 0.5em;
+}
+
+.admin-media-result--ok {
+  color: var(--accent);
+}
+
+.admin-media-result--error {
+  color: var(--coral);
+}
+
+/* Phone: two cards across is the floor, one when even that is too tight, and
+   the rail becomes the swipe it is on a touch screen. The point is that the
+   learner sees what the library holds without a long vertical scroll. */
+@media (max-width: 600px) {
+  .media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-2);
+  }
+
+  .media-grid--rail {
+    grid-auto-columns: 72vw;
+  }
+
+  .media-shelf {
+    margin-block: var(--space-4);
+  }
+
+  .media-card__meta {
+    font-size: var(--text-xs);
+  }
+
+  .admin-media-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .media-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-card__visual > img,
+  .media-card__body,
+  .media-grid--rail {
+    transition: none;
+    animation: none;
+    scroll-behavior: auto;
+  }
+}

@@ -18,6 +18,21 @@ const COMMONS_MEDIA_HOSTS=['commons.wikimedia.org','upload.wikimedia.org'];
 // arbitrary origin, not a second provenance decision.
 const POSTER_HOSTS=[...COMMONS_MEDIA_HOSTS,'thumb.wikimedia.org','i.ytimg.com','img.youtube.com'];
 
+/* Media Orena stores itself - a learner's uploaded file, or the thumbnail the
+   importer generated for it - is served from this application's own origin
+   under an opaque, server-validated key. It is addressed as a relative path,
+   which is the property that matters here: a relative path cannot point the
+   page at another origin, so it needs no host allowlist, while an absolute URL
+   on any other host is still refused by reviewedMediaUrl() below. The prefix
+   is explicit rather than "anything under /api/" so the boundary stays
+   readable: only these two routes can ever be played or attached. */
+const ORENA_MEDIA_PATH=/^\/api\/media\/files\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/;
+const ORENA_ARTWORK_PATH=/^\/api\/media\/library\/assets\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/;
+function sameOriginMedia(value,pattern){
+  const raw=String(value||'');
+  return pattern.test(raw)?raw:null;
+}
+
 // One reviewed-media URL policy, matching listening_catalog.py and the native
 // adapter: https, an exact allowlisted host, no credentials, no port.
 function reviewedMediaUrl(value,hosts=COMMONS_MEDIA_HOSTS){
@@ -30,6 +45,11 @@ function reviewedMediaUrl(value,hosts=COMMONS_MEDIA_HOSTS){
 
 function playbackAdapter(playback){
   if(playback?.kind==='audio'||playback?.kind==='video'){
+    if(playback?.provider==='orena'){
+      const href=sameOriginMedia(playback.url,ORENA_MEDIA_PATH);
+      if(!href)return null;
+      return {kind:playback.kind,url:href,origin:globalThis.location?.origin||'',controllable:true};
+    }
     if(playback.provider!=='wikimedia-commons')return null;
     const href=reviewedMediaUrl(playback.url);
     if(!href)return null;

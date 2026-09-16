@@ -302,8 +302,19 @@ export function learnerMemory(storage, owner, language) {
       save();
       return item;
     },
-    addMedia({ id, title, kind, duration_ms }) {
-      if (!id.startsWith('url:') || !title) return false;
+    /* A media membership record. Two kinds of id are accepted, and they mean
+       different things: `url:` is a source the learner pasted and Orena can
+       re-acquire from the provider, `upload:` is a file whose bytes Orena
+       stores itself. Both are imports, so both belong in My content; anything
+       else (a curated `media:` lesson) is not the learner's and is refused
+       here rather than silently filed as theirs.
+
+       `thumbnail_url` and `provider` are additive: without them the library
+       card falls back to the Orena sound artwork, exactly as it did before,
+       so a record written by an older build still renders. */
+    addMedia({ id, title, kind, duration_ms, thumbnail_url, provider }) {
+      const own = id.startsWith('url:') || id.startsWith('upload:');
+      if (!own || !title) return false;
       const item = {
         id,
         title: String(title).slice(0, 500),
@@ -312,6 +323,13 @@ export function learnerMemory(storage, owner, language) {
         origin: 'imported',
         duration_ms,
       };
+      /* Only an https thumbnail is stored, for the same reason `art()` only
+         renders one: a value that could carry a script or a private address
+         never reaches an <img> through the memory record either. */
+      const thumbnail = String(thumbnail_url || '');
+      if (/^https:\/\//.test(thumbnail) && !thumbnail.includes('@'))
+        item.thumbnail_url = thumbnail.slice(0, 600);
+      if (provider) item.provider = String(provider).slice(0, 40);
       value.mediaImports = [
         item,
         ...value.mediaImports.filter((x) => x.id !== id),

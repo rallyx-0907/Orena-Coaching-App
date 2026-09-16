@@ -442,7 +442,16 @@ class YouTubeMediaProviderAdapter:
     ) -> MediaAcquisition:
         video_id = parse_youtube_video_id(source_url)
         canonical_url = canonical_youtube_url(video_id)
-        title = self._metadata_client.fetch_title(canonical_url)
+        # The oEmbed request already resolves a reviewed provider poster. Carry
+        # it with the acquisition so browsers never need a second metadata call.
+        metadata_client = self._metadata_client
+        if hasattr(metadata_client, "fetch_metadata"):
+            metadata = metadata_client.fetch_metadata(canonical_url)  # type: ignore[attr-defined]
+            title = metadata.title
+            thumbnail_ref = metadata.thumbnail_url
+        else:
+            title = metadata_client.fetch_title(canonical_url)
+            thumbnail_ref = ""
         native_caption_error: ProviderTimedOut | ProviderRequestFailed | None = None
         try:
             track = self._caption_client.fetch_track(video_id, source_language)
@@ -485,6 +494,7 @@ class YouTubeMediaProviderAdapter:
             duration_ms=None,
             transcript_available=transcript is not None,
             translation_available=False,
+            thumbnail_ref=thumbnail_ref,
         )
         try:
             media_object = MediaLearningObject(asset=asset, transcript=transcript)

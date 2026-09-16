@@ -178,13 +178,15 @@ function waitingMedia(root, ctx, payload) {
   // A catalog lesson whose transcript is still missing reaches this same
   // waiting room, and it must not be described as something the learner
   // brought in. addMedia already ignores anything that is not an import.
-  const imported = id.startsWith('url:');
+  const imported = id.startsWith('url:') || id.startsWith('upload:');
   memory.enter({ id, title, source_url: payload.asset.source_url });
   memory.addMedia({
     id,
     title,
     kind: payload.playback.kind,
     duration_ms: payload.asset.duration_ms,
+    thumbnail_url: payload.asset.thumbnail_url,
+    provider: payload.playback.provider,
   });
   root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${imported ? c.imported : c.curated}</small></div><header class="encounter-heading"><div><small>${c.pendingMedia}</small><h1 lang="${language}">${esc(title)}</h1></div><p>${c.pendingNote}</p></header><section class="pending-media"><div class="player-wrap">${mediaPlayer(payload.playback, title)}</div><div class="transport"><button data-play>${c.play}</button><button data-retry>${c.retry}</button></div><p data-recovery-state role="status">${c.pendingNote}</p></section>`;
   const playerRoot = root.querySelector('.pending-media');
@@ -278,7 +280,12 @@ export async function renderEncounter(root, ctx) {
             alive,
             onProgress,
           })
-        : null;
+        : id.startsWith('upload:')
+          ? // A file the learner uploaded is Orena's own stored content, so it
+            // is resolved by identity instead of being re-acquired from a
+            // provider: there is no provider, and there may be no transcript.
+            await api.mediaMy(id.slice(7))
+          : null;
   } catch (error) {
     if (pendingCleanup && alive()) {
       root.querySelector('[data-recovery-state]').textContent = c.sourceOnly;
@@ -306,15 +313,17 @@ export async function renderEncounter(root, ctx) {
       ...payload.catalog,
       id,
       title: payload.asset.title,
-      origin: id.startsWith('url:') ? 'imported' : 'curated',
+      origin: /^(url|upload):/.test(id) ? 'imported' : 'curated',
       kind: payload.playback.kind,
     };
-  if (id.startsWith('url:'))
+  if (/^(url|upload):/.test(id))
     memory.addMedia({
       id,
       title: item.title,
       kind: item.kind,
       duration_ms: payload.asset.duration_ms,
+      thumbnail_url: payload.asset.thumbnail_url,
+      provider: payload.playback.provider,
     });
   const prior = memory.value.continuation.find((x) => x.id === id);
   if (prior?.segment) model.select(prior.segment);

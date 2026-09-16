@@ -74,10 +74,21 @@ from writing_coach.media_interaction import contextual_router as contextual_dict
 from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
 from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
+    configure_listening_media_library,
     configure_listening_progress,
     configure_listening_translation_cache,
+    stored_media_payload,
     router as listening_progress_router,
 )
+from writing_coach.media_library_api import (
+    configure_media_library,
+    configure_media_library_payload,
+    media_learning_router as media_library_upload_router,
+    router as media_library_router,
+)
+from writing_coach.media_library_store import FileMediaLibraryStore
+from writing_coach.media_source_import import MediaSourceImporter
+from writing_coach.book_asset_store import FilesystemBookAssetStore
 from writing_coach.speech_asr import GroqSpeechAsrProvider
 from writing_coach.speech_pronunciation import build_speech_pronunciation_provider
 from writing_coach.core.errors import orena_http_error
@@ -332,14 +343,16 @@ if _media_fallback_mode == "supadata" and _supadata_fallback_client is None:
 
 app.include_router(platform_router)
 app.include_router(product_router)
-configure_media_ingestion(
-    MediaIngestionService(
-        # One recovery policy, shared with the bulk importer, so a caption-less
-        # video means the same thing in My Media and in the catalog pipeline.
-        adapters=(build_youtube_adapter(),),
-        source_language_supported=is_enabled,
-    )
+# The one acquisition service, kept in a named binding because the Shared
+# Listening Library importer must resolve a source through exactly the same
+# provider boundary the learner's own import uses - never a second one.
+_media_ingestion_service = MediaIngestionService(
+    # One recovery policy, shared with the bulk importer, so a caption-less
+    # video means the same thing in My Media and in the catalog pipeline.
+    adapters=(build_youtube_adapter(),),
+    source_language_supported=is_enabled,
 )
+configure_media_ingestion(_media_ingestion_service)
 # Which engine translates shared media, resolved once here and never re-decided
 # per request. Groq is the default because it answers in about a second where
 # the local Marian service needed thirty-seven; the local service is kept as the
@@ -398,6 +411,34 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
+
+# Shared Listening Library (media). The store is Orena's own index of imported
+# sources, the asset store is where a generated thumbnail or an uploaded file
+# lives, and the importer is the media-specific source engine. One ingestion
+# service serves both an administrator's import and a learner's own, so a source
+# that is unsupported in one place is unsupported in the other.
+#
+# A stored entry resolves through the Listening boundary's own serializer
+# (`stored_media_payload`), because that module owns support-language
+# resolution and the persisted meaning cache; a second serializer here would
+# drift from the payload the curated catalog answers with.
+_media_library_root = Path(os.getenv("MEDIA_LIBRARY_ROOT", str(ROOT / "data" / "media_library")))
+_media_library_asset_root = Path(
+    os.getenv("MEDIA_LIBRARY_ASSET_ROOT", str(ROOT / "data" / "media_library_assets"))
+)
+_media_library_store = FileMediaLibraryStore(_media_library_root)
+_media_library_assets = FilesystemBookAssetStore(_media_library_asset_root)
+configure_media_library(
+    _media_library_store,
+    _media_library_assets,
+    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets),
+    admin_guard=require_admin,
+    language_supported=is_enabled,
+)
+configure_media_library_payload(stored_media_payload)
+configure_listening_media_library(_media_library_store)
+app.include_router(media_library_router)
+app.include_router(media_library_upload_router)
 # Collection retrieval (I4 step 1): one read over the owners that exist, each
 # read through what it already serves. No surface calls it yet.
 configure_collection(runtime_owners(

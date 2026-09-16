@@ -1,5 +1,6 @@
 import { esc } from './html.js';
 import { pageIntro } from './patterns.js';
+import { paintAdminMediaImporter } from './media-library.js';
 
 const alive = (ctx) => (typeof ctx.alive === 'function' ? ctx.alive() : true);
 
@@ -205,15 +206,17 @@ export async function renderAdmin(root, ctx) {
     const payload = await ctx.api.adminReadinessSummary();
     if (!alive(ctx)) return;
     if (!payload || payload.available === false) {
-      root.innerHTML = `${empty(c)}${importer(c)}<div data-admin-library></div>`;
+      root.innerHTML = `${empty(c)}${importer(c)}<div data-admin-library></div><div data-admin-media></div>`;
       bindImporter(root, ctx);
       paintAddBooks(root.querySelector('[data-admin-library]'), ctx);
+      paintAdminMediaImporter(root.querySelector('[data-admin-media]'), ctx);
       return;
     }
     const indicators = Array.isArray(payload.indicators) ? payload.indicators : [];
-    root.innerHTML = `${indicators.length ? summary(c, payload) : empty(c)}${importer(c)}<div data-admin-library></div>`;
+    root.innerHTML = `${indicators.length ? summary(c, payload) : empty(c)}${importer(c)}<div data-admin-library></div><div data-admin-media></div>`;
     bindImporter(root, ctx);
     paintAddBooks(root.querySelector('[data-admin-library]'), ctx);
+    paintAdminMediaImporter(root.querySelector('[data-admin-media]'), ctx);
   } catch {
     if (!alive(ctx)) return;
     root.innerHTML = error(c);

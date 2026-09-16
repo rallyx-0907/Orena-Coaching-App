@@ -204,6 +204,33 @@ export const api={
   // An omitted target language is resolved by the server from the learner's
 // profile; the client must not substitute a language of its own.
   listeningLibraryLesson:(lessonId,targetLanguage)=>request(`/api/listening/library/${encodeURIComponent(lessonId)}?target_language=${encodeURIComponent(targetLanguage||'')}`),
+  // Shared Listening Library. `my` resolves one stored media identity - an
+  // administrator's import or a learner's own file - into the same acquisition
+  // payload `/import` answers with, so the encounter has one shape to render.
+  // The admin routes are admin-gated server-side, not here.
+  mediaMy:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`),
+  mediaUpload:(file,language)=>{
+    const form=new FormData();
+    form.append('file',file,file.name);
+    form.append('language',String(language||'en'));
+    return request('/api/media-learning/upload',{method:'POST',body:form});
+  },
+  adminMediaPreview:(urls,language)=>request('/api/media/admin/preview',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify({urls,language}),
+  }),
+  adminMediaImport:(items,language)=>request('/api/media/admin/import',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify({items,language}),
+  }),
+  adminMediaUpload:(files,language)=>{
+    const form=new FormData();
+    for(const file of files)form.append('file',file,file.name);
+    form.append('language',String(language||'en'));
+    return request('/api/media/admin/upload',{method:'POST',body:form});
+  },
   annotateMediaText:(payload)=>request('/api/media-learning/annotate',{
     method:'POST',
     headers:JSON_HEADERS,
