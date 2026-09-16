@@ -65,11 +65,11 @@ AGENTS.md; SQLite is test-only. Switch language in-page.
 ## NEXT EXACT TASK
 
 Core: R3/T15 Card human PASS. Vocabulary foundation/catalog/feed/save and
-Chinese orthography are schema-free. Vocabulary correction is `IMPLEMENTING`:
-only complete/published packs show in Library; current 35/33-word seeds stay
-hidden. A published pack folds internal level extensions. Feed is a bounded
-one-card deck with drag/swipe, keys, snap and reduced-motion support. Review
-at `http://127.0.0.1:8011/#/language` or the machine LAN address on port 8011;
+Chinese orthography are schema-free. Vocabulary Source Import is E2E through
+Admin preview/mapping/import and learner collection/card projections.
+Architecture review is approved; the remaining Vocabulary gate is human
+schema/runtime authorization for `20260916_0008`, then PostgreSQL rehearsal.
+Browser review at `http://127.0.0.1:8011/#/language` or the machine LAN address on port 8011;
 check EN/ZH and Chinese orthography across Discover/My Language.
 
 Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
@@ -107,12 +107,12 @@ and metallic frame. Public Library has an explicit gate; current packs are
 seed-only, so local Library is truthfully empty until a complete pack is
 authored/published. No active runtime schema change.
 
-Source Import is implemented through UTF-8 preview/mapping, normalization,
-identity, provenance, batch results, shared repository, Admin UI and learner
-cards. Proposal `20260916_0008` awaits independent review and human
-schema/runtime authorization; PostgreSQL import is fail-closed. Claude review
-was not dispatched: `INFRA_FAILURE=auth` (CLI not logged in). No schema verdict
-or secret fallback was loaded.
+Source Import is implemented through UTF-8 mapping, normalization, identity,
+provenance, batch results, shared repository, Admin UI and learner cards.
+Independent review is APPROVED for `a1a90b7b`; schema authorization remains
+pending and PostgreSQL import is fail-closed. Claude-2: `INFRA_FAILURE=auth`;
+two Codex launches: `launcher_error`/`timeout`; final UTF-8 review passed. No
+secret fallback was used.
 
 ## PENDING
 
@@ -151,7 +151,7 @@ None identified.
 
 ## Baseline test evidence
 
-Baseline suite now passes locally with `997 passed, 107 skipped, 4 warnings`;
+Baseline suite now passes locally with `1059 passed, 114 skipped, 4 warnings`;
 this is not a CI claim. Inherited governance/media failures were reconciled
 against the current architecture; retired legacy matrix tests are not regressions.
 

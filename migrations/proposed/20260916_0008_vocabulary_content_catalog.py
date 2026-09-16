@@ -1,7 +1,8 @@
 """PROPOSAL - shared Vocabulary Source Import content catalog.
 
-PENDING INDEPENDENT ARCHITECTURE REVIEW AND HUMAN SCHEMA/RUNTIME
-AUTHORIZATION.  This file intentionally lives under ``migrations/proposed``;
+PENDING HUMAN SCHEMA/RUNTIME AUTHORIZATION.  Independent architecture review
+is recorded in ``docs/project/VOCABULARY_SOURCE_ARCHITECTURE_REVIEW.md``.  This
+file intentionally lives under ``migrations/proposed``;
 it is not part of the live Alembic chain and must not be moved to
 ``migrations/versions`` until the named gate is complete.
 

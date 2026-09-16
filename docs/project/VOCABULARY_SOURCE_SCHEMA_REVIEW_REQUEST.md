@@ -1,6 +1,10 @@
 # Vocabulary source content schema review request
 
-Status: `PENDING INDEPENDENT ARCHITECTURE REVIEW`
+Status: `PENDING HUMAN SCHEMA/RUNTIME AUTHORIZATION`
+
+Independent architecture review: `APPROVED` for commit
+`a1a90b7bfe8ebdd5f60e1a928f0b070f52cc3c8d`. See
+`docs/project/VOCABULARY_SOURCE_ARCHITECTURE_REVIEW.md`.
 
 This proposal supports the Vocabulary Source Import vertical slice. It is
 shared content persistence, not learner-owned state. It is intentionally not
@@ -53,7 +57,8 @@ future enrichment can add a separate origin without overwriting them.
 ## Required gate before activation
 
 1. Independent architecture review of the model, identity constraints,
-   deletion behaviour, batch transaction boundary, and PostgreSQL indexes.
+   deletion behaviour, batch transaction boundary, and PostgreSQL indexes —
+   complete; see the recorded verdict above.
 2. Human authorization for the shared vocabulary schema/runtime migration.
 3. Rehearsal against a throwaway PostgreSQL database, then moving the proposal
    into `migrations/versions/` and applying it to the named sandbox runtime.
