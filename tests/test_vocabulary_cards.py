@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import writing_coach.becoming_library as becoming_library
 from writing_coach.vocabulary_cards import (
     vocabulary_card_from_catalog_entry,
     vocabulary_card_from_saved_word,
@@ -179,6 +180,47 @@ def test_imported_english_and_chinese_cards_preserve_source_orthography_and_laye
     ]
     assert chinese["pronunciation"] == "xuéxí"
     assert chinese["orthography"] == chinese_orthography
+
+
+def test_saved_library_projection_prefers_imported_orthography(monkeypatch) -> None:
+    source_orthography = {
+        "script": "han",
+        "characters": [{"character": "学习", "stroke_count": 16}],
+        "source": "imported-source",
+    }
+    monkeypatch.setattr(becoming_library, "current_language_code", lambda: "zh")
+    monkeypatch.setattr(
+        becoming_library,
+        "_catalog_entry_for",
+        lambda word: {"orthography": source_orthography},
+    )
+    monkeypatch.setattr(
+        becoming_library,
+        "orthography_for_word",
+        lambda word, language: {"source": "fallback-adapter"},
+    )
+
+    item = becoming_library._row_to_item(
+        {
+            "word": "学习",
+            "phonetic": "xuéxí",
+            "part_of_speech": "verb",
+            "definition": "to study",
+            "translation_vi": "học",
+            "added_at": "",
+            "source_essay_id": None,
+            "source_fragment": "",
+            "source_kind": "collection",
+            "focus_note": "",
+            "review_stage": 0,
+            "successful_recalls": 0,
+            "lapse_count": 0,
+            "last_reviewed_at": "",
+            "next_review_at": "",
+        }
+    )
+
+    assert item["orthography"] == source_orthography
 
 
 def test_catalog_entry_card_has_no_memory_or_source_encounters() -> None:

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import io
+
+import pytest
+
 from writing_coach.vocabulary_source_import import (
     canonical_vocabulary_identity,
     detect_vocabulary_mapping,
     normalize_vocabulary_rows,
     parse_vocabulary_source,
     stable_collection_id,
+    VocabularySourceError,
 )
 
 
@@ -57,10 +62,49 @@ def test_json_and_txt_sources_accept_different_shapes() -> None:
     assert [row["term"] for row in txt_source.rows] == ["学习", "复习"]
 
 
+def test_tsv_source_is_parsed_with_the_same_mapping_contract() -> None:
+    source = parse_vocabulary_source(
+        "words.tsv",
+        "term\tmeaning\nallocate\tphân bổ\n".encode(),
+    )
+    detected = detect_vocabulary_mapping(source)
+    normalized = normalize_vocabulary_rows(
+        source,
+        mapping=detected.mapping,
+        language_code="en",
+        meaning_language="vi",
+    )
+
+    assert source.format == "tsv"
+    assert normalized["records"][0]["term"] == "allocate"
+    assert normalized["records"][0]["short_meanings"][0]["language"] == "vi"
+
+
+def test_malformed_utf8_source_fails_truthfully() -> None:
+    with pytest.raises(VocabularySourceError, match="UTF-8"):
+        parse_vocabulary_source("broken.csv", b"term\n\xff\xfe")
+
+
+def test_xlsx_source_is_supported_when_optional_dependency_is_available() -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.append(["term", "meaning"])
+    sheet.append(["allocate", "phân bổ"])
+    output = io.BytesIO()
+    workbook.save(output)
+
+    source = parse_vocabulary_source("words.xlsx", output.getvalue())
+
+    assert source.format == "xlsx"
+    assert source.rows[0]["term"] == "allocate"
+
+
 def test_identity_is_language_and_sense_aware() -> None:
     assert canonical_vocabulary_identity(language_code="en", term="Lead") == canonical_vocabulary_identity(language_code="en", term="lead")
     assert canonical_vocabulary_identity(language_code="en", term="resume") != canonical_vocabulary_identity(language_code="en", term="résumé")
     assert canonical_vocabulary_identity(language_code="zh", term="学习") != canonical_vocabulary_identity(language_code="zh", term="學習")
+    assert canonical_vocabulary_identity(language_code="zh", term="行", part_of_speech="动词") != canonical_vocabulary_identity(language_code="zh", term="行", part_of_speech="名词")
     assert canonical_vocabulary_identity(language_code="en", term="lead", part_of_speech="noun", sense_key="metal") != canonical_vocabulary_identity(language_code="en", term="lead", part_of_speech="verb", sense_key="guide")
     assert stable_collection_id("HSK 1", "zh", "HSK").startswith("zh-hsk-hsk-1")
 

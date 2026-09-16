@@ -354,6 +354,10 @@ class SQLAlchemyVocabularyRepository:
 
         with Session(self.engine) as session, session.begin():
             collection_row = session.get(VocabularyCollection, collection_id)
+            collection_was_published = bool(
+                collection_row is not None
+                and collection_row.catalog_status == "published"
+            )
             if collection_row is None:
                 collection_row = VocabularyCollection(
                     id=collection_id,
@@ -459,6 +463,35 @@ class SQLAlchemyVocabularyRepository:
                 entry = session.scalar(
                     select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key)
                 )
+                if collection_was_published:
+                    # Published collections are immutable content snapshots.
+                    # An idempotent replay of an already-member source row is
+                    # safe to receipt as a duplicate, but a new membership or
+                    # a new lexical entry needs a fresh draft/version path.
+                    if entry is None:
+                        raise ValueError(
+                            f"Published collection '{collection_id}' cannot accept new vocabulary entries."
+                        )
+                    published_membership = session.scalar(
+                        select(VocabularyCollectionMembership).where(
+                            VocabularyCollectionMembership.collection_id == collection_id,
+                            VocabularyCollectionMembership.entry_id == entry.id,
+                        )
+                    )
+                    if published_membership is None:
+                        raise ValueError(
+                            f"Published collection '{collection_id}' cannot accept new memberships."
+                        )
+                    duplicate_count += 1
+                    skipped_count += 1
+                    skipped_details.append(
+                        {
+                            "position": source_position,
+                            "reason": "already a member of published collection",
+                            "term": entry.term,
+                        }
+                    )
+                    continue
                 if entry is None:
                     entry = VocabularyEntry(
                         id=uuid.uuid4(),
@@ -742,10 +775,20 @@ class SQLAlchemyVocabularyRepository:
         with Session(self.engine) as session:
             entry = session.scalar(
                 select(VocabularyEntry)
+                .join(
+                    VocabularyCollectionMembership,
+                    VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                )
+                .join(
+                    VocabularyCollection,
+                    VocabularyCollection.id == VocabularyCollectionMembership.collection_id,
+                )
                 .where(
                     VocabularyEntry.language_code == _text(language_code).casefold(),
                     VocabularyEntry.normalized_term == _text(normalized_term),
+                    VocabularyCollection.catalog_status == "published",
                 )
+                .distinct()
                 .order_by(VocabularyEntry.identity_key)
             )
             return _entry_dict(entry) if entry is not None else None

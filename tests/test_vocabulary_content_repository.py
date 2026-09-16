@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
 from writing_coach.vocabulary_source_import import (
     detect_vocabulary_mapping,
@@ -218,6 +220,72 @@ def test_published_admission_and_provenance_survive_pending_reimport(tmp_path) -
     assert summary["catalog_status"] == "published"
     assert summary["provenance"]["publisher"] == "original"
     assert summary["provenance"]["admission"] == approved
+
+    _, new_detected, new_normalized = _source("new.csv", "word,meaning\nnew,greeting\n")
+    with pytest.raises(ValueError, match="Published collection"):
+        repository.import_source(
+            collection={
+                "id": "immutable-pack",
+                "title": "Immutable Pack",
+                "language_code": "en",
+                "catalog_status": "pending_review",
+                "origin": "imported",
+                "provenance": {},
+            },
+            source=new_normalized,
+            records=new_normalized["records"],
+            mapping=new_detected.mapping,
+            imported_by="untrusted-reimport",
+        )
+    assert repository.list_collections("en")[0]["item_count"] == 1
+
+
+def test_find_entry_hides_unpublished_entries(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "pending-visibility.db")
+    repository.initialize()
+    _, detected, normalized = _source("pending.csv", "word,meaning\nprivate,greeting\n")
+    repository.import_source(
+        collection={
+            "id": "pending-pack",
+            "title": "Pending Pack",
+            "language_code": "en",
+            "catalog_status": "pending_review",
+            "origin": "imported",
+            "provenance": {},
+        },
+        source=normalized,
+        records=normalized["records"],
+        mapping=detected.mapping,
+    )
+
+    assert repository.find_entry("en", "private") is None
+
+
+def test_published_write_requires_reviewer_identity(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "missing-reviewer.db")
+    repository.initialize()
+    _, detected, normalized = _source("unattested.csv", "word,meaning\nhello,greeting\n")
+    with pytest.raises(ValueError, match="reviewer identity"):
+        repository.import_source(
+            collection={
+                "id": "unattested-pack",
+                "title": "Unattested Pack",
+                "language_code": "en",
+                "catalog_status": "published",
+                "origin": "imported",
+                "provenance": {
+                    "admission": {
+                        "review_status": "approved",
+                        "publication_attested": True,
+                        "rights_status": "internal_curated",
+                        "completeness": "complete",
+                    }
+                },
+            },
+            source=normalized,
+            records=normalized["records"],
+            mapping=detected.mapping,
+        )
 
 
 def test_repository_rejects_caller_supplied_identity_mismatch(tmp_path) -> None:

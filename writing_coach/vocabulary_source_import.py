@@ -82,6 +82,13 @@ def _field_token(value: object) -> str:
     return re.sub(r"[^a-z0-9]+", "", text)
 
 
+def _identity_token(value: object) -> str:
+    """Canonicalize an identity dimension without discarding non-Latin text."""
+
+    text = unicodedata.normalize("NFKC", _clean_text(value)).casefold()
+    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
+
+
 def _format_for_filename(filename: str) -> str:
     suffix = PurePath(filename or "").suffix.casefold()
     if suffix == ".csv":
@@ -365,7 +372,7 @@ def canonical_vocabulary_identity(
     normalized_term = canonical_vocabulary_normalized_term(
         language_code=language, term=term
     )
-    pos = _field_token(part_of_speech)
+    pos = _identity_token(part_of_speech)
     sense = _normalize_term(_clean_text(sense_key), language)[:240]
     return "|".join((language, normalized_term, pos, sense))
 

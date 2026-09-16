@@ -114,7 +114,7 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
     word = str(row["word"])
     language = current_language_code().strip().casefold()
     catalog_entry = _catalog_entry_for(word)
-    orthography = orthography_for_word(word, language)
+    orthography = None
     item = {
         "word": word,
         "phonetic": str(row["phonetic"] or ""),
@@ -151,6 +151,10 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
         examples = catalog_entry.get("examples")
         if isinstance(examples, list) and examples:
             item["examples"] = [dict(example) for example in examples if isinstance(example, dict)]
+        if isinstance(catalog_entry.get("orthography"), dict) and catalog_entry["orthography"]:
+            orthography = dict(catalog_entry["orthography"])
+    if orthography is None:
+        orthography = orthography_for_word(word, language)
     if orthography is not None:
         item["orthography"] = orthography
     return item
