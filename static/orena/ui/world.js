@@ -45,10 +45,10 @@ function contentRow(item, intent, c) {
   return `<article class="collection-row"><a class="collection-art" aria-label="${esc(item.title)}" href="${link('encounter', { id: item.id, intent })}">${art(item)}</a><div><small>${esc(origin(item, c))}</small><h2><a lang="${item.language || ''}" href="${link('encounter', { id: item.id, intent })}">${esc(item.title)} ↗</a></h2></div><button class="quiet" data-remove="${esc(item.id)}" aria-label="${esc(c.remove + ': ' + item.title)}">×</button></article>`;
 }
 
-/* Vocabulary Library and Daily Feed - two Discover sections over the curated
-   catalog (writing_coach/vocabulary_library.py), distinct from My Language's
-   own saved/review state. Both render through the one shared Vocabulary Card
-   renderer and the one shared save path
+/* Vocabulary helpers share the curated catalog (writing_coach/vocabulary_library.py)
+   with My Language's saved/review state. Discovery mounts only the Feed; the
+   complete Library is rendered by the dedicated Vocabulary route. Both use the
+   shared Vocabulary Card renderer and save path
    (docs/superpowers/plans/2026-09-14-vocabulary-experience.md Task E). */
 
 /* A projected Vocabulary Card folds every authored support translation into
@@ -145,6 +145,13 @@ export function vocabularyFeedCardAfterSlot(c, index) {
   return `<button class="quiet" data-feed-keep="${index}">${esc(c.vocabularySave || c.keep)} ＋</button>`;
 }
 
+// Discovery is an invitation into the language world, not the Vocabulary
+// Library destination. Keep only the small Feed widget here; the complete
+// collection catalog belongs to #/language.
+export function discoveryVocabularySection(c) {
+  return `<section class="voices discovery-vocabulary-feed" data-vocabulary-feed aria-label="${esc(c.vocabularyFeedTitle)}"></section>`;
+}
+
 /* Inner content only - the caller owns the permanent
    <section data-vocabulary-library> wrapper so a state repaint never
    double-nests it. */
@@ -192,13 +199,15 @@ export function vocabularyFeedSection(c, state = {}) {
   } else if (!items.length) {
     body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyFeedEmpty)}</p></div>`;
   } else {
-    body = renderVocabularyFeedCarousel(vocabularyDiscoverCopy(c, supportLanguage), items, { limit: 5, saveAttribute: 'data-feed-keep', full: true });
+    body = renderVocabularyFeedCarousel(vocabularyDiscoverCopy(c, supportLanguage), items, { limit: 5, saveAttribute: 'data-feed-keep', full: false, variant: 'discovery' });
   }
   return `${heading}${body}`;
 }
 
-/* Both controllers repaint only their own container - opening a collection or
-   keeping a Feed word never reloads the rest of Discover. */
+/* The dedicated Vocabulary controller repaints only its own Library container.
+   Discovery has no Library mount, but retaining this controller keeps the
+   existing collection-detail contract available to the Vocabulary route and
+   its regression tests. */
 async function paintVocabularyLibrary(container, ctx) {
   if (!container) return;
   const { api, c, language, alive, support } = ctx;
@@ -272,6 +281,8 @@ async function paintVocabularyLibrary(container, ctx) {
   await loadList();
 }
 
+/* The Discovery controller repaints only its Feed container. The complete
+   collection catalog is owned by the dedicated Vocabulary route. */
 async function paintVocabularyFeed(container, ctx) {
   if (!container) return;
   const { api, c, language, alive, support } = ctx;
@@ -443,11 +454,9 @@ export async function renderWorld(root, ctx) {
     );
     root.innerHTML = `${editorialIntro(ctx,{title:referenceCopy[ctx.ui].collectionTitle,note:referenceCopy[ctx.ui].collectionNote,state:'together',eyebrow:referenceCopy[ctx.ui].content})}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
   } else {
-    // Vocabulary Library and Daily Feed are two sections inside this same
-    // Discover destination, not a new destination - each mounts and repaints
-    // independently once the rest of Discover is on the page.
-    root.innerHTML = `${discoverySpread(ctx, {media, text, catalogError})}<section class="voices" data-vocabulary-library aria-label="${esc(c.vocabularyLibraryTitle)}"></section><section class="voices" data-vocabulary-feed aria-label="${esc(c.vocabularyFeedTitle)}"></section>`;
-    paintVocabularyLibrary(root.querySelector('[data-vocabulary-library]'), ctx);
+    // Discovery keeps a small vocabulary invitation. The complete Library is
+    // intentionally owned by the dedicated Vocabulary destination (#/language).
+    root.innerHTML = `${discoverySpread(ctx, {media, text, catalogError})}${discoveryVocabularySection(c)}`;
     paintVocabularyFeed(root.querySelector('[data-vocabulary-feed]'), ctx);
   }
   root

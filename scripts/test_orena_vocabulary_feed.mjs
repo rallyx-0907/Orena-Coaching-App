@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import {
+  discoveryVocabularySection,
   vocabularyFeedCardAfterSlot,
   vocabularyFeedSection,
   vocabularyKeepPayload,
@@ -43,6 +44,10 @@ assert.match(vocabularyFeedCardAfterSlot(copy.en, 2), /data-feed-keep="2"/);
 for (const ui of ['en', 'zh']) {
   const c = copy[ui];
 
+  const discovery = discoveryVocabularySection(c);
+  assert.doesNotMatch(discovery, /data-vocabulary-library/, `${ui} Discovery does not mount the Vocabulary Library`);
+  assert.match(discovery, /data-vocabulary-feed/, `${ui} Discovery keeps the Daily Feed mount`);
+
   // Loading is truthful: no candidates claimed before any arrive.
   assert.match(vocabularyFeedSection(c, {}), new RegExp(c.vocabularyFeedLoading));
 
@@ -63,6 +68,7 @@ for (const ui of ['en', 'zh']) {
   assert.match(withItems, /data-feed-keep="0"/);
   assert.match(withItems, /data-vocabulary-feed-carousel/);
   assert.match(withItems, /data-vocabulary-feed-track/);
+  assert.match(withItems, /vocabulary-feed-carousel--discovery/);
   assert.doesNotMatch(withItems, /vocabulary-feed-preview--grid/);
 }
 

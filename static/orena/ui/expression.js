@@ -796,7 +796,34 @@ export async function renderLanguage(root, ctx) {
     const interactionPool = () => vocabularyInteractionItems(view, { feedCards, visibleItems, savedCards, studyItems });
     root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularyStudy); const pool = button.dataset.vocabularyStudySource === 'feed' ? feedCards.slice(0, 5) : interactionPool(); setStudy(pool, index); }));
     root.querySelectorAll('[data-vocabulary-save]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularySave); const source = button.closest('[data-vocabulary-source]')?.dataset.vocabularySource; const pool = source === 'feed' ? feedCards.slice(0, 5) : interactionPool(); saveCard(pool[index], source === 'feed' ? 'feed' : view === 'collection' ? 'collection' : 'manual'); }));
-    root.querySelectorAll('[data-study-flip]').forEach((button) => (button.onclick = () => { const card = root.querySelector('.vocabulary-study-card'); const front = root.querySelector('[data-study-front]'); const back = root.querySelector('[data-study-back]'); const showingBack = card.dataset.studyState === 'back'; card.dataset.studyState = showingBack ? 'front' : 'back'; front.hidden = !showingBack; back.hidden = showingBack; }));
+    const studyCard = root.querySelector('.vocabulary-study-card');
+    const setStudyState = (nextState) => {
+      if (!studyCard) return;
+      const front = studyCard.querySelector('[data-study-front]');
+      const back = studyCard.querySelector('[data-study-back]');
+      const showingBack = nextState === 'back';
+      studyCard.dataset.studyState = nextState;
+      front?.setAttribute('aria-hidden', showingBack ? 'true' : 'false');
+      back?.setAttribute('aria-hidden', showingBack ? 'false' : 'true');
+      if (front) front.inert = showingBack;
+      if (back) back.inert = !showingBack;
+    };
+    const flipStudyCard = () => {
+      if (!studyCard) return;
+      setStudyState(studyCard.dataset.studyState === 'back' ? 'front' : 'back');
+    };
+    if (studyCard) {
+      studyCard.addEventListener('click', (event) => {
+        if (event.target.closest('button, a, input, select, textarea, [data-study-no-flip]')) return;
+        flipStudyCard();
+      });
+      studyCard.addEventListener('keydown', (event) => {
+        if (event.target !== studyCard || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        flipStudyCard();
+      });
+    }
+    root.querySelectorAll('[data-study-flip]').forEach((button) => (button.onclick = (event) => { event.stopPropagation(); flipStudyCard(); }));
     root.querySelector('[data-study-prev]')?.addEventListener('click', () => { if (studyIndex > 0) { studyIndex -= 1; paint(); } });
     root.querySelector('[data-study-next]')?.addEventListener('click', () => { if (studyIndex < studyItems.length - 1) { studyIndex += 1; paint(); } });
     root.querySelector('[data-study-audio]')?.addEventListener('click', () => { const word = studyItems[studyIndex]?.headword; if (word && 'speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(word)); });

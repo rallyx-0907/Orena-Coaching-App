@@ -103,9 +103,8 @@ layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
 
 Vocabulary UX `639b03d` plus correction `2e591c3`: EN/ZH cards show real levels only
 (CEFR A1–C2, HSK1–HSK7-9), pronunciation/examples, contained review status
-and metallic frame. Public Library has an explicit gate; current packs are
-seed-only, so local Library is truthfully empty until a complete pack is
-authored/published. No active runtime schema change.
+and metallic frame. Library is dedicated to `/language`; Discovery mounts
+compact Feed only. Public packs remain gated; no active runtime schema change.
 
 Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
 results, shared repository, Admin UI and learner cards; review APPROVED
