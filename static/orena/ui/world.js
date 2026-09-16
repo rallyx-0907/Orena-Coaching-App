@@ -462,12 +462,6 @@ export async function renderWorld(root, ctx) {
       catalogError,
       vocabularyFeed: discoveryVocabularySection(c),
     });
-    const discoverNarrow = typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(max-width: 700px)').matches;
-    root.querySelectorAll('.discover-progressive').forEach((section) => {
-      section.open = !discoverNarrow;
-    });
     paintVocabularyFeed(root.querySelector('[data-vocabulary-feed]'), ctx);
   }
   root

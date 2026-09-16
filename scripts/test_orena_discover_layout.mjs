@@ -41,14 +41,13 @@ for (const marker of [
   'continuationShelf(ctx,2)',
   'discover-progressive',
   '<summary>',
-  '<details open',
+  '<details class="discover-progressive',
 ]) {
   assert.match(discovery, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `Discover layout needs ${marker}`);
 }
 
 assert.match(world, /discoveryVocabularySection\(c\)/, 'Discover still mounts the shared Feed helper');
 assert.match(world, /vocabularyFeed: discoveryVocabularySection\(c\)/, 'Feed is placed inside the Discover dashboard composition');
-assert.match(world, /matchMedia\('\(max-width: 700px\)'\)/, 'mobile progressive sections are closed by the Discover controller');
 const discoverBranch = world.slice(world.indexOf('  } else {', world.indexOf('export async function renderWorld')), world.indexOf('  root\n    .querySelectorAll', world.indexOf('export async function renderWorld')));
 assert.doesNotMatch(discoverBranch, /paintLibraryGrid/, 'Discover does not mount the Vocabulary Library');
 assert.match(discovery, /class="editorial-spread"/, 'featured editorial content remains available');
@@ -61,7 +60,8 @@ assert.match(styles, /\[data-experience='discover'\] \.discover-dashboard/);
 assert.match(styles, /\[data-experience='discover'\] \.editorial-spread/);
 assert.match(styles, /@media\s*\(max-width:600px\)[\s\S]*?\.discover-map__primary/);
 assert.match(styles, /@media\s*\(max-width:600px\)[\s\S]*?\.discover-dashboard/);
-assert.match(styles, /\.discover-progressive:not\(\[open\]\) > :not\(summary\) \{ display: none; \}/);
+assert.match(styles, /\.discover-progressive:not\(\[open\]\) > \.studio-spread/);
+assert.match(styles, /\.discover-progressive:not\(\[open\]\) > \.story-walk/);
 assert.match(styles, /\.discover-progressive\[open\] > \.studio-spread/);
 
 const sampleMedia = [{
