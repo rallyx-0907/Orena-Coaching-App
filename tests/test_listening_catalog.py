@@ -1,7 +1,30 @@
 from __future__ import annotations
 
+import pytest
+
+from writing_coach import listening_api
 from writing_coach.listening_api import listening_library, open_listening_library_lesson
 from writing_coach.listening_catalog import CATALOG, CATALOG_SOURCES, catalog_lesson, catalog_lessons, lesson_metadata
+from writing_coach.media_library_store import FileMediaLibraryStore
+
+
+@pytest.fixture(autouse=True)
+def _curated_catalog_only(tmp_path):
+    """Read the curated catalog without whatever this machine has imported.
+
+    The library read now merges persisted imports beside the curated lessons, and
+    a curated-catalog test must not be a statement about a developer's sandbox:
+    with a populated library the shared items lead the response and the curated
+    rails stop being what these assertions are about. The store is pointed at an
+    empty directory for the duration and the deployment's own store is put back
+    afterwards, so this isolates the test rather than disabling the feature.
+    """
+    previous = listening_api._media_store
+    listening_api.configure_listening_media_library(FileMediaLibraryStore(tmp_path / "media_library"))
+    try:
+        yield
+    finally:
+        listening_api.configure_listening_media_library(previous)
 
 
 def test_library_lists_lightweight_en_and_zh_curated_lessons() -> None:
