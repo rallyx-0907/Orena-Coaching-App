@@ -353,7 +353,6 @@
 [data-experience='discover'] .discover-dashboard__aside { min-width: 0; }
 [data-experience='discover'] .discover-start {
   padding: 18px 0 20px;
-  border-block: 1px solid var(--line);
 }
 [data-experience='discover'] .discover-start__head {
   display: flex;
@@ -378,36 +377,50 @@
   display: inline-flex;
   align-items: center;
 }
-[data-experience='discover'] .discover-map { display: grid; gap: 8px; }
+[data-experience='discover'] .discover-map { display: grid; gap: 0; }
 [data-experience='discover'] .discover-map__primary,
 [data-experience='discover'] .discover-map__secondary {
   display: grid;
-  gap: 8px;
+  gap: 0;
 }
-[data-experience='discover'] .discover-map__primary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-[data-experience='discover'] .discover-map__secondary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+[data-experience='discover'] .discover-map__primary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block: 1px solid var(--line);
+}
+[data-experience='discover'] .discover-map__secondary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
 [data-experience='discover'] .discover-map__item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   min-width: 0;
-  min-height: 58px;
-  padding: 10px 12px;
+  min-height: 68px;
+  padding: 11px 15px;
   color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   text-decoration: none;
 }
+[data-experience='discover'] .discover-map__item + .discover-map__item,
+[data-experience='discover'] .discover-map__utility + .discover-map__utility { border-left: 1px solid var(--line); }
 [data-experience='discover'] .discover-map__item:hover,
 [data-experience='discover'] .discover-map__item:focus-visible {
-  background: var(--sage-surface);
-  border-color: var(--on-sage-muted);
+  color: var(--accent);
+  background: transparent;
 }
 [data-experience='discover'] .discover-map__item > svg { color: var(--accent); flex: 0 0 auto; }
 [data-experience='discover'] .discover-map__item > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
-[data-experience='discover'] .discover-map__item strong { font-size: var(--text-sm); line-height: 1.2; }
+[data-experience='discover'] .discover-map__item strong {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 [data-experience='discover'] .discover-map__item small {
   overflow: hidden;
   color: var(--muted);
@@ -416,11 +429,34 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-[data-experience='discover'] .discover-map__item--primary {
-  min-height: 68px;
-  border-bottom: 2px solid var(--accent);
+[data-experience='discover'] .discover-map__item > span:last-child,
+[data-experience='discover'] .discover-map__utility > span:last-child { margin-left: auto; color: var(--accent); }
+[data-experience='discover'] .discover-map__utility {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 15px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-decoration: none;
 }
-[data-experience='discover'] .discover-map__secondary .discover-map__item { min-height: 52px; }
+[data-experience='discover'] .discover-map__utility > svg { flex: 0 0 auto; color: var(--accent); }
+[data-experience='discover'] .discover-map__utility strong {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-experience='discover'] .discover-map__utility:hover,
+[data-experience='discover'] .discover-map__utility:focus-visible {
+  color: var(--accent);
+  background: transparent;
+}
 [data-experience='discover'] .discover-dashboard__aside > .discovery-vocabulary-feed {
   width: 100%;
   max-width: 360px;
@@ -493,22 +529,19 @@
 
 @media (max-width: 1000px) {
   [data-experience='discover'] .discover-dashboard { grid-template-columns: minmax(0, 1fr) minmax(270px, 320px); gap: 16px; }
-  [data-experience='discover'] .discover-map__secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   [data-experience='discover'] .discover-dashboard { grid-template-columns: 1fr; gap: 17px; }
   [data-experience='discover'] .discover-dashboard__aside > .discovery-vocabulary-feed { max-width: 380px; }
+}
+@media (max-width: 700px) {
   [data-experience='discover'] .discover-start { padding-block: 14px 16px; }
   [data-experience='discover'] .discover-start__head { align-items: start; gap: 10px; }
   [data-experience='discover'] .discover-start__head h2 { font-size: 25px; }
   [data-experience='discover'] .discover-start__head p { max-width: 30ch; }
-  [data-experience='discover'] .discover-map__item { min-height: 72px; padding: 10px; }
-  [data-experience='discover'] .discover-map__item > span:last-child { display: none; }
-  [data-experience='discover'] .discover-map__item--primary { display: flex; align-items: center; gap: 7px; min-height: 64px; }
-  [data-experience='discover'] .discover-map__item--primary > span:nth-child(2) { display: block; }
-  [data-experience='discover'] .discover-map__item--primary small,
-  [data-experience='discover'] .discover-map__secondary small { display: none; }
-  [data-experience='discover'] .discover-map__secondary .discover-map__item { min-height: 54px; display: flex; }
+  [data-experience='discover'] .discover-map__item { min-height: 64px; padding-inline: 11px; }
+  [data-experience='discover'] .discover-map__item small { display: none; }
+  [data-experience='discover'] .discover-map__utility { padding-inline: 10px; }
   [data-experience='discover'] .editorial-spread { gap: 16px; }
   [data-experience='discover'] .feature-image { aspect-ratio: 1.72; }
   [data-experience='discover'] .feature-caption { padding: 15px 16px 17px; }
@@ -570,7 +603,23 @@
   [data-experience='discover'] .editorial-intro:has(.brand-art) > div { padding-top: 58px; }
   [data-experience='discover'] .editorial-intro small { top: 21px; }
   [data-experience='discover'] .discover-start__head > a { font-size: var(--text-sm); }
+  [data-experience='discover'] .discover-map__primary { grid-template-columns: 1fr; }
+  [data-experience='discover'] .discover-map__item + .discover-map__item {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+  [data-experience='discover'] .discover-map__item { min-height: 52px; padding-inline: 4px; }
+  [data-experience='discover'] .discover-map__secondary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  [data-experience='discover'] .discover-map__utility {
+    justify-content: center;
+    gap: 0;
+    padding-inline: 5px;
+  }
+  [data-experience='discover'] .discover-map__utility > svg,
+  [data-experience='discover'] .discover-map__utility > span:last-child { display: none; }
+  [data-experience='discover'] .discover-map__utility strong { text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-experience='discover'] .discover-map__item { transition: none; }
+  [data-experience='discover'] .discover-map__item,
+  [data-experience='discover'] .discover-map__utility { transition: none; }
 }

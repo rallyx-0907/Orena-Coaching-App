@@ -10,6 +10,27 @@ const world = read('static/orena/ui/world.js');
 const reference = read('static/orena/ui/reference.js');
 const styles = read('static/orena/reference.css');
 
+function cssRule(source, selector, containing = '') {
+  let searchFrom = 0;
+  while (searchFrom < source.length) {
+    const start = source.indexOf(`${selector} {`, searchFrom);
+    if (start === -1) break;
+    const open = source.indexOf('{', start);
+    let depth = 0;
+    for (let index = open; index < source.length; index += 1) {
+      if (source[index] === '{') depth += 1;
+      if (source[index] === '}') depth -= 1;
+      if (depth === 0) {
+        const block = source.slice(start, index + 1);
+        if (!containing || block.includes(containing)) return block;
+        searchFrom = index + 1;
+        break;
+      }
+    }
+  }
+  throw new Error(`missing CSS rule: ${selector}${containing ? ` containing ${containing}` : ''}`);
+}
+
 // Discover must expose a compact mental map before the editorial content. The
 // links remain the existing intent routes; this test protects the information
 // architecture rather than a particular visual treatment.
@@ -64,6 +85,27 @@ assert.match(styles, /\.discover-progressive:not\(\[open\]\) > \.studio-spread/)
 assert.match(styles, /\.discover-progressive:not\(\[open\]\) > \.story-walk/);
 assert.match(styles, /\.discover-progressive\[open\] > \.studio-spread/);
 
+// Discover wayfinding follows Orena's line-based navigation language. The
+// primary paths and secondary destinations are deliberately different
+// densities; neither is a rounded surface card and focus/hover does not add a
+// sage/green fill. Three secondary destinations must occupy three equal tracks
+// instead of leaving a fourth empty track or wrapping one item by accident.
+const primaryItemRule = cssRule(styles, "[data-experience='discover'] .discover-map__item");
+assert.match(primaryItemRule, /background:\s*transparent;/, 'primary wayfinding has no card surface');
+assert.match(primaryItemRule, /border:\s*0;/, 'primary wayfinding has no card border');
+assert.match(primaryItemRule, /border-radius:\s*0;/, 'primary wayfinding has no card radius');
+const itemInteractionRule = cssRule(styles, "[data-experience='discover'] .discover-map__item:hover,\n[data-experience='discover'] .discover-map__item:focus-visible");
+assert.doesNotMatch(itemInteractionRule, /--sage-surface|--on-sage/, 'wayfinding hover/focus does not invent a green card state');
+assert.match(itemInteractionRule, /color:\s*var\(--accent\);/, 'wayfinding hover/focus stays typographic');
+const secondaryGridRule = cssRule(styles, "[data-experience='discover'] .discover-map__secondary", 'grid-template-columns');
+assert.match(secondaryGridRule, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);/, 'three secondary destinations use three equal tracks');
+assert.doesNotMatch(styles, /\.discover-map__secondary\s*\{\s*grid-template-columns:\s*repeat\(2,/s, 'tablet does not wrap one secondary destination onto a stray row');
+assert.match(
+  styles,
+  /@media \(max-width: 900px\) \{\s*\[data-experience='discover'\] \.discover-dashboard \{ grid-template-columns: 1fr; gap: 17px; \}/,
+  'tablet stacks the Feed below full-width wayfinding before labels become cramped',
+);
+
 const sampleMedia = [{
   id: 'media:discover-check',
   kind: 'video',
@@ -91,6 +133,11 @@ for (const ui of ['en', 'zh']) {
   assert.match(rendered, new RegExp(referenceCopy[ui].goSpeak));
   assert.match(rendered, /data-vocabulary-feed/);
   assert.doesNotMatch(rendered, /data-vocabulary-library/);
+  const secondaryStart = rendered.indexOf('discover-map__secondary');
+  const secondaryEnd = rendered.indexOf('</div></nav>', secondaryStart);
+  const secondary = rendered.slice(secondaryStart, secondaryEnd);
+  assert.equal((secondary.match(/discover-map__utility/g) || []).length, 3, `${ui} renders three quiet secondary destinations`);
+  assert.doesNotMatch(secondary, /<small>/, `${ui} secondary destinations do not become two-line cards`);
   assert.ok(rendered.indexOf('discover-start') < rendered.indexOf('data-vocabulary-feed'));
   assert.ok(rendered.indexOf('data-vocabulary-feed') < rendered.indexOf('editorial-spread'));
 }
