@@ -338,3 +338,207 @@
   [data-experience='listening'] .voice-row > span:last-child { display:none; }
   [data-experience='listening'] .voice-row strong { font-size:23px; }
 }
+
+/* Discover is an orientation surface, not a stack of landing pages. The map
+   and the small vocabulary deck establish the product mental model first;
+   editorial content keeps its personality below that compact starting point. */
+[data-experience='discover'] .discover-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 22px;
+  align-items: start;
+  margin-bottom: 28px;
+}
+[data-experience='discover'] .discover-dashboard__main,
+[data-experience='discover'] .discover-dashboard__aside { min-width: 0; }
+[data-experience='discover'] .discover-start {
+  padding: 18px 0 20px;
+  border-block: 1px solid var(--line);
+}
+[data-experience='discover'] .discover-start__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 13px;
+}
+[data-experience='discover'] .discover-start__head h2 {
+  margin: 4px 0 2px;
+  font-size: clamp(24px, 2.2vw, 32px);
+  line-height: 1.1;
+}
+[data-experience='discover'] .discover-start__head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+[data-experience='discover'] .discover-start__head > a {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+[data-experience='discover'] .discover-map { display: grid; gap: 8px; }
+[data-experience='discover'] .discover-map__primary,
+[data-experience='discover'] .discover-map__secondary {
+  display: grid;
+  gap: 8px;
+}
+[data-experience='discover'] .discover-map__primary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+[data-experience='discover'] .discover-map__secondary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+[data-experience='discover'] .discover-map__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+}
+[data-experience='discover'] .discover-map__item:hover,
+[data-experience='discover'] .discover-map__item:focus-visible {
+  background: var(--sage-surface);
+  border-color: var(--on-sage-muted);
+}
+[data-experience='discover'] .discover-map__item > svg { color: var(--accent); flex: 0 0 auto; }
+[data-experience='discover'] .discover-map__item > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
+[data-experience='discover'] .discover-map__item strong { font-size: var(--text-sm); line-height: 1.2; }
+[data-experience='discover'] .discover-map__item small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-experience='discover'] .discover-map__item--primary {
+  min-height: 68px;
+  border-bottom: 2px solid var(--accent);
+}
+[data-experience='discover'] .discover-map__secondary .discover-map__item { min-height: 52px; }
+[data-experience='discover'] .discover-dashboard__aside > .discovery-vocabulary-feed {
+  width: 100%;
+  max-width: 360px;
+  margin: 0;
+}
+[data-experience='discover'] .discovery-vocabulary-feed > .section-head { margin-bottom: 4px; }
+[data-experience='discover'] .discovery-vocabulary-feed > .meta { margin: 0; }
+[data-experience='discover'] .discovery-vocabulary-feed .vocabulary-feed-preview { height: 270px; }
+[data-experience='discover'] .discovery-vocabulary-feed .vocabulary-feed-preview > .vocabulary-feed-slide {
+  min-height: 0;
+  padding: 12px;
+}
+[data-experience='discover'] .discovery-vocabulary-feed .vocabulary-browse-card__content { padding: 12px 1px 7px; }
+[data-experience='discover'] .discovery-vocabulary-feed .vocabulary-browse-card__content h3 { font-size: 1.5rem; }
+[data-experience='discover'] .discovery-vocabulary-feed .vocabulary-browse-card__actions { margin-top: 7px; }
+[data-experience='discover'] .discovery-vocabulary-feed .vocabulary-browse-card__actions button { min-height: 36px; padding-block: 6px; }
+[data-experience='discover'] .editorial-spread { gap: 18px; }
+[data-experience='discover'] .feature-image { aspect-ratio: 16 / 7; }
+[data-experience='discover'] .feature-caption { padding: 18px 20px 20px; }
+[data-experience='discover'] .feature-caption h2 { font-size: clamp(26px, 2.3vw, 36px); }
+[data-experience='discover'] .reading-window { padding: 17px 19px 21px; }
+[data-experience='discover'] .reading-window > small { margin-bottom: 11px; }
+[data-experience='discover'] .reading-window-art { aspect-ratio: 1.55; margin-bottom: 12px; }
+[data-experience='discover'] .reading-window h2 { font-size: clamp(24px, 2.2vw, 32px); }
+[data-experience='discover'] .studio-spread { gap: 18px; margin-top: 32px; }
+[data-experience='discover'] .studio-spread article { min-height: 232px; padding: 23px; }
+[data-experience='discover'] .studio-spread h2 { font-size: clamp(26px, 2.5vw, 36px); }
+[data-experience='discover'] .story-walk { margin-top: 34px; }
+[data-experience='discover'] .story-path { padding-block: 17px; }
+[data-experience='discover'] .story-path h3 { font-size: 22px; }
+[data-experience='discover'] .bring-invitation { margin-top: 38px; padding-block: 22px; }
+[data-experience='discover'] .discover-progressive > summary { display: none; }
+[data-experience='discover'] .discover-progressive > .studio-spread,
+[data-experience='discover'] .discover-progressive > .story-walk { display: block; }
+
+@media (max-width: 1000px) {
+  [data-experience='discover'] .discover-dashboard { grid-template-columns: minmax(0, 1fr) minmax(270px, 320px); gap: 16px; }
+  [data-experience='discover'] .discover-map__secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  [data-experience='discover'] .discover-dashboard { grid-template-columns: 1fr; gap: 17px; }
+  [data-experience='discover'] .discover-dashboard__aside > .discovery-vocabulary-feed { max-width: 380px; }
+  [data-experience='discover'] .discover-start { padding-block: 14px 16px; }
+  [data-experience='discover'] .discover-start__head { align-items: start; gap: 10px; }
+  [data-experience='discover'] .discover-start__head h2 { font-size: 25px; }
+  [data-experience='discover'] .discover-start__head p { max-width: 30ch; }
+  [data-experience='discover'] .discover-map__item { min-height: 72px; padding: 10px; }
+  [data-experience='discover'] .discover-map__item > span:last-child { display: none; }
+  [data-experience='discover'] .discover-map__item--primary { display: flex; align-items: center; gap: 7px; min-height: 64px; }
+  [data-experience='discover'] .discover-map__item--primary > span:nth-child(2) { display: block; }
+  [data-experience='discover'] .discover-map__item--primary small,
+  [data-experience='discover'] .discover-map__secondary small { display: none; }
+  [data-experience='discover'] .discover-map__secondary .discover-map__item { min-height: 54px; display: flex; }
+  [data-experience='discover'] .editorial-spread { gap: 16px; }
+  [data-experience='discover'] .feature-image { aspect-ratio: 1.72; }
+  [data-experience='discover'] .feature-caption { padding: 15px 16px 17px; }
+  [data-experience='discover'] .feature-caption h2 { font-size: 25px; }
+  [data-experience='discover'] .reading-window { padding: 16px; }
+  [data-experience='discover'] .reading-window-art { aspect-ratio: 1.8; }
+  [data-experience='discover'] .reading-window h2 { font-size: 25px; }
+  [data-experience='discover'] .studio-spread { gap: 12px; margin-top: 22px; }
+  [data-experience='discover'] .discover-progressive {
+    margin-top: 20px;
+    border-block: 1px solid var(--line);
+  }
+  [data-experience='discover'] .discover-progressive > summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 12px;
+    align-items: center;
+    min-height: 62px;
+    padding: 10px 0;
+    color: var(--ink);
+    cursor: pointer;
+    list-style: none;
+  }
+  [data-experience='discover'] .discover-progressive > summary::-webkit-details-marker { display: none; }
+  [data-experience='discover'] .discover-progressive > summary > span:first-child {
+    color: var(--accent);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+  [data-experience='discover'] .discover-progressive > summary > strong { font-size: var(--text-base); }
+  [data-experience='discover'] .discover-progressive > summary > span:last-child {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: var(--accent);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+  [data-experience='discover'] .discover-progressive > summary:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 4px;
+  }
+  [data-experience='discover'] .discover-progressive:not([open]) > :not(summary) { display: none; }
+  [data-experience='discover'] .discover-progressive[open] > .studio-spread,
+  [data-experience='discover'] .discover-progressive[open] > .story-walk { display: block; }
+  [data-experience='discover'] .discover-progressive[open] > .studio-spread { display: grid; }
+  [data-experience='discover'] .discover-progressive[open] > .story-walk { padding-bottom: 4px; }
+  [data-experience='discover'] .discover-stories[open] .story-walk > .section-head > div { display: none; }
+  [data-experience='discover'] .discover-stories[open] .story-walk > .section-head { justify-content: flex-end; margin-bottom: 2px; }
+  [data-experience='discover'] .studio-spread article { min-height: 178px; padding: 18px; }
+  [data-experience='discover'] .studio-spread h2 { font-size: 27px; margin-top: 8px; }
+  [data-experience='discover'] .studio-spread p { max-width: 25ch; font-size: var(--text-sm); }
+  [data-experience='discover'] .story-walk { margin-top: 26px; }
+  [data-experience='discover'] .story-path { padding-block: 13px; }
+  [data-experience='discover'] .story-path h3 { font-size: 20px; }
+  [data-experience='discover'] .bring-invitation { margin-top: 27px; padding-block: 16px; }
+}
+@media (max-width: 600px) {
+  [data-experience='discover'] .editorial-intro { padding-block: 18px 16px; }
+  [data-experience='discover'] .editorial-intro h1 { font-size: clamp(31px, 9vw, 38px); }
+  [data-experience='discover'] .editorial-intro .brand-art { width: 76px; top: 19px; }
+  [data-experience='discover'] .editorial-intro:has(.brand-art) > div { padding-top: 58px; }
+  [data-experience='discover'] .editorial-intro small { top: 21px; }
+  [data-experience='discover'] .discover-start__head > a { font-size: var(--text-sm); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-experience='discover'] .discover-map__item { transition: none; }
+}

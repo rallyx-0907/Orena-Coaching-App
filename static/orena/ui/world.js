@@ -456,7 +456,18 @@ export async function renderWorld(root, ctx) {
   } else {
     // Discovery keeps a small vocabulary invitation. The complete Library is
     // intentionally owned by the dedicated Vocabulary destination (#/language).
-    root.innerHTML = `${discoverySpread(ctx, {media, text, catalogError})}${discoveryVocabularySection(c)}`;
+    root.innerHTML = discoverySpread(ctx, {
+      media,
+      text,
+      catalogError,
+      vocabularyFeed: discoveryVocabularySection(c),
+    });
+    const discoverNarrow = typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(max-width: 700px)').matches;
+    root.querySelectorAll('.discover-progressive').forEach((section) => {
+      section.open = !discoverNarrow;
+    });
     paintVocabularyFeed(root.querySelector('[data-vocabulary-feed]'), ctx);
   }
   root
