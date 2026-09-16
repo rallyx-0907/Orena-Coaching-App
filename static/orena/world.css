@@ -1728,10 +1728,11 @@
   position: relative;
   overflow: hidden;
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 55%, var(--line));
-  border-top: 3px solid var(--vocabulary-level-color);
+  border: 1px solid var(--line);
+  border-top: 3px solid color-mix(in srgb, var(--vocabulary-level-color) 78%, var(--line));
   border-radius: 10px;
-  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--vocabulary-level-color) 12%, transparent), transparent 42%), var(--surface);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 16%, transparent);
 }
 [data-vocabulary-skin="bronze"] { --vocabulary-level-color: var(--coral); --vocabulary-level-secondary: var(--coral); }
 [data-vocabulary-skin="silver"] { --vocabulary-level-color: var(--muted); --vocabulary-level-secondary: var(--muted); }
@@ -1825,19 +1826,11 @@
   min-height: 500px;
   margin-top: 18px;
   padding: 26px;
-  background:
-    linear-gradient(116deg,
-      color-mix(in srgb, var(--vocabulary-level-color) 44%, var(--surface)) 0%,
-      color-mix(in srgb, var(--surface) 84%, var(--vocabulary-level-color)) 15%,
-      color-mix(in srgb, var(--vocabulary-level-color) 22%, var(--surface)) 30%,
-      color-mix(in srgb, var(--surface) 95%, var(--vocabulary-level-secondary)) 45%,
-      color-mix(in srgb, var(--vocabulary-level-secondary) 37%, var(--surface)) 59%,
-      color-mix(in srgb, var(--surface) 84%, var(--vocabulary-level-color)) 76%,
-      color-mix(in srgb, var(--vocabulary-level-color) 34%, var(--surface)) 100%);
-  border: 4px solid color-mix(in srgb, var(--vocabulary-level-color) 84%, var(--line));
+  background: var(--surface);
+  border: 4px solid color-mix(in srgb, var(--vocabulary-level-color) 68%, var(--line));
   border-radius: 18px;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 54%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 14%, transparent), 0 18px 38px color-mix(in srgb, var(--ink) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 38%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 14%, transparent), 0 18px 38px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 .vocabulary-study-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
 .vocabulary-study-card::before {
@@ -1866,18 +1859,6 @@
       transparent 79%);
   opacity: .9;
   pointer-events: none;
-}
-.vocabulary-study-card[data-vocabulary-skin="aurora"] {
-  background:
-    linear-gradient(116deg,
-      color-mix(in srgb, var(--accent) 44%, var(--surface)) 0%,
-      color-mix(in srgb, var(--surface) 84%, var(--accent)) 15%,
-      color-mix(in srgb, var(--coral) 28%, var(--surface)) 30%,
-      color-mix(in srgb, var(--surface) 94%, var(--coral)) 45%,
-      color-mix(in srgb, var(--sage) 30%, var(--surface)) 60%,
-      color-mix(in srgb, var(--surface) 84%, var(--sage)) 76%,
-      color-mix(in srgb, var(--accent) 38%, var(--surface)) 100%);
-  border-color: color-mix(in srgb, var(--accent) 84%, var(--line));
 }
 .vocabulary-study-card__inner {
   position: relative;
@@ -1920,7 +1901,7 @@
 .vocabulary-study__pronunciation { color: var(--muted); }
 .vocabulary-study-card__prompt { margin: 0; color: var(--muted); text-align: center; }
 .vocabulary-study-card__front > [data-study-flip] { align-self: center; margin-top: 10px; }
-.vocabulary-study-card__back-body { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--vocabulary-level-color) 70%, var(--line)) transparent; }
+.vocabulary-study-card__back-body { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .vocabulary-study-card__back h2 { margin: 8px 0 4px; overflow-wrap: anywhere; font-size: clamp(32px, 5vw, 48px); }
 .vocabulary-study__support { margin: 14px 0 4px; color: var(--accent); font-size: 22px; font-weight: 650; }
 .vocabulary-study__definition { margin: 0 0 10px; color: var(--muted); }
@@ -1997,8 +1978,6 @@
   gap: 14px;
 }
 .vocabulary-browse-card {
-  --vocabulary-level-wash: color-mix(in srgb, var(--vocabulary-level-color) 18%, transparent);
-  --vocabulary-level-wash-secondary: transparent;
   position: relative;
   display: flex;
   min-width: 0;
@@ -2006,19 +1985,11 @@
   flex-direction: column;
   overflow: hidden;
   padding: 17px;
-  border: 3px solid color-mix(in srgb, var(--vocabulary-level-color) 72%, var(--line));
+  border: 3px solid color-mix(in srgb, var(--vocabulary-level-color) 52%, var(--line));
+  border-top-color: color-mix(in srgb, var(--vocabulary-level-color) 72%, var(--line));
   border-radius: 16px;
-  background:
-    linear-gradient(116deg,
-      color-mix(in srgb, var(--vocabulary-level-color) 22%, var(--surface)) 0%,
-      color-mix(in srgb, var(--surface) 94%, var(--vocabulary-level-color)) 22%,
-      color-mix(in srgb, var(--vocabulary-level-color) 11%, var(--surface)) 47%,
-      color-mix(in srgb, var(--surface) 96%, var(--vocabulary-level-color)) 68%,
-      color-mix(in srgb, var(--vocabulary-level-color) 18%, var(--surface)) 100%),
-    radial-gradient(circle at 100% 0, var(--vocabulary-level-wash), transparent 46%),
-    radial-gradient(circle at 0 100%, var(--vocabulary-level-wash-secondary), transparent 38%),
-    var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 48%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 24px color-mix(in srgb, var(--ink) 13%, transparent);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 28%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 24px color-mix(in srgb, var(--ink) 13%, transparent);
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 .vocabulary-browse-card::before {
@@ -2028,15 +1999,8 @@
   content: '';
   border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 48%, transparent);
   border-radius: 10px;
-  background: linear-gradient(116deg,
-    transparent 0 25%,
-    color-mix(in srgb, var(--surface) 42%, transparent) 33%,
-    color-mix(in srgb, var(--surface) 12%, transparent) 38%,
-    transparent 46%,
-    transparent 67%,
-    color-mix(in srgb, var(--ink) 6%, transparent) 73%,
-    transparent 80%);
-  opacity: .9;
+  background: none;
+  opacity: .72;
   pointer-events: none;
 }
 .vocabulary-browse-card::after {
@@ -2058,15 +2022,6 @@
 .vocabulary-browse-card:focus-within {
   border-color: var(--vocabulary-level-color);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--vocabulary-level-color) 24%, transparent), 0 12px 28px color-mix(in srgb, var(--ink) 10%, transparent);
-}
-[data-vocabulary-skin="bronze"] { --vocabulary-level-wash: color-mix(in srgb, var(--coral) 20%, transparent); }
-[data-vocabulary-skin="silver"] { --vocabulary-level-wash: color-mix(in srgb, var(--muted) 20%, transparent); }
-[data-vocabulary-skin="gold"] { --vocabulary-level-wash: color-mix(in srgb, var(--sun) 20%, transparent); }
-[data-vocabulary-skin="platinum"] { --vocabulary-level-wash: color-mix(in srgb, var(--sage) 20%, transparent); }
-[data-vocabulary-skin="violet"] { --vocabulary-level-wash: color-mix(in srgb, var(--accent) 20%, transparent); }
-[data-vocabulary-skin="aurora"] {
-  --vocabulary-level-wash: color-mix(in srgb, var(--coral) 21%, transparent);
-  --vocabulary-level-wash-secondary: color-mix(in srgb, var(--sage) 16%, transparent);
 }
 .vocabulary-browse-card__top {
   position: relative;
@@ -2137,7 +2092,7 @@
   border-top: 1px solid var(--line);
 }
 .vocabulary-browse-card__status .vocabulary-stars {
-  color: var(--on-sun);
+  color: var(--accent);
   font-size: var(--text-sm);
   font-weight: 750;
   letter-spacing: .08em;
@@ -2163,7 +2118,7 @@
 }
 .vocabulary-browse-card__actions button:focus-visible,
 .vocabulary-collection-card__open:focus-visible {
-  outline: 3px solid var(--sun);
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 .vocabulary-collection-card__footer {
