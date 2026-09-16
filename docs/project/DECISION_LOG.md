@@ -1592,3 +1592,55 @@ nor re-registers.
 
 **Supersedes / Superseded by:** Qualifies D-054's "inherits nothing" wording;
 the product policy (deletion is permanent, nothing is restored) is unchanged.
+
+## D-056 — Shared Reading Library initial rollout ships without a per-text rights gate
+
+**Status:** Accepted, explicit current human instruction (2026-09-16), scoped
+and time-bounded as described below - not a repeal of the general principle.
+
+**Decision:** The admin-facing EPUB import pipeline and its shared catalog
+(`reading_books`/`reading_book_chapters`, `writing_coach/reading_library_api.py`,
+`static/orena/ui/library.js`) ship for their initial rollout with no rights
+investigation, no rights-approval workflow, no publishing-permission queue and
+no legal-verification subsystem: a book becomes visible to every learner the
+moment its import succeeds. The human explicitly instructed this scope
+reduction in-session, after being told it contradicts the written architecture
+hold, and accepted the consequence that content imported through this path
+carries no recorded rights basis.
+
+This is a narrow, named carve-out for this one pipeline, not a change to the
+general rule. It does **not** touch, weaken or supersede:
+
+- `admittedReading()` in `static/orena/content/reading-library.js`, the
+  existing hand-curated catalog's own rights gate (creator/license/
+  evidence_url/verified_on/edition/changes) - unchanged, a fully separate code
+  path that never calls or is called by the new pipeline;
+- D-039's rights-gated publication model for the Listening domain;
+- the general principle in `AGENTS.md` §"Architecture holds" ("Reading
+  library breadth ... is a rights decision per text, not an implementation
+  task") for any *other* Reading content path.
+
+**Reason:** The human's own stated goal for this round was to prove a working
+admin-import → shared-library → learner-read vertical slice end to end;
+building a rights-review/approval subsystem first was explicitly out of scope
+for that goal. The tradeoff (no recorded rights basis for imported EPUBs) was
+named to the human before this decision, not discovered afterward.
+
+**Consequences:** `docs/project/CURRENT_PRODUCT_STATE.yaml`'s `current_p1`
+records this carve-out alongside the pre-existing, unchanged
+`reading_library_breadth_requires_rights_decisions_per_text` entry.
+`CURRENT_HANDOFF.md`'s own "Reading breadth: rights gate" bullet is
+deliberately left unchanged: the file sits at `scripts/validate_project_
+memory.py`'s hard 8000-byte cap with no room for a net addition, and this
+entry plus the product-state array are the authoritative record instead -
+`PROJECT_MEMORY.md`'s own precedence chain reads `CURRENT_PRODUCT_STATE`
+before `CURRENT_HANDOFF`, so a bounded restore sees the accurate entry first.
+The old hand-curated catalog's own rights gate is untouched and the general
+hold remains live for any future Reading content path this decision does not
+name. Any later decision to add rights review to this specific pipeline, or
+to publish its content more broadly (e.g. outside this sandbox), is a new,
+separate decision - this entry authorizes the initial rollout only, not a
+permanent policy that imported books never need rights review.
+
+**Supersedes / Superseded by:** None. A narrow, named exception alongside the
+general principle, not a change to it.

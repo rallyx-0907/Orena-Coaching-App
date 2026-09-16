@@ -213,6 +213,27 @@ export async function renderEncounter(root, ctx) {
     textEncounter(root, ctx, item);
     return;
   }
+  if (id.startsWith('book:')) {
+    // `book:<bookId>/<chapterId>` - a Shared Reading Library chapter. Same
+    // gate every other source ends at: the API's paragraphs go through
+    // readable() and the same textEncounter() every reading source uses,
+    // never a second reader.
+    const [bookId, chapterId] = id.slice(5).split('/');
+    const chapter = bookId && chapterId ? await api.libraryBookChapter(bookId, chapterId) : null;
+    if (!alive()) return;
+    const item =
+      chapter &&
+      readable({
+        id,
+        title: chapter.title,
+        language: chapter.language,
+        paragraphs: chapter.paragraphs,
+        source: chapter.author ? { creator: chapter.author } : undefined,
+      });
+    if (!item) throw Error(c.unavailable);
+    textEncounter(root, ctx, item);
+    return;
+  }
   if (id.startsWith('story:') || id.startsWith('text:')) {
     const found = id.startsWith('story:')
       ? contentFor(language).find((x) => `story:${x.id}` === id)

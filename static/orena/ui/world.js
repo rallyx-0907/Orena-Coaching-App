@@ -25,6 +25,7 @@ import {
   bindVocabularyFeedCarousel,
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
+import { paintLibraryGrid } from './library.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -427,7 +428,7 @@ export async function renderWorld(root, ctx) {
        the room - the way back already says "Practice". */
     root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
-        ? `<section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
+        ? `<section class="voices" data-library-grid aria-label="${esc(c.libraryTitle)}"></section><section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
             c,
             {
               facet: c.collectionOrigin,
@@ -448,6 +449,7 @@ export async function renderWorld(root, ctx) {
               .join('') || `<p>${c.noCatalog}</p>`
           }</section>`
     }${continuation}`;
+    if (intent === 'reading') paintLibraryGrid(root.querySelector('[data-library-grid]'), ctx);
   } else if (location.page === 'content') {
     const kept = all.filter(
       (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',

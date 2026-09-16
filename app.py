@@ -449,6 +449,33 @@ configure_becoming_library_content(_persistence_runtime.vocabulary_repository)
 configure_becoming_reading(_specialized_learning_repository, generate_structured)
 configure_becoming_linguistics(_specialized_learning_repository)
 
+# Reading Library (shared book catalog). Postgres-only, matching every other
+# schema-backed repository: unavailable under the SQLite test/archive backend
+# rather than silently falling back. Asset bytes are filesystem-backed for
+# this sandbox; BookAssetStore is the seam a future S3-compatible backend
+# swaps in without touching the catalog schema or these callers.
+from writing_coach.book_asset_store import FilesystemBookAssetStore  # noqa: E402
+from writing_coach.persistence.reading_library_repository import (  # noqa: E402
+    PostgresReadingLibraryRepository,
+)
+from writing_coach.reading_library_api import (  # noqa: E402
+    configure_reading_library,
+    router as reading_library_router,
+)
+
+_reading_library_asset_root = Path(
+    os.getenv("READING_LIBRARY_ASSET_ROOT", str(ROOT / "data" / "reading_library_assets"))
+)
+configure_reading_library(
+    PostgresReadingLibraryRepository(_persistence_runtime.engine)
+    if _persistence_runtime.backend == "postgresql"
+    else None,
+    FilesystemBookAssetStore(_reading_library_asset_root),
+    admin_guard=require_admin,
+    language_supported=is_enabled,
+)
+app.include_router(reading_library_router)
+
 def weighted_overall(result: dict[str, Any]) -> float:
     return calculate_weighted_overall(result, active_rubric_weights())
 

@@ -125,6 +125,79 @@ function bindImporter(root, ctx) {
   });
 }
 
+/* Add Books: admin-only EPUB import into the Shared Reading Library
+   (writing_coach/reading_library_api.py) - independent of the vocabulary
+   importer above (different feature, different backend), appended as its
+   own self-mounting section so neither repaint touches the other's DOM.
+   Operational detail (per-file progress, detected title, failures) stays on
+   this admin screen only; the learner-facing grid (ui/library.js) never
+   sees any of it. */
+const LIBRARY_LANGUAGES = [
+  ['en', 'adminLibraryLanguageEnglish'],
+  ['zh', 'adminLibraryLanguageChinese'],
+];
+
+function addBooksSection(c, state) {
+  const { files, language, busy, results, submitError } = state;
+  const fileNames = files.length
+    ? `<p class="meta">${files.map((file) => esc(file.name)).join(', ')}</p>`
+    : '';
+  const resultRows = results
+    ? `<ul class="admin-import-results">${results
+        .map((result) =>
+          result.status === 'ok'
+            ? `<li class="admin-import-ok">${esc(result.filename)} — ${esc(c.adminLibraryImportOk)} "${esc(result.title)}" (${Number(result.chapter_count) || 0} ${esc(c.adminLibraryChapters)})</li>`
+            : result.status === 'duplicate'
+              ? `<li class="admin-import-duplicate">${esc(result.filename)} — ${esc(c.adminLibraryDuplicate)} "${esc(result.title)}"</li>`
+              : `<li class="admin-import-error">${esc(result.filename)} — ${esc(c.adminLibraryErrorGeneric)} (${esc(result.category || '')})</li>`,
+        )
+        .join('')}</ul>`
+    : '';
+  return `<section class="thread-shelf admin-library" aria-live="polite"><div class="section-head"><h2>${esc(c.adminLibraryTitle)}</h2></div><p class="meta">${esc(c.adminLibraryNote)}</p><form class="admin-library-form"><label for="adminLibraryFiles">${esc(c.adminLibrarySelectFiles)}</label><input id="adminLibraryFiles" type="file" accept=".epub" multiple data-library-files>${fileNames}<label for="adminLibraryLanguage">${esc(c.adminLibraryLanguageLabel)}</label><select id="adminLibraryLanguage" data-library-language>${LIBRARY_LANGUAGES.map(([code, key]) => `<option value="${code}" ${language === code ? 'selected' : ''}>${esc(c[key])}</option>`).join('')}</select><button class="primary" type="submit" data-library-import ${busy || !files.length ? 'disabled' : ''}>${esc(busy ? c.adminLibraryImporting : c.adminLibraryImport)}</button>${submitError ? `<p class="notice" role="alert">${esc(c.adminUnavailable)}</p>` : ''}</form>${resultRows}</section>`;
+}
+
+function paintAddBooks(container, ctx) {
+  if (!container) return;
+  const c = ctx.c;
+  let files = [];
+  let language = ctx.language === 'zh' ? 'zh' : 'en';
+  let busy = false;
+  let results = null;
+  let submitError = false;
+
+  function paint() {
+    if (!alive(ctx)) return;
+    container.innerHTML = addBooksSection(c, { files, language, busy, results, submitError });
+    container.querySelector('[data-library-files]')?.addEventListener('change', (event) => {
+      files = Array.from(event.target.files || []);
+      paint();
+    });
+    container.querySelector('[data-library-language]')?.addEventListener('change', (event) => {
+      language = event.target.value;
+    });
+    container.querySelector('.admin-library-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!files.length || busy) return;
+      busy = true;
+      submitError = false;
+      paint();
+      try {
+        const response = await ctx.api.adminImportLibraryBooks(files, language);
+        if (!alive(ctx)) return;
+        results = response.results || [];
+        files = [];
+      } catch {
+        if (!alive(ctx)) return;
+        submitError = true;
+      } finally {
+        busy = false;
+        if (alive(ctx)) paint();
+      }
+    });
+  }
+  paint();
+}
+
 export async function renderAdmin(root, ctx) {
   const c = ctx.c;
   root.innerHTML = loading(c);
@@ -132,13 +205,15 @@ export async function renderAdmin(root, ctx) {
     const payload = await ctx.api.adminReadinessSummary();
     if (!alive(ctx)) return;
     if (!payload || payload.available === false) {
-      root.innerHTML = `${empty(c)}${importer(c)}`;
+      root.innerHTML = `${empty(c)}${importer(c)}<div data-admin-library></div>`;
       bindImporter(root, ctx);
+      paintAddBooks(root.querySelector('[data-admin-library]'), ctx);
       return;
     }
     const indicators = Array.isArray(payload.indicators) ? payload.indicators : [];
-    root.innerHTML = `${indicators.length ? summary(c, payload) : empty(c)}${importer(c)}`;
+    root.innerHTML = `${indicators.length ? summary(c, payload) : empty(c)}${importer(c)}<div data-admin-library></div>`;
     bindImporter(root, ctx);
+    paintAddBooks(root.querySelector('[data-admin-library]'), ctx);
   } catch {
     if (!alive(ctx)) return;
     root.innerHTML = error(c);
