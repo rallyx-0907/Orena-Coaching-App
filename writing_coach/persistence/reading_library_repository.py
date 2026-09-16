@@ -1,10 +1,8 @@
 """Reading Library catalog repository - `reading_books` / `reading_book_chapters`.
 
-Schema: `migrations/proposed/20260916_0009_reading_library.py` - PROPOSED,
-not yet applied anywhere. See `docs/project/
-READING_LIBRARY_SCHEMA_REVIEW_REQUEST.md` for review status; update this
-docstring's status line only once the migration has actually moved into
-`migrations/versions/` and been applied.
+Schema: `migrations/versions/20260916_0009_reading_library.py` - reviewed
+(three rounds, APPROVED), human-authorized, applied to the sandbox runtime
+only. See `docs/project/READING_LIBRARY_SCHEMA_REVIEW_REQUEST.md`.
 
 Division of responsibility: this file only reads/writes rows that already
 represent a fully valid, fully stored book - it never decides whether an

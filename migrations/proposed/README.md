@@ -15,14 +15,13 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**One proposal is open.** `20260916_0008_vocabulary_content_catalog.py` has
-passed independent architecture review and is pending human schema/runtime
-authorization. The table below is the history of what passed through here;
-every historical proposal now lives in `versions/`.
+**No proposal is open.** The table below is the history of what passed
+through here; every proposal now lives in `versions/`.
 
 | Proposal | Outcome |
 | --- | --- |
-| `20260916_0008_vocabulary_content_catalog.py` | **PENDING HUMAN AUTHORIZATION** after independent architecture review (`a1a90b7bfe8ebdd5f60e1a928f0b070f52cc3c8d`, APPROVED). Shared vocabulary collections, reusable lexical entries, many-to-many memberships, and per-source import receipts; no learner-state or review tables. See `docs/project/VOCABULARY_SOURCE_SCHEMA_REVIEW_REQUEST.md`. |
+| `20260916_0009_reading_library.py` | Two tables — `reading_books`, `reading_book_chapters`, admin EPUB import into a shared catalog every learner reads. Three rounds of delegated independent architecture review, round 3 **APPROVED**. Human schema/runtime authorization given 2026-09-16; moved into `versions/` together with `20260916_0008` (its chain parent) and applied to the sandbox runtime. See `docs/project/READING_LIBRARY_SCHEMA_REVIEW_REQUEST.md`. |
+| `20260916_0008_vocabulary_content_catalog.py` | Shared vocabulary collections, reusable lexical entries, many-to-many memberships, and per-source import receipts; no learner-state or review tables. Independent architecture review **APPROVED** (`a1a90b7bfe8ebdd5f60e1a928f0b070f52cc3c8d`). Human schema/runtime authorization given 2026-09-16; moved into `versions/` and applied to the sandbox runtime. See `docs/project/VOCABULARY_SOURCE_SCHEMA_REVIEW_REQUEST.md`. |
 | `20260908_0005_account_work_backbone.py` | I2: eight tables — account incarnation, stream head, mutation receipts, change records, work, work turns, kept-language provenance, projection checkpoints. Reviewed at `69ceb53` (APPROVED WITH REQUIRED CHANGES), revised through two re-reviews, approved at `6cc3dc1`, rehearsed under §6 step 3, and moved into `versions/` and applied to the sandbox runtime under §6 step 4. `ORENA_ACCOUNT_BACKBONE` remains off. |
 | `20260911_0006_commerce_subscription_inbox.py` | I3: three tables — `commerce_subscriptions`, `commerce_provider_subscriptions`, `commerce_billing_event_receipts`. Delegated review round 3 (`7020925`): APPROVED WITH REQUIRED CHANGES - schema approved; the one required code reorder is made with its test (23/23). Moved into `versions/` with 0007 and applied to the sandbox runtime. See `I3_SCHEMA_REVIEW_REQUEST.md`. |
 | `20260912_0007_commerce_quota_buckets.py` | I3: two tables — `commerce_quota_buckets`, `commerce_quota_reservations`. Round 3 (`7020925`): **APPROVED** (28/28 postgres cases incl. a deadlock stress; the reviewer's deadlock matrix 0 in all configurations). Moved into `versions/` and applied to the sandbox runtime. Chains on top of `20260911_0006` (linearity only — no shared foreign key). See `I3_SCHEMA_REVIEW_REQUEST.md`. |

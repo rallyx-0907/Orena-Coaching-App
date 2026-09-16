@@ -1,14 +1,18 @@
 # Vocabulary source content schema review request
 
-Status: `PENDING HUMAN SCHEMA/RUNTIME AUTHORIZATION`
+Status: `APPLIED TO SANDBOX` (human schema/runtime authorization given
+2026-09-16; moved into `migrations/versions/20260916_0008_vocabulary_content_catalog.py`
+and applied together with its chain child `20260916_0009_reading_library.py`
+— see `migrations/proposed/README.md`'s ledger).
 
 Independent architecture review: `APPROVED` for commit
 `a1a90b7bfe8ebdd5f60e1a928f0b070f52cc3c8d`. See
 `docs/project/VOCABULARY_SOURCE_ARCHITECTURE_REVIEW.md`.
 
 This proposal supports the Vocabulary Source Import vertical slice. It is
-shared content persistence, not learner-owned state. It is intentionally not
-active: the migration remains in `migrations/proposed/20260916_0008_vocabulary_content_catalog.py`.
+shared content persistence, not learner-owned state. Schema is now live on
+the sandbox runtime; whether any caller is wired/active is a separate,
+unaffected question this note does not decide.
 
 ## Why static content is no longer sufficient
 

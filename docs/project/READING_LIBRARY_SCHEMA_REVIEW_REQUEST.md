@@ -147,30 +147,26 @@ returned 200. "Nothing further blocks moving this migration from
 `migrations/proposed/` to `migrations/versions/` from an architecture-review
 standpoint."
 
-## Authorization status — separate from architecture review, not yet granted
+## Authorization status — granted, applied
 
-Architecture review (three rounds) is complete and this migration is
-**APPROVED**. Per this repository's own established practice (see the
-concurrent `docs/project/VOCABULARY_SOURCE_SCHEMA_REVIEW_REQUEST.md`,
-architecture-review-approved 2026-09-16 but recorded as `PENDING HUMAN
-SCHEMA/RUNTIME AUTHORIZATION`), architecture approval and human schema/
-runtime authorization are two separate gates. This proposal has the first,
-not yet the second - moving it into `migrations/versions/` and applying it,
-even to the sandbox only, is being held for that explicit authorization
-rather than inferred from architecture approval alone.
+Architecture review (three rounds, APPROVED) plus explicit human
+schema/runtime authorization, given 2026-09-16 ("move hết vào" - move
+everything in, covering both this migration and its chain parent
+`20260916_0008_vocabulary_content_catalog.py` together, per the cross-lane
+dependency named below). Rehearsed once more via `_runtime_alembic_config()`
+(the exact code path the real application startup check uses) against a
+fresh scratch database before touching the sandbox. Both migrations moved
+into `migrations/versions/` and applied to the **sandbox runtime only**;
+`migrations/proposed/README.md`'s ledger records the outcome.
+`reading_books`/`reading_book_chapters` are live on the sandbox database;
+`runtime_head()` resolves cleanly to `20260916_0009`. Production and preview
+remain untouched and are separate human gates.
 
-**Cross-lane dependency, named rather than hidden:** this migration's
-`down_revision` chains onto `20260916_0008_vocabulary_content_catalog.py` (a
-concurrent, independent proposal from a different in-flight task - see
-"Chain position" above). That migration is *also* architecture-review-approved
-and *also* awaiting the same human authorization. Because Alembic requires a
-single linear head for `runtime_head()`/`_verify_runtime_readiness()` to keep
-working (`writing_coach/persistence/runtime.py`), this migration cannot be
-moved into `migrations/versions/` and applied before `20260916_0008` is -
-authorizing both together, in chain order, is the only sequencing that keeps
-the runtime's own startup schema check working. This is not this proposal's
-call to make for the other one; it is named here so the human authorizing
-either one sees the dependency.
+**Cross-lane dependency, resolved:** this migration's `down_revision` chains
+onto `20260916_0008_vocabulary_content_catalog.py` (a concurrent, independent
+proposal from a different in-flight task - see "Chain position" above). Both
+were authorized and applied together, in chain order, as the dependency
+required.
 
 ## What is being proposed
 
