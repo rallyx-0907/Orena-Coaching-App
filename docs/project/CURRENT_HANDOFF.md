@@ -107,11 +107,12 @@ and metallic frame. Public Library has an explicit gate; current packs are
 seed-only, so local Library is truthfully empty until a complete pack is
 authored/published. No active runtime schema change.
 
-Vocabulary Source Import is in progress: UTF-8 source preview/mapping,
-normalization, language-aware identity, source provenance, batch results, shared
-repository, Admin UI, and learner card read-through are implemented. Proposal
-`20260916_0008` needs independent architecture review and human schema/runtime
-authorization; PostgreSQL import is fail-closed until then.
+Source Import is implemented through UTF-8 preview/mapping, normalization,
+identity, provenance, batch results, shared repository, Admin UI and learner
+cards. Proposal `20260916_0008` awaits independent review and human
+schema/runtime authorization; PostgreSQL import is fail-closed. Claude review
+was not dispatched: `INFRA_FAILURE=auth` (CLI not logged in). No schema verdict
+or secret fallback was loaded.
 
 ## PENDING
 
