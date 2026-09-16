@@ -376,3 +376,119 @@ class AuditLog(Base):
     entity_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyCollection(Base):
+    """A shared, learner-facing vocabulary pack.
+
+    Collections are content, not learner state.  A collection can be imported
+    once and read by many learners; saved/review relationships remain in the
+    existing learner vocabulary tables.
+    """
+
+    __tablename__ = "vocabulary_collections"
+    __table_args__ = (
+        Index("ix_vocabulary_collections_language_status", "language_code", "catalog_status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(160), primary_key=True)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    framework: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    level: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    level_range: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    topic: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    catalog_status: Mapped[str] = mapped_column(String(30), default="published", nullable=False)
+    origin: Mapped[str] = mapped_column(String(40), default="imported", nullable=False)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyEntry(Base):
+    """A language-neutral lexical item shared across collection memberships."""
+
+    __tablename__ = "vocabulary_entries"
+    __table_args__ = (
+        UniqueConstraint("identity_key", name="uq_vocabulary_entry_identity"),
+        Index("ix_vocabulary_entries_language_term", "language_code", "normalized_term"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    term: Mapped[str] = mapped_column(String(500), nullable=False)
+    normalized_term: Mapped[str] = mapped_column(String(500), nullable=False)
+    identity_key: Mapped[str] = mapped_column(String(900), nullable=False)
+    sense_key: Mapped[str] = mapped_column(String(240), default="", nullable=False)
+    pronunciations: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    readings: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    short_meanings: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    detailed_definitions: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    part_of_speech: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    examples: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    usage_notes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    orthography: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    level: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    framework: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    topic: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    content_origins: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularySourceImport(Base):
+    """One source attempt, retained for auditability and batch reporting."""
+
+    __tablename__ = "vocabulary_source_imports"
+    __table_args__ = (
+        Index("ix_vocabulary_source_imports_collection_created", "collection_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    collection_id: Mapped[str | None] = mapped_column(
+        ForeignKey("vocabulary_collections.id", ondelete="SET NULL"), nullable=True
+    )
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_format: Mapped[str] = mapped_column(String(20), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    mapping: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    imported_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    skipped_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    duplicate_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    warning_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    warnings: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    errors: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    imported_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyCollectionMembership(Base):
+    """Many-to-many placement of shared entries inside curated collections."""
+
+    __tablename__ = "vocabulary_collection_memberships"
+    __table_args__ = (
+        UniqueConstraint(
+            "collection_id", "entry_id", name="uq_vocabulary_collection_membership"
+        ),
+        Index("ix_vocabulary_memberships_collection_position", "collection_id", "position"),
+        Index("ix_vocabulary_memberships_entry", "entry_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    collection_id: Mapped[str] = mapped_column(
+        ForeignKey("vocabulary_collections.id", ondelete="CASCADE"), nullable=False
+    )
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vocabulary_entries.id", ondelete="CASCADE"), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vocabulary_source_imports.id", ondelete="SET NULL"), nullable=True
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    membership_metadata: Mapped[dict] = mapped_column(
+        "metadata", JSON, default=dict, nullable=False
+    )

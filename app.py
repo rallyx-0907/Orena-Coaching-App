@@ -90,12 +90,20 @@ from writing_coach.core.support_languages import (
     support_language_uses_cjk,
 )
 from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
+from writing_coach.vocabulary_source_import import (
+    VocabularySourceError,
+    detect_vocabulary_mapping,
+    normalize_vocabulary_rows,
+    parse_vocabulary_source,
+    stable_collection_id,
+)
 from writing_coach.vocabulary_feed import (
     LearnerFeedContext,
     daily_feed_candidates,
     vocabulary_card_from_feed_candidate,
 )
 from writing_coach.vocabulary_library import (
+    all_vocabulary_entries,
     get_vocabulary_collection,
     list_vocabulary_collections,
     normalize_vocabulary_word,
@@ -105,21 +113,21 @@ from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_a
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.product.service import configure_product_repository
 from writing_coach.persistence.runtime import build_runtime
+from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
 from writing_coach.persistence.learning_repository import (
     SQLiteLearningCacheRepository,
     SQLiteLearningRepository,
 )
-from writing_coach.persistence.specialized_repository import SQLiteSpecializedLearningRepository
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
-from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, delete_library_vocabulary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
+from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
 from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
 from writing_coach.cross_skill_transfer import select_cross_skill_cue
 from writing_coach.product_activity_api import product_activity_response
 from writing_coach.readiness_summary import build_readiness_summary
-from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.exception_handlers import request_validation_exception_handler as fastapi_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -300,6 +308,9 @@ def init_db() -> None:
     if _persistence_runtime.backend == "sqlite":
         _learning_repository.initialize(schema_version=SCHEMA_VERSION)
         _specialized_learning_repository.initialize()
+        vocabulary_repository = getattr(_persistence_runtime, "vocabulary_repository", None)
+        if vocabulary_repository is not None:
+            vocabulary_repository.initialize()
     _learning_cache.initialize()
 
 
@@ -434,6 +445,7 @@ install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
 configure_becoming_library(_specialized_learning_repository)
+configure_becoming_library_content(_persistence_runtime.vocabulary_repository)
 configure_becoming_reading(_specialized_learning_repository, generate_structured)
 configure_becoming_linguistics(_specialized_learning_repository)
 
@@ -1941,7 +1953,7 @@ def dashboard() -> dict[str, Any]:
     recent = latest[-10:]
     weights = list(range(1, len(recent) + 1))
     skill_score = round(
-        sum(float(r["overall"]) * w for r, w in zip(recent, weights)) / sum(weights), 1
+        sum(float(r["overall"]) * w for r, w in zip(recent, weights, strict=True)) / sum(weights), 1
     )
 
     metrics = {
@@ -2055,6 +2067,220 @@ def admin_readiness_summary(request: Request) -> dict[str, Any]:
     operations = admin_ai_operations(request, limit=500)
     product_activity = product_activity_response(request, _specialized_learning_repository, require_admin, window_days=7, operations_loader=lambda: operations)
     return build_readiness_summary(config, operations, product_activity)
+
+
+# === ADMIN VOCABULARY SOURCE IMPORT ROUTES START ===
+def _json_form_object(raw: str, field: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw or "{}")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(422, f"{field} must be valid JSON.") from exc
+    if not isinstance(value, dict):
+        raise HTTPException(422, f"{field} must be a JSON object.")
+    return value
+
+
+def _admin_vocabulary_metadata(raw: str) -> dict[str, Any]:
+    metadata = _json_form_object(raw, "metadata")
+    language_code = str(metadata.get("language_code") or "").strip().casefold()
+    title = str(metadata.get("title") or "").strip()
+    if not language_code:
+        raise HTTPException(422, "metadata.language_code is required.")
+    if not title:
+        raise HTTPException(422, "metadata.title is required for a learner-facing collection.")
+    if len(language_code) > 20 or not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9-]{1,19}", language_code):
+        raise HTTPException(422, "metadata.language_code is invalid.")
+    return {
+        **metadata,
+        "language_code": language_code,
+        "title": title[:255],
+        "framework": str(metadata.get("framework") or "").strip()[:80],
+        "level": str(metadata.get("level") or "").strip()[:80],
+        "level_range": str(metadata.get("level_range") or "").strip()[:80],
+        "topic": str(metadata.get("topic") or "").strip()[:160],
+        "meaning_language": str(metadata.get("meaning_language") or "").strip().casefold()[:20],
+        "collection_id": str(metadata.get("collection_id") or "").strip()[:160],
+        "provenance": metadata.get("provenance") if isinstance(metadata.get("provenance"), dict) else {},
+    }
+
+
+async def _parse_uploaded_vocabulary_source(upload: UploadFile):
+    filename = str(upload.filename or "source").strip() or "source"
+    raw = await upload.read()
+    return parse_vocabulary_source(filename, raw)
+
+
+@app.post("/api/admin/vocabulary/preview", name="admin_vocabulary_source_preview")
+async def admin_vocabulary_source_preview(
+    request: Request,
+    files: list[UploadFile] = File(...),
+) -> dict[str, Any]:
+    """Parse uploads and suggest mappings without touching persistence."""
+
+    require_admin(request)
+    if not files:
+        raise HTTPException(422, "Choose at least one vocabulary source file.")
+    items: list[dict[str, Any]] = []
+    for upload in files:
+        filename = str(upload.filename or "source").strip() or "source"
+        try:
+            source = await _parse_uploaded_vocabulary_source(upload)
+            detected = detect_vocabulary_mapping(source)
+            items.append(
+                {
+                    "filename": source.filename,
+                    "format": source.format,
+                    "content_hash": source.content_hash,
+                    "row_count": len(source.rows),
+                    "headers": list(source.headers),
+                    "sample": [dict(row) for row in source.rows[:5]],
+                    "detected_mapping": detected.mapping,
+                    "confidence": detected.confidence,
+                    "warnings": list(detected.warnings),
+                    "error": "",
+                }
+            )
+        except VocabularySourceError as exc:
+            items.append(
+                {
+                    "filename": filename,
+                    "format": "",
+                    "content_hash": "",
+                    "row_count": 0,
+                    "headers": [],
+                    "sample": [],
+                    "detected_mapping": {},
+                    "confidence": {},
+                    "warnings": [],
+                    "error": str(exc),
+                }
+            )
+    return {"items": items}
+
+
+@app.post("/api/admin/vocabulary/import", name="admin_vocabulary_source_import")
+async def admin_vocabulary_source_import(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    metadata: str = Form(default="{}"),
+    mappings: str = Form(default="{}"),
+) -> dict[str, Any]:
+    """Import a batch one source at a time and return per-source outcomes."""
+
+    admin = require_admin(request)
+    if not files:
+        raise HTTPException(422, "Choose at least one vocabulary source file.")
+    collection_metadata = _admin_vocabulary_metadata(metadata)
+    mapping_by_filename = _json_form_object(mappings, "mappings")
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            raise VocabularyContentUnavailable(
+                "Vocabulary content persistence is not active. The reviewed vocabulary schema must be applied before import."
+            )
+    except VocabularyContentUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "category": "vocabulary_schema_unavailable",
+                "retryable": False,
+                "message": str(exc),
+            },
+        ) from exc
+
+    collection_id = collection_metadata.get("collection_id") or stable_collection_id(
+        collection_metadata["title"],
+        collection_metadata["language_code"],
+        collection_metadata.get("framework", ""),
+    )
+    provenance = {
+        **collection_metadata.get("provenance", {}),
+        "origin": "imported",
+        "catalog_status": "published",
+    }
+    collection = {
+        **collection_metadata,
+        "id": collection_id,
+        "catalog_status": "published",
+        "origin": "imported",
+        "provenance": provenance,
+    }
+    imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
+    results: list[dict[str, Any]] = []
+    for index, upload in enumerate(files):
+        filename = str(upload.filename or "source").strip() or "source"
+        try:
+            source = await _parse_uploaded_vocabulary_source(upload)
+            detected = detect_vocabulary_mapping(source)
+            raw_mapping = mapping_by_filename.get(filename)
+            if raw_mapping is None:
+                raw_mapping = mapping_by_filename.get(str(index))
+            mapping = raw_mapping if isinstance(raw_mapping, dict) else detected.mapping
+            normalized = normalize_vocabulary_rows(
+                source,
+                mapping=mapping,
+                language_code=collection_metadata["language_code"],
+                meaning_language=collection_metadata.get("meaning_language", ""),
+                collection_level=collection_metadata.get("level", ""),
+                collection_framework=collection_metadata.get("framework", ""),
+                collection_topic=collection_metadata.get("topic", ""),
+            )
+            if not normalized["records"]:
+                raise VocabularySourceError("The source has no valid vocabulary rows to import.")
+            result = repository.import_source(
+                collection=collection,
+                source=normalized,
+                records=normalized["records"],
+                mapping=mapping,
+                imported_by=imported_by,
+            )
+            results.append(result)
+        except (VocabularySourceError, ValueError) as exc:
+            results.append(
+                {
+                    "filename": filename,
+                    "status": "failed",
+                    "imported": 0,
+                    "skipped": 0,
+                    "duplicates": 0,
+                    "warnings": [],
+                    "failed": 1,
+                    "failure_reason": str(exc),
+                }
+            )
+        except (VocabularyContentUnavailable, RuntimeError, OSError) as exc:
+            # A source-level infrastructure failure does not erase or relabel
+            # other successful files in the batch.
+            results.append(
+                {
+                    "filename": filename,
+                    "status": "failed",
+                    "imported": 0,
+                    "skipped": 0,
+                    "duplicates": 0,
+                    "warnings": [],
+                    "failed": 1,
+                    "failure_reason": f"persistence unavailable: {exc}",
+                }
+            )
+        except Exception as exc:  # pragma: no cover - provider/database-specific guard
+            # A single malformed or concurrently conflicting source must not
+            # abort the rest of a batch.  The source result remains explicit so
+            # an administrator can retry only this file after inspection.
+            results.append(
+                {
+                    "filename": filename,
+                    "status": "failed",
+                    "imported": 0,
+                    "skipped": 0,
+                    "duplicates": 0,
+                    "warnings": [],
+                    "failed": 1,
+                    "failure_reason": f"import failed: {exc}",
+                }
+            )
+    return {"collection": {"id": collection_id, "title": collection["title"]}, "items": results}
+# === ADMIN VOCABULARY SOURCE IMPORT ROUTES END ===
 
 @app.get("/api/cross-skill-cue", name="becoming_cross_skill_cue_get")
 def becoming_cross_skill_cue_get() -> dict[str, Any]:
@@ -2243,6 +2469,63 @@ def _require_vocabulary_language_code(language_code: str) -> str:
     return code
 
 
+def _persisted_vocabulary_collections(language_code: str) -> list[dict[str, Any]]:
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            return []
+        return repository.list_collections(language_code)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        # A PostgreSQL runtime before the reviewed content migration remains a
+        # truthful static-catalog runtime.  Import writes fail closed below;
+        # learner reads never turn a missing shared schema into fake data.
+        return []
+
+
+def _persisted_vocabulary_collection(
+    collection_id: str,
+    *,
+    search: str = "",
+    level: str = "",
+    limit: int = 100,
+    offset: int = 0,
+) -> dict[str, Any] | None:
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            return None
+        return repository.get_collection(
+            collection_id,
+            search=search,
+            level=level,
+            limit=limit,
+            offset=offset,
+        )
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        return None
+
+
+def _vocabulary_feed_pool(language_code: str) -> list[dict[str, Any]]:
+    static_entries = all_vocabulary_entries(language_code)
+    repository = _persistence_runtime.vocabulary_repository
+    persisted_entries: list[dict[str, Any]] = []
+    try:
+        if repository.available():
+            persisted_entries = repository.list_entries_for_language(language_code, limit=5000)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        persisted_entries = []
+    # An imported lexical entry replaces a static seed with the same identity,
+    # while an explicit sense identity remains distinct.  Memberships do not
+    # create repeated Feed cards for every collection.
+    merged: dict[str, dict[str, Any]] = {}
+    for entry in static_entries + persisted_entries:
+        key = str(entry.get("identity_key") or "").strip()
+        if not key:
+            key = f"{entry.get('language_code', language_code)}|{entry.get('normalized_word') or normalize_vocabulary_word(entry.get('word'))}"
+        merged[key] = dict(entry)
+    return list(merged.values())
+
+
 @app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
 def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
     code = _require_vocabulary_language_code(language_code)
@@ -2254,14 +2537,22 @@ def becoming_vocabulary_library_collections(language_code: str = Query(default="
     saved_by_word = {
         normalize_vocabulary_word(item.get("word")): item for item in saved_items
     }
+    by_id = {summary["id"]: dict(summary) for summary in list_vocabulary_collections(code)}
+    for summary in _persisted_vocabulary_collections(code):
+        by_id[summary["id"]] = dict(summary)
     summaries = []
-    for summary in list_vocabulary_collections(code):
-        catalog = get_vocabulary_collection(summary["id"]) or {"entries": []}
+    for summary in by_id.values():
+        catalog = (
+            _persisted_vocabulary_collection(summary["id"], limit=5000)
+            if summary.get("origin") == "imported"
+            else get_vocabulary_collection(summary["id"])
+        ) or {"entries": []}
         summary = dict(summary)
         summary["progress"] = _vocabulary_collection_progress(
             catalog.get("entries", []), saved_by_word
         )
         summaries.append(summary)
+    summaries.sort(key=lambda item: (str(item.get("framework") or ""), str(item.get("title") or "")))
     return {"items": summaries}
 
 
@@ -2285,11 +2576,34 @@ def _vocabulary_collection_progress(
     "/api/vocabulary/library/collections/{collection_id}",
     name="becoming_vocabulary_library_collection_detail",
 )
-def becoming_vocabulary_library_collection_detail(collection_id: str) -> dict[str, Any]:
-    collection = get_vocabulary_collection(collection_id)
+def becoming_vocabulary_library_collection_detail(
+    collection_id: str,
+    search: str = Query(default=""),
+    level: str = Query(default=""),
+    limit: int = Query(default=100, ge=1, le=5000),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    collection = _persisted_vocabulary_collection(
+        collection_id,
+        search=search,
+        level=level,
+        limit=limit,
+        offset=offset,
+    )
+    if collection is None:
+        collection = get_vocabulary_collection(collection_id)
     if collection is None:
         raise HTTPException(404, "Vocabulary collection not found.")
     entries = collection.pop("entries")
+    if search or level:
+        needle = search.strip().casefold()
+        wanted_level = level.strip().casefold()
+        entries = [
+            entry
+            for entry in entries
+            if (not needle or needle in f"{entry.get('word', '')} {entry.get('normalized_word', '')}".casefold())
+            and (not wanted_level or str(entry.get("level") or "").casefold() == wanted_level)
+        ]
     language_token = LANGUAGE_CODE_CTX.set(collection["language_code"])
     try:
         saved_items = list_library_vocabulary()["items"]
@@ -2349,7 +2663,10 @@ def becoming_vocabulary_feed(
         learner_key=_VOCABULARY_FEED_SANDBOX_LEARNER_KEY, target_level=declared_level
     )
     candidates = daily_feed_candidates(
-        code, learner_context=learner_context, exclude_normalized=exclude_normalized
+        code,
+        learner_context=learner_context,
+        exclude_normalized=exclude_normalized,
+        candidate_pool=_vocabulary_feed_pool(code),
     )
     items = [vocabulary_card_from_feed_candidate(entry) for entry in candidates]
     return {"items": items, "date": datetime.now().astimezone().date().isoformat()}

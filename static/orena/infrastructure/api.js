@@ -48,6 +48,18 @@ export const api={
   productCommerce:()=>request('/api/product/commerce'),
   adminProductAccount:()=>request('/api/product/admin/account'),
   adminReadinessSummary:()=>request('/api/admin/readiness-summary'),
+  adminVocabularyPreview:(files)=>{
+    const form=new FormData();
+    [...(files||[])].forEach((file)=>form.append('files',file,file.name));
+    return request('/api/admin/vocabulary/preview',{method:'POST',body:form});
+  },
+  adminVocabularyImport:(files,metadata={},mappings={})=>{
+    const form=new FormData();
+    [...(files||[])].forEach((file)=>form.append('files',file,file.name));
+    form.append('metadata',JSON.stringify(metadata));
+    form.append('mappings',JSON.stringify(mappings));
+    return request('/api/admin/vocabulary/import',{method:'POST',body:form});
+  },
   health:()=>request('/api/health'),
   languages:()=>request('/api/platform/languages'),
   skills:()=>request('/api/platform/skills'),
@@ -123,8 +135,28 @@ export const api={
   // read-only, distinct from the saved/review state above. "Keep" from either
   // reuses saveLibraryVocabulary with source_kind 'collection' or 'feed'.
   vocabularyLibraryCollections:(languageCode)=>request(`/api/vocabulary/library/collections?language_code=${encodeURIComponent(languageCode)}`),
-  vocabularyLibraryCollection:(collectionId)=>request(`/api/vocabulary/library/collections/${encodeURIComponent(collectionId)}`),
+  vocabularyLibraryCollection:(collectionId,params={})=>{
+    const query=new URLSearchParams();
+    if(params.search)query.set('search',String(params.search));
+    if(params.level)query.set('level',String(params.level));
+    if(params.limit!=null)query.set('limit',String(params.limit));
+    if(params.offset!=null)query.set('offset',String(params.offset));
+    const suffix=query.toString()?`?${query.toString()}`:'';
+    return request(`/api/vocabulary/library/collections/${encodeURIComponent(collectionId)}${suffix}`);
+  },
   dailyVocabularyFeed:(languageCode,targetLevel)=>request(`/api/vocabulary/feed?language_code=${encodeURIComponent(languageCode)}${targetLevel?`&target_level=${encodeURIComponent(targetLevel)}`:''}`),
+  // Shared Reading Library: admin-imported books, open to every learner.
+  // libraryBookChapter backs the `book:<id>/<chapterId>` encounter locator
+  // in ui/encounter.js; adminImportLibraryBooks is admin-gated server-side.
+  libraryBooks:(languageCode,cursor)=>request(`/api/reading/library/books?learning_language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
+  libraryBook:(bookId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}`),
+  libraryBookChapter:(bookId,chapterId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}/chapters/${encodeURIComponent(chapterId)}`),
+  adminImportLibraryBooks:(files,languageCode)=>{
+    const form=new FormData();
+    for(const file of files)form.append('files',file,file.name);
+    form.append('learning_language',languageCode);
+    return request('/api/reading/library/import',{method:'POST',body:form});
+  },
   grammarLibrary:()=>request('/api/library/grammar'),
   grammarLesson:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}`),
   grammarReference:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/reference`),

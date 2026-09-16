@@ -163,3 +163,37 @@ def test_catalog_entry_card_does_not_invent_optional_fields() -> None:
     assert "framework" not in card
     assert "topic" not in card
     assert "orthography" not in card
+
+
+def test_imported_card_keeps_short_meaning_separate_from_detailed_definition() -> None:
+    card = vocabulary_card_from_catalog_entry(
+        {
+            "term": "abandon",
+            "language_code": "en",
+            "normalized_term": "abandon",
+            "short_meanings": [
+                {"language": "vi", "text": "bỏ, từ bỏ", "origin": "source"}
+            ],
+            "detailed_definitions": [
+                {
+                    "language": "en",
+                    "text": "to leave someone or something completely",
+                    "origin": "source",
+                }
+            ],
+            "pronunciations": [
+                {"text": "/əˈbændən/", "origin": "source"}
+            ],
+        }
+    )
+
+    assert card["headword"] == "abandon"
+    assert card["pronunciation"] == "/əˈbændən/"
+    assert card["short_meanings"] == [{"language": "vi", "text": "bỏ, từ bỏ"}]
+    assert card["detailed_definitions"] == [
+        {"language": "en", "text": "to leave someone or something completely"}
+    ]
+    assert {item["text"] for item in card["meanings"]} == {
+        "bỏ, từ bỏ",
+        "to leave someone or something completely",
+    }

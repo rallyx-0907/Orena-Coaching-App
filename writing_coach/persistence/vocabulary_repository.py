@@ -1,0 +1,660 @@
+"""Persistence adapter for shared vocabulary content.
+
+The repository owns collections, lexical entries, memberships, and import
+receipts.  It deliberately does *not* own saved words, review schedules, or
+learner progress; those continue through the existing learner repositories.
+
+PostgreSQL is fail-closed until the vocabulary-content migration is explicitly
+reviewed and applied.  The SQLite implementation is only a hermetic test/local
+archive adapter and creates its four content tables when the app is running in
+the SQLite test backend.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import uuid
+from collections.abc import Iterable, Mapping
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Protocol
+
+from sqlalchemy import create_engine, inspect, select
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
+
+from writing_coach.persistence.models import (
+    Base,
+    VocabularyCollection,
+    VocabularyCollectionMembership,
+    VocabularyEntry,
+    VocabularySourceImport,
+)
+
+
+VOCABULARY_TABLES = (
+    "vocabulary_collections",
+    "vocabulary_entries",
+    "vocabulary_source_imports",
+    "vocabulary_collection_memberships",
+)
+
+
+class VocabularyContentUnavailable(RuntimeError):
+    """The shared vocabulary schema is not available in this runtime."""
+
+
+class VocabularyRepository(Protocol):
+    def available(self) -> bool: ...
+    def initialize(self) -> None: ...
+    def import_source(
+        self,
+        *,
+        collection: Mapping[str, Any],
+        source: Mapping[str, Any],
+        records: Iterable[Mapping[str, Any]],
+        mapping: Mapping[str, Any],
+        imported_by: str = "",
+    ) -> dict[str, Any]: ...
+    def list_collections(self, language_code: str) -> list[dict[str, Any]]: ...
+    def get_collection(
+        self,
+        collection_id: str,
+        *,
+        search: str = "",
+        level: str = "",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict[str, Any] | None: ...
+    def find_entry(self, language_code: str, normalized_term: str) -> dict[str, Any] | None: ...
+    def list_entries_for_language(
+        self, language_code: str, *, limit: int = 1000
+    ) -> list[dict[str, Any]]: ...
+    def list_entries(
+        self,
+        collection_id: str,
+        *,
+        search: str = "",
+        level: str = "",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]: ...
+
+
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
+def _copy_json(value: Any, fallback: Any) -> Any:
+    if value is None:
+        return fallback
+    try:
+        return json.loads(json.dumps(value, ensure_ascii=False))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _level_sort_key(value: object) -> tuple[int, int, str]:
+    text = str(value or "").strip().upper().replace("–", "-").replace("—", "-")
+    if text.startswith("HSK"):
+        suffix = text.removeprefix("HSK")
+        if suffix == "7-9":
+            return (1, 7, text)
+        if suffix.isdigit():
+            return (1, int(suffix), text)
+    order = {name: index for index, name in enumerate(("A1", "A2", "B1", "B2", "C1", "C2"), start=1)}
+    if text in order:
+        return (0, order[text], text)
+    return (2, 0, text)
+
+
+def _level_range(levels: list[str], fallback: str = "") -> str:
+    unique = sorted({str(value).strip() for value in levels if str(value).strip()}, key=_level_sort_key)
+    if len(unique) >= 2:
+        return f"{unique[0]}–{unique[-1]}"
+    return unique[0] if unique else str(fallback or "").strip()
+
+
+def _text(value: Any) -> str:
+    return " ".join(str(value or "").split()).strip()
+
+
+def _merge_list(existing: Any, incoming: Any) -> list[Any]:
+    current = list(existing) if isinstance(existing, list) else []
+    additions = incoming if isinstance(incoming, list) else []
+    seen = {json.dumps(item, ensure_ascii=False, sort_keys=True) for item in current}
+    for item in additions:
+        marker = json.dumps(item, ensure_ascii=False, sort_keys=True)
+        if marker not in seen:
+            current.append(_copy_json(item, item))
+            seen.add(marker)
+    return current
+
+
+def _entry_dict(entry: VocabularyEntry) -> dict[str, Any]:
+    return {
+        "id": str(entry.id),
+        "word": entry.term,
+        "term": entry.term,
+        "language_code": entry.language_code,
+        "normalized_word": entry.normalized_term,
+        "normalized_term": entry.normalized_term,
+        "identity_key": entry.identity_key,
+        "sense_key": entry.sense_key,
+        "pronunciations": _copy_json(entry.pronunciations, []),
+        "readings": _copy_json(entry.readings, []),
+        "short_meanings": _copy_json(entry.short_meanings, []),
+        "detailed_definitions": _copy_json(entry.detailed_definitions, []),
+        "support_translations": {
+            item.get("language"): item.get("text")
+            for item in (_copy_json(entry.short_meanings, []) or [])
+            if isinstance(item, Mapping) and item.get("language") and item.get("text")
+        },
+        "phonetic": (
+            (_copy_json(entry.pronunciations, []) or [{}])[0].get("text", "")
+            if isinstance((_copy_json(entry.pronunciations, []) or [{}])[0], Mapping)
+            else ((_copy_json(entry.pronunciations, []) or [""])[0])
+        ),
+        "part_of_speech": entry.part_of_speech,
+        "examples": _copy_json(entry.examples, []),
+        "usage_notes": _copy_json(entry.usage_notes, []),
+        "orthography": _copy_json(entry.orthography, {}),
+        "level": entry.level,
+        "framework": entry.framework,
+        "topic": entry.topic,
+        "content_origins": _copy_json(entry.content_origins, {}),
+        "provenance": _copy_json(entry.provenance, {}),
+    }
+
+
+class SQLAlchemyVocabularyRepository:
+    """Shared repository implementation for PostgreSQL and test SQLite."""
+
+    def __init__(self, engine: Engine, *, allow_sqlite_initialize: bool = False) -> None:
+        self.engine = engine
+        self.allow_sqlite_initialize = allow_sqlite_initialize
+
+    def available(self) -> bool:
+        try:
+            tables = set(inspect(self.engine).get_table_names())
+        except Exception:
+            return False
+        return set(VOCABULARY_TABLES).issubset(tables)
+
+    def initialize(self) -> None:
+        """Create only the isolated SQLite content schema when permitted."""
+
+        if not self.allow_sqlite_initialize:
+            return
+        if self.engine.dialect.name != "sqlite":
+            raise VocabularyContentUnavailable(
+                "The PostgreSQL vocabulary schema must be applied by the reviewed migration."
+            )
+        Base.metadata.create_all(
+            self.engine,
+            tables=[
+                VocabularyCollection.__table__,
+                VocabularyEntry.__table__,
+                VocabularySourceImport.__table__,
+                VocabularyCollectionMembership.__table__,
+            ],
+        )
+
+    def _require_available(self) -> None:
+        if not self.available():
+            raise VocabularyContentUnavailable(
+                "The vocabulary content schema is unavailable; the import was not written."
+            )
+
+    def import_source(
+        self,
+        *,
+        collection: Mapping[str, Any],
+        source: Mapping[str, Any],
+        records: Iterable[Mapping[str, Any]],
+        mapping: Mapping[str, Any],
+        imported_by: str = "",
+    ) -> dict[str, Any]:
+        self._require_available()
+        collection_id = _text(collection.get("id"))
+        if not collection_id:
+            raise ValueError("A stable collection id is required.")
+        language_code = _text(collection.get("language_code")).casefold()
+        if not language_code:
+            raise ValueError("A collection language_code is required.")
+        now = _now()
+        rows = list(records)
+        source_id = uuid.uuid4()
+        warnings = [str(item) for item in source.get("warnings", []) if str(item).strip()]
+        skipped_details = [item for item in source.get("skipped", []) if isinstance(item, Mapping)]
+        imported_count = 0
+        duplicate_count = 0
+        skipped_count = len(skipped_details)
+        source_format = _text(source.get("format"))
+        filename = _text(source.get("filename")) or "source"
+        content_hash = _text(source.get("content_hash"))
+        if not content_hash:
+            content_hash = hashlib.sha256(filename.encode("utf-8")).hexdigest()
+
+        with Session(self.engine) as session, session.begin():
+            collection_row = session.get(VocabularyCollection, collection_id)
+            if collection_row is None:
+                collection_row = VocabularyCollection(
+                    id=collection_id,
+                    language_code=language_code,
+                    title=_text(collection.get("title")) or collection_id,
+                    framework=_text(collection.get("framework")),
+                    level=_text(collection.get("level")),
+                    level_range=_text(collection.get("level_range")),
+                    topic=_text(collection.get("topic")),
+                    catalog_status=_text(collection.get("catalog_status")) or "published",
+                    origin=_text(collection.get("origin")) or "imported",
+                    provenance=_copy_json(collection.get("provenance"), {}),
+                    created_at=now,
+                    updated_at=now,
+                )
+                session.add(collection_row)
+            elif collection_row.language_code != language_code:
+                raise ValueError(
+                    f"Collection '{collection_id}' already belongs to language '{collection_row.language_code}'."
+                )
+            else:
+                # Re-importing a collection may update human-entered display
+                # metadata, but never changes the collection's stable identity.
+                for field in ("title", "framework", "level", "level_range", "topic", "catalog_status"):
+                    value = _text(collection.get(field))
+                    if value:
+                        setattr(collection_row, field, value)
+                collection_row.provenance = _merge_list([], [collection.get("provenance", {})])[0]
+                collection_row.updated_at = now
+
+            import_row = VocabularySourceImport(
+                id=source_id,
+                collection_id=collection_id,
+                filename=filename,
+                source_format=source_format,
+                content_hash=content_hash,
+                mapping=_copy_json(mapping, {}),
+                status="importing",
+                warnings=warnings,
+                errors=[],
+                imported_by=_text(imported_by),
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(import_row)
+            session.flush()
+
+            for position, raw_record in enumerate(rows, start=1):
+                record = dict(raw_record)
+                identity_key = _text(record.get("identity_key"))
+                if not identity_key:
+                    skipped_count += 1
+                    skipped_details.append({"position": position, "reason": "missing identity key"})
+                    continue
+                entry = session.scalar(
+                    select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key)
+                )
+                if entry is None:
+                    entry = VocabularyEntry(
+                        id=uuid.uuid4(),
+                        language_code=language_code,
+                        term=_text(record.get("term")),
+                        normalized_term=_text(record.get("normalized_term")),
+                        identity_key=identity_key,
+                        sense_key=_text(record.get("sense_key")),
+                        pronunciations=_copy_json(record.get("pronunciations"), []),
+                        readings=_copy_json(record.get("readings"), []),
+                        short_meanings=_copy_json(record.get("short_meanings"), []),
+                        detailed_definitions=_copy_json(record.get("detailed_definitions"), []),
+                        part_of_speech=_text(record.get("part_of_speech")),
+                        examples=_copy_json(record.get("examples"), []),
+                        usage_notes=_copy_json(record.get("usage_notes"), []),
+                        orthography=_copy_json(record.get("orthography"), {}),
+                        level=_text(record.get("level")),
+                        framework=_text(record.get("framework")),
+                        topic=_text(record.get("topic")),
+                        content_origins=_copy_json(record.get("content_origins"), {}),
+                        provenance=_copy_json(record.get("provenance"), {}),
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    session.add(entry)
+                    session.flush()
+                else:
+                    duplicate_count += 1
+                    _merge_existing_entry(entry, record, warnings)
+                    entry.updated_at = now
+
+                membership = session.scalar(
+                    select(VocabularyCollectionMembership).where(
+                        VocabularyCollectionMembership.collection_id == collection_id,
+                        VocabularyCollectionMembership.entry_id == entry.id,
+                    )
+                )
+                if membership is not None:
+                    skipped_count += 1
+                    skipped_details.append(
+                        {"position": position, "reason": "already a member of collection", "term": entry.term}
+                    )
+                    continue
+                membership = VocabularyCollectionMembership(
+                    id=uuid.uuid4(),
+                    collection_id=collection_id,
+                    entry_id=entry.id,
+                    source_import_id=source_id,
+                    position=position,
+                    membership_metadata={
+                        "source_row": record.get("provenance", {}).get("row"),
+                        "origin": "source",
+                        "level": _text(record.get("level")),
+                        "framework": _text(record.get("framework")),
+                        "topic": _text(record.get("topic")),
+                    },
+                )
+                session.add(membership)
+                imported_count += 1
+
+            import_row.status = "imported" if imported_count else "skipped"
+            import_row.imported_count = imported_count
+            import_row.skipped_count = skipped_count
+            import_row.duplicate_count = duplicate_count
+            import_row.warning_count = len(warnings)
+            import_row.failed_count = 0
+            import_row.warnings = warnings
+            import_row.errors = skipped_details
+            import_row.updated_at = _now()
+
+            if not collection_row.level_range:
+                levels = list(
+                    session.scalars(
+                        select(VocabularyEntry.level)
+                        .join(
+                            VocabularyCollectionMembership,
+                            VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                        )
+                        .where(VocabularyCollectionMembership.collection_id == collection_id)
+                    )
+                )
+                collection_row.level_range = _level_range(levels, collection_row.level)
+
+        return {
+            "source_import_id": str(source_id),
+            "filename": filename,
+            "status": "imported" if imported_count else "skipped",
+            "imported": imported_count,
+            "skipped": skipped_count,
+            "duplicates": duplicate_count,
+            "warnings": warnings,
+            "failed": 0,
+            "failure_reason": "",
+        }
+
+    def list_collections(self, language_code: str) -> list[dict[str, Any]]:
+        self._require_available()
+        language = _text(language_code).casefold()
+        with Session(self.engine) as session:
+            collections = list(
+                session.scalars(
+                    select(VocabularyCollection)
+                    .where(
+                        VocabularyCollection.language_code == language,
+                        VocabularyCollection.catalog_status == "published",
+                    )
+                    .order_by(VocabularyCollection.title)
+                )
+            )
+            result: list[dict[str, Any]] = []
+            for collection in collections:
+                levels, item_count = self._collection_stats(session, collection.id)
+                result.append(_collection_summary(collection, levels, item_count))
+            return result
+
+    def get_collection(
+        self,
+        collection_id: str,
+        *,
+        search: str = "",
+        level: str = "",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict[str, Any] | None:
+        self._require_available()
+        with Session(self.engine) as session:
+            collection = session.scalar(
+                select(VocabularyCollection).where(
+                    VocabularyCollection.id == _text(collection_id),
+                    VocabularyCollection.catalog_status == "published",
+                )
+            )
+            if collection is None:
+                return None
+            entries, total = self._list_entries_in_session(
+                session,
+                collection.id,
+                search=_text(search),
+                level=_text(level),
+                limit=limit,
+                offset=offset,
+            )
+            levels, item_count = self._collection_stats(session, collection.id)
+            result = _collection_summary(collection, levels, item_count)
+            result["entries"] = entries
+            result["pagination"] = {
+                "limit": max(0, min(limit, 5000)),
+                "offset": max(0, offset),
+                "total": total,
+                "has_more": max(0, offset) + len(entries) < total,
+            }
+            return result
+
+    @staticmethod
+    def _collection_stats(
+        session: Session, collection_id: str
+    ) -> tuple[list[str], int]:
+        rows = session.execute(
+            select(VocabularyEntry.level, VocabularyCollectionMembership.membership_metadata)
+            .join(
+                VocabularyCollectionMembership,
+                VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+            )
+            .where(VocabularyCollectionMembership.collection_id == collection_id)
+        ).all()
+        levels: list[str] = []
+        for entry_level, raw_metadata in rows:
+            metadata = _copy_json(raw_metadata, {}) or {}
+            effective_level = _text(metadata.get("level")) or _text(entry_level)
+            if effective_level:
+                levels.append(effective_level)
+        return levels, len(rows)
+
+    def list_entries(
+        self,
+        collection_id: str,
+        *,
+        search: str = "",
+        level: str = "",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]:
+        self._require_available()
+        with Session(self.engine) as session:
+            return self._list_entries_in_session(
+                session,
+                _text(collection_id),
+                search=_text(search),
+                level=_text(level),
+                limit=limit,
+                offset=offset,
+            )
+
+    def find_entry(self, language_code: str, normalized_term: str) -> dict[str, Any] | None:
+        self._require_available()
+        with Session(self.engine) as session:
+            entry = session.scalar(
+                select(VocabularyEntry)
+                .where(
+                    VocabularyEntry.language_code == _text(language_code).casefold(),
+                    VocabularyEntry.normalized_term == _text(normalized_term),
+                )
+                .order_by(VocabularyEntry.identity_key)
+            )
+            return _entry_dict(entry) if entry is not None else None
+
+    def list_entries_for_language(
+        self, language_code: str, *, limit: int = 1000
+    ) -> list[dict[str, Any]]:
+        self._require_available()
+        with Session(self.engine) as session:
+            rows = list(
+                session.execute(
+                    select(VocabularyEntry)
+                    .join(
+                        VocabularyCollectionMembership,
+                        VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                    )
+                    .join(
+                        VocabularyCollection,
+                        VocabularyCollection.id == VocabularyCollectionMembership.collection_id,
+                    )
+                    .where(
+                        VocabularyEntry.language_code == _text(language_code).casefold(),
+                        VocabularyCollection.catalog_status == "published",
+                    )
+                    .order_by(VocabularyEntry.identity_key)
+                    .limit(max(0, min(limit, 5000)))
+                ).scalars()
+            )
+            seen: set[uuid.UUID] = set()
+            result: list[dict[str, Any]] = []
+            for entry in rows:
+                if entry.id in seen:
+                    continue
+                seen.add(entry.id)
+                result.append(_entry_dict(entry))
+            return result
+
+    def _list_entries_in_session(
+        self,
+        session: Session,
+        collection_id: str,
+        *,
+        search: str = "",
+        level: str = "",
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]:
+        rows = list(
+            session.execute(
+                select(VocabularyEntry, VocabularyCollectionMembership)
+                .join(
+                    VocabularyCollectionMembership,
+                    VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                )
+                .where(VocabularyCollectionMembership.collection_id == collection_id)
+                .order_by(VocabularyCollectionMembership.position, VocabularyEntry.term)
+            ).all()
+        )
+        needle = search.casefold()
+        wanted_level = level.casefold()
+        filtered: list[dict[str, Any]] = []
+        for entry, membership in rows:
+            membership_metadata = _copy_json(membership.membership_metadata, {}) or {}
+            effective_level = _text(membership_metadata.get("level")) or _text(entry.level)
+            if needle and needle not in f"{entry.term} {entry.normalized_term}".casefold():
+                continue
+            if wanted_level and effective_level.casefold() != wanted_level:
+                continue
+            item = _entry_dict(entry)
+            item["collection_id"] = collection_id
+            item["position"] = membership.position
+            membership_metadata = _copy_json(membership.membership_metadata, {}) or {}
+            for field in ("level", "framework", "topic"):
+                if membership_metadata.get(field):
+                    item[field] = membership_metadata[field]
+            filtered.append(item)
+        total = len(filtered)
+        if limit is None:
+            return filtered[offset:], total
+        return filtered[offset : offset + max(0, min(limit, 5000))], total
+
+
+def _merge_existing_entry(
+    entry: VocabularyEntry, record: Mapping[str, Any], warnings: list[str]
+) -> None:
+    """Merge only missing shared fields; do not overwrite source truth silently."""
+
+    scalar_fields = (
+        "term", "normalized_term", "sense_key", "part_of_speech", "level", "framework", "topic"
+    )
+    for field in scalar_fields:
+        incoming = _text(record.get(field))
+        current = _text(getattr(entry, field))
+        if incoming and not current:
+            setattr(entry, field, incoming)
+        elif incoming and current and incoming != current and field in {"term", "part_of_speech"}:
+            warnings.append(
+                f"Existing entry '{entry.term}' kept its {field}; the source supplied a different value."
+            )
+    for field in (
+        "pronunciations", "readings", "short_meanings", "detailed_definitions",
+        "examples", "usage_notes",
+    ):
+        setattr(entry, field, _merge_list(getattr(entry, field), record.get(field)))
+    incoming_orthography = record.get("orthography")
+    if incoming_orthography and not entry.orthography:
+        entry.orthography = _copy_json(incoming_orthography, {})
+    entry.content_origins = {
+        **(_copy_json(entry.content_origins, {}) or {}),
+        **(_copy_json(record.get("content_origins"), {}) or {}),
+    }
+    existing_provenance = _copy_json(entry.provenance, {}) or {}
+    incoming_provenance = _copy_json(record.get("provenance"), {}) or {}
+    sources = existing_provenance.get("sources", [])
+    if not isinstance(sources, list):
+        sources = []
+    source_marker = {key: incoming_provenance.get(key) for key in ("filename", "format", "row", "content_hash")}
+    if source_marker not in sources:
+        sources.append(source_marker)
+    entry.provenance = {**existing_provenance, "sources": sources}
+
+
+def _collection_summary(
+    collection: VocabularyCollection, levels: list[str], item_count: int
+) -> dict[str, Any]:
+    clean_levels = sorted({value for value in levels if value}, key=_level_sort_key)
+    fallback = _text(collection.level)
+    return {
+        "id": collection.id,
+        "language_code": collection.language_code,
+        "framework": collection.framework,
+        "level": collection.level,
+        "topic": collection.topic,
+        "title": collection.title,
+        "item_count": item_count,
+        "levels": clean_levels,
+        "level_range": _level_range(clean_levels, collection.level_range or fallback),
+        "provenance": _copy_json(collection.provenance, {}),
+        "catalog_status": collection.catalog_status,
+        "origin": collection.origin,
+    }
+
+
+def sqlite_vocabulary_repository(path: Path) -> SQLAlchemyVocabularyRepository:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(
+        f"sqlite+pysqlite:///{path}",
+        future=True,
+        connect_args={"check_same_thread": False},
+    )
+    return SQLAlchemyVocabularyRepository(engine, allow_sqlite_initialize=True)
+
+
+def vocabulary_db_path(product_db: Path) -> Path:
+    configured = os.getenv("VOCABULARY_DB", "").strip()
+    if configured:
+        return Path(configured)
+    return Path(product_db).with_name("vocabulary.db")

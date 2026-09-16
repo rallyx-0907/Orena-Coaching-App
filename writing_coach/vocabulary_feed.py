@@ -1,8 +1,9 @@
 """Task C: the Daily Vocabulary Feed candidate/selection foundation.
 
-The Feed is a filtered, day-seeded *view* over Task B's static catalog
-(``writing_coach.vocabulary_library.all_vocabulary_entries``) — it is not a
-second content set and it does not create a second card projection.
+The Feed is a filtered, day-seeded view over the canonical vocabulary catalog
+(``writing_coach.vocabulary_library.all_vocabulary_entries``) by default, or a
+repository-supplied shared pool. It is not a second content set and it does
+not create a second card projection.
 ``vocabulary_card_from_feed_candidate`` is a direct, undecorated call into
 ``vocabulary_cards.vocabulary_card_from_catalog_entry``.
 
@@ -108,9 +109,12 @@ def daily_feed_candidates(
     exclude_normalized: set[str],
     count: int = 5,
     on_date: date | None = None,
+    candidate_pool: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Up to ``count`` catalog entries for ``language_code``, deterministically
-    ordered per ``(learner_context, language_code, on_date)``.
+    ordered per ``(learner_context, language_code, on_date)``.  An optional
+    repository-provided ``candidate_pool`` keeps imported content on the same
+    deterministic selector; omission preserves the static compatibility pool.
 
     Filters to ``learner_context.target_level``/``framework`` when supplied,
     falling back to the full per-language pool rather than returning an empty
@@ -119,7 +123,10 @@ def daily_feed_candidates(
     """
 
     language = str(language_code or "").strip().casefold()
-    pool = _narrowed_pool(all_vocabulary_entries(language), learner_context)
+    pool = _narrowed_pool(
+        list(candidate_pool) if candidate_pool is not None else all_vocabulary_entries(language),
+        learner_context,
+    )
 
     excluded = {normalize_vocabulary_word(word) for word in exclude_normalized}
     pool = [entry for entry in pool if entry.get("normalized_word") not in excluded]

@@ -7,10 +7,12 @@ from pydantic import BaseModel, Field
 from writing_coach.core.request_context import current_language_code
 from writing_coach.orthography import orthography_for_word
 from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
+from writing_coach.persistence.vocabulary_repository import VocabularyRepository, VocabularyContentUnavailable
 from writing_coach.vocabulary_library import all_vocabulary_entries, normalize_vocabulary_word
 
 
 _repository: SpecializedLearningRepository | None = None
+_content_repository: VocabularyRepository | None = None
 
 STAGE_LABELS = {
     0: "New",
@@ -43,6 +45,13 @@ class VocabularyReviewIn(BaseModel):
 def configure_becoming_library(repository: SpecializedLearningRepository) -> None:
     global _repository
     _repository = repository
+
+
+def configure_becoming_library_content(repository: VocabularyRepository | None) -> None:
+    """Install the shared content read-through without changing learner state."""
+
+    global _content_repository
+    _content_repository = repository
 
 
 def _repo() -> SpecializedLearningRepository:
@@ -83,6 +92,13 @@ def _catalog_entry_for(word: str) -> dict[str, Any] | None:
     if not normalized:
         return None
     language = current_language_code().strip().casefold()
+    if _content_repository is not None:
+        try:
+            persisted = _content_repository.find_entry(language, normalized)
+        except (VocabularyContentUnavailable, RuntimeError, OSError):
+            persisted = None
+        if persisted is not None:
+            return persisted
     return next(
         (
             entry
@@ -124,6 +140,14 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
                 item[field] = catalog_entry[field]
         if not item["phonetic"] and catalog_entry.get("phonetic"):
             item["phonetic"] = str(catalog_entry["phonetic"])
+        for field in (
+            "short_meanings", "detailed_definitions", "readings", "pronunciations",
+            "usage_notes", "content_origins", "provenance",
+        ):
+            if catalog_entry.get(field):
+                item[field] = catalog_entry[field]
+        if catalog_entry.get("support_translations"):
+            item["support_translations"] = dict(catalog_entry["support_translations"])
         examples = catalog_entry.get("examples")
         if isinstance(examples, list) and examples:
             item["examples"] = [dict(example) for example in examples if isinstance(example, dict)]

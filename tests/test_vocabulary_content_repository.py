@@ -1,0 +1,108 @@
+from __future__ import annotations
+
+from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+from writing_coach.vocabulary_source_import import (
+    detect_vocabulary_mapping,
+    normalize_vocabulary_rows,
+    parse_vocabulary_source,
+)
+
+
+def _source(filename: str, text: str):
+    parsed = parse_vocabulary_source(filename, text.encode("utf-8"))
+    detected = detect_vocabulary_mapping(parsed)
+    normalized = normalize_vocabulary_rows(
+        parsed,
+        mapping=detected.mapping,
+        language_code="en",
+        meaning_language="vi",
+        collection_framework="TOEIC",
+        collection_level="B1",
+    )
+    return parsed, detected, normalized
+
+
+def test_sqlite_content_repository_persists_membership_and_replays_duplicates(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "vocabulary.db")
+    assert repository.available() is False
+    repository.initialize()
+    assert repository.available() is True
+    parsed, detected, normalized = _source(
+        "toeic.csv",
+        "English|Vietnamese|IPA|Definition|Example\n"
+        "allocate|phân bổ|/ˈæləkeɪt/|give for a purpose|Allocate funds carefully.\n"
+        "abandon|bỏ, từ bỏ|||\n",
+    )
+    collection = {
+        "id": "en-toeic-essential",
+        "title": "600 TOEIC Essential",
+        "language_code": "en",
+        "framework": "TOEIC",
+        "level": "B1",
+        "catalog_status": "published",
+        "origin": "imported",
+        "provenance": {"publisher": "test"},
+    }
+    first = repository.import_source(
+        collection=collection,
+        source=normalized,
+        records=normalized["records"],
+        mapping=detected.mapping,
+        imported_by="test-admin",
+    )
+    assert first["status"] == "imported"
+    assert first["imported"] == 2
+    assert first["duplicates"] == 0
+
+    summaries = repository.list_collections("en")
+    assert summaries[0]["id"] == "en-toeic-essential"
+    assert summaries[0]["item_count"] == 2
+    assert summaries[0]["level_range"] == "B1"
+
+    detail = repository.get_collection("en-toeic-essential", limit=1)
+    assert detail is not None
+    assert detail["pagination"] == {"limit": 1, "offset": 0, "total": 2, "has_more": True}
+    assert detail["entries"][0]["short_meanings"][0]["language"] == "vi"
+    assert detail["entries"][0]["pronunciations"][0]["text"] == "/ˈæləkeɪt/"
+    assert detail["entries"][0]["detailed_definitions"][0]["origin"] == "source"
+
+    second = repository.import_source(
+        collection=collection,
+        source=normalized,
+        records=normalized["records"],
+        mapping=detected.mapping,
+        imported_by="test-admin",
+    )
+    assert second["status"] == "skipped"
+    assert second["imported"] == 0
+    assert second["duplicates"] == 2
+    assert second["skipped"] == 2
+
+    found = repository.find_entry("en", "allocate")
+    assert found is not None
+    assert found["term"] == "allocate"
+    assert found["support_translations"] == {"vi": "phân bổ"}
+
+
+def test_one_entry_can_belong_to_two_collections_without_copying_lexical_content(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "vocabulary.db")
+    repository.initialize()
+    _, detected, normalized = _source("one.csv", "word,meaning\nlead,dẫn dắt\n")
+    base = {
+        "language_code": "en",
+        "framework": "internal",
+        "level": "B1",
+        "catalog_status": "published",
+        "origin": "imported",
+        "provenance": {},
+    }
+    for collection_id, title in (("pack-a", "Pack A"), ("pack-b", "Pack B")):
+        repository.import_source(
+            collection={**base, "id": collection_id, "title": title},
+            source=normalized,
+            records=normalized["records"],
+            mapping=detected.mapping,
+        )
+    assert len(repository.list_entries_for_language("en")) == 1
+    assert repository.list_collections("en")[0]["item_count"] == 1
+    assert repository.list_collections("en")[1]["item_count"] == 1

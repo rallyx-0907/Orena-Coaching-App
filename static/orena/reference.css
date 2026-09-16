@@ -40,6 +40,20 @@
 .admin-indicators li small { grid-column: 1 / -1; color: var(--muted); }
 .admin-indicators li p { grid-column: 1 / -1; margin: 4px 0 0; color: var(--muted); font-size: var(--text-sm); }
 .admin-summary > .meta { color: var(--muted); font-size: var(--text-sm); }
+.admin-vocabulary-importer { display: grid; gap: var(--space-4); }
+.admin-vocabulary-grid, .admin-vocabulary-mapping-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.admin-vocabulary-grid label, .admin-vocabulary-mapping-grid label { display: grid; gap: 6px; color: var(--muted); font-size: var(--text-sm); }
+.admin-vocabulary-grid input, .admin-vocabulary-mapping-grid select { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.admin-vocabulary-source { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--surface) 88%, var(--sage-surface)); }
+.admin-vocabulary-source .section-head { margin: 0; }
+.admin-vocabulary-source h3 { margin: 0; }
+.admin-vocabulary-hash { color: var(--muted); font-family: ui-monospace, monospace; font-size: var(--text-xs); }
+.admin-vocabulary-warnings { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: var(--text-sm); }
+.admin-vocabulary-source details pre { max-width: 100%; overflow: auto; padding: 10px; background: var(--paper); color: var(--ink); }
+.admin-vocabulary-results ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.admin-vocabulary-results li { display: grid; grid-template-columns: minmax(10rem, 1fr) auto; gap: 3px var(--space-3); padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.admin-vocabulary-results li small { grid-column: 1 / -1; color: var(--muted); }
+.admin-vocabulary-results li span { color: var(--accent); font-weight: 700; }
 #shell nav a { display: flex; gap: 12px; align-items: center; padding: 8px 12px; min-height: 43px; border-radius: 7px; font-size: var(--text-sm); color: var(--muted); }
 #shell nav a svg { flex: none; }
 #shell nav a[aria-current] { background: var(--sage-surface); color: var(--on-sage); }
@@ -311,6 +325,8 @@
   .thread-list { grid-template-columns:1fr; gap:22px; }
   .thread + .thread { border-left:2px solid var(--accent); }
   .thread-shelf .section-head { align-items:flex-start; flex-direction:column; gap:8px; }
+  .admin-vocabulary-grid, .admin-vocabulary-mapping-grid { grid-template-columns:1fr; }
+  .admin-vocabulary-results li { grid-template-columns:1fr; }
   .story-path { grid-template-columns:32px 1fr 20px; gap:12px; }
   .path-number { font-size:28px; }
   .story-path h3 { font-size:24px; }

@@ -344,21 +344,35 @@ export async function renderExpression(root, ctx) {
    distinct meanings, not one paragraph choosing between them. */
 function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   const meanings = [];
+  const appendMeaning = (meaning) => {
+    const text = String(meaning?.text || '').trim();
+    const meaningLanguage = String(meaning?.language || '').trim().toLowerCase();
+    if (text && !meanings.some((entry) => entry.language === meaningLanguage && entry.text === text)) {
+      meanings.push({ language: meaningLanguage || 'unknown', text });
+    }
+  };
   const definition = String(item.definition || '').trim();
   const translation = String(item.translation_vi || '').trim();
+  const shortMeanings = Array.isArray(item.short_meanings) ? item.short_meanings : [];
   if (definition) meanings.push({ language, text: definition });
-  if (translation) meanings.push({ language: 'vi', text: translation });
+  if (translation && !shortMeanings.some((meaning) => String(meaning?.language || '').toLowerCase() === 'vi')) meanings.push({ language: 'vi', text: translation });
+  Object.entries(item.support_translations || {}).forEach(([meaningLanguage, text]) => appendMeaning({ language: meaningLanguage, text }));
+  shortMeanings.forEach(appendMeaning);
+  (Array.isArray(item.detailed_definitions) ? item.detailed_definitions : []).forEach(appendMeaning);
   const kind = String(item.source_kind || '').trim();
   const fragment = String(item.source_fragment || '').trim();
   const card = {
-    identity: { language, normalized: String(item.word || '').toLowerCase() },
+    identity: { language, normalized: String(item.normalized_term || item.normalized_word || item.word || '').toLowerCase() },
     headword: item.word,
     meanings,
     source_encounters: kind && fragment ? [{ kind, fragment }] : [],
   };
-  const pronunciation = String(item.phonetic || '').trim();
+  const pronunciation = String(item.phonetic || item.pronunciation || item.pronunciations?.[0]?.text || item.readings?.[0]?.text || '').trim();
   if (pronunciation && pinyinAllowed) card.pronunciation = pronunciation;
   if (Array.isArray(item.examples)) card.examples = item.examples;
+  if (Array.isArray(item.short_meanings) && item.short_meanings.length) card.short_meanings = item.short_meanings;
+  if (Array.isArray(item.detailed_definitions) && item.detailed_definitions.length) card.detailed_definitions = item.detailed_definitions;
+  if (Array.isArray(item.usage_notes) && item.usage_notes.length) card.usage = String(item.usage_notes[0]?.text || item.usage_notes[0] || '').trim();
   for (const field of ['level', 'framework', 'topic']) {
     if (item[field]) card[field] = item[field];
   }
@@ -648,10 +662,13 @@ export async function renderLanguage(root, ctx) {
         ? `<section class="vocabulary-browse-grid">${visibleItems.map((card, index) => renderVocabularyBrowseCard(copy, card, { index, source: 'collection' })).join('')}</section>`
         : `<section class="vocabulary-row-list vocabulary-saved-management">${visibleItems.map((card, index) => renderVocabularyRow(copy, card, { index })).join('')}</section>`
       : `<section class="empty vocabulary-empty"><h2>${esc(c.vocabularyNoMatches)}</h2></section>`;
+    const pagination = view === 'collection' && activeCollection?.pagination?.has_more
+      ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-load-more>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
+      : '';
     const collectionProgress = view === 'collection' && activeCollection
       ? (() => { const progress = activeCollection.progress || {}; const learned = Number(progress.learned_count) || 0; const total = Number(activeCollection.item_count) || 0; const percent = total ? Math.round((learned / total) * 100) : 0; return `<section class="vocabulary-collection-detail-progress" aria-label="${esc(c.vocabularyProgress || 'Progress')}"><div><span>${esc(c.vocabularyProgress || 'Progress')}</span><strong>${esc(learned)} / ${esc(total)} ${esc(c.vocabularyWordCount)}</strong></div><div class="vocabulary-progress" aria-hidden="true"><span style="width:${percent}%"></span></div></section>`; })()
       : '';
-    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}`;
+    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
   };
 
   const feedView = () => `${pageIntro({ title: c.vocabularyFeedTitle, note: c.vocabularyFeedNote, eyebrow: c.vocabularyTitle, compact: true })}<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>${feedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>` : feedCards.length ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5, full: true }) : `<section class="empty"><h2>${esc(c.vocabularyFeedEmpty)}</h2></section>`}`;
@@ -726,6 +743,20 @@ export async function renderLanguage(root, ctx) {
     root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : 'overview'; paint(); }));
     root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', () => setStudy(savedCards.filter((card) => card.due)));
     root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => { query = event.target.value; paint(); const input = root.querySelector('[data-vocabulary-search]'); input?.focus(); input?.setSelectionRange(query.length, query.length); });
+    root.querySelector('[data-vocabulary-load-more]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        const pagination = activeCollection?.pagination || {};
+        const next = await api.vocabularyLibraryCollection(activeCollection.id, {
+          search: '', level: '', limit: pagination.limit || 100, offset: (pagination.offset || 0) + (pagination.limit || activeItems.length || 100),
+        });
+        if (!alive()) return;
+        activeItems = [...activeItems, ...(next.items || [])];
+        activeCollection = { ...activeCollection, ...next, items: activeItems };
+        paint();
+      } catch { button.disabled = false; }
+    });
     root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => { filter = button.dataset.vocabularyFilter; paint(); }));
     root.querySelectorAll('[data-vocabulary-level-filter]').forEach((button) => (button.onclick = () => { levelFilter = button.dataset.vocabularyLevelFilter; paint(); }));
     root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => { sort = event.target.value; paint(); });

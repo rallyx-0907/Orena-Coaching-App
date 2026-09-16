@@ -34,6 +34,164 @@ function summary(c, payload) {
   return frame(c, `<div class="section-head"><div><h2>${esc(c.adminIndicators)}</h2><p>${esc(c.adminState)}: <strong>${esc(valueLabel(c, payload.evidence_state || payload.state))}</strong></p></div><p>${esc(c.adminApproval)}: <strong>${esc(valueLabel(c, payload.approval_state))}</strong></p></div><ul class="admin-indicators">${rows}</ul><p class="meta"><strong>${esc(c.adminRedaction)}:</strong> ${esc(payload.redaction || '—')}</p>`);
 }
 
+const IMPORT_FIELDS = [
+  'term', 'short_meaning', 'detailed_definition', 'pronunciation',
+  'part_of_speech', 'example', 'usage', 'level', 'framework', 'topic',
+  'meaning_language', 'target_language', 'reading', 'orthography', 'sense_key',
+];
+
+function fieldLabel(c, field) {
+  return c[`adminVocabularyField_${field}`] || field.replaceAll('_', ' ');
+}
+
+function importer(c) {
+  return `<section class="thread-shelf admin-vocabulary-importer" data-admin-vocabulary-importer><div class="section-head"><div><h2>${esc(c.adminVocabularyTitle)}</h2><p>${esc(c.adminVocabularyNote)}</p></div></div><form data-admin-vocabulary-form><div class="admin-vocabulary-grid"><label><span>${esc(c.adminVocabularyFiles)}</span><input type="file" data-admin-vocabulary-files multiple accept=".csv,.tsv,.json,.txt,.xlsx"></label><label><span>${esc(c.adminVocabularyCollectionTitle)}</span><input type="text" data-admin-vocabulary-title maxlength="255" required placeholder="${esc(c.adminVocabularyCollectionTitlePlaceholder)}"></label><label><span>${esc(c.adminVocabularyLanguage)}</span><input type="text" data-admin-vocabulary-language value="en" maxlength="20" required></label><label><span>${esc(c.adminVocabularyFramework)}</span><input type="text" data-admin-vocabulary-framework placeholder="TOEIC, HSK, CEFR…"></label><label><span>${esc(c.adminVocabularyLevel)}</span><input type="text" data-admin-vocabulary-level placeholder="A1–C2 or HSK1–HSK7-9"></label><label><span>${esc(c.adminVocabularyMeaningLanguage)}</span><input type="text" data-admin-vocabulary-meaning-language value="vi" maxlength="20"></label><label><span>${esc(c.adminVocabularyTopic)}</span><input type="text" data-admin-vocabulary-topic></label><label><span>${esc(c.adminVocabularyCollectionId)}</span><input type="text" data-admin-vocabulary-collection-id placeholder="${esc(c.adminVocabularyCollectionIdPlaceholder)}"></label></div><div class="button-row"><button class="outline" type="button" data-admin-vocabulary-preview>${esc(c.adminVocabularyPreview)}</button><button class="primary" type="button" data-admin-vocabulary-import disabled>${esc(c.adminVocabularyImport)}</button></div><p class="meta" data-admin-vocabulary-status role="status">${esc(c.adminVocabularyChooseSource)}</p><div data-admin-vocabulary-preview-output></div><div data-admin-vocabulary-results></div></form></section>`;
+}
+
+function renderPreview(c, previews, mappings) {
+  return previews.map((item, index) => {
+    if (item.error) return `<article class="admin-vocabulary-source admin-vocabulary-source--error"><h3>${esc(item.filename)}</h3><p class="notice" role="alert">${esc(item.error)}</p></article>`;
+    const detected = item.detected_mapping || {};
+    mappings[item.filename] ||= { ...detected };
+    const fields = IMPORT_FIELDS.map((field) => {
+      const selected = mappings[item.filename][field] || '';
+      const options = [`<option value="">${esc(c.adminVocabularyNotProvided)}</option>`, ...(item.headers || []).map((header) => `<option value="${esc(header)}" ${header === selected ? 'selected' : ''}>${esc(header)}</option>`)].join('');
+      return `<label><span>${esc(fieldLabel(c, field))}</span><select data-admin-vocabulary-map data-file-index="${index}" data-field="${esc(field)}">${options}</select></label>`;
+    }).join('');
+    const sample = (item.sample || []).slice(0, 3).map((row) => `<pre>${esc(JSON.stringify(row, null, 2))}</pre>`).join('');
+    const warnings = (item.warnings || []).map((warning) => `<li>${esc(warning)}</li>`).join('');
+    return `<article class="admin-vocabulary-source"><div class="section-head"><div><h3>${esc(item.filename)}</h3><p>${esc(item.row_count)} ${esc(c.adminVocabularyRows)} · ${esc(item.format.toUpperCase())}</p></div><span class="admin-vocabulary-hash">${esc(item.content_hash ? item.content_hash.slice(0, 12) : '')}</span></div><div class="admin-vocabulary-mapping-grid">${fields}</div>${warnings ? `<ul class="admin-vocabulary-warnings">${warnings}</ul>` : ''}<details><summary>${esc(c.adminVocabularySample)}</summary>${sample}</details></article>`;
+  }).join('');
+}
+
+function renderImportResults(c, items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `<section class="admin-vocabulary-results"><h3>${esc(c.adminVocabularyResults)}</h3><ul>${items.map((item) => `<li><strong>${esc(item.filename || 'source')}</strong><span>${esc(item.status || 'failed')}</span><small>${esc(item.imported || 0)} ${esc(c.adminVocabularyImported)} · ${esc(item.duplicates || 0)} ${esc(c.adminVocabularyDuplicates)} · ${esc(item.skipped || 0)} ${esc(c.adminVocabularySkipped)}${item.failure_reason ? ` · ${esc(item.failure_reason)}` : ''}</small></li>`).join('')}</ul></section>`;
+}
+
+function bindImporter(root, ctx) {
+  const shell = root.querySelector('[data-admin-vocabulary-importer]');
+  if (!shell) return;
+  const filesInput = shell.querySelector('[data-admin-vocabulary-files]');
+  const previewButton = shell.querySelector('[data-admin-vocabulary-preview]');
+  const importButton = shell.querySelector('[data-admin-vocabulary-import]');
+  const status = shell.querySelector('[data-admin-vocabulary-status]');
+  const output = shell.querySelector('[data-admin-vocabulary-preview-output]');
+  const results = shell.querySelector('[data-admin-vocabulary-results]');
+  const state = { files: [], previews: [], mappings: {} };
+  const setStatus = (message) => { if (status) status.textContent = message; };
+  filesInput?.addEventListener('change', () => {
+    state.files = [...(filesInput.files || [])]; state.previews = []; state.mappings = {};
+    if (output) output.innerHTML = ''; if (results) results.innerHTML = '';
+    if (importButton) importButton.disabled = true;
+    setStatus(state.files.length ? `${state.files.length} ${ctx.c.adminVocabularyFilesSelected}` : ctx.c.adminVocabularyChooseSource);
+  });
+  previewButton?.addEventListener('click', async () => {
+    if (!state.files.length) { setStatus(ctx.c.adminVocabularyChooseSource); return; }
+    previewButton.disabled = true; setStatus(ctx.c.adminVocabularyPreviewing);
+    try {
+      const payload = await ctx.api.adminVocabularyPreview(state.files);
+      if (!alive(ctx)) return;
+      state.previews = Array.isArray(payload?.items) ? payload.items : []; state.mappings = {};
+      if (output) output.innerHTML = renderPreview(ctx.c, state.previews, state.mappings);
+      const hasTerm = state.previews.some((item) => !item.error && item.detected_mapping?.term);
+      if (importButton) importButton.disabled = !hasTerm;
+      setStatus(hasTerm ? ctx.c.adminVocabularyMappingReady : ctx.c.adminVocabularyMappingRequired);
+    } catch (error) { setStatus(error.message || ctx.c.adminUnavailable); }
+    finally { previewButton.disabled = false; }
+  });
+  output?.addEventListener('change', (event) => {
+    const select = event.target.closest('[data-admin-vocabulary-map]'); if (!select) return;
+    const item = state.previews[Number(select.dataset.fileIndex)]; if (!item) return;
+    state.mappings[item.filename] ||= {}; state.mappings[item.filename][select.dataset.field] = select.value || null;
+    const termReady = state.previews.some((preview) => !preview.error && state.mappings[preview.filename]?.term);
+    if (importButton) importButton.disabled = !termReady;
+  });
+  importButton?.addEventListener('click', async () => {
+    if (!state.files.length) return;
+    const metadata = { title: shell.querySelector('[data-admin-vocabulary-title]')?.value || '', language_code: shell.querySelector('[data-admin-vocabulary-language]')?.value || '', framework: shell.querySelector('[data-admin-vocabulary-framework]')?.value || '', level: shell.querySelector('[data-admin-vocabulary-level]')?.value || '', meaning_language: shell.querySelector('[data-admin-vocabulary-meaning-language]')?.value || '', topic: shell.querySelector('[data-admin-vocabulary-topic]')?.value || '', collection_id: shell.querySelector('[data-admin-vocabulary-collection-id]')?.value || '' };
+    if (!metadata.title || !metadata.language_code) { setStatus(ctx.c.adminVocabularyMetadataRequired); return; }
+    importButton.disabled = true; setStatus(ctx.c.adminVocabularyImporting);
+    try {
+      const payload = await ctx.api.adminVocabularyImport(state.files, metadata, state.mappings);
+      if (!alive(ctx)) return;
+      if (results) results.innerHTML = renderImportResults(ctx.c, payload?.items);
+      setStatus(ctx.c.adminVocabularyComplete);
+    } catch (error) { setStatus(error.message || ctx.c.adminUnavailable); importButton.disabled = false; }
+  });
+}
+
+/* Add Books: admin-only EPUB import into the Shared Reading Library
+   (writing_coach/reading_library_api.py) - independent of the vocabulary
+   importer above (different feature, different backend), appended as its
+   own self-mounting section so neither repaint touches the other's DOM.
+   Operational detail (per-file progress, detected title, failures) stays on
+   this admin screen only; the learner-facing grid (ui/library.js) never
+   sees any of it. */
+const LIBRARY_LANGUAGES = [
+  ['en', 'adminLibraryLanguageEnglish'],
+  ['zh', 'adminLibraryLanguageChinese'],
+];
+
+function addBooksSection(c, state) {
+  const { files, language, busy, results, submitError } = state;
+  const fileNames = files.length
+    ? `<p class="meta">${files.map((file) => esc(file.name)).join(', ')}</p>`
+    : '';
+  const resultRows = results
+    ? `<ul class="admin-import-results">${results
+        .map((result) =>
+          result.status === 'ok'
+            ? `<li class="admin-import-ok">${esc(result.filename)} — ${esc(c.adminLibraryImportOk)} "${esc(result.title)}" (${Number(result.chapter_count) || 0} ${esc(c.adminLibraryChapters)})</li>`
+            : `<li class="admin-import-error">${esc(result.filename)} — ${esc(c.adminLibraryErrorGeneric)} (${esc(result.category || '')})</li>`,
+        )
+        .join('')}</ul>`
+    : '';
+  return `<section class="thread-shelf admin-library" aria-live="polite"><div class="section-head"><h2>${esc(c.adminLibraryTitle)}</h2></div><p class="meta">${esc(c.adminLibraryNote)}</p><form class="admin-library-form"><label for="adminLibraryFiles">${esc(c.adminLibrarySelectFiles)}</label><input id="adminLibraryFiles" type="file" accept=".epub" multiple data-library-files>${fileNames}<label for="adminLibraryLanguage">${esc(c.adminLibraryLanguageLabel)}</label><select id="adminLibraryLanguage" data-library-language>${LIBRARY_LANGUAGES.map(([code, key]) => `<option value="${code}" ${language === code ? 'selected' : ''}>${esc(c[key])}</option>`).join('')}</select><button class="primary" type="submit" data-library-import ${busy || !files.length ? 'disabled' : ''}>${esc(busy ? c.adminLibraryImporting : c.adminLibraryImport)}</button>${submitError ? `<p class="notice" role="alert">${esc(c.adminUnavailable)}</p>` : ''}</form>${resultRows}</section>`;
+}
+
+function paintAddBooks(container, ctx) {
+  if (!container) return;
+  const c = ctx.c;
+  let files = [];
+  let language = ctx.language === 'zh' ? 'zh' : 'en';
+  let busy = false;
+  let results = null;
+  let submitError = false;
+
+  function paint() {
+    if (!alive(ctx)) return;
+    container.innerHTML = addBooksSection(c, { files, language, busy, results, submitError });
+    container.querySelector('[data-library-files]')?.addEventListener('change', (event) => {
+      files = Array.from(event.target.files || []);
+      paint();
+    });
+    container.querySelector('[data-library-language]')?.addEventListener('change', (event) => {
+      language = event.target.value;
+    });
+    container.querySelector('.admin-library-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!files.length || busy) return;
+      busy = true;
+      submitError = false;
+      paint();
+      try {
+        const response = await ctx.api.adminImportLibraryBooks(files, language);
+        if (!alive(ctx)) return;
+        results = response.results || [];
+        files = [];
+      } catch {
+        if (!alive(ctx)) return;
+        submitError = true;
+      } finally {
+        busy = false;
+        if (alive(ctx)) paint();
+      }
+    });
+  }
+  paint();
+}
+
 export async function renderAdmin(root, ctx) {
   const c = ctx.c;
   root.innerHTML = loading(c);
@@ -41,11 +199,15 @@ export async function renderAdmin(root, ctx) {
     const payload = await ctx.api.adminReadinessSummary();
     if (!alive(ctx)) return;
     if (!payload || payload.available === false) {
-      root.innerHTML = empty(c);
+      root.innerHTML = `${empty(c)}${importer(c)}<div data-admin-library></div>`;
+      bindImporter(root, ctx);
+      paintAddBooks(root.querySelector('[data-admin-library]'), ctx);
       return;
     }
     const indicators = Array.isArray(payload.indicators) ? payload.indicators : [];
-    root.innerHTML = indicators.length ? summary(c, payload) : empty(c);
+    root.innerHTML = `${indicators.length ? summary(c, payload) : empty(c)}${importer(c)}<div data-admin-library></div>`;
+    bindImporter(root, ctx);
+    paintAddBooks(root.querySelector('[data-admin-library]'), ctx);
   } catch {
     if (!alive(ctx)) return;
     root.innerHTML = error(c);

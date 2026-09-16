@@ -21,11 +21,8 @@ dictation, recording, provider and evidence primitives survive, and the learner
 surfaces converge on static/orena. PostgreSQL APIs remain.
 
 Golden Star foundation: shared page intro, intention navigation, response
-composer, continuation shelf, draft status, progressReporter(). Tinted panels
-carry their own ink in both themes - the recurring defect is an ambient
-colour outranking a component's own pairing. ORENA_WEB_EXTENSION_GUIDE.md
-records what a surface inherits. `/orena-assets/*` revalidates by ETag; never
-`no-store`, which re-downloaded 3.2 MB per refresh.
+composer, continuation shelf, draft status, progressReporter(), and theme-safe
+tinted panels. ORENA_WEB_EXTENSION_GUIDE.md records surface inheritance.
 
 Platform Admin has a host again via `#/admin` (`04a56c4`); human review
 confirmed the UI matches Orena's design, resolving the "lost its host" P1.
@@ -62,9 +59,8 @@ added from this non-elevated shell; if peer access is blocked, add TCP 8011
 scoped to `LocalSubnet` from Administrator PowerShell. AI eval uses selected
 local/provider credentials; ASR remains unconfigured.
 
-Dependency-heavy tests use `ai-writing-coach:local`, read-only repo and tmpfs;
-command in AGENTS.md. SQLite is test-only. App cwd is `/app`; image lacks
-pytest (install only in the ephemeral gate). Switch language in-page.
+Dependency-heavy tests use the read-only `ai-writing-coach:local` recipe in
+AGENTS.md; SQLite is test-only. Switch language in-page.
 
 ## NEXT EXACT TASK
 
@@ -109,7 +105,13 @@ Vocabulary UX `639b03d` plus correction `2e591c3`: EN/ZH cards show real levels 
 (CEFR A1–C2, HSK1–HSK7-9), pronunciation/examples, contained review status
 and metallic frame. Public Library has an explicit gate; current packs are
 seed-only, so local Library is truthfully empty until a complete pack is
-authored/published. No schema change.
+authored/published. No active runtime schema change.
+
+Vocabulary Source Import is in progress: UTF-8 source preview/mapping,
+normalization, language-aware identity, source provenance, batch results, shared
+repository, Admin UI, and learner card read-through are implemented. Proposal
+`20260916_0008` needs independent architecture review and human schema/runtime
+authorization; PostgreSQL import is fail-closed until then.
 
 ## PENDING
 

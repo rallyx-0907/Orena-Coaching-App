@@ -5,10 +5,10 @@ This module mirrors ``writing_coach/grammar_catalog.py``'s role over
 language module are the content, the small ``*.vocabulary_collections``
 loaders read them at import time, and this module aggregates them across
 languages, denormalizes parent collection metadata into each entry, builds a
-load-time word index, and validates structure. There is no database table or
-membership join here — see
-``docs/superpowers/plans/2026-09-14-vocabulary-experience.md`` §2 "Static
-catalog, not schema" for why none is needed.
+load-time word index, and validates structure. It remains the immutable static
+fallback; imported shared content is owned by
+``writing_coach.persistence.vocabulary_repository`` and merged by the API
+layer, not written into these source files.
 
 The JSON files may contain authored seed material before a pack is ready for
 learner-facing Library publication.  ``list_vocabulary_collections`` and
