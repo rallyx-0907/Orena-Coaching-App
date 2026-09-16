@@ -72,6 +72,9 @@ function renderImportResults(c, items) {
 function bindImporter(root, ctx) {
   const shell = root.querySelector('[data-admin-vocabulary-importer]');
   if (!shell) return;
+  shell.querySelector('.admin-vocabulary-grid')?.insertAdjacentHTML('beforeend', `<label><span>${esc(ctx.c.adminVocabularyRightsStatus)}</span><select data-admin-vocabulary-rights-status><option value="">${esc(ctx.c.adminVocabularyRightsUnknown)}</option><option value="public_domain">${esc(ctx.c.adminVocabularyRightsPublicDomain)}</option><option value="licensed">${esc(ctx.c.adminVocabularyRightsLicensed)}</option><option value="creator_authorized">${esc(ctx.c.adminVocabularyRightsCreatorAuthorized)}</option><option value="internal_curated">${esc(ctx.c.adminVocabularyRightsInternalCurated)}</option></select></label><label><span>${esc(ctx.c.adminVocabularyCompleteness)}</span><select data-admin-vocabulary-completeness><option value="complete">${esc(ctx.c.adminVocabularyCompletenessComplete)}</option><option value="partial">${esc(ctx.c.adminVocabularyCompletenessPartial)}</option><option value="unknown" selected>${esc(ctx.c.adminVocabularyCompletenessUnknown)}</option></select></label><label class="admin-vocabulary-publish"><span>${esc(ctx.c.adminVocabularyPublish)}</span><input type="checkbox" data-admin-vocabulary-publish></label>`);
+  const meaningLanguageInput = shell.querySelector('[data-admin-vocabulary-meaning-language]');
+  if (meaningLanguageInput && ctx.support) meaningLanguageInput.value = ctx.support;
   const filesInput = shell.querySelector('[data-admin-vocabulary-files]');
   const previewButton = shell.querySelector('[data-admin-vocabulary-preview]');
   const importButton = shell.querySelector('[data-admin-vocabulary-import]');
@@ -109,14 +112,15 @@ function bindImporter(root, ctx) {
   });
   importButton?.addEventListener('click', async () => {
     if (!state.files.length) return;
-    const metadata = { title: shell.querySelector('[data-admin-vocabulary-title]')?.value || '', language_code: shell.querySelector('[data-admin-vocabulary-language]')?.value || '', framework: shell.querySelector('[data-admin-vocabulary-framework]')?.value || '', level: shell.querySelector('[data-admin-vocabulary-level]')?.value || '', meaning_language: shell.querySelector('[data-admin-vocabulary-meaning-language]')?.value || '', topic: shell.querySelector('[data-admin-vocabulary-topic]')?.value || '', collection_id: shell.querySelector('[data-admin-vocabulary-collection-id]')?.value || '' };
+    const publish = Boolean(shell.querySelector('[data-admin-vocabulary-publish]')?.checked);
+    const metadata = { title: shell.querySelector('[data-admin-vocabulary-title]')?.value || '', language_code: shell.querySelector('[data-admin-vocabulary-language]')?.value || '', framework: shell.querySelector('[data-admin-vocabulary-framework]')?.value || '', level: shell.querySelector('[data-admin-vocabulary-level]')?.value || '', meaning_language: shell.querySelector('[data-admin-vocabulary-meaning-language]')?.value || '', topic: shell.querySelector('[data-admin-vocabulary-topic]')?.value || '', collection_id: shell.querySelector('[data-admin-vocabulary-collection-id]')?.value || '', rights_status: shell.querySelector('[data-admin-vocabulary-rights-status]')?.value || '', completeness: shell.querySelector('[data-admin-vocabulary-completeness]')?.value || 'unknown', publish, publication_attested: publish };
     if (!metadata.title || !metadata.language_code) { setStatus(ctx.c.adminVocabularyMetadataRequired); return; }
     importButton.disabled = true; setStatus(ctx.c.adminVocabularyImporting);
     try {
       const payload = await ctx.api.adminVocabularyImport(state.files, metadata, state.mappings);
       if (!alive(ctx)) return;
       if (results) results.innerHTML = renderImportResults(ctx.c, payload?.items);
-      setStatus(ctx.c.adminVocabularyComplete);
+      setStatus(payload?.collection?.catalog_status === 'published' ? ctx.c.adminVocabularyComplete : payload?.collection?.catalog_status === 'not_created' ? ctx.c.adminVocabularyNoCollection : ctx.c.adminVocabularyPendingReview);
     } catch (error) { setStatus(error.message || ctx.c.adminUnavailable); importButton.disabled = false; }
   });
 }

@@ -82,3 +82,20 @@ def test_duplicate_rows_are_reported_without_fabricating_missing_fields() -> Non
     assert record["detailed_definitions"] == []
     assert record["pronunciations"] == []
     assert record["examples"] == []
+
+
+def test_row_target_language_must_match_the_collection_language() -> None:
+    source = parse_vocabulary_source(
+        "mixed.csv",
+        b"word,target_language\nhello,en\n\xe5\xad\xa6\xe4\xb9\xa0,zh\ninvalid,not a language\n",
+    )
+    normalized = normalize_vocabulary_rows(
+        source,
+        mapping={"term": "word", "target_language": "target_language"},
+        language_code="en",
+        meaning_language="vi",
+    )
+    assert [record["term"] for record in normalized["records"]] == ["hello"]
+    assert len(normalized["skipped"]) == 2
+    assert "does not match collection language" in normalized["skipped"][0]["reason"]
+    assert "valid language code" in normalized["skipped"][1]["reason"]

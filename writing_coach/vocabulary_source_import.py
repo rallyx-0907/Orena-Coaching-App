@@ -42,6 +42,9 @@ CANONICAL_FIELDS = (
 )
 
 REQUIRED_FIELDS = ("term",)
+MAX_SOURCE_BYTES = 25 * 1024 * 1024
+MAX_SOURCE_ROWS = 100_000
+_LANGUAGE_CODE_RE = re.compile(r"[a-zA-Z]{2,8}(?:-[a-zA-Z0-9]{2,8})?")
 
 
 class VocabularySourceError(ValueError):
@@ -140,6 +143,10 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
     """Parse one upload without applying a field mapping."""
 
     name = _clean_text(filename) or "source"
+    if len(raw) > MAX_SOURCE_BYTES:
+        raise VocabularySourceError(
+            f"Source is too large ({MAX_SOURCE_BYTES // (1024 * 1024)} MB maximum)."
+        )
     source_format = _format_for_filename(name)
     if source_format == "xlsx":
         # openpyxl is intentionally not a base dependency.  Do not silently
@@ -190,6 +197,10 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
 
     if not rows:
         raise VocabularySourceError("The source contains no data rows.")
+    if len(rows) > MAX_SOURCE_ROWS:
+        raise VocabularySourceError(
+            f"Source contains too many rows ({MAX_SOURCE_ROWS:,} maximum)."
+        )
     return ParsedVocabularySource(
         filename=name,
         format=source_format,
@@ -278,8 +289,24 @@ def _mapping_value(row: Mapping[str, Any], mapping: Mapping[str, str | None], fi
 def _list_value(value: Any) -> list[str]:
     if value is None:
         return []
+    if isinstance(value, Mapping):
+        selected = (
+            value.get("text")
+            or value.get("value")
+            or value.get("term")
+            or value.get("meaning")
+        )
+        if selected is not None:
+            return _list_value(selected)
+        values: list[str] = []
+        for item in value.values():
+            values.extend(_list_value(item))
+        return values
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
-        return [_clean_text(item) for item in value if _clean_text(item)]
+        values: list[str] = []
+        for item in value:
+            values.extend(_list_value(item))
+        return values
     text = _clean_text(value)
     if not text:
         return []
@@ -288,7 +315,9 @@ def _list_value(value: Any) -> list[str]:
     except (TypeError, json.JSONDecodeError):
         decoded = None
     if isinstance(decoded, Sequence) and not isinstance(decoded, (str, bytes)):
-        return [_clean_text(item) for item in decoded if _clean_text(item)]
+        return _list_value(decoded)
+    if isinstance(decoded, Mapping):
+        return _list_value(decoded)
     return [part.strip() for part in re.split(r"\s*[;|]\s*", text) if part.strip()]
 
 
@@ -340,9 +369,12 @@ def stable_collection_id(title: str, language_code: str, framework: str = "") ->
         part for part in (_clean_text(language), _clean_text(framework), _clean_text(title)) if part
     )
     slug = re.sub(r"[^a-z0-9]+", "-", unicodedata.normalize("NFKC", source).casefold()).strip("-")
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()[:12]
     if not slug:
-        slug = f"{language or 'unknown'}-collection-{hashlib.sha256(source.encode('utf-8')).hexdigest()[:12]}"
-    return slug[:160]
+        slug = f"{language or 'unknown'}-collection"
+    # Keep the readable prefix, but include the source hash so punctuation,
+    # transliteration, or two non-Latin titles cannot silently collide.
+    return f"{slug[:147]}-{digest}"
 
 
 def normalize_vocabulary_rows(
@@ -360,6 +392,8 @@ def normalize_vocabulary_rows(
     language = _clean_text(language_code).casefold()
     if not language:
         raise VocabularySourceError("Target language is required for import.")
+    if not _LANGUAGE_CODE_RE.fullmatch(language):
+        raise VocabularySourceError("Target language must be a valid language code.")
     missing = [field for field in REQUIRED_FIELDS if not mapping.get(field)]
     if missing:
         raise VocabularyMappingRequired(
@@ -404,6 +438,24 @@ def normalize_vocabulary_rows(
             or ""
         ).casefold()
         target_language = _clean_text(_mapping_value(row, mapping, "target_language")).casefold() or language
+        if not _LANGUAGE_CODE_RE.fullmatch(target_language):
+            skipped.append(
+                {
+                    "row": row_number,
+                    "reason": f"target language '{target_language}' is not a valid language code",
+                    "term": term,
+                }
+            )
+            continue
+        if target_language != language:
+            skipped.append(
+                {
+                    "row": row_number,
+                    "reason": f"target language '{target_language}' does not match collection language '{language}'",
+                    "term": term,
+                }
+            )
+            continue
         pronunciation = _list_value(_mapping_value(row, mapping, "pronunciation"))
         readings = _list_value(_mapping_value(row, mapping, "reading"))
         examples = [

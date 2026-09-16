@@ -63,6 +63,10 @@ def test_admin_preview_and_import_are_real_vertical_slice(tmp_path, monkeypatch)
                     "level": "A1–B1",
                     "meaning_language": "vi",
                     "collection_id": "test-imported-starter-pack",
+                    "rights_status": "internal_curated",
+                    "completeness": "complete",
+                    "publish": True,
+                    "publication_attested": True,
                 }
             ),
             "mappings": json.dumps({"batch.csv": mapping}),
@@ -116,6 +120,63 @@ def test_admin_import_reports_schema_boundary_instead_of_writing_a_workaround(mo
     assert "migrations" not in response.text
 
 
+def test_admin_import_keeps_unattested_collection_out_of_learner_catalog(monkeypatch, tmp_path) -> None:
+    from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+
+    repository = sqlite_vocabulary_repository(tmp_path / "pending.db")
+    repository.initialize()
+    monkeypatch.setattr(
+        app_module,
+        "_persistence_runtime",
+        replace(app_module._persistence_runtime, vocabulary_repository=repository),
+    )
+    response = _request(
+        "POST",
+        "/api/admin/vocabulary/import",
+        data={
+            "metadata": json.dumps(
+                {"title": "Pending Pack", "language_code": "en", "collection_id": "pending-pack"}
+            ),
+            "mappings": json.dumps({"words.txt": {"term": "term"}}),
+        },
+        files=[("files", ("words.txt", b"hello\n", "text/plain"))],
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["collection"]["catalog_status"] == "pending_review"
+    assert repository.list_collections("en") == []
+
+
+def test_admin_import_rejects_publish_without_verified_admission(monkeypatch, tmp_path) -> None:
+    from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+
+    repository = sqlite_vocabulary_repository(tmp_path / "admission.db")
+    repository.initialize()
+    monkeypatch.setattr(
+        app_module,
+        "_persistence_runtime",
+        replace(app_module._persistence_runtime, vocabulary_repository=repository),
+    )
+    response = _request(
+        "POST",
+        "/api/admin/vocabulary/import",
+        data={
+            "metadata": json.dumps(
+                {
+                    "title": "Unverified Pack",
+                    "language_code": "en",
+                    "collection_id": "unverified-pack",
+                    "publish": True,
+                    "publication_attested": True,
+                    "completeness": "complete",
+                }
+            ),
+        },
+        files=[("files", ("words.txt", b"hello\n", "text/plain"))],
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"]["category"] == "vocabulary_rights_required"
+
+
 def test_batch_import_keeps_a_bad_source_isolated(monkeypatch, tmp_path) -> None:
     from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
 
@@ -143,6 +204,10 @@ def test_batch_import_keeps_a_bad_source_isolated(monkeypatch, tmp_path) -> None
                     "title": "Batch Isolated",
                     "language_code": "en",
                     "collection_id": "test-batch-isolated",
+                    "rights_status": "internal_curated",
+                    "completeness": "complete",
+                    "publish": True,
+                    "publication_attested": True,
                 }
             ),
             "mappings": json.dumps(mapping),
@@ -156,4 +221,5 @@ def test_batch_import_keeps_a_bad_source_isolated(monkeypatch, tmp_path) -> None
     results = {item["filename"]: item for item in response.json()["items"]}
     assert results["good.csv"]["status"] == "imported"
     assert results["bad.csv"]["status"] == "failed"
+    assert results["bad.csv"]["source_import_id"]
     assert repository.list_collections("en")[0]["item_count"] == 1

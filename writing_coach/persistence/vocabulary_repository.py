@@ -21,7 +21,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
-from sqlalchemy import create_engine, inspect, select
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+from sqlalchemy import create_engine, func, inspect, or_, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -40,6 +42,52 @@ VOCABULARY_TABLES = (
     "vocabulary_source_imports",
     "vocabulary_collection_memberships",
 )
+VOCABULARY_SCHEMA_REVISION = "20260916_0008"
+VOCABULARY_REQUIRED_COLUMNS = {
+    "vocabulary_collections": {
+        "id", "language_code", "title", "framework", "level", "level_range",
+        "topic", "catalog_status", "origin", "provenance", "created_at", "updated_at",
+    },
+    "vocabulary_entries": {
+        "id", "language_code", "term", "normalized_term", "identity_key", "sense_key",
+        "pronunciations", "readings", "short_meanings", "detailed_definitions",
+        "part_of_speech", "examples", "usage_notes", "orthography", "level", "framework",
+        "topic", "content_origins", "provenance", "created_at", "updated_at",
+    },
+    "vocabulary_source_imports": {
+        "id", "collection_id", "filename", "source_format", "content_hash", "mapping",
+        "status", "imported_count", "skipped_count", "duplicate_count", "warning_count",
+        "failed_count", "warnings", "errors", "imported_by", "created_at", "updated_at",
+    },
+    "vocabulary_collection_memberships": {
+        "id", "collection_id", "entry_id", "source_import_id", "position", "metadata",
+    },
+}
+_VOCABULARY_PUBLISHABLE_RIGHTS = {
+    "public_domain",
+    "licensed",
+    "creator_authorized",
+    "internal_curated",
+}
+_VOCABULARY_CATALOG_STATUSES = {"pending_review", "published"}
+
+
+def _vocabulary_revision_is_usable(current_revision: str) -> bool:
+    """Accept the vocabulary migration and any later linear descendant."""
+
+    if current_revision == VOCABULARY_SCHEMA_REVISION:
+        return True
+    try:
+        root = Path(__file__).resolve().parents[2]
+        config = Config(str(root / "alembic.ini"))
+        config.set_main_option("script_location", str(root / "migrations"))
+        script = ScriptDirectory.from_config(config)
+        return any(
+            revision.revision == VOCABULARY_SCHEMA_REVISION
+            for revision in script.iterate_revisions(current_revision, VOCABULARY_SCHEMA_REVISION)
+        )
+    except Exception:
+        return False
 
 
 class VocabularyContentUnavailable(RuntimeError):
@@ -56,6 +104,17 @@ class VocabularyRepository(Protocol):
         source: Mapping[str, Any],
         records: Iterable[Mapping[str, Any]],
         mapping: Mapping[str, Any],
+        imported_by: str = "",
+    ) -> dict[str, Any]: ...
+    def record_source_failure(
+        self,
+        *,
+        collection_id: str | None,
+        filename: str,
+        source_format: str = "",
+        content_hash: str = "",
+        mapping: Mapping[str, Any] | None = None,
+        failure_reason: str,
         imported_by: str = "",
     ) -> dict[str, Any]: ...
     def list_collections(self, language_code: str) -> list[dict[str, Any]]: ...
@@ -178,10 +237,26 @@ class SQLAlchemyVocabularyRepository:
 
     def available(self) -> bool:
         try:
-            tables = set(inspect(self.engine).get_table_names())
+            inspector = inspect(self.engine)
+            tables = set(inspector.get_table_names())
+            if not set(VOCABULARY_TABLES).issubset(tables):
+                return False
+            for table, required in VOCABULARY_REQUIRED_COLUMNS.items():
+                actual = {column["name"] for column in inspector.get_columns(table)}
+                if not required.issubset(actual):
+                    return False
+            if self.engine.dialect.name != "postgresql":
+                return self.allow_sqlite_initialize
+            with self.engine.connect() as connection:
+                revisions = {
+                    str(row[0] or "")
+                    for row in connection.execute(
+                        text("SELECT version_num FROM alembic_version")
+                    ).all()
+                }
+            return len(revisions) == 1 and _vocabulary_revision_is_usable(revisions.pop())
         except Exception:
             return False
-        return set(VOCABULARY_TABLES).issubset(tables)
 
     def initialize(self) -> None:
         """Create only the isolated SQLite content schema when permitted."""
@@ -224,6 +299,21 @@ class SQLAlchemyVocabularyRepository:
         language_code = _text(collection.get("language_code")).casefold()
         if not language_code:
             raise ValueError("A collection language_code is required.")
+        catalog_status = _text(collection.get("catalog_status")).casefold() or "pending_review"
+        if catalog_status not in _VOCABULARY_CATALOG_STATUSES:
+            raise ValueError(f"Unsupported vocabulary catalog status '{catalog_status}'.")
+        collection_provenance = _copy_json(collection.get("provenance"), {}) or {}
+        if catalog_status == "published":
+            admission = collection_provenance.get("admission")
+            if not isinstance(admission, Mapping) or (
+                admission.get("review_status") != "approved"
+                or admission.get("publication_attested") is not True
+                or _text(admission.get("rights_status")) not in _VOCABULARY_PUBLISHABLE_RIGHTS
+                or _text(admission.get("completeness")).casefold() != "complete"
+            ):
+                raise ValueError(
+                    "A vocabulary collection needs an approved rights/completeness admission before publication."
+                )
         now = _now()
         rows = list(records)
         source_id = uuid.uuid4()
@@ -249,9 +339,9 @@ class SQLAlchemyVocabularyRepository:
                     level=_text(collection.get("level")),
                     level_range=_text(collection.get("level_range")),
                     topic=_text(collection.get("topic")),
-                    catalog_status=_text(collection.get("catalog_status")) or "published",
+                    catalog_status=catalog_status,
                     origin=_text(collection.get("origin")) or "imported",
-                    provenance=_copy_json(collection.get("provenance"), {}),
+                    provenance=collection_provenance,
                     created_at=now,
                     updated_at=now,
                 )
@@ -265,6 +355,8 @@ class SQLAlchemyVocabularyRepository:
                 # metadata, but never changes the collection's stable identity.
                 for field in ("title", "framework", "level", "level_range", "topic", "catalog_status"):
                     value = _text(collection.get(field))
+                    if field == "catalog_status" and value.casefold() != "published" and collection_row.catalog_status == "published":
+                        continue
                     if value:
                         setattr(collection_row, field, value)
                 collection_row.provenance = _merge_list([], [collection.get("provenance", {})])[0]
@@ -287,12 +379,20 @@ class SQLAlchemyVocabularyRepository:
             session.add(import_row)
             session.flush()
 
-            for position, raw_record in enumerate(rows, start=1):
+            next_position = int(
+                session.scalar(
+                    select(func.max(VocabularyCollectionMembership.position)).where(
+                        VocabularyCollectionMembership.collection_id == collection_id
+                    )
+                )
+                or 0
+            )
+            for source_position, raw_record in enumerate(rows, start=1):
                 record = dict(raw_record)
                 identity_key = _text(record.get("identity_key"))
                 if not identity_key:
                     skipped_count += 1
-                    skipped_details.append({"position": position, "reason": "missing identity key"})
+                    skipped_details.append({"position": source_position, "reason": "missing identity key"})
                     continue
                 entry = session.scalar(
                     select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key)
@@ -337,7 +437,7 @@ class SQLAlchemyVocabularyRepository:
                 if membership is not None:
                     skipped_count += 1
                     skipped_details.append(
-                        {"position": position, "reason": "already a member of collection", "term": entry.term}
+                        {"position": source_position, "reason": "already a member of collection", "term": entry.term}
                     )
                     continue
                 membership = VocabularyCollectionMembership(
@@ -345,7 +445,7 @@ class SQLAlchemyVocabularyRepository:
                     collection_id=collection_id,
                     entry_id=entry.id,
                     source_import_id=source_id,
-                    position=position,
+                    position=next_position + 1,
                     membership_metadata={
                         "source_row": record.get("provenance", {}).get("row"),
                         "origin": "source",
@@ -356,6 +456,7 @@ class SQLAlchemyVocabularyRepository:
                 )
                 session.add(membership)
                 imported_count += 1
+                next_position += 1
 
             import_row.status = "imported" if imported_count else "skipped"
             import_row.imported_count = imported_count
@@ -390,6 +491,61 @@ class SQLAlchemyVocabularyRepository:
             "warnings": warnings,
             "failed": 0,
             "failure_reason": "",
+        }
+
+    def record_source_failure(
+        self,
+        *,
+        collection_id: str | None,
+        filename: str,
+        source_format: str = "",
+        content_hash: str = "",
+        mapping: Mapping[str, Any] | None = None,
+        failure_reason: str,
+        imported_by: str = "",
+    ) -> dict[str, Any]:
+        """Persist a failed source receipt without creating lexical content."""
+
+        self._require_available()
+        source_id = uuid.uuid4()
+        now = _now()
+        clean_filename = _text(filename) or "source"
+        clean_hash = _text(content_hash) or hashlib.sha256(
+            clean_filename.encode("utf-8")
+        ).hexdigest()
+        error = {"reason": _text(failure_reason) or "source import failed"}
+        with Session(self.engine) as session, session.begin():
+            session.add(
+                VocabularySourceImport(
+                    id=source_id,
+                    collection_id=_text(collection_id) or None,
+                    filename=clean_filename,
+                    source_format=_text(source_format),
+                    content_hash=clean_hash,
+                    mapping=_copy_json(mapping, {}) or {},
+                    status="failed",
+                    imported_count=0,
+                    skipped_count=0,
+                    duplicate_count=0,
+                    warning_count=0,
+                    failed_count=1,
+                    warnings=[],
+                    errors=[error],
+                    imported_by=_text(imported_by),
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+        return {
+            "source_import_id": str(source_id),
+            "filename": clean_filename,
+            "status": "failed",
+            "imported": 0,
+            "skipped": 0,
+            "duplicates": 0,
+            "warnings": [],
+            "failed": 1,
+            "failure_reason": error["reason"],
         }
 
     def list_collections(self, language_code: str) -> list[dict[str, Any]]:
@@ -546,27 +702,56 @@ class SQLAlchemyVocabularyRepository:
         limit: int | None = None,
         offset: int = 0,
     ) -> tuple[list[dict[str, Any]], int]:
-        rows = list(
-            session.execute(
-                select(VocabularyEntry, VocabularyCollectionMembership)
+        conditions = [VocabularyCollectionMembership.collection_id == collection_id]
+        needle = _text(search).casefold()
+        wanted_level = _text(level).casefold()
+        if needle:
+            pattern = f"%{needle}%"
+            conditions.append(
+                or_(
+                    VocabularyEntry.term.ilike(pattern),
+                    VocabularyEntry.normalized_term.ilike(pattern),
+                )
+            )
+        if wanted_level:
+            membership_level = VocabularyCollectionMembership.membership_metadata[
+                "level"
+            ].as_string()
+            conditions.append(
+                or_(
+                    func.lower(VocabularyEntry.level) == wanted_level,
+                    func.lower(membership_level) == wanted_level,
+                )
+            )
+
+        total = int(
+            session.scalar(
+                select(func.count())
+                .select_from(VocabularyEntry)
                 .join(
                     VocabularyCollectionMembership,
                     VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
                 )
-                .where(VocabularyCollectionMembership.collection_id == collection_id)
-                .order_by(VocabularyCollectionMembership.position, VocabularyEntry.term)
-            ).all()
+                .where(*conditions)
+            )
+            or 0
         )
-        needle = search.casefold()
-        wanted_level = level.casefold()
-        filtered: list[dict[str, Any]] = []
+        statement = (
+            select(VocabularyEntry, VocabularyCollectionMembership)
+            .join(
+                VocabularyCollectionMembership,
+                VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+            )
+            .where(*conditions)
+            .order_by(VocabularyCollectionMembership.position, VocabularyEntry.term)
+        )
+        if limit is not None:
+            statement = statement.offset(max(0, offset)).limit(max(0, min(limit, 5000)))
+        else:
+            statement = statement.offset(max(0, offset))
+        rows = list(session.execute(statement).all())
+        items: list[dict[str, Any]] = []
         for entry, membership in rows:
-            membership_metadata = _copy_json(membership.membership_metadata, {}) or {}
-            effective_level = _text(membership_metadata.get("level")) or _text(entry.level)
-            if needle and needle not in f"{entry.term} {entry.normalized_term}".casefold():
-                continue
-            if wanted_level and effective_level.casefold() != wanted_level:
-                continue
             item = _entry_dict(entry)
             item["collection_id"] = collection_id
             item["position"] = membership.position
@@ -574,11 +759,8 @@ class SQLAlchemyVocabularyRepository:
             for field in ("level", "framework", "topic"):
                 if membership_metadata.get(field):
                     item[field] = membership_metadata[field]
-            filtered.append(item)
-        total = len(filtered)
-        if limit is None:
-            return filtered[offset:], total
-        return filtered[offset : offset + max(0, min(limit, 5000))], total
+            items.append(item)
+        return items, total
 
 
 def _merge_existing_entry(

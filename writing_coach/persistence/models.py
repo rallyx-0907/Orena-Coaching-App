@@ -398,7 +398,7 @@ class VocabularyCollection(Base):
     level: Mapped[str] = mapped_column(String(80), default="", nullable=False)
     level_range: Mapped[str] = mapped_column(String(80), default="", nullable=False)
     topic: Mapped[str] = mapped_column(String(160), default="", nullable=False)
-    catalog_status: Mapped[str] = mapped_column(String(30), default="published", nullable=False)
+    catalog_status: Mapped[str] = mapped_column(String(30), default="pending_review", nullable=False)
     origin: Mapped[str] = mapped_column(String(40), default="imported", nullable=False)
     provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -476,6 +476,7 @@ class VocabularyCollectionMembership(Base):
         ),
         Index("ix_vocabulary_memberships_collection_position", "collection_id", "position"),
         Index("ix_vocabulary_memberships_entry", "entry_id"),
+        Index("ix_vocabulary_memberships_source_import", "source_import_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)

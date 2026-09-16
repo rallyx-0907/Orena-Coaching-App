@@ -2090,6 +2090,15 @@ def _admin_vocabulary_metadata(raw: str) -> dict[str, Any]:
         raise HTTPException(422, "metadata.title is required for a learner-facing collection.")
     if len(language_code) > 20 or not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9-]{1,19}", language_code):
         raise HTTPException(422, "metadata.language_code is invalid.")
+    if not is_enabled(language_code):
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_target_language_unsupported",
+                "retryable": False,
+                "message": f"Target language '{language_code}' is not enabled for the learner Library.",
+            },
+        )
     return {
         **metadata,
         "language_code": language_code,
@@ -2100,14 +2109,79 @@ def _admin_vocabulary_metadata(raw: str) -> dict[str, Any]:
         "topic": str(metadata.get("topic") or "").strip()[:160],
         "meaning_language": str(metadata.get("meaning_language") or "").strip().casefold()[:20],
         "collection_id": str(metadata.get("collection_id") or "").strip()[:160],
+        "rights_status": str(metadata.get("rights_status") or "").strip().casefold()[:40],
+        "completeness": str(metadata.get("completeness") or "").strip().casefold()[:40],
+        "publish": metadata.get("publish") is True,
+        "publication_attested": metadata.get("publication_attested") is True,
         "provenance": metadata.get("provenance") if isinstance(metadata.get("provenance"), dict) else {},
     }
+
+
+_VOCABULARY_PUBLISHABLE_RIGHTS = {
+    "public_domain",
+    "licensed",
+    "creator_authorized",
+    "internal_curated",
+}
+
+
+def _vocabulary_admission(
+    metadata: dict[str, Any], *, imported_by: str
+) -> tuple[str, dict[str, Any]]:
+    """Require an explicit admin admission before learner publication."""
+
+    rights_status = metadata.get("rights_status", "")
+    completeness = metadata.get("completeness", "")
+    attested = bool(metadata.get("publication_attested"))
+    publish = bool(metadata.get("publish"))
+    admission = {
+        "rights_status": rights_status,
+        "completeness": completeness,
+        "review_status": "approved" if publish and attested else "pending_review",
+        "publication_attested": attested,
+    }
+    if not publish:
+        return "pending_review", admission
+    if not attested:
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_admission_required",
+                "retryable": False,
+                "message": "Confirm source rights and collection readiness before publishing.",
+            },
+        )
+    if rights_status not in _VOCABULARY_PUBLISHABLE_RIGHTS:
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_rights_required",
+                "retryable": False,
+                "message": "Choose a verified source-rights status before publishing.",
+            },
+        )
+    if completeness != "complete":
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_completeness_required",
+                "retryable": False,
+                "message": "Only a complete, reviewed collection can be published to learners.",
+            },
+        )
+    admission["attested_by"] = imported_by
+    return "published", admission
 
 
 async def _parse_uploaded_vocabulary_source(upload: UploadFile):
     filename = str(upload.filename or "source").strip() or "source"
     raw = await upload.read()
     return parse_vocabulary_source(filename, raw)
+
+
+def _vocabulary_source_format_hint(filename: str) -> str:
+    suffix = Path(filename or "").suffix.casefold().lstrip(".")
+    return {"csv": "csv", "tsv": "tsv", "json": "json", "txt": "txt", "text": "txt", "xlsx": "xlsx", "xlsm": "xlsx"}.get(suffix, "")
 
 
 @app.post("/api/admin/vocabulary/preview", name="admin_vocabulary_source_preview")
@@ -2193,24 +2267,67 @@ async def admin_vocabulary_source_import(
         collection_metadata["language_code"],
         collection_metadata.get("framework", ""),
     )
+    imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
+    catalog_status, admission = _vocabulary_admission(
+        collection_metadata,
+        imported_by=imported_by,
+    )
     provenance = {
         **collection_metadata.get("provenance", {}),
         "origin": "imported",
-        "catalog_status": "published",
+        "catalog_status": catalog_status,
+        "admission": admission,
     }
     collection = {
         **collection_metadata,
         "id": collection_id,
-        "catalog_status": "published",
+        "catalog_status": catalog_status,
         "origin": "imported",
         "provenance": provenance,
     }
-    imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
     results: list[dict[str, Any]] = []
+    collection_persisted = False
+
+    def failed_source_result(
+        *,
+        filename: str,
+        raw: bytes,
+        source: Any = None,
+        mapping: dict[str, Any] | None = None,
+        reason: str,
+    ) -> dict[str, Any]:
+        try:
+            receipt = repository.record_source_failure(
+                collection_id=collection_id if collection_persisted else None,
+                filename=filename,
+                source_format=str(getattr(source, "format", "") or _vocabulary_source_format_hint(filename)),
+                content_hash=str(getattr(source, "content_hash", "") or hashlib.sha256(raw).hexdigest()),
+                mapping=mapping or {},
+                failure_reason=reason,
+                imported_by=imported_by,
+            )
+            return receipt
+        except Exception as receipt_error:  # pragma: no cover - provider-specific guard
+            return {
+                "source_import_id": "",
+                "filename": filename,
+                "status": "failed",
+                "imported": 0,
+                "skipped": 0,
+                "duplicates": 0,
+                "warnings": [f"Could not record failure receipt: {receipt_error}"],
+                "failed": 1,
+                "failure_reason": reason,
+            }
+
     for index, upload in enumerate(files):
         filename = str(upload.filename or "source").strip() or "source"
+        raw = b""
+        source = None
+        mapping: dict[str, Any] = {}
         try:
-            source = await _parse_uploaded_vocabulary_source(upload)
+            raw = await upload.read()
+            source = parse_vocabulary_source(filename, raw)
             detected = detect_vocabulary_mapping(source)
             raw_mapping = mapping_by_filename.get(filename)
             if raw_mapping is None:
@@ -2234,52 +2351,48 @@ async def admin_vocabulary_source_import(
                 mapping=mapping,
                 imported_by=imported_by,
             )
+            collection_persisted = True
             results.append(result)
         except (VocabularySourceError, ValueError) as exc:
-            results.append(
-                {
-                    "filename": filename,
-                    "status": "failed",
-                    "imported": 0,
-                    "skipped": 0,
-                    "duplicates": 0,
-                    "warnings": [],
-                    "failed": 1,
-                    "failure_reason": str(exc),
-                }
+            results.append(failed_source_result(
+                filename=filename,
+                raw=raw,
+                source=source,
+                mapping=mapping,
+                reason=str(exc),
+            )
             )
         except (VocabularyContentUnavailable, RuntimeError, OSError) as exc:
             # A source-level infrastructure failure does not erase or relabel
             # other successful files in the batch.
-            results.append(
-                {
-                    "filename": filename,
-                    "status": "failed",
-                    "imported": 0,
-                    "skipped": 0,
-                    "duplicates": 0,
-                    "warnings": [],
-                    "failed": 1,
-                    "failure_reason": f"persistence unavailable: {exc}",
-                }
+            results.append(failed_source_result(
+                filename=filename,
+                raw=raw,
+                source=source,
+                mapping=mapping,
+                reason=f"persistence unavailable: {exc}",
+            )
             )
         except Exception as exc:  # pragma: no cover - provider/database-specific guard
             # A single malformed or concurrently conflicting source must not
             # abort the rest of a batch.  The source result remains explicit so
             # an administrator can retry only this file after inspection.
-            results.append(
-                {
-                    "filename": filename,
-                    "status": "failed",
-                    "imported": 0,
-                    "skipped": 0,
-                    "duplicates": 0,
-                    "warnings": [],
-                    "failed": 1,
-                    "failure_reason": f"import failed: {exc}",
-                }
+            results.append(failed_source_result(
+                filename=filename,
+                raw=raw,
+                source=source,
+                mapping=mapping,
+                reason=f"import failed: {exc}",
             )
-    return {"collection": {"id": collection_id, "title": collection["title"]}, "items": results}
+            )
+    return {
+        "collection": {
+            "id": collection_id,
+            "title": collection["title"],
+            "catalog_status": catalog_status if collection_persisted else "not_created",
+        },
+        "items": results,
+    }
 # === ADMIN VOCABULARY SOURCE IMPORT ROUTES END ===
 
 @app.get("/api/cross-skill-cue", name="becoming_cross_skill_cue_get")

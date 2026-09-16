@@ -145,9 +145,18 @@ def upgrade() -> None:
         "vocabulary_collection_memberships",
         ["entry_id"],
     )
+    op.create_index(
+        "ix_vocabulary_memberships_source_import",
+        "vocabulary_collection_memberships",
+        ["source_import_id"],
+    )
 
 
 def downgrade() -> None:
+    op.drop_index(
+        "ix_vocabulary_memberships_source_import",
+        table_name="vocabulary_collection_memberships",
+    )
     op.drop_index(
         "ix_vocabulary_memberships_entry",
         table_name="vocabulary_collection_memberships",

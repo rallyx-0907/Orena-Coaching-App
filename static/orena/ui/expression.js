@@ -590,6 +590,8 @@ export async function renderLanguage(root, ctx) {
   let filter = 'all';
   let levelFilter = 'all';
   let sort = 'recommended';
+  let collectionSearchTimer = null;
+  let collectionRequest = 0;
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -641,7 +643,7 @@ export async function renderLanguage(root, ctx) {
   const management = (title, note = '', withBack = false) => {
     const source = activeItems;
     const collectionLevels = view === 'collection'
-      ? [...new Set(source.map((card) => vocabularyLevel(card)).filter(Boolean))].sort((left, right) => vocabularyLevelOrder(left) - vocabularyLevelOrder(right) || left.localeCompare(right))
+      ? [...new Set((activeCollection?.levels || source.map((card) => vocabularyLevel(card))).filter(Boolean))].sort((left, right) => vocabularyLevelOrder(left) - vocabularyLevelOrder(right) || left.localeCompare(right))
       : [];
     const filtered = source.filter((card) => (levelFilter === 'all' || vocabularyLevel(card) === levelFilter) && vocabularyStatusMatches(card, filter) && `${card.headword} ${supportMeaning(card, support)} ${card.level || ''} ${card.framework || ''}`.toLowerCase().includes(query.toLowerCase()));
     visibleItems = [...filtered].sort((left, right) => {
@@ -695,16 +697,20 @@ export async function renderLanguage(root, ctx) {
     paint();
   };
 
-  const openCollection = async (id) => {
+  const openCollection = async (id, params = {}) => {
+    const requestId = ++collectionRequest;
     try {
-      const detail = await api.vocabularyLibraryCollection(id);
-      if (!alive()) return;
+      const detail = await api.vocabularyLibraryCollection(id, params);
+      if (!alive() || requestId !== collectionRequest) return;
       activeCollection = detail;
       activeItems = updateCollectionCards(detail.items || []);
-      query = '';
-      filter = 'all';
-      levelFilter = 'all';
-      sort = 'recommended';
+      const isRefinement = Object.prototype.hasOwnProperty.call(params, 'search') || Object.prototype.hasOwnProperty.call(params, 'level');
+      query = isRefinement ? String(params.search || '') : '';
+      levelFilter = isRefinement ? String(params.level || '') || 'all' : 'all';
+      if (!isRefinement) {
+        filter = 'all';
+        sort = 'recommended';
+      }
       view = 'collection';
       paint();
     } catch (error) {
@@ -742,14 +748,31 @@ export async function renderLanguage(root, ctx) {
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
     root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : 'overview'; paint(); }));
     root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', () => setStudy(savedCards.filter((card) => card.due)));
-    root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => { query = event.target.value; paint(); const input = root.querySelector('[data-vocabulary-search]'); input?.focus(); input?.setSelectionRange(query.length, query.length); });
+    root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => {
+      query = event.target.value;
+      if (view === 'collection' && activeCollection) {
+        if (collectionSearchTimer) clearTimeout(collectionSearchTimer);
+        const collectionId = activeCollection.id;
+        collectionSearchTimer = setTimeout(() => {
+          openCollection(collectionId, {
+            search: query,
+            level: levelFilter === 'all' ? '' : levelFilter,
+          });
+        }, 250);
+        return;
+      }
+      paint();
+      const input = root.querySelector('[data-vocabulary-search]');
+      input?.focus();
+      input?.setSelectionRange(query.length, query.length);
+    });
     root.querySelector('[data-vocabulary-load-more]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
       try {
         const pagination = activeCollection?.pagination || {};
         const next = await api.vocabularyLibraryCollection(activeCollection.id, {
-          search: '', level: '', limit: pagination.limit || 100, offset: (pagination.offset || 0) + (pagination.limit || activeItems.length || 100),
+          search: query, level: levelFilter === 'all' ? '' : levelFilter, limit: pagination.limit || 100, offset: (pagination.offset || 0) + (pagination.limit || activeItems.length || 100),
         });
         if (!alive()) return;
         activeItems = [...activeItems, ...(next.items || [])];
@@ -758,7 +781,17 @@ export async function renderLanguage(root, ctx) {
       } catch { button.disabled = false; }
     });
     root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => { filter = button.dataset.vocabularyFilter; paint(); }));
-    root.querySelectorAll('[data-vocabulary-level-filter]').forEach((button) => (button.onclick = () => { levelFilter = button.dataset.vocabularyLevelFilter; paint(); }));
+    root.querySelectorAll('[data-vocabulary-level-filter]').forEach((button) => (button.onclick = () => {
+      levelFilter = button.dataset.vocabularyLevelFilter;
+      if (view === 'collection' && activeCollection) {
+        openCollection(activeCollection.id, {
+          search: query,
+          level: levelFilter === 'all' ? '' : levelFilter,
+        });
+      } else {
+        paint();
+      }
+    }));
     root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => { sort = event.target.value; paint(); });
     const interactionPool = () => vocabularyInteractionItems(view, { feedCards, visibleItems, savedCards, studyItems });
     root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularyStudy); const pool = button.dataset.vocabularyStudySource === 'feed' ? feedCards.slice(0, 5) : interactionPool(); setStudy(pool, index); }));

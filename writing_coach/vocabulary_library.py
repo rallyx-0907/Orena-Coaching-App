@@ -35,6 +35,7 @@ from writing_coach.languages.chinese.vocabulary_collections import (
 from writing_coach.languages.english.vocabulary_collections import (
     VOCABULARY_COLLECTIONS as _ENGLISH_COLLECTIONS,
 )
+from writing_coach.vocabulary_source_import import canonical_vocabulary_identity
 
 
 class VocabularyCatalogInvalid(ValueError):
@@ -153,6 +154,19 @@ def _denormalized_entries(collection: Mapping[str, Any]) -> list[dict[str, Any]]
         entry.setdefault("level", collection.get("level"))
         entry.setdefault("topic", collection.get("topic"))
         entry["normalized_word"] = normalize_vocabulary_word(entry.get("word"))
+        support_translations = entry.get("support_translations")
+        sense_seed = ""
+        if isinstance(support_translations, Mapping):
+            sense_seed = next(
+                (str(value).strip() for value in support_translations.values() if str(value).strip()),
+                "",
+            )
+        entry["identity_key"] = canonical_vocabulary_identity(
+            language_code=entry["language_code"],
+            term=entry["word"],
+            part_of_speech=entry.get("part_of_speech", ""),
+            sense_key=entry.get("sense_key") or sense_seed or entry.get("definition", ""),
+        )
         entries.append(entry)
     return entries
 

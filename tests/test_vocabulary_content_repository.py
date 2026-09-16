@@ -41,7 +41,15 @@ def test_sqlite_content_repository_persists_membership_and_replays_duplicates(tm
         "level": "B1",
         "catalog_status": "published",
         "origin": "imported",
-        "provenance": {"publisher": "test"},
+        "provenance": {
+            "publisher": "test",
+            "admission": {
+                "review_status": "approved",
+                "publication_attested": True,
+                "rights_status": "internal_curated",
+                "completeness": "complete",
+            },
+        },
     }
     first = repository.import_source(
         collection=collection,
@@ -94,7 +102,14 @@ def test_one_entry_can_belong_to_two_collections_without_copying_lexical_content
         "level": "B1",
         "catalog_status": "published",
         "origin": "imported",
-        "provenance": {},
+        "provenance": {
+            "admission": {
+                "review_status": "approved",
+                "publication_attested": True,
+                "rights_status": "internal_curated",
+                "completeness": "complete",
+            }
+        },
     }
     for collection_id, title in (("pack-a", "Pack A"), ("pack-b", "Pack B")):
         repository.import_source(
@@ -106,3 +121,59 @@ def test_one_entry_can_belong_to_two_collections_without_copying_lexical_content
     assert len(repository.list_entries_for_language("en")) == 1
     assert repository.list_collections("en")[0]["item_count"] == 1
     assert repository.list_collections("en")[1]["item_count"] == 1
+
+
+def test_collection_search_and_pagination_are_applied_before_fetching_rows(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "paged.db")
+    repository.initialize()
+    _, detected, normalized = _source(
+        "paged.csv",
+        "word,meaning\n"
+        "alpha,first\n"
+        "beta,second\n"
+        "gamma,third\n",
+    )
+    repository.import_source(
+        collection={
+            "id": "paged-pack",
+            "title": "Paged Pack",
+            "language_code": "en",
+            "framework": "internal",
+            "level": "A1",
+            "catalog_status": "published",
+            "origin": "imported",
+            "provenance": {
+                "admission": {
+                    "review_status": "approved",
+                    "publication_attested": True,
+                    "rights_status": "internal_curated",
+                    "completeness": "complete",
+                }
+            },
+        },
+        source=normalized,
+        records=normalized["records"],
+        mapping=detected.mapping,
+    )
+
+    detail = repository.get_collection("paged-pack", search="gamma", limit=1, offset=0)
+    assert detail is not None
+    assert detail["pagination"] == {"limit": 1, "offset": 0, "total": 1, "has_more": False}
+    assert [entry["term"] for entry in detail["entries"]] == ["gamma"]
+
+
+def test_failed_source_receipt_is_persisted_without_lexical_content(tmp_path) -> None:
+    repository = sqlite_vocabulary_repository(tmp_path / "failed-receipt.db")
+    repository.initialize()
+    receipt = repository.record_source_failure(
+        collection_id=None,
+        filename="broken.csv",
+        source_format="csv",
+        content_hash="abc123",
+        mapping={"term": "missing"},
+        failure_reason="The source was not UTF-8 encoded.",
+        imported_by="test-admin",
+    )
+    assert receipt["status"] == "failed"
+    assert receipt["source_import_id"]
+    assert receipt["failure_reason"] == "The source was not UTF-8 encoded."

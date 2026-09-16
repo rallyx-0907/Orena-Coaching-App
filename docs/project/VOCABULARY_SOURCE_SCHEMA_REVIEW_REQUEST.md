@@ -28,6 +28,14 @@ provide the required collection/entry/membership scale.
 - `vocabulary_source_imports`: one audit/result row per source in a batch,
   including mapping, hash, counts, warnings, and failure details.
 
+Publication is an admission decision, not a parser default.  Imports without
+an explicit publication request remain `pending_review`.  A published
+collection carries an admin attestation in provenance recording a verified
+rights status, complete-pack status, and the reviewer identity; the repository
+also rejects a direct published write without that admission.  Failed parse,
+mapping, normalization, and source-level persistence attempts retain a failed
+source receipt, even when no collection row exists yet.
+
 The identity key is language-aware: NFC is preserved, Latin case is folded,
 Chinese simplified/traditional forms are not silently collapsed, POS remains a
 dimension, and a supplied sense key or source meaning fingerprint separates
@@ -50,6 +58,8 @@ future enrichment can add a separate origin without overwriting them.
 3. Rehearsal against a throwaway PostgreSQL database, then moving the proposal
    into `migrations/versions/` and applying it to the named sandbox runtime.
 
-Until those steps happen, Admin preview is available but Admin import returns
-an explicit `503 vocabulary_schema_unavailable`; no upload is silently written
-to static files or platform settings.
+The repository checks the required table/column contract and the Alembic
+revision that introduced it (or a later linear descendant).  Until the
+reviewed migration is active, Admin preview is available but Admin import
+returns an explicit `503 vocabulary_schema_unavailable`; no upload is silently
+written to static files or platform settings.
