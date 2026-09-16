@@ -107,12 +107,12 @@ and metallic frame. Public Library has an explicit gate; current packs are
 seed-only, so local Library is truthfully empty until a complete pack is
 authored/published. No active runtime schema change.
 
-Source Import is implemented through UTF-8 mapping, normalization, identity,
-provenance, batch results, shared repository, Admin UI and learner cards.
-Independent review is APPROVED for `a1a90b7b`; schema authorization remains
-pending and PostgreSQL import is fail-closed. Claude-2: `INFRA_FAILURE=auth`;
-two Codex launches: `launcher_error`/`timeout`; final UTF-8 review passed. No
-secret fallback was used.
+Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
+results, shared repository, Admin UI and learner cards; review APPROVED
+(`a1a90b7b`). Schema auth pending; PostgreSQL import fail-closed. Claude-2:
+prior `INFRA_FAILURE=auth`; 2026-09-16 CLI/auth pass, literal model
+`unrecognized_model`; default/sonnet pass. Codex:
+`launcher_error`/`timeout`; UTF-8 review passed. No secret fallback.
 
 ## PENDING
 

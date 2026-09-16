@@ -53,8 +53,12 @@ authorization followed by the documented throwaway PostgreSQL rehearsal.
 
 ## Review execution note
 
-`claude-2` was not available because its CLI authentication was missing
-(`INFRA_FAILURE=auth`). Two initial Codex reviewer launches were also
+The original `claude-2` attempt was not available because its CLI
+authentication was missing (`INFRA_FAILURE=auth`). A fresh local preflight on
+2026-09-16 confirmed the installed Claude CLI and auth are healthy; the
+literal `claude-2` model value is rejected by the current model catalog as
+`unrecognized_model`, while the default and `sonnet` probes pass. Two initial
+Codex reviewer launches were also
 classified as runner infrastructure failures (`launcher_error` and `timeout`)
 because the nested CLI inherited an incompatible shell/MCP environment. The
 final independent review used a UTF-8 stdin patch transport with the user
