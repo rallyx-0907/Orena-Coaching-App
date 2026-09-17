@@ -84,6 +84,7 @@ assert.equal(
 const expressionSource = readFileSync(new URL('../static/orena/ui/expression.js', import.meta.url), 'utf8');
 const vocabularyExperienceSource = readFileSync(new URL('../static/orena/ui/vocabulary-experience.js', import.meta.url), 'utf8');
 const worldSource = readFileSync(new URL('../static/orena/ui/world.js', import.meta.url), 'utf8');
+const discoverySource = readFileSync(new URL('../static/orena/ui/discovery.js', import.meta.url), 'utf8');
 assert.match(expressionSource, /const management = \(title, note = '', withBack = false\)/, 'management views expose an in-content return affordance');
 assert.match(expressionSource, /view === 'saved' \? management\(c\.vocabularyManage, c\.vocabularyOverviewNote, true\)/, 'Saved management can return to Vocabulary Overview');
 assert.match(expressionSource, /view === 'library' \? libraryView\(\)/, 'Library is an expanded view rather than an in-page scroll target');
@@ -108,9 +109,8 @@ assert.match(expressionSource, /closest\('button, a, input, select, textarea, \[
 assert.match(expressionSource, /studyCard\.addEventListener\('keydown'/, 'Study card surface remains keyboard operable');
 const discoveryBranch = worldSource.slice(worldSource.indexOf('  } else {', worldSource.indexOf('export async function renderWorld')), worldSource.indexOf('  root\n    .querySelectorAll', worldSource.indexOf('export async function renderWorld')));
 assert.doesNotMatch(discoveryBranch, /data-vocabulary-library/, 'Discovery no longer mounts Vocabulary Library');
-assert.match(discoveryBranch, /data-vocabulary-feed/, 'Discovery keeps only the Daily Vocabulary surface');
-assert.match(worldSource, /discoveryVocabularySection\(c\)/, 'Discovery uses the feed-only vocabulary surface helper');
-assert.match(worldSource, /renderVocabularyFeedCarousel\([\s\S]*full: false/, 'Discovery uses the compact Feed widget variant');
+assert.doesNotMatch(discoveryBranch, /data-vocabulary-feed/, 'Discovery does not duplicate the dedicated Vocabulary experience');
+assert.match(discoverySource, /href:\s*link\('language'\)/, 'Discovery routes its compact Vocabulary card to the canonical Vocabulary destination');
 assert.match(vocabularyExperienceSource, /vocabulary-feed-slide/, 'Feed slides use a dedicated deck presentation');
 assert.match(vocabularyExperienceSource, /slide\.classList\.toggle\('is-active'/, 'deck keeps one active slide');
 assert.match(vocabularyExperienceSource, /slide\.toggleAttribute\('inert'/, 'inactive slides are removed from keyboard interaction');

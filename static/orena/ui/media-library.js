@@ -1,6 +1,7 @@
 import { esc, safeExternal } from './html.js';
 import { art, duration, bindImages } from './content.js';
 import { link } from '../product/intent.js';
+import { continuationEntries } from './patterns.js';
 
 /* Listening = media library.
 
@@ -117,6 +118,19 @@ function continuationRail(c, entries) {
     .join('')}</div></section>`;
 }
 
+export function mediaContinuation(memory, language) {
+  return continuationEntries(memory, { experience: 'listening' })
+    .slice(0, 3)
+    .map((entry) => ({
+      id: entry.id,
+      title: entry.title || entry.id,
+      language,
+      kind: entry.kind === 'audio' ? 'audio' : 'video',
+      duration_ms: entry.duration_ms || 0,
+      intent: entry.intent || 'follow',
+    }));
+}
+
 /* Inner content only: the caller owns a permanent wrapper so this repaints only
    its own container. */
 export function mediaLibrary(c, state = {}) {
@@ -145,18 +159,6 @@ export function paintMediaLibrary(container, ctx) {
   let filters = { type: 'all', query: '', level: '', source: '' };
   let personalFilters = { type: 'all', query: '', level: '', source: '' };
 
-  const continuation = () => {
-    const entries = (memory?.value?.continuation || []).filter((entry) => entry && entry.id);
-    return entries.slice(0, 3).map((entry) => ({
-      id: entry.id,
-      title: entry.title || entry.id,
-      language: language,
-      kind: entry.kind === 'audio' ? 'audio' : 'video',
-      duration_ms: entry.duration_ms || 0,
-      intent: entry.intent || 'follow',
-    }));
-  };
-
   const personal = () =>
     (memory?.value?.mediaImports || []).map((entry) => ({
       ...entry,
@@ -174,7 +176,7 @@ export function paintMediaLibrary(container, ctx) {
       mySource: personalFilters.source,
       sharedItems: shared,
       myItems: personal(),
-      continuation: continuation(),
+      continuation: mediaContinuation(memory, language),
     };
     container.innerHTML = `${error ? `<p class="notice" role="alert">${esc(c.unavailable)} <button type="button" data-media-retry>${esc(c.retry)}</button></p>` : ''}${!loaded && !error ? `<p class="loading" role="status">${esc(c.loading)}</p>` : mediaLibrary(c, state)}`;
     bindImages(container, c);

@@ -4,9 +4,26 @@ import { copy } from '../static/orena/ui/copy.js';
 import {
   filterMediaItems,
   mediaCard,
+  mediaContinuation,
   mediaLibrary,
   renderAdminMediaImporter,
 } from '../static/orena/ui/media-library.js';
+
+const mixedContinuation = {
+  value: {
+    continuation: [
+      { id: 'story:alice', title: 'Alice', intent: 'reading' },
+      { id: 'media:night-market', title: 'Night market voices', intent: 'follow', kind: 'audio' },
+      { id: 'voice:coffee', title: 'Order coffee', intent: 'speaking' },
+    ],
+    conversations: {},
+  },
+};
+assert.deepEqual(
+  mediaContinuation(mixedContinuation, 'en').map((item) => item.id),
+  ['media:night-market'],
+  'Continue listening contains listening media only',
+);
 
 const sharedVideo = {
   id: 'media:rainy-taxi',

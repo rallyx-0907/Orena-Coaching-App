@@ -347,9 +347,8 @@ export async function renderWorld(root, ctx) {
     api.readingSessions(12),
   ]);
   if (!alive()) return;
-  const media = (
-    result[0].status === 'fulfilled' ? result[0].value.items || [] : []
-  )
+  const listeningPayload = result[0].status === 'fulfilled' ? result[0].value : {};
+  const media = (listeningPayload.items || [])
     .filter((x) => x.language === language)
     .map((x) => ({
       ...x,
@@ -357,6 +356,13 @@ export async function renderWorld(root, ctx) {
       kind: x.playback_kind,
       origin: 'curated',
     }));
+  const newSection = (listeningPayload.sections || []).find(
+    (section) => section.id === 'new',
+  );
+  const mediaByLesson = new Map(media.map((item) => [item.lesson_id, item]));
+  const newContent = (newSection?.item_ids || [])
+    .map((id) => mediaByLesson.get(id))
+    .filter(Boolean);
   const failed = result[0].status === 'rejected';
   // Passages the learner asked for before. They live with the account rather
   // than on the device, so an empty list here is not the same as none kept.
@@ -427,6 +433,16 @@ export async function renderWorld(root, ctx) {
       : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
     /* The way back sits above the heading, and the heading's eyebrow names
        the room - the way back already says "Practice". */
+    const practiceContinuation = intent === 'follow'
+      ? ''
+      : intent === 'reading'
+        ? continuationShelf(ctx, 12, {
+            title: r.continueLearning,
+            compact: true,
+            experience: 'reading',
+            rail: true,
+          })
+        : continuation;
     root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
         ? `<section class="voices" data-library-grid aria-label="${esc(c.libraryTitle)}"></section><section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
@@ -461,7 +477,7 @@ export async function renderWorld(root, ctx) {
                 .join('') || `<p>${c.noCatalog}</p>`
             }</section>`;
           })()
-    }${continuation}`;
+    }${practiceContinuation}`;
     if (intent === 'reading') paintLibraryGrid(root.querySelector('[data-library-grid]'), ctx);
     if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
   } else if (location.page === 'content') {
@@ -470,15 +486,12 @@ export async function renderWorld(root, ctx) {
     );
     root.innerHTML = `${editorialIntro(ctx,{title:referenceCopy[ctx.ui].collectionTitle,note:referenceCopy[ctx.ui].collectionNote,state:'together',eyebrow:referenceCopy[ctx.ui].content})}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
   } else {
-    // Discovery keeps a small vocabulary invitation. The complete Library is
-    // intentionally owned by the dedicated Vocabulary destination (#/language).
     root.innerHTML = discoverySpread(ctx, {
       media,
       text,
       catalogError,
-      vocabularyFeed: discoveryVocabularySection(c),
+      newContent,
     });
-    paintVocabularyFeed(root.querySelector('[data-vocabulary-feed]'), ctx);
   }
   root
     .querySelectorAll('[data-bring]')

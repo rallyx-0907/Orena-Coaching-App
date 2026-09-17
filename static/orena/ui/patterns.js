@@ -5,10 +5,12 @@ import { scene } from './brand.js';
 import { symbol } from './symbols.js';
 import {
   link,
+  continuationExperience,
   continuationLink,
   sourceLink,
   practiceIntentions,
 } from '../product/intent.js';
+import { entryIcon } from './icons.js';
 
 /* Why Orena kept something, and the way back to where the learner met it.
 
@@ -195,22 +197,56 @@ export function resumable(item, memory) {
   return true;
 }
 
+export function continuationEntries(memory, { experience = '' } = {}) {
+  return (memory?.value?.continuation || []).filter(
+    (item) =>
+      item &&
+      item.id &&
+      resumable(item, memory) &&
+      (!experience || continuationExperience(item) === experience),
+  );
+}
+
+const continuationIcons = {
+  listening: 'sound',
+  reading: 'book',
+  speaking: 'voice',
+  writing: 'pen',
+  understanding: 'spark',
+  practice: 'focus',
+  recall: 'return',
+};
+
 export function continuationShelf(ctx, limit = 3, options = {}) {
   const { memory, c, language } = ctx;
-  const { title = c.continue, compact = false } = options;
-  const entries = memory.value.continuation
-    .filter((item) => resumable(item, memory))
-    .slice(0, limit);
+  const {
+    title = c.continue,
+    compact = false,
+    experience = '',
+    rail = false,
+    showHeading = true,
+  } = options;
+  const entries = continuationEntries(memory, { experience }).slice(0, limit);
   if (!entries.length) return '';
-  return `<section class="thread-shelf${compact ? ' thread-shelf--compact' : ''}" aria-label="${esc(title)}"><div class="section-head"><h2>${esc(title)}</h2>${hint({ text: c.deviceThreads })}</div><div class="thread-list">${entries
+  const heading = showHeading
+    ? `<div class="section-head"><h2>${esc(title)}</h2>${hint({ text: c.deviceThreads })}</div>`
+    : '';
+  return `<section class="thread-shelf${compact ? ' thread-shelf--compact' : ''}${rail ? ' thread-shelf--rail' : ''}" aria-label="${esc(title)}">${heading}<div class="thread-list${rail ? ' thread-list--rail' : ''}">${entries
     .map((item) => {
       const draft = memory.value.expressions[item.id]?.trim();
       const action =
         draft && item.intent === 'writing'
           ? c.draftLabel
           : threadShape(item, c);
+      const experienceName = continuationExperience(item);
+      const railAction = experienceName === 'listening'
+        ? c.followName
+        : c[`${experienceName}Name`];
       const state = compact ? '' : draft ? `<p lang="${language}">${esc(draft)}</p>` : `<p>${esc(threadState(item, memory, c))}</p>`;
-      return `<a class="thread" href="${continuationLink(item)}"><small>${esc(action)}</small><strong lang="${language}">${esc(item.title)}</strong>${state}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
+      const icon = rail
+        ? `<span class="thread-icon">${entryIcon(continuationIcons[experienceName] || 'return')}</span>`
+        : '';
+      return `<a class="thread${rail ? ' thread--rail' : ''}" href="${continuationLink(item)}">${icon}<small>${esc((rail && railAction) || action)}</small><strong lang="${language}">${esc(item.title)}</strong>${state}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
     })
     .join('')}</div></section>`;
 }

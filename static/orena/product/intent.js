@@ -77,6 +77,25 @@ export function continuationLink(item) {
     return link('practice', { id: item.id.slice(8), intent: 'grammar' });
   return link('encounter', { id: item.id, intent: item.intent });
 }
+
+/* A continuation belongs to the experience the learner was using, not to
+   whichever page happens to render the shared device memory. Prefixes remain
+   the routing truth; `intent` refines practice performed over source media. */
+export function continuationExperience(item = {}) {
+  const id = String(item.id || '');
+  const intent = item.intent || '';
+  if (id.startsWith('conversation:') || id.startsWith('voice:') || intent === 'speaking')
+    return 'speaking';
+  if (/^(expression|essay):/.test(id) || intent === 'writing') return 'writing';
+  if (id.startsWith('grammar:') || intent === 'grammar') return 'understanding';
+  if (intent === 'recall') return 'recall';
+  if (/^(media:|url:|upload:)/.test(id)) {
+    if (['dictation', 'shadowing'].includes(intent)) return 'practice';
+    return 'listening';
+  }
+  if (intent === 'dictation' || intent === 'shadowing') return 'practice';
+  return 'reading';
+}
 export function sourceLink(id) {
   if (id.startsWith('conversation:')) return link('conversation', { id });
   if (id.startsWith('voice:'))

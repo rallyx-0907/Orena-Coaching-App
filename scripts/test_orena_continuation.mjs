@@ -11,8 +11,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { learnerMemory } from '../static/orena/product/memory.js';
 import { conversation } from '../static/orena/product/conversation.js';
-import { continuationLink, practiceIntentions } from '../static/orena/product/intent.js';
-import { continuationShelf, resumable } from '../static/orena/ui/patterns.js';
+import {
+  continuationExperience,
+  continuationLink,
+  practiceIntentions,
+} from '../static/orena/product/intent.js';
+import {
+  continuationEntries,
+  continuationShelf,
+  resumable,
+} from '../static/orena/ui/patterns.js';
 import { copy } from '../static/orena/ui/copy.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -27,6 +35,42 @@ const store = () => {
   };
 };
 const ctxFor = (memory, ui = 'en', language = 'en') => ({ memory, c: copy[ui], language });
+
+/* --- A destination only receives its own work --- */
+
+const mixedMemory = {
+  value: {
+    continuation: [
+      { id: 'media:night-market', title: 'Night market voices', intent: 'follow' },
+      { id: 'story:last-train', title: 'The last train home', intent: 'reading' },
+      { id: 'voice:coffee', title: 'Order a coffee', intent: 'speaking' },
+      { id: 'expression:note', title: 'A note', intent: 'writing' },
+    ],
+    conversations: {},
+    expressions: {},
+  },
+};
+assert.equal(continuationExperience(mixedMemory.value.continuation[0]), 'listening');
+assert.equal(continuationExperience(mixedMemory.value.continuation[1]), 'reading');
+assert.equal(continuationExperience(mixedMemory.value.continuation[2]), 'speaking');
+assert.equal(continuationExperience(mixedMemory.value.continuation[3]), 'writing');
+assert.deepEqual(
+  continuationEntries(mixedMemory, { experience: 'listening' }).map((item) => item.id),
+  ['media:night-market'],
+  'Listening must not borrow Reading or Speaking continuation',
+);
+assert.deepEqual(
+  continuationEntries(mixedMemory, { experience: 'reading' }).map((item) => item.id),
+  ['story:last-train'],
+  'Reading receives the reading thread that previously appeared under Listening',
+);
+const rail = continuationShelf(ctxFor(mixedMemory), 20, {
+  compact: true,
+  rail: true,
+});
+assert.match(rail, /thread-list--rail/, 'compact continuation uses the shared swipe rail');
+assert.equal((rail.match(/class="thread thread--rail"/g) || []).length, 4);
+assert.doesNotMatch(rail, /<p>/, 'compact continuation cards do not repeat state prose');
 
 /* --- An intention survives a visit that does not name one --- */
 
