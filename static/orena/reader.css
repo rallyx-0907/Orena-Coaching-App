@@ -1,0 +1,714 @@
+/* The reader. World recedes, content comes forward.
+
+   `reader.js` and `reading-room.js` have composed this room since the reading
+   batch, and until now none of it was styled: the page inherited the room
+   shell, so a chapter ran the full width of a 1440px window, the bar sat in
+   the flow as a row of stray links, the selection tools appeared wherever the
+   document put them, and the panel was a block of text at the bottom of the
+   article. That is the "excessive line length / shell competes with text"
+   defect D-057 rule 11 and the DESIGN_CONTRACT focused-mode rule name.
+
+   Everything here reads Orena's semantic tokens. The reader carries no colour
+   of its own: its light, sepia and dark appearances are registered themes worn
+   by this room alone (`readerPresentation`), which is why nothing below sets a
+   literal colour. */
+
+/* --- The room ------------------------------------------------------------ */
+
+/* Reading is a focused experience, so the shell quiets down: the rail loses
+   its weight until pointed at, and the room gives its width back to the text.
+   Nothing is hidden - every destination stays reachable, by pointer and by
+   keyboard - it simply stops competing. */
+#main[data-experience='reading'] {
+  padding-top: 0;
+}
+body:has(.reader) #shellNav {
+  opacity: 0.55;
+  transition: opacity 0.18s ease-out;
+}
+body:has(.reader) #shellNav:hover,
+body:has(.reader) #shellNav:focus-within {
+  opacity: 1;
+}
+
+.reader {
+  --reader-scale: 1;
+  --reader-leading: 1.75;
+  --reader-measure: 44rem;
+  position: relative;
+  padding-bottom: var(--space-16);
+}
+
+/* --- The bar ------------------------------------------------------------- */
+
+/* One compact line holding where the learner is and the three tools that
+   belong to reading. It sticks, because losing your place is the one thing a
+   reader must not do, and it stays quiet: no title the size of a headline. */
+.reader-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  margin-bottom: var(--space-8);
+  padding: var(--space-3) 0;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+.reader-bar__back,
+.reader-bar__where,
+.reader-bar__tools {
+  min-width: 0;
+}
+.reader-bar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+.reader-bar__back:hover,
+.reader-bar__back:focus-visible {
+  color: var(--ink);
+}
+.reader-bar__back span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Title and place are two facts, not one run-on line: they stack, and the
+   place is the quieter of the two. */
+.reader-bar__where {
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  text-align: center;
+}
+.reader-bar__title {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-bar__place {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.reader-bar__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: end;
+}
+.reader-bar__steps {
+  display: inline-flex;
+  align-items: center;
+}
+.reader-tool,
+.reader-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+.reader-tool--text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.reader-tool:hover,
+.reader-tool:focus-visible,
+a.reader-step:hover,
+a.reader-step:focus-visible {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+.reader-tool[aria-pressed='true'] {
+  color: var(--accent);
+}
+span.reader-step {
+  opacity: 0.28;
+  cursor: default;
+}
+
+/* How far through this chapter, as a hairline under the bar. */
+.reader-progress {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+}
+.reader-progress > span {
+  display: block;
+  height: 100%;
+  inline-size: 0;
+  background: var(--accent);
+}
+
+/* --- The page ------------------------------------------------------------ */
+
+/* The measure is the whole point. `--reader-measure` comes from the learner's
+   own width setting; the text never runs the width of the window. */
+.reader-body {
+  display: grid;
+  justify-items: center;
+}
+.reader-page {
+  width: 100%;
+  max-width: var(--reader-measure);
+  font-size: calc(var(--text-base) * var(--reader-scale) * 1.125);
+  line-height: var(--reader-leading);
+  text-wrap: pretty;
+}
+.reader[data-reader-font='serif'] .reader-page {
+  font-family: var(--story-font);
+}
+.reader[data-reader-font='sans'] .reader-page {
+  font-family: var(--font);
+}
+.reader-page > p {
+  margin: 0 0 1.15em;
+  hanging-punctuation: first last;
+}
+.reader-page > p + p {
+  margin-top: 0;
+}
+/* A chapter opening, in proportion: it orients and yields the viewport to the
+   text rather than taking a screen of its own (D-051 rule 5). */
+.reader-title {
+  margin: 0 0 var(--space-6);
+  font-size: calc(var(--text-base) * var(--reader-scale) * 1.9);
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.reader-heading {
+  margin: 2em 0 0.7em;
+  font-size: calc(var(--text-base) * var(--reader-scale) * 1.3);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.reader-break {
+  width: 5rem;
+  margin: 2.2em auto;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.reader-page mark {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--brand) 26%, transparent);
+  color: inherit;
+}
+/* The word the learner tapped, while its panel is open. A transient reading
+   mark, told apart from a saved one by being cleared the moment the panel
+   closes (reader.js). */
+.reader-page ::selection {
+  background: color-mix(in srgb, var(--brand) 32%, transparent);
+}
+.reader-question {
+  max-width: var(--reader-measure);
+  margin: var(--space-8) auto 0;
+  color: var(--muted);
+  font-style: italic;
+}
+.reader-next-line {
+  margin: var(--space-6) auto 0;
+}
+
+/* --- Turning the page ---------------------------------------------------- */
+
+.reader-chapter-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-4);
+  align-items: center;
+  width: 100%;
+  max-width: var(--reader-measure);
+  margin-top: var(--space-16);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+.reader-chapter-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.reader-chapter-nav a:last-child {
+  justify-self: end;
+}
+.reader-chapter-nav a:hover,
+.reader-chapter-nav a:focus-visible {
+  color: var(--accent);
+}
+.reader-chapter-nav__where,
+.reader-chapter-nav__end {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+.reader-chapter-nav__end {
+  justify-self: end;
+}
+
+/* The phone's own way to turn a chapter, within reach of a thumb. */
+.reader-dock {
+  display: none;
+}
+
+/* --- Settings ------------------------------------------------------------ */
+
+.reader-settings-pop {
+  position: absolute;
+  z-index: 8;
+  top: 52px;
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  padding: var(--space-4);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--line) 80%, transparent),
+    0 18px 40px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.reader-settings {
+  display: grid;
+  gap: var(--space-4);
+}
+.reader-setting {
+  display: grid;
+  gap: 6px;
+}
+.reader-setting__label {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.reader-segmented,
+.reader-stepper {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.reader-segmented button,
+.reader-stepper button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-xs);
+}
+.reader-stepper button {
+  flex: 0 0 auto;
+  width: 44px;
+}
+.reader-stepper output {
+  flex: 1 1 auto;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.reader-segmented button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  font-weight: 600;
+}
+.reader-segmented button[disabled],
+.reader-stepper button[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+.reader-swatch {
+  width: 13px;
+  height: 13px;
+  border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  border-radius: 50%;
+}
+.reader-swatch[data-swatch='auto'] {
+  background: linear-gradient(135deg, var(--paper) 50%, var(--ink) 50%);
+}
+.reader-swatch[data-swatch='light'] {
+  background: #f4f7f3;
+}
+.reader-swatch[data-swatch='sepia'] {
+  background: #f8f3e9;
+}
+.reader-swatch[data-swatch='dark'] {
+  background: #102538;
+}
+
+/* --- Contents ------------------------------------------------------------ */
+
+.reader-toc-sheet .reader-toc {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  counter-reset: reader-chapter;
+}
+.reader-toc a {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 9px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.reader-toc a:hover,
+.reader-toc a:focus-visible {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+.reader-toc a[aria-current='true'] {
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+  font-weight: 600;
+}
+.reader-about {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.reader-about h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.reader-about dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px var(--space-3);
+  margin: 0;
+}
+.reader-about dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* --- Selection tools ----------------------------------------------------- */
+
+/* What the learner can do with what they just selected, beside the selection
+   itself. Small, fast to dismiss, never a fixed panel taking a column of the
+   page (D-057, reader tool surface). */
+.reader-selection {
+  position: fixed;
+  z-index: 20;
+}
+.reader-selection-bar {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--night-surface);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 34%, transparent);
+}
+.reader-selection-bar button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--on-night);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.reader-selection-bar button:hover,
+.reader-selection-bar button:focus-visible {
+  background: color-mix(in srgb, var(--on-night) 16%, transparent);
+}
+
+/* --- The answer ---------------------------------------------------------- */
+
+/* A small panel near the selection on a pointer device; a bottom sheet on a
+   phone, where a popover the size of a tooltip is unusable. Either way it
+   dismisses easily and never moves the learner's place in the text. */
+.reader-panel {
+  position: fixed;
+  z-index: 21;
+  width: min(384px, calc(100vw - 32px));
+  max-height: min(60vh, 520px);
+  overflow: auto;
+  padding: var(--space-4) var(--space-5) var(--space-4) var(--space-4);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--line) 80%, transparent),
+    0 20px 46px color-mix(in srgb, var(--ink) 24%, transparent);
+  overscroll-behavior: contain;
+}
+.reader-panel__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 19px;
+  line-height: 1;
+}
+.reader-panel__close:hover,
+.reader-panel__close:focus-visible {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+.reader-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding-right: var(--space-6);
+}
+.reader-panel__selection {
+  font-family: var(--story-font);
+  font-size: 1.28rem;
+  line-height: 1.25;
+}
+/* Pinyin for Chinese, the system's own transcription for English: the reading
+   sits with the word it belongs to, and carries its own play control. */
+.reader-panel__reading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.reader-panel__speak {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+.reader-panel__speak:hover,
+.reader-panel__speak:focus-visible {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+}
+.reader-panel__facts {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.reader-panel__translation {
+  margin: var(--space-3) 0 0;
+  font-size: 1.02rem;
+}
+.reader-panel__meanings {
+  display: grid;
+  gap: 5px;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.reader-panel__meanings li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+.reader-panel__meanings small,
+.reader-panel__source-label {
+  color: var(--muted);
+  font-size: 11px;
+}
+.reader-panel__source-label {
+  margin: 6px 0 0;
+}
+.reader-panel__definitions {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.reader-panel__definitions h4 {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.reader-panel__definitions ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--text-sm);
+}
+.reader-panel__note {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.reader-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.reader-panel__actions button {
+  min-height: 36px;
+}
+.reader-panel__status:empty {
+  display: none;
+}
+.reader-panel__status {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+}
+/* Already in My Language: the state is the answer, not another save button. */
+.reader-panel__kept {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--sage-surface) 70%, transparent);
+  color: var(--on-sage);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(.reader) #shellNav {
+    transition: none;
+  }
+}
+
+/* --- Phone --------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  .reader {
+    padding-bottom: calc(var(--space-16) + 56px);
+  }
+  .reader-bar {
+    margin-bottom: var(--space-5);
+    padding: var(--space-2) 0;
+    gap: var(--space-2);
+  }
+  .reader-bar__back span {
+    display: none;
+  }
+  .reader-bar__where {
+    justify-items: start;
+    text-align: left;
+  }
+  .reader-page {
+    font-size: calc(var(--text-base) * var(--reader-scale) * 1.06);
+  }
+  .reader-title {
+    font-size: calc(var(--text-base) * var(--reader-scale) * 1.5);
+    margin-bottom: var(--space-5);
+  }
+  .reader-chapter-nav {
+    margin-top: var(--space-12);
+  }
+  .reader-settings-pop {
+    position: fixed;
+    inset: auto 12px 12px;
+    top: auto;
+    width: auto;
+  }
+
+  /* Chapters turn from a dock at the bottom, where a thumb already is. */
+  .reader-dock {
+    position: fixed;
+    z-index: 7;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: var(--space-2);
+    align-items: center;
+    padding: 6px max(12px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+  }
+  .reader-dock__where {
+    min-height: 36px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A tooltip-sized popover is unusable with a thumb, so the answer becomes a
+     sheet: full width, reachable, dismissed by its own close control or by
+     tapping the text again. */
+  .reader-panel {
+    inset: auto 0 0;
+    width: 100%;
+    max-height: 62vh;
+    padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -14px 40px color-mix(in srgb, var(--ink) 26%, transparent);
+  }
+  .reader-panel__close {
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+  }
+  .reader-selection {
+    inset: auto 0 0;
+    display: flex;
+    justify-content: center;
+    padding: 0 12px calc(56px + env(safe-area-inset-bottom));
+  }
+  .reader-selection-bar {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}

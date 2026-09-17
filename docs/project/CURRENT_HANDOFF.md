@@ -20,9 +20,9 @@ D-046 and the product reset are committed; the shared media, transcript,
 dictation, recording, provider and evidence primitives survive, and the learner
 surfaces converge on static/orena. PostgreSQL APIs remain.
 
-Golden Star foundation: shared page intro, intention navigation, response
-composer, draft status, progressReporter(), theme-safe tinted panels.
-ORENA_WEB_EXTENSION_GUIDE.md records surface inheritance.
+Golden Star foundation: shared page intro, response composer, draft status,
+progressReporter(), theme-safe panels; ORENA_WEB_EXTENSION_GUIDE.md records
+surface inheritance.
 
 Platform Admin has a host via `#/admin` (`04a56c4`), human-reviewed; APIs and
 `static/admin.js` stay preserved.
@@ -53,6 +53,10 @@ content. Continue reads as continuity: a chapter shown as a chapter of its
 book, place and percent carried on the memory entry. Reading opens on the
 library, cover-first, with a Continue reading shelf and search folded into a
 utility; book detail leads with cover, one action and the current chapter.
+Reader: `reader.css` exists at last (the room had none), so text keeps a
+measure and the shell recedes. A tap selects the tagger's lexical unit - the ZH
+word, not one character - and the panel carries pinyin, speak, Save with its
+saved state, Explain and the pattern question.
 
 Verified: pytest `1109 passed, 118 skipped`, all 45 CI `.mjs` gates, ESM graph,
 both validators, EN/ZH browser pass on `orena-foundation-web`:8011 at desktop
@@ -97,8 +101,7 @@ Golden Star capability findings are closed; Packages A-D of
 remains Opus implementation work; F is human review, not architecture completion.
 
 Multi-theme system awaiting visual review: Paper, Night Ink, Deep Forest,
-Sage Field; identity separate from appearance; colour owned by `theme.css`.
-Ember deferred; brand assets replaced.
+Sage Field; colour owned by `theme.css`. Ember deferred.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
@@ -108,10 +111,6 @@ approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
 D-049/D-050 (2026-09-12): Content Architecture amended to five domains +
 horizontal Understanding Engine + Vocabulary Card/orthography; sequence in
 `ROADMAP.md`. Docs-only.
-
-Vocabulary UX `639b03d`/`2e591c3`: EN/ZH cards show real CEFR/HSK levels,
-pronunciation/examples; Library at `/language`; Discover rails for Continue
-+ five domains; desktop/mobile REVIEWABLE.
 
 Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
 results, shared repository, Admin UI and learner cards; review APPROVED

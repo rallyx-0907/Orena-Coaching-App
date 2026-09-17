@@ -6,6 +6,7 @@
    sense for what was selected. Everything here is a pure function of its
    arguments; `reader.js` owns the DOM, the requests and the events. */
 import { esc, safeExternal } from './html.js';
+import { symbol } from './symbols.js';
 import { link } from '../product/intent.js';
 
 /* What each endpoint accepts, named once so a request is shaped to fit rather
@@ -78,10 +79,18 @@ export function paragraphHtml(text, mark = null) {
    as the page title rather than printing the title twice. */
 export function readerArticleHtml(c, { title, language, blocks, marks = new Map() }) {
   const first = blocks[0];
-  const headingIsTitle = first?.type === 'heading' && flat(first.text) === flat(title);
+  /* An imported chapter often opens by repeating its own title, sometimes as a
+     heading and sometimes as a plain line. Either way it is the same words
+     twice at the top of the page: the first is promoted to the page title, and
+     a plain line saying the same thing is dropped rather than printed under
+     the heading it duplicates. */
+  const firstIsTitle = Boolean(first) && first.type !== 'break' && flat(first.text) === flat(title);
+  const headingIsTitle = firstIsTitle && first.type === 'heading';
+  const duplicateLine = firstIsTitle && first.type === 'paragraph';
   let html = `<article class="reader-page" lang="${esc(language)}" data-reader-page>`;
   if (!headingIsTitle) html += `<h1 class="reader-title">${lines(tidy(title))}</h1>`;
   blocks.forEach((block, index) => {
+    if (index === 0 && duplicateLine) return;
     if (block.type === 'break') {
       html += '<hr class="reader-break">';
     } else if (block.type === 'heading') {
@@ -225,15 +234,22 @@ export function selectionKind(text, language) {
   return 'passage';
 }
 
+/* Which tools fit what was selected. A word is looked up, kept and spoken; a
+   phrase or a sentence can also be asked how it works, which is the pattern
+   question put to the one explanation surface rather than a grammar module of
+   its own. A passage is too much to keep or to speak. */
 export function selectionActions(kind, { canSpeak = false } = {}) {
   if (!kind) return [];
-  if (kind === 'passage') return ['translate', 'explain'];
+  if (kind === 'passage') return ['translate', 'explain', 'pattern'];
+  if (kind === 'phrase')
+    return ['translate', 'explain', 'pattern', 'save', ...(canSpeak ? ['pronounce'] : [])];
   return ['translate', 'explain', 'save', ...(canSpeak ? ['pronounce'] : [])];
 }
 
 const ACTION_LABELS = {
   translate: 'selectionTranslate',
   explain: 'selectionExplain',
+  pattern: 'selectionPattern',
   save: 'selectionSave',
   pronounce: 'selectionPronounce',
 };
@@ -258,14 +274,30 @@ const SOURCE_LABELS = {
    meaning came from; for a phrase or passage, its translation, labelled as
    machine translation. What did not arrive says so - the original is never
    shown in place of a meaning. */
-export function lookupPanelHtml(c, { selection, language, support, kind, state, result = {} }) {
+export function lookupPanelHtml(
+  c,
+  { selection, language, support, kind, state, result = {}, canSpeak = false, kept = false },
+) {
   const found = result || {};
-  const reading = found.pronunciation
-    ? `<span class="reader-panel__reading">${esc(found.pronunciation)}</span>`
+  /* The reading and the way to hear it belong together: pinyin for Chinese,
+     whatever transcription the system holds for English, and one compact
+     control that speaks the selection. Pronunciation is a learner action, not
+     a line of transcription (D-057, reader pronunciation). */
+  const speak = canSpeak
+    ? `<button type="button" class="reader-panel__speak" data-panel-action="pronounce" aria-label="${esc(c.selectionPronounce)}">${symbol('sound', 16)}</button>`
     : '';
+  const reading =
+    found.pronunciation || speak
+      ? `<span class="reader-panel__reading">${found.pronunciation ? `<span${language === 'zh' ? ' data-reading="pinyin"' : ''}>${esc(found.pronunciation)}</span>` : ''}${speak}</span>`
+      : '';
   const head = `<div class="reader-panel__head"><strong class="reader-panel__selection" lang="${esc(language)}">${esc(selection)}</strong>${reading}</div>`;
   const canKeep = kind !== 'passage';
-  const actions = `<div class="reader-panel__actions"><button type="button" class="outline" data-panel-action="explain">${esc(c.selectionExplain)}</button>${canKeep ? `<button type="button" class="quiet" data-panel-action="save">${esc(c.selectionSave)}</button>` : ''}</div><p class="meta reader-panel__status" role="status" data-panel-status></p>`;
+  const keepControl = !canKeep
+    ? ''
+    : kept
+      ? `<span class="reader-panel__kept" data-panel-kept>${esc(c.selectionSaved)}</span>`
+      : `<button type="button" class="quiet" data-panel-action="save">${esc(c.selectionSave)}</button>`;
+  const actions = `<div class="reader-panel__actions"><button type="button" class="outline" data-panel-action="explain">${esc(c.selectionExplain)}</button>${kind === 'word' ? '' : `<button type="button" class="quiet" data-panel-action="pattern">${esc(c.selectionPattern)}</button>`}${keepControl}</div><p class="meta reader-panel__status" role="status" data-panel-status></p>`;
 
   if (state === 'loading')
     return `${head}<p class="reader-panel__note" role="status">${esc(kind === 'word' ? c.lookupLoading : c.translationLoading)}</p>`;

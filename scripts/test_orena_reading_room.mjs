@@ -184,9 +184,12 @@ const c = copy.en;
   assert.equal(selectionKind('林安赶到站台时，车站里的咖啡店已经关门了。', 'zh'), 'passage');
   assert.equal(selectionKind('x'.repeat(EXPLAIN_LIMITS.selection + 1), 'en'), null, 'too much to act on');
 
+  /* A word is looked up, kept and spoken. A phrase or a sentence can also be
+     asked how it works - the pattern question put to the one explanation
+     surface, not a grammar module. A passage is too much to keep or speak. */
   assert.deepEqual(selectionActions('word', { canSpeak: true }), ['translate', 'explain', 'save', 'pronounce']);
-  assert.deepEqual(selectionActions('phrase', { canSpeak: false }), ['translate', 'explain', 'save']);
-  assert.deepEqual(selectionActions('passage', { canSpeak: true }), ['translate', 'explain']);
+  assert.deepEqual(selectionActions('phrase', { canSpeak: false }), ['translate', 'explain', 'pattern', 'save']);
+  assert.deepEqual(selectionActions('passage', { canSpeak: true }), ['translate', 'explain', 'pattern']);
   assert.deepEqual(selectionActions(null, { canSpeak: true }), []);
 
   const bar = selectionToolbarHtml(c, ['translate', 'explain', 'save', 'pronounce']);
@@ -293,6 +296,7 @@ const keys = [
   'readerWidth', 'readerWidthNarrow', 'readerWidthMedium', 'readerWidthWide',
   'readerAppearance', 'readerAppearanceAuto', 'readerAppearanceLight', 'readerAppearanceSepia', 'readerAppearanceDark',
   'selectionActions', 'selectionTranslate', 'selectionExplain', 'selectionSave', 'selectionPronounce',
+  'selectionPattern', 'selectionSaved', 'askPattern',
   'lookupLoading', 'translationLoading', 'lookupUnavailable', 'lookupFailed', 'lookupSourceCollection',
   'lookupSourceDictionary', 'lookupSourceMachine', 'lookupDefinitions', 'lookupBaseForm',
 ];
@@ -317,13 +321,28 @@ assert.ok(encounter.length > 0, 'the text encounter exists');
 assert.match(reader, /api\.readingLookup\(/);
 assert.match(reader, /api\.readingTranslate\(/);
 // AI is reached only through the one explanation surface, from an explicit Explain.
-assert.match(reader, /case 'explain':[\s\S]{0,400}openUnderstanding\(ctx, \{/);
+assert.match(reader, /case 'explain':\s+case 'pattern': \{[\s\S]{0,700}openUnderstanding\(ctx, \{/);
 assert.equal((reader.match(/openUnderstanding\(/g) || []).length, 1, 'explain is the only way to AI');
+/* "How this works" is the same explanation request carrying the pattern
+   question, not a second surface and not a second route to a provider. */
+assert.match(reader, /question: action === 'pattern' \? c\.askPattern/);
 for (const source of [reader, encounter]) {
-  assert.doesNotMatch(source, /contextualGloss|contextualDictionary|annotateMediaText/, 'no AI or per-word tagging runs while reading');
+  assert.doesNotMatch(source, /contextualGloss|contextualDictionary/, 'no AI runs while reading');
 }
-// Nothing is requested until the learner selects something.
+/* Tapping a word asks the shared local tagger where this paragraph's words
+   are. It is not AI, and it is not background work: the one call lives in
+   `tokensFor`, which only a tap reaches, and a paragraph is asked about once. */
+assert.equal((reader.match(/api\.annotateMediaText\(/g) || []).length, 1,
+  'segmentation is requested in exactly one place');
+const tokensFor = reader.slice(reader.indexOf('async function tokensFor('), reader.indexOf('function offsetAt('));
+assert.match(tokensFor, /api\.annotateMediaText\(/, 'and that place is the tap-time tokeniser');
+assert.match(tokensFor, /if \(tokenised\.has\(index\)\) return tokenised\.get\(index\)/,
+  'a paragraph is tokenised once, not on every tap');
+assert.match(reader, /const tokens = await tokensFor\(index, text\)/);
+assert.doesNotMatch(encounter, /annotateMediaText/, 'nothing is tokenised when a chapter opens');
+// Nothing is requested until the learner selects or taps something.
 assert.match(reader, /selectionchange/);
+assert.match(reader, /async function tapWord\(event\)/, 'a tap is a first-class way in');
 assert.doesNotMatch(reader, /IntersectionObserver/, 'no background work as paragraphs scroll by');
 // The encounter mounts the reader instead of rendering its own passage.
 assert.match(encounterFile, /from '\.\/reader\.js'/);

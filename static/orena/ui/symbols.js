@@ -17,6 +17,8 @@ const strokes = {
   contents: '<path d="M9 6.5h11"/><path d="M9 12h11"/><path d="M9 17.5h11"/><path d="M4.5 6.5h.1"/><path d="M4.5 12h.1"/><path d="M4.5 17.5h.1"/>',
   // A ribbon marker: somewhere to come back to.
   bookmark: '<path d="M6.5 3.5h11v17l-5.5-4-5.5 4Z"/>',
+  // A speaker with one wave: hear this said aloud.
+  sound: '<path d="M11 5.5 6.5 9.5H3.5v5h3l4.5 4Z"/><path d="M15 9.2a4.2 4.2 0 0 1 0 5.6"/>',
   back: '<path d="m14.5 5.5-6.5 6.5 6.5 6.5"/>',
   forward: '<path d="m9.5 5.5 6.5 6.5-6.5 6.5"/>',
 };
