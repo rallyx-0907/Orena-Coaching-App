@@ -36,7 +36,7 @@ export function lensesFor(item) {
   const id = String(item.id || '');
   if (intent === 'reading' || why === 'from_reading' || id.startsWith('story:'))
     found.add('reading');
-  if (['follow', 'dictation', 'shadowing'].includes(intent) || why === 'from_listening' || /^(media:|url:)/.test(id))
+  if (['follow', 'dictation', 'shadowing'].includes(intent) || why === 'from_listening' || /^(media:|url:|upload:)/.test(id))
     found.add('listening');
   if (intent === 'speaking' || why === 'from_speaking' || id.startsWith('conversation:'))
     found.add('speaking');

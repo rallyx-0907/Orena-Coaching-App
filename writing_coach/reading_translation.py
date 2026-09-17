@@ -26,6 +26,30 @@ from writing_coach.media_translation import (
 
 DEFAULT_READING_TRANSLATION_CACHE_ENTRIES = 4096
 
+READING_TRANSLATION_PROVIDER_IDS = ("local", "groq")
+
+
+def resolve_reading_translation_provider_id(configured: str, *, groq_key: str) -> str:
+    """Which engine translates reading paragraphs, decided once from configuration.
+
+    Reading never inherits Listening's engine choice: the default here is
+    always the local, non-LLM Marian service, and `groq` is used only when an
+    operator explicitly asks for it (`ARCHITECTURE_INVARIANTS.md`: no silent
+    provider fallback, no automatic failover between engines).
+    """
+    chosen = str(configured or "").strip().casefold()
+    if not chosen:
+        chosen = "local"
+    if chosen not in READING_TRANSLATION_PROVIDER_IDS:
+        raise ValueError(
+            "READING_TRANSLATION_PROVIDER must be "
+            + " or ".join(repr(item) for item in READING_TRANSLATION_PROVIDER_IDS)
+            + "."
+        )
+    if chosen == "groq" and not str(groq_key or "").strip():
+        raise ValueError("READING_TRANSLATION_PROVIDER='groq' requires GROQ_API_KEY.")
+    return chosen
+
 
 @dataclass(frozen=True)
 class TextSegment:

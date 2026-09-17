@@ -13,6 +13,7 @@ from writing_coach.reading_translation import (
     ReadingTranslationService,
     ReadingTranslationStatus,
     TextSegment,
+    resolve_reading_translation_provider_id,
 )
 
 
@@ -232,3 +233,25 @@ def test_translate_endpoint_is_unavailable_until_configured(monkeypatch) -> None
 
     assert response.status_code == 503
     assert response.json()["detail"]["category"] == "reading_translation_unavailable"
+
+
+def test_resolve_reading_translation_provider_defaults_to_local() -> None:
+    assert resolve_reading_translation_provider_id("", groq_key="") == "local"
+    # Reading never inherits Listening's Groq default just because a key exists.
+    assert resolve_reading_translation_provider_id("", groq_key="sk-1") == "local"
+
+
+def test_resolve_reading_translation_provider_accepts_explicit_local() -> None:
+    assert resolve_reading_translation_provider_id("local", groq_key="") == "local"
+
+
+def test_resolve_reading_translation_provider_requires_a_key_for_groq() -> None:
+    with pytest.raises(ValueError):
+        resolve_reading_translation_provider_id("groq", groq_key="")
+
+    assert resolve_reading_translation_provider_id("groq", groq_key="sk-1") == "groq"
+
+
+def test_resolve_reading_translation_provider_rejects_unknown_values() -> None:
+    with pytest.raises(ValueError):
+        resolve_reading_translation_provider_id("bogus", groq_key="sk-1")

@@ -64,8 +64,13 @@ from writing_coach.media_translation import (
     MediaTranslationService,
     resolve_translation_provider_id,
 )
-from writing_coach.reading_translation import ReadingTranslationService
+from writing_coach.reading_lookup import ReadingLookupService
+from writing_coach.reading_translation import (
+    ReadingTranslationService,
+    resolve_reading_translation_provider_id,
+)
 from writing_coach.reading_translation_api import (
+    configure_reading_lookup,
     configure_reading_translation,
     router as reading_translation_router,
 )
@@ -384,8 +389,45 @@ _media_translation_provider = (
     )
 )
 configure_media_translation(MediaTranslationService(_media_translation_provider))
-# Reading paragraphs go through the same engine, never a second provider choice.
-configure_reading_translation(ReadingTranslationService(_media_translation_provider))
+# Reading never inherits Listening's LLM engine: its default is the local,
+# non-LLM Marian service, and an operator must explicitly opt into Groq.
+try:
+    _reading_translation_provider_id = resolve_reading_translation_provider_id(
+        os.getenv("READING_TRANSLATION_PROVIDER", ""), groq_key=_GROQ_API_KEY
+    )
+except ValueError as exc:
+    raise RuntimeError(str(exc)) from exc
+
+_reading_translation_provider = (
+    GroqTranslationProvider(
+        _GROQ_API_KEY,
+        model=os.getenv("GROQ_TRANSLATION_MODEL", "openai/gpt-oss-120b"),
+        base_url=os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+    )
+    if _reading_translation_provider_id == "groq"
+    else LocalHttpTranslationProvider(
+        os.getenv("LOCAL_TRANSLATION_URL", "http://local-translator:8090")
+    )
+)
+_reading_translation_service = ReadingTranslationService(_reading_translation_provider)
+configure_reading_translation(_reading_translation_service)
+
+
+def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
+    """English-only dictionary facts for Reading lookup. Never Chinese/AI."""
+    try:
+        return lookup_dictionary(word)
+    except HTTPException:
+        return None
+
+
+configure_reading_lookup(
+    ReadingLookupService(
+        _persistence_runtime.vocabulary_repository,
+        _reading_english_dictionary,
+        _reading_translation_service,
+    )
+)
 configure_media_timing(
     MediaTimingService(
         YtDlpYouTubeAudioUrlResolver(),

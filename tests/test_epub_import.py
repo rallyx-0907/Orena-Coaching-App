@@ -74,10 +74,13 @@ def test_valid_epub_parses_title_author_language_and_chapters():
     assert book.author == "An Author"
     assert book.language == "en"
     assert len(book.chapters) == 2
-    # Block-level heading text counts as content the chapter actually has,
-    # same as any other block tag - nothing is filtered out as "just a title".
-    assert book.chapters[0].paragraphs == ("Chapter One", "First paragraph.", "Second paragraph.")
-    assert book.chapters[1].paragraphs == ("Chapter Two", "Another paragraph here.")
+    assert book.chapters[0].paragraphs == ("First paragraph.", "Second paragraph.")
+    assert book.chapters[1].paragraphs == ("Another paragraph here.",)
+    assert book.chapters[0].blocks == (
+        {"type": "heading", "level": 1, "text": "Chapter One"},
+        {"type": "paragraph", "text": "First paragraph."},
+        {"type": "paragraph", "text": "Second paragraph."},
+    )
     assert book.cover is None
 
 
@@ -121,7 +124,6 @@ def test_custom_entity_declaration_is_rejected():
         '<!DOCTYPE html [<!ENTITY boom "big">]>'
         '<html xmlns="http://www.w3.org/1999/xhtml"><body><p>&boom;</p></body></html>'
     )
-    data = _build_epub(chap1=chap1)
     # The chapter itself is skipped rather than failing the whole book, but
     # with only one chapter left it must still succeed - assert indirectly by
     # making it the ONLY chapter and expecting no_readable_content.
@@ -245,6 +247,154 @@ def test_one_broken_chapter_does_not_fail_the_whole_book():
     book = parse_epub(data)
     assert len(book.chapters) == 1
     assert book.chapters[0].paragraphs == ("Still here.",)
+
+
+def test_blocks_preserve_breaks_nested_blocks_and_drop_empty_content():
+    chapter = _xhtml(
+        "<hr/><h2>CHAPTER I.<br/>Down the Rabbit-Hole</h2>"
+        "<p>One<br/>two <em>three</em>.</p>"
+        "<blockquote><p>Quoted once.</p></blockquote>"
+        "<li><p>Listed once.</p></li>"
+        "<hr/><hr/>"
+        "<p><br/></p><p>&#160;</p>"
+        "<div>Direct <span>text</span>.</div><hr/>"
+    )
+    book = parse_epub(_build_epub(chap1=chapter, chap2=_xhtml("")))
+    assert book.chapters[0].blocks == (
+        {"type": "heading", "level": 2, "text": "CHAPTER I.\nDown the Rabbit-Hole"},
+        {"type": "paragraph", "text": "One\ntwo three."},
+        {"type": "paragraph", "text": "Quoted once."},
+        {"type": "paragraph", "text": "Listed once."},
+        {"type": "break"},
+        {"type": "paragraph", "text": "Direct text."},
+    )
+
+
+def test_navigation_classifies_title_contents_and_cover_and_extracts_provenance():
+    opf = (
+        '<?xml version="1.0"?>'
+        '<package xmlns="http://www.idpf.org/2007/opf" version="2.0">'
+        '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+        '<dc:title>Alice</dc:title><dc:creator>Lewis Carroll</dc:creator>'
+        '<dc:publisher>https://onemorelibrary.com</dc:publisher>'
+        '<dc:rights>Public domain</dc:rights><dc:date>1865</dc:date></metadata>'
+        '<manifest>'
+        '<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="toc" href="toc.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>'
+        '</manifest><spine toc="ncx">'
+        '<itemref idref="cover"/><itemref idref="title"/><itemref idref="toc"/>'
+        '<itemref idref="c1"/><itemref idref="c2"/></spine>'
+        '<guide><reference type="cover" href="cover.xhtml"/><reference type="toc" href="toc.xhtml"/></guide>'
+        '</package>'
+    )
+    files = {
+        "OEBPS/cover.xhtml": _xhtml("<svg><image/></svg>"),
+        "OEBPS/title.xhtml": _xhtml(
+            "<p>https://onemorelibrary.com</p><h1>Alice</h1><p>by</p><p>Lewis Carroll</p>"
+        ),
+        "OEBPS/toc.xhtml": _xhtml(
+            '<h2>Contents</h2><table><tr><td><a href="c1.xhtml">CHAPTER I. Down the Rabbit-Hole</a></td></tr>'
+            '<tr><td><a href="c2.xhtml">CHAPTER II. The Pool of Tears</a></td></tr></table>'
+        ),
+        "OEBPS/c1.xhtml": _xhtml("<h2>CHAPTER I.<br/>Down the Rabbit-Hole</h2><p>First.</p>"),
+        "OEBPS/c2.xhtml": _xhtml("<h2>CHAPTER II.<br/>The Pool of Tears</h2><p>Second.</p>"),
+        "OEBPS/toc.ncx": (
+            '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx"><navMap>'
+            '<navPoint><navLabel><text>Contents</text></navLabel><content src="toc.xhtml"/></navPoint>'
+            '<navPoint><navLabel><text>CHAPTER I. Down the Rabbit-Hole</text></navLabel><content src="c1.xhtml#x"/></navPoint>'
+            '<navPoint><navLabel><text>CHAPTER II. The Pool of Tears</text></navLabel><content src="c2.xhtml"/></navPoint>'
+            '</navMap></ncx>'
+        ),
+    }
+    book = parse_epub(_build_epub(
+        opf=opf,
+        chap1=files["OEBPS/cover.xhtml"],
+        chap2=files["OEBPS/title.xhtml"],
+        extra_files=files,
+    ))
+    assert [chapter.title for chapter in book.chapters] == [
+        "CHAPTER I. Down the Rabbit-Hole", "CHAPTER II. The Pool of Tears"
+    ]
+    assert book.chapters[0].blocks[0] == {
+        "type": "heading", "level": 2, "text": "CHAPTER I.\nDown the Rabbit-Hole"
+    }
+    assert all("onemorelibrary" not in block.get("text", "") for chapter in book.chapters for block in chapter.blocks)
+    assert book.provenance == {
+        "source_url": "https://onemorelibrary.com", "publisher": "", "rights": "Public domain", "date": "1865"
+    }
+
+
+def test_pure_link_list_without_navigation_is_toc_and_classification_falls_back_to_text_documents():
+    opf = _opf(
+        manifest_extra='<item id="toc" href="toc.xhtml" media-type="application/xhtml+xml"/>',
+    ).replace('<spine><itemref idref="chap1"/><itemref idref="chap2"/></spine>',
+              '<spine><itemref idref="toc"/><itemref idref="chap1"/><itemref idref="chap2"/></spine>')
+    toc = _xhtml('<p><a href="chap1.xhtml">One</a></p><p><a href="chap2.xhtml">Two</a></p>')
+    book = parse_epub(_build_epub(
+        opf=opf,
+        chap1=_xhtml("<h1>One</h1><p>Only chapter one.</p>"),
+        chap2=_xhtml("<h1>Two</h1><p>Only chapter two.</p>"),
+        extra_files={"OEBPS/toc.xhtml": toc},
+    ))
+    assert len(book.chapters) == 2
+    assert {"Only chapter one.", "Only chapter two."} == {
+        paragraph for chapter in book.chapters for paragraph in chapter.paragraphs
+    }
+
+
+def test_epub3_nav_landmarks_keep_only_body_chapters():
+    opf = _opf().replace(
+        '<manifest>',
+        '<manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'
+        '<item id="titlepage" href="titlepage.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="toc" href="toc.xhtml" media-type="application/xhtml+xml"/>',
+    ).replace(
+        '<spine><itemref idref="chap1"/><itemref idref="chap2"/></spine>',
+        '<spine><itemref idref="titlepage"/><itemref idref="toc"/>'
+        '<itemref idref="chap1"/><itemref idref="chap2"/></spine>',
+    )
+    nav = (
+        '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body>'
+        '<nav epub:type="toc"><ol><li><a href="chap1.xhtml">First</a></li>'
+        '<li><a href="chap2.xhtml">Second</a></li></ol></nav>'
+        '<nav epub:type="landmarks"><ol><li><a epub:type="titlepage" href="titlepage.xhtml">Title</a></li>'
+        '<li><a epub:type="toc" href="toc.xhtml">Contents</a></li>'
+        '<li><a epub:type="bodymatter" href="chap1.xhtml">Start</a></li></ol></nav>'
+        '</body></html>'
+    )
+    book = parse_epub(_build_epub(
+        opf=opf,
+        chap1=_xhtml("<h1>First body</h1><p>Body one.</p>"),
+        chap2=_xhtml("<h1>Second body</h1><p>Body two.</p>"),
+        extra_files={
+            "OEBPS/nav.xhtml": nav,
+            "OEBPS/titlepage.xhtml": _xhtml("<h1>Title</h1><p>Front.</p>"),
+            "OEBPS/toc.xhtml": _xhtml("<h1>Contents</h1><p>Links.</p>"),
+        },
+    ))
+    assert [chapter.title for chapter in book.chapters] == ["First", "Second"]
+
+
+def test_classification_safety_net_keeps_text_when_every_document_is_excluded():
+    opf = _opf().replace(
+        '<spine><itemref idref="chap1"/><itemref idref="chap2"/></spine>',
+        '<spine><itemref idref="chap1"/><itemref idref="chap2"/></spine>',
+    )
+    front = '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body epub:type="frontmatter"><p>Readable.</p></body></html>'
+    book = parse_epub(_build_epub(opf=opf, chap1=front, chap2=front))
+    assert len(book.chapters) == 2
+
+
+def test_epub_without_navigation_keeps_text_documents_if_all_are_classified_away():
+    chapter = _xhtml("<p>Readable.</p>")
+    opf = _opf().replace('<spine><itemref idref="chap1"/><itemref idref="chap2"/></spine>',
+                         '<spine><itemref idref="chap1"/><itemref idref="chap2"/></spine>')
+    book = parse_epub(_build_epub(opf=opf, chap1=chapter, chap2=chapter))
+    assert len(book.chapters) == 2
 
 
 def test_missing_optional_metadata_never_fails_the_import():

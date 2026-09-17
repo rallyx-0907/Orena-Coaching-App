@@ -7,20 +7,8 @@ import {
   hint,
 } from './patterns.js';
 import { esc, safeExternal, dialog, status, focusRegion, focusWork } from './html.js';
-import { openUnderstanding, openWordCard, selectionWithin } from './understanding.js';
-import {
-  GLOSS_LIMITS,
-  TRANSLATE_BATCH,
-  annotationChunks,
-  explainBounds,
-  paragraphHtml,
-  positionLabel,
-  readingBlock,
-  readingFrame,
-  sentenceAround,
-  tokensFromAnnotation,
-  translationRequests,
-} from './reading-room.js';
+import { openUnderstanding, selectionWithin } from './understanding.js';
+import { mountReader } from './reader.js';
 import { voiceEvidence } from './voice-evidence.js';
 import { publishedReading } from '../content/reading-library.js';
 import { mountVoiceResponse } from './voice-response.js';
@@ -59,7 +47,7 @@ import {
   acquireMedia,
   translationRequest,
 } from '../capabilities/media-acquisition.js';
-import { art, origin, duration, bindImages, audioIdentity } from './content.js';
+import { origin, duration, bindImages, audioIdentity } from './content.js';
 import { symbol } from './symbols.js';
 
 /* How to read the follow panel - the words of the line being spoken, the
@@ -81,357 +69,30 @@ export function inspectPhrase(ctx, text, title, context, origin = null) {
   });
 }
 
-/* Reading happens in a room of its own. The passage scrolls inside a frame, so
-   the questions and the learner's response stay one step below it instead of a
-   page away; each paragraph is a numbered block with its meaning a tap away;
-   and every word the shared tagger finds can be pointed at for what it means in
-   its sentence. Words are tagged as their paragraphs come near the frame, so a
-   long chapter costs nothing it does not show. */
-function textEncounter(root, ctx, item) {
-  const { api, c, language, memory } = ctx;
-  const alive = ctx.alive || (() => root.isConnected);
-  const dialogue = item.kind === 'conversation';
+/* Reading is a reader. The text is the page and nothing is interleaved with
+   it; learning tools appear only for what the learner selects (`reader.js`).
+   What follows reading - prepared language notes, an optional comprehension
+   check, a response, and where the text came from - comes after the text. */
+function textEncounter(root, ctx, item, book = null) {
+  const { c, language, memory } = ctx;
   const paragraphs = item.paragraphs || [item.text];
-  let count = dialogue ? 1 : paragraphs.length;
-  // Meaning is offered only where there is another language to give it in.
-  const translatable = Boolean(ctx.support) && ctx.support !== language;
-  const translations = new Map();
-  const open = new Set();
-  const tokens = new Map();
-  const tagging = new Set();
-  const marks = new Map();
-  const pendingText = new Set();
+  memory.enter({ id: item.id, title: item.title, excerpt: paragraphs[0] });
   const title = `${origin(item, c)} · ${item.title}`;
   const from = { id: item.id, where: item.title, why: 'from_reading' };
-  memory.enter({ id: item.id, title: item.title, excerpt: paragraphs[0] });
+  const notes = (item.phrases || []).length
+    ? `<details class="reader-notes"><summary>${esc(c.readerNotes)}</summary>${item.phrases.map((p, i) => `<div class="reader-note"><p class="reader-note__word" lang="${language}">${esc(p.word)}</p>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p lang="${esc(ctx.support)}">${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button class="quiet" data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></div>`).join('')}</details>`
+    : '';
+  root.innerHTML = `<div data-reader-host></div><div class="reader-after">${notes}${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p></div>`;
 
-  const blockState = (index) => ({
-    paragraph: paragraphs[index],
-    tokens: tokens.get(index) || [],
-    mark: marks.get(index) || null,
-    language,
-    support: ctx.support,
-    translatable,
-    open: open.has(index),
-    translation: translations.get(index),
-  });
-  const blocks = () =>
-    paragraphs
-      .slice(0, count)
-      .map((_, index) => readingBlock(c, index, blockState(index)))
-      .join('');
-  const after = () =>
-    count < paragraphs.length
-      ? `<button class="outline" data-next>${c.nextLine} →</button>`
-      : item.question
-        ? `<h2>${esc(item.question)}</h2>`
-        : '';
-  const kept = () => memory.value.kept.includes(item.id);
-
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><button data-keep class="quiet" aria-pressed="${kept()}">${kept() ? c.saved : c.keep} ＋</button></div><header class="text-heading"><small>${origin(item, c)}</small><h1 lang="${language}">${esc(item.title)}</h1><p lang="${language}">${esc(item.subtitle || '')}</p></header><div class="text-encounter">${readingFrame(c, {
-    title: item.title,
-    blocks: blocks(),
-    after: after(),
-    total: paragraphs.length,
-    tools: `${hint({ text: c.readingWordHint, icon: 'words' })}${translatable ? followToggle('meaning-toggle', 'data-reading-all-meaning', 'meaning', c.readingShowAllMeaning) : ''}`,
-    dialogue,
-  })}<aside class="language-margin"><div class="margin-art">${art(item)}</div><h2>${c.inspect}</h2>${(item.phrases || []).map((p, i) => `<details><summary lang="${language}">${esc(p.word)}</summary>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p>${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></details>`).join('')}<button class="outline" data-inspect>${c.phrase} ↗</button></aside></div>${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
-
-  const scroller = root.querySelector('[data-reading-scroll]');
-  const passage = root.querySelector('.passage');
-  const position = root.querySelector('[data-reading-position]');
-  const allMeaning = root.querySelector('[data-reading-all-meaning]');
-  const inspectButton = root.querySelector('[data-inspect]');
-
-  const keepButton = root.querySelector('[data-keep]');
-  keepButton.onclick = () => {
-    memory.keep(item.id);
-    keepButton.setAttribute('aria-pressed', String(kept()));
-    keepButton.textContent = `${kept() ? c.saved : c.keep} ＋`;
-  };
-
-  const selectedInside = (element) => {
-    const selection = window.getSelection?.();
-    return Boolean(
-      selection &&
-        !selection.isCollapsed &&
-        selection.rangeCount &&
-        element.contains(selection.getRangeAt(0).commonAncestorContainer),
-    );
-  };
-  // A selection in progress belongs to the learner: new word tags wait for it.
-  const paintText = (index) => {
-    const element = passage.querySelector(`[data-text="${index}"]`);
-    if (!element) return;
-    if (selectedInside(element)) {
-      pendingText.add(index);
-      return;
-    }
-    pendingText.delete(index);
-    element.innerHTML = paragraphHtml(
-      paragraphs[index],
-      tokens.get(index) || [],
-      marks.get(index) || null,
-    );
-  };
-  /* Only a paragraph's meaning and its tools change when its translation does;
-     the text - and anything selected in it - stays where it is, and a control
-     that had keyboard focus keeps it. */
-  const paintMeaning = (index) => {
-    const block = passage.querySelector(`[data-block="${index}"]`);
-    if (!block) return;
-    const active = document.activeElement;
-    const focused = block.contains(active)
-      ? ['data-translate', 'data-retry-translate', 'data-explain'].find((name) =>
-          active.hasAttribute(name),
-        )
-      : null;
-    const template = document.createElement('template');
-    template.innerHTML = readingBlock(c, index, blockState(index));
-    const fresh = template.content.firstElementChild;
-    block.querySelector('[data-meaning]')?.remove();
-    const meaning = fresh.querySelector('[data-meaning]');
-    if (meaning) block.querySelector('[data-text]').after(meaning);
-    block
-      .querySelector('.reading-block__tools')
-      .replaceWith(fresh.querySelector('.reading-block__tools'));
-    if (focused)
-      (
-        block.querySelector(`[${focused}]`) || block.querySelector('[data-translate]')
-      )?.focus({ preventScroll: true });
-  };
-
-  const settled = (state) => ['ready', 'loading', 'too_large'].includes(state);
-  async function translate(indices) {
-    const sendable = [];
-    for (const index of indices) {
-      if (settled(translations.get(index)?.state)) continue;
-      const tooLong = paragraphs[index].length > TRANSLATE_BATCH.paragraph;
-      translations.set(index, { state: tooLong ? 'too_large' : 'loading' });
-      if (!tooLong) sendable.push(index);
-      paintMeaning(index);
-    }
-    for (const request of translationRequests(paragraphs, sendable)) {
-      let answer = null;
-      try {
-        answer = await api.readingTranslate({
-          source_language: language,
-          target_language: ctx.support,
-          segments: request.segments,
-        });
-      } catch {
-        answer = null;
-      }
-      if (!alive()) return;
-      const meanings = new Map(
-        (answer?.translations || []).map((entry) => [
-          entry.segment_id,
-          entry.translated_meaning,
-        ]),
-      );
-      for (const index of request.indices) {
-        const text = meanings.get(`p${index}`);
-        translations.set(
-          index,
-          answer?.status === 'ready' && text
-            ? { state: 'ready', text }
-            : answer?.status === 'too_large'
-              ? { state: 'too_large' }
-              : { state: 'unavailable' },
-        );
-        paintMeaning(index);
-      }
-    }
-  }
-
-  const shown = () => paragraphs.slice(0, count).map((_, index) => index);
-  const syncAllMeaning = () => {
-    if (allMeaning) allMeaning.checked = shown().every((index) => open.has(index));
-  };
-  const toggleMeaning = (index) => {
-    if (open.has(index)) open.delete(index);
-    else {
-      open.add(index);
-      translate([index]);
-    }
-    paintMeaning(index);
-    syncAllMeaning();
-  };
-  if (allMeaning)
-    allMeaning.onchange = () => {
-      const indices = shown();
-      for (const index of indices)
-        if (allMeaning.checked) open.add(index);
-        else open.delete(index);
-      if (allMeaning.checked) translate(indices);
-      indices.forEach(paintMeaning);
-    };
-
-  const lookUp = (index, start, end, anchor) => {
-    const paragraph = paragraphs[index];
-    openWordCard(ctx, {
-      selection: paragraph.slice(start, end),
-      context: sentenceAround(paragraph, start, end),
-      anchor,
-      title,
-      origin: from,
-      returnFocus: scroller,
-    });
-  };
-
-  const nextLine = () => {
-    count += 1;
-    if (allMeaning?.checked) open.add(count - 1);
-    const top = scroller.scrollTop;
-    passage.innerHTML = blocks() + after();
-    scroller.scrollTop = top;
-    watch();
-    if (open.has(count - 1)) translate([count - 1]);
-    passage
-      .querySelector(`[data-block="${count - 1}"]`)
-      ?.scrollIntoView({ block: 'nearest' });
-    (
-      root.querySelector('[data-next]') || root.querySelector('#response')
-    )?.focus({ preventScroll: true });
-  };
-
-  passage.addEventListener('click', (event) => {
-    const target = event.target;
-    const translateButton = target.closest('[data-translate]');
-    if (translateButton) return toggleMeaning(Number(translateButton.dataset.translate));
-    const retry = target.closest('[data-retry-translate]');
-    if (retry) return translate([Number(retry.dataset.retryTranslate)]);
-    const explain = target.closest('[data-explain]');
-    if (explain) {
-      const bounds = explainBounds(paragraphs[Number(explain.dataset.explain)]);
-      return openUnderstanding(ctx, {
-        selection: bounds.selection,
-        context: bounds.context,
-        title,
-        origin: from,
-      });
-    }
-    if (target.closest('[data-next]')) return nextLine();
-    const word = target.closest('.reading-word');
-    // Finishing a drag over words is a selection, not a tap on the last one.
-    if (!word || selectionWithin(passage)) return;
-    lookUp(
-      Number(word.closest('[data-text]').dataset.text),
-      Number(word.dataset.start),
-      Number(word.dataset.end),
-      word,
-    );
+  const reader = mountReader(root.querySelector('[data-reader-host]'), ctx, {
+    item,
+    blocks: item.blocks,
+    book,
+    progressive: item.kind === 'conversation',
+    title,
+    origin: from,
   });
 
-  // A phrase selected in the original text, located in its own paragraph.
-  const pickedPhrase = () => {
-    const selection = window.getSelection?.();
-    const picked = selectionWithin(passage);
-    if (!picked || !selection?.rangeCount) return { picked };
-    const range = selection.getRangeAt(0);
-    const node = range.startContainer;
-    const text = (node.nodeType === 1 ? node : node.parentElement)?.closest('[data-text]');
-    if (!text || !text.contains(range.endContainer)) return { picked };
-    const index = Number(text.dataset.text);
-    const start = paragraphs[index].indexOf(picked.text);
-    return start < 0 ? { picked } : { picked, index, start, range };
-  };
-  const onSelected = () => {
-    const found = pickedPhrase();
-    const picked = found.picked;
-    inspectButton.textContent = picked
-      ? `${c.lookCloser}: ${picked.text.slice(0, 24)}${picked.text.length > 24 ? '…' : ''} ↗`
-      : `${c.phrase} ↗`;
-    if (found.range && picked.text.length <= GLOSS_LIMITS.selection)
-      lookUp(found.index, found.start, found.start + picked.text.length, found.range);
-  };
-  passage.addEventListener('mouseup', () => setTimeout(onSelected, 0));
-  // Touch selects by pressing and adjusting handles, with no mouseup to wait
-  // for: the phrase is looked up once the selection has settled.
-  const coarse = window.matchMedia?.('(pointer: coarse)')?.matches;
-  let selectionTimer = 0;
-  const onSelectionChange = () => {
-    const selection = window.getSelection?.();
-    if (pendingText.size && (!selection || selection.isCollapsed))
-      [...pendingText].forEach(paintText);
-    if (!coarse) return;
-    clearTimeout(selectionTimer);
-    selectionTimer = setTimeout(() => {
-      if (alive() && selectionWithin(passage)) onSelected();
-    }, 600);
-  };
-  document.addEventListener('selectionchange', onSelectionChange);
-
-  async function tag(index) {
-    if (tokens.has(index) || tagging.has(index)) return;
-    tagging.add(index);
-    const found = [];
-    for (const chunk of annotationChunks(paragraphs[index], language)) {
-      try {
-        const result = await api.annotateMediaText({
-          text: chunk.text,
-          source_language: language,
-        });
-        found.push(...tokensFromAnnotation(chunk.text, chunk.start, result));
-      } catch {
-        // Untagged text is still text: it can be selected and explained.
-      }
-      if (!alive()) return;
-    }
-    tagging.delete(index);
-    tokens.set(index, found);
-    paintText(index);
-  }
-  const observer =
-    typeof IntersectionObserver === 'function'
-      ? new IntersectionObserver(
-          (entries) =>
-            entries.forEach(
-              (entry) => entry.isIntersecting && tag(Number(entry.target.dataset.block)),
-            ),
-          { root: scroller, rootMargin: '400px 0px' },
-        )
-      : null;
-  function watch() {
-    if (!observer) return shown().forEach(tag);
-    observer.disconnect();
-    passage.querySelectorAll('[data-block]').forEach((block) => observer.observe(block));
-  }
-
-  let positionFrame = 0;
-  const updatePosition = () => {
-    positionFrame = 0;
-    const edge = scroller.getBoundingClientRect().top + 12;
-    let current = 1;
-    for (const block of passage.querySelectorAll('[data-block]')) {
-      if (block.getBoundingClientRect().bottom > edge) {
-        current = Number(block.dataset.block) + 1;
-        break;
-      }
-    }
-    position.textContent = `${current} / ${paragraphs.length}`;
-    position.setAttribute('aria-label', positionLabel(c, current, paragraphs.length));
-  };
-  scroller.addEventListener(
-    'scroll',
-    () => {
-      if (!positionFrame) positionFrame = requestAnimationFrame(updatePosition);
-    },
-    { passive: true },
-  );
-
-  // With nothing selected, the whole passage is investigated - within what an
-  // explanation accepts.
-  inspectButton.onclick = () => {
-    const picked = selectionWithin(passage);
-    const whole = explainBounds(paragraphs.join('\n'));
-    openUnderstanding(ctx, {
-      selection: picked ? picked.text : whole.selection,
-      context: picked ? picked.context : whole.context,
-      title,
-      origin: from,
-    });
-  };
   root.querySelectorAll('[data-note]').forEach(
     (button) =>
       (button.onclick = async () => {
@@ -449,7 +110,7 @@ function textEncounter(root, ctx, item) {
                 definition: preparedMeaning(p, language, ctx.support).text,
                 source_kind: 'manual',
                 source_fragment: paragraphs[p.paragraph].slice(0, 1200),
-                focus_note: `${origin(item, c)} · ${item.title}`,
+                focus_note: title,
               }),
             );
             report.saved(savedLanguageLink(c));
@@ -461,40 +122,17 @@ function textEncounter(root, ctx, item) {
         await save();
       }),
   );
-  const showEvidence = (fragment) => {
-    const index = paragraphs.findIndex((part) => part.includes(fragment));
-    if (index < 0) return '';
-    const cleared = [...marks.keys()];
-    marks.clear();
-    cleared.forEach(paintText);
-    if (index < count) {
-      const start = paragraphs[index].indexOf(fragment);
-      marks.set(index, { start, end: start + fragment.length });
-      paintText(index);
-      passage
-        .querySelector(`[data-block="${index}"]`)
-        ?.scrollIntoView({ block: 'center' });
-    }
-    return paragraphs[index].slice(0, 2400);
-  };
   bindComprehension(root, ctx, {
     sessionId: readingSessionId(item.id),
     questions: item.questions,
-    onEvidence: showEvidence,
+    onEvidence: (fragment) => reader.showEvidence(fragment),
     // Evidence from a check belongs to the passage it was found in, not to
     // the check: a phrase kept here must lead back to the text.
-    origin: { id: item.id, where: item.title, why: 'from_reading' },
+    origin: from,
   });
   bindComposer(root, ctx, item);
   bindImages(root, c);
-  watch();
-  updatePosition();
-  return () => {
-    observer?.disconnect();
-    document.removeEventListener('selectionchange', onSelectionChange);
-    clearTimeout(selectionTimer);
-    if (positionFrame) cancelAnimationFrame(positionFrame);
-  };
+  return () => reader.destroy();
 }
 function waitingMedia(root, ctx, payload) {
   const { c, language, memory } = ctx;
@@ -544,7 +182,15 @@ export async function renderEncounter(root, ctx) {
     // readable() and the same textEncounter() every reading source uses,
     // never a second reader.
     const [bookId, chapterId] = id.slice(5).split('/');
-    const chapter = bookId && chapterId ? await api.libraryBookChapter(bookId, chapterId) : null;
+    // The book is what gives a chapter its place: contents, previous and next,
+    // and where the book came from. A chapter still reads without it.
+    const [chapter, bookDetail] =
+      bookId && chapterId
+        ? await Promise.all([
+            api.libraryBookChapter(bookId, chapterId),
+            api.libraryBook(bookId).catch(() => null),
+          ])
+        : [null, null];
     if (!alive()) return;
     const item =
       chapter &&
@@ -556,7 +202,18 @@ export async function renderEncounter(root, ctx) {
         source: chapter.author ? { creator: chapter.author } : undefined,
       });
     if (!item) throw Error(c.unavailable);
-    return textEncounter(root, ctx, item);
+    return textEncounter(
+      root,
+      ctx,
+      { ...item, blocks: chapter.blocks },
+      {
+        id: bookId,
+        title: chapter.book_title || bookDetail?.title || '',
+        chapterId,
+        chapters: bookDetail?.chapters || [],
+        provenance: bookDetail?.provenance || null,
+      },
+    );
   }
   if (id.startsWith('story:') || id.startsWith('text:')) {
     const found = id.startsWith('story:')

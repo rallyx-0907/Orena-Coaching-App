@@ -10,6 +10,7 @@ import {
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const discovery = read('static/orena/ui/discovery.js');
+const rail = read('static/orena/ui/content-rail.js');
 const world = read('static/orena/ui/world.js');
 const styles = read('static/orena/reference.css');
 
@@ -65,6 +66,9 @@ const sampleVocabulary = Array.from({ length: 5 }, (_, index) => ({
   headword: `word-${index + 1}`,
   pronunciation: `/word-${index + 1}/`,
   level: index < 2 ? 'A2' : 'B1',
+  saved: index === 0,
+  due: index === 0,
+  review_stage: index === 0 ? 2 : 0,
   meanings: [
     { language: 'en', text: `definition ${index + 1}` },
     { language: 'vi', text: `nghĩa ${index + 1}` },
@@ -109,6 +113,16 @@ for (const ui of ['en', 'zh']) {
   assert.equal((rendered.match(/data-speaking-card/g) || []).length, 3);
   assert.equal((rendered.match(/data-writing-card/g) || []).length, 4);
   assert.equal((rendered.match(/data-vocabulary-card/g) || []).length, 5);
+  assert.match(rendered, /data-vocabulary-skin="silver"/,
+    `${ui}: Discover preserves the canonical level material/skin`);
+  assert.match(rendered, /data-vocabulary-state="due"/,
+    `${ui}: Discover preserves real review state`);
+  assert.match(rendered, /★★☆/,
+    `${ui}: Discover preserves learner mastery evidence`);
+  assert.match(rendered, /data-discover-vocabulary-save="1"/,
+    `${ui}: an unsaved feed item keeps the existing save action`);
+  assert.match(rendered, /data-vocabulary-study="0"/,
+    `${ui}: Vocabulary keeps its existing study action`);
   assert.match(rendered, /https:\/\/example\.com\/listen-0\.jpg/);
   assert.match(rendered, /1:30/);
   assert.match(rendered, /nghĩa 1/);
@@ -169,8 +183,12 @@ assert.match(styles, /\.content-rail__track\s*\{[^}]*scroll-snap-type:\s*x\s+man
 assert.match(styles, /\.content-rail__track\s*\{[^}]*flex-wrap:\s*nowrap;/s);
 assert.match(styles, /\.content-rail__track\s*\{[^}]*touch-action:\s*pan-y;/s,
   'touch rails leave vertical page movement to the browser');
-assert.match(styles, /\.content-rail__track\s*\{[^}]*padding:\s*2px\s+38px/s,
-  'desktop rail controls have reserved space instead of covering cards');
+assert.doesNotMatch(styles, /\.content-rail__track\s*\{[^}]*padding[^}]*38px/s,
+  'desktop rail controls overlay the rail edge instead of consuming card space');
+assert.match(styles, /\.content-rail__viewport:(?:hover|focus-within)[^}]*\.content-rail__control/s,
+  'desktop rail controls appear contextually rather than staying noisy');
+assert.match(styles, /\.content-rail--continue\s+\.content-rail__item\s*\{[^}]*calc\(\(100%\s*-\s*2\s*\*\s*var\(--rail-gap\)\)\s*\/\s*3\)/s,
+  'Continue fits complete cards at desktop widths instead of clipping half a card');
 assert.match(styles, /\.content-rail__item\s*\{[^}]*scroll-snap-align:\s*start;/s);
 assert.match(styles, /@media\s*\(max-width:\s*600px\)[\s\S]*?\.content-rail__item\s*\{[^}]*flex-basis:\s*min\((?:5[0-9]|6[0-5])vw,/s,
   'mobile deliberately peeks the next card instead of stacking domain items');
@@ -188,13 +206,17 @@ assert.match(world, /reading:\s*readable/);
 assert.match(world, /\n\s*vocabulary,\n/);
 assert.doesNotMatch(discovery, /const\s+(?:media|reading|speaking|writing|vocabulary)\s*=\s*\[/,
   'Discover adapts domain data and does not own a hard-coded content catalog');
-assert.doesNotMatch(discovery, /globalThis\.addEventListener\?\.\('resize'/,
+assert.doesNotMatch(rail, /globalThis\.addEventListener\?\.\('resize'/,
   'rail binding must not leak one global resize listener on every Discover render');
-assert.match(discovery, /resizeObserver\?\.disconnect\(\)/,
+assert.match(rail, /resizeObserver\?\.disconnect\(\)/,
   'rail binding returns lifecycle cleanup for its ResizeObservers');
 assert.match(world, /return unbindContentRails;/,
   'renderWorld hands rail cleanup back to the app route lifecycle');
-assert.match(discovery, /const\s+verticalDistance\s*=\s*Math\.abs\(event\.clientY - startY\)/,
+assert.match(rail, /const\s+verticalDistance\s*=\s*Math\.abs\(event\.clientY - startY\)/,
   'pointer dragging waits for a horizontal gesture before taking control');
+
+const appSource = read('static/orena/app.js');
+assert.doesNotMatch(appSource, /<span>\$\{c\.internal\}<\/span>/,
+  'internal review status must not leak into the learner footer');
 
 console.log('Discover: separate real-content rails, localized controls, compact responsive shelf behavior: PASS');

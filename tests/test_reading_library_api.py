@@ -10,6 +10,7 @@ tests/test_reading_library_persistence_postgres.py.
 from __future__ import annotations
 
 import io
+import json
 import uuid
 import zipfile
 
@@ -72,6 +73,7 @@ class FakeRepository:
         self.books: dict[str, dict] = {}
         self.chapters: dict[tuple[str, str], dict] = {}
         self._by_hash: dict[str, str] = {}
+        self.fail_create = False
 
     def get_book_by_hash(self, source_hash):
         book_id = self._by_hash.get(source_hash)
@@ -83,7 +85,9 @@ class FakeRepository:
         return {"id": book["id"], "title": book["title"], "chapter_count": book["chapter_count"]}
 
     def create_book(self, *, book_id, title, author, description, learning_language,
-                     source_kind, source_hash, cover_asset_key, original_asset_key, imported_by, chapters):
+                    source_kind, source_hash, cover_asset_key, original_asset_key, imported_by, chapters):
+        if self.fail_create:
+            raise RuntimeError("simulated repository failure")
         existing = self._by_hash.get(source_hash)
         if existing is not None and self.books.get(existing, {}).get("status") != "archived":
             book = self.books[existing]
@@ -205,7 +209,7 @@ def test_import_batch_one_bad_file_does_not_block_the_good_one():
 
 
 def test_list_and_get_book_and_chapter_happy_path():
-    client, repo, _store = _client()
+    client, repo, store = _client()
     upload = client.post(
         "/api/reading/library/import",
         files=[("files", ("book.epub", _minimal_epub_bytes("Listable"), "application/epub+zip"))],
@@ -221,11 +225,71 @@ def test_list_and_get_book_and_chapter_happy_path():
     detail = client.get(f"/api/reading/library/books/{book_id}")
     assert detail.status_code == 200
     assert detail.json()["title"] == "Listable"
+    assert detail.json()["provenance"] == {"source_url": "", "publisher": "", "rights": "", "date": ""}
     chapter_id = detail.json()["chapters"][0]["id"]
 
     chapter = client.get(f"/api/reading/library/books/{book_id}/chapters/{chapter_id}")
     assert chapter.status_code == 200
     assert chapter.json()["paragraphs"] == ["Hello world."]
+    assert chapter.json()["blocks"] == [{"type": "paragraph", "text": "Hello world."}]
+    chapter_key = repo.get_chapter(book_id, chapter_id)["content_asset_key"]
+    assert json.loads(store.data[chapter_key]) == {
+        "format": 2,
+        "blocks": [{"type": "paragraph", "text": "Hello world."}],
+        "paragraphs": ["Hello world."],
+    }
+    assert json.loads(store.data[f"books/{book_id}/manifest.json"]) == {
+        "format": 2,
+        "provenance": {"source_url": "", "publisher": "", "rights": "", "date": ""},
+    }
+
+
+def test_chapter_api_derives_blocks_for_a_format_one_asset():
+    client, repo, store = _client()
+    upload = client.post(
+        "/api/reading/library/import",
+        files=[("files", ("book.epub", _minimal_epub_bytes("Legacy"), "application/epub+zip"))],
+        data={"learning_language": "en"},
+        headers={"x-test-admin": "1"},
+    )
+    book_id = upload.json()["results"][0]["book_id"]
+    chapter_id = repo.get_book(book_id)["chapters"][0]["id"]
+    key = repo.get_chapter(book_id, chapter_id)["content_asset_key"]
+    store.data[key] = b'{"paragraphs":["old one", "old two"]}'
+
+    response = client.get(f"/api/reading/library/books/{book_id}/chapters/{chapter_id}")
+    assert response.status_code == 200
+    assert response.json()["blocks"] == [
+        {"type": "paragraph", "text": "old one"}, {"type": "paragraph", "text": "old two"}
+    ]
+
+
+def test_book_api_returns_null_provenance_when_manifest_is_missing_or_unreadable():
+    client, _repo, store = _client()
+    upload = client.post(
+        "/api/reading/library/import",
+        files=[("files", ("book.epub", _minimal_epub_bytes("No Manifest"), "application/epub+zip"))],
+        data={"learning_language": "en"},
+        headers={"x-test-admin": "1"},
+    )
+    book_id = upload.json()["results"][0]["book_id"]
+    store.data[f"books/{book_id}/manifest.json"] = b"not json"
+    response = client.get(f"/api/reading/library/books/{book_id}")
+    assert response.status_code == 200
+    assert response.json()["provenance"] is None
+
+
+def test_import_writes_manifest_and_rolls_it_back_with_other_assets_on_failure():
+    client, repo, store = _client()
+    repo.fail_create = True
+    response = client.post(
+        "/api/reading/library/import",
+        files=[("files", ("book.epub", _minimal_epub_bytes("Rollback"), "application/epub+zip"))],
+        data={"learning_language": "en"},
+        headers={"x-test-admin": "1"},
+    )
+    assert response.json()["results"][0]["category"] == "storage_failed"
+    assert not store.data
 
 
 def test_reimporting_the_same_bytes_is_reported_as_duplicate_not_a_second_book():

@@ -15,6 +15,7 @@ import {
   renderGrammar,
 } from './ui/expression.js';
 import { installHints } from './ui/patterns.js';
+import { bindContentRails } from './ui/content-rail.js';
 import { growthSummarySection } from './ui/growth-summary.js';
 import { renderAdmin } from './ui/admin.js';
 
@@ -192,7 +193,7 @@ function shell() {
     toggle.focus();
   };
   document.getElementById('footer').innerHTML =
-    `<a href="#/" class="brand-small">orena</a><span>${c.internal}</span><button class="quiet" data-account>${c.preferences} ↗</button>`;
+    `<a href="#/" class="brand-small">orena</a><button class="quiet" data-account>${c.preferences} ↗</button>`;
   document
     .querySelector('[data-account]')
     ?.addEventListener('click', () => preferences());
@@ -423,7 +424,7 @@ async function render() {
         : page === 'admin'
           ? await renderAdmin(root, scope)
         : page === 'continue'
-        ? renderContinue(root, scope)
+        ? (renderContinue(root, scope), bindContentRails(root))
         : page === 'encounter'
         ? await renderEncounter(root, scope)
         : page === 'conversation'

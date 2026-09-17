@@ -23,7 +23,8 @@ import hashlib
 import json
 import logging
 import uuid
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 from sqlalchemy.exc import ProgrammingError
@@ -164,7 +165,12 @@ async def _import_one(
         chapter_inputs: list[ChapterInput] = []
         for index, chapter in enumerate(parsed.chapters):
             content_key = f"books/{book_id}/chapters/{index}.json"
-            asset_store.put(content_key, json.dumps({"paragraphs": list(chapter.paragraphs)}).encode("utf-8"))
+            asset_store.put(
+                content_key,
+                json.dumps(
+                    {"format": 2, "blocks": list(chapter.blocks), "paragraphs": list(chapter.paragraphs)}
+                ).encode("utf-8"),
+            )
             written_keys.append(content_key)
             chapter_inputs.append(
                 ChapterInput(
@@ -174,6 +180,13 @@ async def _import_one(
                     word_count=chapter.word_count,
                 )
             )
+
+        manifest_key = f"books/{book_id}/manifest.json"
+        written_keys.append(manifest_key)
+        asset_store.put(
+            manifest_key,
+            json.dumps({"format": 2, "provenance": parsed.provenance}).encode("utf-8"),
+        )
 
         book = repository.create_book(
             book_id=book_id,
@@ -264,11 +277,20 @@ def list_books(learning_language: str, cursor: str | None = None, limit: int = 2
 
 @router.get("/books/{book_id}")
 def get_book(book_id: str) -> dict[str, Any]:
-    repository, _asset = _require_backend()
+    repository, asset_store = _require_backend()
     book = _call_repository(lambda: repository.get_book(book_id))
     if book is None:
         raise HTTPException(404, "Book not found.")
-    return book
+    response = dict(book)
+    response["provenance"] = None
+    try:
+        manifest = json.loads(asset_store.get(f"books/{book_id}/manifest.json"))
+        provenance = manifest.get("provenance") if isinstance(manifest, dict) else None
+        if isinstance(provenance, dict):
+            response["provenance"] = provenance
+    except Exception:  # noqa: BLE001 - provenance is optional metadata, never a book-read blocker
+        pass
+    return response
 
 
 @router.get("/books/{book_id}/chapters/{chapter_id}")
@@ -279,8 +301,12 @@ def get_chapter(book_id: str, chapter_id: str) -> dict[str, Any]:
         raise HTTPException(404, "Chapter not found.")
     try:
         raw = asset_store.get(chapter["content_asset_key"])
-        paragraphs = json.loads(raw)["paragraphs"]
-    except (AssetNotFound, json.JSONDecodeError, KeyError) as exc:
+        payload = json.loads(raw)
+        paragraphs = payload["paragraphs"]
+        blocks = payload.get("blocks")
+        if not isinstance(blocks, list):
+            blocks = [{"type": "paragraph", "text": paragraph} for paragraph in paragraphs]
+    except (AssetNotFound, json.JSONDecodeError, KeyError, TypeError, AttributeError) as exc:
         raise orena_http_error(503, "reading_library_chapter_unavailable", "Chapter content is unavailable.") from exc
     return {
         "id": str(chapter["id"]),
@@ -291,6 +317,7 @@ def get_chapter(book_id: str, chapter_id: str) -> dict[str, Any]:
         "language": chapter["learning_language"],
         "position": chapter["position"],
         "content_revision": chapter["content_revision"],
+        "blocks": blocks,
         "paragraphs": paragraphs,
     }
 

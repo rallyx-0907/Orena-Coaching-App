@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { route, link, continuationLink, practiceIntentions } from '../static/orena/product/intent.js';
+import { copy } from '../static/orena/ui/copy.js';
 
 assert.equal(route(link('continue')).page, 'continue', 'Continue must have its own reachable experience');
-const { experienceFor, entryPoints, referenceCopy } = await import('../static/orena/ui/reference.js');
+const { experienceFor, entryPoints, referenceCopy, renderContinue } = await import('../static/orena/ui/reference.js');
 for (const ui of ['en', 'zh']) {
   const entries = entryPoints(ui);
   assert.equal(new Set(entries.map(x => x.id)).size, entries.length);
@@ -98,6 +99,30 @@ for (const intent of practiceIntentions)
   assert.equal(route(link('practice', { intent })).intent, intent, `${intent} must still resolve`);
 for (const page of ['content', 'language', 'continue', 'expression', 'encounter', 'conversation', 'collection'])
   assert.equal(route(`#/${page}`).page, page, `${page} must still resolve`);
+
+const continueRoot = { innerHTML: '' };
+renderContinue(continueRoot, {
+  ui: 'en',
+  c: copy.en,
+  language: 'en',
+  memory: {
+    available: true,
+    value: {
+      continuation: [
+        { id: 'story:one', title: 'One real thread', intent: 'reading' },
+        { id: 'media:two', title: 'A second thread', intent: 'follow' },
+      ],
+      conversations: {},
+      expressions: {},
+    },
+  },
+});
+assert.match(continueRoot.innerHTML, /data-content-rail="continue"/,
+  'Continue uses the same accessible rail primitive as Discover');
+assert.match(continueRoot.innerHTML, /data-content-rail-prev/);
+assert.match(continueRoot.innerHTML, /data-content-rail-next/);
+assert.doesNotMatch(continueRoot.innerHTML, /thread-action/,
+  'resume cards do not repeat permanent arrows when the whole card is clickable');
 
 /* Removing the repeated bar has to be a composition change. Hiding it in CSS
    would leave every room still rendering the whole map to assistive

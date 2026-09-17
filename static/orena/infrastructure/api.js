@@ -103,7 +103,7 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
-  contextualGloss:(payload)=>request('/api/dictionary/gloss',{
+  readingLookup:(payload)=>request('/api/reading/lookup',{
     method:'POST',
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),

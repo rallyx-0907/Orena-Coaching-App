@@ -1,23 +1,330 @@
-/* The reading room: a passage read inside its own scrolling frame, one numbered
-   block per paragraph, each paragraph's meaning on demand, and every word a tap
-   away from what it means in its sentence.
+/* The reader, as markup and rules. Reading first; learning tools on demand.
 
-   Everything here is a pure function of its arguments - markup and the shape of
-   requests. The encounter owns state, requests and events. Paragraphs stay the
-   ones the text was written in: a block is never a sentence group the product
-   invented. */
-import { esc } from './html.js';
-import { symbol } from './symbols.js';
+   A text is read as continuous prose in one column: headings where the text
+   has headings, paragraphs as the text wrote them, nothing interleaved. Tools
+   appear only for something the learner selected, and only the tools that make
+   sense for what was selected. Everything here is a pure function of its
+   arguments; `reader.js` owns the DOM, the requests and the events. */
+import { esc, safeExternal } from './html.js';
+import { link } from '../product/intent.js';
 
 /* What each endpoint accepts, named once so a request is shaped to fit rather
-   than refused. Annotation takes 1200 characters and tags at most 160 words a
-   call; a Chinese word is one or two characters, so Chinese chunks are shorter. */
-export const ANNOTATE_LIMITS = Object.freeze({ en: 900, zh: 220 });
-export const TRANSLATE_BATCH = Object.freeze({ segments: 24, chars: 5000, paragraph: 5900 });
+   than refused. */
+export const LOOKUP_LIMITS = Object.freeze({ selection: 80, context: 1200 });
+export const TRANSLATE_LIMITS = Object.freeze({ text: 5900 });
 export const EXPLAIN_LIMITS = Object.freeze({ selection: 1600, context: 2400 });
-export const GLOSS_LIMITS = Object.freeze({ selection: 120, context: 1200 });
 
 const lines = (value) => esc(value).replace(/\n/g, '<br>');
+const tidy = (value) =>
+  String(value ?? '')
+    .split('\n')
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n');
+const flat = (value) => tidy(value).replace(/\n/g, ' ').toLowerCase();
+
+/* --- Content ------------------------------------------------------------- */
+
+/* The blocks a text is read as. A structured chapter keeps its headings,
+   paragraphs and section breaks; a text that only has paragraphs reads as
+   paragraphs. Anything else - an unknown block, an empty one, a break with
+   nothing on one side of it - is dropped rather than shown. */
+export function blocksFrom(item = {}) {
+  const source =
+    Array.isArray(item.blocks) && item.blocks.length
+      ? item.blocks
+      : (item.paragraphs || []).map((text) => ({ type: 'paragraph', text }));
+  const blocks = [];
+  for (const block of source) {
+    if (!block || typeof block !== 'object') continue;
+    if (block.type === 'break') {
+      if (blocks.length && blocks[blocks.length - 1].type !== 'break')
+        blocks.push({ type: 'break' });
+      continue;
+    }
+    if (block.type !== 'heading' && block.type !== 'paragraph') continue;
+    const text = tidy(block.text);
+    if (!text) continue;
+    blocks.push(
+      block.type === 'heading'
+        ? {
+            type: 'heading',
+            level: Math.min(6, Math.max(1, Number.parseInt(block.level, 10) || 2)),
+            text,
+          }
+        : { type: 'paragraph', text },
+    );
+  }
+  while (blocks.length && blocks[blocks.length - 1].type === 'break') blocks.pop();
+  return blocks;
+}
+
+// A paragraph's text, escaped, with its own line breaks and an optional mark.
+export function paragraphHtml(text, mark = null) {
+  const value = String(text ?? '');
+  if (
+    !mark ||
+    !Number.isInteger(mark.start) ||
+    !Number.isInteger(mark.end) ||
+    mark.end <= mark.start
+  )
+    return lines(value);
+  const start = Math.max(0, mark.start);
+  const end = Math.min(value.length, mark.end);
+  return `${lines(value.slice(0, start))}<mark>${lines(value.slice(start, end))}</mark>${lines(value.slice(end))}`;
+}
+
+/* The page. A chapter whose first block is its own heading uses that heading
+   as the page title rather than printing the title twice. */
+export function readerArticleHtml(c, { title, language, blocks, marks = new Map() }) {
+  const first = blocks[0];
+  const headingIsTitle = first?.type === 'heading' && flat(first.text) === flat(title);
+  let html = `<article class="reader-page" lang="${esc(language)}" data-reader-page>`;
+  if (!headingIsTitle) html += `<h1 class="reader-title">${lines(tidy(title))}</h1>`;
+  blocks.forEach((block, index) => {
+    if (block.type === 'break') {
+      html += '<hr class="reader-break">';
+    } else if (block.type === 'heading') {
+      if (index === 0 && headingIsTitle)
+        html += `<h1 class="reader-title" data-block="0">${lines(block.text)}</h1>`;
+      else {
+        const level = Math.max(2, block.level);
+        html += `<h${level} class="reader-heading" data-block="${index}">${lines(block.text)}</h${level}>`;
+      }
+    } else {
+      html += `<p data-block="${index}">${paragraphHtml(block.text, marks.get(index))}</p>`;
+    }
+  });
+  return `${html}</article>`;
+}
+
+/* --- Chapters ------------------------------------------------------------ */
+
+const byPosition = (chapters) =>
+  [...(chapters || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+export function chapterNeighbours(chapters, chapterId) {
+  const ordered = byPosition(chapters);
+  const index = ordered.findIndex((chapter) => String(chapter.id) === String(chapterId));
+  if (index < 0) return null;
+  return {
+    index,
+    total: ordered.length,
+    previous: ordered[index - 1] || null,
+    next: ordered[index + 1] || null,
+  };
+}
+
+export const chapterLabel = (c, index, total) =>
+  String(c.readerChapterOf || '')
+    .replace('{current}', String(index + 1))
+    .replace('{total}', String(total));
+
+export const progressLabel = (c, percent) =>
+  String(c.readerProgress || '').replace('{percent}', String(percent));
+
+export const chapterHref = (bookId, chapterId) =>
+  link('encounter', { id: `book:${bookId}/${chapterId}`, intent: 'reading' });
+
+/* The table of contents, with the chapter being read marked, and what is known
+   about where the book came from - beside the text, never inside it. */
+export function tocHtml(c, { bookId, chapters, currentId, provenance = null }) {
+  const items = byPosition(chapters)
+    .map((chapter) => {
+      const current = String(chapter.id) === String(currentId);
+      return `<li><a href="${esc(chapterHref(bookId, chapter.id))}"${current ? ' aria-current="true"' : ''}>${esc(tidy(chapter.title).replace(/\n/g, ' '))}</a></li>`;
+    })
+    .join('');
+  const url = safeExternal(String(provenance?.source_url || ''));
+  const publisher = String(provenance?.publisher || '').trim();
+  const about =
+    url || publisher
+      ? `<section class="reader-about"><h3>${esc(c.readerAbout)}</h3><dl>${publisher ? `<dt>${esc(c.readerPublisher)}</dt><dd>${esc(publisher)}</dd>` : ''}${url ? `<dt>${esc(c.readerSource)}</dt><dd><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(url)}</a></dd>` : ''}</dl></section>`
+      : '';
+  return `<ol class="reader-toc">${items}</ol>${about}`;
+}
+
+/* --- Settings ------------------------------------------------------------ */
+
+export const READER_DEFAULTS = Object.freeze({
+  size: 1,
+  font: 'serif',
+  spacing: 'normal',
+  width: 'medium',
+  appearance: 'auto',
+});
+const CHOICES = {
+  font: ['serif', 'sans'],
+  spacing: ['compact', 'normal', 'relaxed'],
+  width: ['narrow', 'medium', 'wide'],
+  appearance: ['auto', 'light', 'sepia', 'dark'],
+};
+export const READER_SIZE = Object.freeze({ min: 0.85, max: 1.4, step: 0.05 });
+const LEADING = { compact: 1.55, normal: 1.75, relaxed: 2 };
+const MEASURE = { narrow: '36rem', medium: '44rem', wide: '50rem' };
+/* Light, sepia and dark are registered Orena themes worn by the reader alone:
+   no new colours, and each already passes AA. "Auto" follows the app. */
+const APPEARANCE = {
+  light: { theme: 'sage-field', appearance: 'light' },
+  sepia: { theme: 'paper', appearance: 'light' },
+  dark: { theme: 'night-ink', appearance: 'dark' },
+};
+
+export function readerSettings(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const settings = { ...READER_DEFAULTS };
+  const size = Number(value.size);
+  if (Number.isFinite(size))
+    settings.size =
+      Math.round(Math.min(READER_SIZE.max, Math.max(READER_SIZE.min, size)) * 100) / 100;
+  for (const [key, allowed] of Object.entries(CHOICES))
+    if (allowed.includes(value[key])) settings[key] = value[key];
+  return settings;
+}
+
+export function readerPresentation(settings) {
+  const s = readerSettings(settings);
+  return {
+    style: `--reader-scale: ${s.size}; --reader-leading: ${LEADING[s.spacing]}; --reader-measure: ${MEASURE[s.width]};`,
+    font: s.font,
+    theme: APPEARANCE[s.appearance] || null,
+  };
+}
+
+const choiceRow = (c, label, key, current, labels) =>
+  `<div class="reader-setting"><span class="reader-setting__label">${esc(label)}</span><div class="reader-segmented">${CHOICES[key]
+    .map(
+      (value) =>
+        `<button type="button" data-reader-${key}="${value}" aria-pressed="${value === current ? 'true' : 'false'}">${key === 'appearance' ? `<span class="reader-swatch" data-swatch="${value}" aria-hidden="true"></span>` : ''}<span>${esc(labels[value])}</span></button>`,
+    )
+    .join('')}</div></div>`;
+
+export function settingsHtml(c, settings) {
+  const s = readerSettings(settings);
+  return `<div class="reader-settings" role="group" aria-label="${esc(c.readerSettings)}"><div class="reader-setting"><span class="reader-setting__label">${esc(c.readerTextSize)}</span><div class="reader-stepper"><button type="button" data-reader-size="-1" aria-label="${esc(c.readerSmaller)}"${s.size <= READER_SIZE.min ? ' disabled' : ''}>A−</button><output aria-live="polite">${Math.round(s.size * 100)}%</output><button type="button" data-reader-size="1" aria-label="${esc(c.readerLarger)}"${s.size >= READER_SIZE.max ? ' disabled' : ''}>A+</button></div></div>${choiceRow(c, c.readerTypeface, 'font', s.font, { serif: c.readerSerif, sans: c.readerSans })}${choiceRow(c, c.readerSpacing, 'spacing', s.spacing, { compact: c.readerSpacingCompact, normal: c.readerSpacingNormal, relaxed: c.readerSpacingRelaxed })}${choiceRow(c, c.readerWidth, 'width', s.width, { narrow: c.readerWidthNarrow, medium: c.readerWidthMedium, wide: c.readerWidthWide })}${choiceRow(c, c.readerAppearance, 'appearance', s.appearance, { auto: c.readerAppearanceAuto, light: c.readerAppearanceLight, sepia: c.readerAppearanceSepia, dark: c.readerAppearanceDark })}</div>`;
+}
+
+/* --- Selection ----------------------------------------------------------- */
+
+/* What the learner selected: a word (looked up), a phrase (translated, and
+   worth keeping), or a passage (translated or explained). Too much to act on
+   is nothing. */
+export function selectionKind(text, language) {
+  const value = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (!value || value.length > EXPLAIN_LIMITS.selection) return null;
+  if (language === 'zh') {
+    if (/[。！？；…!?;]/.test(value) || value.length > 24) return 'passage';
+    if (value.length <= 4 && !/[\s，、,.：:“”"'‘’（）()]/.test(value)) return 'word';
+    return 'phrase';
+  }
+  const words = value.split(' ');
+  if (words.length === 1 && value.length <= 40 && /^[\p{L}\p{M}'’-]+$/u.test(value))
+    return 'word';
+  if (words.length <= 6 && value.length <= LOOKUP_LIMITS.selection && !/[.!?;:]/.test(value))
+    return 'phrase';
+  return 'passage';
+}
+
+export function selectionActions(kind, { canSpeak = false } = {}) {
+  if (!kind) return [];
+  if (kind === 'passage') return ['translate', 'explain'];
+  return ['translate', 'explain', 'save', ...(canSpeak ? ['pronounce'] : [])];
+}
+
+const ACTION_LABELS = {
+  translate: 'selectionTranslate',
+  explain: 'selectionExplain',
+  save: 'selectionSave',
+  pronounce: 'selectionPronounce',
+};
+
+export function selectionToolbarHtml(c, actions) {
+  return `<div class="reader-selection-bar" role="toolbar" aria-label="${esc(c.selectionActions)}">${actions
+    .map(
+      (action) =>
+        `<button type="button" data-selection-action="${action}">${esc(c[ACTION_LABELS[action]])}</button>`,
+    )
+    .join('')}</div>`;
+}
+
+const posName = (c, pos) => (pos && pos !== 'other' ? c[`pos_${pos}`] || '' : '');
+const SOURCE_LABELS = {
+  collection: 'lookupSourceCollection',
+  dictionary: 'lookupSourceDictionary',
+  machine_translation: 'lookupSourceMachine',
+};
+
+/* The answer to Translate: for a word, what is known about it and where each
+   meaning came from; for a phrase or passage, its translation, labelled as
+   machine translation. What did not arrive says so - the original is never
+   shown in place of a meaning. */
+export function lookupPanelHtml(c, { selection, language, support, kind, state, result = {} }) {
+  const found = result || {};
+  const reading = found.pronunciation
+    ? `<span class="reader-panel__reading">${esc(found.pronunciation)}</span>`
+    : '';
+  const head = `<div class="reader-panel__head"><strong class="reader-panel__selection" lang="${esc(language)}">${esc(selection)}</strong>${reading}</div>`;
+  const canKeep = kind !== 'passage';
+  const actions = `<div class="reader-panel__actions"><button type="button" class="outline" data-panel-action="explain">${esc(c.selectionExplain)}</button>${canKeep ? `<button type="button" class="quiet" data-panel-action="save">${esc(c.selectionSave)}</button>` : ''}</div><p class="meta reader-panel__status" role="status" data-panel-status></p>`;
+
+  if (state === 'loading')
+    return `${head}<p class="reader-panel__note" role="status">${esc(kind === 'word' ? c.lookupLoading : c.translationLoading)}</p>`;
+  if (state === 'failed')
+    return `${head}<p class="reader-panel__note">${esc(c.lookupFailed)} <button type="button" class="quiet" data-panel-action="retry">${esc(c.retry)}</button></p>${actions}`;
+
+  let body = '';
+  if (found.translation) {
+    body = `<p class="reader-panel__translation" lang="${esc(support)}">${esc(found.translation)}</p><p class="reader-panel__source-label">${esc(c.lookupSourceMachine)}</p>`;
+  } else {
+    const facts = [
+      posName(c, found.part_of_speech) ? `<span>${esc(posName(c, found.part_of_speech))}</span>` : '',
+      found.base_form && String(found.base_form).toLowerCase() !== String(selection).toLowerCase()
+        ? `<span>${esc(c.lookupBaseForm)}: <span lang="${esc(language)}">${esc(found.base_form)}</span></span>`
+        : '',
+    ].filter(Boolean);
+    const meanings = (found.meanings || []).filter((meaning) => meaning?.text);
+    const definitions = (found.definitions || []).filter((definition) => definition?.definition);
+    body = `${facts.length ? `<p class="reader-panel__facts">${facts.join('<span aria-hidden="true"> · </span>')}</p>` : ''}${
+      meanings.length
+        ? `<ul class="reader-panel__meanings">${meanings
+            .map(
+              (meaning) =>
+                `<li><span lang="${esc(support)}">${esc(meaning.text)}</span><small>${esc(c[SOURCE_LABELS[meaning.source]] || '')}</small></li>`,
+            )
+            .join('')}</ul>`
+        : ''
+    }${
+      definitions.length
+        ? `<section class="reader-panel__definitions"><h4>${esc(c.lookupDefinitions)}</h4><ol>${definitions
+            .map(
+              (definition) =>
+                `<li>${posName(c, definition.part_of_speech) || definition.part_of_speech ? `<small>${esc(posName(c, definition.part_of_speech) || definition.part_of_speech)}</small> ` : ''}<span lang="${esc(language === 'zh' ? 'en' : language)}">${esc(definition.definition)}</span></li>`,
+            )
+            .join('')}</ol><p class="reader-panel__source-label">${esc(c.lookupSourceDictionary)}</p></section>`
+        : ''
+    }`;
+    if (!meanings.length && !definitions.length)
+      body = `${facts.length ? `<p class="reader-panel__facts">${facts.join('<span aria-hidden="true"> · </span>')}</p>` : ''}<p class="reader-panel__note">${esc(c.lookupUnavailable)}</p>`;
+  }
+  return `${head}${body}${actions}`;
+}
+
+// A kept word carries its meaning and the sentence it was met in.
+export function keepPayload({ selection, result = {}, context = '', title = '' }) {
+  const found = result || {};
+  const meaning = (found.meanings || []).find((item) => item?.text)?.text || found.translation || '';
+  return {
+    word: String(selection || '').trim().slice(0, 180),
+    phonetic: String(found.pronunciation || '').slice(0, 180),
+    part_of_speech: String(found.part_of_speech || '').slice(0, 120),
+    definition: String(meaning).slice(0, 2400),
+    source_kind: 'reading',
+    source_fragment: String(context || '').slice(0, 1200),
+    focus_note: String(title || '').slice(0, 2400),
+  };
+}
+
+/* --- Context ------------------------------------------------------------- */
 
 const SENTENCE_END = /[.!?…。！？]+["'”’」』）)\]]*\s*|\n+/gu;
 
@@ -33,9 +340,6 @@ function sentenceSpans(text) {
   return spans;
 }
 
-// Contiguous spans of whole sentences, each at most `max` long. A sentence
-// longer than that is cut at the last space that fits, or at the limit for
-// text written without spaces - never inside a surrogate pair.
 function chunkSpans(text, max) {
   const chunks = [];
   let current = null;
@@ -62,89 +366,8 @@ function chunkSpans(text, max) {
   return chunks;
 }
 
-/* The pieces of a paragraph to send to the shared tagger, each with where it
-   starts in the paragraph. The tagger trims what it is sent, so chunks are sent
-   trimmed and their offsets account for it. */
-export function annotationChunks(text, language) {
-  const value = String(text ?? '');
-  const max = language === 'zh' ? ANNOTATE_LIMITS.zh : ANNOTATE_LIMITS.en;
-  return chunkSpans(value, max).flatMap(({ start, end }) => {
-    const raw = value.slice(start, end);
-    const trimmed = raw.trim();
-    return trimmed ? [{ start: start + (raw.length - raw.trimStart().length), text: trimmed }] : [];
-  });
-}
-
-/* Tagger offsets count code points; the page indexes JavaScript strings. Only
-   tokens whose fragment really sits at their offsets survive, in order. */
-export function tokensFromAnnotation(chunkText, chunkStart, result) {
-  if (!result || result.text !== chunkText || !Array.isArray(result.annotations)) return [];
-  const points = Array.from(chunkText);
-  const tokens = [];
-  let cursor = 0;
-  for (const token of result.annotations) {
-    if (
-      !Number.isInteger(token?.start) ||
-      !Number.isInteger(token?.end) ||
-      token.start < 0 ||
-      token.end <= token.start ||
-      token.end > points.length ||
-      points.slice(token.start, token.end).join('') !== token.fragment
-    )
-      continue;
-    const start = points.slice(0, token.start).join('').length;
-    if (start < cursor) continue;
-    const end = start + token.fragment.length;
-    tokens.push({ start: chunkStart + start, end: chunkStart + end, pos: String(token.pos || 'other') });
-    cursor = end;
-  }
-  return tokens;
-}
-
-/* A paragraph's text: escaped, its own line breaks kept, each tagged word a tap
-   target, and the evidence a question pointed at marked - even when the mark
-   begins inside a word. */
-export function paragraphHtml(text, tokens = [], mark = null) {
-  const value = String(text ?? '');
-  const length = value.length;
-  const range =
-    mark && Number.isInteger(mark.start) && Number.isInteger(mark.end) && mark.end > mark.start
-      ? { start: Math.max(0, mark.start), end: Math.min(length, mark.end) }
-      : null;
-  const cuts = new Set([0, length]);
-  for (const token of tokens) {
-    cuts.add(token.start);
-    cuts.add(token.end);
-  }
-  if (range) {
-    cuts.add(range.start);
-    cuts.add(range.end);
-  }
-  const points = [...cuts].filter((n) => n >= 0 && n <= length).sort((a, b) => a - b);
-  let html = '';
-  let marked = false;
-  let next = 0;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const a = points[i];
-    const b = points[i + 1];
-    const inside = Boolean(range) && a >= range.start && b <= range.end;
-    if (inside !== marked) {
-      html += inside ? '<mark>' : '</mark>';
-      marked = inside;
-    }
-    while (next < tokens.length && tokens[next].end <= a) next += 1;
-    const token = tokens[next] && tokens[next].start <= a && b <= tokens[next].end ? tokens[next] : null;
-    const piece = lines(value.slice(a, b));
-    html += token
-      ? `<span class="reading-word" data-start="${token.start}" data-end="${token.end}" data-pos="${esc(token.pos)}">${piece}</span>`
-      : piece;
-  }
-  if (marked) html += '</mark>';
-  return html;
-}
-
 // The sentence a selection sits in, so a meaning is asked about its own use.
-export function sentenceAround(text, start, end, limit = GLOSS_LIMITS.context) {
+export function sentenceAround(text, start, end, limit = LOOKUP_LIMITS.context) {
   const value = String(text ?? '');
   const spans = sentenceSpans(value);
   let from = (spans.find((s) => s.start <= start && start < s.end) || { start: 0 }).start;
@@ -161,74 +384,13 @@ export function sentenceAround(text, start, end, limit = GLOSS_LIMITS.context) {
   return value.slice(from, to).trim();
 }
 
-// A paragraph to explain, within what the explanation accepts.
-export function explainBounds(paragraph) {
-  const value = String(paragraph ?? '').trim();
+// A stretch of text to explain, within what the explanation accepts.
+export function explainBounds(text) {
+  const value = String(text ?? '').trim();
   if (value.length <= EXPLAIN_LIMITS.selection) return { selection: value, context: value };
   const [first] = chunkSpans(value, EXPLAIN_LIMITS.selection);
   return {
     selection: value.slice(first.start, first.end).trim(),
     context: value.slice(0, EXPLAIN_LIMITS.context).trim(),
   };
-}
-
-/* Paragraph meaning requested in turns one provider batch can hold, so the
-   first meanings arrive while the rest are on their way. */
-export function translationRequests(paragraphs, indices, limits = TRANSLATE_BATCH) {
-  const requests = [];
-  let current = null;
-  let chars = 0;
-  for (const index of indices) {
-    const text = String(paragraphs[index] ?? '');
-    if (!text.trim()) continue;
-    if (
-      !current ||
-      current.segments.length >= limits.segments ||
-      (current.segments.length && chars + text.length > limits.chars)
-    ) {
-      current = { segments: [], indices: [] };
-      chars = 0;
-      requests.push(current);
-    }
-    current.segments.push({ segment_id: `p${index}`, text });
-    current.indices.push(index);
-    chars += text.length;
-  }
-  return requests;
-}
-
-function meaningHtml(c, index, translation, support) {
-  const state = translation?.state || 'loading';
-  if (state === 'ready')
-    return `<p class="reading-block__meaning" data-meaning="${index}" lang="${esc(support)}"><span class="sr-only">${esc(c.readingTranslationLabel)}: </span>${lines(translation.text)}</p>`;
-  if (state === 'too_large')
-    return `<p class="reading-block__meaning" data-meaning="${index}" data-state="too_large">${esc(c.readingTranslationTooLarge)}</p>`;
-  if (state === 'unavailable')
-    return `<p class="reading-block__meaning" data-meaning="${index}" data-state="unavailable">${esc(c.readingTranslationUnavailable)} <button type="button" class="quiet" data-retry-translate="${index}">${esc(c.retry)}</button></p>`;
-  return `<p class="reading-block__meaning" data-meaning="${index}" data-state="loading" role="status">${esc(c.readingTranslating)}</p>`;
-}
-
-export function readingBlock(
-  c,
-  index,
-  { paragraph, tokens = [], mark = null, language, support, translatable, open, translation },
-) {
-  const number = index + 1;
-  const which = `<span class="sr-only"> · ${esc(c.readingParagraph)} ${number}</span>`;
-  const translate = translatable
-    ? `<button type="button" class="reading-tool" data-translate="${index}" aria-pressed="${open ? 'true' : 'false'}">${symbol('meaning', 16)}<span>${esc(open ? c.readingHideTranslation : c.readingTranslate)}</span>${which}</button>`
-    : '';
-  return `<div class="reading-block" data-block="${index}"><span class="reading-block__number" aria-hidden="true">${number}</span><div class="reading-block__body"><p class="reading-block__text" data-text="${index}" lang="${esc(language)}">${paragraphHtml(paragraph, tokens, mark)}</p>${open && translatable ? meaningHtml(c, index, translation, support) : ''}<div class="reading-block__tools">${translate}<button type="button" class="reading-tool" data-explain="${index}">${symbol('words', 16)}<span>${esc(c.readingExplain)}</span>${which}</button></div></div></div>`;
-}
-
-export function positionLabel(c, current, total) {
-  return String(c.readingPosition || '')
-    .replace('{current}', String(current))
-    .replace('{total}', String(total));
-}
-
-/* The frame the passage scrolls in. The page keeps its place; the text moves
-   inside its own region, so what comes after reading stays one step away. */
-export function readingFrame(c, { title, blocks, after = '', total, tools = '', dialogue = false }) {
-  return `<div class="reading-frame"><div class="reading-frame__bar"><span class="reading-frame__position" data-reading-position aria-label="${esc(positionLabel(c, 1, total))}">1 / ${total}</span><div class="reading-frame__tools">${tools}</div></div><div class="reading-frame__scroll" data-reading-scroll tabindex="0" role="region" aria-label="${esc(title)}"><article class="passage${dialogue ? ' dialogue' : ''}">${blocks}${after}</article></div></div>`;
 }

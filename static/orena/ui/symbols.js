@@ -13,6 +13,12 @@ const strokes = {
   words: '<path d="M3.5 6.5h10"/><path d="M3.5 11.5h6"/><path d="M3.5 16.5h4.5"/><circle cx="15.5" cy="14" r="4"/><path d="m18.4 16.9 2.6 2.6"/>',
   // A character and a letter side by side: what a line means in another language.
   meaning: '<path d="M3.5 6h8"/><path d="M7.5 4v2"/><path d="M5 6c.9 3 2.8 5.1 5.8 6.4"/><path d="M10 6c-.9 3-2.8 5.1-5.8 6.4"/><path d="m12.8 20 3.7-8.5 3.7 8.5"/><path d="M14.1 17h4.8"/>',
+  // A list with its markers: the chapters of a book.
+  contents: '<path d="M9 6.5h11"/><path d="M9 12h11"/><path d="M9 17.5h11"/><path d="M4.5 6.5h.1"/><path d="M4.5 12h.1"/><path d="M4.5 17.5h.1"/>',
+  // A ribbon marker: somewhere to come back to.
+  bookmark: '<path d="M6.5 3.5h11v17l-5.5-4-5.5 4Z"/>',
+  back: '<path d="m14.5 5.5-6.5 6.5 6.5 6.5"/>',
+  forward: '<path d="m9.5 5.5 6.5 6.5-6.5 6.5"/>',
 };
 
 export function symbol(name, size = 16) {

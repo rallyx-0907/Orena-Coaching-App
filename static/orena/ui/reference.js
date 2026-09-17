@@ -119,7 +119,7 @@ export function experienceFor(location) {
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui], active = experienceFor(ctx.location), entries = entryPoints(ctx.ui);
   const group = (label, ids) => `<div class="nav-group"><small>${esc(label)}</small>${entries.filter(x=>ids.includes(x.id)).map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</div>`;
-  const adminEntry = ctx.user?.is_admin === true ? `<div class="nav-group"><small>${esc(c.admin)}</small><a href="${link('admin')}" ${active === 'admin' ? 'aria-current="page"' : ''}>${entryIcon('spark')}<span>${esc(c.admin)}</span></a></div>` : '';
+  const adminEntry = ctx.user?.is_admin === true ? `<div class="nav-group nav-group--admin"><small>${esc(c.admin)}</small><a href="${link('admin')}" ${active === 'admin' ? 'aria-current="page"' : ''}>${entryIcon('spark')}<span>${esc(c.admin)}</span></a></div>` : '';
   return `<nav id="shellNav" aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}${adminEntry}</nav>`;
 }
 
@@ -160,6 +160,8 @@ export function renderContinue(root, ctx) {
     compact: true,
     rail: true,
     showHeading: false,
+    previousLabel: `${c.railPrevious}: ${c.continueLearning}`,
+    nextLabel: `${c.railNext}: ${c.continueLearning}`,
   });
   root.innerHTML = `${pageIntro({title:c.continue,compact:true})}${ctx.memory.available ? '' : `<p class="notice">${esc(ctx.c.memoryUnavailable)}</p>`}${threads || `<section class="continue-empty"><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.discover)} →</a></section>`}`;
 }

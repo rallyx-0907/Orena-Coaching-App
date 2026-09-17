@@ -1,253 +1,277 @@
-/* The reading room: a passage read in its own scrolling frame, one numbered
-   block per paragraph, each paragraph's meaning on demand, and any word a tap
-   away from what it means in its sentence.
+/* The reader: reading first, learning tools on demand.
 
-   Pure rendering and request-shaping contracts for static/orena/ui/reading-room.js
-   and the word card in static/orena/ui/understanding.js. The DOM wiring lives in
-   encounter.js and is checked in the browser; what can be checked without one is
-   checked here - escaping, offsets, request limits and EN/ZH copy. */
+   Pure rendering, settings and request-shaping contracts for
+   static/orena/ui/reading-room.js, plus source-level guarantees about the DOM
+   controller (static/orena/ui/reader.js) and the encounter that mounts it. The
+   browser behaviour itself is checked in the browser; what can be checked
+   without one is checked here - structure, escaping, what is (and is not)
+   rendered by default, which learner action reaches which service, and EN/ZH. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import {
-  ANNOTATE_LIMITS,
   EXPLAIN_LIMITS,
-  GLOSS_LIMITS,
-  TRANSLATE_BATCH,
-  annotationChunks,
+  LOOKUP_LIMITS,
+  READER_DEFAULTS,
+  blocksFrom,
+  chapterLabel,
+  chapterNeighbours,
   explainBounds,
+  keepPayload,
+  lookupPanelHtml,
   paragraphHtml,
-  readingFrame,
-  readingBlock,
+  readerArticleHtml,
+  readerSettings,
+  readerPresentation,
+  selectionActions,
+  selectionKind,
+  selectionToolbarHtml,
   sentenceAround,
-  tokensFromAnnotation,
-  translationRequests,
+  settingsHtml,
+  tocHtml,
 } from '../static/orena/ui/reading-room.js';
-import { glossKeepPayload, wordCardBody } from '../static/orena/ui/understanding.js';
 
 const c = copy.en;
 
-/* --- A paragraph's text is always escaped, and keeps the line breaks it wrote --- */
-assert.equal(paragraphHtml('a <b>bold</b>\nline'), 'a &lt;b&gt;bold&lt;/b&gt;<br>line');
-
-/* --- Words become tap targets at exactly their offsets --- */
+/* --- Content: typed blocks, never flattened strings --------------------- */
 {
-  const text = 'I like books.';
-  const html = paragraphHtml(text, [
-    { start: 2, end: 6, pos: 'verb' },
-    { start: 7, end: 12, pos: 'noun' },
-  ]);
-  assert.equal(
-    html,
-    'I <span class="reading-word" data-start="2" data-end="6" data-pos="verb">like</span> <span class="reading-word" data-start="7" data-end="12" data-pos="noun">books</span>.',
-  );
-}
-
-/* --- Evidence from a question is marked without losing the words around it,
-       even when the mark starts inside a word --- */
-{
-  const text = 'I like books.';
-  const html = paragraphHtml(text, [{ start: 7, end: 12, pos: 'noun' }], { start: 9, end: 13 });
-  assert.match(html, /^I like <span class="reading-word" data-start="7" data-end="12" data-pos="noun">bo<\/span><mark>/);
-  assert.match(html, /<mark><span class="reading-word" data-start="7" data-end="12" data-pos="noun">oks<\/span>\.<\/mark>$/);
-  assert.equal(paragraphHtml('A b c', [], { start: 2, end: 3 }), 'A <mark>b</mark> c');
-}
-
-/* --- Annotation offsets are Python code points; the page indexes JS strings --- */
-{
-  const chunk = '😀 like it';
-  const result = {
-    text: chunk,
-    annotations: [
-      { fragment: 'like', start: 2, end: 6, pos: 'verb' },
-      { fragment: 'it', start: 7, end: 9, pos: 'pronoun' },
+  // Structured chapters keep their blocks; unknown or empty blocks drop.
+  const blocks = blocksFrom({
+    blocks: [
+      { type: 'break' },
+      { type: 'heading', level: 2, text: 'CHAPTER I.\nDown the Rabbit-Hole' },
+      { type: 'paragraph', text: '  Alice was beginning to get very tired.  ' },
+      { type: 'paragraph', text: '   ' },
+      { type: 'script', text: 'nope' },
+      { type: 'break' },
+      { type: 'break' },
+      { type: 'heading', level: 9, text: 'Deep' },
+      { type: 'break' },
     ],
-  };
-  const tokens = tokensFromAnnotation(chunk, 10, result);
-  assert.deepEqual(tokens, [
-    { start: 13, end: 17, pos: 'verb' },
-    { start: 18, end: 20, pos: 'pronoun' },
+  });
+  assert.deepEqual(blocks, [
+    { type: 'heading', level: 2, text: 'CHAPTER I.\nDown the Rabbit-Hole' },
+    { type: 'paragraph', text: 'Alice was beginning to get very tired.' },
+    { type: 'break' },
+    { type: 'heading', level: 6, text: 'Deep' },
   ]);
-  // An answer about different text is not an answer about this chunk.
-  assert.deepEqual(tokensFromAnnotation(chunk, 0, { ...result, text: 'other' }), []);
-  // A fragment the text does not contain at its offsets is dropped, not trusted.
-  assert.deepEqual(
-    tokensFromAnnotation(chunk, 0, { text: chunk, annotations: [{ fragment: 'nope', start: 2, end: 6, pos: 'verb' }] }),
-    [],
+  // A source with only paragraphs reads as paragraphs.
+  assert.deepEqual(blocksFrom({ paragraphs: ['One.', ' ', 'Two.'] }), [
+    { type: 'paragraph', text: 'One.' },
+    { type: 'paragraph', text: 'Two.' },
+  ]);
+}
+
+/* --- The page is continuous text: no per-line tools, no numbering -------- */
+{
+  const html = readerArticleHtml(c, {
+    title: 'CHAPTER I. Down the Rabbit-Hole',
+    language: 'en',
+    blocks: [
+      { type: 'heading', level: 2, text: 'CHAPTER I.\nDown the Rabbit-Hole' },
+      { type: 'paragraph', text: 'Alice <b>was</b> tired.' },
+      { type: 'break' },
+      { type: 'paragraph', text: 'Line one\nLine two' },
+    ],
+  });
+  assert.match(html, /^<article class="reader-page" lang="en" data-reader-page>/);
+  // The chapter's own heading is the page title - not repeated above itself.
+  assert.equal((html.match(/<h1/g) || []).length, 1);
+  assert.match(html, /<h1 class="reader-title" data-block="0">CHAPTER I\.<br>Down the Rabbit-Hole<\/h1>/);
+  assert.match(html, /<p data-block="1">Alice &lt;b&gt;was&lt;\/b&gt; tired\.<\/p>/);
+  assert.match(html, /<hr class="reader-break">/);
+  assert.match(html, /<p data-block="3">Line one<br>Line two<\/p>/);
+  for (const forbidden of [/data-translate/, /data-explain/, /reading-block__number/, /Translate/, /Explain/])
+    assert.doesNotMatch(html, forbidden, 'reading content carries no learning actions by default');
+
+  // A heading that is not the title keeps its place in the outline.
+  const titled = readerArticleHtml(c, {
+    title: 'A table for two strangers',
+    language: 'en',
+    blocks: [
+      { type: 'paragraph', text: 'The café was full.' },
+      { type: 'heading', level: 1, text: 'Later' },
+    ],
+  });
+  assert.match(titled, /<h1 class="reader-title">A table for two strangers<\/h1><p data-block="0">/);
+  assert.match(titled, /<h2 class="reader-heading" data-block="1">Later<\/h2>/);
+
+  // Evidence a question points at is marked in place.
+  const marked = readerArticleHtml(c, {
+    title: 'T',
+    language: 'en',
+    blocks: [{ type: 'paragraph', text: 'A b c' }],
+    marks: new Map([[0, { start: 2, end: 3 }]]),
+  });
+  assert.match(marked, /<p data-block="0">A <mark>b<\/mark> c<\/p>/);
+  assert.equal(paragraphHtml('x\ny', { start: 0, end: 1 }), '<mark>x</mark><br>y');
+}
+
+/* --- Chapter identity and navigation ------------------------------------- */
+{
+  const chapters = [
+    { id: 'a', title: 'CHAPTER I. Down the Rabbit-Hole', position: 0 },
+    { id: 'b', title: 'CHAPTER II. The Pool of Tears', position: 1 },
+    { id: 'c', title: 'CHAPTER III. A Caucus-Race', position: 2 },
+  ];
+  assert.deepEqual(chapterNeighbours(chapters, 'b'), {
+    index: 1,
+    total: 3,
+    previous: chapters[0],
+    next: chapters[2],
+  });
+  assert.equal(chapterNeighbours(chapters, 'a').previous, null);
+  assert.equal(chapterNeighbours(chapters, 'c').next, null);
+  assert.equal(chapterNeighbours(chapters, 'missing'), null);
+  assert.equal(chapterLabel(c, 1, 3), 'Chapter 2 of 3');
+  assert.equal(chapterLabel(copy.zh, 1, 3), '第 2 章，共 3 章');
+
+  const toc = tocHtml(c, { bookId: 'book-1', chapters, currentId: 'b' });
+  assert.equal((toc.match(/<a /g) || []).length, 3);
+  assert.match(toc, /aria-current="true"[^>]*>[\s\S]*CHAPTER II\. The Pool of Tears/);
+  assert.match(toc, /href="#\/encounter\?id=book%3Abook-1%2Fc&amp;intent=reading"/);
+  // Provenance lives beside the book, never in the text.
+  const about = tocHtml(c, {
+    bookId: 'book-1',
+    chapters,
+    currentId: 'a',
+    provenance: { source_url: 'https://onemorelibrary.com', publisher: 'Macmillan <1865>' },
+  });
+  assert.match(about, /https:\/\/onemorelibrary\.com/);
+  assert.match(about, /Macmillan &lt;1865&gt;/);
+  assert.doesNotMatch(
+    tocHtml(c, { bookId: 'b', chapters, currentId: 'a', provenance: { source_url: 'javascript:alert(1)' } }),
+    /javascript:/,
   );
 }
 
-/* --- Annotation requests stay inside what the endpoint accepts, and their
-       offsets still point into the paragraph --- */
+/* --- Reader settings: real, bounded, and theme-honest --------------------- */
 {
-  const sentence = 'This sentence is long enough to matter. ';
-  const long = sentence.repeat(60);
-  const chunks = annotationChunks(long, 'en');
-  assert.ok(chunks.length > 1);
-  for (const chunk of chunks) {
-    assert.ok(chunk.text.length <= ANNOTATE_LIMITS.en, 'an English chunk fits one annotate call');
-    assert.equal(long.slice(chunk.start, chunk.start + chunk.text.length), chunk.text);
-    assert.equal(chunk.text, chunk.text.trim());
-  }
-  const zh = '我今天在学校学习中文，也读了一本很有意思的书。'.repeat(30);
-  for (const chunk of annotationChunks(zh, 'zh')) {
-    assert.ok(chunk.text.length <= ANNOTATE_LIMITS.zh, 'a Chinese chunk stays under the token cap');
-    assert.equal(zh.slice(chunk.start, chunk.start + chunk.text.length), chunk.text);
-  }
-  assert.deepEqual(annotationChunks('   ', 'en'), []);
+  assert.deepEqual(readerSettings(null), READER_DEFAULTS);
+  assert.deepEqual(
+    readerSettings({ size: 99, font: 'comic', spacing: 'relaxed', width: 'wide', appearance: 'sepia' }),
+    { ...READER_DEFAULTS, size: 1.4, spacing: 'relaxed', width: 'wide', appearance: 'sepia' },
+  );
+  assert.equal(readerSettings({ size: 0.1 }).size, 0.85);
+  // Appearance maps onto registered Orena themes rather than inventing colours.
+  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'light' }).theme, { theme: 'sage-field', appearance: 'light' });
+  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'sepia' }).theme, { theme: 'paper', appearance: 'light' });
+  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'dark' }).theme, { theme: 'night-ink', appearance: 'dark' });
+  assert.equal(readerPresentation(READER_DEFAULTS).theme, null, 'by default the reader follows the Orena theme');
+  const style = readerPresentation({ ...READER_DEFAULTS, size: 1.2, spacing: 'compact', width: 'narrow', font: 'sans' });
+  assert.match(style.style, /--reader-scale: 1\.2/);
+  assert.match(style.style, /--reader-leading: 1\.55/);
+  assert.match(style.style, /--reader-measure: 36rem/);
+  assert.match(readerPresentation(READER_DEFAULTS).style, /--reader-measure: 44rem/, 'the default column is about 700px');
+  assert.equal(style.font, 'sans');
+
+  const panel = settingsHtml(c, { ...READER_DEFAULTS, appearance: 'dark' });
+  for (const hook of ['data-reader-size="-1"', 'data-reader-size="1"', 'data-reader-font="serif"', 'data-reader-spacing="relaxed"', 'data-reader-width="wide"', 'data-reader-appearance="dark"'])
+    assert.ok(panel.includes(hook), `settings control missing: ${hook}`);
+  assert.match(panel, /data-reader-appearance="dark"[^>]*aria-pressed="true"/);
+  assert.match(panel, new RegExp(c.readerTextSize));
 }
 
-/* --- A word's meaning is asked about in its own sentence --- */
+/* --- Selection decides what is offered ------------------------------------ */
 {
-  const text = 'The wind blew. The traveler held his cloak tighter! Then the sun shone.';
-  const start = text.indexOf('cloak');
-  const context = sentenceAround(text, start, start + 5);
-  assert.equal(context, 'The traveler held his cloak tighter!');
-  const zh = '北风吹得很猛。旅人把斗篷裹得更紧了！后来太阳出来了。';
-  const at = zh.indexOf('斗篷');
-  assert.equal(sentenceAround(zh, at, at + 2), '旅人把斗篷裹得更紧了！');
-  const huge = `${'word '.repeat(400)}target ${'word '.repeat(400)}`;
-  const t = huge.indexOf('target');
-  const bounded = sentenceAround(huge, t, t + 6);
-  assert.ok(bounded.length <= GLOSS_LIMITS.context);
-  assert.ok(bounded.includes('target'), 'the selection is always inside its context');
+  assert.equal(selectionKind('', 'en'), null);
+  assert.equal(selectionKind('cloak', 'en'), 'word');
+  assert.equal(selectionKind('rabbit-hole', 'en'), 'word');
+  assert.equal(selectionKind('genial rays', 'en'), 'phrase');
+  assert.equal(selectionKind('She took off one garment after another, and at last undressed.', 'en'), 'passage');
+  assert.equal(selectionKind('学校', 'zh'), 'word');
+  assert.equal(selectionKind('最后一班回家的车', 'zh'), 'phrase');
+  assert.equal(selectionKind('林安赶到站台时，车站里的咖啡店已经关门了。', 'zh'), 'passage');
+  assert.equal(selectionKind('x'.repeat(EXPLAIN_LIMITS.selection + 1), 'en'), null, 'too much to act on');
+
+  assert.deepEqual(selectionActions('word', { canSpeak: true }), ['translate', 'explain', 'save', 'pronounce']);
+  assert.deepEqual(selectionActions('phrase', { canSpeak: false }), ['translate', 'explain', 'save']);
+  assert.deepEqual(selectionActions('passage', { canSpeak: true }), ['translate', 'explain']);
+  assert.deepEqual(selectionActions(null, { canSpeak: true }), []);
+
+  const bar = selectionToolbarHtml(c, ['translate', 'explain', 'save', 'pronounce']);
+  assert.match(bar, /role="toolbar"/);
+  for (const action of ['translate', 'explain', 'save', 'pronounce'])
+    assert.ok(bar.includes(`data-selection-action="${action}"`));
+  assert.match(bar, new RegExp(`>${c.selectionTranslate}<`));
 }
 
-/* --- Explaining a paragraph never sends more than the explanation accepts --- */
+/* --- Lookup/translation panel: says what it knows, and where it came from -- */
 {
-  assert.deepEqual(explainBounds('Short.'), { selection: 'Short.', context: 'Short.' });
-  const long = 'A sentence that goes on for a while. '.repeat(120);
-  const bounds = explainBounds(long);
-  assert.ok(bounds.selection.length <= EXPLAIN_LIMITS.selection);
-  assert.ok(bounds.context.length <= EXPLAIN_LIMITS.context);
-  assert.ok(bounds.context.includes(bounds.selection));
-}
-
-/* --- Meaning is requested in turns a provider batch can hold --- */
-{
-  const paragraphs = Array.from({ length: 60 }, (_, i) => `Paragraph ${i}.`);
-  const requests = translationRequests(paragraphs, paragraphs.map((_, i) => i));
-  assert.ok(requests.every((r) => r.segments.length <= TRANSLATE_BATCH.segments));
-  assert.deepEqual(requests.flatMap((r) => r.indices), paragraphs.map((_, i) => i));
-  assert.deepEqual(requests[0].segments[3], { segment_id: 'p3', text: 'Paragraph 3.' });
-  const big = ['x'.repeat(3000), 'y'.repeat(3000), 'z'.repeat(10)];
-  const split = translationRequests(big, [0, 1, 2]);
-  assert.ok(split.every((r) => r.segments.reduce((n, s) => n + s.text.length, 0) <= TRANSLATE_BATCH.chars || r.segments.length === 1));
-}
-
-/* --- One block per paragraph, numbered, with its own tools --- */
-const baseBlock = {
-  paragraph: 'The <wind> blew.',
-  tokens: [],
-  mark: null,
-  language: 'en',
-  support: 'vi',
-  translatable: true,
-  open: false,
-  translation: undefined,
-};
-{
-  const html = readingBlock(c, 2, baseBlock);
-  assert.match(html, /data-block="2"/);
-  assert.match(html, /class="reading-block__number" aria-hidden="true">3</);
-  assert.match(html, /<p class="reading-block__text" data-text="2" lang="en">The &lt;wind&gt; blew\.<\/p>/);
-  assert.match(html, /data-translate="2" aria-pressed="false"/);
-  assert.match(html, /data-explain="2"/);
-  assert.doesNotMatch(html, /data-meaning=/, 'a closed paragraph shows no meaning');
-  // Reading in the support language: no translation offered at all.
-  assert.doesNotMatch(readingBlock(c, 0, { ...baseBlock, translatable: false }), /data-translate=/);
-}
-{
-  const loading = readingBlock(c, 0, { ...baseBlock, open: true, translation: { state: 'loading' } });
-  assert.match(loading, /data-meaning="0"[^>]*data-state="loading"/);
-  assert.match(loading, new RegExp(c.readingTranslating));
-  assert.match(loading, /aria-pressed="true"/);
-
-  const ready = readingBlock(c, 0, {
-    ...baseBlock,
-    open: true,
-    translation: { state: 'ready', text: 'Gió <thổi>.' },
-  });
-  assert.match(ready, /<p class="reading-block__meaning" data-meaning="0" lang="vi">/);
-  assert.match(ready, /Gió &lt;thổi&gt;\./);
-  assert.match(ready, new RegExp(`<span class="sr-only">${c.readingTranslationLabel}: </span>`));
-
-  const failed = readingBlock(c, 0, { ...baseBlock, open: true, translation: { state: 'unavailable' } });
-  assert.match(failed, /data-state="unavailable"/);
-  assert.match(failed, /data-retry-translate="0"/);
-  // Original text is never shown where a translation should be.
-  assert.doesNotMatch(failed, /lang="vi">The/);
-
-  const tooLarge = readingBlock(c, 0, { ...baseBlock, open: true, translation: { state: 'too_large' } });
-  assert.match(tooLarge, new RegExp(c.readingTranslationTooLarge));
-  assert.doesNotMatch(tooLarge, /data-retry-translate/, 'retrying cannot make a paragraph shorter');
-}
-
-/* --- The frame: its own scrolling region, a position, and the room's own controls --- */
-{
-  const html = readingFrame(c, {
-    title: 'Chapter <1>',
-    blocks: '<div class="reading-block"></div>',
-    after: '',
-    total: 12,
-    tools: '<label data-reading-all-meaning></label>',
-    dialogue: false,
-  });
-  assert.match(html, /class="reading-frame"/);
-  assert.match(html, /data-reading-scroll tabindex="0" role="region" aria-label="Chapter &lt;1&gt;"/);
-  assert.match(html, /data-reading-position[^>]*>1 \/ 12</);
-  assert.match(html, /class="reading-frame__bar"[\s\S]*data-reading-all-meaning[\s\S]*data-reading-scroll/);
-  assert.match(html, /<article class="passage">/);
-  const plain = readingFrame(c, { title: 'T', blocks: '', after: '', total: 1, tools: '', dialogue: true });
-  assert.match(plain, /<article class="passage dialogue">/);
-}
-
-/* --- The word card says what it knows, and never invents the rest --- */
-{
-  const loading = wordCardBody(c, { selection: 'cloak', language: 'en', support: 'vi', state: 'loading' });
+  const loading = lookupPanelHtml(c, { selection: 'cloak', language: 'en', support: 'vi', kind: 'word', state: 'loading' });
   assert.match(loading, /lang="en">cloak</);
-  assert.match(loading, new RegExp(c.wordCardLoading));
-  assert.match(loading, /data-word-keep/);
-  assert.match(loading, /data-word-more/);
+  assert.match(loading, new RegExp(c.lookupLoading));
 
-  const ready = wordCardBody(c, {
+  const word = lookupPanelHtml(c, {
     selection: 'cloaks',
     language: 'en',
     support: 'vi',
+    kind: 'word',
     state: 'ready',
-    result: { meaning: 'áo <choàng>', base_form: 'cloak', part_of_speech: 'noun', pronunciation: '/kləʊk/' },
+    result: {
+      base_form: 'cloak',
+      part_of_speech: 'noun',
+      pronunciation: '/kləʊk/',
+      meanings: [
+        { text: 'áo <choàng>', source: 'collection' },
+        { text: 'áo khoác', source: 'machine_translation' },
+      ],
+      definitions: [{ part_of_speech: 'noun', definition: 'A sleeveless outer garment.' }],
+    },
   });
-  assert.match(ready, /lang="vi">áo &lt;choàng&gt;</);
-  assert.match(ready, /\/kləʊk\//);
-  assert.match(ready, new RegExp(c.pos_noun));
-  assert.match(ready, />cloak</, 'the dictionary form is shown when it differs');
+  assert.match(word, /lang="vi">áo &lt;choàng&gt;</);
+  assert.match(word, new RegExp(c.lookupSourceCollection));
+  assert.match(word, new RegExp(c.lookupSourceMachine));
+  assert.match(word, /\/kləʊk\//);
+  assert.match(word, new RegExp(c.pos_noun));
+  assert.match(word, /lang="en">A sleeveless outer garment\.</);
+  assert.match(word, /data-panel-action="explain"/);
+  assert.match(word, /data-panel-action="save"/);
 
-  const unavailable = wordCardBody(c, {
-    selection: '学校',
-    language: 'zh',
+  const phrase = lookupPanelHtml(c, {
+    selection: 'She took off one garment after another.',
+    language: 'en',
     support: 'vi',
-    state: 'unavailable',
-    result: { meaning: '', base_form: '学校', part_of_speech: 'noun', pronunciation: 'xué xiào' },
+    kind: 'passage',
+    state: 'ready',
+    result: { translation: 'Cô cởi bỏ từng món đồ.' },
   });
-  assert.match(unavailable, new RegExp(c.wordCardUnavailable));
-  assert.match(unavailable, /xué xiào/, 'what is known locally still helps');
-  assert.doesNotMatch(unavailable, /lang="vi">学校/, 'the word itself is never passed off as its meaning');
-  assert.doesNotMatch(unavailable, /data-word-retry/, 'a provider that is not there is not worth retrying');
+  assert.match(phrase, /lang="vi">Cô cởi bỏ từng món đồ\.</);
+  assert.match(phrase, new RegExp(c.lookupSourceMachine));
+  assert.doesNotMatch(phrase, /data-panel-action="save"/, 'a passage is not a word to keep');
 
-  // A request that failed on the way is different news from one that has no answer.
-  const failed = wordCardBody(c, { selection: 'cloak', language: 'en', support: 'vi', state: 'failed' });
-  assert.match(failed, new RegExp(c.wordCardFailed));
-  assert.match(failed, /data-word-retry/);
-  assert.match(failed, /data-word-keep/, 'the word can still be kept without its meaning');
+  const nothing = lookupPanelHtml(c, { selection: 'zzz', language: 'en', support: 'vi', kind: 'word', state: 'unavailable', result: { meanings: [], definitions: [] } });
+  assert.match(nothing, new RegExp(c.lookupUnavailable));
+  assert.doesNotMatch(nothing, /lang="vi">zzz/, 'the original is never shown as its own meaning');
+
+  const failed = lookupPanelHtml(c, { selection: 'cloak', language: 'en', support: 'vi', kind: 'word', state: 'failed' });
+  assert.match(failed, /data-panel-action="retry"/);
 }
 
-/* --- Keeping a word keeps where it was met --- */
+/* --- Context sent with a selection stays inside what each endpoint accepts - */
+{
+  const text = 'The wind blew. The traveler held his cloak tighter! Then the sun shone.';
+  const start = text.indexOf('cloak');
+  assert.equal(sentenceAround(text, start, start + 5), 'The traveler held his cloak tighter!');
+  const zh = '北风吹得很猛。旅人把斗篷裹得更紧了！后来太阳出来了。';
+  assert.equal(sentenceAround(zh, zh.indexOf('斗篷'), zh.indexOf('斗篷') + 2), '旅人把斗篷裹得更紧了！');
+  const huge = `${'word '.repeat(400)}target ${'word '.repeat(400)}`;
+  const at = huge.indexOf('target');
+  const bounded = sentenceAround(huge, at, at + 6, LOOKUP_LIMITS.context);
+  assert.ok(bounded.length <= LOOKUP_LIMITS.context && bounded.includes('target'));
+  const long = 'A sentence that goes on for a while. '.repeat(120);
+  const bounds = explainBounds(long);
+  assert.ok(bounds.selection.length <= EXPLAIN_LIMITS.selection);
+  assert.ok(bounds.context.length <= EXPLAIN_LIMITS.context && bounds.context.includes(bounds.selection));
+}
+
+/* --- Keeping a word keeps its meaning and where it was met ---------------- */
 assert.deepEqual(
-  glossKeepPayload({
+  keepPayload({
     selection: 'cloaks',
-    result: { meaning: 'áo choàng', base_form: 'cloak', part_of_speech: 'noun', pronunciation: '/kləʊk/' },
+    result: { pronunciation: '/kləʊk/', part_of_speech: 'noun', meanings: [{ text: 'áo choàng', source: 'collection' }] },
     context: 'He held his cloaks.',
-    title: 'Chapter 1',
+    title: 'CHAPTER I',
   }),
   {
     word: 'cloaks',
@@ -256,51 +280,57 @@ assert.deepEqual(
     definition: 'áo choàng',
     source_kind: 'reading',
     source_fragment: 'He held his cloaks.',
-    focus_note: 'Chapter 1',
+    focus_note: 'CHAPTER I',
   },
 );
 
-/* --- EN and ZH both carry every word the room says --- */
+/* --- EN and ZH carry every word the reader says --------------------------- */
 const keys = [
-  'readingTranslate',
-  'readingHideTranslation',
-  'readingExplain',
-  'readingShowAllMeaning',
-  'readingTranslating',
-  'readingTranslationUnavailable',
-  'readingTranslationTooLarge',
-  'readingTranslationLabel',
-  'readingParagraph',
-  'readingPosition',
-  'readingWordHint',
-  'wordCardLoading',
-  'wordCardUnavailable',
-  'wordCardFailed',
-  'wordCardMore',
-  'wordCardKeep',
-  'wordCardBaseForm',
+  'readerBackToReading', 'readerContents', 'readerSettings', 'readerChapterOf', 'readerProgress',
+  'readerPrevious', 'readerNext', 'readerEnd', 'readerAbout', 'readerSource', 'readerPublisher',
+  'readerTextSize', 'readerSmaller', 'readerLarger', 'readerTypeface', 'readerSerif', 'readerSans',
+  'readerSpacing', 'readerSpacingCompact', 'readerSpacingNormal', 'readerSpacingRelaxed',
+  'readerWidth', 'readerWidthNarrow', 'readerWidthMedium', 'readerWidthWide',
+  'readerAppearance', 'readerAppearanceAuto', 'readerAppearanceLight', 'readerAppearanceSepia', 'readerAppearanceDark',
+  'selectionActions', 'selectionTranslate', 'selectionExplain', 'selectionSave', 'selectionPronounce',
+  'lookupLoading', 'translationLoading', 'lookupUnavailable', 'lookupFailed', 'lookupSourceCollection',
+  'lookupSourceDictionary', 'lookupSourceMachine', 'lookupDefinitions', 'lookupBaseForm',
 ];
-const partsOfSpeech = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'auxiliary', 'interjection', 'classifier', 'proper_noun', 'other'];
+const partsOfSpeech = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'auxiliary', 'interjection', 'classifier', 'proper_noun'];
 for (const ui of ['en', 'zh']) {
   for (const key of [...keys, ...partsOfSpeech.map((pos) => `pos_${pos}`)])
     assert.ok(copy[ui][key], `${ui}: missing ${key}`);
 }
-assert.notEqual(copy.en.readingTranslate, copy.zh.readingTranslate);
+assert.notEqual(copy.en.selectionTranslate, copy.zh.selectionTranslate);
 
-/* --- The encounter uses the room and the shared surfaces, not a copy of them --- */
-const encounter = readFileSync('static/orena/ui/encounter.js', 'utf8');
-assert.match(encounter, /from '\.\/reading-room\.js'/);
-assert.match(encounter, /openWordCard\(/, 'a word opens the shared word card');
-assert.match(encounter, /openUnderstanding\(ctx, \{/, 'explaining a paragraph opens the one understanding surface');
-assert.match(encounter, /api\.readingTranslate\(/);
-assert.match(encounter, /api\.annotateMediaText\(/, 'words are found by the one shared tagger');
-assert.match(
-  encounter,
-  /followToggle\('meaning-toggle', 'data-reading-all-meaning'/,
-  'reading shows every meaning with the same switch Listening uses',
+/* --- Which learner action reaches which service ---------------------------- */
+const reader = readFileSync('static/orena/ui/reader.js', 'utf8');
+const encounterFile = readFileSync('static/orena/ui/encounter.js', 'utf8');
+// Listening shares encounter.js and legitimately tags words; only the text
+// encounter is the reader's business here.
+const encounter = encounterFile.slice(
+  encounterFile.indexOf('function textEncounter('),
+  encounterFile.indexOf('function waitingMedia('),
 );
+assert.ok(encounter.length > 0, 'the text encounter exists');
+// A word is looked up; a phrase or passage is translated; neither is AI.
+assert.match(reader, /api\.readingLookup\(/);
+assert.match(reader, /api\.readingTranslate\(/);
+// AI is reached only through the one explanation surface, from an explicit Explain.
+assert.match(reader, /case 'explain':[\s\S]{0,400}openUnderstanding\(ctx, \{/);
+assert.equal((reader.match(/openUnderstanding\(/g) || []).length, 1, 'explain is the only way to AI');
+for (const source of [reader, encounter]) {
+  assert.doesNotMatch(source, /contextualGloss|contextualDictionary|annotateMediaText/, 'no AI or per-word tagging runs while reading');
+}
+// Nothing is requested until the learner selects something.
+assert.match(reader, /selectionchange/);
+assert.doesNotMatch(reader, /IntersectionObserver/, 'no background work as paragraphs scroll by');
+// The encounter mounts the reader instead of rendering its own passage.
+assert.match(encounterFile, /from '\.\/reader\.js'/);
+assert.match(encounter, /mountReader\(/);
+assert.doesNotMatch(encounter, /language-margin|data-inspect|readingBlock|readingFrame|openWordCard/);
 const api = readFileSync('static/orena/infrastructure/api.js', 'utf8');
-assert.match(api, /readingTranslate:\(payload\)=>request\('\/api\/reading\/translate'/);
-assert.match(api, /contextualGloss:\(payload\)=>request\('\/api\/dictionary\/gloss'/);
+assert.match(api, /readingLookup:\(payload\)=>request\('\/api\/reading\/lookup'/);
+assert.doesNotMatch(api, /contextualGloss/);
 
-console.log('Reading room: frame, paragraph blocks, meaning on demand, word card, EN/ZH PASS');
+console.log('Reader: continuous text, selection-only tools, non-AI lookup, settings, chapters, EN/ZH PASS');

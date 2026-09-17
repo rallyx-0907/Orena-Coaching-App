@@ -500,6 +500,33 @@ export async function renderWorld(root, ctx) {
     });
   }
   const unbindContentRails = bindContentRails(root);
+  root.querySelectorAll('[data-discover-vocabulary-save]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const index = Number(button.dataset.discoverVocabularySave);
+      const card = vocabulary[index];
+      if (!card || card.saved || button.disabled) return;
+      button.disabled = true;
+      try {
+        await api.saveLibraryVocabulary(vocabularyKeepPayload(card, 'feed', ctx.support));
+        if (!alive()) return;
+        card.saved = true;
+        const surface = button.closest('[data-vocabulary-card]');
+        surface?.setAttribute('data-vocabulary-state', card.due ? 'due' : 'learning');
+        const state = surface?.querySelector('.vocabulary-state');
+        if (state && !card.due) {
+          state.className = 'vocabulary-state vocabulary-state--learning';
+          state.textContent = c.vocabularyLearningState;
+        }
+        const saved = document.createElement('span');
+        saved.className = 'quiet';
+        saved.dataset.vocabularySaved = '';
+        saved.textContent = `${c.vocabularySaved || c.saved} ✓`;
+        button.replaceWith(saved);
+      } catch {
+        if (alive()) button.disabled = false;
+      }
+    });
+  });
   root
     .querySelectorAll('[data-bring]')
     .forEach((x) => (x.onclick = ctx.import));

@@ -11,6 +11,7 @@ import {
   practiceIntentions,
 } from '../product/intent.js';
 import { entryIcon } from './icons.js';
+import { contentRail } from './content-rail.js';
 
 /* Why Orena kept something, and the way back to where the learner met it.
 
@@ -225,14 +226,15 @@ export function continuationShelf(ctx, limit = 3, options = {}) {
     experience = '',
     rail = false,
     showHeading = true,
+    previousLabel = c.previous || 'Previous',
+    nextLabel = c.next || 'Next',
   } = options;
   const entries = continuationEntries(memory, { experience }).slice(0, limit);
   if (!entries.length) return '';
   const heading = showHeading
     ? `<div class="section-head"><h2>${esc(title)}</h2>${hint({ text: c.deviceThreads })}</div>`
     : '';
-  return `<section class="thread-shelf${compact ? ' thread-shelf--compact' : ''}${rail ? ' thread-shelf--rail' : ''}" aria-label="${esc(title)}">${heading}<div class="thread-list${rail ? ' thread-list--rail' : ''}">${entries
-    .map((item) => {
+  const cards = entries.map((item) => {
       const draft = memory.value.expressions[item.id]?.trim();
       const action =
         draft && item.intent === 'writing'
@@ -246,9 +248,21 @@ export function continuationShelf(ctx, limit = 3, options = {}) {
       const icon = rail
         ? `<span class="thread-icon">${entryIcon(continuationIcons[experienceName] || 'return')}</span>`
         : '';
-      return `<a class="thread${rail ? ' thread--rail' : ''}" href="${continuationLink(item)}">${icon}<small>${esc((rail && railAction) || action)}</small><strong lang="${language}">${esc(item.title)}</strong>${state}<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span></a>`;
-    })
-    .join('')}</div></section>`;
+      return `<a class="thread${rail ? ' thread--rail' : ''}" href="${continuationLink(item)}">${icon}<small>${esc((rail && railAction) || action)}</small><strong lang="${language}">${esc(item.title)}</strong>${state}${rail ? '' : `<span class="thread-action">${esc(c.resume)} <span aria-hidden="true">→</span></span>`}</a>`;
+    });
+  if (rail) {
+    return contentRail({
+      id: 'continue',
+      title,
+      icon: 'return',
+      items: cards,
+      previousLabel,
+      nextLabel,
+      showHeader: showHeading,
+      className: `thread-shelf${compact ? ' thread-shelf--compact' : ''}`,
+    });
+  }
+  return `<section class="thread-shelf${compact ? ' thread-shelf--compact' : ''}" aria-label="${esc(title)}">${heading}<div class="thread-list">${cards.join('')}</div></section>`;
 }
 
 /* One voice for work that leaves the device. Saving, saved, and a failure that

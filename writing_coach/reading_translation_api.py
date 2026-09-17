@@ -12,6 +12,7 @@ from writing_coach.core.request_context import current_language_code
 from writing_coach.core.support_languages import UnsupportedSupportLanguage
 from writing_coach.media_ingestion import primary_language
 from writing_coach.media_translation import MAX_TRANSLATION_BATCH_CHARS
+from writing_coach.reading_lookup import ReadingLookupService
 from writing_coach.reading_translation import ReadingTranslationService, TextSegment
 
 # One request is at most two provider batches of paragraphs; a reader asking for
@@ -21,11 +22,17 @@ MAX_READING_TRANSLATION_SEGMENTS = 48
 
 router = APIRouter(prefix="/api/reading", tags=["reading"])
 _service: ReadingTranslationService | None = None
+_lookup_service: ReadingLookupService | None = None
 
 
 def configure_reading_translation(service: ReadingTranslationService | None) -> None:
     global _service
     _service = service
+
+
+def configure_reading_lookup(service: ReadingLookupService | None) -> None:
+    global _lookup_service
+    _lookup_service = service
 
 
 class ReadingTranslationSegmentIn(BaseModel):
@@ -91,3 +98,50 @@ def translate_reading(payload: ReadingTranslationIn) -> dict[str, Any]:
             for segment_id, meaning in result.translations
         ],
     }
+
+
+class ReadingLookupIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=80)
+    context: str = Field(min_length=1, max_length=1200)
+    source_language: str = Field(min_length=2, max_length=32)
+    target_language: str = Field(min_length=2, max_length=32)
+
+
+@router.post("/lookup")
+def lookup_reading_text(payload: ReadingLookupIn) -> dict[str, Any]:
+    if _lookup_service is None:
+        raise orena_http_error(
+            503,
+            "reading_lookup_unavailable",
+            "Reading lookup is not available right now.",
+            retryable=False,
+        )
+    source = primary_language(payload.source_language)
+    if source not in {"en", "zh"} or source != primary_language(current_language_code()):
+        raise orena_http_error(
+            409,
+            "reading_language_mismatch",
+            "Text language must match the current learning language.",
+            retryable=False,
+        )
+    text = payload.text.strip()
+    context = payload.context.strip()
+    if not text or text.casefold() not in context.casefold():
+        raise orena_http_error(
+            422,
+            "reading_lookup_text_not_in_context",
+            "Selected text must come from the supplied reading context.",
+            retryable=False,
+        )
+    try:
+        result = _lookup_service.lookup(text, context, source, payload.target_language)
+    except UnsupportedSupportLanguage as exc:
+        raise orena_http_error(
+            422,
+            "invalid_support_language",
+            "Choose a valid support language.",
+            retryable=False,
+        ) from exc
+    return result.to_dict()

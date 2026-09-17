@@ -68,7 +68,8 @@ const rail = continuationShelf(ctxFor(mixedMemory), 20, {
   compact: true,
   rail: true,
 });
-assert.match(rail, /thread-list--rail/, 'compact continuation uses the shared swipe rail');
+assert.match(rail, /data-content-rail="continue"/, 'compact continuation uses the shared swipe rail');
+assert.match(rail, /data-content-rail-track/, 'compact continuation keeps the accessible horizontal track');
 assert.equal((rail.match(/class="thread thread--rail"/g) || []).length, 4);
 assert.doesNotMatch(rail, /<p>/, 'compact continuation cards do not repeat state prose');
 
