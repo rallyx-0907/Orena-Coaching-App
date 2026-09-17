@@ -92,27 +92,82 @@ function continuationCard(item, ctx) {
   const label = experience === 'listening'
     ? ctx.c.followName
     : ctx.c[`${experience}Name`] || ctx.c.resume;
-  return `<a class="discover-continuation-card" href="${esc(continuationLink(item))}"><span aria-hidden="true">${entryIcon(continuationIcons[experience] || 'return')}</span><small>${esc(label)}</small><strong lang="${esc(ctx.language)}">${esc(item.title)}</strong></a>`;
+  /* The thing itself, then what the learner was doing to it. A row of white
+     cards carrying only a word and a title was the SaaS grammar D-057 names;
+     the cover makes a resumed item recognisable at a glance. */
+  return `<a class="discover-continuation-card" href="${esc(continuationLink(item))}"><span class="discover-continuation-card__visual" aria-hidden="true">${art(item)}</span><small>${entryIcon(continuationIcons[experience] || 'return')}${esc(label)}</small><strong lang="${esc(ctx.language)}">${esc(item.title)}</strong></a>`;
 }
 
-function railCopy(ctx, id, icon, items, href) {
+function rail(ctx, { id, title, icon, items, href = '' }) {
   const r = referenceCopy[ctx.ui];
   return contentRail({
     id,
-    title: r[id] || ctx.c[`${id}Name`] || id,
+    title,
     icon,
     items,
     seeAllHref: href,
     seeAllLabel: r.collectionViewAll,
-    previousLabel: `${r.railPrevious}: ${r[id] || id}`,
-    nextLabel: `${r.railNext}: ${r[id] || id}`,
+    previousLabel: `${r.railPrevious}: ${title}`,
+    nextLabel: `${r.railNext}: ${title}`,
     emptyLabel: r.railEmpty,
   });
 }
 
-/* Discover distributes real domain content. Vertical movement changes domain;
-   horizontal movement stays inside that domain. Continue is the only mixed
-   shelf because its purpose is to return to unfinished learner work. */
+/* How long a thing takes, in whole minutes, from whatever field its domain
+   authored. Unknown stays unknown: an item with no stated length is never
+   guessed into a shelf that promises five minutes. */
+function minutes(item) {
+  if (Number(item?.duration_ms) > 0) return Math.round(Number(item.duration_ms) / 60000);
+  const stated = /(\d+)/.exec(String(item?.time || ''));
+  return stated ? Number(stated[1]) : 0;
+}
+
+const STORY_MATERIAL = /fable|story|fiction|tale|classical/i;
+
+/* The doors. Skill names are valid navigation vocabulary (D-057) and a learner
+   who already knows they want to listen today deserves one. They are a compact
+   row of marks, not the structure of the surface: content comes first above
+   them and continues below. */
+function doors(ctx) {
+  const r = referenceCopy[ctx.ui];
+  const entries = [
+    ['reading', 'book', 'sage', link('practice', { intent: 'reading' })],
+    ['listening', 'sound', 'night', link('practice', { intent: 'follow' })],
+    ['speaking', 'voice', 'coral', link('practice', { intent: 'speaking' })],
+    ['writing', 'pen', 'sun', link('expression')],
+    ['vocabulary', 'leaf', 'sage', link('language')],
+  ];
+  return `<nav class="discover-doors" aria-label="${esc(r.browseAll)}">${entries
+    .map(([key, icon, tone, href]) => `<a class="discover-door" data-discover-door="${esc(key)}" data-tone="${esc(tone)}" href="${esc(href)}"><span class="discover-door__mark" aria-hidden="true">${entryIcon(icon)}</span>${esc(r[key])}</a>`)
+    .join('')}</nav>`;
+}
+
+/* The first action, and only ever one of them.
+
+   A learner who has never used a language-learning app must see what to do
+   within a few seconds, and a learner with history must see the way back
+   (D-057, Product Constitution §10). Both are the same block in two states, so
+   neither can be pushed under the other by a rail that happened to load. */
+function startBlock(ctx, { first, resume }) {
+  const r = referenceCopy[ctx.ui];
+  if (resume) {
+    const experience = continuationExperience(resume);
+    const label = experience === 'listening' ? ctx.c.followName : ctx.c[`${experience}Name`] || ctx.c.resume;
+    return `<section class="discover-start discover-start--resume"><div class="discover-start__body"><small>${esc(label)}</small><h2 lang="${esc(ctx.language)}">${esc(resume.title)}</h2><a class="primary" href="${esc(continuationLink(resume))}">${esc(r.continueAction)} <span aria-hidden="true">→</span></a></div><span class="discover-start__visual" aria-hidden="true">${art(resume)}</span></section>`;
+  }
+  if (!first)
+    return `<section class="discover-start discover-start--begin"><div class="discover-start__body"><h2>${esc(r.startTitle)}</h2></div>${scene('discovery', { size: 'hero' })}</section>`;
+  const destination = first.kind === 'audio' || first.kind === 'video'
+    ? link('encounter', { id: first.id, intent: 'follow' })
+    : link('encounter', { id: first.id, intent: 'reading' });
+  const length = minutes(first);
+  return `<section class="discover-start discover-start--begin"><div class="discover-start__body"><h2>${esc(r.startTitle)}</h2><a class="primary" href="${esc(destination)}">${esc(r.startAction)} <span aria-hidden="true">→</span></a><small lang="${esc(first.language || ctx.language)}">${esc(first.title)}${length ? ` · ${length} ${esc(r.railMinutes)}` : ''}</small></div>${scene('discovery', { size: 'hero' })}</section>`;
+}
+
+/* Discover distributes real domain content, and organises it by what the
+   content is rather than by which skill it trains (D-057). A rail is built from
+   the data it was handed; a rail with nothing real in it does not appear, and
+   nothing here invents an item to fill a shape. */
 export function discoverySpread(
   ctx,
   {
@@ -126,25 +181,92 @@ export function discoverySpread(
 ) {
   const r = referenceCopy[ctx.ui];
   const continuation = continuationEntries(ctx.memory).slice(0, 8);
+  const texts = reading.slice(0, RAIL_PREVIEW_LIMIT);
+  const heard = media.slice(0, RAIL_PREVIEW_LIMIT);
+
   const rails = [];
-  if (continuation.length) {
-    rails.push(contentRail({
+  if (continuation.length > 1)
+    rails.push(rail(ctx, {
       id: 'continue',
       title: r.continueLearning,
       icon: 'return',
-      items: continuation.map((item) => continuationCard(item, ctx)),
-      seeAllHref: link('continue'),
-      seeAllLabel: r.collectionViewAll,
-      previousLabel: `${r.railPrevious}: ${r.continueLearning}`,
-      nextLabel: `${r.railNext}: ${r.continueLearning}`,
+      items: continuation.slice(1).map((item) => continuationCard(item, ctx)),
+      href: link('continue'),
     }));
-  }
-  rails.push(
-    railCopy(ctx, 'reading', 'book', reading.slice(0, RAIL_PREVIEW_LIMIT).map((item) => readingCard(item, ctx)), link('practice', { intent: 'reading' })),
-    railCopy(ctx, 'listening', 'sound', media.slice(0, RAIL_PREVIEW_LIMIT).map((item) => listeningCard(item, ctx)), link('practice', { intent: 'follow' })),
-    railCopy(ctx, 'speaking', 'voice', speaking.map((item) => speakingCard(item, ctx)), link('practice', { intent: 'speaking' })),
-    railCopy(ctx, 'writing', 'pen', writing.map((item) => writingCard(item, ctx)), link('expression')),
-    railCopy(ctx, 'vocabulary', 'leaf', vocabulary.map((item, index) => vocabularyCard({ ...item, __discoverIndex: index }, ctx)), link('language')),
+
+  const stories = texts.filter(
+    (item) => STORY_MATERIAL.test(String(item.material || '')) || item.kind === 'story' || item.kind === 'text',
   );
-  return `<header class="discover-hero"><h1>${esc(r.discover)}</h1>${scene('discovery',{size:'hero'})}</header>${catalogError || ''}<div class="discover-feed">${rails.join('')}</div>`;
+  if (stories.length)
+    rails.push(rail(ctx, {
+      id: 'stories',
+      title: r.railStories,
+      icon: 'book',
+      items: stories.map((item) => readingCard(item, ctx)),
+      href: link('practice', { intent: 'reading' }),
+    }));
+
+  const voices = heard;
+  if (voices.length)
+    rails.push(rail(ctx, {
+      id: 'voices',
+      title: r.railVoices,
+      icon: 'sound',
+      items: voices.map((item) => listeningCard(item, ctx)),
+      href: link('practice', { intent: 'follow' }),
+    }));
+
+  /* A lens, not a shelf. It deliberately looks back across everything above and
+     may repeat an item, which is what makes it useful to a learner with five
+     minutes at a bus stop. It sits after the shelves it draws from, and stays
+     small, so it can never become the page. */
+  const SHORT_LIMIT = 4;
+  const isShort = (item) => minutes(item) > 0 && minutes(item) <= 5;
+  // Interleaved, not concatenated: a shelf that answers "what can I finish
+  // now?" has to show both kinds inside the first few cards, and a 3:4 cover
+  // beside a 16:9 thumbnail is the rhythm the Art Bible asks a shelf for.
+  const shortTexts = texts.filter(isShort);
+  const shortHeard = heard.filter(isShort);
+  const short = [];
+  for (let index = 0; short.length < SHORT_LIMIT && (shortTexts[index] || shortHeard[index]); index += 1) {
+    if (shortTexts[index]) short.push(shortTexts[index]);
+    if (short.length < SHORT_LIMIT && shortHeard[index]) short.push(shortHeard[index]);
+  }
+  if (short.length > 1)
+    rails.push(rail(ctx, {
+      id: 'short',
+      title: r.railShort,
+      icon: 'focus',
+      items: short.map((item) => (heard.includes(item) ? listeningCard(item, ctx) : readingCard(item, ctx))),
+    }));
+
+  const say = [...speaking, ...writing];
+  if (say.length)
+    rails.push(rail(ctx, {
+      id: 'say',
+      title: r.railSay,
+      icon: 'voice',
+      items: [
+        ...speaking.map((item) => speakingCard(item, ctx)),
+        ...writing.map((item) => writingCard(item, ctx)),
+      ],
+      href: link('expression'),
+    }));
+
+  if (vocabulary.length)
+    rails.push(rail(ctx, {
+      id: 'words',
+      title: r.railWords,
+      icon: 'leaf',
+      items: vocabulary.map((item, index) => vocabularyCard({ ...item, __discoverIndex: index }, ctx)),
+      href: link('language'),
+    }));
+
+  /* The heading names the page for assistive technology; the learner is told
+     where they are by the start block and the content beneath it, not by a
+     headline the width of the screen. */
+  return `<h1 class="sr-only">${esc(r.discover)}</h1>${startBlock(ctx, {
+    first: texts.find((item) => minutes(item) > 0 && minutes(item) <= 5) || texts[0] || heard[0] || null,
+    resume: continuation[0] || null,
+  })}${doors(ctx)}${catalogError || ''}<div class="discover-feed">${rails.join('')}</div>`;
 }

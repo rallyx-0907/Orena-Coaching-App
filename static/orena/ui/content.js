@@ -1,4 +1,5 @@
 import { esc, safeExternal } from './html.js';
+import { contentCover } from './cover.js';
 
 // Content presentation is shared by discovery, practice and the encounter.
 export const duration = (ms) => {
@@ -23,37 +24,21 @@ export function origin(item, c) {
         ? c.generated
         : c.provided;
 }
-/* A shelf of texts without cover images used to be a shelf of one cover: every
-   passage drew the same "Aa 字" on the same ground, so five spines read as one
-   block of colour. A text still has something of its own to show - its first
-   letter - and a stable identity to vary the ground with, so the fallback is
-   controlled variation over real data rather than a repeated placeholder. */
-const COVER_VARIANTS = 6;
-function coverVariant(item) {
-  const seed = String(item.id || item.title || '');
-  let total = 0;
-  for (let index = 0; index < seed.length; index += 1)
-    total = (total + seed.charCodeAt(index)) % COVER_VARIANTS;
-  return total;
-}
-function coverMark(item) {
-  if (item.art === 'table') return '◡ ◡';
-  if (item.art === 'street') return '↗';
-  return [...String(item.title || '').trim()][0] || 'Aa';
-}
+/* Real imagery first, a designed cover second, a letter never.
+
+   A shelf of texts without cover images used to draw the item's first character
+   on a tinted rectangle, so five spines read as one block of colour with an
+   alphabet on it. D-057 retires that: a production surface shows no single
+   letter, no repeated `Aa 字` and no generic geometric block. When no real
+   image exists the item gets a cover from the one deterministic system in
+   `ui/cover.js`, drawn from its own identity and what it is. */
 export function art(item) {
   const poster = safeExternal(item.poster_url);
   if (poster)
     return `<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
   if (item.art === 'train')
     return '<img src="/orena-assets/assets/last-train.png" alt="" loading="lazy">';
-  if (
-    item.kind === 'text' ||
-    item.kind === 'story' ||
-    item.origin === 'generated'
-  )
-    return `<div class="text-art" data-cover-variant="${coverVariant(item)}" aria-hidden="true"><span>${esc(coverMark(item))}</span></div>`;
-  return '<div class="sound-art" aria-hidden="true"><div class="sound-orbit"></div><span class="sound-wave">▂ ▅ ▃ ▇ ▂ ▆ ▄ ▅ ▂</span><span class="sound-note">♪</span></div>';
+  return contentCover(item);
 }
 export function bindImages(root, c) {
   root.querySelectorAll('img').forEach((img) =>

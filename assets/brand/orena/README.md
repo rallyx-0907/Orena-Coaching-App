@@ -4,10 +4,11 @@ Canonical reference package for designers and coding/generation agents.
 
 Start here:
 1. `references/00_MASTER_REFERENCE_APPROVED.png`
-2. `BRAND_MASCOT_GUIDE.md`
-3. `AGENT_GENERATION_CONTRACT.md`
-4. `tokens/brand-tokens.json`
-5. `actions/` and `expressions/`
+2. `ART_BIBLE.md`
+3. `BRAND_MASCOT_GUIDE.md`
+4. `AGENT_GENERATION_CONTRACT.md`
+5. `tokens/brand-tokens.json`
+6. `actions/` and `expressions/`
 
 Do not regenerate the mascot from memory when these references are available.
 
@@ -40,20 +41,21 @@ licence belongs to artwork alone: interface colour keeps its single owner in
 `static/orena/theme.css`, and any text or control placed over artwork still
 meets the contrast rules. See `docs/project/DESIGN_CONTRACT.md` rules 14-16.
 
+`ART_BIBLE.md` holds the direction itself: the overall visual language, mascot
+placement, scene illustration, content thumbnails, book covers, the icon family,
+backgrounds and patterns, motion, composition, and worked DO / DON'T examples.
+The mascot's own identity stays in `BRAND_MASCOT_GUIDE.md` and its generation
+procedure in `AGENT_GENERATION_CONTRACT.md`.
+
 ### Known gaps
 
-This package currently specifies the mascot, brand model, the three brand
-layers, props, tokens and approved references. It does **not** yet specify:
+The five specification gaps recorded when this section was written — thumbnails,
+book covers, the icon family, backgrounds and patterns, motion — are closed by
+`ART_BIBLE.md`.
 
-- content thumbnail rules (real image versus illustration, crop, title overlay,
-  category markers, duration and level placement);
-- book cover system (cover-first layout, genre variation, title legibility, no
-  single-letter placeholder);
-- the icon family (stroke and fill, colour, active and inactive states,
-  decorative versus learning-action icons);
-- background and pattern usage;
-- motion vocabulary.
-
-These are recorded gaps, to be closed by an explicit art-direction task. Until
-then an agent reuses what this package already approves and raises the gap; it
-does not invent a style for one surface.
+What remains open is **artwork, not rules**, and is listed in that file's own
+"Known gaps": no real book-cover artwork exists in the repository, no approved
+artwork exists for curated audio arriving without a poster, icon coverage is
+partial, and no shared motion tokens exist yet. Until an asset exists, an agent
+uses the deterministic designed-cover system in `ART_BIBLE.md` §D.1 and raises
+the gap; it does not invent a style for one surface.

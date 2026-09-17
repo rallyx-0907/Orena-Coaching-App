@@ -72,9 +72,19 @@ assert.match(card, /A2/, 'a genuinely known level is visible');
 assert.match(card, /lang="en"/, 'the learning-content title carries its own language');
 assert.match(card, /aria-label="Open A rainy day taxi"/, 'the card link has a specific accessible name');
 
+/* A source with no thumbnail of its own gets Orena's designed cover, drawn
+   deterministically from its identity and what it is (ART_BIBLE.md D.1, D-057).
+   The waveform placeholder it replaced was the same drawing on every card. */
 const fallback = mediaCard(sharedAudio, copy.en, { intent: 'follow' });
-assert.match(fallback, /class="sound-art"/, 'missing thumbnails use the existing Orena media artwork');
+assert.match(fallback, /class="content-cover" data-cover-motif="wave"/,
+  'missing thumbnails use the designed cover for a voice');
 assert.doesNotMatch(fallback, /<img /, 'missing thumbnails do not invent an image');
+assert.doesNotMatch(fallback, /sound-art|text-art/, 'the shared placeholder artwork is retired');
+assert.equal(
+  mediaCard(sharedAudio, copy.en, { intent: 'follow' }),
+  fallback,
+  'the same item always draws the same cover',
+);
 
 assert.deepEqual(
   filterMediaItems([sharedVideo, sharedAudio], { type: 'video' }).map((item) => item.id),

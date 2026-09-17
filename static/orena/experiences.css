@@ -117,16 +117,6 @@
   height: 100%;
   object-fit: cover;
 }
-.voice-cover .sound-art {
-  height: 100%;
-}
-.voice-cover .sound-wave {
-  font-size: 18px;
-  letter-spacing: 0;
-}
-.voice-cover .sound-note {
-  display: none;
-}
 .voice-cover .voice-play {
   position: absolute;
   bottom: 10px;

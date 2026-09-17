@@ -47,18 +47,17 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-Reading Room word lookup (`9865bfa`): dictionary-first, translation-last,
-never-AI; paragraph translation defaults to local Marian, Groq is opt-in.
-Fixed an EPUB nav-landmarks bug that kept a TOC doc as a chapter.
+D-057 governance, then Discover under it. `ART_BIBLE.md` joins
+`assets/brand/orena/` as the art-direction rules; `ui/cover.js` draws one
+deterministic designed cover per item, retiring the letter and waveform
+placeholders product-wide. Discover opens on one action (Start here /
+Continue), keeps skill names as compact doors, and organises shelves by
+content: Stories, Everyday voices, Around five minutes, Something to say,
+Words worth keeping. Its gate now encodes that contract.
 
-Learning-surface UI polish: Vocabulary rank/material restored (reference.css
-had overwritten `--vocabulary-level-color`); one shared rail peek
-(`--rail-columns` + `--rail-peek`); Continue shows real state at a 1040px
-measure; Speaking/Writing are no longer one card with two icons.
-
-Verified both batches: full pytest, all 45 CI `.mjs` gates, both validators,
-browser pass on `orena-foundation-web`:8011. Gemini R3 4/4 EN/ZH/support pass.
-No CI claim.
+Verified: pytest `1109 passed, 118 skipped`, all 45 CI `.mjs` gates, ESM graph,
+both validators, EN/ZH browser pass on `orena-foundation-web`:8011 at desktop
+and 390px. No CI claim.
 
 ## Runtime / safety
 

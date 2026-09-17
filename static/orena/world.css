@@ -366,19 +366,15 @@
   z-index: 1;
   font-size: var(--text-sm);
 }
-.text-art {
-  display: grid;
-  place-items: center;
+/* One designed cover fills whatever frame it is given. The drawing is inside
+   the SVG (ui/cover.js); a surface only says how big the frame is. */
+.content-cover {
+  display: block;
+  width: 100%;
   height: 100%;
-  background: var(--sage-surface);
-  color: var(--on-sage);
+  object-fit: cover;
 }
-.text-art span {
-  font-size: 80px;
-  letter-spacing: -0.08em;
-  opacity: 0.65;
-}
-.text-paths .text-art {
+.text-paths .content-cover {
   position: absolute;
   bottom: -60px;
   right: 10px;
@@ -486,30 +482,6 @@
 .collection-row small {
   font-size: var(--text-xs);
   color: var(--muted);
-}
-.sound-art {
-  position: relative;
-  overflow: hidden;
-  min-height: 100%;
-  background: var(--sage-surface);
-  color: var(--on-sage);
-  display: grid;
-  place-items: center;
-}
-.sound-wave {
-  font-size: 38px;
-  letter-spacing: 5px;
-}
-.sound-orbit {
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  opacity: 0.2;
-}
-.sound-note {
-  font-size: 30px;
 }
 .image-unavailable {
   display: grid;
@@ -1479,7 +1451,7 @@
   .text-paths > a {
     min-height: 215px;
   }
-  .text-paths .text-art {
+  .text-paths .content-cover {
     bottom: -90px;
   }
   .bring-invitation h2 {

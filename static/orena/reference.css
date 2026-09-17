@@ -392,23 +392,93 @@
 #main[data-experience='continue'] > .thread-shelf { padding: 0; border-block: 0; }
 .thread--rail { height: 100%; }
 
-/* Discover is a vertical feed of compact domain shelves. The shelf primitive
-   owns horizontal behaviour; each domain keeps the shape that helps a learner
-   recognise its content. */
-[data-experience='discover'] .discover-hero {
+/* Discover opens with one action, then content.
+
+   The page used to open with the word "Discover" set the width of the screen
+   and a scene beside it, which told a learner nothing and cost the whole first
+   viewport (D-057 rule 13). What replaces it is the one thing a learner needs
+   first: begin, or carry on. The rails beneath it are organised by what the
+   content is, and the skill doors are a compact row between the two. */
+.discover-start {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
-  padding: 28px 0 18px;
+  margin: var(--space-4) 0 var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: 18px;
+  background: var(--sage-surface);
+  color: var(--on-sage);
 }
-[data-experience='discover'] .discover-hero h1 {
+.discover-start__body { display: grid; justify-items: start; gap: 10px; min-width: 0; }
+.discover-start h2 {
   margin: 0;
-  font-size: clamp(38px, 4vw, 58px);
-  line-height: 1;
-  letter-spacing: -.045em;
+  font-size: clamp(23px, 2.4vw, 32px);
+  line-height: 1.15;
+  letter-spacing: -.02em;
 }
-[data-experience='discover'] .discover-hero .brand-art { width: clamp(72px, 8vw, 112px); margin: 0; }
+.discover-start small,
+.discover-start__body > small {
+  color: var(--on-sage-muted);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.discover-start--resume small { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+.discover-start .primary { margin: 2px 0 0; }
+.discover-start .brand-art { flex: 0 0 auto; width: clamp(104px, 13vw, 168px); margin: 0 0 0 auto; }
+.discover-start__visual {
+  flex: 0 0 auto;
+  margin-left: auto;
+  overflow: hidden;
+  width: clamp(92px, 11vw, 128px);
+  aspect-ratio: 3 / 4;
+  border-radius: 5px 10px 10px 5px;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.discover-start__visual > img, .discover-start__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.discover-start--resume { background: var(--night-surface); color: var(--on-night); }
+.discover-start--resume small { color: var(--on-night-muted); }
+
+/* Skill names stay valid navigation vocabulary and stay compact: one row of
+   marks between the first action and the content, never the structure of the
+   page (D-057 rule 17). */
+.discover-doors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.discover-door {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform .12s ease-out, border-color .12s ease-out;
+}
+.discover-door__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--sage-surface);
+  color: var(--on-sage);
+}
+.discover-door__mark svg { width: 16px; height: 16px; }
+.discover-door[data-tone='night'] .discover-door__mark { background: var(--night-surface); color: var(--on-night); }
+.discover-door[data-tone='coral'] .discover-door__mark { background: var(--coral-surface); color: var(--on-coral); }
+.discover-door[data-tone='sun'] .discover-door__mark { background: var(--sun-surface); color: var(--on-sun); }
+.discover-door:hover, .discover-door:focus-visible { border-color: var(--accent); transform: translateY(-1px); }
 .discover-feed { display: grid; gap: var(--space-5); padding-bottom: var(--space-6); }
 /* One shelf mechanic for every rail in the product.
    A rail states how many cards it shows (`--rail-columns`) and the primitive
@@ -537,8 +607,8 @@
 .discover-listening-card__visual { aspect-ratio: 16 / 9; border-radius: 9px; }
 .discover-reading-card__visual > img,
 .discover-listening-card__visual > img,
-.discover-reading-card__visual > div,
-.discover-listening-card__visual > div { width: 100%; height: 100%; object-fit: cover; }
+.discover-reading-card__visual > svg,
+.discover-listening-card__visual > svg { width: 100%; height: 100%; object-fit: cover; }
 .discover-listening-card__duration {
   position: absolute;
   right: 7px;
@@ -565,35 +635,10 @@
   font-size: 11px;
   line-height: 1;
 }
-.content-rail--reading,
-.content-rail--vocabulary { --rail-columns: 5; }
-/* Fallback covers for texts that have no image. The variant is derived from
-   the text's own identity, so a passage keeps the same cover wherever it is
-   shown - the previous nth-child tinting repainted the same book whenever it
-   moved along the shelf. Each variant is an approved surface paired with the
-   ink that belongs on it; only tone, type placement and one ruled pattern
-   change, so a shelf reads as a shelf rather than one repeated tile. */
-.discover-reading-card__visual .text-art { position: relative; background: var(--sage-surface); color: var(--on-sage); }
-.discover-reading-card__visual .text-art span { font-size: clamp(38px, 4.4vw, 62px); opacity: .58; }
-.discover-reading-card__visual .text-art[data-cover-variant='1'] { background: color-mix(in srgb, var(--surface) 82%, var(--paper)); color: var(--ink); }
-.discover-reading-card__visual .text-art[data-cover-variant='2'] { background: color-mix(in srgb, var(--paper) 80%, var(--sage-surface)); color: var(--ink); }
-.discover-reading-card__visual .text-art[data-cover-variant='3'] { background: var(--night-surface); color: var(--on-night); }
-.discover-reading-card__visual .text-art[data-cover-variant='4'] { background: color-mix(in srgb, var(--sage-surface) 70%, var(--surface)); color: var(--on-sage); }
-.discover-reading-card__visual .text-art[data-cover-variant='5'] { background: var(--sun-surface); color: var(--on-sun); }
-.discover-reading-card__visual .text-art[data-cover-variant='1'],
-.discover-reading-card__visual .text-art[data-cover-variant='4'] { place-items: end start; padding: 0 var(--space-3) var(--space-3); }
-.discover-reading-card__visual .text-art[data-cover-variant='1'] span,
-.discover-reading-card__visual .text-art[data-cover-variant='4'] span { font-size: clamp(28px, 3.2vw, 44px); opacity: .72; }
-.discover-reading-card__visual .text-art[data-cover-variant='2']::after,
-.discover-reading-card__visual .text-art[data-cover-variant='5']::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0;
-  height: 42%;
-  opacity: .5;
-  background: repeating-linear-gradient(to bottom, transparent 0 11px, currentColor 11px 12px);
-  mask-image: linear-gradient(to bottom, transparent, #000);
-}
+/* A shelf of 3:4 covers reads as a shelf when the covers are book-sized; four
+   of them across a wide window makes each one a poster. */
+.content-rail--stories,
+.content-rail--words { --rail-columns: 5; }
 /* A spine, so a cover reads as a book rather than a tile. */
 .discover-reading-card__visual::before {
   content: '';
@@ -654,8 +699,11 @@
 .discover-writing-card strong { font-family: var(--story-font); font-size: var(--text-base); line-height: 1.45; -webkit-line-clamp: 3; }
 .discover-writing-card__source { color: var(--muted); }
 .discover-writing-card { background-image: repeating-linear-gradient(to bottom, transparent 0 27px, color-mix(in srgb, var(--line) 42%, transparent) 27px 28px); }
-.content-rail--speaking,
-.content-rail--writing { --rail-columns: 4; }
+.content-rail--say { --rail-columns: 4; }
+/* A deliberately mixed shelf reads as one shelf: its own ratio wins, so a row
+   of covers and thumbnails shares a baseline instead of stepping. The book
+   ratio still governs shelves that are actually books (ART_BIBLE.md D). */
+.content-rail--short .discover-reading-card__visual { aspect-ratio: 16 / 9; border-radius: 5px 9px 9px 5px; }
 /* Vocabulary carries the material its level is cut from. The skin sets
    `--vocabulary-level-color` in world.css; this card used to redeclare that
    property as `--line`, and because reference.css loads later every card on
@@ -710,9 +758,25 @@
   background: var(--surface);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 72%, transparent);
 }
-.discover-continuation-card > span:first-child { grid-row: 1 / 3; color: var(--muted); }
-.discover-continuation-card > small { color: var(--muted); }
-.discover-continuation-card > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.discover-continuation-card__visual {
+  grid-row: 1 / 3;
+  overflow: hidden;
+  width: 54px;
+  aspect-ratio: 3 / 4;
+  border-radius: 3px 7px 7px 3px;
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.discover-continuation-card__visual > img,
+.discover-continuation-card__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.discover-continuation-card > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: end;
+  color: var(--muted);
+}
+.discover-continuation-card > small svg { width: 15px; height: 15px; }
+.discover-continuation-card > strong { align-self: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .content-rail--continue { --rail-columns: 3; }
 .discover-content-card:hover,
 .discover-content-card:focus-visible,
@@ -725,39 +789,51 @@
    signal that a rail scrolls never changes shape between breakpoints. */
 @media (max-width: 1200px) {
   .content-rail,
-  .content-rail--speaking,
-  .content-rail--writing,
-  .content-rail--listening { --rail-columns: 3; }
-  .content-rail--reading,
-  .content-rail--vocabulary { --rail-columns: 4; }
+  .content-rail--say,
+  .content-rail--short,
+  .content-rail--voices { --rail-columns: 3; }
+  .content-rail--stories,
+  .content-rail--words { --rail-columns: 4; }
 }
 
 @media (max-width: 900px) {
   .content-rail__control { display: none; }
   .content-rail,
   .content-rail--continue,
-  .content-rail--speaking,
-  .content-rail--writing,
-  .content-rail--listening { --rail-columns: 2; }
-  .content-rail--reading,
-  .content-rail--vocabulary { --rail-columns: 3; }
+  .content-rail--say,
+  .content-rail--short,
+  .content-rail--voices { --rail-columns: 2; }
+  .content-rail--stories,
+  .content-rail--words { --rail-columns: 3; }
+  .discover-start { padding: var(--space-4); }
 }
 
 @media (max-width: 600px) {
-  [data-experience='discover'] .discover-hero { padding-block: 20px 13px; }
-  [data-experience='discover'] .discover-hero h1 { font-size: clamp(34px, 10vw, 44px); }
-  [data-experience='discover'] .discover-hero .brand-art { width: 68px; }
+  /* A phone still opens on the action, not on copy: the start block keeps its
+     own row, the artwork shrinks to a companion, and the doors wrap into a
+     single scannable band above the first shelf (D-057 rule 13, D-052). */
+  .discover-start {
+    gap: var(--space-3);
+    margin: var(--space-3) 0 var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: 15px;
+  }
+  .discover-start h2 { font-size: 21px; }
+  .discover-start .brand-art { width: 84px; }
+  .discover-start__visual { width: 72px; }
+  .discover-doors { gap: 6px; margin-bottom: var(--space-3); }
+  .discover-door { min-height: 34px; padding: 0 12px 0 7px; font-size: var(--text-xs); }
   .discover-feed { gap: var(--space-4); }
   .content-rail__header { margin-bottom: var(--space-2); }
   .content-rail__heading h2 { font-size: var(--text-base); }
   .content-rail__track { padding: 2px 2px var(--space-2); }
   .content-rail,
   .content-rail--continue,
-  .content-rail--speaking,
-  .content-rail--writing,
-  .content-rail--listening,
-  .content-rail--vocabulary { --rail-columns: 1; }
-  .content-rail--reading { --rail-columns: 2; }
+  .content-rail--say,
+  .content-rail--voices,
+  .content-rail--words { --rail-columns: 1; }
+  .content-rail--stories,
+  .content-rail--short { --rail-columns: 2; }
   .discover-prompt-card { padding: var(--space-3); }
   .thread--rail,
   [data-experience='continue'] .thread--rail { min-height: 102px; }

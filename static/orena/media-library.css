@@ -93,10 +93,9 @@
   object-fit: cover;
 }
 
-/* A source with no poster of its own keeps Orena's own media artwork rather
+/* A source with no poster of its own keeps Orena's own designed cover rather
    than an invented image; it fills the same frame so the grid stays even. */
-.media-card__visual .sound-art,
-.media-card__visual .text-art {
+.media-card__visual .content-cover {
   width: 100%;
   height: 100%;
   border-radius: 0;

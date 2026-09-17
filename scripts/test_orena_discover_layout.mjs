@@ -8,6 +8,7 @@ import {
   discoverySpread,
 } from '../static/orena/ui/discovery.js';
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const discovery = read('static/orena/ui/discovery.js');
 const rail = read('static/orena/ui/content-rail.js');
@@ -26,6 +27,15 @@ for (const key of [
   'railPrevious',
   'railNext',
   'railEmpty',
+  'startTitle',
+  'startAction',
+  'continueAction',
+  'railShort',
+  'railStories',
+  'railVoices',
+  'railSay',
+  'railWords',
+  'railMinutes',
 ]) {
   for (const ui of ['en', 'zh']) {
     assert.equal(typeof referenceCopy[ui][key], 'string', `${ui}.${key} must be localized`);
@@ -101,18 +111,55 @@ for (const ui of ['en', 'zh']) {
     },
   );
 
+  /* D-057: Discover is organised by what the content is, not by which skill it
+     trains. Skill names survive as compact doors and as a rail's "see all"
+     destination; they are not the shelves themselves. */
   const railIds = [...rendered.matchAll(/data-content-rail="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(
     railIds,
-    ['continue', 'reading', 'listening', 'speaking', 'writing', 'vocabulary'],
-    `${ui}: vertical feed contains one resume rail followed by five separate domain rails`,
+    ['continue', 'stories', 'voices', 'short', 'say', 'words'],
+    `${ui}: the feed is organised by content, continuity and length`,
+  );
+  assert.equal(
+    railIds.filter((id) => ['reading', 'listening', 'speaking', 'writing', 'vocabulary'].includes(id)).length,
+    0,
+    `${ui}: no shelf is named after a skill module`,
   );
   assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 6);
-  assert.equal((rendered.match(/data-reading-card/g) || []).length, 5);
-  assert.equal((rendered.match(/data-listening-card/g) || []).length, 5);
+  /* Two rails carry more than one kind of content. A mixed shelf is the point:
+     a five-minute shelf holds whatever takes five minutes. */
+  const shortRail = rendered.slice(rendered.indexOf('data-content-rail="short"'), rendered.indexOf('data-content-rail="say"'));
+  assert.ok(/data-reading-card/.test(shortRail) && /data-listening-card/.test(shortRail),
+    `${ui}: the length-based shelf mixes reading and listening`);
+  const sayRail = rendered.slice(rendered.indexOf('data-content-rail="say"'), rendered.indexOf('data-content-rail="words"'));
+  assert.ok(/data-speaking-card/.test(sayRail) && /data-writing-card/.test(sayRail),
+    `${ui}: the expression shelf mixes speaking and writing`);
   assert.equal((rendered.match(/data-speaking-card/g) || []).length, 3);
   assert.equal((rendered.match(/data-writing-card/g) || []).length, 4);
   assert.equal((rendered.match(/data-vocabulary-card/g) || []).length, 5);
+
+  /* One obvious action in the first viewport, and only one. A learner with
+     history is shown the way back; a new learner is shown the way in. */
+  assert.equal((rendered.match(/class="discover-start[ "]/g) || []).length, 1,
+    `${ui}: exactly one start block`);
+  assert.equal((rendered.match(/<a class="primary"/g) || []).length, 1,
+    `${ui}: the start block carries the single primary action`);
+  assert.match(rendered, /class="discover-start discover-start--resume"/,
+    `${ui}: a learner with unfinished work is offered the way back first`);
+  assert.match(rendered, new RegExp(escapeRegExp(referenceCopy[ui].continueAction)),
+    `${ui}: the continue action is localized`);
+  assert.doesNotMatch(rendered, /class="discover-hero"/,
+    `${ui}: the page-wide headline is retired (D-057 rule 13)`);
+  assert.match(rendered, /<h1 class="sr-only">/,
+    `${ui}: the page is still named for assistive technology`);
+
+  /* Doors remain, compact, after the first action. */
+  assert.match(rendered, /class="discover-doors"/, `${ui}: skill doors remain available`);
+  assert.equal((rendered.match(/class="discover-door"/g) || []).length, 5);
+  assert.ok(rendered.indexOf('discover-doors') > rendered.indexOf('discover-start'),
+    `${ui}: content and the first action come before the skill doors`);
+  assert.ok(rendered.indexOf('discover-doors') < rendered.indexOf('discover-feed'),
+    `${ui}: the doors are one compact row, not the structure of the feed`);
   assert.match(rendered, /data-vocabulary-skin="silver"/,
     `${ui}: Discover preserves the canonical level material/skin`);
   assert.match(rendered, /data-vocabulary-rank="C"/,
@@ -128,6 +175,13 @@ for (const ui of ['en', 'zh']) {
   assert.match(rendered, /data-vocabulary-study="0"/,
     `${ui}: Vocabulary keeps its existing study action`);
   assert.match(rendered, /https:\/\/example\.com\/listen-0\.jpg/);
+  /* No production placeholder survives: no single letter, no repeated `Aa 字`,
+     no generic block. A text without a cover gets a designed one, drawn from
+     its own identity (ART_BIBLE.md D.1). */
+  assert.doesNotMatch(rendered, /text-art|sound-art|data-cover-variant/,
+    `${ui}: the letter/waveform placeholders are gone`);
+  assert.match(rendered, /class="content-cover" data-cover-motif="/,
+    `${ui}: a text without an image gets a designed cover`);
   assert.match(rendered, /1:30/);
   assert.match(rendered, /nghĩa 1/);
   assert.match(rendered, /#\/practice\?intent=reading/);
@@ -144,7 +198,25 @@ const noContinue = discoverySpread(
   { media: sampleMedia, reading: sampleReading, speaking: sampleSpeaking, writing: sampleWriting, vocabulary: sampleVocabulary },
 );
 assert.doesNotMatch(noContinue, /data-content-rail="continue"/, 'Continue is truthful and disappears without resumable work');
-assert.equal((noContinue.match(/data-content-rail=/g) || []).length, 5, 'the five domain rails remain visible');
+assert.equal((noContinue.match(/data-content-rail=/g) || []).length, 5, 'the content shelves remain visible');
+/* A learner with no history is never left without a way in. */
+assert.match(noContinue, /class="discover-start discover-start--begin"/,
+  'a new learner is offered a beginning rather than a resume');
+assert.match(noContinue, new RegExp(escapeRegExp(referenceCopy.en.startAction)),
+  'the beginning carries a localized primary action');
+assert.equal((noContinue.match(/<a class="primary"/g) || []).length, 1,
+  'a new learner sees exactly one primary action');
+assert.ok(
+  noContinue.indexOf('discover-start') < noContinue.indexOf('discover-feed'),
+  'the way in comes before the catalogue, not after it',
+);
+/* Nothing real to show is still not a reason to invent a shelf. */
+const nothing = discoverySpread(
+  { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory: { value: { continuation: [], expressions: {}, conversations: {} } } },
+  { media: [], reading: [], speaking: [], writing: [], vocabulary: [] },
+);
+assert.doesNotMatch(nothing, /data-content-rail=/, 'an empty catalogue renders no invented shelves');
+assert.match(nothing, /class="discover-doors"/, 'the doors still orient a learner with an empty catalogue');
 
 const bounded = discoverySpread(
   { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory },
@@ -156,8 +228,16 @@ const bounded = discoverySpread(
     vocabulary: sampleVocabulary,
   },
 );
-assert.equal((bounded.match(/data-reading-card/g) || []).length, 12, 'Discover previews Reading rather than rendering an unbounded library');
-assert.equal((bounded.match(/data-listening-card/g) || []).length, 12, 'Discover previews Listening rather than rendering an unbounded library');
+/* Discover previews; it never renders a library. Every shelf stays bounded on
+   its own, and the cross-cutting length lens is bounded tighter still so it
+   cannot become the page. */
+const railBodies = bounded.split('data-content-rail="').slice(1);
+for (const body of railBodies) {
+  const id = body.slice(0, body.indexOf('"'));
+  const cards = (body.match(/role="listitem"/g) || []).length;
+  assert.ok(cards <= 12, `rail ${id} previews at most 12 cards, rendered ${cards}`);
+  if (id === 'short') assert.ok(cards <= 6, `the length lens stays compact, rendered ${cards}`);
+}
 
 const primitive = contentRail({
   id: 'test',
@@ -206,6 +286,13 @@ assert.match(
 );
 assert.match(styles, /\.content-rail--continue\s*\{[^}]*--rail-columns:\s*3;/s,
   'Continue fits complete cards at desktop widths instead of clipping half a card');
+/* The shelves are named after content now, so the column contract has to be
+   named after them too; a rule left pointing at a retired id silently drops
+   every shelf back to the default width. */
+assert.match(styles, /\.content-rail--stories,\s*\.content-rail--words\s*\{[^}]*--rail-columns:\s*5;/s,
+  'a shelf of 3:4 covers is denser than the default rail');
+assert.doesNotMatch(styles, /\.content-rail--(?:reading|listening|speaking|writing|vocabulary)/,
+  'no column rule is left pointing at a retired skill-named shelf');
 assert.doesNotMatch(styles, /\.content-rail__viewport::after/s,
   'the peek signals more content; an edge gradient washing over a whole card reads as clipping');
 assert.match(styles, /\.content-rail__item\s*\{[^}]*scroll-snap-align:\s*start;/s);
@@ -251,4 +338,4 @@ const appSource = read('static/orena/app.js');
 assert.doesNotMatch(appSource, /<span>\$\{c\.internal\}<\/span>/,
   'internal review status must not leak into the learner footer');
 
-console.log('Discover: separate real-content rails, localized controls, compact responsive shelf behavior: PASS');
+console.log('Discover: one first action, content-organised shelves, compact doors, designed covers, EN/ZH: PASS');
