@@ -38,7 +38,36 @@ function metadataLine(item, c) {
     .join(' · ');
 }
 
-export function mediaCard(item, c, { intent = '' } = {}) {
+/* A catalogue row is not yet something the product can open.
+
+   `/api/listening/library` identifies a lesson by `lesson_id` and states its
+   playback as `playback_kind`/`media_type`; the encounter locator for a
+   catalogue lesson is `media:<lesson_id>`, and a card renders by `kind`. That
+   translation used to live inline in Discover and nowhere else, so the
+   Listening library rendered raw rows: every card linked to an encounter with
+   no id, nothing could resolve, and the room fell back to Reading.
+
+   One boundary now, used by both surfaces, so there is one place that knows
+   what a listening item is called. An item that already carries an identity -
+   anything the learner imported, or a continuation entry - passes through
+   unchanged, and a row with no identity is never given an invented one. */
+export function listeningItem(row) {
+  if (!row || typeof row !== 'object') return row;
+  const lesson = String(row.lesson_id || '').trim();
+  return {
+    ...row,
+    id: String(row.id || '').trim() || (lesson ? `media:${lesson}` : ''),
+    kind: row.kind || row.playback_kind || row.media_type || '',
+    origin: row.origin || (lesson ? 'curated' : row.origin),
+  };
+}
+
+export function mediaCard(row, c, { intent = '' } = {}) {
+  /* Normalised here as well as at the read, so no caller can render a card
+     that cannot be opened. This is the bug's own boundary: the library passed
+     raw catalogue rows straight through, and a card with no id linked to an
+     encounter that could resolve nothing. */
+  const item = listeningItem(row);
   const thumbnail = thumbnailOf(item);
   const visual = thumbnail
     ? `<img src="${esc(thumbnail)}" alt="${esc(item.title)}" loading="lazy" referrerpolicy="no-referrer">`
@@ -193,11 +222,13 @@ export function paintMediaLibrary(container, ctx) {
   let personalFilters = { type: 'all', query: '', level: '', source: '' };
 
   const personal = () =>
-    (memory?.value?.mediaImports || []).map((entry) => ({
-      ...entry,
-      language: entry.language || language,
-      source_label: entry.provider ? '' : '',
-    }));
+    (memory?.value?.mediaImports || []).map((entry) =>
+      listeningItem({
+        ...entry,
+        language: entry.language || language,
+        source_label: entry.provider ? '' : '',
+      }),
+    );
 
   function paint() {
     if (!alive()) return;
@@ -258,7 +289,9 @@ export function paintMediaLibrary(container, ctx) {
     try {
       const payload = await api.listeningLibrary(language);
       if (!alive()) return;
-      shared = (payload?.items || []).filter((item) => item.language === language);
+      shared = (payload?.items || [])
+        .filter((item) => item.language === language)
+        .map(listeningItem);
     } catch {
       if (!alive()) return;
       error = true;

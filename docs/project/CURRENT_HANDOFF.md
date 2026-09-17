@@ -20,12 +20,10 @@ D-046 and the product reset are committed; the shared media, transcript,
 dictation, recording, provider and evidence primitives survive, and the learner
 surfaces converge on static/orena. PostgreSQL APIs remain.
 
-Golden Star foundation: shared page intro, response composer, draft status,
-progressReporter(), theme-safe panels; ORENA_WEB_EXTENSION_GUIDE.md records
-surface inheritance.
+Golden Star foundation: page intro, response composer, draft status,
+progressReporter(), theme-safe panels; ORENA_WEB_EXTENSION_GUIDE.md records it.
 
-Platform Admin has a host via `#/admin` (`04a56c4`), human-reviewed; APIs and
-`static/admin.js` stay preserved.
+Platform Admin has a host via `#/admin` (`04a56c4`), human-reviewed.
 
 ## Learning capabilities
 
@@ -58,6 +56,10 @@ measure and the shell recedes. Its interaction layer is now `ui/lexical.js`,
 shared: Listening's transcript mounts the same one, so a tapped word answers
 identically in both rooms. Listening opens on the covers, grows shelves from
 real data, and writes its place into the shared continuation field.
+Fixed: the library rendered raw catalogue rows, so every card linked to an
+encounter with no id and the room fell back to Reading. `listeningItem()` is the
+one identity boundary now, an unclassifiable encounter keeps the learner's
+domain, and the failure state is compact and domain-aware.
 
 Verified: pytest `1109 passed, 118 skipped`, all 45 CI `.mjs` gates, ESM graph,
 both validators, EN/ZH browser pass on `orena-foundation-web`:8011 at desktop
@@ -105,13 +107,8 @@ Multi-theme system awaiting visual review: Paper, Night Ink, Deep Forest,
 Sage Field; colour owned by `theme.css`. Ember deferred.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
-`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
-approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
-(trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
-
-D-049/D-050 (2026-09-12): Content Architecture amended to five domains +
-horizontal Understanding Engine + Vocabulary Card/orthography; sequence in
-`ROADMAP.md`. Docs-only.
+`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2 schema approved,
+sandbox only at `20260908_0005`, flag `off` (`I2_ACTIVATION_RUNBOOK.md` §6).
 
 Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
 results, shared repository, Admin UI and learner cards; review APPROVED

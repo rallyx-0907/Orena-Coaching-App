@@ -991,3 +991,26 @@
   .content-rail__track { scroll-behavior: auto; }
   .discover-vocabulary-card { transition: none; }
 }
+
+/* A room that could not open says so in a line, offers the way back to the
+   room the learner was in, and takes no more space than that (D-057 rule 13).
+   It replaced a page-sized restatement of the same sentence twice over. */
+.room-failed {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  max-width: 44rem;
+  margin: var(--space-8) 0;
+}
+.room-failed h1 {
+  margin: 0;
+  font-size: clamp(21px, 2.2vw, 28px);
+  line-height: 1.2;
+  letter-spacing: -.015em;
+}
+.room-failed p { margin: 0; color: var(--muted); }
+.room-failed .button-row { margin-top: var(--space-2); }
+@media (max-width: 600px) {
+  .room-failed { margin: var(--space-5) 0; }
+  .room-failed h1 { font-size: 20px; }
+}

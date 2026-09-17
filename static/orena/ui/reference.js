@@ -119,7 +119,19 @@ export function experienceFor(location) {
   if (page === 'expression') return 'writing';
   if (page === 'practice' && intent === 'grammar') return 'understanding';
   if (['dictation','shadowing','speaking'].includes(intent) && page === 'encounter') return 'practice';
-  if (page === 'encounter') return /^(media:|url:|upload:)/.test(id) ? 'listening' : 'reading';
+  /* Which room an encounter belongs to.
+
+     The id prefix is the usual answer, but it cannot be the only one: a route
+     the product cannot classify used to fall to Reading, so a malformed media
+     link took a learner who had asked to listen into the Reading room, rail
+     highlight and error state included. The learner's stated intention decides
+     when the id cannot, and only then - a `media:` id is Listening whatever
+     the intent says, because the content is what it is. */
+  if (page === 'encounter') {
+    if (/^(media:|url:|upload:)/.test(id)) return 'listening';
+    if (id) return 'reading';
+    return intent === 'follow' ? 'listening' : 'reading';
+  }
   if (page === 'practice' && intent === 'reading') return 'reading';
   if (page === 'practice' && intent === 'follow') return 'listening';
   return page === 'preferences' ? 'discover' : page;

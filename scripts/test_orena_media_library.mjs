@@ -3,11 +3,14 @@ import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import {
   filterMediaItems,
+  listeningItem,
   mediaCard,
   mediaContinuation,
   mediaLibrary,
   renderAdminMediaImporter,
 } from '../static/orena/ui/media-library.js';
+import { route } from '../static/orena/product/intent.js';
+import { experienceFor } from '../static/orena/ui/reference.js';
 
 const mixedContinuation = {
   value: {
@@ -181,6 +184,110 @@ assert.match(admin, /admin-media-result--ok[\s\S]*admin-media-result--error/, 's
   assert.doesNotMatch(small, /data-media-shelf=/, 'a small library is not split into shelves that repeat it');
   const empty = mediaLibrary(copy.en, { sharedItems: [], myItems: [], continuation: [] });
   assert.doesNotMatch(empty, /data-media-shelf=/, 'no shelf is invented for an empty library');
+}
+
+/* --- A card opens the thing it shows, in the room it belongs to -----------
+   The regression this pins: the Listening library rendered catalogue rows
+   straight from `/api/listening/library`, which identifies a lesson by
+   `lesson_id` and carries no `id` and no `kind`. Every card therefore linked to
+   `#/encounter?intent=follow` with no id at all - so the encounter could
+   resolve nothing, and `experienceFor` fell back to Reading, which highlighted
+   Reading in the rail and showed a Reading error over a learner's Listening
+   intent.
+
+   These fixtures are the real payload's field names on purpose. A fixture that
+   invents `id` cannot catch this, which is exactly why the previous gate did
+   not. The chain asserted here is the learner's: card -> href -> route ->
+   room. */
+{
+  const catalogueRow = (over = {}) => ({
+    lesson_id: 'en-daily-pen-in-my-bag',
+    media_object_id: 'commons-voa-anna-pen',
+    title: 'A pen in my bag',
+    language: 'en',
+    level: 'A1',
+    duration_ms: 8547,
+    playback_kind: 'audio',
+    media_type: 'audio',
+    source_label: 'Wikimedia Commons',
+    thumbnail_url: '',
+    ...over,
+  });
+
+  // The boundary that turns a catalogue row into something the product can open.
+  const normalised = listeningItem(catalogueRow());
+  assert.equal(normalised.id, 'media:en-daily-pen-in-my-bag', 'a lesson becomes its encounter locator');
+  assert.equal(normalised.kind, 'audio', 'playback kind becomes the kind the card renders by');
+  assert.equal(listeningItem(catalogueRow({ playback_kind: '', media_type: 'video' })).kind, 'video',
+    'media type answers when playback kind is absent');
+  assert.equal(listeningItem({ id: 'url:https://example.test/a', kind: 'video' }).id, 'url:https://example.test/a',
+    'an item that already carries an identity keeps it');
+  assert.equal(listeningItem({ lesson_id: '' }).id, '', 'a row with no identity is not given a fake one');
+
+  const opens = (item) => {
+    const html = mediaCard(item, copy.en, { intent: 'follow' });
+    const href = /href="([^"]+)"/.exec(html)?.[1]?.replace(/&amp;/g, '&') || '';
+    const location = route(href);
+    return { href, location, experience: experienceFor(location) };
+  };
+
+  for (const [name, row] of [
+    ['audio without a poster', catalogueRow()],
+    ['video with a poster', catalogueRow({ lesson_id: 'en-travel-rainy-day-taxi', playback_kind: 'video', media_type: 'video', thumbnail_url: 'https://images.example.test/taxi.jpg' })],
+    ['video without a poster', catalogueRow({ lesson_id: 'en-science-cosmic-calendar', playback_kind: 'video', media_type: 'video' })],
+  ]) {
+    const opened = opens(listeningItem(row));
+    assert.match(opened.href, /id=media%3A/, `${name}: the card carries the content identity`);
+    assert.equal(opened.location.page, 'encounter', `${name}: it opens an encounter`);
+    assert.equal(opened.location.id, `media:${row.lesson_id}`, `${name}: it opens this exact item`);
+    assert.equal(opened.location.intent, 'follow', `${name}: the learner's intention survives the link`);
+    assert.equal(opened.experience, 'listening', `${name}: and lands in Listening, never Reading`);
+  }
+
+  /* The whole library rendered from RAW catalogue rows - exactly what
+     `/api/listening/library` returns. This is the shape the shipped bug was
+     rendered from, so it is the shape the gate has to use. */
+  const rawLibrary = mediaLibrary(copy.en, {
+    sharedItems: [catalogueRow(), catalogueRow({ lesson_id: 'en-travel-rainy-day-taxi', playback_kind: 'video', media_type: 'video' })],
+    myItems: [],
+    continuation: [],
+  });
+  const rawHrefs = [...rawLibrary.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+  assert.ok(rawHrefs.length >= 2, 'raw rows still render cards');
+  for (const href of rawHrefs) {
+    const location = route(href);
+    assert.ok(location.id, `a raw catalogue row must still produce an openable card: ${href}`);
+    assert.equal(experienceFor(location), 'listening', `and must stay in Listening: ${href}`);
+  }
+
+  // The same guarantee for a library rendered whole, and for Continue listening.
+  const rendered = mediaLibrary(copy.en, {
+    sharedItems: [listeningItem(catalogueRow())],
+    myItems: [],
+    continuation: mediaContinuation(
+      { value: { continuation: [{ id: 'media:en-daily-pen-in-my-bag', title: 'A pen in my bag', intent: 'follow', kind: 'audio' }], conversations: {} } },
+      'en',
+    ),
+  });
+  const hrefs = [...rendered.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+  assert.ok(hrefs.length >= 2, 'the library and its continuation rail both render links');
+  for (const href of hrefs) {
+    const location = route(href);
+    assert.ok(location.id, `every media link carries an id: ${href}`);
+    assert.equal(experienceFor(location), 'listening', `every media link stays in Listening: ${href}`);
+  }
+
+  /* A route the product cannot classify must not take the learner's domain
+     with it. An intention to follow is Listening even when the id is missing
+     or malformed - the error belongs to the room the learner was in. */
+  assert.equal(experienceFor({ page: 'encounter', id: '', intent: 'follow' }), 'listening',
+    'a malformed media route stays in Listening');
+  assert.equal(experienceFor({ page: 'encounter', id: '', intent: 'reading' }), 'reading',
+    'and an intention to read stays in Reading');
+  assert.equal(experienceFor({ page: 'encounter', id: 'story:one', intent: null }), 'reading',
+    'a text with no stated intention is still Reading');
+  assert.equal(experienceFor({ page: 'encounter', id: 'media:one', intent: null }), 'listening',
+    'and a media id is still Listening');
 }
 
 console.log('Media Library: thumbnail-first cards, filters, separate libraries, localized admin importer: PASS');

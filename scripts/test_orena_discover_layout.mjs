@@ -322,7 +322,7 @@ assert.match(world, /api\.readingSessions\(12\)/);
 assert.match(world, /api\.dailyVocabularyFeed\(language\)/);
 assert.match(world, /voiceInvitations\(language\)/);
 assert.match(world, /reading:\s*readable/);
-assert.match(world, /\n\s*vocabulary,\n/);
+assert.match(world, /[\r\n]\s*vocabulary,\s*[\r\n]/, 'Discover is handed the vocabulary it renders');
 assert.doesNotMatch(discovery, /const\s+(?:media|reading|speaking|writing|vocabulary)\s*=\s*\[/,
   'Discover adapts domain data and does not own a hard-coded content catalog');
 assert.doesNotMatch(rail, /globalThis\.addEventListener\?\.\('resize'/,

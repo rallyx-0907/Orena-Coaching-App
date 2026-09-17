@@ -31,7 +31,7 @@ import {
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
 import { paintLibraryGrid } from './library.js';
-import { paintMediaLibrary } from './media-library.js';
+import { listeningItem, paintMediaLibrary } from './media-library.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -359,14 +359,11 @@ export async function renderWorld(root, ctx) {
   ]);
   if (!alive()) return;
   const listeningPayload = result[0].status === 'fulfilled' ? result[0].value : {};
+  // The same identity boundary the Listening library reads through, so Discover
+  // and the library cannot disagree about what an item is called.
   const media = (listeningPayload.items || [])
     .filter((x) => x.language === language)
-    .map((x) => ({
-      ...x,
-      id: `media:${x.lesson_id}`,
-      kind: x.playback_kind,
-      origin: 'curated',
-    }));
+    .map(listeningItem);
   const vocabulary = result[2].status === 'fulfilled'
     ? result[2].value.items || []
     : [];

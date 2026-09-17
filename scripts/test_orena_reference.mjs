@@ -160,6 +160,39 @@ renderContinue(forgetful, {
 });
 assert.match(forgetful.innerHTML, /notice/, 'a device that cannot remember says so');
 
+/* --- A room that fails stays in its own room ------------------------------
+   The regression: a media route the product could not classify fell back to
+   Reading, so a learner who asked to listen got the Reading rail highlight and
+   a Reading error. The learner's intention decides when the id cannot. */
+assert.equal(experienceFor({ page: 'encounter', id: '', intent: 'follow' }), 'listening');
+assert.equal(experienceFor({ page: 'encounter', id: '', intent: 'reading' }), 'reading');
+assert.equal(experienceFor({ page: 'encounter', id: '', intent: null }), 'reading');
+assert.equal(experienceFor({ page: 'encounter', id: 'media:x', intent: null }), 'listening');
+assert.equal(experienceFor({ page: 'encounter', id: 'story:x', intent: 'follow' }), 'reading',
+  'content that is a text is Reading whatever the intent says');
+
+/* The failure state itself: short, domain-aware, and never printing a
+   developer's English sentence under a learner's heading. */
+const appSource = readFileSync(new URL('../static/orena/app.js', import.meta.url), 'utf8');
+const failure = appSource.slice(appSource.indexOf('const room = experienceFor(ctx.location)'), appSource.indexOf("root.querySelector('#retry').onclick"));
+assert.match(failure, /class="room-failed"/, 'the failure state has its own compact composition');
+assert.match(failure, /ctx\.c\.cantOpen/, 'it says what happened in one localized line');
+assert.match(failure, /ctx\.c\.backTo/, 'and offers the way back to the room the learner was in');
+assert.match(failure, /room === 'listening'[\s\S]{0,160}intent: 'follow'/, 'Listening goes back to Listening');
+assert.match(failure, /room === 'reading'[\s\S]{0,160}intent: 'reading'/, 'Reading goes back to Reading');
+assert.doesNotMatch(failure, /esc\(error\.message\)/,
+  'a thrown message is a diagnostic, not learner-facing copy');
+assert.doesNotMatch(failure, /ctx\.c\.unavailable/,
+  'the old "part of your world" sentence is not the heading any more');
+for (const ui of ['en', 'zh']) {
+  for (const key of ['cantOpen', 'backTo']) {
+    assert.equal(typeof copy[ui][key], 'string', `${ui}.${key} is localized`);
+    assert.ok(copy[ui][key].trim(), `${ui}.${key} is not empty`);
+  }
+  assert.match(copy[ui].backTo, /\{room\}/, `${ui}.backTo names the room it returns to`);
+}
+assert.notEqual(copy.en.cantOpen, copy.zh.cantOpen);
+
 /* Removing the repeated bar has to be a composition change. Hiding it in CSS
    would leave every room still rendering the whole map to assistive
    technology, which is the same defect wearing a different coat. */

@@ -483,7 +483,28 @@ async function render() {
       // Retrying a route that is gone - the wrong language, a removed import,
       // an id that never existed - only fails again, so always offer the way
       // back out as well.
-      root.innerHTML = `<section class="empty"><h1>${ctx.c.unavailable}</h1><p>${esc(error.message)}</p><div class="button-row"><button class="primary" id="retry">${ctx.c.retry}</button><a class="outline" href="${link()}">${ctx.c.discover} ↗</a></div></section>`;
+      /* Short, and in the room the learner was actually in.
+
+         This used to open with the full "this part of your world" sentence as
+         a page-sized heading and then print the same sentence again as the
+         body, because that is what was thrown - and it offered "Discover",
+         which does not say where it goes. It also had no idea which room had
+         failed, so a Listening item that could not open showed a Reading page.
+         The way back is now the room the learner came from (D-057 rule 13). */
+      const r = referenceCopy[ctx.ui];
+      const room = experienceFor(ctx.location);
+      const back =
+        room === 'listening'
+          ? { href: link('practice', { intent: 'follow' }), label: r.listening }
+          : room === 'reading'
+            ? { href: link('practice', { intent: 'reading' }), label: r.reading }
+            : { href: link(), label: r.discover };
+      /* No technical detail on the page. Whatever was thrown is a developer's
+         sentence - an English server message, an HTTP status - and printing it
+         under a Chinese heading is how untranslated text reaches a learner.
+         The failure itself is already recorded in `renderFailures` and the
+         console, which is where a diagnostic belongs. */
+      root.innerHTML = `<section class="room-failed"><h1>${esc(ctx.c.cantOpen)}</h1><div class="button-row"><button class="primary" id="retry">${esc(ctx.c.retry)}</button><a class="outline" href="${esc(back.href)}">${esc(String(ctx.c.backTo).replace('{room}', back.label))}</a></div></section>`;
       root.querySelector('#retry').onclick = render;
       root.querySelector('h1').setAttribute('tabindex', '-1');
       root.querySelector('h1').focus({ preventScroll: true });
@@ -530,7 +551,7 @@ async function boot() {
     await render();
     if (!profile.exists) preferences(true);
   } catch (error) {
-    root.innerHTML = `<section class="empty"><h1>${ctx.c.unavailable}</h1><p>${esc(error.message)}</p><button onclick="location.reload()">${ctx.c.retry}</button></section>`;
+    root.innerHTML = `<section class="room-failed"><h1>${esc(ctx.c.cantOpen)}</h1><button class="primary" onclick="location.reload()">${esc(ctx.c.retry)}</button></section>`;
   }
 }
 boot();
