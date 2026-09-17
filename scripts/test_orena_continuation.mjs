@@ -180,17 +180,29 @@ assert.ok(!offered.includes('Situation 1'));
 const reference = read('static/orena/ui/reference.js');
 const continueRoom = reference.slice(reference.indexOf('export function renderContinue'));
 assert.ok(
-  /const threads = continuationShelf\(/.test(continueRoom),
-  'Continue must render what the shelf will actually offer',
+  /continuationEntries\(ctx\.memory\)/.test(continueRoom),
+  'Continue must render what can actually be resumed, not count rows',
 );
 assert.ok(
-  /\$\{threads \|\|/.test(continueRoom),
-  'an empty shelf must reach the empty state, not a blank room',
+  /const \[lead, \.\.\.rest\] = threads/.test(continueRoom),
+  'the thread the learner was last in leads the room',
+);
+assert.ok(
+  /continue-empty/.test(continueRoom),
+  'nothing to resume must reach the empty state, not a blank room',
 );
 assert.ok(
   /memory\.available \? '' :/.test(continueRoom) && /memoryUnavailable/.test(continueRoom),
   'a device that cannot remember must say so here',
 );
+
+/* Progress is read from what the entry carries, never estimated from an id or
+   a title, so a figure on screen is always one the product can stand behind. */
+const patternsSource = read('static/orena/ui/patterns.js');
+assert.ok(/export function continuationPlace/.test(patternsSource),
+  'the place inside a whole has one shared reader');
+assert.ok(/index <= total/.test(patternsSource),
+  'an impossible place is refused rather than printed');
 
 /* --- Language scope --- */
 

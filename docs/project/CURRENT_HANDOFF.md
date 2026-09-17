@@ -21,12 +21,11 @@ dictation, recording, provider and evidence primitives survive, and the learner
 surfaces converge on static/orena. PostgreSQL APIs remain.
 
 Golden Star foundation: shared page intro, intention navigation, response
-composer, continuation shelf, draft status, progressReporter(), and theme-safe
-tinted panels. ORENA_WEB_EXTENSION_GUIDE.md records surface inheritance.
+composer, draft status, progressReporter(), theme-safe tinted panels.
+ORENA_WEB_EXTENSION_GUIDE.md records surface inheritance.
 
-Platform Admin has a host again via `#/admin` (`04a56c4`); human review
-confirmed the UI matches Orena's design, resolving the "lost its host" P1.
-APIs and `static/admin.js` stay preserved.
+Platform Admin has a host via `#/admin` (`04a56c4`), human-reviewed; APIs and
+`static/admin.js` stay preserved.
 
 ## Learning capabilities
 
@@ -47,13 +46,13 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-D-057 governance, then Discover under it. `ART_BIBLE.md` joins
-`assets/brand/orena/` as the art-direction rules; `ui/cover.js` draws one
-deterministic designed cover per item, retiring the letter and waveform
-placeholders product-wide. Discover opens on one action (Start here /
-Continue), keeps skill names as compact doors, and organises shelves by
-content: Stories, Everyday voices, Around five minutes, Something to say,
-Words worth keeping. Its gate now encodes that contract.
+D-057, then the surfaces under it. `ART_BIBLE.md` joins `assets/brand/orena/`;
+`ui/cover.js` draws one deterministic cover per item, retiring the letter and
+waveform placeholders product-wide. Discover opens on one action, shelved by
+content. Continue reads as continuity: a chapter shown as a chapter of its
+book, place and percent carried on the memory entry. Reading opens on the
+library, cover-first, with a Continue reading shelf and search folded into a
+utility; book detail leads with cover, one action and the current chapter.
 
 Verified: pytest `1109 passed, 118 skipped`, all 45 CI `.mjs` gates, ESM graph,
 both validators, EN/ZH browser pass on `orena-foundation-web`:8011 at desktop

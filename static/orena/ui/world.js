@@ -342,6 +342,9 @@ async function paintVocabularyFeed(container, ctx) {
 }
 export async function renderWorld(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
+  // The library paints itself asynchronously into its own container and binds
+  // its own shelves there; this is how that binding is released with the room.
+  let releaseLibrary = () => {};
   const text = contentFor(language).map((x) => ({
     ...x,
     id: `story:${x.id}`,
@@ -432,7 +435,12 @@ export async function renderWorld(root, ctx) {
   };
   if (location.page === 'practice') {
     const r = referenceCopy[ctx.ui];
-    const intro = !intent || intent === 'follow'
+    /* Reading opens on the books, not on a headline about reading. The room is
+       named, once and quietly, and the covers take the first viewport
+       (D-057 rule 13 and 15). */
+    const intro = intent === 'reading'
+      ? pageIntro({ title: r.reading, compact: true })
+      : !intent || intent === 'follow'
       ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
       : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
     /* The way back sits above the heading, and the heading's eyebrow names
@@ -449,7 +457,11 @@ export async function renderWorld(root, ctx) {
         : continuation;
     root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
-        ? `<section class="voices" data-library-grid aria-label="${esc(c.libraryTitle)}"></section><section class="voices"><div class="section-head"><h2>${c.readingCollection}</h2><button class="quiet" data-read>＋ ${c.readingBring}</button></div>${readingError}${collectionSearch(
+        /* The library is the room. Search, facets and the whole flat list of
+           everything readable are how a learner finds one specific thing they
+           already have in mind - a utility, folded away until it is wanted,
+           rather than the first thing the page shows (D-057 rule 17). */
+        ? `<section class="voices" data-library-grid aria-label="${esc(c.libraryTitle)}"></section><details class="library-utility"><summary><span>${esc(c.libraryFind)}</span><button class="quiet" type="button" data-read>＋ ${esc(c.readingBring)}</button></summary>${readingError}${collectionSearch(
             c,
             {
               facet: c.collectionOrigin,
@@ -462,7 +474,7 @@ export async function renderWorld(root, ctx) {
           )}<div data-reading-results>${
             readable.map((x) => readingRow(x, c)).join('') ||
             `<p>${c.empty}</p>`
-          }</div></section>`
+          }</div></details>`
         : (() => {
             /* Listening is a media library, not a list of documents. The shared
                catalogue, what an administrator imported and what the learner
@@ -482,7 +494,11 @@ export async function renderWorld(root, ctx) {
             }</section>`;
           })()
     }${practiceContinuation}`;
-    if (intent === 'reading') paintLibraryGrid(root.querySelector('[data-library-grid]'), ctx);
+    if (intent === 'reading')
+      releaseLibrary = paintLibraryGrid(root.querySelector('[data-library-grid]'), {
+        ...ctx,
+        bindShelves: bindContentRails,
+      }) || (() => {});
     if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
   } else if (location.page === 'content') {
     const kept = all.filter(
@@ -560,5 +576,8 @@ export async function renderWorld(root, ctx) {
     return found.length;
   });
   bindImages(root, c);
-  return unbindContentRails;
+  return () => {
+    unbindContentRails();
+    releaseLibrary();
+  };
 }

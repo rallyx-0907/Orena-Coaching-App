@@ -198,6 +198,18 @@ export function resumable(item, memory) {
   return true;
 }
 
+/* How far through, when that is actually known.
+
+   Continuity is "you are on chapter four of fourteen", not "there is an
+   unfinished row with this id". The entry carries its own place (memory.js);
+   this only refuses to print one it cannot stand behind. */
+export function continuationPlace(item) {
+  const index = Number(item?.place?.index);
+  const total = Number(item?.place?.total);
+  if (!(index >= 1 && total >= 1 && index <= total)) return null;
+  return { index, total, percent: Math.max(1, Math.round((index / total) * 100)) };
+}
+
 export function continuationEntries(memory, { experience = '' } = {}) {
   return (memory?.value?.continuation || []).filter(
     (item) =>

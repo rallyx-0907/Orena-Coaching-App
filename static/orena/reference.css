@@ -161,8 +161,144 @@
 [data-experience='continue'] .thread-list { grid-template-columns:1fr; }
 [data-experience='continue'] .thread { padding:26px 32px; border-left:2px solid var(--accent); border-bottom:1px solid var(--line); }
 [data-experience='continue'] .thread-action { margin-top:8px; }
-.continue-empty { padding:50px 0; border-top:1px solid var(--line); }
-.continue-empty h2 { margin-bottom:25px; }
+/* Continue is continuity, not a list of unfinished rows.
+
+   The thread the learner was last in gets the room to be recognised - its own
+   artwork, what it belongs to, how far through it is, one way back in - and
+   everything else stays compact underneath. */
+.continue-lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin: var(--space-4) 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: 18px;
+  background: var(--night-surface);
+  color: var(--on-night);
+}
+.continue-lead__visual {
+  flex: 0 0 auto;
+  overflow: hidden;
+  width: clamp(88px, 10vw, 124px);
+  aspect-ratio: 3 / 4;
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: 0 10px 24px color-mix(in srgb, #000 30%, transparent);
+}
+.continue-lead__visual > img,
+.continue-lead__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.continue-lead__body { display: grid; justify-items: start; gap: 9px; min-width: 0; }
+.continue-lead__body > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--on-night-muted);
+}
+.continue-lead__body > small svg { width: 16px; height: 16px; }
+.continue-lead h2 {
+  margin: 0;
+  font-size: clamp(22px, 2.3vw, 31px);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+.continue-lead__context {
+  margin: 0;
+  color: var(--on-night-muted);
+  font-size: var(--text-sm);
+}
+.continue-lead .primary { margin-top: 3px; }
+
+/* Progress reads at a glance and never claims more than the entry knows. */
+.continue-progress,
+.library-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  max-width: 260px;
+}
+.continue-progress__bar,
+.library-progress__bar {
+  position: relative;
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+.continue-progress__bar > span,
+.library-progress__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+}
+.continue-progress small,
+.library-progress small {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  opacity: .8;
+}
+
+.continue-more { margin-top: var(--space-5); }
+.continue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: var(--space-3);
+}
+.continue-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 72%, transparent);
+  color: var(--ink);
+  text-decoration: none;
+}
+.continue-card__visual {
+  overflow: hidden;
+  width: 56px;
+  aspect-ratio: 3 / 4;
+  border-radius: 3px 7px 7px 3px;
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.continue-card__visual > img,
+.continue-card__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.continue-card__body { display: grid; align-content: start; gap: 4px; min-width: 0; }
+.continue-card__body > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.continue-card__body > small svg { width: 15px; height: 15px; }
+.continue-card__body > strong {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.continue-card__context {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.continue-card:hover, .continue-card:focus-visible { color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+
+.continue-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) 0;
+}
+.continue-empty h2 { margin: 0 0 var(--space-3); }
+.continue-empty .brand-art { flex: 0 0 auto; width: clamp(96px, 11vw, 136px); margin: 0; }
 [data-experience='content'] .collection-row { background:var(--surface); padding:22px; margin-block:12px; }
 [data-experience='understanding'] .page-intro { border-bottom:2px solid var(--accent); }
 .understanding-source { background:var(--night-surface); color:var(--on-night); padding:22px; border-radius:8px; }
@@ -384,6 +520,8 @@
 #main[data-experience='continue'] > .page-intro--compact,
 #main[data-experience='continue'] > .content-rail,
 #main[data-experience='continue'] > .notice,
+#main[data-experience='continue'] > .continue-lead,
+#main[data-experience='continue'] > .continue-more,
 #main[data-experience='continue'] > .continue-empty { max-width: 1040px; margin-inline: 0; }
 #main[data-experience='continue'] > .content-rail { margin-top: var(--space-4); }
 #main[data-experience='continue'] > .page-intro--compact { padding-bottom: var(--space-3); }
@@ -837,6 +975,17 @@
   .discover-prompt-card { padding: var(--space-3); }
   .thread--rail,
   [data-experience='continue'] .thread--rail { min-height: 102px; }
+  .continue-lead {
+    gap: var(--space-3);
+    margin: var(--space-3) 0 var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: 15px;
+  }
+  .continue-lead__visual { width: 74px; }
+  .continue-lead h2 { font-size: 20px; }
+  .continue-grid { grid-template-columns: 1fr; }
+  .continue-empty { gap: var(--space-4); padding: var(--space-4) 0; }
+  .continue-empty .brand-art { width: 88px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .content-rail__track { scroll-behavior: auto; }

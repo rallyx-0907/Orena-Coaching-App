@@ -28,6 +28,17 @@ function keptRecord(term, item) {
     at: typeof item.at === 'string' ? item.at.slice(0, 40) : '',
   };
 }
+/* A position inside a whole, or nothing. Both numbers have to be real and the
+   index has to fit inside the total, because a progress figure that cannot be
+   true is worse than no progress figure at all. */
+function readPlace(place) {
+  const index = Number(place?.index);
+  const total = Number(place?.total);
+  if (!Number.isInteger(index) || !Number.isInteger(total)) return null;
+  if (index < 1 || total < 1 || index > total) return null;
+  return { index, total };
+}
+
 export function learnerMemory(storage, owner, language) {
   const key = `orena.encounters.v1:${encodeURIComponent(owner)}:${language}`;
   let available = true,
@@ -230,7 +241,7 @@ export function learnerMemory(storage, owner, language) {
        stated: closing a practice panel passes `intent: null` on purpose, and
        that still means the learner is back to the encounter itself. */
     enter(entry) {
-      const { id, title, segment, source_url, excerpt } = entry;
+      const { id, title, segment, source_url, excerpt, context, place } = entry;
       const previous = value.continuation.find((x) => x.id === id);
       value.continuation = [
         {
@@ -240,6 +251,14 @@ export function learnerMemory(storage, owner, language) {
           intent: 'intent' in entry ? entry.intent : (previous?.intent ?? null),
           source_url: source_url ?? previous?.source_url ?? '',
           excerpt: String(excerpt ?? previous?.excerpt ?? '').slice(0, 1200),
+          /* Where this sits in something larger, when it sits in something
+             larger. A chapter is a chapter *of a book*, and "Chapter IV" on its
+             own is the database row, not the continuity - so the whole it
+             belongs to and its position in that whole travel with the entry.
+             Both are optional and neither is guessed: a text that belongs to
+             nothing keeps none of this. */
+          context: String(context ?? previous?.context ?? '').slice(0, 240),
+          place: readPlace(place ?? previous?.place),
         },
         ...value.continuation.filter((x) => x.id !== id),
       ].slice(0, 20);

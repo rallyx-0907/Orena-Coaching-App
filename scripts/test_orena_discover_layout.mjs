@@ -329,8 +329,8 @@ assert.doesNotMatch(rail, /globalThis\.addEventListener\?\.\('resize'/,
   'rail binding must not leak one global resize listener on every Discover render');
 assert.match(rail, /resizeObserver\?\.disconnect\(\)/,
   'rail binding returns lifecycle cleanup for its ResizeObservers');
-assert.match(world, /return unbindContentRails;/,
-  'renderWorld hands rail cleanup back to the app route lifecycle');
+assert.match(world, /unbindContentRails\(\);\s+releaseLibrary\(\);/,
+  'renderWorld hands rail and library cleanup back to the app route lifecycle');
 assert.match(rail, /const\s+verticalDistance\s*=\s*Math\.abs\(event\.clientY - startY\)/,
   'pointer dragging waits for a horizontal gesture before taking control');
 

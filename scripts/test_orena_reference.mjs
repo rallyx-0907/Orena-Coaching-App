@@ -109,7 +109,7 @@ renderContinue(continueRoot, {
     available: true,
     value: {
       continuation: [
-        { id: 'story:one', title: 'One real thread', intent: 'reading' },
+        { id: 'book:alice/ch-4', title: 'Chapter IV', intent: 'reading', context: "Alice's Adventures in Wonderland", place: { index: 4, total: 14 } },
         { id: 'media:two', title: 'A second thread', intent: 'follow' },
       ],
       conversations: {},
@@ -117,12 +117,48 @@ renderContinue(continueRoot, {
     },
   },
 });
-assert.match(continueRoot.innerHTML, /data-content-rail="continue"/,
-  'Continue uses the same accessible rail primitive as Discover');
-assert.match(continueRoot.innerHTML, /data-content-rail-prev/);
-assert.match(continueRoot.innerHTML, /data-content-rail-next/);
+/* Continuity, not a list of unfinished rows: the most recent thread leads with
+   its own artwork, what it belongs to, how far through it is, and one way back
+   in. The rest stay compact beneath it. */
+assert.match(continueRoot.innerHTML, /class="continue-lead"/,
+  'the thread the learner was last in leads the room');
+assert.equal((continueRoot.innerHTML.match(/<a class="primary"/g) || []).length, 1,
+  'exactly one primary way back in');
+assert.match(continueRoot.innerHTML, /Alice&#039;s Adventures in Wonderland/,
+  'a chapter is shown as a chapter of its book');
+assert.match(continueRoot.innerHTML, /4\/14/, 'the place inside the whole is printed');
+assert.match(continueRoot.innerHTML, /class="continue-progress"/, 'progress reads at a glance');
+assert.match(continueRoot.innerHTML, /width:29%/, 'progress is computed from the real place');
+assert.match(continueRoot.innerHTML, /class="content-cover"/,
+  'a resumed item is recognisable by its own artwork');
+assert.equal((continueRoot.innerHTML.match(/class="continue-card"/g) || []).length, 1,
+  'the remaining threads stay compact');
 assert.doesNotMatch(continueRoot.innerHTML, /thread-action/,
   'resume cards do not repeat permanent arrows when the whole card is clickable');
+
+/* A thread with no known place never prints an invented one. */
+assert.equal((continueRoot.innerHTML.match(/class="continue-progress"/g) || []).length, 1,
+  'progress appears only where the entry actually carries a place');
+
+const emptyContinue = { innerHTML: '' };
+renderContinue(emptyContinue, {
+  ui: 'en',
+  c: copy.en,
+  language: 'en',
+  memory: { available: true, value: { continuation: [], conversations: {}, expressions: {} } },
+});
+assert.match(emptyContinue.innerHTML, /class="continue-empty"/, 'an empty room says so');
+assert.match(emptyContinue.innerHTML, /<a class="primary" href="#\/"/,
+  'with nothing to resume, the way out is the way in');
+
+const forgetful = { innerHTML: '' };
+renderContinue(forgetful, {
+  ui: 'en',
+  c: copy.en,
+  language: 'en',
+  memory: { available: false, value: { continuation: [], conversations: {}, expressions: {} } },
+});
+assert.match(forgetful.innerHTML, /notice/, 'a device that cannot remember says so');
 
 /* Removing the repeated bar has to be a composition change. Hiding it in CSS
    would leave every room still rendering the whole map to assistive

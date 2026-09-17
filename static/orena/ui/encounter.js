@@ -76,7 +76,21 @@ export function inspectPhrase(ctx, text, title, context, origin = null) {
 function textEncounter(root, ctx, item, book = null) {
   const { c, language, memory } = ctx;
   const paragraphs = item.paragraphs || [item.text];
-  memory.enter({ id: item.id, title: item.title, excerpt: paragraphs[0] });
+  /* A chapter is a chapter of a book. Which book, and which chapter of how
+     many, is what makes Continue continuity rather than a list of rows - and
+     it is known right here, where the book was loaded, and nowhere later. */
+  const chapterIndex = book?.chapterId
+    ? (book.chapters || []).findIndex((chapter) => chapter.id === book.chapterId)
+    : -1;
+  memory.enter({
+    id: item.id,
+    title: item.title,
+    excerpt: paragraphs[0],
+    context: book?.title || '',
+    place: chapterIndex >= 0
+      ? { index: chapterIndex + 1, total: book.chapters.length }
+      : null,
+  });
   const title = `${origin(item, c)} · ${item.title}`;
   const from = { id: item.id, where: item.title, why: 'from_reading' };
   const notes = (item.phrases || []).length

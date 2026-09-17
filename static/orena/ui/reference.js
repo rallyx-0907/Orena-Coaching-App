@@ -3,8 +3,10 @@
 import { link } from '../product/intent.js';
 import { esc } from './html.js';
 import { scene } from './brand.js';
-import { continuationShelf, pageIntro } from './patterns.js';
+import { continuationEntries, continuationPlace, hint, pageIntro } from './patterns.js';
 import { entryIcon } from './icons.js';
+import { art } from './content.js';
+import { continuationExperience, continuationLink } from '../product/intent.js';
 
 export { entryIcon } from './icons.js';
 
@@ -154,25 +156,59 @@ export function editorialIntro(ctx, {title, note, state, eyebrow}) {
 }
 /* The room whose whole subject is coming back.
 
-   It asked the store how many threads it held and trusted the answer, which
-   was wrong twice: a device that cannot remember reported nothing to continue
-   rather than saying it had lost the ability to, and threads the shelf now
-   declines to offer still counted, leaving the room empty under a heading
-   promising otherwise. The shelf decides what can be resumed; this asks it. */
+   It used to be the same shelf Discover carries, rendered longer: a row of
+   white cards each holding a word and a title, which is a list of unfinished
+   database rows rather than continuity. What a learner needs here is where
+   they are - the thing itself, what it belongs to, how far through they got,
+   and one way back in.
+
+   Nothing here is invented. The cover is drawn from the item's own identity,
+   the place is printed only when the entry actually carries one, and the shelf
+   still decides what can be resumed: a thread whose work is gone is not
+   offered, and a device that cannot remember says so.
+   `continuationEntries` is that decision; this room asks it. */
+const continuationIcons = {
+  listening: 'sound',
+  reading: 'book',
+  speaking: 'voice',
+  writing: 'pen',
+  understanding: 'spark',
+  practice: 'focus',
+  recall: 'return',
+};
+
+function continueLabel(item, ctx) {
+  const experience = continuationExperience(item);
+  return experience === 'listening'
+    ? ctx.c.followName
+    : ctx.c[`${experience}Name`] || ctx.c.resume;
+}
+
+function progressBar(place, label) {
+  if (!place) return '';
+  return `<span class="continue-progress" role="img" aria-label="${esc(label)}"><span class="continue-progress__bar"><span style="width:${place.percent}%"></span></span><small>${place.percent}%</small></span>`;
+}
+
+/* The one the learner was last in, given the room to be recognised. */
+function continueLead(item, ctx) {
+  const c = referenceCopy[ctx.ui];
+  const place = continuationPlace(item);
+  const progressLabel = place ? `${place.percent}% · ${item.context || item.title}` : '';
+  return `<section class="continue-lead"><span class="continue-lead__visual" aria-hidden="true">${art(item)}</span><div class="continue-lead__body"><small>${entryIcon(continuationIcons[continuationExperience(item)] || 'return')}${esc(continueLabel(item, ctx))}</small><h2 lang="${esc(ctx.language)}">${esc(item.title)}</h2>${item.context ? `<p class="continue-lead__context" lang="${esc(ctx.language)}">${esc(item.context)}${place ? ` · ${place.index}/${place.total}` : ''}</p>` : ''}${progressBar(place, progressLabel)}<a class="primary" href="${esc(continuationLink(item))}">${esc(c.continueAction)} <span aria-hidden="true">→</span></a></div></section>`;
+}
+
+function continueCard(item, ctx) {
+  const place = continuationPlace(item);
+  const where = item.context || '';
+  return `<a class="continue-card" href="${esc(continuationLink(item))}"><span class="continue-card__visual" aria-hidden="true">${art(item)}</span><span class="continue-card__body"><small>${entryIcon(continuationIcons[continuationExperience(item)] || 'return')}${esc(continueLabel(item, ctx))}</small><strong lang="${esc(ctx.language)}">${esc(item.title)}</strong>${where ? `<span class="continue-card__context" lang="${esc(ctx.language)}">${esc(where)}${place ? ` · ${place.index}/${place.total}` : ''}</span>` : ''}${progressBar(place, place ? `${place.percent}%` : '')}</span></a>`;
+}
+
 export function renderContinue(root, ctx) {
   const c = referenceCopy[ctx.ui];
-  /* The room whose whole subject is coming back shows what is actually waiting
-     - the draft in progress, or how far a conversation got. Discover's rail
-     stays compact because it is one shelf among six; here the state is the
-     reason the learner opened the page. Nothing is invented: the shelf only
-     prints state it already holds. */
-  const threads = continuationShelf(ctx, ctx.memory.value.continuation.length, {
-    title: c.continueLearning,
-    compact: false,
-    rail: true,
-    showHeading: false,
-    previousLabel: `${c.railPrevious}: ${c.continueLearning}`,
-    nextLabel: `${c.railNext}: ${c.continueLearning}`,
-  });
-  root.innerHTML = `${pageIntro({title:c.continue,note:c.continueNote,compact:true})}${ctx.memory.available ? '' : `<p class="notice">${esc(ctx.c.memoryUnavailable)}</p>`}${threads || `<section class="continue-empty"><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.discover)} →</a></section>`}`;
+  const threads = continuationEntries(ctx.memory);
+  const [lead, ...rest] = threads;
+  const body = lead
+    ? `${continueLead(lead, ctx)}${rest.length ? `<section class="continue-more" aria-label="${esc(c.continueLearning)}"><div class="section-head"><h2>${esc(c.continueLearning)}</h2>${hint({ text: ctx.c.deviceThreads })}</div><div class="continue-grid">${rest.map((item) => continueCard(item, ctx)).join('')}</div></section>` : ''}`
+    : `<section class="continue-empty">${scene('empty', { size: 'medium' })}<div><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.startAction)} <span aria-hidden="true">→</span></a></div></section>`;
+  root.innerHTML = `${pageIntro({ title: c.continue, compact: true })}${ctx.memory.available ? '' : `<p class="notice">${esc(ctx.c.memoryUnavailable)}</p>`}${body}`;
 }
