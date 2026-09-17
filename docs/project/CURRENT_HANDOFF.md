@@ -34,9 +34,8 @@ Preserved Opus implementation; ORENA_STATUS and GOLDEN_STAR_COMPLETION hold
 behavior and evidence. Current invariants/owners:
 
 - Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
-- Reading: content/reading.js readable contract; reading-library.js rights gate;
-  ui/reader.js adds paragraph meaning and a never-AI, dictionary-first
-  word lookup.
+- Reading: content/reading.js readable contract; reading-library.js rights
+  gate; ui/reader.js adds paragraph meaning and never-AI word lookup.
 - Writing: ui/writing-review.js; exact snapshot and grounded revision; T12 evaluator in `c71c644`.
 - Speaking: product/conversation.js; own turns, no absent-reference alignment.
 - Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
@@ -49,15 +48,17 @@ behavior and evidence. Current invariants/owners:
 ## Last verified batch
 
 Reading Room word lookup (`9865bfa`): dictionary-first, translation-last,
-never-AI; paragraph translation now defaults to local Marian, Groq needs
-explicit opt-in. Fixed an EPUB nav-landmarks bug that kept a TOC doc as a
-chapter. Also records the prior unlogged Discover content-rail/Shared
-Reading Library commits.
+never-AI; paragraph translation defaults to local Marian, Groq is opt-in.
+Fixed an EPUB nav-landmarks bug that kept a TOC doc as a chapter.
 
-Verified: full pytest (1109 passed, 0 failed), all 45 CI `.mjs` gates, both
-validators, browser pass on `orena-foundation-web`:8011 (ZH lookup only).
+Learning-surface UI polish: Vocabulary rank/material restored (reference.css
+had overwritten `--vocabulary-level-color`); one shared rail peek
+(`--rail-columns` + `--rail-peek`); Continue shows real state at a 1040px
+measure; Speaking/Writing are no longer one card with two icons.
 
-Gemini R3 4/4 EN/ZH/support pass; no CI claim.
+Verified both batches: full pytest, all 45 CI `.mjs` gates, both validators,
+browser pass on `orena-foundation-web`:8011. Gemini R3 4/4 EN/ZH/support pass.
+No CI claim.
 
 ## Runtime / safety
 
@@ -65,10 +66,9 @@ Operate only isolated `orena-foundation-web`:8011 with its PG/network,
 published on `0.0.0.0:8011` for private-LAN review via Ethernet IPv4.
 PGDATA is tmpfs; the start script restores it. Restart after Python
 changes; uvicorn does not reload. Do not operate production 8000/preview
-8010/Cloudflare/volumes. Loopback/LAN self-checks pass; if peer access is
-blocked, add TCP 8011 scoped to `LocalSubnet` from Administrator
-PowerShell. AI eval uses selected local/provider credentials; ASR
-unconfigured.
+8010/Cloudflare/volumes. Loopback/LAN checks pass; if a peer cannot reach it,
+open TCP 8011 to `LocalSubnet` from an elevated shell. AI eval uses selected
+local/provider credentials; ASR unconfigured.
 
 Dependency-heavy tests use the read-only `ai-writing-coach:local` recipe in
 AGENTS.md; SQLite is test-only. Switch language in-page.
@@ -80,8 +80,8 @@ Chinese orthography are schema-free. Vocabulary Source Import is E2E through
 Admin preview/mapping/import and learner collection/card projections.
 Architecture review is approved; the remaining Vocabulary gate is human
 schema/runtime authorization for `20260916_0008`, then PostgreSQL rehearsal.
-Browser review at `http://127.0.0.1:8011/#/language` or the machine LAN address on port 8011;
-check EN/ZH and Chinese orthography across Discover/My Language.
+Browser review at `:8011/#/language` (or the LAN address); check EN/ZH and
+Chinese orthography across Discover/My Language.
 
 Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
 approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
@@ -98,9 +98,9 @@ Golden Star capability findings are closed; Packages A-D of
 `ORENA_REFERENCE_ARCHITECTURE.md` are done. Backbone runtime integration I1-I7
 remains Opus implementation work; F is human review, not architecture completion.
 
-Multi-theme system implemented, awaiting visual review: Paper, Night Ink,
-Deep Forest, Sage Field; identity separate from appearance; colour owned
-solely by `theme.css`. Ember deferred; brand assets replaced, runtime remapped.
+Multi-theme system awaiting visual review: Paper, Night Ink, Deep Forest,
+Sage Field; identity separate from appearance; colour owned by `theme.css`.
+Ember deferred; brand assets replaced.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
@@ -122,10 +122,10 @@ fallback.
 
 ## PENDING
 
-R3 Gemini live gate verified 4/4 representative EN/ZH/support-language cases
-with native structured output, grounded evidence, valid levels and script
-separation. The Ollama fallback remains a lower-quality local option: `qwen3:8b`
-intermittently leaks target script in nested support explanations.
+R3 Gemini live gate passed 4/4 EN/ZH/support cases with native structured
+output, grounded evidence and script separation. The Ollama fallback stays a
+lower-quality local option: `qwen3:8b` leaks target script in nested support
+explanations.
 
 ## BLOCKED
 

@@ -155,13 +155,18 @@ export function editorialIntro(ctx, {title, note, state, eyebrow}) {
    promising otherwise. The shelf decides what can be resumed; this asks it. */
 export function renderContinue(root, ctx) {
   const c = referenceCopy[ctx.ui];
+  /* The room whose whole subject is coming back shows what is actually waiting
+     - the draft in progress, or how far a conversation got. Discover's rail
+     stays compact because it is one shelf among six; here the state is the
+     reason the learner opened the page. Nothing is invented: the shelf only
+     prints state it already holds. */
   const threads = continuationShelf(ctx, ctx.memory.value.continuation.length, {
     title: c.continueLearning,
-    compact: true,
+    compact: false,
     rail: true,
     showHeading: false,
     previousLabel: `${c.railPrevious}: ${c.continueLearning}`,
     nextLabel: `${c.railNext}: ${c.continueLearning}`,
   });
-  root.innerHTML = `${pageIntro({title:c.continue,compact:true})}${ctx.memory.available ? '' : `<p class="notice">${esc(ctx.c.memoryUnavailable)}</p>`}${threads || `<section class="continue-empty"><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.discover)} →</a></section>`}`;
+  root.innerHTML = `${pageIntro({title:c.continue,note:c.continueNote,compact:true})}${ctx.memory.available ? '' : `<p class="notice">${esc(ctx.c.memoryUnavailable)}</p>`}${threads || `<section class="continue-empty"><h2>${esc(c.continueEmpty)}</h2><a class="primary" href="${link()}">${esc(c.discover)} →</a></section>`}`;
 }

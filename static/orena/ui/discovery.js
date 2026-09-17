@@ -14,6 +14,8 @@ import {
   masteryStars,
   vocabularyLevel,
   vocabularyLevelSkin,
+  vocabularyRank,
+  vocabularyRankToken,
   vocabularyStatus,
 } from './vocabulary-experience.js';
 import { bindContentRails, contentRail } from './content-rail.js';
@@ -42,12 +44,21 @@ function listeningCard(item, ctx) {
   return `<a class="discover-content-card discover-listening-card" data-listening-card href="${esc(link('encounter', { id: item.id, intent: 'follow' }))}"><span class="discover-listening-card__visual">${art(item)}${length ? `<span class="discover-listening-card__duration">${esc(length)}</span>` : ''}<span class="discover-listening-card__play" aria-hidden="true">▶</span></span><span class="discover-content-card__body"><strong lang="${esc(item.language || ctx.language)}">${esc(item.title)}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</span></a>`;
 }
 
+/* Speaking and Writing are both invitations to produce language, which is why
+   they kept collapsing into one card with a different icon. They are told apart
+   by what the learner is being handed: Speaking opens a situation and gives the
+   opening turn to say something into; Writing hands over the prompt itself,
+   with the passage it came from kept quiet underneath. Both read real authored
+   fields - neither invents a line to fill its shape. */
 function speakingCard(item, ctx) {
-  return `<a class="discover-prompt-card discover-speaking-card" data-speaking-card href="${esc(link('practice', { id: `voice:${item.key}`, intent: 'speaking' }))}"><span class="discover-prompt-card__icon" aria-hidden="true">${entryIcon('voice')}</span><strong lang="${esc(ctx.language)}">${esc(item.title)}</strong></a>`;
+  const opening = String(item.cue || item.prompt || '').trim();
+  return `<a class="discover-prompt-card discover-speaking-card" data-speaking-card href="${esc(link('practice', { id: `voice:${item.key}`, intent: 'speaking' }))}"><span class="discover-prompt-card__icon" aria-hidden="true">${entryIcon('voice')}</span><span class="discover-prompt-card__body"><strong lang="${esc(ctx.language)}">${esc(item.title)}</strong>${opening ? `<span class="discover-speaking-card__turn" lang="${esc(ctx.language)}">${esc(opening)}</span>` : ''}</span></a>`;
 }
 
 function writingCard(item, ctx) {
-  return `<a class="discover-prompt-card discover-writing-card" data-writing-card href="${esc(link('expression', { id: item.id }))}"><span class="discover-prompt-card__icon" aria-hidden="true">${entryIcon('pen')}</span><strong lang="${esc(ctx.language)}">${esc(item.prompt || item.title)}</strong></a>`;
+  const prompt = String(item.prompt || item.title || '').trim();
+  const source = String(item.prompt ? item.title || '' : '').trim();
+  return `<a class="discover-prompt-card discover-writing-card" data-writing-card href="${esc(link('expression', { id: item.id }))}"><span class="discover-prompt-card__icon" aria-hidden="true">${entryIcon('pen')}</span><span class="discover-prompt-card__body"><strong lang="${esc(ctx.language)}">${esc(prompt)}</strong>${source && source !== prompt ? `<small class="discover-writing-card__source" lang="${esc(item.language || ctx.language)}">${esc(source)}</small>` : ''}</span></a>`;
 }
 
 function vocabularyCard(card, ctx) {
@@ -60,7 +71,10 @@ function vocabularyCard(card, ctx) {
   const index = Number(card.__discoverIndex) || 0;
   const stateKey = { new: 'vocabularyNew', learning: 'vocabularyLearningState', due: 'vocabularyDueState', mastered: 'vocabularyMasteredState' }[state];
   const stateLabel = ctx.c[stateKey] || state;
-  return `<article class="discover-vocabulary-card" data-vocabulary-card data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-state="${esc(state)}"><div class="discover-vocabulary-card__top">${level ? `<small>${esc(level)}</small>` : '<small>—</small>'}<span class="vocabulary-stars" aria-label="${esc(stars)}">${esc(stars)}</span></div><strong lang="${esc(targetLanguage)}">${esc(card.headword)}</strong>${meaning ? `<span class="discover-vocabulary-card__meaning" lang="${esc(ctx.support || '')}">${esc(meaning)}</span>` : ''}${card.pronunciation ? `<small class="discover-vocabulary-card__pronunciation" lang="${esc(targetLanguage)}">${esc(card.pronunciation)}</small>` : ''}<div class="discover-vocabulary-card__footer"><span class="vocabulary-state vocabulary-state--${esc(state)}">${esc(stateLabel)}</span><span class="discover-vocabulary-card__actions"><a class="quiet" data-vocabulary-study="${index}" href="${esc(link('language'))}">${esc(ctx.c.vocabularyStudy || ctx.c.lookCloser)}</a>${card.saved ? `<span class="quiet" data-vocabulary-saved>${esc(ctx.c.vocabularySaved || ctx.c.saved)} ✓</span>` : `<button class="quiet" type="button" data-discover-vocabulary-save="${index}">${esc(ctx.c.vocabularySave || ctx.c.keep)} ＋</button>`}</span></div></article>`;
+  /* The word is the anchor; the level and the rank material it is cut from sit
+     above it as metadata, and the meaning, pronunciation, mastery and review
+     state read in descending weight beneath it. */
+  return `<article class="discover-vocabulary-card" data-vocabulary-card data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-state="${esc(state)}"><div class="discover-vocabulary-card__top">${level ? `<small>${esc(level)}</small>` : '<small>—</small>'}${vocabularyRankToken(ctx.c, card)}</div><strong lang="${esc(targetLanguage)}">${esc(card.headword)}</strong>${meaning ? `<span class="discover-vocabulary-card__meaning" lang="${esc(ctx.support || '')}">${esc(meaning)}</span>` : ''}${card.pronunciation ? `<small class="discover-vocabulary-card__pronunciation" lang="${esc(targetLanguage)}">${esc(card.pronunciation)}</small>` : ''}<div class="discover-vocabulary-card__footer"><span class="vocabulary-stars" aria-label="${esc(stars)}">${esc(stars)}</span><span class="vocabulary-state vocabulary-state--${esc(state)}">${esc(stateLabel)}</span></div><div class="discover-vocabulary-card__actions"><a class="quiet" data-vocabulary-study="${index}" href="${esc(link('language'))}">${esc(ctx.c.vocabularyStudy || ctx.c.lookCloser)}</a>${card.saved ? `<span class="quiet" data-vocabulary-saved>${esc(ctx.c.vocabularySaved || ctx.c.saved)} ✓</span>` : `<button class="quiet" type="button" data-discover-vocabulary-save="${index}">${esc(ctx.c.vocabularySave || ctx.c.keep)} ＋</button>`}</div></article>`;
 }
 
 const continuationIcons = {

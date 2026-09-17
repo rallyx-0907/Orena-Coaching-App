@@ -25,13 +25,27 @@
   overflow: hidden;
   z-index: 30;
 }
-.shell-identity { padding: 4px 8px 8px; flex: none; }
-.shell-motto { display: block; color: var(--muted); font-size: var(--text-xs); margin-top: 4px; line-height: 1.5; }
+.shell-identity { padding: 4px 8px 16px; flex: none; }
+.shell-motto { display: block; color: var(--muted); font-size: var(--text-xs); margin-top: 6px; letter-spacing: normal; text-transform: none; font-weight: 500; line-height: 1.5; }
 #shell .brand { font-size: 30px; letter-spacing: -1.6px; }
-#shell nav { display: flex; flex-direction: column; align-items: stretch; gap: 12px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+/* Groups breathe more than the destinations inside them, so the rail reads as
+   three named neighbourhoods rather than one list of eleven links. */
+#shell nav { display: flex; flex-direction: column; align-items: stretch; gap: 20px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .nav-group { display: flex; flex-direction: column; gap: 1px; }
-.nav-group > small { color: var(--muted); letter-spacing: .02em; text-transform: none; padding: 0 12px 3px; font-size: 11px; line-height: 1.5; }
-.nav-group--admin { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
+.nav-group > small {
+  color: color-mix(in srgb, var(--muted) 82%, var(--surface));
+  letter-spacing: .05em;
+  text-transform: none;
+  font-weight: 600;
+  padding: 0 12px 6px;
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+/* Platform Admin is tooling. It keeps its place, below the learner's world and
+   visibly outside it, rather than reading as a twelfth destination. */
+.nav-group--admin { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); }
+.nav-group--admin > small { color: color-mix(in srgb, var(--muted) 66%, var(--surface)); }
+.nav-group--admin a { font-size: var(--text-xs); }
 .admin-summary { margin-top: var(--space-4); }
 .admin-summary .section-head { align-items: flex-start; gap: var(--space-4); }
 .admin-summary .section-head p { color: var(--muted); margin: 0; }
@@ -55,9 +69,9 @@
 .admin-vocabulary-results li { display: grid; grid-template-columns: minmax(10rem, 1fr) auto; gap: 3px var(--space-3); padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .admin-vocabulary-results li small { grid-column: 1 / -1; color: var(--muted); }
 .admin-vocabulary-results li span { color: var(--accent); font-weight: 700; }
-#shell nav a { display: flex; gap: 11px; align-items: center; padding: 8px 12px; min-height: 43px; border-radius: 7px; font-size: var(--text-sm); color: var(--muted); }
-#shell nav a svg { flex: none; }
-#shell nav a[aria-current] { background: var(--sage-surface); color: var(--on-sage); }
+#shell nav a { display: flex; gap: 11px; align-items: center; padding: 8px 12px; min-height: 43px; border-radius: 8px; font-size: var(--text-sm); color: var(--muted); }
+#shell nav a svg { flex: none; width: 18px; height: 18px; }
+#shell nav a[aria-current] { background: var(--sage-surface); color: var(--on-sage); font-weight: 600; }
 #shell nav a[aria-current]:after { display: none; }
 #shell nav a:hover { background: var(--paper); color: var(--ink); }
 #shell nav a i { height: 6px; width: 6px; border-radius: 50%; background: var(--accent); margin-left: auto; }
@@ -318,40 +332,65 @@
 /* Continue and Discover share browsing mechanics without sharing one generic
    card. The primitive controls snap, touch and navigation; each domain still
    owns its silhouette and information hierarchy. */
+/* A resume card is a piece of unfinished work, not a button: the activity it
+   belongs to, what the work is called, and - where the store actually holds it
+   - how far it got. It is sized by that content rather than by a fixed block,
+   so a thread with no state left to report does not leave a hole. */
 .thread--rail,
 [data-experience='continue'] .thread--rail {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  gap: 3px var(--space-3);
+  align-content: start;
+  gap: 2px var(--space-3);
   width: 100%;
-  min-height: 98px;
-  padding: var(--space-4);
+  min-height: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   border: 0;
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 72%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent);
 }
 .thread--rail + .thread--rail,
 [data-experience='continue'] .thread--rail + .thread--rail { border-left: 0; }
-.thread-icon { grid-row: 1 / 3; align-self: start; color: var(--muted); }
+.thread-icon { grid-row: 1 / 3; align-self: start; margin-top: 3px; color: var(--muted); }
+.thread-icon svg { width: 18px; height: 18px; }
 .thread--rail small { grid-column: 2; color: var(--muted); }
 .thread--rail strong {
   grid-column: 2;
   overflow: hidden;
   font-size: var(--text-base);
-  line-height: 1.25;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.thread--rail p {
+  grid-column: 2;
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 5px 0 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .thread--rail:hover,
 .thread--rail:focus-visible {
   background: color-mix(in srgb, var(--surface) 84%, var(--paper));
-  box-shadow: inset 0 0 0 1px var(--muted);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 60%, var(--line));
 }
-[data-experience='continue'] > .page-intro--compact,
-[data-experience='continue'] > .content-rail { max-width: 1040px; }
-[data-experience='continue'] > .content-rail { margin-top: var(--space-5); }
+/* Continue holds one shelf. Given the whole canvas it left a single row of
+   cards adrift at the top of an empty page, so the room takes a reading
+   measure and the shelf sits in it. The selector carries `#main` because the
+   shell's own `#main > *` rule is an id selector: written without it, this
+   measure lost the cascade and never applied at all. */
+#main[data-experience='continue'] > .page-intro--compact,
+#main[data-experience='continue'] > .content-rail,
+#main[data-experience='continue'] > .notice,
+#main[data-experience='continue'] > .continue-empty { max-width: 1040px; margin-inline: 0; }
+#main[data-experience='continue'] > .content-rail { margin-top: var(--space-4); }
+#main[data-experience='continue'] > .page-intro--compact { padding-bottom: var(--space-3); }
+/* The shelf is the room's only content; it does not need rules drawn above and
+   below it to say so. */
+#main[data-experience='continue'] > .thread-shelf { padding: 0; border-block: 0; }
+.thread--rail { height: 100%; }
 
 /* Discover is a vertical feed of compact domain shelves. The shelf primitive
    owns horizontal behaviour; each domain keeps the shape that helps a learner
@@ -371,7 +410,14 @@
 }
 [data-experience='discover'] .discover-hero .brand-art { width: clamp(72px, 8vw, 112px); margin: 0; }
 .discover-feed { display: grid; gap: var(--space-5); padding-bottom: var(--space-6); }
-.content-rail { --rail-gap: var(--space-3); min-width: 0; }
+/* One shelf mechanic for every rail in the product.
+   A rail states how many cards it shows (`--rail-columns`) and the primitive
+   works out the width, so a card is never accidentally cut: what is left over
+   is exactly `--rail-peek` of the next card - enough to say "there is more
+   here", the same amount on every rail and every screen. A rail whose items
+   all fit simply has nothing to peek at. This replaced an edge gradient, which
+   washed over a complete card and read as clipping. */
+.content-rail { --rail-gap: var(--space-3); --rail-peek: 24px; --rail-columns: 4; min-width: 0; }
 .content-rail__header {
   display: flex;
   align-items: center;
@@ -383,23 +429,18 @@
 .content-rail__heading h2 { margin: 0; font-size: var(--text-lead); }
 .content-rail__icon { display: inline-flex; color: var(--muted); }
 .content-rail__icon svg { width: 20px; height: 20px; }
+/* Six shelves each ending in an orange "See all" made the accent ambient.
+   Orange marks the thing being acted on - focus, the current destination, a
+   primary action - so a standing link waits until it is hovered or focused. */
 .content-rail__all {
   flex: 0 0 auto;
-  color: var(--accent);
+  color: var(--muted);
   font-size: var(--text-small);
   text-decoration: none;
 }
+.content-rail__all:hover,
+.content-rail__all:focus-visible { color: var(--accent); }
 .content-rail__viewport { position: relative; min-width: 0; }
-.content-rail__viewport::after {
-  content: '';
-  position: absolute;
-  z-index: 2;
-  inset: 0 0 0 auto;
-  width: 24px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--paper));
-}
-.content-rail.is-at-end .content-rail__viewport::after { opacity: 0; }
 .content-rail__track {
   display: flex;
   flex-wrap: nowrap;
@@ -417,7 +458,7 @@
 .content-rail__track::-webkit-scrollbar { display: none; }
 .content-rail__track:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .content-rail__item {
-  flex: 0 0 calc((100% - 3 * var(--rail-gap)) / 4);
+  flex: 0 0 calc((100% - var(--rail-columns) * var(--rail-gap) - var(--rail-peek)) / var(--rail-columns));
   min-width: 0;
   scroll-snap-align: start;
 }
@@ -466,7 +507,24 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-.discover-content-card__body small { color: var(--muted); }
+/* Metadata is provenance, not a headline. The global `small` rule sets every
+   one of them in bold uppercase with wide tracking, which turns a source line
+   like "Wikimedia Commons" into the loudest thing under a cover. Uppercase is
+   kept for the short activity eyebrows that earn it; long metadata reads as
+   running text at a lower weight. */
+.discover-content-card__body small,
+.discover-writing-card__source,
+.discover-vocabulary-card__pronunciation,
+.discover-vocabulary-card__top small,
+.thread--rail p {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.5;
+}
+.discover-vocabulary-card__top small { font-weight: 600; letter-spacing: .04em; }
 .discover-reading-card__visual,
 .discover-listening-card__visual {
   position: relative;
@@ -491,30 +549,77 @@
   color: var(--on-night);
   font-size: 12px;
 }
+/* A media thumbnail says "this plays" with a control, not a floating glyph. */
 .discover-listening-card__play {
   position: absolute;
-  left: 9px;
-  bottom: 8px;
+  left: 8px;
+  bottom: 7px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding-left: 2px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--night-surface) 78%, transparent);
   color: var(--on-night);
-  text-shadow: 0 1px 4px var(--night-surface);
+  font-size: 11px;
+  line-height: 1;
 }
-.content-rail--reading .content-rail__item,
-.content-rail--vocabulary .content-rail__item { flex-basis: calc((100% - 4 * var(--rail-gap)) / 5); }
-.content-rail--listening .content-rail__item { flex-basis: calc((100% - 3 * var(--rail-gap)) / 4); }
-.content-rail--reading .content-rail__item:nth-child(3n + 1) .text-art { background: color-mix(in srgb, var(--surface) 76%, var(--sage-surface)); }
-.content-rail--reading .content-rail__item:nth-child(3n + 2) .text-art { background: color-mix(in srgb, var(--surface) 82%, var(--paper)); }
-.content-rail--reading .content-rail__item:nth-child(3n) .text-art { background: color-mix(in srgb, var(--paper) 80%, var(--sage-surface)); }
+.content-rail--reading,
+.content-rail--vocabulary { --rail-columns: 5; }
+/* Fallback covers for texts that have no image. The variant is derived from
+   the text's own identity, so a passage keeps the same cover wherever it is
+   shown - the previous nth-child tinting repainted the same book whenever it
+   moved along the shelf. Each variant is an approved surface paired with the
+   ink that belongs on it; only tone, type placement and one ruled pattern
+   change, so a shelf reads as a shelf rather than one repeated tile. */
+.discover-reading-card__visual .text-art { position: relative; background: var(--sage-surface); color: var(--on-sage); }
+.discover-reading-card__visual .text-art span { font-size: clamp(38px, 4.4vw, 62px); opacity: .58; }
+.discover-reading-card__visual .text-art[data-cover-variant='1'] { background: color-mix(in srgb, var(--surface) 82%, var(--paper)); color: var(--ink); }
+.discover-reading-card__visual .text-art[data-cover-variant='2'] { background: color-mix(in srgb, var(--paper) 80%, var(--sage-surface)); color: var(--ink); }
+.discover-reading-card__visual .text-art[data-cover-variant='3'] { background: var(--night-surface); color: var(--on-night); }
+.discover-reading-card__visual .text-art[data-cover-variant='4'] { background: color-mix(in srgb, var(--sage-surface) 70%, var(--surface)); color: var(--on-sage); }
+.discover-reading-card__visual .text-art[data-cover-variant='5'] { background: var(--sun-surface); color: var(--on-sun); }
+.discover-reading-card__visual .text-art[data-cover-variant='1'],
+.discover-reading-card__visual .text-art[data-cover-variant='4'] { place-items: end start; padding: 0 var(--space-3) var(--space-3); }
+.discover-reading-card__visual .text-art[data-cover-variant='1'] span,
+.discover-reading-card__visual .text-art[data-cover-variant='4'] span { font-size: clamp(28px, 3.2vw, 44px); opacity: .72; }
+.discover-reading-card__visual .text-art[data-cover-variant='2']::after,
+.discover-reading-card__visual .text-art[data-cover-variant='5']::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  opacity: .5;
+  background: repeating-linear-gradient(to bottom, transparent 0 11px, currentColor 11px 12px);
+  mask-image: linear-gradient(to bottom, transparent, #000);
+}
+/* A spine, so a cover reads as a book rather than a tile. */
+.discover-reading-card__visual::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0 auto 0 0;
+  width: 5px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+/* Speaking and Writing share tokens, not a component. Both open with a small
+   icon and a title, and there the composition parts: Speaking is a turn handed
+   over, Writing is a prompt with the passage it came from kept quiet beneath
+   it. Neither carries a border - the surface and the spacing separate them. */
 .discover-prompt-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: var(--space-3);
-  min-height: 108px;
-  padding: var(--space-4);
+  gap: var(--space-2) var(--space-3);
+  min-height: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   background: var(--surface);
 }
 .discover-prompt-card__icon { display: inline-flex; color: var(--muted); }
-.discover-prompt-card__icon svg { width: 24px; height: 24px; }
+.discover-prompt-card__icon svg { width: 20px; height: 20px; }
+.discover-prompt-card__body { display: grid; gap: 5px; min-width: 0; }
 .discover-prompt-card strong {
   display: -webkit-box;
   overflow: hidden;
@@ -522,39 +627,78 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-.discover-speaking-card {
-  border-radius: 8px 18px 18px 18px;
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 32%, var(--line));
+.discover-speaking-card { border-radius: 4px 16px 16px 16px; }
+.discover-speaking-card strong { font-size: var(--text-sm); font-weight: 600; color: var(--muted); }
+/* The opening turn, set as speech: the line the learner is being invited to
+   answer, not another label. */
+.discover-speaking-card__turn {
+  position: relative;
+  display: -webkit-box;
+  overflow: hidden;
+  padding-left: var(--space-3);
+  font-family: var(--story-font);
+  font-size: var(--text-base);
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
-.discover-writing-card {
-  border-radius: 5px;
-  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 30px, color-mix(in srgb, var(--line) 48%, transparent) 31px);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 62%, transparent);
+.discover-speaking-card__turn::before {
+  content: '';
+  position: absolute;
+  inset: 2px auto 2px 0;
+  width: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
-.content-rail--speaking .content-rail__item,
-.content-rail--writing .content-rail__item { flex-basis: calc((100% - 3 * var(--rail-gap)) / 4); }
+.discover-writing-card { border-radius: 4px; }
+.discover-writing-card strong { font-family: var(--story-font); font-size: var(--text-base); line-height: 1.45; -webkit-line-clamp: 3; }
+.discover-writing-card__source { color: var(--muted); }
+.discover-writing-card { background-image: repeating-linear-gradient(to bottom, transparent 0 27px, color-mix(in srgb, var(--line) 42%, transparent) 27px 28px); }
+.content-rail--speaking,
+.content-rail--writing { --rail-columns: 4; }
+/* Vocabulary carries the material its level is cut from. The skin sets
+   `--vocabulary-level-color` in world.css; this card used to redeclare that
+   property as `--line`, and because reference.css loads later every card on
+   Discover painted the same neutral edge whatever its level said. The fallback
+   belongs in the `var()`, not in a property that overrides the skin. */
 .discover-vocabulary-card {
-  --vocabulary-level-color: var(--line);
   display: grid;
   align-content: start;
   gap: 4px;
-  min-height: 172px;
+  min-height: 168px;
   padding: var(--space-4);
-  border-top: 3px solid color-mix(in srgb, var(--vocabulary-level-color) 72%, var(--line));
+  border-top: 3px solid color-mix(in srgb, var(--vocabulary-level-color, var(--line)) 72%, var(--line));
   border-radius: 9px;
   background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 75%, transparent), 0 5px 14px color-mix(in srgb, var(--ink) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent), 0 5px 14px color-mix(in srgb, var(--ink) 7%, transparent);
   transition: transform .15s ease, box-shadow .15s ease;
 }
-.discover-vocabulary-card__top { display: flex; justify-content: space-between; color: var(--muted); }
+.discover-vocabulary-card__top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); color: var(--muted); }
 .discover-vocabulary-card strong { margin-top: var(--space-2); font-family: var(--story-font); font-size: clamp(21px, 1.7vw, 27px); line-height: 1.1; }
 .discover-vocabulary-card__meaning { color: var(--ink); }
 .discover-vocabulary-card__pronunciation { color: var(--muted); }
-.discover-vocabulary-card__footer { display: flex; align-items: end; justify-content: space-between; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); }
-.discover-vocabulary-card__actions { display: flex; align-items: center; gap: var(--space-2); }
+.discover-vocabulary-card__footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); }
+.discover-vocabulary-card__actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 6px; }
 .discover-vocabulary-card__actions .quiet { min-height: 32px; padding: 5px 7px; font-size: var(--text-xs); }
-.discover-vocabulary-card:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 75%, transparent), 0 9px 20px color-mix(in srgb, var(--ink) 10%, transparent); }
+.discover-vocabulary-card:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color, var(--line)) 30%, var(--line)), 0 9px 20px color-mix(in srgb, var(--ink) 10%, transparent); }
 .discover-vocabulary-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The rank token: the material, stated. Small, tonal, and never the loudest
+   thing on a card whose subject is a word. */
+.vocabulary-rank {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color, var(--muted)) 46%, var(--line));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--vocabulary-level-color, var(--surface)) 12%, var(--surface));
+  color: color-mix(in srgb, var(--vocabulary-level-color, var(--ink)) 62%, var(--ink));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1;
+}
 .discover-continuation-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -569,7 +713,7 @@
 .discover-continuation-card > span:first-child { grid-row: 1 / 3; color: var(--muted); }
 .discover-continuation-card > small { color: var(--muted); }
 .discover-continuation-card > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.content-rail--continue .content-rail__item { flex-basis: calc((100% - 2 * var(--rail-gap)) / 3); }
+.content-rail--continue { --rail-columns: 3; }
 .discover-content-card:hover,
 .discover-content-card:focus-visible,
 .discover-prompt-card:hover,
@@ -577,24 +721,26 @@
 .discover-continuation-card:hover,
 .discover-continuation-card:focus-visible { color: var(--ink); }
 
+/* Fewer columns as the window narrows; the peek stays the same size, so the
+   signal that a rail scrolls never changes shape between breakpoints. */
 @media (max-width: 1200px) {
-  .content-rail__item,
-  .content-rail--speaking .content-rail__item,
-  .content-rail--writing .content-rail__item,
-  .content-rail--listening .content-rail__item { flex-basis: calc((100% - 2 * var(--rail-gap)) / 3); }
-  .content-rail--reading .content-rail__item,
-  .content-rail--vocabulary .content-rail__item { flex-basis: calc((100% - 3 * var(--rail-gap)) / 4); }
+  .content-rail,
+  .content-rail--speaking,
+  .content-rail--writing,
+  .content-rail--listening { --rail-columns: 3; }
+  .content-rail--reading,
+  .content-rail--vocabulary { --rail-columns: 4; }
 }
 
 @media (max-width: 900px) {
   .content-rail__control { display: none; }
-  .content-rail__item,
-  .content-rail--continue .content-rail__item,
-  .content-rail--speaking .content-rail__item,
-  .content-rail--writing .content-rail__item,
-  .content-rail--listening .content-rail__item { flex-basis: 42%; }
-  .content-rail--reading .content-rail__item,
-  .content-rail--vocabulary .content-rail__item { flex-basis: 34%; }
+  .content-rail,
+  .content-rail--continue,
+  .content-rail--speaking,
+  .content-rail--writing,
+  .content-rail--listening { --rail-columns: 2; }
+  .content-rail--reading,
+  .content-rail--vocabulary { --rail-columns: 3; }
 }
 
 @media (max-width: 600px) {
@@ -604,14 +750,15 @@
   .discover-feed { gap: var(--space-4); }
   .content-rail__header { margin-bottom: var(--space-2); }
   .content-rail__heading h2 { font-size: var(--text-base); }
-  .content-rail__track { padding: 2px 20px var(--space-2) 2px; }
-  .content-rail__item { flex-basis: min(58vw, 218px); }
-  .content-rail--reading .content-rail__item { flex-basis: min(43vw, 168px); }
-  .content-rail--speaking .content-rail__item,
-  .content-rail--writing .content-rail__item,
-  .content-rail--continue .content-rail__item { flex-basis: min(62vw, 236px); }
-  .discover-prompt-card { min-height: 100px; padding: var(--space-3); }
-  .discover-vocabulary-card__footer { align-items: start; flex-direction: column; }
+  .content-rail__track { padding: 2px 2px var(--space-2); }
+  .content-rail,
+  .content-rail--continue,
+  .content-rail--speaking,
+  .content-rail--writing,
+  .content-rail--listening,
+  .content-rail--vocabulary { --rail-columns: 1; }
+  .content-rail--reading { --rail-columns: 2; }
+  .discover-prompt-card { padding: var(--space-3); }
   .thread--rail,
   [data-experience='continue'] .thread--rail { min-height: 102px; }
 }

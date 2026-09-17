@@ -351,6 +351,7 @@ const en = {
   vocabularyFilterSaved: 'Saved',
   vocabularyNoMatches: 'No words match these filters.',
   vocabularyStudy: 'Study',
+  vocabularyRank: 'Rank',
   vocabularyOpen: 'Open',
   vocabularySave: 'Save word',
   vocabularySaved: 'Saved',
@@ -387,7 +388,6 @@ const en = {
   welcomeNote:
     'Choose your learning and support languages. You can change them any time.',
   enterOrena: 'Enter Orena',
-  internal: 'This foundation is awaiting human review.',
   limited: 'This experience is available in the internal review environment.',
   // Plan/usage: a read-only account fact, never an access decision. No price,
   // upgrade action or provider identifier belongs here while billing_ready is
@@ -782,6 +782,7 @@ const zh = {
   vocabularyFilterSaved: '已保存',
   vocabularyNoMatches: '没有符合这些筛选条件的词。',
   vocabularyStudy: '学习',
+  vocabularyRank: '等级',
   vocabularyOpen: '打开',
   vocabularySave: '保存词语',
   vocabularySaved: '已保存',
@@ -817,7 +818,6 @@ const zh = {
   welcome: '在这里，慢慢熟悉。',
   welcomeNote: '选择学习语言和辅助语言，随时可以更改。',
   enterOrena: '走进 Orena',
-  internal: '此基础体验正在等待人工评审。',
   limited: '此体验仅在内部评审环境开放。',
   planUsage: '套餐与用量',
   planUsageNote: 'Orena 评审期间免费，这里的一切都不会计费。',

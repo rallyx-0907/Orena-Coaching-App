@@ -23,6 +23,24 @@ export function origin(item, c) {
         ? c.generated
         : c.provided;
 }
+/* A shelf of texts without cover images used to be a shelf of one cover: every
+   passage drew the same "Aa 字" on the same ground, so five spines read as one
+   block of colour. A text still has something of its own to show - its first
+   letter - and a stable identity to vary the ground with, so the fallback is
+   controlled variation over real data rather than a repeated placeholder. */
+const COVER_VARIANTS = 6;
+function coverVariant(item) {
+  const seed = String(item.id || item.title || '');
+  let total = 0;
+  for (let index = 0; index < seed.length; index += 1)
+    total = (total + seed.charCodeAt(index)) % COVER_VARIANTS;
+  return total;
+}
+function coverMark(item) {
+  if (item.art === 'table') return '◡ ◡';
+  if (item.art === 'street') return '↗';
+  return [...String(item.title || '').trim()][0] || 'Aa';
+}
 export function art(item) {
   const poster = safeExternal(item.poster_url);
   if (poster)
@@ -34,7 +52,7 @@ export function art(item) {
     item.kind === 'story' ||
     item.origin === 'generated'
   )
-    return `<div class="text-art" aria-hidden="true"><span>${item.art === 'table' ? '◡ ◡' : item.art === 'street' ? '↗' : 'Aa 字'}</span></div>`;
+    return `<div class="text-art" data-cover-variant="${coverVariant(item)}" aria-hidden="true"><span>${esc(coverMark(item))}</span></div>`;
   return '<div class="sound-art" aria-hidden="true"><div class="sound-orbit"></div><span class="sound-wave">▂ ▅ ▃ ▇ ▂ ▆ ▄ ▅ ▂</span><span class="sound-note">♪</span></div>';
 }
 export function bindImages(root, c) {

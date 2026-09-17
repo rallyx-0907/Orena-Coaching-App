@@ -137,7 +137,15 @@ const collection = renderVocabularyCollectionCard(copy, {
 assert.match(collection, /data-vocabulary-level="B1"/);
 assert.match(collection, /Common Vocabulary/);
 assert.match(collection, />B1 · Common Vocabulary</);
-assert.doesNotMatch(collection, /Rank|vocabulary-rank|data-vocabulary-rank/);
+/* A level and a rank answer different questions: the level is the framework's
+   own placement and stays authoritative in the eyebrow, while the rank names
+   the material that level is cut from. `639b03d` replaced one with the other
+   and this gate held the replacement in place; the current instruction is that
+   both belong on the card, so the gate now holds both. */
+assert.match(collection, /data-vocabulary-rank="B"/,
+  'a collection carries the rank its level maps to');
+assert.match(collection, /<span class="vocabulary-rank" aria-label="Rank B">B<\/span>/,
+  'the rank is readable and labelled, not only a styling hook');
 const rangedCollection = renderVocabularyCollectionCard(copy, {
   ...{
     id: 'common-3000',
@@ -194,20 +202,28 @@ assert.match(browse, />Study<\/button>/);
 assert.match(browse, />\+ Save<\/button>/);
 assert.match(browse, /data-vocabulary-study="4"/);
 assert.match(browse, /data-vocabulary-save="4"/);
-assert.doesNotMatch(browse, /Rank|vocabulary-rank|data-vocabulary-rank/);
+assert.match(browse, /data-vocabulary-rank="B"/, 'a browse card carries its rank alongside its level');
 
-for (const [level, skin] of [
-  ['A1', 'bronze'], ['A2', 'silver'], ['B1', 'gold'], ['B2', 'platinum'],
-  ['C1', 'violet'], ['C2', 'aurora'], ['HSK1', 'bronze'], ['HSK2', 'silver'],
-  ['HSK3', 'gold'], ['HSK4', 'platinum'], ['HSK5', 'violet'],
-  ['HSK6', 'aurora'], ['HSK7-9', 'aurora'],
+/* Level, material and rank are one derivation with three readings: the
+   framework's placement, the skin it paints with, and the letter that names
+   the material. A word that has all three must show all three. */
+for (const [level, skin, rank] of [
+  ['A1', 'bronze', 'D'], ['A2', 'silver', 'C'], ['B1', 'gold', 'B'], ['B2', 'platinum', 'A'],
+  ['C1', 'violet', 'S'], ['C2', 'aurora', 'S+'], ['HSK1', 'bronze', 'D'], ['HSK2', 'silver', 'C'],
+  ['HSK3', 'gold', 'B'], ['HSK4', 'platinum', 'A'], ['HSK5', 'violet', 'S'],
+  ['HSK6', 'aurora', 'S+'], ['HSK7-9', 'aurora', 'S+'],
 ]) {
   const sample = renderVocabularyBrowseCard(copy, { ...card, level, saved: false }, { index: 8 });
   assert.match(sample, new RegExp(`data-vocabulary-level="${level}"`));
   assert.match(sample, new RegExp(`data-vocabulary-skin="${skin}"`));
+  assert.match(sample, new RegExp(`data-vocabulary-rank="${rank.replace('+', '\\+')}"`));
   assert.match(sample, new RegExp(`>${level}<`));
-  assert.doesNotMatch(sample, /Rank|vocabulary-rank|data-vocabulary-rank/);
 }
+/* An ungraded word has no level to derive a rank from, and the card must not
+   invent one rather than showing nothing. */
+const ungraded = renderVocabularyBrowseCard(copy, { ...card, level: '' }, { index: 9 });
+assert.match(ungraded, /data-vocabulary-rank=""/, 'no level means no rank, not a default rank');
+assert.doesNotMatch(ungraded, /class="vocabulary-rank"/, 'an ungraded word shows no rank token');
 
 const savedBrowse = renderVocabularyBrowseCard(copy, card, { index: 5 });
 assert.match(savedBrowse, />Saved ✓<\/button>/);
@@ -247,7 +263,9 @@ assert.match(study, /aria-label="Saved ✓"/);
 assert.match(study, />Saved ✓<\/button>/);
 assert.match(study, /data-vocabulary-level="B1"/);
 assert.match(study, /data-vocabulary-skin="gold"/);
-assert.doesNotMatch(study, /Rank|vocabulary-rank|data-vocabulary-rank/);
+assert.match(study, /data-vocabulary-rank="B"/, 'the study card keeps the rank on the article');
+assert.equal((study.match(/class="vocabulary-rank"/g) || []).length, 2,
+  'both faces of the study card carry the rank, so flipping never loses it');
 assert.doesNotMatch(study, /Keep for later/);
 
 const unrankedStudy = renderVocabularyStudyCard(copy, { ...card, level: '' }, { index: 7 });
