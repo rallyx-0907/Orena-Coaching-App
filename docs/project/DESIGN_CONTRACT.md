@@ -50,7 +50,8 @@ evidence meaning or capability semantics.
    and continuation shelves sit below the desktop frame (Frame 3+ on narrow
    screens) and never take space the activity or its immediate feedback needs.
 5. **Rooms where the learner works open compactly.** Entry, discovery and empty
-   states may carry full openings and approved artwork; an activity room's
+   states may carry full openings and approved artwork — permitted, never a
+   default page template (amended by rule 13 below); an activity room's
    heading orients and yields the first viewport to the work. The way back sits
    above the heading and does not repeat it.
 6. **Supplementary guidance is a symbol with words on demand.** Optional-field
@@ -113,6 +114,125 @@ evidence meaning or capability semantics.
 How the current web implements these rules is described, not governed, in
 `docs/product/ORENA_WEB_EXTENSION_GUIDE.md`.
 
+## Learner-facing experience rules, continued (D-057)
+
+Explicit human direction, 2026-09-17, continuing the numbering above. Rules
+1-12 stand unchanged except where rule 13 amends rule 5. Product authority for
+this direction is `docs/product/ORENA_PRODUCT_CONSTITUTION.md`; this section
+governs how a surface must be built, not what Orena is for.
+
+13. **Less words, more life.** Show first; say only what is needed. A full
+    opening with a headline and approved artwork remains permitted where it
+    earns its place, but it is not the default template for a page, and the
+    sequence *eyebrow + giant headline + slogan + paragraph + mascot* must
+    never be repeated across surfaces simply because the primitive exists.
+    Headlines and slogans do not substitute for hierarchy, artwork, content or
+    interaction. Every screen has a copy budget, spent in this order: content
+    title, action, essential context, metadata, optional explanation, and
+    marketing or slogan prose last. If a screen needs two or three sentences to
+    say where the learner is, the hierarchy or the artwork is not doing its
+    work. If a screen feels empty, fix composition, content density, imagery or
+    hierarchy before adding copy, a slogan or a mascot. This amends rule 5: it
+    removes the default, not the permission.
+
+14. **Artwork is a system, not decoration.** All production artwork belongs to
+    one Art Bible, owned by `assets/brand/orena/` (see "Art direction owner"
+    below). Do not mix unrelated rendering styles without an explicit system.
+    A piece of artwork must do at least one job: identify content, create
+    curiosity, communicate mood, support navigation, create continuity, explain
+    meaning, or reinforce a learning action. Artwork placed only to fill an
+    empty hero fails. Artwork with no narrative, navigational, emotional or
+    semantic role is removed rather than rebalanced. The mascot's own placement
+    rules stay where they already live, in
+    `assets/brand/orena/BRAND_MASCOT_GUIDE.md`.
+
+15. **Content imagery carries the visual authority.** On Discover, Library,
+    Reading and Listening surfaces, covers, thumbnails, scenes and meaningful
+    imagery are normally more prominent than metadata: the learner sees
+    something worth entering before reading information about it. Cards lead
+    with the image and a title, carry minimal metadata, and leave author,
+    level, description, chapter count, progress, source, rights and related
+    content to the detail view. Generic placeholders — a single letter, a
+    repeated `Aa 字` tile, repeated abstract rectangles, geometric filler — are
+    development-only and must not stand as the product's visual language.
+
+16. **Vivid, but one colour owner.** Content artwork, covers, thumbnails,
+    scenes and illustration may use a rich authored palette: warm, vivid,
+    playful, editorial, memorable. That licence belongs to artwork, and it
+    creates no second colour owner. UI chrome, components, surfaces, text and
+    interactive states still read their colour only from the semantic tokens in
+    `static/orena/theme.css`; no component re-invents the brand palette and no
+    second `:root` colour block appears anywhere. Icons used as UI controls may
+    carry colour, fill, shape, active/inactive states and small tactile motion,
+    through those same semantic tokens. Nothing here exempts anything from
+    accessibility: body text, secondary text, controls, links, tinted panels
+    and any UI or text overlaid on artwork must still pass AA, as
+    `scripts/test_orena_foundation.mjs` enforces for every registered theme.
+    Vivid does not mean arbitrary — saturation, contrast and palette
+    relationships are governed by the Art Bible.
+
+17. **Discover is not a list of skills.** Skill labels are valid navigation
+    vocabulary and Reading, Listening, Speaking, Writing, Vocabulary, Library
+    and Practice remain valid doors and shortcuts. But a discovery surface must
+    not be organised primarily as those modules: it uses content, topic, theme,
+    mood, context, person, situation and continuity, and it may mix media
+    within one rail. Level, type and duration are secondary metadata.
+    Horizontal rails remain valid when they stay compact, reveal the next card
+    on narrow screens, never capture vertical scrolling, and lead with imagery
+    and title. Library may be the practical, searchable surface; search and
+    filter are secondary controls on a discovery surface, not its opening move.
+
+18. **UI speaks sans. Stories speak serif.** The interface is set in the sans
+    family; story, book and editorial reading content may be set in the serif
+    family. Serif and sans are not chosen per component by taste.
+
+Rule 11 already gives the focused-learning direction; under this section it
+reads as **world recedes, content comes forward**: entering Reader, Listening,
+Writing, Speaking or another focused experience reduces navigation and shell
+noise, keeps the learning tools and explanations within reach, and adds no
+decorative immersion that competes with the task.
+
+## Art direction owner
+
+`assets/brand/orena/` is the canonical owner of Orena's art direction and is
+the Art Bible referred to by rule 14. There is no second artwork authority, and
+any future `ART_BIBLE.md` belongs inside that package rather than beside it.
+
+Its governed scope is: mascot and character, world and scene illustration,
+content thumbnail, book cover, icon, badge, empty state, background and
+pattern, and motion. Where that package does not yet specify part of the scope,
+that is a recorded gap to be closed by an explicit art-direction task, not an
+invitation for a surface to invent its own style.
+
+## Acceptance gates (D-057)
+
+Both gates apply to every learner-facing surface before it may be called
+`REVIEWABLE`. They are additional to `docs/project/REVIEW_POLICY.md`'s existing
+completion evidence, not a replacement for it.
+
+**Beginner clarity gate.** A new-user surface fails if:
+
+- there is no obvious primary action;
+- the learner must understand an Orena metaphor before acting;
+- exploration overwhelms or obscures the guided start;
+- labels are clever but unclear;
+- a slogan stands where an instruction is needed;
+- the first content is inappropriate for a true beginner;
+- a phone's first viewport hides the start or continue action beneath copy;
+- English or Chinese lacks the same beginner-safe entry.
+
+**Art gate.** A redesigned surface fails if:
+
+- its artwork does not follow the same Art Bible, or mixes unrelated styles;
+- placeholder visuals survive into the reviewed build;
+- text is compensating for weak artwork or composition;
+- the screen cannot be understood without reading marketing copy;
+- colour is arbitrary rather than authored, or a component invents colour
+  outside the semantic tokens;
+- contrast fails for text, controls, interactive states, or UI over artwork;
+- the narrow layout loses the meaning the wide one carries;
+- English and Chinese are not both verified.
+
 ## Source of truth
 
 ```text
@@ -149,3 +269,36 @@ Native review asks whether the implementation faithfully ports approved Orena
 web behavior—not whether a reviewer prefers a different mobile design. A
 native-only flow, reduced feature set, contradictory navigation, or separate
 state/domain model is a product-memory regression.
+
+## Agent checklist (derived)
+
+A convenience checklist for an agent about to touch a learner-facing surface.
+It is **derived**, not a source of law: where it and the rules above differ,
+the rules above win, and this checklist is corrected. It is not a second design
+contract and must never grow into one.
+
+Before starting, read `docs/product/ORENA_PRODUCT_CONSTITUTION.md`,
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md`, this contract, and
+`assets/brand/orena/` for visual work. Legacy UI and screenshots are evidence
+of what was built, never design authority.
+
+Before calling the work done, ask:
+
+1. Remove the slogans mentally — is the screen still clear and still alive?
+2. Remove the labels Reading / Listening / Speaking / Writing mentally — does
+   the surface still give the learner a reason to enter?
+3. Can a complete beginner find the next action within a few seconds?
+4. Does the artwork look like one product, with no placeholder surviving?
+5. Are imagery, icons and interaction doing more work than prose?
+6. Does the phone layout keep the same meaning without excessive scrolling?
+7. Are English and Chinese both verified, in the same batch?
+8. Does every colour still come from the semantic tokens, and does contrast
+   still pass — including UI placed over artwork?
+
+Do not: redesign from a blank canvas without reading the contracts and assets;
+repeat the hero template; add copy to cover weak composition; turn "world" into
+lore; rename clear navigation into poetic phrases; scatter unrelated artwork
+styles; ship letter or geometry placeholders; add mascot art to fill space;
+make every element a rounded white card; duplicate one content item into
+per-skill copies; hide core learner actions below the fold; or regress phone,
+English or Chinese.

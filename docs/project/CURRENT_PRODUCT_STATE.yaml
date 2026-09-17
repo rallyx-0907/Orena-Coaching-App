@@ -195,7 +195,9 @@
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
     "reading_library_breadth_requires_rights_decisions_per_text",
     "shared_reading_library_epub_pipeline_ships_without_rights_gate_per_d056_sandbox_only",
-    "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native"
+    "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native",
+    "shipped_learner_ui_does_not_yet_conform_to_d057_design_direction",
+    "art_bible_scope_incomplete_for_thumbnails_covers_icons_backgrounds_motion"
   ],
   "last_verified_at": "2026-09-17"
 }

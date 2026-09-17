@@ -59,6 +59,25 @@ Where technically and pedagogically appropriate, both should use the same
 learning capabilities, learner memory, evidence, vocabulary, grammar,
 progression, and continuation model.
 
+### Library, Discover and the learning tools (D-057)
+
+Explicit human direction, 2026-09-17. The three carry different jobs over the
+same content:
+
+> **Library stores the world. Discover reveals the world. Learning tools help
+> the learner interact with it.**
+
+Library may be practical: browsable, searchable, filterable, built to hold
+hundreds or thousands of items, leading with covers and thumbnails rather than
+metadata. Discover selects and reveals meaningful parts of that same library —
+by content, topic, theme, mood, context, person, situation or continuity — and
+must not be organised primarily as a list of skill modules. Learning tools act
+on whatever the learner has entered.
+
+None of the three owns content the others cannot see, and Discover and Home
+remain distribution surfaces over the domain libraries in §5-§9 rather than
+canonical stores of their own.
+
 ### Orena is not one universal content schema
 
 Orena contains **five canonical learning-content domains** — Reading,
@@ -655,6 +674,25 @@ A short conversation
 
 Do not mechanically force every capability into every content object.
 Integration must have a learner reason.
+
+## One content object, several learning actions (D-057)
+
+A single content object must not be duplicated into a separate copy per skill.
+One video is one content object — not a Listening resource, a Vocabulary
+resource, a Speaking resource and a Practice resource that drift apart.
+
+From one content object a learner should be able to reach, where the content
+genuinely supports it and without leaving the experience: watching or
+listening, reading, a synchronized transcript, word meaning, pronunciation and
+pinyin, sentence explanation, grammar or pattern, saving language, shadowing,
+speaking, writing and later recall.
+
+This is a rule about **learning actions reachable from one content identity**,
+not a universal content schema. The five domains keep their own content models
+and their explicit references to each other (§4, D-049/D-050 corrected). "Do
+not duplicate content per skill" and "do not collapse the domains into one
+shape" are the same principle seen from two sides: identity is shared, schema
+is not.
 
 ---
 

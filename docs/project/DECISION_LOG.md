@@ -1644,3 +1644,81 @@ permanent policy that imported books never need rights review.
 
 **Supersedes / Superseded by:** None. A narrow, named exception alongside the
 general principle, not a change to it.
+
+## D-057 — Clarity first, a simple front door, and artwork as a system
+
+**Status:** Accepted, explicit current human instruction (2026-09-17), after a
+screen-by-screen design audit of the current web build.
+
+**Decision:** Orena is reaffirmed as a content-rich language-learning product
+with a beginner-safe front door and depth that reveals itself over time. Four
+sentences govern the direction:
+
+> **Clarity first. Curiosity next. Depth over time.**
+> **Simple front door. Deep world behind it.**
+> **Less words, more life.**
+> **Artwork is a system, not decoration.**
+
+The durable principles this decision accepts:
+
+- "World" is an internal product and design principle. It is never
+  learner-facing lore, fantasy, a traveller metaphor, or a concept a learner
+  must understand before learning a language.
+- A learner who has never used a language-learning app must always have one
+  obvious next action; a returning learner an obvious way to continue.
+- Guided path and Explore both exist, as two entry modes into the same content
+  and learning system, and neither obscures the other.
+- Skill labels are valid navigation vocabulary. A skill-module dashboard is not
+  the primary product architecture. Clear labels are never traded for poetic
+  wording that reduces comprehension.
+- Library stores the world; Discover reveals it; the learning tools help the
+  learner interact with it. One content object supports several learning
+  actions rather than being duplicated per skill.
+- Show first, say only what is needed. A full opening is permitted but is not a
+  default page template, and the sequence eyebrow + giant headline + slogan +
+  paragraph + mascot is not repeated across surfaces.
+- All production artwork belongs to one Art Bible, owned by
+  `assets/brand/orena/`. Content imagery, covers, thumbnails, icons, colour and
+  motion carry more of the product's life than slogans do.
+- Content artwork may be vivid; interface colour keeps its single owner in
+  `static/orena/theme.css` and its accessibility obligations.
+- Focused learning modes reduce shell noise and keep the learning tools within
+  reach.
+- English and Chinese remain first-class, unchanged.
+
+Explicit non-goals: no fantasy or lore redesign; no removal of Reading,
+Listening, Speaking, Writing, Vocabulary or Library as labels; no
+redesign-by-decoration; no arbitrary palette; no generic SaaS dashboard; no
+product philosophy explained to the learner; no placeholder artwork in a
+reviewed build.
+
+**Reason:** The audit found many individually good pieces — branding, palette,
+typography, rails, an intention-centred Practice, the Daily Feed — assembled on
+a conventional module architecture, with poetic copy carrying weight that
+composition and artwork should carry, an inconsistent visual system, and a
+repeated hero template. Separately, the "world" framing risked producing a
+product a beginner has to decode. This decision restores the intended direction
+while making beginner clarity the first constraint on it.
+
+**Consequences:** Recorded in
+`docs/product/ORENA_PRODUCT_CONSTITUTION.md` (§2 ranking, §5 skill labels and
+interface language, §10 beginner-safe front door and guided path plus Explore,
+§11 what "world" is not),
+`docs/product/ORENA_CONTENT_ARCHITECTURE.md` (§1 Library/Discover/tools, §13 one
+content object and several learning actions),
+`docs/project/DESIGN_CONTRACT.md` (rules 13-18, the art-direction owner, the
+beginner clarity and art acceptance gates, and a derived agent checklist),
+`assets/brand/orena/README.md` (Art Bible authority, governed scope, recorded
+gaps),
+`AGENTS.md` (the mandatory-read routing for learner-facing work) and
+`docs/project/REVIEW_POLICY.md` (both gates as completion evidence).
+`docs/project/CURRENT_PRODUCT_STATE.yaml` records that the shipped UI does not
+yet conform. No UI, code, palette or backend contract changed with this entry;
+conforming the product is subsequent, separately scoped work.
+
+**Supersedes / Superseded by:** Amends D-051 rule 5 in
+`docs/project/DESIGN_CONTRACT.md`: a full opening with approved artwork remains
+permitted on entry, discovery and empty states, but is no longer a default page
+template. Supersedes nothing else. It does not change D-046 or its tombstones,
+D-049/D-050's five domains and horizontal Understanding Engine, D-051's
+remaining rules, D-052/D-053's phone rules, or any multilingual invariant.

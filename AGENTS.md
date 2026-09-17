@@ -63,6 +63,28 @@ convenience commands and harness-specific tooling only. They are never
 authoritative for anything in the table above, and no agent should need to read
 another harness's file to work in this repository.
 
+## Learner-facing UI work: mandatory reads
+
+Before any learner-facing product, UX, UI, visual, content-discovery, Library,
+Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
+navigation task, read and obey:
+
+- `docs/product/ORENA_PRODUCT_CONSTITUTION.md`;
+- `docs/product/ORENA_CONTENT_ARCHITECTURE.md`;
+- `docs/project/DESIGN_CONTRACT.md`, including its acceptance gates;
+- `assets/brand/orena/` for anything visual — it is the Art Bible and the only
+  art-direction authority;
+- the current verified state the cold start in §2 already requires.
+
+Precedence for these tasks: explicit current human instruction → the Product
+Constitution → the Content Architecture → the Design Contract → current
+verified product state → the task brief → existing implementation. Legacy UI
+and screenshots are evidence of what was built, never design authority. If a
+requested change would violate a contract, stop and surface the conflict before
+implementing it.
+
+The rules themselves live in those files and are not repeated here.
+
 ## Architecture review authority
 
 Architecture authority is **role-based, not model-name-based**. The role is
@@ -243,6 +265,11 @@ the two as the same thing, and never assume there are two of anything.
 - A new approved theme is registered - a block in `theme.css`, an entry in
   `theme.js`, a name and note in `ui/copy.js` for EN and ZH. It is never a new
   component, a component fork, or a rewrite of the settings UI.
+- Content artwork - covers, thumbnails, scenes, illustration - may be more
+  vivid than the interface, under the Art Bible. That licence is artwork's
+  alone and changes nothing above: it creates no second colour owner, exempts
+  no UI or text from AA, and no component invents colour outside the semantic
+  tokens. `DESIGN_CONTRACT.md` rule 16 governs the boundary (D-057).
 
 **Protected areas.** Journey, Review, Library / Active Recall UI, shared layout
 primitives, the shared CSS/JS design system, R5 Grammar contracts and Concept

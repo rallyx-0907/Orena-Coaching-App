@@ -80,6 +80,13 @@ Documentation-only work must not claim application behavior PASS merely
 because no application code changed. Validate document scope, links,
 consistency, versions, and diff hygiene instead.
 
+Learner-facing work additionally reports both acceptance gates in
+`docs/project/DESIGN_CONTRACT.md`, "Acceptance gates (D-057)": the **beginner
+clarity gate** and the **art gate**, each with the result per checked item. A
+surface that fails either gate is not `REVIEWABLE`. Missing artwork
+specification is reported as a gap against `assets/brand/orena/`, never closed
+by inventing a style for one surface.
+
 ## Stop behavior
 
 Stop and involve the human coordinator when repository evidence materially
