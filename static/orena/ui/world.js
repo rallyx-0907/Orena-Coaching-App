@@ -1,4 +1,8 @@
-import { discoverySpread, practiceOverview } from './discovery.js';
+import {
+  bindContentRails,
+  discoverySpread,
+  practiceOverview,
+} from './discovery.js';
 import { referenceCopy, editorialIntro } from './reference.js';
 import { duration, origin, art, bindImages } from './content.js';
 import { companionArt, scene } from './brand.js';
@@ -11,6 +15,7 @@ import {
   supports,
 } from '../product/intent.js';
 import { contentFor } from '../content/texts.js';
+import { voiceInvitations } from '../content/voice-invitations.js';
 import { readingEntry, readingSessionId } from '../content/reading.js';
 import { openReadingRequest, readingRow } from './reading.js';
 import {
@@ -345,6 +350,9 @@ export async function renderWorld(root, ctx) {
   const result = await Promise.allSettled([
     api.listeningLibrary(language),
     api.readingSessions(12),
+    location.page === 'discover'
+      ? api.dailyVocabularyFeed(language)
+      : Promise.resolve({ items: [] }),
   ]);
   if (!alive()) return;
   const listeningPayload = result[0].status === 'fulfilled' ? result[0].value : {};
@@ -356,13 +364,9 @@ export async function renderWorld(root, ctx) {
       kind: x.playback_kind,
       origin: 'curated',
     }));
-  const newSection = (listeningPayload.sections || []).find(
-    (section) => section.id === 'new',
-  );
-  const mediaByLesson = new Map(media.map((item) => [item.lesson_id, item]));
-  const newContent = (newSection?.item_ids || [])
-    .map((id) => mediaByLesson.get(id))
-    .filter(Boolean);
+  const vocabulary = result[2].status === 'fulfilled'
+    ? result[2].value.items || []
+    : [];
   const failed = result[0].status === 'rejected';
   // Passages the learner asked for before. They live with the account rather
   // than on the device, so an empty list here is not the same as none kept.
@@ -488,11 +492,14 @@ export async function renderWorld(root, ctx) {
   } else {
     root.innerHTML = discoverySpread(ctx, {
       media,
-      text,
+      reading: readable,
+      speaking: voiceInvitations(language),
+      writing: text.filter((item) => item.prompt),
+      vocabulary,
       catalogError,
-      newContent,
     });
   }
+  const unbindContentRails = bindContentRails(root);
   root
     .querySelectorAll('[data-bring]')
     .forEach((x) => (x.onclick = ctx.import));
@@ -526,4 +533,5 @@ export async function renderWorld(root, ctx) {
     return found.length;
   });
   bindImages(root, c);
+  return unbindContentRails;
 }

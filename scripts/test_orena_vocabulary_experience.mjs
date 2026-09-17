@@ -110,7 +110,7 @@ assert.match(expressionSource, /studyCard\.addEventListener\('keydown'/, 'Study 
 const discoveryBranch = worldSource.slice(worldSource.indexOf('  } else {', worldSource.indexOf('export async function renderWorld')), worldSource.indexOf('  root\n    .querySelectorAll', worldSource.indexOf('export async function renderWorld')));
 assert.doesNotMatch(discoveryBranch, /data-vocabulary-library/, 'Discovery no longer mounts Vocabulary Library');
 assert.doesNotMatch(discoveryBranch, /data-vocabulary-feed/, 'Discovery does not duplicate the dedicated Vocabulary experience');
-assert.match(discoverySource, /href:\s*link\('language'\)/, 'Discovery routes its compact Vocabulary card to the canonical Vocabulary destination');
+assert.match(discoverySource, /function vocabularyCard[\s\S]*?link\('language'\)/, 'Discovery routes its compact Vocabulary card to the canonical Vocabulary destination');
 assert.match(vocabularyExperienceSource, /vocabulary-feed-slide/, 'Feed slides use a dedicated deck presentation');
 assert.match(vocabularyExperienceSource, /slide\.classList\.toggle\('is-active'/, 'deck keeps one active slide');
 assert.match(vocabularyExperienceSource, /slide\.toggleAttribute\('inert'/, 'inactive slides are removed from keyboard interaction');

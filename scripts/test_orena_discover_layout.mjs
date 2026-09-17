@@ -2,84 +2,199 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import { referenceCopy } from '../static/orena/ui/reference.js';
-import { discoverySpread } from '../static/orena/ui/discovery.js';
+import {
+  bindContentRails,
+  contentRail,
+  discoverySpread,
+} from '../static/orena/ui/discovery.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const discovery = read('static/orena/ui/discovery.js');
 const world = read('static/orena/ui/world.js');
 const styles = read('static/orena/reference.css');
 
-for (const key of ['discover', 'reading', 'listening', 'newContent', 'newContentEmpty']) {
+for (const key of [
+  'discover',
+  'continueLearning',
+  'reading',
+  'listening',
+  'speaking',
+  'writing',
+  'vocabulary',
+  'collectionViewAll',
+  'railPrevious',
+  'railNext',
+  'railEmpty',
+]) {
   for (const ui of ['en', 'zh']) {
     assert.equal(typeof referenceCopy[ui][key], 'string', `${ui}.${key} must be localized`);
     assert.ok(referenceCopy[ui][key].trim(), `${ui}.${key} must not be empty`);
   }
 }
 
-const sampleMedia = [{
-  id: 'media:discover-check',
-  kind: 'video',
-  title: 'A small signal',
-  level: 'B1',
-}];
-const sampleStory = [{
-  id: 'story:discover-check',
-  title: 'A short story',
-}];
-const sampleNew = [{
-  id: 'media:discover-check',
-  kind: 'video',
-  title: 'A small signal',
-}, {
-  id: 'media:new-upload',
-  kind: 'audio',
-  title: 'Fresh from the library',
-}];
+const sampleMedia = Array.from({ length: 5 }, (_, index) => ({
+  id: `media:listen-${index}`,
+  lesson_id: `listen-${index}`,
+  kind: index % 2 ? 'audio' : 'video',
+  title: `Listening ${index + 1}`,
+  language: 'en',
+  level: index < 2 ? 'A2' : 'B1',
+  duration_ms: 90000 + index * 1000,
+  poster_url: `https://example.com/listen-${index}.jpg`,
+}));
+const sampleReading = Array.from({ length: 5 }, (_, index) => ({
+  id: `story:read-${index}`,
+  kind: 'story',
+  title: `Story ${index + 1}`,
+  language: 'en',
+  level: index < 2 ? 'A2' : 'B1',
+  time: `${index + 2} min`,
+  origin: 'generated',
+}));
+const sampleSpeaking = Array.from({ length: 3 }, (_, index) => ({
+  key: `speak-${index}`,
+  title: `Speaking prompt ${index + 1}`,
+  prompt: `Say something useful ${index + 1}`,
+}));
+const sampleWriting = sampleReading.slice(0, 4).map((item, index) => ({
+  ...item,
+  prompt: `Writing prompt ${index + 1}`,
+}));
+const sampleVocabulary = Array.from({ length: 5 }, (_, index) => ({
+  identity: { language: 'en' },
+  headword: `word-${index + 1}`,
+  pronunciation: `/word-${index + 1}/`,
+  level: index < 2 ? 'A2' : 'B1',
+  meanings: [
+    { language: 'en', text: `definition ${index + 1}` },
+    { language: 'vi', text: `nghĩa ${index + 1}` },
+  ],
+}));
+
+const memory = {
+  value: {
+    continuation: [
+      { id: 'media:listen-0', title: 'Listening 1', intent: 'follow' },
+      { id: 'story:read-0', title: 'Story 1', intent: 'reading' },
+    ],
+    conversations: {},
+    expressions: {},
+  },
+};
 
 for (const ui of ['en', 'zh']) {
   const rendered = discoverySpread(
     {
-      c: copy[ui], language: ui, ui,
-      memory: { value: { continuation: [], expressions: {} } },
+      c: copy[ui], language: 'en', support: 'vi', ui, memory,
     },
-    { media: sampleMedia, text: sampleStory, catalogError: '', newContent: sampleNew },
+    {
+      media: sampleMedia,
+      reading: sampleReading,
+      speaking: sampleSpeaking,
+      writing: sampleWriting,
+      vocabulary: sampleVocabulary,
+      catalogError: '',
+    },
   );
-  assert.equal((rendered.match(/class="discover-domain-card"/g) || []).length, 4, `${ui}: exactly four overview cards`);
-  assert.match(rendered, /class="discover-domain-rail"/);
-  assert.ok(rendered.indexOf(referenceCopy[ui].listening) < rendered.indexOf(referenceCopy[ui].reading));
-  assert.ok(rendered.indexOf(referenceCopy[ui].reading) < rendered.indexOf(copy[ui].vocabularyTitle));
-  assert.ok(rendered.indexOf(copy[ui].vocabularyTitle) < rendered.indexOf(referenceCopy[ui].newContent));
-  assert.match(rendered, /#\/practice\?intent=follow/);
+
+  const railIds = [...rendered.matchAll(/data-content-rail="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(
+    railIds,
+    ['continue', 'reading', 'listening', 'speaking', 'writing', 'vocabulary'],
+    `${ui}: vertical feed contains one resume rail followed by five separate domain rails`,
+  );
+  assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 6);
+  assert.equal((rendered.match(/data-reading-card/g) || []).length, 5);
+  assert.equal((rendered.match(/data-listening-card/g) || []).length, 5);
+  assert.equal((rendered.match(/data-speaking-card/g) || []).length, 3);
+  assert.equal((rendered.match(/data-writing-card/g) || []).length, 4);
+  assert.equal((rendered.match(/data-vocabulary-card/g) || []).length, 5);
+  assert.match(rendered, /https:\/\/example\.com\/listen-0\.jpg/);
+  assert.match(rendered, /1:30/);
+  assert.match(rendered, /nghĩa 1/);
   assert.match(rendered, /#\/practice\?intent=reading/);
+  assert.match(rendered, /#\/practice\?intent=follow/);
+  assert.match(rendered, /#\/practice\?id=voice%3Aspeak-0&amp;intent=speaking/);
+  assert.match(rendered, /#\/expression\?id=story%3Aread-0/);
   assert.match(rendered, /#\/language/);
-  assert.match(rendered, /#\/encounter\?id=media%3Anew-upload/);
-  assert.equal((rendered.match(/A small signal/g) || []).length, 1, `${ui}: New content does not duplicate the Listening feature`);
-  assert.equal(rendered.split(`>${copy[ui].vocabularyTitle}<`).length - 1, 1, `${ui}: the Vocabulary card does not repeat its label`);
-  assert.doesNotMatch(rendered, /discover-actions|feature-window|data-vocabulary-feed|thread-shelf/);
-  assert.doesNotMatch(rendered, /<p>/, 'Discover cards use icons and short labels rather than descriptions');
+  assert.doesNotMatch(rendered, /discover-domain-card|discover-domain-rail|New content|新上线/);
+  assert.doesNotMatch(rendered, /voice-description|card-description/);
 }
 
-const empty = discoverySpread(
-  {
-    c: copy.en, language: 'en', ui: 'en',
-    memory: { value: { continuation: [], expressions: {} } },
-  },
-  { media: sampleMedia, text: sampleStory, catalogError: '', newContent: [] },
+const noContinue = discoverySpread(
+  { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory: { value: { continuation: [], expressions: {}, conversations: {} } } },
+  { media: sampleMedia, reading: sampleReading, speaking: sampleSpeaking, writing: sampleWriting, vocabulary: sampleVocabulary },
 );
-assert.match(empty, new RegExp(referenceCopy.en.newContentEmpty));
+assert.doesNotMatch(noContinue, /data-content-rail="continue"/, 'Continue is truthful and disappears without resumable work');
+assert.equal((noContinue.match(/data-content-rail=/g) || []).length, 5, 'the five domain rails remain visible');
 
-assert.match(styles, /\.discover-domain-rail\s*\{[^}]*display:\s*flex;/s);
-assert.match(styles, /\.discover-domain-rail\s*\{[^}]*overflow-x:\s*auto;/s);
-assert.match(styles, /\.discover-domain-rail\s*\{[^}]*scroll-snap-type:\s*x\s+mandatory;/s);
-assert.match(styles, /\.discover-domain-rail\s*\{[^}]*flex-wrap:\s*nowrap;/s);
-assert.match(styles, /\.discover-domain-card\s*\{[^}]*scroll-snap-align:\s*start;/s);
-assert.match(styles, /@media\s*\(max-width:\s*600px\)[\s\S]*?\.discover-domain-card\s*\{[^}]*flex-basis:\s*min\(/s,
-  'mobile keeps one landscape card at a time in the horizontal rail');
-assert.doesNotMatch(styles, /\.discover-domain-card[^}]*background:\s*var\(--sage-surface\)/s);
-assert.doesNotMatch(styles, /\.discover-domain-card:hover[^}]*background:/s);
+const bounded = discoverySpread(
+  { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory },
+  {
+    media: Array.from({ length: 20 }, (_, index) => ({ ...sampleMedia[0], id: `media:large-${index}`, title: `Media ${index}` })),
+    reading: Array.from({ length: 20 }, (_, index) => ({ ...sampleReading[0], id: `story:large-${index}`, title: `Story ${index}` })),
+    speaking: sampleSpeaking,
+    writing: sampleWriting,
+    vocabulary: sampleVocabulary,
+  },
+);
+assert.equal((bounded.match(/data-reading-card/g) || []).length, 12, 'Discover previews Reading rather than rendering an unbounded library');
+assert.equal((bounded.match(/data-listening-card/g) || []).length, 12, 'Discover previews Listening rather than rendering an unbounded library');
 
-assert.match(world, /listeningPayload\.sections[\s\S]{0,120}\.find[\s\S]{0,120}section\.id === 'new'/, 'Discover derives New content from the truthful imported-content rail');
-assert.doesNotMatch(world, /vocabularyFeed:\s*discoveryVocabularySection/);
-assert.doesNotMatch(discovery, /continuationShelf/);
+const primitive = contentRail({
+  id: 'test',
+  title: 'Test rail',
+  icon: 'book',
+  seeAllHref: '#/test',
+  seeAllLabel: 'See all',
+  previousLabel: 'Previous',
+  nextLabel: 'Next',
+  items: ['<a href="#/a">A</a>', '<a href="#/b">B</a>'],
+});
+assert.match(primitive, /aria-labelledby="content-rail-test-title"/);
+assert.match(primitive, /data-content-rail-prev/);
+assert.match(primitive, /data-content-rail-next/);
+assert.match(primitive, /role="list"/);
+assert.equal(typeof bindContentRails, 'function');
+const emptyPrimitive = contentRail({
+  id: 'empty', title: 'Empty', icon: 'book', items: [], seeAllHref: '#/empty',
+  seeAllLabel: 'See all', previousLabel: 'Previous', nextLabel: 'Next', emptyLabel: 'Nothing here yet.',
+});
+assert.match(emptyPrimitive, /class="content-rail__item content-rail__item--empty" role="listitem"/,
+  'an empty rail still satisfies the ARIA list ownership contract');
 
-console.log('Discover layout: four compact domain cards in one swipeable row, localized and non-duplicative: PASS');
+assert.match(styles, /\.content-rail__track\s*\{[^}]*display:\s*flex;/s);
+assert.match(styles, /\.content-rail__track\s*\{[^}]*overflow-x:\s*auto;/s);
+assert.match(styles, /\.content-rail__track\s*\{[^}]*scroll-snap-type:\s*x\s+mandatory;/s);
+assert.match(styles, /\.content-rail__track\s*\{[^}]*flex-wrap:\s*nowrap;/s);
+assert.match(styles, /\.content-rail__track\s*\{[^}]*touch-action:\s*pan-y;/s,
+  'touch rails leave vertical page movement to the browser');
+assert.match(styles, /\.content-rail__track\s*\{[^}]*padding:\s*2px\s+38px/s,
+  'desktop rail controls have reserved space instead of covering cards');
+assert.match(styles, /\.content-rail__item\s*\{[^}]*scroll-snap-align:\s*start;/s);
+assert.match(styles, /@media\s*\(max-width:\s*600px\)[\s\S]*?\.content-rail__item\s*\{[^}]*flex-basis:\s*min\((?:5[0-9]|6[0-5])vw,/s,
+  'mobile deliberately peeks the next card instead of stacking domain items');
+assert.match(styles, /\.discover-listening-card__visual\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9;/s);
+assert.match(styles, /\.discover-reading-card__visual\s*\{[^}]*aspect-ratio:\s*3\s*\/\s*4;/s);
+assert.doesNotMatch(styles, /\.content-rail[^}]*background:\s*#(?:[0-9a-f]{3}|[0-9a-f]{6})/i,
+  'rails and cards use semantic Orena tokens, not a new palette');
+assert.doesNotMatch(styles, /\.content-rail__track[^}]*flex-wrap:\s*wrap/s);
+
+assert.match(world, /api\.listeningLibrary\(language\)/);
+assert.match(world, /api\.readingSessions\(12\)/);
+assert.match(world, /api\.dailyVocabularyFeed\(language\)/);
+assert.match(world, /voiceInvitations\(language\)/);
+assert.match(world, /reading:\s*readable/);
+assert.match(world, /\n\s*vocabulary,\n/);
+assert.doesNotMatch(discovery, /const\s+(?:media|reading|speaking|writing|vocabulary)\s*=\s*\[/,
+  'Discover adapts domain data and does not own a hard-coded content catalog');
+assert.doesNotMatch(discovery, /globalThis\.addEventListener\?\.\('resize'/,
+  'rail binding must not leak one global resize listener on every Discover render');
+assert.match(discovery, /resizeObserver\?\.disconnect\(\)/,
+  'rail binding returns lifecycle cleanup for its ResizeObservers');
+assert.match(world, /return unbindContentRails;/,
+  'renderWorld hands rail cleanup back to the app route lifecycle');
+assert.match(discovery, /const\s+verticalDistance\s*=\s*Math\.abs\(event\.clientY - startY\)/,
+  'pointer dragging waits for a horizontal gesture before taking control');
+
+console.log('Discover: separate real-content rails, localized controls, compact responsive shelf behavior: PASS');
