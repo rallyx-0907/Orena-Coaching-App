@@ -317,32 +317,44 @@ const encounter = encounterFile.slice(
   encounterFile.indexOf('function waitingMedia('),
 );
 assert.ok(encounter.length > 0, 'the text encounter exists');
-// A word is looked up; a phrase or passage is translated; neither is AI.
-assert.match(reader, /api\.readingLookup\(/);
-assert.match(reader, /api\.readingTranslate\(/);
+/* One lexical layer for the whole product.
+
+   Reading and Listening must answer a tapped word the same way, and the only
+   way to be sure they keep doing so is for there to be one implementation.
+   `ui/lexical.js` is it; the rooms supply nothing but where their text is. */
+const lexical = readFileSync('static/orena/ui/lexical.js', 'utf8');
+assert.match(lexical, /api\.readingLookup\(/);
+assert.match(lexical, /api\.readingTranslate\(/);
+assert.match(reader, /mountLexicalLayer\(\{/, 'Reading mounts the shared layer');
+assert.match(encounterFile, /mountLexicalLayer\(\{/, 'Listening mounts the same layer');
+for (const source of [reader, encounterFile]) {
+  assert.doesNotMatch(source, /api\.readingLookup\(/, 'no room runs its own lookup');
+  assert.doesNotMatch(source, /api\.readingTranslate\(/, 'no room runs its own translation');
+  assert.doesNotMatch(source, /lookupPanelHtml\(/, 'no room renders its own answer panel');
+  assert.doesNotMatch(source, /selectionToolbarHtml\(/, 'no room draws its own selection tools');
+}
 // AI is reached only through the one explanation surface, from an explicit Explain.
-assert.match(reader, /case 'explain':\s+case 'pattern': \{[\s\S]{0,700}openUnderstanding\(ctx, \{/);
-assert.equal((reader.match(/openUnderstanding\(/g) || []).length, 1, 'explain is the only way to AI');
+assert.match(lexical, /case 'explain':\s+case 'pattern': \{[\s\S]{0,700}openUnderstanding\(ctx, \{/);
+assert.equal((lexical.match(/openUnderstanding\(/g) || []).length, 1, 'explain is the only way to AI');
 /* "How this works" is the same explanation request carrying the pattern
    question, not a second surface and not a second route to a provider. */
-assert.match(reader, /question: action === 'pattern' \? c\.askPattern/);
-for (const source of [reader, encounter]) {
+assert.match(lexical, /question: action === 'pattern' \? c\.askPattern/);
+for (const source of [reader, lexical, encounter]) {
   assert.doesNotMatch(source, /contextualGloss|contextualDictionary/, 'no AI runs while reading');
 }
-/* Tapping a word asks the shared local tagger where this paragraph's words
-   are. It is not AI, and it is not background work: the one call lives in
-   `tokensFor`, which only a tap reaches, and a paragraph is asked about once. */
-assert.equal((reader.match(/api\.annotateMediaText\(/g) || []).length, 1,
+/* Tapping a word asks the shared local tagger where this unit's words are. It
+   is not AI and it is not background work: one call, in the tap-time
+   tokeniser, and a unit is asked about once. */
+assert.equal((lexical.match(/api\.annotateMediaText\(/g) || []).length, 1,
   'segmentation is requested in exactly one place');
-const tokensFor = reader.slice(reader.indexOf('async function tokensFor('), reader.indexOf('function offsetAt('));
+const tokensFor = lexical.slice(lexical.indexOf('async function tokensFor('), lexical.indexOf('async function tapWord('));
 assert.match(tokensFor, /api\.annotateMediaText\(/, 'and that place is the tap-time tokeniser');
-assert.match(tokensFor, /if \(tokenised\.has\(index\)\) return tokenised\.get\(index\)/,
-  'a paragraph is tokenised once, not on every tap');
-assert.match(reader, /const tokens = await tokensFor\(index, text\)/);
-assert.doesNotMatch(encounter, /annotateMediaText/, 'nothing is tokenised when a chapter opens');
+assert.match(tokensFor, /if \(tokenised\.has\(key\)\) return tokenised\.get\(key\)/,
+  'a unit is tokenised once, not on every tap');
+assert.doesNotMatch(reader, /annotateMediaText/, 'the reader does not tokenise anything itself');
 // Nothing is requested until the learner selects or taps something.
-assert.match(reader, /selectionchange/);
-assert.match(reader, /async function tapWord\(event\)/, 'a tap is a first-class way in');
+assert.match(lexical, /selectionchange/);
+assert.match(lexical, /async function tapWord\(event\)/, 'a tap is a first-class way in');
 assert.doesNotMatch(reader, /IntersectionObserver/, 'no background work as paragraphs scroll by');
 // The encounter mounts the reader instead of rendering its own passage.
 assert.match(encounterFile, /from '\.\/reader\.js'/);

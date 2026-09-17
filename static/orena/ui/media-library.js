@@ -103,9 +103,42 @@ function grid(c, items, empty) {
     : `<p class="empty">${esc(empty)}</p>`;
 }
 
-function shelf(title, attribute, c, state) {
+/* Shelves appear when the library is big enough to need them, from real data
+   only. With a handful of items a themed shelf is the same items printed
+   twice; with a real catalogue, one flat wall is what the learner scrolls
+   past. Same rule the book library uses (D-057). */
+const SHELF_THRESHOLD = 8;
+const SHORT_LISTEN_MS = 5 * 60 * 1000;
+
+function themedShelf(id, title, c, items) {
+  if (!items.length) return '';
+  return `<section class="media-shelf media-shelf--themed" data-media-shelf="${esc(id)}"><div class="section-head"><h3>${esc(title)}</h3></div><div class="media-grid media-grid--rail">${items
+    .map((item) => `<div class="media-card__wrap">${mediaCard(item, c, { intent: 'follow' })}</div>`)
+    .join('')}</div></section>`;
+}
+
+function themedShelves(c, items) {
+  if (items.length <= SHELF_THRESHOLD) return '';
+  const short = items.filter(
+    (item) => Number(item.duration_ms) > 0 && Number(item.duration_ms) <= SHORT_LISTEN_MS,
+  );
+  const videos = items.filter((item) => item.kind === 'video' || item.kind === 'embed');
+  const audio = items.filter((item) => item.kind === 'audio');
+  return `${short.length >= 3 ? themedShelf('short', c.mediaShort, c, short) : ''}${
+    videos.length >= 3 && audio.length ? themedShelf('videos', c.mediaVideos, c, videos) : ''
+  }${audio.length >= 3 && videos.length ? themedShelf('audio', c.mediaAudioShelf, c, audio) : ''}`;
+}
+
+/* The covers lead; search, type, level and source are how a learner finds one
+   thing they already have in mind, folded away until wanted rather than being
+   the first thing Listening shows (D-057 rule 17). */
+function shelf(title, attribute, c, state, { utility = true } = {}) {
   const items = filterMediaItems(state.items, state);
-  return `<section class="media-shelf" ${attribute}><div class="section-head"><h2>${esc(title)}</h2></div>${filterBar(c, mediaFacets(state.items), state)}<div data-media-results>${grid(c, items, c.mediaNoMatches)}</div></section>`;
+  const facets = mediaFacets(state.items);
+  const find = utility && state.items.length
+    ? `<details class="library-utility"><summary><span>${esc(c.mediaFind)}</span></summary>${filterBar(c, facets, state)}</details>`
+    : filterBar(c, facets, state);
+  return `<section class="media-shelf" ${attribute}><div class="section-head"><h2>${esc(title)}</h2></div>${themedShelves(c, state.items)}<div data-media-results>${grid(c, items, c.mediaNoMatches)}</div>${find}</section>`;
 }
 
 /* One small rail, and only from real continuation entries. There is no

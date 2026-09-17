@@ -194,10 +194,10 @@
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
     "reading_library_breadth_requires_rights_decisions_per_text",
-    "zh_word_meanings_need_catalog_coverage_or_a_zh_translation_engine_in_sandbox",
+    "zh_word_meanings_need_catalog_coverage_or_a_zh_translation_engine_shared_by_reader_and_listening",
     "shared_reading_library_epub_pipeline_ships_without_rights_gate_per_d056_sandbox_only",
     "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native",
-    "d057_conformance_done_for_discover_continue_library_book_detail_and_reader",
+    "d057_conformance_done_for_discover_continue_library_reader_and_listening",
     "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent"
   ],
   "last_verified_at": "2026-09-17"

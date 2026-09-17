@@ -54,9 +54,10 @@ book, place and percent carried on the memory entry. Reading opens on the
 library, cover-first, with a Continue reading shelf and search folded into a
 utility; book detail leads with cover, one action and the current chapter.
 Reader: `reader.css` exists at last (the room had none), so text keeps a
-measure and the shell recedes. A tap selects the tagger's lexical unit - the ZH
-word, not one character - and the panel carries pinyin, speak, Save with its
-saved state, Explain and the pattern question.
+measure and the shell recedes. Its interaction layer is now `ui/lexical.js`,
+shared: Listening's transcript mounts the same one, so a tapped word answers
+identically in both rooms. Listening opens on the covers, grows shelves from
+real data, and writes its place into the shared continuation field.
 
 Verified: pytest `1109 passed, 118 skipped`, all 45 CI `.mjs` gates, ESM graph,
 both validators, EN/ZH browser pass on `orena-foundation-web`:8011 at desktop
@@ -114,8 +115,7 @@ horizontal Understanding Engine + Vocabulary Card/orthography; sequence in
 
 Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
 results, shared repository, Admin UI and learner cards; review APPROVED
-(`a1a90b7b`). Schema auth pending; PostgreSQL import fail-closed. No secret
-fallback.
+(`a1a90b7b`). Schema auth pending; import fail-closed.
 
 ## PENDING
 

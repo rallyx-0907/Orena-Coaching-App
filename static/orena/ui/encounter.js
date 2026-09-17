@@ -9,6 +9,7 @@ import {
 import { esc, safeExternal, dialog, status, focusRegion, focusWork } from './html.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { mountReader } from './reader.js';
+import { mountLexicalLayer } from './lexical.js';
 import { voiceEvidence } from './voice-evidence.js';
 import { publishedReading } from '../content/reading-library.js';
 import { mountVoiceResponse } from './voice-response.js';
@@ -340,7 +341,17 @@ export async function renderEncounter(root, ctx) {
     practiceVersion = 0;
   let voiceCleanup = () => {};
   const isAlive = () => alive() && !disposed;
-  const remember = () =>
+  /* Where the learner got to, in the one shared continuation shape.
+
+     A voice has a place inside a whole exactly as a chapter does: the line
+     being followed, of how many. That is what Continue, Book detail and
+     Discover already read (`continuationPlace`), so Listening feeds the same
+     field rather than keeping a progress store of its own. The segment id it
+     already stored stays, because resuming needs the line and not the count. */
+  const remember = () => {
+    const index = model.segments.findIndex(
+      (segment) => segment.segment_id === model.current?.segment_id,
+    );
     memory.enter({
       id,
       title: item.title,
@@ -348,7 +359,10 @@ export async function renderEncounter(root, ctx) {
       intent: practice,
       source_url: payload.asset.source_url,
       excerpt: model.current?.original_text,
+      context: payload.catalog?.source_label || payload.catalog?.source?.creator || '',
+      place: index >= 0 ? { index: index + 1, total: model.segments.length } : null,
     });
+  };
   remember();
   root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><div class="heading-with-hint"><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small>${hint({ text: c.followNote })}</div><h1 lang="${language}">${esc(item.title)}</h1></div></header><div class="media-encounter"><section class="media-stage"><div class="media-source"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label></div><div class="moment-actions"><span class="heading-with-hint">${esc(c.deeper)}${location.intent === 'follow' ? hint({ text: c.followOptional }) : ''}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><div class="follow-tools"><span data-meaning-note hidden>${hint({ text: c.allMeaningNote })}</span>${followToggle('close-look', 'data-close-look', 'words', c.closeLook)}${followToggle('meaning-toggle', 'data-all-meaning', 'meaning', c.showAllMeaning)}</div></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><section class="follow-moment" aria-label="${c.follow}"><small data-now></small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button><div class="close-look-guide" hidden><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span></div><p class="meta" data-annotation-status role="status"></p><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button></div></section></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
   const playerRoot = root.querySelector('.media-stage');
@@ -371,6 +385,39 @@ export async function renderEncounter(root, ctx) {
   const practiceRoot = root.querySelector('.practice-space');
   const moment = root.querySelector('.follow-moment');
   const transcript = root.querySelector('.transcript-panel');
+  /* The same lexical layer Reading uses (`ui/lexical.js`), over the transcript.
+     A tapped word in a spoken line answers exactly as a tapped word in a
+     chapter does - one lookup, one panel, one save, one explanation - because
+     it is the same implementation. The transcript only says where its text is:
+     a line carrying `data-segment`, and the canonical text that line was
+     rendered from. */
+  /* Which line a tap belongs to. A transcript row is a seek control, so the
+     compact rows keep meaning "take me there"; the line being followed is
+     opened up in place, outside that button, at reading size - and that is the
+     line a learner taps a word in. One tap, one meaning, no ambiguity: tap a
+     row to go there, tap a word in the line you are on to ask about it. */
+  const segmentIdOf = (unit) =>
+    unit?.closest?.('li')?.querySelector('[data-segment]')?.dataset.segment || '';
+  const lexical = mountLexicalLayer({
+    surface: root,
+    ctx,
+    title: item.title,
+    origin: { id, where: item.title, why: 'from_listening' },
+    alive: isAlive,
+    units: {
+      root: () => transcript.querySelector('ol'),
+      unitOf: (node) => node?.closest?.('.spoken, .line-original') || null,
+      textOf: (unit) =>
+        model.segments.find((segment) => segment.segment_id === segmentIdOf(unit))?.original_text ||
+        unit.textContent ||
+        '',
+      keyOf: (unit) => `segment:${segmentIdOf(unit)}`,
+    },
+  });
+  transcript.addEventListener('click', (event) => {
+    if (!event.target.closest('.spoken')) return;
+    lexical.tapWord(event);
+  });
   const original = moment.querySelector('.spoken'),
     meaning = moment.querySelector('.meaning');
   /* Word-level Follow sharpens the segment; it never replaces it. An asset
@@ -1217,6 +1264,7 @@ export async function renderEncounter(root, ctx) {
   if (deeperPractice.includes(practice)) openPractice(practice);
   return () => {
     disposed = true;
+    lexical.destroy();
     voiceCleanup();
     practiceVersion++;
     recorder.cleanup();

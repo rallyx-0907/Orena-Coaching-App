@@ -153,4 +153,34 @@ for (const field of ['title', 'level', 'language', 'topic', 'tags']) {
 }
 assert.match(admin, /admin-media-result--ok[\s\S]*admin-media-result--error/, 'successful and failed items remain visible together');
 
+/* D-057: Listening opens on the covers. Search, type, level and source stay
+   available, folded into a utility rather than leading the page, and themed
+   shelves appear only once the library is bigger than a shelf - never as the
+   same items printed twice. */
+{
+  const many = Array.from({ length: 12 }, (_, index) => ({
+    id: `media:many-${index}`,
+    title: `Item ${index}`,
+    language: 'en',
+    kind: index % 2 ? 'audio' : 'video',
+    duration_ms: index < 5 ? 120000 : 3600000,
+    level: 'B1',
+    source_label: 'Source',
+  }));
+  const big = mediaLibrary(copy.en, { sharedItems: many, myItems: [], continuation: [] });
+  assert.match(big, /class="library-utility"/, 'search is a utility, not the opening');
+  assert.ok(
+    big.indexOf('data-media-results') < big.indexOf('library-utility'),
+    'the content comes before the way to search it',
+  );
+  assert.match(big, /data-media-shelf="short"/, 'a real short-listen shelf from real durations');
+  assert.match(big, /data-media-shelf="videos"/);
+  assert.match(big, /data-media-shelf="audio"/);
+
+  const small = mediaLibrary(copy.en, { sharedItems: many.slice(0, 4), myItems: [], continuation: [] });
+  assert.doesNotMatch(small, /data-media-shelf=/, 'a small library is not split into shelves that repeat it');
+  const empty = mediaLibrary(copy.en, { sharedItems: [], myItems: [], continuation: [] });
+  assert.doesNotMatch(empty, /data-media-shelf=/, 'no shelf is invented for an empty library');
+}
+
 console.log('Media Library: thumbnail-first cards, filters, separate libraries, localized admin importer: PASS');

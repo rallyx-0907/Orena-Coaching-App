@@ -438,9 +438,14 @@ export async function renderWorld(root, ctx) {
     /* Reading opens on the books, not on a headline about reading. The room is
        named, once and quietly, and the covers take the first viewport
        (D-057 rule 13 and 15). */
+    /* Listening opens on the voices, for the same reason Reading opens on the
+       books: the headline and its paragraph told a learner nothing and cost
+       the first viewport (D-057 rule 13). */
     const intro = intent === 'reading'
       ? pageIntro({ title: r.reading, compact: true })
-      : !intent || intent === 'follow'
+      : intent === 'follow'
+      ? pageIntro({ title: r.listening, compact: true })
+      : !intent
       ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
       : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
     /* The way back sits above the heading, and the heading's eyebrow names
