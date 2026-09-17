@@ -127,7 +127,21 @@ class TranslationProviderError(RuntimeError):
     pass
 
 
-TranslationBatch = tuple[TranscriptSegment, ...]
+class TranslatableSegment(Protocol):
+    """What an engine reads from a segment: its id and its text, never its timing.
+
+    A transcript segment is one; a reading paragraph is another, and has no
+    timing to invent.
+    """
+
+    @property
+    def segment_id(self) -> str: ...
+
+    @property
+    def original_text(self) -> str: ...
+
+
+TranslationBatch = tuple[TranslatableSegment, ...]
 
 
 class TranslationProvider(Protocol):
@@ -486,7 +500,7 @@ class MediaTranslationService:
         )
 
 
-def build_translation_batches(segments: tuple[TranscriptSegment, ...]) -> tuple[TranslationBatch, ...] | None:
+def build_translation_batches(segments: tuple[TranslatableSegment, ...]) -> tuple[TranslationBatch, ...] | None:
     batches: list[TranslationBatch] = []
     current: list[TranscriptSegment] = []
     current_chars = 0

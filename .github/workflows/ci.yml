@@ -64,6 +64,7 @@ jobs:
           node scripts/test_orena_workspace.mjs
           node scripts/test_orena_reading_library.mjs
           node scripts/test_orena_shared_reading_library.mjs
+          node scripts/test_orena_reading_room.mjs
           node scripts/test_orena_media_library.mjs
           node scripts/test_orena_extension_patterns.mjs
           node scripts/test_transcript_display_units.mjs

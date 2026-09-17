@@ -259,6 +259,210 @@ export function openUnderstanding(
   return sheet;
 }
 
+// "other" is the tagger admitting it has no class to give, not a class to show.
+export function posLabel(c, pos) {
+  return pos && pos !== 'other' ? c[`pos_${pos}`] || '' : '';
+}
+
+/* The word card: the first, quick answer about one word or short phrase, where
+   the learner pointed at it. It says what the word means in this sentence, how
+   it sounds and what kind of word it is - and hands anything deeper to the full
+   explanation above rather than growing into a second one.
+
+   `state` is what the gloss request came to: loading, ready, unavailable (the
+   provider is not there - nothing to retry) or failed (worth trying again).
+   Local facts - word class, Chinese pinyin - still show when the meaning does
+   not arrive. */
+export function wordCardBody(c, { selection, language, support, state, result = {}, headingId = '' }) {
+  const found = result || {};
+  const word = String(selection || '').trim();
+  const baseForm = String(found.base_form || '').trim();
+  const facts = [
+    posLabel(c, found.part_of_speech)
+      ? `<span>${esc(posLabel(c, found.part_of_speech))}</span>`
+      : '',
+    baseForm && baseForm.toLowerCase() !== word.toLowerCase()
+      ? `<span>${esc(c.wordCardBaseForm)}: <span lang="${esc(language)}">${esc(baseForm)}</span></span>`
+      : '',
+  ].filter(Boolean);
+  const meaning =
+    state === 'ready' && found.meaning
+      ? `<p class="word-card__meaning" lang="${esc(support)}">${esc(found.meaning)}</p>`
+      : state === 'failed'
+        ? `<p class="word-card__meaning" data-state="failed">${esc(c.wordCardFailed)} <button type="button" class="quiet" data-word-retry>${esc(c.retry)}</button></p>`
+        : state === 'unavailable'
+          ? `<p class="word-card__meaning" data-state="unavailable">${esc(c.wordCardUnavailable)}</p>`
+          : `<p class="word-card__meaning" data-state="loading" role="status">${esc(c.wordCardLoading)}</p>`;
+  return `<div class="word-card__head"><strong class="word-card__word"${headingId ? ` id="${esc(headingId)}"` : ''} lang="${esc(language)}">${esc(word)}</strong>${found.pronunciation ? `<span class="word-card__reading">${esc(found.pronunciation)}</span>` : ''}</div>${facts.length ? `<p class="word-card__facts">${facts.join('<span aria-hidden="true"> · </span>')}</p>` : ''}${meaning}<div class="word-card__actions"><button type="button" class="primary" data-word-keep${state === 'loading' ? ' disabled' : ''}>${esc(c.wordCardKeep)} ＋</button><button type="button" class="quiet" data-word-more>${esc(c.wordCardMore)} ↗</button></div><p class="meta" role="status" data-word-status></p>`;
+}
+
+// A kept word carries its meaning and the sentence it was met in.
+export function glossKeepPayload({ selection, result = {}, context = '', title = '' }) {
+  const found = result || {};
+  return {
+    word: String(selection || '').trim().slice(0, 180),
+    phonetic: String(found.pronunciation || '').slice(0, 180),
+    part_of_speech: String(found.part_of_speech || '').slice(0, 120),
+    definition: String(found.meaning || '').slice(0, 2400),
+    source_kind: 'reading',
+    source_fragment: String(context || '').slice(0, 1200),
+    focus_note: String(title || '').slice(0, 2400),
+  };
+}
+
+let wordCardSequence = 0;
+let activeWordCard = null;
+
+/* Opens beside the word on a wide screen and as a sheet along the bottom of a
+   narrow one (CSS). It is not modal: reading carries on underneath, and a tap
+   anywhere else, Escape, scrolling or leaving the room closes it. One card at
+   a time. `returnFocus` is where keyboard focus goes back to on Escape. */
+export function openWordCard(
+  ctx,
+  { selection, context, anchor, title = '', origin = null, returnFocus = null },
+) {
+  const { c, api, language, support } = ctx;
+  const word = String(selection || '').trim();
+  const sentence = String(context || word).trim();
+  if (!word) return null;
+  activeWordCard?.close();
+
+  const card = document.createElement('div');
+  const headingId = `orena-word-card-${++wordCardSequence}`;
+  card.className = 'word-card';
+  card.setAttribute('role', 'dialog');
+  card.setAttribute('aria-modal', 'false');
+  card.setAttribute('aria-labelledby', headingId);
+  card.tabIndex = -1;
+  const closeLabel = document.documentElement.dataset.close || 'Close';
+  let state = 'loading';
+  let result = {};
+  let asking = 0;
+
+  const alive = () => card.isConnected;
+  const place = () => {
+    card.style.removeProperty('top');
+    card.style.removeProperty('left');
+    if (window.matchMedia('(max-width: 700px)').matches) return;
+    const box = anchor?.getBoundingClientRect?.();
+    if (!box) return;
+    const gap = 8;
+    const width = card.offsetWidth;
+    const height = card.offsetHeight;
+    const room = document.documentElement.clientWidth;
+    const top =
+      box.bottom + gap + height <= window.innerHeight - gap
+        ? box.bottom + gap
+        : Math.max(gap, box.top - gap - height);
+    card.style.top = `${Math.round(top)}px`;
+    card.style.left = `${Math.round(Math.min(Math.max(gap, box.left), room - width - gap))}px`;
+  };
+
+  const handle = { element: card, close: () => close() };
+  const onKey = (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    close({ restore: true });
+  };
+  const onPointer = (event) => {
+    if (!card.contains(event.target)) close();
+  };
+  const onScroll = (event) => {
+    if (!card.contains(event.target)) close();
+  };
+  const onLeave = () => close();
+  function close({ restore = false } = {}) {
+    if (!card.isConnected) return;
+    document.removeEventListener('keydown', onKey);
+    document.removeEventListener('pointerdown', onPointer, true);
+    document.removeEventListener('scroll', onScroll, true);
+    window.removeEventListener('resize', onLeave);
+    window.removeEventListener('hashchange', onLeave);
+    card.remove();
+    if (activeWordCard === handle) activeWordCard = null;
+    if (restore) (returnFocus?.isConnected ? returnFocus : null)?.focus?.({ preventScroll: true });
+  }
+
+  const keep = async (button) => {
+    const report = progressReporter(card.querySelector('[data-word-status]'), ctx, alive);
+    const save = async () => {
+      button.disabled = true;
+      report.saving();
+      try {
+        await ctx.mutate(() =>
+          api.saveLibraryVocabulary(
+            glossKeepPayload({ selection: word, result, context: sentence, title }),
+          ),
+        );
+        // As in the full explanation: the way back is written only after the
+        // account has the word.
+        if (origin?.why)
+          ctx.memory.rememberLanguage({
+            term: word,
+            origin: origin.id || '',
+            where: origin.where || title,
+            why: origin.why,
+            context: sentence,
+          });
+        report.saved(savedLanguageLink(c));
+      } catch {
+        report.failed(c.failedSave, save);
+        if (alive()) button.disabled = false;
+      }
+    };
+    await save();
+  };
+
+  const paint = () => {
+    card.innerHTML = `<button type="button" class="word-card__close" data-word-close aria-label="${esc(closeLabel)}">×</button>${wordCardBody(c, { selection: word, language, support, state, result, headingId })}`;
+    card.querySelector('[data-word-close]').onclick = () => close({ restore: true });
+    card.querySelector('[data-word-keep]').onclick = (event) => keep(event.currentTarget);
+    card.querySelector('[data-word-more]').onclick = () => {
+      close();
+      openUnderstanding(ctx, { selection: word, context: sentence, title, origin });
+    };
+    const retry = card.querySelector('[data-word-retry]');
+    if (retry) retry.onclick = () => ask();
+    place();
+  };
+
+  async function ask() {
+    const ticket = ++asking;
+    state = 'loading';
+    paint();
+    let next = 'failed';
+    let found = {};
+    try {
+      const value = await api.contextualGloss({
+        text: word,
+        context: sentence,
+        source_language: language,
+        target_language: support,
+      });
+      // An answer about other words is not an answer about this one.
+      found = value?.selected_text === word ? value : {};
+      next = value?.available && value.selected_text === word ? 'ready' : 'unavailable';
+    } catch {
+      next = 'failed';
+    }
+    if (!alive() || ticket !== asking) return;
+    state = next;
+    result = found;
+    paint();
+  }
+
+  document.body.append(card);
+  document.addEventListener('keydown', onKey);
+  document.addEventListener('pointerdown', onPointer, true);
+  document.addEventListener('scroll', onScroll, true);
+  window.addEventListener('resize', onLeave);
+  window.addEventListener('hashchange', onLeave);
+  activeWordCard = handle;
+  ask();
+  card.focus({ preventScroll: true });
+  return handle;
+}
+
 /* What the learner has actually selected inside a given element, so a
    highlight anywhere in a passage can be investigated in its own context. */
 export function selectionWithin(root) {

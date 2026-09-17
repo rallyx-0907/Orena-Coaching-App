@@ -183,6 +183,18 @@ Learning capabilities now built on that foundation:
   readable contract now states what a text must carry, including author,
   licence and source in the same shape media uses, so books, public-domain
   works and articles can be added with an adapter rather than a redesign.
+- **Reading** happens in a room of its own (REVIEWABLE). The passage scrolls
+  inside its own frame, so the questions and the learner's response stay one
+  step below the text instead of a long page away. Every paragraph is a
+  numbered block - the paragraphs the text was written in - with Translate
+  (its meaning in the learner's support language, through the same cached
+  translation engine Listening uses, plus a switch for every paragraph) and
+  Explain (the shared understanding surface). Every word the shared tagger
+  finds, English or Chinese, opens a word card: what it means in this
+  sentence, how it sounds (pinyin read locally for Chinese), its word class,
+  keeping it into the collection with the sentence it came from, and a way on
+  to the full explanation. A translation or meaning that does not arrive says
+  so; the original text is never shown in its place.
 - **Writing** shows the full review the evaluator returns - weighted
   dimensions, CEFR, strengths quoted from the learner, issues with the reason
   and the rule - and never strikes through words the learner did not write.

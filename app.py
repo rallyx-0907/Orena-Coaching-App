@@ -64,6 +64,11 @@ from writing_coach.media_translation import (
     MediaTranslationService,
     resolve_translation_provider_id,
 )
+from writing_coach.reading_translation import ReadingTranslationService
+from writing_coach.reading_translation_api import (
+    configure_reading_translation,
+    router as reading_translation_router,
+)
 from writing_coach.speech_api import (
     configure_speech_asr,
     configure_speech_pronunciation,
@@ -379,6 +384,8 @@ _media_translation_provider = (
     )
 )
 configure_media_translation(MediaTranslationService(_media_translation_provider))
+# Reading paragraphs go through the same engine, never a second provider choice.
+configure_reading_translation(ReadingTranslationService(_media_translation_provider))
 configure_media_timing(
     MediaTimingService(
         YtDlpYouTubeAudioUrlResolver(),
@@ -394,6 +401,7 @@ configure_media_fallback(
 )
 app.include_router(media_learning_router)
 app.include_router(contextual_dictionary_router)
+app.include_router(reading_translation_router)
 configure_speech_asr(_speech_asr_provider)
 configure_speech_pronunciation(build_speech_pronunciation_provider())
 configure_speaking_attempt_repository(

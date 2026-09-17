@@ -103,6 +103,16 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
+  contextualGloss:(payload)=>request('/api/dictionary/gloss',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload||{}),
+  }),
+  readingTranslate:(payload)=>request('/api/reading/translate',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload||{}),
+  }),
   spokenResponseCoaching:(payload)=>request('/api/dictionary/spoken-response',{
     method:'POST',
     headers:JSON_HEADERS,
