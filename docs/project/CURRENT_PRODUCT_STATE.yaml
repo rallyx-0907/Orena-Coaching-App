@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "orena_golden_star_reference_architecture"
   },
-  "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
-  "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
+  "last_verified_application_commit": "8d5f3cdb707cabd2ee4dabca2558301bc2e78f70",
+  "last_verified_batch": "reading_room_word_lookup_and_discover_content_rails",
   "current_program_stage": {
     "id": "R21",
     "name": "Mobile Release Readiness",
@@ -197,5 +197,5 @@
     "shared_reading_library_epub_pipeline_ships_without_rights_gate_per_d056_sandbox_only",
     "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native"
   ],
-  "last_verified_at": "2026-09-02"
+  "last_verified_at": "2026-09-17"
 }

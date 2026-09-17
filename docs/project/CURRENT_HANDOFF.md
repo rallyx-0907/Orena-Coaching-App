@@ -34,7 +34,9 @@ Preserved Opus implementation; ORENA_STATUS and GOLDEN_STAR_COMPLETION hold
 behavior and evidence. Current invariants/owners:
 
 - Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
-- Reading: content/reading.js readable contract; reading-library.js rights gate.
+- Reading: content/reading.js readable contract; reading-library.js rights gate;
+  ui/reader.js adds paragraph meaning and a never-AI, dictionary-first
+  word lookup.
 - Writing: ui/writing-review.js; exact snapshot and grounded revision; T12 evaluator in `c71c644`.
 - Speaking: product/conversation.js; own turns, no absent-reference alignment.
 - Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
@@ -46,18 +48,27 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
+Reading Room word lookup (`9865bfa`): dictionary-first, translation-last,
+never-AI; paragraph translation now defaults to local Marian, Groq needs
+explicit opt-in. Fixed an EPUB nav-landmarks bug that kept a TOC doc as a
+chapter. Also records the prior unlogged Discover content-rail/Shared
+Reading Library commits.
+
+Verified: full pytest (1109 passed, 0 failed), all 45 CI `.mjs` gates, both
+validators, browser pass on `orena-foundation-web`:8011 (ZH lookup only).
+
 Gemini R3 4/4 EN/ZH/support pass; no CI claim.
 
 ## Runtime / safety
 
-Operate only isolated `orena-foundation-web` at 8011 with its PG/network. It is
-published on `0.0.0.0:8011` for private-LAN review; use Ethernet IPv4.
-PGDATA is tmpfs; the start script restores it. Restart after
-Python changes; uvicorn does not reload. Do not operate production 8000/preview
-8010/Cloudflare/volumes. Loopback and LAN self-checks pass. Firewall was not
-added from this non-elevated shell; if peer access is blocked, add TCP 8011
-scoped to `LocalSubnet` from Administrator PowerShell. AI eval uses selected
-local/provider credentials; ASR remains unconfigured.
+Operate only isolated `orena-foundation-web`:8011 with its PG/network,
+published on `0.0.0.0:8011` for private-LAN review via Ethernet IPv4.
+PGDATA is tmpfs; the start script restores it. Restart after Python
+changes; uvicorn does not reload. Do not operate production 8000/preview
+8010/Cloudflare/volumes. Loopback/LAN self-checks pass; if peer access is
+blocked, add TCP 8011 scoped to `LocalSubnet` from Administrator
+PowerShell. AI eval uses selected local/provider credentials; ASR
+unconfigured.
 
 Dependency-heavy tests use the read-only `ai-writing-coach:local` recipe in
 AGENTS.md; SQLite is test-only. Switch language in-page.
@@ -96,22 +107,18 @@ Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
 (trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
 
-D-049/D-050 (2026-09-12): Content Architecture amended to five domains, a
-horizontal Understanding Engine (AI-first, context-grounded, optional support
-layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
-`ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
+D-049/D-050 (2026-09-12): Content Architecture amended to five domains +
+horizontal Understanding Engine + Vocabulary Card/orthography; sequence in
+`ROADMAP.md`. Docs-only.
 
-Vocabulary UX `639b03d` plus correction `2e591c3`: EN/ZH cards show real levels only
-(CEFR A1–C2, HSK1–HSK7-9), pronunciation/examples, contained review status
-and metallic frame. Library stays at `/language`; Discover uses compact real-content
-rails for Continue and five learning domains; desktop/mobile are REVIEWABLE.
+Vocabulary UX `639b03d`/`2e591c3`: EN/ZH cards show real CEFR/HSK levels,
+pronunciation/examples; Library at `/language`; Discover rails for Continue
++ five domains; desktop/mobile REVIEWABLE.
 
 Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
 results, shared repository, Admin UI and learner cards; review APPROVED
-(`a1a90b7b`). Schema auth pending; PostgreSQL import fail-closed. Claude-2:
-prior `INFRA_FAILURE=auth`; 2026-09-16 CLI/auth pass, literal model
-`unrecognized_model`; default/sonnet pass. Codex:
-`launcher_error`/`timeout`; UTF-8 review passed. No secret fallback.
+(`a1a90b7b`). Schema auth pending; PostgreSQL import fail-closed. No secret
+fallback.
 
 ## PENDING
 
@@ -150,7 +157,7 @@ None identified.
 
 ## Baseline test evidence
 
-Baseline suite now passes locally with `1059 passed, 114 skipped, 4 warnings`;
+Baseline suite now passes locally with `1109 passed, 118 skipped, 4 warnings`;
 this is not a CI claim. Inherited governance/media failures were reconciled
 against the current architecture; retired legacy matrix tests are not regressions.
 
