@@ -229,7 +229,6 @@ export const vi = {
   previousLine: 'Câu trước',
   nextLine: 'Câu sau',
   lineList: 'Các câu trong bài này',
-  lineNumber: 'Câu {n}',
   lineWritten: 'đã chép',
   exitPractice: 'Thoát',
   allMeaningNote:
@@ -923,4 +922,14 @@ export const vi = {
      record rather than a hole the merge quietly filled. */
   vocabularyFramework_toeic: 'TOEIC',
   vocabularyFramework_hsk: 'HSK',
+
+  // --- Writing as a workspace ---------------------------------------------
+  reviewAction: 'Nhận xét',
+  reviewFocus: 'Bắt đầu từ đây',
+  reviewMore: 'Thêm nhận xét',
+  reviewLocate: 'Tìm trong bài của tôi',
+  reviewWorking: 'Đang đọc những gì bạn viết…',
+  reviewAgain: 'Nhận xét lại',
+  writingIntentionNone: 'Cho biết bài này viết để làm gì',
+  writingKeepWriting: 'Quay lại viết',
 };

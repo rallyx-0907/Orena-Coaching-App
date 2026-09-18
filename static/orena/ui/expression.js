@@ -33,7 +33,9 @@ import {
   writingReviewWaiting,
   shownIssues,
 } from './writing-review.js';
+import { locateInText } from './writing-locate.js';
 import {bindRevisionWorkbench} from './revision-workbench.js';
+import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
@@ -117,12 +119,42 @@ export async function renderExpression(root, ctx) {
   const invitations = contentFor(language).slice(0, 2);
   const levels =
     ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count aria-live="polite"></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><div class="writing-task"><span class="writing-task__label"><label for="writingTask">${esc(c.writingTask)}</label>${hint({ text: c.writingTaskNote })}</span><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"></div></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  /* Writing, composed as a workspace.
+
+     What it replaced: a page-wide heading, one very tall box, then - under the
+     box, where a learner only arrives after writing - the draft status, a
+     character count, a "feedback target" selector naming a model setting, the
+     Review button, and finally a field asking what the piece was for. The
+     thing the learner most needed before starting was the last thing they
+     could reach, the primary action sat at the bottom of a form, and the
+     result pane stood empty beside it taking half the room.
+
+     Now: what this piece is for sits in the heading, before and during the
+     writing. The page is the learner's own surface. The actions under it are
+     one bar - a shared icon-first toolbar for the secondary ones, the level
+     setting among them, and one primary Review. The margin beside it holds the
+     source while there is nothing to say and the feedback once there is, and
+     the workspace gives the page more width until the review arrives
+     (DESIGN_CONTRACT rules 19, 24, 27). */
+  const intention = memory.value.expressions[`${id}::task`] || '';
+  const writingActions = [
+    {
+      name: 'more',
+      icon: 'more',
+      kind: 'menu',
+      label: c.stageMore,
+      items: [
+        { name: 'registers', label: c.registerExplore },
+        { name: 'history', label: c.revisionHistory },
+      ],
+    },
+  ];
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a>${draftStatus(ctx)}</div><header class="writing-head"><small>${esc(c.writingName)}</small><h1>${esc(title)}</h1><div class="writing-intention"><label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}">${hint({ text: c.writingTaskNote })}</div>${hasSource ? `<p class="writing-head__prompt" lang="${language}">${esc(prompt)}</p>` : ''}</header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="writing-bar"><span class="meta" data-character-count aria-live="polite"></span><label class="review-target"><span class="sr-only">${esc(c.reviewTarget)}</span><select name="target" data-tip="${esc(c.reviewTarget)}" aria-label="${esc(c.reviewTarget)}"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label>${learningToolbar(writingActions, { label: c.writingName })}<button class="primary" data-review-action>${esc(c.reviewAction)}</button></div><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
      start of the result frame instead of halfway down the page. */
-  const { showResult } = workspaceFrames(
+  const { showResult, showActivity } = workspaceFrames(
     root.querySelector('.learning-workspace'),
     {
       back: root.querySelector('[data-back-to-writing]'),
@@ -130,6 +162,28 @@ export async function renderExpression(root, ctx) {
       result: root.querySelector('#writingFeedback'),
     },
   );
+  const workspace = root.querySelector('.writing-workspace');
+  /* The secondary writing actions, in the shared bar rather than a second row
+     of large buttons beside the primary one. Registers and the history of the
+     piece are both things a learner reaches for sometimes, not every time. */
+  const writingBar = bindLearningToolbar(root.querySelector('.writing-bar .learning-toolbar'), {
+    onAction: (name) => {
+      if (name === 'registers')
+        return openRegisters(ctx, { text: root.querySelector('textarea').value, title });
+      if (name === 'history')
+        root
+          .querySelector('[data-revisions]')
+          ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    },
+  });
+  /* One compact line beside the action, never a pane. A provider that is not
+     configured changes nothing about the writing, so it takes one row to say
+     so and the workspace stays the workspace. */
+  const trouble = root.querySelector('[data-writing-trouble]');
+  const sayTrouble = (html) => {
+    trouble.innerHTML = html || '';
+    trouble.hidden = !html;
+  };
   const paintRevisions = () => {
     const list = revisionsOf();
     const host = root.querySelector('[data-revisions]');
@@ -184,6 +238,20 @@ export async function renderExpression(root, ctx) {
       root.querySelector('textarea').focus();
     feedback.querySelector('[data-registers]').onclick = () =>
       openRegisters(ctx, { text, title });
+    workspace.dataset.review = 'ready';
+    sayTrouble('');
+    /* A quoted phrase is findable in the learner's own words rather than
+       something to hunt for by eye, and the caret is left in it, so the
+       revision has already begun (`ui/writing-locate.js`). */
+    feedback.querySelectorAll('[data-locate]').forEach((button) => {
+      button.onclick = () => {
+        const issue = corrections[Number(button.dataset.locate)];
+        const box = root.querySelector('#expressionText');
+        if (!issue || !box) return;
+        showActivity();
+        if (!locateInText(box, issue.quote)) status(c.revisionAmbiguous);
+      };
+    });
     // "Why?" opens the same explanation surface reading and listening use,
     // with the learner's own sentence as the context it reasons about.
     feedback.querySelectorAll('[data-why]').forEach((button) => {
@@ -204,9 +272,25 @@ export async function renderExpression(root, ctx) {
       };
     });
   };
-  // Reopened, the latest review is already there: the piece comes back with
-  // what was said about it, not as a blank result frame.
-  if (series?.latest && Array.isArray(series.latest.issues))
+  /* Reopened, the latest review is already there: the piece comes back with
+     what was said about it, not as a blank result frame.
+
+     Unless it was written in a language the learner no longer reads. The
+     evaluator answers in the support language and the stored evaluation does
+     not record which one - so after a switch, a Chinese room replayed
+     Vietnamese explanations around Chinese headings. What this device asked
+     for is recorded with its own revisions, so a review it cannot vouch for is
+     simply not replayed: the piece and its versions are all still here, and
+     one press of Review answers in the language the learner reads now. */
+  const reviewedInSupport = (essayId) =>
+    revisionsOf().some(
+      (entry) => entry.essay_id === essayId && entry.support === ctx.support,
+    );
+  if (
+    series?.latest &&
+    Array.isArray(series.latest.issues) &&
+    reviewedInSupport(series.latest.id)
+  )
     presentReview(series.latest, String(series.latest.text || ''));
   /* Kept with the account when this deployment keeps work there; on this
      device always. The status says which is true, and a version changed on
@@ -286,7 +370,9 @@ export async function renderExpression(root, ctx) {
     const button = form.querySelector('button.primary'),
       feedback = root.querySelector('#writingFeedback');
     button.disabled = true;
-    feedback.textContent = c.loading;
+    sayTrouble('');
+    workspace.dataset.review = 'working';
+    feedback.innerHTML = `<p class="review-working" role="status">${esc(c.reviewWorking)}</p>`;
     /* The result is the point of pressing Review, so its frame opens at once -
        loading, feedback or an honest failure - instead of leaving the learner
        to discover it below the writing area. */
@@ -299,20 +385,41 @@ export async function renderExpression(root, ctx) {
          has always accepted a task; nothing asked the learner for one. */
       const task = root.querySelector('[name=task]').value.trim();
       if (task) memory.write(`${id}::task`, task);
-      const result = await ctx.mutate(() =>
-        api.evaluate({
-          prompt: [
-            source ? `${title}\n${c.responsePrompt}` : c.freeTitle,
-            task && `${c.writingTask} ${task}`,
-          ]
-            .filter(Boolean)
-            .join('\n'),
-          text,
-          target_cefr: root.querySelector('[name=target]').value || null,
-          learning_language: language,
-          parent_essay_id: parentId,
-        }),
-      );
+      const ask = (parent) =>
+        ctx.mutate(() =>
+          api.evaluate({
+            prompt: [
+              source ? `${title}\n${c.responsePrompt}` : c.freeTitle,
+              task && `${c.writingTask} ${task}`,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            text,
+            target_cefr: root.querySelector('[name=target]').value || null,
+            learning_language: language,
+            parent_essay_id: parent,
+          }),
+        );
+      /* This device remembers which server version this piece continues, and
+         the server is the one that knows whether that version still exists in
+         this learning scope. When it does not - a reset sandbox, a piece begun
+         under another learning language - the request came back refused and
+         explicitly not retryable, and the learner was told their writing could
+         not be reviewed. Permanently: nothing on the page could clear a number
+         they cannot see.
+
+         A parent the server does not recognise is a stale device record, not a
+         reason to refuse a learner their review. It is dropped and the piece
+         starts a series again, which costs the comparison with the previous
+         version and nothing else. */
+      let result;
+      try {
+        result = await ask(parentId);
+      } catch (error) {
+        if (!parentId || error?.category !== 'parent_essay_not_found') throw error;
+        parentId = null;
+        result = await ask(null);
+      }
       if (!alive()) return;
       parentId = result.id;
       memory.recordRevision(id, {
@@ -323,17 +430,30 @@ export async function renderExpression(root, ctx) {
           : null,
         overall: Number.isFinite(result.overall) ? result.overall : null,
         level: typeof result.app_cefr === 'string' ? result.app_cefr : '',
+        support: ctx.support,
       });
       paintRevisions();
       presentReview(result, text);
     } catch (error) {
       if (alive()) {
-        feedback.innerHTML = writingReviewFailure(c, error);
-        const retry = feedback.querySelector('[data-retry-review]');
+        /* A review that did not arrive is news about the review, not about the
+           writing. It is said in one line beside the action that asked for it,
+           and the learner is put back on their page with their draft intact -
+           rather than left in a result frame holding a single sentence. */
+        workspace.dataset.review = 'waiting';
+        feedback.innerHTML = excerpt
+          ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote></aside>`
+          : writingReviewWaiting(c);
+        sayTrouble(writingReviewFailure(c, error));
+        showActivity();
+        const retry = trouble.querySelector('[data-retry-review]');
         if (retry) retry.onclick = () => form.requestSubmit();
       }
     } finally {
-      if (alive()) button.disabled = false;
+      if (alive()) {
+        button.disabled = false;
+        button.textContent = workspace.dataset.review === 'ready' ? c.reviewAgain : c.reviewAction;
+      }
     }
   };
 }

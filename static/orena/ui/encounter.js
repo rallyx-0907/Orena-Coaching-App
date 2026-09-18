@@ -344,6 +344,8 @@ export async function renderEncounter(root, ctx) {
   let disposed = false,
     practiceVersion = 0;
   let voiceCleanup = () => {};
+  // A practice panel that mounted a shared bar takes its listeners with it.
+  let practiceCleanup = () => {};
   const isAlive = () => alive() && !disposed;
   /* Where the learner got to, in the one shared continuation shape.
 
@@ -1069,6 +1071,8 @@ export async function renderEncounter(root, ctx) {
   function closePractice() {
     voiceCleanup();
     voiceCleanup = () => {};
+    practiceCleanup();
+    practiceCleanup = () => {};
     practiceVersion++;
     recorder.cleanup();
     recorder = createLocalAudioRecorder();
@@ -1117,7 +1121,7 @@ export async function renderEncounter(root, ctx) {
        that is off for a different reason (the first line, the last line) must
        not be switched back on when the recording ends. */
     practiceRoot
-      .querySelectorAll('[data-prev-moment], [data-next-moment], [data-goto-segment]')
+      .querySelectorAll('[data-prev-moment], [data-next-moment], [data-menu-toggle]')
       .forEach((x) => {
         if (active) {
           x.dataset.wasDisabled = String(x.disabled);
@@ -1170,6 +1174,8 @@ export async function renderEncounter(root, ctx) {
     if (recording) return;
     voiceCleanup();
     voiceCleanup = () => {};
+    practiceCleanup();
+    practiceCleanup = () => {};
     practiceVersion++;
     const version = practiceVersion;
     practice = intent;
@@ -1190,7 +1196,7 @@ export async function renderEncounter(root, ctx) {
        is chrome - a cross, in the panel's top row, next to the name of the
        task - and moving is task navigation, with the line's place in the
        lesson between its two directions. */
-    practiceRoot.innerHTML = `<div class="practice-top"><small>${c[intent + 'Name']}</small><button type="button" class="quiet practice-exit" data-exit-practice>${symbol('close', 18)}<span>${esc(c.exitPractice)}</span></button></div><h2>${intent === 'dictation' ? c.hearFirst : intent === 'speaking' ? c.voiceResponse : c.shadowPrompt}</h2><nav class="practice-steps" aria-label="${esc(c.lineNavigation)}"><button type="button" class="quiet" data-prev-moment aria-label="${esc(c.previousLine)}" data-tip="${esc(c.previousLine)}">${symbol('back', 18)}</button><span class="practice-place">${at + 1} / ${model.segments.length}</span><button type="button" class="quiet" data-next-moment aria-label="${esc(c.nextLine)}" data-tip="${esc(c.nextLine)}">${symbol('forward', 18)}</button></nav>${intent === 'dictation' ? `<ol class="segment-navigator" data-segment-list aria-label="${esc(c.lineList)}"></ol>` : ''}<div data-practice-body></div>`;
+    practiceRoot.innerHTML = `<div class="practice-top"><small>${c[intent + 'Name']}</small><button type="button" class="quiet practice-exit" data-exit-practice>${symbol('close', 18)}<span>${esc(c.exitPractice)}</span></button></div><h2>${intent === 'dictation' ? c.hearFirst : intent === 'speaking' ? c.voiceResponse : c.shadowPrompt}</h2><nav class="practice-steps" aria-label="${esc(c.lineNavigation)}"><button type="button" class="quiet" data-prev-moment aria-label="${esc(c.previousLine)}" data-tip="${esc(c.previousLine)}">${symbol('back', 18)}</button><span class="practice-place">${at + 1} / ${model.segments.length}</span><button type="button" class="quiet" data-next-moment aria-label="${esc(c.nextLine)}" data-tip="${esc(c.nextLine)}">${symbol('forward', 18)}</button>${intent === 'dictation' ? `<span data-lines-host></span>` : ''}</nav><div data-practice-body></div>`;
     practiceRoot.querySelector('[data-exit-practice]').onclick = closePractice;
     /* Narrow screens put the work below a sticky strip of source, which is the
        right shape but starts out of sight. Opening a practice brings it to the
@@ -1224,33 +1230,55 @@ export async function renderEncounter(root, ctx) {
     };
     nextButton.onclick = () => moveTo(nextIndex);
     previousButton.onclick = () => moveTo(at - 1);
-    /* Dictation hides the transcript, which is right - the lesson's words are
-       the answer - but it left the learner with no idea which line they were
-       on, which they had done, or how to go back to one. This is that list:
-       the lesson's lines by number, what has been written down, and where they
-       are now. It is navigation, not a score. */
-    const segmentList = practiceRoot.querySelector('[data-segment-list]');
-    if (segmentList) {
+    /* Which line am I on, and how do I get back to another one?
+
+       Dictation hides the transcript, because the lesson's words are the
+       answer. The first fix for that was a strip of numbered pills - 01 02 03
+       04 05 06 - which took a row of the workspace to say nothing: a number is
+       not a sentence, and a learner cannot recognise the line they want in it.
+       The lesson's own lines are the navigation. They are behind one control
+       rather than always on screen, because a transcript on display while
+       somebody writes it down is the answer sheet; asking for it is the
+       learner's own act, like Reveal beside it.
+
+       Previous, the place, and Next stay in the open - they are the movement
+       that does not need to name a line. */
+    const linesHost = practiceRoot.querySelector('[data-lines-host]');
+    let linesBar = null;
+    if (linesHost) {
       const written = (segment) =>
         Boolean(
           String(
             memory.value.answers[`${payload.asset.asset_id}:${segment.segment_id}`] || '',
           ).trim(),
         );
-      segmentList.innerHTML = model.segments
-        .map((segment, index) => {
-          const done = written(segment);
-          const here = index === at;
-          return `<li><button type="button" data-goto-segment="${index}" aria-current="${here}"${here ? ' data-here' : ''}${done ? ' data-written' : ''} aria-label="${esc(c.lineNumber.replace('{n}', String(index + 1)))}${done ? `, ${esc(c.lineWritten)}` : ''}"><span class="segment-number">${String(index + 1).padStart(2, '0')}</span><span class="segment-mark" aria-hidden="true">${done ? '✓' : here ? '●' : ''}</span></button></li>`;
-        })
-        .join('');
-      segmentList.onclick = (event) => {
-        const button = event.target.closest('[data-goto-segment]');
-        if (button) moveTo(Number(button.dataset.gotoSegment));
-      };
-      segmentList
-        .querySelector('[data-here]')
-        ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+      linesHost.innerHTML = learningToolbar(
+        [
+          {
+            name: 'lines',
+            icon: 'contents',
+            kind: 'menu',
+            wide: true,
+            label: c.lineList,
+            items: model.segments.map((segment, index) => ({
+              name: `line:${index}`,
+              label: segment.original_text,
+              lang: language,
+              note: duration(segment.start_ms),
+              done: written(segment),
+              doneLabel: c.lineWritten,
+              current: index === at,
+            })),
+          },
+        ],
+        { label: c.lineNavigation },
+      );
+      linesBar = bindLearningToolbar(linesHost.querySelector('.learning-toolbar'), {
+        onAction: (name) => {
+          if (name.startsWith('line:')) moveTo(Number(name.slice(5)));
+        },
+      });
+      practiceCleanup = () => linesBar?.dispose();
     }
     if (intent === 'dictation') {
       /* One frame, no scrolling: the shape of the line, the question with its
@@ -1553,6 +1581,7 @@ export async function renderEncounter(root, ctx) {
   if (deeperPractice.includes(practice)) openPractice(practice);
   return () => {
     disposed = true;
+    practiceCleanup();
     bar.dispose();
     lexical.destroy();
     voiceCleanup();

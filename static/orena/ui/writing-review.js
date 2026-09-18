@@ -36,7 +36,7 @@ function dimensions(c, result) {
     (key) => number(source[key]) !== null,
   );
   if (!keys.length) return '';
-  return `<section class="review-dimensions"><h3>${esc(c.reviewDimensions)}</h3><dl>${keys
+  return `<section class="review-dimensions"><dl>${keys
     .map((key) => {
       const value = Math.round(number(source[key]));
       return `<div class="review-dimension"><dt>${esc(c[`rubric_${key}`] || key)}</dt><dd><span class="review-bar" aria-hidden="true"><i style="inline-size:${Math.max(0, Math.min(100, value))}%"></i></span><b>${value}</b>${moved(c, result.delta, key)}</dd></div>`;
@@ -78,7 +78,7 @@ function comparison(c, result, text) {
       : '',
   ].filter(Boolean);
   if (!blocks.length) return '';
-  return `<section class="review-comparison"><h3>${esc(c.reviewSinceLast)}</h3><p class="meta">${esc(c.reviewSinceLastNote)}</p><div class="review-changes">${blocks.join('')}</div></section>`;
+  return `<section class="review-comparison"><p class="meta">${esc(c.reviewSinceLastNote)}</p><div class="review-changes">${blocks.join('')}</div></section>`;
 }
 
 /* A revision is only worth a number if there is something to compare it with.
@@ -97,7 +97,7 @@ function movement(c, result) {
 function strengths(c, result, language, text) {
   const items = shownStrengths(result, text);
   if (!items.length) return '';
-  return `<section class="review-strengths"><h3>${esc(c.reviewStrengths)}</h3>${items
+  return `<section class="review-strengths">${items
     .map(
       (item) =>
         `<article class="strength"><blockquote lang="${esc(language)}">${esc(item.quote)}</blockquote>${item.why ? `<p>${esc(item.why)}</p>` : ''}<small>${esc(c[`rubric_${item.category}`] || item.category)}</small></article>`,
@@ -107,22 +107,49 @@ function strengths(c, result, language, text) {
 
 /* An issue carries the learner's own wording, what to write instead, why it is
    a problem, and the rule behind it. Each one can be taken further through the
-   shared explanation surface, which is what `data-why` is for. */
+   shared explanation surface, which is what `data-why` is for - and located in
+   the learner's own text, which is what `data-locate` is for: nobody should
+   have to read their own paragraph hunting for a quoted phrase.
+
+   `index` is the issue's position in `shownIssues`, and stays that whether it
+   is shown in the focus or behind the fold, because that is the number the
+   room binds its handlers to. */
+const PRIORITY = { high: 0, critical: 0, medium: 1, low: 2 };
+
+function correction(c, item, index, language) {
+  return `<article class="correction" data-issue="${index}" data-priority="${esc(item.priority || 'medium')}"><small class="correction__category">${esc(c[`rubric_${item.category}`] || item.category)}</small><p class="correction__row correction__wrote"><span class="correction__label">${esc(c.reviewYouWrote)}</span><del lang="${esc(language)}">${esc(item.quote)}</del></p>${item.suggestion ? `<p class="correction__row correction__fix"><span class="correction__label">${esc(c.reviewCorrection)}</span><strong lang="${esc(language)}">${esc(item.suggestion)}</strong></p>` : ''}${item.why ? `<p class="correction__row correction__why"><span class="correction__label">${esc(c.reviewWhy)}</span><span>${esc(item.why)}</span></p>` : ''}${item.how ? `<p class="correction__rule"><span class="correction__label">${esc(c.reviewRule)}</span><span>${esc(item.how)}</span></p>` : ''}<div class="button-row"><button class="quiet" data-locate="${index}">${esc(c.reviewLocate)}</button><button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></div></article>`;
+}
+
+/* Ten findings shown as equals is a wall, and a beginner reads none of them.
+   The few worth doing now lead; the rest are a fold away, still whole. */
+export function orderedIssues(result, text) {
+  return shownIssues(result, text)
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => (PRIORITY[a.item.priority] ?? 1) - (PRIORITY[b.item.priority] ?? 1));
+}
+
+const FOCUS = 3;
+
 function issues(c, result, language, text) {
-  const items = shownIssues(result, text);
-  if (!items.length) return '';
-  return `<section class="review-issues"><h3>${esc(c.reviewIssues)}</h3>${items
-    .map(
-      (item, index) =>
-        `<article class="correction" data-priority="${esc(item.priority || 'medium')}"><small class="correction__category">${esc(c[`rubric_${item.category}`] || item.category)}</small><p class="correction__row correction__wrote"><span class="correction__label">${esc(c.reviewYouWrote)}</span><del lang="${esc(language)}">${esc(item.quote)}</del></p>${item.suggestion ? `<p class="correction__row correction__fix"><span class="correction__label">${esc(c.reviewCorrection)}</span><strong lang="${esc(language)}">${esc(item.suggestion)}</strong></p>` : ''}${item.why ? `<p class="correction__row correction__why"><span class="correction__label">${esc(c.reviewWhy)}</span><span>${esc(item.why)}</span></p>` : ''}${item.how ? `<p class="correction__rule"><span class="correction__label">${esc(c.reviewRule)}</span><span>${esc(item.how)}</span></p>` : ''}<div class="button-row"><button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></div></article>`,
-    )
-    .join('')}</section>`;
+  const ordered = orderedIssues(result, text);
+  if (!ordered.length) return '';
+  const focus = ordered.slice(0, FOCUS);
+  const rest = ordered.slice(FOCUS);
+  return `<section class="review-issues"><h3>${esc(c.reviewFocus)}</h3>${focus
+    .map(({ item, index }) => correction(c, item, index, language))
+    .join('')}${
+    rest.length
+      ? `<details class="review-fold"><summary>${esc(c.reviewMore)} <span>${rest.length}</span></summary>${rest
+          .map(({ item, index }) => correction(c, item, index, language))
+          .join('')}</details>`
+      : ''
+  }</section>`;
 }
 
 function priorities(c, result) {
   const items = (result.next_actions || []).filter(Boolean);
   if (!items.length) return '';
-  return `<section class="review-next"><h3>${esc(c.reviewNext)}</h3><ol>${items
+  return `<section class="review-next"><ol>${items
     .map((item) => `<li>${esc(item)}</li>`)
     .join('')}</ol></section>`;
 }
@@ -139,29 +166,50 @@ export function shownStrengths(result, text) {
 
 /* Preserve the capability envelope's answer about whether another request can
    help. A network/provider interruption offers one explicit retry; a disabled
-   or invalid capability tells the truth without presenting a dead action. */
+   or invalid capability tells the truth without presenting a dead action.
+
+   It is one compact line, wherever it is put. A provider that is not
+   configured used to take half the workspace to say so, which is a lot of
+   screen for news that changes nothing about the writing: the draft is safe
+   and the room still works. */
 export function writingReviewFailure(c, error) {
   const retryable = error?.retryable !== false;
-  return `<p class="notice" role="alert">${esc(
+  return `<p class="notice review-trouble" role="alert"><span>${esc(
     retryable ? c.reviewFailed : c.reviewUnavailable,
-  )}</p>${
+  )}</span>${
     retryable
-      ? `<button type="button" class="outline" data-retry-review>${esc(c.retry)}</button>`
+      ? `<button type="button" class="quiet" data-retry-review>${esc(c.retry)}</button>`
       : ''
-  }`;
+  }</p>`;
 }
 
 /* The whole-piece rewrite, when the evaluator offered one. It is one way to
    say it rather than the answer, so it sits after the individual corrections. */
 function corrected(c, result, language) {
   if (!result.corrected_text) return '';
-  return `<section class="review-corrected"><h3>${esc(c.reviewWholePiece)}</h3><blockquote lang="${esc(language)}">${esc(result.corrected_text)}</blockquote></section>`;
+  return `<section class="review-corrected"><blockquote lang="${esc(language)}">${esc(result.corrected_text)}</blockquote></section>`;
 }
 
 /* Before the first review the result region stays quiet: it names what will
    appear there without spending the workspace on prompt copy. */
 export function writingReviewWaiting(c) {
   return `<div class="review-waiting"><small>${esc(c.review)}</small><p>${esc(c.reviewWaiting)}</p></div>`;
+}
+
+/* What a learner needs first, and in this order: what to do about this piece,
+   then what is already working, then the measurement, then the history.
+
+   The review used to run headline, summary, every dimension, every change
+   since the last version, every strength and every issue as equals, ending in
+   a whole-piece rewrite. That is a report. A learner revising wants two or
+   three things to fix and their own words to fix them in, so the corrections
+   lead and everything else is kept, whole, behind a fold. Nothing is dropped:
+   the payload still decides what exists, and this only decides what is met
+   first (DESIGN_CONTRACT rule 27). */
+function fold(summary, body, { open = false } = {}) {
+  return body
+    ? `<details class="review-fold"${open ? ' open' : ''}><summary>${esc(summary)}</summary>${body}</details>`
+    : '';
 }
 
 export function writingReview(c, result, { language, text }) {
@@ -171,11 +219,12 @@ export function writingReview(c, result, { language, text }) {
     !shownIssues(result, text).length &&
     !shownStrengths(result, text).length &&
     !result.corrected_text;
-  return `<div class="review"><h2 class="review-title">${esc(c.review)}</h2>${
+  const measurement = dimensions(c, result);
+  return `<div class="review">${
     result.evaluator === 'fallback-demo'
       ? `<p class="notice">${esc(c.demoMeasurement)}</p>`
       : ''
-  }${
+  }<div class="review-head">${
     overall === null
       ? ''
       : `<div class="review-headline"><b>${Math.round(overall)}</b>${level ? `<span>${esc(level)}</span>` : ''}${movement(c, result)}</div>`
@@ -183,5 +232,5 @@ export function writingReview(c, result, { language, text }) {
     result.summary?.interpretation
       ? `<p class="review-summary">${esc(result.summary.interpretation)}</p>`
       : ''
-  }${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${dimensions(c, result)}${comparison(c, result, text)}${strengths(c, result, language, text)}${issues(c, result, language, text)}${corrected(c, result, language)}${priorities(c, result)}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
+  }</div>${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${issues(c, result, language, text)}${fold(c.reviewStrengths, strengths(c, result, language, text))}${fold(c.reviewNext, priorities(c, result))}${fold(c.reviewDimensions, measurement)}${fold(c.reviewSinceLast, comparison(c, result, text))}${fold(c.reviewWholePiece, corrected(c, result, language))}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
 }

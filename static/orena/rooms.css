@@ -49,10 +49,16 @@
   margin: 0;
 }
 
-/* The writing workspace: the sheet on one side, the review on the other, both
-   inside one frame. The sheet fills its region and the review scrolls in its
-   own, so feedback never lengthens the page. */
-[data-experience='writing'] .writing-workspace { --workspace-inset: 11rem; }
+/* The writing workspace: the learner's page on one side, what is said about it
+   on the other, both inside one frame. The page fills its region and the
+   review scrolls in its own, so feedback never lengthens the page.
+
+   Two bordered rectangles of equal weight is what this looked like before, and
+   the right one stood empty until a review arrived. The page is the learner's
+   surface and reads as paper; the margin beside it is a margin - no box of its
+   own until it has something to hold - and until then the page takes the width
+   (DESIGN_CONTRACT rules 19, 21, 27). */
+[data-experience='writing'] .writing-workspace { --workspace-inset: 13rem; }
 [data-experience='writing'] .writing-sheet {
   display: flex;
   flex-direction: column;
@@ -65,6 +71,53 @@
   padding: var(--space-4) var(--space-5);
   box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
 }
+/* What this piece is for, in the heading, before and during the writing -
+   where it used to be a form field under the box the learner had already
+   filled. It is quiet until it is being used: a line of the heading, not a
+   labelled input in a settings row. */
+[data-experience='writing'] .writing-head { padding: var(--space-1) 0 var(--space-4); }
+[data-experience='writing'] .writing-head > small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+[data-experience='writing'] .writing-head h1 {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  margin: var(--space-1) 0 var(--space-2);
+}
+[data-experience='writing'] .writing-intention {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-inline-size: 48ch;
+}
+[data-experience='writing'] .writing-intention input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-height: 32px;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px dashed var(--line);
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+[data-experience='writing'] .writing-intention input::placeholder { color: var(--muted); }
+[data-experience='writing'] .writing-intention input:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+[data-experience='writing'] .writing-head__prompt {
+  margin: var(--space-2) 0 0;
+  max-inline-size: 60ch;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+[data-experience='writing'] .back-row [data-draft-status] { margin-inline-start: auto; }
 /* Another device moved this draft on: shown above the box, the learner's
    words untouched beneath it until they choose. */
 [data-experience='writing'] .draft-elsewhere {
@@ -95,15 +148,47 @@
   font-size: var(--text-reading);
   line-height: 1.7;
 }
-[data-experience='writing'] .expression-tools {
+/* One row under the page: how much room is left when that starts to matter,
+   the level the review aims at as a quiet select, the secondary actions in the
+   shared bar, and one primary action named in one word. The row it replaced
+   put a labelled "feedback target" selector and a sentence-long button at the
+   bottom of a form (DESIGN_CONTRACT rule 24). */
+[data-experience='writing'] .writing-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   border-top: 1px solid var(--line);
-  padding-top: var(--space-3);
-  gap: var(--space-3);
+  padding-top: var(--space-2);
 }
-[data-experience='writing'] .writing-task { margin-top: var(--space-3); }
-[data-experience='writing'] .writing-result {
+[data-experience='writing'] .writing-bar .meta { margin: 0; font-size: var(--text-xs); }
+[data-experience='writing'] .writing-bar .review-target { margin-inline-start: auto; }
+[data-experience='writing'] .writing-bar select {
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+[data-experience='writing'] .writing-bar .primary { min-height: 38px; }
+/* A review that did not arrive is one line here, never a pane. */
+[data-experience='writing'] .writing-trouble,
+.review-trouble {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+.review-trouble button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
+/* The margin. It is a margin while it holds context, and becomes a surface of
+   its own only once there is a review in it - so nothing draws a second empty
+   card beside the page. */
+[data-experience='writing'] .writing-result { color: var(--ink); }
+[data-experience='writing'] .writing-workspace[data-review='ready'] .writing-result {
   background: var(--surface);
-  color: var(--ink);
   border: 1px solid var(--line);
   border-top: 4px solid var(--accent);
   box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
@@ -1503,9 +1588,8 @@ ul.pronunciation-words small { color: var(--muted); }
 
    Leaving the task is chrome - a cross beside the task's name. Moving through
    the task is its own row, with the line's place between its two directions.
-   Dictation hides the transcript, so it also gets the lesson's lines as a
-   compact strip: which are written down, which one is open, and one tap back
-   to any of them.
+   Dictation hides the transcript, so its lines are offered behind one control
+   in the same row - by what they say, not by a number.
    --------------------------------------------------------------------------- */
 .practice-top { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .practice-exit {
@@ -1538,43 +1622,93 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 .practice-steps button[disabled] { opacity: .35; cursor: default; }
 .practice-place { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
-.segment-navigator {
-  display: flex;
-  gap: 4px;
-  margin: 0 0 var(--space-3);
-  padding: 0 0 var(--space-1);
-  list-style: none;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: thin;
-}
-.segment-navigator li { margin: 0; }
-.segment-navigator button {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  min-height: 30px;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
-.segment-navigator button[data-written] { color: var(--ink); border-color: color-mix(in srgb, var(--sage-surface) 70%, var(--line)); }
-.segment-navigator button[aria-current='true'] {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-  color: var(--ink);
-  font-weight: 600;
-}
-.segment-navigator button[disabled] { opacity: .4; cursor: default; }
-.segment-mark:empty { display: none; }
 @media (max-width: 600px) {
   .practice-steps { gap: var(--space-1); }
-  .segment-navigator { margin-bottom: var(--space-2); }
 }
 .section-head__tools { display: inline-flex; align-items: center; gap: var(--space-1); margin-inline-start: auto; }
+
+/* ---------------------------------------------------------------------------
+   Writing: the page keeps the width until there is something to say.
+
+   Before a review the margin holds the source, or one quiet line naming what
+   will appear there - so the workspace gives the page the room, instead of
+   standing a blank half-screen beside it. When the review arrives the two
+   settle into a working balance. The change is a column width, so the page the
+   learner is reading does not jump: their text stays where it was on screen.
+   --------------------------------------------------------------------------- */
+/* The width changes the moment the learner asks for a review, and it changes
+   at once. It was briefly a transition, which was worse than either end of it:
+   Chrome does not interpolate `minmax(0, <n>fr)` tracks, so the animation held
+   the starting width and the rebalance never arrived at all. A learner-asked
+   change does not need easing to be understood. */
+@media (min-width: 1001px) {
+  [data-experience='writing'] .writing-workspace[data-review='waiting'],
+  [data-experience='writing'] .writing-workspace[data-review='working'] {
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  }
+  [data-experience='writing'] .writing-workspace[data-review='ready'] {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+/* The learner's page keeps a measure: a line of prose stays readable however
+   wide the window is. */
+[data-experience='writing'] .writing-sheet textarea { max-inline-size: 62ch; }
+[data-experience='writing'] .writing-workspace[data-review='waiting'] .writing-result,
+[data-experience='writing'] .writing-workspace[data-review='working'] .writing-result {
+  justify-content: start;
+}
+[data-experience='writing'] .writing-workspace[data-review='waiting'] .workspace-result__scroll,
+[data-experience='writing'] .writing-workspace[data-review='working'] .workspace-result__scroll {
+  padding: 0;
+}
+.review-working { color: var(--muted); font-size: var(--text-sm); }
+
+/* ---------------------------------------------------------------------------
+   The review: the few things worth doing now, then everything else, folded.
+   --------------------------------------------------------------------------- */
+.review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.review-head .review-summary { margin: 0; flex: 1 1 14rem; min-inline-size: 0; }
+.review-issues > h3 { margin: 0 0 var(--space-2); font-size: var(--text-lead); }
+.review-fold { margin-top: var(--space-3); }
+.review-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-quiet);
+  cursor: pointer;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  list-style: none;
+}
+.review-fold > summary::-webkit-details-marker { display: none; }
+.review-fold > summary::before {
+  content: '';
+  inline-size: 0;
+  block-size: 0;
+  border-inline-start: 5px solid currentColor;
+  border-block: 4px solid transparent;
+  transition: transform 0.15s ease-out;
+}
+.review-fold[open] > summary::before { transform: rotate(90deg); }
+.review-fold > summary span {
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-fold > summary::before { transition: none; }
+}
+/* A correction is one thing to do, so its actions are quiet and its own words
+   lead. Nothing here is a card: the rule under each one is the separator. */
+.correction { padding-block: var(--space-3); border-block-start: 1px solid var(--line); }
+.review-issues .correction:first-of-type { border-block-start: 0; padding-block-start: 0; }
+.correction .button-row { margin-block-start: var(--space-2); gap: var(--space-1) var(--space-3); }
+.correction .button-row button { min-height: 30px; padding-inline: 0; font-size: var(--text-sm); }
+.correction .button-row .outline { padding-inline: var(--space-3); }

@@ -1,0 +1,182 @@
+/* Writing as a workspace, not a form.
+
+   What this replaced: a page-wide heading, one very tall box, and then - under
+   the box, where a learner only arrives after writing - the draft status, a
+   character count, a selector labelled "feedback target", the Review button,
+   and finally the field asking what the piece was for. The thing most needed
+   before starting was the last thing reachable, the primary action sat at the
+   bottom of a form, and an empty bordered pane stood beside it taking half the
+   room until a review arrived.
+
+   These are the contracts that keep that from growing back: the learner's text
+   and the feedback stay in one working context, the feedback leads with what
+   is worth doing now, a quoted phrase is findable in the learner's own text,
+   and nothing replaces what the learner wrote (DESIGN_CONTRACT rule 27). */
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { copy } from '../static/orena/ui/copy.js';
+import { writingReview, writingReviewFailure, orderedIssues } from '../static/orena/ui/writing-review.js';
+
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const expression = read('static/orena/ui/expression.js');
+const rooms = read('static/orena/rooms.css');
+const contract = read('docs/project/DESIGN_CONTRACT.md');
+
+/* --- What the piece is for, before and while writing -------------------- */
+const head = expression.slice(
+  expression.indexOf('<header class="writing-head">'),
+  expression.indexOf('<section class="learning-workspace writing-workspace"'),
+);
+assert.ok(head.includes('writing-intention'), 'the intention has a place in the heading');
+assert.ok(head.includes('id="writingTask"'), 'and it is the same field the evaluator is told about');
+assert.ok(
+  expression.indexOf('class="writing-intention"') < expression.indexOf('id="expressionText"'),
+  'the learner meets it before the box, not under it',
+);
+assert.doesNotMatch(expression, /class="writing-task"/, 'the form row below the editor is gone');
+assert.doesNotMatch(expression, /class="expression-tools"/, 'and so is the settings row it sat in');
+
+/* --- One primary action, named in one word ------------------------------ */
+assert.match(expression, /data-review-action/, 'Review is a named control');
+assert.match(expression, /\$\{esc\(c\.reviewAction\)\}<\/button>/, 'it carries the short name');
+for (const ui of ['en', 'zh', 'vi']) {
+  assert.ok(copy[ui].reviewAction?.trim(), `${ui} names the action`);
+  assert.ok(
+    copy[ui].reviewAction.length < copy[ui].review.length,
+    `${ui}: the action is shorter than the room's own title for the review`,
+  );
+}
+/* The level the review aims at is a setting, not the headline of the task. */
+const bar = expression.slice(
+  expression.indexOf('<div class="writing-bar">'),
+  expression.indexOf('data-writing-trouble'),
+);
+assert.ok(bar.includes("name=\"target\""), 'the level still exists');
+assert.ok(bar.includes('class="sr-only">${esc(c.reviewTarget)}'), 'named for assistive technology');
+assert.ok(!bar.includes(`>\${c.reviewTarget}<`), 'but not as a visible form label beside the action');
+assert.ok(bar.includes('learningToolbar('), 'the secondary actions use the shared bar');
+assert.equal((bar.match(/class="primary"/g) || []).length, 1, 'one primary action in the row');
+
+/* --- The margin is a margin until there is something to hold ------------ */
+assert.match(expression, /data-review="waiting"/, 'the workspace says whether a review exists');
+assert.match(expression, /workspace\.dataset\.review = 'ready'/, 'and says so when one arrives');
+assert.match(expression, /workspace\.dataset\.review = 'working'/, 'and while one is being made');
+assert.match(
+  rooms,
+  /\.writing-workspace\[data-review='ready'\] \.writing-result \{[^}]*border:/,
+  'the margin becomes a surface only once it holds a review',
+);
+assert.match(
+  rooms,
+  /\.writing-workspace\[data-review='waiting'\],[\s\S]{0,120}?grid-template-columns: minmax\(0, 2\.1fr\)/,
+  'and the page takes the width until then',
+);
+assert.match(
+  rooms,
+  /\.writing-workspace\[data-review='ready'\] \{[\s\S]{0,80}?grid-template-columns: minmax\(0, 1\.15fr\)/,
+  'then the two settle into a working balance',
+);
+/* Chrome does not interpolate `minmax(0, <n>fr)`, so a transition on the
+   columns held the starting width and the rebalance never arrived. */
+assert.doesNotMatch(rooms, /transition:[^;]*grid-template-columns/, 'the columns change at once');
+
+/* --- A review that cannot be made is a line, not a pane ----------------- */
+const c = copy.en;
+const failure = writingReviewFailure(c, { retryable: false });
+assert.match(failure, /class="notice review-trouble"/, 'the failure is one compact notice');
+assert.doesNotMatch(failure, /<section|<h2|<h3/, 'with no structure of its own');
+assert.ok(failure.length < 400, 'and it is short');
+assert.match(expression, /sayTrouble\(writingReviewFailure\(c, error\)\)/,
+  'it is said beside the action that asked for the review');
+assert.match(expression, /showActivity\(\);\n\s+const retry/, 'and the learner is put back on their page');
+assert.match(rooms, /\.writing-trouble,\n\.review-trouble \{/, 'it is styled as a row, not a panel');
+
+/* --- Feedback leads with what is worth doing now ------------------------ */
+const text = 'I go to the shop yesterday and buyed some bread and I dont finished it.';
+const result = {
+  overall: 55,
+  app_cefr: 'B1',
+  summary: { interpretation: 'Your meaning comes through.' },
+  corrected_text: 'I went to the shop yesterday and bought some bread.',
+  dimensions: { grammar: 50 },
+  strengths: [{ quote: 'some bread', why: 'clear', category: 'vocabulary' }],
+  next_actions: ['Practise the past tense.'],
+  issues: [
+    { quote: 'dont finished it', priority: 'low', category: 'tense', suggestion: "didn't finish it" },
+    { quote: 'I go to', priority: 'high', category: 'tense', suggestion: 'I went to', why: 'Past.' },
+    { quote: 'buyed', priority: 'medium', category: 'word_form', suggestion: 'bought' },
+    { quote: 'the shop yesterday', priority: 'medium', category: 'other', suggestion: 'the shop' },
+  ],
+};
+const ordered = orderedIssues(result, text);
+assert.deepEqual(
+  ordered.map((entry) => entry.item.quote),
+  ['I go to', 'buyed', 'the shop yesterday', 'dont finished it'],
+  'the most useful come first, and equal ones keep the order they arrived in',
+);
+assert.deepEqual(
+  ordered.map((entry) => entry.index),
+  [1, 2, 3, 0],
+  'an issue keeps the position the room binds its handlers to',
+);
+const html = writingReview(c, result, { language: 'en', text });
+const focus = html.slice(html.indexOf('review-issues'), html.indexOf('review-fold'));
+assert.equal((focus.match(/class="correction"/g) || []).length, 3, 'three lead, no more');
+assert.ok(html.includes(`<h3>${c.reviewFocus}</h3>`), 'and they are named as the place to start');
+assert.ok(html.indexOf('review-issues') < html.indexOf(c.reviewStrengths), 'corrections come before praise');
+for (const folded of [c.reviewStrengths, c.reviewNext, c.reviewDimensions, c.reviewWholePiece])
+  assert.ok(html.includes(`<summary>${folded}</summary>`), `${folded} is kept, behind a fold`);
+assert.ok(html.includes(c.reviewMore), 'and so are the remaining corrections');
+/* Nothing is dropped: a folded section is still whole. */
+assert.ok(html.includes('Practise the past tense.'), 'the priorities survive the fold');
+assert.ok(html.includes(result.corrected_text), 'and so does the whole-piece rewrite');
+/* A section behind a fold is named once, by its summary. */
+assert.equal((html.match(new RegExp(c.reviewStrengths, 'g')) || []).length, 1, 'named once');
+
+/* --- The learner's own text is where a quote is found ------------------- */
+assert.match(html, /data-locate="\d+"/, 'every correction can be found in the text');
+const locate = read('static/orena/ui/writing-locate.js');
+assert.match(locate, /export function locateInText/, 'finding it is a shared thing, not a page trick');
+assert.match(locate, /setSelectionRange/, "it uses the browser's own selection");
+assert.doesNotMatch(locate, /innerHTML|value\s*=/, 'and never rewrites what the learner wrote');
+assert.match(expression, /locateInText\(box, issue\.quote\)/, 'the room asks it for the quoted phrase');
+assert.match(expression, /showActivity\(\);\n\s+if \(!locateInText/, 'on a phone that means coming back to the page');
+
+/* --- Nothing replaces the learner's writing ----------------------------- */
+const submit = expression.slice(expression.indexOf("root.querySelector('form').onsubmit"));
+assert.doesNotMatch(submit, /box\.value = |textarea'\)\.value = /, 'a review never writes into the box');
+assert.match(expression, /data-revise/, 'revising is offered');
+assert.match(contract, /27\. \*\*The writing revision loop\.\*\*/, 'the durable rule is recorded');
+
+/* --- A stale device record never blocks a learner from being read ------- */
+assert.match(expression, /error\?\.category !== 'parent_essay_not_found'/,
+  'a parent the server does not know is dropped, not reported to the learner');
+assert.match(expression, /parentId = null;\n\s+result = await ask\(null\)/, 'and the review is asked for again');
+
+/* --- Generated guidance speaks the support language --------------------- */
+const backend = read('app.py');
+assert.match(backend, /support_language_name=support_name/, 'the evaluator is told which language to answer in');
+assert.match(backend, /def _resolved_writing_support_language/, "from the learner's own profile");
+assert.match(expression, /support: ctx\.support/, 'and the device records which one it asked for');
+assert.match(expression, /const reviewedInSupport = /, 'so a stored review is only replayed when it still fits');
+assert.match(contract, /does not replay it\./, 'the durable rule is recorded');
+
+/* --- EN, ZH and VI all say it ------------------------------------------- */
+for (const ui of ['en', 'zh', 'vi'])
+  for (const key of ['reviewAction', 'reviewFocus', 'reviewMore', 'reviewLocate',
+    'reviewWorking', 'reviewAgain', 'writingIntentionNone', 'writingKeepWriting']) {
+    assert.equal(typeof copy[ui][key], 'string', `${ui}.${key} exists`);
+    assert.ok(copy[ui][key].trim(), `${ui}.${key} is not empty`);
+  }
+for (const key of ['reviewAction', 'reviewFocus', 'writingKeepWriting'])
+  assert.equal(
+    new Set([copy.en[key], copy.zh[key], copy.vi[key]]).size,
+    3,
+    `${key} reads differently in each supported language`,
+  );
+
+/* --- A phone recomposes rather than stacking the desktop ---------------- */
+assert.match(rooms, /\.writing-bar \{[\s\S]{0,160}?display: flex/, 'the actions are one row');
+assert.doesNotMatch(expression, /class="writing-sheet"[\s\S]{0,400}?<h2/, 'the page carries no heading of its own');
+
+console.log('Writing workspace: intention first, one action, feedback that leads, text that stays: PASS');

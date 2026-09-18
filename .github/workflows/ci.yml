@@ -80,6 +80,7 @@ jobs:
           node scripts/test_orena_learning_stage.mjs
           node scripts/test_orena_dictation_workspace.mjs
           node scripts/test_orena_learner_language.mjs
+          node scripts/test_orena_writing_workspace.mjs
           node scripts/test_orena_admin_entry.mjs
           node scripts/test_orena_vocabulary_card.mjs
           node scripts/test_orena_vocabulary_experience.mjs

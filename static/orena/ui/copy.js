@@ -2014,7 +2014,6 @@ Object.assign(copy.en, {
   previousLine: 'Previous line',
   nextLine: 'Next line',
   lineList: 'Lines in this lesson',
-  lineNumber: 'Line {n}',
   lineWritten: 'written down',
 });
 Object.assign(copy.zh, {
@@ -2025,8 +2024,34 @@ Object.assign(copy.zh, {
   previousLine: '上一句',
   nextLine: '下一句',
   lineList: '本课的句子',
-  lineNumber: '第 {n} 句',
   lineWritten: '已听写',
+});
+
+/* Writing, as a workspace rather than a form.
+
+   The primary action is one word, not a sentence describing a system; the
+   level the review aims at is a setting behind More, because a learner should
+   not have to understand model configuration to be read. The feedback leads
+   with the few things worth doing now and keeps the rest a fold away. */
+Object.assign(copy.en, {
+  reviewAction: 'Review',
+  reviewFocus: 'Start with this',
+  reviewMore: 'More feedback',
+  reviewLocate: 'Find it in my text',
+  reviewWorking: 'Reading what you wrote…',
+  reviewAgain: 'Review again',
+  writingIntentionNone: 'Say what this is for',
+  writingKeepWriting: 'Back to writing',
+});
+Object.assign(copy.zh, {
+  reviewAction: '查看反馈',
+  reviewFocus: '先从这里开始',
+  reviewMore: '更多反馈',
+  reviewLocate: '在我的文字中找到它',
+  reviewWorking: '正在读你写的内容…',
+  reviewAgain: '再看一次',
+  writingIntentionNone: '说明这是写给谁、做什么的',
+  writingKeepWriting: '回到写作',
 });
 
 import { vi } from './copy-vi.js';

@@ -268,6 +268,19 @@ Explicit human direction after a learning-surface review. Rules 1-18 stand.
     material is never translated by this rule - a target-language line, title
     or passage is content.
 
+27. **The writing revision loop.** A writing surface keeps the learner's own
+    text and the feedback about it in one working context: reviewing never
+    replaces the editor, and a quoted phrase is findable in the learner's text
+    rather than something to hunt for by eye. Feedback leads with the few
+    things worth doing now and keeps the rest whole behind progressive
+    disclosure - a full report shown at once is not feedback a learner can act
+    on. A review offers revision; it never substitutes generated text for the
+    learner's writing, and a whole-piece rewrite is one way to say it, never
+    the answer. Review is one primary action named in one word; the settings
+    that steer it are secondary controls, because a learner should not have to
+    understand model configuration to be read. A review that cannot be produced
+    is one compact line beside the action, not a pane.
+
 ## The learner language contract
 
 Orena has two learner language roles, and only two.
@@ -281,6 +294,12 @@ controls, instructions, guidance, feedback, explanations, errors, tooltips,
 status and system messages.
 
 Learner output keeps whatever language the learner actually produced.
+
+Generated guidance - a writing review, an explanation, a coaching note - is
+**requested** in the support language, not translated around afterwards. A
+stored one carries the language it was written in: a surface that cannot
+establish that a saved answer matches the learner's current support language
+does not replay it.
 
 There is no third, independently chosen learner-facing interface language. A
 stored legacy preference may remain for compatibility, but it no longer decides

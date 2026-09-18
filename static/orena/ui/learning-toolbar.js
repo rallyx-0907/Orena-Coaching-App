@@ -28,17 +28,30 @@ import { symbol } from './symbols.js';
 
 const EDGE = 8;
 
+/* A menu item is usually a plain instruction. It can also be a piece of the
+   learner's own material - a line of a transcript, say - in which case the
+   content is the label and a mark says where the learner stands in it. That is
+   what keeps navigation legible: "Using this scale the universe slowed" tells
+   a learner which line they are choosing; "03" does not. */
+function menuItemHtml(entry) {
+  const marks = entry.done ? '✓' : entry.current ? '●' : '';
+  const state = entry.current ? ' aria-current="true"' : '';
+  const note = entry.note ? ` <span class="learning-menu__note">${esc(entry.note)}</span>` : '';
+  // The mark is a glyph, so what it means is said in words for anyone who
+  // cannot see it - in the support language, like every other word Orena says.
+  const said = entry.done && entry.doneLabel
+    ? `<span class="sr-only">${esc(entry.doneLabel)}, </span>` : '';
+  return `<button type="button" role="menuitem" data-action="${esc(entry.name)}"${state}${entry.done ? ' data-done' : ''}><span class="learning-menu__mark" aria-hidden="true">${marks}</span>${said}<span class="learning-menu__label"${entry.lang ? ` lang="${esc(entry.lang)}"` : ''}>${esc(entry.label)}</span>${note}</button>`;
+}
+
 function actionHtml(action) {
   const { name, icon, label, kind = 'action' } = action;
   const tip = `data-tip="${esc(label)}" aria-label="${esc(label)}"`;
   if (kind === 'toggle')
     return `<button type="button" class="learning-action" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${symbol(icon, 18)}</button>`;
   if (kind === 'menu')
-    return `<span class="learning-action-menu"><button type="button" class="learning-action" data-menu-toggle="${esc(name)}" aria-haspopup="menu" aria-expanded="false" ${tip}>${symbol(icon, 18)}</button><div class="learning-menu" data-menu="${esc(name)}" role="menu" hidden>${(action.items || [])
-      .map(
-        (entry) =>
-          `<button type="button" role="menuitem" data-action="${esc(entry.name)}">${esc(entry.label)}</button>`,
-      )
+    return `<span class="learning-action-menu"><button type="button" class="learning-action" data-menu-toggle="${esc(name)}" aria-haspopup="menu" aria-expanded="false" ${tip}>${symbol(icon, 18)}</button><div class="learning-menu${action.wide ? ' learning-menu--wide' : ''}" data-menu="${esc(name)}" role="menu" hidden>${(action.items || [])
+      .map(menuItemHtml)
       .join('')}</div></span>`;
   return `<button type="button" class="learning-action" data-action="${esc(name)}" ${tip}>${symbol(icon, 18)}</button>`;
 }
