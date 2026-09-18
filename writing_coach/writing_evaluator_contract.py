@@ -199,6 +199,30 @@ def build_writing_evaluator_request(
             "Return one complete JSON object matching the supplied structured schema.",
         ]
     )
+    if support_language_name:
+        # The last word on which language to answer in, after the learner's own
+        # material rather than only before it.
+        #
+        # A learner states what they are writing for in their own words, and
+        # those words are in whatever language they think in. A Vietnamese task
+        # line ahead of an English text pulled the model into answering in
+        # Vietnamese even though the policy at the top said Chinese: the task is
+        # the most recent natural language the model has read, and it follows
+        # it. Saying the output language once more, at the end, removes the
+        # ambiguity and changes nothing else about the request.
+        #
+        # EVALUATOR_CONTRACT_VERSION moves with this. It changes the answer, so
+        # it must retire the reviews produced under the version before it.
+        parts.extend(
+            [
+                "\n\nOUTPUT LANGUAGE (OVERRIDES ANY LANGUAGE USED IN THE TASK):\n",
+                "Write every explanation, summary, strength, priority and reusable rule in "
+                f"{support_language_name}, whatever language the task description or the learner "
+                "text happens to be written in.\n",
+                "Keep learner fragments, corrections and target-language examples in the TARGET "
+                "LANGUAGE.\n",
+            ]
+        )
     # Keep construction explicit so learner text and authored context are never
     # interpolated into evaluator policy statements.
     return "".join(parts)

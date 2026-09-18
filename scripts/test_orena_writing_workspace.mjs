@@ -124,8 +124,82 @@ const focus = html.slice(html.indexOf('review-issues'), html.indexOf('review-fol
 assert.equal((focus.match(/class="correction"/g) || []).length, 3, 'three lead, no more');
 assert.ok(html.includes(`<h3>${c.reviewFocus}</h3>`), 'and they are named as the place to start');
 assert.ok(html.indexOf('review-issues') < html.indexOf(c.reviewStrengths), 'corrections come before praise');
-for (const folded of [c.reviewStrengths, c.reviewNext, c.reviewDimensions, c.reviewWholePiece])
+for (const folded of [c.reviewStrengths, c.reviewNext, c.reviewWholePiece])
   assert.ok(html.includes(`<summary>${folded}</summary>`), `${folded} is kept, behind a fold`);
+
+/* --- Where am I, before what do I fix ----------------------------------- */
+/* The corrections were moved to the front of the review, which left the
+   measurement several folds down - so a learner met "fix this" before "how am
+   I doing". The overview leads now: the score, the level, the movement since
+   the last version, and the dimensions the evaluator actually scored. */
+assert.ok(html.includes('class="review-overview"'), 'the review opens on an overview');
+assert.ok(
+  html.indexOf('review-overview') < html.indexOf('review-issues'),
+  'and it comes before the corrections',
+);
+assert.ok(
+  html.indexOf('review-dimensions') < html.indexOf('review-issues'),
+  'the dimensions are part of that overview, not a fold below the corrections',
+);
+assert.ok(
+  html.indexOf('review-headline') < html.indexOf('review-dimensions'),
+  'the score leads the overview',
+);
+assert.doesNotMatch(html, new RegExp(`<summary>${c.reviewDimensions}</summary>`),
+  'and they are no longer folded away');
+/* Only what the evaluator returned. No average, no invented confidence. */
+const scoreless = writingReview(c, { ...result, overall: null, dimensions: {} }, { language: 'en', text });
+assert.doesNotMatch(scoreless, /review-headline|review-dimensions/,
+  'no score and no dimensions means none are drawn');
+assert.doesNotMatch(scoreless, /(100|50|0)\s*%/, 'and nothing is computed to fill the gap');
+const partial = writingReview(c, { ...result, dimensions: { grammar: 50 } }, { language: 'en', text });
+assert.equal((partial.match(/class="review-dimension"/g) || []).length, 1,
+  'one scored dimension draws one row, not a full rubric of blanks');
+
+/* --- A review belongs to the words it was written about ----------------- */
+assert.match(expression, /let reviewedText = null/, 'the room remembers which words were reviewed');
+assert.match(expression, /function markReviewFreshness\(\)/, 'and says whether that is still current');
+assert.match(expression, /reviewedText !== null && reviewedText !== box\.value/,
+  'by comparing them, not by guessing from a timer');
+assert.match(expression, /data-review-stale-note/, 'the learner is told, in the result frame');
+/* The workspace's flag and the note are different names on purpose: one
+   selector matching both hid the whole workspace, and only the grid's own
+   `display` kept that from being visible. */
+assert.ok(
+  !/querySelector\('\[data-review-stale\]'\)/.test(expression),
+  'the note is addressed by its own name',
+);
+assert.doesNotMatch(
+  expression.slice(expression.indexOf('function markReviewFreshness(')),
+  /feedback\.innerHTML = ''|\.remove\(\)/,
+  'and the review is not taken away from somebody who is acting on it',
+);
+for (const ui of ['en', 'zh', 'vi'])
+  for (const key of ['reviewStale', 'reviewStaleAction', 'writingTooLong', 'writingTooLongPaste'])
+    assert.ok(copy[ui][key]?.trim(), `${ui}.${key} is said in the support language`);
+
+/* --- What never reaches the network ------------------------------------- */
+const limits = read('static/orena/capabilities/writing-limits.js');
+assert.match(limits, /export function measureWriting/, 'the browser can measure a piece of writing');
+assert.match(limits, /export function editWouldFit/, 'and an edit before it happens');
+assert.match(expression, /box\.addEventListener\('paste'/, 'a paste is judged before it is inserted');
+assert.ok(
+  new RegExp('event\\.preventDefault\\(\\);\\s*sayTrouble').test(expression),
+  'and refused whole',
+);
+assert.doesNotMatch(limits, /\.slice\(0, MAX|substring/, 'nothing here truncates a learner');
+assert.match(expression, /const measured = measureWriting\(event\.target\.value\)/,
+  'and any other way text arrives is measured too');
+/* The browser and the server share one contract, and a gate fails on drift. */
+const python = read('writing_coach/writing_limits.py');
+for (const name of ['MAX_CHARACTERS', 'MAX_BYTES', 'MAX_LINES']) {
+  const inJs = limits.match(new RegExp('export const ' + name + ' = (\\d+)'))?.[1];
+  const inPy = python
+    .match(new RegExp('^' + name + ' = ([\\d_]+)', 'm'))?.[1]
+    ?.replace(/_/g, '');
+  assert.ok(inJs && inPy, `${name} is stated on both sides`);
+  assert.equal(inJs, inPy, `${name} must be the same number in the browser and on the server`);
+}
 assert.ok(html.includes(c.reviewMore), 'and so are the remaining corrections');
 /* Nothing is dropped: a folded section is still whole. */
 assert.ok(html.includes('Practise the past tense.'), 'the priorities survive the fold');
@@ -147,6 +221,8 @@ const submit = expression.slice(expression.indexOf("root.querySelector('form').o
 assert.doesNotMatch(submit, /box\.value = |textarea'\)\.value = /, 'a review never writes into the box');
 assert.match(expression, /data-revise/, 'revising is offered');
 assert.match(contract, /27\. \*\*The writing revision loop\.\*\*/, 'the durable rule is recorded');
+assert.match(contract, /28\. \*\*Bounded before it is spent on\.\*\*/, 'and so is the resource bound');
+assert.match(contract, /29\. \*\*A valid evaluation is reused, never recomputed\.\*\*/, 'and the reuse rule');
 
 /* --- A stale device record never blocks a learner from being read ------- */
 assert.match(expression, /error\?\.category !== 'parent_essay_not_found'/,
@@ -154,11 +230,18 @@ assert.match(expression, /error\?\.category !== 'parent_essay_not_found'/,
 assert.match(expression, /parentId = null;\n\s+result = await ask\(null\)/, 'and the review is asked for again');
 
 /* --- Generated guidance speaks the support language --------------------- */
+/* And it is the evaluation that says so, not the device that happened to ask
+   for it: a review earned on one device is recognised on another, and a
+   Vietnamese one is never replayed to a learner now reading Chinese. */
 const backend = read('app.py');
 assert.match(backend, /support_language_name=support_name/, 'the evaluator is told which language to answer in');
 assert.match(backend, /def _resolved_writing_support_language/, "from the learner's own profile");
-assert.match(expression, /support: ctx\.support/, 'and the device records which one it asked for');
-assert.match(expression, /const reviewedInSupport = /, 'so a stored review is only replayed when it still fits');
+const identity = read('writing_coach/writing_review_identity.py');
+assert.match(identity, /"support_language": normalized_support/, 'the support language is part of a review identity');
+assert.match(identity, /EVALUATOR_CONTRACT_VERSION/, 'and so is the evaluator agreement it was produced under');
+assert.match(expression, /const reviewSpeaksTo = /, 'the room asks the stored identity, not a device record');
+assert.match(expression, /identity\.support_language/, 'about the support language');
+assert.doesNotMatch(expression, /entry\.support === ctx\.support/, 'the device-only guess is retired');
 assert.match(contract, /does not replay it\./, 'the durable rule is recorded');
 
 /* --- EN, ZH and VI all say it ------------------------------------------- */

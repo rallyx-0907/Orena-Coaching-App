@@ -35,6 +35,26 @@ class LearningRepository(Protocol):
     def delete_saved_word(self, word: str) -> bool: ...
 
 
+def _essay_module_data(values: dict[str, Any]) -> dict[str, Any]:
+    """What travels in an essay's metadata bag, decided once for both backends.
+
+    The practice it came from, the grammar it touched, and - since reviews
+    became reusable - the identity of the review this row *is*: which words,
+    which two languages, which level, which evaluator contract. Kept here so
+    SQLite and PostgreSQL cannot drift into storing different things.
+    """
+    module_data: dict[str, Any] = {}
+    practice_context = values.get("practice_context")
+    grammar_links = values.get("grammar_links") or []
+    review_identity = values.get("review_identity") or None
+    if practice_context is not None or grammar_links:
+        module_data["practice"] = practice_context
+        module_data["grammar_links"] = grammar_links
+    if review_identity:
+        module_data["review"] = review_identity
+    return module_data
+
+
 class LearningCacheRepository(Protocol):
     def get_dictionary(self, word: str) -> dict[str, Any] | None: ...
     def put_dictionary(self, word: str, payload: dict[str, Any], fetched_at: str) -> None: ...
@@ -227,8 +247,6 @@ class SQLiteLearningRepository:
         return int(row[0])
 
     def create_essay(self, values: dict[str, Any]) -> dict[str, Any]:
-        practice_context = values.get("practice_context")
-        grammar_links = values.get("grammar_links") or []
         with self.connect() as conn:
             cur = conn.execute(
                 """
@@ -249,10 +267,11 @@ class SQLiteLearningRepository:
                 ),
             )
             essay_id = int(cur.lastrowid)
-            if practice_context is not None or grammar_links:
+            module_data = _essay_module_data(values)
+            if module_data:
                 conn.execute(
                     "UPDATE essays SET module_data_json = ? WHERE id = ?",
-                    (json.dumps({"practice": practice_context, "grammar_links": grammar_links}, ensure_ascii=False), essay_id),
+                    (json.dumps(module_data, ensure_ascii=False), essay_id),
                 )
             series_id = int(values.get("series_id") or essay_id)
             if values.get("series_id") is None:
@@ -581,7 +600,7 @@ class PostgresLearningRepository:
                 task_achievement=float(values["task_achievement"]), naturalness=float(values["naturalness"]), overall=float(values["overall"]),
                 level_estimate=values["cefr_estimate"], evaluator=values["evaluator"], summary_vi=values["summary_vi"],
                 strengths=json.loads(values["strengths_json"]), priorities=json.loads(values["priorities_json"]),
-                errors=json.loads(values["errors_json"]), module_data={"practice": values["practice_context"], "grammar_links": values.get("grammar_links") or []} if (values.get("practice_context") or values.get("grammar_links")) else {},
+                errors=json.loads(values["errors_json"]), module_data=_essay_module_data(values),
                 strength_evidence=json.loads(values["strength_evidence_json"]),
             )
             session.add(essay)

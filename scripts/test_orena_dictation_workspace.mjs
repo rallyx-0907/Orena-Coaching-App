@@ -10,8 +10,8 @@
    The second was navigational. "Back to Follow" and "Next" sat side by side as
    two arrows, so a learner reaching for the line before left Dictation
    altogether. Leaving is chrome; moving through the lesson is task navigation,
-   and Dictation - which hides the transcript - offers the lesson's own lines,
-   by what they say, behind one control. */
+   and Dictation - which hides the transcript - moves through it with two
+   arrows and a position, and nothing else. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { segmentHoldAction } from '../static/orena/capabilities/media-player.js';
@@ -86,45 +86,37 @@ assert.match(encounter, /previousButton\.onclick = \(\) => moveTo\(at - 1\)/, 'P
 assert.match(encounter, /nextButton\.onclick = \(\) => moveTo\(nextIndex\)/, 'Next is the line after');
 assert.match(encounter, /previousButton\.disabled = at <= 0/, 'the first line has no line before it');
 
-/* --- The lesson's own lines are the navigation -------------------------- */
-/* A strip of numbered pills - 01 02 03 04 05 06 - took a row of the workspace
-   to say nothing a learner could recognise. The lines themselves are what a
-   learner picks from, and they sit behind one control rather than on screen,
-   because a transcript on display while somebody writes it down is the answer
-   sheet. Asking for it is the learner's own act, like Reveal beside it. */
+/* --- Previous, where you are, Next - and nothing else ------------------- */
+/* Two attempts at arbitrary segment selection have been removed. Numbered
+   pills said nothing a learner could recognise; a popover of real sentences
+   read better but overlapped its own text, overflowed its pane and covered the
+   task. Both were a second way to do what the two arrows already do. */
 assert.doesNotMatch(encounter, /segment-navigator|data-goto-segment|data-segment-list/,
-  'the numbered pills are gone');
-assert.doesNotMatch(rooms, /\.segment-navigator/, 'and so is their stylesheet');
-assert.doesNotMatch(encounter, /c\.lineNumber/, 'and nothing names a line by its number');
-const lines = encounter.slice(
-  encounter.indexOf('const linesHost = practiceRoot.querySelector'),
-  encounter.indexOf("    if (intent === 'dictation') {"),
-);
-assert.match(lines, /label: segment\.original_text/, "a line is offered by what it says");
-assert.match(lines, /lang: language/, 'in the learning language, because it is content');
-assert.match(lines, /note: duration\(segment\.start_ms\)/, 'with when it is said');
-assert.match(lines, /current: index === at/, 'the line being written is marked');
-assert.match(lines, /done: written\(segment\)/, 'and so is one already written down');
-assert.match(lines, /doneLabel: c\.lineWritten/, 'the mark is said in words too');
-assert.match(lines, /memory\.value\.answers\[`\$\{payload\.asset\.asset_id\}:\$\{segment\.segment_id\}`\]/,
-  "from the learner's own answers, not a second store of progress");
-assert.match(lines, /moveTo\(Number\(name\.slice\(5\)\)\)/, 'choosing one stays inside Dictation');
-assert.match(lines, /learningToolbar\(/, 'it reuses the shared bar rather than a component of its own');
+  'no numbered pills');
+assert.doesNotMatch(encounter, /data-lines-host|linesHost/, 'and no segment list behind a control');
+assert.doesNotMatch(encounter, /c\.lineNumber|c\.lineList|c\.lineWritten/,
+  'nothing names a line by number or lists them');
+assert.doesNotMatch(rooms, /\.segment-navigator/, 'and no stylesheet for either');
 const toolbar = read('static/orena/ui/learning-toolbar.js');
-assert.match(toolbar, /function menuItemHtml/, "a menu item can carry the learner's own material");
-assert.match(toolbar, /learning-menu__label/, 'the content is the label');
+assert.doesNotMatch(toolbar, /learning-menu__label|menuItemHtml|entry\.done/,
+  'the shared bar keeps plain menu items, with nothing left over from the picker');
 const foundation = read('static/orena/foundation.css');
-assert.match(foundation, /@media \(max-width: 600px\)[\s\S]*?\.learning-menu \{[\s\S]*?position: fixed/,
-  'and on a phone the list is a sheet, not a popover that can overflow');
-/* Only the lines control is new; the movement that needs no name stays open. */
-assert.match(encounter, /class="practice-steps"/, 'Previous, the place and Next stay in the open');
-assert.doesNotMatch(encounter, /practiceRoot\.querySelector\('\[data-segment-list\]'\)/, 'no second list component');
+assert.doesNotMatch(foundation, /learning-menu--wide/, 'and no stylesheet for one either');
+/* The practice panel's navigation is three things, and the third is a state. */
+const steps = encounter.slice(
+  encounter.indexOf('<nav class="practice-steps"'),
+  encounter.indexOf('<div data-practice-body>'),
+);
+assert.match(steps, /data-prev-moment/, 'Previous');
+assert.match(steps, /class="practice-place"/, 'where you are');
+assert.match(steps, /data-next-moment/, 'Next');
+assert.doesNotMatch(steps, /data-menu-toggle|learningToolbar/, 'and no fourth control');
+assert.equal((steps.match(/<button/g) || []).length, 2, 'two controls in the row, both arrows');
 
 /* --- EN, ZH and VI all say it ------------------------------------------- */
 for (const ui of ['en', 'zh', 'vi'])
   for (const key of [
-    'exitPractice', 'previousLine', 'nextLine', 'lineList',
-    'lineWritten', 'lineNow', 'lineActionsLabel',
+    'exitPractice', 'previousLine', 'nextLine', 'lineNow', 'lineActionsLabel',
   ]) {
     assert.equal(typeof copy[ui][key], 'string', `${ui}.${key} exists`);
     assert.ok(copy[ui][key].trim(), `${ui}.${key} is not empty`);

@@ -281,6 +281,25 @@ Explicit human direction after a learning-surface review. Rules 1-18 stand.
     understand model configuration to be read. A review that cannot be produced
     is one compact line beside the action, not a pane.
 
+28. **Bounded before it is spent on.** Learner content is untrusted input.
+    Every surface that accepts it states one product bound - shared by the
+    browser, the request model, the route, the repository and the evaluator -
+    and refuses what exceeds it before anything is spent: before a row, a
+    tokenizer pass, a prompt or a provider call. A refusal carries the
+    measurement, never the content, so an oversized request cannot put a
+    learner's work into a log. Nothing is silently truncated and no encoding is
+    cut mid-character: refusing a piece whole is the honest answer, keeping
+    part of it is not. A database column type is not a product limit.
+
+29. **A valid evaluation is reused, never recomputed.** Generated work that
+    costs money and is deterministic in its inputs - a writing review, and
+    anything like it - carries the identity it was produced under: the content,
+    both languages, the relevant settings, and the version of the agreement
+    that produced it. A request for the same identity is answered from what is
+    stored. Reopening a piece, pressing the action again, a second tab and
+    concurrent duplicates cost nothing; only a genuine change earns a new call.
+    A stored answer is never served past the contract that produced it.
+
 ## The learner language contract
 
 Orena has two learner language roles, and only two.

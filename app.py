@@ -1,9 +1,11 @@
 import json
 import hashlib
+import logging
 import random
 import os
 import re
 import statistics
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -101,7 +103,20 @@ from writing_coach.media_source_import import MediaSourceImporter
 from writing_coach.book_asset_store import FilesystemBookAssetStore
 from writing_coach.speech_asr import GroqSpeechAsrProvider
 from writing_coach.speech_pronunciation import build_speech_pronunciation_provider
-from writing_coach.core.errors import orena_http_error
+from writing_coach.core.errors import error_detail, orena_http_error
+from writing_coach.writing_limits import (
+    MAX_BYTES,
+    MAX_CHARACTERS,
+    MAX_PROMPT_CHARACTERS,
+    MAX_REVIEW_BYTES,
+    MAX_REVIEW_ITEMS,
+    measure_writing,
+)
+from writing_coach.writing_review_identity import (
+    identity_of_stored,
+    review_identity,
+    same_review,
+)
 from writing_coach.core.platform_api import router as platform_router
 from writing_coach.core.language_registry import is_enabled
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX
@@ -151,7 +166,7 @@ from writing_coach.readiness_summary import build_readiness_summary
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.exception_handlers import request_validation_exception_handler as fastapi_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -174,9 +189,67 @@ SCHEMA_VERSION = 11
 app = FastAPI(title="Orena", version=APP_VERSION)
 
 
+# The Writing endpoints that carry learner prose, and the largest body any of
+# them can legitimately need. Bounded here rather than globally, because an
+# EPUB or a media file is a legitimately large upload and must stay possible.
+#
+# The allowance is generous against the writing contract - JSON escaping, the
+# prompt, the intention and the envelope all ride along - and still refuses a
+# body that is not writing at all, before a parser has looked at it.
+_WRITING_BODY_PATHS = ("/api/evaluate", "/api/improve", "/api/work/drafts")
+_MAX_WRITING_BODY_BYTES = 4 * MAX_BYTES
+
+
+@app.middleware("http")
+async def bound_writing_request_bodies(request: Request, call_next):
+    """Refuse an oversized Writing body before anything reads it.
+
+    `Content-Length` is a claim, not a fact, so this is the cheap first gate
+    and not the only one: the route measures the actual text afterwards. What
+    this buys is that a client announcing ten megabytes is turned away without
+    a parse, an allocation or a line in a log containing any of it.
+    """
+    path = request.url.path.rstrip("/")
+    if any(path.startswith(prefix) for prefix in _WRITING_BODY_PATHS):
+        declared = request.headers.get("content-length")
+        try:
+            size = int(declared) if declared is not None else 0
+        except ValueError:
+            size = 0
+        if size > _MAX_WRITING_BODY_BYTES:
+            logging.getLogger(__name__).warning(
+                "writing body refused: endpoint=%s declared_bytes=%d max_bytes=%d",
+                path,
+                size,
+                _MAX_WRITING_BODY_BYTES,
+            )
+            return JSONResponse(
+                status_code=413,
+                content={
+                    "detail": error_detail(
+                        "writing_too_large",
+                        "This request is larger than Orena accepts.",
+                        retryable=False,
+                        context={"bytes": size, "max_bytes": _MAX_WRITING_BODY_BYTES},
+                    )
+                },
+            )
+    return await call_next(request)
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_response(request: Request, exc: RequestValidationError) -> Response:
-    """Preserve FastAPI validation bodies while marking mutable dictionary errors."""
+    """Preserve FastAPI validation bodies while marking mutable dictionary errors.
+
+    Without the rejected value. FastAPI echoes the input that failed, which for
+    a length rule means echoing the whole over-long field back to the client
+    and into anything that records the response - a learner's essay, in full,
+    because it was one character too long. The type, the location and the
+    message say what is wrong; the value adds nothing and travels badly.
+    """
+    for error in exc.errors():
+        if isinstance(error, dict):
+            error.pop("input", None)
     response = await fastapi_validation_exception_handler(request, exc)
     if request.url.path.rstrip("/") == "/api/dictionary":
         response.headers["Cache-Control"] = "no-store"
@@ -258,8 +331,11 @@ class WritingContextIn(BaseModel):
 
 
 class EssayIn(BaseModel):
-    prompt: str = Field(default="", max_length=5000)
-    text: str = Field(min_length=10, max_length=20000)
+    # The shared Writing contract (`writing_coach/writing_limits.py`), not what
+    # a TEXT column happens to hold. The route measures bytes and lines too,
+    # which a character bound cannot see.
+    prompt: str = Field(default="", max_length=MAX_PROMPT_CHARACTERS)
+    text: str = Field(min_length=10, max_length=MAX_CHARACTERS)
     target_cefr: str | None = Field(default=None, min_length=2, max_length=12)
     writing_mode: str = Field(default="guided", pattern=r"^(guided|journal)$")
     writing_context: WritingContextIn = Field(default_factory=WritingContextIn)
@@ -1917,8 +1993,103 @@ def api_delete_vocabulary(word: str) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     return {"deleted": _learning_repository.delete_saved_word(clean)}
 
+def _guard_writing_size(text: str, *, endpoint: str) -> None:
+    """Refuse writing that is not writing, before anything is spent on it.
+
+    First, and deterministically. Everything after this point costs something -
+    a tokenizer pass, a prompt, a row, a provider call - and none of it should
+    be reachable by sending a megabyte. The refusal carries the measurement so
+    a learner is told by how much, and carries no part of the text, so an
+    oversized request cannot put somebody's writing into a log.
+    """
+    measured = measure_writing(text)
+    if measured.within_limits:
+        return
+    # Operational metadata only: the size, the limit and where it happened.
+    # Never the writing itself, however small the breach.
+    logging.getLogger(__name__).warning(
+        "writing size refused: endpoint=%s limit=%s characters=%d bytes=%d lines=%d",
+        endpoint,
+        measured.limit_exceeded,
+        measured.characters,
+        measured.bytes,
+        measured.lines,
+    )
+    raise orena_http_error(
+        413,
+        "writing_too_large",
+        "This piece of writing is longer than Orena accepts.",
+        retryable=False,
+        context=measured.as_context(),
+    )
+
+
+def _bounded_review(result: dict[str, Any]) -> dict[str, Any]:
+    """Refuse a provider answer that is not an answer.
+
+    The schema already says what shape a review has; this says how much of it
+    there may be. A model that returns ten thousand issues would otherwise
+    become a multi-megabyte row and a page nobody can render - so the
+    collections are bounded and an answer that is still enormous after that is
+    rejected rather than stored.
+    """
+    bounded = dict(result)
+    for key in ("errors", "strengths_vi", "priorities_vi", "strength_evidence"):
+        value = bounded.get(key)
+        if isinstance(value, list) and len(value) > MAX_REVIEW_ITEMS:
+            bounded[key] = value[:MAX_REVIEW_ITEMS]
+    size = len(json.dumps(bounded, ensure_ascii=False, default=str).encode("utf-8"))
+    if size > MAX_REVIEW_BYTES:
+        raise orena_http_error(
+            502,
+            "writing_review_unusable",
+            "The review that came back could not be used.",
+            retryable=True,
+            context={"bytes": size, "max_bytes": MAX_REVIEW_BYTES},
+        )
+    return bounded
+
+
+# One evaluation per identity, even when several requests ask at once.
+#
+# The browser disables its button, which stops one learner double-clicking and
+# nothing else: a reload mid-flight, two tabs, a retry, or a direct client can
+# all ask for the same review concurrently, and each one would have been a
+# separate paid call. The first request through holds the identity; the others
+# wait for it and then read the answer it stored. Keyed by identity, so
+# different writing never waits on unrelated work.
+_review_in_flight: dict[str, threading.Lock] = {}
+_review_in_flight_guard = threading.Lock()
+
+
+def _review_gate(fingerprint: str) -> threading.Lock:
+    with _review_in_flight_guard:
+        lock = _review_in_flight.get(fingerprint)
+        if lock is None:
+            lock = threading.Lock()
+            _review_in_flight[fingerprint] = lock
+        return lock
+
+
+def _stored_review_for(identity: dict[str, str]) -> dict[str, Any] | None:
+    """A review already earned for exactly this request, if there is one.
+
+    Scoped by the repository to this account and learning language, so another
+    learner's essay can never answer this one.
+    """
+    # `detail=True` is what parses the metadata bag the identity lives in - and
+    # is also the shape a review is returned in, so a reused answer needs no
+    # second read.
+    for row in _learning_repository.list_essays(60):
+        stored = row_to_dict(row, detail=True)
+        if same_review(identity, identity_of_stored(stored.get("module_data"))):
+            return stored
+    return None
+
+
 @app.post("/api/evaluate")
 def api_evaluate(payload: EssayIn) -> dict[str, Any]:
+    _guard_writing_size(payload.text, endpoint="/api/evaluate")
     active_language = active_grammar_language_code()
     if payload.learning_language:
         requested_language = payload.learning_language.casefold().replace("_", "-")
@@ -1947,7 +2118,44 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         series_id = int(previous["series_id"] or previous["id"])
         revision_no = _learning_repository.next_revision_no(series_id)
 
+    # Has this exact review already been earned?
+    #
+    # The same words, task, level and pair of languages, judged by the same
+    # evaluator contract, are the same review. Asking a provider for it again
+    # buys nothing and is charged every time - so the identity is computed
+    # first and a stored answer is returned as it stands. A learner pressing
+    # Review twice, a reload, a second tab and a retry all land here.
+    #
+    # The gate below makes that true under concurrency too: the first request
+    # holds the identity, the rest wait and then find the answer it stored.
+    # Twenty identical requests are one provider call.
+    support_code, _support_name = _resolved_writing_support_language()
+    identity = review_identity(
+        text=payload.text,
+        learning_language=active_language,
+        support_language=support_code,
+        target_level=payload.target_cefr or "",
+        prompt=payload.prompt,
+    )
+    existing = _stored_review_for(identity)
+    if existing is not None:
+        return _review_payload(existing, previous)
+    with _review_gate(identity["fingerprint"]):
+        existing = _stored_review_for(identity)
+        if existing is not None:
+            return _review_payload(existing, previous)
+        return _run_review(payload, identity, previous, series_id, revision_no)
+
+
+def _run_review(
+    payload: EssayIn,
+    identity: dict[str, str],
+    previous: dict[str, Any] | None,
+    series_id: int | None,
+    revision_no: int,
+) -> dict[str, Any]:
     result, evaluator = evaluate(payload)
+    result = _bounded_review(result)
     result["grammar_links"] = grammar_links_for_issues(
         result.get("errors", []),
         active_grammar_knowledge_by_id(),
@@ -1970,7 +2178,9 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "prompt": payload.prompt,
         "text": payload.text,
         "word_count": word_count,
-        "target_cefr": payload.target_cefr,
+        # "no level asked for" is an empty level, not a missing one: the column
+        # is NOT NULL and the PostgreSQL side already defaults it to "".
+        "target_cefr": payload.target_cefr or "",
         "grammar": result["grammar"],
         "vocabulary": result["vocabulary"],
         "coherence": result["coherence"],
@@ -1989,6 +2199,10 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "parent_id": payload.parent_essay_id,
         "practice_context": practice_context,
         "grammar_links": result["grammar_links"],
+        # The identity of the review travels with the review, in the per-essay
+        # metadata both backends already persist - so no column and no
+        # migration, and it reaches the client through the same payload.
+        "review_identity": identity,
     })
     essay_id = int(created["id"])
     series_id = int(created["series_id"])
@@ -2006,6 +2220,25 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "evaluator": evaluator,
         "delta": delta,
         **result,
+    }
+
+
+def _review_payload(stored: dict[str, Any], previous: dict[str, Any] | None) -> dict[str, Any]:
+    """A stored evaluation, shaped exactly as a fresh one.
+
+    A reused review must be indistinguishable from an earned one, or the room
+    would have to know which it got and would drift into two renderings of the
+    same thing. It is the stored row, read through the same serializer, with
+    the same delta computed against the same previous revision.
+    """
+    overall = float(stored.get("overall") or 0.0)
+    delta = revision_delta({**stored, "overall": overall}, previous)
+    return {
+        **stored,
+        "overall": overall,
+        "app_cefr": app_cefr(overall),
+        "delta": delta,
+        "reused": True,
     }
 
 

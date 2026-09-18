@@ -2013,8 +2013,6 @@ Object.assign(copy.en, {
   lineNavigation: 'Move through the lines',
   previousLine: 'Previous line',
   nextLine: 'Next line',
-  lineList: 'Lines in this lesson',
-  lineWritten: 'written down',
 });
 Object.assign(copy.zh, {
   lineActionsLabel: '对这句话可以做什么',
@@ -2023,8 +2021,6 @@ Object.assign(copy.zh, {
   lineNavigation: '在句子之间移动',
   previousLine: '上一句',
   nextLine: '下一句',
-  lineList: '本课的句子',
-  lineWritten: '已听写',
 });
 
 /* Writing, as a workspace rather than a form.
@@ -2052,6 +2048,22 @@ Object.assign(copy.zh, {
   reviewAgain: '再看一次',
   writingIntentionNone: '说明这是写给谁、做什么的',
   writingKeepWriting: '回到写作',
+});
+
+/* What a learner is told when a piece will not fit, and when the review they
+   are looking at belongs to words they have since changed. Both are the
+   support language's to say, like every other word Orena speaks. */
+Object.assign(copy.en, {
+  writingTooLong: 'This is longer than Orena can take in one piece. Nothing was added, and what you wrote is untouched.',
+  writingTooLongPaste: 'That paste is too long to add here. What you wrote is untouched.',
+  reviewStale: 'You have changed this piece. This review belongs to the version before your edits.',
+  reviewStaleAction: 'Review the new version',
+});
+Object.assign(copy.zh, {
+  writingTooLong: '这段文字超过了 Orena 一次能处理的长度。没有添加任何内容，你写的东西原封不动。',
+  writingTooLongPaste: '要粘贴的内容太长，无法加在这里。你写的东西原封不动。',
+  reviewStale: '你已经改过这篇文字。这份反馈对应的是修改之前的版本。',
+  reviewStaleAction: '查看新版本的反馈',
 });
 
 import { vi } from './copy-vi.js';

@@ -39,37 +39,37 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-D-057 and the surfaces under it: `ART_BIBLE.md` in `assets/brand/orena/`;
-`ui/cover.js` draws one cover per item. Discover opens on one action; Continue
-reads as continuity. Reading opens on the library, cover-first; `reader.css`
-gives the text a measure and `ui/lexical.js` is its interaction layer, shared
-with the transcript and the practised line. Listening is two panes: media left,
-transcript right, the spoken line IS the active row - no duplicated stage.
-Dictation hides the writing response. Speaking is a composed module, not a card
-wall. A synthetic result is never a pronunciation score.
+D-057 and the surfaces under it. `ui/cover.js` draws one cover per item;
+`ui/lexical.js` is the shared interaction layer for reader, transcript and
+practised line. Listening is two panes, the spoken line IS the active row.
+Dictation hides the writing response. Speaking is a composed module. A
+synthetic result is never a pronunciation score.
+
+A review is earned once (D-051 rules 28-29). Every evaluation carries the
+identity it was produced under - text, both languages, level, task, evaluator
+contract - in the `module_data` both backends already persist, so no migration.
+An identical ask is served from it: reload 0 calls, unchanged Review 0, edited
+revision 1, eight concurrent identical asks 1. The score overview leads the
+review; editing marks it as the previous version rather than deleting it.
+Learner writing is bounded by one shared contract
+(`writing_coach/writing_limits.py` + `capabilities/writing-limits.js`, a gate
+fails on drift): 12,000 code points / 60,000 bytes / 1,000 lines, refused whole
+and never truncated, before any row, prompt or provider call; Writing bodies
+are capped in middleware and validation errors no longer echo the rejected
+text. Dictation's segment picker is gone for good - Previous, position, Next.
 
 Writing is a workspace (D-051 rule 27): what the piece is for sits in the
 heading, the page takes the width until a review exists, one primary action in
-one word, the level a setting in the bar. Feedback leads with up to three
-corrections and folds the rest whole; a quote is found in the learner's own
-text by selection (`ui/writing-locate.js`), never by rewriting it. A review
-that cannot be made is one line beside the action. Dictation's numbered pills
-are gone: the lesson's own lines, behind one control. Fixed: a stale device
-`parent_essay_id` made Review fail permanently; it is dropped and re-asked. A
-stored review is replayed only when this device asked for it in the current
-support language.
+one word. The overview leads, then up to three corrections, then folds; a quote
+is located in the learner's own text by selection (`ui/writing-locate.js`),
+never by rewriting it. A stale `parent_essay_id` is dropped and re-asked.
 
 Before it (D-051 rules 23-26): a transcript row keeps its geometry when the
-voice reaches it - every row carries when/line/reading/meaning, and which show
-is a panel preference. Its actions live in `ui/learning-toolbar.js`, the shared
-icon-first bar whose menus are measured against the viewport and become a sheet
-on a phone. Dictation binds the player to the line being written
-(`holdSegment`). A supported locale owns every string its surfaces ask for:
-`copy.vi` and `referenceCopy.vi` complete for en/zh/vi, `untranslated()` records
-a shortfall, and the gate fails on silent English, including families composed
-at the point of use (`topic_`, `pos_`, `rubric_`).
+voice reaches it; its actions live in `ui/learning-toolbar.js`; Dictation binds
+the player to the line being written (`holdSegment`); en/zh/vi each own every
+interface string their surfaces ask for, and the gate fails on silent English.
 
-Verified: pytest `1109 passed, 118 skipped`, all 49 CI `.mjs` gates, ESM graph,
+Verified: pytest `1127 passed, 118 skipped`, all 49 CI `.mjs` gates, ESM graph,
 both validators, and the Python CI validators. Browser pass on
 `orena-foundation-web`:8011 for vi/en, zh/en and vi/zh at desktop and 390px,
 including a real Gemini review, revision and re-review. No CI claim.

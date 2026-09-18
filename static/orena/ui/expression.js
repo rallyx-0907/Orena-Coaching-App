@@ -34,6 +34,11 @@ import {
   shownIssues,
 } from './writing-review.js';
 import { locateInText } from './writing-locate.js';
+import {
+  MAX_CHARACTERS,
+  editWouldFit,
+  measureWriting,
+} from '../capabilities/writing-limits.js';
 import {bindRevisionWorkbench} from './revision-workbench.js';
 import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
 import { openRegisters } from './registers.js';
@@ -104,6 +109,16 @@ export async function renderExpression(root, ctx) {
   // every time the learner comes back to the same piece.
   let parentId =
     [...revisionsOf()].reverse().find((x) => x.essay_id)?.essay_id ?? null;
+  /* The room opened from the sidebar is `expression:free`, not `essay:<n>`, so
+     it has no server series to load - and reopening it therefore came back
+     with the draft restored and the review it had already paid for missing.
+
+     The device knows which server version this piece last became: that is the
+     same number the next review continues from. Reading it back is one GET,
+     never an evaluation, and it is what makes a reload cost nothing at all. */
+  const lastReview =
+    series?.latest ||
+    (parentId ? await api.essay(parentId).catch(() => null) : null);
   const seriesTitle = series
     ? String(series.latest.prompt || '').split('\n')[0].trim()
     : '';
@@ -149,7 +164,7 @@ export async function renderExpression(root, ctx) {
       ],
     },
   ];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a>${draftStatus(ctx)}</div><header class="writing-head"><small>${esc(c.writingName)}</small><h1>${esc(title)}</h1><div class="writing-intention"><label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}">${hint({ text: c.writingTaskNote })}</div>${hasSource ? `<p class="writing-head__prompt" lang="${language}">${esc(prompt)}</p>` : ''}</header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="writing-bar"><span class="meta" data-character-count aria-live="polite"></span><label class="review-target"><span class="sr-only">${esc(c.reviewTarget)}</span><select name="target" data-tip="${esc(c.reviewTarget)}" aria-label="${esc(c.reviewTarget)}"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label>${learningToolbar(writingActions, { label: c.writingName })}<button class="primary" data-review-action>${esc(c.reviewAction)}</button></div><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a>${draftStatus(ctx)}</div><header class="writing-head"><small>${esc(c.writingName)}</small><h1>${esc(title)}</h1><div class="writing-intention"><label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}">${hint({ text: c.writingTaskNote })}</div>${hasSource ? `<p class="writing-head__prompt" lang="${language}">${esc(prompt)}</p>` : ''}</header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="writing-bar"><span class="meta" data-character-count aria-live="polite"></span><label class="review-target"><span class="sr-only">${esc(c.reviewTarget)}</span><select name="target" data-tip="${esc(c.reviewTarget)}" aria-label="${esc(c.reviewTarget)}"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label>${learningToolbar(writingActions, { label: c.writingName })}<button class="primary" data-review-action>${esc(c.reviewAction)}</button></div><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
@@ -163,6 +178,14 @@ export async function renderExpression(root, ctx) {
     },
   );
   const workspace = root.querySelector('.writing-workspace');
+  /* Which words the review on screen was written about.
+
+     A learner who edits after a review still wants to see it - it is the last
+     thing anybody said about their writing - but it stops being *current* the
+     moment the words change. So the text it answered is remembered, and the
+     room says plainly whose version it belongs to rather than deleting it or
+     letting it pass for an answer about what is now in the box. */
+  let reviewedText = null;
   /* The secondary writing actions, in the shared bar rather than a second row
      of large buttons beside the primary one. Registers and the history of the
      piece are both things a learner reaches for sometimes, not every time. */
@@ -180,6 +203,22 @@ export async function renderExpression(root, ctx) {
      configured changes nothing about the writing, so it takes one row to say
      so and the workspace stays the workspace. */
   const trouble = root.querySelector('[data-writing-trouble]');
+  /* Say whether the review on screen is still about what is in the box.
+
+     Called whenever the words change and whenever a review arrives. It never
+     removes the feedback: a learner mid-revision is looking at it precisely
+     because they are acting on it, and taking it away the moment they type
+     would be taking away the reason they were typing. It stops being current,
+     visibly, and says how to make it current again. */
+  function markReviewFreshness() {
+    const stale = reviewedText !== null && reviewedText !== box.value;
+    workspace.dataset.reviewStale = String(stale);
+    // A distinct name from the workspace's own flag above: one selector that
+    // matched both would have hidden the whole workspace, and only the grid's
+    // own `display` kept that from showing.
+    const note = root.querySelector('[data-review-stale-note]');
+    if (note) note.hidden = !stale;
+  }
   const sayTrouble = (html) => {
     trouble.innerHTML = html || '';
     trouble.hidden = !html;
@@ -239,6 +278,8 @@ export async function renderExpression(root, ctx) {
     feedback.querySelector('[data-registers]').onclick = () =>
       openRegisters(ctx, { text, title });
     workspace.dataset.review = 'ready';
+    reviewedText = text;
+    markReviewFreshness();
     sayTrouble('');
     /* A quoted phrase is findable in the learner's own words rather than
        something to hunt for by eye, and the caret is left in it, so the
@@ -273,31 +314,36 @@ export async function renderExpression(root, ctx) {
     });
   };
   /* Reopened, the latest review is already there: the piece comes back with
-     what was said about it, not as a blank result frame.
+     what was said about it, not as a blank result frame - and without asking a
+     provider for anything, because it was already paid for once.
 
-     Unless it was written in a language the learner no longer reads. The
-     evaluator answers in the support language and the stored evaluation does
-     not record which one - so after a switch, a Chinese room replayed
-     Vietnamese explanations around Chinese headings. What this device asked
-     for is recorded with its own revisions, so a review it cannot vouch for is
-     simply not replayed: the piece and its versions are all still here, and
-     one press of Review answers in the language the learner reads now. */
-  const reviewedInSupport = (essayId) =>
-    revisionsOf().some(
-      (entry) => entry.essay_id === essayId && entry.support === ctx.support,
+     Whether it is *this* learner's review is the server's answer, not a guess:
+     every stored evaluation now carries the identity it was produced under
+     (`writing_coach/writing_review_identity.py`), including the support
+     language. A device-side record could only vouch for reviews this device
+     made; the identity travels with the evaluation, so a review earned on
+     another device is recognised here too - and a Vietnamese one is never
+     replayed to a learner now reading Chinese. */
+  const reviewSpeaksTo = (essay) => {
+    const identity = essay?.module_data?.review;
+    if (!identity) return false;
+    return (
+      String(identity.support_language || '') === String(ctx.support || '') &&
+      String(identity.learning_language || '').split('-')[0] === String(language).split('-')[0]
     );
-  if (
-    series?.latest &&
-    Array.isArray(series.latest.issues) &&
-    reviewedInSupport(series.latest.id)
-  )
-    presentReview(series.latest, String(series.latest.text || ''));
+  };
   /* Kept with the account when this deployment keeps work there; on this
      device always. The status says which is true, and a version changed on
      another device is shown for the learner to choose, never merged. */
   const box = root.querySelector('#expressionText');
   const taskInput = root.querySelector('[name=task]');
   const elsewhereNode = root.querySelector('[data-draft-elsewhere]');
+  // The piece comes back with what was said about it. Nothing is asked of a
+  // provider to do this: the evaluation was stored with the essay.
+  if (lastReview && Array.isArray(lastReview.issues) && reviewSpeaksTo(lastReview))
+    presentReview(lastReview, String(lastReview.text || ''));
+  root.querySelector('[data-review-again]').onclick = () =>
+    root.querySelector('form').requestSubmit();
   // The draft is the words and the task they answer, always together.
   function draftNow() {
     return { text: box.value, task: taskInput.value };
@@ -308,6 +354,8 @@ export async function renderExpression(root, ctx) {
     memory.write(id, draft.text);
     memory.write(`${id}::task`, draft.task);
     updateCount();
+    // The account's copy may be a version the review on screen predates.
+    markReviewFreshness();
   };
   const sync = draftSync({
     api,
@@ -355,12 +403,42 @@ export async function renderExpression(root, ctx) {
     memory.write(`${id}::task`, taskInput.value);
     sync.edit(draftNow());
   });
+  /* A paste that does not fit is refused before it is inserted.
+
+     The order matters: a learner who drops a whole document into the box
+     should be told so, not watched while the page lays out a megabyte and the
+     network carries it to a server that was always going to refuse it. The
+     edit is measured as it would leave the box, so what is judged is the
+     result - and when it does not fit, nothing is inserted and nothing the
+     learner already wrote is touched. Never truncated: keeping the first
+     twelve thousand characters of somebody's document is a worse answer than
+     saying it will not fit. */
+  box.addEventListener('paste', (event) => {
+    const incoming = event.clipboardData?.getData('text') ?? '';
+    if (!incoming) return;
+    const measured = editWouldFit(box.value, incoming, box.selectionStart, box.selectionEnd);
+    if (measured.withinLimits) return;
+    event.preventDefault();
+    sayTrouble(`<span>${esc(c.writingTooLongPaste)}</span>`);
+  });
   box.oninput = (event) => {
+    /* The box's own maxlength stops typing past the bound, and a paste is
+       stopped above. This is the last line: any other way text arrives - a
+       drop, an extension, a script - is measured here, and an over-long value
+       is rolled back rather than saved or sent. */
+    const measured = measureWriting(event.target.value);
+    if (!measured.withinLimits) {
+      event.target.value = memory.value.expressions[id] || '';
+      updateCount();
+      sayTrouble(`<span>${esc(c.writingTooLong)}</span>`);
+      return;
+    }
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing', excerpt });
     refreshDraftStatus(root.querySelector('[data-draft-status]'), ctx);
     sync.edit(draftNow());
     updateCount();
+    markReviewFreshness();
   };
   root.querySelector('form').onsubmit = async (event) => {
     event.preventDefault();

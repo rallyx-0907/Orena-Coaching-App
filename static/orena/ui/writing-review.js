@@ -196,16 +196,23 @@ export function writingReviewWaiting(c) {
   return `<div class="review-waiting"><small>${esc(c.review)}</small><p>${esc(c.reviewWaiting)}</p></div>`;
 }
 
-/* What a learner needs first, and in this order: what to do about this piece,
-   then what is already working, then the measurement, then the history.
+/* What a learner needs first, and in this order: where they are, then what to
+   do about it, then what is already working, then the history.
 
-   The review used to run headline, summary, every dimension, every change
-   since the last version, every strength and every issue as equals, ending in
-   a whole-piece rewrite. That is a report. A learner revising wants two or
-   three things to fix and their own words to fix them in, so the corrections
-   lead and everything else is kept, whole, behind a fold. Nothing is dropped:
-   the payload still decides what exists, and this only decides what is met
-   first (DESIGN_CONTRACT rule 27). */
+   The review once ran headline, summary, every dimension, every change since
+   the last version, every strength and every issue as equals, ending in a
+   whole-piece rewrite. That is a report, and the corrections were moved to the
+   front of it. But "what should I fix?" is the second question a learner asks;
+   the first is "how am I doing?" - and the measurement that answers it was
+   then the thing buried, several folds down, after the corrections.
+
+   So the overview leads: the score the evaluator gave, the level it read, the
+   movement since the last version, and the dimensions it scored - compactly,
+   as a few rows of numbers rather than a dashboard. Then the two or three
+   things worth doing now. Then everything else, kept whole behind a fold.
+
+   Nothing is dropped and nothing is invented: the payload decides what exists,
+   and this only decides what is met first (DESIGN_CONTRACT rule 27). */
 function fold(summary, body, { open = false } = {}) {
   return body
     ? `<details class="review-fold"${open ? ' open' : ''}><summary>${esc(summary)}</summary>${body}</details>`
@@ -224,7 +231,7 @@ export function writingReview(c, result, { language, text }) {
     result.evaluator === 'fallback-demo'
       ? `<p class="notice">${esc(c.demoMeasurement)}</p>`
       : ''
-  }<div class="review-head">${
+  }<section class="review-overview">${
     overall === null
       ? ''
       : `<div class="review-headline"><b>${Math.round(overall)}</b>${level ? `<span>${esc(level)}</span>` : ''}${movement(c, result)}</div>`
@@ -232,5 +239,5 @@ export function writingReview(c, result, { language, text }) {
     result.summary?.interpretation
       ? `<p class="review-summary">${esc(result.summary.interpretation)}</p>`
       : ''
-  }</div>${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${issues(c, result, language, text)}${fold(c.reviewStrengths, strengths(c, result, language, text))}${fold(c.reviewNext, priorities(c, result))}${fold(c.reviewDimensions, measurement)}${fold(c.reviewSinceLast, comparison(c, result, text))}${fold(c.reviewWholePiece, corrected(c, result, language))}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
+  }${measurement}</section>${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${issues(c, result, language, text)}${fold(c.reviewStrengths, strengths(c, result, language, text))}${fold(c.reviewNext, priorities(c, result))}${fold(c.reviewSinceLast, comparison(c, result, text))}${fold(c.reviewWholePiece, corrected(c, result, language))}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
 }

@@ -624,6 +624,13 @@ def test_api_evaluate_end_to_end_preserves_en_zh_evidence_and_provenance(
             self.created = values
             return {"id": 41, "series_id": 41, "revision_no": 1}
 
+        def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]:
+            # Part of the repository protocol, and asked before every review so
+            # an evaluation already earned for this exact request is reused
+            # rather than bought again. Nothing is stored here, so this double
+            # always answers "no such review yet" and the evaluator runs.
+            return []
+
     repository = FakeLearningRepository()
     monkeypatch.setattr(app, "_learning_repository", repository)
     monkeypatch.setattr(app, "active_grammar_language_code", lambda: language)

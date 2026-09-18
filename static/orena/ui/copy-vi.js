@@ -228,8 +228,6 @@ export const vi = {
   lineNavigation: 'Di chuyển giữa các câu',
   previousLine: 'Câu trước',
   nextLine: 'Câu sau',
-  lineList: 'Các câu trong bài này',
-  lineWritten: 'đã chép',
   exitPractice: 'Thoát',
   allMeaningNote:
     'Nghĩa được chuẩn bị sẵn cho bài này, hiện ngay dưới câu mà nó thuộc về.',
@@ -932,4 +930,13 @@ export const vi = {
   reviewAgain: 'Nhận xét lại',
   writingIntentionNone: 'Cho biết bài này viết để làm gì',
   writingKeepWriting: 'Quay lại viết',
+
+  // --- Writing bounds, and a review that belongs to an older version ------
+  writingTooLong:
+    'Phần này dài hơn mức Orena nhận được trong một lần. Không có gì được thêm vào, và bài bạn viết vẫn nguyên vẹn.',
+  writingTooLongPaste:
+    'Nội dung dán vào quá dài để thêm ở đây. Bài bạn viết vẫn nguyên vẹn.',
+  reviewStale:
+    'Bạn đã sửa bài này. Nhận xét dưới đây thuộc về bản trước khi sửa.',
+  reviewStaleAction: 'Nhận xét bản mới',
 };
