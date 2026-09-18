@@ -2003,5 +2003,55 @@ Object.assign(copy.zh, {
   pos_other: '词',
 });
 
+/* The transcript's shared action bar, and the navigation of a practice that
+   works through a lesson one line at a time. Both are named here rather than
+   in the room, because the support language owns every word Orena says. */
+Object.assign(copy.en, {
+  lineActionsLabel: 'What to do with this line',
+  lineNow: 'Now playing',
+  exitPractice: 'Leave',
+  lineNavigation: 'Move through the lines',
+  previousLine: 'Previous line',
+  nextLine: 'Next line',
+  lineList: 'Lines in this lesson',
+  lineNumber: 'Line {n}',
+  lineWritten: 'written down',
+});
+Object.assign(copy.zh, {
+  lineActionsLabel: '对这句话可以做什么',
+  lineNow: '正在播放',
+  exitPractice: '退出',
+  lineNavigation: '在句子之间移动',
+  previousLine: '上一句',
+  nextLine: '下一句',
+  lineList: '本课的句子',
+  lineNumber: '第 {n} 句',
+  lineWritten: '已听写',
+});
+
 import { vi } from './copy-vi.js';
+
+/* A supported learner locale owns its own words.
+
+   Merging a partial pack over English reads as a working product and is not
+   one: a learner with Vietnamese support met "Dictation", "Feedback target",
+   "USED WELL" and "Review my words" in the middle of Vietnamese, and nothing
+   anywhere said so. English arriving silently is the defect - not the missing
+   translation, which at least can be found.
+
+   So the merge stays, because a learner mid-sentence must never be shown a
+   key, and what each locale actually owns is recorded beside it. `packs` is
+   that record; `untranslated()` reads it. The CI gate
+   (`scripts/test_orena_learner_language.mjs`) fails on any learner surface
+   with a shortfall, and the shell warns on the developer's console at startup,
+   so a gap is loud where it can be fixed and quiet where it cannot. */
+export const supportedLocales = ['en', 'zh', 'vi'];
+const packs = { en: copy.en, zh: copy.zh, vi };
 copy.vi = { ...copy.en, ...vi };
+
+/* The keys a locale does not translate, out of the ones asked about. Asked
+   nothing, it answers for the whole of English. */
+export function untranslated(locale, keys = Object.keys(copy.en)) {
+  const own = packs[locale];
+  return own ? [...keys].filter((key) => !(key in own)) : [...keys];
+}

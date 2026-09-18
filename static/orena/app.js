@@ -1,5 +1,5 @@
 import { api } from './infrastructure/api.js';
-import { copy } from './ui/copy.js';
+import { copy, untranslated } from './ui/copy.js';
 import { esc, dialog, status } from './ui/html.js';
 import { route, link } from './product/intent.js';
 import { learnerMemory } from './product/memory.js';
@@ -117,9 +117,19 @@ const storage = (() => {
    reading an English product. The stored preference is kept so nothing breaks,
    but it no longer decides this on its own.
 
-   A locale with no copy pack falls back to English rather than showing keys. */
+   A locale with no copy pack at all falls back to English rather than showing
+   keys. A supported locale is expected to be complete, and a shortfall in one
+   is said out loud here - on the developer's console, where it can be fixed -
+   rather than reaching a learner as untold English (`ui/copy.js`). */
 const uiLocale = (support) => (copy[String(support || '')] ? String(support) : 'en');
 const ui = uiLocale(storage.getItem('orena.support') || storage.getItem('orena.interface'));
+{
+  const gap = untranslated(ui);
+  if (gap.length)
+    console.warn(
+      `[Orena copy] ${gap.length} interface strings have no ${ui} translation and are showing in English: ${gap.slice(0, 12).join(', ')}${gap.length > 12 ? '…' : ''}`,
+    );
+}
 const ctx = {
   api,
   ui,

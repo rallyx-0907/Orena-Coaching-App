@@ -233,6 +233,41 @@ Explicit human direction after a learning-surface review. Rules 1-18 stand.
     surface that begins from a card for every piece of content has started in
     the wrong place.
 
+23. **Active state does not restructure.** On a transcript, timeline, list or
+    any surface where the current item changes while the learner is reading,
+    becoming current must not change a row's height, padding, container or the
+    number of controls it holds. Every row carries the slots it can ever show;
+    which of those are shown is a property of the surface, so it is true of all
+    rows at once. Mark the current one with ground, edge, typography, state
+    text and non-layout transition - visual emphasis before structural
+    expansion. A list that grows where the voice is and collapses behind it is
+    the defect this rule names.
+
+24. **Reusable learner actions live in a shared toolbar.** An action that
+    repeats across items - replay, practise, show meaning, show reading, colour
+    the word classes, and the deeper intentions behind an overflow - belongs to
+    one compact bar with a stable place in the workspace, acting on the current
+    or selected item. It is not duplicated inside each content row, and each
+    surface adopting it extends the shared primitive rather than building its
+    own. A menu or popover is placed by measuring against the viewport and its
+    pane, opens inward at an edge, and on a phone becomes a sheet; it never
+    creates page scroll and never carries a hard-coded coordinate.
+
+25. **Icon first for shared actions, text carries the meaning.** Where a stable
+    semantic icon exists, a reusable learner control uses it, and the support
+    language supplies the tooltip, the accessible name, and a compact companion
+    label or menu item where the icon alone would be ambiguous. Oversized
+    text-only buttons are not the default shape of an action. Nothing depends
+    on the symbol alone.
+
+26. **No silent support-language fallback.** A supported learner locale owns
+    every interface string its surfaces ask for. A locale with no pack at all
+    falls back to English rather than showing keys, but a supported locale that
+    quietly renders English is a defect, not a shortfall: the gap is detected
+    by regression, recorded, and visible to whoever can close it. Learner
+    material is never translated by this rule - a target-language line, title
+    or passage is content.
+
 ## The learner language contract
 
 Orena has two learner language roles, and only two.
@@ -254,8 +289,12 @@ is a defect unless the content itself deliberately contains those languages -
 and a target-language title or passage appearing in target language is content,
 never leakage.
 
-A support locale with no copy pack yet falls back to English rather than showing
-keys, and the shortfall is recorded rather than hidden.
+A locale with no copy pack at all falls back to English rather than showing
+keys. A **supported** locale is a different promise: it owns every interface
+string the learner surfaces ask for, and English arriving silently in its place
+is a defect. Rule 26 states it; `scripts/test_orena_learner_language.mjs`
+enforces it against the surfaces themselves, and the shell reports any
+shortfall where it can be fixed rather than letting it reach a learner untold.
 
 ## Art direction owner
 

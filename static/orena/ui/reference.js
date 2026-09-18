@@ -141,6 +141,59 @@ referenceCopy.vi = {
   continueEmpty: 'Lần tới bạn sẽ bắt đầu từ đây.',
   browseAll: 'Mọi lối vào',
   direct: 'Chọn một hướng luyện tập',
+  collection: 'Bộ sưu tập',
+  collectionTitle: 'Một thế giới mang\ndấu tay của bạn.',
+  collectionNote:
+    'Những thứ bạn mang vào và chọn giữ lại. Sẵn sàng để xem lại một lần nữa.',
+  collectionSearch: 'Tìm thứ bạn đã giữ',
+  collectionSearchHint: 'Tìm trong mọi thứ bạn đã gặp hoặc đã giữ',
+  collectionLenses: 'Bạn gặp nó theo cách nào',
+  collectionResults: 'ở đây',
+  collectionThreads: 'Nơi bạn đang dở',
+  collectionYourContent: 'Thứ bạn mang vào',
+  collectionYourLanguage: 'Ngôn ngữ bạn giữ lại',
+  collectionEmpty: 'Chưa có gì ở đây.',
+  collectionEmptyNote:
+    'Những gì bạn đọc, nghe, giữ lại và viết ra sẽ tụ về đây.',
+  lens_all: 'Tất cả',
+  lens_reading: 'Đã đọc',
+  lens_listening: 'Đã nghe',
+  lens_speaking: 'Đã nói',
+  lens_writing: 'Đã viết',
+  lens_language: 'Ngôn ngữ',
+  threadLabel: 'Một mạch đang dở',
+  contentLabel: 'Của bạn',
+  languageLabel: 'Đã giữ',
+  moreStories: 'Còn nữa để đọc',
+  invitation: 'Một chút tò mò.\nMột thế giới rộng hơn.',
+  welcome: 'Đến vì một câu chuyện. Ở lại vì những gì nó mở ra.',
+  note:
+    'Lắng nghe thật kỹ. Đi lang thang trong một câu chuyện. Tìm ra điều bạn muốn nói.',
+  featured: 'Qua một ô cửa khác',
+  readNext: 'Giữa những dòng chữ',
+  practiceTitle: 'Một khoảnh khắc nhỏ.\nThêm một chút là của bạn.',
+  practiceNote:
+    'Chọn một ý định. Làm việc với một giọng nói thật, một đoạn văn, hoặc một suy nghĩ của riêng bạn.',
+  listenTitle: 'Thế giới có điều\nmuốn nói với bạn.',
+  listenNote:
+    'Đi theo một giọng nói với tốc độ của bạn. Ở lại với ý nghĩa, hoặc bước vào bên trong một câu.',
+  goRead: 'Tìm một câu chuyện',
+  goListen: 'Đi theo một giọng nói',
+  goSpeak: 'Bắt đầu một cuộc trao đổi',
+  studio: 'Dành chỗ cho lời của chính bạn',
+  studioNote: 'Điều bạn nghe được có thể thành điều bạn nói ra.',
+  writingInvite: 'Một suy nghĩ đáng được viết thành lời.',
+  writingDetail:
+    'Một tin nhắn, một câu chuyện, một góc nhìn khác. Hãy bắt đầu từ điều bạn muốn nói.',
+  practiceInvite: 'Ở lại với một khoảnh khắc nhỏ.',
+  practiceDetail:
+    'Bắt lấy từng chữ. Mượn lấy nhịp điệu. Thử lại với một chút hiểu biết hơn.',
+  continueTitle: 'Có một mạch đang\nchờ bạn quay lại.',
+  continueNote:
+    'Những câu chuyện bạn bước vào và những chữ bạn đang gọt giũa đều để lại một lối về. Các mạch này ở lại trên thiết bị này.',
+  newContent: 'Nội dung mới',
+  newContentEmpty: 'Chưa có gì mới',
+  review: 'Phần tham chiếu đang hoàn thiện · bài của bạn vẫn là của bạn',
 };
 
 const paths = [

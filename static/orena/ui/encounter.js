@@ -33,7 +33,10 @@ import {
   setPlaybackRate,
   stopSegmentPlayback,
   seekPlayback,
+  holdSegment,
+  releaseSegment,
 } from '../capabilities/media-player.js';
+import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
 import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
 import {
   linePieces,
@@ -365,7 +368,64 @@ export async function renderEncounter(root, ctx) {
     });
   };
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><div class="heading-with-hint"><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small>${hint({ text: c.followNote })}</div><h1 lang="${language}">${esc(item.title)}</h1></div></header><div class="media-encounter"><section class="media-stage"><div class="media-source"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${esc(c.transcript)}</h2><div class="stage-toggles" role="group" aria-label="${esc(c.stagePartsOfSpeech)}"><span class="stage-toggle-with-hint"><button data-stage-toggle="meaning" aria-pressed="false">${esc(c.stageMeaning)}</button><span data-meaning-note>${hint({ text: c.allMeaningNote })}</span></span>${language === 'zh' ? `<button data-stage-toggle="pinyin" aria-pressed="false">${esc(c.stagePinyin)}</button>` : ''}<button data-stage-toggle="colors" aria-pressed="false">${esc(c.stageWordColors)}</button><button data-legend-toggle aria-expanded="false" aria-label="${esc(c.stagePartsOfSpeech)}">ⓘ</button></div></div><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span><span data-role="other">${esc(c.wordConnectors)}</span></div><button class="quiet" data-back-to-current hidden>${esc(c.stageBackToCurrent)}</button><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><section class="follow-moment" aria-label="${esc(c.follow)}"><small data-now></small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${esc(ctx.support)}"></p><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button><p class="meta" data-annotation-status role="status" hidden></p><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button><div class="stage-actions"><button class="primary" data-replay-line>${esc(c.replay)} ↺</button><div class="stage-menu"><button class="outline" data-menu-toggle="practice" aria-expanded="false" aria-haspopup="true">${esc(c.stagePractice)}</button><div class="stage-menu__list" data-menu="practice" hidden><button data-intent="shadowing">${esc(c.stageShadowLine)}</button><button data-intent="speaking">${esc(c.stageSayYourself)}</button></div></div><div class="stage-menu"><button class="quiet" data-menu-toggle="more" aria-expanded="false" aria-haspopup="true">${esc(c.stageMore)}</button><div class="stage-menu__list" data-menu="more" hidden><button data-inspect>${esc(c.inspect)}</button><button data-save-sentence>${esc(c.stageSaveSentence)}</button><button data-intent="dictation">${esc(c.dictate)}</button></div></div></div></section></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details><div data-response-host>${responseComposer(ctx, item)}</div>`;
+  /* One shape for every line, and the same shape when it is the line being
+     spoken.
+
+     The row used to be a compact button that was hidden the instant the voice
+     reached it, and replaced in place by a block carrying the sentence again,
+     its meaning, its reading, a status line and three controls. Playback then
+     rewrote the list's geometry every few seconds: it grew where the voice
+     was and collapsed behind it, the lines a learner was reading slid, and on
+     a phone the whole panel jumped. The information was right; the structural
+     change was the defect (DESIGN_CONTRACT: active state before structural
+     expansion).
+
+     So every row carries every slot it will ever need - when it was said, the
+     line, its reading, its meaning - and becoming the current line changes
+     only what those slots say and how the row is drawn. Which slots are shown
+     at all is a panel-wide display preference, so it is true of every row at
+     once and a change of line never changes a height. */
+  const transcriptRow = (s) => {
+    const reading = payload.catalog?.pinyin_by_segment?.[s.segment_id];
+    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button></li>`;
+  };
+  /* The bar that owns the actions of the current line (`ui/learning-toolbar.js`).
+     Icon-first, because these are the reusable learner actions - hear it
+     again, work on it, show what it means, show how it reads, colour the word
+     classes - and the support language names each one in its tooltip and to
+     assistive technology. Pinyin is not a quiet control here; it is absent
+     when the learning language has no reading to show. */
+  const lineActions = [
+    { name: 'replay', icon: 'replay', label: c.replay },
+    {
+      name: 'practice',
+      icon: 'practice',
+      kind: 'menu',
+      label: c.stagePractice,
+      items: [
+        { name: 'shadowing', label: c.stageShadowLine },
+        { name: 'speaking', label: c.stageSayYourself },
+      ],
+    },
+    { name: 'meaning', icon: 'meaning', kind: 'toggle', label: c.stageMeaning },
+    language === 'zh'
+      ? { name: 'pinyin', icon: 'reading', kind: 'toggle', label: c.stagePinyin }
+      : null,
+    { name: 'colors', icon: 'palette', kind: 'toggle', label: c.stageWordColors },
+    { name: 'legend', icon: 'info', label: c.stagePartsOfSpeech },
+    {
+      name: 'more',
+      icon: 'more',
+      kind: 'menu',
+      label: c.stageMore,
+      items: [
+        { name: 'inspect', label: c.inspect },
+        { name: 'save-sentence', label: c.stageSaveSentence },
+        { name: 'dictation', label: c.dictate },
+      ],
+    },
+  ];
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><div class="heading-with-hint"><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small>${hint({ text: c.followNote })}</div><h1 lang="${language}">${esc(item.title)}</h1></div></header><div class="media-encounter"><section class="media-stage"><div class="media-source"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel" data-show-meaning="off" data-show-reading="off"><div class="section-head"><h2>${esc(c.transcript)}</h2><span class="section-head__tools">${learningToolbar(lineActions, { label: c.lineActionsLabel })}<span data-meaning-note hidden>${hint({ text: c.allMeaningNote })}</span></span></div><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span><span data-role="other">${esc(c.wordConnectors)}</span></div><p class="transcript-note" data-line-note hidden><span role="status" data-line-note-text></span><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button></p><button class="quiet" data-back-to-current hidden>${esc(c.stageBackToCurrent)}</button><ol>${model.segments.map(transcriptRow).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details><div data-response-host>${responseComposer(ctx, item)}</div>`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -384,8 +444,19 @@ export async function renderEncounter(root, ctx) {
   };
   playerRoot.addEventListener('orena:media-state', onMediaState);
   const practiceRoot = root.querySelector('.practice-space');
-  const moment = root.querySelector('.follow-moment');
   const transcript = root.querySelector('.transcript-panel');
+  /* There is no separate "current line" element any more: the current line is
+     a row of the transcript, and everything that used to live in a panel of
+     its own is either a slot that row already has or a note that belongs to
+     the workspace rather than to a sentence. */
+  const lineNote = root.querySelector('[data-line-note]');
+  const lineNoteText = root.querySelector('[data-line-note-text]');
+  const rowFor = (segmentId) =>
+    [...transcript.querySelectorAll('[data-segment]')].find(
+      (x) => x.dataset.segment === segmentId,
+    ) || null;
+  const currentRow = () => rowFor(model.current?.segment_id);
+  const slot = (name) => currentRow()?.querySelector(name) || null;
   /* The same lexical layer Reading uses (`ui/lexical.js`), over the transcript.
      A tapped word in a spoken line answers exactly as a tapped word in a
      chapter does - one lookup, one panel, one save, one explanation - because
@@ -413,7 +484,7 @@ export async function renderEncounter(root, ctx) {
     alive: isAlive,
     units: {
       root: () => root.querySelector('.media-encounter'),
-      unitOf: (node) => node?.closest?.('.spoken, .line-original, [data-practice-line]') || null,
+      unitOf: (node) => node?.closest?.('.line-original, [data-practice-line]') || null,
       textOf: (unit) =>
         model.segments.find((segment) => segment.segment_id === lineOf(unit))?.original_text ||
         unit.textContent ||
@@ -421,12 +492,20 @@ export async function renderEncounter(root, ctx) {
       keyOf: (unit) => `segment:${lineOf(unit)}`,
     },
   });
+  /* Tap a row to go there; tap a word in the line you are already on to ask
+     about it. The row is a seek control, so the two can share it without
+     ambiguity: on the current line seeking is a no-op, and the word is what
+     the learner meant. A line the voice has not reached keeps the plain
+     meaning of its row. */
   root.addEventListener('click', (event) => {
-    if (!event.target.closest('.spoken, [data-practice-line]')) return;
+    const practised = event.target.closest('[data-practice-line]');
+    if (practised) return lexical.tapWord(event);
+    const line = event.target.closest('.line-original');
+    if (!line || line.closest('li')?.hasAttribute('data-current') !== true) return;
     lexical.tapWord(event);
   });
-  const original = moment.querySelector('.spoken'),
-    meaning = moment.querySelector('.meaning');
+  const original = () => slot('.line-original');
+  const meaning = () => slot('.line-meaning');
   /* Word-level Follow sharpens the segment; it never replaces it. An asset
      whose word timing does not reconcile with the canonical line renders as
      plain text and keeps segment Follow exactly as it was. */
@@ -468,36 +547,32 @@ export async function renderEncounter(root, ctx) {
         paintFollow(lastClockSegment === 'gap');
     }
   };
-  /* Following and the whole conversation are one panel. The line being spoken
-     is not a separate block above the list - whose height changed with every
-     sentence and pushed the list up and down - but the list's own current
-     entry, opened up where it sits: the line at reading size, its meaning, and
-     the word guide. The panel keeps one height; only its list moves,
-     and it scrolls on its own so the learner can read ahead. */
-  /* The line being spoken is the protagonist, and it has its own place on the
-     stage above the transcript - it does not live inside the list any more.
-     A learner should not have to scan a long transcript to find where the
-     voice is; the transcript marks the current row and stays context. */
-  /* The line being spoken is the active transcript row, opened in place.
-
-     It had a stage of its own above the list for a while, which said the same
-     sentence twice, ate the height the transcript needed, and left the desktop
-     wide and empty while the learning stacked downward. The information was
-     already here; the row it belongs to carries it (DESIGN_CONTRACT: no
-     duplicated learning stage). */
-  function placeMoment(s) {
-    const host = [...transcript.querySelectorAll('[data-segment]')].find(
-      (x) => x.dataset.segment === s.segment_id,
-    );
-    const item = host?.closest('li');
-    if (item && moment.parentElement !== item) item.append(moment);
+  /* Following and the whole conversation are one panel, and the line being
+     spoken is one of its rows. Not a block above the list, whose height
+     changed with every sentence; and no longer a row that swaps its compact
+     form for a taller opened one either. The panel keeps one height, every
+     row keeps its own, and only the list scrolls - so a learner can read
+     ahead, and the geometry under their eyes holds still while the voice
+     moves (DESIGN_CONTRACT: active state before structural expansion). */
+  function markCurrent(s) {
+    const row = rowFor(s.segment_id);
+    const item = row?.closest('li') || null;
     transcript
       .querySelectorAll('li')
       .forEach((li) => li.toggleAttribute('data-current', li === item));
-    // The opened row is the line; its compact form would say it twice.
-    transcript
-      .querySelectorAll('[data-segment]')
-      .forEach((x) => (x.hidden = x === host && !moment.hidden));
+    return row;
+  }
+  /* A row that stops being the current line gives back exactly what being the
+     current line added: word spans, colours, a lazily fetched reading, the
+     state it was in. Its slots stay; only their contents return to plain. */
+  function plainRow(row) {
+    if (!row) return;
+    const segment = model.segments.find((x) => x.segment_id === row.dataset.segment);
+    const line = row.querySelector('.line-original');
+    if (segment && line) line.textContent = segment.original_text;
+    line?.removeAttribute('data-close-look-state');
+    const state = row.querySelector('[data-line-state]');
+    if (state) state.textContent = '';
   }
   /* A learner reading ahead in the list is not pulled back to the voice - but
      only while they are actually moving through it. Hover and focus used to
@@ -538,53 +613,77 @@ export async function renderEncounter(root, ctx) {
         : behavior,
     });
   }
+  /* Only one row is ever the painted one, so the row the voice has left is
+     handed back its plain text before the new one is dressed. */
+  let paintedRow = null;
   function paintFollow(gap = false) {
     const s = model.current;
     if (!s) return;
-    placeMoment(s);
-    /* Between two spoken lines the entry stays where it was and says so; it
-       does not blank the line the learner was just reading. */
-    moment.dataset.gap = String(gap);
-    moment.querySelector('[data-now]').textContent = gap
-      ? c.pauseGap
-      : `${duration(s.start_ms)} · ${c.current}`;
+    const row = markCurrent(s);
+    if (paintedRow && paintedRow !== row) plainRow(paintedRow);
+    paintedRow = row;
+    if (!row) return;
+    const line = row.querySelector('.line-original');
+    /* Between two spoken lines the current line stays where it is and says so;
+       it does not blank the line the learner was just reading. */
+    transcript.dataset.gap = String(gap);
+    row.querySelector('[data-line-state]').textContent = gap
+      ? ` · ${c.pauseGap}`
+      : ` · ${c.lineNow}`;
     followSpans = gap ? null : wordSpans(s);
     followWord = -1;
-    if (gap) original.textContent = s.original_text;
+    if (gap) line.textContent = s.original_text;
     else if (followSpans) {
       const pieces = linePieces(s);
-      original.innerHTML = pieces
+      line.innerHTML = pieces
         .map((piece) =>
           piece.index < 0
             ? esc(piece.text)
             : `<span class="word" data-word="${piece.index}">${esc(piece.text)}</span>`,
         )
         .join('');
-    } else original.textContent = s.original_text;
+    } else line.textContent = s.original_text;
     if (!gap && closeLook) void annotateLine(s);
+    /* Word classes as colour, and nothing else: the reading stays in the row's
+       own slot rather than being stacked above each character inside the line.
+       Set over the characters it grew the line by about fourteen pixels the
+       moment the voice arrived, on rows whose height is the one thing this
+       panel promises not to change - and it said the reading twice, once in
+       the line and once in the slot that was already reserving room for it. */
     const closely = !gap && closeLook ? annotatedLine(s, annotated.get(s.segment_id), {
-      pinyin: ctx.profile.pinyin !== 'off',
+      pinyin: false,
       labels: { noun:c.wordThings, verb:c.wordActions, detail:c.wordDetails },
     }) : null;
-    if (closely) original.innerHTML = closely;
-    original.dataset.closeLookState = closely ? 'on' : 'off';
+    if (closely) line.innerHTML = closely;
+    line.dataset.closeLookState = closely ? 'on' : 'off';
     /* The legend is a key, not content: it is shown once, from its own control,
        and never repeated under the line it explains. Only a real failure is
-       worth a status line - a working colouring explains itself. */
+       worth a note, and the note belongs to the workspace rather than to the
+       sentence - a row that grows a status line is a row that moves the list. */
     const pending = annotating.has(s.segment_id);
-    const status = moment.querySelector('[data-annotation-status]');
     const trouble = closeLook && !gap && !closely;
-    status.hidden = !trouble;
-    status.textContent = trouble ? (pending ? c.closeLookLoading : c.closeLookUnavailable) : '';
-    moment.querySelector('[data-retry-annotation]').hidden = !trouble || pending;
     const translated = model.meaning();
-    meaning.textContent =
-      translated || (ctx.support === language ? c.sameLanguage : c.noMeaning);
+    const lostMeaning = !gap && !translated && ctx.support !== language;
+    lineNoteText.textContent = trouble
+      ? pending
+        ? c.closeLookLoading
+        : c.closeLookUnavailable
+      : lostMeaning
+        ? c.noMeaning
+        : '';
+    lineNote.querySelector('[data-retry-annotation]').hidden = !trouble || pending;
+    lineNote.querySelector('[data-meaning]').hidden = !lostMeaning;
+    lineNote.hidden = !trouble && !lostMeaning;
+    const meaningSlot = row.querySelector('.line-meaning');
+    if (meaningSlot && translated) meaningSlot.textContent = translated;
     /* Pinyin for the line. The lesson's own reading is used when it ships one;
        otherwise the shared tagger already knows how these words are read - the
        same local, non-AI annotation the word colours use - so the reading is
        composed from it rather than left blank. Nothing is invented: a line the
-       tagger cannot read shows no pinyin at all. */
+       tagger cannot read shows no pinyin at all. The row's slot is there in
+       every case, and the panel reserves its height while readings are shown,
+       so a reading arriving late never moves the list. */
+    const readingSlot = row.querySelector('[data-line-pinyin]');
     const catalogPinyin = payload.catalog?.pinyin_by_segment?.[s.segment_id];
     let reading = typeof catalogPinyin === 'string' ? catalogPinyin : '';
     if (!gap && showPinyin() && !reading) {
@@ -594,11 +693,7 @@ export async function renderEncounter(root, ctx) {
         .filter(Boolean)
         .join(' ');
     }
-    moment.querySelector('[data-pinyin]').textContent =
-      !gap && !closely?.includes('data-reading=') && showPinyin() ? reading : '';
-    meaning.hidden = !stage.meaning;
-    moment.querySelector('[data-meaning]').hidden =
-      gap || Boolean(translated) || ctx.support === language;
+    if (readingSlot) readingSlot.textContent = reading;
     root.querySelectorAll('[data-segment]').forEach((x) => {
       const active = !gap && x.dataset.segment === s.segment_id;
       x.setAttribute('aria-current', String(active));
@@ -653,8 +748,8 @@ export async function renderEncounter(root, ctx) {
     if (playing) togglePlayback(playerRoot, payload.playback);
     return playing;
   }
-  root.querySelector('[data-inspect]').onclick = () => {
-    const picked = selectionWithin(moment);
+  function inspectCurrentLine() {
+    const picked = selectionWithin(transcript);
     const held = holdTheVoice();
     const sheet = inspectPhrase(
       ctx,
@@ -669,7 +764,7 @@ export async function renderEncounter(root, ctx) {
       note.textContent = c.heldForYou;
       sheet.querySelector('.understanding-source')?.append(note);
     }
-  };
+  }
   /* Three small controls, and nothing more: what the line means, how it is
      said, and whether the words carry their class as colour. They are learner
      preferences, kept the way the reader keeps its own (one key, try/catch),
@@ -697,80 +792,60 @@ export async function renderEncounter(root, ctx) {
       // A device that cannot keep the preference still honours it this visit.
     }
   };
+  /* Whether a line's meaning and its reading are shown is a property of the
+     panel, not of a row: every row has both slots, and the panel says which of
+     them count. That is what makes a change of current line free of geometry -
+     the alternative, showing them on whichever row the voice is on, is the
+     expand-and-collapse this batch removed. */
   const showAllMeaning = (on) => {
     stage.meaning = on;
-    transcript
-      .querySelectorAll('.line-meaning')
-      .forEach((node) => (node.hidden = !on));
-    root
-      .querySelectorAll('[data-stage-toggle="meaning"]')
-      .forEach((b) => b.setAttribute('aria-pressed', String(on)));
-    const note = root.querySelector('[data-meaning-note]');
+    transcript.dataset.showMeaning = on ? 'on' : 'off';
+    bar?.setToggle('meaning', on);
+    // Meanings that are shown say where they came from - once, beside the
+    // control that shows them, never under every line (D-051 rule 6).
+    const note = transcript.querySelector('[data-meaning-note]');
     if (note) note.hidden = !on;
   };
+  const showAllReadings = () => {
+    transcript.dataset.showReading = showPinyin() ? 'on' : 'off';
+    bar?.setToggle('pinyin', stage.pinyin);
+  };
   closeLook = stage.colors;
-  showAllMeaning(stage.meaning);
-  root.querySelectorAll('[data-stage-toggle]').forEach((button) => {
-    const key = button.dataset.stageToggle;
-    button.setAttribute('aria-pressed', String(key === 'colors' ? stage.colors : stage[key]));
-    button.onclick = () => {
-      if (key === 'meaning') showAllMeaning(!stage.meaning);
-      else if (key === 'pinyin') {
-        stage.pinyin = !stage.pinyin;
-        button.setAttribute('aria-pressed', String(stage.pinyin));
+  /* Replay, Practice, and the display preferences, in one bar with a fixed
+     place above the list - never inside the row the voice happens to be on
+     (DESIGN_CONTRACT: shared action toolbar, icon-first shared actions). */
+  const bar = bindLearningToolbar(transcript.querySelector('.learning-toolbar'), {
+    onAction: (name) => {
+      if (name === 'replay') return playLine();
+      if (name === 'legend') {
+        const legend = transcript.querySelector('[data-word-legend]');
+        const opener = transcript.querySelector('[data-action="legend"]');
+        legend.hidden = !legend.hidden;
+        opener?.setAttribute('aria-expanded', String(!legend.hidden));
+        return;
+      }
+      if (name === 'inspect') return inspectCurrentLine();
+      if (name === 'save-sentence') return saveCurrentSentence();
+      if (deeperPractice.includes(name)) return openPractice(name);
+    },
+    onToggle: (name, on) => {
+      if (name === 'meaning') showAllMeaning(on);
+      else if (name === 'pinyin') {
+        stage.pinyin = on;
+        showAllReadings();
       } else {
-        stage.colors = !stage.colors;
-        closeLook = stage.colors;
-        button.setAttribute('aria-pressed', String(stage.colors));
+        stage.colors = on;
+        closeLook = on;
       }
       keepStage();
       paintFollow();
       keepCurrentInView('instant');
-    };
+    },
   });
-  /* The legend is a key shown on request, once, and never under the sentence
-     it explains. */
-  {
-    const legendButton = root.querySelector('[data-legend-toggle]');
-    const legend = root.querySelector('[data-word-legend]');
-    legendButton.onclick = () => {
-      const open = legend.hidden;
-      legend.hidden = !open;
-      legendButton.setAttribute('aria-expanded', String(open));
-    };
-  }
-  /* Replay, Practice, More - three controls, not six equal ones. The deeper
-     intentions live inside Practice and More, named plainly. */
-  root.querySelector('[data-replay-line]').onclick = () => playLine();
-  const closeMenus = (except) =>
-    root.querySelectorAll('[data-menu]').forEach((list) => {
-      if (list === except) return;
-      list.hidden = true;
-      root
-        .querySelector(`[data-menu-toggle="${list.dataset.menu}"]`)
-        ?.setAttribute('aria-expanded', 'false');
-    });
-  root.querySelectorAll('[data-menu-toggle]').forEach((button) => {
-    button.onclick = () => {
-      const list = root.querySelector(`[data-menu="${button.dataset.menuToggle}"]`);
-      const open = list.hidden;
-      closeMenus(open ? list : null);
-      list.hidden = !open;
-      button.setAttribute('aria-expanded', String(open));
-      if (open) list.querySelector('button')?.focus({ preventScroll: true });
-    };
-  });
-  root.addEventListener('click', (event) => {
-    if (event.target.closest('[data-menu], [data-menu-toggle]')) return;
-    closeMenus(null);
-  });
-  root.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeMenus(null);
-  });
-  root.querySelectorAll('[data-menu] button').forEach((button) =>
-    button.addEventListener('click', () => closeMenus(null)),
-  );
-  root.querySelector('[data-save-sentence]').onclick = async () => {
+  bar.setToggle('colors', stage.colors);
+  showAllMeaning(stage.meaning);
+  showAllReadings();
+  function saveCurrentSentence() {
     const line = model.current;
     if (!line) return;
     memory.rememberLanguage({
@@ -781,7 +856,7 @@ export async function renderEncounter(root, ctx) {
       context: line.original_text,
     });
     status(c.persisted);
-  };
+  }
   /* A learner who has read ahead gets one way back to the voice, and it only
      exists while they are actually away from it. */
   {
@@ -815,7 +890,7 @@ export async function renderEncounter(root, ctx) {
     focusRegion(transcript.querySelector('h2'));
   };
 
-  moment.querySelector('[data-retry-annotation]').onclick = () => {
+  lineNote.querySelector('[data-retry-annotation]').onclick = () => {
     annotated.delete(model.current.segment_id);
     paintFollow();
   };
@@ -823,7 +898,7 @@ export async function renderEncounter(root, ctx) {
      opens the same explanation every other surface uses - with the line it
      came from as its context, which is what makes the answer about this
      sentence rather than a dictionary entry. */
-  moment.addEventListener('click', (event) => {
+  transcript.addEventListener('click', (event) => {
     const token = event.target.closest('[data-token]');
     if (!token || !model.current) return;
     const held = holdTheVoice();
@@ -855,7 +930,7 @@ export async function renderEncounter(root, ctx) {
     } catch {
       // Saying "no meaning" again would look like nothing happened; the
       // learner asked for a retry and deserves to know it did not land.
-      if (isAlive()) meaning.textContent = c.meaningUnavailable;
+      if (isAlive()) lineNoteText.textContent = c.meaningUnavailable;
     } finally {
       button.disabled = false;
     }
@@ -870,13 +945,9 @@ export async function renderEncounter(root, ctx) {
         const s = model.current;
         replaySegment(playerRoot, payload.playback, s.start_ms, null, rate);
         paintFollow();
-        // The row that was pressed opens into the line itself; the learner's
-        // place moves with it rather than falling back to the page, and the
-        // opened entry is brought into the list's view.
-        if (!moment.hidden) {
-          focusRegion(moment);
-          keepCurrentInView();
-        }
+        // The row that was pressed becomes the current line in place; the
+        // learner's place moves with it rather than falling back to the page.
+        if (!practice) keepCurrentInView();
         remember();
       }),
   );
@@ -945,7 +1016,11 @@ export async function renderEncounter(root, ctx) {
       }
       remember();
     }
-    if (practice) return;
+    if (practice) {
+      // Re-assert the boundary against a player that connected late.
+      if (practice === 'dictation') holdPractisedLine();
+      return;
+    }
     const s = model.follow(event.detail.time_ms);
     // "Between spoken lines" is only true of media that is running. At rest -
     // and a paused player sits at 0ms, before the first line - the learner
@@ -1004,14 +1079,30 @@ export async function renderEncounter(root, ctx) {
     practiceRoot.hidden = true;
     const responseHost = root.querySelector('[data-response-host]');
     if (responseHost) responseHost.hidden = false;
-    moment.hidden = false;
     transcript.hidden = false;
+    // Following is the whole source again.
+    releaseSegment(playerRoot);
     practice = null;
     lastClockSegment = null;
     paintFollow();
     placeFrame();
     keepCurrentInView('instant');
     remember();
+  }
+  /* Writing down a line means hearing that line, and not the five after it.
+
+     Dictation binds the player to the segment being written (`holdSegment`),
+     so every way of starting playback - Replay, the transport's play button,
+     the video element's own controls - stops at the end of that line. Before
+     this, only Replay was bounded and everything else ran the source on
+     through the rest of the lesson, which is what a learner met first.
+
+     The player may not have its metadata yet when a practice opens straight
+     from a link, so the hold is also re-applied from the clock: asking twice
+     costs nothing, and the boundary is never missed. */
+  function holdPractisedLine() {
+    if (practice !== 'dictation' || !practiceTarget) return releaseSegment(playerRoot);
+    return holdSegment(playerRoot, practiceTarget.start_ms, practiceTarget.end_ms);
   }
   /* A live microphone owns the segment. Rather than swallowing clicks that
      would move it, say so on the controls themselves, so the reason a control
@@ -1022,14 +1113,27 @@ export async function renderEncounter(root, ctx) {
       if (active) x.title = c.recordingInProgress;
       else x.removeAttribute('title');
     });
-    const next = practiceRoot.querySelector('[data-next-moment]');
-    if (next && (active || !next.dataset.exhausted)) next.disabled = active;
+    /* A live microphone owns the line, so moving off it waits - but a control
+       that is off for a different reason (the first line, the last line) must
+       not be switched back on when the recording ends. */
+    practiceRoot
+      .querySelectorAll('[data-prev-moment], [data-next-moment], [data-goto-segment]')
+      .forEach((x) => {
+        if (active) {
+          x.dataset.wasDisabled = String(x.disabled);
+          x.disabled = true;
+          x.title = c.recordingInProgress;
+        } else {
+          x.disabled = x.dataset.wasDisabled === 'true';
+          x.removeAttribute('title');
+        }
+      });
   }
   function basePractice() {
     stopSegmentPlayback(playerRoot, payload.playback);
     practiceTarget = { ...model.current };
-    moment.hidden = true;
     transcript.hidden = practice === 'dictation';
+    holdPractisedLine();
     // The stage hands the room over to the practice panel: the line being
     // worked on is shown there, so showing it twice would only compete.
     practiceRoot.hidden = false;
@@ -1079,10 +1183,15 @@ export async function renderEncounter(root, ctx) {
     take = null;
     basePractice();
     const target = practiceTarget;
-    /* Both ways out - back to Follow and on to the next line - sit in the
-       panel's top row, so neither costs a row of the frame the work needs. */
-    practiceRoot.innerHTML = `<div class="practice-top"><small>${c[intent + 'Name']}</small><div class="practice-nav"><button class="quiet" data-follow>← ${c.followBack}</button><button class="quiet" data-next-moment>${c.next} →</button></div></div><h2>${intent === 'dictation' ? c.hearFirst : intent === 'speaking' ? c.voiceResponse : c.shadowPrompt}</h2><div data-practice-body></div>`;
-    practiceRoot.querySelector('[data-follow]').onclick = closePractice;
+    const at = model.segments.findIndex((x) => x.segment_id === target.segment_id);
+    /* Leaving the task and moving through it are different acts, and used to
+       be told the same way: an arrow back beside an arrow on. A learner who
+       wanted the line before ended up out of Dictation altogether. So leaving
+       is chrome - a cross, in the panel's top row, next to the name of the
+       task - and moving is task navigation, with the line's place in the
+       lesson between its two directions. */
+    practiceRoot.innerHTML = `<div class="practice-top"><small>${c[intent + 'Name']}</small><button type="button" class="quiet practice-exit" data-exit-practice>${symbol('close', 18)}<span>${esc(c.exitPractice)}</span></button></div><h2>${intent === 'dictation' ? c.hearFirst : intent === 'speaking' ? c.voiceResponse : c.shadowPrompt}</h2><nav class="practice-steps" aria-label="${esc(c.lineNavigation)}"><button type="button" class="quiet" data-prev-moment aria-label="${esc(c.previousLine)}" data-tip="${esc(c.previousLine)}">${symbol('back', 18)}</button><span class="practice-place">${at + 1} / ${model.segments.length}</span><button type="button" class="quiet" data-next-moment aria-label="${esc(c.nextLine)}" data-tip="${esc(c.nextLine)}">${symbol('forward', 18)}</button></nav>${intent === 'dictation' ? `<ol class="segment-navigator" data-segment-list aria-label="${esc(c.lineList)}"></ol>` : ''}<div data-practice-body></div>`;
+    practiceRoot.querySelector('[data-exit-practice]').onclick = closePractice;
     /* Narrow screens put the work below a sticky strip of source, which is the
        right shape but starts out of sight. Opening a practice brings it to the
        learner instead of asking them to go looking for it; wide screens have it
@@ -1098,20 +1207,51 @@ export async function renderEncounter(root, ctx) {
     }
     focusRegion(practiceRoot.querySelector('h2'));
     const body = practiceRoot.querySelector('[data-practice-body]');
-    const nextIndex =
-      model.segments.findIndex((x) => x.segment_id === target.segment_id) + 1;
+    const nextIndex = at + 1;
     const nextButton = practiceRoot.querySelector('[data-next-moment]');
+    const previousButton = practiceRoot.querySelector('[data-prev-moment]');
     const exhausted = nextIndex >= model.segments.length;
-    // On the last line the way on is the way back, which already sits beside
-    // it; one control says it once.
-    nextButton.hidden = exhausted;
-    nextButton.onclick = () => {
-      if (recording) return;
-      closePractice();
-      if (exhausted) return;
-      model.select(model.segments[nextIndex].segment_id);
+    nextButton.disabled = exhausted;
+    previousButton.disabled = at <= 0;
+    /* Moving to another line stays inside the task: the same intention, a
+       different segment. openPractice() already discards the take, the
+       recorder and the previous version, so this is a move rather than a
+       leave-and-re-enter. */
+    const moveTo = (index) => {
+      if (recording || index < 0 || index >= model.segments.length) return;
+      model.select(model.segments[index].segment_id);
       openPractice(intent);
     };
+    nextButton.onclick = () => moveTo(nextIndex);
+    previousButton.onclick = () => moveTo(at - 1);
+    /* Dictation hides the transcript, which is right - the lesson's words are
+       the answer - but it left the learner with no idea which line they were
+       on, which they had done, or how to go back to one. This is that list:
+       the lesson's lines by number, what has been written down, and where they
+       are now. It is navigation, not a score. */
+    const segmentList = practiceRoot.querySelector('[data-segment-list]');
+    if (segmentList) {
+      const written = (segment) =>
+        Boolean(
+          String(
+            memory.value.answers[`${payload.asset.asset_id}:${segment.segment_id}`] || '',
+          ).trim(),
+        );
+      segmentList.innerHTML = model.segments
+        .map((segment, index) => {
+          const done = written(segment);
+          const here = index === at;
+          return `<li><button type="button" data-goto-segment="${index}" aria-current="${here}"${here ? ' data-here' : ''}${done ? ' data-written' : ''} aria-label="${esc(c.lineNumber.replace('{n}', String(index + 1)))}${done ? `, ${esc(c.lineWritten)}` : ''}"><span class="segment-number">${String(index + 1).padStart(2, '0')}</span><span class="segment-mark" aria-hidden="true">${done ? '✓' : here ? '●' : ''}</span></button></li>`;
+        })
+        .join('');
+      segmentList.onclick = (event) => {
+        const button = event.target.closest('[data-goto-segment]');
+        if (button) moveTo(Number(button.dataset.gotoSegment));
+      };
+      segmentList
+        .querySelector('[data-here]')
+        ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
     if (intent === 'dictation') {
       /* One frame, no scrolling: the shape of the line, the question with its
          replay beside it, the attempt, the actions, and a result region that
@@ -1406,11 +1546,6 @@ export async function renderEncounter(root, ctx) {
       }
     }
   }
-  root
-    .querySelectorAll('[data-intent]')
-    .forEach(
-      (button) => (button.onclick = () => openPractice(button.dataset.intent)),
-    );
   bindComposer(root, ctx, item, () => model.current?.original_text || '');
   bindImages(root, c);
   // Follow arrives here as an intention too, and its whole point is that
@@ -1418,6 +1553,7 @@ export async function renderEncounter(root, ctx) {
   if (deeperPractice.includes(practice)) openPractice(practice);
   return () => {
     disposed = true;
+    bar.dispose();
     lexical.destroy();
     voiceCleanup();
     practiceVersion++;

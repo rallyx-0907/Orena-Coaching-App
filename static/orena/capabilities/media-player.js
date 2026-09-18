@@ -3,6 +3,9 @@ import {esc} from '../ui/html.js';
 const YOUTUBE_EMBED_ORIGIN='https://www.youtube-nocookie.com';
 const YOUTUBE_EMBED_PATH=/^\/embed\/[A-Za-z0-9_-]{11}$/;
 const segmentTimers=new WeakMap();
+// One clock tick of slack, so a pause that lands a few milliseconds past the
+// end of a held line is not read as the learner having left it.
+const HOLD_TOLERANCE_MS=150;
 const controllers=new WeakMap();
 let youtubeApiPromise=null;
 function mediaState(root,state){
@@ -120,6 +123,26 @@ function ensureYouTubeIframeApi(){
   return youtubeApiPromise;
 }
 
+/* What a held player owes the line it is holding, given where it is now.
+
+   Pure, and exported, so the boundary can be checked with numbers rather than
+   with a regular expression over this file. Three answers and no others:
+
+     'pause' - the line has been heard out
+     'seek'  - playback is somewhere else entirely and belongs back at the line
+     null    - inside the line, or stopped, so nothing is owed
+
+   A stopped player is never moved: a learner who paused mid-line and went to
+   write it down comes back to where they paused. */
+export function segmentHoldAction(hold,timeMs,playing){
+  const start=Number(hold?.start_ms),end=Number(hold?.end_ms),at=Number(timeMs);
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!Number.isFinite(at))return null;
+  if(!playing)return null;
+  if(at>=end)return 'pause';
+  if(at<start-HOLD_TOLERANCE_MS||at>end+HOLD_TOLERANCE_MS)return 'seek';
+  return null;
+}
+
 function clearSegmentTimer(root){
   const controller=controllers.get(root);if(controller)controller.segmentEndMs=null;
   const timer=segmentTimers.get(root);
@@ -154,6 +177,26 @@ function emitClock(root,controller){
     let currentTime=Number(controller.player.getCurrentTime?.());
     if(!Number.isFinite(currentTime))return;
     let state=Number(controller.player.getPlayerState?.());
+    /* A held segment is the whole of what may be played.
+
+       Dictation is the reason this exists: a learner writing down line 3 must
+       hear line 3, and nothing after it. A one-shot "pause at this time" only
+       binds playback that replaySegment() itself started, so the native
+       controls, the transport's own play button, or a seek would run the
+       source straight on through the next five lines. A hold binds the player
+       instead of the call: whatever starts it, playback stays inside the line.
+
+       The clock polls at 125ms, so the pause lands within one tick of the end
+       rather than exactly on it; HOLD_TOLERANCE_MS keeps a seek from fighting
+       that overshoot, and keeps a segment boundary that the transcript reports
+       a few milliseconds early from re-seeking on its own. */
+    const holding=segmentHoldAction(
+      {start_ms:controller.holdStartMs,end_ms:controller.holdEndMs},
+      currentTime*1000,
+      state===1,
+    );
+    if(holding==='pause'){controller.player.pauseVideo?.();state=2;}
+    else if(holding==='seek')controller.player.seekTo?.(controller.holdStartMs/1000,true);
     if(Number.isFinite(controller.segmentEndMs)&&currentTime*1000>=controller.segmentEndMs&&state===1){
       controller.player.pauseVideo?.();controller.segmentEndMs=null;state=2;
     }
@@ -212,6 +255,8 @@ export function connectMediaPlayer(root,playback){
     pollTimer:null,
     startMs:Number.isFinite(parsedStart)&&parsedStart>=0?parsedStart:0,
     endMs:Number.isFinite(parsedEnd)&&parsedEnd>parsedStart?parsedEnd:null,
+    holdStartMs:null,
+    holdEndMs:null,
   };
   controllers.set(root,controller);
   mediaState(root,'connecting');
@@ -342,6 +387,35 @@ export function segmentPlaybackDelayMs(startMs,endMs,rate=1){
   return Math.max(80,Math.round((end-start)/speed)+90);
 }
 
+/* Bind the player to one line until it is released.
+
+   `holdSegment` is what a task that is about a single line - Dictation, and
+   any practice that follows it - uses instead of trusting every entry point to
+   remember the boundary. `releaseSegment` gives the whole source back. */
+export function holdSegment(root,startMs,endMs){
+  const controller=controllers.get(root);
+  const start=Number(startMs),end=Number(endMs);
+  if(!controller||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return false;
+  controller.holdStartMs=Math.max(0,start);
+  controller.holdEndMs=end;
+  return true;
+}
+
+export function releaseSegment(root){
+  const controller=controllers.get(root);
+  if(!controller)return false;
+  controller.holdStartMs=null;
+  controller.holdEndMs=null;
+  return true;
+}
+
+export function heldSegment(root){
+  const controller=controllers.get(root);
+  return Number.isFinite(controller?.holdEndMs)
+    ?{start_ms:controller.holdStartMs,end_ms:controller.holdEndMs}
+    :null;
+}
+
 export function stopSegmentPlayback(root,playback){
   clearSegmentTimer(root);
   return sendCommand(root,playback,'pauseVideo');
@@ -355,6 +429,9 @@ export function seekPlayback(root,playback,timeMs){
 }
 
 export function replaySegment(root,playback,startMs,endMs=null,rate=1){
+  // clearSegmentTimer() drops the one-shot boundary only; a held line outlives
+  // every replay inside it, which is what keeps Dictation bounded when the
+  // learner presses Replay a fourth time.
   clearSegmentTimer(root);
   const started=sendCommand(root,playback,'seekTo',[Math.max(0,startMs)/1000,true])
     &&sendCommand(root,playback,'playVideo');
@@ -408,7 +485,12 @@ export function togglePlayback(root,playback){
     if(state===1)controller.player.pauseVideo();
     else{
       const current=Number(controller.player.getCurrentTime?.());
-      if(Number.isFinite(controller.endMs)&&Number.isFinite(current)&&current*1000>=controller.endMs-100){
+      // Play inside a held line always means "play this line", from wherever
+      // in it the learner is - and from its start once it has been heard out.
+      if(Number.isFinite(controller.holdEndMs)&&Number.isFinite(current)&&
+        (current*1000>=controller.holdEndMs-HOLD_TOLERANCE_MS||current*1000<controller.holdStartMs)){
+        controller.player.seekTo(controller.holdStartMs/1000,true);
+      }else if(Number.isFinite(controller.endMs)&&Number.isFinite(current)&&current*1000>=controller.endMs-100){
         controller.player.seekTo(controller.startMs/1000,true);
       }
       controller.player.playVideo();

@@ -254,30 +254,8 @@
 .media-encounter {
   gap: var(--space-8);
 }
-.follow-moment {
-  border-radius: var(--radius) var(--radius) 0 0;
-  padding: var(--space-8);
-}
-.follow-moment .spoken {
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  font-weight: 600;
-  line-height: 1.6;
-}
 .meaning {
   font-size: var(--text-lead);
-}
-.moment-actions > span {
-  font-size: var(--text-xs);
-  letter-spacing: 0.05em;
-}
-.moment-actions > button {
-  padding-inline: 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-}
-.moment-actions > button:hover {
-  border-color: var(--accent);
 }
 .transcript-panel {
   padding-top: 16px;
@@ -530,16 +508,6 @@
   .thread-list {
     gap: var(--space-6);
   }
-  .follow-moment,
-  .practice-space {
-    padding: var(--space-6) var(--space-4);
-  }
-  .moment-actions {
-    gap: 8px;
-  }
-  .moment-actions > button {
-    font-size: var(--text-sm);
-  }
   .response {
     margin-block: var(--space-12);
   }
@@ -562,11 +530,11 @@
    weight and colour, and a warm underline travels beneath it, so a learner
    reading ahead is never pulled back by a moving block of colour. Assets
    without word timing simply never get the attribute. */
-.spoken .word {
+.line-original .word {
   position: relative;
   transition: color 0.12s linear;
 }
-.spoken .word::after {
+.line-original .word::after {
   content: '';
   position: absolute;
   left: 0;
@@ -583,17 +551,17 @@
    the same way (D-057, learning stage). Where the voice is reads as a soft
    ground plus the underline; what a word *is* stays the only thing carried by
    colour, so the two can be true at once without competing. */
-.spoken .word[data-speaking] {
+.line-original .word[data-speaking] {
   border-radius: 3px;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
 }
-.spoken .word[data-speaking]::after {
+.line-original .word[data-speaking]::after {
   transform: scaleX(1);
 }
 @media (prefers-reduced-motion: reduce) {
-  .spoken .word,
-  .spoken .word::after {
+  .line-original .word,
+  .line-original .word::after {
     transition: none;
   }
 }
@@ -1732,14 +1700,6 @@
   justify-content: space-between;
   gap: var(--space-4);
   flex-wrap: wrap;
-}
-.meaning-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-xs);
-  color: var(--muted);
-  cursor: pointer;
 }
 .line-meaning {
   display: block;
