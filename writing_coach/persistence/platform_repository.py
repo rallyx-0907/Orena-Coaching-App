@@ -20,7 +20,7 @@ from writing_coach.ai.config import (
 )
 from writing_coach.ai.base import AICapabilityConfigInvalid
 from writing_coach.persistence.config import create_shadow_engine
-from writing_coach.persistence.models import AuditLog, PlatformSetting
+from writing_coach.persistence.models import AuditLog, PlatformSetting, User
 
 
 @dataclass(frozen=True)
@@ -73,6 +73,15 @@ class PlatformRepository(Protocol):
     def delete_provider_credential(self, provider_id: str) -> None: ...
     def record_ai_operation(self, telemetry: dict) -> None: ...
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]: ...
+    def record_admin_event(
+        self,
+        action: str,
+        *,
+        actor: str,
+        entity_type: str = "",
+        entity_id: str = "",
+        payload: dict | None = None,
+    ) -> None: ...
 
 
 class SQLitePlatformRepository:
@@ -277,6 +286,19 @@ class SQLitePlatformRepository:
         # SQLite is frozen archive/rollback storage; telemetry is PostgreSQL-only.
         return None
 
+    def record_admin_event(
+        self,
+        action: str,
+        *,
+        actor: str,
+        entity_type: str = "",
+        entity_id: str = "",
+        payload: dict | None = None,
+    ) -> None:
+        # Like telemetry, the administrator audit is PostgreSQL-only; the frozen
+        # archive store neither gains an audit table nor fails a change for it.
+        return None
+
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         return []
 
@@ -439,6 +461,39 @@ class PostgresPlatformRepository:
                     entity_type="ai_capability",
                     entity_id=str(safe["capability"]),
                     payload=safe,
+                    created_at=now,
+                )
+            )
+
+    def record_admin_event(
+        self,
+        action: str,
+        *,
+        actor: str,
+        entity_type: str = "",
+        entity_id: str = "",
+        payload: dict | None = None,
+    ) -> None:
+        """Record one administrator change to the AI platform in `audit_logs`.
+
+        The same table AI operation telemetry uses. The actor is linked to its
+        account row when there is one; a development administrator without one
+        is named in the payload instead. Callers pass only non-secret facts.
+        """
+        body = dict(payload or {})
+        now = datetime.now(timezone.utc)
+        with Session(self.engine) as session, session.begin():
+            user_id = session.scalar(select(User.id).where(User.user_key == actor)) if actor else None
+            if user_id is None:
+                body["actor"] = str(actor or "unknown")
+            session.add(
+                AuditLog(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    action=str(action)[:160],
+                    entity_type=str(entity_type)[:120],
+                    entity_id=str(entity_id)[:255],
+                    payload=body,
                     created_at=now,
                 )
             )

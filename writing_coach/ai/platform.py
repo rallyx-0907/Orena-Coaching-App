@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from time import perf_counter
 from enum import Enum
@@ -47,6 +48,7 @@ from writing_coach.persistence.platform_repository import PlatformRepository
 ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DB_PATH = Path(os.getenv("PLATFORM_DB", ROOT / "data" / "platform.db"))
 _admin_guard: Callable[[Request], dict[str, Any]] | None = None
+_logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin/ai", tags=["platform-admin"])
 
@@ -387,6 +389,36 @@ def _require_admin(request: Request) -> dict[str, Any]:
     return _admin_guard(request)
 
 
+def _record_admin_event(
+    admin: dict[str, Any],
+    action: str,
+    *,
+    entity_type: str,
+    entity_id: str,
+    payload: dict[str, Any],
+) -> None:
+    """Record who changed or tested the AI platform, and how it went.
+
+    Only non-secret facts are passed in: a credential change records that a
+    key was set, never the key. The change has already happened (or been
+    refused) when it is recorded, so a record that cannot be written is
+    logged by action name alone rather than turning the answer into an error.
+    """
+    recorder = getattr(_platform_repository, "record_admin_event", None)
+    if recorder is None:
+        return
+    try:
+        recorder(
+            action,
+            actor=str(admin.get("google_sub") or admin.get("email") or "admin"),
+            entity_type=entity_type,
+            entity_id=str(entity_id)[:120],
+            payload=payload,
+        )
+    except Exception as exc:  # noqa: BLE001 - reported, never allowed to undo or fail the change
+        _logger.warning("AI admin audit record failed for %s (%s)", action, type(exc).__name__)
+
+
 def _legacy_config_payload() -> dict[str, Any]:
     item, model = active_selection()
     displayed_model, model_redacted = safe_model_display(model)
@@ -564,12 +596,19 @@ def admin_ai_provider_credential_test(
     request: Request,
     response: Response,
 ) -> dict[str, Any]:
-    _require_admin(request)
+    admin = _require_admin(request)
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
-    values = _provider_credential_values(provider_id, payload, require_models=False)
-    response.headers["Cache-Control"] = "no-store"
-    models = _credential_test(provider_id, values)
+    try:
+        values = _provider_credential_values(provider_id, payload, require_models=False)
+        response.headers["Cache-Control"] = "no-store"
+        models = _credential_test(provider_id, values)
+    except HTTPException as exc:
+        _record_admin_event(admin, "admin.ai.provider.test", entity_type="ai_provider", entity_id=provider_id,
+                            payload={"outcome": "failed", "status": exc.status_code})
+        raise
+    _record_admin_event(admin, "admin.ai.provider.test", entity_type="ai_provider", entity_id=provider_id,
+                        payload={"outcome": "ok", "models": len(models)})
     return {
         "ok": True,
         "provider": provider_id,
@@ -588,22 +627,35 @@ def admin_ai_provider_credential_save(
     admin = _require_admin(request)
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
-    values = _provider_credential_values(provider_id, payload)
-    live_models = _credential_test(provider_id, values)
-    live_model_set = set(live_models)
-    if not live_model_set:
-        raise HTTPException(502, "Provider returned no usable text models.")
-    if values["default_model"] not in live_model_set or not set(values["models"]).issubset(live_model_set):
-        raise HTTPException(400, "Choose the default and allowed models from the live provider catalog.")
     try:
-        encrypted = encrypt_credentials(provider_id, values)
-        _installed_platform_repository().set_provider_credential(
-            provider_id,
-            encrypted,
-            updated_by=str(admin.get("google_sub") or ""),
-        )
-    except ProviderCredentialStoreError as exc:
-        raise HTTPException(503, "Provider credential encryption is not configured on this server.") from exc
+        values = _provider_credential_values(provider_id, payload)
+        live_models = _credential_test(provider_id, values)
+        live_model_set = set(live_models)
+        if not live_model_set:
+            raise HTTPException(502, "Provider returned no usable text models.")
+        if values["default_model"] not in live_model_set or not set(values["models"]).issubset(live_model_set):
+            raise HTTPException(400, "Choose the default and allowed models from the live provider catalog.")
+        try:
+            encrypted = encrypt_credentials(provider_id, values)
+            _installed_platform_repository().set_provider_credential(
+                provider_id,
+                encrypted,
+                updated_by=str(admin.get("google_sub") or ""),
+            )
+        except ProviderCredentialStoreError as exc:
+            raise HTTPException(503, "Provider credential encryption is not configured on this server.") from exc
+    except HTTPException as exc:
+        _record_admin_event(admin, "admin.ai.credential.update", entity_type="ai_provider", entity_id=provider_id,
+                            payload={"credential_updated": False, "outcome": "failed", "status": exc.status_code})
+        raise
+    _record_admin_event(admin, "admin.ai.credential.update", entity_type="ai_provider", entity_id=provider_id,
+                        payload={
+                            "credential_updated": True,
+                            "outcome": "ok",
+                            "endpoint_set": bool(values["base_url"]),
+                            "models": len(values["models"]),
+                            "default_model": safe_model_display(values["default_model"])[0],
+                        })
     response.headers["Cache-Control"] = "no-store"
     stored = providers().get(provider_id)
     if stored is None:
@@ -626,8 +678,12 @@ def admin_ai_provider_credential_delete(
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
     if provider_id not in providers():
+        _record_admin_event(admin, "admin.ai.credential.delete", entity_type="ai_provider", entity_id=provider_id,
+                            payload={"credential_deleted": False, "outcome": "refused", "status": 404})
         raise HTTPException(404, "Unknown AI provider.")
     _installed_platform_repository().delete_provider_credential(provider_id)
+    _record_admin_event(admin, "admin.ai.credential.delete", entity_type="ai_provider", entity_id=provider_id,
+                        payload={"credential_deleted": True, "outcome": "ok"})
     response.headers["Cache-Control"] = "no-store"
     return {"ok": True, "provider": provider_id, "secret_deleted": True, "secret_exposed": False}
 
@@ -645,36 +701,49 @@ def admin_ai_config_update(payload: AIConfigIn, request: Request) -> dict[str, A
     provider_id = payload.provider.strip().casefold()
     model = payload.model.strip()
     item = items.get(provider_id)
+    target = {"provider": provider_id[:40], "model": safe_model_display(model)[0]}
 
-    if not item:
-        raise HTTPException(400, "Unknown AI provider.")
-    if not item.configured:
-        raise HTTPException(409, f"{item.name} is not configured on the server.")
+    try:
+        if not item:
+            raise HTTPException(400, "Unknown AI provider.")
+        if not item.configured:
+            raise HTTPException(409, f"{item.name} is not configured on the server.")
 
-    models = item.list_models()
-    if models and model not in models:
-        raise HTTPException(400, "Selected model is not available for this provider.")
+        models = item.list_models()
+        if models and model not in models:
+            raise HTTPException(400, "Selected model is not available for this provider.")
 
-    _installed_platform_repository().set_ai_selection(
-        provider=provider_id,
-        model=model,
-        updated_by=str(admin.get("google_sub") or ""),
-    )
+        _installed_platform_repository().set_ai_selection(
+            provider=provider_id,
+            model=model,
+            updated_by=str(admin.get("google_sub") or ""),
+        )
+    except HTTPException as exc:
+        _record_admin_event(admin, "admin.ai.selection.update", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "refused", "status": exc.status_code})
+        raise
+    _record_admin_event(admin, "admin.ai.selection.update", entity_type="ai_selection", entity_id="learner_default",
+                        payload={**target, "outcome": "ok"})
 
     return _legacy_config_payload()
 
 
 @router.post("/test", deprecated=True)
 def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
-    _require_admin(request)
+    admin = _require_admin(request)
     items = providers()
     provider_id = payload.provider.strip().casefold()
     model = payload.model.strip()
     item = items.get(provider_id)
+    target = {"provider": provider_id[:40], "model": safe_model_display(model)[0]}
 
     if not item:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "refused", "status": 400})
         raise HTTPException(400, "Unknown AI provider.")
     if not item.configured:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "refused", "status": 409})
         raise HTTPException(409, f"{item.name} is not configured.")
 
     schema = {
@@ -698,9 +767,15 @@ def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
             temperature=0.0,
         )
     except AIProviderUnavailable as exc:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "failed", "status": 503})
         raise HTTPException(503, "AI provider is unavailable.") from exc
     except AIProviderError as exc:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "failed", "status": 502})
         raise HTTPException(502, "AI provider request failed.") from exc
+    _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                        payload={**target, "outcome": "ok"})
 
     displayed_model, model_redacted = safe_model_display(result.model)
 
@@ -734,13 +809,18 @@ def admin_ai_capability_config_update(
 ) -> dict[str, Any]:
     admin = _require_admin(request)
     try:
-        return AIControlPlane(_installed_platform_repository()).set_config(
+        result = AIControlPlane(_installed_platform_repository()).set_config(
             capability_key,
             _capability_config(payload),
             updated_by=str(admin.get("google_sub") or ""),
         )
     except (AICapabilityConfigInvalid, AICapabilityUnsupported) as exc:
+        _record_admin_event(admin, "admin.ai.route.update", entity_type="ai_capability",
+                            entity_id=safe_capability_display(capability_key), payload={"outcome": "refused"})
         raise HTTPException(400, str(exc)) from exc
+    _record_admin_event(admin, "admin.ai.route.update", entity_type="ai_capability", entity_id=result["capability"],
+                        payload={**result["config"], "outcome": "ok"})
+    return result
 
 
 def _live_failure(
@@ -816,10 +896,11 @@ def admin_ai_capability_test(
     request: Request,
     standby: bool = False,
 ) -> dict[str, Any]:
-    _require_admin(request)
+    admin = _require_admin(request)
     control_plane = AIControlPlane(_installed_platform_repository())
+    entity_id = safe_capability_display(capability_key)
     try:
-        return control_plane.live_test(capability_key, standby=standby)
+        result = control_plane.live_test(capability_key, standby=standby)
     except (
         AICapabilityConfigInvalid,
         AICapabilityDisabled,
@@ -827,7 +908,13 @@ def admin_ai_capability_test(
         AICapabilityUnsupported,
         AIProviderError,
     ) as exc:
-        raise _live_failure(control_plane, capability_key, exc, standby=standby) from exc
+        failure = _live_failure(control_plane, capability_key, exc, standby=standby)
+        _record_admin_event(admin, "admin.ai.route.test", entity_type="ai_capability", entity_id=entity_id,
+                            payload={"standby": standby, "outcome": "failed", "error_class": failure.detail["error_class"]})
+        raise failure from exc
+    _record_admin_event(admin, "admin.ai.route.test", entity_type="ai_capability", entity_id=entity_id,
+                        payload={"standby": standby, "outcome": "ok"})
+    return result
 
 
 def install_platform_ai(
