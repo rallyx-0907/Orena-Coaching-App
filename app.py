@@ -116,6 +116,7 @@ from writing_coach.vocabulary_source_import import (
     detect_vocabulary_mapping,
     normalize_vocabulary_rows,
     parse_vocabulary_source,
+    read_source_upload,
     stable_collection_id,
 )
 from writing_coach.vocabulary_feed import (
@@ -2339,7 +2340,7 @@ def _vocabulary_admission(
 
 async def _parse_uploaded_vocabulary_source(upload: UploadFile):
     filename = str(upload.filename or "source").strip() or "source"
-    raw = await upload.read()
+    raw = await read_source_upload(upload)
     return parse_vocabulary_source(filename, raw)
 
 
@@ -2498,7 +2499,7 @@ async def admin_vocabulary_source_import(
         source = None
         mapping: dict[str, Any] = {}
         try:
-            raw = await upload.read()
+            raw = await read_source_upload(upload)
             source = parse_vocabulary_source(filename, raw)
             detected = detect_vocabulary_mapping(source)
             raw_mapping = mapping_by_filename.get(filename)

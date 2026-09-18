@@ -44,6 +44,23 @@ CANONICAL_FIELDS = (
 REQUIRED_FIELDS = ("term",)
 MAX_SOURCE_BYTES = 25 * 1024 * 1024
 MAX_SOURCE_ROWS = 100_000
+# One text line per match: the separators str.splitlines() honours, found
+# lazily so an oversized list of lines is never built before rows are counted.
+_LINE = re.compile(r"[^\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029]+")
+
+
+def _too_many_rows() -> VocabularySourceError:
+    return VocabularySourceError(f"Source contains too many rows ({MAX_SOURCE_ROWS:,} maximum).")
+
+
+async def read_source_upload(upload: Any) -> bytes:
+    """Read an upload no further than one byte past the source limit.
+
+    parse_vocabulary_source() refuses anything over MAX_SOURCE_BYTES, and one
+    byte more than the limit is enough to know - the rest of an oversized file
+    is never held in memory.
+    """
+    return await upload.read(MAX_SOURCE_BYTES + 1)
 _LANGUAGE_CODE_RE = re.compile(r"[a-zA-Z]{2,8}(?:-[a-zA-Z0-9]{2,8})?")
 
 
@@ -127,6 +144,8 @@ def _rows_from_json(value: object) -> tuple[list[str], list[dict[str, Any]]]:
             payload = [payload]
     if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes)):
         raise VocabularySourceError("JSON source must contain an object or an array.")
+    if len(payload) > MAX_SOURCE_ROWS:
+        raise _too_many_rows()
 
     rows: list[dict[str, Any]] = []
     for position, item in enumerate(payload, start=1):
@@ -168,7 +187,13 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
             ) from exc
         workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
         worksheet = workbook.active
-        values = list(worksheet.iter_rows(values_only=True))
+        values = []
+        for row in worksheet.iter_rows(values_only=True):
+            # A header row plus the row limit; a workbook is not read past it.
+            if len(values) > MAX_SOURCE_ROWS:
+                workbook.close()
+                raise _too_many_rows()
+            values.append(row)
         workbook.close()
         if not values:
             raise VocabularySourceError("The XLSX source has no rows.")
@@ -184,8 +209,14 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
             raise VocabularySourceError(f"Invalid JSON: {exc.msg}.") from exc
         headers, rows = _rows_from_json(payload)
     elif source_format == "txt":
-        lines = [_clean_text(line) for line in _decode_source(raw).splitlines()]
-        rows = [{"term": line} for line in lines if line]
+        rows = []
+        for match in _LINE.finditer(_decode_source(raw)):
+            term = _clean_text(match.group())
+            if not term:
+                continue
+            if len(rows) >= MAX_SOURCE_ROWS:
+                raise _too_many_rows()
+            rows.append({"term": term})
         headers = ["term"]
     else:
         text = _decode_source(raw)
@@ -200,14 +231,16 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
         headers = [str(header or "").strip() for header in (reader.fieldnames or [])]
         if not headers:
             raise VocabularySourceError("The tabular source has no header row.")
-        rows = [{str(key): value for key, value in row.items()} for row in reader]
+        rows = []
+        for row in reader:
+            if len(rows) >= MAX_SOURCE_ROWS:
+                raise _too_many_rows()
+            rows.append({str(key): value for key, value in row.items()})
 
     if not rows:
         raise VocabularySourceError("The source contains no data rows.")
     if len(rows) > MAX_SOURCE_ROWS:
-        raise VocabularySourceError(
-            f"Source contains too many rows ({MAX_SOURCE_ROWS:,} maximum)."
-        )
+        raise _too_many_rows()
     return ParsedVocabularySource(
         filename=name,
         format=source_format,
