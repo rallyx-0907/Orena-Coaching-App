@@ -20,9 +20,6 @@ D-046 and the product reset are committed; the shared media, transcript,
 dictation, recording, provider and evidence primitives survive, and the learner
 surfaces converge on static/orena. PostgreSQL APIs remain.
 
-Golden Star foundation: page intro, response composer, draft status,
-progressReporter(), theme-safe panels; ORENA_WEB_EXTENSION_GUIDE.md records it.
-
 Platform Admin has a host via `#/admin` (`04a56c4`), human-reviewed.
 
 ## Learning capabilities
@@ -51,13 +48,15 @@ content. Continue reads as continuity: a chapter shown as a chapter of its
 book, place and percent carried on the memory entry. Reading opens on the
 library, cover-first, with a Continue reading shelf and search folded into a
 utility; book detail leads with cover, one action and the current chapter.
-Reader: `reader.css` exists at last (the room had none), so text keeps a
-measure and the shell recedes. Its interaction layer is now `ui/lexical.js`,
-shared: Listening's transcript mounts the same one, so a tapped word answers
-identically in both rooms. Listening opens on the covers, grows shelves from
-real data, and writes its place into the shared continuation field.
-Shadowing and Speaking reuse it too: the practised line is askable in place and
-leaving a room releases the microphone (gated). Fixed: the library rendered raw catalogue rows, so every
+Reader: `reader.css` exists (the room had none), so text keeps a measure and
+the shell recedes. Its interaction layer is `ui/lexical.js`, shared with the
+Listening transcript and the practised line. Listening opens on covers, shelves
+from real data, place in the shared continuation field.
+Listening opens on a learning stage: spoken line first, three toggles, one POS
+legend on request, Replay/Practice/More, transcript as context. Dictation hides
+the writing response. Speaking is a module with its own landing. Mic readiness
+shows the real device and level. A synthetic or recogniser result is never
+rendered as a pronunciation score. Fixed: the library rendered raw catalogue rows, so every
 card linked to an encounter with no id and the room fell back to Reading. `listeningItem()` is the
 one identity boundary now, an unclassifiable encounter keeps the learner's
 domain, and the failure state is compact and domain-aware.
@@ -98,9 +97,8 @@ I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
-Golden Star capability findings are closed; Packages A-D of
-`ORENA_REFERENCE_ARCHITECTURE.md` are done. Backbone runtime integration I1-I7
-remains Opus implementation work; F is human review, not architecture completion.
+Golden Star findings closed; Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md`
+done. Backbone I1-I7 remains Opus work; F is human review.
 
 Multi-theme awaiting visual review: Paper, Night Ink, Deep Forest, Sage Field;
 colour owned by `theme.css`. Ember deferred.

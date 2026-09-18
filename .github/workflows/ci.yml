@@ -77,6 +77,7 @@ jobs:
           node scripts/test_media_status_compact_accessor.mjs
           node scripts/test_orena_reference.mjs
           node scripts/test_orena_discover_layout.mjs
+          node scripts/test_orena_learning_stage.mjs
           node scripts/test_orena_admin_entry.mjs
           node scripts/test_orena_vocabulary_card.mjs
           node scripts/test_orena_vocabulary_experience.mjs

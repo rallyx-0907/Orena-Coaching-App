@@ -10,6 +10,7 @@ import { esc, safeExternal, dialog, status, focusRegion, focusWork } from './htm
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { mountReader } from './reader.js';
 import { mountLexicalLayer } from './lexical.js';
+import { pronunciationReportHtml } from './pronunciation-report.js';
 import { voiceEvidence } from './voice-evidence.js';
 import { publishedReading } from '../content/reading-library.js';
 import { mountVoiceResponse } from './voice-response.js';
@@ -364,7 +365,7 @@ export async function renderEncounter(root, ctx) {
     });
   };
   remember();
-  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><div class="heading-with-hint"><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small>${hint({ text: c.followNote })}</div><h1 lang="${language}">${esc(item.title)}</h1></div></header><div class="media-encounter"><section class="media-stage"><div class="media-source"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label></div><div class="moment-actions"><span class="heading-with-hint">${esc(c.deeper)}${location.intent === 'follow' ? hint({ text: c.followOptional }) : ''}</span><button data-intent="dictation">${c.dictate} ↗</button><button data-intent="shadowing">${c.shadow} ↗</button><button data-intent="speaking">${c.speakingName} ↗</button><button data-inspect>${c.inspect} ＋</button></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${c.transcript}</h2><div class="follow-tools"><span data-meaning-note hidden>${hint({ text: c.allMeaningNote })}</span>${followToggle('close-look', 'data-close-look', 'words', c.closeLook)}${followToggle('meaning-toggle', 'data-all-meaning', 'meaning', c.showAllMeaning)}</div></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol><section class="follow-moment" aria-label="${c.follow}"><small data-now></small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${ctx.support}"></p><button class="quiet" data-meaning hidden>${c.recoverMeaning} ↗</button><div class="close-look-guide" hidden><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span></div><p class="meta" data-annotation-status role="status"></p><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button></div></section></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>${responseComposer(ctx, item)}`;
+  root.innerHTML = `<div class="back-row"><a href="#/">← ${c.back}</a><small>${esc(origin(item, c))}</small><button class="quiet" data-keep aria-pressed="${memory.value.kept.includes(id)}">${memory.value.kept.includes(id) ? c.saved : c.keep} ＋</button></div><header class="encounter-heading"><div><div class="heading-with-hint"><small>${esc(c['topic_' + payload.catalog?.topic] || c.follow)} · ${duration((payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0))}</small>${hint({ text: c.followNote })}</div><h1 lang="${language}">${esc(item.title)}</h1></div></header><div class="media-encounter"><section class="media-stage"><div class="media-source"><div class="player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url })}</div><div class="transport"><button data-play aria-label="${c.play}">▶</button><button data-replay>${c.replay} ↺</button><label><span class="sr-only">${c.speed}</span><select data-rate aria-label="${c.speed}">${[0.5, 0.75, 1, 1.25, 1.5, 2].map((v) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${v}×</option>`).join('')}</select></label></div><label class="seek-line"><span class="sr-only">${c.seek}</span><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${c.seek}"><output data-time>0:00</output></label></div><section class="reached-the-end" data-reached hidden><h2>${esc(c.reachedTheEnd)}</h2><p>${esc(c.reachedTheEndNote)}</p><div class="button-row"><button class="outline" data-again>${esc(c.hearItAgain)} ↺</button><button class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></section></section><section class="learning-stage" aria-label="${esc(c.follow)}"><section class="follow-moment" aria-label="${esc(c.follow)}"><small data-now></small><p class="spoken" lang="${language}"></p><p class="pinyin" data-pinyin></p><p class="meaning" lang="${esc(ctx.support)}"></p><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button><p class="meta" data-annotation-status role="status" hidden></p><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button></section><div class="stage-actions"><button class="primary" data-replay-line>${esc(c.replay)} ↺</button><div class="stage-menu"><button class="outline" data-menu-toggle="practice" aria-expanded="false" aria-haspopup="true">${esc(c.stagePractice)}</button><div class="stage-menu__list" data-menu="practice" hidden><button data-intent="shadowing">${esc(c.stageShadowLine)}</button><button data-intent="speaking">${esc(c.stageSayYourself)}</button></div></div><div class="stage-menu"><button class="quiet" data-menu-toggle="more" aria-expanded="false" aria-haspopup="true">${esc(c.stageMore)}</button><div class="stage-menu__list" data-menu="more" hidden><button data-inspect>${esc(c.inspect)}</button><button data-save-sentence>${esc(c.stageSaveSentence)}</button><button data-intent="dictation">${esc(c.dictate)}</button></div></div></div><div class="stage-toggles" role="group" aria-label="${esc(c.stagePartsOfSpeech)}"><span class="stage-toggle-with-hint"><button data-stage-toggle="meaning" aria-pressed="false">${esc(c.stageMeaning)}</button><span data-meaning-note>${hint({ text: c.allMeaningNote })}</span></span>${language === 'zh' ? `<button data-stage-toggle="pinyin" aria-pressed="false">${esc(c.stagePinyin)}</button>` : ''}<button data-stage-toggle="colors" aria-pressed="false">${esc(c.stageWordColors)}</button><button data-legend-toggle aria-expanded="false">${esc(c.stagePartsOfSpeech)}</button></div><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span><span data-role="other">${esc(c.wordConnectors)}</span></div></section><section class="practice-space" hidden></section><aside class="transcript-panel"><div class="section-head"><h2>${esc(c.transcript)}</h2><button class="quiet" data-back-to-current hidden>${esc(c.stageBackToCurrent)}</button></div><ol>${model.segments.map((s) => `<li><button data-segment="${esc(s.segment_id)}"><time>${duration(s.start_ms)}</time><span class="line-original" lang="${language}">${esc(s.original_text)}</span>${model.meaning(s.segment_id) ? `<span class="line-meaning" lang="${esc(ctx.support)}" hidden>${esc(model.meaning(s.segment_id))}</span>` : ''}</button></li>`).join('')}</ol></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details><div data-response-host>${responseComposer(ctx, item)}</div>`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -443,6 +444,7 @@ export async function renderEncounter(root, ctx) {
      Only the classes that carry meaning are tinted. Function words keep the
      ink they had, because a system a learner cannot hold in their head is
      decoration. */
+  // Mirrors the stage's word-colour toggle, read by paintFollow.
   let closeLook = false;
   const annotated = new Map(), annotating = new Set();
   const annotateLine = async (segment) => {
@@ -458,7 +460,11 @@ export async function renderEncounter(root, ctx) {
       if (alive()) annotated.set(segment.segment_id, null);
     } finally {
       annotating.delete(segment.segment_id);
-      if (alive() && closeLook && model.current?.segment_id === segment.segment_id)
+      if (
+        alive() &&
+        (closeLook || showPinyin()) &&
+        model.current?.segment_id === segment.segment_id
+      )
         paintFollow(lastClockSegment === 'gap');
     }
   };
@@ -468,19 +474,18 @@ export async function renderEncounter(root, ctx) {
      entry, opened up where it sits: the line at reading size, its meaning, and
      the word guide. The panel keeps one height; only its list moves,
      and it scrolls on its own so the learner can read ahead. */
+  /* The line being spoken is the protagonist, and it has its own place on the
+     stage above the transcript - it does not live inside the list any more.
+     A learner should not have to scan a long transcript to find where the
+     voice is; the transcript marks the current row and stays context. */
   function placeMoment(s) {
     const host = [...transcript.querySelectorAll('[data-segment]')].find(
       (x) => x.dataset.segment === s.segment_id,
     );
     const item = host?.closest('li');
-    if (item && moment.parentElement !== item) item.append(moment);
     transcript
       .querySelectorAll('li')
       .forEach((li) => li.toggleAttribute('data-current', li === item));
-    // The opened entry is the line; its compact row would say it twice.
-    transcript
-      .querySelectorAll('[data-segment]')
-      .forEach((x) => (x.hidden = x === host && !moment.hidden));
   }
   /* A learner reading ahead in the list is not pulled back to the voice - but
      only while they are actually moving through it. Hover and focus used to
@@ -551,22 +556,35 @@ export async function renderEncounter(root, ctx) {
     }) : null;
     if (closely) original.innerHTML = closely;
     original.dataset.closeLookState = closely ? 'on' : 'off';
-    moment.querySelector('.close-look-guide').hidden = !closeLook || gap;
-    moment.querySelector('[data-word-legend]').hidden = !closely;
+    /* The legend is a key, not content: it is shown once, from its own control,
+       and never repeated under the line it explains. Only a real failure is
+       worth a status line - a working colouring explains itself. */
     const pending = annotating.has(s.segment_id);
-    moment.querySelector('[data-annotation-status]').textContent =
-      closely ? c.closeLookHelp : pending ? c.closeLookLoading : c.closeLookUnavailable;
-    moment.querySelector('[data-retry-annotation]').hidden = Boolean(closely) || pending;
+    const status = moment.querySelector('[data-annotation-status]');
+    const trouble = closeLook && !gap && !closely;
+    status.hidden = !trouble;
+    status.textContent = trouble ? (pending ? c.closeLookLoading : c.closeLookUnavailable) : '';
+    moment.querySelector('[data-retry-annotation]').hidden = !trouble || pending;
     const translated = model.meaning();
     meaning.textContent =
       translated || (ctx.support === language ? c.sameLanguage : c.noMeaning);
-    const pinyin = payload.catalog?.pinyin_by_segment?.[s.segment_id];
+    /* Pinyin for the line. The lesson's own reading is used when it ships one;
+       otherwise the shared tagger already knows how these words are read - the
+       same local, non-AI annotation the word colours use - so the reading is
+       composed from it rather than left blank. Nothing is invented: a line the
+       tagger cannot read shows no pinyin at all. */
+    const catalogPinyin = payload.catalog?.pinyin_by_segment?.[s.segment_id];
+    let reading = typeof catalogPinyin === 'string' ? catalogPinyin : '';
+    if (!gap && showPinyin() && !reading) {
+      void annotateLine(s);
+      reading = (annotated.get(s.segment_id)?.annotations || [])
+        .map((token) => token?.pronunciation || '')
+        .filter(Boolean)
+        .join(' ');
+    }
     moment.querySelector('[data-pinyin]').textContent =
-      !gap && !closely?.includes('data-reading=') && ctx.profile.pinyin !== 'off'
-        ? typeof pinyin === 'string'
-          ? pinyin
-          : ''
-        : '';
+      !gap && !closely?.includes('data-reading=') && showPinyin() ? reading : '';
+    meaning.hidden = !stage.meaning;
     moment.querySelector('[data-meaning]').hidden =
       gap || Boolean(translated) || ctx.support === language;
     root.querySelectorAll('[data-segment]').forEach((x) => {
@@ -640,22 +658,140 @@ export async function renderEncounter(root, ctx) {
       sheet.querySelector('.understanding-source')?.append(note);
     }
   };
-  // Reading the whole thing is a way of understanding it. The meanings are the
-  // ones the lesson already ships, each with the provenance the panel states.
-  const meaningToggle = root.querySelector('[data-all-meaning]');
+  /* Three small controls, and nothing more: what the line means, how it is
+     said, and whether the words carry their class as colour. They are learner
+     preferences, kept the way the reader keeps its own (one key, try/catch),
+     rather than a new place to store three booleans. */
+  const STAGE_KEY = 'orena.stage';
+  const readStage = () => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(STAGE_KEY) || 'null');
+      return raw && typeof raw === 'object' ? raw : {};
+    } catch {
+      return {};
+    }
+  };
+  const savedStage = readStage();
+  const stage = {
+    meaning: savedStage.meaning !== false,
+    pinyin: savedStage.pinyin !== false,
+    colors: savedStage.colors === true,
+  };
+  const showPinyin = () => language === 'zh' && stage.pinyin && ctx.profile.pinyin !== 'off';
+  const keepStage = () => {
+    try {
+      localStorage.setItem(STAGE_KEY, JSON.stringify(stage));
+    } catch {
+      // A device that cannot keep the preference still honours it this visit.
+    }
+  };
   const showAllMeaning = (on) => {
-    meaningToggle.checked = on;
+    stage.meaning = on;
     transcript
       .querySelectorAll('.line-meaning')
       .forEach((node) => (node.hidden = !on));
-    root.querySelector('[data-meaning-note]').hidden = !on;
+    root
+      .querySelectorAll('[data-stage-toggle="meaning"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(on)));
+    const note = root.querySelector('[data-meaning-note]');
+    if (note) note.hidden = !on;
   };
-  // Every line growing or shrinking must not carry the line being spoken off
-  // the list's view.
-  meaningToggle.onchange = () => {
-    showAllMeaning(meaningToggle.checked);
-    keepCurrentInView('instant');
+  closeLook = stage.colors;
+  showAllMeaning(stage.meaning);
+  root.querySelectorAll('[data-stage-toggle]').forEach((button) => {
+    const key = button.dataset.stageToggle;
+    button.setAttribute('aria-pressed', String(key === 'colors' ? stage.colors : stage[key]));
+    button.onclick = () => {
+      if (key === 'meaning') showAllMeaning(!stage.meaning);
+      else if (key === 'pinyin') {
+        stage.pinyin = !stage.pinyin;
+        button.setAttribute('aria-pressed', String(stage.pinyin));
+      } else {
+        stage.colors = !stage.colors;
+        closeLook = stage.colors;
+        button.setAttribute('aria-pressed', String(stage.colors));
+      }
+      keepStage();
+      paintFollow();
+      keepCurrentInView('instant');
+    };
+  });
+  /* The legend is a key shown on request, once, and never under the sentence
+     it explains. */
+  {
+    const legendButton = root.querySelector('[data-legend-toggle]');
+    const legend = root.querySelector('[data-word-legend]');
+    legendButton.onclick = () => {
+      const open = legend.hidden;
+      legend.hidden = !open;
+      legendButton.setAttribute('aria-expanded', String(open));
+    };
+  }
+  /* Replay, Practice, More - three controls, not six equal ones. The deeper
+     intentions live inside Practice and More, named plainly. */
+  root.querySelector('[data-replay-line]').onclick = () => playLine();
+  const closeMenus = (except) =>
+    root.querySelectorAll('[data-menu]').forEach((list) => {
+      if (list === except) return;
+      list.hidden = true;
+      root
+        .querySelector(`[data-menu-toggle="${list.dataset.menu}"]`)
+        ?.setAttribute('aria-expanded', 'false');
+    });
+  root.querySelectorAll('[data-menu-toggle]').forEach((button) => {
+    button.onclick = () => {
+      const list = root.querySelector(`[data-menu="${button.dataset.menuToggle}"]`);
+      const open = list.hidden;
+      closeMenus(open ? list : null);
+      list.hidden = !open;
+      button.setAttribute('aria-expanded', String(open));
+      if (open) list.querySelector('button')?.focus({ preventScroll: true });
+    };
+  });
+  root.addEventListener('click', (event) => {
+    if (event.target.closest('[data-menu], [data-menu-toggle]')) return;
+    closeMenus(null);
+  });
+  root.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMenus(null);
+  });
+  root.querySelectorAll('[data-menu] button').forEach((button) =>
+    button.addEventListener('click', () => closeMenus(null)),
+  );
+  root.querySelector('[data-save-sentence]').onclick = async () => {
+    const line = model.current;
+    if (!line) return;
+    memory.rememberLanguage({
+      term: line.original_text,
+      origin: id,
+      where: item.title,
+      why: 'from_listening',
+      context: line.original_text,
+    });
+    status(c.persisted);
   };
+  /* A learner who has read ahead gets one way back to the voice, and it only
+     exists while they are actually away from it. */
+  {
+    const back = root.querySelector('[data-back-to-current]');
+    const list = transcript.querySelector('ol');
+    const refresh = () => {
+      const current = transcript.querySelector('li[data-current]');
+      if (!current) return;
+      const above = current.offsetTop - list.offsetTop < list.scrollTop - 8;
+      const below =
+        current.offsetTop - list.offsetTop + current.offsetHeight >
+        list.scrollTop + list.clientHeight + 8;
+      back.hidden = !(above || below);
+    };
+    list.addEventListener('scroll', refresh, { passive: true });
+    back.onclick = () => {
+      readingAheadUntil = 0;
+      keepCurrentInView('smooth');
+      back.hidden = true;
+    };
+    setTimeout(refresh, 400);
+  }
   root.querySelector('[data-again]').onclick = () => {
     root.querySelector('[data-reached]').hidden = true;
     reachedTheEnd = false;
@@ -666,15 +802,7 @@ export async function renderEncounter(root, ctx) {
     showAllMeaning(true);
     focusRegion(transcript.querySelector('h2'));
   };
-  const closeLookToggle = root.querySelector('input[data-close-look]');
-  closeLookToggle.onchange = () => {
-    closeLook = closeLookToggle.checked;
-    // Pause to explore without replacing the focused word while it is read.
-    const held = closeLook && holdTheVoice();
-    paintFollow();
-    keepCurrentInView('instant');
-    if (held) status(c.heldForYou);
-  };
+
   moment.querySelector('[data-retry-annotation]').onclick = () => {
     annotated.delete(model.current.segment_id);
     paintFollow();
@@ -862,9 +990,12 @@ export async function renderEncounter(root, ctx) {
     take = null;
     practiceTarget = null;
     practiceRoot.hidden = true;
+    const stageHost = root.querySelector('.learning-stage');
+    if (stageHost) stageHost.hidden = false;
+    const responseHost = root.querySelector('[data-response-host]');
+    if (responseHost) responseHost.hidden = false;
     moment.hidden = false;
     transcript.hidden = false;
-    root.querySelector('.moment-actions').hidden = false;
     practice = null;
     lastClockSegment = null;
     paintFollow();
@@ -889,7 +1020,10 @@ export async function renderEncounter(root, ctx) {
     practiceTarget = { ...model.current };
     moment.hidden = true;
     transcript.hidden = practice === 'dictation';
-    root.querySelector('.moment-actions').hidden = true;
+    // The stage hands the room over to the practice panel: the line being
+    // worked on is shown there, so showing it twice would only compete.
+    const stageHost = root.querySelector('.learning-stage');
+    if (stageHost) stageHost.hidden = true;
     practiceRoot.hidden = false;
     // The transcript stays on screen through Shadowing and Speaking, so it has
     // to mark the line being practised rather than the one Follow left behind.
@@ -927,6 +1061,11 @@ export async function renderEncounter(root, ctx) {
     practiceVersion++;
     const version = practiceVersion;
     practice = intent;
+    /* A practice mode is its own task. The writing response belongs to Follow -
+       "what stayed with you" under a Dictation is a different module wearing
+       this one's page (D-057: one task, one frame). */
+    const responseHost = root.querySelector('[data-response-host]');
+    if (responseHost) responseHost.hidden = true;
     lexical.forget();
     recorder.discard();
     take = null;
@@ -1214,7 +1353,7 @@ export async function renderEncounter(root, ctx) {
               version === practiceVersion &&
               assessedTake === takeId
             )
-              area.innerHTML = `<h3>${c.pronunciation}</h3><p>${c.accuracy}: ${result.accuracy_score ?? c.notMeasured} · ${c.fluency}: ${result.fluency_score ?? c.notMeasured}</p><div class="pronunciation-words">${(result.words || []).map((x) => `<span lang="${language}">${esc(x.word)} <small>${x.accuracy_score ?? c.notMeasured}</small></span>`).join('')}</div><p class="meta">${result.score_kind === 'synthetic_demo' ? c.demoMeasurement : c.voiceMeasureNote}</p>`;
+              area.innerHTML = pronunciationReportHtml(c, result, language);
           } catch {
             if (isAlive() && assessedTake === takeId) {
               area.textContent = c.feedbackUnavailable;

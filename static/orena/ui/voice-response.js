@@ -4,6 +4,7 @@ import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
 import { loadSpokenCoaching } from './spoken-coaching.js';
 import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
+import { MIC_STATES, watchMicrophone } from '../capabilities/mic-readiness.js';
 import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import { link } from '../product/intent.js';
 
@@ -62,7 +63,37 @@ export function mountVoiceResponse(
   /* Where the recording lives is worth knowing and not worth reading before
      every take, so it sits beside the control as a hint. What to do - reply
      in your own words, within two minutes - stays on screen. */
-  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt practice-line" data-practice-line lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button>${hint({ text: c.localAudio })}<span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
+  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt practice-line" data-practice-line lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="mic-readiness" data-mic hidden><span class="mic-readiness__state" data-mic-state></span><span class="mic-readiness__device" data-mic-device></span><span class="mic-readiness__level" aria-hidden="true"><span data-mic-level></span></span></div><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button>${hint({ text: c.localAudio })}<span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
+  /* Before a learner speaks, say whether the microphone is there and which one
+     it is. State is words plus a level, never colour alone. */
+  const micPanel = root.querySelector('[data-mic]');
+  const micLabels = {
+    [MIC_STATES.CHECKING]: c.micChecking,
+    [MIC_STATES.READY]: c.micReady,
+    [MIC_STATES.DENIED]: c.micDenied,
+    [MIC_STATES.NO_DEVICE]: c.micNoDevice,
+    [MIC_STATES.UNSUPPORTED]: c.microphone,
+  };
+  const mic = watchMicrophone({
+    onState: ({ state, facts }) => {
+      // Readiness is an enhancement: it never decides whether the room works.
+      if (!alive() || !micPanel?.dataset) return;
+      micPanel.hidden = false;
+      micPanel.dataset.state = state;
+      const label = micPanel.querySelector?.('[data-mic-state]');
+      if (label) label.textContent = micLabels[state] || '';
+      const device = micPanel.querySelector?.('[data-mic-device]');
+      if (device) device.textContent = facts?.label || '';
+      if (facts)
+        // The negotiated capture settings, for diagnosing a bad take rather
+        // than guessing at one. Device diagnostic only; nothing is sent.
+        console.info('[Orena Speaking] capture', facts);
+    },
+    onLevel: (peak) => {
+      const bar = micPanel?.querySelector?.('[data-mic-level]');
+      if (bar?.style) bar.style.inlineSize = `${Math.round(Math.min(1, peak) * 100)}%`;
+    },
+  });
   const record = root.querySelector('[data-record]');
   const state = root.querySelector('[data-record-status]');
   const result = resultHost || root.querySelector('[data-voice-result]');
@@ -211,10 +242,18 @@ export function mountVoiceResponse(
           return;
         }
         takeId = crypto.randomUUID();
+        /* A take that is almost silent is worth saying so about before the
+           learner sends it for recognition and wonders why nothing came back.
+           Opus spends about 2.5-4 kB a second on speech; a fraction of that is
+           a signal problem - a virtual input, a muted device, or a microphone
+           too far away - not something to score. It is a hint, not a
+           measurement, and it never blocks the take. */
+        const seconds = Math.max(1, (Date.now() - startedAt) / 1000);
+        if (take.size && take.size / seconds < 1200) report.note(c.micVeryQuiet);
         root.querySelector('[data-take]').innerHTML =
           `<audio controls aria-label="${esc(c.voicePlayback)}" src="${esc(take.url)}"></audio><button class="outline" data-feedback>${esc(c.voiceHearWords)} ↗</button>`;
         root.querySelector('[data-feedback]').onclick = feedback;
-        report.note(c.voiceReady);
+        if (!(take.size && take.size / seconds < 1200)) report.note(c.voiceReady);
       } else {
         result.innerHTML = resultIdle;
         root.querySelector('[data-take]').innerHTML = '';
@@ -249,6 +288,7 @@ export function mountVoiceResponse(
   return () => {
     disposed = true;
     clearInterval(ticker);
+    mic.stop();
     recorder.cleanup();
     onRecording(false);
   };

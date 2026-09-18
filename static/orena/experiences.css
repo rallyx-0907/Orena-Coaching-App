@@ -579,8 +579,14 @@
   transform-origin: left;
   transition: transform 0.12s linear;
 }
+/* Playback and word class are two different signals and must not be told in
+   the same way (D-057, learning stage). Where the voice is reads as a soft
+   ground plus the underline; what a word *is* stays the only thing carried by
+   colour, so the two can be true at once without competing. */
 .spoken .word[data-speaking] {
-  color: var(--accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .spoken .word[data-speaking]::after {
   transform: scaleX(1);
