@@ -12,6 +12,7 @@ import {
   credentialState,
   mergeProviders,
   modelOptions,
+  servicesView,
 } from '../static/orena/admin/ai.js';
 import { usersSummaryView, accountsTable, accountDetailView, retentionView } from '../static/orena/admin/users.js';
 import { contentTable, contentDetailView, imageSource } from '../static/orena/admin/content.js';
@@ -28,8 +29,8 @@ import {
   vocabularyView,
   renderImports,
 } from '../static/orena/admin/imports.js';
-import { readinessView, systemView, operationsView } from '../static/orena/admin/operations.js';
-import { sectionFrom, sectionHref, frameView, hashParams, badgeCounts, SECTIONS } from '../static/orena/admin/shell.js';
+import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
+import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, SECTIONS } from '../static/orena/admin/shell.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = adminCopy.en;
@@ -431,6 +432,126 @@ const frame = frameView({ section: 'users', t: zh, attention });
 assert.match(frame, /aria-current="page">用户/);
 assert.match(frame, /<h1>平台管理<\/h1>/);
 assert.equal((frame.match(/class="ac-tab"/g) || []).length, 6);
+
+// ---- hostile data is text, never markup ---------------------------------------
+/* Every string the console shows can come from outside: a book's metadata, a
+   file name, a provider's model list, a transcript, a server error, an account's
+   name. Each view is rendered here with such a string in every field; none may
+   reach the page as markup, and no link or image may carry a script URL. */
+const EVIL = '<img src=x onerror=alert(1)>"\'><script>alert(2)</script>';
+const SCRIPT_URL = 'javascript:alert(3)';
+const inert = (html, where) => {
+  assert.doesNotMatch(html, /<img src=x|<script>|<\/script>/i, `${where}: hostile text reached the page as markup`);
+  assert.doesNotMatch(html, /(?:href|src)\s*=\s*"\s*javascript:/i, `${where}: a script URL became a link or image`);
+  assert.doesNotMatch(html, /onerror=alert\(1\)>/, `${where}: an attribute was broken out of`);
+};
+const hostileRecord = (kind, extra = {}) => ({
+  kind, id: EVIL, title: EVIL, subtitle: EVIL, language: EVIL, status: EVIL, origin: EVIL, updated_at: EVIL,
+  created_at: EVIL, image: SCRIPT_URL, facts: { chapter_count: 1, word_count: 2, duration_ms: 1000, transcript: EVIL,
+  segment_count: 1, item_count: 3, level: EVIL, topic: EVIL, provider: EVIL, framework: EVIL, rights_status: EVIL,
+  completeness: EVIL }, issues: [EVIL], actions: ['preview', 'archive', 'publish', 'reprocess'], ...extra,
+});
+for (const ui of ['en', 'zh']) {
+  const t = adminCopy[ui];
+  inert(overviewView({
+    generated_at: EVIL,
+    accounts: { available: true, total: 1, admins: 0, new_7d: 1, new_30d: 1, registrations: [{ date: '2026-09-01', count: 1 }] },
+    activity: { available: true, active_7d: 1, active_30d: 1, new_7d: 1, returning_7d: 0, daily: [{ date: '2026-09-01', learners: 1 }],
+      domains: [{ domain: EVIL, events: 1, learners: 1 }], languages: [{ language: EVIL, learners: 1 }] },
+    languages: { available: true, profiles: [{ language: EVIL, learners: 1 }], active_30d: [{ language: EVIL, learners: 1 }] },
+    content: { published: 1, book: { published: 1, archived: 0 }, media: { published: 0, curated: 0, imported: 0, transcript_missing: 0 },
+      vocabulary: { published: 0, draft: 0 }, sources: { [EVIL]: 'unavailable', book: 'ok' } },
+    imports: { available: true, failed_7d: 1, last_import_at: EVIL },
+    ai: { runtime_mode: EVIL, capabilities: {}, providers: {}, health: { [EVIL]: 1 }, provider_names: { gemini: EVIL } },
+    attention: [{ kind: EVIL, severity: EVIL, section: EVIL, subject: EVIL, provider: 'gemini', count: 1 },
+      { kind: 'legacy_route_fallback', severity: 'warning', section: 'ai', provider: 'gemini' }],
+  }, t, ui, href), `overview ${ui}`);
+  inert(accountsTable({ available: true, items: [{ id: EVIL, display_name: EVIL, email_masked: EVIL, role: EVIL, joined_at: EVIL,
+    last_active_at: EVIL, languages: [EVIL], level: EVIL, status: EVIL }], total: 1, limit: 25, offset: 0 }, t, ui), `accounts ${ui}`);
+  inert(accountDetailView({ id: EVIL, display_name: EVIL, email: EVIL, role: EVIL, status: EVIL, joined_at: EVIL, last_login_at: EVIL,
+    last_active_at: EVIL, account_state: EVIL, profiles: [{ language: EVIL, goal: EVIL, style: EVIL, support_language: EVIL, updated_at: EVIL }],
+    activity: [{ measure: EVIL, language: EVIL, count: 1, last_at: EVIL }] }, t, ui), `account detail ${ui}`);
+  inert(usersSummaryView({ available: true, window_days: 30,
+    accounts: { available: true, total: 1, admins: 0, new_7d: 1, new_30d: 1, registrations: [{ date: '2026-09-01', count: 1 }] },
+    activity: { available: true, active_7d: 1, active_30d: 1, new_7d: 1, returning_7d: 0, segments: { active: 1, new: 1, returning: 0 },
+      daily: [{ date: '2026-09-01', learners: 1 }], domains: [{ domain: EVIL, events: 1, learners: 1 }], languages: [{ language: EVIL, learners: 1 }] },
+    segments_30d: { active: 1, new: 1, returning: 0 },
+    retention: [{ days: 7, eligible_learners: 30, returned_learners: 3, state: 'ready', rate_percent: 10, minimum_sample: 20 }],
+    level: { state: EVIL }, languages: { profiles: [{ language: EVIL, learners: 1 }], active: [{ language: EVIL, learners: 1 }] },
+  }, t, ui), `users summary ${ui}`);
+  inert(contentTable({ items: ['book', 'media', 'vocabulary'].map((kind) => hostileRecord(kind)), total: 3, limit: 25, offset: 0,
+    sources: { [EVIL]: 'unavailable' } }, t, ui), `content ${ui}`);
+  inert(contentDetailView({ record: hostileRecord('book'), book: { description: EVIL, imported_by: EVIL, chapters: [{ id: EVIL, title: EVIL }] },
+    learner_link: SCRIPT_URL }, t, ui, 'archive'), `book detail ${ui}`);
+  inert(contentDetailView({ record: hostileRecord('media'), transcript: { segment_count: 2, segments: [{ start_ms: 0, text: EVIL }] },
+    source: { url: SCRIPT_URL, license: EVIL, review_status: EVIL, imported_by: EVIL, provider: EVIL }, learner_link: SCRIPT_URL }, t, ui, 'reprocess'),
+  `media detail ${ui}`);
+  inert(contentDetailView({ record: hostileRecord('vocabulary'), entries: [{ term: EVIL, reading: EVIL, meaning: EVIL, level: EVIL, part_of_speech: EVIL }],
+    entry_total: 9, sources: [{ filename: EVIL, created_at: EVIL, status: 'failed', error: EVIL }], admission: { rights_status: EVIL, completeness: EVIL } }, t, ui),
+  `vocabulary detail ${ui}`);
+  inert(booksView({ language: 'en', running: false, items: [
+    { name: EVIL, size: 1, state: 'published', title: EVIL, chapters: 1 },
+    { name: EVIL, size: 1, state: 'duplicate', title: EVIL },
+    { name: EVIL, size: 1, state: 'failed', code: EVIL, stage: EVIL, message: EVIL },
+  ] }, t, ui), `books ${ui}`);
+  inert(mediaView({ urls: EVIL, language: 'en', running: false, checking: false, advanced: true, items: [
+    { url: EVIL, title: EVIL, state: 'ready', source_label: EVIL, thumbnail_url: SCRIPT_URL, has_transcript: false, level: EVIL, topic: EVIL, tags: [EVIL] },
+    { url: EVIL, title: EVIL, state: 'published', source_label: EVIL, thumbnail_url: `/api/${EVIL}`, level: EVIL, topic: EVIL, tags: [EVIL] },
+    { url: EVIL, state: 'failed', code: EVIL, stage: EVIL, message: EVIL },
+    { file: {}, name: EVIL, size: 1, state: 'to_import' },
+  ] }, t, ui), `media ${ui}`);
+  inert(vocabularyView({ files: [{ name: EVIL }], previews: [
+    { filename: EVIL, headers: [EVIL], row_count: 1, format: EVIL, sample: [{ [EVIL]: EVIL }], warnings: [EVIL] },
+    { filename: EVIL, error: EVIL },
+  ], mappings: { [EVIL]: { term: EVIL } }, metadata: { title: EVIL, language: 'en', meaning_language: EVIL, framework: EVIL, level: EVIL, topic: EVIL,
+    collection_id: EVIL, rights_status: EVIL, completeness: 'unknown', publish: true, attested: false }, errors: [EVIL],
+  results: { items: [{ filename: EVIL, status: 'failed', failure_reason: EVIL }, { filename: EVIL, status: 'imported', imported: 1, duplicates: 0, skipped: 0 }],
+    collection: { catalog_status: EVIL } }, running: false, previewing: false }, t, ui), `vocabulary import ${ui}`);
+  inert(historyView({ available: true, total: 2, limit: 20, offset: 0, summary: { total: 2, failed: 1 }, items: [
+    { kind: EVIL, source: EVIL, created_at: EVIL, status: EVIL, result: { title: EVIL, transcript: EVIL }, error: { stage: EVIL, code: EVIL, message: EVIL }, origin: EVIL },
+    { kind: 'vocabulary', source: EVIL, created_at: EVIL, status: 'ready', result: { title: EVIL, imported: 1 }, error: null, origin: 'receipt' },
+  ] }, { kind: '', status: '' }, t, ui), `history ${ui}`);
+  const evilConfig = {
+    capabilities: [{ key: EVIL, operation: EVIL, implemented: true, provider_backed: true, configurable: true, explicit_config_exists: true,
+      config: { enabled: true, provider: EVIL, model: EVIL, backup_provider: EVIL, backup_model: EVIL } }],
+    providers: [{ id: EVIL, name: EVIL, kind: EVIL, secret_mode: 'server-managed', supported_operations: [EVIL], server_configured: true }],
+  };
+  const evilProviders = mergeProviders(evilConfig, { providers: [{ id: EVIL, configured: true, models: [EVIL],
+    configuration: { credential_env: EVIL, credential_source: EVIL, endpoint_url: SCRIPT_URL } }] });
+  const evilState = { config: evilConfig, providers: evilProviders, operations: { by_capability: [{ capability: EVIL, health_state: EVIL }] },
+    tests: new Map([[EVIL, { state: 'failed', message: EVIL }]]), editing: EVIL, draft: { enabled: true, provider: EVIL, model: EVIL },
+    catalogState: 'ready', providerTests: new Map([[EVIL, { state: 'failed', message: EVIL }]]), runtime: { ai: { credential_store: EVIL } },
+    providerForm: EVIL, providerMessage: EVIL, confirmRemove: EVIL, expanded: EVIL };
+  inert(routingView(evilState, t, ui), `routing ${ui}`);
+  inert(providersView(evilState, t, ui), `providers ${ui}`);
+  inert(runtimeView({ ai: { learner_runtime_mode: EVIL, legacy_selection: { source: EVIL, provider: EVIL, model: EVIL, provider_configured: false,
+    effective: { provider: EVIL, model: EVIL, fallback: true } } } }, t, { [EVIL]: EVIL }), `runtime ${ui}`);
+  inert(servicesView({ services: [{ id: EVIL, provider: EVIL, engine: EVIL, model: EVIL, state: EVIL }] }, t), `services ${ui}`);
+  inert(operationsView({ available: true, has_data: true, sample_limit: 1, by_capability: [{ capability: EVIL, health_state: EVIL, total: 1,
+    failure_rate_percent: 0, avg_latency_ms: 10, quota_state: EVIL, cost_totals: [{ currency: EVIL, amount: 1 }] }],
+    recent: [{ created_at: EVIL, capability: EVIL, origin: EVIL, outcome: EVIL, provider: EVIL, model: EVIL, latency_ms: 1, error_class: EVIL }] },
+  t, ui, { degraded_latency_ms: 2000, degraded_failure_rate_percent: 50 }), `operations ${ui}`);
+  inert(readinessView({ available: true, state: EVIL, evidence_state: EVIL, approval_state: EVIL,
+    indicators: [{ name: EVIL, state: EVIL, source: EVIL, detail: EVIL }] }, t), `readiness ${ui}`);
+  inert(systemView({ persistence_backend: EVIL, schema: { state: EVIL, current: EVIL, expected: EVIL }, account_backbone: EVIL,
+    stores: { media_index: EVIL, reading_library: EVIL, vocabulary: EVIL, audit_log: EVIL }, ai: { credential_store: EVIL }, app_version: EVIL }, t),
+  `system ${ui}`);
+  inert(activationView({ ai: { learner_runtime_mode: EVIL } }, t), `activation ${ui}`);
+  inert(impactView({ learner_impact_failures: { available: true, by_capability: [{ capability: EVIL, failure_count: 1, degraded_count: 1 }] } }, t, ui),
+    `impact ${ui}`);
+  inert(envView({ persistence_backend: EVIL, ai: { learner_runtime_mode: EVIL }, app_version: EVIL }, t), `environment ${ui}`);
+  inert(frameView({ section: EVIL, t, attention: [{ section: EVIL }] }), `frame ${ui}`);
+}
+assert.doesNotMatch(contentDetailView({ record: hostileRecord('book'), book: { chapters: [] }, learner_link: 'https://elsewhere.example/' }, en, 'en'),
+  /elsewhere\.example/, 'an "open as a learner" link stays inside the app');
+assert.match(contentDetailView({ record: hostileRecord('book'), book: { chapters: [] }, learner_link: '#/encounter?id=book%3A1' }, en, 'en'),
+  /href="#\/encounter\?id=book%3A1"/);
+assert.deepEqual(mediaOutcome({ status: 'duplicate', media_id: 'upload-1' }), { state: 'duplicate', contentId: 'upload-1' });
+const duplicateFlow = mediaView({ urls: '', language: 'en', running: false, checking: false, advanced: false, items: [
+  { file: {}, name: 'tone.wav', size: 10, state: 'duplicate', contentId: 'upload-1' },
+] }, en, 'en');
+assert.match(duplicateFlow, new RegExp(en.mediaDuplicate), 'a file already in the library says so');
+assert.match(duplicateFlow, /role="status"/, 'a batch of duplicates is finished, not pending');
 
 // ---- one colour owner ----------------------------------------------------------
 const css = read('static/orena/admin/admin.css');

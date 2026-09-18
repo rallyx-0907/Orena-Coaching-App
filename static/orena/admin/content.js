@@ -98,9 +98,12 @@ export function contentTable(data, t, ui) {
   })}${pager({ offset: data?.offset || 0, limit: data?.limit || PAGE_SIZE, total: data?.total || 0 }, t, ui)}`;
 }
 
+/* Only a route inside this app: the link is built by the server from ids,
+   and anything else - another site, a script URL - is not offered at all. */
 function learnerLink(detail, t) {
-  return detail.learner_link
-    ? `<p><a class="ac-link" href="${esc(detail.learner_link)}">${esc(t.openAsLearner)}</a> <span class="ac-muted">${esc(t.learnerLinkNote)}</span></p>`
+  const link = String(detail.learner_link || '');
+  return link.startsWith('#/')
+    ? `<p><a class="ac-link" href="${esc(link)}">${esc(t.openAsLearner)}</a> <span class="ac-muted">${esc(t.learnerLinkNote)}</span></p>`
     : '';
 }
 

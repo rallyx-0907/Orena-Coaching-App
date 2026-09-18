@@ -52,6 +52,9 @@ export function bookOutcome(row) {
 }
 
 export function mediaOutcome(row) {
+  // The server keys an uploaded file by its content: the same bytes again are
+  // the item already in the library, not a failure and not a second copy.
+  if (row?.status === 'duplicate') return { state: 'duplicate', contentId: row.media_id };
   if (row?.status === 'ok') {
     return { state: 'published', contentId: row.media_id, has_transcript: row.has_transcript ?? null, segment_count: row.segment_count ?? null };
   }
@@ -165,14 +168,16 @@ export function mediaView(state, t, ui) {
       : '';
     const stateCell = item.state === 'failed'
       ? `${chip('failed', t)}<span class="ac-error">${esc(failureText(item, t))}</span>`
-      : chip(item.state, t);
+      : item.state === 'duplicate'
+        ? `${chip('duplicate', t)}<span class="ac-muted">${esc(t.mediaDuplicate)}</span>`
+        : chip(item.state, t);
     const remove = editable || (!state.running && (item.state === 'to_import' || failed))
       ? `<button type="button" class="ac-button ac-button--quiet" data-ac-remove="${index}">${esc(t.removeItem)}</button>`
       : '';
     return [source, transcript, advanced ? `<div class="ac-cell-stack">${level}${advanced}</div>` : level, `<div class="ac-cell-stack">${stateCell}</div>`, remove];
   });
   const importable = state.items.filter((item) => item.state === 'ready' || (item.file && item.state === 'to_import')).length;
-  const done = state.items.length && state.items.every((item) => ['published', 'failed'].includes(item.state));
+  const done = state.items.length && state.items.every((item) => ['published', 'duplicate', 'failed'].includes(item.state));
   const ok = state.items.filter((item) => item.state === 'published').length;
   return `<form class="ac-flow" data-ac-media><div class="ac-flow__fields"><label class="ac-field ac-field--wide"><span>${esc(t.mediaUrls)}</span><textarea name="urls" rows="3"${state.running ? ' disabled' : ''}>${esc(state.urls)}</textarea></label>${fileControl({ label: t.mediaFiles, accept: 'video/*,audio/*', count: state.items.filter((item) => item.file).length, disabled: state.running }, t, ui)}${languageSelect('language', state.language, t)}</div><div class="ac-flow__actions"><button type="button" class="ac-button" data-ac-media-check${state.running || state.checking ? ' disabled' : ''}>${esc(state.checking ? t.checking : t.checkSources)}</button><label class="ac-check"><input type="checkbox" name="advanced"${state.advanced ? ' checked' : ''}><span>${esc(t.advancedFields)}</span></label></div>${rows.length ? table({
     head: [t.colSource, t.transcript, t.level, t.colState, { label: t.colActions, hidden: true }],

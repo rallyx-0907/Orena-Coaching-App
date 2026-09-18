@@ -232,14 +232,22 @@ class AdminConsoleRepository:
         offset: int = 0,
     ) -> dict[str, Any]:
         events = self._activity()
-        last = (
-            select(events.c.user_id.label("user_id"), func.max(events.c.at).label("last_active"))
-            .group_by(events.c.user_id)
-            .subquery("last_activity")
-        )
-        statement = select(
-            User.id, User.name, User.email, User.role, User.created_at, User.last_login, last.c.last_active
-        ).outerjoin(last, last.c.user_id == User.id)
+        # Filtering or ordering by activity needs every account's latest event.
+        # Otherwise the page is chosen from the accounts alone, and only the
+        # latest events of the accounts on it are read: the default list costs
+        # one page, not the whole learning history.
+        by_activity = activity in {"active", "idle", "never"} or sort == "active"
+        columns = (User.id, User.name, User.email, User.role, User.created_at, User.last_login)
+        last = None
+        if by_activity:
+            last = (
+                select(events.c.user_id.label("user_id"), func.max(events.c.at).label("last_active"))
+                .group_by(events.c.user_id)
+                .subquery("last_activity")
+            )
+            statement = select(*columns, last.c.last_active).outerjoin(last, last.c.user_id == User.id)
+        else:
+            statement = select(*columns)
 
         needle = str(query or "").strip()
         if needle:
@@ -253,19 +261,22 @@ class AdminConsoleRepository:
         if role in {"admin", "user"}:
             statement = statement.where(User.role == role)
         recent = now - timedelta(days=ACTIVE_DAYS)
-        if activity == "active":
-            statement = statement.where(last.c.last_active >= recent)
-        elif activity == "idle":
-            statement = statement.where(last.c.last_active < recent)
-        elif activity == "never":
-            statement = statement.where(last.c.last_active.is_(None))
+        if last is not None:
+            if activity == "active":
+                statement = statement.where(last.c.last_active >= recent)
+            elif activity == "idle":
+                statement = statement.where(last.c.last_active < recent)
+            elif activity == "never":
+                statement = statement.where(last.c.last_active.is_(None))
 
-        ordering = {
+        orderings = {
             "joined": (User.created_at.desc(), User.id),
             "joined_asc": (User.created_at.asc(), User.id),
-            "active": (last.c.last_active.desc().nulls_last(), User.created_at.desc()),
             "name": (func.lower(User.name).asc(), func.lower(User.email).asc()),
-        }.get(sort, (User.created_at.desc(), User.id))
+        }
+        if last is not None:
+            orderings["active"] = (last.c.last_active.desc().nulls_last(), User.created_at.desc())
+        ordering = orderings.get(sort, (User.created_at.desc(), User.id))
         bounded = max(1, min(int(limit or 25), MAX_PAGE))
         start = max(0, int(offset or 0))
 
@@ -273,6 +284,16 @@ class AdminConsoleRepository:
             total = int(session.scalar(select(func.count()).select_from(statement.subquery())) or 0)
             rows = session.execute(statement.order_by(*ordering).limit(bounded).offset(start)).all()
             ids = [row.id for row in rows]
+            latest: dict[str, Any] = {}
+            if last is None and ids:
+                latest = {
+                    _text_id(user_id): at
+                    for user_id, at in session.execute(
+                        select(events.c.user_id, func.max(events.c.at))
+                        .where(events.c.user_id.in_(ids))
+                        .group_by(events.c.user_id)
+                    ).all()
+                }
             languages: dict[str, list[str]] = {}
             if ids:
                 for user_id, code in session.execute(
@@ -286,7 +307,7 @@ class AdminConsoleRepository:
         items = []
         for row in rows:
             key = _text_id(row.id)
-            last_active = _utc(row.last_active)
+            last_active = _utc(row.last_active if last is not None else latest.get(key))
             items.append({
                 "id": key,
                 "display_name": row.name or "",
@@ -541,6 +562,29 @@ class AdminConsoleRepository:
                     created_at=datetime.now(UTC),
                 )
             )
+
+    def find_import(self, *, kind: str, content_hash: str) -> str:
+        """The content an earlier successful import of these bytes became, or ''.
+
+        Read from the import receipts, which carry the SHA-256 of an uploaded
+        file; the newest success wins, so a file imported again after its first
+        copy was removed points at the copy that exists.
+        """
+        if not content_hash:
+            return ""
+        statement = (
+            select(AuditLog.entity_id)
+            .where(
+                AuditLog.action == "admin.import",
+                AuditLog.entity_type == kind,
+                AuditLog.payload["content_hash"].as_string() == content_hash,
+                AuditLog.payload["status"].as_string() == "ok",
+            )
+            .order_by(AuditLog.created_at.desc())
+            .limit(1)
+        )
+        with Session(self.engine) as session:
+            return str(session.scalar(statement) or "")
 
     def list_events(
         self, actions: Iterable[str], *, limit: int = 500, since: datetime | None = None

@@ -121,11 +121,17 @@ def setup(tmp_path):
     console.configure_admin_console(admin_guard=None)
 
 
-def call(app, method, path, admin=True, **kwargs):
+def call(app, method, path, admin=True, origin="http://testserver", **kwargs):
+    """One request as the console page makes it: a browser attaches Origin to
+    every request that changes something, and the console requires it."""
+    headers = {"x-test-admin": "1"} if admin else {}
+    if origin and method.upper() != "GET":
+        headers["origin"] = origin
+    headers.update(kwargs.pop("headers", None) or {})
+
     async def run():
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
-            headers = {"x-test-admin": "1"} if admin else {}
             return await client.request(method, path, headers=headers, **kwargs)
     return asyncio.run(run())
 

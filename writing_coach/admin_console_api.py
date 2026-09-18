@@ -11,7 +11,9 @@ import attempt.
 
 Rules this boundary keeps:
 
-* every route is administrator-only, through the guard the app installs;
+* every route is administrator-only, through the guard the app installs, and
+  every change must come from the console's own page (the Origin a browser
+  attaches), so a sibling site cannot ride the session cookie;
 * a number is either computed from stored rows or reported as unavailable or
   insufficient - never estimated, never filled in;
 * nothing learner-authored leaves the server (no essay, passage, transcript of
@@ -22,6 +24,8 @@ Rules this boundary keeps:
 """
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import logging
 import os
 from collections import defaultdict
@@ -29,7 +33,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, time, timedelta
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
@@ -196,6 +200,26 @@ def _admin(request: Request) -> Mapping[str, Any]:
     if _state.admin_guard is None:
         raise orena_http_error(503, "admin_console_unavailable", "The admin console is not configured.")
     return _state.admin_guard(request) or {}
+
+
+def _same_origin(request: Request) -> None:
+    """A change must come from the console's own page.
+
+    The session cookie is SameSite=Lax, which stops a cross-site form post but
+    not a same-site one - a sibling subdomain. A browser attaches Origin to
+    every request that changes something, so a change whose Origin is absent
+    or names another host is refused: the check the AI credential endpoints
+    already make.
+    """
+    origin = request.headers.get("origin")
+    if not origin:
+        raise orena_http_error(403, "admin_origin_required", "Admin changes must be made from the admin console.")
+    try:
+        origin_host = urlsplit(origin).netloc
+    except ValueError:
+        origin_host = ""
+    if not origin_host or origin_host != request.headers.get("host", ""):
+        raise orena_http_error(403, "admin_origin_mismatch", "Admin changes must be made from the admin console.")
 
 
 def _no_store(response: Response) -> None:
@@ -393,7 +417,9 @@ def _accounts_block(now: datetime, days: int) -> dict[str, Any]:
     }
 
 
-def _activity_block(now: datetime, days: int = TREND_DAYS) -> dict[str, Any]:
+def _activity_block(
+    now: datetime, days: int = TREND_DAYS, *, first: Mapping[str, datetime] | None = None
+) -> dict[str, Any]:
     repository = _state.repository
     if repository is None:
         return {"available": False}
@@ -401,7 +427,9 @@ def _activity_block(now: datetime, days: int = TREND_DAYS) -> dict[str, Any]:
     start = _day_start(today - timedelta(days=days - 1))
     week_start = _day_start(today - timedelta(days=6))
     rows = repository.activity_rows(start)
-    first = repository.first_activity_by_user()
+    # Each learner's first activity reads the whole history; a caller that
+    # needs it too passes it in so it is read once per request.
+    first = repository.first_activity_by_user() if first is None else first
     daily_learners: dict[str, set[str]] = defaultdict(set)
     daily_events: dict[str, int] = defaultdict(int)
     domain_events: dict[str, int] = defaultdict(int)
@@ -505,7 +533,7 @@ def _receipt(admin: Mapping[str, Any], kind: str, payload: Mapping[str, Any], *,
     _audit(admin, "admin.import", entity_type=kind, entity_id=content_id, payload={"kind": kind, **payload})
 
 
-def _media_receipt(admin: Mapping[str, Any], row: dict[str, Any], language: str) -> None:
+def _media_receipt(admin: Mapping[str, Any], row: dict[str, Any], language: str, *, content_hash: str = "") -> None:
     """Record one media import attempt, and answer the row with what was stored.
 
     A provider preview can know a transcript exists without having counted it,
@@ -519,15 +547,19 @@ def _media_receipt(admin: Mapping[str, Any], row: dict[str, Any], language: str)
     stored = row.get("status") == "ok" and entry is not None
     if stored:
         row.update({"has_transcript": bool(segments), "segment_count": len(segments)})
-    _receipt(admin, "media", {
+    status = str(row.get("status") or "")
+    receipt = {
         "source": str(row.get("url") or ""),
         "language": language,
-        "status": "ok" if row.get("status") == "ok" else "error",
-        "detail": "" if row.get("status") == "ok" else str(row.get("detail") or ""),
+        "status": status if status in {"ok", "duplicate"} else "error",
+        "detail": "" if status in {"ok", "duplicate"} else str(row.get("detail") or ""),
         "title": entry.title if entry is not None else "",
         "has_transcript": bool(segments),
         "segment_count": len(segments),
-    }, content_id=content_id)
+    }
+    if content_hash:
+        receipt["content_hash"] = content_hash
+    _receipt(admin, "media", receipt, content_id=content_id)
 
 
 def _error_category(exc: HTTPException, fallback: str) -> str:
@@ -605,9 +637,9 @@ def users_summary(request: Request, response: Response, days: int = TREND_DAYS) 
         return {"available": False}
     now = _now()
     window = max(7, min(int(days or TREND_DAYS), 90))
-    activity = _activity_block(now, window)
-    floor = _day_start(now.date() - timedelta(days=RETENTION_COHORT_DAYS))
     first = repository.first_activity_by_user()
+    activity = _activity_block(now, window, first=first)
+    floor = _day_start(now.date() - timedelta(days=RETENTION_COHORT_DAYS))
     _first_seen, active_days = activity_days((row["user_id"], row["day"]) for row in repository.activity_rows(floor))
     first_days = {learner: stamp.date() for learner, stamp in first.items()}
     return {
@@ -930,6 +962,7 @@ class PublishIn(BaseModel):
 @router.post("/content/book/{book_id}/archive")
 def archive_book(book_id: str, request: Request, response: Response) -> dict[str, Any]:
     admin = _admin(request)
+    _same_origin(request)
     _no_store(response)
     import uuid as _uuid
 
@@ -946,14 +979,22 @@ def archive_book(book_id: str, request: Request, response: Response) -> dict[str
         _logger.warning("admin console: archive failed for %s", book_id, exc_info=True)
         raise orena_http_error(503, "reading_library_unavailable", "The Reading Library is not available.") from exc
     if not archived:
+        # A retry of an archive whose answer was lost finds the book already
+        # archived: that is the state asked for, so it is answered as done.
+        current = _state.repository.get_book(book_id) if _state.repository is not None else None
+        if current is not None and current.get("status") == "archived":
+            _audit(admin, "admin.content.archive", entity_type="book", entity_id=book_id,
+                   payload={"outcome": "unchanged"})
+            return {"archived": True, "id": book_id, "unchanged": True}
         raise orena_http_error(404, "content_not_found", "No published book has this identifier.")
-    _audit(admin, "admin.content.archive", entity_type="book", entity_id=book_id)
+    _audit(admin, "admin.content.archive", entity_type="book", entity_id=book_id, payload={"outcome": "ok"})
     return {"archived": True, "id": book_id}
 
 
 @router.post("/content/vocabulary/{collection_id}/publish")
 def publish_collection(collection_id: str, payload: PublishIn, request: Request, response: Response) -> dict[str, Any]:
     admin = _admin(request)
+    _same_origin(request)
     _no_store(response)
     if not payload.attested:
         raise orena_http_error(422, "vocabulary_admission_required",
@@ -978,13 +1019,14 @@ def publish_collection(collection_id: str, payload: PublishIn, request: Request,
     except ValueError as exc:
         raise orena_http_error(422, "vocabulary_publication_refused", str(exc)) from exc
     _audit(admin, "admin.content.publish", entity_type="vocabulary_collection", entity_id=collection_id,
-           payload={"rights_status": rights, "completeness": "complete"})
+           payload={"rights_status": rights, "completeness": "complete", "outcome": "ok"})
     return {"published": True, "collection": collection}
 
 
 @router.post("/content/media/{media_id}/reprocess")
 def reprocess_media(media_id: str, request: Request, response: Response) -> dict[str, Any]:
     admin = _admin(request)
+    _same_origin(request)
     _no_store(response)
     store = _state.media_store
     entry = store.get(media_id) if store is not None else None
@@ -1004,7 +1046,7 @@ def reprocess_media(media_id: str, request: Request, response: Response) -> dict
     row = (result.get("items") or [{}])[0]
     _media_receipt(admin, row, entry.language)
     _audit(admin, "admin.content.reprocess", entity_type="media", entity_id=media_id,
-           payload={"status": row.get("status", "")})
+           payload={"status": row.get("status", ""), "outcome": "ok" if row.get("status") == "ok" else "failed"})
     refreshed = store.get(media_id)
     return {"item": row, "record": media_record(refreshed) if refreshed is not None else None}
 
@@ -1020,6 +1062,7 @@ async def import_books(
     learning_language: str = Form(...),
 ) -> dict[str, Any]:
     admin = _admin(request)
+    _same_origin(request)
     _no_store(response)
     language = learning_language.strip().casefold()
     try:
@@ -1047,6 +1090,7 @@ async def import_books(
 @router.post("/imports/media")
 def import_media(payload: media_library_api.MediaImportIn, request: Request, response: Response) -> dict[str, Any]:
     admin = _admin(request)
+    _same_origin(request)
     _no_store(response)
     language = payload.language.strip().casefold()
     try:
@@ -1069,17 +1113,85 @@ async def import_media_upload(
     file: list[UploadFile] = File(default=[]),
     language: str = Form(default="en"),
 ) -> dict[str, Any]:
+    """Import audio/video files; a file already in the library is not stored twice.
+
+    An upload has no natural identity - the importer mints a new id for every
+    file - so a retried or double-clicked upload used to become a second
+    library item, with no delete to take it back. The console keys each file
+    by its content: a file whose bytes were already imported, and whose item
+    is still in the library, answers `duplicate` with that item. One lock per
+    content hash covers the check and the import, so two identical uploads
+    that arrive together store one item.
+    """
     admin = _admin(request)
+    _same_origin(request)
     _no_store(response)
     selected = language.strip().casefold()
+    rows: list[dict[str, Any]] = []
+    for upload in file or []:
+        digest = await _upload_digest(upload)
+        async with _upload_lock(digest):
+            existing = _stored_upload(digest)
+            if existing:
+                row = {"url": upload.filename or "upload", "status": "duplicate",
+                       "detail": "This file is already in the library.", "media_id": existing, "lesson_id": ""}
+            else:
+                try:
+                    result = await media_library_api.admin_upload(request, [upload], language)
+                except HTTPException as exc:
+                    category = _error_category(exc, "media_import_unavailable")
+                    _receipt(admin, "media", {"source": upload.filename or "upload", "language": selected,
+                                              "status": "error", "category": category, "detail": "",
+                                              "content_hash": digest})
+                    raise
+                row = (result.get("items") or [{"url": upload.filename or "upload", "status": "error",
+                                                 "detail": "This file could not be imported."}])[0]
+            _media_receipt(admin, row, selected, content_hash=digest)
+        rows.append(row)
+    return {"items": rows, "summary": {
+        "total": len(rows),
+        "ok": sum(1 for row in rows if row.get("status") == "ok"),
+        "duplicate": sum(1 for row in rows if row.get("status") == "duplicate"),
+        "error": sum(1 for row in rows if row.get("status") not in {"ok", "duplicate"}),
+    }}
+
+
+_UPLOAD_LOCKS: dict[str, asyncio.Lock] = {}
+
+
+def _upload_lock(digest: str) -> asyncio.Lock:
+    # Created and used on the one event loop, so the dict needs no guard;
+    # an unused lock is dropped the next time its key is asked for after it.
+    lock = _UPLOAD_LOCKS.get(digest)
+    if lock is None:
+        if len(_UPLOAD_LOCKS) > 256:
+            for key in [key for key, value in _UPLOAD_LOCKS.items() if not value.locked()]:
+                del _UPLOAD_LOCKS[key]
+        lock = _UPLOAD_LOCKS[digest] = asyncio.Lock()
+    return lock
+
+
+async def _upload_digest(upload: UploadFile) -> str:
+    """SHA-256 of an upload's bytes, read in chunks and rewound for the importer."""
+    digest = hashlib.sha256()
+    while True:
+        chunk = await upload.read(1024 * 1024)
+        if not chunk:
+            break
+        digest.update(chunk)
+    await upload.seek(0)
+    return digest.hexdigest()
+
+
+def _stored_upload(digest: str) -> str:
+    """The shared library item an earlier upload of these bytes became, if it is still there."""
+    repository, store = _state.repository, _state.media_store
+    if repository is None or store is None:
+        return ""
     try:
-        result = await media_library_api.admin_upload(request, file, language)
-    except HTTPException as exc:
-        category = _error_category(exc, "media_import_unavailable")
-        for upload in file or []:
-            _receipt(admin, "media", {"source": upload.filename or "upload", "language": selected, "status": "error",
-                                      "category": category, "detail": ""})
-        raise
-    for row in result.get("items") or []:
-        _media_receipt(admin, row, selected)
-    return result
+        media_id = repository.find_import(kind="media", content_hash=digest)
+    except Exception:  # noqa: BLE001 - an unreadable receipt log only loses the shortcut, not the import
+        _logger.warning("admin console: upload receipt lookup failed", exc_info=True)
+        return ""
+    entry = store.get(media_id) if media_id else None
+    return media_id if entry is not None and entry.library == "shared" else ""
