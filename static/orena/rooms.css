@@ -766,7 +766,7 @@
 }
 /* A transcript row is a full-width button; the words and quiet controls inside
    the opened entry are not rows and keep their own shape. */
-.transcript-panel .follow-moment button {
+.transcript-panel .follow-moment > button {
   display: inline-block;
   width: auto;
   padding: var(--space-1) 0;
@@ -774,7 +774,6 @@
   border-radius: 0;
   text-align: start;
 }
-.transcript-panel .follow-moment > small { font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
 .transcript-panel .follow-moment .spoken { margin: var(--space-2) 0 var(--space-1); }
 .transcript-panel .follow-moment .meaning { margin-top: var(--space-1); }
 .transcript-panel .close-look-guide { margin-top: var(--space-2); padding-top: var(--space-2); }
@@ -1108,7 +1107,7 @@
   .transcript-panel h2 { font-size: var(--text-base); margin: 0; }
   .transcript-panel ol { max-height: min(420px, 62svh); }
   .transcript-panel li { margin-bottom: 0; }
-  .transcript-panel button { padding: var(--space-1) var(--space-2); line-height: 1.45; gap: 0; }
+  .transcript-panel [data-segment] { padding: var(--space-1) var(--space-2); line-height: 1.45; gap: 0; }
   .transcript-panel time { font-size: var(--text-xs); }
   .transcript-panel .line-original { font-size: 0.875rem; }
   .transcript-panel .line-meaning { font-size: var(--text-xs); }
@@ -1307,48 +1306,51 @@
   .practice-line { font-size: 18px; }
 }
 
-/* --- The listening learning stage ----------------------------------------
+/* --- The listening workspace ---------------------------------------------
 
-   The line being spoken is the protagonist. It used to live inside the
-   transcript list, which meant a learner had to find the voice in a long
-   column of rows before they could work with it. It now has its own stage
-   under the media, with three small controls, one compact row of actions, and
-   the transcript beneath it as context and navigation (D-057 rule 11). */
-.learning-stage {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
+   Media and the transcript share one viewport: the video keeps the left, the
+   transcript scrolls on the right, and the line being spoken opens in place as
+   the active row. There is no separate current-line panel - that said the same
+   sentence twice and pushed the learning below the fold while the desktop sat
+   half empty (DESIGN_CONTRACT: no duplicated learning stage, horizontal space
+   first). */
+.transcript-panel .section-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
 }
-.learning-stage .follow-moment {
+
+/* The active row is the learning object: it opens, the rest stay light. */
+.transcript-panel .follow-moment {
   min-height: 0;
   margin: 0;
-  padding: 0;
+  padding: var(--space-3) var(--space-4) var(--space-3);
   border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 3px 0 var(--accent), 0 1px 0 var(--line);
 }
-.learning-stage .follow-moment > small {
+.transcript-panel .follow-moment > small {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: .06em;
 }
-.learning-stage .spoken {
-  margin: var(--space-2) 0 0;
-  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
-  line-height: 1.4;
+.transcript-panel .follow-moment .spoken {
+  margin: 6px 0 0;
+  font-size: clamp(1.05rem, 1.35vw, 1.3rem);
+  line-height: 1.45;
 }
-.learning-stage .pinyin { margin: 6px 0 0; color: var(--muted); font-size: var(--text-sm); }
-.learning-stage .meaning { margin: var(--space-2) 0 0; color: var(--ink); }
-.learning-stage .follow-moment[data-gap='true'] .spoken { opacity: .55; }
+.transcript-panel .follow-moment .pinyin { margin: 4px 0 0; color: var(--muted); font-size: var(--text-sm); }
+.transcript-panel .follow-moment .meaning { margin: 6px 0 0; color: var(--ink); font-size: var(--text-sm); }
+.follow-moment[data-gap='true'] > small { color: var(--muted); }
+.follow-moment[data-gap='true'] .spoken { opacity: .55; }
 
-/* Replay is the one thing a learner reaches for most; the deeper intentions
-   live inside Practice and More rather than as six equal buttons. */
-.stage-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.stage-actions > button, .stage-menu > button { min-height: 38px; }
+/* Replay in the open; the deeper intentions inside two menus. One compact row,
+   on the active line only - never repeated on every row. */
+.stage-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-top: var(--space-3); }
+.stage-actions > button, .stage-menu > button { min-height: 34px; font-size: var(--text-sm); }
 .stage-menu { position: relative; }
 .stage-menu__list {
   position: absolute;
@@ -1364,7 +1366,7 @@
     0 16px 34px color-mix(in srgb, var(--ink) 20%, transparent);
 }
 .stage-menu__list button {
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 12px;
   border: 0;
   border-radius: 9px;
@@ -1379,19 +1381,19 @@
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
-/* Three preferences, stated as pressed states rather than as prose. */
-.stage-toggles { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.stage-toggle-with-hint { display: inline-flex; align-items: center; gap: 4px; }
+/* Display preferences, not primary actions: small, quiet, beside the heading. */
+.stage-toggles { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.stage-toggle-with-hint { display: inline-flex; align-items: center; gap: 3px; }
 .stage-toggles button {
-  min-height: 32px;
-  padding: 0 11px;
+  min-height: 28px;
+  padding: 0 9px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--paper);
   color: var(--muted);
   cursor: pointer;
   font: inherit;
-  font-size: var(--text-xs);
+  font-size: 11px;
   font-weight: 600;
 }
 .stage-toggles button[aria-pressed='true'] {
@@ -1400,57 +1402,109 @@
   color: var(--ink);
 }
 .stage-toggles button[aria-pressed='true']::before { content: '✓ '; }
-.learning-stage .word-legend {
-  gap: var(--space-2) var(--space-4);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--line);
+.transcript-panel .word-legend {
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) 0;
+  border-block: 1px solid var(--line);
+  color: var(--muted);
+}
+.transcript-panel [data-back-to-current] { align-self: start; margin-bottom: var(--space-2); white-space: nowrap; }
+
+/* --- Speaking as its own module ------------------------------------------
+
+   Four ways in, each composed for what it actually is rather than as another
+   equal rectangle: the one thing to carry on with leads with the artwork of
+   where it came from, lines worth repeating sit on a rail, situations are text
+   and read as text, and the prompt is a single action. A wall of bordered
+   cards is not a layout (DESIGN_CONTRACT: the card-wall anti-pattern). */
+.speak-section { margin-bottom: var(--space-6); }
+.speak-section > h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
-/* The transcript is context now: the current row is marked, and one control
-   appears only while the learner has scrolled away from it. */
-.transcript-panel li[data-current] > [data-segment] {
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-  box-shadow: inset 3px 0 var(--accent);
-}
-.transcript-panel [data-back-to-current] { white-space: nowrap; }
-
-@media (max-width: 800px) {
-  /* A phone reads: media, the line, what it means, what to do with it, then
-     the transcript. Not a shrunken desktop column. */
-  .learning-stage { padding: var(--space-3) var(--space-4); border-radius: 14px; }
-  .learning-stage .spoken { font-size: 1.25rem; }
-  .stage-actions > button, .stage-menu > button { min-height: 40px; }
-  .stage-menu__list { left: auto; right: 0; }
-}
-
-/* --- Speaking as its own module ------------------------------------------
-   Arriving at Speaking offers the ways in that really exist, built from real
-   state: unfinished work, a line worth repeating, the authored situations, and
-   the learner's own prompt. Cards, not a feature list. */
-.speak-shelf { margin-bottom: var(--space-6); }
-.speak-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-3);
-}
-.speak-card {
-  display: grid;
-  align-content: start;
-  gap: 6px;
-  min-height: 92px;
+.speak-resume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
   padding: var(--space-4);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
-  color: var(--ink);
+  border-radius: 16px;
+  background: var(--night-surface);
+  color: var(--on-night);
   text-decoration: none;
 }
-.speak-card > small { color: var(--muted); font-size: var(--text-xs); }
-.speak-card > strong { line-height: 1.35; }
-.speak-card:hover, .speak-card:focus-visible { box-shadow: inset 0 0 0 1px var(--accent); }
+.speak-resume__visual {
+  flex: 0 0 auto;
+  overflow: hidden;
+  width: 76px;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px 9px 9px 4px;
+}
+.speak-resume__visual > img, .speak-resume__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.speak-resume__body { display: grid; gap: 4px; min-width: 0; }
+.speak-resume__body > strong { font-size: var(--text-lead); line-height: 1.25; }
+.speak-resume__body > span { color: var(--on-night-muted); font-size: var(--text-sm); }
+.speak-resume__place { font-variant-numeric: tabular-nums; }
+.speak-resume__go { margin-left: auto; white-space: nowrap; font-weight: 600; }
+
+.speak-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, calc((100% - 3 * var(--space-3) - 24px) / 4));
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  touch-action: pan-y;
+}
+.speak-rail__item {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+  scroll-snap-align: start;
+}
+.speak-rail__visual {
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: 9px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.speak-rail__visual > img, .speak-rail__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.speak-rail__item > span {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.speak-rail__item:hover .speak-rail__visual, .speak-rail__item:focus-visible .speak-rail__visual {
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.speak-situations { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; max-width: 62ch; }
+.speak-situations li { padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.speak-situations li:first-child { border-top: 1px solid var(--line); }
+.speak-situations a { color: var(--ink); font-size: var(--text-lead); text-decoration: none; }
+.speak-situations a:hover, .speak-situations a:focus-visible { color: var(--accent); }
+.speak-situations li > span { display: block; margin-top: 3px; color: var(--muted); font-size: var(--text-sm); }
+.speak-section--prompt > button { min-height: 40px; }
+
+@media (max-width: 900px) {
+  .speak-rail { grid-auto-columns: minmax(0, calc((100% - var(--space-3) - 24px) / 2)); }
+}
 @media (max-width: 600px) {
-  .speak-grid { grid-template-columns: 1fr; }
+  .speak-rail { grid-auto-columns: minmax(0, calc(100% - 28px)); }
+  .speak-resume { gap: var(--space-3); padding: var(--space-3); }
+  .speak-resume__visual { width: 58px; }
+  .speak-resume__go { margin-left: 0; }
+  .speak-resume { flex-wrap: wrap; }
 }
 
 /* A measurement reads as dimensions and the words worth working on - not as one

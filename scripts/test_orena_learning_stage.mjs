@@ -16,22 +16,38 @@ const speaking = read('static/orena/ui/speaking.js');
 const rooms = read('static/orena/rooms.css');
 const experiences = read('static/orena/experiences.css');
 
-/* --- The line being spoken is the protagonist --------------------------- */
-assert.match(encounter, /<section class="learning-stage"/, 'the current line has its own stage');
-assert.ok(
-  encounter.indexOf('class="learning-stage"') < encounter.indexOf('class="transcript-panel"'),
-  'the stage comes before the transcript, not after it',
-);
-/* It must not be put back inside the list: that is the defect - a learner
-   scanning a long transcript to find where the voice is. */
+/* --- The line being spoken IS the active transcript row ------------------
+   It briefly had a stage of its own above the list. That said the same
+   sentence twice, ate the height the transcript needed, and left the desktop
+   wide and empty while the learning stacked downward. The information already
+   lived in the row it belongs to, so the row carries it. */
+assert.doesNotMatch(encounter, /class="learning-stage"/, 'no separate current-line stage');
 const placeMoment = encounter.slice(
   encounter.indexOf('function placeMoment('),
   encounter.indexOf('function paintFollow('),
 );
-assert.doesNotMatch(placeMoment, /item\.append\(moment\)/, 'the stage is not moved into the transcript list');
-assert.match(placeMoment, /toggleAttribute\('data-current'/, 'the transcript marks the current row instead');
-assert.match(rooms, /\.transcript-panel li\[data-current\] > \[data-segment\]/, 'and that row is visibly current');
+assert.match(placeMoment, /item\.append\(moment\)/, 'the active row opens in place');
+assert.match(placeMoment, /x\.hidden = x === host/, 'and its compact form is not shown twice');
+assert.match(placeMoment, /toggleAttribute\('data-current'/, 'the row is marked current');
+assert.ok(
+  encounter.indexOf('class="stage-actions"') > encounter.indexOf('class="follow-moment"'),
+  'the actions belong to the opened row, not to a panel above it',
+);
+assert.ok(
+  encounter.indexOf('class="stage-actions"') > encounter.indexOf('<ol>'),
+  'and they live inside the transcript list',
+);
+assert.equal((encounter.match(/class="stage-actions"/g) || []).length, 1,
+  'one action row, on the active line - never repeated on every row');
 assert.match(encounter, /data-back-to-current/, 'a learner who reads ahead is offered one way back');
+assert.match(rooms, /\.transcript-panel \.follow-moment \{/, 'the opened row has its own compact shape');
+
+/* Media and transcript share one viewport: the transcript scrolls inside its
+   own pane rather than the page scrolling between them. */
+assert.match(rooms, /@media \(min-width: 801px\)[\s\S]*?grid-template-columns: minmax\(0, 1\.3fr\) minmax\(320px, 1fr\)/,
+  'desktop uses its width before stacking');
+assert.match(rooms, /\.transcript-panel \{[\s\S]{0,200}?position: sticky/,
+  'the transcript pane keeps its place while the media stays visible');
 
 /* --- Playback and word class are different signals ---------------------- */
 const speakingWordStart = experiences.indexOf('.spoken .word[data-speaking]');
@@ -50,16 +66,17 @@ assert.ok(
   encounter.indexOf('data-word-legend') > encounter.indexOf('class="stage-toggles"'),
   'the legend belongs to the controls, not to the line',
 );
+assert.ok(
+  encounter.indexOf('class="stage-toggles"') < encounter.indexOf('<ol>'),
+  'the display preferences sit with the transcript heading, not in the list',
+);
 assert.doesNotMatch(encounter, /close-look-guide/, 'the per-line colour explainer is retired');
 
 /* --- Three small controls, and a compact action row --------------------- */
 for (const toggle of ['meaning', 'pinyin', 'colors'])
   assert.match(encounter, new RegExp(`data-stage-toggle="${toggle}"`), `${toggle} is a learner control`);
 assert.match(encounter, /localStorage\.setItem\(STAGE_KEY/, 'the three preferences are kept as the reader keeps its own');
-const stageActions = encounter.slice(
-  encounter.indexOf('class="stage-actions"'),
-  encounter.indexOf('class="stage-toggles"'),
-);
+const stageActions = encounter.slice(encounter.indexOf('class="stage-actions"'));
 assert.match(stageActions, /data-replay-line/, 'Replay is the one control in the open');
 assert.match(stageActions, /data-menu-toggle="practice"/);
 assert.match(stageActions, /data-menu-toggle="more"/);
@@ -84,7 +101,16 @@ for (const key of ['speakContinue', 'speakRepeat', 'speakRespond', 'speakPrompt'
   assert.match(speaking, new RegExp(`c\\.${key}`), `${key} is one of the ways in`);
 assert.match(speaking, /continuationExperience\(x\) === 'speaking'/, 'unfinished speaking is real state');
 assert.match(speaking, /continuationExperience\(x\) === 'listening'/, 'a line worth repeating comes from real listening');
-assert.match(speaking, /items\.length$/m, 'a way in with nothing behind it is absent rather than empty');
+assert.match(speaking, /body \? `<section class="speak-section"/,
+  'a way in with nothing behind it is absent rather than empty');
+/* Four ways in, each composed for what it is - not four of the same
+   rectangle (DESIGN_CONTRACT: the card-wall anti-pattern). */
+assert.match(speaking, /class="speak-resume"/, 'the one thing to carry on with leads with its artwork');
+assert.match(speaking, /class="speak-rail"/, 'lines worth repeating sit on a rail');
+assert.match(speaking, /class="speak-situations"/, 'situations are text and read as text');
+assert.doesNotMatch(speaking, /class="speak-card"/, 'the wall of equal cards is gone');
+assert.match(speaking, /entries\.find\(\(x\) => continuationExperience\(x\) === 'speaking'\)/,
+  'Continue is one current thing, not a history dump');
 assert.match(speaking, /mountLexicalLayer\(\{/, 'Speaking asks about language through the shared layer');
 
 /* --- Microphone readiness, and what it may claim ------------------------ */
@@ -112,7 +138,7 @@ for (const ui of ['en', 'zh'])
 assert.notEqual(copy.en.stagePractice, copy.zh.stagePractice);
 
 /* --- The phone is designed, not squeezed -------------------------------- */
-assert.match(rooms, /@media \(max-width: 800px\)[\s\S]*?\.learning-stage/, 'the stage has its own phone layout');
-assert.match(rooms, /@media \(max-width: 600px\)[\s\S]*?\.speak-grid/, 'so does the Speaking landing');
+assert.match(rooms, /@media \(max-width: 600px\)[\s\S]*?\.speak-rail/, 'the Speaking rail has its own phone layout');
+assert.match(rooms, /@media \(max-width: 600px\)[\s\S]*?\.speak-resume/, 'so does the Speaking landing');
 
 console.log('Learning stage: current line first, one legend, compact actions, Dictation apart, Speaking standalone, EN/ZH: PASS');

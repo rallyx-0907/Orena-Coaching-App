@@ -70,8 +70,10 @@ evidence meaning or capability semantics.
    scale, weight, semantic colour, surface, spacing and grouping. Supporting
    information recedes; not everything becomes an equally weighted card.
 9. **One interface language.** Navigation, controls, headings, instructions,
-   helper text, errors, feedback scaffolding and labels follow the interface
-   language; the learning language governs the material learned or produced.
+   helper text, errors, feedback scaffolding and labels follow one language;
+   the learning language governs the material learned or produced. Which
+   language that is, is settled by "The learner language contract" below: it is
+   the support language, not a separately chosen interface language.
    Learning, support and interface language remain distinct concepts
    internally, and coherence comes from the shared localisation architecture,
    never from a special case for one language.
@@ -191,6 +193,69 @@ reads as **world recedes, content comes forward**: entering Reader, Listening,
 Writing, Speaking or another focused experience reduces navigation and shell
 noise, keeps the learning tools and explanations within reach, and adds no
 decorative immersion that competes with the task.
+
+## Learner-facing experience rules, continued (2026-09-18)
+
+Explicit human direction after a learning-surface review. Rules 1-18 stand.
+
+19. **The core learning viewport.** Everything the immediate learning task needs
+    at the same time stays available in one learning viewport. A learner never
+    page-scrolls to trade the media for the transcript, the prompt for the
+    recording, the recording for its immediate result, or the audio for the
+    dictation input. Secondary material - earlier attempts, deeper analysis,
+    measurement detail, history - may scroll inside its own region, collapse,
+    or open progressively. On a desktop the width is used before core elements
+    are stacked; a wide empty area beside vertically stacked learning content is
+    the defect this rule names. A phone recomposes the workspace rather than
+    receiving the desktop columns end to end.
+
+20. **No duplicated learning stage.** Before adding a panel, ask whether the
+    information already exists in a visible learning object. If it does, that
+    object is enhanced instead. The line being spoken is the active transcript
+    row, opened in place - not a second card above the list repeating it. The
+    same applies to a source title stated three times, or a mode label the
+    navigation already carries.
+
+21. **The card wall is not a layout.** Repeated equal bordered rectangles are
+    not the default shape of a learner surface, and changing their border,
+    radius, shadow or background does not fix one - the composition has to
+    change. A container is earned when it carries real content identity, an
+    interaction boundary, an active or selected state, a bounded scroll region,
+    a continuation object, or a form control. Ordinary text does not become a
+    group by being wrapped in a white rounded rectangle. Compose with content
+    imagery, source artwork, typography, spacing, rails, active state, icons,
+    semantic colour, progress and relationships first; reach for a border when
+    one of those is genuinely what is meant.
+
+22. **Composition order.** Actual learning content, then the source's own visual
+    identity, then active state, then typography, then spatial grouping, then
+    semantic colour, then icons, then progress - and only then a container. A
+    surface that begins from a card for every piece of content has started in
+    the wrong place.
+
+## The learner language contract
+
+Orena has two learner language roles, and only two.
+
+**Learning language** owns the material: lesson and book text, media
+transcripts, target vocabulary, practice sentences, target-language prompts and
+the source content itself.
+
+**Support language** owns everything Orena itself says: navigation, labels,
+controls, instructions, guidance, feedback, explanations, errors, tooltips,
+status and system messages.
+
+Learner output keeps whatever language the learner actually produced.
+
+There is no third, independently chosen learner-facing interface language. A
+stored legacy preference may remain for compatibility, but it no longer decides
+what language the product speaks; the support language does. A mixed interface
+is a defect unless the content itself deliberately contains those languages -
+and a target-language title or passage appearing in target language is content,
+never leakage.
+
+A support locale with no copy pack yet falls back to English rather than showing
+keys, and the shortfall is recorded rather than hidden.
 
 ## Art direction owner
 

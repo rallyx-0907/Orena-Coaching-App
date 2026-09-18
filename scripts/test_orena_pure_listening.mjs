@@ -124,8 +124,10 @@ assert.ok(
 );
 
 const worldCss = readFileSync(new URL('../static/orena/world.css', import.meta.url), 'utf8');
+/* The row rule is scoped to actual transcript rows: the panel also holds
+   ordinary controls now, and they are not rows. */
 const segmentRule = worldCss.slice(
-  worldCss.indexOf('.transcript-panel button {'),
+  worldCss.indexOf('.transcript-panel ol > li > button[data-segment] {'),
   worldCss.indexOf('.transcript-panel time {'),
 );
 assert.ok(
@@ -137,13 +139,13 @@ assert.ok(
   'a flex row is what made the original and its meaning parallel columns',
 );
 assert.ok(
-  worldCss.includes(".transcript-panel button[aria-current='true'] .line-meaning"),
+  worldCss.includes(".transcript-panel [data-segment][aria-current='true'] .line-meaning"),
   'the active block carries its meaning with it rather than highlighting half of itself',
 );
 
 /* --- Support text ships in its own writing system --- */
 assert.ok(
-  !/\.transcript-panel button > span/.test(worldCss),
+  !/\.transcript-panel \[data-segment\] > span/.test(worldCss),
   'styling every child alike is what flattened the meaning into a second original',
 );
 

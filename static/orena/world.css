@@ -666,7 +666,11 @@
    it means, stacked in that order. Laying the original and the meaning out as
    parallel columns makes them two things to read instead of one line and its
    translation, and it breaks down entirely at narrow widths. */
-.transcript-panel button {
+/* A transcript *row* is a full-width button. The panel also holds ordinary
+   controls now - the display toggles, the legend, the way back to the current
+   line - and those are not rows, so the rule is scoped to the rows it was
+   written for rather than to every button in the panel. */
+.transcript-panel ol > li > button[data-segment] {
   display: grid;
   gap: 2px;
   width: 100%;
@@ -691,7 +695,7 @@
   padding-inline-start: var(--space-3);
   border-inline-start: 2px solid var(--line);
 }
-.transcript-panel button[aria-current='true'] {
+.transcript-panel [data-segment][aria-current='true'] {
   background: var(--sage-surface);
   color: var(--on-sage);
   box-shadow: inset 3px 0 var(--accent);
@@ -700,11 +704,11 @@
    takes the ink paired with that tint. Ambient --muted is mixed against the
    page, not against sage, and lands at 4.05:1 there - the timestamp and the
    meaning are exactly the small text that cannot afford it. */
-.transcript-panel button[aria-current='true'] time,
-.transcript-panel button[aria-current='true'] .line-meaning {
+.transcript-panel [data-segment][aria-current='true'] time,
+.transcript-panel [data-segment][aria-current='true'] .line-meaning {
   color: var(--on-sage-muted);
 }
-.transcript-panel button[aria-current='true'] .line-meaning {
+.transcript-panel [data-segment][aria-current='true'] .line-meaning {
   border-inline-start-color: var(--on-sage-muted);
 }
 .media-encounter:has(.transcript-panel[hidden]) {

@@ -2,6 +2,7 @@ import {
   pageIntro,
   practiceReturn,
   continuationEntries,
+  continuationPlace,
   continuationShelf,
   hint,
   workspaceFrames,
@@ -9,6 +10,7 @@ import {
 import { esc, dialog } from './html.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { link, continuationExperience } from '../product/intent.js';
+import { art } from './content.js';
 import { mountVoiceResponse } from './voice-response.js';
 import { mountLexicalLayer } from './lexical.js';
 import { startConversation } from './conversation.js';
@@ -24,29 +26,45 @@ import { startConversation } from './conversation.js';
 function speakingLanding(root, ctx, invitations) {
   const { c, language, memory } = ctx;
   const entries = continuationEntries(memory);
-  const resumable = entries.filter((x) => continuationExperience(x) === 'speaking').slice(0, 3);
+  const resuming = entries.find((x) => continuationExperience(x) === 'speaking') || null;
   const repeatable = entries
     .filter((x) => continuationExperience(x) === 'listening' && String(x.excerpt || '').trim())
-    .slice(0, 3);
-  const card = (href, label, title, lang) =>
-    `<a class="speak-card" href="${esc(href)}"><small>${esc(label)}</small><strong${lang ? ` lang="${esc(lang)}"` : ''}>${esc(title)}</strong></a>`;
-  const shelf = (id, title, items) =>
-    items.length
-      ? `<section class="speak-shelf" data-speak-shelf="${esc(id)}"><div class="section-head"><h2>${esc(title)}</h2></div><div class="speak-grid">${items.join('')}</div></section>`
-      : '';
-  root.innerHTML = `${practiceReturn(c, 'speaking')}${pageIntro({ title: c.speakingName, compact: true })}${shelf(
-    'continue',
+    .slice(0, 6);
+
+  /* One continuation, not a history dump: the thing the learner was last
+     saying, with the artwork of where it came from. */
+  const place = resuming ? continuationPlace(resuming) : null;
+  const continueRow = resuming
+    ? `<a class="speak-resume" href="${esc(link('practice', { id: resuming.id, intent: 'speaking' }))}"><span class="speak-resume__visual" aria-hidden="true">${art(resuming)}</span><span class="speak-resume__body"><strong lang="${esc(language)}">${esc(resuming.title)}</strong>${resuming.excerpt ? `<span lang="${esc(language)}">${esc(String(resuming.excerpt).slice(0, 110))}</span>` : ''}${place ? `<span class="speak-resume__place">${place.index}/${place.total}</span>` : ''}</span><span class="speak-resume__go">${esc(c.continue)} <span aria-hidden="true">→</span></span></a>`
+    : '';
+
+  /* A line worth repeating leads with the content it came from, on a rail. */
+  const repeatRail = repeatable.length
+    ? `<div class="speak-rail">${repeatable
+        .map(
+          (x) =>
+            `<a class="speak-rail__item" href="${esc(link('practice', { id: x.id, intent: 'speaking' }))}"><span class="speak-rail__visual" aria-hidden="true">${art(x)}</span><span lang="${esc(language)}">${esc(String(x.excerpt).slice(0, 80))}</span></a>`,
+        )
+        .join('')}</div>`
+    : '';
+
+  /* Situations are text, and text does not need a rectangle each. */
+  const respondList = invitations.length
+    ? `<ul class="speak-situations">${invitations
+        .map(
+          (x) =>
+            `<li><a href="${esc(link('practice', { intent: 'speaking', id: `voice:${x.key}` }))}" lang="${esc(language)}">${esc(x.title)}</a>${x.cue ? `<span lang="${esc(language)}">${esc(x.cue)}</span>` : ''}</li>`,
+        )
+        .join('')}</ul>`
+    : '';
+
+  const section = (title, body) =>
+    body ? `<section class="speak-section"><h2>${esc(title)}</h2>${body}</section>` : '';
+
+  root.innerHTML = `${practiceReturn(c, 'speaking')}${pageIntro({ title: c.speakingName, compact: true })}${section(
     c.speakContinue,
-    resumable.map((x) => card(link('practice', { id: x.id, intent: 'speaking' }), c.speakRespond, x.title, language)),
-  )}${shelf(
-    'repeat',
-    c.speakRepeat,
-    repeatable.map((x) => card(link('practice', { id: x.id, intent: 'speaking' }), x.title, x.excerpt.slice(0, 90), language)),
-  )}${shelf(
-    'respond',
-    c.speakRespond,
-    invitations.map((x) => card(link('practice', { intent: 'speaking', id: `voice:${x.key}` }), c.voiceSituation, x.title, language)),
-  )}<section class="speak-shelf"><div class="section-head"><h2>${esc(c.speakPrompt)}</h2></div><button class="outline" data-own-prompt>${esc(c.voiceOwn)}</button></section>`;
+    continueRow,
+  )}${section(c.speakRepeat, repeatRail)}${section(c.speakRespond, respondList)}<section class="speak-section speak-section--prompt"><h2>${esc(c.speakPrompt)}</h2><button class="outline" data-own-prompt>${esc(c.voiceOwn)} <span aria-hidden="true">→</span></button></section>`;
   bindOwnPrompt(root, ctx);
   return () => {};
 }

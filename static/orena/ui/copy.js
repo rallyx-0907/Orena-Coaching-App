@@ -885,6 +885,10 @@ const zh = {
 };
 export const copy = { en, zh };
 
+/* Vietnamese support merges over English so a string not translated yet still
+   reads. The pack is applied at the end of this module, once every
+   `Object.assign(copy.en, ...)` block below has run. */
+
 Object.assign(copy.en, {
   seek: 'Seek through this media',
   accuracy: 'Pronunciation accuracy',
@@ -1998,3 +2002,6 @@ Object.assign(copy.zh, {
   pos_proper_noun: '专有名词',
   pos_other: '词',
 });
+
+import { vi } from './copy-vi.js';
+copy.vi = { ...copy.en, ...vi };

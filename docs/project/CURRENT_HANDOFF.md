@@ -52,10 +52,11 @@ Reader: `reader.css` exists (the room had none), so text keeps a measure and
 the shell recedes. Its interaction layer is `ui/lexical.js`, shared with the
 Listening transcript and the practised line. Listening opens on covers, shelves
 from real data, place in the shared continuation field.
-Listening opens on a learning stage: spoken line first, three toggles, one POS
-legend on request, Replay/Practice/More, transcript as context. Dictation hides
-the writing response. Speaking is a module with its own landing. Mic readiness
-shows the real device and level. A synthetic or recogniser result is never
+Listening is a two-pane workspace: media left, transcript right, the spoken line
+IS the active row - no duplicated stage. Dictation hides the writing response.
+Speaking is a composed module, not a card wall. Learner UI follows the SUPPORT
+language (`copy.vi` merges over English); no separate interface language. Mic
+readiness shows the real device; a synthetic or recogniser result is never
 rendered as a pronunciation score. Fixed: the library rendered raw catalogue rows, so every
 card linked to an encounter with no id and the room fell back to Reading. `listeningItem()` is the
 one identity boundary now, an unclassifiable encounter keeps the learner's

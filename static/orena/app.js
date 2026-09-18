@@ -107,7 +107,19 @@ const storage = (() => {
     };
   }
 })();
-const ui = storage.getItem('orena.interface') === 'zh' ? 'zh' : 'en';
+/* The learner's support language owns everything Orena says.
+
+   Orena has two learner language roles and only two: the learning language,
+   which owns the material, and the support language, which owns every word the
+   product itself speaks - navigation, controls, instructions, feedback,
+   errors. A third, independently chosen "interface language" produced exactly
+   what it sounds like: a learner studying English with Vietnamese support
+   reading an English product. The stored preference is kept so nothing breaks,
+   but it no longer decides this on its own.
+
+   A locale with no copy pack falls back to English rather than showing keys. */
+const uiLocale = (support) => (copy[String(support || '')] ? String(support) : 'en');
+const ui = uiLocale(storage.getItem('orena.support') || storage.getItem('orena.interface'));
 const ctx = {
   api,
   ui,
@@ -148,7 +160,7 @@ const ctx = {
 };
 function shell() {
   const c = ctx.c;
-  document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
+  document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : ctx.ui;
   document.documentElement.dataset.learning = ctx.language;
   // Shared plumbing such as a dialog's close control reads its label from the
   // interface language rather than carrying every language at once.
@@ -231,7 +243,7 @@ function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
   });
   /* The theme chooser is built from the registry, so registering a theme is
      the whole of adding one - there is no list of themes written out a second
@@ -287,10 +299,10 @@ function preferences(onboarding = false) {
         support_language: data.get('support'),
       });
       ctx.support = ctx.profile.support_language || ctx.profile.native_language;
-      ctx.ui = String(data.get('interface'));
+      ctx.ui = uiLocale(data.get('support'));
       ctx.c = copy[ctx.ui];
       try {
-        storage.setItem('orena.interface', ctx.ui);
+        storage.setItem('orena.support', String(data.get('support') || ''));
       } catch {}
       ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
       sheet.close();
@@ -533,6 +545,13 @@ async function boot() {
     ctx.commerce = commerce;
     ctx.growth = growth;
     ctx.support = profile.support_language || profile.native_language || 'en';
+    ctx.ui = uiLocale(ctx.support);
+    ctx.c = copy[ctx.ui];
+    try {
+      storage.setItem('orena.support', ctx.support);
+    } catch {
+      // A device that cannot keep it still honours it for this visit.
+    }
     ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
     // New product direction remains internal until the human release gate.
     if (!user.is_admin) {
