@@ -1288,3 +1288,21 @@
   }
   .review-issues .correction { padding: var(--space-2) var(--space-3); }
 }
+
+/* The line being practised is the phrase the learner is repeating, and it is
+   askable in place: the same lexical layer the transcript uses answers a word
+   tapped here (ui/lexical.js). It reads as the source it is, not as a quote
+   ornament. */
+.practice-line {
+  margin: 0 0 var(--space-3);
+  font-size: clamp(18px, 1.7vw, 23px);
+  line-height: 1.45;
+  cursor: text;
+}
+.practice-line::selection,
+.practice-line ::selection {
+  background: color-mix(in srgb, var(--brand) 32%, transparent);
+}
+@media (max-width: 600px) {
+  .practice-line { font-size: 18px; }
+}

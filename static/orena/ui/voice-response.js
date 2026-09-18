@@ -62,7 +62,7 @@ export function mountVoiceResponse(
   /* Where the recording lives is worth knowing and not worth reading before
      every take, so it sits beside the control as a hint. What to do - reply
      in your own words, within two minutes - stays on screen. */
-  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt" lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button>${hint({ text: c.localAudio })}<span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
+  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt practice-line" data-practice-line lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button>${hint({ text: c.localAudio })}<span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
   const record = root.querySelector('[data-record]');
   const state = root.querySelector('[data-record-status]');
   const result = resultHost || root.querySelector('[data-voice-result]');

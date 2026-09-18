@@ -9,6 +9,7 @@ import { esc, dialog } from './html.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { link } from '../product/intent.js';
 import { mountVoiceResponse } from './voice-response.js';
+import { mountLexicalLayer } from './lexical.js';
 import { startConversation } from './conversation.js';
 
 export function renderSpeaking(root, ctx) {
@@ -78,7 +79,7 @@ export function renderSpeaking(root, ctx) {
     intent: 'speaking',
     excerpt: picked.prompt,
   });
-  return mountVoiceResponse(root.querySelector('[data-voice]'), ctx, {
+  const releaseVoice = mountVoiceResponse(root.querySelector('[data-voice]'), ctx, {
     id,
     title: picked.title,
     prompt: picked.prompt,
@@ -86,4 +87,28 @@ export function renderSpeaking(root, ctx) {
     resultIdle: waiting,
     onResult: frames.showResult,
   });
+  /* The situation a learner is answering is language too, and a word in it is
+     asked about the same way it is asked about anywhere else - the shared layer
+     (`ui/lexical.js`), not a Speaking copy of it. */
+  const lexical = mountLexicalLayer({
+    surface: root,
+    ctx,
+    title: picked.title,
+    origin: { id, where: picked.title, why: 'from_speaking' },
+    alive: ctx.alive || (() => root.isConnected),
+    units: {
+      root: () => root,
+      unitOf: (node) => node?.closest?.('[data-practice-line]') || null,
+      textOf: (unit) => unit.textContent || '',
+      keyOf: () => `speaking:${id}`,
+    },
+  });
+  root.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-practice-line]')) return;
+    lexical.tapWord(event);
+  });
+  return () => {
+    lexical.destroy();
+    releaseVoice?.();
+  };
 }

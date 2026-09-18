@@ -398,6 +398,12 @@ export async function renderEncounter(root, ctx) {
      row to go there, tap a word in the line you are on to ask about it. */
   const segmentIdOf = (unit) =>
     unit?.closest?.('li')?.querySelector('[data-segment]')?.dataset.segment || '';
+  /* The line a learner is working on is askable wherever it is on screen: in
+     the transcript, and in the practice panel, where it is the phrase being
+     shadowed or spoken. Same layer, same answers - a word in a line the learner
+     is repeating is the word they are most likely to ask about. */
+  const lineOf = (unit) =>
+    unit?.dataset?.practiceSegment || segmentIdOf(unit) || '';
   const lexical = mountLexicalLayer({
     surface: root,
     ctx,
@@ -405,17 +411,17 @@ export async function renderEncounter(root, ctx) {
     origin: { id, where: item.title, why: 'from_listening' },
     alive: isAlive,
     units: {
-      root: () => transcript.querySelector('ol'),
-      unitOf: (node) => node?.closest?.('.spoken, .line-original') || null,
+      root: () => root.querySelector('.media-encounter'),
+      unitOf: (node) => node?.closest?.('.spoken, .line-original, [data-practice-line]') || null,
       textOf: (unit) =>
-        model.segments.find((segment) => segment.segment_id === segmentIdOf(unit))?.original_text ||
+        model.segments.find((segment) => segment.segment_id === lineOf(unit))?.original_text ||
         unit.textContent ||
         '',
-      keyOf: (unit) => `segment:${segmentIdOf(unit)}`,
+      keyOf: (unit) => `segment:${lineOf(unit)}`,
     },
   });
-  transcript.addEventListener('click', (event) => {
-    if (!event.target.closest('.spoken')) return;
+  root.addEventListener('click', (event) => {
+    if (!event.target.closest('.spoken, [data-practice-line]')) return;
     lexical.tapWord(event);
   });
   const original = moment.querySelector('.spoken'),
@@ -921,6 +927,7 @@ export async function renderEncounter(root, ctx) {
     practiceVersion++;
     const version = practiceVersion;
     practice = intent;
+    lexical.forget();
     recorder.discard();
     take = null;
     basePractice();
@@ -1113,7 +1120,7 @@ export async function renderEncounter(root, ctx) {
     } else {
       // Where the recording lives sits beside the control as a hint, as it
       // does in the voice response; the guide is the instruction and stays.
-      body.innerHTML = `<blockquote lang="${language}">${esc(target.original_text)}</blockquote><p class="practice-meaning">${esc(model.meaning(target.segment_id) || '')}</p><p class="practice-guide">${intent === 'shadowing' ? c.shadowGuide : c.speakingGuide}</p><div class="button-row"><button class="outline" data-listen>${c.replay} ↺</button><button class="primary" data-record>● ${c.record}</button>${hint({ text: c.localAudio })}</div><p role="status" data-record-status></p><div data-take></div><div data-feedback></div>`;
+      body.innerHTML = `<blockquote class="practice-line" data-practice-line data-practice-segment="${esc(target.segment_id)}" lang="${language}">${esc(target.original_text)}</blockquote><p class="practice-meaning">${esc(model.meaning(target.segment_id) || '')}</p><p class="practice-guide">${intent === 'shadowing' ? c.shadowGuide : c.speakingGuide}</p><div class="button-row"><button class="outline" data-listen>${c.replay} ↺</button><button class="primary" data-record>● ${c.record}</button>${hint({ text: c.localAudio })}</div><p role="status" data-record-status></p><div data-take></div><div data-feedback></div>`;
       body.querySelector('[data-listen]').onclick = playLine;
       body.querySelector('[data-record]').onclick = async (event) => {
         const button = event.currentTarget,

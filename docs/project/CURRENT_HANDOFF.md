@@ -56,8 +56,9 @@ measure and the shell recedes. Its interaction layer is now `ui/lexical.js`,
 shared: Listening's transcript mounts the same one, so a tapped word answers
 identically in both rooms. Listening opens on the covers, grows shelves from
 real data, and writes its place into the shared continuation field.
-Fixed: the library rendered raw catalogue rows, so every card linked to an
-encounter with no id and the room fell back to Reading. `listeningItem()` is the
+Shadowing and Speaking reuse it too: the practised line is askable in place and
+leaving a room releases the microphone (gated). Fixed: the library rendered raw catalogue rows, so every
+card linked to an encounter with no id and the room fell back to Reading. `listeningItem()` is the
 one identity boundary now, an unclassifiable encounter keeps the learner's
 domain, and the failure state is compact and domain-aware.
 
@@ -82,20 +83,18 @@ AGENTS.md; SQLite is test-only. Switch language in-page.
 
 Core: R3/T15 Card human PASS. Vocabulary foundation/catalog/feed/save and
 Chinese orthography are schema-free. Vocabulary Source Import is E2E through
-Admin preview/mapping/import and learner collection/card projections.
-Architecture review is approved; the remaining Vocabulary gate is human
-schema/runtime authorization for `20260916_0008`, then PostgreSQL rehearsal.
-Browser review at `:8011/#/language` (or the LAN address); check EN/ZH and
-Chinese orthography across Discover/My Language.
+Admin preview/mapping/import and learner collection/card projections. Review
+approved; remaining Vocabulary gate is human schema/runtime authorization for
+`20260916_0008`, then PostgreSQL rehearsal. Browser review at
+`:8011/#/language`; check EN/ZH and Chinese orthography.
 
-Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
-approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
-chain `20260912_0007`, flag on, backbone `active` (runbook §7). Writing
-drafts kept with the account there, human-approved by browser review
-(`4e1f0a5`); billing/quota off. "Your growth" read glance in preferences
-(I6, REVIEWABLE, not yet human-reviewed). Deletion gated (D-055). I4
-`/api/collection`. Keep A-D, 11 destinations, Opus WIP; no I1-I7 claim
-implies human approval.
+Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007 approved
+by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only: chain
+`20260912_0007`, flag on, backbone `active` (runbook §7). Writing drafts kept
+with the account there, human-approved (`4e1f0a5`); billing/quota off. "Your
+growth" glance in preferences (I6, REVIEWABLE, not human-reviewed). Deletion
+gated (D-055). I4 `/api/collection`. Keep A-D, 11 destinations, Opus WIP; no
+I1-I7 claim implies human approval.
 
 ## IN PROGRESS
 
@@ -103,23 +102,22 @@ Golden Star capability findings are closed; Packages A-D of
 `ORENA_REFERENCE_ARCHITECTURE.md` are done. Backbone runtime integration I1-I7
 remains Opus implementation work; F is human review, not architecture completion.
 
-Multi-theme system awaiting visual review: Paper, Night Ink, Deep Forest,
-Sage Field; colour owned by `theme.css`. Ember deferred.
+Multi-theme awaiting visual review: Paper, Night Ink, Deep Forest, Sage Field;
+colour owned by `theme.css`. Ember deferred.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2 schema approved,
 sandbox only at `20260908_0005`, flag `off` (`I2_ACTIVATION_RUNBOOK.md` §6).
 
-Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
-results, shared repository, Admin UI and learner cards; review APPROVED
-(`a1a90b7b`). Schema auth pending; import fail-closed.
+Source Import: UTF-8 mapping, normalization, identity, provenance, batch
+results, shared repository, Admin UI, learner cards; APPROVED (`a1a90b7b`).
+Schema auth pending; import fail-closed.
 
 ## PENDING
 
-R3 Gemini live gate passed 4/4 EN/ZH/support cases with native structured
-output, grounded evidence and script separation. The Ollama fallback stays a
-lower-quality local option: `qwen3:8b` leaks target script in nested support
-explanations.
+R3 Gemini live gate passed 4/4 EN/ZH/support with native structured output,
+grounded evidence and script separation. Ollama stays a lower-quality local
+option: `qwen3:8b` leaks target script in nested support explanations.
 
 ## BLOCKED
 
@@ -133,9 +131,8 @@ None identified.
 
 ## OPEN P1
 
-- `#/language` renders "temporarily unavailable" only in long multi-room
-  sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated (0/130).
-  Self-recovers.
+- `#/language` renders "temporarily unavailable" only in long multi-room sweeps
+  at short dwell (4/4@700ms; 2/2@750ms); never isolated (0/130). Self-recovers.
 - Grammar breadth: patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, not a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync activation
@@ -146,8 +143,8 @@ None identified.
 - Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
   r20 remains frozen native.
 - Language coherence: interface is en/zh; evaluator/grammar explanations follow
-  the support language (12; sandbox profile vi) - EN/ZH labels over VI text is a
-  product decision (more interface locales, or explain in UI language).
+  the support language (12; sandbox vi) - EN/ZH labels over VI text is a product
+  decision (more interface locales, or explain in UI language).
 
 ## Baseline test evidence
 
