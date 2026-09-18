@@ -1722,3 +1722,57 @@ permitted on entry, discovery and empty states, but is no longer a default page
 template. Supersedes nothing else. It does not change D-046 or its tombstones,
 D-049/D-050's five domains and horizontal Understanding Engine, D-051's
 remaining rules, D-052/D-053's phone rules, or any multilingual invariant.
+
+## D-058 — Platform Admin becomes an operator control center
+
+**Status:** Accepted, explicit current human instruction (2026-09-18). Built in
+the parallel lane `admin/control-center`; REVIEWABLE, not merged, awaiting
+human review.
+
+**Decision:** `#/admin` is the Platform Admin control center: six sections -
+Overview, AI & Models, Users, Content, Imports, Operations - built as
+admin-only modules under `static/orena/admin/` behind the existing admin guard,
+with one read-mostly router, `/api/admin/console`
+(`writing_coach/admin_console_api.py`). It composes contracts that already
+exist rather than adding new ones: the capability registry and AI control plane
+(routes, provider credentials through the existing encrypted store, provider
+and route tests), the readiness summary, product activity, the reading-library
+importer and archive, the media source importer, and the vocabulary importer
+with its admission-checked publication. The old `static/admin.js` shell is not
+restored.
+
+The human named the authorized admin use cases for account data
+(`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §1): an account list whose identity is
+masked, and an account detail limited to operational metadata (joined, last
+sign-in, languages, activity counts by domain). Both reads write an audit
+record and refuse to answer when it cannot be written. Learner writing,
+private text, conversations and saved content are never read for the console.
+
+Bounds set by the same instruction:
+
+- no billing, revenue or subscription figures - no billing contract exists,
+  and a registration is not a subscription;
+- a retention rate only above a minimum cohort, otherwise "insufficient data";
+- no account actions and no content delete, unpublish or metadata edit, since
+  no contract implements them; the only actions are the existing ones - archive
+  a book, publish a vocabulary collection after an attested admission, read a
+  URL media source again;
+- learner AI runtime activation (`AI_RUNTIME_MODE`) stays a human-gated
+  deployment change: the console reports it and never switches it;
+- secrets are write-only through the existing encrypted store; without its key
+  the console says so and stores nothing;
+- every book and media import attempt, failures included and with the stage
+  that failed, is recorded as an `admin.import` row in the existing
+  `audit_logs` table - no new table, no migration.
+
+**Reason:** The page was readiness evidence above stacked importers. Operators
+needed one place to see platform state and act on it, without new persistence
+and without a second provider architecture.
+
+**Consequences:** `docs/product/ORENA_STATUS.md`'s operator note describes the
+console. `CURRENT_PRODUCT_STATE.yaml`'s `platform_admin_host_remains_a_human_hold`
+and the Platform Admin line in `AGENTS.md` "Architecture holds" predate both
+`04a56c4` and this entry; a parallel lane does not rewrite shared memory, so
+closing them is left to the human review of this lane.
+
+**Supersedes / Superseded by:** None.

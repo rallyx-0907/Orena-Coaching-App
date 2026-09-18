@@ -567,6 +567,52 @@ configure_reading_library(
 )
 app.include_router(reading_library_router)
 
+# Platform Admin control center (`/api/admin/console`): one admin boundary over
+# the contracts wired above - AI control plane, catalogs, importers and the
+# learner-evidence tables. It adds read-only aggregates and audit rows only.
+from writing_coach.account_backbone import (  # noqa: E402
+    schema_present as _backbone_schema_present,
+    state as _backbone_state,
+)
+from writing_coach.admin_console_api import (  # noqa: E402
+    configure_admin_console,
+    describe_runtime_services,
+    router as admin_console_router,
+    schema_facts,
+)
+from writing_coach.persistence.admin_repository import AdminConsoleRepository  # noqa: E402
+
+
+def configure_admin_console_from_runtime() -> None:
+    engine = _persistence_runtime.engine
+    configure_admin_console(
+        admin_guard=require_admin,
+        backend=_persistence_runtime.backend,
+        repository=AdminConsoleRepository(engine) if engine is not None else None,
+        platform_repository=_persistence_runtime.platform_repository,
+        vocabulary_repository=_persistence_runtime.vocabulary_repository,
+        media_store=_media_library_store,
+        reading_repository=PostgresReadingLibraryRepository(engine) if _persistence_runtime.backend == "postgresql" else None,
+        runtime_services=describe_runtime_services(
+            media_translation=(_media_translation_provider_id, _media_translation_provider),
+            reading_translation=(_reading_translation_provider_id, _reading_translation_provider),
+            speech_recognition=_speech_asr_provider,
+            pronunciation=build_speech_pronunciation_provider(),
+            transcript_fallback=_media_fallback_mode,
+        ),
+        runtime_facts=lambda: {
+            "schema": schema_facts(engine),
+            "account_backbone": _backbone_state(
+                present=_backbone_schema_present(_backbone_tables()), asked=_backbone_requested()
+            ),
+        },
+        app_version=APP_VERSION,
+    )
+
+
+configure_admin_console_from_runtime()
+app.include_router(admin_console_router)
+
 def weighted_overall(result: dict[str, Any]) -> float:
     return calculate_weighted_overall(result, active_rubric_weights())
 
