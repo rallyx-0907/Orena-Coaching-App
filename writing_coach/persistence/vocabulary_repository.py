@@ -106,9 +106,11 @@ def _vocabulary_revision_is_usable(current_revision: str) -> bool:
         config = Config(str(root / "alembic.ini"))
         config.set_main_option("script_location", str(root / "migrations"))
         script = ScriptDirectory.from_config(config)
+        # walk_revisions includes both ends; iterate_revisions(upper, lower)
+        # stops before `lower`, which hid this revision below every later head.
         return any(
             revision.revision == VOCABULARY_SCHEMA_REVISION
-            for revision in script.iterate_revisions(current_revision, VOCABULARY_SCHEMA_REVISION)
+            for revision in script.walk_revisions(base="base", head=current_revision)
         )
     except Exception:
         return False
