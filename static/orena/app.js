@@ -13,6 +13,9 @@ import {
   navigationTabs,
   languageChip,
   accountCard,
+  accountAvatarButton,
+  topBar,
+  paintDueChip,
   referenceCopy,
   experienceFor,
   renderContinue,
@@ -195,10 +198,14 @@ function shell() {
      phone a slim top bar plus a tab bar at the thumb, with the whole map one
      control away as a sheet. Controls that exist in both compositions are
      written once per composition; CSS shows the one that belongs. */
+  /* The approved composition (D-060): on a desk the rail - mark, four
+     destinations, Practice, the learner's card - and a top bar over each
+     destination; on a phone a slim bar (mark, language pair, the learner) and
+     the tab bar. Bringing your own content lives in Library. */
   document.getElementById('shell').innerHTML =
-    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}<div class="shell-bar">${languageChip(ctx)}<button class="icon-button" type="button" data-bring aria-label="${esc(c.bring)}">${icon('plus', { size: 20 })}</button>${navigationToggle(ctx)}</div><div class="shell-foot"><button class="shell-bring" type="button" data-bring>${icon('plus', { size: 18 })}<span>${esc(c.bring)}</span></button>${accountCard(ctx)}</div>${navigationTabs(ctx)}`;
-  document.querySelectorAll('#shell [data-bring]').forEach((x) => (x.onclick = importContent));
+    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}<div class="shell-bar">${languageChip(ctx)}${accountAvatarButton(ctx)}${navigationToggle(ctx)}</div><div class="shell-foot">${accountCard(ctx)}</div>${navigationTabs(ctx)}`;
   document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  paintTopBar();
   /* The narrow-screen destination sheet. The shell is rebuilt on every route,
      so choosing a destination closes it without anything having to remember
      that it was open - and Escape closes it from the keyboard. */
@@ -236,11 +243,62 @@ function shell() {
     setMenu(false);
     toggle.focus();
   };
-  document.getElementById('footer').innerHTML =
-    `<a href="#/" class="brand-small">orena</a><button class="quiet" data-account>${c.preferences} ↗</button>`;
-  document
-    .querySelector('[data-account]')
-    ?.addEventListener('click', () => preferences());
+  // The approved design has no page footer; settings live in the learner's
+  // card and the You tab.
+  document.getElementById('footer').innerHTML = '';
+}
+/* The destinations that carry the top bar. Rooms where the learner works do
+   not: the content comes forward (Design Contract rule 11). */
+const TOP_BAR_PAGES = new Set(['discover', 'content', 'language', 'progress', 'continue', 'collection']);
+function paintTopBar() {
+  const bar = document.getElementById('topbar');
+  if (!bar) return;
+  const page = ctx.location.page;
+  const show = TOP_BAR_PAGES.has(page) && ctx.location.intent !== 'recall';
+  bar.hidden = !show;
+  document.documentElement.dataset.topbar = show ? 'on' : 'off';
+  if (!show) {
+    bar.innerHTML = '';
+    return;
+  }
+  bar.innerHTML = topBar(ctx);
+  bar.querySelectorAll('[data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  const form = bar.querySelector('[data-global-search]');
+  form.onsubmit = (event) => {
+    event.preventDefault();
+    const query = String(new FormData(form).get('q') || '').trim();
+    if (!query) return;
+    pendingSearch = query;
+    ctx.go('practice', { intent: 'reading' });
+  };
+  refreshDueCount();
+}
+/* The due count is the learner's own saved vocabulary, read fresh on each
+   destination so a review just finished is reflected. Unknown stays unknown:
+   a failed read leaves the chip leading to Recall without a number. */
+let dueRequest = 0;
+async function refreshDueCount() {
+  const request = ++dueRequest;
+  let count = NaN;
+  try {
+    const data = await api.libraryVocabulary();
+    count = (data.items || []).filter((item) => item.due).length;
+  } catch {}
+  if (request !== dueRequest) return;
+  document.querySelectorAll('#topbar, #main').forEach((el) => paintDueChip(el, ctx, count));
+}
+/* A search typed in the top bar lands in the reading library's own search
+   until the grouped global search arrives (Phase 4, GAP-011). */
+let pendingSearch = '';
+function applyPendingSearch() {
+  if (!pendingSearch) return;
+  const input = root.querySelector('[data-collection-search] input[name="query"]');
+  if (!input) return;
+  input.closest('details')?.setAttribute('open', '');
+  input.value = pendingSearch;
+  pendingSearch = '';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.focus({ preventScroll: false });
 }
 /* Read-only account fact, never an access decision - accountCommerce() in
    writing_coach/product/commerce.py is the one server resolver this renders.
@@ -456,9 +514,11 @@ async function render() {
      microtask, so it is always cleared before it can fire; a slow one leaves
      the previous room on screen for a moment and then says it is working,
      which is the honest order. */
+  /* Loading is a skeleton at the real geometry, never a line of text in the
+     middle of the page (Design Contract rule 39). */
   const announceLoading = setTimeout(() => {
     if (scope.alive())
-      root.innerHTML = `<p class="loading" role="status">${ctx.c.loading}</p>`;
+      root.innerHTML = `<div class="room-loading" role="status" aria-busy="true"><span class="sr-only">${esc(ctx.c.loading)}</span><span class="skeleton skeleton--line room-loading__title"></span><div class="room-loading__row"><span class="skeleton skeleton--card"></span><span class="skeleton skeleton--card"></span></div><div class="room-loading__rail"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div></div>`;
   }, 150);
   try {
     const page = ctx.location.page;
@@ -490,6 +550,7 @@ async function render() {
       return;
     }
     cleanup = result || (() => {});
+    applyPendingSearch();
     root.querySelector('h1')?.setAttribute('tabindex', '-1');
     root.querySelector('h1')?.focus({ preventScroll: true });
   } catch (error) {
@@ -550,7 +611,7 @@ async function render() {
          under a Chinese heading is how untranslated text reaches a learner.
          The failure itself is already recorded in `renderFailures` and the
          console, which is where a diagnostic belongs. */
-      root.innerHTML = `<section class="room-failed"><h1>${esc(ctx.c.cantOpen)}</h1><div class="button-row"><button class="primary" id="retry">${esc(ctx.c.retry)}</button><a class="outline" href="${esc(back.href)}">${esc(String(ctx.c.backTo).replace('{room}', back.label))}</a></div></section>`;
+      root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" id="retry">${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(ctx.c.retry)}</span></button><a class="outline" href="${esc(back.href)}">${icon('arrow-right', { size: 18 })}<span>${esc(String(ctx.c.backTo).replace('{room}', back.label))}</span></a></div></section>`;
       root.querySelector('#retry').onclick = render;
       root.querySelector('h1').setAttribute('tabindex', '-1');
       root.querySelector('h1').focus({ preventScroll: true });
@@ -604,7 +665,7 @@ async function boot() {
     await render();
     if (!profile.exists) preferences(true);
   } catch (error) {
-    root.innerHTML = `<section class="room-failed"><h1>${esc(ctx.c.cantOpen)}</h1><button class="primary" onclick="location.reload()">${esc(ctx.c.retry)}</button></section>`;
+    root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" onclick="location.reload()">${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(ctx.c.retry)}</span></button></div></section>`;
   }
 }
 boot();

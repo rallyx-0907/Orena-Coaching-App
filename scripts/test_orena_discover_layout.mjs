@@ -111,84 +111,69 @@ for (const ui of ['en', 'zh']) {
     },
   );
 
-  /* D-057: Discover is organised by what the content is, not by which skill it
-     trains. Skill names survive as compact doors and as a rail's "see all"
-     destination; they are not the shelves themselves. */
+  /* D-060: Home is the approved composition - Continue, the Listening shelf,
+     the Reading shelf beside Today's words - and then the speaking-and-writing
+     shelf the design's checklist lists for Home. Shelves carry the domain
+     names the design uses; skill modules are not rebuilt as extra shelves. */
   const railIds = [...rendered.matchAll(/data-content-rail="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(
-    railIds,
-    // D-059: two threads are the Continue cards, so no Continue shelf repeats
-    // them; voices lead, as the design system's Home orders them.
-    ['voices', 'stories', 'short', 'say', 'words'],
-    `${ui}: the feed is organised by content, continuity and length`,
+  assert.deepEqual(railIds, ['voices', 'stories', 'say'], `${ui}: the approved shelves, in order`);
+  assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 3);
+  assert.ok(
+    rendered.indexOf('data-content-rail="stories"') < rendered.indexOf('data-today-words') &&
+      rendered.indexOf('class="home-pair"') < rendered.indexOf('data-content-rail="stories"'),
+    `${ui}: Reading and Today's words share one row`,
   );
-  assert.equal(
-    railIds.filter((id) => ['reading', 'listening', 'speaking', 'writing', 'vocabulary'].includes(id)).length,
-    0,
-    `${ui}: no shelf is named after a skill module`,
-  );
-  assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 5);
-  // Both threads are cards at the top, the most recent lit, each once.
-  assert.equal((rendered.match(/class="continue-card"/g) || []).length, 2, `${ui}: two continue cards`);
-  assert.equal((rendered.match(/class="continue-card" data-live/g) || []).length, 1, `${ui}: one lit thread`);
-  assert.equal((rendered.match(/>Story 1</g) || []).length >= 1, true);
-  /* Two rails carry more than one kind of content. A mixed shelf is the point:
-     a five-minute shelf holds whatever takes five minutes. */
-  const shortRail = rendered.slice(rendered.indexOf('data-content-rail="short"'), rendered.indexOf('data-content-rail="say"'));
-  assert.ok(/data-reading-card/.test(shortRail) && /data-listening-card/.test(shortRail),
-    `${ui}: the length-based shelf mixes reading and listening`);
-  const sayRail = rendered.slice(rendered.indexOf('data-content-rail="say"'), rendered.indexOf('data-content-rail="words"'));
+  // Continue: the two threads as cards, both lit, the most recent leading.
+  assert.equal((rendered.match(/class="continue-card" data-live/g) || []).length, 2, `${ui}: two lit continue cards`);
+  assert.equal((rendered.match(/data-lead/g) || []).length, 1, `${ui}: one leading thread`);
+  // No thread records a place in this fixture, so no percentage is invented.
+  assert.doesNotMatch(rendered.slice(0, rendered.indexOf('discover-feed')), /aria-valuenow/, `${ui}: no invented progress`);
+  assert.match(rendered, /class="progress-bar" data-unavailable/, `${ui}: the progress rail keeps its place, marked unmeasured`);
+  const sayRail = rendered.slice(rendered.indexOf('data-content-rail="say"'));
   assert.ok(/data-speaking-card/.test(sayRail) && /data-writing-card/.test(sayRail),
     `${ui}: the expression shelf mixes speaking and writing`);
   assert.equal((rendered.match(/data-speaking-card/g) || []).length, 3);
   assert.equal((rendered.match(/data-writing-card/g) || []).length, 4);
   assert.equal((rendered.match(/data-vocabulary-card/g) || []).length, 5);
+  assert.equal((rendered.match(/data-vocabulary-card[^>]*hidden/g) || []).length, 4, `${ui}: one word on top of the stack`);
 
-  /* One obvious action in the first viewport, and only one. A learner with
-     history is shown the way back; a new learner is shown the way in. */
+  /* One obvious action in the first viewport, and only one. */
   assert.equal((rendered.match(/class="discover-start[ "]/g) || []).length, 1,
     `${ui}: exactly one start block`);
-  assert.equal((rendered.match(/<a class="primary"/g) || []).length, 1,
+  assert.equal((rendered.match(/<a class="primary/g) || []).length, 1,
     `${ui}: the start block carries the single primary action`);
   assert.match(rendered, /class="discover-start discover-start--resume"/,
     `${ui}: a learner with unfinished work is offered the way back first`);
   assert.match(rendered, new RegExp(escapeRegExp(referenceCopy[ui].continueAction)),
-    `${ui}: the continue action is localized`);
+    `${ui}: the continue action is named`);
   assert.doesNotMatch(rendered, /class="discover-hero"/,
     `${ui}: the page-wide headline is retired (D-057 rule 13)`);
   assert.match(rendered, /<h1 class="sr-only">/,
     `${ui}: the page is still named for assistive technology`);
-
-  /* Doors remain, compact, after the first action. */
-  assert.match(rendered, /class="discover-doors"/, `${ui}: skill doors remain available`);
-  // D-059: Dictation is a visible room, so it has a door too.
-  assert.equal((rendered.match(/class="discover-door"/g) || []).length, 6);
-  assert.ok(rendered.indexOf('discover-doors') > rendered.indexOf('discover-start'),
-    `${ui}: content and the first action come before the skill doors`);
-  assert.ok(rendered.indexOf('discover-doors') < rendered.indexOf('discover-feed'),
-    `${ui}: the doors are one compact row, not the structure of the feed`);
+  // The approved Home draws no skill doors; Practice is reached from the rail
+  // and, on a phone, the practice sheet.
+  assert.doesNotMatch(rendered, /class="discover-doors"/, `${ui}: no doors row the design does not draw`);
   assert.match(rendered, /data-vocabulary-skin="silver"/,
-    `${ui}: Discover preserves the canonical level material/skin`);
+    `${ui}: Home preserves the canonical level material/skin`);
   assert.match(rendered, /data-vocabulary-rank="C"/,
-    `${ui}: Discover restores the rank the level's material is cut from`);
+    `${ui}: Home keeps the rank the level's material is cut from`);
   assert.match(rendered, /class="vocabulary-rank"/,
     `${ui}: the rank reads on the card, not only in a data attribute`);
   assert.match(rendered, /data-vocabulary-state="due"/,
-    `${ui}: Discover preserves real review state`);
+    `${ui}: Home preserves real review state`);
   assert.match(rendered, /★★☆/,
-    `${ui}: Discover preserves learner mastery evidence`);
+    `${ui}: Home preserves learner mastery evidence`);
   assert.match(rendered, /data-discover-vocabulary-save="1"/,
     `${ui}: an unsaved feed item keeps the existing save action`);
   assert.match(rendered, /data-vocabulary-study="0"/,
     `${ui}: Vocabulary keeps its existing study action`);
   assert.match(rendered, /https:\/\/example\.com\/listen-0\.jpg/);
-  /* No production placeholder survives: no single letter, no repeated `Aa 字`,
-     no generic block. A text without a cover gets a designed one, drawn from
-     its own identity (ART_BIBLE.md D.1). */
-  assert.doesNotMatch(rendered, /text-art|sound-art|data-cover-variant/,
-    `${ui}: the letter/waveform placeholders are gone`);
-  assert.match(rendered, /class="content-cover" data-cover-motif="/,
-    `${ui}: a text without an image gets a designed cover`);
+  /* Real imagery first; without it, the design system's artwork slot - never a
+     letter, a waveform glyph or the retired Art Bible motif covers (D-060). */
+  assert.doesNotMatch(rendered, /text-art|sound-art|data-cover-variant|<svg class="content-cover"/,
+    `${ui}: the letter/waveform placeholders and the retired motif covers are gone`);
+  assert.match(rendered, /class="content-cover" data-cover-motif="[a-z]+" data-cover-hue="\d+"/,
+    `${ui}: a text without an image gets the artwork slot`);
   assert.match(rendered, /1:30/);
   assert.match(rendered, /nghĩa 1/);
   assert.match(rendered, /#\/practice\?intent=reading/);
@@ -205,13 +190,13 @@ const noContinue = discoverySpread(
   { media: sampleMedia, reading: sampleReading, speaking: sampleSpeaking, writing: sampleWriting, vocabulary: sampleVocabulary },
 );
 assert.doesNotMatch(noContinue, /data-content-rail="continue"/, 'Continue is truthful and disappears without resumable work');
-assert.equal((noContinue.match(/data-content-rail=/g) || []).length, 5, 'the content shelves remain visible');
+assert.equal((noContinue.match(/data-content-rail=/g) || []).length, 3, 'the content shelves remain visible');
 /* A learner with no history is never left without a way in. */
 assert.match(noContinue, /class="discover-start discover-start--begin"/,
   'a new learner is offered a beginning rather than a resume');
 assert.match(noContinue, new RegExp(escapeRegExp(referenceCopy.en.startAction)),
   'the beginning carries a localized primary action');
-assert.equal((noContinue.match(/<a class="primary"/g) || []).length, 1,
+assert.equal((noContinue.match(/<a class="primary/g) || []).length, 1,
   'a new learner sees exactly one primary action');
 assert.ok(
   noContinue.indexOf('discover-start') < noContinue.indexOf('discover-feed'),
@@ -223,7 +208,7 @@ const nothing = discoverySpread(
   { media: [], reading: [], speaking: [], writing: [], vocabulary: [] },
 );
 assert.doesNotMatch(nothing, /data-content-rail=/, 'an empty catalogue renders no invented shelves');
-assert.match(nothing, /class="discover-doors"/, 'the doors still orient a learner with an empty catalogue');
+assert.match(nothing, /class="discover-start discover-start--begin"/, 'an empty catalogue still greets a learner with a beginning');
 
 const bounded = discoverySpread(
   { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory },
@@ -292,12 +277,15 @@ assert.match(
   'card width is derived from the column count and the shared peek',
 );
 assert.match(styles, /\.content-rail--continue\s*\{[^}]*--rail-columns:\s*3;/s,
-  'Continue fits complete cards at desktop widths instead of clipping half a card');
+  'the Continue room fits complete cards at desktop widths');
 /* The shelves are named after content now, so the column contract has to be
    named after them too; a rule left pointing at a retired id silently drops
    every shelf back to the default width. */
-assert.match(styles, /\.content-rail--stories,\s*\.content-rail--words\s*\{[^}]*--rail-columns:\s*5;/s,
-  'a shelf of 3:4 covers is denser than the default rail');
+// D-060: the approved Reading shelf holds book-sized 104px covers.
+assert.match(styles, /\.content-rail--stories \.content-rail__item\s*\{[^}]*flex:\s*0 0 104px;/s,
+  'a shelf of covers is book-sized, as drawn');
+// A desk shows whole cards; the peek is the phone's signal.
+assert.match(styles, /@media \(min-width: 901px\)\s*\{[^}]*--rail-peek:\s*0px;/s);
 assert.doesNotMatch(styles, /\.content-rail--(?:reading|listening|speaking|writing|vocabulary)/,
   'no column rule is left pointing at a retired skill-named shelf');
 assert.doesNotMatch(styles, /\.content-rail__viewport::after/s,
@@ -316,8 +304,10 @@ assert.doesNotMatch(styles, /\.content-rail[^}]*background:\s*#(?:[0-9a-f]{3}|[0
    for every level. */
 assert.doesNotMatch(styles, /\.discover-vocabulary-card\s*\{[^}]*--vocabulary-level-color:/s,
   'the Discover card must not overwrite the level material it was handed');
-assert.match(styles, /\.discover-vocabulary-card\s*\{[^}]*border-top:[^;]*var\(--vocabulary-level-color,/s,
-  'the card reads the level material with a fallback rather than replacing it');
+assert.match(styles, /\.vocabulary-rank\s*\{[^}]*var\(--vocabulary-level-color,/s,
+  'the rank token reads the level material with a fallback rather than replacing it');
+// Today's words is the approved compact stack: an earned rim, a counter.
+assert.match(styles, /\.discover-vocabulary-card\s*\{[^}]*border:\s*1px solid var\(--word-card-rim\)/s);
 /* Speaking and Writing share tokens, not one component wearing two icons. */
 assert.match(styles, /\.discover-speaking-card__turn\s*\{/s,
   'Speaking composes the opening turn it hands the learner');

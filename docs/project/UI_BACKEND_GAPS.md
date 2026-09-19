@@ -1,0 +1,54 @@
+# UI ↔ backend gaps
+
+## Governance
+
+Purpose: the backlog of everything the approved Orena Design System draws that
+the backend, API, data or business logic does not provide yet. Authority: D-060
+- the approved mockup decides what the interface looks like; a backend gap is
+tracked here and never becomes a reason to remove, hide or redesign a component.
+
+Rules for this file:
+
+- A gap keeps its component in the UI. The frontend shows the design system's
+  honest unavailable state (`—`, "not measured yet", a hatched track) in the
+  component's approved place; it never shows invented data.
+- New gaps start as `NOT_STARTED`. Nothing here is implemented by the audit that
+  created it.
+- Learner-data persistence, schema and account sync are an architecture hold
+  (`AGENTS.md` §7): a gap whose fix needs new learner-owned persistence needs
+  independent architecture review and human authorization before any schema.
+- Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
+
+Mockup source: claude.ai design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
+(Design Overview, Screens parts 1-6, Checklist Status). "P1 §N" means Screens
+Part 1, section N.
+
+## Backlog
+
+| ID | Screen | UI element / feature | Mockup reference | Required backend capability | Current backend state | Frontend state | Dependency | Priority | Status | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GAP-001 | Progress, Profile | Learning streak ("18 days", "18 d") | P2 §10, P5 §20, P6 §27 | Daily activity streak aggregation across domains, per learner and timezone | None; LearnerSummary counts activity per window, no streak | Progress streak chip in place, value `—`, labelled not measured; Profile in Phase 10 | Evidence architecture decision on what counts as a study day | P1 | NOT_STARTED | Must follow LearnerSummary rules: assisted vs unassisted, no synthetic evidence |
+| GAP-002 | Progress | Study time this week ("3h 20m of study") | P2 §10, P5 §20, P6 §27 | Study-duration tracking per session and surface, weekly aggregate | None; no session duration is recorded | Headline figure in place, `—` with "study time is not measured yet" | New learner-owned telemetry → architecture hold (§7), privacy review | P1 | NOT_STARTED | Measurement definition (active vs idle time) is a product decision |
+| GAP-003 | Progress | Seven-day study chart, today highlighted in amber | P2 §10, P5 §20, P6 §27 | Per-day study-duration series (depends on GAP-002) | None | Seven day slots in place, hatched unmeasured bars, day labels localized | GAP-002 | P2 | NOT_STARTED | |
+| GAP-004 | Shell, Home, Library, Profile, Onboarding | Learner level ("HSK 2") in the account card, rail metadata, library level facet, profile, onboarding level step | P1 §01-§02, P2 §10-§11, P6 §25 | Stored proficiency level per learning language, in each language's framework (HSK for zh, CEFR for en) | `declared_level` exists as CEFR only and is `stored=False`; no HSK | Account card and rails show language pair and counts without a level | Profile schema → architecture hold (§7) | P1 | NOT_STARTED | Level must be declared or estimated honestly; an estimate needs its evaluator named |
+| GAP-005 | Profile | Total hours studied ("46") | P2 §10, P6 §27 | Lifetime study-duration aggregate (depends on GAP-002) | None | Phase 10 (Profile) will keep the tile with `—` | GAP-002 | P3 | NOT_STARTED | |
+| GAP-006 | Home | Progress on every Continue card ("42%", "87/150") | P1 §01, P6 §25, DIR Home 390 | A position and total for every continuation kind: chapter position, listening timestamp, vocabulary collection learned/total, writing draft state | Only continuation entries that record `place` (index/total) have one; most do not | Progress rail always in place; hatched unmeasured track where no position exists; real % where it does | Continuation contract (device memory by design, §7) | P1 | NOT_STARTED | Collection progress exists server-side (`progress.learned_count`), so vocabulary threads could carry it without schema |
+| GAP-007 | Progress | Listening card ("18 episodes · 41 min") | P2 §10, P5 §20, P6 §27 | Listening consumption aggregate: items followed to the end, minutes listened | `listeningProgress` per asset exists; LearnerSummary's listening domain holds dictation lines only | Card in place, "not measured yet"; dictation lines shown on the Dictation card | LearnerSummary domain extension (read model, no schema expected) | P2 | NOT_STARTED | |
+| GAP-008 | Progress | A progress bar on every domain card | P2 §10, P6 §27 | A defined per-domain progress fraction (numerator and denominator) | None defined; only Vocabulary has a real fraction (mastered / saved) | Vocabulary bar is real; the other five show the hatched unmeasured track | Product definition of "progress" per domain | P2 | NOT_STARTED | |
+| GAP-009 | Progress, Speaking, Writing, Dictation | Average scores ("avg 82", "avg 76", "avg 74") | P2 §10, P4 practice indexes | Averaged scores per domain over comparable evaluations | LearnerSummary deliberately does not average; comparability rules exist (`growth_comparable`) | Counts are shown; averages are not | Evidence policy decision (a new LearnerSummary policy version) | P2 | NOT_STARTED | An average across evaluator versions or assistance modes would break the evidence contract |
+| GAP-010 | Progress | Reading line ("4 titles · 2 in progress") | P2 §10, P5 §20 | Titles opened and in progress, per learner | LearnerSummary reading counts comprehension checks answered | Shows the checks-answered count | LearnerSummary domain extension | P3 | NOT_STARTED | |
+| GAP-011 | Shell (top bar), Search | Global search, results grouped by words, books, audio | P1 §01, P3 search, P5 §20 | Search across library books, listening catalogue, saved and library vocabulary | No search API; the reading library has client-side search only | Search field in place; a query opens the reading library's search until Phase 4 builds grouped results | Phase 4 (frontend); a search API if the catalogue outgrows client-side filtering | P1 | NOT_STARTED | |
+| GAP-012 | Home, Library, Reader, Listening | Real cover and media artwork | DIR §05, P1 §00 (artwork slot), Grammar rule 10 | Cover/poster assets per book and curated audio, with rights recorded | Some media carry posters; books and most audio have none | Design-system artwork slot (dot field, domain-hue bloom) at the real 2:3 / 16:9 / 21:9 geometry; real images replace it with no layout change | Art supply and rights per title (Art Bible, rights gate) | P1 | NOT_STARTED | The retired Art Bible motif covers are not a fallback (D-060) |
+| GAP-013 | Shell, Profile | Learner display name and avatar ("Mai", avatar image) | P1 §01, P2 §10 | Profile display name and avatar (upload or provider picture) | `/api/me` gives email/mode; no display name, no avatar | Account card shows the account's name or email handle and the design's avatar disc | Profile schema → architecture hold (§7) | P3 | NOT_STARTED | |
+| GAP-014 | Home, Vocabulary | Words-due count in the top bar ("12 DUE") | P1 §01, P6 §25 | Due count endpoint (cheap) | Derived client-side from the full saved-vocabulary list | Real count shown; computed from `api.libraryVocabulary()` on each destination | None required; an endpoint would only reduce payload | P3 | NOT_STARTED | Works today; tracked as a scaling concern |
+| GAP-015 | Onboarding | Sign in / sign up with email and password, and with Apple | P2 §11, P5 onboarding | Email/password accounts and Sign in with Apple | Google OAuth only | Phase 10 | Human gate: OAuth providers and credentials | P2 | NOT_STARTED | |
+| GAP-016 | Onboarding | Content interests step | P5 onboarding | Stored interests and their use in Discover ordering | None | Phase 10 | Profile schema → architecture hold (§7) | P3 | NOT_STARTED | |
+| GAP-017 | Profile | "Autoplay audio" and "Review reminders" toggles | P2 §10, P6 §27 | Preference fields; reminder scheduling and delivery | None | Phase 10 | Notifications channel (human gate if it uses a paid provider) | P3 | NOT_STARTED | |
+| GAP-018 | Profile | Separate "Interface" language row | P2 §10, P6 §27 | A third, interface-only language setting | Deliberately absent: Design Contract rule 9 and D-051 make the support language the interface language | Phase 10 | Product decision - conflicts with an accepted rule | P3 | NOT_STARTED | Needs a human decision before any build; recorded, not resolved |
+| GAP-019 | Vocabulary | Four-grade review with visible intervals (Again <1m, Hard 1d, Good 4d, Easy 10d) | P1 §05, P6 §27 | Scheduler that accepts four grades and previews next intervals | `reviewLibraryVocabulary` takes again / got_it | Phase 6 | Scheduler change; evidence of review is learner data → architecture review | P2 | NOT_STARTED | |
+| GAP-020 | Vocabulary | Collection tier ("TIER II") and mastery rank rim | P1 §05, P5 §21 | Tier/rank per collection for the learner | Collection progress exists; tier is not defined | Phase 6 | Product definition of tiers | P3 | NOT_STARTED | |
+| GAP-021 | Speaking | Pronunciation score, accuracy / fluency / completeness, phoneme and tone detail | P2 §08, P5 §21 | A configured pronunciation assessment provider | ASR/assessment unconfigured in the sandbox; a synthetic result is never a score | Phase 8 | Human gate: provider and credentials | P1 | NOT_STARTED | |
+| GAP-022 | Library | Level and topic facets, "Recently added" sort, total title count | P1 §02, P6 §26 | Level and topic metadata on books and media; server-side facet counts | Partial metadata; paginated list | Phase 4 | GAP-004 for level facets | P2 | NOT_STARTED | |
+| GAP-023 | History | 30-day history with a score per activity | P3 history, P5 §20 | Activity history across domains with results | `practiceOutcomes` and domain reads exist separately | Phase 4 | Read model over existing owners (no schema expected) | P2 | NOT_STARTED | |
+| GAP-024 | Saved content | Saved content kept apart in four kinds (words, highlights, notes, bookmarks) with counts | P3 saved, P5 §20 | Persisted highlights, notes and bookmarks per learner | Saved words exist; highlights/notes are device memory by design | Phase 4 | Learner-data persistence → architecture hold (§7), human gate | P2 | NOT_STARTED | |
+| GAP-025 | Listening | Comprehension quiz, replay-limited | P3 quizzes | Listening comprehension items and scoring | Reading comprehension exists; listening quiz does not | Phase 7 | Content authoring | P3 | NOT_STARTED | |

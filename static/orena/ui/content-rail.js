@@ -1,5 +1,6 @@
 import { esc } from './html.js';
 import { entryIcon } from './icons.js';
+import { icon as glyph } from './phosphor.js';
 
 /* Shared shelf mechanics only. Each domain supplies its own card composition;
    the rail supplies one accessible, touch-first way to browse it. */
@@ -7,6 +8,7 @@ export function contentRail({
   id,
   title,
   icon = '',
+  meta = '',
   items = [],
   seeAllHref = '',
   seeAllLabel = '',
@@ -23,9 +25,9 @@ export function contentRail({
     ? items.map((item) => `<div class="content-rail__item" role="listitem">${item}</div>`).join('')
     : `<div class="content-rail__item content-rail__item--empty" role="listitem"><p class="content-rail__empty" role="status">${esc(emptyLabel)}</p></div>`;
   const header = showHeader
-    ? `<header class="content-rail__header"><div class="content-rail__heading">${icon ? `<span class="content-rail__icon" aria-hidden="true">${entryIcon(icon)}</span>` : ''}<h2 id="${esc(headingId)}">${esc(title)}</h2></div>${seeAllHref ? `<a class="content-rail__all" href="${esc(seeAllHref)}">${esc(seeAllLabel)} <span aria-hidden="true">→</span></a>` : ''}</header>`
+    ? `<header class="content-rail__header"><div class="content-rail__heading">${icon ? `<span class="content-rail__icon" aria-hidden="true">${entryIcon(icon)}</span>` : ''}<h2 id="${esc(headingId)}">${esc(title)}</h2>${meta ? `<span class="content-rail__meta">${esc(meta)}</span>` : ''}</div>${seeAllHref ? `<a class="content-rail__all" href="${esc(seeAllHref)}">${esc(seeAllLabel)}${glyph('caret-right', { size: 14 })}</a>` : ''}</header>`
     : `<h2 class="sr-only" id="${esc(headingId)}">${esc(title)}</h2>`;
-  return `<section class="content-rail content-rail--${esc(safeId)}${className ? ` ${esc(className)}` : ''}" data-content-rail="${esc(safeId)}" aria-labelledby="${esc(headingId)}">${header}<div class="content-rail__viewport"><button type="button" class="content-rail__control content-rail__control--previous" data-content-rail-prev aria-controls="${esc(trackId)}" aria-label="${esc(previousLabel)}">←</button><div id="${esc(trackId)}" class="content-rail__track" data-content-rail-track role="list" tabindex="0">${cards}</div><button type="button" class="content-rail__control content-rail__control--next" data-content-rail-next aria-controls="${esc(trackId)}" aria-label="${esc(nextLabel)}">→</button></div></section>`;
+  return `<section class="content-rail content-rail--${esc(safeId)}${className ? ` ${esc(className)}` : ''}" data-content-rail="${esc(safeId)}" aria-labelledby="${esc(headingId)}">${header}<div class="content-rail__viewport"><button type="button" class="content-rail__control content-rail__control--previous" data-content-rail-prev aria-controls="${esc(trackId)}" aria-label="${esc(previousLabel)}">${glyph('caret-right', { size: 18, className: 'is-flipped' })}</button><div id="${esc(trackId)}" class="content-rail__track" data-content-rail-track role="list" tabindex="0">${cards}</div><button type="button" class="content-rail__control content-rail__control--next" data-content-rail-next aria-controls="${esc(trackId)}" aria-label="${esc(nextLabel)}">${glyph('caret-right', { size: 18 })}</button></div></section>`;
 }
 
 export function bindContentRails(root) {

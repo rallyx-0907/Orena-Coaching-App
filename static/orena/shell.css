@@ -1,18 +1,21 @@
-/* The shell (D-059, Design Contract rule 38) - the one owner of the app's
-   chrome: the rail, the phone's top bar and tab bar, the destinations sheet,
-   and where #main sits beside or between them. Loaded last so nothing earlier
-   decides the frame. Colour is read only from theme.css.
+/* The shell (D-059, D-060; Design Contract rule 38) - the one owner of the
+   app's chrome: the rail, the top bar over a destination, the phone's bar and
+   tab bar, the practice sheet, and where #main sits. Loaded last so nothing
+   earlier decides the frame. Colour comes only from theme.css.
 
-   Three compositions of the same parts:
-   - desk (above 1100px): a labelled rail - mark, destinations, Practice, the
-     learner's card at its foot;
-   - tablet (901-1100px): the same rail reduced to icons;
-   - phone (900px and below): a slim top bar and a tab bar at the thumb, with
-     every destination one control away in a sheet. */
+   Measurements are the approved design's (Home · desktop 1280, Home · 390,
+   Home · paper): a 224px rail, 10/12px rows at radius 12, a 420px search, a
+   40px round action. Where the design draws nothing - the 1024 tablet - the
+   rail keeps its icons (a recorded open decision, not a redesign). */
 
 :root {
-  --rail-width: 248px;
+  --rail-width: 224px;
   --tabbar-height: 64px;
+  --page-gutter: 28px;
+}
+html,
+body {
+  overflow-x: clip;
 }
 
 /* ---- The mark -------------------------------------------------------- */
@@ -21,7 +24,7 @@
   align-items: center;
   gap: 10px;
   font-family: var(--display-font);
-  font-size: 22px;
+  font-size: 17px;
   font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   line-height: 1;
@@ -30,42 +33,40 @@
 .brand-tail {
   display: block;
   flex: none;
-  inline-size: 30px;
-  block-size: 30px;
+  inline-size: 24px;
+  block-size: 24px;
   background: url('/orena-assets/assets/mark.svg') center / contain no-repeat;
 }
-.brand-small {
-  font-family: var(--display-font);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-}
 
-/* ---- The rail: desk and tablet --------------------------------------- */
+/* ---- The rail -------------------------------------------------------- */
 #shell {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: var(--z-shell);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 26px;
   inline-size: var(--rail-width);
-  padding: 22px 14px 14px;
-  background: var(--surface-sunken);
+  padding: 22px 16px;
+  background: var(--surface-rail);
   border-right: 1px solid var(--border-subtle);
   overflow: hidden;
 }
 #shell > .brand {
-  padding: 2px 10px 4px;
+  padding: 0 8px;
 }
 #shellNav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 26px;
   flex: 1 1 auto;
   min-block-size: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+#shellNav::-webkit-scrollbar {
+  display: none;
 }
 .nav-sheet-head {
   display: none;
@@ -73,20 +74,19 @@
 .nav-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 .nav-link {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-block-size: 40px;
-  padding: 7px 12px;
+  gap: 11px;
+  padding: 10px 12px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+  font-size: 14px;
+  font-weight: var(--weight-medium);
   line-height: 1.25;
   transition:
     background var(--duration-fast) var(--ease-standard),
@@ -99,60 +99,35 @@
   background: color-mix(in srgb, var(--text-primary) 5%, transparent);
   color: var(--text-primary);
 }
-/* Where the learner is: a raised surface with its own light pool - the live
-   thing is the only lit thing in the rail. */
+/* Where the learner is: a violet tint and a violet hairline, the icon filled. */
 .nav-link[aria-current='page'] {
-  background: var(--bloom), var(--surface-elevated);
-  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--action-text) 14%, transparent);
+  border-color: color-mix(in srgb, var(--action-text) 30%, transparent);
   color: var(--text-primary);
+  font-weight: var(--weight-bold);
 }
-.nav-group--main .nav-link[aria-current='page'] > svg {
+.nav-link[aria-current='page'] > svg {
   color: var(--action-text);
 }
-.nav-link--sub {
-  min-block-size: 32px;
-  padding-block: 4px;
-  padding-inline-start: 44px;
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
+.nav-link--practice {
+  padding-block: 9px;
+  font-size: 13.5px;
 }
-.nav-link--sub > svg {
-  opacity: 0.8;
-}
-.nav-dot {
-  inline-size: 6px;
-  block-size: 6px;
-  margin-inline-start: auto;
-  border-radius: 50%;
-  background: var(--progress);
+/* The practice icon wears its domain hue; the row stays neutral (rule 32). */
+.nav-link--practice > svg {
+  color: var(--tile-ink);
 }
 .nav-heading {
   display: block;
-  padding: 4px 12px 6px;
-  border-radius: var(--radius-sm);
+  padding: 0 12px 6px;
   color: var(--text-muted);
-  font-size: var(--text-2xs);
+  font-size: 11px;
   font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
 }
 .nav-heading:hover,
 .nav-heading[aria-current='page'] {
   color: var(--text-primary);
-}
-/* A practice room carries its domain hue in a small tile - never as the
-   row's ground (rule 32). */
-.nav-tile {
-  display: grid;
-  place-items: center;
-  flex: none;
-  inline-size: 28px;
-  block-size: 28px;
-  border-radius: 9px;
-  color: var(--tile-ink);
-  background: color-mix(in srgb, var(--tile-hue) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tile-hue) 38%, transparent);
-}
-.nav-link[aria-current='page'] .nav-tile {
-  background: color-mix(in srgb, var(--tile-hue) 24%, transparent);
 }
 .nav-group--admin {
   margin-block-start: auto;
@@ -160,43 +135,23 @@
   border-top: 1px solid var(--border-subtle);
 }
 .nav-group--admin .nav-link {
-  font-size: var(--text-xs);
+  font-size: 12.5px;
 }
 
-/* The foot of the rail: bringing something in, and the learner. */
+/* The learner's card at the foot of the rail. */
 .shell-foot {
-  display: grid;
-  gap: var(--space-2);
   flex: none;
-  padding-block-start: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
-}
-.shell-bring {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-block-size: 36px;
-  padding: 6px 12px;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.shell-bring:hover:not(:disabled) {
-  color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--text-primary) 32%, transparent);
 }
 .account-card {
   display: flex;
   align-items: center;
   gap: 10px;
   inline-size: 100%;
-  min-block-size: 52px;
-  padding: 8px 10px;
+  min-block-size: 0;
+  padding: 10px 12px;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface-primary);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
   color: var(--text-primary);
   text-align: start;
 }
@@ -205,38 +160,123 @@
   color: var(--text-primary);
 }
 .account-avatar {
-  display: grid;
-  place-items: center;
+  display: block;
   flex: none;
-  inline-size: 34px;
-  block-size: 34px;
+  inline-size: 28px;
+  block-size: 28px;
   border-radius: 50%;
-  background: var(--artwork-wash);
-  color: #fff;
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
+  background: var(--avatar-wash);
+  border: 1px solid var(--border-strong);
 }
 .account-text {
   display: grid;
-  min-inline-size: 0;
   flex: 1;
+  min-inline-size: 0;
 }
 .account-text strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-sm);
+  font-size: 13px;
   font-weight: var(--weight-bold);
+  line-height: 1.35;
 }
 .account-text small {
   color: var(--text-secondary);
-  font-size: var(--text-2xs);
+  font-size: 11px;
   font-weight: var(--weight-medium);
-  line-height: 1.4;
+  line-height: 1.35;
 }
 .account-gear {
   flex: none;
   color: var(--text-secondary);
+}
+
+/* ---- The top bar over a destination ---------------------------------- */
+#topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-inline-start: var(--rail-width);
+  padding: 22px var(--page-gutter) 0;
+}
+#topbar[hidden] {
+  display: none;
+}
+/* The one page-level bloom, off the top-right of the page. */
+#topbar::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block-start: -220px;
+  inset-inline-end: -80px;
+  inline-size: 620px;
+  block-size: 460px;
+  border-radius: 50%;
+  background: var(--bloom-page);
+  pointer-events: none;
+}
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-inline-size: 420px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text-primary) 5%, var(--surface-primary));
+  color: var(--text-secondary);
+}
+.topbar-search:focus-within {
+  border-color: var(--action-text);
+}
+.topbar-search input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+}
+.topbar-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+.topbar-chips {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-inline-start: auto;
+}
+.language-chip,
+.due-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 30px;
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.language-chip {
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-primary);
+}
+.due-chip {
+  border: 1px solid color-mix(in srgb, var(--domain-vocabulary) 35%, transparent);
+  background: color-mix(in srgb, var(--domain-vocabulary) 14%, transparent);
+  color: var(--text-primary);
+}
+.due-chip > svg {
+  color: var(--domain-vocabulary);
 }
 
 /* Phone-only parts do not exist on a desk. */
@@ -250,26 +290,18 @@
 #main {
   min-block-size: 85vh;
   margin-inline-start: var(--rail-width);
-  padding: var(--space-6) clamp(24px, 3.6vw, 64px) var(--space-16);
+  padding: 22px var(--page-gutter) 30px;
+}
+html[data-topbar='on'] #main {
+  padding-block-start: 26px;
 }
 /* The default measure of a room's direct children stays in reference.css:
    rooms.css narrows it at the same specificity and must load after it. */
 #footer {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  margin: 0 clamp(24px, 3.6vw, 64px) 0 calc(var(--rail-width) + clamp(24px, 3.6vw, 64px));
-  padding-block: var(--space-6);
-  border-top: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-}
-#footer .quiet {
-  min-block-size: 32px;
-  color: var(--text-secondary);
+  display: none;
 }
 
-/* ---- Tablet: the rail keeps its place and loses its words ----------- */
+/* ---- Tablet: not drawn by the design; the rail keeps its icons --------- */
 @media (min-width: 901px) and (max-width: 1100px) {
   :root {
     --rail-width: 76px;
@@ -279,13 +311,12 @@
     align-items: center;
   }
   #shell > .brand {
-    padding: 2px 0 4px;
+    padding: 0;
   }
   .brand-word,
   .nav-label,
   .account-text,
-  .account-gear,
-  .shell-bring span {
+  .account-gear {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -293,64 +324,48 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  /* Every destination stays in the rail; a short window scrolls the list
-     inside the rail, silently, rather than dropping any of them. */
   #shellNav {
     align-items: center;
-    gap: var(--space-3);
     inline-size: 100%;
     overflow-x: hidden;
-    scrollbar-width: none;
-  }
-  #shellNav::-webkit-scrollbar {
-    display: none;
   }
   .nav-group {
     align-items: center;
   }
-  .nav-link,
-  .nav-link--sub {
+  .nav-link {
     justify-content: center;
     inline-size: 48px;
-    min-block-size: 40px;
+    min-block-size: 42px;
     padding: 0;
   }
   .nav-heading {
     inline-size: 32px;
     block-size: 1px;
-    min-block-size: 0;
     padding: 0;
-    margin-block: 4px 8px;
+    margin-block: 0 8px;
     overflow: hidden;
     color: transparent;
     background: var(--border-strong);
   }
-  .nav-dot {
-    position: absolute;
-    inset-block-start: 8px;
-    inset-inline-end: 8px;
-  }
   .shell-foot {
     inline-size: 100%;
+    display: grid;
     justify-items: center;
   }
-  .shell-bring,
   .account-card {
     justify-content: center;
     inline-size: 48px;
-    padding: 0;
-    min-block-size: 44px;
-  }
-  .account-card {
+    padding: 8px 0;
     border: 0;
     background: none;
   }
 }
 
-/* ---- Phone: top bar, tab bar, and the map as a sheet ---------------- */
+/* ---- Phone: the bar, the tab bar, and the practice sheet -------------- */
 @media (max-width: 900px) {
   :root {
     --rail-width: 0px;
+    --page-gutter: 18px;
   }
   body {
     padding-block-end: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
@@ -362,42 +377,72 @@
     align-items: center;
     gap: var(--space-3);
     inline-size: 100%;
-    min-block-size: 56px;
-    padding: 8px 16px;
-    /* Opaque, and no backdrop-filter: a filter here would become the
-       containing block for the fixed sheet and tab bar inside it. */
+    min-block-size: 60px;
+    padding: 12px var(--page-gutter);
+    /* Opaque, and no filter: a filter here would become the containing block
+       for the fixed sheet and tab bar inside it. */
     background: var(--surface-canvas);
     border-right: 0;
-    border-bottom: 1px solid var(--border-subtle);
     overflow: visible;
   }
   #shell > .brand {
     padding: 0;
-    font-size: 20px;
   }
-  .brand-tail {
-    inline-size: 28px;
-    block-size: 28px;
+  /* The phone's one page bloom, off the top-left, behind everything. */
+  body::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset-block-start: -140px;
+    inset-inline-start: -80px;
+    inline-size: 440px;
+    block-size: 360px;
+    border-radius: 50%;
+    background: var(--bloom-page);
+    pointer-events: none;
   }
-  .shell-foot {
+  #shell {
+    background: color-mix(in srgb, var(--surface-canvas) 0%, transparent);
+  }
+  #shell[data-compact] {
+    background: var(--surface-canvas);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .shell-foot,
+  #topbar {
     display: none;
   }
   .shell-bar {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 8px;
     margin-inline-start: auto;
   }
-  #footer {
-    display: none;
+  .account-avatar--button {
+    inline-size: 30px;
+    block-size: 30px;
+    min-block-size: 30px;
+    padding: 0;
+    cursor: pointer;
   }
-  #main {
+  .nav-toggle {
+    display: grid;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    min-block-size: 32px;
+    padding: 0;
+    border-radius: 10px;
+    color: var(--text-secondary);
+  }
+  #main,
+  html[data-topbar='on'] #main {
     margin-inline-start: 0;
-    padding: var(--space-4) 16px var(--space-8);
+    padding: var(--space-2) var(--page-gutter) var(--space-8);
   }
 
-  /* The sheet. Closed it is visibility:hidden - out of the tab order and the
-     accessibility tree - and it rises from the bottom, above the tab bar. */
+  /* The practice sheet. Closed it is visibility:hidden - out of the tab order
+     and the accessibility tree - and it rises from the bottom. */
   #shellNav {
     position: fixed;
     inset: auto 0 0 0;
@@ -455,14 +500,6 @@
     min-block-size: 44px;
     font-size: var(--text-base);
   }
-  .nav-link--sub {
-    min-block-size: 36px;
-    font-size: var(--text-sm);
-  }
-  .nav-heading {
-    padding-block-start: var(--space-2);
-    font-size: var(--text-xs);
-  }
   /* Below the shell's own layer: #shell is a stacking context, so a curtain
      above it would cover the sheet it opens. Above the room, which it dims. */
   .nav-backdrop {
@@ -479,7 +516,7 @@
     display: block;
   }
 
-  /* The tab bar, at the thumb. */
+  /* The tab bar, at the thumb: icon over a small label, the current one lit. */
   .shell-tabs {
     position: fixed;
     inset: auto 0 0 0;
@@ -487,10 +524,8 @@
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     block-size: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
-    padding: 6px 6px env(safe-area-inset-bottom);
-    background: color-mix(in srgb, var(--surface-sunken) 92%, transparent);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    padding: 8px 14px env(safe-area-inset-bottom);
+    background: var(--surface-canvas);
     border-top: 1px solid var(--border-subtle);
     transition: transform var(--duration-base) var(--ease-standard);
   }
@@ -499,16 +534,20 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 5px;
     min-block-size: 48px;
     padding: 0;
     border-radius: var(--radius-md);
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: var(--weight-semibold);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: var(--weight-medium);
     line-height: 1.1;
   }
   .shell-tab[aria-current='page'] {
+    color: var(--text-primary);
+    font-weight: var(--weight-bold);
+  }
+  .shell-tab[aria-current='page'] > svg {
     color: var(--action-text);
   }
   .shell-tab:hover:not(:disabled) {
@@ -519,11 +558,11 @@
      the tab bar steps aside so the learning has the height (rule 12). */
   #shell[data-compact] {
     min-block-size: 48px;
-    padding-block: 4px;
+    padding-block: 6px;
   }
   #shell[data-compact] .brand-word,
   #shell[data-compact] .language-chip,
-  #shell[data-compact] [data-bring] {
+  #shell[data-compact] .account-avatar--button {
     display: none;
   }
   #shell[data-compact] .shell-tabs {
@@ -537,6 +576,3 @@
     }
   }
 }
-
-/* A focused room recedes the chrome (rule 11): the reader keeps its own
-   treatment in reader.css. */

@@ -1,6 +1,7 @@
 import {
   bindContentRails,
   discoverySpread,
+  bindTodayWords,
   practiceOverview,
 } from './discovery.js';
 import { referenceCopy, editorialIntro } from './reference.js';
@@ -518,6 +519,7 @@ export async function renderWorld(root, ctx) {
     });
   }
   const unbindContentRails = bindContentRails(root);
+  bindTodayWords(root);
   root.querySelectorAll('[data-discover-vocabulary-save]').forEach((button) => {
     button.addEventListener('click', async () => {
       const index = Number(button.dataset.discoverVocabularySave);

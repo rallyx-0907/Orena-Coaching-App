@@ -36,8 +36,13 @@ export const referenceCopy = {
     dictation: 'Dictation', settings: 'Settings', allPractice: 'All practice',
     allDestinations: 'Everything in Orena', mainNavigation: 'Main', practiceNavigation: 'Practice',
     languagePair: 'Learning {learning}, explained in {support}',
-    progressWindow: 'Period', progressWindow_7d: '7 days', progressWindow_30d: '30 days',
-    progressWindow_90d: '90 days', progressWindow_all: 'All time',
+    searchPlaceholder: 'Search books, audio, words…', dueCount: '{n} due',
+    itemCount: '{n} items', todayWords: "Today's words", flipCard: 'Flip', flipBack: 'Front',
+    progressThisWeek: 'This week', progressStudyUnavailable: 'Study time is not measured yet',
+    progressStreak: 'Streak', progressWordsDue: 'Words due', progressWords: 'Words',
+    progressByDomain: 'By domain', progressNotMeasured: 'Not measured yet',
+    progressWordsLine: '{saved} saved · {mastered} mastered',
+    progressChartUnavailable: 'Daily study time is not measured yet',
     invitation: 'A little curiosity.\nA bigger world.',
     welcome: 'Come for a story. Stay for what it opens up.',
     note: 'Listen closely. Wander through a story. Find something you want to say.',
@@ -89,8 +94,13 @@ export const referenceCopy = {
     dictation: '听写', settings: '设置', allPractice: '全部练习',
     allDestinations: 'Orena 的全部去处', mainNavigation: '主要', practiceNavigation: '练习',
     languagePair: '正在学{learning}，用{support}讲解',
-    progressWindow: '时间范围', progressWindow_7d: '7 天', progressWindow_30d: '30 天',
-    progressWindow_90d: '90 天', progressWindow_all: '全部',
+    searchPlaceholder: '搜索书、音频、词…', dueCount: '{n} 个待复习',
+    itemCount: '{n} 项', todayWords: '今日词语', flipCard: '翻面', flipBack: '正面',
+    progressThisWeek: '本周', progressStudyUnavailable: '学习时长暂未记录',
+    progressStreak: '连续天数', progressWordsDue: '待复习', progressWords: '词语',
+    progressByDomain: '各项', progressNotMeasured: '暂未记录',
+    progressWordsLine: '已收藏 {saved} · 已掌握 {mastered}',
+    progressChartUnavailable: '每日学习时长暂未记录',
     invitation: '一点好奇，\n一个更大的世界。', welcome: '从一个故事开始，看看它会带你去哪里。',
     note: '听见一种声音，走进一个故事，找到自己想说的话。',
     featured: '打开另一扇窗', readNext: '在字里行间',
@@ -148,11 +158,21 @@ referenceCopy.vi = {
   mainNavigation: 'Chính',
   practiceNavigation: 'Luyện tập',
   languagePair: 'Đang học {learning}, giải thích bằng {support}',
-  progressWindow: 'Khoảng thời gian',
-  progressWindow_7d: '7 ngày',
-  progressWindow_30d: '30 ngày',
-  progressWindow_90d: '90 ngày',
-  progressWindow_all: 'Toàn bộ',
+  searchPlaceholder: 'Tìm sách, audio, từ vựng…',
+  dueCount: '{n} từ đến hạn',
+  itemCount: '{n} mục',
+  todayWords: 'Từ hôm nay',
+  flipCard: 'Lật thẻ',
+  flipBack: 'Mặt trước',
+  progressThisWeek: 'Tuần này',
+  progressStudyUnavailable: 'Chưa đo thời gian học',
+  progressStreak: 'Chuỗi ngày',
+  progressWordsDue: 'Từ đến hạn',
+  progressWords: 'Từ đã lưu',
+  progressByDomain: 'Theo kỹ năng',
+  progressNotMeasured: 'Chưa có số liệu',
+  progressWordsLine: '{saved} đã lưu · {mastered} đã thuộc',
+  progressChartUnavailable: 'Chưa đo thời gian học mỗi ngày',
   fieldNote: 'Đi theo tò mò của bạn',
   continueLearning: 'Tiếp tục học',
   continueAction: 'Tiếp tục',
@@ -262,34 +282,34 @@ export function experienceFor(location) {
   if (page === 'practice' && intent === 'follow') return 'listening';
   return page === 'preferences' ? 'discover' : page;
 }
-/* The shell's destinations (D-059, Design Contract rule 38).
+/* The shell's destinations (D-059, D-060; Design Contract rule 38).
 
-   Five places a learner goes - Home, Library, Vocabulary, Progress, Profile -
-   and a Practice group of the rooms where they do the work. Nothing that
-   existed before is dropped to fit that shape: Continue sits under Home and
-   Recall under Vocabulary, every earlier hash keeps its meaning, and the
-   Practice heading itself still opens the full practice map.
+   Exactly the approved rail: Home, Library, Vocabulary, Progress, then a
+   Practice group of Reading, Listening, Speaking, Dictation, Writing, then the
+   learner's card. The design system is the visual source of truth (D-060), so
+   nothing sits in the rail that the approved design does not draw. Nothing that
+   existed is lost either - each has a named home one step away:
+   - Continue: the Continue cards on Home, and their "See all";
+   - Recall: the due chip in the top bar, and Vocabulary's review action;
+   - Grammar and the whole practice map: the Practice heading itself;
+   - bringing your own content: Library;
+   - Platform Admin: an operator entry, rendered only for admins.
 
    `current` is derived from the same `experienceFor` the rooms use, so the
    rail, the tab bar and the room can never disagree about where the learner
-   is. */
+   is. A room without its own entry lights the entry that leads to it. */
 const DESTINATIONS = [
-  { id: 'discover', page: 'discover', icon: 'house', label: 'home', sub: ['continue'] },
-  { id: 'content', page: 'content', icon: 'books', label: 'library' },
-  { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', sub: ['recall'] },
-  { id: 'progress', page: 'progress', icon: 'chart-line-up', label: 'progress' },
+  { id: 'discover', page: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue'] },
+  { id: 'content', page: 'content', icon: 'books', label: 'library', owns: ['content', 'collection'] },
+  { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall'] },
+  { id: 'progress', page: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress'] },
 ];
-const SUBS = {
-  continue: { page: 'continue', icon: 'clock-counter-clockwise', label: 'continue' },
-  recall: { page: 'practice', intent: 'recall', icon: 'arrow-counter-clockwise', label: 'recall' },
-};
 const PRACTICE = [
   { id: 'reading', page: 'practice', intent: 'reading', icon: 'book-open', domain: 'reading' },
   { id: 'listening', page: 'practice', intent: 'follow', icon: 'headphones', domain: 'listening' },
   { id: 'speaking', page: 'practice', intent: 'speaking', icon: 'microphone', domain: 'speaking' },
   { id: 'dictation', page: 'practice', intent: 'dictation', icon: 'keyboard', domain: 'dictation' },
   { id: 'writing', page: 'expression', icon: 'pencil-simple', domain: 'writing' },
-  { id: 'understanding', page: 'practice', intent: 'grammar', icon: 'sparkle', domain: 'neutral' },
 ];
 /* The phone's tab bar. Each tab owns the rooms it leads to, so the one that
    lights up is the way back to where the learner is. */
@@ -302,53 +322,41 @@ const TABS = [
 
 /* Which navigation entry the learner is in. Practice over media - dictation,
    shadowing - is its own entry where one exists and the Practice map where
-   it does not. */
+   it does not; Grammar, which has no rail entry, lights the Practice map. */
 export function navigationCurrent(location) {
   const experience = experienceFor(location);
   if (experience === 'practice')
     return location.intent === 'dictation' ? 'dictation' : location.intent === 'shadowing' ? 'listening' : 'practice';
+  if (experience === 'understanding') return 'practice';
   return experience;
 }
 export function navigationEntries(ui) {
   const c = referenceCopy[ui] || referenceCopy.en;
-  const main = DESTINATIONS.map((x) => ({
-    ...x,
-    label: c[x.label],
-    href: link(x.page),
-    sub: (x.sub || []).map((id) => ({ id, ...SUBS[id], label: c[SUBS[id].label], href: link(SUBS[id].page, { intent: SUBS[id].intent }) })),
-  }));
+  const main = DESTINATIONS.map((x) => ({ ...x, label: c[x.label], href: link(x.page) }));
   const practice = PRACTICE.map((x) => ({ ...x, label: c[x.id], href: link(x.page, { intent: x.intent }) }));
   return { main, practice, practiceHref: link('practice') };
 }
 const current = (on) => (on ? ' aria-current="page"' : '');
-function navLink(entry, here, { domain = '' } = {}) {
-  const on = here === entry.id;
-  const glyph = domain
-    ? `<span class="nav-tile" data-domain="${domain}">${icon(entry.icon, { filled: on, size: 18 })}</span>`
-    : icon(entry.icon, { filled: on, size: 20 });
-  return `<a class="nav-link" href="${entry.href}"${current(on)} data-nav="${entry.id}">${glyph}<span class="nav-label">${esc(entry.label)}</span></a>`;
-}
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const here = navigationCurrent(ctx.location);
   const { main, practice, practiceHref } = navigationEntries(ctx.ui);
-  const hasThread = Boolean(ctx.memory?.value?.continuation?.length);
   const mainLinks = main
     .map((entry) => {
-      const subs = entry.sub
-        .map((sub) => {
-          const on = here === sub.id;
-          const dot = sub.id === 'continue' && hasThread ? '<i class="nav-dot" aria-hidden="true"></i>' : '';
-          return `<a class="nav-link nav-link--sub" href="${sub.href}"${current(on)} data-nav="${sub.id}">${icon(sub.icon, { filled: on, size: 16 })}<span class="nav-label">${esc(sub.label)}</span>${dot}</a>`;
-        })
-        .join('');
-      return navLink(entry, here) + subs;
+      const on = entry.owns.includes(here);
+      return `<a class="nav-link" href="${entry.href}"${current(on)} data-nav="${entry.id}">${icon(entry.icon, { filled: on, size: 20 })}<span class="nav-label">${esc(entry.label)}</span></a>`;
     })
     .join('');
-  const practiceLinks = practice.map((entry) => navLink(entry, here, { domain: entry.domain })).join('');
+  // A practice room's icon wears its domain hue; the row itself stays neutral.
+  const practiceLinks = practice
+    .map((entry) => {
+      const on = here === entry.id;
+      return `<a class="nav-link nav-link--practice" href="${entry.href}"${current(on)} data-nav="${entry.id}" data-domain="${entry.domain}">${icon(entry.icon, { filled: on, size: 18 })}<span class="nav-label">${esc(entry.label)}</span></a>`;
+    })
+    .join('');
   const adminEntry =
     ctx.user?.is_admin === true
-      ? `<div class="nav-group nav-group--admin"><a class="nav-link" href="${link('admin')}"${current(here === 'admin')} data-nav="admin">${icon('gear-six', { filled: here === 'admin', size: 20 })}<span class="nav-label">${esc(c.admin)}</span></a></div>`
+      ? `<div class="nav-group nav-group--admin"><a class="nav-link" href="${link('admin')}"${current(here === 'admin')} data-nav="admin">${icon('gear-six', { filled: here === 'admin', size: 18 })}<span class="nav-label">${esc(c.admin)}</span></a></div>`
       : '';
   return `<nav id="shellNav" aria-label="Orena"><div class="nav-sheet-head"><strong>${esc(c.allDestinations)}</strong><button class="nav-close" type="button" data-nav-close aria-label="${esc(c.closeDestinations)}">${icon('x', { size: 20 })}</button></div><div class="nav-group nav-group--main" role="group" aria-label="${esc(c.mainNavigation)}">${mainLinks}</div><div class="nav-group nav-group--practice" role="group" aria-labelledby="navPractice"><a class="nav-heading" id="navPractice" href="${practiceHref}"${current(here === 'practice')} data-nav="practice"><span>${esc(c.practiceNavigation)}</span><span class="sr-only">, ${esc(c.allPractice)}</span></a>${practiceLinks}</div>${adminEntry}</nav>`;
 }
@@ -361,19 +369,21 @@ export function navigationTabs(ctx) {
   const tabs = TABS.map((tab) => {
     const on = tab.owns.includes(here);
     const href = tab.id === 'discover' ? link() : link(tab.id);
-    return `<a class="shell-tab" href="${href}"${current(on)}>${icon(tab.icon, { filled: on, size: 24 })}<span>${esc(c[tab.label])}</span></a>`;
+    return `<a class="shell-tab" href="${href}"${current(on)}>${icon(tab.icon, { filled: on, size: 22 })}<span>${esc(c[tab.label])}</span></a>`;
   }).join('');
-  return `<nav class="shell-tabs" aria-label="${esc(c.mainNavigation)}">${tabs}<button class="shell-tab" type="button" data-preference>${icon('user-circle', { size: 24 })}<span>${esc(c.you)}</span></button></nav>`;
+  return `<nav class="shell-tabs" aria-label="${esc(c.mainNavigation)}">${tabs}<button class="shell-tab" type="button" data-preference>${icon('user-circle', { size: 22 })}<span>${esc(c.you)}</span></button></nav>`;
 }
 
-/* Everything else, on a phone, is one control away: the whole map above,
-   as a sheet. */
+/* The practice map on a phone. The approved phone composition draws five tabs
+   and no practice list; until the Library phase gives Practice its phone home,
+   this one control keeps every practice room reachable (tracked as parity
+   drift in DESIGN_SYSTEM_MIGRATION.md, not a design of its own). */
 export function navigationToggle(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav" aria-label="${esc(c.allDestinations)}">${icon('squares-four', { size: 22 })}</button>`;
+  return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav" aria-label="${esc(c.allDestinations)}">${icon('squares-four', { size: 20 })}</button>`;
 }
 
-/* "EN → VI": what is being learned, and the language Orena explains it in.
+/* "中文 → VI": what is being learned, and the language Orena explains it in.
    The learning language keeps its own writing system where it has one. */
 const LEARNING_MARK = { zh: '中文', en: 'EN' };
 export function languagePair(ctx) {
@@ -385,17 +395,43 @@ export function languageChip(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const pair = languagePair(ctx);
   const label = c.languagePair.replace('{learning}', pair.learning).replace('{support}', pair.support);
-  return `<button class="language-chip" type="button" data-preference aria-label="${esc(label)}">${icon('translate', { size: 16 })}<span>${esc(pair.text)}</span></button>`;
+  return `<button class="language-chip" type="button" data-preference aria-label="${esc(label)}">${esc(pair.text)}</button>`;
+}
+
+/* Words due for review, from the learner's own saved vocabulary. The count is
+   painted when it arrives (`paintDueChip`); until then, and when it cannot be
+   read, the chip still leads to Recall and simply says so without a number. */
+export function dueChip(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  return `<a class="due-chip" href="${link('practice', { intent: 'recall' })}" data-due-chip data-domain="vocabulary">${icon('cards', { filled: true, size: 14 })}<span data-due-count>${esc(c.recall)}</span></a>`;
+}
+export function paintDueChip(root, ctx, count) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  root.querySelectorAll('[data-due-count]').forEach((el) => {
+    el.textContent = Number.isFinite(count) ? c.dueCount.replace('{n}', String(count)) : c.recall;
+  });
+}
+
+/* The top bar of a destination (Home, Library, Vocabulary, Progress): the
+   global search, the language pair and the due chip. Rooms where the learner
+   works do not carry it - the content comes forward (rule 11). */
+export function topBar(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  return `<form class="topbar-search" role="search" data-global-search><label class="sr-only" for="globalSearch">${esc(c.searchPlaceholder)}</label>${icon('magnifying-glass', { size: 18 })}<input id="globalSearch" type="search" name="q" autocomplete="off" placeholder="${esc(c.searchPlaceholder)}"></form><div class="topbar-chips">${languageChip(ctx)}${dueChip(ctx)}</div>`;
 }
 
 /* The learner, at the foot of the rail: who they are, what they are learning,
-   and the way into settings. Only what the account actually says is shown. */
+   and the way into settings. Only what the account actually says is shown -
+   the design's level ("HSK 2") has no source yet and is tracked as GAP-004. */
 export function accountCard(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const user = ctx.user || {};
   const name = String(user.name || user.display_name || (user.email ? user.email.split('@')[0] : '') || c.you);
-  const initial = Array.from(name.trim())[0]?.toUpperCase() || '·';
-  return `<button class="account-card" type="button" data-preference aria-label="${esc(`${c.profile} · ${c.settings}`)}"><span class="account-avatar" aria-hidden="true">${esc(initial)}</span><span class="account-text"><strong>${esc(name)}</strong><small>${esc(languagePair(ctx).text)}</small></span>${icon('gear-six', { size: 18, className: 'account-gear' })}</button>`;
+  return `<button class="account-card" type="button" data-preference aria-label="${esc(`${c.profile} · ${c.settings}`)}"><span class="account-avatar" aria-hidden="true"></span><span class="account-text"><strong>${esc(name)}</strong><small>${esc(languagePair(ctx).text)}</small></span>${icon('gear-six', { size: 16, className: 'account-gear' })}</button>`;
+}
+export function accountAvatarButton(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  return `<button class="account-avatar account-avatar--button" type="button" data-preference aria-label="${esc(`${c.profile} · ${c.settings}`)}"></button>`;
 }
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;

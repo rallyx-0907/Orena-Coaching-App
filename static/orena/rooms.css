@@ -1821,64 +1821,139 @@ ul.pronunciation-words small { color: var(--muted); }
 .recall-done p { margin: var(--space-1) 0; }
 
 /* ---------------------------------------------------------------------------
-   Progress (D-059). One card per evidence domain: its tile, its activity, a
-   way into the room. No streak, minutes or chart - Orena records none of them.
+   Progress (D-059, D-060) - the approved composition (Progress · learner-
+   facing, Progress dashboard · mobile, Progress · paper): a week panel with a
+   headline figure and two stat chips, a seven-day chart, and six domain cards.
+   A measure Orena does not record keeps its component and says "not measured"
+   (components.css `data-unavailable`, `.metric-unavailable`).
    --------------------------------------------------------------------------- */
+.progress-title { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.progress-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+}
+.progress-week { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
+.progress-week__time { display: grid; gap: 8px; }
+.progress-week__value {
+  font-family: var(--display-font);
+  font-size: 40px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.progress-week__note { color: var(--text-muted); font-size: 12px; }
+.progress-stats { display: flex; gap: 10px; margin-left: auto; }
+.progress-stat {
+  display: grid;
+  gap: 5px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.progress-stat strong {
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+/* The streak is an earned mark: lamp amber, its own small light. */
+.progress-stat--streak {
+  border-color: color-mix(in srgb, var(--progress) 30%, transparent);
+  background:
+    radial-gradient(120% 120% at 85% -20%, color-mix(in srgb, var(--progress) 26%, transparent), transparent 62%),
+    var(--surface-secondary);
+}
+.progress-stat--streak .progress-label { color: var(--progress-text); }
+.progress-stat--words { display: none; }
+.progress-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  block-size: 120px;
+  padding: 0 2px;
+}
+.progress-day { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; block-size: 100%; }
+.progress-day__bar {
+  inline-size: 100%;
+  block-size: 12%;
+  border-radius: 8px 8px 3px 3px;
+  background: repeating-linear-gradient(135deg, var(--progress-track) 0 4px, transparent 4px 8px);
+}
+.progress-day__label { color: var(--text-muted); font-size: 10.5px; font-weight: var(--weight-semibold); }
+.progress-by-domain { display: none; }
 .progress-domains {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
-.progress-domain__link {
+.progress-domain {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-block-size: 76px;
-  padding: var(--space-3) var(--space-4);
+  flex-direction: column;
+  gap: 11px;
+  padding: 16px;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   background: var(--surface-primary);
   color: var(--text-primary);
   transition: border-color var(--duration-fast) var(--ease-standard);
 }
-.progress-domain__link:hover {
-  border-color: var(--border-strong);
+.progress-domain:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.progress-domain__head { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: var(--weight-bold); }
+.progress-domain__head > svg { flex: none; color: var(--tile-ink); }
+.progress-domain__line { color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.progress-domain__line .hint { display: none; }
+.progress-domain .progress-bar { block-size: 5px; }
+.progress-domain .progress-bar > span { background: var(--progress); }
+
+@media (max-width: 900px) {
+  .progress-domains { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.progress-domain__text {
-  display: grid;
-  gap: 2px;
-  flex: 1;
-  min-inline-size: 0;
-}
-.progress-domain__label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-weight: var(--weight-bold);
-}
-.progress-domain__value {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-.progress-domain[data-state='unavailable'] .progress-domain__value {
-  color: var(--status-warning);
-}
-.progress-domain__go {
-  flex: none;
-  color: var(--text-muted);
-}
-.progress-footnote {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-block: var(--space-6) 0;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-.progress-footnote > svg {
-  flex: none;
-  color: var(--progress-text);
+@media (max-width: 600px) {
+  /* Progress dashboard · mobile: the title, the week figure, three stat tiles,
+     the chart, then one row per domain. */
+  .progress-title {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    overflow: visible;
+    clip-path: none;
+    margin: 0 0 18px;
+    font-size: 28px;
+  }
+  .progress-panel { padding: 0; border: 0; background: none; gap: 20px; }
+  .progress-week { display: grid; gap: 16px; }
+  .progress-week__value { font-size: 30px; }
+  .progress-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-left: 0; }
+  .progress-stat { padding: 12px 14px; }
+  .progress-stat strong { font-size: 22px; }
+  .progress-stat--words { display: grid; }
+  .progress-chart { block-size: 90px; }
+  .progress-by-domain { display: block; margin-bottom: -10px; }
+  .progress-domains { grid-template-columns: 1fr; gap: 10px; }
+  .progress-domain {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 56px;
+    grid-template-areas: 'icon name bar' 'icon line bar';
+    align-items: center;
+    gap: 2px 12px;
+    padding: 12px 14px;
+  }
+  .progress-domain__head { display: contents; }
+  .progress-domain__head > svg { grid-area: icon; }
+  .progress-domain__head > span { grid-area: name; }
+  .progress-domain__line { grid-area: line; font-size: 11px; }
+  .progress-domain .progress-bar { grid-area: bar; }
 }

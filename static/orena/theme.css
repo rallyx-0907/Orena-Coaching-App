@@ -110,6 +110,8 @@
   --surface-secondary: var(--o-ink-lifted);
   --surface-elevated: var(--o-ink-raised);
   --surface-sunken: var(--o-ink-sunken);
+  --surface-rail: var(--o-ink-sunken);
+  --surface-panel: var(--o-ink-sunken);
   --surface-overlay: rgba(6, 5, 8, 0.72);
 
   /* Text */
@@ -153,11 +155,20 @@
 
   /* Elevation - light pools, not shadows. */
   --bloom: radial-gradient(130% 130% at 88% -25%, rgba(144, 101, 240, 0.34), transparent 62%);
-  --bloom-page: radial-gradient(closest-side, rgba(110, 64, 200, 0.42), transparent);
+  --bloom-page: radial-gradient(closest-side, rgba(110, 64, 200, 0.35), transparent);
   --shadow-raised: 0 12px 30px rgba(84, 50, 170, 0.22);
   --shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.55);
   --glow-action: 0 8px 26px rgba(144, 101, 240, 0.42);
   --artwork-wash: linear-gradient(160deg, #3a2e57, #151318);
+  --avatar-wash: radial-gradient(circle at 30% 25%, #5f4a86, #2a2531);
+  /* An earned edge on a word card: lamp amber on ink. */
+  --word-card-rim: rgba(249, 190, 120, 0.38);
+  --word-card-surface: #26222c;
+  /* Controls and text placed on artwork. Artwork keeps its own (dark) light
+     in both themes, so these do not change with the theme. */
+  --on-artwork: #ffffff;
+  --artwork-control: rgba(255, 255, 255, 0.16);
+  --artwork-control-edge: rgba(255, 255, 255, 0.28);
 
   /* Compatibility aliases - read by every room written before D-059. */
   --paper: var(--o-ink-ground);
@@ -191,9 +202,12 @@
 [data-theme='paper'] {
   --surface-canvas: var(--o-paper-ground);
   --surface-primary: var(--o-paper-surface);
-  --surface-secondary: var(--o-paper-ground);
+  /* Paper maps every lifted card to white (the design's ink -> paper table). */
+  --surface-secondary: var(--o-paper-surface);
   --surface-elevated: var(--o-paper-raised);
   --surface-sunken: var(--o-paper-raised);
+  --surface-rail: var(--o-paper-surface);
+  --surface-panel: #f2f1f5;
   --surface-overlay: rgba(20, 15, 30, 0.38);
 
   --text-primary: var(--o-paper-text);
@@ -230,11 +244,21 @@
   --domain-neutral: var(--o-paper-muted);
 
   --bloom: radial-gradient(130% 130% at 88% -25%, rgba(116, 69, 206, 0.07), transparent 62%);
-  --bloom-page: radial-gradient(closest-side, rgba(116, 69, 206, 0.08), transparent);
+  /* Paper drops the page bloom entirely: glow on paper reads as smudge. */
+  --bloom-page: none;
   --shadow-raised: 0 10px 24px rgba(20, 15, 30, 0.08);
   --shadow-overlay: 0 24px 60px rgba(20, 15, 30, 0.18);
   --glow-action: 0 6px 18px rgba(116, 69, 206, 0.24);
   --artwork-wash: linear-gradient(160deg, #3a2e57, #151318);
+  --avatar-wash: radial-gradient(circle at 30% 25%, #b9a6ee, #8a74cf);
+  /* On paper the word card's rim takes the vocabulary hue, as drawn. */
+  --word-card-rim: rgba(161, 65, 116, 0.35);
+  --word-card-surface: var(--o-paper-surface);
+  /* Controls and text placed on artwork. Artwork keeps its own (dark) light
+     in both themes, so these do not change with the theme. */
+  --on-artwork: #ffffff;
+  --artwork-control: rgba(255, 255, 255, 0.16);
+  --artwork-control-edge: rgba(255, 255, 255, 0.28);
 
   --paper: var(--o-paper-ground);
   --surface: var(--o-paper-surface);
@@ -269,6 +293,8 @@
   --surface-secondary: #f5efe3;
   --surface-elevated: #ece4d4;
   --surface-sunken: #ece4d4;
+  --surface-rail: #fbf7ef;
+  --surface-panel: #f5efe3;
   --text-primary: #2b241c;
   --text-secondary: #5e5446;
   --text-muted: #6d6252;

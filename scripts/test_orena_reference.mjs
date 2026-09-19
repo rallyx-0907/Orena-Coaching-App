@@ -222,7 +222,9 @@ const {
   navigationTabs,
   referenceNavigation,
   navigationCurrent,
+  topBar,
 } = await import('../static/orena/ui/reference.js');
+const { practiceOverview, discoverySpread } = await import('../static/orena/ui/discovery.js');
 const shellCtx = (ui, location, extra = {}) => ({
   ui,
   location,
@@ -236,14 +238,29 @@ for (const ui of ['en', 'zh', 'vi']) {
     assert.ok(c[key], `${ui}: the shell needs "${key}"`);
   const nav = referenceNavigation(shellCtx(ui, route('#/')));
   assert.match(nav, /id="shellNav"/, 'the control has something to point at');
-  // Every approved destination is still in the map - nothing was dropped to fit.
-  for (const entry of entryPoints(ui))
-    assert.ok(nav.includes(`href="${entry.href}"`), `${ui}: ${entry.id} left the map`);
-  for (const href of [link('progress'), link('practice', { intent: 'dictation' })])
-    assert.ok(nav.includes(`href="${href}"`), `${ui}: ${href} is a destination`);
+  /* D-060: the rail is exactly the approved one - four destinations, the
+     Practice heading, five practice rooms. */
+  const railHrefs = [...nav.matchAll(/<a class="nav-(?:link|heading)[^"]*" (?:id="navPractice" )?href="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(railHrefs, [
+    link(), link('content'), link('language'), link('progress'),
+    link('practice'),
+    link('practice', { intent: 'reading' }), link('practice', { intent: 'follow' }),
+    link('practice', { intent: 'speaking' }), link('practice', { intent: 'dictation' }), link('expression'),
+  ], `${ui}: the approved rail`);
   assert.equal((nav.match(/aria-current="page"/g) || []).length, 1, 'exactly one is current');
-  // A practice room wears its domain in a tile, and the hue never leaves it.
-  assert.match(nav, /class="nav-tile" data-domain="reading"/);
+  // A practice room's icon wears its domain hue; the row stays neutral.
+  assert.match(nav, /class="nav-link nav-link--practice" href="[^"]+" data-nav="reading" data-domain="reading"/);
+  /* Nothing that existed is lost: every earlier destination is still reached
+     from its named home - the rail, the top bar, the practice map, or Home. */
+  const threeThreads = { value: { continuation: ['a', 'b', 'c'].map((x) => ({ id: `story:${x}`, title: x, intent: 'reading' })), expressions: {}, conversations: {} } };
+  const reachable = [
+    nav,
+    topBar({ ui, language: 'en', support: 'vi', location: route('#/') }),
+    practiceOverview({ c: copy[ui === 'vi' ? 'vi' : ui] || copy.en, ui }),
+    discoverySpread({ c: copy[ui] || copy.en, ui, language: 'en', support: 'vi', memory: threeThreads }, {}),
+  ].join('');
+  for (const entry of entryPoints(ui))
+    assert.ok(reachable.includes(`href="${entry.href}"`), `${ui}: ${entry.id} is no longer reachable`);
 
   const toggle = navigationToggle(shellCtx(ui, route('#/')));
   assert.match(toggle, /aria-expanded="false"/, 'it reports its own state');

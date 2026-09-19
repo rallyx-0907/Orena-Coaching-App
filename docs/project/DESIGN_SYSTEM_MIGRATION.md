@@ -43,17 +43,56 @@ surface unchanged.
 
 | Screen | Desktop Ink | Desktop Paper | Mobile Ink | Mobile Paper | Real data | Interactions | States | QA | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Foundation: tokens, themes, type, primitives | yes | yes | yes | yes | n/a | theme switch | n/a | gates | Integrated |
-| App shell and navigation | yes | yes | yes | yes | yes | rail, tablet icon rail, tab bar, sheet (Esc, backdrop, close), compact on scroll | n/a | 1440/1024/390 browser, gates | Integrated |
-| Home | yes | yes | yes | yes | continuation, catalogues, daily feed | two Continue cards (one primary), rails with peek, phone domain doors | begin state, empty catalogue | 1440/390 browser, gates | Integrated |
+| Foundation: tokens, themes, type, primitives | yes | yes | yes | yes | n/a | theme switch | skeleton, degraded panel | gates, AA contrast | Integrated |
+| App shell and navigation | yes | yes | yes | yes | due count, language pair | rail, top bar search, tab bar, practice sheet, compact on scroll | n/a | 1440/1024/390 browser, gates | Integrated |
+| Home | yes | yes | yes | yes | continuation, catalogues, daily feed | Continue cards, rails, words stack (flip, step, swipe) | begin, empty catalogue, loading skeleton | 1440/1024/390 browser, gates | Integrated |
+| Progress | yes | yes | yes | yes | saved vocabulary, LearnerSummary | domain links | skeleton, unmeasured, degraded panel | 1440/1024/390 browser | Integrated (gaps tracked) |
 | Library, search | - | - | - | - | - | - | - | - | Not started |
 | Reading | - | - | - | - | - | - | - | - | Not started |
 | Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
 | Writing | - | - | - | - | - | - | - | - | Not started |
-| Progress | yes | yes | yes | yes | LearnerSummary, 4 windows | window switch, domain links | skeleton, ready, degraded panel with retry | 1440/1024/390 browser | Integrated |
 | Profile, settings, onboarding | - | - | - | - | - | - | - | - | Not started |
+
+## Parity audit (D-060), Phase 1-3
+
+Compared directly with Home · desktop 1280, Home · 390 (Visual Direction),
+Home · paper (Part 6), Progress · learner-facing (Part 2), Progress dashboard
+· mobile (Part 5), Progress · paper (Part 6), and the Visual Grammar rules.
+Values: EXACT, MINOR_DRIFT, MAJOR_DRIFT, NOT_IMPLEMENTED.
+
+| Surface | Desktop 1440 Ink | Desktop 1440 Paper | Tablet 1024 | Mobile 390 Ink | Mobile 390 Paper | Remaining difference |
+| --- | --- | --- | --- | --- | --- | --- |
+| Shell rail | EXACT | EXACT | MINOR_DRIFT | n/a | n/a | Tablet is not drawn by the mockup; the rail keeps its icons (open design decision) |
+| Top bar | EXACT | EXACT | EXACT | n/a | n/a | Search results are the reading library's until Phase 4 (GAP-011) |
+| Phone bar and tab bar | n/a | n/a | n/a | MINOR_DRIFT | MINOR_DRIFT | A practice-sheet control sits beside the avatar; the mockup's phone has none. It is the phone's only way to Speaking, Dictation, Writing and Grammar until Library gives Practice a phone home (Phase 4) |
+| Home · Continue | EXACT | EXACT | EXACT | EXACT | EXACT | Progress rail is the unmeasured track where a thread records no position (GAP-006) |
+| Home · Listening shelf | EXACT | EXACT | EXACT | EXACT | EXACT | Rail meta shows the item count; the level half ("HSK 2") waits on GAP-004 |
+| Home · Reading + Today's words | EXACT | EXACT | EXACT | EXACT | EXACT | Small step buttons under the stack for pointer and keyboard users (the mockup relies on swipe) - MINOR |
+| Home · Speaking and writing shelf | MINOR_DRIFT | MINOR_DRIFT | MINOR_DRIFT | MINOR_DRIFT | MINOR_DRIFT | Not drawn on Home; the design checklist lists it as a Home rail not yet drawn. Kept in the approved shelf shape because it is the phone's only door to those prompts |
+| Progress | EXACT | EXACT | EXACT | EXACT | EXACT | Figures the backend lacks show the unmeasured state in their approved place (GAP-001..003, 007..010) |
+| Artwork | EXACT | EXACT | EXACT | EXACT | EXACT | The design's artwork slot until real art exists (GAP-012) |
+
+Deliberate differences, chosen by the human and recorded in D-060 (not drift):
+Manrope instead of Nunito / Nunito Sans / DM Mono, with sentence-case labels
+and no monospace; the approved Orena mark instead of the violet square.
+
+## Legacy audit (D-060), Phase 1-3
+
+| Legacy element | Where | State |
+| --- | --- | --- |
+| Colour aliases (`--paper`, `--ink`, `--muted`, `--line`, `--accent`, tinted-panel pairs) | foundation.css (53 uses) | Fixed - every base primitive reads the semantic tokens |
+| Colour aliases | shell.css, components.css, Home section of reference.css, Progress section of rooms.css | None |
+| Colour aliases | world.css, experiences.css, rooms.css, reader.css, media-library.css, the rest of reference.css | Remain for rooms not yet migrated (Phases 4-10); removed from each room as it migrates |
+| Art Bible motif covers (orange/navy leaf, arc, wave) and the `rotate(undefined)` SVG error | ui/cover.js | Fixed - replaced by the artwork slot; the unsigned hash removes the error |
+| Old shell: 11-link rail, "Bring" in the rail, footer, `＋` on the phone bar | app.js, reference.js, shell.css | Fixed - the approved rail, top bar and phone bar; Bring lives in Library |
+| Old Home: start hero, doors row, "five minutes" and continuation shelves, 3:4 covers with a spine, poetic shelf titles, rail header icons, `←`/`→` text arrows | discovery.js, reference.css, content-rail.js | Fixed |
+| Old Progress (list of domain rows with a window switcher) | progress.js, rooms.css | Fixed - the approved week panel, chart and domain cards |
+| Text loading line and page-sized failure heading | app.js | Fixed - skeleton at the page's geometry; degraded panel with two ways forward |
+| Hard-coded colours | shell.css, Home, Progress | None; artwork overlay colours are tokens; the artwork recipe keeps its own palette (artwork licence, rule 16) |
+| Legacy `entryIcon` stroke icons | practice map, Continue room, rooms | Remain outside Phase 1-3; replaced per room |
+| Preferences dialog | app.js | Phase 10 (Profile, settings) |
 
 ## Backlog from the later design parts
 
@@ -74,7 +113,7 @@ the phase that owns its domain, and each is built only over data that exists:
 - Toast and tooltip (shell phase), the offline strip (shell phase).
 - Admin overview and content import styling (last; Admin stays admin-only).
 
-Next: Phase 4, Library (facets, grid, filter sheet, search, saved, history).
+Next: Phase 4, Library (facets, grid, filter sheet, grouped search, saved, history), which also gives Practice its phone home. Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

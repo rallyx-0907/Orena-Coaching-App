@@ -334,20 +334,25 @@ how a surface looks, not what it is for. Colour values live only in
     dimensions, phonemes and explanations one step deeper. Wrong is never
     colour alone: it carries an underline, a dash, a glyph or a label too.
 37. **Artwork is the brightest object.** Covers are 2:3, media artwork 16:9 in
-    rails and 21:9 on detail pages. The prototype's dot-field placeholders are
-    not adopted: until real artwork exists, covers use the Art Bible's
-    designed-cover system (D-057 still forbids placeholder art in a reviewed
-    build).
-38. **Navigation.** Five destinations - Home, Library, Vocabulary, Progress,
-    Profile - and a Practice group (Reading, Listening, Speaking, Dictation,
-    Writing, Grammar). Desktop carries them in a sidebar; a phone in a bottom
-    tab bar with Practice one tap away. Search is global, not a tab. No
-    existing capability is removed to fit: Continue, Recall, collections,
-    bringing your own content, Shadowing, Conversation and Admin each have a
-    named home in D-059.
+    rails and 21:9 on detail pages. Until real artwork exists, content uses the
+    design system's artwork slot - dark ground, domain-hued bloom, dot field -
+    at the real geometry, so real artwork drops in with no layout change
+    (D-060). Artwork keeps its own light in both themes.
+38. **Navigation.** Exactly the approved rail: Home, Library, Vocabulary,
+    Progress, then Practice with Reading, Listening, Speaking, Dictation and
+    Writing, then the learner's card; each destination carries the top bar
+    (global search, language pair, due chip). A phone has the five-tab bar.
+    Nothing is removed to fit: Continue, Recall, Grammar, bringing your own
+    content and Admin each keep a named home one step away (D-060).
 39. **Designed states.** Empty is an icon, one line and one action; loading is
     a skeleton at the real geometry, never a centre-screen spinner; a failing
     service degrades one panel with two ways forward, never the whole screen.
+40. **The mockup decides the interface.** The approved mockup is reproduced,
+    not reinterpreted. When the backend lacks what a component shows, the
+    component keeps its place and shape in the design system's unavailable
+    state, and the gap is recorded in `docs/project/UI_BACKEND_GAPS.md`
+    (D-060). No component is removed, hidden or redesigned because of a
+    backend gap, and none shows invented data.
 
 ## The learner language contract
 

@@ -1794,3 +1794,59 @@ Art Bible authority, artwork licence, one colour owner, acceptance gates and
 "no placeholder artwork in a reviewed build" all stand - the prototype's
 dot-field placeholders are not adopted; covers use the Art Bible's designed
 cover system until real artwork exists.
+
+## D-060 — The approved mockup is the visual source of truth; backend gaps are tracked, not hidden
+
+**Status:** Accepted, explicit current human instruction (2026-09-19), given
+after the Phase 1-3 checkpoint of D-059.
+
+**Decision:** The production frontend reproduces the approved Orena Design
+System mockup as exactly as it can - layout, dimensions, spacing, alignment,
+typography, proportions, radius, borders, shadow and glow, colour, hierarchy,
+navigation, icons and responsive behaviour. Integration does not redesign or
+"improve" the mockup; where the implementation differs, the implementation
+changes.
+
+1. **Backend gaps do not become UI gaps.** When the mockup draws a component
+   whose data or behaviour the backend does not provide, the component keeps
+   its approved place and shape and shows the design system's honest
+   unavailable state. It is never removed, hidden or replaced, and it never
+   shows invented data. Each such gap is recorded in
+   `docs/project/UI_BACKEND_GAPS.md` (status `NOT_STARTED` until work starts).
+2. **Artwork.** Where no real image exists, content uses the design system's
+   artwork slot - dark ground, domain-hued bloom, dot field, at the card's own
+   ratio - and real artwork replaces it with no layout change. The earlier Art
+   Bible motif covers are retired as a fallback; missing artwork is a tracked
+   gap (GAP-012), not a reason to return to the old style.
+3. **Navigation.** The rail is exactly the approved one (four destinations,
+   Practice, five rooms, the learner's card) and each destination carries the
+   approved top bar. Capabilities the mockup does not draw keep a named home
+   one step away rather than a place in the rail: Continue on Home, Recall
+   behind the due chip and in Vocabulary, Grammar in the Practice map,
+   bringing content in Library, Admin for admins only.
+4. **Legacy.** Compatibility aliases in `theme.css` exist only so rooms not yet
+   migrated keep rendering; a migrated surface reads only the semantic tokens,
+   and no legacy composition survives under new colours on a migrated screen.
+
+Two earlier explicit choices stand and are recorded as deliberate differences
+from the mockup, not drift: the interface typeface is Manrope, with no
+monospace, capitals or wide tracking in learner UI (the human's D-059 brief),
+and the mark is the approved Orena mark, not the mockup's violet square (the
+human's D-059 answer). Either can be reopened by the human.
+
+**Reason:** A migration that trims the approved design to what today's
+backend happens to supply drifts the product toward the backend's shape, and
+the approved design stops being the thing that is built. Tracking the gaps
+keeps both honest: the interface stays the approved one and the missing data
+stays visible as work.
+
+**Consequences:** `docs/project/UI_BACKEND_GAPS.md` is created as the backlog.
+`docs/project/DESIGN_CONTRACT.md` rules 37 and 38 are amended and rule 40 is
+added. `ui/cover.js` draws the artwork slot. The Phase 1-3 surfaces were
+re-audited against the mockup; the parity result is recorded in
+`docs/project/DESIGN_SYSTEM_MIGRATION.md`.
+
+**Supersedes / Superseded by:** Amends D-059 §3 (the rail no longer carries
+Continue, Recall or Grammar) and D-057's placeholder clause for covers in
+favour of the design system's defined artwork slot. D-057's Art Bible
+authority for mascot, scenes and real artwork is unchanged.

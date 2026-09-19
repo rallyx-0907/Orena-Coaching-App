@@ -64,8 +64,7 @@
 
 /* ---- Chips: filters, metadata, the language pair. A pill that holds a
    label; selected is violet (it is a selection), never amber. */
-.chip,
-.language-chip {
+.chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -85,9 +84,6 @@
   background: var(--action-selected);
   border-color: color-mix(in srgb, var(--action-primary) 55%, transparent);
   color: var(--text-primary);
-}
-.language-chip > svg {
-  color: var(--text-secondary);
 }
 
 /* ---- Segmented control: one choice among a few, in one pill. ----------- */
@@ -131,7 +127,7 @@
 /* ---- Progress: amber records (rule 31). ------------------------------- */
 .progress-bar {
   position: relative;
-  block-size: 6px;
+  block-size: 5px;
   border-radius: var(--radius-pill);
   background: var(--progress-track);
   overflow: hidden;
@@ -237,4 +233,46 @@
   padding: 12px;
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-md);
+}
+
+/* ---- Artwork slot (D-059 rule 37, D-060) --------------------------------
+   The design system's cover when no real artwork exists: a dark ground, a
+   bloom in the content's hue, and a fine dot field. The hue is data
+   (`--cover-hue`, set by ui/cover.js); the recipe lives only here. Artwork
+   keeps its own light, so it is the same in Ink and Paper. */
+.content-cover {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  background:
+    radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.3px) 0 0 / 9px 9px,
+    radial-gradient(130% 85% at var(--cover-bloom, 70% 10%), oklch(0.55 0.14 var(--cover-hue, 295) / 0.5), transparent),
+    linear-gradient(160deg, oklch(0.31 0.05 var(--cover-hue, 295)), oklch(0.17 0.02 300));
+}
+
+/* A measure the backend does not provide yet (docs/project/UI_BACKEND_GAPS.md):
+   the component keeps its place and shape, and the track says "not measured"
+   with a hatch rather than reading as zero. */
+.progress-bar[data-unavailable] {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--progress-track) 0 4px,
+    transparent 4px 8px
+  );
+}
+.metric-unavailable {
+  color: var(--text-muted);
+}
+
+/* A room that is still arriving: the page's own geometry, breathing - a
+   title line, two continue-sized cards, a shelf. */
+.room-loading { display: grid; gap: 22px; padding-block: 4px; }
+.room-loading__title { inline-size: 22%; }
+.room-loading__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.room-loading__row .skeleton { block-size: 112px; border-radius: 18px; }
+.room-loading__rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.room-loading__rail .skeleton { aspect-ratio: 16 / 11; border-radius: 16px; }
+@media (max-width: 600px) {
+  .room-loading__row { grid-template-columns: 1fr; }
+  .room-loading__rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
