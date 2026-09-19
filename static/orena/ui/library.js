@@ -256,3 +256,34 @@ export function paintLibraryGrid(container, ctx) {
   loadList();
   return () => releaseShelves();
 }
+
+/* One book on its own route (#/book?id=), for the Library, whose cards are
+   links. The same detail the reading room opens inline - one implementation;
+   its Phase 5 redesign lands here and there at once. */
+export function paintBookPage(container, ctx, id) {
+  if (!container) return () => {};
+  const { api, c, alive } = ctx;
+  let open = { id, book: null, error: false };
+  const paint = () => {
+    if (!alive()) return;
+    container.innerHTML = librarySection(c, { open, reading: readingFromMemory(ctx.memory) });
+    bindImages(container, c);
+    container.querySelector('[data-close-book]')?.addEventListener('click', () => history.back());
+    container.querySelector('[data-book-retry]')?.addEventListener('click', load);
+  };
+  async function load() {
+    open = { id, book: null, error: false };
+    paint();
+    try {
+      const book = await api.libraryBook(id);
+      if (!alive()) return;
+      open = { id, book, error: false };
+    } catch {
+      if (!alive()) return;
+      open = { id, book: null, error: true };
+    }
+    paint();
+  }
+  load();
+  return () => {};
+}

@@ -32,6 +32,8 @@ import {
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
 import { paintLibraryGrid } from './library.js';
+import { renderLibraryBrowse } from './library-browse.js';
+import { renderSearch } from './search.js';
 import { listeningItem, paintMediaLibrary } from './media-library.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
@@ -503,11 +505,16 @@ export async function renderWorld(root, ctx) {
         bindShelves: bindContentRails,
       }) || (() => {});
     if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
+  } else if (location.page === 'search') {
+    releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});
   } else if (location.page === 'content') {
-    const kept = all.filter(
-      (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',
-    );
-    root.innerHTML = `${editorialIntro(ctx,{title:referenceCopy[ctx.ui].collectionTitle,note:referenceCopy[ctx.ui].collectionNote,state:'together',eyebrow:referenceCopy[ctx.ui].content})}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
+    /* Library (D-059 Phase 4): everything browsable, with facets. What the
+       learner kept lives in Saved (#/collection); bringing something in is a
+       Library action. */
+    releaseLibrary = renderLibraryBrowse(root, ctx, {
+      readable,
+      media: practiceMedia,
+    }) || (() => {});
   } else {
     root.innerHTML = discoverySpread(ctx, {
       media,

@@ -22,6 +22,8 @@ import {
 } from './ui/reference.js';
 import { icon } from './ui/phosphor.js';
 import { renderProgress } from './ui/progress.js';
+import { paintBookPage } from './ui/library.js';
+import { renderHistory } from './ui/history.js';
 import { renderCollection } from './ui/collection.js';
 import {
   renderExpression,
@@ -249,7 +251,9 @@ function shell() {
 }
 /* The destinations that carry the top bar. Rooms where the learner works do
    not: the content comes forward (Design Contract rule 11). */
-const TOP_BAR_PAGES = new Set(['discover', 'content', 'language', 'progress', 'continue', 'collection']);
+// Library carries its own search above the grid, so it does not repeat the
+// global one (rule 20).
+const TOP_BAR_PAGES = new Set(['discover', 'language', 'progress', 'continue', 'collection']);
 function paintTopBar() {
   const bar = document.getElementById('topbar');
   if (!bar) return;
@@ -268,8 +272,7 @@ function paintTopBar() {
     event.preventDefault();
     const query = String(new FormData(form).get('q') || '').trim();
     if (!query) return;
-    pendingSearch = query;
-    ctx.go('practice', { intent: 'reading' });
+    ctx.go('search', { q: query });
   };
   refreshDueCount();
 }
@@ -287,19 +290,7 @@ async function refreshDueCount() {
   if (request !== dueRequest) return;
   document.querySelectorAll('#topbar, #main').forEach((el) => paintDueChip(el, ctx, count));
 }
-/* A search typed in the top bar lands in the reading library's own search
-   until the grouped global search arrives (Phase 4, GAP-011). */
-let pendingSearch = '';
-function applyPendingSearch() {
-  if (!pendingSearch) return;
-  const input = root.querySelector('[data-collection-search] input[name="query"]');
-  if (!input) return;
-  input.closest('details')?.setAttribute('open', '');
-  input.value = pendingSearch;
-  pendingSearch = '';
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.focus({ preventScroll: false });
-}
+
 /* Read-only account fact, never an access decision - accountCommerce() in
    writing_coach/product/commerce.py is the one server resolver this renders.
    billing_ready is false everywhere upstream, so no price, upgrade action or
@@ -527,6 +518,10 @@ async function render() {
         ? renderCollection(root, scope)
         : page === 'progress'
           ? await renderProgress(root, scope)
+        : page === 'book'
+          ? paintBookPage(root, scope, ctx.location.id)
+        : page === 'history'
+          ? await renderHistory(root, scope)
         : page === 'admin'
           ? await renderAdmin(root, scope)
         : page === 'continue'
@@ -550,7 +545,6 @@ async function render() {
       return;
     }
     cleanup = result || (() => {});
-    applyPendingSearch();
     root.querySelector('h1')?.setAttribute('tabindex', '-1');
     root.querySelector('h1')?.focus({ preventScroll: true });
   } catch (error) {

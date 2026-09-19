@@ -47,7 +47,7 @@ surface unchanged.
 | App shell and navigation | yes | yes | yes | yes | due count, language pair | rail, top bar search, tab bar, practice sheet, compact on scroll | n/a | 1440/1024/390 browser, gates | Integrated |
 | Home | yes | yes | yes | yes | continuation, catalogues, daily feed | Continue cards, rails, words stack (flip, step, swipe) | begin, empty catalogue, loading skeleton | 1440/1024/390 browser, gates | Integrated |
 | Progress | yes | yes | yes | yes | saved vocabulary, LearnerSummary | domain links | skeleton, unmeasured, degraded panel | 1440/1024/390 browser | Integrated (gaps tracked) |
-| Library, search | - | - | - | - | - | - | - | - | Not started |
+| Library, search, saved, history | yes | yes | yes | yes | books (paged), passages, media, collections, saved vocabulary, kept phrases, essays, reading sessions, speaking takes | facets, filter sheet, library search, sort, grid/list, grouped global search, saved tabs, history | loading skeletons, empty, degraded panels | 1440/390 browser, gates | Integrated |
 | Reading | - | - | - | - | - | - | - | - | Not started |
 | Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
@@ -113,7 +113,16 @@ the phase that owns its domain, and each is built only over data that exists:
 - Toast and tooltip (shell phase), the offline strip (shell phase).
 - Admin overview and content import styling (last; Admin stays admin-only).
 
-Next: Phase 4, Library (facets, grid, filter sheet, grouped search, saved, history), which also gives Practice its phone home. Backend gaps: `UI_BACKEND_GAPS.md`.
+Phase 4 notes (parity): Library, Search, Saved and History follow Parts 1, 3, 5 and 6.
+MINOR_DRIFT, recorded: the Library toolbar carries two actions the mockup does
+not draw - Saved (the old My content moved there) and Bring (import) - because
+both existed and have no other drawn home; Progress links to History (the
+mockup leaves History "reachable from anywhere" without drawing the entry);
+topic facets show only topics the support language can name; the phone keeps
+the practice sheet until the domain indexes (Phases 5-9) give Practice its phone
+home. The book detail at `#/book` keeps its current look until Phase 5.
+
+Next: Phase 5, Reading (reading library, book detail, reader workspace, quiz and chapter complete). Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

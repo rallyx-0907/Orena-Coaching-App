@@ -37,6 +37,12 @@ export function route(hash = '') {
       // D-059: Progress is a destination of its own, over the learner's
       // recorded evidence (LearnerSummary). Additive; no route changed.
       'progress',
+      // D-059 Phase 4: a book has its own address, so Library cards are links.
+      'book',
+      // Global search, with its query in the address so it survives a reload.
+      'search',
+      // The learner's last thirty days of work, read from the owners that hold it.
+      'history',
     ].includes(path)
       ? path
       : 'discover',
@@ -44,11 +50,13 @@ export function route(hash = '') {
     intent: practiceIntentions.includes(q.get('intent'))
       ? q.get('intent')
       : null,
+    q: q.get('q') || '',
   };
 }
-export function link(page = 'discover', { id = '', intent = null } = {}) {
+export function link(page = 'discover', { id = '', intent = null, q = '' } = {}) {
   const query = new URLSearchParams();
   if (id) query.set('id', id);
+  if (q) query.set('q', q);
   if (practiceIntentions.includes(intent)) query.set('intent', intent);
   return `#/${page === 'discover' ? '' : page}${query.size ? '?' + query : ''}`;
 }

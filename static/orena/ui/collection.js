@@ -1,146 +1,113 @@
 import { esc } from './html.js';
-import { editorialIntro, referenceCopy } from './reference.js';
-import { link, sourceLink, continuationLink } from '../product/intent.js';
-import { keptProvenance } from './patterns.js';
+import { referenceCopy } from './reference.js';
+import { link, sourceLink } from '../product/intent.js';
+import { icon } from './phosphor.js';
+import { art } from './content.js';
+import { masteryStars } from './vocabulary-experience.js';
 
-/* DEFERRED. Reachable at #/collection, deliberately not a primary destination.
+/* Saved (D-059 Phase 4, D-060) - "Saved content · four kinds, kept apart":
+   Words, Highlights, Notes and Content, each with its count, never mixed into
+   one feed. Words are the learner's saved vocabulary (with search, a mastery
+   filter, a sort and the due banner); Highlights are the phrases they kept
+   from a text; Content is what they brought in. Notes are drawn by the design
+   and not stored anywhere yet - that tab says so (GAP-024). */
 
-   This was built during an IA run whose scope went beyond the change that was
-   actually wanted. It is kept rather than deleted because it works and because
-   the retrieval idea is worth revisiting on purpose - but My content and My
-   language are the approved learner-facing surfaces, and they are unchanged.
-   Do not promote this without a deliberate product decision.
+const KINDS = ['words', 'highlights', 'notes', 'content'];
+const KIND_ICON = { words: 'cards', highlights: 'sparkle', notes: 'pencil-simple', content: 'bookmark-simple' };
+const SOURCE_KIND = { feed: 'library', reading: 'reading', listening: 'listening', speaking: 'speaking', writing: 'writing', dictation: 'dictation', essay: 'writing' };
 
-   Everything the learner has met, kept or made, in one place to retrieve from.
-
-   My content and My language remain exactly what they were - their routes,
-   their stores and their deep views are untouched. This is the retrieval layer
-   over them, because a learner looking for something they saw last week does
-   not know whether they filed it under content or under language. They know
-   they read it, or heard it, or wrote it.
-
-   That is why the lenses here are skills, where on Discover they would be
-   wrong: this is not a place to choose a discipline to study, it is a place to
-   remember through. An item met through several capabilities appears under
-   each lens that applies; nothing is duplicated in storage to achieve it. */
-
-const LENSES = ['all', 'reading', 'listening', 'speaking', 'writing', 'language'];
-
-/* A skill lens is a question about how the learner met something, so it is
-   answered from what they actually did with it - the intent they entered it
-   through, the reason they kept it - never from a guess about the content. */
-export function lensesFor(item) {
-  const found = new Set(['all']);
-  const intent = item.intent || '';
-  const why = item.why || '';
-  const id = String(item.id || '');
-  if (intent === 'reading' || why === 'from_reading' || id.startsWith('story:'))
-    found.add('reading');
-  if (['follow', 'dictation', 'shadowing'].includes(intent) || why === 'from_listening' || /^(media:|url:|upload:)/.test(id))
-    found.add('listening');
-  if (intent === 'speaking' || why === 'from_speaking' || id.startsWith('conversation:'))
-    found.add('speaking');
-  if (intent === 'writing' || why === 'from_writing' || id.startsWith('expression:'))
-    found.add('writing');
-  if (item.kind === 'language') found.add('language');
-  return [...found];
-}
-
+/* Kept for other surfaces that read the learner's retained items. */
 export function collectionItems(ctx) {
   const { memory } = ctx;
-  const seen = new Map();
-  const add = (item) => {
-    if (!item.id || seen.has(item.id)) return;
-    seen.set(item.id, { ...item, lenses: lensesFor(item) });
-  };
-  for (const entry of memory.value.continuation || [])
-    add({ ...entry, kind: 'thread', at: entry.at || '' });
-  for (const entry of memory.value.imports || [])
-    add({ ...entry, kind: 'content' });
-  for (const entry of memory.value.mediaImports || [])
-    add({ ...entry, kind: 'content' });
+  const out = [];
+  for (const entry of memory.value.imports || []) out.push({ ...entry, kind: 'content' });
+  for (const entry of memory.value.mediaImports || []) out.push({ ...entry, kind: 'content' });
   for (const [term, kept] of Object.entries(memory.value.keptLanguage || {}))
-    add({
-      id: `language:${term}`,
-      title: term,
-      kind: 'language',
-      why: kept?.why,
-      where: kept?.where,
-      origin: kept?.origin,
-      at: kept?.at || '',
-    });
-  return [...seen.values()];
+    out.push({ id: `language:${term}`, title: term, kind: 'language', ...kept });
+  return out;
 }
 
-const rowFor = (c, item) => {
-  const href =
-    item.kind === 'language'
-      ? link('language')
-      : item.kind === 'thread'
-        ? continuationLink(item)
-        : sourceLink(item.id);
-  return `<li><a href="${esc(href)}"><small>${esc(item.where || c[`${item.kind}Label`] || '')}</small><span lang="${esc(item.lang || '')}">${esc(item.title || item.id)}</span></a></li>`;
-};
-
 export function renderCollection(root, ctx) {
-  const c = { ...referenceCopy[ctx.ui], ...ctx.c };
-  const all = collectionItems(ctx);
-  let lens = 'all';
-  let query = '';
+  const c = ctx.c;
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const { memory, api, alive, language } = ctx;
+  const highlights = Object.entries(memory.value.keptLanguage || {}).map(([term, kept]) => ({ term, ...kept }));
+  const content = [...(memory.value.imports || []), ...(memory.value.mediaImports || [])];
+  const state = { kind: 'words', words: null, failed: false, query: '', starred: false, sort: 'recent' };
 
-  root.innerHTML = `${editorialIntro(ctx, {
-    title: c.collectionTitle,
-    note: c.collectionNote,
-    state: 'remembering',
-    eyebrow: c.collection,
-  })}<form class="collection-find" data-find><label><span class="sr-only">${esc(c.collectionSearch)}</span><input type="search" name="q" autocomplete="off" placeholder="${esc(c.collectionSearchHint)}"></label></form><nav class="lens-row" aria-label="${esc(c.collectionLenses)}">${LENSES.map(
-    (id) =>
-      `<button data-lens="${id}" ${id === 'all' ? 'aria-current="true"' : ''}>${esc(c[`lens_${id}`])}</button>`,
-  ).join('')}</nav><p class="meta" role="status" data-found></p><div class="collection-shelves" data-shelves></div>`;
+  const count = (kind) =>
+    kind === 'words' ? (state.words ? String(state.words.length) : '…')
+      : kind === 'highlights' ? String(highlights.length)
+        : kind === 'content' ? String(content.length)
+          : '—';
 
-  const shelves = root.querySelector('[data-shelves]');
-  const found = root.querySelector('[data-found]');
+  function wordsView() {
+    if (state.failed)
+      return `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-words-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`;
+    if (!state.words)
+      return `<div class="saved-grid" aria-hidden="true">${Array.from({ length: 4 }, () => '<span class="skeleton skeleton--card"></span>').join('')}</div>`;
+    if (!state.words.length)
+      return `<div class="state-panel state-panel--empty">${icon('bookmark-simple', { size: 22 })}<div><strong>${esc(r.savedNoWords)}</strong><p>${esc(r.savedNoWordsNote)}</p></div><a class="primary" href="${esc(link('practice', { intent: 'reading' }))}">${icon('book-open', { size: 16 })}<span>${esc(r.savedOpenBook)}</span></a></div>`;
+    const q = state.query.trim().toLowerCase();
+    let list = state.words.filter((w) => !q || `${w.word} ${w.translation_vi || ''} ${Object.values(w.support_translations || {}).join(' ')}`.toLowerCase().includes(q));
+    if (state.starred) list = list.filter((w) => (Number(w.review_stage) || 0) < 2);
+    list = [...list].sort((a, b) => (state.sort === 'recent' ? String(b.added_at || '').localeCompare(String(a.added_at || '')) : String(a.word).localeCompare(String(b.word))));
+    const due = state.words.filter((w) => w.due).length;
+    const rows = list.map((w) => {
+      const stars = masteryStars(w);
+      const filled = (stars.match(/★/g) || []).length;
+      const from = SOURCE_KIND[w.source_kind] || '';
+      const meaning = w.support_translations?.[ctx.support] || w.translation_vi || '';
+      return `<a class="saved-word" href="${esc(w.source_essay_id ? link('expression', { id: `essay:${w.source_essay_id}` }) : link('language'))}"><span class="saved-word__text"><strong lang="${esc(language)}">${esc(w.word)}</strong><small>${esc([w.phonetic, meaning].filter(Boolean).join(' · '))}${from ? ` · ${esc(r.savedFrom)} <span class="saved-word__from">${esc(r[from] || from)}</span>` : ''}</small></span><span class="vocabulary-stars" aria-label="${esc(stars)}">${[0, 1, 2].map((n) => icon('star', { filled: n < filled, size: 12, className: n < filled ? 'is-earned' : '' })).join('')}</span></a>`;
+    }).join('');
+    return `<div class="saved-tools"><label class="library-search"><span class="sr-only">${esc(r.savedSearchWords)}</span>${icon('magnifying-glass', { size: 18 })}<input id="savedQuery" type="search" autocomplete="off" placeholder="${esc(r.savedSearchWords)}" value="${esc(state.query)}" data-saved-query></label><button type="button" class="saved-filter" aria-pressed="${state.starred}" data-saved-starred>${icon('funnel', { size: 14 })}<span>${esc(r.savedOneStar)}</span></button><button type="button" class="saved-filter" data-saved-sort>${icon('sliders-horizontal', { size: 14 })}<span>${esc(state.sort === 'recent' ? r.savedRecent : r.librarySortTitle)}</span></button></div><div class="saved-grid">${rows || `<p class="meta">${esc(r.libraryNoResults)}</p>`}</div>${due ? `<div class="saved-due" data-live><span class="saved-due__icon" data-domain="vocabulary">${icon('cards', { filled: true, size: 20 })}</span><div><strong>${esc(r.savedDue.replace('{n}', String(due)))}</strong></div><a class="primary" href="${esc(link('practice', { intent: 'recall' }))}">${esc(r.recall)}</a></div>` : ''}`;
+  }
 
-  const paint = () => {
-    const needle = query.trim().toLocaleLowerCase();
-    const matching = all.filter(
-      (item) =>
-        item.lenses.includes(lens) &&
-        (!needle ||
-          `${item.title || ''} ${item.where || ''}`
-            .toLocaleLowerCase()
-            .includes(needle)),
-    );
-    found.textContent = `${matching.length} ${c.collectionResults}`;
-    /* An overview, not one long feed: each shelf shows a useful handful and
-       says how to see the rest. Scrolling is not retrieval. */
-    const shelf = (title, kind, route) => {
-      const items = matching.filter((x) => x.kind === kind);
-      if (!items.length) return '';
-      return `<section class="collection-shelf"><div class="section-head"><h2>${esc(title)}</h2>${route && items.length > 6 ? `<a class="quiet" href="${esc(route)}">${esc(c.collectionViewAll)} ↗</a>` : ''}</div><ul>${items.slice(0, 6).map((x) => rowFor(c, x)).join('')}</ul></section>`;
-    };
-    shelves.innerHTML =
-      [
-        shelf(c.collectionThreads, 'thread', link('continue')),
-        shelf(c.collectionYourContent, 'content', link('content')),
-        shelf(c.collectionYourLanguage, 'language', link('language')),
-      ].join('') ||
-      `<section class="empty"><h2>${esc(c.collectionEmpty)}</h2><p>${esc(c.collectionEmptyNote)}</p><a class="primary" href="#/">${esc(c.discover)} ↗</a></section>`;
-  };
+  function highlightsView() {
+    if (!highlights.length)
+      return `<div class="state-panel state-panel--empty">${icon('sparkle', { size: 22 })}<div><strong>${esc(r.savedNoHighlights)}</strong></div></div>`;
+    return `<div class="saved-list">${highlights.map((h) => `<a class="saved-row" href="${esc(h.source ? sourceLink(h.source) : link('language'))}"><span class="saved-row__text"><strong lang="${esc(language)}">${esc(h.term)}</strong>${h.where ? `<small>${esc(h.where)}</small>` : ''}</span>${icon('caret-right', { size: 18 })}</a>`).join('')}</div>`;
+  }
 
-  root.querySelectorAll('[data-lens]').forEach((button) => {
-    button.onclick = () => {
-      lens = button.dataset.lens;
-      root
-        .querySelectorAll('[data-lens]')
-        .forEach((x) => x.toggleAttribute('aria-current', x === button));
-      paint();
-    };
-  });
-  root.querySelector('[data-find]').oninput = (event) => {
-    query = event.target.value;
+  function contentView() {
+    if (!content.length)
+      return `<div class="state-panel state-panel--empty">${icon('bookmark-simple', { size: 22 })}<div><strong>${esc(r.savedNoContent)}</strong></div><button type="button" class="primary" data-bring>${icon('plus', { size: 16 })}<span>${esc(c.bring)}</span></button></div>`;
+    return `<div class="saved-list">${content.map((x) => `<a class="saved-row" href="${esc(sourceLink(x.id))}"><span class="saved-row__visual">${art(x)}</span><span class="saved-row__text"><strong>${esc(x.title || x.id)}</strong><small>${esc(x.kind === 'audio' || x.kind === 'video' || String(x.id).startsWith('url:') ? r.libraryType_audio : r.libraryType_books)}</small></span>${icon('caret-right', { size: 18 })}</a>`).join('')}</div><button type="button" class="library-more" data-bring>${icon('plus', { size: 16 })}<span>${esc(c.bring)}</span></button>`;
+  }
+
+  const notesView = () =>
+    `<div class="state-panel state-panel--empty">${icon('pencil-simple', { size: 22 })}<div><strong>${esc(r.savedNotesUnavailable)}</strong></div></div>`;
+
+  function paint() {
+    if (!alive()) return;
+    const focused = document.activeElement?.id;
+    const body = { words: wordsView, highlights: highlightsView, notes: notesView, content: contentView }[state.kind]();
+    root.innerHTML = `<section class="saved-page"><h1 class="saved-title">${esc(r.savedTitle)}</h1><div class="saved-panel"><div class="saved-tabs" role="tablist" aria-label="${esc(r.savedTitle)}">${KINDS.map((kind) => `<button type="button" role="tab" class="saved-tab" aria-selected="${state.kind === kind}" data-saved-kind="${kind}">${icon(KIND_ICON[kind], { size: 14, filled: state.kind === kind })}<span>${esc(r[`saved_${kind}`])}</span><span class="saved-tab__count">${esc(count(kind))}</span></button>`).join('')}</div><div class="saved-body" role="tabpanel">${body}</div></div></section>`;
+    root.querySelectorAll('[data-saved-kind]').forEach((b) => (b.onclick = () => { state.kind = b.dataset.savedKind; paint(); }));
+    const query = root.querySelector('[data-saved-query]');
+    if (query) query.oninput = () => { state.query = query.value; paint(); };
+    root.querySelector('[data-saved-starred]')?.addEventListener('click', () => { state.starred = !state.starred; paint(); });
+    root.querySelector('[data-saved-sort]')?.addEventListener('click', () => { state.sort = state.sort === 'recent' ? 'title' : 'recent'; paint(); });
+    root.querySelector('[data-words-retry]')?.addEventListener('click', load);
+    root.querySelectorAll('[data-bring]').forEach((b) => (b.onclick = () => ctx.import?.()));
+    if (focused) {
+      const el = document.getElementById(focused);
+      el?.focus();
+      if (el?.setSelectionRange) el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }
+  async function load() {
+    state.words = null;
+    state.failed = false;
     paint();
-  };
-  root.querySelector('[data-find]').onsubmit = (event) => event.preventDefault();
-  paint();
+    try {
+      const data = await api.libraryVocabulary();
+      state.words = data.items || [];
+    } catch {
+      state.failed = true;
+    }
+    paint();
+  }
+  load();
+  return () => {};
 }
