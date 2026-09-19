@@ -320,14 +320,6 @@ function planUsageSection(scope) {
     .join('');
   return `<section class="plan-usage"><h2>${c.planUsage} — ${esc(commerce.plan?.name || '')}</h2><p>${c.planUsageNote}</p><ul>${rows}</ul></section>`;
 }
-/* The two surfaces the approved IA calls "secondary, reached from anywhere":
-   saved content and history. They live beside Settings until the surfaces that
-   draw them arrive - Vocabulary's "Saved words" row (Phase 6) and the profile
-   sheet (Phase 10). No new chrome anywhere else. */
-function secondarySurfaces(scope) {
-  const r = referenceCopy[scope.ui] || referenceCopy.en;
-  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>`;
-}
 function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
@@ -417,6 +409,14 @@ function preferences(onboarding = false) {
       form.inert = false;
     }
   };
+}
+/* The two surfaces the approved IA calls "secondary, reached from anywhere":
+   saved content and history. They live beside Settings until the surfaces that
+   draw them arrive - Vocabulary's "Saved words" row (Phase 6) and the profile
+   sheet (Phase 10). No new chrome anywhere else. */
+function secondarySurfaces(scope) {
+  const r = referenceCopy[scope.ui] || referenceCopy.en;
+  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>`;
 }
 function validVideo(value) {
   try {
