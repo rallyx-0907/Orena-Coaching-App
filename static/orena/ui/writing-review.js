@@ -21,13 +21,38 @@ export const RUBRIC = [
 
 const number = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
-// A dimension that moved says by how much, so progress is visible where it
-// happened rather than only in the single overall number.
-function moved(c, delta, key) {
-  const change = delta && typeof delta === 'object' ? number(delta[key]) : null;
-  if (change === null || Math.round(change) === 0) return '';
-  const up = change > 0;
-  return `<span class="dimension-move" data-direction="${up ? 'up' : 'down'}">${up ? '+' : ''}${Math.round(change)}</span>`;
+/* One rubric dimension, as one row.
+
+   Label, bar, score, change - four things on one line. They were a three
+   column grid holding four items, so the change wrapped onto a line of its
+   own under every dimension: five rubric rows became ten, each one twice as
+   tall as it needed to be, and the numbers read as something appended rather
+   than as part of the row.
+
+   The bar shows where the learner was and where they are now, which is the
+   whole point of a second review. The previous score is not invented: the
+   evaluator returns the change, so the score before it is the score now minus
+   that change - arithmetic on data it gave us, not a guess. With no previous
+   review there is no change and the bar is simply the score.
+
+   Improving and slipping are drawn differently on purpose. A gain is the
+   stretch the learner added, past where they were. A loss is the ground they
+   held and no longer do, marked back from where they were to where they are -
+   so a drop cannot read as though zero-to-here were progress. */
+function dimensionRow(c, key, value, change) {
+  const label = esc(c[`rubric_${key}`] || key);
+  const now = Math.max(0, Math.min(100, value));
+  const moved = change !== null && Math.round(change) !== 0 ? Math.round(change) : null;
+  const before = moved === null ? null : Math.max(0, Math.min(100, value - moved));
+  const direction = moved === null ? 'none' : moved > 0 ? 'up' : 'down';
+  // The bar is two segments: what was held, and what changed since.
+  const held = before === null ? now : Math.min(before, now);
+  const shift = before === null ? 0 : Math.abs(now - before);
+  return `<div class="review-dimension" data-direction="${direction}"><dt>${label}</dt><dd class="review-dimension__bar"><span class="review-bar" aria-hidden="true"><i class="review-bar__held" style="inline-size:${held}%"></i><i class="review-bar__shift" style="inline-size:${shift}%"></i></span></dd><dd class="review-dimension__score"><b>${Math.round(value)}</b></dd><dd class="review-dimension__move">${
+    moved === null
+      ? ''
+      : `<span class="dimension-move" data-direction="${direction}">${moved > 0 ? '+' : ''}${moved}</span>`
+  }</dd></div>`;
 }
 
 function dimensions(c, result) {
@@ -36,11 +61,9 @@ function dimensions(c, result) {
     (key) => number(source[key]) !== null,
   );
   if (!keys.length) return '';
+  const delta = result.delta && typeof result.delta === 'object' ? result.delta : null;
   return `<section class="review-dimensions"><dl>${keys
-    .map((key) => {
-      const value = Math.round(number(source[key]));
-      return `<div class="review-dimension"><dt>${esc(c[`rubric_${key}`] || key)}</dt><dd><span class="review-bar" aria-hidden="true"><i style="inline-size:${Math.max(0, Math.min(100, value))}%"></i></span><b>${value}</b>${moved(c, result.delta, key)}</dd></div>`;
-    })
+    .map((key) => dimensionRow(c, key, number(source[key]), delta ? number(delta[key]) : null))
     .join('')}</dl></section>`;
 }
 
@@ -130,20 +153,26 @@ export function orderedIssues(result, text) {
 
 const FOCUS = 3;
 
+/* Where to begin. Never folded: a learner who opens a review and finds only a
+   score and some accordions has been given a report, not coaching. */
 function issues(c, result, language, text) {
-  const ordered = orderedIssues(result, text);
-  if (!ordered.length) return '';
-  const focus = ordered.slice(0, FOCUS);
-  const rest = ordered.slice(FOCUS);
+  const focus = orderedIssues(result, text).slice(0, FOCUS);
+  if (!focus.length) return '';
   return `<section class="review-issues"><h3>${esc(c.reviewFocus)}</h3>${focus
     .map(({ item, index }) => correction(c, item, index, language))
-    .join('')}${
-    rest.length
-      ? `<details class="review-fold"><summary>${esc(c.reviewMore)} <span>${rest.length}</span></summary>${rest
-          .map(({ item, index }) => correction(c, item, index, language))
-          .join('')}</details>`
-      : ''
-  }</section>`;
+    .join('')}</section>`;
+}
+
+/* Everything else the evaluator found, as its own step rather than a fold
+   inside the first three. This is where a learner goes when they have done the
+   urgent things and want the rest - word choice, naturalness, structure - and
+   it keeps every finding the payload carried. */
+function deeper(c, result, language, text) {
+  const rest = orderedIssues(result, text).slice(FOCUS);
+  if (!rest.length) return '';
+  return `<section class="review-deeper">${rest
+    .map(({ item, index }) => correction(c, item, index, language))
+    .join('')}</section>`;
 }
 
 function priorities(c, result) {
@@ -239,5 +268,5 @@ export function writingReview(c, result, { language, text }) {
     result.summary?.interpretation
       ? `<p class="review-summary">${esc(result.summary.interpretation)}</p>`
       : ''
-  }${measurement}</section>${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${issues(c, result, language, text)}${fold(c.reviewStrengths, strengths(c, result, language, text))}${fold(c.reviewNext, priorities(c, result))}${fold(c.reviewSinceLast, comparison(c, result, text))}${fold(c.reviewWholePiece, corrected(c, result, language))}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
+  }${measurement}</section>${nothing ? `<p class="review-none">${esc(c.noCorrections)}</p>` : ''}${issues(c, result, language, text)}${fold(c.reviewStrengths, strengths(c, result, language, text), { open: true })}${fold(c.reviewNext, priorities(c, result), { open: true })}${fold(c.reviewDeeper, deeper(c, result, language, text))}${fold(c.reviewSinceLast, comparison(c, result, text))}${fold(c.reviewWholePiece, corrected(c, result, language))}<p class="meta">${esc(c.reviewNotOneAnswer)}</p><p class="meta review-persisted">${esc(c.persisted)}</p><div class="button-row"><button class="outline" data-revise>${esc(c.revision)} ↗</button><button class="quiet" data-registers>${esc(c.registerExplore)} ↗</button></div></div>`;
 }

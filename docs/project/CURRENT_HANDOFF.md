@@ -39,35 +39,38 @@ behavior and evidence. Current invariants/owners:
 
 ## Last verified batch
 
-D-057 and the surfaces under it. `ui/cover.js` draws one cover per item;
-`ui/lexical.js` is the shared interaction layer for reader, transcript and
-practised line. Listening is two panes, the spoken line IS the active row.
-Dictation hides the writing response. Speaking is a composed module. A
-synthetic result is never a pronunciation score.
+D-057 and the surfaces under it. `ui/lexical.js` is the shared interaction
+layer for reader, transcript and practised line. Listening is two panes, the
+spoken line IS the active row. Speaking is a composed module. A synthetic
+result is never a pronunciation score.
 
-A review is earned once (D-051 rules 28-29). Every evaluation carries the
+My Language opens on the language, not a count of it: what is due, then what
+was kept with the sentence and piece it came from, then collections, then the
+tally in one line. Recall is the loop over the same saved contract and
+scheduler - a landing, one item, a completion with real counts only. Writing's
+rubric is one row per dimension (label, bar, score, change), the bar showing
+where the learner was and is now; corrections and deeper findings are separate
+steps.
+
+A review is earned once (D-051 rules 28-29): every evaluation carries the
 identity it was produced under - text, both languages, level, task, evaluator
-contract - in the `module_data` both backends already persist, so no migration.
-An identical ask is served from it: reload 0 calls, unchanged Review 0, edited
-revision 1, eight concurrent identical asks 1. The score overview leads the
-review; editing marks it as the previous version rather than deleting it.
-Learner writing is bounded by one shared contract
-(`writing_coach/writing_limits.py` + `capabilities/writing-limits.js`, a gate
-fails on drift): 12,000 code points / 60,000 bytes / 1,000 lines, refused whole
-and never truncated, before any row, prompt or provider call; Writing bodies
-are capped in middleware and validation errors no longer echo the rejected
-text. Dictation's segment picker is gone for good - Previous, position, Next.
+contract - in the `module_data` both backends persist, so no migration. Reload
+0 calls, unchanged Review 0, edited revision 1, eight concurrent identical 1.
+Editing marks a review as the previous version rather than deleting it.
+Writing is bounded by one shared contract (`writing_coach/writing_limits.py` +
+`capabilities/writing-limits.js`, gated against drift): 12,000 code points /
+60,000 bytes / 1,000 lines, refused whole, never truncated, before any row,
+prompt or provider call. Dictation: Previous, position, Next, nothing else.
 
-Writing is a workspace (D-051 rule 27): what the piece is for sits in the
-heading, the page takes the width until a review exists, one primary action in
-one word. The overview leads, then up to three corrections, then folds; a quote
-is located in the learner's own text by selection (`ui/writing-locate.js`),
-never by rewriting it. A stale `parent_essay_id` is dropped and re-asked.
+Writing is a workspace (D-051 rule 27): the intention sits in the heading, the
+page takes the width until a review exists, one primary action in one word, and
+a quote is located in the learner's own text by selection, never by rewriting
+it.
 
 Before it (D-051 rules 23-26): a transcript row keeps its geometry when the
 voice reaches it; its actions live in `ui/learning-toolbar.js`; Dictation binds
-the player to the line being written (`holdSegment`); en/zh/vi each own every
-interface string their surfaces ask for, and the gate fails on silent English.
+the player to the line being written; en/zh/vi each own every interface string
+their surfaces ask for.
 
 Verified: pytest `1127 passed, 118 skipped`, all 49 CI `.mjs` gates, ESM graph,
 both validators, and the Python CI validators. Browser pass on

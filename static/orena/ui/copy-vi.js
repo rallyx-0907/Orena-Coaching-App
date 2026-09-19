@@ -924,7 +924,6 @@ export const vi = {
   // --- Writing as a workspace ---------------------------------------------
   reviewAction: 'Nhận xét',
   reviewFocus: 'Bắt đầu từ đây',
-  reviewMore: 'Thêm nhận xét',
   reviewLocate: 'Tìm trong bài của tôi',
   reviewWorking: 'Đang đọc những gì bạn viết…',
   reviewAgain: 'Nhận xét lại',
@@ -939,4 +938,5 @@ export const vi = {
   reviewStale:
     'Bạn đã sửa bài này. Nhận xét dưới đây thuộc về bản trước khi sửa.',
   reviewStaleAction: 'Nhận xét bản mới',
+  reviewDeeper: 'Cải thiện chuyên sâu',
 };

@@ -120,12 +120,51 @@ assert.deepEqual(
   'an issue keeps the position the room binds its handlers to',
 );
 const html = writingReview(c, result, { language: 'en', text });
-const focus = html.slice(html.indexOf('review-issues'), html.indexOf('review-fold'));
+const focus = html.slice(html.indexOf('review-issues'), html.indexOf('</section>', html.indexOf('review-issues')));
 assert.equal((focus.match(/class="correction"/g) || []).length, 3, 'three lead, no more');
 assert.ok(html.includes(`<h3>${c.reviewFocus}</h3>`), 'and they are named as the place to start');
+/* Where to begin is never folded away: a review that is a score and some
+   accordions is a report, not coaching. */
+assert.ok(
+  !/<details[^>]*>(?:(?!<\/details>)[\s\S])*?review-issues/.test(html),
+  'the place to start is not inside a fold',
+);
 assert.ok(html.indexOf('review-issues') < html.indexOf(c.reviewStrengths), 'corrections come before praise');
-for (const folded of [c.reviewStrengths, c.reviewNext, c.reviewWholePiece])
-  assert.ok(html.includes(`<summary>${folded}</summary>`), `${folded} is kept, behind a fold`);
+for (const folded of [c.reviewStrengths, c.reviewNext, c.reviewDeeper, c.reviewWholePiece])
+  assert.ok(html.includes(`<summary>${folded}</summary>`), `${folded} is kept, as its own step`);
+/* Everything the evaluator found stays reachable: the rest of the corrections
+   are a step of their own rather than a fold inside the first three. */
+const deep = html.slice(html.indexOf('review-deeper'), html.indexOf('</section>', html.indexOf('review-deeper')));
+assert.equal((deep.match(/class="correction"/g) || []).length, 1, 'the remaining findings are all kept');
+assert.ok(
+  html.indexOf(c.reviewNext) < html.indexOf('review-deeper'),
+  'and they come after what to practise next',
+);
+
+/* --- One rubric dimension is one row ------------------------------------ */
+/* Label, bar, score, change. They were four items in a three-column grid, so
+   the change wrapped under every dimension and each row doubled in height. */
+const experiences = read('static/orena/experiences.css');
+assert.match(experiences, /\.review-dimension \{[^}]*grid-template-columns: minmax\(6rem, 8\.5rem\) 1fr auto auto/,
+  'four columns for four things');
+assert.doesNotMatch(experiences, /\.review-dimension dd \{[^}]*display: contents/,
+  'the cells are cells, not a contents passthrough that loses the count');
+/* The bar shows where the learner was and where they are now. The previous
+   score is arithmetic on the change the evaluator returned, never a guess. */
+const improved = writingReview(c, { ...result, dimensions: { grammar: 45 }, delta: { grammar: 7 } }, { language: 'en', text });
+assert.match(improved, /review-dimension" data-direction="up"/, 'a gain says so');
+assert.match(improved, /review-bar__held" style="inline-size:38%"/, 'the ground held is where they were');
+assert.match(improved, /review-bar__shift" style="inline-size:7%"/, 'and the stretch is what they added');
+const slipped = writingReview(c, { ...result, dimensions: { grammar: 45 }, delta: { grammar: -10 } }, { language: 'en', text });
+assert.match(slipped, /review-dimension" data-direction="down"/, 'a loss says so too');
+assert.match(slipped, /review-bar__held" style="inline-size:45%"/, 'held is where they are now');
+assert.match(slipped, /review-bar__shift" style="inline-size:10%"/, 'and the shift is the ground given up');
+assert.match(experiences, /\[data-direction='down'\] \.review-bar__shift \{[^}]*repeating-linear-gradient/,
+  'so a drop cannot read as progress');
+const flat = writingReview(c, { ...result, dimensions: { grammar: 45 }, delta: {} }, { language: 'en', text });
+assert.match(flat, /data-direction="none"/, 'no previous review means no direction');
+assert.doesNotMatch(flat, /class="dimension-move"/, 'and no change is invented');
+assert.match(flat, /review-bar__held" style="inline-size:45%"/, 'just the score');
 
 /* --- Where am I, before what do I fix ----------------------------------- */
 /* The corrections were moved to the front of the review, which left the
@@ -200,7 +239,6 @@ for (const name of ['MAX_CHARACTERS', 'MAX_BYTES', 'MAX_LINES']) {
   assert.ok(inJs && inPy, `${name} is stated on both sides`);
   assert.equal(inJs, inPy, `${name} must be the same number in the browser and on the server`);
 }
-assert.ok(html.includes(c.reviewMore), 'and so are the remaining corrections');
 /* Nothing is dropped: a folded section is still whole. */
 assert.ok(html.includes('Practise the past tense.'), 'the priorities survive the fold');
 assert.ok(html.includes(result.corrected_text), 'and so does the whole-piece rewrite');
@@ -246,7 +284,7 @@ assert.match(contract, /does not replay it\./, 'the durable rule is recorded');
 
 /* --- EN, ZH and VI all say it ------------------------------------------- */
 for (const ui of ['en', 'zh', 'vi'])
-  for (const key of ['reviewAction', 'reviewFocus', 'reviewMore', 'reviewLocate',
+  for (const key of ['reviewAction', 'reviewFocus', 'reviewDeeper', 'reviewLocate',
     'reviewWorking', 'reviewAgain', 'writingIntentionNone', 'writingKeepWriting']) {
     assert.equal(typeof copy[ui][key], 'string', `${ui}.${key} exists`);
     assert.ok(copy[ui][key].trim(), `${ui}.${key} is not empty`);

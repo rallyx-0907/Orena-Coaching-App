@@ -389,6 +389,21 @@ export function bindVocabularyFeedCarousel(root) {
   });
 }
 
+/* Where a saved word was met.
+
+   A word kept while reading is not the same thing as a word from a list: the
+   sentence it was met in, and the piece it came from, are most of why a
+   learner recognises it again. Both already travel on the saved record, and
+   showing them is the difference between My Language and a dictionary export.
+   One line, quoted, in the learning language - it is content, not chrome. */
+function sourceLine(card, language) {
+  const encounter = (card.source_encounters || []).find((entry) => value(entry?.fragment));
+  if (!encounter) return '';
+  const fragment = value(encounter.fragment).replace(/\s+/g, ' ');
+  const where = value(encounter.where);
+  return `<p class="vocabulary-row__source">${where ? `<span class="vocabulary-row__where">${esc(where)}</span>` : ''}<q lang="${esc(language)}">${esc(fragment)}</q></p>`;
+}
+
 export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {
   const headword = value(card.headword);
   const language = value(card.identity?.language) || 'en';
@@ -398,7 +413,7 @@ export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'da
   const saveLabel = saved ? `${copy.saved} ✓` : copy.save;
   const level = vocabularyLevel(card);
   const skin = vocabularyLevelSkin(card);
-  return `<article class="vocabulary-row" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-row="${esc(index)}"><div class="vocabulary-row__word"><strong lang="${esc(language)}">${esc(headword)}</strong>${pronunciation ? `<span class="vocabulary-row__pronunciation">${esc(pronunciation)}</span>` : ''}</div><div class="vocabulary-row__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(translation || targetMeaning(card))}</div>${metadata(copy, card)}<div class="vocabulary-row__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div></article>`;
+  return `<article class="vocabulary-row" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-row="${esc(index)}"><div class="vocabulary-row__word"><strong lang="${esc(language)}">${esc(headword)}</strong>${pronunciation ? `<span class="vocabulary-row__pronunciation">${esc(pronunciation)}</span>` : ''}</div><div class="vocabulary-row__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(translation || targetMeaning(card))}</div>${sourceLine(card, language)}${metadata(copy, card)}<div class="vocabulary-row__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div></article>`;
 }
 
 function orthography(card, copy) {

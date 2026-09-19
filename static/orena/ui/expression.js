@@ -12,7 +12,6 @@ import {
   refreshDraftStatus,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
-import { renderVocabularyCard } from './vocabulary-card.js';
 import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
@@ -559,11 +558,14 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   (Array.isArray(item.detailed_definitions) ? item.detailed_definitions : []).forEach(appendMeaning);
   const kind = String(item.source_kind || '').trim();
   const fragment = String(item.source_fragment || '').trim();
+  // Where this came from, as the learner would name it: the piece's own title,
+  // which the saved record already carries.
+  const where = String(item.focus_note || '').trim();
   const card = {
     identity: { language, normalized: String(item.normalized_term || item.normalized_word || item.word || '').toLowerCase() },
     headword: item.word,
     meanings,
-    source_encounters: kind && fragment ? [{ kind, fragment }] : [],
+    source_encounters: kind && fragment ? [{ kind, fragment, where }] : [],
   };
   const pronunciation = String(item.phonetic || item.pronunciation || item.pronunciations?.[0]?.text || item.readings?.[0]?.text || '').trim();
   if (pronunciation && pinyinAllowed) card.pronunciation = pronunciation;
@@ -577,13 +579,25 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   if (item.orthography) card.orthography = item.orthography;
   return card;
 }
+/* Recall: one item at a time, over the language the learner kept.
+
+   It reads the same saved-language contract My Language does and grades
+   through the same scheduler - there is no second store and no second
+   algorithm here, only the review loop over what is already due.
+
+   Three stages, because a review session has three questions. What is waiting
+   (the landing, which says how much rather than dropping the learner into item
+   one with no idea of the size of it). Then one item, until the queue empties.
+   Then what actually happened - reviewed, still due - with no score, no
+   streak and no mastery invented for the occasion. */
 async function renderRecallLanguage(root, ctx) {
   const { api, c, language, alive, memory } = ctx;
   const data = await api.libraryVocabulary();
   if (!alive()) return;
   let items = data.items || [],
-    recalling = ctx.location.intent === 'recall',
-    revealed = false;
+    revealed = false,
+    reviewed = 0,
+    stage = 'landing';
   function paint(moveFocus = false) {
     if (!alive()) return;
     const due = items.filter((x) => x.due),
@@ -601,24 +615,28 @@ async function renderRecallLanguage(root, ctx) {
       gap.segments
         .map((part) => esc(part))
         .join(`<b>${marker}</b>`);
-    root.innerHTML = `${recalling ? practiceReturn(c, 'recall') : ''}${pageIntro({ title: recalling ? c.recallTitle : c.wordsTitle, note: recalling ? c.recallTruth : c.wordsIntro, eyebrow: recalling ? c.recallName : c.language, scene: recalling ? undefined : 'remembering', compact: recalling })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment" data-shape="${shape}"><small>${esc(c[`recallAsk_${shape}`])}</small>${
-                shape === 'in_context' && gap
-                  ? `<blockquote class="recall-gap" lang="${language}">${withheld(revealed ? esc(current.word) : '&nbsp;'.repeat(3))}</blockquote>`
-                  : `<h2 lang="${language}">${revealed || shape !== 'say' ? esc(current.word) : '···'}</h2>${current.phonetic && revealed && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}${shape === 'say' && !revealed ? `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>` : ''}${shape !== 'in_context' && current.source_fragment ? `<blockquote class="${gap && !revealed ? 'recall-gap' : ''}" lang="${language}">${gap && !revealed ? withheld('&nbsp;'.repeat(3)) : esc(current.source_fragment)}</blockquote>` : ''}`
-              }${
-                revealed
-                  ? `${shape === 'say' ? '' : `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${keptProvenance(c, keptNow)}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>`
-                  : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
-              }<p role="status" data-recall-status></p></section>` : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection language-cabinet">${items
-              .map((x) => {
-                const pinyinAllowed = language !== 'zh' || ctx.profile.pinyin !== 'off';
-                const card = vocabularyCardFromLibraryItem(x, language, { pinyinAllowed });
-                return renderVocabularyCard(c, card, {
-                  before: keptProvenance(c, memory.value.keptLanguage?.[x.word]) || `<small>${esc(x.focus_note || c.sourceContext)}</small>`,
-                  after: x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : '',
-                });
-              })
-              .join('')}</section>` : `<section class="empty">${scene('empty', { size: 'medium' })}<h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
+    const card = current
+      ? `<section class="recall-moment" data-shape="${shape}"><small>${esc(c[`recallAsk_${shape}`])}</small>${
+          shape === 'in_context' && gap
+            ? `<blockquote class="recall-gap" lang="${language}">${withheld(revealed ? esc(current.word) : '&nbsp;'.repeat(3))}</blockquote>`
+            : `<h2 lang="${language}">${revealed || shape !== 'say' ? esc(current.word) : '···'}</h2>${current.phonetic && revealed && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}${shape === 'say' && !revealed ? `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>` : ''}${shape !== 'in_context' && current.source_fragment ? `<blockquote class="${gap && !revealed ? 'recall-gap' : ''}" lang="${language}">${gap && !revealed ? withheld('&nbsp;'.repeat(3)) : esc(current.source_fragment)}</blockquote>` : ''}`
+        }${
+          revealed
+            ? `${shape === 'say' ? '' : `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${current.focus_note ? `<p class="recall-where">${esc(current.focus_note)}</p>` : ''}${keptProvenance(c, keptNow)}${current.source_fragment ? `<button class="quiet" data-word-explain="${esc(current.word)}">${esc(c.lookCloser)} ↗</button>` : ''}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>`
+            : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
+        }<p role="status" data-recall-status></p></section>`
+      : '';
+    /* What is waiting, before the first item. A learner dropped straight into
+       item one has no idea whether this is three words or thirty. */
+    const landing = due.length
+      ? `<section class="recall-landing"><small>${esc(c.vocabularyDueState)}</small><h2>${due.length} ${esc(c.vocabularyWordCount)}</h2><p>${esc(due.slice(0, 3).map((x) => x.word).join(' · '))}${due.length > 3 ? ' …' : ''}</p><button class="primary" data-recall-start>${esc(c.recallName)} →</button></section>`
+      : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`;
+    /* What actually happened. Real counts only: what was reviewed in this
+       sitting and what is still waiting. No score, no streak, no mastery. */
+    const done = `<section class="empty recall-done">${scene('completion', { size: 'medium' })}<h2>${esc(c.allDone)}</h2><p>${reviewed} ${esc(c.vocabularyWordCount)}${due.length ? ` · ${due.length} ${esc(c.vocabularyDueState)}` : ''}</p><p class="meta">${esc(c.allDoneNote)}</p><div class="button-row">${due.length ? `<button class="primary" data-recall-start>${esc(c.vocabularyContinueReview)} →</button>` : ''}<a class="outline" href="${link('language')}">${c.language} →</a></div></section>`;
+    root.innerHTML = `${practiceReturn(c, 'recall')}${pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })}${
+      stage === 'landing' ? landing : current ? card : done
+    }`;
     /* A kept word already carries the sentence it came from, which is exactly
        the context the shared explanation needs. Without this, the collection
        is a list to reread rather than something a learner can question - the
@@ -641,8 +659,9 @@ async function renderRecallLanguage(root, ctx) {
         });
       };
     });
-    root.querySelector('[data-recall]')?.addEventListener('click', () => {
-      recalling = true;
+    root.querySelector('[data-recall-start]')?.addEventListener('click', () => {
+      stage = 'card';
+      revealed = false;
       paint(true);
     });
     root.querySelector('[data-reveal]')?.addEventListener('click', () => {
@@ -684,6 +703,7 @@ async function renderRecallLanguage(root, ctx) {
               if (!alive()) return;
               items = updated.items || [];
               revealed = false;
+              reviewed += 1;
               paint(true);
               status(c.persisted);
             } catch {
@@ -806,7 +826,18 @@ export async function renderLanguage(root, ctx) {
   };
   const stateCount = (key) => Number(summary()[key] || 0);
   const cardByWord = (word) => savedCards.find((item) => item.headword.toLowerCase() === String(word).toLowerCase());
-  const statusSummary = `<div class="vocabulary-summary-metrics"><div><strong>${stateCount('saved')}</strong><span>${esc(c.vocabularySavedCount)}</span></div><div><strong>${stateCount('learning')}</strong><span>${esc(c.vocabularyLearningCount)}</span></div><div class="is-due"><strong>${stateCount('due')}</strong><span>${esc(c.vocabularyDueCount)}</span></div><div><strong>${stateCount('mastered')}</strong><span>${esc(c.vocabularyMasteredCount)}</span></div></div>`;
+  /* How much a learner has kept, said once and quietly.
+
+     This was four large tiles - saved, learning, due, mastered - and it opened
+     the room, so the first thing My Language said about somebody's language
+     was a count of it. The numbers are real and worth having; they are not
+     what the room is about. They sit as one line under the heading, and the
+     language itself takes the space. */
+  const statusSummary = `<p class="vocabulary-tally">${[
+    `${stateCount('saved')} ${esc(c.vocabularySavedCount)}`,
+    `${stateCount('learning')} ${esc(c.vocabularyLearningCount)}`,
+    `${stateCount('mastered')} ${esc(c.vocabularyMasteredCount)}`,
+  ].join(' · ')}</p>`;
 
   const updateCollectionCards = (items) => items.map((card) => {
     const saved = cardByWord(card.headword);
@@ -826,7 +857,21 @@ export async function renderLanguage(root, ctx) {
       : feedCards.length
         ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5 })
         : `<div class="vocabulary-feed-empty"><p class="meta">${esc(c.vocabularyFeedEmpty)}</p></div>`;
-    return `${pageIntro({ title: c.vocabularyTitle, note: c.vocabularyOverviewNote, eyebrow: c.language, compact: true })}<section class="vocabulary-overview-hero"><div>${statusSummary}<div class="button-row">${dueItems.length ? `<button class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)} →</button>` : ''}<button class="outline" data-vocabulary-manage>${esc(c.vocabularyManage)}</button></div></div><div class="vocabulary-overview-callout"><small>${esc(c.vocabularyDueCount)}</small><strong>${dueItems.length ? esc(dueItems[0].headword) : esc(c.allDone)}</strong><p>${dueItems.length ? esc(compactSupportMeaning(dueItems[0], support)) : esc(c.allDoneNote)}</p></div></section><section class="vocabulary-dashboard"><section class="vocabulary-overview-section vocabulary-dashboard__library"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2><p>${esc(c.vocabularyLibraryNote)}</p></div><button class="quiet" data-vocabulary-library>${esc(c.vocabularyOpenLibrary)} →</button></div>${libraryBody}</section><aside class="vocabulary-overview-section vocabulary-dashboard__feed"><div class="section-head"><div><small>${esc(c.vocabularyFeedTitle)}</small><h2>${esc(c.vocabularyOpenFeed)}</h2></div><button class="quiet" data-vocabulary-feed>${esc(c.vocabularyOpenFeed)} →</button></div>${feedBody}</aside></section>${recent.length ? `<section class="vocabulary-overview-section vocabulary-recent"><div class="section-head"><h2>${esc(c.vocabularyRecent)}</h2><button class="quiet" data-vocabulary-manage>${esc(c.vocabularyManage)} →</button></div><div class="vocabulary-row-list">${recent.map((card) => renderVocabularyRow(copy, card, { index: savedCards.indexOf(card) })).join('')}</div></section>` : ''}${savedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="saved">${esc(c.retry)}</button></p>` : ''}`;
+    /* What did I keep, what is worth reviewing, what am I learning from.
+
+       The room used to open on four metric tiles and a two-column dashboard of
+       Library and Feed, with the learner's own saved language third - a
+       screen about the collection rather than about the language in it. The
+       language leads now: what is due (only when something actually is), then
+       what was kept recently with the sentence it came from, then the
+       collections, then the numbers. */
+    const reviewBlock = dueItems.length
+      ? `<section class="language-due"><div><small>${esc(c.vocabularyDueState)}</small><h2>${dueItems.length} ${esc(c.vocabularyWordCount)}</h2><p class="meta">${esc(dueItems[0].headword)}${dueItems.length > 1 ? ` · ${esc(dueItems[1].headword)}` : ''}${dueItems.length > 2 ? ' …' : ''}</p></div><button class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)} →</button></section>`
+      : '';
+    const keptBlock = recent.length
+      ? `<section class="vocabulary-overview-section vocabulary-recent"><div class="section-head"><h2>${esc(c.vocabularyRecent)}</h2><button class="quiet" data-vocabulary-manage>${esc(c.vocabularyManage)} →</button></div><div class="vocabulary-row-list">${recent.map((card) => renderVocabularyRow(copy, card, { index: savedCards.indexOf(card) })).join('')}</div></section>`
+      : `<section class="vocabulary-overview-section language-empty"><h2>${esc(c.noWords)}</h2><p>${esc(c.noWordsNote)}</p><div class="button-row"><a class="outline" href="${link('practice', { intent: 'reading' })}">${esc(c.readingName)} →</a><a class="quiet" href="${link('practice', { intent: 'follow' })}">${esc(c.followName)} →</a></div></section>`;
+    return `${pageIntro({ title: c.vocabularyTitle, note: c.vocabularyOverviewNote, eyebrow: c.language, compact: true })}${reviewBlock}${keptBlock}<section class="vocabulary-overview-section vocabulary-dashboard__library"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2></div><button class="quiet" data-vocabulary-library>${esc(c.vocabularyOpenLibrary)} →</button></div>${libraryBody}</section>${feedCards.length ? `<section class="vocabulary-overview-section vocabulary-dashboard__feed"><div class="section-head"><div><small>${esc(c.vocabularyFeedTitle)}</small><h2>${esc(c.vocabularyOpenFeed)}</h2></div><button class="quiet" data-vocabulary-feed>${esc(c.vocabularyOpenFeed)} →</button></div>${feedBody}</section>` : ''}${statusSummary}${savedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="saved">${esc(c.retry)}</button></p>` : ''}`;
   };
 
   const libraryView = () => {

@@ -91,7 +91,17 @@ assert.match(expressionSource, /view === 'library' \? libraryView\(\)/, 'Library
 assert.match(expressionSource, /collections\.slice\(0, 3\)/, 'Overview bounds the collection preview');
 assert.match(expressionSource, /savedCards[\s\S]*?slice\(0, 3\)/, 'Overview bounds the saved preview');
 assert.match(expressionSource, /renderVocabularyFeedCarousel/, 'Overview uses the shared Feed carousel');
-assert.match(expressionSource, /class="vocabulary-dashboard"/, 'Overview gives Library and Feed distinct dashboard regions');
+/* Library and Feed stay distinct regions. They were two halves of a dashboard
+   grid that opened the room; the room now opens on the learner's own language,
+   and these are sections under it - still separate, still named. */
+assert.match(expressionSource, /vocabulary-dashboard__library/, 'Library is its own region');
+assert.match(expressionSource, /vocabulary-dashboard__feed/, 'and so is the Feed');
+assert.ok(
+  expressionSource.indexOf('vocabulary-recent') < expressionSource.indexOf('vocabulary-dashboard__library'),
+  "the learner's own kept language comes before the catalogue",
+);
+assert.doesNotMatch(expressionSource, /vocabulary-summary-metrics/,
+  'and the room no longer opens on four metric tiles');
 assert.match(expressionSource, /vocabulary-dashboard__library/, 'Library owns the primary dashboard column');
 assert.match(expressionSource, /vocabulary-dashboard__feed/, 'Feed is a secondary dashboard widget');
 assert.doesNotMatch(expressionSource, /vocabulary-collection-grid'\)\?\.scrollIntoView/, 'View all collections must navigate to Library');

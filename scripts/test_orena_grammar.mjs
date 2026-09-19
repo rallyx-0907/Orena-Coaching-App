@@ -103,7 +103,7 @@ assert.ok(
   'the sentence the word came from is the context it is explained in',
 );
 assert.ok(
-  expression.includes("x.source_fragment ? `<button"),
+  expression.includes("current.source_fragment ? `<button"),
   'a word with no recorded sentence offers no context-free lookup',
 );
 

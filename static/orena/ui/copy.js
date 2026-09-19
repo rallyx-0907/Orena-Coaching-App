@@ -2032,7 +2032,6 @@ Object.assign(copy.zh, {
 Object.assign(copy.en, {
   reviewAction: 'Review',
   reviewFocus: 'Start with this',
-  reviewMore: 'More feedback',
   reviewLocate: 'Find it in my text',
   reviewWorking: 'Reading what you wrote…',
   reviewAgain: 'Review again',
@@ -2042,7 +2041,6 @@ Object.assign(copy.en, {
 Object.assign(copy.zh, {
   reviewAction: '查看反馈',
   reviewFocus: '先从这里开始',
-  reviewMore: '更多反馈',
   reviewLocate: '在我的文字中找到它',
   reviewWorking: '正在读你写的内容…',
   reviewAgain: '再看一次',
@@ -2065,6 +2063,9 @@ Object.assign(copy.zh, {
   reviewStale: '你已经改过这篇文字。这份反馈对应的是修改之前的版本。',
   reviewStaleAction: '查看新版本的反馈',
 });
+
+Object.assign(copy.en, { reviewDeeper: 'Deeper improvements' });
+Object.assign(copy.zh, { reviewDeeper: '更深入的改进' });
 
 import { vi } from './copy-vi.js';
 
