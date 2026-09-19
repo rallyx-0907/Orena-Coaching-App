@@ -186,7 +186,7 @@ export const vi = {
   preferencesMoved:
     'Tuỳ chọn của bạn đã thay đổi ở nơi khác. Đây là tuỳ chọn hiện tại — hãy áp dụng lại nếu bạn vẫn muốn thay đổi đó.',
   themesystem: 'Theo cài đặt thiết bị',
-  themesystemNote: 'Ban ngày là Paper, tối đến chuyển sang Night Ink.',
+  themesystemNote: 'Ban ngày là Paper, tối đến chuyển sang Ink.',
   limited: 'Trải nghiệm này chỉ có trong môi trường duyệt nội bộ.',
   candidate: 'Bản chọn để phát triển · đang chờ duyệt nội dung',
   planUsage: 'Gói và mức dùng',
@@ -694,14 +694,10 @@ export const vi = {
   topic_culture: 'Người ta sống thế nào',
   topic_technology: 'Công cụ và hiểu biết',
 
+  theme_ink: 'Ink',
+  theme_inkNote: 'Nền tối, ánh đèn trên trang.',
   theme_paper: 'Paper',
-  theme_paperNote: 'Màu ngà và mực. Phòng đọc mặc định.',
-  'theme_night-ink': 'Night Ink',
-  'theme_night-inkNote': 'Xanh navy đậm, ánh sáng ấm. Buổi tối trong nhà.',
-  'theme_deep-forest': 'Deep Forest',
-  'theme_deep-forestNote': 'Xanh mòng két và hoàng thổ. Chiều muộn ngoài đồng.',
-  'theme_sage-field': 'Sage Field',
-  'theme_sage-fieldNote': 'Xanh lá dịu và ánh sáng ban mai.',
+  theme_paperNote: 'Nền sáng, để đọc ban ngày.',
   themePreview: 'Xem thử',
 
   pos_noun: 'danh từ',

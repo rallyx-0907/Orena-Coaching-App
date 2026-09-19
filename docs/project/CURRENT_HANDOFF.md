@@ -110,8 +110,8 @@ No I1-I7 claim implies human approval.
 Golden Star findings closed; Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md`
 done. Backbone I1-I7 is Opus work; F is human review.
 
-Multi-theme awaiting visual review: Paper, Night Ink, Deep Forest, Sage Field;
-colour owned by `theme.css`. Ember deferred.
+Design System migration (D-059): tracker and next phase in
+`DESIGN_SYSTEM_MIGRATION.md`.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2 schema approved,

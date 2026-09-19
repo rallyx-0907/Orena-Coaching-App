@@ -86,10 +86,8 @@ const SAME_IN_EVERY_LANGUAGE = new Set([
   'vocabularyFramework_toeic',
   'vocabularyFramework_hsk',
   // A theme's identity is its name. Paper is Paper in every room.
+  'theme_ink',
   'theme_paper',
-  'theme_night-ink',
-  'theme_deep-forest',
-  'theme_sage-field',
   'vocabularySortAlpha',
   'readerProgress',
   'readerAppearanceAuto',

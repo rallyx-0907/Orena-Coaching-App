@@ -241,24 +241,25 @@ IDs, environment-specific paths, migration records, API responses or temporary
 UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
-**Theme.** Orena has a canonical multi-theme visual system, not a light/dark
-switch. A theme has an identity (`paper`, `night-ink`, `deep-forest`,
-`sage-field`) and, separately, an appearance (`light` or `dark`); never treat
-the two as the same thing, and never assume there are two of anything.
+**Theme.** Orena's interface follows the approved Orena Design System (D-059).
+A theme has an identity (`ink`, `paper`) and, separately, an appearance
+(`dark`, `light`); never treat the two as the same thing. The registry, not a
+light/dark switch, is the mechanism: a later theme is a registration, not a
+rewrite.
 
 - Colour has one owner: `static/orena/theme.css`. A foundation layer names the
   approved palette, grouped by family; a semantic block per theme says what
   each colour is *for*. Components read only semantic tokens. Do not add a
   second `:root` colour block anywhere - that is the defect this replaced.
-- Themes derive from approved palettes under `assets/brand/`. Do not invent a
+- Interface colour derives from the approved design system: violet acts
+  (action, navigation, selection), lamp amber records (progress, completion,
+  earned), six domain hues appear in small doses, grounds are cool ink greys.
+  A button is never amber and a progress fill is never violet. Do not invent a
   colour skin, and do not recolour canonical mascot or brand artwork.
-  `pattern/color-pallate.png` is exploratory theme reference only: it is not
-  the canonical palette, and its gradients are not approved UI colours.
-- Orena Orange `#FF7A3D` is the brand colour and stays canonical. It measures
-  2.34 on Paper Ivory, so on light grounds it is fill and illustration only;
-  `--accent` carries the contrast-safe text and action role. Never change a
-  brand value to make one component pass contrast - assign it a decorative
-  role instead.
+- Orena Orange `#FF7A3D` stays canonical as the mascot's and the artwork's
+  colour; it has no interface role (D-059). Paper takes darker partners of
+  violet and amber so both hold AA on white. Never change a canonical value to
+  make one component pass contrast - use its contrast-safe partner.
 - Every theme must pass AA for body text, secondary text, controls, links and
   tinted panels. `scripts/test_orena_foundation.mjs` enforces this for every
   registered theme.

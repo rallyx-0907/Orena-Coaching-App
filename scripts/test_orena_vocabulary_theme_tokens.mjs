@@ -39,7 +39,7 @@ const stars = rule(vocabularyCss, '.vocabulary-browse-card__status .vocabulary-s
 assert.match(stars, /color:\s*var\(--accent\);/, 'mastery stars use the semantic accent');
 assert.doesNotMatch(vocabularyCss, /outline:\s*\d+px solid var\(--sun\)/, 'focus rings do not use a decorative sun token');
 
-for (const themeName of ['paper', 'night-ink', 'deep-forest', 'sage-field']) {
+for (const themeName of ['ink', 'paper']) {
   const start = themeCss.indexOf(`[data-theme='${themeName}']`);
   assert.notEqual(start, -1, `${themeName} is registered in the theme token owner`);
   const end = themeCss.indexOf('}', start);
@@ -55,4 +55,4 @@ for (const ui of ['en', 'zh']) {
   }
 }
 
-console.log('Orena Vocabulary visual tokens: semantic surfaces, light rank accents, four themes, EN/ZH parity PASS');
+console.log('Orena Vocabulary visual tokens: semantic surfaces, light rank accents, Ink and Paper, EN/ZH parity PASS');

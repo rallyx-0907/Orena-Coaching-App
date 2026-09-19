@@ -1722,3 +1722,75 @@ permitted on entry, discovery and empty states, but is no longer a default page
 template. Supersedes nothing else. It does not change D-046 or its tombstones,
 D-049/D-050's five domains and horizontal Understanding Engine, D-051's
 remaining rules, D-052/D-053's phone rules, or any multilingual invariant.
+
+## D-059 — The Orena Design System becomes the interface's visual source of truth
+
+**Status:** Accepted, explicit current human instruction (2026-09-19). The
+human approved the Orena Design System prototype (claude.ai design project
+`7a5604ca-1e11-4d8e-8305-7d0cb32d552d`: Design Overview, Screens parts 1-6,
+Visual Grammar, Checklist Status) and chose, when asked, each of the four
+points below. Numbered D-059 because D-058 is held by the Admin lane's
+unmerged control-centre decision.
+
+**Decision:** The existing Orena frontend migrates onto the approved design
+system. It is a UI migration over the existing backend, API, authentication,
+routes, data model and learner state - not a rewrite, and not a second app.
+
+1. **Interface palette.** Violet is the interface's action colour - action,
+   navigation, selection - and lamp amber is its progress colour - progress,
+   completion, anything earned. Grounds are cool ink greys on hue 300. Six
+   domain hues (Reading 295, Listening 235, Speaking 170, Dictation 110,
+   Writing 55, Vocabulary 350) sit at equal weight and appear in small doses
+   only. Orena Orange `#FF7A3D` remains the mascot's and the artwork's colour
+   and no longer carries an interface role.
+2. **Themes.** One identity in two appearances: **Ink** (dark, default
+   identity) and **Paper** (light), built from one mapping rather than two
+   designs. The registry mechanism - identity separate from appearance, one
+   block in `theme.css`, one entry in `theme.js` - is unchanged. Night Ink,
+   Deep Forest and Sage Field are retired; a stored choice of any of them is
+   read as the theme with the same appearance, so no learner wakes up to a
+   different brightness. The reader keeps its sepia option as a reader-only
+   block beside the two themes.
+3. **Navigation.** Five destinations - Home, Library, Vocabulary, Progress,
+   Profile - plus a Practice group. Nothing that exists is removed to fit the
+   mockup: Continue lives on Home, Recall and collections in Vocabulary,
+   bringing your own content in Library, Grammar/Understanding as a Practice
+   entry (it stays horizontal, D-050), Shadowing and Conversation inside
+   Listening and Speaking, Admin for admins only. Hash routes keep their
+   meaning. The design's later additions (search, saved content, history,
+   quizzes, details, practice indexes) join the migration backlog.
+4. **Mark and mascot.** The approved mark and mascot in `assets/brand/orena/`
+   stay. The design's violet square and the owl logo exploration are not
+   adopted; a new logo would be its own decision.
+
+Typography follows the human's instruction over the prototype's: Manrope for
+the interface (700 headings, 600 labels, 400-500 body; no capitals or wide
+tracking in learner UI, no monospace), Noto Sans SC for Han characters, the
+serif for stories (Design Contract rule 18).
+
+**Reason:** The approved system gives Orena one coherent visual language -
+content-first, artwork as the brightest object, hierarchy readable at a glance -
+where the shipped UI had accumulated four themes, a hero template and uneven
+components. The token layer already routes almost every colour through
+`theme.css`, so the change can land in the foundation first and reach every
+room without per-page CSS.
+
+**Consequences:** `static/orena/theme.css` holds the new foundation and a
+semantic layer (surface, text, border, action, progress, status, domain,
+elevation) with the earlier names kept as aliases; `static/orena/theme.js`
+registers Ink and Paper and maps retired ids; `foundation.css` holds the
+non-colour tokens (type, radius, motion, layers) and the restyled primitives.
+`scripts/test_orena_foundation.mjs` now asserts violet and amber as canonical,
+Orena Orange as the artwork colour, violet-never-progress, and AA for the new
+semantic pairs in every theme block. `AGENTS.md` (Theme) and
+`docs/project/DESIGN_CONTRACT.md` (Orena Design System section) carry the
+rules. No backend, API, schema, route or learner-state contract changes.
+
+**Supersedes / Superseded by:** Supersedes the interface-palette clauses of the
+Theme invariant in `AGENTS.md` (Orena Orange as canonical interface brand
+colour, themes derived only from `assets/brand/` palettes, the four named
+themes) and the registry that implemented them. Does not supersede D-057: its
+Art Bible authority, artwork licence, one colour owner, acceptance gates and
+"no placeholder artwork in a reviewed build" all stand - the prototype's
+dot-field placeholders are not adopted; covers use the Art Bible's designed
+cover system until real artwork exists.

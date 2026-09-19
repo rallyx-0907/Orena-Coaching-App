@@ -2,35 +2,41 @@
 // This small DOM adapter is intentionally independent of auth and routing.
 //
 // The registry below is the canonical list of Orena themes. A theme has an
-// identity and, separately, an appearance: "deep-forest" is the identity,
-// "dark" is only how bright it is. The product used to conflate the two - the
-// preference was literally the string 'light' or 'dark' - which is why a third
-// theme could not exist without rewriting the switch and the settings UI.
+// identity and, separately, an appearance: "ink" is the identity, "dark" is
+// only how bright it is. Keeping the two apart is what lets a theme be added,
+// retired or renamed without rewriting the switch and the settings UI.
 //
 // Adding a theme is an entry here plus a [data-theme] block in theme.css.
 // Nothing else. Learner-facing names live in ui/copy.js with every other
 // string, so a new theme is translated the same way everything else is.
 (() => {
   const key = 'orena.theme';
+  // D-059: the Orena Design System is one identity in two appearances.
   const THEMES = [
-    { id: 'paper', appearance: 'light', mood: 'reading-room' },
-    { id: 'night-ink', appearance: 'dark', mood: 'evening-indoors' },
-    { id: 'deep-forest', appearance: 'dark', mood: 'evening-field' },
-    { id: 'sage-field', appearance: 'light', mood: 'morning' },
+    { id: 'ink', appearance: 'dark', mood: 'lamplight' },
+    { id: 'paper', appearance: 'light', mood: 'daylight' },
   ];
   // What "follow the system" resolves to. Appearance chooses; identity is the
   // product's decision, not the operating system's.
-  const SYSTEM_DEFAULT = { light: 'paper', dark: 'night-ink' };
+  const SYSTEM_DEFAULT = { light: 'paper', dark: 'ink' };
+  /* Themes an earlier build offered. Each is read as the theme that now
+     carries its appearance, so nobody who chose one loses their choice to the
+     D-059 upgrade - a dark choice stays dark and a light one stays light. The
+     first two are what the preference stored before themes had names. */
+  const RETIRED = {
+    light: 'paper',
+    dark: 'ink',
+    'night-ink': 'ink',
+    'deep-forest': 'ink',
+    'sage-field': 'paper',
+  };
 
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const known = (id) => THEMES.some((theme) => theme.id === id);
-  /* A preference written by an older build said 'light' or 'dark'. Those are
-     appearances, and each still names exactly one theme, so they are read as
-     that theme rather than discarded - nobody loses their choice to an
-     upgrade. Anything unrecognised falls back to following the system. */
+  // Anything unrecognised falls back to following the system.
   const valid = (value) => {
     if (known(value)) return value;
-    if (value === 'light' || value === 'dark') return SYSTEM_DEFAULT[value];
+    if (Object.hasOwn(RETIRED, value)) return RETIRED[value];
     return 'system';
   };
 

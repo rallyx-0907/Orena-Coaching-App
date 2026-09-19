@@ -300,6 +300,55 @@ Explicit human direction after a learning-surface review. Rules 1-18 stand.
     concurrent duplicates cost nothing; only a genuine change earns a new call.
     A stored answer is never served past the contract that produced it.
 
+## The Orena Design System (D-059)
+
+Explicit human direction, 2026-09-19: the approved Orena Design System is the
+visual source of truth for the learner web. Rules 1-29 stand; this section says
+how a surface looks, not what it is for. Colour values live only in
+`static/orena/theme.css`; non-colour tokens (type, radius, motion, layers) in
+`static/orena/foundation.css`.
+
+30. **Three greys, one hairline.** Ground, surface and raised surface on cool
+    ink; separation is a hairline. Depth on Ink is a light pool, never a drop
+    shadow; Paper replaces the pool with a faint wash and a soft shadow.
+31. **Violet acts, amber records.** Violet is action, navigation and
+    selection; amber is progress, completion and anything earned. One filled
+    violet pill per screen - the primary action. Everything else is a hairline
+    surface.
+32. **Domain hue in small doses.** Reading, Listening, Speaking, Dictation,
+    Writing and Vocabulary each have a hue at equal weight. It appears in a
+    tile, a label, a timeline fill or a transcript highlight - never as a card
+    background, never as the only signal.
+33. **A light pool marks the live thing.** An in-progress or selected card
+    carries the bloom; everything else stays flat, so the glow itself says
+    where the learner left off. At most one page-level bloom per screen.
+34. **Type.** Manrope for the interface; 700 for headings, 600 for labels and
+    controls, 400-500 for body. No capitals, no wide tracking and no monospace
+    in learner UI. Han characters fall back to Noto Sans SC; stories keep the
+    serif (rule 18).
+35. **Radius by size.** Inline chips and covers 10px, rows and icon buttons
+    14px, cards and sheets 20px, anything pressable that holds a label a pill,
+    a sheet's top corners 24px.
+36. **Feedback: number, then detail.** A graded surface opens with one score
+    and one word, lists what went wrong as tappable items, and keeps
+    dimensions, phonemes and explanations one step deeper. Wrong is never
+    colour alone: it carries an underline, a dash, a glyph or a label too.
+37. **Artwork is the brightest object.** Covers are 2:3, media artwork 16:9 in
+    rails and 21:9 on detail pages. The prototype's dot-field placeholders are
+    not adopted: until real artwork exists, covers use the Art Bible's
+    designed-cover system (D-057 still forbids placeholder art in a reviewed
+    build).
+38. **Navigation.** Five destinations - Home, Library, Vocabulary, Progress,
+    Profile - and a Practice group (Reading, Listening, Speaking, Dictation,
+    Writing, Grammar). Desktop carries them in a sidebar; a phone in a bottom
+    tab bar with Practice one tap away. Search is global, not a tab. No
+    existing capability is removed to fit: Continue, Recall, collections,
+    bringing your own content, Shadowing, Conversation and Admin each have a
+    named home in D-059.
+39. **Designed states.** Empty is an icon, one line and one action; loading is
+    a skeleton at the real geometry, never a centre-screen spinner; a failing
+    service degrades one panel with two ways forward, never the whole screen.
+
 ## The learner language contract
 
 Orena has two learner language roles, and only two.

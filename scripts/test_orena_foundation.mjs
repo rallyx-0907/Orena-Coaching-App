@@ -43,10 +43,8 @@ function themeHarness(saved, dark = false, blocked = false) {
      kept as a second copy of the palette, so the harness has to answer the
      same question a stylesheet would. */
   const grounds = {
-    paper: '#f8f3e9',
-    'night-ink': '#102538',
-    'deep-forest': '#1e3a3c',
-    'sage-field': '#eff2ec',
+    ink: '#0b0a0d',
+    paper: '#f7f6f9',
   };
   vm.runInNewContext(themeCode, {
     window,
@@ -73,19 +71,15 @@ function themeHarness(saved, dark = false, blocked = false) {
    'dark' - which is why a third theme could not exist. These hold the two
    apart, because every future theme depends on the distinction. */
 const auto = themeHarness(null, true);
-assert.equal(auto.dataset.theme, 'night-ink', 'a dark device gets a named theme');
+assert.equal(auto.dataset.theme, 'ink', 'a dark device gets a named theme');
 assert.equal(auto.dataset.appearance, 'dark', 'appearance is tracked separately');
 auto.media.matches = false;
 auto.callbacks.system();
 assert.equal(auto.dataset.theme, 'paper');
 assert.equal(auto.dataset.appearance, 'light');
-auto.theme.set('deep-forest');
+auto.theme.set('ink');
 auto.callbacks.system();
-assert.equal(
-  auto.dataset.theme,
-  'deep-forest',
-  'Explicit choice survives OS changes',
-);
+assert.equal(auto.dataset.theme, 'ink', 'Explicit choice survives OS changes');
 assert.equal(
   auto.dataset.appearance,
   'dark',
@@ -101,7 +95,16 @@ assert.equal(
 // Every registered theme is selectable and declares an appearance, so the
 // settings UI can be built from the registry rather than from a second list.
 const registry = auto.theme.themes;
-assert.ok(registry.length >= 4, 'the registry carries the approved themes');
+/* D-059: the Orena Design System is one identity in two appearances. */
+assert.deepEqual(
+  // Rebuilt in this realm: the registry comes from the vm context.
+  Array.from(registry, (entry) => [String(entry.id), String(entry.appearance)]),
+  [
+    ['ink', 'dark'],
+    ['paper', 'light'],
+  ],
+  'the registry carries the approved themes',
+);
 for (const entry of registry) {
   assert.ok(entry.id && entry.mood, `${entry.id}: incomplete registration`);
   assert.ok(['light', 'dark'].includes(entry.appearance), `${entry.id}: appearance`);
@@ -118,23 +121,31 @@ for (const entry of registry) {
 auto.theme.set('not-a-theme');
 assert.equal(auto.dataset.theme, 'paper', 'an unknown id is not applied');
 
-/* A preference written by an older build said 'light' or 'dark'. Each still
-   names exactly one theme, so it is read as that theme: nobody loses their
-   choice to an upgrade. */
-assert.equal(themeHarness('light', true).dataset.theme, 'paper');
-assert.equal(themeHarness('dark', false).dataset.theme, 'night-ink');
+/* A preference written by an older build - 'light' or 'dark', or one of the
+   four themes D-059 retired - is read as the theme that now carries its
+   appearance: nobody loses their choice to an upgrade, and a dark choice never
+   wakes up light. */
+for (const [saved, device, expected] of [
+  ['light', true, 'paper'],
+  ['dark', false, 'ink'],
+  ['night-ink', false, 'ink'],
+  ['deep-forest', false, 'ink'],
+  ['sage-field', true, 'paper'],
+  ['paper', true, 'paper'],
+])
+  assert.equal(themeHarness(saved, device).dataset.theme, expected, `${saved} keeps its appearance`);
 
 /* The browser chrome follows the resolved ground rather than a hardcoded
    pair, which is how it came to be serving a pre-brand green while the page
    had been ivory for some time. */
-const chrome = themeHarness('deep-forest', false);
-assert.equal(chrome.callbacks.chrome, '#1e3a3c', 'chrome matches the theme it frames');
+const chrome = themeHarness('ink', false);
+assert.equal(chrome.callbacks.chrome, '#0b0a0d', 'chrome matches the theme it frames');
 
 const blocked = themeHarness(null, true, true);
-blocked.theme.set('sage-field');
+blocked.theme.set('paper');
 assert.equal(
   blocked.dataset.theme,
-  'sage-field',
+  'paper',
   'A storage failure must not break a live theme choice',
 );
 
@@ -366,13 +377,24 @@ const pairings = [
   ['--paper', '--ink', 4.5],
   ['--paper', '--muted', 4.5],
   ['--surface', '--ink', 4.5],
+  // The D-059 semantic layer: text, links and progress figures on both grounds.
+  ['--surface-canvas', '--text-primary', 4.5],
+  ['--surface-canvas', '--text-secondary', 4.5],
+  ['--surface-primary', '--text-secondary', 4.5],
+  ['--surface-canvas', '--action-text', 4.5],
+  ['--surface-primary', '--action-text', 4.5],
+  ['--surface-canvas', '--progress-text', 4.5],
 ];
 /* Every registered theme, not just two. A palette that cannot carry its own
    text is not a theme, however good it looks in a swatch. */
 const themeBlocks = [...themeCss.matchAll(/\[data-theme='([\w-]+)'\] \{/g)].map(
   (m) => [m[1], m[0]],
 );
-assert.ok(themeBlocks.length >= 4, 'every approved theme declares its tokens');
+for (const theme of ['ink', 'paper'])
+  assert.ok(
+    themeBlocks.some(([name]) => name === theme),
+    `${theme} declares its tokens`,
+  );
 for (const [themeName, selector] of themeBlocks) {
   const palette = tokens(selector);
   for (const [surface, ink, need] of pairings) {
@@ -413,18 +435,28 @@ for (const ink of ['--word-thing', '--word-action', '--word-detail']) {
   assert.equal(uses, 2, `${ink} is defined once per appearance, not per theme`);
 }
 
-/* The canonical brand colour stays canonical. It is kept in the foundation
-   layer under its own name and given a contrast-safe partner, rather than
-   being quietly redefined to whatever passes a check. */
-assert.equal(foundation['--o-orange'], '#ff7a3d', 'Orena Orange is canonical');
-assert.equal(foundation['--o-forest-ink'], '#0e2a47', 'Forest Ink is canonical');
-assert.equal(foundation['--o-paper-ivory'], '#f8f3e9', 'Paper Ivory is canonical');
-assert.ok(foundation['--o-action-warm'], 'the contrast-safe action partner exists');
-assert.notEqual(
-  foundation['--o-action-warm'],
-  foundation['--o-orange'],
-  'the action colour is a partner, not a replacement for the brand colour',
-);
+/* The canonical colours stay canonical (D-059). Violet is the action colour
+   and amber the progress colour; each keeps its design-system value and is
+   given a darker partner for paper, rather than being quietly redefined to
+   whatever passes a check. Orena Orange remains the artwork's colour. */
+assert.equal(foundation['--o-violet'], '#9065f0', 'Violet .62 .20 294 is the canonical action');
+assert.equal(foundation['--o-amber'], '#f8ab4f', 'Amber .80 .14 68 is the canonical progress');
+assert.equal(foundation['--o-ink-ground'], '#0b0a0d', 'the ink ground is canonical');
+assert.equal(foundation['--o-orange'], '#ff7a3d', 'Orena Orange stays the artwork colour');
+for (const [brand, partner] of [
+  ['--o-violet', '--o-violet-deep'],
+  ['--o-amber', '--o-amber-text'],
+]) {
+  assert.ok(foundation[partner], `${partner}: the contrast-safe partner exists`);
+  assert.notEqual(foundation[partner], foundation[brand], `${partner} is a partner, not a replacement`);
+}
+/* Violet acts, amber records: a theme never paints progress with the action
+   colour or an action with the progress colour. */
+for (const [themeName, selector] of themeBlocks) {
+  const palette = tokens(selector);
+  if (palette['--progress'] && palette['--action-primary'])
+    assert.notEqual(palette['--progress'], palette['--action-primary'], `${themeName}: progress is not violet`);
+}
 
 // A panel colour must never be used as a background without its paired ink.
 for (const name of ['foundation', 'world', 'experiences']) {

@@ -153,10 +153,16 @@ const c = copy.en;
     { ...READER_DEFAULTS, size: 1.4, spacing: 'relaxed', width: 'wide', appearance: 'sepia' },
   );
   assert.equal(readerSettings({ size: 0.1 }).size, 0.85);
-  // Appearance maps onto registered Orena themes rather than inventing colours.
-  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'light' }).theme, { theme: 'sage-field', appearance: 'light' });
-  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'sepia' }).theme, { theme: 'paper', appearance: 'light' });
-  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'dark' }).theme, { theme: 'night-ink', appearance: 'dark' });
+  // Appearance maps onto the Orena themes, plus the reader-only sepia block
+  // theme.css declares beside them, rather than inventing colours (D-059).
+  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'light' }).theme, { theme: 'paper', appearance: 'light' });
+  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'sepia' }).theme, { theme: 'sepia', appearance: 'light' });
+  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'dark' }).theme, { theme: 'ink', appearance: 'dark' });
+  for (const theme of ['paper', 'sepia', 'ink'])
+    assert.ok(
+      readFileSync('static/orena/theme.css', 'utf8').includes(`[data-theme='${theme}'] {`),
+      `the reader's ${theme} appearance has a token block`,
+    );
   assert.equal(readerPresentation(READER_DEFAULTS).theme, null, 'by default the reader follows the Orena theme');
   const style = readerPresentation({ ...READER_DEFAULTS, size: 1.2, spacing: 'compact', width: 'narrow', font: 'sans' });
   assert.match(style.style, /--reader-scale: 1\.2/);

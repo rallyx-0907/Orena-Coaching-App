@@ -171,12 +171,13 @@ const CHOICES = {
 export const READER_SIZE = Object.freeze({ min: 0.85, max: 1.4, step: 0.05 });
 const LEADING = { compact: 1.55, normal: 1.75, relaxed: 2 };
 const MEASURE = { narrow: '36rem', medium: '44rem', wide: '50rem' };
-/* Light, sepia and dark are registered Orena themes worn by the reader alone:
-   no new colours, and each already passes AA. "Auto" follows the app. */
+/* Light and dark are the two Orena themes; sepia is the reader-only warm paper
+   declared beside them in theme.css. All three pass AA. "Auto" follows the
+   app. */
 const APPEARANCE = {
-  light: { theme: 'sage-field', appearance: 'light' },
-  sepia: { theme: 'paper', appearance: 'light' },
-  dark: { theme: 'night-ink', appearance: 'dark' },
+  light: { theme: 'paper', appearance: 'light' },
+  sepia: { theme: 'sepia', appearance: 'light' },
+  dark: { theme: 'ink', appearance: 'dark' },
 };
 
 export function readerSettings(raw) {
