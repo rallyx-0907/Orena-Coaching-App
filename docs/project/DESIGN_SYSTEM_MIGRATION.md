@@ -45,7 +45,7 @@ surface unchanged.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Foundation: tokens, themes, type, primitives | yes | yes | yes | yes | n/a | theme switch | n/a | gates | Integrated |
 | App shell and navigation | yes | yes | yes | yes | yes | rail, tablet icon rail, tab bar, sheet (Esc, backdrop, close), compact on scroll | n/a | 1440/1024/390 browser, gates | Integrated |
-| Home | - | - | - | - | - | - | - | - | Not started |
+| Home | yes | yes | yes | yes | continuation, catalogues, daily feed | two Continue cards (one primary), rails with peek, phone domain doors | begin state, empty catalogue | 1440/390 browser, gates | Integrated |
 | Library, search | - | - | - | - | - | - | - | - | Not started |
 | Reading | - | - | - | - | - | - | - | - | Not started |
 | Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
@@ -73,6 +73,8 @@ the phase that owns its domain, and each is built only over data that exists:
 - Content interests and first-time home in onboarding (Profile phase).
 - Toast and tooltip (shell phase), the offline strip (shell phase).
 - Admin overview and content import styling (last; Admin stays admin-only).
+
+Next: Phase 4, Library (facets, grid, filter sheet, search, saved, history).
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

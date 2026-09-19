@@ -359,83 +359,133 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin: var(--space-4) 0 var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-radius: 18px;
-  background: var(--sage-surface);
-  color: var(--on-sage);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bloom), var(--surface-primary);
+  color: var(--text-primary);
 }
 .discover-start__body { display: grid; justify-items: start; gap: 10px; min-width: 0; }
 .discover-start h2 {
   margin: 0;
-  font-size: clamp(23px, 2.4vw, 32px);
+  font-size: clamp(1.375rem, 2.2vw, 1.75rem);
   line-height: 1.15;
   letter-spacing: -.02em;
 }
-.discover-start small,
 .discover-start__body > small {
-  color: var(--on-sage-muted);
-  font-weight: 500;
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
   font-size: var(--text-xs);
-  letter-spacing: normal;
-  text-transform: none;
 }
-.discover-start--resume small { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
 .discover-start .primary { margin: 2px 0 0; }
 .discover-start .brand-art { flex: 0 0 auto; width: clamp(104px, 13vw, 168px); margin: 0 0 0 auto; }
-.discover-start__visual {
-  flex: 0 0 auto;
-  margin-left: auto;
-  overflow: hidden;
-  width: clamp(92px, 11vw, 128px);
-  aspect-ratio: 3 / 4;
-  border-radius: 5px 10px 10px 5px;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 16%, transparent);
-}
-.discover-start__visual > img, .discover-start__visual > svg { width: 100%; height: 100%; object-fit: cover; }
-.discover-start--resume { background: var(--night-surface); color: var(--on-night); }
-.discover-start--resume small { color: var(--on-night-muted); }
 
-/* Skill names stay valid navigation vocabulary and stay compact: one row of
-   marks between the first action and the content, never the structure of the
-   page (D-057 rule 17). */
-.discover-doors {
+/* Continue (D-059): the two most recent threads as cards - artwork, the room
+   and domain, the title, how far through (only when the entry records it),
+   and one way back in. The most recent is the lit one and carries the page's
+   single primary action. */
+.discover-start--resume {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.discover-start .home-label {
+  margin: 0 0 var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+}
+.continue-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--space-3);
+}
+.continue-card {
   display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-primary);
+}
+.continue-card[data-live] {
+  background: var(--bloom), var(--surface-secondary);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-raised);
+}
+.continue-card__visual {
+  flex: none;
+  overflow: hidden;
+  inline-size: 60px;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.continue-card__visual > img,
+.continue-card__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.continue-card__body { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.continue-card__body > strong {
+  overflow: hidden;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.continue-card__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 4px;
+}
+.continue-card__progress .progress-bar { flex: 1; }
+.continue-card__progress small {
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.continue-card__action { flex: none; }
+.continue-card .primary { min-height: 40px; padding-inline: 16px 18px; }
+
+/* Skill doors: a phone's compact way into Practice. On a desk the rail
+   carries these rooms, so the row is not repeated there (rule 20). */
+.discover-doors {
+  display: none;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .discover-door {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 36px;
-  padding: 0 14px 0 8px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
+  padding: 0 14px 0 5px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-primary);
+  color: var(--text-primary);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   text-decoration: none;
-  transition: transform .12s ease-out, border-color .12s ease-out;
 }
 .discover-door__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 9px;
-  background: var(--sage-surface);
-  color: var(--on-sage);
+  border-radius: var(--radius-pill);
+  color: var(--tile-ink);
+  background: color-mix(in srgb, var(--tile-hue) 16%, transparent);
 }
-.discover-door__mark svg { width: 16px; height: 16px; }
-.discover-door[data-tone='night'] .discover-door__mark { background: var(--night-surface); color: var(--on-night); }
-.discover-door[data-tone='coral'] .discover-door__mark { background: var(--coral-surface); color: var(--on-coral); }
-.discover-door[data-tone='sun'] .discover-door__mark { background: var(--sun-surface); color: var(--on-sun); }
-.discover-door:hover, .discover-door:focus-visible { border-color: var(--accent); transform: translateY(-1px); }
-.discover-feed { display: grid; gap: var(--space-5); padding-bottom: var(--space-6); }
+.discover-door:hover, .discover-door:focus-visible { border-color: var(--border-strong); color: var(--text-primary); }
+.discover-feed { display: grid; gap: var(--space-8); padding-bottom: var(--space-6); }
 /* One shelf mechanic for every rail in the product.
    A rail states how many cards it shows (`--rail-columns`) and the primitive
    works out the width, so a card is never accidentally cut: what is left over
@@ -452,20 +502,21 @@
   margin-bottom: var(--space-3);
 }
 .content-rail__heading { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
-.content-rail__heading h2 { margin: 0; font-size: var(--text-lead); }
-.content-rail__icon { display: inline-flex; color: var(--muted); }
-.content-rail__icon svg { width: 20px; height: 20px; }
+.content-rail__heading h2 { margin: 0; font-size: 1.1875rem; font-weight: var(--weight-bold); letter-spacing: -0.01em; }
+.content-rail__icon { display: inline-flex; color: var(--text-muted); }
+.content-rail__icon svg { width: 18px; height: 18px; }
 /* Six shelves each ending in an orange "See all" made the accent ambient.
    Orange marks the thing being acted on - focus, the current destination, a
    primary action - so a standing link waits until it is hovered or focused. */
 .content-rail__all {
   flex: 0 0 auto;
-  color: var(--muted);
-  font-size: var(--text-small);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   text-decoration: none;
 }
 .content-rail__all:hover,
-.content-rail__all:focus-visible { color: var(--accent); }
+.content-rail__all:focus-visible { color: var(--action-text); }
 .content-rail__viewport { position: relative; min-width: 0; }
 .content-rail__track {
   display: flex;
@@ -494,14 +545,15 @@
   position: absolute;
   z-index: 3;
   top: 50%;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-strong);
   border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 14%, transparent);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-overlay);
   opacity: 0;
   transform: translateY(-50%) scale(.94);
   transition: opacity .15s ease, transform .15s ease;
@@ -524,12 +576,14 @@
   color: var(--ink);
   text-decoration: none;
 }
-.discover-content-card { display: grid; align-content: start; gap: var(--space-2); }
-.discover-content-card__body { display: grid; gap: 4px; min-width: 0; }
+.discover-content-card { display: grid; align-content: start; gap: 10px; }
+.discover-content-card__body { display: grid; gap: 2px; min-width: 0; }
 .discover-content-card__body strong {
   display: -webkit-box;
   overflow: hidden;
-  line-height: 1.25;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1.3;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -551,59 +605,57 @@
   line-height: 1.5;
 }
 .discover-vocabulary-card__top small { font-weight: 600; letter-spacing: .04em; }
+/* Artwork is the brightest object (rule 37): covers 2:3, media 16:9, a
+   hairline edge and no drop shadow on ink. */
 .discover-reading-card__visual,
 .discover-listening-card__visual {
   position: relative;
   display: block;
   overflow: hidden;
-  background: var(--surface);
-  box-shadow: 0 7px 18px color-mix(in srgb, var(--ink) 10%, transparent);
+  background: var(--artwork-wash);
+  border: 1px solid var(--border-subtle);
 }
-.discover-reading-card__visual { aspect-ratio: 3 / 4; border-radius: 5px 9px 9px 5px; }
-.discover-listening-card__visual { aspect-ratio: 16 / 9; border-radius: 9px; }
+.discover-reading-card__visual { aspect-ratio: 2 / 3; border-radius: var(--radius-sm); }
+.discover-listening-card__visual { aspect-ratio: 16 / 9; border-radius: var(--radius-md); }
 .discover-reading-card__visual > img,
 .discover-listening-card__visual > img,
 .discover-reading-card__visual > svg,
 .discover-listening-card__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+/* Text on artwork sits on its own dark chip, so it holds contrast over any
+   cover in either theme. */
 .discover-listening-card__duration {
   position: absolute;
-  right: 7px;
-  bottom: 7px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: var(--night-surface);
-  color: var(--on-night);
-  font-size: 12px;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(8, 7, 11, 0.72);
+  color: #f3f1f6;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
 }
 /* A media thumbnail says "this plays" with a control, not a floating glyph. */
 .discover-listening-card__play {
   position: absolute;
-  left: 8px;
-  bottom: 7px;
+  right: 8px;
+  bottom: 8px;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  padding-left: 2px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--night-surface) 78%, transparent);
-  color: var(--on-night);
-  font-size: 11px;
-  line-height: 1;
+  background: rgba(8, 7, 11, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
 /* A shelf of 3:4 covers reads as a shelf when the covers are book-sized; four
    of them across a wide window makes each one a poster. */
 .content-rail--stories,
 .content-rail--words { --rail-columns: 5; }
-/* A spine, so a cover reads as a book rather than a tile. */
-.discover-reading-card__visual::before {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  inset: 0 auto 0 0;
-  width: 5px;
-  pointer-events: none;
-  background: color-mix(in srgb, var(--ink) 16%, transparent);
+/* 2:3 covers are book-sized, not posters: a wide desk shows seven. */
+@media (min-width: 1201px) {
+  .content-rail--stories { --rail-columns: 7; }
 }
 /* Speaking and Writing share tokens, not a component. Both open with a small
    icon and a title, and there the composition parts: Speaking is a turn handed
@@ -616,7 +668,8 @@
   gap: var(--space-2) var(--space-3);
   min-height: 0;
   padding: var(--space-3) var(--space-4) var(--space-4);
-  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-primary);
 }
 .discover-prompt-card__icon { display: inline-flex; color: var(--muted); }
 .discover-prompt-card__icon svg { width: 20px; height: 20px; }
@@ -628,7 +681,9 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-.discover-speaking-card { border-radius: 4px 16px 16px 16px; }
+.discover-speaking-card { border-radius: var(--radius-lg); }
+.discover-speaking-card .discover-prompt-card__icon { color: var(--domain-speaking); }
+.discover-writing-card .discover-prompt-card__icon { color: var(--domain-writing); }
 .discover-speaking-card strong { font-size: var(--text-sm); font-weight: 600; color: var(--muted); }
 /* The opening turn, set as speech: the line the learner is being invited to
    answer, not another label. */
@@ -651,40 +706,41 @@
   border-radius: 2px;
   background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
-.discover-writing-card { border-radius: 4px; }
+.discover-writing-card { border-radius: var(--radius-lg); }
 .discover-writing-card strong { font-family: var(--story-font); font-size: var(--text-base); line-height: 1.45; -webkit-line-clamp: 3; }
 .discover-writing-card__source { color: var(--muted); }
-.discover-writing-card { background-image: repeating-linear-gradient(to bottom, transparent 0 27px, color-mix(in srgb, var(--line) 42%, transparent) 27px 28px); }
 .content-rail--say { --rail-columns: 4; }
 /* A deliberately mixed shelf reads as one shelf: its own ratio wins, so a row
    of covers and thumbnails shares a baseline instead of stepping. The book
    ratio still governs shelves that are actually books (ART_BIBLE.md D). */
-.content-rail--short .discover-reading-card__visual { aspect-ratio: 16 / 9; border-radius: 5px 9px 9px 5px; }
+.content-rail--short .discover-reading-card__visual { aspect-ratio: 16 / 9; border-radius: var(--radius-md); }
 /* Vocabulary carries the material its level is cut from. The skin sets
    `--vocabulary-level-color` in world.css; this card used to redeclare that
    property as `--line`, and because reference.css loads later every card on
    Discover painted the same neutral edge whatever its level said. The fallback
    belongs in the `var()`, not in a property that overrides the skin. */
+/* Today's words stay compact: a word, its meaning, its state - a corner of
+   the page, never the page (D-059). */
 .discover-vocabulary-card {
   display: grid;
   align-content: start;
-  gap: 4px;
-  min-height: 168px;
-  padding: var(--space-4);
-  border-top: 3px solid color-mix(in srgb, var(--vocabulary-level-color, var(--line)) 72%, var(--line));
-  border-radius: 9px;
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent), 0 5px 14px color-mix(in srgb, var(--ink) 7%, transparent);
-  transition: transform .15s ease, box-shadow .15s ease;
+  gap: 2px;
+  min-height: 150px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-top: 2px solid color-mix(in srgb, var(--vocabulary-level-color, var(--line)) 72%, var(--line));
+  border-radius: var(--radius-lg);
+  background: var(--surface-primary);
+  transition: border-color .15s ease;
 }
 .discover-vocabulary-card__top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); color: var(--muted); }
-.discover-vocabulary-card strong { margin-top: var(--space-2); font-family: var(--story-font); font-size: clamp(21px, 1.7vw, 27px); line-height: 1.1; }
+.discover-vocabulary-card strong { margin-top: var(--space-1); font-family: var(--display-font); font-size: clamp(1.375rem, 1.6vw, 1.625rem); font-weight: var(--weight-bold); line-height: 1.15; }
 .discover-vocabulary-card__meaning { color: var(--ink); }
 .discover-vocabulary-card__pronunciation { color: var(--muted); }
 .discover-vocabulary-card__footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); }
 .discover-vocabulary-card__actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 6px; }
 .discover-vocabulary-card__actions .quiet { min-height: 32px; padding: 5px 7px; font-size: var(--text-xs); }
-.discover-vocabulary-card:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color, var(--line)) 30%, var(--line)), 0 9px 20px color-mix(in srgb, var(--ink) 10%, transparent); }
+.discover-vocabulary-card:hover { border-color: var(--border-strong); }
 .discover-vocabulary-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* The rank token: the material, stated. Small, tonal, and never the loudest
    thing on a card whose subject is a word. */
@@ -710,17 +766,17 @@
   gap: 3px var(--space-3);
   min-height: 96px;
   padding: var(--space-3);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 72%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-primary);
 }
 .discover-continuation-card__visual {
   grid-row: 1 / 3;
   overflow: hidden;
-  width: 54px;
-  aspect-ratio: 3 / 4;
-  border-radius: 3px 7px 7px 3px;
-  box-shadow: 0 5px 12px color-mix(in srgb, var(--ink) 14%, transparent);
+  width: 48px;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
 }
 .discover-continuation-card__visual > img,
 .discover-continuation-card__visual > svg { width: 100%; height: 100%; object-fit: cover; }
@@ -762,6 +818,7 @@
   .content-rail--stories,
   .content-rail--words { --rail-columns: 3; }
   .discover-start { padding: var(--space-4); }
+  .discover-doors { display: flex; }
 }
 
 @media (max-width: 600px) {
@@ -770,16 +827,20 @@
      single scannable band above the first shelf (D-057 rule 13, D-052). */
   .discover-start {
     gap: var(--space-3);
-    margin: var(--space-3) 0 var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    border-radius: 15px;
+    margin: 0 0 var(--space-4);
+    padding: var(--space-4);
   }
-  .discover-start h2 { font-size: 21px; }
+  .discover-start--resume { padding: 0; }
+  .discover-start h2 { font-size: 1.3125rem; }
   .discover-start .brand-art { width: 84px; }
   .discover-start__visual { width: 72px; }
-  .discover-doors { gap: 6px; margin-bottom: var(--space-3); }
-  .discover-door { min-height: 34px; padding: 0 12px 0 7px; font-size: var(--text-xs); }
-  .discover-feed { gap: var(--space-4); }
+  .discover-doors { gap: 6px; margin-bottom: var(--space-4); }
+  .discover-door { min-height: 34px; padding: 0 12px 0 5px; font-size: var(--text-xs); }
+  .continue-cards { grid-template-columns: 1fr; gap: var(--space-2); }
+  .continue-card { gap: var(--space-3); padding: var(--space-2) var(--space-3); }
+  .continue-card__visual { inline-size: 48px; }
+  .continue-card .primary { min-height: 36px; padding-inline: 12px 14px; }
+  .discover-feed { gap: var(--space-6); }
   .content-rail__header { margin-bottom: var(--space-2); }
   .content-rail__heading h2 { font-size: var(--text-base); }
   .content-rail__track { padding: 2px 2px var(--space-2); }

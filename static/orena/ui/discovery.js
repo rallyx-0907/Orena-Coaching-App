@@ -6,7 +6,8 @@ import {
   continuationLink,
   link,
 } from '../product/intent.js';
-import { continuationEntries } from './patterns.js';
+import { continuationEntries, continuationPlace } from './patterns.js';
+import { icon } from './phosphor.js';
 import { referenceCopy } from './reference.js';
 import { entryIcon } from './icons.js';
 import {
@@ -41,7 +42,7 @@ function readingCard(item, ctx) {
 function listeningCard(item, ctx) {
   const length = Number(item.duration_ms) > 0 ? duration(item.duration_ms) : '';
   const meta = [item.level, item.source_label].filter(Boolean).join(' · ');
-  return `<a class="discover-content-card discover-listening-card" data-listening-card href="${esc(link('encounter', { id: item.id, intent: 'follow' }))}"><span class="discover-listening-card__visual">${art(item)}${length ? `<span class="discover-listening-card__duration">${esc(length)}</span>` : ''}<span class="discover-listening-card__play" aria-hidden="true">▶</span></span><span class="discover-content-card__body"><strong lang="${esc(item.language || ctx.language)}">${esc(item.title)}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</span></a>`;
+  return `<a class="discover-content-card discover-listening-card" data-listening-card href="${esc(link('encounter', { id: item.id, intent: 'follow' }))}"><span class="discover-listening-card__visual">${art(item)}${length ? `<span class="discover-listening-card__duration">${esc(length)}</span>` : ''}<span class="discover-listening-card__play" aria-hidden="true">${icon('play', { filled: true, size: 14 })}</span></span><span class="discover-content-card__body"><strong lang="${esc(item.language || ctx.language)}">${esc(item.title)}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</span></a>`;
 }
 
 /* Speaking and Writing are both invitations to produce language, which is why
@@ -130,15 +131,19 @@ const STORY_MATERIAL = /fable|story|fiction|tale|classical/i;
    them and continues below. */
 function doors(ctx) {
   const r = referenceCopy[ctx.ui];
+  /* Each door wears its design-system domain in a small tile (D-059 rule 32).
+     On a desk the rail already carries these rooms, so the row is a phone's
+     way into Practice and CSS keeps it to narrow screens. */
   const entries = [
-    ['reading', 'book', 'sage', link('practice', { intent: 'reading' })],
-    ['listening', 'sound', 'night', link('practice', { intent: 'follow' })],
-    ['speaking', 'voice', 'coral', link('practice', { intent: 'speaking' })],
-    ['writing', 'pen', 'sun', link('expression')],
-    ['vocabulary', 'leaf', 'sage', link('language')],
+    ['reading', 'book-open', 'reading', link('practice', { intent: 'reading' })],
+    ['listening', 'headphones', 'listening', link('practice', { intent: 'follow' })],
+    ['speaking', 'microphone', 'speaking', link('practice', { intent: 'speaking' })],
+    ['dictation', 'keyboard', 'dictation', link('practice', { intent: 'dictation' })],
+    ['writing', 'pencil-simple', 'writing', link('expression')],
+    ['vocabulary', 'cards', 'vocabulary', link('language')],
   ];
   return `<nav class="discover-doors" aria-label="${esc(r.browseAll)}">${entries
-    .map(([key, icon, tone, href]) => `<a class="discover-door" data-discover-door="${esc(key)}" data-tone="${esc(tone)}" href="${esc(href)}"><span class="discover-door__mark" aria-hidden="true">${entryIcon(icon)}</span>${esc(r[key])}</a>`)
+    .map(([key, glyph, domain, href]) => `<a class="discover-door" data-discover-door="${esc(key)}" data-domain="${esc(domain)}" href="${esc(href)}"><span class="discover-door__mark" aria-hidden="true">${icon(glyph, { size: 16 })}</span>${esc(r[key])}</a>`)
     .join('')}</nav>`;
 }
 
@@ -148,12 +153,36 @@ function doors(ctx) {
    within a few seconds, and a learner with history must see the way back
    (D-057, Product Constitution §10). Both are the same block in two states, so
    neither can be pushed under the other by a rail that happened to load. */
-function startBlock(ctx, { first, resume }) {
+const CONTINUE_DOMAIN = {
+  listening: ['listening', 'headphones'],
+  reading: ['reading', 'book-open'],
+  speaking: ['speaking', 'microphone'],
+  writing: ['writing', 'pencil-simple'],
+  understanding: ['neutral', 'sparkle'],
+  practice: ['dictation', 'keyboard'],
+  recall: ['vocabulary', 'cards'],
+};
+function continueCard(item, ctx, lead) {
+  const r = referenceCopy[ctx.ui];
+  const experience = continuationExperience(item);
+  const label = experience === 'listening' ? ctx.c.followName : ctx.c[`${experience}Name`] || ctx.c.resume;
+  const [domain, glyph] = CONTINUE_DOMAIN[experience] || ['neutral', 'clock-counter-clockwise'];
+  const place = continuationPlace(item);
+  const href = esc(continuationLink(item));
+  const progress = place
+    ? `<span class="continue-card__progress"><span class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${place.percent}" aria-label="${esc(item.title)}"><span style="width:${place.percent}%"></span></span><small>${place.percent}%</small></span>`
+    : '';
+  /* One primary action on the page: the most recent thread carries it, the
+     second one is a quiet way in. */
+  const action = lead
+    ? `<a class="primary" href="${href}">${icon('play', { filled: true, size: 16 })}<span>${esc(r.continueAction)}</span></a>`
+    : `<a class="icon-button continue-card__action" href="${href}" aria-label="${esc(`${r.continueAction}: ${item.title}`)}">${icon('caret-right', { size: 20 })}</a>`;
+  return `<article class="continue-card"${lead ? ' data-live' : ''} data-domain="${domain}"><span class="continue-card__visual" aria-hidden="true">${art(item)}</span><span class="continue-card__body"><small class="domain-label">${icon(glyph, { size: 14 })}${esc(label)}</small><strong lang="${esc(ctx.language)}">${esc(item.title)}</strong>${progress}</span>${action}</article>`;
+}
+function startBlock(ctx, { first, resume, next }) {
   const r = referenceCopy[ctx.ui];
   if (resume) {
-    const experience = continuationExperience(resume);
-    const label = experience === 'listening' ? ctx.c.followName : ctx.c[`${experience}Name`] || ctx.c.resume;
-    return `<section class="discover-start discover-start--resume"><div class="discover-start__body"><small>${esc(label)}</small><h2 lang="${esc(ctx.language)}">${esc(resume.title)}</h2><a class="primary" href="${esc(continuationLink(resume))}">${esc(r.continueAction)} <span aria-hidden="true">→</span></a></div><span class="discover-start__visual" aria-hidden="true">${art(resume)}</span></section>`;
+    return `<section class="discover-start discover-start--resume" aria-labelledby="homeContinue"><h2 class="home-label" id="homeContinue">${esc(r.continue)}</h2><div class="continue-cards">${continueCard(resume, ctx, true)}${next ? continueCard(next, ctx, false) : ''}</div></section>`;
   }
   if (!first)
     return `<section class="discover-start discover-start--begin"><div class="discover-start__body"><h2>${esc(r.startTitle)}</h2></div>${scene('discovery', { size: 'hero' })}</section>`;
@@ -185,13 +214,27 @@ export function discoverySpread(
   const heard = media.slice(0, RAIL_PREVIEW_LIMIT);
 
   const rails = [];
-  if (continuation.length > 1)
+  /* The two most recent threads are the cards at the top of the page; this
+     shelf holds only the rest, so nothing on Home is shown twice (rule 20). */
+  if (continuation.length > 2)
     rails.push(rail(ctx, {
       id: 'continue',
       title: r.continueLearning,
       icon: 'return',
-      items: continuation.slice(1).map((item) => continuationCard(item, ctx)),
+      items: continuation.slice(2).map((item) => continuationCard(item, ctx)),
       href: link('continue'),
+    }));
+
+  /* Voices first, then stories: the order the design system's Home gives
+     them, artwork leading each shelf. */
+  const voices = heard;
+  if (voices.length)
+    rails.push(rail(ctx, {
+      id: 'voices',
+      title: r.railVoices,
+      icon: 'sound',
+      items: voices.map((item) => listeningCard(item, ctx)),
+      href: link('practice', { intent: 'follow' }),
     }));
 
   const stories = texts.filter(
@@ -204,16 +247,6 @@ export function discoverySpread(
       icon: 'book',
       items: stories.map((item) => readingCard(item, ctx)),
       href: link('practice', { intent: 'reading' }),
-    }));
-
-  const voices = heard;
-  if (voices.length)
-    rails.push(rail(ctx, {
-      id: 'voices',
-      title: r.railVoices,
-      icon: 'sound',
-      items: voices.map((item) => listeningCard(item, ctx)),
-      href: link('practice', { intent: 'follow' }),
     }));
 
   /* A lens, not a shelf. It deliberately looks back across everything above and
@@ -268,5 +301,6 @@ export function discoverySpread(
   return `<h1 class="sr-only">${esc(r.discover)}</h1>${startBlock(ctx, {
     first: texts.find((item) => minutes(item) > 0 && minutes(item) <= 5) || texts[0] || heard[0] || null,
     resume: continuation[0] || null,
+    next: continuation[1] || null,
   })}${doors(ctx)}${catalogError || ''}<div class="discover-feed">${rails.join('')}</div>`;
 }

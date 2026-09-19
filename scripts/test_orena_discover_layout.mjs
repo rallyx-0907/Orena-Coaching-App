@@ -117,7 +117,9 @@ for (const ui of ['en', 'zh']) {
   const railIds = [...rendered.matchAll(/data-content-rail="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(
     railIds,
-    ['continue', 'stories', 'voices', 'short', 'say', 'words'],
+    // D-059: two threads are the Continue cards, so no Continue shelf repeats
+    // them; voices lead, as the design system's Home orders them.
+    ['voices', 'stories', 'short', 'say', 'words'],
     `${ui}: the feed is organised by content, continuity and length`,
   );
   assert.equal(
@@ -125,7 +127,11 @@ for (const ui of ['en', 'zh']) {
     0,
     `${ui}: no shelf is named after a skill module`,
   );
-  assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 6);
+  assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 5);
+  // Both threads are cards at the top, the most recent lit, each once.
+  assert.equal((rendered.match(/class="continue-card"/g) || []).length, 2, `${ui}: two continue cards`);
+  assert.equal((rendered.match(/class="continue-card" data-live/g) || []).length, 1, `${ui}: one lit thread`);
+  assert.equal((rendered.match(/>Story 1</g) || []).length >= 1, true);
   /* Two rails carry more than one kind of content. A mixed shelf is the point:
      a five-minute shelf holds whatever takes five minutes. */
   const shortRail = rendered.slice(rendered.indexOf('data-content-rail="short"'), rendered.indexOf('data-content-rail="say"'));
@@ -155,7 +161,8 @@ for (const ui of ['en', 'zh']) {
 
   /* Doors remain, compact, after the first action. */
   assert.match(rendered, /class="discover-doors"/, `${ui}: skill doors remain available`);
-  assert.equal((rendered.match(/class="discover-door"/g) || []).length, 5);
+  // D-059: Dictation is a visible room, so it has a door too.
+  assert.equal((rendered.match(/class="discover-door"/g) || []).length, 6);
   assert.ok(rendered.indexOf('discover-doors') > rendered.indexOf('discover-start'),
     `${ui}: content and the first action come before the skill doors`);
   assert.ok(rendered.indexOf('discover-doors') < rendered.indexOf('discover-feed'),
@@ -299,7 +306,8 @@ assert.match(styles, /\.content-rail__item\s*\{[^}]*scroll-snap-align:\s*start;/
 assert.match(styles, /@media\s*\(max-width:\s*600px\)[\s\S]*?--rail-columns:\s*1;/s,
   'a phone shows one whole card and the same deliberate peek of the next');
 assert.match(styles, /\.discover-listening-card__visual\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9;/s);
-assert.match(styles, /\.discover-reading-card__visual\s*\{[^}]*aspect-ratio:\s*3\s*\/\s*4;/s);
+// D-059 rule 37: covers are 2:3.
+assert.match(styles, /\.discover-reading-card__visual\s*\{[^}]*aspect-ratio:\s*2\s*\/\s*3;/s);
 assert.doesNotMatch(styles, /\.content-rail[^}]*background:\s*#(?:[0-9a-f]{3}|[0-9a-f]{6})/i,
   'rails and cards use semantic Orena tokens, not a new palette');
 /* The skin is the material a level is cut from. Declaring the property on the
