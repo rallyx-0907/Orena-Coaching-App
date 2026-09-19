@@ -36,23 +36,51 @@ export function hintTokens(expected, sourceLanguage) {
   return tokens;
 }
 
-/* How far the learner has got with each expected word, in order. Uses the same
-   alignment as the comparison they are shown, so an anchor here and a matched
-   word there can never disagree.
+/* How far the learner has got with each expected word, in order - and only as
+   far as they have actually got.
+
+   This used to align the whole answer against the whole line with the same
+   longest-common-subsequence the final comparison uses. A subsequence keeps
+   order but knows nothing about position, so a word the learner typed could
+   be credited to a *later* identical word in the line: typing "the" into
+   "With the big bang starting the year" could light up the second "the", and
+   typing one word of "the boy saw the dog" could reveal a word at the end the
+   learner had not reached. Dictation then hands out answers for free, which is
+   the whole of the exercise.
+
+   The fix is a reach. A learner who has written N units can only have reached
+   the first N units of the line, so the alignment is computed against that
+   prefix and nothing beyond it is looked at, let alone confirmed. Inside the
+   reach the same alignment is kept, so one missing or one extra word still
+   does not shift every anchor after it - the partial credit that makes this
+   usable survives, and the leak does not.
+
+   The final comparison is deliberately not changed: once a learner submits,
+   they have asked to see the whole line against the whole of what they wrote.
+   Hint, Reveal and Compare are the explicit ways to learn an unearned word;
+   typing is not one of them.
 
    A word they attempted and got wrong still carries what they wrote, which is
    what makes partial credit possible. */
 export function wordProgress({ expected, answer, source_language }) {
   const words = listeningUnits(expected, source_language);
   const progress = words.map((word) => ({ word, found: false, attempt: '' }));
-  if (!String(answer ?? '').trim()) return progress;
+  const written = String(answer ?? '');
+  if (!written.trim()) return progress;
+  const reach = listeningUnits(written, source_language).length;
+  if (!reach) return progress;
+  // The line as far as the learner can possibly have got. Joining the units
+  // rather than slicing the original keeps this in the tokenizer's own terms,
+  // so scripts without spaces are cut between units and never inside one.
+  const reached = words.slice(0, reach);
   let index = 0;
   for (const entry of listeningReconstructionDiff({
     source_language,
-    expected,
-    answer,
+    expected: reached.join(' '),
+    answer: written,
   })) {
     if (entry.status === 'extra') continue;
+    if (index >= reach) break;
     if (progress[index]) {
       progress[index].found = entry.status === 'correct';
       progress[index].attempt = entry.status === 'wrong' ? entry.actual || '' : '';

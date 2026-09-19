@@ -139,16 +139,22 @@ function strengths(c, result, language, text) {
    room binds its handlers to. */
 const PRIORITY = { high: 0, critical: 0, medium: 1, low: 2 };
 
-function correction(c, item, index, language) {
-  return `<article class="correction" data-issue="${index}" data-priority="${esc(item.priority || 'medium')}"><small class="correction__category">${esc(c[`rubric_${item.category}`] || item.category)}</small><p class="correction__row correction__wrote"><span class="correction__label">${esc(c.reviewYouWrote)}</span><del lang="${esc(language)}">${esc(item.quote)}</del></p>${item.suggestion ? `<p class="correction__row correction__fix"><span class="correction__label">${esc(c.reviewCorrection)}</span><strong lang="${esc(language)}">${esc(item.suggestion)}</strong></p>` : ''}${item.why ? `<p class="correction__row correction__why"><span class="correction__label">${esc(c.reviewWhy)}</span><span>${esc(item.why)}</span></p>` : ''}${item.how ? `<p class="correction__rule"><span class="correction__label">${esc(c.reviewRule)}</span><span>${esc(item.how)}</span></p>` : ''}<div class="button-row"><button class="quiet" data-locate="${index}">${esc(c.reviewLocate)}</button><button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></div></article>`;
+function correction(c, item, index, language, canLocate = true) {
+  return `<article class="correction" data-issue="${index}" data-priority="${esc(item.priority || 'medium')}"><small class="correction__category">${esc(c[`rubric_${item.category}`] || item.category)}</small><p class="correction__row correction__wrote"><span class="correction__label">${esc(c.reviewYouWrote)}</span><del lang="${esc(language)}">${esc(item.quote)}</del></p>${item.suggestion ? `<p class="correction__row correction__fix"><span class="correction__label">${esc(c.reviewCorrection)}</span><strong lang="${esc(language)}">${esc(item.suggestion)}</strong></p>` : ''}${item.why ? `<p class="correction__row correction__why"><span class="correction__label">${esc(c.reviewWhy)}</span><span>${esc(item.why)}</span></p>` : ''}${item.how ? `<p class="correction__rule"><span class="correction__label">${esc(c.reviewRule)}</span><span>${esc(item.how)}</span></p>` : ''}<div class="button-row">${canLocate ? `<button class="quiet" data-locate="${index}">${esc(c.reviewLocate)}</button>` : ''}<button class="quiet" data-why="${index}">${esc(c.askWhy)} ↗</button><button class="outline" data-try-revision="${index}">${esc(c.revisionTry)} ↗</button></div></article>`;
 }
 
 /* Ten findings shown as equals is a wall, and a beginner reads none of them.
    The few worth doing now lead; the rest are a fold away, still whole. */
 export function orderedIssues(result, text) {
   return shownIssues(result, text)
-    .map((item, index) => ({ item, index }))
-    .sort((a, b) => (PRIORITY[a.item.priority] ?? 1) - (PRIORITY[b.item.priority] ?? 1));
+    .map((item, index) => ({ item, index, anchored: anchored(item, text) }))
+    /* Most useful first, and an anchored finding before an unanchored one of
+       the same priority: the learner can act on it immediately. */
+    .sort(
+      (a, b) =>
+        (PRIORITY[a.item.priority] ?? 1) - (PRIORITY[b.item.priority] ?? 1) ||
+        Number(b.anchored) - Number(a.anchored),
+    );
 }
 
 const FOCUS = 3;
@@ -159,7 +165,7 @@ function issues(c, result, language, text) {
   const focus = orderedIssues(result, text).slice(0, FOCUS);
   if (!focus.length) return '';
   return `<section class="review-issues"><h3>${esc(c.reviewFocus)}</h3>${focus
-    .map(({ item, index }) => correction(c, item, index, language))
+    .map(({ item, index, anchored: found }) => correction(c, item, index, language, found))
     .join('')}</section>`;
 }
 
@@ -171,7 +177,7 @@ function deeper(c, result, language, text) {
   const rest = orderedIssues(result, text).slice(FOCUS);
   if (!rest.length) return '';
   return `<section class="review-deeper">${rest
-    .map(({ item, index }) => correction(c, item, index, language))
+    .map(({ item, index, anchored: found }) => correction(c, item, index, language, found))
     .join('')}</section>`;
 }
 
@@ -185,8 +191,24 @@ function priorities(c, result) {
 
 /* The issues this render actually offered, in the order shown, so the caller
    can bind "why?" to the right one without re-deriving the filter. */
+/* Every finding the review carried, and whether each one can be pointed at.
+
+   These used to be one question: a finding whose quote was not verbatim in
+   the learner text was not shown at all. That is the right answer for
+   highlighting - pointing at the wrong words is worse than pointing at
+   nothing - and the wrong answer for keeping it, because a learner then never
+   heard that the verb form was wrong.
+
+   So: `shownIssues` is every trustworthy finding, and `anchored` says which
+   of them "find it in my text" may be offered for. An unanchored finding is
+   real guidance about a real mistake; it simply cannot promise a span, so it
+   is never given a control that would jump to the wrong one. */
+export function anchored(issue, text) {
+  return Boolean(issue && issue.quote && text.includes(issue.quote));
+}
+
 export function shownIssues(result, text) {
-  return (result.issues || []).filter((x) => x && x.quote && text.includes(x.quote));
+  return (result.issues || []).filter((x) => x && (x.quote || x.fragment));
 }
 
 export function shownStrengths(result, text) {

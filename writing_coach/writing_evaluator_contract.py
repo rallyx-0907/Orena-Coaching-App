@@ -192,10 +192,54 @@ def build_writing_evaluator_request(
             "- Identify 1-3 exact learner fragments that demonstrate genuine strengths.\n",
             "- Every errors item must describe a genuine problem visible in its exact fragment.\n",
             "- Every error suggestion must meaningfully differ from the erroneous fragment.\n",
-            "- If uncertain whether something is wrong, omit it. Fewer high-confidence findings are ",
-            "preferable to many doubtful findings.\n",
+            # Report every genuine error, and rank them - do not report only a few.
+            #
+            # This used to read "fewer high-confidence findings are preferable
+            # to many doubtful findings", which a small model obeys by saying
+            # almost nothing: an essay with a wrong verb form, a wrong
+            # infinitive, a missing article and a wrong fixed expression came
+            # back with one structured error and the rest as general advice.
+            # Advice a learner cannot find in their own sentence is not a
+            # correction.
+            #
+            # Precision is still the rule: an uncertain finding is still
+            # omitted and nothing may be invented. What changed is that being
+            # the fifth true thing is no longer a reason to leave it out. The
+            # surface decides what a learner meets first; the evaluator
+            # decides what is true.
+            "- Report EVERY genuine error you are confident about, not only the most important ",
+            "ones. A clear verb-form, agreement, article, tense, word-choice or fixed-expression ",
+            "mistake is worth returning even when the text already contains other mistakes.\n",
+            "- Rank them: give the highest `confidence` to the errors that matter most for this ",
+            "learner's next revision. The surface shows the strongest few first and keeps the ",
+            "rest, so leaving a real error out does not simplify anything - it loses it.\n",
+            "- If uncertain whether something is wrong, still omit it: never invent a problem, ",
+            "and never mark a wording wrong when another reading of it is correct.\n",
             f"- Return evidence only when confidence >= {CONFIDENCE_THRESHOLD:.2f}.\n",
-            "- Focus on recurring or reusable learning points, not only isolated typos.\n",
+            "- Recurring, reusable learning points matter most, but a one-off mistake the learner ",
+            "can see and fix is also worth returning.\n",
+            # Which of the two outlets a mistake belongs in.
+            #
+            # The instruction above was not enough on its own. `errors` and
+            # `priorities_vi` were both described, and neither was described
+            # in terms of the other, so a model with four mistakes to report
+            # returned one error and put the rest in priorities: "revise the
+            # fixed expression 'in time'", "watch verb forms". Every one of
+            # them was true, and not one could be found in the sentence it
+            # came from. Advice is what a learner is left with once the
+            # correction has been made; it is not a cheaper way to mention a
+            # correction.
+            #
+            # So the boundary is stated, not implied: pointable goes in
+            # `errors`, carried-forward goes in `priorities_vi`, and nothing
+            # appears in the second that has not earned its place in the first.
+            "- `errors` and `priorities_vi` are not two places to put the same thing. If a ",
+            "mistake can be pointed at in LEARNER_TEXT, it belongs in `errors`, with its exact ",
+            "fragment - always, and no matter how many errors are already there.\n",
+            "- `priorities_vi` is what the learner should carry into their next piece of ",
+            "writing, drawn from the errors you returned. Do not name a mistake there that you ",
+            "did not return as an error: the learner cannot find it, and it reads as a ",
+            "correction they were refused.\n",
             "Return one complete JSON object matching the supplied structured schema.",
         ]
     )

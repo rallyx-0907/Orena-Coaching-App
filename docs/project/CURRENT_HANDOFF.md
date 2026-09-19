@@ -10,8 +10,8 @@ D-046. No human approval or production readiness is implied.
 ## Current branch / lane
 
 `codex/work`, Orena WEB Golden Star plus real learning capabilities. Do not
-restore the deleted learner product. Native mobile / Expo / React Native is
-frozen. Human instruction authorizes full-stack WEB work on the capabilities
+restore the deleted learner product.
+Human instruction authorizes full-stack WEB work on the capabilities
 themselves, not only on the foundation.
 
 ## DONE
@@ -28,14 +28,14 @@ behavior and evidence. Current invariants/owners:
 - Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
 - Reading: content/reading.js readable contract; reading-library.js rights
   gate; ui/reader.js adds paragraph meaning and never-AI word lookup.
-- Writing: ui/writing-review.js; exact snapshot and grounded revision; T12 evaluator in `c71c644`.
+- Writing: ui/writing-review.js; exact snapshot, grounded revision; T12 `c71c644`.
 - Speaking: product/conversation.js; own turns, no absent-reference alignment.
 - Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
 - Kept language: product/memory.js; provenance device sidecar after account save.
 - Recall: product/recall.js; hidden answer, explicit reveal/self-assessment.
 - Continue: ui/patterns.js and product/intent.js; actual work type and intention.
 - Understanding: ui/understanding.js; exact context and stale-answer rejection.
-- Presentation/brand: ORENA_WEB_EXTENSION_GUIDE; Opus owns theme/brand execution.
+- Presentation/brand: ORENA_WEB_EXTENSION_GUIDE; Opus owns theme/brand.
 
 ## Last verified batch
 
@@ -44,50 +44,51 @@ layer for reader, transcript and practised line. Listening is two panes, the
 spoken line IS the active row. Speaking is a composed module. A synthetic
 result is never a pronunciation score.
 
-My Language opens on the language, not a count of it: what is due, then what
-was kept with the sentence and piece it came from, then collections, then the
-tally in one line. Recall is the loop over the same saved contract and
-scheduler - a landing, one item, a completion with real counts only. Writing's
-rubric is one row per dimension (label, bar, score, change), the bar showing
-where the learner was and is now; corrections and deeper findings are separate
-steps.
+My Language opens on the language, not a count of it: what is due, what was
+kept with the sentence it came from, collections, then the tally in one line.
+Recall is the loop over that same contract and scheduler - a landing, one item,
+real counts only. Writing's rubric is one row per dimension (label, bar, score,
+change), the bar showing where the learner was and is now.
 
-A review is earned once (D-051 rules 28-29): every evaluation carries the
-identity it was produced under - text, both languages, level, task, evaluator
-contract - in the `module_data` both backends persist, so no migration. Reload
-0 calls, unchanged Review 0, edited revision 1, eight concurrent identical 1.
-Editing marks a review as the previous version rather than deleting it.
+A review is earned once (D-051 rules 28-29): each evaluation carries its
+identity - text, both languages, level, task, evaluator contract - in the
+`module_data` both backends persist, so no migration. Reload 0 calls, unchanged
+0, edited revision 1, eight concurrent identical 1. Editing marks the previous
+version rather than deleting it.
+
+A review also keeps what it found. Only an untrustworthy finding is dropped; a
+quote occurring literally sets `anchored` and a span, and only an anchored one
+offers "find it in my text" - the rest still reads under deeper improvement.
+Top 3 is presentation; one call returns both, `errors` being what can be
+pointed at and `priorities_vi` only what to carry forward.
+
+Dictation's live reveal is positional: N units written reaches N units of the
+line, and no further. Typing is not a hint.
 Writing is bounded by one shared contract (`writing_coach/writing_limits.py` +
-`capabilities/writing-limits.js`, gated against drift): 12,000 code points /
-60,000 bytes / 1,000 lines, refused whole, never truncated, before any row,
-prompt or provider call. Dictation: Previous, position, Next, nothing else.
+`capabilities/writing-limits.js`, gated): 12,000 code points / 60,000 bytes /
+1,000 lines, refused whole, never truncated, before any prompt or provider
+call. Dictation: Previous, position, Next, nothing else.
 
-Writing is a workspace (D-051 rule 27): the intention sits in the heading, the
-page takes the width until a review exists, one primary action in one word, and
-a quote is located in the learner's own text by selection, never by rewriting
-it.
+Writing is a workspace (rule 27): intention in the heading, full width until a
+review exists, one primary action in one word, quotes located by selection.
+Rules 23-26: a transcript row keeps its geometry; its actions live in
+`ui/learning-toolbar.js`; Dictation binds the player to the line; en/zh/vi each
+own every interface string.
 
-Before it (D-051 rules 23-26): a transcript row keeps its geometry when the
-voice reaches it; its actions live in `ui/learning-toolbar.js`; Dictation binds
-the player to the line being written; en/zh/vi each own every interface string
-their surfaces ask for.
-
-Verified: pytest `1127 passed, 118 skipped`, all 49 CI `.mjs` gates, ESM graph,
-both validators, and the Python CI validators. Browser pass on
+Verified: pytest `1136 passed, 118 skipped`, all 50 CI `.mjs` gates, ESM graph,
+both validators, the Python CI validators. Browser pass on
 `orena-foundation-web`:8011 for vi/en, zh/en and vi/zh at desktop and 390px,
-including a real Gemini review, revision and re-review. No CI claim.
+including real Gemini review, revision and re-review; the error-heavy essay
+returns three located corrections in one call, reload still 0. No CI claim.
 
 ## Runtime / safety
 
 Operate only isolated `orena-foundation-web`:8011 with its PG/network,
 published on `0.0.0.0:8011` for private-LAN review. PGDATA is tmpfs; the start
 script restores it. Restart after Python changes; uvicorn does not reload. Do
-not operate production 8000/preview 8010/Cloudflare/volumes. If a peer cannot
-reach it, open TCP 8011 to `LocalSubnet` from an elevated shell. AI eval uses
-selected local/provider credentials; ASR unconfigured.
-
-Dependency-heavy tests use the read-only `ai-writing-coach:local` recipe in
-AGENTS.md; SQLite is test-only.
+not operate production 8000/preview 8010/Cloudflare/volumes. A peer that cannot
+reach it needs TCP 8011 open to `LocalSubnet`. AI eval uses selected
+local/provider credentials; ASR unconfigured.
 
 ## NEXT EXACT TASK
 

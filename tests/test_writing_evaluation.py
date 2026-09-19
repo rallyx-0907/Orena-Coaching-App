@@ -175,16 +175,16 @@ def test_strength_evidence_is_bounded() -> None:
     assert len(result["strength_evidence"]) == 6
 
 
-def test_errors_require_exact_evidence_meaningful_suggestion_and_confidence() -> None:
+def test_errors_require_a_meaningful_suggestion_and_confidence() -> None:
     accepted = _normalize({"errors": [_error()]})
     assert accepted["errors"][0]["category"] == "agreement"
     assert accepted["errors"][0]["span"] == {"start": 0, "end": len(LEARNER_TEXT)}
+    assert accepted["errors"][0]["anchored"] is True
     assert accepted["issues"][0]["id"] == accepted["errors"][0]["id"]
 
     rejected = _normalize(
         {
             "errors": [
-                _error(fragment="invented fragment"),
                 _error(confidence=0.74),
                 _error(confidence=0.749),
                 _error(suggestion=""),
@@ -194,6 +194,23 @@ def test_errors_require_exact_evidence_meaningful_suggestion_and_confidence() ->
         }
     )
     assert rejected["errors"] == []
+
+
+def test_a_finding_that_cannot_be_quoted_is_kept_but_cannot_be_pointed_at() -> None:
+    """Exact evidence decides where a finding can be shown, not whether it exists.
+
+    A fragment that is not verbatim in the learner's text used to be thrown
+    away with the finding attached to it, so an evaluator that retyped its own
+    quote - a straight apostrophe for a curly one - silently cost the learner a
+    real correction. The span is what requires an exact occurrence: without one
+    there is nothing honest to highlight, and the surface offers no way to look
+    for it. The finding itself is still worth reading.
+    """
+    result = _normalize({"errors": [_error(fragment="invented fragment")]})
+    (finding,) = result["errors"]
+    assert finding["fragment"] == "invented fragment"
+    assert finding["anchored"] is False
+    assert finding["span"] == {"start": 0, "end": 0}, "no span is claimed that cannot be shown"
 
 
 def test_error_categories_follow_exact_active_language_taxonomy() -> None:

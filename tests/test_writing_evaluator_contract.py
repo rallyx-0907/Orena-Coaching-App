@@ -175,8 +175,13 @@ def test_request_contract_is_explicit_about_evidence_and_target_level_semantics(
     assert "genuine strength visible in its exact fragment" in request
     assert "genuine problem visible in its exact fragment" in request
     assert "suggestion must meaningfully differ" in request
-    assert "If uncertain whether something is wrong, omit it" in request
-    assert "Fewer high-confidence findings" in request
+    # Uncertainty is still a reason to say nothing - but being the fifth true
+    # thing is not. "Fewer high-confidence findings are preferable" is what a
+    # small model obeyed by returning one correction for five mistakes.
+    assert "If uncertain whether something is wrong, still omit it" in request
+    assert "Fewer high-confidence findings" not in request
+    assert "EVERY genuine error" in request
+    assert "highest `confidence` to the errors that matter most" in request
     assert "confidence >= 0.75" in request
     assert "TARGET LEVEL (LEARNING CONTEXT ONLY)" in request
     assert "actual demonstrated performance" in request

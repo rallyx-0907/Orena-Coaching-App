@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import {
   RUBRIC,
+  anchored,
   shownIssues,
   shownStrengths,
   writingReviewFailure,
@@ -97,11 +98,23 @@ const full = {
   next_actions: ['Past tense of irregular verbs'],
 };
 
-// A struck-through phrase must always be one the learner actually wrote. An
-// evaluator that quotes text back inaccurately is a source of confusion the
-// learner cannot resolve, so the fragment is dropped rather than shown.
+/* A finding is kept; a highlight is earned.
+
+   An evaluator that quotes text back inaccurately cannot be allowed to point
+   at the learner's words - a struck-through phrase must always be one they
+   actually wrote. But dropping the whole finding for it meant a real mistake
+   went unmentioned because the quote lost an apostrophe, which is the bug
+   this pair of assertions now guards from both sides: every trustworthy
+   finding survives, and only the ones that can be located are offered a span. */
 const shown = shownIssues(full, text);
-assert.equal(shown.length, 1, 'an issue quoting words the learner never wrote is not shown');
+assert.equal(shown.length, 2, 'every trustworthy finding is kept');
+assert.equal(
+  shown.filter((issue) => anchored(issue, text)).length,
+  1,
+  'but only the one the learner actually wrote can be pointed at',
+);
+assert.equal(anchored({ quote: 'not in the learner text' }, text), false);
+assert.equal(anchored({ quote: 'buyed some bread' }, text), true);
 assert.equal(shown[0].quote, 'go to the shop yesterday');
 assert.deepEqual(shownIssues({}, text), [], 'no issues is not an error');
 const visibleStrengths = shownStrengths(full, text);
@@ -122,7 +135,16 @@ for (const fragment of [
 ]) {
   assert.ok(html.includes(fragment), `the review dropped "${fragment}"`);
 }
-assert.ok(!html.includes('not in the learner text'), 'a filtered issue must not reach the page');
+/* The unanchored finding is kept as guidance - it is a real mistake and the
+   learner should hear about it - but it is never offered a span to jump to.
+   A strength is different: praising words the learner did not write is not
+   guidance about anything, so an invented one is still dropped. */
+assert.ok(html.includes('not in the learner text'), 'a finding that cannot be located is still said');
+assert.equal(
+  (html.match(/data-locate=/g) || []).length,
+  1,
+  'but only the located one offers to be found in the text',
+);
 assert.ok(!html.includes('This evidence was invented.'), 'invented strength evidence must not reach the page');
 assert.equal(
   (html.match(/data-why=/g) || []).length,

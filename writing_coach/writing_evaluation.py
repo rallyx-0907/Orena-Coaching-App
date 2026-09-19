@@ -259,10 +259,24 @@ def _normalize_errors(
         suggestion = _bounded_text(item.get("suggestion", ""), 1000)
         rule = _bounded_text(item.get("mini_rule_vi", ""), 1500)
         confidence = _normalized_confidence(item.get("confidence", 1.0))
+        # A finding that cannot be pointed at is still a finding.
+        #
+        # This used to drop any error whose fragment was not verbatim in the
+        # learner text, which is right for *highlighting* - pointing at the
+        # wrong words is worse than pointing at nothing - and wrong for
+        # keeping it: an evaluator that normalised an apostrophe or trimmed a
+        # word lost the whole correction, and the learner never heard that the
+        # verb form was wrong at all.
+        #
+        # So the two questions are separated. Is it trustworthy: confidence,
+        # explanation, rule, a suggestion that differs. Can it be anchored:
+        # whether the fragment occurs literally. An unanchored finding keeps
+        # everything except the span, and the surface shows it as guidance
+        # without offering to find it in the text.
+        anchored = bool(fragment) and fragment in learner_text
         if (
             confidence < CONFIDENCE_THRESHOLD
             or not fragment
-            or fragment not in learner_text
             or not explanation
             or not rule
         ):
@@ -285,6 +299,7 @@ def _normalize_errors(
                 "fragment": fragment,
                 "quote": fragment,
                 "span": span,
+                "anchored": anchored,
                 "explanation_vi": explanation,
                 "suggestion": suggestion,
                 "mini_rule_vi": rule,
