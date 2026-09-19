@@ -110,12 +110,16 @@ function card(entry, c, view) {
   return `<a class="library-item" href="${esc(entry.href)}" data-kind="${entry.kind}"><span class="library-item__visual">${entry.visual}${bar}</span><strong lang="${esc(entry.language)}">${esc(entry.title)}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</a>`;
 }
 
-export function renderLibraryBrowse(root, ctx, sources) {
+/* `only` scopes the whole surface to one kind - the Reading room is this same
+   library with books and texts in it, not a second library. The type facet
+   goes with the choice it no longer offers. */
+export function renderLibraryBrowse(root, ctx, sources, { only = null } = {}) {
   const { api, c, language, alive } = ctx;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const reading = readingFromMemory(ctx.memory);
+  const scope = only ? KINDS.filter((kind) => only.includes(kind)) : null;
   const state = {
-    kinds: new Set(),
+    kinds: new Set(scope || []),
     levels: new Set(),
     topics: new Set(),
     query: '',
@@ -162,7 +166,7 @@ export function renderLibraryBrowse(root, ctx, sources) {
       `<label class="facet-check"><input type="checkbox" data-facet-kind="${kind}"${state.kinds.has(kind) ? ' checked' : ''}><span class="facet-check__box" aria-hidden="true">${icon('check', { size: 12 })}</span><span>${esc(r[`libraryType_${kind}`])}</span></label>`;
     const chip = (group, value, label) =>
       `<button type="button" class="facet-chip" data-facet-${group}="${esc(value)}" aria-pressed="${state[group === 'level' ? 'levels' : 'topics'].has(value)}">${esc(label)}</button>`;
-    return `<div class="library-facets__head"><strong>${esc(r.libraryFilters)}</strong><button type="button" class="quiet" data-facet-clear>${esc(r.libraryClear)}</button></div><fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryType)}</legend>${KINDS.map(kindRow).join('')}</fieldset>${levels.length ? `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryLevel)}</legend><div class="facet-chips">${levels.map((level) => chip('level', level, level)).join('')}</div></fieldset>` : ''}${topics.length ? `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryTopic)}</legend><div class="facet-topics">${topics.map((topic) => chip('topic', topic, topicLabel(c, topic))).join('')}</div></fieldset>` : ''}<button type="button" class="library-facets__clear" data-facet-clear>${icon('x', { size: 14 })}<span>${esc(r.libraryClearFilters)}</span></button><button type="button" class="primary library-facets__show" data-sheet-close>${esc(r.libraryShowResults.replace('{n}', String(everything().filter((x) => matches(x)).length)))}</button>`;
+    return `<div class="library-facets__head"><strong>${esc(r.libraryFilters)}</strong><button type="button" class="quiet" data-facet-clear>${esc(r.libraryClear)}</button></div>${scope ? '' : `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryType)}</legend>${KINDS.map(kindRow).join('')}</fieldset>`}${levels.length ? `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryLevel)}</legend><div class="facet-chips">${levels.map((level) => chip('level', level, level)).join('')}</div></fieldset>` : ''}${topics.length ? `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryTopic)}</legend><div class="facet-topics">${topics.map((topic) => chip('topic', topic, topicLabel(c, topic))).join('')}</div></fieldset>` : ''}<button type="button" class="library-facets__clear" data-facet-clear>${icon('x', { size: 14 })}<span>${esc(r.libraryClearFilters)}</span></button><button type="button" class="primary library-facets__show" data-sheet-close>${esc(r.libraryShowResults.replace('{n}', String(everything().filter((x) => matches(x)).length)))}</button>`;
   };
 
   const section = (kind, entries) => {
@@ -189,7 +193,7 @@ export function renderLibraryBrowse(root, ctx, sources) {
     const byKind = Object.fromEntries(KINDS.map((kind) => [kind, all.filter((x) => x.kind === kind)]));
     const shown = KINDS.filter((kind) => !state.kinds.size || state.kinds.has(kind));
     const sections = shown.map((kind) => section(kind, byKind[kind])).join('');
-    const active = state.kinds.size + state.levels.size + state.topics.size;
+    const active = (scope ? 0 : state.kinds.size) + state.levels.size + state.topics.size;
     const empty = !all.length && state.books !== null
       ? `<div class="state-panel state-panel--empty">${icon('magnifying-glass', { size: 22 })}<div><strong>${esc(r.libraryNoResults)}</strong></div><button type="button" class="primary" data-facet-clear>${esc(r.libraryClearFilters)}</button></div>`
       : '';
@@ -213,7 +217,7 @@ export function renderLibraryBrowse(root, ctx, sources) {
     root.querySelectorAll('[data-facet-level]').forEach((button) => (button.onclick = () => toggle(state.levels, button.dataset.facetLevel)));
     root.querySelectorAll('[data-facet-topic]').forEach((button) => (button.onclick = () => toggle(state.topics, button.dataset.facetTopic)));
     root.querySelectorAll('[data-facet-clear]').forEach((button) => (button.onclick = () => {
-      state.kinds.clear();
+      state.kinds = new Set(scope || []);
       state.levels.clear();
       state.topics.clear();
       state.query = '';

@@ -86,6 +86,19 @@
   color: var(--text-primary);
 }
 
+/* A chip that names a domain wears that domain's hue, as a label rather than
+   as a control: the mono label the design uses for a kind. */
+.chip--domain {
+  border-color: color-mix(in srgb, var(--tile-ink) 40%, transparent);
+  background: color-mix(in srgb, var(--tile-hue) 14%, transparent);
+  color: var(--tile-ink);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 /* ---- Segmented control: one choice among a few, in one pill. ----------- */
 .segmented {
   display: inline-flex;
@@ -172,6 +185,16 @@
 }
 .skeleton--line {
   block-size: 12px;
+  border-radius: var(--radius-pill);
+}
+.skeleton--title {
+  block-size: 34px;
+  inline-size: min(100%, 420px);
+}
+.skeleton--chip {
+  display: inline-block;
+  block-size: 30px;
+  inline-size: 72px;
   border-radius: var(--radius-pill);
 }
 @media (prefers-reduced-motion: no-preference) {

@@ -15,6 +15,8 @@
 import { esc, dialog } from './html.js';
 import { mountLexicalLayer } from './lexical.js';
 import { symbol } from './symbols.js';
+import { icon } from './phosphor.js';
+import { referenceCopy } from './reference.js';
 import { link } from '../product/intent.js';
 import {
   EXPLAIN_LIMITS,
@@ -86,6 +88,14 @@ export function mountReader(
       ? `<a class="reader-step" href="${esc(href)}" rel="${direction === 'back' ? 'prev' : 'next'}" aria-label="${esc(label)}">${symbol(direction, 20)}</a>`
       : `<span class="reader-step" aria-hidden="true">${symbol(direction, 20)}</span>`;
 
+  /* The support-language layer's state, declared with the other reading state
+     because the first paint already asks whether it is on. */
+  const translations = new Map();
+  let showSupport = false;
+  const supportLine = (index) => {
+    const text = translations.get(index);
+    return showSupport && text ? `<p class="reader-support" lang="${esc(support || '')}">${esc(text)}</p>` : '';
+  };
   const bodyHtml = () => {
     const visible = blocks.slice(0, shown);
     const next =
@@ -94,17 +104,72 @@ export function mountReader(
         : item.question
           ? `<p class="reader-question">${esc(item.question)}</p>`
           : '';
-    return `${readerArticleHtml(c, { title: item.title, language, blocks: visible, marks })}${next}`;
+    const article = readerArticleHtml(c, { title: item.title, language, blocks: visible, marks });
+    /* The support-language line sits under the paragraph it translates, as the
+       design draws it - a layer over the same text, never a second column. */
+    const withSupport = showSupport
+      ? article.replace(/<\/p>/g, (match, offset, whole) => {
+          const before = whole.slice(0, offset);
+          const opened = [...before.matchAll(/data-block="(\d+)"/g)].pop();
+          return `</p>${opened ? supportLine(Number(opened[1])) : ''}`;
+        })
+      : article;
+    return `${withSupport}${next}`;
   };
 
   const chapterNav = place
     ? `<nav class="reader-chapter-nav" aria-label="${esc(c.readerContents)}">${prevHref ? `<a href="${esc(prevHref)}" rel="prev">${symbol('back', 18)}<span>${esc(c.readerPrevious)}</span></a>` : '<span></span>'}<span class="reader-chapter-nav__where">${esc(where)}</span>${nextHref ? `<a href="${esc(nextHref)}" rel="next"><span>${esc(c.readerNext)}</span>${symbol('forward', 18)}</a>` : `<span class="reader-chapter-nav__end">${esc(c.readerEnd)}</span>`}</nav>`
     : '';
 
-  host.innerHTML = `<div class="reader" data-reader><header class="reader-bar"><a class="reader-bar__back" href="${esc(link('practice', { intent: 'reading' }))}">${symbol('back', 18)}<span>${esc(c.readerBackToReading)}</span></a><div class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span><span class="reader-bar__place">${where ? `<span>${esc(where)}</span><span aria-hidden="true"> · </span>` : ''}<span data-reader-percent>${esc(progressLabel(c, 0))}</span></span></div><div class="reader-bar__tools">${place ? `<span class="reader-bar__steps">${stepLink(prevHref, c.readerPrevious, 'back')}${stepLink(nextHref, c.readerNext, 'forward')}</span><button type="button" class="reader-tool" data-reader-toc aria-label="${esc(c.readerContents)}" aria-haspopup="dialog">${symbol('contents', 20)}</button>` : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button><button type="button" class="reader-tool" data-keep aria-pressed="${kept()}" aria-label="${esc(c.readerKeep)}">${symbol('bookmark', 20)}</button></div><div class="reader-progress" aria-hidden="true"><span data-reader-progress></span></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-body" data-reader-body>${bodyHtml()}${chapterNav}</div>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
+  /* The approved reader (D-059 Phase 5): a compact bar - the way back, where
+     the learner is, the progress rail, the reading layers and the type size -
+     over a split pane. The text takes the page; the side panel holds the word
+     just looked up, notes and the contents. A phone drops the panel: the word
+     arrives as the anchored sheet the design draws. */
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const layerChip = (key, label, on, available) =>
+    `<button type="button" class="reader-layer" data-reader-layer="${key}" aria-pressed="${on}"${available ? '' : ` aria-disabled="true" title="${esc(r.readerLayerUnavailable)}"`}>${esc(label)}</button>`;
+  const tabs = ['word', 'notes', 'chapters'].filter((tab) => tab !== 'chapters' || place);
+  host.innerHTML = `<div class="reader" data-reader><header class="reader-bar"><a class="reader-bar__back" href="${esc(origin || link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}${where ? ` · ${esc(where)}` : ''}</span><div class="reader-progress" aria-hidden="true"><span data-reader-progress></span></div><span class="reader-bar__percent ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button>${book ? '' : `<button type="button" class="reader-tool" data-keep aria-pressed="${kept()}" aria-label="${esc(c.readerKeep)}">${symbol('bookmark', 20)}</button>`}</div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout"><div class="reader-body" data-reader-body>${bodyHtml()}${chapterNav}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
+    .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
+    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside></div>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
 
   const reader = host.querySelector('[data-reader]');
   const body = host.querySelector('[data-reader-body]');
+  const asidePanel = host.querySelector('[data-reader-panel]');
+  let tab = 'word';
+  const wide = () => window.matchMedia('(min-width: 901px)').matches;
+  /* The words kept while reading this text, as the design's "saved in this
+     chapter" list - read from device memory, never a second store. */
+  const savedHere = () =>
+    Object.entries(memory.value.keptLanguage || {})
+      .filter(([, kept]) => !kept?.where || kept.where === barTitle || kept.where === item.title)
+      .slice(0, 8);
+  const panelPlaceholder = () => {
+    if (tab === 'chapters' && place)
+      return tocHtml(c, { bookId: book.id, chapters: book.chapters, currentId: book.chapterId, provenance: book.provenance });
+    if (tab === 'notes')
+      return `<div class="state-panel state-panel--empty">${icon('pencil-simple', { size: 20 })}<div><strong>${esc(r.savedNotesUnavailable)}</strong></div></div>`;
+    const saved = savedHere();
+    return `<p class="reader-aside__hint">${icon('hand-tap', { size: 16 })}<span>${esc(r.readerTapWord)}</span></p>${
+      saved.length
+        ? `<div class="reader-aside__saved"><span class="ds-label">${esc(r.readerSavedHere)}</span>${saved
+            .map(([term, kept]) => `<span class="reader-saved-row"><span lang="${esc(language)}">${esc(term)}</span><small class="ds-data">${esc(kept?.reading || kept?.pronunciation || '')}</small></span>`)
+            .join('')}</div>`
+        : ''
+    }`;
+  };
+  const paintPanel = () => {
+    asidePanel.innerHTML = panelPlaceholder();
+    asidePanel.querySelectorAll('.reader-toc a').forEach((a) => a.setAttribute('data-reader-chapter', ''));
+  };
+  host.querySelectorAll('[data-reader-tab]').forEach((button) => {
+    button.onclick = () => {
+      tab = button.dataset.readerTab;
+      host.querySelectorAll('[data-reader-tab]').forEach((x) => x.setAttribute('aria-selected', String(x === button)));
+      paintPanel();
+    };
+  });
   const settingsPop = host.querySelector('[data-reader-settings]');
   const settingsToggle = host.querySelector('[data-reader-settings-toggle]');
   const percentLabel = host.querySelector('[data-reader-percent]');
@@ -164,12 +229,40 @@ export function mountReader(
   });
   applySettings();
 
+  /* --- Reading layers --- */
+  async function toggleSupport(button) {
+    showSupport = !showSupport;
+    button.setAttribute('aria-pressed', String(showSupport));
+    reader.dataset.readerSupport = showSupport ? 'on' : 'off';
+    if (!showSupport) return repaintBody();
+    const missing = blocks
+      .map((block, index) => ({ block, index }))
+      .filter(({ block, index }) => block.type === 'paragraph' && !translations.has(index))
+      .slice(0, 12);
+    if (missing.length) {
+      button.disabled = true;
+      const answered = await lexical.translateBlocks(
+        missing.map(({ block, index }) => ({ index, text: block.text })),
+      );
+      for (const [index, line] of answered) translations.set(index, line);
+      button.disabled = false;
+    }
+    repaintBody();
+  }
+  host.querySelectorAll('[data-reader-layer]').forEach((button) => {
+    button.onclick = () => {
+      if (button.getAttribute('aria-disabled') === 'true') return;
+      if (button.dataset.readerLayer === 'support') toggleSupport(button);
+    };
+  });
+
   /* --- Keep, contents, dialogue --- */
   const keepButton = host.querySelector('[data-keep]');
-  keepButton.onclick = () => {
-    memory.keep(item.id);
-    keepButton.setAttribute('aria-pressed', String(kept()));
-  };
+  if (keepButton)
+    keepButton.onclick = () => {
+      memory.keep(item.id);
+      keepButton.setAttribute('aria-pressed', String(kept()));
+    };
   host.querySelectorAll('[data-reader-toc]').forEach(
     (button) =>
       (button.onclick = () => {
@@ -235,6 +328,10 @@ export function mountReader(
     title,
     origin,
     alive,
+    dock: () => (wide() ? (tab === 'word' ? asidePanel : null) : null),
+    onPanel: (open) => {
+      if (!open) paintPanel();
+    },
     units: {
       root: () => page(),
       unitOf: (node) => node?.closest?.('[data-block]') || null,
@@ -247,6 +344,8 @@ export function mountReader(
     if (event.target.closest('[data-next]')) return;
     lexical.tapWord(event);
   });
+
+  paintPanel();
 
   const closeSettingsIfOutside = (event) => {
     if (!settingsPop.hidden && !settingsPop.contains(event.target) && !settingsToggle.contains(event.target))

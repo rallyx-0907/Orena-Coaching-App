@@ -48,7 +48,7 @@ surface unchanged.
 | Home | yes | yes | yes | yes | continuation, catalogues, daily feed | Continue cards, rails, words stack (flip, step, swipe) | begin, empty catalogue, loading skeleton | 1440/1024/390 browser, gates | Integrated |
 | Progress | yes | yes | yes | yes | saved vocabulary, LearnerSummary | domain links | skeleton, unmeasured, degraded panel | 1440/1024/390 browser | Integrated (gaps tracked) |
 | Library, search, saved, history | yes | yes | yes | yes | books (paged), passages, media, collections, saved vocabulary, kept phrases, essays, reading sessions, speaking takes | facets, filter sheet, library search, sort, grid/list, grouped global search, saved tabs, history | loading skeletons, empty, degraded panels | 1440/390 browser, gates | Integrated |
-| Reading | - | - | - | - | - | - | - | - | Not started |
+| Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels | 1440/390 browser, gates | Integrated (quiz and chapter complete pending; gaps tracked) |
 | Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
@@ -128,7 +128,24 @@ and Grammar rides with the practice map. **The sheet control is removed in
 Phase 7**, when every practice room has a drawn phone entry; nothing else may
 be added to it in the meantime.
 
-Next: Phase 5, Reading (reading library, book detail, reader workspace, quiz and chapter complete). Backend gaps: `UI_BACKEND_GAPS.md`.
+Phase 5 notes (parity): the Reading room is the approved library scoped to
+books and texts - one library (`ui/library-browse.js`), not a second one - so
+the retired cover grid, its shelves and its inline detail state are gone. A
+book card leads to the book page (`#/book`), rebuilt to Part 4 section 16:
+overview first, chapters below, side column last. The reader follows Part 1
+section 04: a compact bar (back, place, progress rail, reading layers, type
+size), the text beside a word panel on a desk and as an anchored sheet on a
+phone, and a tapped word answers itself in the dictionary rather than opening
+a toolbar. Every figure the design draws that nothing measures keeps its place
+with a dash and a reason (GAP-028 to GAP-036).
+
+Two deviations, both recorded: a chapter row shows the chapter's real word
+count where the mockup draws minutes (GAP-029), and the phone keeps the primary
+action inline in the hero rather than in a fixed bottom bar, because Orena's
+phone shell already owns the bottom of the screen with its tab bar.
+
+Next: Phase 5 continues with the reading quiz (Part 3 section 13) and chapter
+completion, then Phase 6, Vocabulary. Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

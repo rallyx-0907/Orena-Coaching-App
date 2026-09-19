@@ -1878,3 +1878,39 @@ the labels follow it, and D-053's floor still governs reading content.
 
 **Supersedes / Superseded by:** Supersedes the typography clause of D-059 and
 the typography difference recorded in D-060.
+
+## D-062 — One library, one book page, and a reader whose word panel is the dictionary
+
+**Status:** Accepted, under D-059 Phase 5 and D-060 (2026-09-20).
+
+**Decision:** Reading is the approved library scoped to what can be read. The
+Reading room renders `ui/library-browse.js` with `only: ['books']` - the same
+search, facets, sections and cards as `#/content` - so there is one library
+implementation, not two. The retired cover grid, its shelves and its inline
+book-detail state are removed with the surface they served. A book card leads
+to `#/book`, rebuilt to Screens part 4 section 16: cover, chips, progress and
+one action above the fold; chapters below with a single highlighted next row,
+an unread-only filter and show-all; description, the words this book taught and
+recommendations in the side column. The reader follows part 1 section 04: a
+compact bar (back, place, progress rail, reading layers, type size) over a
+split pane, with the word panel docked beside the text on a desk and anchored
+as a sheet on a phone. A tapped word answers itself - reading, meaning, save -
+because that is the dictionary; the selection toolbar remains for a dragged
+phrase, where the learner may have meant any of its tools.
+
+**Reason:** D-060 makes the mockup decide, and the mockup draws one library and
+one book page. Keeping the legacy grid beside the approved one would have left
+two libraries with different cards, and a second book detail to maintain.
+
+**Consequences:** `ui/library.js` is the book page only (`librarySection`,
+`paintBookPage`, `wordsFromBook`); `ui/world.js` no longer paints a reading
+grid; `ui/library-browse.js` takes `only`; `ui/reader.js` and `ui/lexical.js`
+carry the split pane, the docked panel and tap-to-answer;
+`scripts/test_orena_shared_reading_library.mjs` follows. Two deviations are
+recorded in `DESIGN_SYSTEM_MIGRATION.md`: a chapter row shows its real word
+count where the mockup draws minutes (GAP-029), and the phone keeps the book's
+primary action inline because Orena's phone shell owns the bottom bar. Missing
+backend capability is GAP-028 to GAP-036, all `NOT_STARTED`.
+
+**Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 5; retires
+the D-057 reading-room cover grid and its shelves.

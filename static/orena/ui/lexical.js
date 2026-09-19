@@ -114,6 +114,13 @@ export function mountLexicalLayer({
   title,
   origin = null,
   alive = () => true,
+  /* Where the answer is shown. With a `dock` - the reader's side panel on a
+     desk - the panel lives inside it, as the approved reader draws it; without
+     one it anchors to the word, and on a phone CSS makes it the bottom sheet.
+     `onPanel` lets the host restore its own placeholder when nothing is
+     looked up. */
+  dock = null,
+  onPanel = () => {},
 }) {
   const { api, c, language, memory } = ctx;
   const support = ctx.support;
@@ -157,10 +164,12 @@ export function mountLexicalLayer({
     toolbar?.remove();
     toolbar = null;
   };
+  const dockNode = () => (typeof dock === 'function' ? dock() : dock) || null;
   const closePanel = () => {
     panel?.remove();
     panel = null;
     panelTarget = null;
+    onPanel(false);
   };
   const anchorBelow = (element, rect) => {
     if (narrow()) return element.removeAttribute('style');
@@ -204,7 +213,6 @@ export function mountLexicalLayer({
       panel.setAttribute('aria-modal', 'false');
       panel.setAttribute('aria-label', target.text);
       panel.tabIndex = -1;
-      surface.append(panel);
       panel.addEventListener('mousedown', (event) => {
         if (event.target.closest('button')) event.preventDefault();
       });
@@ -214,11 +222,21 @@ export function mountLexicalLayer({
         if (button) runAction(button.dataset.panelAction);
       });
     }
+    const host = dockNode();
+    if (host) {
+      panel.classList.add('reader-panel--docked');
+      panel.removeAttribute('style');
+      if (panel.parentElement !== host) host.replaceChildren(panel);
+    } else {
+      panel.classList.remove('reader-panel--docked');
+      if (panel.parentElement !== surface) surface.append(panel);
+    }
     panelTarget = target;
     const closeLabel = document.documentElement.dataset.close || 'Close';
     panel.innerHTML = `<button type="button" class="reader-panel__close" data-panel-close aria-label="${esc(closeLabel)}">×</button>${lookupPanelHtml(c, { selection: target.text, language, support, kind: target.kind, state, result, canSpeak, kept: alreadyKept(target.text) })}`;
     if (!translatable) panel.querySelector('[data-panel-action="retry"]')?.remove();
-    anchorBelow(panel, target.rect);
+    if (!dockNode()) anchorBelow(panel, target.rect);
+    onPanel(true);
   };
 
   // A word is looked up; a phrase or passage is translated. Never AI.
@@ -409,14 +427,29 @@ export function mountLexicalLayer({
       tokens?.find((token) => offset >= token.start && offset < token.end) ||
       plainWordAt(text, offset);
     if (!span || !selectRange(unit, span.start, span.end)) return;
-    evaluateSelection();
+    evaluateSelection({ tapped: true });
   }
 
-  const evaluateSelection = () => {
+  /* A tapped word answers itself. The approved reader shows the word panel -
+     reading, meaning, Save - the moment a word is touched, so the lookup runs
+     straight away. It is the dictionary, never AI: "explain" stays an explicit
+     action inside the panel. A dragged phrase or passage still offers the
+     toolbar first, because there the learner may have meant any of its tools. */
+  const evaluateSelection = ({ tapped = false } = {}) => {
     if (!alive()) return;
     const target = readSelection();
-    if (target) showToolbar(target);
-    else if (!panel) hideToolbar();
+    if (!target) return void (!panel && hideToolbar());
+    if (tapped && target.kind === 'word') {
+      hideToolbar();
+      active = target;
+      showAnswer(target);
+      return;
+    }
+    /* The selection a panel is already answering never re-opens the toolbar:
+       selecting the word is how the tap reaches the dictionary, so the delayed
+       selection pass that follows it must not talk over the answer. */
+    if (panel && panelTarget && panelTarget.text === target.text) return;
+    showToolbar(target);
   };
   const onSelectionChange = () => {
     clearTimeout(selectionTimer);
@@ -458,6 +491,33 @@ export function mountLexicalLayer({
   window.addEventListener('scroll', onPageScroll, { passive: true });
 
   return {
+    /* The support-language layer a room can turn on over its own text. It is
+       here, with every other answer about text, so Reading and Listening
+       cannot drift into two translators (one implementation, one contract).
+       Returns a Map of segment index to translated line; a failure returns an
+       empty map and the room simply shows no layer. */
+    async translateBlocks(segments) {
+      if (!translatable || !segments.length) return new Map();
+      const out = new Map();
+      try {
+        const value = await api.readingTranslate({
+          source_language: language,
+          target_language: support,
+          segments: segments.map(({ index, text }) => ({
+            segment_id: `b${index}`,
+            text: String(text).slice(0, TRANSLATE_LIMITS.text),
+          })),
+        });
+        for (const translated of value?.translations || []) {
+          const index = Number(String(translated.segment_id).slice(1));
+          if (Number.isInteger(index) && translated.translated_meaning)
+            out.set(index, translated.translated_meaning);
+        }
+      } catch {
+        // No layer; the text is untouched.
+      }
+      return out;
+    },
     tapWord,
     evaluateSelection,
     closePanel,

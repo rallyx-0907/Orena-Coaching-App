@@ -18,12 +18,8 @@ import {
 import { contentFor } from '../content/texts.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { readingEntry, readingSessionId } from '../content/reading.js';
-import { openReadingRequest, readingRow } from './reading.js';
-import {
-  publishedReadings,
-  filterReadings,
-} from '../content/reading-library.js';
-import { collectionSearch, bindCollectionSearch } from './collection-search.js';
+import { openReadingRequest } from './reading.js';
+import { publishedReadings } from '../content/reading-library.js';
 import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
@@ -31,7 +27,6 @@ import {
   bindVocabularyFeedCarousel,
   vocabularyKeepPayload as sharedVocabularyKeepPayload,
 } from './vocabulary-experience.js';
-import { paintLibraryGrid } from './library.js';
 import { renderLibraryBrowse } from './library-browse.js';
 import { renderSearch } from './search.js';
 import { listeningItem, paintMediaLibrary } from './media-library.js';
@@ -462,24 +457,13 @@ export async function renderWorld(root, ctx) {
         : continuation;
     root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
-        /* The library is the room. Search, facets and the whole flat list of
-           everything readable are how a learner finds one specific thing they
-           already have in mind - a utility, folded away until it is wanted,
-           rather than the first thing the page shows (D-057 rule 17). */
-        ? `<section class="voices" data-library-grid aria-label="${esc(c.libraryTitle)}"></section><details class="library-utility"><summary><span>${esc(c.libraryFind)}</span><button class="quiet" type="button" data-read>＋ ${esc(c.readingBring)}</button></summary>${readingError}${collectionSearch(
-            c,
-            {
-              facet: c.collectionOrigin,
-              options: [
-                { value: 'provided', label: c.provided },
-                { value: 'generated', label: c.generated },
-                { value: 'imported', label: c.imported },
-              ],
-            },
-          )}<div data-reading-results>${
-            readable.map((x) => readingRow(x, c)).join('') ||
-            `<p>${c.empty}</p>`
-          }</div></details>`
+        /* Reading opens on the library the design draws (D-059 Phase 5), with
+           books and the learner's own texts in it: the same search, facets,
+           sections and cards as #/content, scoped to what can be read. It is
+           one library, not a second one - a book card leads to the book page
+           (#/book), which is where a chapter is chosen. Bringing a passage in
+           stays the room's own action. */
+        ? `${readingError}<div class="reading-library" data-library-browse></div><div class="button-row reading-bring"><button class="quiet" type="button" data-read>＋ ${esc(c.readingBring)}</button></div>`
         : (() => {
             /* Listening is a media library, not a list of documents. The shared
                catalogue, what an administrator imported and what the learner
@@ -500,10 +484,12 @@ export async function renderWorld(root, ctx) {
           })()
     }${practiceContinuation}`;
     if (intent === 'reading')
-      releaseLibrary = paintLibraryGrid(root.querySelector('[data-library-grid]'), {
-        ...ctx,
-        bindShelves: bindContentRails,
-      }) || (() => {});
+      releaseLibrary = renderLibraryBrowse(
+        root.querySelector('[data-library-browse]'),
+        ctx,
+        { readable, media: [] },
+        { only: ['books'] },
+      ) || (() => {});
     if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
   } else if (location.page === 'search') {
     releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});
@@ -580,12 +566,6 @@ export async function renderWorld(root, ctx) {
         };
       }),
   );
-  bindCollectionSearch(root, c, ({ query, facet }) => {
-    const found = filterReadings(readable, { query, origin: facet });
-    root.querySelector('[data-reading-results]').innerHTML =
-      found.map((x) => readingRow(x, c)).join('') || `<p>${c.empty}</p>`;
-    return found.length;
-  });
   bindImages(root, c);
   return () => {
     unbindContentRails();
