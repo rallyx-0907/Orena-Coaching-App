@@ -1,0 +1,542 @@
+/* The shell (D-059, Design Contract rule 38) - the one owner of the app's
+   chrome: the rail, the phone's top bar and tab bar, the destinations sheet,
+   and where #main sits beside or between them. Loaded last so nothing earlier
+   decides the frame. Colour is read only from theme.css.
+
+   Three compositions of the same parts:
+   - desk (above 1100px): a labelled rail - mark, destinations, Practice, the
+     learner's card at its foot;
+   - tablet (901-1100px): the same rail reduced to icons;
+   - phone (900px and below): a slim top bar and a tab bar at the thumb, with
+     every destination one control away in a sheet. */
+
+:root {
+  --rail-width: 248px;
+  --tabbar-height: 64px;
+}
+
+/* ---- The mark -------------------------------------------------------- */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display-font);
+  font-size: 22px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.brand-tail {
+  display: block;
+  flex: none;
+  inline-size: 30px;
+  block-size: 30px;
+  background: url('/orena-assets/assets/mark.svg') center / contain no-repeat;
+}
+.brand-small {
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+}
+
+/* ---- The rail: desk and tablet --------------------------------------- */
+#shell {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: var(--z-shell);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  inline-size: var(--rail-width);
+  padding: 22px 14px 14px;
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+#shell > .brand {
+  padding: 2px 10px 4px;
+}
+#shellNav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.nav-sheet-head {
+  display: none;
+}
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 40px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+.nav-link > svg {
+  flex: none;
+}
+.nav-link:hover {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-primary);
+}
+/* Where the learner is: a raised surface with its own light pool - the live
+   thing is the only lit thing in the rail. */
+.nav-link[aria-current='page'] {
+  background: var(--bloom), var(--surface-elevated);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.nav-group--main .nav-link[aria-current='page'] > svg {
+  color: var(--action-text);
+}
+.nav-link--sub {
+  min-block-size: 32px;
+  padding-block: 4px;
+  padding-inline-start: 44px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+.nav-link--sub > svg {
+  opacity: 0.8;
+}
+.nav-dot {
+  inline-size: 6px;
+  block-size: 6px;
+  margin-inline-start: auto;
+  border-radius: 50%;
+  background: var(--progress);
+}
+.nav-heading {
+  display: block;
+  padding: 4px 12px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+}
+.nav-heading:hover,
+.nav-heading[aria-current='page'] {
+  color: var(--text-primary);
+}
+/* A practice room carries its domain hue in a small tile - never as the
+   row's ground (rule 32). */
+.nav-tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 9px;
+  color: var(--tile-ink);
+  background: color-mix(in srgb, var(--tile-hue) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tile-hue) 38%, transparent);
+}
+.nav-link[aria-current='page'] .nav-tile {
+  background: color-mix(in srgb, var(--tile-hue) 24%, transparent);
+}
+.nav-group--admin {
+  margin-block-start: auto;
+  padding-block-start: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.nav-group--admin .nav-link {
+  font-size: var(--text-xs);
+}
+
+/* The foot of the rail: bringing something in, and the learner. */
+.shell-foot {
+  display: grid;
+  gap: var(--space-2);
+  flex: none;
+  padding-block-start: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.shell-bring {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 36px;
+  padding: 6px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+.shell-bring:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--text-primary) 32%, transparent);
+}
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  inline-size: 100%;
+  min-block-size: 52px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  text-align: start;
+}
+.account-card:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.account-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 50%;
+  background: var(--artwork-wash);
+  color: #fff;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+}
+.account-text {
+  display: grid;
+  min-inline-size: 0;
+  flex: 1;
+}
+.account-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+.account-text small {
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+}
+.account-gear {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+/* Phone-only parts do not exist on a desk. */
+.shell-bar,
+.shell-tabs,
+.nav-backdrop {
+  display: none;
+}
+
+/* ---- Where the room sits -------------------------------------------- */
+#main {
+  min-block-size: 85vh;
+  margin-inline-start: var(--rail-width);
+  padding: var(--space-6) clamp(24px, 3.6vw, 64px) var(--space-16);
+}
+/* The default measure of a room's direct children stays in reference.css:
+   rooms.css narrows it at the same specificity and must load after it. */
+#footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin: 0 clamp(24px, 3.6vw, 64px) 0 calc(var(--rail-width) + clamp(24px, 3.6vw, 64px));
+  padding-block: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+#footer .quiet {
+  min-block-size: 32px;
+  color: var(--text-secondary);
+}
+
+/* ---- Tablet: the rail keeps its place and loses its words ----------- */
+@media (min-width: 901px) and (max-width: 1100px) {
+  :root {
+    --rail-width: 76px;
+  }
+  #shell {
+    padding-inline: 12px;
+    align-items: center;
+  }
+  #shell > .brand {
+    padding: 2px 0 4px;
+  }
+  .brand-word,
+  .nav-label,
+  .account-text,
+  .account-gear,
+  .shell-bring span {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* Every destination stays in the rail; a short window scrolls the list
+     inside the rail, silently, rather than dropping any of them. */
+  #shellNav {
+    align-items: center;
+    gap: var(--space-3);
+    inline-size: 100%;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  #shellNav::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-group {
+    align-items: center;
+  }
+  .nav-link,
+  .nav-link--sub {
+    justify-content: center;
+    inline-size: 48px;
+    min-block-size: 40px;
+    padding: 0;
+  }
+  .nav-heading {
+    inline-size: 32px;
+    block-size: 1px;
+    min-block-size: 0;
+    padding: 0;
+    margin-block: 4px 8px;
+    overflow: hidden;
+    color: transparent;
+    background: var(--border-strong);
+  }
+  .nav-dot {
+    position: absolute;
+    inset-block-start: 8px;
+    inset-inline-end: 8px;
+  }
+  .shell-foot {
+    inline-size: 100%;
+    justify-items: center;
+  }
+  .shell-bring,
+  .account-card {
+    justify-content: center;
+    inline-size: 48px;
+    padding: 0;
+    min-block-size: 44px;
+  }
+  .account-card {
+    border: 0;
+    background: none;
+  }
+}
+
+/* ---- Phone: top bar, tab bar, and the map as a sheet ---------------- */
+@media (max-width: 900px) {
+  :root {
+    --rail-width: 0px;
+  }
+  body {
+    padding-block-end: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  }
+  #shell {
+    position: sticky;
+    inset: 0 auto auto 0;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    inline-size: 100%;
+    min-block-size: 56px;
+    padding: 8px 16px;
+    /* Opaque, and no backdrop-filter: a filter here would become the
+       containing block for the fixed sheet and tab bar inside it. */
+    background: var(--surface-canvas);
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    overflow: visible;
+  }
+  #shell > .brand {
+    padding: 0;
+    font-size: 20px;
+  }
+  .brand-tail {
+    inline-size: 28px;
+    block-size: 28px;
+  }
+  .shell-foot {
+    display: none;
+  }
+  .shell-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-inline-start: auto;
+  }
+  #footer {
+    display: none;
+  }
+  #main {
+    margin-inline-start: 0;
+    padding: var(--space-4) 16px var(--space-8);
+  }
+
+  /* The sheet. Closed it is visibility:hidden - out of the tab order and the
+     accessibility tree - and it rises from the bottom, above the tab bar. */
+  #shellNav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: var(--z-sheet);
+    gap: var(--space-4);
+    max-block-size: min(82svh, 720px);
+    padding: var(--space-3) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom));
+    background: var(--surface-primary);
+    border-top: 1px solid var(--border-strong);
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: var(--shadow-overlay);
+    visibility: hidden;
+    transform: translateY(100%);
+    transition:
+      transform var(--duration-slow) var(--ease-standard),
+      visibility 0s linear var(--duration-slow);
+  }
+  #shell[data-menu='open'] #shellNav {
+    visibility: visible;
+    transform: none;
+    transition:
+      transform var(--duration-slow) var(--ease-standard),
+      visibility 0s;
+  }
+  .nav-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-2) 0;
+  }
+  .nav-sheet-head::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 8px;
+    inset-inline-start: calc(50% - 20px);
+    inline-size: 40px;
+    block-size: 4px;
+    border-radius: 999px;
+    background: var(--border-strong);
+  }
+  .nav-sheet-head strong {
+    font-size: var(--text-base);
+    font-weight: var(--weight-bold);
+  }
+  .nav-close {
+    display: grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border-radius: 50%;
+    color: var(--text-secondary);
+  }
+  .nav-link {
+    min-block-size: 44px;
+    font-size: var(--text-base);
+  }
+  .nav-link--sub {
+    min-block-size: 36px;
+    font-size: var(--text-sm);
+  }
+  .nav-heading {
+    padding-block-start: var(--space-2);
+    font-size: var(--text-xs);
+  }
+  /* Below the shell's own layer: #shell is a stacking context, so a curtain
+     above it would cover the sheet it opens. Above the room, which it dims. */
+  .nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-sticky);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--surface-overlay);
+    cursor: default;
+  }
+  #shell[data-menu='open'] ~ .nav-backdrop {
+    display: block;
+  }
+
+  /* The tab bar, at the thumb. */
+  .shell-tabs {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: var(--z-shell);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    block-size: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+    padding: 6px 6px env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--surface-sunken) 92%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-top: 1px solid var(--border-subtle);
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  .shell-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-block-size: 48px;
+    padding: 0;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: var(--weight-semibold);
+    line-height: 1.1;
+  }
+  .shell-tab[aria-current='page'] {
+    color: var(--action-text);
+  }
+  .shell-tab:hover:not(:disabled) {
+    color: var(--text-primary);
+  }
+
+  /* Working: scrolled into a room, the bar keeps the mark and the map, and
+     the tab bar steps aside so the learning has the height (rule 12). */
+  #shell[data-compact] {
+    min-block-size: 48px;
+    padding-block: 4px;
+  }
+  #shell[data-compact] .brand-word,
+  #shell[data-compact] .language-chip,
+  #shell[data-compact] [data-bring] {
+    display: none;
+  }
+  #shell[data-compact] .shell-tabs {
+    transform: translateY(100%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #shellNav,
+    #shell[data-menu='open'] #shellNav,
+    .shell-tabs {
+      transition: none;
+    }
+  }
+}
+
+/* A focused room recedes the chrome (rule 11): the reader keeps its own
+   treatment in reader.css. */

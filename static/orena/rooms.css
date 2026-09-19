@@ -726,7 +726,6 @@
    line's reading lives in the row's own slot, which reserves its space for
    every row at once, so nothing moves when the voice arrives. */
 
-
 /* ---------------------------------------------------------------------------
    The follow panel: the whole conversation, with the line being spoken opened
    up inside it.
@@ -861,8 +860,7 @@
 }
 /* A short laptop window: the opened line a step smaller, so the longest line,
    its meaning and the word guide still fit the list's height. */
-@media (min-width: 801px) and (max-height: 760px) {
-}
+
 /* A small laptop keeps the rail, so the panel takes an equal share of what is
    left rather than its minimum, and a long line wraps less. */
 @media (min-width: 801px) and (max-width: 1100px) {
@@ -1041,8 +1039,7 @@
 
 /* A small laptop or a tablet held sideways: the rail stays, so the caption
    column is narrow and the line wraps more. It is set a step smaller there. */
-@media (min-width: 901px) and (max-width: 1100px) {
-}
+
 /* A short window - a small laptop with its browser chrome - gives the heading
    less room, so the line being spoken keeps it. */
 @media (min-width: 901px) and (max-height: 700px) {
@@ -1078,7 +1075,6 @@
    generous.
    --------------------------------------------------------------------------- */
 @media (max-width: 600px) {
-  #main { padding-inline: var(--space-4); }
   /* Actions: found at a glance, touched without aiming, not billboard-sized. */
   .primary,
   .outline {
@@ -1823,3 +1819,66 @@ ul.pronunciation-words small { color: var(--muted); }
 /* Where the word was met, after the learner has committed to an answer. */
 .recall-where { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--text-xs); }
 .recall-done p { margin: var(--space-1) 0; }
+
+/* ---------------------------------------------------------------------------
+   Progress (D-059). One card per evidence domain: its tile, its activity, a
+   way into the room. No streak, minutes or chart - Orena records none of them.
+   --------------------------------------------------------------------------- */
+.progress-domains {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.progress-domain__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 76px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.progress-domain__link:hover {
+  border-color: var(--border-strong);
+}
+.progress-domain__text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-inline-size: 0;
+}
+.progress-domain__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-bold);
+}
+.progress-domain__value {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.progress-domain[data-state='unavailable'] .progress-domain__value {
+  color: var(--status-warning);
+}
+.progress-domain__go {
+  flex: none;
+  color: var(--text-muted);
+}
+.progress-footnote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: var(--space-6) 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.progress-footnote > svg {
+  flex: none;
+  color: var(--progress-text);
+}

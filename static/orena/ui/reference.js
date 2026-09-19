@@ -5,6 +5,7 @@ import { esc } from './html.js';
 import { scene } from './brand.js';
 import { continuationEntries, continuationPlace, hint, pageIntro } from './patterns.js';
 import { entryIcon } from './icons.js';
+import { icon } from './phosphor.js';
 import { art } from './content.js';
 import { continuationExperience, continuationLink } from '../product/intent.js';
 
@@ -31,6 +32,12 @@ export const referenceCopy = {
     language: 'My language', recall: 'Recall', continue: 'Continue', content: 'My content', admin: 'Platform Admin',
     world: 'A bigger world', make: 'Make it yours', keep: 'Your growing world',
     destinations: 'Destinations', closeDestinations: 'Close destinations',
+    home: 'Home', library: 'Library', progress: 'Progress', profile: 'Profile', you: 'You',
+    dictation: 'Dictation', settings: 'Settings', allPractice: 'All practice',
+    allDestinations: 'Everything in Orena', mainNavigation: 'Main', practiceNavigation: 'Practice',
+    languagePair: 'Learning {learning}, explained in {support}',
+    progressWindow: 'Period', progressWindow_7d: '7 days', progressWindow_30d: '30 days',
+    progressWindow_90d: '90 days', progressWindow_all: 'All time',
     invitation: 'A little curiosity.\nA bigger world.',
     welcome: 'Come for a story. Stay for what it opens up.',
     note: 'Listen closely. Wander through a story. Find something you want to say.',
@@ -78,6 +85,12 @@ export const referenceCopy = {
     speaking: '表达', vocabulary: '词汇', understanding: '句式与含义', language: '我的语言', recall: '回想',
     continue: '继续', content: '我的内容', world: '走进更大的世界', make: '用自己的方式表达', keep: '慢慢积累的世界',
     destinations: '去处', closeDestinations: '收起去处',
+    home: '首页', library: '书库', progress: '进度', profile: '个人', you: '我',
+    dictation: '听写', settings: '设置', allPractice: '全部练习',
+    allDestinations: 'Orena 的全部去处', mainNavigation: '主要', practiceNavigation: '练习',
+    languagePair: '正在学{learning}，用{support}讲解',
+    progressWindow: '时间范围', progressWindow_7d: '7 天', progressWindow_30d: '30 天',
+    progressWindow_90d: '90 天', progressWindow_all: '全部',
     invitation: '一点好奇，\n一个更大的世界。', welcome: '从一个故事开始，看看它会带你去哪里。',
     note: '听见一种声音，走进一个故事，找到自己想说的话。',
     featured: '打开另一扇窗', readNext: '在字里行间',
@@ -123,6 +136,23 @@ referenceCopy.vi = {
   keep: 'Những gì bạn giữ lại',
   destinations: 'Các điểm đến',
   closeDestinations: 'Đóng danh sách',
+  home: 'Trang chủ',
+  library: 'Thư viện',
+  progress: 'Tiến độ',
+  profile: 'Hồ sơ',
+  you: 'Bạn',
+  dictation: 'Chính tả',
+  settings: 'Cài đặt',
+  allPractice: 'Tất cả bài luyện',
+  allDestinations: 'Mọi nơi trong Orena',
+  mainNavigation: 'Chính',
+  practiceNavigation: 'Luyện tập',
+  languagePair: 'Đang học {learning}, giải thích bằng {support}',
+  progressWindow: 'Khoảng thời gian',
+  progressWindow_7d: '7 ngày',
+  progressWindow_30d: '30 ngày',
+  progressWindow_90d: '90 ngày',
+  progressWindow_all: 'Toàn bộ',
   fieldNote: 'Đi theo tò mò của bạn',
   continueLearning: 'Tiếp tục học',
   continueAction: 'Tiếp tục',
@@ -232,32 +262,140 @@ export function experienceFor(location) {
   if (page === 'practice' && intent === 'follow') return 'listening';
   return page === 'preferences' ? 'discover' : page;
 }
+/* The shell's destinations (D-059, Design Contract rule 38).
+
+   Five places a learner goes - Home, Library, Vocabulary, Progress, Profile -
+   and a Practice group of the rooms where they do the work. Nothing that
+   existed before is dropped to fit that shape: Continue sits under Home and
+   Recall under Vocabulary, every earlier hash keeps its meaning, and the
+   Practice heading itself still opens the full practice map.
+
+   `current` is derived from the same `experienceFor` the rooms use, so the
+   rail, the tab bar and the room can never disagree about where the learner
+   is. */
+const DESTINATIONS = [
+  { id: 'discover', page: 'discover', icon: 'house', label: 'home', sub: ['continue'] },
+  { id: 'content', page: 'content', icon: 'books', label: 'library' },
+  { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', sub: ['recall'] },
+  { id: 'progress', page: 'progress', icon: 'chart-line-up', label: 'progress' },
+];
+const SUBS = {
+  continue: { page: 'continue', icon: 'clock-counter-clockwise', label: 'continue' },
+  recall: { page: 'practice', intent: 'recall', icon: 'arrow-counter-clockwise', label: 'recall' },
+};
+const PRACTICE = [
+  { id: 'reading', page: 'practice', intent: 'reading', icon: 'book-open', domain: 'reading' },
+  { id: 'listening', page: 'practice', intent: 'follow', icon: 'headphones', domain: 'listening' },
+  { id: 'speaking', page: 'practice', intent: 'speaking', icon: 'microphone', domain: 'speaking' },
+  { id: 'dictation', page: 'practice', intent: 'dictation', icon: 'keyboard', domain: 'dictation' },
+  { id: 'writing', page: 'expression', icon: 'pencil-simple', domain: 'writing' },
+  { id: 'understanding', page: 'practice', intent: 'grammar', icon: 'sparkle', domain: 'neutral' },
+];
+/* The phone's tab bar. Each tab owns the rooms it leads to, so the one that
+   lights up is the way back to where the learner is. */
+const TABS = [
+  { id: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue', 'practice', 'speaking', 'dictation', 'writing', 'understanding'] },
+  { id: 'content', icon: 'books', label: 'library', owns: ['content', 'reading', 'listening', 'collection'] },
+  { id: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall'] },
+  { id: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress'] },
+];
+
+/* Which navigation entry the learner is in. Practice over media - dictation,
+   shadowing - is its own entry where one exists and the Practice map where
+   it does not. */
+export function navigationCurrent(location) {
+  const experience = experienceFor(location);
+  if (experience === 'practice')
+    return location.intent === 'dictation' ? 'dictation' : location.intent === 'shadowing' ? 'listening' : 'practice';
+  return experience;
+}
+export function navigationEntries(ui) {
+  const c = referenceCopy[ui] || referenceCopy.en;
+  const main = DESTINATIONS.map((x) => ({
+    ...x,
+    label: c[x.label],
+    href: link(x.page),
+    sub: (x.sub || []).map((id) => ({ id, ...SUBS[id], label: c[SUBS[id].label], href: link(SUBS[id].page, { intent: SUBS[id].intent }) })),
+  }));
+  const practice = PRACTICE.map((x) => ({ ...x, label: c[x.id], href: link(x.page, { intent: x.intent }) }));
+  return { main, practice, practiceHref: link('practice') };
+}
+const current = (on) => (on ? ' aria-current="page"' : '');
+function navLink(entry, here, { domain = '' } = {}) {
+  const on = here === entry.id;
+  const glyph = domain
+    ? `<span class="nav-tile" data-domain="${domain}">${icon(entry.icon, { filled: on, size: 18 })}</span>`
+    : icon(entry.icon, { filled: on, size: 20 });
+  return `<a class="nav-link" href="${entry.href}"${current(on)} data-nav="${entry.id}">${glyph}<span class="nav-label">${esc(entry.label)}</span></a>`;
+}
 export function referenceNavigation(ctx) {
-  const c = referenceCopy[ctx.ui], active = experienceFor(ctx.location), entries = entryPoints(ctx.ui);
-  const group = (label, ids) => `<div class="nav-group"><small>${esc(label)}</small>${entries.filter(x=>ids.includes(x.id)).map(x=>`<a href="${x.href}" ${active === x.id ? 'aria-current="page"' : ''}>${entryIcon(x.icon)}<span>${esc(x.label)}</span>${x.id==='continue' && ctx.memory.value.continuation.length ? '<i aria-hidden="true"></i>' : ''}</a>`).join('')}</div>`;
-  const adminEntry = ctx.user?.is_admin === true ? `<div class="nav-group nav-group--admin"><small>${esc(c.admin)}</small><a href="${link('admin')}" ${active === 'admin' ? 'aria-current="page"' : ''}>${entryIcon('spark')}<span>${esc(c.admin)}</span></a></div>` : '';
-  return `<nav id="shellNav" aria-label="Orena">${group(c.world,['discover','continue','reading','listening'])}${group(c.make,['practice','writing','speaking','understanding'])}${group(c.keep,['content','language','recall'])}${adminEntry}</nav>`;
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const here = navigationCurrent(ctx.location);
+  const { main, practice, practiceHref } = navigationEntries(ctx.ui);
+  const hasThread = Boolean(ctx.memory?.value?.continuation?.length);
+  const mainLinks = main
+    .map((entry) => {
+      const subs = entry.sub
+        .map((sub) => {
+          const on = here === sub.id;
+          const dot = sub.id === 'continue' && hasThread ? '<i class="nav-dot" aria-hidden="true"></i>' : '';
+          return `<a class="nav-link nav-link--sub" href="${sub.href}"${current(on)} data-nav="${sub.id}">${icon(sub.icon, { filled: on, size: 16 })}<span class="nav-label">${esc(sub.label)}</span>${dot}</a>`;
+        })
+        .join('');
+      return navLink(entry, here) + subs;
+    })
+    .join('');
+  const practiceLinks = practice.map((entry) => navLink(entry, here, { domain: entry.domain })).join('');
+  const adminEntry =
+    ctx.user?.is_admin === true
+      ? `<div class="nav-group nav-group--admin"><a class="nav-link" href="${link('admin')}"${current(here === 'admin')} data-nav="admin">${icon('gear-six', { filled: here === 'admin', size: 20 })}<span class="nav-label">${esc(c.admin)}</span></a></div>`
+      : '';
+  return `<nav id="shellNav" aria-label="Orena"><div class="nav-sheet-head"><strong>${esc(c.allDestinations)}</strong><button class="nav-close" type="button" data-nav-close aria-label="${esc(c.closeDestinations)}">${icon('x', { size: 20 })}</button></div><div class="nav-group nav-group--main" role="group" aria-label="${esc(c.mainNavigation)}">${mainLinks}</div><div class="nav-group nav-group--practice" role="group" aria-labelledby="navPractice"><a class="nav-heading" id="navPractice" href="${practiceHref}"${current(here === 'practice')} data-nav="practice"><span>${esc(c.practiceNavigation)}</span><span class="sr-only">, ${esc(c.allPractice)}</span></a>${practiceLinks}</div>${adminEntry}</nav>`;
 }
 
-/* How the eleven destinations are reached on a narrow screen.
+/* The phone's destinations: four tabs and the learner's own. "You" opens the
+   profile and settings sheet, so it is a button, not a link. */
+export function navigationTabs(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const here = navigationCurrent(ctx.location);
+  const tabs = TABS.map((tab) => {
+    const on = tab.owns.includes(here);
+    const href = tab.id === 'discover' ? link() : link(tab.id);
+    return `<a class="shell-tab" href="${href}"${current(on)}>${icon(tab.icon, { filled: on, size: 24 })}<span>${esc(c[tab.label])}</span></a>`;
+  }).join('');
+  return `<nav class="shell-tabs" aria-label="${esc(c.mainNavigation)}">${tabs}<button class="shell-tab" type="button" data-preference>${icon('user-circle', { size: 24 })}<span>${esc(c.you)}</span></button></nav>`;
+}
 
-   The rail becomes a header there, and the whole list used to be laid out
-   across it: three groups wrapping onto three lines, each line wider than the
-   phone, so the header ate 228px of an 844px screen and Listening, Patterns &
-   meaning and Recall sat off the right edge where nothing could reach them.
-
-   So the list moves behind one control - and that control names where the
-   learner currently is, rather than being an anonymous hamburger. Closed, it
-   still answers "where am I"; open, it shows every destination with its group
-   heading, which the flattened strip had dropped. Desktop never sees it: the
-   rail is unchanged and this button is not rendered there. */
+/* Everything else, on a phone, is one control away: the whole map above,
+   as a sheet. */
 export function navigationToggle(ctx) {
-  const c = referenceCopy[ctx.ui];
-  const active = experienceFor(ctx.location);
-  const here = active === 'admin' && ctx.user?.is_admin === true
-    ? { id: 'admin', label: c.admin, icon: 'spark' }
-    : entryPoints(ctx.ui).find((x) => x.id === active);
-  return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav">${entryIcon(here?.icon || 'compass')}<span class="nav-toggle-here">${esc(here?.label || c.destinations)}</span><span class="sr-only">, ${esc(c.destinations)}</span><svg class="nav-toggle-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`;
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav" aria-label="${esc(c.allDestinations)}">${icon('squares-four', { size: 22 })}</button>`;
+}
+
+/* "EN → VI": what is being learned, and the language Orena explains it in.
+   The learning language keeps its own writing system where it has one. */
+const LEARNING_MARK = { zh: '中文', en: 'EN' };
+export function languagePair(ctx) {
+  const learning = LEARNING_MARK[ctx.language] || String(ctx.language || '').toUpperCase();
+  const support = String(ctx.support || ctx.ui || '').toUpperCase();
+  return { learning, support, text: `${learning} → ${support}` };
+}
+export function languageChip(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const pair = languagePair(ctx);
+  const label = c.languagePair.replace('{learning}', pair.learning).replace('{support}', pair.support);
+  return `<button class="language-chip" type="button" data-preference aria-label="${esc(label)}">${icon('translate', { size: 16 })}<span>${esc(pair.text)}</span></button>`;
+}
+
+/* The learner, at the foot of the rail: who they are, what they are learning,
+   and the way into settings. Only what the account actually says is shown. */
+export function accountCard(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const user = ctx.user || {};
+  const name = String(user.name || user.display_name || (user.email ? user.email.split('@')[0] : '') || c.you);
+  const initial = Array.from(name.trim())[0]?.toUpperCase() || '·';
+  return `<button class="account-card" type="button" data-preference aria-label="${esc(`${c.profile} · ${c.settings}`)}"><span class="account-avatar" aria-hidden="true">${esc(initial)}</span><span class="account-text"><strong>${esc(name)}</strong><small>${esc(languagePair(ctx).text)}</small></span>${icon('gear-six', { size: 18, className: 'account-gear' })}</button>`;
 }
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;

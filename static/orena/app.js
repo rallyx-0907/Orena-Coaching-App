@@ -7,7 +7,18 @@ import { renderWorld } from './ui/world.js';
 import { renderEncounter } from './ui/encounter.js';
 import { renderSpeaking } from './ui/speaking.js';
 import { renderConversation } from './ui/conversation.js';
-import { referenceNavigation, navigationToggle, referenceCopy, experienceFor, renderContinue } from './ui/reference.js';
+import {
+  referenceNavigation,
+  navigationToggle,
+  navigationTabs,
+  languageChip,
+  accountCard,
+  referenceCopy,
+  experienceFor,
+  renderContinue,
+} from './ui/reference.js';
+import { icon } from './ui/phosphor.js';
+import { renderProgress } from './ui/progress.js';
 import { renderCollection } from './ui/collection.js';
 import {
   renderExpression,
@@ -179,10 +190,15 @@ function shell() {
   // before any language is known; once one is, it speaks only that one.
   const skip = document.querySelector('a.skip');
   if (skip) skip.textContent = c.skipToContent;
+  /* The shell (D-059): a rail on a desk - the approved mark, the destinations,
+     bringing something in and the learner's own card at its foot - and on a
+     phone a slim top bar plus a tab bar at the thumb, with the whole map one
+     control away as a sheet. Controls that exist in both compositions are
+     written once per composition; CSS shows the one that belongs. */
   document.getElementById('shell').innerHTML =
-    `<div class="shell-identity"><a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><span class="shell-motto">${esc(referenceCopy[ctx.ui].fieldNote)}</span></div>${referenceNavigation(ctx)}${navigationToggle(ctx)}<div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}"><span class="language-seal">${ctx.language.toUpperCase()}</span> ${c.preferences}</button></div>`;
-  document.querySelector('[data-bring]').onclick = importContent;
-  document.querySelector('[data-preference]').onclick = () => preferences();
+    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}<div class="shell-bar">${languageChip(ctx)}<button class="icon-button" type="button" data-bring aria-label="${esc(c.bring)}">${icon('plus', { size: 20 })}</button>${navigationToggle(ctx)}</div><div class="shell-foot"><button class="shell-bring" type="button" data-bring>${icon('plus', { size: 18 })}<span>${esc(c.bring)}</span></button>${accountCard(ctx)}</div>${navigationTabs(ctx)}`;
+  document.querySelectorAll('#shell [data-bring]').forEach((x) => (x.onclick = importContent));
+  document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
   /* The narrow-screen destination sheet. The shell is rebuilt on every route,
      so choosing a destination closes it without anything having to remember
      that it was open - and Escape closes it from the keyboard. */
@@ -209,6 +225,12 @@ function shell() {
   setMenu(false);
   toggle.onclick = () => setMenu(shellEl.dataset.menu !== 'open');
   backdrop.onclick = () => setMenu(false);
+  const closeSheet = shellEl.querySelector('[data-nav-close]');
+  if (closeSheet)
+    closeSheet.onclick = () => {
+      setMenu(false);
+      toggle.focus();
+    };
   shellEl.onkeydown = (event) => {
     if (event.key !== 'Escape' || shellEl.dataset.menu !== 'open') return;
     setMenu(false);
@@ -443,6 +465,8 @@ async function render() {
     const result =
       page === 'collection'
         ? renderCollection(root, scope)
+        : page === 'progress'
+          ? await renderProgress(root, scope)
         : page === 'admin'
           ? await renderAdmin(root, scope)
         : page === 'continue'

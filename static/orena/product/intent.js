@@ -34,6 +34,9 @@ export function route(hash = '') {
       'continue',
       'collection',
       'admin',
+      // D-059: Progress is a destination of its own, over the learner's
+      // recorded evidence (LearnerSummary). Additive; no route changed.
+      'progress',
     ].includes(path)
       ? path
       : 'discover',

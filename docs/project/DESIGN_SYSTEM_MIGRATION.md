@@ -27,7 +27,7 @@ Source: claude.ai design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`.
 | Speaking recording, result | `#/practice?intent=speaking`, `#/conversation` | `ui/speaking.js`, `ui/voice-response.js` | `assessPronunciation`, `evaluateSpeaking` | a score where no recogniser is configured |
 | Writing editor, evaluation, history | `#/expression` | `ui/expression.js`, `ui/writing-review.js` | `evaluate`, `improve`, `essays`, `saveDraft` | - |
 | Vocabulary, collection, flashcard, review | `#/language`, `#/collection`, `intent=recall` | `ui/vocabulary-experience.js`, `ui/collection.js`, `product/recall.js` | `vocabularyLibraryCollections`, `reviewLibraryVocabulary`, `dailyVocabularyFeed` | - |
-| Progress | no route yet; "Your growth" in preferences | `ui/growth-summary.js` | `learnerSummary` | streak, weekly minutes, hours: no backend measure exists |
+| Progress | `#/progress` (added) | `ui/progress.js`, `ui/growth-summary.js` | `learnerSummary` | streak, weekly minutes, hours: no backend measure exists |
 | Profile, settings | preferences sheet | `app.js` | `learnerProfile`, `patchLearnerProfile`, `productCommerce` | HSK level (declared level is CEFR and not stored) |
 | Onboarding | first-run preferences sheet | `app.js` | profile | email/password and Apple sign-in: Google OAuth only |
 | Empty, loading, error | every room | `ui/html.js`, `app.js` | - | - |
@@ -44,7 +44,7 @@ surface unchanged.
 | Screen | Desktop Ink | Desktop Paper | Mobile Ink | Mobile Paper | Real data | Interactions | States | QA | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Foundation: tokens, themes, type, primitives | yes | yes | yes | yes | n/a | theme switch | n/a | gates | Integrated |
-| App shell and navigation | - | - | - | - | yes | - | - | - | Not started |
+| App shell and navigation | yes | yes | yes | yes | yes | rail, tablet icon rail, tab bar, sheet (Esc, backdrop, close), compact on scroll | n/a | 1440/1024/390 browser, gates | Integrated |
 | Home | - | - | - | - | - | - | - | - | Not started |
 | Library, search | - | - | - | - | - | - | - | - | Not started |
 | Reading | - | - | - | - | - | - | - | - | Not started |
@@ -52,7 +52,7 @@ surface unchanged.
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
 | Writing | - | - | - | - | - | - | - | - | Not started |
-| Progress | - | - | - | - | - | - | - | - | Not started |
+| Progress | yes | yes | yes | yes | LearnerSummary, 4 windows | window switch, domain links | skeleton, ready, degraded panel with retry | 1440/1024/390 browser | Integrated |
 | Profile, settings, onboarding | - | - | - | - | - | - | - | - | Not started |
 
 ## Backlog from the later design parts

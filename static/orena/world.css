@@ -1,102 +1,5 @@
-#shell {
-  display: flex;
-  align-items: center;
-  gap: 50px;
-  min-height: 94px;
-  padding: 18px max(32px, calc((100vw - 1320px) / 2));
-  border-bottom: 1px solid var(--line);
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  font-size: 35px;
-  font-weight: 900;
-  letter-spacing: -2px;
-  line-height: 1;
-}
-.brand-tail {
-  display: block;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  /* The mark is `mark.svg`, set in experiences.css, which loads after this and
-     wins. This rule cropped a 1.7 MB reference sheet down to a 40px circle;
-     the browser never fetched it because the later rule replaced it, but a
-     stylesheet reordering would have made it live again. */
-}
-.brand-small {
-  font-size: 25px;
-  font-weight: 900;
-  letter-spacing: -1.5px;
-}
-#shell nav {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  flex: 1;
-}
-#shell nav a {
-  font-size: var(--text-sm);
-  position: relative;
-  white-space: nowrap;
-  padding: 15px 0;
-  color: var(--muted);
-}
-#shell nav a[aria-current] {
-  color: var(--ink);
-  font-weight: 800;
-}
-#shell nav a[aria-current]:after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 4px;
-  width: 22px;
-  height: 3px;
-  background: var(--accent);
-  border-radius: 3px;
-}
-.shell-actions {
-  display: flex;
-  gap: 22px;
-  align-items: center;
-}
-.bring-button {
-  font-size: var(--text-xs);
-  border: 1px solid var(--muted);
-  border-radius: 6px;
-  padding: 12px 15px;
-  white-space: nowrap;
-}
-.account-button {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  font-size: var(--text-xs);
-  min-height: 44px;
-  white-space: nowrap;
-}
-#main {
-  max-width: 1384px;
-  margin: auto;
-  padding: 0 32px 50px;
-  min-height: 72vh;
-}
-#footer {
-  max-width: 1320px;
-  margin: 50px auto 0;
-  padding: 24px 0;
-  border-top: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  gap: 30px;
-  font-size: var(--text-xs);
-  color: var(--muted);
-}
-#footer span {
-  flex: 1;
-}
+
+
 #announcement:not(:empty) {
   position: fixed;
   left: 50%;
@@ -1102,23 +1005,6 @@
   font-size: var(--text-base);
 }
 @media (max-width: 1100px) {
-  #shell {
-    gap: 28px;
-    padding-inline: 28px;
-  }
-  #shell nav {
-    gap: 22px;
-  }
-  .shell-actions {
-    gap: 15px;
-  }
-  .bring-button span {
-    display: none;
-  }
-  .bring-button {
-    font-size: 21px;
-    padding: 3px 13px;
-  }
   .world-opening {
     gap: 28px;
     grid-template-columns: 1.7fr 1fr;
@@ -1169,38 +1055,6 @@
   }
 }
 @media (max-width: 800px) {
-  #shell {
-    flex-wrap: wrap;
-    gap: 15px;
-    min-height: auto;
-    padding: 18px 24px 8px;
-  }
-  .brand {
-    font-size: 30px;
-  }
-  .brand-tail {
-    width: 35px;
-    height: 35px;
-    background-size: 552px 552px;
-    background-position: -393px -135px;
-  }
-  .shell-actions {
-    margin-left: auto;
-  }
-  #shell nav {
-    order: 3;
-    width: 100%;
-    gap: 30px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    flex: auto;
-  }
-  #shell nav a {
-    font-size: var(--text-sm);
-  }
-  #main {
-    padding-inline: 24px;
-  }
   .world-opening {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1317,10 +1171,7 @@
   .bring-invitation > button {
     margin-left: 70px;
   }
-  #footer {
-    margin-inline: 24px;
-    padding-bottom: 30px;
-  }
+
   .practice-invitation {
     grid-template-columns: 65px 1fr;
   }
@@ -1358,19 +1209,6 @@
   }
 }
 @media (max-width: 480px) {
-  #shell {
-    padding-inline: 18px;
-  }
-  #shell nav {
-    justify-content: space-between;
-    gap: 16px;
-  }
-  #shell nav a {
-    font-size: var(--text-xs);
-  }
-  #main {
-    padding-inline: 18px;
-  }
   .arrival {
     gap: 16px;
   }
@@ -1608,10 +1446,7 @@
   .sheet .import-choice button {
     font-size: var(--text-sm);
   }
-  #footer {
-    gap: 18px;
-    margin-inline: 18px;
-  }
+
   .primary,
   .outline {
     min-height: 44px;
@@ -2560,9 +2395,6 @@
 
 /* Wide displays: use the room for the work, not for longer lines of prose. */
 @media (min-width: 1600px) {
-  #main {
-    max-width: 1560px;
-  }
   .media-encounter {
     grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
     gap: 44px;
@@ -2632,19 +2464,6 @@
    and the back row onto two. Scrolling the navigation on one line is the whole
    fix, and it applies everywhere rather than only while practising. */
 @media (max-width: 800px) {
-  /* The navigation scrolls on one line rather than wrapping onto two. The
-     shell keeps its own wrapping: forcing that onto one row makes the row
-     taller, not shorter. */
-  #shell nav {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    gap: var(--space-6);
-  }
-  #shell nav::-webkit-scrollbar {
-    display: none;
-  }
   .back-row {
     flex-wrap: nowrap;
     gap: var(--space-3);
