@@ -276,3 +276,19 @@
   .room-loading__row { grid-template-columns: 1fr; }
   .room-loading__rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* The settings sheet's two secondary surfaces (saved content, history). Rows
+   in a sheet, not chrome on a page: the surfaces that draw them properly
+   arrive with Vocabulary (Phase 6) and the profile sheet (Phase 10). */
+.sheet-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.sheet-links a {
+  color: var(--action-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}

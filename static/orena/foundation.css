@@ -1062,9 +1062,12 @@ input[type='radio'] {
 }
 
 /* ---------------------------------------------------------------------------
-   Data and label type (D-061). DM Mono has no Vietnamese glyphs, and a label
-   that switches face mid-word reads as broken, so a Vietnamese interface sets
-   its mono in Roboto Mono - the same job, a face that carries its diacritics.
+   Data and label type (D-061). The approved face for this role is DM Mono.
+   DM Mono ships no Vietnamese glyphs, so a Vietnamese interface would render
+   a label in two faces mid-word; Roboto Mono stands in for it there. This is a
+   technical glyph fallback for one locale, not a design override: the role,
+   the sizes and the tracking are the approved ones, and every locale DM Mono
+   can set uses DM Mono.
    --------------------------------------------------------------------------- */
 :root:lang(vi) {
   --mono-font: 'Roboto Mono', 'Noto Sans SC', ui-monospace, monospace;

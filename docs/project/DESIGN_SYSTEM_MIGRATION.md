@@ -113,14 +113,20 @@ the phase that owns its domain, and each is built only over data that exists:
 - Toast and tooltip (shell phase), the offline strip (shell phase).
 - Admin overview and content import styling (last; Admin stays admin-only).
 
-Phase 4 notes (parity): Library, Search, Saved and History follow Parts 1, 3, 5 and 6.
-MINOR_DRIFT, recorded: the Library toolbar carries two actions the mockup does
-not draw - Saved (the old My content moved there) and Bring (import) - because
-both existed and have no other drawn home; Progress links to History (the
-mockup leaves History "reachable from anywhere" without drawing the entry);
-topic facets show only topics the support language can name; the phone keeps
-the practice sheet until the domain indexes (Phases 5-9) give Practice its phone
-home. The book detail at `#/book` keeps its current look until Phase 5.
+Phase 4 notes (parity): Library, Search, Saved and History follow Parts 1, 3, 5
+and 6, and the Library toolbar carries only what the mockup draws (search,
+filters, sort, view). Saved and History are reached from the settings sheet -
+the IA's "secondary, reached from anywhere" - until Vocabulary's "Saved words"
+row (Phase 6) and the profile sheet (Phase 10) draw their homes; bringing
+content in lives in Saved's Content tab, where brought-in content is listed.
+Topic facets show only topics the support language can name.
+
+One temporary entry remains, with its removal condition: the phone's practice
+sheet. Its rooms reach the phone as their indexes land - Reading in Phase 5,
+Listening and Dictation in Phase 7, Speaking in Phase 8, Writing in Phase 9 -
+and Grammar rides with the practice map. **The sheet control is removed in
+Phase 7**, when every practice room has a drawn phone entry; nothing else may
+be added to it in the meantime.
 
 Next: Phase 5, Reading (reading library, book detail, reader workspace, quiz and chapter complete). Backend gaps: `UI_BACKEND_GAPS.md`.
 

@@ -324,9 +324,10 @@ how a surface looks, not what it is for. Colour values live only in
     where the learner left off. At most one page-level bloom per screen.
 34. **Type (D-061).** Three faces, three jobs, as the mockup draws them:
     Nunito 800 for display and headline figures, Nunito Sans for interface and
-    reading copy, DM Mono for data and the small uppercase labels (Roboto Mono
-    in a Vietnamese interface, which DM Mono cannot set). Han characters fall
-    back to Noto Sans SC; stories keep the serif (rule 18).
+    reading copy, DM Mono for data and the small uppercase labels. Where a face
+    has no glyphs for a locale the same role falls back technically, never by
+    redesign: Roboto Mono carries the mono role in a Vietnamese interface, Noto
+    Sans SC carries Han characters. Stories keep the serif (rule 18).
 35. **Radius by size.** Inline chips and covers 10px, rows and icon buttons
     14px, cards and sheets 20px, anything pressable that holds a label a pill,
     a sheet's top corners 24px.

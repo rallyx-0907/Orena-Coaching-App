@@ -320,11 +320,19 @@ function planUsageSection(scope) {
     .join('');
   return `<section class="plan-usage"><h2>${c.planUsage} — ${esc(commerce.plan?.name || '')}</h2><p>${c.planUsageNote}</p><ul>${rows}</ul></section>`;
 }
+/* The two surfaces the approved IA calls "secondary, reached from anywhere":
+   saved content and history. They live beside Settings until the surfaces that
+   draw them arrive - Vocabulary's "Saved words" row (Phase 6) and the profile
+   sheet (Phase 10). No new chrome anywhere else. */
+function secondarySurfaces(scope) {
+  const r = referenceCopy[scope.ui] || referenceCopy.en;
+  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>`;
+}
 function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : secondarySurfaces(ctx)}${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
   });
   /* The theme chooser is built from the registry, so registering a theme is
      the whole of adding one - there is no list of themes written out a second
