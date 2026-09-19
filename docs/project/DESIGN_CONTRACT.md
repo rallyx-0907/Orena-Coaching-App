@@ -322,10 +322,11 @@ how a surface looks, not what it is for. Colour values live only in
 33. **A light pool marks the live thing.** An in-progress or selected card
     carries the bloom; everything else stays flat, so the glow itself says
     where the learner left off. At most one page-level bloom per screen.
-34. **Type.** Manrope for the interface; 700 for headings, 600 for labels and
-    controls, 400-500 for body. No capitals, no wide tracking and no monospace
-    in learner UI. Han characters fall back to Noto Sans SC; stories keep the
-    serif (rule 18).
+34. **Type (D-061).** Three faces, three jobs, as the mockup draws them:
+    Nunito 800 for display and headline figures, Nunito Sans for interface and
+    reading copy, DM Mono for data and the small uppercase labels (Roboto Mono
+    in a Vietnamese interface, which DM Mono cannot set). Han characters fall
+    back to Noto Sans SC; stories keep the serif (rule 18).
 35. **Radius by size.** Inline chips and covers 10px, rows and icon buttons
     14px, cards and sheets 20px, anything pressable that holds a label a pill,
     a sheet's top corners 24px.

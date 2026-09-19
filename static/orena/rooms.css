@@ -1839,16 +1839,18 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 .progress-label {
   color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.02em;
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .progress-week { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
 .progress-week__time { display: grid; gap: 8px; }
 .progress-week__value {
   font-family: var(--display-font);
   font-size: 40px;
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-heavy);
   letter-spacing: -0.02em;
   line-height: 1.05;
 }
@@ -1862,10 +1864,11 @@ ul.pronunciation-words small { color: var(--muted); }
   border-radius: 16px;
   background: var(--surface-secondary);
 }
+.progress-stat .progress-label { font-size: 9.5px; letter-spacing: 0.12em; }
 .progress-stat strong {
   font-family: var(--display-font);
   font-size: 24px;
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-heavy);
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
@@ -1892,7 +1895,7 @@ ul.pronunciation-words small { color: var(--muted); }
   border-radius: 8px 8px 3px 3px;
   background: repeating-linear-gradient(135deg, var(--progress-track) 0 4px, transparent 4px 8px);
 }
-.progress-day__label { color: var(--text-muted); font-size: 10.5px; font-weight: var(--weight-semibold); }
+.progress-day__label { color: var(--text-muted); font-family: var(--mono-font); font-size: 10px; }
 .progress-by-domain { display: none; }
 .progress-domains {
   display: grid;
@@ -1913,7 +1916,7 @@ ul.pronunciation-words small { color: var(--muted); }
 .progress-domain:hover { border-color: var(--border-strong); color: var(--text-primary); }
 .progress-domain__head { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: var(--weight-bold); }
 .progress-domain__head > svg { flex: none; color: var(--tile-ink); }
-.progress-domain__line { color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.progress-domain__line { color: var(--text-secondary); font-family: var(--mono-font); font-size: 11px; font-variant-numeric: tabular-nums; }
 .progress-domain__line .hint { display: none; }
 .progress-domain .progress-bar { block-size: 5px; }
 .progress-domain .progress-bar > span { background: var(--progress); }
@@ -1932,6 +1935,7 @@ ul.pronunciation-words small { color: var(--muted); }
     clip-path: none;
     margin: 0 0 18px;
     font-size: 28px;
+    font-weight: var(--weight-heavy);
   }
   .progress-panel { padding: 0; border: 0; background: none; gap: 20px; }
   .progress-week { display: grid; gap: 16px; }

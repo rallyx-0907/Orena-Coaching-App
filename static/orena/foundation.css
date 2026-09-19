@@ -14,15 +14,19 @@
   --space-8: 2rem;
   --space-12: 3rem;
   --space-16: 4rem;
-  /* Type (D-059). Manrope carries the interface; Noto Sans SC carries Han
-     characters it has no glyphs for; stories keep the serif (rule 18). Weights
-     stay between 400 and 700 - hierarchy comes from size and colour first. */
+  /* Type (D-061): the approved mockup's three faces, three jobs. Nunito 800
+     for display and any number read as a headline; Nunito Sans for interface
+     and reading copy; DM Mono for every datum - level, timing, score, state -
+     and for the small uppercase labels. Noto Sans SC carries Han characters
+     the Latin faces lack; stories keep the serif (rule 18). */
   --display-font:
-    'Manrope', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
+    'Nunito', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
     sans-serif;
   --font:
-    'Manrope', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
+    'Nunito Sans', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
     sans-serif;
+  --mono-font: 'DM Mono', 'Noto Sans SC', ui-monospace, monospace;
+  --weight-heavy: 800;
   --text-2xs: 0.75rem;
   --text-title: 1.375rem;
   --text-display: clamp(1.75rem, 2.6vw, 2.25rem);
@@ -361,6 +365,7 @@ h3 {
 }
 h1 {
   font-size: var(--text-display);
+  font-weight: var(--weight-heavy);
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
@@ -376,7 +381,6 @@ p {
   margin: 14px 0;
   line-height: 1.8;
 }
-/* A label, in sentence case: no capitals and no tracking in learner UI. */
 small {
   font-size: var(--text-xs);
   letter-spacing: 0;
@@ -1057,4 +1061,27 @@ input[type='radio'] {
   .learning-menu button { font-size: var(--text-base); }
 }
 
+/* ---------------------------------------------------------------------------
+   Data and label type (D-061). DM Mono has no Vietnamese glyphs, and a label
+   that switches face mid-word reads as broken, so a Vietnamese interface sets
+   its mono in Roboto Mono - the same job, a face that carries its diacritics.
+   --------------------------------------------------------------------------- */
+:root:lang(vi) {
+  --mono-font: 'Roboto Mono', 'Noto Sans SC', ui-monospace, monospace;
+}
+/* The mockup's small uppercase label: section labels, domain labels, stat
+   names. One definition; components opt in with the class or the tokens. */
+.ds-label {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.ds-data {
+  font-family: var(--mono-font);
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }

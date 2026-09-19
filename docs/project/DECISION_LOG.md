@@ -1850,3 +1850,31 @@ re-audited against the mockup; the parity result is recorded in
 Continue, Recall or Grammar) and D-057's placeholder clause for covers in
 favour of the design system's defined artwork slot. D-057's Art Bible
 authority for mascot, scenes and real artwork is unchanged.
+
+## D-061 — The mockup's typography replaces Manrope
+
+**Status:** Accepted, explicit current human instruction (2026-09-19), answering
+the question D-060 left open.
+
+**Decision:** The interface takes the approved mockup's three faces: Nunito 800
+for display and headline figures, Nunito Sans for interface and reading copy,
+DM Mono for data (level, timing, score, state) and for the small uppercase
+labels the mockup draws (section labels, domain labels, stat names), at the
+mockup's sizes and tracking. The D-059 brief's "Manrope, no monospace, no
+capitals" is superseded. DM Mono has no Vietnamese glyphs, so a Vietnamese
+interface sets the same mono role in Roboto Mono; Han characters keep Noto Sans
+SC. The mark stays the approved Orena mark for now - the human will revisit
+the logo separately.
+
+**Reason:** D-060 makes the mockup the visual source of truth; typography was
+the last recorded difference the human had authorised, and the human chose
+the mockup.
+
+**Consequences:** `foundation.css` type tokens (`--display-font`, `--font`,
+`--mono-font`, `--weight-heavy`, `.ds-label`, `.ds-data`); the migrated shell,
+Home and Progress components; Design Contract rule 34. The mockup's 9.5-10.5px
+labels sit below D-053's 12px phone floor; D-060 makes the mockup decide, so
+the labels follow it, and D-053's floor still governs reading content.
+
+**Supersedes / Superseded by:** Supersedes the typography clause of D-059 and
+the typography difference recorded in D-060.

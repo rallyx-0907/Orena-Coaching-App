@@ -74,9 +74,9 @@ Values: EXACT, MINOR_DRIFT, MAJOR_DRIFT, NOT_IMPLEMENTED.
 | Progress | EXACT | EXACT | EXACT | EXACT | EXACT | Figures the backend lacks show the unmeasured state in their approved place (GAP-001..003, 007..010) |
 | Artwork | EXACT | EXACT | EXACT | EXACT | EXACT | The design's artwork slot until real art exists (GAP-012) |
 
-Deliberate differences, chosen by the human and recorded in D-060 (not drift):
-Manrope instead of Nunito / Nunito Sans / DM Mono, with sentence-case labels
-and no monospace; the approved Orena mark instead of the violet square.
+Typography follows the mockup (D-061). One deliberate difference remains,
+chosen by the human: the approved Orena mark instead of the violet square, to
+be revisited with the logo.
 
 ## Legacy audit (D-060), Phase 1-3
 
