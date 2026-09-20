@@ -43,28 +43,39 @@ assert.match(recallRoom, /recallShape\(current, keptNow\)/, 'the question comes 
 assert.equal(gradable(false), false, 'seeing a card is not recall');
 assert.equal(gradable(true), true, 'committing to an answer is');
 
-/* --- The room opens on the language, not on a count of it --------------- */
+/* --- The room opens on the approved Vocabulary home (D-059 Phase 6) ------
+   The domain tile and two real figures, what is due, the learner's own
+   collections, then the way to everything saved. */
 assert.doesNotMatch(expression, /vocabulary-summary-metrics/, 'the four metric tiles are gone');
-assert.match(expression, /class="vocabulary-tally"/, 'the counts are one quiet line');
 const overview = expression.slice(
   expression.indexOf('const overview = () => {'),
   expression.indexOf('const libraryView = () => {'),
 );
+assert.match(overview, /class="vocab-home"/, 'the home is one panel');
 assert.ok(
-  overview.indexOf('reviewBlock') < overview.indexOf('keptBlock'),
+  overview.indexOf('${due}') < overview.indexOf('vocabYourCollections'),
   'what is due comes first',
 );
 assert.ok(
-  overview.indexOf('${keptBlock}') < overview.indexOf('vocabulary-dashboard__library'),
-  "then the learner's own kept language, before the catalogue",
-);
-assert.ok(
-  overview.lastIndexOf('${statusSummary}') > overview.indexOf('${keptBlock}'),
-  'and the numbers last',
+  overview.indexOf('vocabYourCollections') < overview.indexOf('vocabSavedWords'),
+  'then the collections, then everything saved',
 );
 /* Due is shown only when something is actually due. Nothing is manufactured. */
-assert.match(overview, /dueItems\.length\s*\?/, 'a review block appears only when there is one');
-assert.match(recallRoom, /due\.length\s*\n?\s*\?/, 'and so does the Recall landing');
+assert.match(overview, /const due = dueItems[.]length/, 'a review block appears only when there is one');
+assert.match(recallRoom, /const landing = due[.]length/, 'and so does the Recall landing');
+
+/* The approved review session: what is due, how far through it, and - once the
+   learner has committed - how well they knew it. The scheduler takes two
+   answers, so the other two say they are not available yet (GAP-019) and no
+   interval is printed, because nothing previews one. */
+assert.match(recallRoom, /class="review-session"/, 'the session is the approved composition');
+assert.match(recallRoom, /class="review-rail"/, 'with the rail the design draws');
+assert.match(recallRoom, /vocabHowWell/, 'and the question it asks after the answer');
+assert.match(recallRoom, /vocabGradeUnavailable/, 'a grade the scheduler cannot take says so');
+assert.ok(
+  (recallRoom.match(/grade\('/g) || []).length === 4,
+  'all four approved grades keep their place',
+);
 
 /* --- A saved word keeps where it was met -------------------------------- */
 assert.match(experience, /function sourceLine\(/, 'a row can say where its word came from');

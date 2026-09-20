@@ -364,12 +364,6 @@
   text-transform: none;
   letter-spacing: 0;
 }
-.recall-moment {
-  max-width: 760px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
 .pattern-focus {
   border-radius: var(--radius);
 }
@@ -1765,12 +1759,6 @@
   padding: 0 var(--space-2);
   border-bottom: 2px solid var(--accent);
   font-weight: 700;
-}
-.recall-moment[data-shape='say'] h2 {
-  letter-spacing: 0.2em;
-}
-.recall-moment .kept-because {
-  margin-top: var(--space-3);
 }
 
 /* An experience looks like itself at the top of the page. The scene sits beside

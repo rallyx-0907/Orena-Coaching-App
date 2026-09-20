@@ -62,7 +62,7 @@ assert.match(
   'the shell default this correction exists for is still here',
 );
 const flat = roomsCss.replace(/\s+/g, ' ');
-for (const [selector, measure] of [['.recall-moment', '760px'], ['.provenance', '800px']])
+for (const [selector, measure] of [['.review-session', '730px'], ['.provenance', '800px']])
   assert.ok(
     flat.includes(`#main > ${selector} { max-width: ${measure}; }`),
     `${selector} must restate its measure above the shell default`,

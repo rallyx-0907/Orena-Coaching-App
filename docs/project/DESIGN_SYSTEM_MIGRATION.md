@@ -49,7 +49,7 @@ surface unchanged.
 | Progress | yes | yes | yes | yes | saved vocabulary, LearnerSummary | domain links | skeleton, unmeasured, degraded panel | 1440/1024/390 browser | Integrated (gaps tracked) |
 | Library, search, saved, history | yes | yes | yes | yes | books (paged), passages, media, collections, saved vocabulary, kept phrases, essays, reading sessions, speaking takes | facets, filter sheet, library search, sort, grid/list, grouped global search, saved tabs, history | loading skeletons, empty, degraded panels | 1440/390 browser, gates | Integrated |
 | Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels, check unavailable | 1440/390 browser, gates | UI migrated; Reading not feature complete (GAP-028..045) |
-| Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
+| Vocabulary, recall | yes | yes | yes | yes | saved vocabulary and its summary, collections and their progress, the daily feed, the review scheduler | due review, collection tiles, not-mastered filter, show all, flip, shuffle, grading | loading, empty, all-done, unavailable tier and grades, error panels | 1440/390 browser, gates | UI migrated; four-grade review and tiers are gaps (GAP-019, GAP-020) |
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
 | Writing | - | - | - | - | - | - | - | - | Not started |
@@ -188,7 +188,26 @@ what they are (GAP-044).
 | Reading time, quiz average per book | NOT_STARTED | GAP-030, GAP-031 |
 | Content kinds: articles, news, essays, dialogues, imports | NOT_STARTED | GAP-044 |
 
-Next: Phase 6, Vocabulary and recall. Backend gaps: `UI_BACKEND_GAPS.md`.
+Phase 6 notes (parity): Vocabulary home follows Part 4 section 18 - the domain
+tile, what was kept and mastered, what is due, the learner's collections and
+the way to everything saved; the daily feed keeps its row because it is a real
+destination the mockup's smaller panel does not draw. A collection follows Part
+1 section 05: its artwork, what it is, how far through it the learner is, one
+way in, then a compact two-column overview of its words with the design's one
+filter - the full list, with search, level, status and sort, is behind "show
+all". The flashcard and the review session follow the same section: the card is
+card-sized with the amber rim of an earned mark, and the session shows what is
+due, the word, and - after the learner commits - how well they knew it.
+
+Three honest states, all tracked: a collection's tier reads as a dash
+(GAP-020); Hard and Easy keep their place in the approved four-grade panel and
+say they are not available yet, because the scheduler accepts two answers
+(GAP-019); and no interval is printed next to a grade, because nothing previews
+one. The card is 260x340 rather than the mockup's 232x306, at the same
+proportions: 232 is sized for two Han characters and cannot hold a Latin
+headword with its support meaning.
+
+Next: Phase 7, Listening and dictation. Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

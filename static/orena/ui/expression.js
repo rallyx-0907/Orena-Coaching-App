@@ -24,6 +24,7 @@ import {
   vocabularyLevel,
   vocabularyKeepPayload,
   vocabularyStatus,
+  masteryStars,
 } from './vocabulary-experience.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import {
@@ -40,6 +41,9 @@ import {
 } from '../capabilities/writing-limits.js';
 import {bindRevisionWorkbench} from './revision-workbench.js';
 import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
+import { icon } from './phosphor.js';
+import { contentCover } from './cover.js';
+import { referenceCopy } from './reference.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
@@ -615,16 +619,33 @@ async function renderRecallLanguage(root, ctx) {
       gap.segments
         .map((part) => esc(part))
         .join(`<b>${marker}</b>`);
+    /* The approved review session: what is due and how far through it the
+       learner is, the word itself, and - once they have committed - how well
+       they knew it. The scheduler accepts two answers, so Hard and Easy keep
+       their place in the approved panel and say they are not available yet
+       (GAP-019); no interval is printed, because nothing previews one. */
+    const r = referenceCopy[ctx.ui] || referenceCopy.en;
+    const passed = Math.min(reviewed, reviewed + due.length);
+    const rail = `<div class="review-rail" aria-hidden="true">${Array.from(
+      { length: Math.min(reviewed + due.length, 12) },
+      (_, position) => `<span class="review-rail__step"${position < passed ? ' data-tone="done"' : ''}></span>`,
+    ).join('')}</div>`;
+    const grade = (key, label, live) =>
+      `<button type="button" class="review-grade${live === 'good' ? ' review-grade--good' : ''}"${live ? ` data-grade="${key}"` : ` disabled title="${esc(r.vocabGradeUnavailable)}"`}>${icon(
+        key === 'again' ? 'arrow-counter-clockwise' : key === 'hard' ? 'clock' : key === 'got_it' ? 'check' : 'lightning',
+        { size: 15 },
+      )}<span>${esc(label)}</span><span class="ds-data review-grade__when">—</span></button>`;
+    const grades = `<div class="review-grades"><span class="ds-label">${esc(r.vocabHowWell)}</span>${grade('again', c.again, 'again')}${grade('hard', r.vocabGradeHard, '')}${grade('got_it', c.gotIt, 'good')}${grade('easy', r.vocabGradeEasy, '')}</div>`;
     const card = current
-      ? `<section class="recall-moment" data-shape="${shape}"><small>${esc(c[`recallAsk_${shape}`])}</small>${
+      ? `<section class="review-session" data-shape="${shape}"><header class="review-bar"><span class="ds-data">${esc(due.length)} ${esc(c.vocabularyDueState)}</span>${rail}<span class="ds-data">${esc(passed)} / ${esc(reviewed + due.length)}</span></header><div class="review-body"><div class="review-prompt"><small>${esc(c[`recallAsk_${shape}`])}</small>${
           shape === 'in_context' && gap
             ? `<blockquote class="recall-gap" lang="${language}">${withheld(revealed ? esc(current.word) : '&nbsp;'.repeat(3))}</blockquote>`
             : `<h2 lang="${language}">${revealed || shape !== 'say' ? esc(current.word) : '···'}</h2>${current.phonetic && revealed && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}${shape === 'say' && !revealed ? `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>` : ''}${shape !== 'in_context' && current.source_fragment ? `<blockquote class="${gap && !revealed ? 'recall-gap' : ''}" lang="${language}">${gap && !revealed ? withheld('&nbsp;'.repeat(3)) : esc(current.source_fragment)}</blockquote>` : ''}`
         }${
           revealed
-            ? `${shape === 'say' ? '' : `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${current.focus_note ? `<p class="recall-where">${esc(current.focus_note)}</p>` : ''}${keptProvenance(c, keptNow)}${current.source_fragment ? `<button class="quiet" data-word-explain="${esc(current.word)}">${esc(c.lookCloser)} ↗</button>` : ''}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>`
+            ? `${shape === 'say' ? '' : `<p class="review-meaning" lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${current.focus_note ? `<p class="recall-where">${esc(current.focus_note)}</p>` : ''}${keptProvenance(c, keptNow)}${current.source_fragment ? `<button class="quiet" data-word-explain="${esc(current.word)}">${esc(c.lookCloser)} ↗</button>` : ''}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<p class="meta">${c.recallTruth}</p>`
             : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
-        }<p role="status" data-recall-status></p></section>`
+        }<p role="status" data-recall-status></p></div>${revealed ? grades : ''}</div></section>`
       : '';
     /* What is waiting, before the first item. A learner dropped straight into
        item one has no idea whether this is three words or thirty. */
@@ -714,7 +735,7 @@ async function renderRecallLanguage(root, ctx) {
         }),
     );
     if (moveFocus)
-      focusRegion(root.querySelector('.recall-moment h2, .empty h2'));
+      focusRegion(root.querySelector('.review-prompt h2, .review-prompt blockquote, .empty h2'));
   }
   paint();
 }
@@ -772,7 +793,7 @@ function vocabularyLevelOrder(level) {
 
 export function vocabularyInteractionItems(view, { feedCards = [], visibleItems = [], savedCards = [], studyItems = [] } = {}) {
   if (view === 'feed') return feedCards;
-  if (view === 'collection') return visibleItems;
+  if (view === 'collection' || view === 'collection-list') return visibleItems;
   if (view === 'saved' || view === 'overview') return savedCards;
   if (view === 'study') return studyItems;
   return [];
@@ -808,6 +829,7 @@ export async function renderLanguage(root, ctx) {
   let filter = 'all';
   let levelFilter = 'all';
   let sort = 'recommended';
+  let notMastered = false;
   let collectionSearchTimer = null;
   let collectionRequest = 0;
 
@@ -844,34 +866,53 @@ export async function renderLanguage(root, ctx) {
     return saved ? { ...card, saved: true, review_stage: saved.review_stage, due: saved.due, successful_recalls: saved.successful_recalls, lapse_count: saved.lapse_count } : card;
   });
 
+  /* Vocabulary home, as the design draws it (D-059 Phase 6, Screens part 4
+     section 18): the domain tile, what the learner has kept and mastered, what
+     is due, their collections, and the way to everything saved. Every figure
+     is read from the learner's own saved vocabulary; a collection's tier has
+     no source yet and says so rather than inventing one (GAP-020). */
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const collectionTile = (collection) => {
+    const progress = collection.progress || {};
+    const learned = Number(progress.learned_count) || 0;
+    const total = Number(collection.item_count) || 0;
+    const percent = total ? Math.round((learned / total) * 100) : 0;
+    return `<button type="button" class="vocab-collection" data-vocabulary-collection="${esc(collection.id)}"><span class="vocab-collection__head"><strong>${esc(collection.title || '')}</strong><span class="ds-label vocab-collection__tier" title="${esc(r.bookSoon)}">${esc(r.vocabTier)} —</span></span><span class="progress-bar"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span><span class="ds-data vocab-collection__count">${esc(learned)} / ${esc(total)}</span></button>`;
+  };
   const overview = () => {
     const dueItems = savedCards.filter((item) => item.due);
-    const recent = [...savedCards].sort((a, b) => String(b.added_at || '').localeCompare(String(a.added_at || ''))).slice(0, 3);
-    const libraryBody = collectionError
-      ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="collections">${esc(c.retry)}</button></p>`
-      : collections.length
-        ? `<div class="vocabulary-collection-grid vocabulary-collection-grid--preview">${collections.slice(0, 3).map((collection, index) => renderVocabularyCollectionCard(copy, collection, { index })).join('')}</div>`
-        : `<div class="vocabulary-library-empty"><p class="meta">${esc(c.vocabularyLibraryEmpty)}</p></div>`;
-    const feedBody = feedError
-      ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>`
-      : feedCards.length
-        ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5 })
-        : `<div class="vocabulary-feed-empty"><p class="meta">${esc(c.vocabularyFeedEmpty)}</p></div>`;
-    /* What did I keep, what is worth reviewing, what am I learning from.
-
-       The room used to open on four metric tiles and a two-column dashboard of
-       Library and Feed, with the learner's own saved language third - a
-       screen about the collection rather than about the language in it. The
-       language leads now: what is due (only when something actually is), then
-       what was kept recently with the sentence it came from, then the
-       collections, then the numbers. */
-    const reviewBlock = dueItems.length
-      ? `<section class="language-due"><div><small>${esc(c.vocabularyDueState)}</small><h2>${dueItems.length} ${esc(c.vocabularyWordCount)}</h2><p class="meta">${esc(dueItems[0].headword)}${dueItems.length > 1 ? ` · ${esc(dueItems[1].headword)}` : ''}${dueItems.length > 2 ? ' …' : ''}</p></div><button class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)} →</button></section>`
-      : '';
-    const keptBlock = recent.length
-      ? `<section class="vocabulary-overview-section vocabulary-recent"><div class="section-head"><h2>${esc(c.vocabularyRecent)}</h2><button class="quiet" data-vocabulary-manage>${esc(c.vocabularyManage)} →</button></div><div class="vocabulary-row-list">${recent.map((card) => renderVocabularyRow(copy, card, { index: savedCards.indexOf(card) })).join('')}</div></section>`
-      : `<section class="vocabulary-overview-section language-empty"><h2>${esc(c.noWords)}</h2><p>${esc(c.noWordsNote)}</p><div class="button-row"><a class="outline" href="${link('practice', { intent: 'reading' })}">${esc(c.readingName)} →</a><a class="quiet" href="${link('practice', { intent: 'follow' })}">${esc(c.followName)} →</a></div></section>`;
-    return `${pageIntro({ title: c.vocabularyTitle, note: c.vocabularyOverviewNote, eyebrow: c.language, compact: true })}${reviewBlock}${keptBlock}<section class="vocabulary-overview-section vocabulary-dashboard__library"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2></div><button class="quiet" data-vocabulary-library>${esc(c.vocabularyOpenLibrary)} →</button></div>${libraryBody}</section>${feedCards.length ? `<section class="vocabulary-overview-section vocabulary-dashboard__feed"><div class="section-head"><div><small>${esc(c.vocabularyFeedTitle)}</small><h2>${esc(c.vocabularyOpenFeed)}</h2></div><button class="quiet" data-vocabulary-feed>${esc(c.vocabularyOpenFeed)} →</button></div>${feedBody}</section>` : ''}${statusSummary}${savedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="saved">${esc(c.retry)}</button></p>` : ''}`;
+    const saved = stateCount('saved');
+    const mastered = stateCount('mastered');
+    const preview = dueItems
+      .slice(0, 3)
+      .map((item) => item.headword)
+      .join(' · ');
+    const due = dueItems.length
+      ? `<div class="vocab-due"><div><strong>${esc(dueItems.length)} ${esc(c.vocabularyWordCount)}</strong><small>${esc(preview)}${dueItems.length > 3 ? ' …' : ''}</small></div><button type="button" class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)}</button></div>`
+      : saved
+        ? `<div class="state-panel state-panel--empty">${icon('check-circle', { size: 20, filled: true })}<div><strong>${esc(c.allDone)}</strong><p>${esc(c.allDoneNote)}</p></div></div>`
+        : `<div class="state-panel state-panel--empty">${icon('cards', { size: 22 })}<div><strong>${esc(c.noWords)}</strong><p>${esc(c.noWordsNote)}</p></div><a class="primary" href="${esc(link('practice', { intent: 'reading' }))}">${icon('book-open', { size: 16 })}<span>${esc(c.readingName)}</span></a></div>`;
+    const collectionsBlock = collectionError
+      ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="collections">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
+      : `<div class="vocab-collections">${collections
+          .slice(0, 2)
+          .map(collectionTile)
+          .join('')}<button type="button" class="vocab-collection vocab-collection--browse" data-vocabulary-library>${icon('plus', { size: 20 })}<span>${esc(r.vocabBrowseCollections)}</span></button></div>${
+          collections.length ? '' : `<p class="vocab-note">${esc(c.vocabularyLibraryEmpty)}</p>`
+        }`;
+    const row = (attribute, name, label, count) =>
+      `<button type="button" class="vocab-row" ${attribute}>${icon(name, { size: 18 })}<span>${esc(label)}</span><span class="ds-data">${esc(count)}</span>${icon('caret-right', { size: 17 })}</button>`;
+    return `<section class="vocab-home"><header class="vocab-home__head"><span class="domain-tile" data-domain="vocabulary" aria-hidden="true">${icon('cards', { size: 21 })}</span><div class="vocab-home__title"><h1>${esc(c.vocabularyTitle)}</h1><p class="ds-label">${esc(saved)} ${esc(c.vocabularySavedCount)} · ${esc(mastered)} ${esc(c.vocabularyMasteredCount)}</p></div>${
+      dueItems.length
+        ? `<span class="chip vocab-home__due" data-domain="vocabulary">${icon('cards', { size: 14, filled: true })}${esc(dueItems.length)} ${esc(c.vocabularyDueState)}</span>`
+        : ''
+    }</header><div class="vocab-home__body">${due}<section class="vocab-block"><span class="ds-label">${esc(r.vocabYourCollections)}</span>${collectionsBlock}</section>${row('data-vocabulary-manage', 'bookmark-simple', r.vocabSavedWords, saved)}${
+      feedCards.length ? row('data-vocabulary-feed', 'sparkle', c.vocabularyFeedTitle, feedCards.length) : ''
+    }${
+      savedError
+        ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="saved">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
+        : ''
+    }</div></section>`;
   };
 
   const libraryView = () => {
@@ -924,11 +965,45 @@ export async function renderLanguage(root, ctx) {
     return `${pageIntro({ title: c.vocabularyStudy, note: c.vocabularyOverviewNote, eyebrow: c.vocabularyTitle, compact: true })}<div class="vocabulary-study-toolbar"><button class="quiet" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button><span>${studyIndex + 1} / ${studyItems.length}</span></div><section class="vocabulary-study-layout">${renderVocabularyStudyCard(copy, card, { index: studyIndex })}<nav class="vocabulary-study-nav"><button class="outline" data-study-prev ${studyIndex === 0 ? 'disabled' : ''}>←</button><button class="primary" data-study-next ${studyIndex >= studyItems.length - 1 ? 'disabled' : ''}>${studyIndex >= studyItems.length - 1 ? c.allDone : c.nextLine} →</button></nav></section>`;
   };
 
+  /* A collection, as the design draws it (Screens part 1 section 05): the
+     collection's own artwork, what it is, how far through it the learner is,
+     and one way in - then a compact overview of its words, never 150 rows.
+     "Show all" opens the full list, where search, level, status and sort live.
+     A tier has no source yet and reads as a dash (GAP-020). */
+  const WORD_PREVIEW = 8;
+  const collectionStars = (card) => {
+    const earned = (masteryStars(card).match(/★/g) || []).length;
+    return `<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${[0, 1, 2]
+      .map((step) => `<span${step < earned ? ' class="is-earned"' : ''}>${icon('star', { size: 11, filled: step < earned })}</span>`)
+      .join('')}</span>`;
+  };
+  const collectionDetail = () => {
+    const collection = activeCollection || {};
+    const progress = collection.progress || {};
+    const learned = Number(progress.learned_count) || 0;
+    const total = Number(collection.item_count) || 0;
+    const percent = total ? Math.round((learned / total) * 100) : 0;
+    const words = activeItems.filter((card) => !notMastered || vocabularyStatus(card) !== 'mastered');
+    visibleItems = words;
+    const shown = words.slice(0, WORD_PREVIEW);
+    const level = collection.levels?.[0] || collection.level || '';
+    const wordTile = (card, index) =>
+      `<button type="button" class="vocab-word" data-vocabulary-study="${esc(index)}"><span class="vocab-word__text"><strong lang="${esc(card.identity?.language || language)}">${esc(card.headword)}</strong>${card.pronunciation ? `<small class="ds-data">${esc(card.pronunciation)}</small>` : ''}</span>${collectionStars(card)}</button>`;
+    return `<section class="vocab-collection-page"><button type="button" class="icon-button vocab-back" data-vocabulary-back aria-label="${esc(c.vocabularyBackOverview)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</button><header class="vocab-collection__hero"><span class="vocab-collection__art">${contentCover({ id: String(collection.id || collection.title || ''), title: collection.title || '', material: 'collection' })}</span><div class="vocab-collection__copy"><div class="vocab-collection__chips"><span class="chip vocab-tier">${esc(r.vocabTier)} —</span>${level ? `<span class="chip">${esc(level)}</span>` : ''}</div><h1 lang="${esc(language)}">${esc(collection.title || c.vocabularyLibraryTitle)}</h1><div class="vocab-collection__progress"><span class="progress-bar"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span><span class="ds-data">${esc(learned)} / ${esc(total)}</span></div><div class="vocab-collection__actions"><button type="button" class="primary" data-vocabulary-collection-study>${icon('play', { size: 16, filled: true })}<span>${esc(c.vocabularyContinueReview)}</span></button><button type="button" class="icon-button" data-vocabulary-shuffle aria-label="${esc(r.vocabShuffle)}">${icon('shuffle', { size: 19 })}</button></div></div></header><div class="vocab-collection__body"><div class="vocab-words__head"><span class="ds-label">${esc(r.vocabWordsLabel)}</span><button type="button" class="chip vocab-words__filter" data-vocabulary-not-mastered aria-pressed="${notMastered}">${icon('funnel', { size: 13 })}<span>${esc(r.vocabNotMastered)}</span></button></div>${
+      shown.length
+        ? `<div class="vocab-words">${shown.map(wordTile).join('')}</div>`
+        : `<div class="state-panel state-panel--empty">${icon('cards', { size: 20 })}<div><strong>${esc(c.vocabularyNoMatches)}</strong></div></div>`
+    }${
+      words.length > shown.length
+        ? `<button type="button" class="vocab-show-all" data-vocabulary-show-all>${esc(String(r.vocabShowAll).replace('{n}', String(words.length)))}${icon('caret-down', { size: 16 })}</button>`
+        : ''
+    }</div></section>`;
+  };
   const collectionView = () => management(activeCollection?.title || c.vocabularyLibraryTitle, `${activeCollection?.progress?.learned_count || 0} / ${activeCollection?.item_count || 0} ${c.vocabularyWordCount}`, true);
 
   const paint = () => {
     if (!alive()) return;
-    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionView() : view === 'feed' ? feedView() : studyView();
+    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : view === 'feed' ? feedView() : studyView();
     bind();
   };
 
@@ -989,7 +1064,20 @@ export async function renderLanguage(root, ctx) {
     root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => { view = 'library'; paint(); }));
     root.querySelectorAll('[data-vocabulary-feed]').forEach((button) => (button.onclick = () => { view = 'feed'; paint(); }));
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
-    root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : 'overview'; paint(); }));
+    root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : view === 'collection-list' ? 'collection' : 'overview'; paint(); }));
+    root.querySelector('[data-vocabulary-not-mastered]')?.addEventListener('click', () => { notMastered = !notMastered; paint(); });
+    root.querySelector('[data-vocabulary-show-all]')?.addEventListener('click', () => { view = 'collection-list'; paint(); });
+    root.querySelector('[data-vocabulary-collection-study]')?.addEventListener('click', () => { if (visibleItems.length) setStudy(visibleItems); });
+    root.querySelector('[data-vocabulary-shuffle]')?.addEventListener('click', () => {
+      if (!visibleItems.length) return;
+      /* A shuffled pass is a different order of the same words, nothing more. */
+      const order = [...visibleItems];
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const swap = Math.floor(Math.random() * (index + 1));
+        [order[index], order[swap]] = [order[swap], order[index]];
+      }
+      setStudy(order);
+    });
     root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', () => setStudy(savedCards.filter((card) => card.due)));
     root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => {
       query = event.target.value;

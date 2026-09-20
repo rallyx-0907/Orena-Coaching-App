@@ -869,25 +869,6 @@
 .word-collection details {
   font-size: var(--text-sm);
 }
-.recall-moment {
-  max-width: 800px;
-  margin: 45px auto;
-  padding: 40px;
-  background: var(--surface);
-  border-bottom: 3px solid var(--coral);
-  text-align: center;
-}
-.recall-moment h2 {
-  font-size: 42px;
-  margin: 25px 0;
-}
-.recall-moment blockquote {
-  text-align: left;
-  font-size: var(--text-lead);
-}
-.recall-moment .button-row {
-  justify-content: center;
-}
 .pattern-list > a {
   display: grid;
   grid-template-columns: 70px 1fr 30px;
@@ -1414,12 +1395,6 @@
   .word-collection {
     grid-template-columns: 1fr;
   }
-  .recall-moment {
-    padding: 30px 20px;
-  }
-  .recall-moment h2 {
-    font-size: 34px;
-  }
   .expression-room textarea {
     padding: 22px;
     font-size: var(--text-lead);
@@ -1630,121 +1605,150 @@
 .vocabulary-study-layout { width: min(100%, 820px); max-width: 820px; margin: 24px auto 60px; }
 #main > .vocabulary-study-layout { max-width: 820px; }
 .vocabulary-study-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+/* The flashcard (D-059 Phase 6, Screens part 1 section 05): a card the size of
+   a card, with the amber rim earned marks wear and a violet bloom behind the
+   word. Front: level, audio, the word and its reading, the way to turn it and
+   what has been earned. Back: what it means, where it came from, and the two
+   answers the scheduler accepts. */
 .vocabulary-study-card {
   position: relative;
-  overflow: hidden;
+  /* The mockup's 232x306 is sized for two Han characters; a Latin headword and
+     a support meaning need a little more room, at the same proportions. */
+  inline-size: 260px;
+  block-size: 340px;
+  margin: 0;
   perspective: 1600px;
-  min-height: 500px;
-  margin-top: 18px;
-  padding: 26px;
-  background: var(--surface);
-  border: 4px solid color-mix(in srgb, var(--vocabulary-level-color) 68%, var(--line));
-  border-radius: 18px;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vocabulary-level-color) 38%, transparent), inset 0 2px 0 color-mix(in srgb, var(--surface) 78%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--ink) 14%, transparent), 0 18px 38px color-mix(in srgb, var(--ink) 18%, transparent);
 }
-.vocabulary-study-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
-.vocabulary-study-card::before {
-  position: absolute;
-  inset: 7px;
-  z-index: 0;
-  content: '';
-  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 52%, transparent);
-  border-radius: 11px;
-  pointer-events: none;
-}
-.vocabulary-study-card::after {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  content: '';
-  background:
-    linear-gradient(116deg,
-      transparent 0 23%,
-      color-mix(in srgb, var(--surface) 52%, transparent) 31%,
-      color-mix(in srgb, var(--surface) 17%, transparent) 36%,
-      transparent 44%),
-    linear-gradient(116deg,
-      transparent 0 63%,
-      color-mix(in srgb, var(--ink) 8%, transparent) 71%,
-      transparent 79%);
-  opacity: .9;
-  pointer-events: none;
-}
+.vocabulary-study-card:focus-visible { outline: 3px solid var(--action-primary); outline-offset: 5px; }
 .vocabulary-study-card__inner {
   position: relative;
   z-index: 1;
-  height: 444px;
+  block-size: 100%;
   transform-style: preserve-3d;
-  transition: transform .58s cubic-bezier(.2, .78, .2, 1);
+  transition: transform 0.58s cubic-bezier(0.2, 0.78, 0.2, 1);
 }
-.vocabulary-study-card[data-study-state="back"] .vocabulary-study-card__inner { transform: rotateY(180deg); }
+.vocabulary-study-card[data-study-state='back'] .vocabulary-study-card__inner { transform: rotateY(180deg); }
 .vocabulary-study-card__front,
 .vocabulary-study-card__back {
   position: absolute;
   inset: 0;
   z-index: 1;
-  min-height: 0;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: 10px;
+  min-inline-size: 0;
+  padding: 22px;
+  container-type: inline-size;
+  border: 1px solid color-mix(in srgb, var(--progress) 38%, transparent);
+  border-radius: 22px;
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-overlay), inset 0 1px 0 color-mix(in srgb, var(--progress) 26%, transparent);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+.vocabulary-study-card__front {
+  justify-content: space-between;
+  background: radial-gradient(120% 95% at 84% 6%, color-mix(in srgb, var(--domain-vocabulary) 34%, transparent), transparent 60%), var(--surface-elevated);
 }
 .vocabulary-study-card__back {
   transform: rotateY(180deg);
   overflow: hidden;
+  background: radial-gradient(110% 95% at 10% 100%, color-mix(in srgb, var(--action-primary) 24%, transparent), transparent 62%), var(--surface-elevated);
 }
-.vocabulary-study-card__top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: var(--text-sm); }
-.vocabulary-study-card__top > span:first-child { margin-right: auto; }
-.vocabulary-study-card__top > span:first-child {
-  padding: 4px 9px;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--vocabulary-level-color) 18%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 65%, var(--line));
-  border-radius: 99px;
-  font-weight: 750;
+.vocabulary-study-card__top { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+.vocabulary-study-card__top .ds-label { margin-inline-end: auto; }
+.vocabulary-study-card__audio {
+  inline-size: 30px;
+  block-size: 30px;
+  min-block-size: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
 }
-.vocabulary-study-card__target { display: grid; place-items: center; flex: 1; text-align: center; }
-.vocabulary-study-card h2 { margin: 0; font-family: var(--font-story, Georgia, serif); font-size: clamp(46px, 8vw, 82px); line-height: 1.05; }
-.vocabulary-study-card__target p,
-.vocabulary-study__pronunciation { color: var(--muted); }
-.vocabulary-study-card__prompt { margin: 0; color: var(--muted); text-align: center; }
-.vocabulary-study-card__front > [data-study-flip] { align-self: center; margin-top: 10px; }
-.vocabulary-study-card__back-body { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.vocabulary-study-card__back h2 { margin: 8px 0 4px; overflow-wrap: anywhere; font-size: clamp(32px, 5vw, 48px); }
-.vocabulary-study__support { margin: 14px 0 4px; color: var(--accent); font-size: 22px; font-weight: 650; }
-.vocabulary-study__definition { margin: 0 0 10px; color: var(--muted); }
+.vocabulary-study-card__target { display: grid; place-items: center; align-content: center; gap: 12px; flex: 1; min-inline-size: 0; text-align: center; }
+/* The word takes the card and never leaves it: the mockup's 52px is sized for
+   two Han characters, so the size follows the card's own width and a long
+   headword wraps rather than running over the rim. */
+.vocabulary-study-card h2 {
+  margin: 0;
+  max-inline-size: 100%;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  font-family: var(--display-font);
+  font-size: clamp(1.9rem, 17cqi, 3.25rem);
+  font-weight: var(--weight-heavy);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.vocabulary-study-card__reading { margin: 0; color: var(--domain-vocabulary); font-size: 0.875rem; }
+.vocabulary-study-card__bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vocabulary-study-card__flip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  color: var(--text-muted);
+}
+.vocabulary-study-card__flip:hover { color: var(--text-primary); }
+.vocabulary-stars { display: inline-flex; gap: 3px; color: color-mix(in srgb, var(--text-primary) 22%, transparent); }
+.vocabulary-stars .is-earned { color: var(--progress); }
+.vocabulary-study-card__back-body {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.vocabulary-study-card__back-body::-webkit-scrollbar { display: none; }
+.vocabulary-study-card__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; }
+.vocabulary-study-card__back h2 { font-size: 22px; line-height: 1.1; }
+.vocabulary-study__support { margin: 10px 0 0; font-size: 0.94rem; font-weight: var(--weight-bold); line-height: 1.35; }
+.vocabulary-study__definition { margin: 6px 0 0; color: var(--text-secondary); font-size: 0.8125rem; }
 .vocabulary-study-card__example,
 .vocabulary-study__usage {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--vocabulary-level-color) 42%, var(--line));
-  border-left: 3px solid var(--vocabulary-level-color);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  margin-block-start: 12px;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.6;
 }
-.vocabulary-study-card__example h3,
-.vocabulary-study__usage h3 { margin: 0 0 5px; color: var(--muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; }
 .vocabulary-study-card__example p,
-.vocabulary-study__usage p { margin: 0; line-height: 1.55; }
-.vocabulary-study__orthography { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.vocabulary-study__orthography h3 { font-size: var(--text-sm); }
-.vocabulary-study__orthography ul { display: flex; gap: 9px; padding: 0; list-style: none; }
+.vocabulary-study__usage p { margin: 0; }
+.vocabulary-study__usage h3 { margin: 0 0 4px; color: var(--text-muted); font-size: 0.75rem; }
+.vocabulary-study__orthography { margin-block-start: 10px; padding-block-start: 10px; border-block-start: 1px solid var(--border-subtle); }
+.vocabulary-study__orthography h3 { color: var(--text-muted); font-size: 0.75rem; }
+.vocabulary-study__orthography ul { display: flex; gap: 9px; padding: 0; margin: 4px 0 0; list-style: none; }
 .vocabulary-study__orthography li { display: grid; gap: 2px; text-align: center; }
-.vocabulary-study__orthography li > span { font-size: 28px; }
-.vocabulary-study__orthography small { color: var(--muted); font-size: var(--text-xs); }
-.vocabulary-study-card__footer { display: grid; flex: 0 0 auto; min-width: 0; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-.vocabulary-study-card__actions,
-.vocabulary-study-card__grades,
+.vocabulary-study__orthography li > span { font-size: 24px; }
+.vocabulary-study__orthography small { color: var(--text-muted); font-size: 0.7rem; }
+.vocabulary-study-card__footer { display: grid; flex: 0 0 auto; gap: 8px; }
+.vocabulary-study-card__actions { display: flex; justify-content: space-between; gap: 8px; }
+.vocabulary-study-card__actions > button { padding: 0; color: var(--text-muted); font-size: 0.75rem; }
+.vocabulary-study-card__grades { display: flex; gap: 8px; }
+.vocabulary-study-card__grades > button {
+  flex: 1;
+  gap: 5px;
+  justify-content: center;
+  min-inline-size: 0;
+  min-block-size: 38px;
+  padding-inline: 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+}
+.vocabulary-study-card__grades > .primary {
+  background: color-mix(in srgb, var(--status-success) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-success) 50%, transparent);
+  color: var(--status-success);
+  box-shadow: none;
+}
+.vocabulary-study-card__status { display: none; }
+.vocabulary-study-layout { display: grid; justify-items: center; gap: var(--space-5); }
 .vocabulary-study-nav { display: flex; justify-content: center; gap: 10px; }
-.vocabulary-study-card__actions,
-.vocabulary-study-card__grades { min-width: 0; margin: 0; padding: 0; flex-wrap: wrap; }
-.vocabulary-study-card__grades { border-top: 0; }
-.vocabulary-study-nav { margin-top: 18px; padding-top: 0; }
-.vocabulary-study-card__status { display: flex; align-self: center; justify-content: center; align-items: center; width: max-content; max-width: 100%; min-width: 0; min-height: 28px; margin: 0 auto; overflow: hidden; }
-.vocabulary-study-card__status .vocabulary-state { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vocabulary-back { margin-top: 8px; }
 @media (max-width: 1000px) {
   .vocabulary-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1764,9 +1768,8 @@
   .vocabulary-row__meaning { grid-column: 1 / -1; grid-row: 2; }
   .vocabulary-meta { grid-column: 1 / -1; grid-row: 3; }
   .vocabulary-row__actions { grid-column: 2; grid-row: 1; }
-  .vocabulary-study-card { min-height: 430px; padding: 19px; }
-  .vocabulary-study-card__inner { height: 389px; }
-  .vocabulary-study-card h2 { font-size: 48px; }
+  .vocabulary-study-card { inline-size: min(100%, 300px); block-size: 356px; }
+  .vocabulary-study-card h2 { font-size: 46px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .vocabulary-study-card, .vocabulary-study-card__inner, .vocabulary-progress span { transition: none; }

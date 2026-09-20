@@ -1962,3 +1962,38 @@ same in one line. The Phase 5 implementation itself is kept as it is.
 
 **Supersedes / Superseded by:** Qualifies D-062 and the Phase 5 entry of D-059;
 supersedes nothing.
+
+## D-064 — Vocabulary takes the approved home, collection, card and review session
+
+**Status:** Accepted, under D-059 Phase 6 and D-060 (2026-09-20).
+
+**Decision:** The Vocabulary surfaces follow the approved design. The room opens
+on the home panel of Screens part 4 section 18 - domain tile, what was kept and
+mastered, what is due, the learner's collections, and the way to everything
+saved - rather than the retired dashboard of metric tiles, recent rows, library
+and feed columns. A collection follows part 1 section 05: its artwork, chips,
+progress and one way in, then a compact two-column overview of its words with
+the design's single "not mastered" filter; the dense list with search, level,
+status and sort remains, one tap behind "show all". The flashcard is a card -
+260x340, the amber rim of an earned mark, the word and its reading, then the
+meaning, the sentence it came from and the two answers the scheduler accepts.
+The review session shows what is due, how far through it the learner is, the
+word, and the approved four-grade panel.
+
+**Reason:** D-060 makes the mockup decide. The previous Vocabulary room was a
+dashboard about the collection; the approved home is a place to decide from.
+
+**Consequences:** `ui/expression.js` (home, collection detail, review session),
+`ui/vocabulary-experience.js` (the card and `masteryStarRow`), `world.css`,
+`rooms.css`, `reference.js` copy, and the gates
+`test_orena_vocabulary_experience.mjs`, `test_orena_vocabulary_theme_tokens.mjs`,
+`test_orena_language_and_recall.mjs` and `test_orena_reference.mjs`, which
+pinned the retired composition. The legacy `.recall-moment` skin is removed.
+Honest states, all tracked: a tier reads as a dash (GAP-020); Hard and Easy keep
+their place and say they are not available yet (GAP-019); no interval is printed
+beside a grade; the review-time estimate is GAP-046 and a card's position in its
+collection GAP-047. The card is 260x340 rather than 232x306, at the same
+proportions, because the mockup's width is sized for two Han characters.
+
+**Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 6; retires
+the Vocabulary dashboard composition and the recall card skin that preceded it.

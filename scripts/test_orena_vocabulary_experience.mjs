@@ -88,23 +88,25 @@ const discoverySource = readFileSync(new URL('../static/orena/ui/discovery.js', 
 assert.match(expressionSource, /const management = \(title, note = '', withBack = false\)/, 'management views expose an in-content return affordance');
 assert.match(expressionSource, /view === 'saved' \? management\(c\.vocabularyManage, c\.vocabularyOverviewNote, true\)/, 'Saved management can return to Vocabulary Overview');
 assert.match(expressionSource, /view === 'library' \? libraryView\(\)/, 'Library is an expanded view rather than an in-page scroll target');
-assert.match(expressionSource, /collections\.slice\(0, 3\)/, 'Overview bounds the collection preview');
-assert.match(expressionSource, /savedCards[\s\S]*?slice\(0, 3\)/, 'Overview bounds the saved preview');
-assert.match(expressionSource, /renderVocabularyFeedCarousel/, 'Overview uses the shared Feed carousel');
-/* Library and Feed stay distinct regions. They were two halves of a dashboard
-   grid that opened the room; the room now opens on the learner's own language,
-   and these are sections under it - still separate, still named. */
-assert.match(expressionSource, /vocabulary-dashboard__library/, 'Library is its own region');
-assert.match(expressionSource, /vocabulary-dashboard__feed/, 'and so is the Feed');
-assert.ok(
-  expressionSource.indexOf('vocabulary-recent') < expressionSource.indexOf('vocabulary-dashboard__library'),
-  "the learner's own kept language comes before the catalogue",
-);
+/* Vocabulary home, as the approved design draws it (D-059 Phase 6, Screens
+   part 4 section 18): the domain tile and two real figures, what is due, the
+   learner's collections, and the way to everything saved. Bounded previews -
+   the home is a place to decide from, not the collection itself. */
+assert.match(expressionSource, /class="vocab-home"/, 'the room opens on the approved home panel');
+assert.match(expressionSource, /collections[\s\S]{0,40}slice\(0, 2\)/, 'the home bounds the collection preview');
+assert.match(expressionSource, /data-vocabulary-library/, 'browsing every collection is one tap away');
+assert.match(expressionSource, /data-vocabulary-manage/, 'and so is everything saved');
+assert.match(expressionSource, /data-vocabulary-continue/, 'what is due leads straight into review');
+assert.match(expressionSource, /feedCards\.length \? row\('data-vocabulary-feed'/,
+  'the daily feed keeps its way in, and only when it has something');
+/* Nothing on the home is invented: a tier nobody defines reads as a dash
+   (GAP-020), and the counts come from the learner's own saved vocabulary. */
+assert.match(expressionSource, /vocab-collection__tier[^`]*\$\{esc\(r\.vocabTier\)\} —/,
+  'a collection with no tier says so rather than being given one');
+assert.match(expressionSource, /stateCount\('saved'\)/, 'saved is a real count');
+assert.match(expressionSource, /stateCount\('mastered'\)/, 'and so is mastered');
 assert.doesNotMatch(expressionSource, /vocabulary-summary-metrics/,
-  'and the room no longer opens on four metric tiles');
-assert.match(expressionSource, /vocabulary-dashboard__library/, 'Library owns the primary dashboard column');
-assert.match(expressionSource, /vocabulary-dashboard__feed/, 'Feed is a secondary dashboard widget');
-assert.doesNotMatch(expressionSource, /vocabulary-collection-grid'\)\?\.scrollIntoView/, 'View all collections must navigate to Library');
+  'and the room does not open on four metric tiles');
 assert.match(expressionSource, /dataset\.vocabularyStudySource === 'feed'[\s\S]*?feedCards\.slice\(0, 5\)/, 'Overview Feed Study actions use the Feed pool');
 assert.match(expressionSource, /data-vocabulary-level-filter/, 'Collection management exposes internal proficiency-level filters');
 assert.match(expressionSource, /vocabulary-collection-detail-progress/, 'Collection detail exposes progress before the dense word list');
@@ -284,13 +286,15 @@ assert.doesNotMatch(unrankedStudy, /— · [A-Z]/, 'Study must not invent anothe
 const worldCss = readFileSync(new URL('../static/orena/world.css', import.meta.url), 'utf8');
 const feedCss = worldCss.slice(worldCss.indexOf('/* Feed is a small tactile deck'), worldCss.indexOf('.seek-line'));
 assert.match(worldCss, /#main\s*>\s*\.vocabulary-study-layout\s*\{[\s\S]*max-width:\s*820px/);
-assert.match(worldCss, /\.vocabulary-study-card\s*\{[\s\S]*border:\s*4px solid/);
+/* The approved card (D-059 Phase 6): card-sized, with the amber rim of an
+   earned mark rather than the retired four-pixel frame. */
+assert.match(worldCss, /\.vocabulary-study-card\s*\{[\s\S]*inline-size: 260px/);
 assert.match(worldCss, /\.vocabulary-study-card__inner\s*\{[\s\S]*transition:\s*transform/);
-assert.match(worldCss, /\.vocabulary-study-card\[data-study-state="back"\][\s\S]*rotateY\(180deg\)/);
-assert.match(worldCss, /\.vocabulary-study-card::before/);
+assert.match(worldCss, /\.vocabulary-study-card\[data-study-state=['"]back['"]\][\s\S]*rotateY\(180deg\)/);
+assert.match(worldCss, /\.vocabulary-study-card__front,[\s\S]*backface-visibility: hidden/);
 assert.match(worldCss, /\.vocabulary-study-card__back-body\s*\{[\s\S]*overflow-y:\s*auto/);
 assert.match(worldCss, /\.vocabulary-study-card__footer\s*\{[\s\S]*flex:\s*0 0 auto/);
-assert.match(worldCss, /\.vocabulary-study-card__status\s*\{[\s\S]*align-self:\s*center/);
+assert.match(worldCss, /\.vocabulary-study-card__grades > button\s*\{[\s\S]*flex: 1/);
 assert.match(worldCss, /\.vocabulary-browse-card\s*\{[\s\S]*border:\s*3px solid/);
 assert.match(worldCss, /data-vocabulary-skin="bronze"/);
 assert.match(worldCss, /data-vocabulary-skin="aurora"/);
