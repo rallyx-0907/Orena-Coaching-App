@@ -3179,7 +3179,8 @@ ul.pronunciation-words small { color: var(--muted); }
   display: flex;
   flex-direction: column;
   gap: 14px;
-  inline-size: 400px;
+  /* The transcript column of the updated design (D-065, device overview 04). */
+  inline-size: 620px;
   flex: none;
   box-sizing: border-box;
   max-block-size: none;
@@ -3264,9 +3265,17 @@ ul.pronunciation-words small { color: var(--muted); }
 .listen-workspace li[data-current] .line-when time { color: var(--domain-listening); }
 .listen-workspace .line-original { font-size: 15.5px; line-height: 1.7; }
 .listen-workspace li[data-current] .line-original { font-size: 16.5px; }
-.listen-workspace .line-pinyin,
-.listen-workspace .line-meaning { margin-top: 6px; color: var(--text-secondary); font-size: 11.5px; }
-.listen-workspace .line-pinyin { font-family: var(--mono-font); }
+.listen-workspace .line-pinyin { margin-top: 6px; color: var(--text-secondary); font-family: var(--mono-font); font-size: 11.5px; }
+/* The translation sits under the line it belongs to, behind a hairline and
+   dimmer than the original - the eye can drop it once it stops needing it. */
+.listen-workspace .line-meaning {
+  margin-top: 8px;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
 .transcript-hint {
   display: flex;
   align-items: center;
@@ -3662,3 +3671,40 @@ ul.pronunciation-words small { color: var(--muted); }
    stretching every card to the tallest cover in it. */
 [data-content-rail='for-you'] .content-rail__track,
 [data-content-rail='saved'] .content-rail__track { align-items: start; }
+
+/* --- Dictation's transport (D-065, recalibration) ------------------------
+   A dictation clip is one sentence long, so there is no scrubber anywhere:
+   the transport is a single circular play button - 102px at a desk, 66px on a
+   phone - with replay, speed and hint as the chips beside the field. */
+.listen-workspace[data-mode='dictation'] .listen-art,
+.listen-workspace[data-mode='dictation'] .listen-meta,
+.listen-workspace[data-mode='dictation'] .listen-seek,
+.listen-workspace[data-mode='dictation'] .listen-rates,
+.listen-workspace[data-mode='dictation'] .listen-actions,
+.listen-workspace[data-mode='dictation'] [data-step] { display: none; }
+.listen-workspace[data-mode='dictation'] .listen-controls { justify-content: center; gap: 18px; }
+.listen-workspace[data-mode='dictation'] .listen-play {
+  inline-size: 102px;
+  block-size: 102px;
+  min-block-size: 102px;
+}
+.listen-workspace[data-mode='dictation'] .listen-play > svg { inline-size: 38px; block-size: 38px; }
+.listen-workspace[data-mode='dictation'] .listen-identity h1 {
+  font-family: var(--display-font);
+  font-size: 22px;
+  text-align: center;
+}
+.listen-workspace[data-mode='dictation'] .listen-stage { align-items: center; }
+/* Dictation is one column: the clip, then the line being written. */
+.listen-workspace[data-mode='dictation'] { flex-direction: column; }
+.listen-workspace[data-mode='dictation'] .listen-stage { inline-size: 100%; min-inline-size: 0; }
+.listen-workspace[data-mode='dictation'] .practice-space { inline-size: 100%; }
+.listen-workspace[data-mode='dictation'] .transcript-panel { display: none; }
+@media (max-width: 700px) {
+  .listen-workspace[data-mode='dictation'] .listen-play {
+    inline-size: 66px;
+    block-size: 66px;
+    min-block-size: 66px;
+  }
+  .listen-workspace[data-mode='dictation'] .listen-play > svg { inline-size: 28px; block-size: 28px; }
+}

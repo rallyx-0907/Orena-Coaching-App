@@ -290,11 +290,27 @@ Then the shell and Home, in the order recorded:
   destinations; the operator entry is rendered for an administrator inside the
   settings sheet, where operating the platform belongs.
 
-Recorded and not yet applied, in the order they will be done: the reader's
-440px word panel and 300px chapter list; the listening transcript at 620px;
-Dictation's single play control and per-character reveal; Progress with rank,
-XP and the activity heatmap; Profile; and the plans screen. New gaps: GAP-048
-to GAP-052.
+Then the three learning surfaces, in the order recorded:
+
+- **Reader**: three columns - the contents at 300px, the text at its own
+  measure (780px at a desk, 350px on a phone), the word panel at 440px. The
+  bar carries what this is and the three controls that change how it reads
+  (type size, Paper, Listen); how far through it the learner is sits under the
+  text with the way to the next chapter. The panel's tabs are Word, Grammar
+  and Notes; grammar has no source yet and says so (GAP-039), and Listen is
+  disabled with its reason (GAP-032). A phone drops both side columns: the
+  contents stay behind the title, and a word arrives as the anchored sheet.
+- **Listening**: the transcript column is 620px, and the support line sits
+  under the line it translates behind a hairline, dimmer than the original -
+  the eye can drop it once it stops needing it.
+- **Dictation**: one column and one circular play control - 102px at a desk,
+  66px on a phone - with no scrubber anywhere, because a dictation clip is one
+  sentence; replay, hint and "show it" are the chips beside the field, and what
+  has been written is counted under it. The per-character reading row is
+  GAP-051.
+
+Recorded and not yet applied: Progress with rank, XP and the activity heatmap;
+Profile; and the plans screen. New gaps: GAP-048 to GAP-052.
 
 Next: apply the update to the shell and Home, then Phase 9, Writing. Backend
 gaps: `UI_BACKEND_GAPS.md`.

@@ -370,4 +370,16 @@ const api = readFileSync('static/orena/infrastructure/api.js', 'utf8');
 assert.match(api, /readingLookup:\(payload\)=>request\('\/api\/reading\/lookup'/);
 assert.doesNotMatch(api, /contextualGloss/);
 
-console.log('Reader: continuous text, selection-only tools, non-AI lookup, settings, chapters, EN/ZH PASS');
+/* --- The three columns of the updated design (D-065) -------------------- */
+assert.match(reader, /class="reader-contents-column"/, 'a book keeps its contents beside the text');
+assert.match(reader, /data-reader-paper/, 'the reading appearance has the one-tap control the design draws');
+assert.match(reader, /data-reader-listen/, 'and the listen control keeps its place');
+assert.match(reader, /const tabs = \['word', 'grammar', 'notes'\]/, 'the panel carries the three tabs the design draws');
+assert.match(reader, /class="reader-foot"/, 'how far through it sits under the text');
+const readerCss = readFileSync('static/orena/reader.css', 'utf8');
+assert.match(readerCss, /\.reader-layout \{[\s\S]*grid-template-columns: 300px minmax\(0, 1fr\) 440px/,
+  'the contents are 300px and the word panel 440px');
+assert.match(readerCss, /--reader-measure: 780px/, 'the text keeps the measure the design protects');
+assert.match(readerCss, /--reader-measure: 350px/, 'and its phone measure');
+
+console.log('Reader: continuous text, selection-only tools, non-AI lookup, settings, chapters, three columns, EN/ZH PASS');
