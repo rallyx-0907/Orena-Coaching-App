@@ -110,11 +110,12 @@ No I1-I7 claim implies human approval.
 Golden Star findings closed; Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md`
 done. Backbone I1-I7 is Opus work; F is human review.
 
-Design System migration (D-059): tracker and next phase in
-`DESIGN_SYSTEM_MIGRATION.md`.
+Design System migration (D-059..D-062): Phases 1-5 integrated, through
+Reading. Tracker, next phase, gaps GAP-001..036 (all NOT_STARTED):
+`DESIGN_SYSTEM_MIGRATION.md`, `UI_BACKEND_GAPS.md`.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
-`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2 schema approved,
+`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done; I2 schema approved,
 sandbox only at `20260908_0005`, flag `off` (runbook §6).
 
 Source Import: mapping, normalization, identity, provenance, batch results,
@@ -149,10 +150,10 @@ None identified.
 - Reading breadth: rights gate. Vocabulary Library content is gated until a
   complete pack is published; Feed and Chinese orthography are technically
   reviewable. Human UX acceptance is pending.
-- Non-CI r8/r10/r11 matrices retired per product decision; r20 frozen native.
-- Language coherence: closed for en/zh/vi (D-051 rule 26). The other stored
-  support locales (ja, ko, es, fr, de, pt, ru, id, th) still fall back to
-  English until given a pack. Platform Admin copy is out of scope.
+- Non-CI r8/r10/r11 matrices retired; r20 frozen native.
+- Language coherence: closed for en/zh/vi (D-051 rule 26); the other stored
+  support locales fall back to English until given a pack. Admin copy is out
+  of scope.
 
 ## Baseline test evidence
 
