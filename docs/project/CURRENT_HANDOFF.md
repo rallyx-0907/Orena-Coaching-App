@@ -110,9 +110,9 @@ No I1-I7 claim implies human approval.
 Golden Star findings closed; Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md`
 done. Backbone I1-I7 is Opus work; F is human review.
 
-Design System migration (D-059..D-063): Phases 1-5 done, through the Reading
-UI. Reading is NOT feature complete, not books-only (D-063). Scope, next
-phase, gaps GAP-001..045: `DESIGN_SYSTEM_MIGRATION.md`.
+Design System migration (D-059..D-064): Phases 1-6 done, through Vocabulary.
+A migrated UI is not a finished capability: Reading is neither feature
+complete nor books-only (D-063). Scope, gaps: `DESIGN_SYSTEM_MIGRATION.md`.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done; I2 schema approved,
@@ -127,8 +127,8 @@ its own reviews only (a schema question, gated).
 
 ## PENDING
 
-R3 Gemini live gate passed 4/4 EN/ZH/support. Ollama stays a lower-quality
-local option: `qwen3:8b` leaks target script in nested support answers.
+R3 Gemini live gate passed 4/4 EN/ZH/support. Ollama is a lower-quality local
+option: `qwen3:8b` leaks target script in nested support answers.
 
 ## BLOCKED
 
