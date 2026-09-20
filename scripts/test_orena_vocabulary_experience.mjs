@@ -97,8 +97,9 @@ assert.match(expressionSource, /collections[\s\S]{0,40}slice\(0, 2\)/, 'the home
 assert.match(expressionSource, /data-vocabulary-library/, 'browsing every collection is one tap away');
 assert.match(expressionSource, /data-vocabulary-manage/, 'and so is everything saved');
 assert.match(expressionSource, /data-vocabulary-continue/, 'what is due leads straight into review');
-assert.match(expressionSource, /feedCards\.length \? row\('data-vocabulary-feed'/,
-  'the daily feed keeps its way in, and only when it has something');
+/* The daily feed's home is Home, where the design draws it; the room carries
+   no second copy of it (D-064). */
+assert.doesNotMatch(expressionSource, /data-vocabulary-feed/, 'the room carries no second feed surface');
 /* Nothing on the home is invented: a tier nobody defines reads as a dash
    (GAP-020), and the counts come from the learner's own saved vocabulary. */
 assert.match(expressionSource, /vocab-collection__tier[^`]*\$\{esc\(r\.vocabTier\)\} —/,
@@ -107,7 +108,8 @@ assert.match(expressionSource, /stateCount\('saved'\)/, 'saved is a real count')
 assert.match(expressionSource, /stateCount\('mastered'\)/, 'and so is mastered');
 assert.doesNotMatch(expressionSource, /vocabulary-summary-metrics/,
   'and the room does not open on four metric tiles');
-assert.match(expressionSource, /dataset\.vocabularyStudySource === 'feed'[\s\S]*?feedCards\.slice\(0, 5\)/, 'Overview Feed Study actions use the Feed pool');
+assert.match(expressionSource, /setStudy\(interactionPool\(\), Number\(button\.dataset\.vocabularyStudy\)\)/,
+  'studying a word uses the pool of the view it was opened from');
 assert.match(expressionSource, /data-vocabulary-level-filter/, 'Collection management exposes internal proficiency-level filters');
 assert.match(expressionSource, /vocabulary-collection-detail-progress/, 'Collection detail exposes progress before the dense word list');
 assert.match(vocabularyExperienceSource, /class="vocabulary-study-card__inner"/, 'Study uses a transformable inner card for the flip animation');
@@ -134,7 +136,8 @@ assert.match(vocabularyExperienceSource, /AudioContext/, 'snap feedback uses opt
 assert.match(vocabularyExperienceSource, /!interactionArmed \|\| !soundEnabled/, 'sound is gated behind interaction and an explicit toggle');
 assert.match(vocabularyExperienceSource, /prefers-reduced-motion/, 'deck checks reduced-motion preferences');
 assert.match(expressionSource, /if \(Array\.isArray\(item\.examples\)\) card\.examples = item\.examples;/, 'saved cards keep catalog context examples');
-assert.match(expressionSource, /button\.closest\('\[data-vocabulary-source\]'\)/, 'Feed Save actions resolve against Feed cards on the overview');
+assert.match(expressionSource, /saveCard\(interactionPool\(\)\[Number\(button\.dataset\.vocabularySave\)\]/,
+  'keeping a word resolves against the pool of the view it was kept from');
 assert.equal(supportMeaning(card, 'vi'), 'phân bổ / cấp phát');
 assert.equal(compactSupportMeaning({ meanings: [{ language: 'vi', text: `Một nghĩa ngắn. ${'Một phần giải thích dài hơn để kiểm tra việc rút gọn nội dung. '.repeat(5)}` }] }, 'vi'), 'Một nghĩa ngắn.');
 
@@ -269,10 +272,16 @@ assert.match(study, /class="vocabulary-study-card__back-body"/);
 assert.match(study, /class="vocabulary-study-card__footer"/);
 assert.match(study, /vocabulary-study-card__flip/);
 assert.ok(study.includes('>B1<'));
-assert.match(study, /class="vocabulary-study-card__status"/);
 assert.match(study, /phân bổ \/ cấp phát/);
-assert.match(study, /aria-label="Saved ✓"/);
-assert.match(study, />Saved ✓<\/button>/);
+/* The approved back carries what the design draws and nothing else: a saved
+   word offers the two answers the scheduler takes, and an unsaved one offers
+   the one action it has - keeping it. */
+assert.doesNotMatch(study, /class="vocabulary-study-card__status"/,
+  'the retired state chip is gone from the card');
+assert.doesNotMatch(study, /data-vocabulary-save/, 'a saved word is not offered saving again');
+const unsavedStudy = renderVocabularyStudyCard(copy, { ...card, saved: false }, { index: 3 });
+assert.match(unsavedStudy, /data-vocabulary-save="3"/, 'an unsaved word can still be kept');
+assert.doesNotMatch(unsavedStudy, /data-study-grade/, 'and is not graded before it is kept');
 assert.match(study, /data-vocabulary-level="B1"/);
 assert.match(study, /data-vocabulary-skin="gold"/);
 assert.match(study, /data-vocabulary-rank="B"/, 'the study card keeps the rank on the article');
@@ -288,7 +297,8 @@ const feedCss = worldCss.slice(worldCss.indexOf('/* Feed is a small tactile deck
 assert.match(worldCss, /#main\s*>\s*\.vocabulary-study-layout\s*\{[\s\S]*max-width:\s*820px/);
 /* The approved card (D-059 Phase 6): card-sized, with the amber rim of an
    earned mark rather than the retired four-pixel frame. */
-assert.match(worldCss, /\.vocabulary-study-card\s*\{[\s\S]*inline-size: 260px/);
+assert.match(worldCss, /\.vocabulary-study-card\s*\{[\s\S]*inline-size: 232px[\s\S]*block-size: 306px/,
+  'the card is the size the design draws, in every language');
 assert.match(worldCss, /\.vocabulary-study-card__inner\s*\{[\s\S]*transition:\s*transform/);
 assert.match(worldCss, /\.vocabulary-study-card\[data-study-state=['"]back['"]\][\s\S]*rotateY\(180deg\)/);
 assert.match(worldCss, /\.vocabulary-study-card__front,[\s\S]*backface-visibility: hidden/);

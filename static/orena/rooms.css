@@ -2838,7 +2838,12 @@ ul.pronunciation-words small { color: var(--muted); }
 .vocab-due small { overflow: hidden; color: var(--text-secondary); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
 .vocab-due .primary { min-block-size: 40px; padding-inline: 16px; border-radius: var(--radius-pill); }
 .vocab-block { display: grid; gap: 9px; }
-.vocab-block > .ds-label { color: var(--text-muted); }
+.vocab-block__head { display: flex; align-items: center; gap: 8px; }
+.vocab-block .ds-label { color: var(--text-muted); }
+/* On a desk the way into the whole catalogue is the dashed card the design
+   draws; on a phone it is the link in this header, as the mobile design
+   draws it instead. */
+.vocab-block__browse { display: none; color: var(--action-text); font-size: 12.5px; font-weight: var(--weight-semibold); }
 .vocab-collections { display: flex; gap: 10px; }
 .vocab-collection {
   display: grid;
@@ -2899,8 +2904,9 @@ ul.pronunciation-words small { color: var(--muted); }
   .vocab-home { border-radius: 18px; }
   .vocab-home__head { padding: 16px; }
   .vocab-home__body { padding: 14px 16px 18px; }
-  .vocab-collections { flex-wrap: wrap; }
-  .vocab-collection { min-inline-size: 45%; }
+  .vocab-block__head .vocab-block__browse { display: inline-flex; margin-inline-start: auto; }
+  .vocab-collections { flex-direction: column; }
+  .vocab-collection--browse { display: none; }
 }
 
 /* --- A collection (D-059 Phase 6, Screens part 1 section 05) --------------

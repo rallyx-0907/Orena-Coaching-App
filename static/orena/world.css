@@ -1612,10 +1612,10 @@
    answers the scheduler accepts. */
 .vocabulary-study-card {
   position: relative;
-  /* The mockup's 232x306 is sized for two Han characters; a Latin headword and
-     a support meaning need a little more room, at the same proportions. */
-  inline-size: 260px;
-  block-size: 340px;
+  /* The card is the size the design draws it, in every language: a long Latin
+     headword is handled by the type inside it, never by a bigger card. */
+  inline-size: 232px;
+  block-size: 306px;
   margin: 0;
   perspective: 1600px;
   cursor: pointer;
@@ -1638,7 +1638,7 @@
   flex-direction: column;
   gap: 10px;
   min-inline-size: 0;
-  padding: 22px;
+  padding: 20px;
   container-type: inline-size;
   border: 1px solid color-mix(in srgb, var(--progress) 38%, transparent);
   border-radius: 22px;
@@ -1682,7 +1682,7 @@
   line-height: 1;
   letter-spacing: -0.02em;
 }
-.vocabulary-study-card__reading { margin: 0; color: var(--domain-vocabulary); font-size: 0.875rem; }
+.vocabulary-study-card__reading { margin: 0; color: var(--domain-vocabulary); font-size: 0.8125rem; }
 .vocabulary-study-card__bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .vocabulary-study-card__flip {
   display: inline-flex;
@@ -1703,17 +1703,17 @@
 }
 .vocabulary-study-card__back-body::-webkit-scrollbar { display: none; }
 .vocabulary-study-card__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; }
-.vocabulary-study-card__back h2 { font-size: 22px; line-height: 1.1; }
-.vocabulary-study__support { margin: 10px 0 0; font-size: 0.94rem; font-weight: var(--weight-bold); line-height: 1.35; }
-.vocabulary-study__definition { margin: 6px 0 0; color: var(--text-secondary); font-size: 0.8125rem; }
+.vocabulary-study-card__back h2 { font-size: 20px; line-height: 1.1; }
+.vocabulary-study__support { margin: 9px 0 0; font-size: 0.875rem; font-weight: var(--weight-bold); line-height: 1.35; }
+.vocabulary-study__definition { margin: 5px 0 0; color: var(--text-secondary); font-size: 0.75rem; line-height: 1.45; }
 .vocabulary-study-card__example,
 .vocabulary-study__usage {
-  margin-block-start: 12px;
-  padding-block-start: 12px;
+  margin-block-start: 10px;
+  padding-block-start: 10px;
   border-block-start: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 0.84rem;
-  line-height: 1.6;
+  font-size: 0.75rem;
+  line-height: 1.55;
 }
 .vocabulary-study-card__example p,
 .vocabulary-study__usage p { margin: 0; }
@@ -1725,18 +1725,17 @@
 .vocabulary-study__orthography li > span { font-size: 24px; }
 .vocabulary-study__orthography small { color: var(--text-muted); font-size: 0.7rem; }
 .vocabulary-study-card__footer { display: grid; flex: 0 0 auto; gap: 8px; }
-.vocabulary-study-card__actions { display: flex; justify-content: space-between; gap: 8px; }
-.vocabulary-study-card__actions > button { padding: 0; color: var(--text-muted); font-size: 0.75rem; }
+.vocabulary-study-card__save { inline-size: 100%; justify-content: center; min-block-size: 36px; border-radius: var(--radius-pill); font-size: 0.72rem; }
 .vocabulary-study-card__grades { display: flex; gap: 8px; }
 .vocabulary-study-card__grades > button {
   flex: 1;
   gap: 5px;
   justify-content: center;
   min-inline-size: 0;
-  min-block-size: 38px;
-  padding-inline: 10px;
+  min-block-size: 36px;
+  padding-inline: 8px;
   border-radius: var(--radius-pill);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: var(--weight-bold);
   white-space: nowrap;
 }
@@ -1768,8 +1767,8 @@
   .vocabulary-row__meaning { grid-column: 1 / -1; grid-row: 2; }
   .vocabulary-meta { grid-column: 1 / -1; grid-row: 3; }
   .vocabulary-row__actions { grid-column: 2; grid-row: 1; }
-  .vocabulary-study-card { inline-size: min(100%, 300px); block-size: 356px; }
-  .vocabulary-study-card h2 { font-size: 46px; }
+  /* The card keeps its own size on a phone, centred in the column. */
+  .vocabulary-study-card { margin-inline: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .vocabulary-study-card, .vocabulary-study-card__inner, .vocabulary-progress span { transition: none; }

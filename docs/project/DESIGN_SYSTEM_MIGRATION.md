@@ -203,9 +203,16 @@ Three honest states, all tracked: a collection's tier reads as a dash
 (GAP-020); Hard and Easy keep their place in the approved four-grade panel and
 say they are not available yet, because the scheduler accepts two answers
 (GAP-019); and no interval is printed next to a grade, because nothing previews
-one. The card is 260x340 rather than the mockup's 232x306, at the same
-proportions: 232 is sized for two Han characters and cannot hold a Latin
-headword with its support meaning.
+one.
+
+The card is the mockup's 232x306 in every language: a long Latin headword is
+handled by the type inside it - the word's size follows the card's own width
+and wraps - never by a bigger card. What the mockup does not draw is gone from
+these surfaces: the daily feed's second copy in the Vocabulary room (its home
+is Home, where the design draws it), the retired Discover-side feed and library
+sections and their controllers, the study card's flip-back button and state
+chip, and the recall card's duplicated truth line. A saved word's card offers
+the two answers; an unsaved one offers keeping it.
 
 Next: Phase 7, Listening and dictation. Backend gaps: `UI_BACKEND_GAPS.md`.
 
