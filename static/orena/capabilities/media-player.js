@@ -367,7 +367,11 @@ export function posterUrl(poster){
   return typeof poster==='string'&&poster?(reviewedMediaUrl(poster,POSTER_HOSTS)||''):'';
 }
 
-export function mediaPlayer(playback,title,{startMs=0,endMs=null,poster=''}={}){
+/* `controls` is the browser's own control strip. A surface that draws the
+   approved transport itself (the listening workspace) turns it off so the
+   learner sees one set of controls, not two; a surface that has no transport
+   of its own keeps it. */
+export function mediaPlayer(playback,title,{startMs=0,endMs=null,poster='',controls=true}={}){
   const adapter=playbackAdapter(playback);
   if(!adapter)return '<div class="listening-player-unavailable" role="status">Playback is unavailable for this source.</div>';
   const safeStart=Math.max(0,Number(startMs)||0);
@@ -376,7 +380,7 @@ export function mediaPlayer(playback,title,{startMs=0,endMs=null,poster=''}={}){
   if(adapter.kind==='audio')return `<audio id="orenaMedia" src="${esc(adapter.url)}" aria-label="${esc(title||'Lesson audio')}" preload="metadata" ${bounds}></audio>`;
   if(adapter.kind==='video'){
     const art=posterUrl(poster);
-    return `<video id="orenaMedia" src="${esc(adapter.url)}"${art?` poster="${esc(art)}"`:''} title="${esc(title||'Lesson video')}" aria-label="${esc(title||'Lesson video')}" preload="metadata" playsinline controls ${bounds}></video>`;
+    return `<video id="orenaMedia" src="${esc(adapter.url)}"${art?` poster="${esc(art)}"`:''} title="${esc(title||'Lesson video')}" aria-label="${esc(title||'Lesson video')}" preload="metadata" playsinline${controls?' controls':''} ${bounds}></video>`;
   }
   return `<iframe id="orenaMedia" src="${esc(adapter.url)}" title="${esc(title||'Lesson video')}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" ${bounds}></iframe>`;
 }

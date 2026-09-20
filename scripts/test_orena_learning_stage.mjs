@@ -129,7 +129,7 @@ assert.doesNotMatch(encounter, /close-look-guide/, 'the per-line colour explaine
 /* --- Every reusable action of the current line, in the one bar ---------- */
 const actions = encounter.slice(
   encounter.indexOf('const lineActions = ['),
-  encounter.lastIndexOf('  root.innerHTML = `<div class="back-row">'),
+  encounter.indexOf('/* The approved listening workspace'),
 );
 assert.ok(actions.length > 200, "the bar's actions were actually found");
 for (const name of ['replay', 'practice', 'meaning', 'pinyin', 'colors', 'legend', 'more'])

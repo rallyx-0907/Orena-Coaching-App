@@ -23,7 +23,7 @@ import { publishedReadings } from '../content/reading-library.js';
 import { vocabularyKeepPayload as sharedVocabularyKeepPayload } from './vocabulary-experience.js';
 import { renderLibraryBrowse } from './library-browse.js';
 import { renderSearch } from './search.js';
-import { listeningItem, paintMediaLibrary } from './media-library.js';
+import { listeningItem } from './media-library.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -205,16 +205,13 @@ export async function renderWorld(root, ctx) {
            stays the room's own action. */
         ? `${readingError}<div class="reading-library" data-library-browse></div><div class="button-row reading-bring"><button class="quiet" type="button" data-read>＋ ${esc(c.readingBring)}</button></div>`
         : (() => {
-            /* Listening is a media library, not a list of documents. The shared
-               catalogue, what an administrator imported and what the learner
-               brought in are one shelf read by thumbnail, so the surface a
-               learner browses is the content itself rather than its
-               description. Dictation, shadowing and speaking keep the filtered
-               list: those are practice modes over a source, not browsing. */
+            /* Listening opens on the same approved library as Reading, scoped
+               to what can be listened to (D-059 Phase 7): one library, one set
+               of cards, one search. Dictation, shadowing and speaking keep the
+               filtered list: those are practice modes over a source, not
+               browsing. */
             if (!intent || intent === 'follow')
-              // The library owns its own section headings; this row only carries
-              // the one action that is not browsing.
-              return `<section class="media-shelf">${catalogError}<div class="button-row"><button class="quiet" data-bring>＋ ${esc(c.bring)}</button></div><div data-media-library></div></section>`;
+              return `${catalogError}<div class="listening-library" data-library-browse></div><div class="button-row reading-bring"><button class="quiet" type="button" data-bring>＋ ${esc(c.bring)}</button></div>`;
             return `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
               practiceMedia
                 .filter((x) => supports(x, intent))
@@ -223,14 +220,13 @@ export async function renderWorld(root, ctx) {
             }</section>`;
           })()
     }${practiceContinuation}`;
-    if (intent === 'reading')
+    if (intent === 'reading' || !intent || intent === 'follow')
       releaseLibrary = renderLibraryBrowse(
         root.querySelector('[data-library-browse]'),
         ctx,
-        { readable, media: [] },
-        { only: ['books'] },
+        intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
+        { only: intent === 'reading' ? ['books'] : ['audio', 'video'] },
       ) || (() => {});
-    if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
   } else if (location.page === 'search') {
     releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});
   } else if (location.page === 'content') {

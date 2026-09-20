@@ -3085,3 +3085,223 @@ ul.pronunciation-words small { color: var(--muted); }
   .review-prompt h2 { font-size: 34px; }
   .review-grades { inline-size: 100%; }
 }
+
+/* ---------------------------------------------------------------------------
+   The listening workspace (D-059 Phase 7, Screens part 1 section 04): one
+   card, two panes. The artwork, what this is, the rail and the controls on the
+   left; the synced transcript on the right.
+   --------------------------------------------------------------------------- */
+#main > .listen-workspace { max-width: 1160px; margin-left: 0; }
+.listen-back { inline-size: 36px; block-size: 36px; min-block-size: 36px; margin-bottom: 14px; border-radius: 50%; }
+.listen-workspace {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-canvas);
+}
+.listen-stage {
+  display: flex;
+  flex: 1;
+  min-inline-size: 380px;
+  flex-direction: column;
+  gap: 18px;
+  box-sizing: border-box;
+  padding: 24px 26px;
+}
+.listen-art {
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--surface-elevated);
+}
+.listen-art :is(video, iframe) { display: block; inline-size: 100%; aspect-ratio: 16 / 9; border: 0; }
+.listen-identity h1 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.018em;
+}
+.listen-meta { margin: 6px 0 0; color: var(--text-secondary); font-size: 11.5px; text-transform: uppercase; }
+.listen-transport { display: grid; gap: 11px; }
+.listen-seek { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; }
+.listen-seek > output,
+.listen-seek__total { flex: none; color: var(--text-secondary); font-size: 11px; }
+.listen-seek input[type='range'] {
+  flex: 1;
+  inline-size: auto;
+  min-block-size: 0;
+  block-size: 5px;
+  accent-color: var(--progress);
+}
+.listen-controls { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; }
+.listen-controls .icon-button { inline-size: 44px; block-size: 44px; min-block-size: 44px; border-radius: 14px; }
+.listen-play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 56px;
+  block-size: 56px;
+  min-block-size: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--action-gradient, var(--action-primary));
+  color: var(--text-on-action);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--action-primary) 45%, transparent);
+}
+.listen-rates { display: flex; gap: 6px; margin-inline-start: auto; }
+.listen-rate {
+  min-block-size: 34px;
+  padding: 8px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+}
+.listen-rate[aria-checked='true'] {
+  border-color: color-mix(in srgb, var(--domain-listening) 45%, transparent);
+  background: color-mix(in srgb, var(--domain-listening) 16%, transparent);
+  color: var(--domain-listening);
+}
+.listen-actions { display: flex; gap: 10px; padding-block-start: 4px; border-block-start: 1px solid var(--border-subtle); }
+.listen-actions .listen-quiz { flex: 1; justify-content: center; min-block-size: 44px; border-radius: var(--radius-pill); font-size: 14px; font-weight: var(--weight-bold); }
+.listen-actions .icon-button { inline-size: 44px; block-size: 44px; min-block-size: 44px; border-radius: 50%; }
+.listen-stage .reached-the-end { margin: 0; }
+
+/* The transcript, as the design draws it: the time it was said, the line, and
+   the layers under it - with everything but the current line receding. */
+.listen-workspace .transcript-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  inline-size: 400px;
+  flex: none;
+  box-sizing: border-box;
+  max-block-size: none;
+  padding: 22px;
+  border: 0;
+  border-inline-start: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: radial-gradient(100% 60% at 50% 0%, var(--bloom-listen, transparent), transparent 65%), var(--surface-primary);
+}
+[data-theme='ink'] .listen-workspace .transcript-panel { --bloom-listen: rgba(144, 101, 240, 0.18); }
+[data-theme='paper'] .listen-workspace .transcript-panel { --bloom-listen: rgba(116, 69, 206, 0.06); }
+.transcript-panel__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 10px; }
+.transcript-panel__head .ds-label { white-space: nowrap; }
+.transcript-panel__head .ds-label { color: var(--text-muted); }
+.transcript-panel__head .learning-toolbar { border: 0; background: none; padding: 0; gap: 3px; }
+.transcript-panel__head .learning-action {
+  inline-size: 30px;
+  block-size: 30px;
+  min-block-size: 30px;
+  padding: 0;
+}
+.transcript-panel__head .learning-action > svg { inline-size: 17px; block-size: 17px; }
+.listen-workspace .transcript-panel ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+/* A row is the time it was said and the line, with the reading and the
+   meaning under the line - the layers the panel's own toggles show. */
+.listen-workspace .transcript-panel li > [data-segment] {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  column-gap: 11px;
+  row-gap: 0;
+  inline-size: 100%;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: none;
+  color: var(--text-primary);
+  text-align: start;
+  opacity: 0.55;
+}
+.listen-workspace .transcript-panel li > [data-segment]:hover { opacity: 0.85; }
+.listen-workspace .transcript-panel li[data-current] > [data-segment] {
+  padding: 12px;
+  border-color: color-mix(in srgb, var(--domain-listening) 35%, transparent);
+  background: color-mix(in srgb, var(--domain-listening) 12%, transparent);
+  opacity: 1;
+}
+.listen-workspace .line-when { grid-column: 1; grid-row: 1; display: grid; gap: 2px; padding-top: 3px; }
+.listen-workspace .line-original { grid-column: 2; grid-row: 1; }
+.listen-workspace .line-pinyin { grid-column: 2; grid-row: 2; }
+.listen-workspace .line-meaning { grid-column: 2; grid-row: 3; }
+/* Which line is playing is said by the lit row itself; the words stay for
+   assistive technology rather than printing beside the time. */
+.listen-workspace .line-state {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* The reading and the support language are named chips, as the design draws
+   them; the rest of the bar stays icon-first. */
+.learning-chip {
+  min-block-size: 28px;
+  padding: 5px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.learning-chip[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--domain-listening) 40%, transparent);
+  background: color-mix(in srgb, var(--domain-listening) 16%, transparent);
+  color: var(--domain-listening);
+}
+.listen-workspace .transcript-panel__head .learning-toolbar { flex-wrap: nowrap; }
+.listen-workspace .line-when time { color: var(--text-muted); font-family: var(--mono-font); font-size: 10.5px; }
+.listen-workspace li[data-current] .line-when time { color: var(--domain-listening); }
+.listen-workspace .line-original { font-size: 15.5px; line-height: 1.7; }
+.listen-workspace li[data-current] .line-original { font-size: 16.5px; }
+.listen-workspace .line-pinyin,
+.listen-workspace .line-meaning { margin-top: 6px; color: var(--text-secondary); font-size: 11.5px; }
+.listen-workspace .line-pinyin { font-family: var(--mono-font); }
+.transcript-hint {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: auto 0 0;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+.transcript-hint > svg { flex: none; color: var(--domain-listening); }
+
+@media (max-width: 1000px) {
+  #main > .listen-workspace { max-width: none; }
+  .listen-workspace { flex-direction: column; }
+  .listen-stage { min-inline-size: 0; }
+  .listen-workspace .transcript-panel {
+    inline-size: 100%;
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--border-subtle);
+  }
+}
+@media (max-width: 700px) {
+  .listen-stage { padding: 18px; gap: 14px; }
+  .listen-identity h1 { font-size: 20px; }
+  /* The phone's transport is the design's five controls in the thumb zone, so
+     speed is the one chip that is chosen - tapping it takes the next. */
+  .listen-controls { justify-content: space-between; gap: 6px; }
+  .listen-controls .icon-button { inline-size: 48px; block-size: 48px; min-block-size: 48px; border-radius: 15px; }
+  .listen-play { inline-size: 64px; block-size: 64px; min-block-size: 64px; }
+  .listen-rates { margin-inline-start: 0; }
+  .listen-rate { inline-size: 48px; block-size: 48px; min-block-size: 48px; padding: 0; border-radius: 15px; text-align: center; }
+  .listen-rate:not([aria-checked='true']) { display: none; }
+  .listen-actions { flex-wrap: wrap; }
+  .listen-workspace .transcript-panel { padding: 18px; }
+}

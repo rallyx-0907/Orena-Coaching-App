@@ -214,7 +214,30 @@ sections and their controllers, the study card's flip-back button and state
 chip, and the recall card's duplicated truth line. A saved word's card offers
 the two answers; an unsaved one offers keeping it.
 
-Next: Phase 7, Listening and dictation. Backend gaps: `UI_BACKEND_GAPS.md`.
+Phase 7 notes (parity): Listening opens on the same approved library as
+Reading, scoped to what can be listened to - one library, one set of cards -
+so the retired media shelf, its filters and its controller are gone. The
+workspace follows Part 1 section 04: one card, two panes; the artwork, what
+this is, the rail and the design's own transport on the left (the browser's
+control strip is off, so there is one set of controls, not two); the synced
+transcript on the right, with the reading and support layers as the chips the
+design draws. Skip is a line, not a number of seconds, because a synced
+transcript moves by what was said. On a phone the transport is the design's
+five controls in the thumb zone, and speed is the one chosen chip - tapping it
+takes the next.
+
+Comprehension for listening has no items yet, so its control keeps its place
+and says so (GAP-025). One reconciliation is recorded rather than decided
+quietly: the mockup's transcript header carries two chips, while
+`DESIGN_CONTRACT` rule 23-26 and `ui/learning-toolbar.js` place the current
+line's reusable actions - hear it again, practise it, colour the word classes,
+the parts-of-speech legend, inspect, save the sentence - in exactly this bar,
+because putting them in the row made the list breathe under the learner's
+eyes. The two display layers now wear the design's chips; the remaining
+actions stay in the same bar, icon-first. Removing them would remove
+capability, so the conflict is reported here for the human.
+
+Next: Phase 7 continues with Dictation. Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

@@ -6,7 +6,6 @@ import {
   listeningItem,
   mediaCard,
   mediaContinuation,
-  mediaLibrary,
   renderAdminMediaImporter,
 } from '../static/orena/ui/media-library.js';
 import { route } from '../static/orena/product/intent.js';
@@ -100,19 +99,15 @@ assert.deepEqual(
   'search, level, and source filters compose',
 );
 
-const library = mediaLibrary(copy.en, {
-  sharedItems: [sharedVideo, sharedAudio],
-  myItems: [personalAudio],
-  continuation: [{ id: sharedVideo.id, title: sharedVideo.title, intent: 'follow' }],
-});
-const sharedStart = library.indexOf('data-media-shared');
-const myStart = library.indexOf('data-media-personal');
-assert.ok(sharedStart !== -1 && myStart > sharedStart, 'Shared Library and My content are separate sections');
-assert.match(library.slice(sharedStart, myStart), /A rainy day taxi/);
-assert.doesNotMatch(library.slice(sharedStart, myStart), /My interview clip/);
-assert.match(library.slice(myStart), /My interview clip/);
-assert.doesNotMatch(library.slice(myStart), /A rainy day taxi/);
-assert.equal((library.match(/data-media-continue/g) || []).length, 1, 'only real continuation entries create the continuation rail');
+/* Browsing what can be listened to is the approved library, scoped (D-059
+   Phase 7): the shared catalogue and the learner's own media are cards in the
+   same surface, with its own search and facets. This gate keeps what the card
+   itself must guarantee; the library's own composition is
+   test_orena_library_browse.mjs. */
+const world = readFileSync(new URL('../static/orena/ui/world.js', import.meta.url), 'utf8');
+assert.match(world, /only: intent === 'reading' \? \['books'\] : \['audio', 'video'\]/,
+  'Listening opens on the approved library, scoped to what can be listened to');
+assert.doesNotMatch(world, /paintMediaLibrary|media-shelf/, 'the retired media shelf is gone');
 
 const styles = readFileSync(new URL('../static/orena/media-library.css', import.meta.url), 'utf8');
 assert.match(styles, /\.media-card__title\s*\{[^}]*-webkit-line-clamp:\s*2/s, 'titles clamp to two lines');
@@ -160,31 +155,9 @@ assert.match(admin, /admin-media-result--ok[\s\S]*admin-media-result--error/, 's
    available, folded into a utility rather than leading the page, and themed
    shelves appear only once the library is bigger than a shelf - never as the
    same items printed twice. */
-{
-  const many = Array.from({ length: 12 }, (_, index) => ({
-    id: `media:many-${index}`,
-    title: `Item ${index}`,
-    language: 'en',
-    kind: index % 2 ? 'audio' : 'video',
-    duration_ms: index < 5 ? 120000 : 3600000,
-    level: 'B1',
-    source_label: 'Source',
-  }));
-  const big = mediaLibrary(copy.en, { sharedItems: many, myItems: [], continuation: [] });
-  assert.match(big, /class="library-utility"/, 'search is a utility, not the opening');
-  assert.ok(
-    big.indexOf('data-media-results') < big.indexOf('library-utility'),
-    'the content comes before the way to search it',
-  );
-  assert.match(big, /data-media-shelf="short"/, 'a real short-listen shelf from real durations');
-  assert.match(big, /data-media-shelf="videos"/);
-  assert.match(big, /data-media-shelf="audio"/);
-
-  const small = mediaLibrary(copy.en, { sharedItems: many.slice(0, 4), myItems: [], continuation: [] });
-  assert.doesNotMatch(small, /data-media-shelf=/, 'a small library is not split into shelves that repeat it');
-  const empty = mediaLibrary(copy.en, { sharedItems: [], myItems: [], continuation: [] });
-  assert.doesNotMatch(empty, /data-media-shelf=/, 'no shelf is invented for an empty library');
-}
+/* Shelves, search and facets over what can be listened to are the approved
+   library's own contract now (D-059 Phase 7); what this file still owns is the
+   card and the identity it carries. */
 
 /* --- A card opens the thing it shows, in the room it belongs to -----------
    The regression this pins: the Listening library rendered catalogue rows
@@ -247,11 +220,9 @@ assert.match(admin, /admin-media-result--ok[\s\S]*admin-media-result--error/, 's
   /* The whole library rendered from RAW catalogue rows - exactly what
      `/api/listening/library` returns. This is the shape the shipped bug was
      rendered from, so it is the shape the gate has to use. */
-  const rawLibrary = mediaLibrary(copy.en, {
-    sharedItems: [catalogueRow(), catalogueRow({ lesson_id: 'en-travel-rainy-day-taxi', playback_kind: 'video', media_type: 'video' })],
-    myItems: [],
-    continuation: [],
-  });
+  const rawLibrary = [catalogueRow(), catalogueRow({ lesson_id: 'en-travel-rainy-day-taxi', playback_kind: 'video', media_type: 'video' })]
+    .map((row) => mediaCard(row, copy.en, { intent: 'follow' }))
+    .join('');
   const rawHrefs = [...rawLibrary.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
   assert.ok(rawHrefs.length >= 2, 'raw rows still render cards');
   for (const href of rawHrefs) {
@@ -261,14 +232,15 @@ assert.match(admin, /admin-media-result--ok[\s\S]*admin-media-result--error/, 's
   }
 
   // The same guarantee for a library rendered whole, and for Continue listening.
-  const rendered = mediaLibrary(copy.en, {
-    sharedItems: [listeningItem(catalogueRow())],
-    myItems: [],
-    continuation: mediaContinuation(
+  const rendered = [
+    listeningItem(catalogueRow()),
+    ...mediaContinuation(
       { value: { continuation: [{ id: 'media:en-daily-pen-in-my-bag', title: 'A pen in my bag', intent: 'follow', kind: 'audio' }], conversations: {} } },
       'en',
     ),
-  });
+  ]
+    .map((row) => mediaCard(row, copy.en, { intent: 'follow' }))
+    .join('');
   const hrefs = [...rendered.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
   assert.ok(hrefs.length >= 2, 'the library and its continuation rail both render links');
   for (const href of hrefs) {

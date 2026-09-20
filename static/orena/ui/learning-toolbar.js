@@ -32,7 +32,11 @@ function actionHtml(action) {
   const { name, icon, label, kind = 'action' } = action;
   const tip = `data-tip="${esc(label)}" aria-label="${esc(label)}"`;
   if (kind === 'toggle')
-    return `<button type="button" class="learning-action" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${symbol(icon, 18)}</button>`;
+    /* A display layer the design names on the surface - the reading, the
+       support language - wears that name as a chip; the rest stay icon-first. */
+    return action.chip
+      ? `<button type="button" class="learning-chip" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${esc(action.chip)}</button>`
+      : `<button type="button" class="learning-action" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${symbol(icon, 18)}</button>`;
   if (kind === 'menu')
     return `<span class="learning-action-menu"><button type="button" class="learning-action" data-menu-toggle="${esc(name)}" aria-haspopup="menu" aria-expanded="false" ${tip}>${symbol(icon, 18)}</button><div class="learning-menu" data-menu="${esc(name)}" role="menu" hidden>${(action.items || [])
       .map(
