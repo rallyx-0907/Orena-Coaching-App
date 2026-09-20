@@ -95,7 +95,7 @@ local/provider credentials; ASR unconfigured.
 Core: R3/T15 Card human PASS. Vocabulary foundation/catalog/feed/save and
 Chinese orthography are schema-free; Source Import is E2E through Admin and
 learner projections. The remaining Vocabulary gate is human schema/runtime
-authorization for `20260916_0008`, then PostgreSQL rehearsal. Browser review at
+authorization for `20260916_0008`, then PostgreSQL rehearsal. Review at
 `:8011/#/language`.
 
 Backbone lane (Opus), D-054 delegation: D-054, 0006, 0007 approved by delegated
@@ -110,9 +110,9 @@ No I1-I7 claim implies human approval.
 Golden Star findings closed; Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md`
 done. Backbone I1-I7 is Opus work; F is human review.
 
-Design System migration (D-059..D-062): Phases 1-5 integrated, through
-Reading. Tracker, next phase, gaps GAP-001..036 (all NOT_STARTED):
-`DESIGN_SYSTEM_MIGRATION.md`, `UI_BACKEND_GAPS.md`.
+Design System migration (D-059..D-063): Phases 1-5 done, through the Reading
+UI. Reading is NOT feature complete, not books-only (D-063). Scope, next
+phase, gaps GAP-001..045: `DESIGN_SYSTEM_MIGRATION.md`.
 
 Backbone runs against locked GPT-6 architecture at `27edeb0`, in
 `ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done; I2 schema approved,
@@ -122,13 +122,13 @@ Source Import: mapping, normalization, identity, provenance, batch results,
 shared repository, Admin UI, learner cards; APPROVED (`a1a90b7b`). Schema auth
 pending; import fail-closed.
 
-Writing has no per-review record of the support language it was written in;
-the device covers its own reviews only (a schema question, gated).
+Writing keeps no per-review record of its support language; the device covers
+its own reviews only (a schema question, gated).
 
 ## PENDING
 
 R3 Gemini live gate passed 4/4 EN/ZH/support. Ollama stays a lower-quality
-local option: `qwen3:8b` leaks target script in nested support explanations.
+local option: `qwen3:8b` leaks target script in nested support answers.
 
 ## BLOCKED
 
@@ -147,9 +147,9 @@ None identified.
 - Grammar breadth: patterns joined by stable Concept ID, extended by
   `grammar-shelf.js`, never a second syllabus.
 - Cross-device continuity: device memory current; I2 schema/sync gated.
-- Reading breadth: rights gate. Vocabulary Library content is gated until a
-  complete pack is published; Feed and Chinese orthography are technically
-  reviewable. Human UX acceptance is pending.
+- Reading breadth: rights gate per text. Vocabulary Library content is gated
+  until a complete pack is published; Feed and Chinese orthography are
+  technically reviewable. Human UX acceptance pending.
 - Non-CI r8/r10/r11 matrices retired; r20 frozen native.
 - Language coherence: closed for en/zh/vi (D-051 rule 26); the other stored
   support locales fall back to English until given a pack. Admin copy is out

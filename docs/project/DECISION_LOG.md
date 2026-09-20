@@ -1925,3 +1925,40 @@ time figures keep their tiles with a dash (GAP-031, GAP-030).
 **Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 5; retires
 the D-057 reading-room cover grid and its shelves, and the `<details>` form the
 comprehension check used to be.
+
+## D-063 — Reading's approved scope is wider than the Phase 5 migration, and is not books-only
+
+**Status:** Accepted, explicit current human instruction (2026-09-20), given at
+the Phase 5 checkpoint of D-059.
+
+**Decision:** Phase 5 is the **Reading UI and reader migration**, complete with
+its functional backend gaps tracked. It does not make Reading feature complete,
+and no document may say it does. The approved Reading capability remains wider
+than Book -> Reader -> dictionary -> multiple-choice check, and every capability
+in it stays recorded with an honest state: translation and contextual
+explanation, pronunciation and audio, Chinese Pinyin, durable highlight of a
+word, sentence or paragraph, saving vocabulary from the reader, grammar notes
+and pattern explanation, contextual learner notes, bookmarks, the exact resume
+position inside a chapter, open-answer comprehension, review of saved
+highlights and notes, and review/SRS linkage. What is unsupported is
+`NOT_STARTED` in `UI_BACKEND_GAPS.md` (GAP-028 to GAP-045), never absent.
+
+**Reading content is not books-only.** Reading covers books, articles, stories,
+news, essays, dialogues and the learner's own imported reading. The Reading
+room being the approved library scoped to what can be read (D-062) is an
+implementation of that scope, not a narrowing of it: every readable thing is
+already in it and reachable. What is missing is a content kind and metadata per
+type, so each can be named, filtered and counted as what it is (GAP-044).
+
+**Reason:** the migrated screens are the visible part of Reading, and an
+approved capability that no current screen happens to draw must not quietly
+leave the product definition. A tracker that reads "Reading: Integrated" would
+have done exactly that.
+
+**Consequences:** `DESIGN_SYSTEM_MIGRATION.md` carries the Reading scope table
+and its matrix row reads "UI migrated; Reading not feature complete";
+`UI_BACKEND_GAPS.md` gains GAP-037 to GAP-045; `CURRENT_HANDOFF.md` says the
+same in one line. The Phase 5 implementation itself is kept as it is.
+
+**Supersedes / Superseded by:** Qualifies D-062 and the Phase 5 entry of D-059;
+supersedes nothing.

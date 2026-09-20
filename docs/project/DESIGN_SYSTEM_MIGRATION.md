@@ -48,7 +48,7 @@ surface unchanged.
 | Home | yes | yes | yes | yes | continuation, catalogues, daily feed | Continue cards, rails, words stack (flip, step, swipe) | begin, empty catalogue, loading skeleton | 1440/1024/390 browser, gates | Integrated |
 | Progress | yes | yes | yes | yes | saved vocabulary, LearnerSummary | domain links | skeleton, unmeasured, degraded panel | 1440/1024/390 browser | Integrated (gaps tracked) |
 | Library, search, saved, history | yes | yes | yes | yes | books (paged), passages, media, collections, saved vocabulary, kept phrases, essays, reading sessions, speaking takes | facets, filter sheet, library search, sort, grid/list, grouped global search, saved tabs, history | loading skeletons, empty, degraded panels | 1440/390 browser, gates | Integrated |
-| Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels, check unavailable | 1440/390 browser, gates | Integrated (gaps tracked) |
+| Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels, check unavailable | 1440/390 browser, gates | UI migrated; Reading not feature complete (GAP-028..045) |
 | Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
@@ -153,6 +153,40 @@ panel names the paragraph the evidence came from when the text contains it.
 The end of a chapter says what was finished, what it left behind (new words
 kept since the chapter opened, counted for real) and the one way on; the quiz
 and time figures keep their tiles with a dash (GAP-031, GAP-030).
+
+## Reading: approved scope versus what Phase 5 migrated
+
+Phase 5 is the **Reading UI and reader migration**, not the Reading capability.
+The approved Reading scope is wider than Book -> Reader -> dictionary -> a
+multiple-choice check, and it stays recorded here so nothing in it is lost by
+being absent from the migrated screens (human instruction, 2026-09-20; D-063).
+
+Reading content is **not books-only**: it is books, articles, stories, news,
+essays, dialogues and the learner's own imported reading. The library already
+carries all of them and every one is reachable; what is missing is a content
+kind and metadata of their own, so they can be named, filtered and counted as
+what they are (GAP-044).
+
+| Capability | State | Where it is, or why not |
+| --- | --- | --- |
+| Word lookup, dictionary, never AI | Supported | `ui/lexical.js` panel; tap answers |
+| Save vocabulary from the reader | Supported | `saveLibraryVocabulary`, real; counted on the book page and at the end of a chapter |
+| Translation of a selection, contextual explanation | Supported | panel translation; "explain" opens the shared contextual explanation |
+| Support-language layer over paragraphs | Partial | first twelve paragraphs per text (GAP-045) |
+| Pronunciation of a word or phrase | Partial | the device's own speech synthesis, no provider voice; sentence, paragraph and chapter audio: GAP-038, audiobooks GAP-032 |
+| Chinese Pinyin layer | NOT_STARTED | GAP-028 |
+| Highlight a word, sentence or paragraph, durably | NOT_STARTED | GAP-037 |
+| Grammar notes and pattern explanation in the text | NOT_STARTED | GAP-039 |
+| Contextual learner notes | NOT_STARTED | GAP-036 |
+| Bookmark a book or a place | NOT_STARTED | GAP-034 |
+| Exact resume position inside a chapter | NOT_STARTED | GAP-040 |
+| Multiple-choice comprehension | Supported | `submitReadingAnswers`, scored server-side |
+| Open-answer comprehension | NOT_STARTED | GAP-041 |
+| Review of saved highlights and notes | NOT_STARTED | GAP-042 |
+| SRS / review linkage from what a text taught | Partial | saving is real and lands in review; four-grade scheduling is GAP-019, linkage GAP-043 |
+| Chapter completion state | NOT_STARTED | GAP-035 (what is shown is derived from the current place) |
+| Reading time, quiz average per book | NOT_STARTED | GAP-030, GAP-031 |
+| Content kinds: articles, news, essays, dialogues, imports | NOT_STARTED | GAP-044 |
 
 Next: Phase 6, Vocabulary and recall. Backend gaps: `UI_BACKEND_GAPS.md`.
 
