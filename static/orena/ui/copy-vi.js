@@ -305,6 +305,8 @@ export const vi = {
   example: 'Trong ngữ cảnh',
 
   // --- Comprehension -----------------------------------------------------
+  speakStillWobbles: 'Mấy từ này còn ngập ngừng — nói lại riêng từng từ rồi thử cả câu.',
+  voiceClear: 'Cả câu nghe đã rõ.',
   quizQuestions: '{n} câu hỏi',
   quizMultipleChoice: 'Trắc nghiệm',
   quizNext: 'Câu tiếp theo',

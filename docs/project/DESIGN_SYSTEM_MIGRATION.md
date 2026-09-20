@@ -51,7 +51,7 @@ surface unchanged.
 | Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels, check unavailable | 1440/390 browser, gates | UI migrated; Reading not feature complete (GAP-028..045) |
 | Vocabulary, recall | yes | yes | yes | yes | saved vocabulary and its summary, collections and their progress, the daily feed, the review scheduler | due review, collection tiles, not-mastered filter, show all, flip, shuffle, grading | loading, empty, all-done, unavailable tier and grades, error panels | 1440/390 browser, gates | UI migrated; four-grade review and tiers are gaps (GAP-019, GAP-020) |
 | Listening, dictation | yes | yes | yes | yes | listening catalogue, the learner's own media, transcripts and their meanings, the dictation scorer | library facets and search, the design's transport, line stepping, speed, transcript layers, typing, check, retry, replay | loading, blocked and failed playback, unavailable listening quiz, reached-the-end, comparison | 1440/390 browser, gates | UI migrated; listening comprehension is a gap (GAP-025) |
-| Speaking | - | - | - | - | - | - | - | - | Not started |
+| Speaking | yes | yes | yes | yes | the learner's own takes, transcription, coaching, attempt history | record, hear your take, try again, ask for feedback | microphone readiness in words, no-assessment state, waiting, failure | 1440/390 browser, gates | UI migrated to the 2026-09-20 recalibration; assessment is a gap (GAP-021) |
 | Writing | - | - | - | - | - | - | - | - | Not started |
 | Profile, settings, onboarding | - | - | - | - | - | - | - | - | Not started |
 
@@ -246,7 +246,39 @@ as pills. Every figure is the comparison's own: the percentage the scorer
 returned and the count of tokens that still differ. The live positional reveal
 stays, because it is Dictation's recorded behaviour, not a legacy form.
 
-Next: Phase 8, Speaking. Backend gaps: `UI_BACKEND_GAPS.md`.
+## The 2026-09-20 design update (D-065)
+
+The approved project gained three documents - "Orena Card Component", "Orena
+Recalibration" and "Orena Device Overview" - and they outrank the earlier
+Screens parts wherever they disagree.
+
+Applied in this pass:
+
+- **The card has no border.** Four layers instead: a translucent ground, an
+  inner highlight, a wide soft shadow, and on ink an optional violet bloom.
+  `theme.css` owns the tokens; one block in `rooms.css` names every surface
+  that takes them, so the recipe is stated once.
+- **A learning surface opens with a sentence**, at 29px over two lines, and
+  carries one violet rising from the floor of the screen. Skill hues left the
+  learning surfaces; they stay in the library and in navigation.
+- **Speaking (Phase 8)** is built to the recalibration: the line to say at
+  display size, the level meter as the design's waveform, the microphone on the
+  centre line (104px desktop, 84px phone) with hearing your own take on one
+  side and trying again on the other, the attempts named by what happened, and
+  feedback as a sentence about the words that still wobble - never a score, and
+  nothing at all when no assessment is configured (GAP-021).
+- **Dictation** takes the title-first heading and loses its skill-coloured
+  field; the field lights violet like every other action.
+
+Recorded and not yet applied, in the order they will be done: the 280px rail
+with Profile as a fifth destination and per-domain level chips; Home's
+recalibrated hero and rails; the reader's 440px word panel and 300px chapter
+list; the listening transcript at 620px; Dictation's single play control and
+per-character reveal; Progress with rank, XP and the activity heatmap; and the
+plans screen. New gaps: GAP-048 to GAP-051.
+
+Next: apply the update to the shell and Home, then Phase 9, Writing. Backend
+gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and

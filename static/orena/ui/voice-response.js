@@ -1,4 +1,6 @@
 import { esc, focusRegion } from './html.js';
+import { icon } from './phosphor.js';
+import { referenceCopy } from './reference.js';
 import { progressReporter, hint } from './patterns.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
@@ -63,7 +65,22 @@ export function mountVoiceResponse(
   /* Where the recording lives is worth knowing and not worth reading before
      every take, so it sits beside the control as a hint. What to do - reply
      in your own words, within two minutes - stays on screen. */
-  root.innerHTML = `<div class="voice-response"><blockquote class="voice-prompt practice-line" data-practice-line lang="${language}">${esc(prompt)}</blockquote><p>${esc(c.voiceTryNote)}</p><div class="mic-readiness" data-mic hidden><span class="mic-readiness__state" data-mic-state></span><span class="mic-readiness__device" data-mic-device></span><span class="mic-readiness__level" aria-hidden="true"><span data-mic-level></span></span></div><div class="button-row"><button class="primary" data-record>● ${esc(c.record)}</button>${hint({ text: c.localAudio })}<span class="meta" data-clock aria-live="off"></span></div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<details class="voice-history"><summary>${esc(c.voiceHistory)}</summary><div data-voice-history></div></details></div>`;
+  /* Speaking, recalibrated (design update 2026-09-20): the sentence to say
+     leads at display size, the level meter is the design's waveform, the
+     microphone sits on the centre line with hearing your own take on one side
+     and trying again on the other, and what comes back is a sentence about
+     two words - never a score. */
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  root.innerHTML = `<div class="voice-response speak-stage"><h2 class="speak-ask">${esc(r.speakAsk)}</h2><blockquote class="voice-prompt practice-line speak-line" data-practice-line lang="${language}">${esc(prompt)}</blockquote><div class="speak-wave" data-mic hidden><span class="speak-wave__state" data-mic-state></span><span class="speak-wave__device" data-mic-device></span><span class="speak-wave__bars" aria-hidden="true"><span data-mic-level></span></span></div><p class="speak-hint">${esc(r.speakTapRecord)}</p><div class="speak-controls"><button type="button" class="icon-button speak-side" data-play-take disabled aria-label="${esc(r.speakPlayMine)}">${icon('speaker-high', { size: 21 })}</button><button type="button" class="speak-mic" data-record aria-label="${esc(c.record)}">${icon('microphone', { size: 34, filled: true })}</button><button type="button" class="icon-button speak-side" data-retake aria-label="${esc(r.speakRetry)}">${icon('arrow-counter-clockwise', { size: 21 })}</button></div><div class="speak-meta"><span class="meta" data-clock aria-live="off"></span>${hint({ text: c.localAudio })}</div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<section class="speak-attempts"><h3 class="ds-label">${esc(r.speakAttempts)}</h3><div data-voice-history></div></section></div>`;
+  root.querySelector('[data-play-take]').onclick = () => {
+    const audio = root.querySelector('[data-take-audio]');
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  };
+  root.querySelector('[data-retake]').onclick = () => {
+    root.querySelector('[data-record]')?.click();
+  };
   /* Before a learner speaks, say whether the microphone is there and which one
      it is. State is words plus a level, never colour alone. */
   const micPanel = root.querySelector('[data-mic]');
@@ -250,13 +267,18 @@ export function mountVoiceResponse(
            measurement, and it never blocks the take. */
         const seconds = Math.max(1, (Date.now() - startedAt) / 1000);
         if (take.size && take.size / seconds < 1200) report.note(c.micVeryQuiet);
+        /* The take is heard through the control beside the microphone, as the
+           design draws it, so the row of native controls is gone. */
         root.querySelector('[data-take]').innerHTML =
-          `<audio controls aria-label="${esc(c.voicePlayback)}" src="${esc(take.url)}"></audio><button class="outline" data-feedback>${esc(c.voiceHearWords)} ↗</button>`;
+          `<audio data-take-audio class="sr-only" aria-label="${esc(c.voicePlayback)}" src="${esc(take.url)}"></audio><button type="button" class="quiet speak-feedback" data-feedback>${esc(c.voiceHearWords)} ↗</button>`;
         root.querySelector('[data-feedback]').onclick = feedback;
+        const playTake = root.querySelector('[data-play-take]');
+        if (playTake) playTake.disabled = false;
         if (!(take.size && take.size / seconds < 1200)) report.note(c.voiceReady);
       } else {
         result.innerHTML = resultIdle;
         root.querySelector('[data-take]').innerHTML = '';
+        root.querySelector('[data-play-take]')?.setAttribute('disabled', '');
         take = null;
         onRecording(true);
         const started = await recorder.start();

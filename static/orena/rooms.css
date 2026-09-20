@@ -3312,7 +3312,16 @@ ul.pronunciation-words small { color: var(--muted); }
    written counted under it, then Check. Result: the score as a ring, what was
    typed against what was said, and the actions as pills.
    --------------------------------------------------------------------------- */
-.dictate-ask { display: block; color: var(--text-muted); }
+/* Title first, data after: the screen opens on what to do, at display size. */
+.dictate-ask {
+  margin: 0 0 12px;
+  max-inline-size: 22ch;
+  font-family: var(--display-font);
+  font-size: 29px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.12;
+  letter-spacing: -0.032em;
+}
 .dictate-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 10px 12px; }
 .dictate-chips .chip {
   min-block-size: 34px;
@@ -3329,9 +3338,7 @@ ul.pronunciation-words small { color: var(--muted); }
   display: grid;
   gap: 10px;
   padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--domain-dictation) 40%, transparent);
   border-radius: 16px;
-  background: var(--surface-secondary);
 }
 .dictate-box textarea {
   min-block-size: 68px;
@@ -3344,7 +3351,9 @@ ul.pronunciation-words small { color: var(--muted); }
   resize: vertical;
 }
 .dictate-box textarea:focus-visible { outline: none; }
-.dictate-box:focus-within { border-color: var(--domain-dictation); }
+/* No skill colour on a learning surface: the field lights violet, like every
+   other action in the system. */
+.dictate-box:focus-within { box-shadow: var(--card-edge-lit), var(--card-ring), var(--card-shadow); }
 .dictate-box__foot { display: flex; justify-content: space-between; gap: 10px; color: var(--text-muted); }
 .dictate-actions { display: flex; gap: 10px; }
 .dictate-actions .primary { flex: 1; justify-content: center; min-block-size: 52px; border-radius: var(--radius-pill); }
@@ -3396,4 +3405,216 @@ ul.pronunciation-words small { color: var(--muted); }
   .dictate-line { font-size: 17px; line-height: 1.8; }
   .dictate-score { inline-size: 72px; block-size: 72px; }
   .dictate-result__head { gap: 14px; }
+}
+
+/* ---------------------------------------------------------------------------
+   The card, recalibrated (design update 2026-09-20, "Card Component").
+
+   No border and no solid fill. Four layers instead: a translucent ground, an
+   inner highlight that reads as a lit edge, a wide soft shadow, and - on ink -
+   an optional violet bloom. Contrast comes from ground and shadow, never from
+   a line, so one recipe holds in both themes.
+
+   This block is the one place that says so. A surface names itself here rather
+   than restating the recipe, and anything that still needs a hairline (a table
+   rule, a divider) keeps `--border-subtle`, which is not a card edge.
+   --------------------------------------------------------------------------- */
+.ds-card,
+.book-hero,
+.book-body,
+.chapter-complete,
+.vocab-home,
+.vocab-collection__hero,
+.vocab-collection__body,
+.review-session,
+.quiz-step,
+.listen-workspace,
+.saved-panel,
+.history-list {
+  border: 0;
+  background: var(--card-surface);
+  backdrop-filter: var(--card-blur);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+/* The smaller cards inside them - a row, a tile, a chip-sized surface - take
+   the same ground and edge without the blur, which would cost more than it
+   shows at that size. */
+.chapter-tile,
+.chapter-next,
+.chapter-word,
+.vocab-due,
+.vocab-collection,
+.vocab-row,
+.vocab-word,
+.book-chapter,
+.quiz-option,
+.quiz-answer,
+.review-grade,
+.review-meaning,
+.dictate-box,
+.dictate-line,
+.saved-word,
+.saved-row,
+.history-row,
+.listen-art,
+.transcript-hint,
+.state-panel {
+  border: 0;
+  background: var(--card-surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+/* Hover lifts; selection is a ring of light, not a border. */
+.vocab-collection:hover,
+.vocab-row:hover,
+.vocab-word:hover,
+.book-chapter:hover,
+.quiz-option:hover:not(:disabled),
+.saved-word:hover,
+.saved-row:hover,
+.history-row:hover {
+  background: var(--card-surface-strong);
+  box-shadow: var(--card-edge-lit), var(--card-shadow-lifted);
+}
+.book-chapter[aria-current='true'],
+.quiz-option[data-tone='picked'],
+.listen-workspace .transcript-panel li[data-current] > [data-segment] {
+  box-shadow: var(--card-edge-lit), var(--card-ring), var(--card-shadow-lifted);
+}
+
+/* ---------------------------------------------------------------------------
+   Speaking, recalibrated (design update 2026-09-20, "Recalibration" + device
+   overview 07): the line to say leads at display size, the microphone sits on
+   the centre line, and what comes back is a sentence about two words - never a
+   score. No skill colour on a learning surface: one violet, rising from the
+   floor of the screen.
+   --------------------------------------------------------------------------- */
+.speak-stage {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  text-align: center;
+  padding-block: var(--space-4) var(--space-6);
+}
+.speak-ask {
+  margin: 0;
+  max-inline-size: 22ch;
+  font-family: var(--display-font);
+  font-size: 29px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.12;
+  letter-spacing: -0.032em;
+}
+.speak-stage .speak-line {
+  margin: 0;
+  max-inline-size: 26ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--display-font);
+  font-size: 31px;
+  font-weight: var(--weight-bold);
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+}
+.speak-hint { margin: 0; color: var(--text-muted); font-size: 14px; }
+.speak-wave {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  inline-size: min(100%, 420px);
+}
+.speak-wave__state { font-size: 13.5px; color: var(--text-secondary); }
+.speak-wave__device { font-size: 12px; color: var(--text-muted); }
+.speak-wave__bars {
+  display: block;
+  inline-size: 100%;
+  block-size: 64px;
+  border-radius: 14px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--text-primary) 14%, transparent) 0 3px,
+    transparent 3px 9px
+  );
+  overflow: hidden;
+}
+.speak-wave__bars > span {
+  display: block;
+  block-size: 100%;
+  inline-size: 0;
+  background: repeating-linear-gradient(90deg, var(--text-primary) 0 3px, transparent 3px 9px);
+  transition: inline-size 0.12s linear;
+}
+.speak-controls { display: flex; align-items: center; justify-content: center; gap: 26px; }
+.speak-mic {
+  display: grid;
+  place-items: center;
+  inline-size: 104px;
+  block-size: 104px;
+  min-block-size: 104px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--action-gradient, var(--action-primary));
+  color: var(--text-on-action);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--action-primary) 50%, transparent);
+}
+.speak-mic[aria-pressed='true'],
+.speak-mic[data-recording='true'] { background: var(--status-error); }
+.speak-side { inline-size: 50px; block-size: 50px; min-block-size: 50px; border-radius: 50%; }
+.speak-meta { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); }
+.speak-feedback { color: var(--action-text); font-size: 14px; font-weight: var(--weight-semibold); }
+.speak-verdict {
+  margin: 0 0 8px;
+  max-inline-size: 46ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  text-align: start;
+}
+.pronunciation-words { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.pronunciation-words > li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--card-surface);
+  box-shadow: var(--card-edge);
+  font-size: 15px;
+}
+.pronunciation-words small { color: var(--text-muted); font-family: var(--mono-font); font-size: 11px; }
+.speak-attempts { display: grid; gap: 9px; inline-size: min(100%, 520px); text-align: start; }
+.speak-attempts .ds-label { color: var(--text-muted); }
+.voice-history-take {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card-surface);
+  box-shadow: var(--card-edge);
+}
+.voice-history-take small { color: var(--text-muted); font-family: var(--mono-font); font-size: 10.5px; }
+.voice-history-take p { margin: 0; font-size: 14px; }
+
+/* A learning surface is one colour rising from the floor of the screen. */
+#main[data-experience='speaking']::before,
+#main[data-experience='dictation']::before {
+  content: '';
+  position: fixed;
+  left: 50%;
+  bottom: -170px;
+  z-index: -1;
+  inline-size: 560px;
+  block-size: 440px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--bloom-floor, none);
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .speak-ask { font-size: 26px; }
+  .speak-stage .speak-line { font-size: 27px; }
+  .speak-mic { inline-size: 84px; block-size: 84px; min-block-size: 84px; }
+  .speak-controls { gap: 22px; }
 }

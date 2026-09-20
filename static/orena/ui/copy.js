@@ -1195,6 +1195,8 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  speakStillWobbles: 'These words still wobble - say them again, then try the line.',
+  voiceClear: 'The whole line came through clearly.',
   quizQuestions: '{n} questions',
   quizMultipleChoice: 'Multiple choice',
   quizNext: 'Next question',
@@ -1210,6 +1212,8 @@ Object.assign(copy.en, {
     'This one comes without questions. Reading it through was the point.',
 });
 Object.assign(copy.zh, {
+  speakStillWobbles: '这几个词还不够稳——先单独念一遍，再说整句。',
+  voiceClear: '整句都说清楚了。',
   quizQuestions: '{n} 道题',
   quizMultipleChoice: '选择题',
   quizNext: '下一题',

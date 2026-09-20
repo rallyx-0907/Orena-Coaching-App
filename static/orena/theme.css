@@ -153,7 +153,22 @@
   --domain-vocabulary: var(--o-hue-vocabulary);
   --domain-neutral: var(--o-ink-muted);
 
-  /* Elevation - light pools, not shadows. */
+  /* Elevation - light pools, not shadows.
+
+     A card is four layers and no border: a translucent ground, an inner
+     highlight that reads as a lit edge, a wide soft shadow, and an optional
+     violet bloom. Contrast comes from ground and shadow, never from a line. */
+  --card-surface: rgba(18, 18, 28, 0.6);
+  --card-surface-strong: rgba(22, 18, 36, 0.72);
+  --card-edge: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --card-edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  --card-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+  --card-shadow-lifted: 0 22px 54px rgba(0, 0, 0, 0.5);
+  --card-blur: blur(12px);
+  --card-glow: radial-gradient(closest-side, rgba(139, 92, 246, 0.18), transparent);
+  --card-ring: 0 0 0 1.5px rgba(167, 120, 255, 0.75);
+  /* A learning surface is one colour rising from the floor of the screen. */
+  --bloom-floor: radial-gradient(closest-side, rgba(126, 74, 226, 0.5), rgba(110, 64, 200, 0.14) 62%, transparent);
   --bloom: radial-gradient(130% 130% at 88% -25%, rgba(144, 101, 240, 0.34), transparent 62%);
   --bloom-page: radial-gradient(closest-side, rgba(110, 64, 200, 0.35), transparent);
   --shadow-raised: 0 12px 30px rgba(84, 50, 170, 0.22);
@@ -243,6 +258,19 @@
   --domain-vocabulary: var(--o-hue-vocabulary-deep);
   --domain-neutral: var(--o-paper-muted);
 
+  /* Paper's card is the same four layers over a light ground: a translucent
+     white, a hairline of light, a soft shadow - and no bloom, because glow on
+     paper reads as smudge. */
+  --card-surface: rgba(255, 255, 255, 0.72);
+  --card-surface-strong: rgba(255, 255, 255, 0.88);
+  --card-edge: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --card-edge-lit: inset 0 1px 0 #ffffff;
+  --card-shadow: 0 16px 40px rgba(20, 15, 30, 0.1);
+  --card-shadow-lifted: 0 20px 48px rgba(20, 15, 30, 0.14);
+  --card-blur: blur(12px);
+  --card-glow: none;
+  --card-ring: 0 0 0 1.5px rgba(116, 69, 206, 0.45);
+  --bloom-floor: none;
   --bloom: radial-gradient(130% 130% at 88% -25%, rgba(116, 69, 206, 0.07), transparent 62%);
   /* Paper drops the page bloom entirely: glow on paper reads as smudge. */
   --bloom-page: none;

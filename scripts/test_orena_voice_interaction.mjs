@@ -26,7 +26,12 @@ for(const language of ['en','zh']) {
   await node('[data-record]').onclick();
   assert.equal(captures,1);assert.equal(saved.length,0,'Recording is not evidence submission');
   await node('[data-record]').onclick();
-  assert.match(node('[data-take]').innerHTML,/audio controls/);
+  /* The take is heard through the control beside the microphone, as the
+     recalibrated design draws it, so the take carries the audio without a
+     second row of native controls. */
+  assert.match(node('[data-take]').innerHTML,/data-take-audio/);
+  assert.doesNotMatch(node('[data-take]').innerHTML,/audio controls/,'no second transport beside the microphone');
+  assert.equal(node('[data-play-take]').disabled,false,'hearing your own take is available once there is one');
   assert.equal(saved.length,0,'Listening to a take does not silently upload it');
   await node('[data-feedback]').onclick();
   assert.equal(saved.length,1);assert.equal(saved[0].reference_text,'');

@@ -52,7 +52,7 @@ function troubleSpots(c, result, language) {
     )
     .slice(0, 6);
   if (!weak.length) return '';
-  return `<ul class="pronunciation-words">${weak
+  return `<p class="speak-verdict">${esc(c.speakStillWobbles || '')}</p><ul class="pronunciation-words">${weak
     .map((word) => {
       const phoneme = (Array.isArray(word.phonemes) ? word.phonemes : [])
         .filter((p) => measured(p?.accuracy_score))
@@ -63,13 +63,15 @@ function troubleSpots(c, result, language) {
     .join('')}</ul>`;
 }
 
+/* What comes back is a sentence, not a scorecard (design update 2026-09-20):
+   the number, the four dimension bars and the per-word chips are gone. What
+   remains is the words that still wobble - the assessment's own, never
+   invented - so the learner knows what to say again. */
 export function pronunciationReportHtml(c, result, language) {
   if (!isRealMeasurement(result))
     return `<p class="meta">${esc(
       result?.score_kind === 'synthetic_demo' ? c.speakDemoAssessment : c.speakNoAssessment,
     )}</p>`;
-  const scores = DIMENSIONS.filter(([key]) => measured(result[key]))
-    .map(([key, label]) => `<span>${esc(c[label] || label)} <b>${Math.round(result[key])}</b></span>`)
-    .join('');
-  return `<h3>${esc(c.pronunciation)}</h3><div class="pronunciation-scores">${scores}</div>${troubleSpots(c, result, language)}<p class="meta">${esc(c.voiceMeasureNote)}</p>`;
+  const weak = troubleSpots(c, result, language);
+  return `${weak || `<p class="speak-verdict">${esc(c.voiceClear || c.voiceReady)}</p>`}<p class="meta">${esc(c.voiceMeasureNote)}</p>`;
 }

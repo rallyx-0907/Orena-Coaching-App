@@ -1997,3 +1997,53 @@ proportions, because the mockup's width is sized for two Han characters.
 
 **Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 6; retires
 the Vocabulary dashboard composition and the recall card skin that preceded it.
+
+## D-065 — The 2026-09-20 design update: cards without borders, and learning surfaces recalibrated
+
+**Status:** Accepted, explicit current human instruction (2026-09-20), pointing
+at three updated documents in the approved design project: "Orena Card
+Component", "Orena Recalibration" and "Orena Device Overview" (with "Orena
+Design Overview" unchanged in its foundations).
+
+**Decision:** Three changes are adopted, and they supersede the earlier Screens
+parts wherever they disagree.
+
+1. **A card has no border.** It is four layers: a translucent ground, an inner
+   highlight that reads as a lit edge, a wide soft shadow, and - on ink - an
+   optional violet bloom. Contrast comes from ground and shadow, never from a
+   line. Hover lifts; selection is a ring of light. `theme.css` owns the
+   tokens (`--card-surface`, `--card-edge`, `--card-shadow`, `--card-glow`,
+   `--card-ring`), and one block in `rooms.css` names the surfaces that take
+   them.
+2. **A learning surface opens with a sentence, not a label**, at 29px over two
+   lines, and carries one colour rising from the floor of the screen. Skill
+   hues leave the learning surfaces entirely - they stay in the library and in
+   navigation, which is where a learner is choosing rather than working.
+3. **A score becomes a sentence.** Speaking drops the number, the four
+   dimension bars and the per-word score chips; what comes back names the words
+   that still wobble, from the assessment's own data, and says nothing when
+   there is no assessment (GAP-021). This is also what Orena's evidence rules
+   already required.
+
+**Reason:** the human updated the approved design and instructed that the
+update be applied to what is built and to Phase 8. D-060 makes the approved
+mockup the visual source of truth; a newer approved document outranks an older
+one.
+
+**Consequences:** `theme.css`, `rooms.css` (the card block, Speaking, the
+dictation field), `ui/voice-response.js`, `ui/speaking.js`,
+`ui/pronunciation-report.js`, `ui/encounter.js`, copy packs, and
+`test_orena_voice_interaction.mjs`. New gaps from the updated documents:
+GAP-048 (rank and XP), GAP-049 (activity heatmap), GAP-050 (plans and
+payment), GAP-051 (the per-character reading row in Dictation).
+
+**Not yet applied, and recorded so it is not lost:** the 280px rail with the
+five destinations plus Profile and per-domain level chips, Home's recalibrated
+hero and rails, the reader's 440px word panel and 300px chapter list, the
+listening transcript at 620px, Dictation's single play control and
+per-character reveal, and the Progress rank panel. These are the next phases,
+in the order `DESIGN_SYSTEM_MIGRATION.md` records.
+
+**Supersedes / Superseded by:** Supersedes the bordered-card treatment of
+D-059/D-060 across every surface, and the scorecard form of the speaking
+report. Extends D-060's authority to the updated documents.
