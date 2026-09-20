@@ -55,6 +55,11 @@ export const referenceCopy = {
     speakPlayMine: 'Hear your take', speakRetry: 'Try again', speakSkip: 'Skip this one',
     dictYouTyped: 'You typed', dictCorrect: 'Correct', dictToFix: '{n} to fix', dictCharacters: '{n} characters',
     dictReplay: 'Replay', dictHint: 'Hint', dictReveal: 'Show it',
+    greetMorning: 'Good morning', greetAfternoon: 'Good afternoon', greetEvening: 'Good evening',
+    greetNamed: 'Hello {name}', greetPlain: 'Welcome back', forYou: 'For you',
+    reviewDue: 'Review {n} words', reviewNote: 'The ones your own reading left behind',
+    reviewNothing: 'Nothing is due', reviewNothingNote: 'Everything saved is resting until its day',
+    levelUnknown: 'No level recorded yet', streakUnmeasured: 'Days in a row are not counted yet',
     listenQuiz: 'Comprehension quiz', listenPrevLine: 'Previous line', listenNextLine: 'Next line',
     listenTranscript: 'Transcript', listenBack: 'Back to listening',
     vocabYourCollections: 'Your collections', vocabSavedWords: 'Saved words', vocabTier: 'Tier',
@@ -158,6 +163,11 @@ export const referenceCopy = {
     speakPlayMine: '听自己的录音', speakRetry: '再试一次', speakSkip: '跳过这句',
     dictYouTyped: '你写的', dictCorrect: '原文', dictToFix: '还差 {n} 处', dictCharacters: '{n} 个字',
     dictReplay: '再听', dictHint: '提示', dictReveal: '看原文',
+    greetMorning: '早上好', greetAfternoon: '下午好', greetEvening: '晚上好',
+    greetNamed: '你好，{name}', greetPlain: '欢迎回来', forYou: '为你推荐',
+    reviewDue: '复习 {n} 个词', reviewNote: '都是你自己读到时留下的',
+    reviewNothing: '暂时没有要复习的', reviewNothingNote: '收藏的词都在等下一个到期日',
+    levelUnknown: '还没有记录级别', streakUnmeasured: '连续天数暂未统计',
     listenQuiz: '理解测验', listenPrevLine: '上一句', listenNextLine: '下一句',
     listenTranscript: '文字稿', listenBack: '返回听力',
     vocabYourCollections: '你的词表', vocabSavedWords: '已收藏的词', vocabTier: '等级',
@@ -300,6 +310,18 @@ referenceCopy.vi = {
   dictReplay: 'Nghe lại',
   dictHint: 'Gợi ý',
   dictReveal: 'Xem bản gốc',
+  greetMorning: 'Chào buổi sáng',
+  greetAfternoon: 'Chào buổi chiều',
+  greetEvening: 'Chào buổi tối',
+  greetNamed: 'Chào {name}',
+  greetPlain: 'Chào bạn',
+  forYou: 'Dành cho bạn',
+  reviewDue: 'Ôn {n} từ',
+  reviewNote: 'Những từ chính bạn để lại khi đọc',
+  reviewNothing: 'Chưa có từ đến hạn',
+  reviewNothingNote: 'Các từ đã lưu đang đợi ngày của chúng',
+  levelUnknown: 'Chưa ghi nhận trình độ',
+  streakUnmeasured: 'Chưa đếm số ngày liên tiếp',
   listenQuiz: 'Câu hỏi hiểu bài',
   listenPrevLine: 'Câu trước',
   listenNextLine: 'Câu sau',
@@ -524,6 +546,11 @@ const DESTINATIONS = [
   { id: 'content', page: 'content', icon: 'books', label: 'library', owns: ['content', 'book', 'search'] },
   { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall', 'collection'] },
   { id: 'progress', page: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress', 'history'] },
+  /* The fifth destination the updated design draws. Until the profile screen
+     is built it opens the profile and settings sheet - the same place the
+     account card and the phone's own tab open - so the rail is never a link
+     to nothing. */
+  { id: 'profile', page: '', icon: 'user-circle', label: 'you', owns: ['profile'], sheet: true },
 ];
 const PRACTICE = [
   { id: 'reading', page: 'practice', intent: 'reading', icon: 'book-open', domain: 'reading' },
@@ -565,21 +592,23 @@ export function referenceNavigation(ctx) {
   const mainLinks = main
     .map((entry) => {
       const on = entry.owns.includes(here);
-      return `<a class="nav-link" href="${entry.href}"${current(on)} data-nav="${entry.id}">${icon(entry.icon, { filled: on, size: 20 })}<span class="nav-label">${esc(entry.label)}</span></a>`;
+      const inside = `${icon(entry.icon, { filled: on, size: 20 })}<span class="nav-label">${esc(entry.label)}</span>`;
+      return entry.sheet
+        ? `<button type="button" class="nav-link" data-preference data-nav="${entry.id}">${inside}</button>`
+        : `<a class="nav-link" href="${entry.href}"${current(on)} data-nav="${entry.id}">${inside}</a>`;
     })
     .join('');
   // A practice room's icon wears its domain hue; the row itself stays neutral.
   const practiceLinks = practice
     .map((entry) => {
       const on = here === entry.id;
-      return `<a class="nav-link nav-link--practice" href="${entry.href}"${current(on)} data-nav="${entry.id}" data-domain="${entry.domain}">${icon(entry.icon, { filled: on, size: 18 })}<span class="nav-label">${esc(entry.label)}</span></a>`;
+      /* The design prints the learner's level beside each domain. Nothing
+         stores one yet (GAP-004), so the slot reads as a dash rather than as
+         a level nobody declared. */
+      return `<a class="nav-link nav-link--practice" href="${entry.href}"${current(on)} data-nav="${entry.id}" data-domain="${entry.domain}">${icon(entry.icon, { filled: on, size: 18 })}<span class="nav-label">${esc(entry.label)}</span><span class="nav-level ds-data" title="${esc(c.levelUnknown)}">—</span></a>`;
     })
     .join('');
-  const adminEntry =
-    ctx.user?.is_admin === true
-      ? `<div class="nav-group nav-group--admin"><a class="nav-link" href="${link('admin')}"${current(here === 'admin')} data-nav="admin">${icon('gear-six', { filled: here === 'admin', size: 18 })}<span class="nav-label">${esc(c.admin)}</span></a></div>`
-      : '';
-  return `<nav id="shellNav" aria-label="Orena"><div class="nav-sheet-head"><strong>${esc(c.allDestinations)}</strong><button class="nav-close" type="button" data-nav-close aria-label="${esc(c.closeDestinations)}">${icon('x', { size: 20 })}</button></div><div class="nav-group nav-group--main" role="group" aria-label="${esc(c.mainNavigation)}">${mainLinks}</div><div class="nav-group nav-group--practice" role="group" aria-labelledby="navPractice"><a class="nav-heading" id="navPractice" href="${practiceHref}"${current(here === 'practice')} data-nav="practice"><span>${esc(c.practiceNavigation)}</span><span class="sr-only">, ${esc(c.allPractice)}</span></a>${practiceLinks}</div>${adminEntry}</nav>`;
+  return `<nav id="shellNav" aria-label="Orena"><div class="nav-sheet-head"><strong>${esc(c.allDestinations)}</strong><button class="nav-close" type="button" data-nav-close aria-label="${esc(c.closeDestinations)}">${icon('x', { size: 20 })}</button></div><div class="nav-group nav-group--main" role="group" aria-label="${esc(c.mainNavigation)}">${mainLinks}</div><div class="nav-group nav-group--practice" role="group" aria-labelledby="navPractice"><a class="nav-heading" id="navPractice" href="${practiceHref}"${current(here === 'practice')} data-nav="practice"><span>${esc(c.practiceNavigation)}</span><span class="sr-only">, ${esc(c.allPractice)}</span></a>${practiceLinks}</div></nav>`;
 }
 
 /* The phone's destinations: four tabs and the learner's own. "You" opens the
@@ -604,6 +633,39 @@ export function navigationToggle(ctx) {
   return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav" aria-label="${esc(c.allDestinations)}">${icon('squares-four', { size: 20 })}</button>`;
 }
 
+
+/* The top bar of a destination (Home, Library, Vocabulary, Progress): the
+   global search, the language pair and the due chip. Rooms where the learner
+   works do not carry it - the content comes forward (rule 11). */
+/* The bar the updated design draws: where the learner is, the one search, and
+   the streak. The language pair moved to the account card and the profile
+   sheet, which is where the design keeps language settings; what is due is a
+   counter on Vocabulary, where the design counts it. */
+export function topBar(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const here = navigationCurrent(ctx.location);
+  /* The bar names the destination with the same word the rail uses. */
+  const title = (here === 'discover' ? c.home : c[here]) || c.home;
+  return `<h1 class="topbar-title">${esc(title)}</h1><form class="topbar-search" role="search" data-global-search><label class="sr-only" for="globalSearch">${esc(c.searchPlaceholder)}</label>${icon('magnifying-glass', { size: 18 })}<input id="globalSearch" type="search" name="q" autocomplete="off" placeholder="${esc(c.searchPlaceholder)}"></form><div class="topbar-chips">${streakChip(ctx)}</div>`;
+}
+
+/* Days in a row. Nothing counts them yet (GAP-001), so the chip keeps its
+   place and says so rather than showing a number nobody measured. */
+export function streakChip(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  return `<span class="streak-chip" title="${esc(c.streakUnmeasured)}">${icon('fire', { size: 14 })}<span class="ds-data">—</span><span class="sr-only">${esc(c.streakUnmeasured)}</span></span>`;
+}
+
+/* Platform Admin is an operator entry, not a learner destination: the updated
+   design's rail draws five learner destinations and no operations. It is
+   rendered for an administrator inside the profile and settings sheet, which
+   is where operating the platform belongs. */
+export function operatorEntry(ctx) {
+  if (ctx.user?.is_admin !== true) return '';
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  return `<nav class="sheet-links sheet-links--operator" aria-label="${esc(c.admin)}"><a href="${link('admin')}">${esc(c.admin)}</a></nav>`;
+}
+
 /* "中文 → VI": what is being learned, and the language Orena explains it in.
    The learning language keeps its own writing system where it has one. */
 const LEARNING_MARK = { zh: '中文', en: 'EN' };
@@ -611,34 +673,6 @@ export function languagePair(ctx) {
   const learning = LEARNING_MARK[ctx.language] || String(ctx.language || '').toUpperCase();
   const support = String(ctx.support || ctx.ui || '').toUpperCase();
   return { learning, support, text: `${learning} → ${support}` };
-}
-export function languageChip(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  const pair = languagePair(ctx);
-  const label = c.languagePair.replace('{learning}', pair.learning).replace('{support}', pair.support);
-  return `<button class="language-chip" type="button" data-preference aria-label="${esc(label)}">${esc(pair.text)}</button>`;
-}
-
-/* Words due for review, from the learner's own saved vocabulary. The count is
-   painted when it arrives (`paintDueChip`); until then, and when it cannot be
-   read, the chip still leads to Recall and simply says so without a number. */
-export function dueChip(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  return `<a class="due-chip" href="${link('practice', { intent: 'recall' })}" data-due-chip data-domain="vocabulary">${icon('cards', { filled: true, size: 14 })}<span data-due-count>${esc(c.recall)}</span></a>`;
-}
-export function paintDueChip(root, ctx, count) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  root.querySelectorAll('[data-due-count]').forEach((el) => {
-    el.textContent = Number.isFinite(count) ? c.dueCount.replace('{n}', String(count)) : c.recall;
-  });
-}
-
-/* The top bar of a destination (Home, Library, Vocabulary, Progress): the
-   global search, the language pair and the due chip. Rooms where the learner
-   works do not carry it - the content comes forward (rule 11). */
-export function topBar(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  return `<form class="topbar-search" role="search" data-global-search><label class="sr-only" for="globalSearch">${esc(c.searchPlaceholder)}</label>${icon('magnifying-glass', { size: 18 })}<input id="globalSearch" type="search" name="q" autocomplete="off" placeholder="${esc(c.searchPlaceholder)}"></form><div class="topbar-chips">${languageChip(ctx)}${dueChip(ctx)}</div>`;
 }
 
 /* The learner, at the foot of the rail: who they are, what they are learning,

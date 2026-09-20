@@ -270,12 +270,31 @@ Applied in this pass:
 - **Dictation** takes the title-first heading and loses its skill-coloured
   field; the field lights violet like every other action.
 
-Recorded and not yet applied, in the order they will be done: the 280px rail
-with Profile as a fifth destination and per-domain level chips; Home's
-recalibrated hero and rails; the reader's 440px word panel and 300px chapter
-list; the listening transcript at 620px; Dictation's single play control and
-per-character reveal; Progress with rank, XP and the activity heatmap; and the
-plans screen. New gaps: GAP-048 to GAP-051.
+Then the shell and Home, in the order recorded:
+
+- **The rail is 280px** with the five destinations the device overview draws -
+  Home, Library, Vocabulary, Progress and Profile - and the practice domains
+  each carry the level slot, reading as a dash because nothing stores a level
+  (GAP-004). Profile opens the profile and settings sheet until its screen is
+  built, so the rail is never a link to nothing.
+- **The bar says where the learner is**: the destination, the one search, and
+  the streak, which reads as a dash because nothing counts days yet (GAP-001).
+  The language pair and the due chip left it: language settings live in the
+  account card and the profile sheet, and what is due is counted on Vocabulary
+  and on Home's review card, which is where the design counts them.
+- **Home** is the updated composition: a greeting, the two cards a learner
+  decides from - what they were in the middle of, and what is due - then "for
+  you" and "saved". The begin block, the separate listening and reading
+  shelves and the say shelf were the previous document's and are gone.
+- **Platform Admin leaves the rail.** The design's rail is five learner
+  destinations; the operator entry is rendered for an administrator inside the
+  settings sheet, where operating the platform belongs.
+
+Recorded and not yet applied, in the order they will be done: the reader's
+440px word panel and 300px chapter list; the listening transcript at 620px;
+Dictation's single play control and per-character reveal; Progress with rank,
+XP and the activity heatmap; Profile; and the plans screen. New gaps: GAP-048
+to GAP-052.
 
 Next: apply the update to the shell and Home, then Phase 9, Writing. Backend
 gaps: `UI_BACKEND_GAPS.md`.

@@ -11,11 +11,10 @@ import {
   referenceNavigation,
   navigationToggle,
   navigationTabs,
-  languageChip,
+  operatorEntry,
   accountCard,
   accountAvatarButton,
   topBar,
-  paintDueChip,
   referenceCopy,
   experienceFor,
   renderContinue,
@@ -205,7 +204,7 @@ function shell() {
      destination; on a phone a slim bar (mark, language pair, the learner) and
      the tab bar. Bringing your own content lives in Library. */
   document.getElementById('shell').innerHTML =
-    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}<div class="shell-bar">${languageChip(ctx)}${accountAvatarButton(ctx)}${navigationToggle(ctx)}</div><div class="shell-foot">${accountCard(ctx)}</div>${navigationTabs(ctx)}`;
+    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}<div class="shell-bar">${accountAvatarButton(ctx)}${navigationToggle(ctx)}</div><div class="shell-foot">${accountCard(ctx)}</div>${navigationTabs(ctx)}`;
   document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
   paintTopBar();
   /* The narrow-screen destination sheet. The shell is rebuilt on every route,
@@ -274,23 +273,7 @@ function paintTopBar() {
     if (!query) return;
     ctx.go('search', { q: query });
   };
-  refreshDueCount();
 }
-/* The due count is the learner's own saved vocabulary, read fresh on each
-   destination so a review just finished is reflected. Unknown stays unknown:
-   a failed read leaves the chip leading to Recall without a number. */
-let dueRequest = 0;
-async function refreshDueCount() {
-  const request = ++dueRequest;
-  let count = NaN;
-  try {
-    const data = await api.libraryVocabulary();
-    count = (data.items || []).filter((item) => item.due).length;
-  } catch {}
-  if (request !== dueRequest) return;
-  document.querySelectorAll('#topbar, #main').forEach((el) => paintDueChip(el, ctx, count));
-}
-
 /* Read-only account fact, never an access decision - accountCommerce() in
    writing_coach/product/commerce.py is the one server resolver this renders.
    billing_ready is false everywhere upstream, so no price, upgrade action or
@@ -416,7 +399,7 @@ function preferences(onboarding = false) {
    sheet (Phase 10). No new chrome anywhere else. */
 function secondarySurfaces(scope) {
   const r = referenceCopy[scope.ui] || referenceCopy.en;
-  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>`;
+  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
 }
 function validVideo(value) {
   try {

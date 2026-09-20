@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { route, link } from '../static/orena/product/intent.js';
 import { api } from '../static/orena/infrastructure/api.js';
-import { referenceNavigation } from '../static/orena/ui/reference.js';
+import { referenceNavigation, operatorEntry } from '../static/orena/ui/reference.js';
 
 const memory = { value: { continuation: [] } };
 
@@ -17,8 +17,13 @@ const navigation = (isAdmin) =>
     user: { is_admin: isAdmin },
   });
 
-assert.doesNotMatch(navigation(false), /#\/admin/, 'non-admin navigation has no admin entry point');
-assert.match(navigation(true), /#\/admin/, 'admin navigation includes the admin entry point');
+/* The rail draws five learner destinations and no operations (D-065), so the
+   operator entry lives with the settings - rendered for an administrator, and
+   for nobody else. */
+assert.doesNotMatch(navigation(false), /#\/admin/, 'the learner rail has no admin entry point');
+assert.doesNotMatch(navigation(true), /#\/admin/, 'and neither does the rail of an administrator');
+assert.equal(operatorEntry({ ui: 'en', user: { is_admin: false } }), '', 'a learner is offered no operator entry');
+assert.match(operatorEntry({ ui: 'en', user: { is_admin: true } }), /#\/admin/, 'an administrator keeps the way in');
 
 let requestedPath = '';
 globalThis.fetch = async (url) => {

@@ -3618,3 +3618,47 @@ ul.pronunciation-words small { color: var(--muted); }
   .speak-mic { inline-size: 84px; block-size: 84px; min-block-size: 84px; }
   .speak-controls { gap: 22px; }
 }
+
+/* --- Home, as the updated design draws it (D-065) ------------------------
+   A greeting, then the two cards a learner decides from, then the rails. */
+.home-greeting { display: grid; gap: 4px; margin-block-end: var(--space-5); }
+.home-greeting .ds-label { color: var(--text-muted); }
+.home-greeting h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 32px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.028em;
+}
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-block-end: var(--space-6);
+}
+.review-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--bloom), var(--card-surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+.review-card > svg { flex: none; color: var(--tile-ink); }
+.review-card__body { display: grid; gap: 3px; flex: 1; min-inline-size: 0; }
+.review-card__body strong { font-size: 14.5px; font-weight: var(--weight-bold); }
+.review-card__body small { color: var(--text-secondary); font-size: 12.5px; }
+.review-card__go { flex: none; min-block-size: 40px; padding-inline: 16px; border-radius: var(--radius-pill); }
+.continue-card--empty { display: flex; align-items: center; gap: 14px; padding: 16px; }
+.continue-card--empty .primary { min-block-size: 40px; padding-inline: 16px; border-radius: var(--radius-pill); }
+
+@media (max-width: 900px) {
+  .home-hero { grid-template-columns: minmax(0, 1fr); }
+  .home-greeting h2 { font-size: 27px; }
+}
+/* One rail, one card height: a mixed shelf aligns to the top rather than
+   stretching every card to the tallest cover in it. */
+[data-content-rail='for-you'] .content-rail__track,
+[data-content-rail='saved'] .content-rail__track { align-items: start; }

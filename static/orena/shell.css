@@ -4,12 +4,12 @@
    earlier decides the frame. Colour comes only from theme.css.
 
    Measurements are the approved design's (Home · desktop 1280, Home · 390,
-   Home · paper): a 224px rail, 10/12px rows at radius 12, a 420px search, a
+   Home · paper): a 280px rail, 10/12px rows at radius 12, a 420px search, a
    40px round action. Where the design draws nothing - the 1024 tablet - the
    rail keeps its icons (a recorded open decision, not a redesign). */
 
 :root {
-  --rail-width: 224px;
+  --rail-width: 280px;
   --tabbar-height: 64px;
   --page-gutter: 28px;
 }
@@ -583,3 +583,35 @@ html[data-topbar='on'] #main {
     }
   }
 }
+
+/* --- The rail and bar of the updated design (D-065) ----------------------
+   Five destinations, the practice domains with the level the design prints
+   beside each one, and a bar that says where the learner is. */
+.nav-link { inline-size: 100%; text-align: start; }
+.nav-link .nav-level {
+  margin-inline-start: auto;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.topbar-title {
+  margin: 0;
+  flex: none;
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.streak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--card-surface);
+  box-shadow: var(--card-edge);
+  color: var(--progress-text);
+  font-size: 11px;
+}
+.streak-chip > svg { color: var(--progress); }

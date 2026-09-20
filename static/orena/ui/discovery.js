@@ -212,72 +212,82 @@ function startBlock(ctx, { first, resume, next, more }) {
   return `<section class="discover-start discover-start--begin"><span class="continue-card__visual" aria-hidden="true">${art(first)}</span><div class="discover-start__body"><h2>${esc(r.startTitle)}</h2><small lang="${esc(first.language || ctx.language)}">${esc(first.title)}${length ? ` · ${length} ${esc(r.railMinutes)}` : ''}</small></div><a class="primary" href="${esc(destination)}">${esc(r.startAction)}${icon('arrow-right', { size: 16 })}</a></section>`;
 }
 
-/* Home (D-060): the approved composition, in its order - Continue, the
-   Listening shelf, then the Reading shelf beside Today's words. The
-   speaking-and-writing shelf follows: the design's checklist lists it as a
-   Home rail it has not drawn yet, and it is the phone's only way to those
-   prompts, so it stays - in the shelf's approved shape. A shelf with nothing
-   real in it does not appear, and nothing here invents an item. */
+/* Home, as the updated design draws it (D-065, device overview 01): a
+   greeting, then the two cards a learner decides from - what they were in the
+   middle of, and what is due - and then two rails: what is for them, and what
+   they have kept. Nothing else: the older begin block, the separate listening
+   and reading shelves and the say shelf were compositions of the previous
+   document.
+
+   Every card is a real item. There is no recommender behind "for you" yet, so
+   the rail is what the catalogue actually holds, in the catalogue's own order
+   (GAP-052), and the review card counts the learner's own saved words. */
+function greeting(ctx) {
+  const r = referenceCopy[ctx.ui];
+  const hour = new Date().getHours();
+  const part = hour < 12 ? r.greetMorning : hour < 18 ? r.greetAfternoon : r.greetEvening;
+  /* A learner's display name is not stored yet (GAP-013); the account's own
+     handle is what Orena actually knows, and without one the greeting simply
+     does not name anybody. */
+  const name = String(ctx.user?.name || '').trim() || String(ctx.user?.email || '').split('@')[0] || '';
+  return `<header class="home-greeting"><p class="ds-label">${esc(part)}</p><h2>${esc(name ? r.greetNamed.replace('{name}', name) : r.greetPlain)}</h2></header>`;
+}
+
+function reviewCard(ctx, due) {
+  const r = referenceCopy[ctx.ui];
+  const count = Number(due) || 0;
+  return `<article class="review-card" data-domain="vocabulary">${icon('cards', { size: 20, filled: true })}<div class="review-card__body"><strong>${esc(count ? r.reviewDue.replace('{n}', String(count)) : r.reviewNothing)}</strong><small>${esc(count ? r.reviewNote : r.reviewNothingNote)}</small></div><a class="${count ? 'primary' : 'outline'} review-card__go" href="${esc(link('practice', { intent: 'recall' }))}">${esc(count ? r.startAction : r.vocabSavedWords)}</a></article>`;
+}
+
 export function discoverySpread(
   ctx,
   {
     media = [],
     reading = [],
-    speaking = [],
-    writing = [],
     vocabulary = [],
+    saved = [],
+    due = 0,
     catalogError = '',
   },
 ) {
   const r = referenceCopy[ctx.ui];
   const continuation = continuationEntries(ctx.memory).slice(0, 8);
-  const texts = reading.slice(0, RAIL_PREVIEW_LIMIT);
-  const heard = media.slice(0, RAIL_PREVIEW_LIMIT);
   const countLabel = (n) => r.itemCount.replace('{n}', String(n));
+  const cardFor = (item) =>
+    item.kind === 'audio' || item.kind === 'video' ? listeningCard(item, ctx) : readingCard(item, ctx);
 
+  /* The label the design prints over the card, and - when there is more than
+     one thread - the way to all of them. */
+  const heroHead = `<header class="home-label-row"><h2 class="home-label" id="homeContinue">${esc(r.continue)}</h2>${
+    continuation.length > 1
+      ? `<a class="home-rail-all" href="${esc(link('continue'))}">${esc(r.collectionViewAll)}${icon('caret-right', { size: 14 })}</a>`
+      : ''
+  }</header>`;
+  const hero = `${heroHead}<div class="home-hero">${
+    continuation[0]
+      ? continueCard(continuation[0], ctx, true)
+      : `<article class="continue-card continue-card--empty" data-domain="neutral"><span class="continue-card__body"><strong>${esc(r.startTitle)}</strong><small>${esc(r.railEmpty)}</small></span><a class="primary" href="${esc(link('content'))}">${esc(r.library)}</a></article>`
+  }${reviewCard(ctx, due)}</div>`;
+
+  const forYou = [...media, ...reading].slice(0, RAIL_PREVIEW_LIMIT);
   const blocks = [];
-  if (heard.length)
+  if (forYou.length)
     blocks.push(rail(ctx, {
-      id: 'voices',
-      title: r.listening,
-      meta: countLabel(media.length),
-      items: heard.map((item, index) => listeningCard(item, ctx, { lead: index === 0 })),
-      href: link('practice', { intent: 'follow' }),
+      id: 'for-you',
+      title: r.forYou,
+      meta: countLabel(media.length + reading.length),
+      items: forYou.map(cardFor),
+      href: link('content'),
     }));
-
-  const stories = texts.filter(
-    (item) => STORY_MATERIAL.test(String(item.material || '')) || item.kind === 'story' || item.kind === 'text',
-  );
-  const readingRail = stories.length
-    ? rail(ctx, {
-        id: 'stories',
-        title: r.reading,
-        items: stories.map((item) => readingCard(item, ctx)),
-        href: link('practice', { intent: 'reading' }),
-      })
-    : '';
-  const words = vocabulary.length ? todayWords(ctx, vocabulary.slice(0, 5)) : '';
-  if (readingRail || words)
-    blocks.push(`<div class="home-pair">${readingRail}${words}</div>`);
-
-  const say = [...speaking, ...writing];
-  if (say.length)
+  const kept = saved.slice(0, RAIL_PREVIEW_LIMIT);
+  if (kept.length)
     blocks.push(rail(ctx, {
-      id: 'say',
-      title: r.railSay,
-      items: [
-        ...speaking.map((item) => speakingCard(item, ctx)),
-        ...writing.map((item) => writingCard(item, ctx)),
-      ],
-      href: link('expression'),
+      id: 'saved',
+      title: r.savedTitle,
+      items: kept.map(cardFor),
+      href: link('collection'),
     }));
+  if (vocabulary.length) blocks.push(todayWords(ctx, vocabulary.slice(0, 5)));
 
-  /* The heading names the page for assistive technology; the learner is told
-     where they are by the rail and the content beneath it. */
-  return `<h1 class="sr-only">${esc(r.home)}</h1>${startBlock(ctx, {
-    first: texts.find((item) => minutes(item) > 0 && minutes(item) <= 5) || texts[0] || heard[0] || null,
-    resume: continuation[0] || null,
-    next: continuation[1] || null,
-    more: continuation.length > 2,
-  })}${catalogError || ''}<div class="discover-feed">${blocks.join('')}</div>`;
+  return `<h1 class="sr-only">${esc(r.home)}</h1>${greeting(ctx)}${hero}${catalogError || ''}<div class="discover-feed">${blocks.join('')}</div>`;
 }

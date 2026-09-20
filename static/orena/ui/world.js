@@ -238,12 +238,23 @@ export async function renderWorld(root, ctx) {
       media: practiceMedia,
     }) || (() => {});
   } else {
+    /* What is due is the learner's own saved vocabulary, read once for the
+       card that offers the review (D-065). A failed read leaves the card
+       saying nothing is due rather than inventing a number. */
+    let due = 0;
+    try {
+      const saved = await api.libraryVocabulary();
+      due = (saved.items || []).filter((item) => item.due).length;
+    } catch {
+      due = 0;
+    }
+    if (!alive()) return;
     root.innerHTML = discoverySpread(ctx, {
       media,
       reading: readable,
-      speaking: voiceInvitations(language),
-      writing: text.filter((item) => item.prompt),
       vocabulary,
+      saved: [...(memory.value.imports || []), ...(memory.value.mediaImports || [])],
+      due,
       catalogError,
     });
   }

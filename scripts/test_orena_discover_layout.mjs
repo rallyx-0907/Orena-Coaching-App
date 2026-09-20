@@ -104,54 +104,34 @@ for (const ui of ['en', 'zh']) {
     {
       media: sampleMedia,
       reading: sampleReading,
-      speaking: sampleSpeaking,
-      writing: sampleWriting,
       vocabulary: sampleVocabulary,
+      saved: sampleReading.slice(0, 2),
+      due: 3,
       catalogError: '',
     },
   );
 
-  /* D-060: Home is the approved composition - Continue, the Listening shelf,
-     the Reading shelf beside Today's words - and then the speaking-and-writing
-     shelf the design's checklist lists for Home. Shelves carry the domain
-     names the design uses; skill modules are not rebuilt as extra shelves. */
+  /* D-065: Home is the updated composition - a greeting, the two cards a
+     learner decides from (what they were in the middle of, and what is due),
+     then what is for them and what they have kept. The older begin block and
+     the listening/reading/say shelves belonged to the previous document. */
   const railIds = [...rendered.matchAll(/data-content-rail="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(railIds, ['voices', 'stories', 'say'], `${ui}: the approved shelves, in order`);
-  assert.equal((rendered.match(/class="content-rail__track"/g) || []).length, 3);
-  assert.ok(
-    rendered.indexOf('data-content-rail="stories"') < rendered.indexOf('data-today-words') &&
-      rendered.indexOf('class="home-pair"') < rendered.indexOf('data-content-rail="stories"'),
-    `${ui}: Reading and Today's words share one row`,
-  );
-  // Continue: the two threads as cards, both lit, the most recent leading.
-  assert.equal((rendered.match(/class="continue-card" data-live/g) || []).length, 2, `${ui}: two lit continue cards`);
+  assert.deepEqual(railIds, ['for-you', 'saved'], `${ui}: the updated rails, in order`);
+  assert.match(rendered, /class="home-greeting"/, `${ui}: the page opens on a greeting`);
+  assert.match(rendered, /class="home-hero"/, `${ui}: and then on the two cards`);
+  assert.match(rendered, /class="review-card"/, `${ui}: what is due is one of them`);
+  assert.equal((rendered.match(/class="continue-card" data-live/g) || []).length, 1,
+    `${ui}: one continue card leads the hero`);
   assert.equal((rendered.match(/data-lead/g) || []).length, 1, `${ui}: one leading thread`);
   // No thread records a place in this fixture, so no percentage is invented.
   assert.doesNotMatch(rendered.slice(0, rendered.indexOf('discover-feed')), /aria-valuenow/, `${ui}: no invented progress`);
   assert.match(rendered, /class="progress-bar" data-unavailable/, `${ui}: the progress rail keeps its place, marked unmeasured`);
-  const sayRail = rendered.slice(rendered.indexOf('data-content-rail="say"'));
-  assert.ok(/data-speaking-card/.test(sayRail) && /data-writing-card/.test(sayRail),
-    `${ui}: the expression shelf mixes speaking and writing`);
-  assert.equal((rendered.match(/data-speaking-card/g) || []).length, 3);
-  assert.equal((rendered.match(/data-writing-card/g) || []).length, 4);
   assert.equal((rendered.match(/data-vocabulary-card/g) || []).length, 5);
   assert.equal((rendered.match(/data-vocabulary-card[^>]*hidden/g) || []).length, 4, `${ui}: one word on top of the stack`);
-
-  /* One obvious action in the first viewport, and only one. */
-  assert.equal((rendered.match(/class="discover-start[ "]/g) || []).length, 1,
-    `${ui}: exactly one start block`);
-  assert.equal((rendered.match(/<a class="primary/g) || []).length, 1,
-    `${ui}: the start block carries the single primary action`);
-  assert.match(rendered, /class="discover-start discover-start--resume"/,
-    `${ui}: a learner with unfinished work is offered the way back first`);
-  assert.match(rendered, new RegExp(escapeRegExp(referenceCopy[ui].continueAction)),
-    `${ui}: the continue action is named`);
-  assert.doesNotMatch(rendered, /class="discover-hero"/,
-    `${ui}: the page-wide headline is retired (D-057 rule 13)`);
+  assert.doesNotMatch(rendered, /class="discover-start/, `${ui}: the retired begin block is gone`);
+  assert.doesNotMatch(rendered, /data-content-rail="say"/, `${ui}: and so is the say shelf`);
   assert.match(rendered, /<h1 class="sr-only">/,
     `${ui}: the page is still named for assistive technology`);
-  // The approved Home draws no skill doors; Practice is reached from the rail
-  // and, on a phone, the practice sheet.
   assert.doesNotMatch(rendered, /class="discover-doors"/, `${ui}: no doors row the design does not draw`);
   assert.match(rendered, /data-vocabulary-skin="silver"/,
     `${ui}: Home preserves the canonical level material/skin`);
@@ -176,48 +156,45 @@ for (const ui of ['en', 'zh']) {
     `${ui}: a text without an image gets the artwork slot`);
   assert.match(rendered, /1:30/);
   assert.match(rendered, /nghĩa 1/);
-  assert.match(rendered, /#\/practice\?intent=reading/);
-  assert.match(rendered, /#\/practice\?intent=follow/);
-  assert.match(rendered, /#\/practice\?id=voice%3Aspeak-0&amp;intent=speaking/);
-  assert.match(rendered, /#\/expression\?id=story%3Aread-0/);
-  assert.match(rendered, /#\/language/);
+  /* The rails lead where the updated design leads: everything browsable, and
+     everything kept. Practice is the rail's own business. */
+  assert.match(rendered, /#\/content/, `${ui}: "for you" opens the library`);
+  assert.match(rendered, /#\/collection/, `${ui}: and what was kept opens Saved`);
+  assert.match(rendered, /#\/practice\?intent=recall/, `${ui}: what is due leads into review`);
   assert.doesNotMatch(rendered, /discover-domain-card|discover-domain-rail|New content|新上线/);
   assert.doesNotMatch(rendered, /voice-description|card-description/);
 }
 
 const noContinue = discoverySpread(
   { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory: { value: { continuation: [], expressions: {}, conversations: {} } } },
-  { media: sampleMedia, reading: sampleReading, speaking: sampleSpeaking, writing: sampleWriting, vocabulary: sampleVocabulary },
+  { media: sampleMedia, reading: sampleReading, vocabulary: sampleVocabulary, saved: [], due: 0 },
 );
-assert.doesNotMatch(noContinue, /data-content-rail="continue"/, 'Continue is truthful and disappears without resumable work');
-assert.equal((noContinue.match(/data-content-rail=/g) || []).length, 3, 'the content shelves remain visible');
-/* A learner with no history is never left without a way in. */
-assert.match(noContinue, /class="discover-start discover-start--begin"/,
+/* A learner with no history is never left without a way in, and nothing due is
+   said rather than dressed as a task. */
+assert.match(noContinue, /class="continue-card continue-card--empty"/,
   'a new learner is offered a beginning rather than a resume');
-assert.match(noContinue, new RegExp(escapeRegExp(referenceCopy.en.startAction)),
-  'the beginning carries a localized primary action');
-assert.equal((noContinue.match(/<a class="primary/g) || []).length, 1,
-  'a new learner sees exactly one primary action');
+assert.match(noContinue, new RegExp(escapeRegExp(referenceCopy.en.reviewNothing)),
+  'nothing due says so');
 assert.ok(
-  noContinue.indexOf('discover-start') < noContinue.indexOf('discover-feed'),
+  noContinue.indexOf('home-hero') < noContinue.indexOf('discover-feed'),
   'the way in comes before the catalogue, not after it',
 );
 /* Nothing real to show is still not a reason to invent a shelf. */
 const nothing = discoverySpread(
   { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory: { value: { continuation: [], expressions: {}, conversations: {} } } },
-  { media: [], reading: [], speaking: [], writing: [], vocabulary: [] },
+  { media: [], reading: [], vocabulary: [], saved: [], due: 0 },
 );
 assert.doesNotMatch(nothing, /data-content-rail=/, 'an empty catalogue renders no invented shelves');
-assert.match(nothing, /class="discover-start discover-start--begin"/, 'an empty catalogue still greets a learner with a beginning');
+assert.match(nothing, /class="home-greeting"/, 'an empty catalogue still greets a learner');
 
 const bounded = discoverySpread(
   { c: copy.en, language: 'en', support: 'vi', ui: 'en', memory },
   {
     media: Array.from({ length: 20 }, (_, index) => ({ ...sampleMedia[0], id: `media:large-${index}`, title: `Media ${index}` })),
     reading: Array.from({ length: 20 }, (_, index) => ({ ...sampleReading[0], id: `story:large-${index}`, title: `Story ${index}` })),
-    speaking: sampleSpeaking,
-    writing: sampleWriting,
     vocabulary: sampleVocabulary,
+    saved: [],
+    due: 0,
   },
 );
 /* Discover previews; it never renders a library. Every shelf stays bounded on
@@ -318,7 +295,7 @@ assert.doesNotMatch(styles, /\.content-rail__track[^}]*flex-wrap:\s*wrap/s);
 assert.match(world, /api\.listeningLibrary\(language\)/);
 assert.match(world, /api\.readingSessions\(12\)/);
 assert.match(world, /api\.dailyVocabularyFeed\(language\)/);
-assert.match(world, /voiceInvitations\(language\)/);
+assert.match(world, /api\.libraryVocabulary\(\)/, 'what is due on Home is the saved vocabulary itself');
 assert.match(world, /reading:\s*readable/);
 assert.match(world, /[\r\n]\s*vocabulary,\s*[\r\n]/, 'Discover is handed the vocabulary it renders');
 assert.doesNotMatch(discovery, /const\s+(?:media|reading|speaking|writing|vocabulary)\s*=\s*\[/,
