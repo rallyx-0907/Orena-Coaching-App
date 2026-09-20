@@ -4,7 +4,7 @@ import json
 import sqlite3
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -481,7 +481,7 @@ class PostgresPlatformRepository:
         is named in the payload instead. Callers pass only non-secret facts.
         """
         body = dict(payload or {})
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with Session(self.engine) as session, session.begin():
             user_id = session.scalar(select(User.id).where(User.user_key == actor)) if actor else None
             if user_id is None:

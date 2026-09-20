@@ -112,4 +112,4 @@ def test_the_admin_routes_read_through_the_limited_reader():
 def test_csv_io_is_still_utf8_only():
     with pytest.raises(VocabularySourceError):
         parse_vocabulary_source("words.csv", "term\ncafé\n".encode("latin-1"))
-    assert parse_vocabulary_source("words.csv", "term\ncafé\n".encode("utf-8")).rows[0]["term"] == "café"
+    assert parse_vocabulary_source("words.csv", "term\ncafé\n".encode()).rows[0]["term"] == "café"
