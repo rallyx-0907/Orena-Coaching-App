@@ -3305,3 +3305,95 @@ ul.pronunciation-words small { color: var(--muted); }
   .listen-actions { flex-wrap: wrap; }
   .listen-workspace .transcript-panel { padding: 18px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Dictation (D-059 Phase 7, Screens part 2 section 07). Typing: the ask, the
+   aids as chips, one bordered field in the dictation hue with what has been
+   written counted under it, then Check. Result: the score as a ring, what was
+   typed against what was said, and the actions as pills.
+   --------------------------------------------------------------------------- */
+.dictate-ask { display: block; color: var(--text-muted); }
+.dictate-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 10px 12px; }
+.dictate-chips .chip {
+  min-block-size: 34px;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  font-weight: var(--weight-regular);
+  text-transform: uppercase;
+}
+.dictate-chips .chip:hover { color: var(--text-primary); }
+.dictate-form { display: grid; gap: 12px; }
+.dictate-box {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--domain-dictation) 40%, transparent);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.dictate-box textarea {
+  min-block-size: 68px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 17px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.dictate-box textarea:focus-visible { outline: none; }
+.dictate-box:focus-within { border-color: var(--domain-dictation); }
+.dictate-box__foot { display: flex; justify-content: space-between; gap: 10px; color: var(--text-muted); }
+.dictate-actions { display: flex; gap: 10px; }
+.dictate-actions .primary { flex: 1; justify-content: center; min-block-size: 52px; border-radius: var(--radius-pill); }
+
+.dictate-result__head { display: flex; align-items: center; gap: 18px; margin-block-end: 16px; }
+.dictate-score {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 88px;
+  block-size: 88px;
+  border-radius: 50%;
+  background: conic-gradient(var(--progress) 0 var(--score, 0%), var(--progress-track) var(--score, 0%) 100%);
+}
+.dictate-score::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--surface-panel);
+}
+.dictate-score > * { position: relative; }
+.dictate-score strong { font-family: var(--display-font); font-size: 24px; font-weight: var(--weight-heavy); }
+.dictate-score small { color: var(--text-muted); font-size: 10.5px; }
+.dictate-result__copy { display: grid; gap: 4px; }
+.dictate-result__copy strong { font-family: var(--display-font); font-size: 19px; font-weight: var(--weight-heavy); }
+.dictate-result__copy p { margin: 0; color: var(--text-secondary); font-size: 13.5px; }
+.dictate-blocks { display: grid; gap: 14px; }
+.dictate-block { display: grid; gap: 8px; }
+.dictate-block .ds-label { color: var(--text-muted); }
+.dictate-line {
+  padding: 14px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  font-size: 19px;
+  line-height: 1.95;
+}
+.dictate-line--right {
+  border-color: color-mix(in srgb, var(--status-success) 30%, transparent);
+  background: color-mix(in srgb, var(--status-success) 8%, transparent);
+}
+.dictate-meaning { margin: 0; color: var(--text-secondary); font-size: 13.5px; }
+.dictate-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-block-start: 14px; }
+.dictate-pills .outline { min-block-size: 42px; padding-inline: 14px; border-radius: var(--radius-pill); font-size: 14px; font-weight: var(--weight-bold); }
+
+@media (max-width: 700px) {
+  .dictate-line { font-size: 17px; line-height: 1.8; }
+  .dictate-score { inline-size: 72px; block-size: 72px; }
+  .dictate-result__head { gap: 14px; }
+}

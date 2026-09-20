@@ -1266,7 +1266,16 @@ export async function renderEncounter(root, ctx) {
          takes the height left. The comparison replaces the shape of the line
          rather than stacking under it - both answer "what did I get right",
          and the comparison is the fuller answer. */
-      body.innerHTML = `<section class="hint-line" data-hint-panel hidden></section><div class="dictation-ask"><label for="reconstruction">${c.dictatePrompt}</label><button type="button" class="quiet" data-listen>${c.replay} ↺</button></div><form id="dictationForm"><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="2" required></textarea><div class="button-row dictation-actions"><button class="primary">${c.check}</button><div class="dictation-aids"><button type="button" data-hint>${c.hint}</button><button type="button" data-reveal>${c.reveal}</button></div></div></form><div class="dictation-result"><div class="comparison" aria-live="polite"></div><p data-evidence-status role="status"></p></div>`;
+      body.innerHTML = `<section class="hint-line" data-hint-panel hidden></section><label class="ds-label dictate-ask" for="reconstruction">${esc(c.dictatePrompt)}</label><div class="dictate-chips"><button type="button" class="chip" data-listen>${icon('arrow-counter-clockwise', { size: 14 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="chip" data-hint>${icon('info', { size: 14 })}<span>${esc(r.dictHint)}</span></button><button type="button" class="chip" data-reveal>${icon('eye', { size: 14 })}<span>${esc(r.dictReveal)}</span></button></div><form id="dictationForm" class="dictate-form"><div class="dictate-box"><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="2" required></textarea><div class="dictate-box__foot"><span class="ds-label" data-dictate-count>${esc(String(r.dictCharacters).replace('{n}', '0'))}</span></div></div><div class="dictate-actions"><button class="primary">${esc(c.check)}</button></div></form><div class="dictation-result"><div class="comparison" aria-live="polite"></div><p data-evidence-status role="status"></p></div>`;
+      /* The design's own count of what has been written, from the field. */
+      const countSlot = body.querySelector('[data-dictate-count]');
+      const paintCount = () => {
+        countSlot.textContent = String(r.dictCharacters).replace(
+          '{n}',
+          String([...body.querySelector('#reconstruction').value.trim()].length),
+        );
+      };
+      body.querySelector('#reconstruction').addEventListener('input', paintCount);
       body.querySelector('[data-listen]').onclick = playLine;
       /* The hint is a working aid, not an outcome: it lives for this visit
          only and never becomes evidence. Revealing the answer stays the
@@ -1364,8 +1373,19 @@ export async function renderEncounter(root, ctx) {
         event.preventDefault();
         try {
           const { result, diff } = dictation.compare(answer.value.trim());
+          /* The approved result (Screens part 2 section 07): the score as a
+             ring, then what was typed against what was said - a wrong token
+             marked by shape as well as by colour, a missing one labelled - and
+             the actions as pills. Every figure comes from the comparison
+             itself: the percentage the scorer returned, and the count of
+             tokens that still differ. */
+          const toFix = diff.filter((part) => part.status !== 'correct').length;
+          const meaningLine = model.meaning(target.segment_id) || '';
           body.querySelector('.comparison').innerHTML =
-            `<div class="comparison-head"><div class="heading-with-hint"><h3>${result.accuracy_percent}% ${c.match}</h3>${hint({ text: c.comparisonNote })}</div><div class="button-row"><button data-again>${c.tryAgain} ↺</button><button data-understand>${c.inspect} ↗</button></div></div><div class="diff" lang="${language}">${diff.map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`).join('')}</div><p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p>`;
+            `<div class="dictate-result__head"><span class="dictate-score" style="--score:${result.accuracy_percent}%" aria-hidden="true"><strong>${result.accuracy_percent}</strong><small class="ds-data">${diff.length - toFix} / ${diff.length}</small></span><div class="dictate-result__copy"><strong>${result.accuracy_percent}% ${esc(c.match)}</strong><p>${esc(String(r.dictToFix).replace('{n}', String(toFix)))}${hint({ text: c.comparisonNote })}</p></div></div><div class="dictate-blocks"><div class="dictate-block"><span class="ds-label">${esc(r.dictYouTyped)}</span><div class="dictate-line diff" lang="${language}">${diff
+              .map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`)
+              .join('')}</div></div><div class="dictate-block"><span class="ds-label">${esc(r.dictCorrect)}</span><div class="dictate-line dictate-line--right" lang="${language}">${esc(target.original_text)}</div>${meaningLine ? `<p class="dictate-meaning" lang="${esc(ctx.support)}">${esc(meaningLine)}</p>` : ''}</div></div><div class="dictate-pills"><button type="button" class="outline" data-again>${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc(c.tryAgain)}</span></button><button type="button" class="outline" data-listen-again>${icon('speaker-high', { size: 15 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="outline" data-understand>${icon('info', { size: 15 })}<span>${esc(c.inspect)}</span></button></div>`;
+          body.querySelector('[data-listen-again]').onclick = playLine;
           hintPanel.hidden = true;
           revealAnswer(body.querySelector('.comparison'));
           body.querySelector('[data-understand]').onclick = () =>

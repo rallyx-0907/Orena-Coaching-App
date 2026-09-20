@@ -50,7 +50,7 @@ surface unchanged.
 | Library, search, saved, history | yes | yes | yes | yes | books (paged), passages, media, collections, saved vocabulary, kept phrases, essays, reading sessions, speaking takes | facets, filter sheet, library search, sort, grid/list, grouped global search, saved tabs, history | loading skeletons, empty, degraded panels | 1440/390 browser, gates | Integrated |
 | Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels, check unavailable | 1440/390 browser, gates | UI migrated; Reading not feature complete (GAP-028..045) |
 | Vocabulary, recall | yes | yes | yes | yes | saved vocabulary and its summary, collections and their progress, the daily feed, the review scheduler | due review, collection tiles, not-mastered filter, show all, flip, shuffle, grading | loading, empty, all-done, unavailable tier and grades, error panels | 1440/390 browser, gates | UI migrated; four-grade review and tiers are gaps (GAP-019, GAP-020) |
-| Listening, dictation | - | - | - | - | - | - | - | - | Not started |
+| Listening, dictation | yes | yes | yes | yes | listening catalogue, the learner's own media, transcripts and their meanings, the dictation scorer | library facets and search, the design's transport, line stepping, speed, transcript layers, typing, check, retry, replay | loading, blocked and failed playback, unavailable listening quiz, reached-the-end, comparison | 1440/390 browser, gates | UI migrated; listening comprehension is a gap (GAP-025) |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
 | Writing | - | - | - | - | - | - | - | - | Not started |
 | Profile, settings, onboarding | - | - | - | - | - | - | - | - | Not started |
@@ -237,7 +237,16 @@ eyes. The two display layers now wear the design's chips; the remaining
 actions stay in the same bar, icon-first. Removing them would remove
 capability, so the conflict is reported here for the human.
 
-Next: Phase 7 continues with Dictation. Backend gaps: `UI_BACKEND_GAPS.md`.
+Dictation follows Part 2 section 07: the ask, the aids as chips (replay, hint,
+show it), one bordered field in the dictation hue with what has been written
+counted under it, then Check; and, once checked, the score as a ring with the
+tokens still to fix, what was typed against what was said - a wrong token
+marked by shape as well as by colour, a missing one labelled - and the actions
+as pills. Every figure is the comparison's own: the percentage the scorer
+returned and the count of tokens that still differ. The live positional reveal
+stays, because it is Dictation's recorded behaviour, not a legacy form.
+
+Next: Phase 8, Speaking. Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and
