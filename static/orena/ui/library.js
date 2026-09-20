@@ -105,7 +105,7 @@ function bookDetail(c, r, open, reading, view = {}) {
   const quiet = (name, label) =>
     `<button type="button" class="icon-button" disabled aria-label="${esc(`${label} — ${r.bookSoon}`)}" title="${esc(r.bookSoon)}">${icon(name, { size: 20 })}</button>`;
   const actions = resume
-    ? `<div class="book-hero__actions"><a class="primary" href="${chapterLink(resume)}">${icon('book-open', { size: 18, weight: 'fill' })}<span>${esc(
+    ? `<div class="book-hero__actions"><a class="primary" href="${chapterLink(resume)}">${icon('book-open', { size: 18, filled: true })}<span>${esc(
         currentIndex >= 0 ? fill(r.bookContinueChapter, { n: currentIndex + 1 }) : c.libraryStartReading,
       )}</span></a>${quiet('bookmark-simple', r.bookBookmark)}${quiet('download-simple', r.bookDownload)}${quiet('dots-three', r.bookMore)}</div>`
     : '';
@@ -138,7 +138,7 @@ function bookDetail(c, r, open, reading, view = {}) {
       isCurrent
         ? `<span class="chip book-chapter__next">${esc(r.bookNext)}</span>`
         : done(index)
-          ? `<span class="book-chapter__done" title="${esc(r.bookRead)}">${icon('check-circle', { size: 18, weight: 'fill' })}<span class="sr-only">${esc(r.bookRead)}</span></span>`
+          ? `<span class="book-chapter__done" title="${esc(r.bookRead)}">${icon('check-circle', { size: 18, filled: true })}<span class="sr-only">${esc(r.bookRead)}</span></span>`
           : ''
     }</a></li>`;
   };

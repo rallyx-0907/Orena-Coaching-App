@@ -145,6 +145,20 @@ function textEncounter(root, ctx, item, book = null) {
     sessionId: readingSessionId(item.id),
     questions: item.questions,
     onEvidence: (fragment) => reader.showEvidence(fragment),
+    /* Which paragraph settles the question, counted in the text the learner
+       just read - the approved answer panel names it. Unfound evidence says
+       "from the text" rather than a number nobody can check. */
+    placeOfEvidence: (fragment) => {
+      const needle = String(fragment || '').trim();
+      if (!needle) return null;
+      const paragraphs = (item.blocks || []).length
+        ? (item.blocks || [])
+            .filter((block) => block.type === 'paragraph')
+            .map((block) => String(block.text || ''))
+        : (item.paragraphs || []).map((part) => String(part || ''));
+      const found = paragraphs.findIndex((text) => text.includes(needle));
+      return found >= 0 ? found : null;
+    },
     // Evidence from a check belongs to the passage it was found in, not to
     // the check: a phrase kept here must lead back to the text.
     origin: from,

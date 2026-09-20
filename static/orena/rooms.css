@@ -1048,9 +1048,9 @@
   .encounter-heading h1 { font-size: 1.6rem; margin-top: 0; }
 }
 
-/* A comprehension result is brought into view when it arrives; below 900px it
-   must land under the sticky header, not behind it. */
-[data-comprehension-results],
+/* A check step is brought into view when it arrives; below 900px it must land
+   under the sticky header, not behind it. */
+.quiz-step,
 .conversation-turn { scroll-margin-top: calc(var(--shell-offset, 0px) + var(--space-3)); }
 
 /* What can be done with a turn sits on one line under it. */
@@ -1166,31 +1166,6 @@
   .practice-space .button-row { margin-block: var(--space-2) var(--space-1); align-items: center; }
   .practice-space [data-take] h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-base); }
   .practice-space .voice-history { margin-top: var(--space-2); padding-top: var(--space-1); }
-
-  /* Reading comprehension: the questions close together, every choice a
-     label-sized target, the result one compact block per question. */
-  .comprehension { margin-block: var(--space-4) var(--space-5); padding-top: var(--space-3); }
-  .comprehension > summary { min-height: var(--tap); display: flex; align-items: center; }
-  .comprehension form { margin-top: var(--space-1); }
-  .comprehension-question { margin-bottom: var(--space-3); gap: 0; }
-  .comprehension-question legend { margin-bottom: 2px; line-height: 1.45; font-size: var(--text-sm); }
-  .comprehension-question label {
-    min-height: var(--tap);
-    align-items: center;
-    gap: var(--space-2);
-    padding: 0 var(--space-2);
-    line-height: 1.45;
-    font-size: var(--text-sm);
-  }
-  .comprehension-score { font-size: 1.1rem; }
-  .comprehension-result { margin-block: var(--space-3); padding-left: var(--space-3); }
-  .comprehension-result > p { margin: var(--space-1) 0; font-size: var(--text-sm); }
-  .comprehension-result blockquote {
-    margin: var(--space-1) 0;
-    padding-block: 2px;
-    font-size: var(--text-sm);
-    line-height: 1.55;
-  }
 
   /* Conversation: the exchange is the page. The simulated-partner line stays
      on screen but as a line, not a panel; a turn is its words and one row of
@@ -2682,4 +2657,141 @@ ul.pronunciation-words small { color: var(--muted); }
   .book-stat strong { font-size: 18px; }
   .book-body { padding: 18px; }
   .book-chapters { min-inline-size: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   The reading check (D-059 Phase 5, Screens part 3 section 13) - one question
+   at a time: the rail, the question, lettered options, then the words in the
+   text that settle it. Optional, so it opens from an invitation.
+   --------------------------------------------------------------------------- */
+.quiz {
+  max-inline-size: 640px;
+  margin-block: var(--space-8) var(--space-6);
+  padding-block-start: var(--space-6);
+  border-block-start: 1px solid var(--border-subtle);
+}
+.quiz-invite { display: grid; justify-items: start; gap: 8px; }
+.quiz-invite .ds-label { color: var(--text-muted); }
+.quiz-invite strong { font-family: var(--display-font); font-size: 21px; font-weight: var(--weight-heavy); }
+.quiz-before { margin: 0; color: var(--text-secondary); font-size: 12px; }
+.quiz-invite .button-row { margin-top: 4px; }
+.quiz-step {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.quiz-bar { display: flex; align-items: center; gap: 12px; }
+.quiz-close { inline-size: 32px; block-size: 32px; min-block-size: 32px; border: 0; border-radius: 50%; }
+.quiz-rail { display: flex; flex: 1; gap: 4px; }
+.quiz-rail__step {
+  flex: 1;
+  block-size: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--progress-track);
+}
+.quiz-rail__step[data-tone='done'] { background: var(--progress); }
+.quiz-rail__step[data-tone='right'] { background: var(--status-success); }
+.quiz-rail__step[data-tone='wrong'] { background: var(--status-error); }
+.quiz-place { color: var(--text-secondary); font-size: 11px; }
+.quiz-head { display: flex; align-items: center; gap: 8px; }
+.quiz-kind { color: var(--action-text); }
+.quiz-type {
+  margin-inline-start: auto;
+  min-block-size: 26px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.quiz-question {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+}
+.quiz-options { display: grid; gap: 10px; }
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  padding: 15px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  text-align: start;
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--border-strong); }
+.quiz-option__letter {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 26px;
+  block-size: 26px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  font-size: 12px;
+}
+.quiz-option__text { flex: 1; font-size: 15.5px; line-height: 1.45; }
+.quiz-option__mine { flex: none; color: var(--text-muted); }
+.quiz-option[data-tone='picked'] {
+  border-color: color-mix(in srgb, var(--action-primary) 55%, transparent);
+  background: var(--action-selected);
+}
+.quiz-option[data-tone='right'] {
+  border-color: color-mix(in srgb, var(--status-success) 50%, transparent);
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+}
+.quiz-option[data-tone='right'] .quiz-option__text { font-weight: var(--weight-bold); }
+.quiz-option[data-tone='right'] .quiz-option__letter {
+  border-color: transparent;
+  background: var(--status-success);
+  color: var(--surface-canvas);
+}
+.quiz-option[data-tone='wrong'] {
+  border-color: color-mix(in srgb, var(--status-error) 45%, transparent);
+  background: color-mix(in srgb, var(--status-error) 10%, transparent);
+}
+.quiz-option[data-tone='wrong'] .quiz-option__letter {
+  border-color: transparent;
+  background: var(--status-error);
+  color: var(--surface-canvas);
+}
+.quiz-option:disabled { cursor: default; opacity: 1; }
+.quiz-option:disabled:not([data-tone]) { opacity: 0.55; }
+.quiz-answer {
+  display: flex;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.quiz-answer > svg { flex: none; color: var(--status-success); }
+.quiz-answer p { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; }
+.quiz-answer blockquote {
+  margin: 8px 0 0;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--border-strong);
+  font-size: 14px;
+}
+.quiz-answer__where { margin-top: 8px; color: var(--text-muted); }
+.quiz-score { margin: 0; font-family: var(--display-font); font-size: 20px; font-weight: var(--weight-heavy); }
+.quiz-actions { display: flex; gap: 10px; }
+.quiz-actions .primary { flex: 1; justify-content: center; min-block-size: 52px; border-radius: var(--radius-pill); }
+
+@media (max-width: 700px) {
+  .quiz { margin-block: var(--space-5) var(--space-4); }
+  .quiz-step { padding: 16px; border-radius: 18px; }
+  .quiz-question { font-size: 21px; }
 }

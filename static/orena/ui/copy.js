@@ -1195,12 +1195,30 @@ Object.assign(copy.zh, {
 });
 
 Object.assign(copy.en, {
+  quizQuestions: '{n} questions',
+  quizMultipleChoice: 'Multiple choice',
+  quizNext: 'Next question',
+  quizSeeAnswers: 'See the answers',
+  quizFromParagraph: 'From paragraph {n}',
+  quizFromText: 'From the text',
+  quizYourAnswer: 'Your answer',
+  quizFinish: 'Done',
+  quizPlace: '{n}/{t}',
   comprehensionWaiting: 'questions if you want them',
   readingOnly: 'To read, no questions',
   readingOnlyNote:
     'This one comes without questions. Reading it through was the point.',
 });
 Object.assign(copy.zh, {
+  quizQuestions: '{n} 道题',
+  quizMultipleChoice: '选择题',
+  quizNext: '下一题',
+  quizSeeAnswers: '看答案',
+  quizFromParagraph: '出自第 {n} 段',
+  quizFromText: '出自原文',
+  quizYourAnswer: '你的答案',
+  quizFinish: '完成',
+  quizPlace: '第 {n} 题 / 共 {t} 题',
   comprehensionWaiting: '道题，想做再做',
   readingOnly: '只是阅读，没有题目',
   readingOnlyNote: '这一篇没有配题目。把它读完，本身就是目的。',

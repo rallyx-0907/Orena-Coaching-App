@@ -305,6 +305,15 @@ export const vi = {
   example: 'Trong ngữ cảnh',
 
   // --- Comprehension -----------------------------------------------------
+  quizQuestions: '{n} câu hỏi',
+  quizMultipleChoice: 'Trắc nghiệm',
+  quizNext: 'Câu tiếp theo',
+  quizSeeAnswers: 'Xem đáp án',
+  quizFromParagraph: 'Từ đoạn {n}',
+  quizFromText: 'Từ bài đọc',
+  quizYourAnswer: 'Câu trả lời của bạn',
+  quizFinish: 'Xong',
+  quizPlace: 'Câu {n}/{t}',
   comprehension: 'Điều bạn thu được',
   comprehensionOptional: 'Không bắt buộc',
   comprehensionNote:

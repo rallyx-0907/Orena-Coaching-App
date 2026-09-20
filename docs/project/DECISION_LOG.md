@@ -1912,5 +1912,16 @@ count where the mockup draws minutes (GAP-029), and the phone keeps the book's
 primary action inline because Orena's phone shell owns the bottom bar. Missing
 backend capability is GAP-028 to GAP-036, all `NOT_STARTED`.
 
+The check and the end of a chapter (Screens part 3 section 13) land in the same
+phase. The check is one question at a time and stays optional - it opens from an
+invitation after the text, never before it. Because the API scores a whole set,
+the answers are collected first and the same rail then walks back through them
+with the real results: no per-question verdict is invented on the client. The
+answer panel names the paragraph its evidence came from when the text contains
+it, and says "from the text" when it does not. The end of a chapter reports what
+was finished, the words kept since it opened, and the one way on; the quiz and
+time figures keep their tiles with a dash (GAP-031, GAP-030).
+
 **Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 5; retires
-the D-057 reading-room cover grid and its shelves.
+the D-057 reading-room cover grid and its shelves, and the `<details>` form the
+comprehension check used to be.

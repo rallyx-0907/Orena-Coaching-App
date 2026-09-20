@@ -887,7 +887,7 @@ input[type='radio'] {
      panel that was not there a moment ago. It settles rather than appears. */
   .practice-space:not([hidden]),
   .conversation-turn,
-  .comprehension-result,
+  .quiz-answer,
   .spoken-coaching,
   .review-comparison,
   .hint-line,

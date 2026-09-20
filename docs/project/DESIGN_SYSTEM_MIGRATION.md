@@ -48,7 +48,7 @@ surface unchanged.
 | Home | yes | yes | yes | yes | continuation, catalogues, daily feed | Continue cards, rails, words stack (flip, step, swipe) | begin, empty catalogue, loading skeleton | 1440/1024/390 browser, gates | Integrated |
 | Progress | yes | yes | yes | yes | saved vocabulary, LearnerSummary | domain links | skeleton, unmeasured, degraded panel | 1440/1024/390 browser | Integrated (gaps tracked) |
 | Library, search, saved, history | yes | yes | yes | yes | books (paged), passages, media, collections, saved vocabulary, kept phrases, essays, reading sessions, speaking takes | facets, filter sheet, library search, sort, grid/list, grouped global search, saved tabs, history | loading skeletons, empty, degraded panels | 1440/390 browser, gates | Integrated |
-| Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels | 1440/390 browser, gates | Integrated (quiz and chapter complete pending; gaps tracked) |
+| Reading: entry, book page, reader workspace | yes | yes | yes | yes | shared library books and chapters, passages, device continuation, saved vocabulary, support-language translation | library facets and search, chapter list with unread-only and show-all, tap a word for the panel, support layer, type size | loading skeletons, unavailable tiles and layers, error panels, check unavailable | 1440/390 browser, gates | Integrated (gaps tracked) |
 | Vocabulary, recall | - | - | - | - | - | - | - | - | Not started |
 | Listening, dictation | - | - | - | - | - | - | - | - | Not started |
 | Speaking | - | - | - | - | - | - | - | - | Not started |
@@ -144,8 +144,17 @@ count where the mockup draws minutes (GAP-029), and the phone keeps the primary
 action inline in the hero rather than in a fixed bottom bar, because Orena's
 phone shell already owns the bottom of the screen with its tab bar.
 
-Next: Phase 5 continues with the reading quiz (Part 3 section 13) and chapter
-completion, then Phase 6, Vocabulary. Backend gaps: `UI_BACKEND_GAPS.md`.
+The check and the end of a chapter follow Part 3 section 13. The check is one
+question at a time - rail, question, lettered options - and stays optional: it
+opens from an invitation after the text. The API scores a whole set, so the
+answers are collected first and the same rail walks back through them with the
+real results; no per-question verdict is invented on the client, and the answer
+panel names the paragraph the evidence came from when the text contains it.
+The end of a chapter says what was finished, what it left behind (new words
+kept since the chapter opened, counted for real) and the one way on; the quiz
+and time figures keep their tiles with a dash (GAP-031, GAP-030).
+
+Next: Phase 6, Vocabulary and recall. Backend gaps: `UI_BACKEND_GAPS.md`.
 
 Open design gaps the prototype names itself: the 1024 tablet breakpoint (the
 shell collapses to an icon sidebar), the processing state after submit, and
