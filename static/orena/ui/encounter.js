@@ -1361,7 +1361,7 @@ export async function renderEncounter(root, ctx) {
         try {
           const typed = answer.value.trim();
           // The evidence and the score are the evaluator's, as before; the screen only reads them.
-          dictation.compare(typed);
+          dictation.compare(typed, { hintLevel });
           const result = dictationResult({
             lineIndex: at + 1,
             lineTotal: model.segments.length,

@@ -13,12 +13,14 @@ export function dictationEvidence({ asset, segment, language, previous = {} }) {
     best_accuracy_percent: previous.best_accuracy_percent ?? null,
     best_exact: Boolean(previous.best_exact),
     last_answer: previous.last_answer || '',
+    last_used_hint: Boolean(previous.last_used_hint),
+    last_hint_level: previous.last_hint_level || 0,
   };
   return {
     get value() {
       return { ...evidence };
     },
-    compare(answer) {
+    compare(answer, { hintLevel = 0 } = {}) {
       const result = evaluateListeningReconstruction({
         source_language: language,
         expected: segment.spoken_text || segment.original_text,
@@ -37,6 +39,9 @@ export function dictationEvidence({ asset, segment, language, previous = {} }) {
         ),
         best_exact: evidence.best_exact || result.exact,
         last_answer: answer,
+        // The attempt's own fact: no hint, or how far the hint went. It changes no score.
+        last_used_hint: hintLevel > 0,
+        last_hint_level: Math.max(0, Math.min(3, hintLevel)),
       };
       return {
         result,
@@ -79,6 +84,9 @@ export function mergeListeningEvidence(stored, local) {
         : Math.max(number(bestStored), number(bestLocal)),
     best_exact: Boolean(stored.best_exact) || Boolean(local.best_exact),
     last_answer: local.last_answer || stored.last_answer || '',
+    // The last attempt is this session's: what the local attempt says about its hint replaces the stored one.
+    last_used_hint: Boolean(local.last_used_hint),
+    last_hint_level: local.last_hint_level || 0,
   };
 }
 

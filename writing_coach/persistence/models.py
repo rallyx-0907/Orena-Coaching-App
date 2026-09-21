@@ -15,6 +15,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    false,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -247,6 +248,10 @@ class ListeningProgress(Base):
     best_accuracy_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
     best_exact: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_answer: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # The last checked attempt: whether a hint was used, and how far it went (0-3). A fact about the
+    # attempt, like last_answer; no scoring rule is inferred from it (D-068, DC-5).
+    last_used_hint: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    last_hint_level: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 

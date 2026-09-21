@@ -655,6 +655,8 @@ class PostgresSpecializedLearningRepository:
             "best_accuracy_percent": row.best_accuracy_percent,
             "best_exact": bool(row.best_exact),
             "last_answer": row.last_answer,
+            "last_used_hint": bool(row.last_used_hint),
+            "last_hint_level": int(row.last_hint_level or 0),
             "updated_at": self._iso(row.updated_at),
         }
 
@@ -674,6 +676,8 @@ class PostgresSpecializedLearningRepository:
                 "best_accuracy_percent": values.get("best_accuracy_percent"),
                 "best_exact": bool(values.get("best_exact", False)),
                 "last_answer": str(values.get("last_answer", "")),
+                "last_used_hint": bool(values.get("last_used_hint", False)),
+                "last_hint_level": max(0, min(3, int(values.get("last_hint_level", 0)))),
                 "updated_at": self._dt(values["updated_at"]),
             }
             if row is None:

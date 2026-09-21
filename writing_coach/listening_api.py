@@ -82,6 +82,9 @@ class ListeningProgressIn(BaseModel):
     best_accuracy_percent: int | None = Field(default=None, ge=0, le=100)
     best_exact: bool = False
     last_answer: str = Field(default="", max_length=2000)
+    # Whether the last checked attempt used a hint, and how far (D-068, DC-5): a fact about the attempt.
+    last_used_hint: bool = False
+    last_hint_level: int = Field(default=0, ge=0, le=3)
 
 
 class ShadowingProgressIn(BaseModel):
@@ -590,6 +593,8 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
         values["revealed"] = True
     if values["revealed"] and values["presentation"] == "prompt":
         values["presentation"] = "revealed"
+    if values["last_hint_level"] > 0:
+        values["last_used_hint"] = True
     values["updated_at"] = datetime.now(timezone.utc).isoformat()
     try:
         item = repository.save_listening_progress_record(values)
