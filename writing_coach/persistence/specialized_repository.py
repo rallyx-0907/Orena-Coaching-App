@@ -25,6 +25,14 @@ from writing_coach.persistence.models import (
 )
 
 
+
+def _hint_level(values: dict[str, Any]) -> int:
+    """The Dictation hint level of a progress record: an integer 0-3, or a refusal (a ValueError, so a route answers 422)."""
+    level = values.get("last_hint_level", 0)
+    if isinstance(level, bool) or not isinstance(level, int) or not 0 <= level <= 3:
+        raise ValueError("last_hint_level must be an integer from 0 to 3")
+    return level
+
 class SpecializedLearningRepository(Protocol):
     def get_profile_record(self) -> dict[str, Any] | None: ...
     def upsert_profile_record(self, values: dict[str, Any]) -> None: ...
@@ -676,8 +684,9 @@ class PostgresSpecializedLearningRepository:
                 "best_accuracy_percent": values.get("best_accuracy_percent"),
                 "best_exact": bool(values.get("best_exact", False)),
                 "last_answer": str(values.get("last_answer", "")),
-                "last_used_hint": bool(values.get("last_used_hint", False)),
-                "last_hint_level": max(0, min(3, int(values.get("last_hint_level", 0)))),
+                # The flag is the level, never a second opinion about it.
+                "last_used_hint": _hint_level(values) > 0,
+                "last_hint_level": _hint_level(values),
                 "updated_at": self._dt(values["updated_at"]),
             }
             if row is None:

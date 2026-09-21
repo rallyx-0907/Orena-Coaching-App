@@ -593,8 +593,8 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
         values["revealed"] = True
     if values["revealed"] and values["presentation"] == "prompt":
         values["presentation"] = "revealed"
-    if values["last_hint_level"] > 0:
-        values["last_used_hint"] = True
+    # The flag is the level: the two can never disagree.
+    values["last_used_hint"] = values["last_hint_level"] > 0
     values["updated_at"] = datetime.now(timezone.utc).isoformat()
     try:
         item = repository.save_listening_progress_record(values)

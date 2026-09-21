@@ -236,6 +236,7 @@
 }
 .qs-well {
   margin: 0;
+  border: 0;
   padding: 15px 17px;
   border-radius: 14px;
   background: var(--glass-well);
@@ -732,6 +733,14 @@
     padding: 13px 14px;
     border-radius: 13px;
     font-size: 14.5px;
+  }
+  /* Chinese: the pinyin is drawn at 16px and the sentence at 17px on a 1.7 line, as the frame draws it. */
+  .qs-reading--pinyin {
+    font-size: 16px;
+  }
+  .qs-well:lang(zh) {
+    font-size: 17px;
+    line-height: 1.7;
   }
   .qs-btn svg {
     width: 18px;

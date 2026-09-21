@@ -82,6 +82,9 @@ def test_the_last_attempts_hint_is_a_fact_about_the_attempt_and_nothing_more() -
         assert repository.values["best_accuracy_percent"] == 80, "the score is what the evaluator said"
         save_listening_progress(ListeningProgressIn(asset_id="asset-en", segment_id="segment-1"))
         assert repository.values["last_used_hint"] is False and repository.values["last_hint_level"] == 0
+        # A client cannot say a hint was used at level zero: the flag is the level.
+        save_listening_progress(ListeningProgressIn(asset_id="asset-en", segment_id="segment-1", last_used_hint=True))
+        assert repository.values["last_used_hint"] is False
         with pytest.raises(ValueError):
             ListeningProgressIn(asset_id="a", segment_id="s", last_hint_level=4)
     finally:

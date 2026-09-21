@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
@@ -233,6 +234,8 @@ class ListeningProgress(Base):
             "ix_listening_progress_user_language_asset",
             "user_id", "language_code", "asset_id",
         ),
+        CheckConstraint("last_hint_level BETWEEN 0 AND 3", name="ck_listening_progress_hint_level"),
+        CheckConstraint("last_used_hint = (last_hint_level > 0)", name="ck_listening_progress_hint_flag"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)

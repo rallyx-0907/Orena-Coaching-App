@@ -1262,8 +1262,8 @@ export async function renderEncounter(root, ctx) {
       };
       const key = `${payload.asset.asset_id}:${target.segment_id}`;
       const keepTerm = (payload.catalog?.vocabulary || []).find((term) => term && target.original_text.includes(term)) || '';
-      /* The hint is a working aid, not an outcome: it lives for this visit only and
-         never becomes evidence. */
+      /* The hint is a working aid, not an outcome: how far it went is recorded with the attempt it
+         helped (D-068), and it changes no score. */
       let hintLevel = 0;
       answer.value = memory.value.answers[key] || '';
       const paintHint = () => {

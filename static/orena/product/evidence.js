@@ -84,9 +84,10 @@ export function mergeListeningEvidence(stored, local) {
         : Math.max(number(bestStored), number(bestLocal)),
     best_exact: Boolean(stored.best_exact) || Boolean(local.best_exact),
     last_answer: local.last_answer || stored.last_answer || '',
-    // The last attempt is this session's: what the local attempt says about its hint replaces the stored one.
-    last_used_hint: Boolean(local.last_used_hint),
-    last_hint_level: local.last_hint_level || 0,
+    // The hint belongs to the last checked attempt: this session's replaces the stored one only if this
+    // session checked one; a session that only revealed keeps what was stored.
+    last_used_hint: local.presentation === 'checked' ? Boolean(local.last_used_hint) : Boolean(stored.last_used_hint),
+    last_hint_level: local.presentation === 'checked' ? local.last_hint_level || 0 : number(stored.last_hint_level),
   };
 }
 

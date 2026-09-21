@@ -2277,3 +2277,34 @@ are rewritten; the learner-language gate no longer exempts any product name;
 the Vietnamese pack has Vietnamese names again.
 
 **Supersedes / Superseded by:** Amends D-067 point 5. D-067 otherwise stands.
+
+## D-069 — DC-5 is two additive columns on `listening_progress`; the human authorised the schema change and an independent review approved it
+
+**Status:** Accepted. Amends D-068 point 3.
+
+**Correction:** D-068 point 3 said the used-hint state "needs no new learner-data schema". That was wrong:
+storing it is a schema change to learner-owned data (two columns on `listening_progress`). The human's
+instruction of 2026-09-21 - "đồng ý lưu trạng thái đã dùng hint; thực hiện architect review và migration cần
+thiết cho learner data" - authorises the change with its review and migration.
+
+**Decision:** `last_used_hint` (boolean) and `last_hint_level` (0-3) are stored with the segment's progress row,
+describing the last checked attempt like `last_answer`. The flag is exactly "level above zero" (CHECK
+constraints, the API and the repository agree). It is a fact about the attempt; no scoring rule is inferred.
+Migration `20260921_0010` sits on `20260916_0009` (the sandbox database is at `20260916_0009`), needs no
+backfill, and is a metadata change on PostgreSQL 11+. An older client that omits the fields writes "no hint";
+that is the same replace-the-aggregate behaviour `last_answer` has. The downgrade drops the facts and is for a
+rehearsal, not a live account.
+
+**Review record (AGENTS.md, Architecture review authority):**
+
+- Reviewer role: Delegated Architecture Reviewer
+- Reviewer identity: an independent Claude subagent (general-purpose), not the implementer's context
+- Reviewed commit: `b881742699c427b8d9ed687fd89f29e406683441`
+- Date: 2026-09-21
+- First outcome: `CHANGES REQUIRED` - one P1 (the wrong D-068 premise, corrected here) and P2 findings
+  (the flag derived from the level, a CHECK on the bound, non-integer input answering 500, the merge
+  path overwriting a stored hint after a reveal-only session, a stale comment, the migration's notes).
+- Fixes: made in the commit that follows this entry; the reviewer is asked to re-check that commit, and its
+  outcome is recorded below before the migration is applied to the sandbox.
+
+**Supersedes / Superseded by:** Amends D-068 point 3.

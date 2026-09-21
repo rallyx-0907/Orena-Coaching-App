@@ -432,11 +432,10 @@ with the prompt card (the intention field lives in it) and the piece as a 24px s
 makes two panes (994 : 820, radius 20, padding 28/30). Removed because the frame draws nothing for
 them - decisions for the human, not guesses:
 
-- **The level control ("Để Orena tự suy ra trình độ").** The request now always carries no target and the
-  evaluator infers the level. Give it a place (a sheet behind a "⋯") or leave it out.
-- **Register exploration** (`ui/registers.js`, "explore registers") and the **revision history** entry
-  of the old "more" menu. The module stays until it has a place or is deleted; the history list itself
-  still renders under the room.
+- **The level control.** Decided (D-068 follow-up): no selector; the review aims at the level the learner
+  declared in their profile (`declared_level`), else the level of the text answered, else nothing.
+- **Register exploration and the revision history** are kept and now sit behind the top bar's menu (three
+  lines), the design's pattern for "everything deeper behind one button".
 - **The "Cần một điểm bắt đầu?" starters** are legacy of the old entry and stay below the room until the
   Writing entry frame (ContentCard / SectionRail of prompts) is built.
 - The prompt card's second line ("B1 · ≈150 từ · giọng thân mật") and the "/ ≈150 từ" target in the count
