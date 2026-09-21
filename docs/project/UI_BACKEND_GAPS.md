@@ -424,3 +424,24 @@ must be rewritten for the new markup; unused copy keys (`reviewFocus`, `reviewDe
 `reviewLocate`, ...); WR-1..4, WR-10, QS-7, QS-8; `ui/understanding.js` stays for its other
 callers. The provider's 15-50 s latency for the full explanation and about 40 s for a review
 is provider speed, shown by the loading states, not fixed here.
+
+## Writing workspace, measured against "Writing workspace" and "Writing review" (D-067)
+
+Built to the frame: a 76px top bar (back, title, saved, word count, one "Nhận xét" pill), a 920px column
+with the prompt card (the intention field lives in it) and the piece as a 24px serif document; a review
+makes two panes (994 : 820, radius 20, padding 28/30). Removed because the frame draws nothing for
+them - decisions for the human, not guesses:
+
+- **The level control ("Để Orena tự suy ra trình độ").** The request now always carries no target and the
+  evaluator infers the level. Give it a place (a sheet behind a "⋯") or leave it out.
+- **Register exploration** (`ui/registers.js`, "explore registers") and the **revision history** entry
+  of the old "more" menu. The module stays until it has a place or is deleted; the history list itself
+  still renders under the room.
+- **The "Cần một điểm bắt đầu?" starters** are legacy of the old entry and stay below the room until the
+  Writing entry frame (ContentCard / SectionRail of prompts) is built.
+- The prompt card's second line ("B1 · ≈150 từ · giọng thân mật") and the "/ ≈150 từ" target in the count
+  need a task with a level, a length and a tone; the free-writing room has none, so the card is one line
+  and the count is the words written.
+- Still not the frame: the review pane's own content (overview, "làm tốt", "ba chỗ cần sửa" cards with
+  three chips each, "các mặt" bars), the top bar's "Lưu nhận xét" / "Sửa lại" pair, the revision
+  compare frame, the error sheet, and the entry.

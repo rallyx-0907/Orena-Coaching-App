@@ -131,8 +131,6 @@ export async function renderExpression(root, ctx) {
     '';
   const prompt = original?.prompt || c.responsePrompt;
   const invitations = contentFor(language).slice(0, 2);
-  const levels =
-    ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
   /* Writing, composed as a workspace.
 
      What it replaced: a page-wide heading, one very tall box, then - under the
@@ -151,19 +149,8 @@ export async function renderExpression(root, ctx) {
      the workspace gives the page more width until the review arrives
      (DESIGN_CONTRACT rules 19, 24, 27). */
   const intention = memory.value.expressions[`${id}::task`] || '';
-  const writingActions = [
-    {
-      name: 'more',
-      icon: 'more',
-      kind: 'menu',
-      label: c.stageMore,
-      items: [
-        { name: 'registers', label: c.registerExplore },
-        { name: 'history', label: c.revisionHistory },
-      ],
-    },
-  ];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a>${draftStatus(ctx)}</div><header class="writing-head"><small>${esc(c.writingName)}</small><h1>${esc(title)}</h1><div class="writing-intention"><label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}">${hint({ text: c.writingTaskNote })}</div>${hasSource ? `<p class="writing-head__prompt" lang="${language}">${esc(prompt)}</p>` : ''}</header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="writing-bar"><span class="meta" data-character-count aria-live="polite"></span><label class="review-target"><span class="sr-only">${esc(c.reviewTarget)}</span><select name="target" data-tip="${esc(c.reviewTarget)}" aria-label="${esc(c.reviewTarget)}"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label>${learningToolbar(writingActions, { label: c.writingName })}<button class="primary" data-review-action>${esc(c.reviewAction)}</button></div><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('practice')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
@@ -185,19 +172,6 @@ export async function renderExpression(root, ctx) {
      room says plainly whose version it belongs to rather than deleting it or
      letting it pass for an answer about what is now in the box. */
   let reviewedText = null;
-  /* The secondary writing actions, in the shared bar rather than a second row
-     of large buttons beside the primary one. Registers and the history of the
-     piece are both things a learner reaches for sometimes, not every time. */
-  const writingBar = bindLearningToolbar(root.querySelector('.writing-bar .learning-toolbar'), {
-    onAction: (name) => {
-      if (name === 'registers')
-        return openRegisters(ctx, { text: root.querySelector('textarea').value, title });
-      if (name === 'history')
-        root
-          .querySelector('[data-revisions]')
-          ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    },
-  });
   /* One compact line beside the action, never a pane. A provider that is not
      configured changes nothing about the writing, so it takes one row to say
      so and the workspace stays the workspace. */
@@ -258,8 +232,12 @@ export async function renderExpression(root, ctx) {
      sentences long. It appears only as the draft nears the limit the box
      enforces, which is when the number starts to decide something. */
   const LIMIT = 12000;
+  const words = new Intl.Segmenter(language, { granularity: 'word' });
   const updateCount = () => {
-    const length = [...root.querySelector('textarea').value].length;
+    const value = root.querySelector('textarea').value;
+    const length = [...value].length;
+    const n = [...words.segment(value)].filter((part) => part.isWordLike).length;
+    root.querySelector('[data-word-count]').textContent = `${n} ${r.writingWords}`;
     root.querySelector('[data-character-count]').textContent =
       length >= LIMIT * 0.9 ? `${length} / ${LIMIT} ${c.draftCount}` : '';
   };
@@ -436,7 +414,7 @@ export async function renderExpression(root, ctx) {
     const form = event.currentTarget;
     // The primary action by role: a hint beside the draft status is also a
     // button inside this form and must never be the one that gets disabled.
-    const button = form.querySelector('button.primary'),
+    const button = root.querySelector('[data-review-action]'),
       feedback = root.querySelector('#writingFeedback');
     button.disabled = true;
     sayTrouble('');
@@ -464,7 +442,7 @@ export async function renderExpression(root, ctx) {
               .filter(Boolean)
               .join('\n'),
             text,
-            target_cefr: root.querySelector('[name=target]').value || null,
+            target_cefr: null,
             learning_language: language,
             parent_essay_id: parent,
           }),
@@ -521,7 +499,7 @@ export async function renderExpression(root, ctx) {
     } finally {
       if (alive()) {
         button.disabled = false;
-        button.textContent = workspace.dataset.review === 'ready' ? c.reviewAgain : c.reviewAction;
+        button.querySelector('span').textContent = workspace.dataset.review === 'ready' ? c.reviewAgain : c.reviewAction;
       }
     }
   };

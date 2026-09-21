@@ -22,60 +22,35 @@ const expression = read('static/orena/ui/expression.js');
 const rooms = read('static/orena/rooms.css');
 const contract = read('docs/project/DESIGN_CONTRACT.md');
 
-/* --- What the piece is for, before and while writing -------------------- */
-const head = expression.slice(
-  expression.indexOf('<header class="writing-head">'),
-  expression.indexOf('<section class="learning-workspace writing-workspace"'),
-);
-assert.ok(head.includes('writing-intention'), 'the intention has a place in the heading');
-assert.ok(head.includes('id="writingTask"'), 'and it is the same field the evaluator is told about');
-assert.ok(
-  expression.indexOf('class="writing-intention"') < expression.indexOf('id="expressionText"'),
-  'the learner meets it before the box, not under it',
-);
-assert.doesNotMatch(expression, /class="writing-task"/, 'the form row below the editor is gone');
-assert.doesNotMatch(expression, /class="expression-tools"/, 'and so is the settings row it sat in');
-
-/* --- One primary action, named in one word ------------------------------ */
-assert.match(expression, /data-review-action/, 'Review is a named control');
-assert.match(expression, /\$\{esc\(c\.reviewAction\)\}<\/button>/, 'it carries the short name');
+/* --- The room, as the "Writing workspace" frame draws it (D-067) --------- */
+const writing = read('static/orena/writing.css');
+const top = expression.slice(expression.indexOf('<header class="wr-top">'), expression.indexOf('<section class="learning-workspace writing-workspace"'));
+assert.ok(top.includes('wr-back') && top.includes('wr-title') && top.includes('data-word-count'), 'a top bar: back, the title and the count');
+assert.ok(top.includes('data-review-action'), 'with the one primary action in it');
+assert.equal((top.match(/class="primary wr-go"/g) || []).length, 1, 'one primary action');
+assert.ok(expression.includes('<div class="wr-prompt">') && expression.includes('id="writingTask"'), 'the prompt card holds what the piece is for - the field the evaluator is told about');
+assert.ok(expression.indexOf('class="wr-prompt"') < expression.indexOf('id="expressionText"'), 'and the learner meets it before the document');
+for (const gone of ['writing-head', 'writing-intention', 'writing-bar', 'review-target', 'name="target"', 'class="back-row"'])
+  assert.ok(!expression.slice(expression.indexOf('<header class="wr-top">'), expression.indexOf('const { showResult')).includes(gone), `${gone} is not drawn by the frame`);
+assert.match(expression, /target_cefr: null,/, 'the level is inferred: no level control exists in the frame');
 for (const ui of ['en', 'zh', 'vi']) {
   assert.ok(copy[ui].reviewAction?.trim(), `${ui} names the action`);
-  assert.ok(
-    copy[ui].reviewAction.length < copy[ui].review.length,
-    `${ui}: the action is shorter than the room's own title for the review`,
-  );
+  assert.ok(copy[ui].reviewAction.length < copy[ui].review.length, `${ui}: the action is shorter than the room's own title for the review`);
 }
-/* The level the review aims at is a setting, not the headline of the task. */
-const bar = expression.slice(
-  expression.indexOf('<div class="writing-bar">'),
-  expression.indexOf('data-writing-trouble'),
-);
-assert.ok(bar.includes("name=\"target\""), 'the level still exists');
-assert.ok(bar.includes('class="sr-only">${esc(c.reviewTarget)}'), 'named for assistive technology');
-assert.ok(!bar.includes(`>\${c.reviewTarget}<`), 'but not as a visible form label beside the action');
-assert.ok(bar.includes('learningToolbar('), 'the secondary actions use the shared bar');
-assert.equal((bar.match(/class="primary"/g) || []).length, 1, 'one primary action in the row');
+for (const [what, pattern] of [
+  ['a 76px top bar', /#main > \.wr-top \{[^}]*block-size: 76px;[^}]*padding: 0 40px;/s],
+  ['a 48px pill for the action', /\.wr-go \{[^}]*block-size: 48px;[^}]*padding: 0 24px;/s],
+  ['a 920px column', /\.workspace-activity \{\s*max-width: 920px;/],
+  ['the prompt card padded 18/20 at radius 16', /\.wr-prompt \{[^}]*padding: 18px 20px;[^}]*border-radius: 16px;/s],
+  ['a 24px serif document', /textarea \{[^}]*font-size: 24px;[^}]*line-height: 1\.95;/s],
+  ['a review makes two panes, 994 to 820', /grid-template-columns: minmax\(0, 994fr\) minmax\(0, 820fr\);/],
+]) assert.match(writing, pattern, what);
 
 /* --- The margin is a margin until there is something to hold ------------ */
 assert.match(expression, /data-review="waiting"/, 'the workspace says whether a review exists');
 assert.match(expression, /workspace\.dataset\.review = 'ready'/, 'and says so when one arrives');
 assert.match(expression, /workspace\.dataset\.review = 'working'/, 'and while one is being made');
-assert.match(
-  rooms,
-  /\.writing-workspace\[data-review='ready'\] \.writing-result \{[^}]*border:/,
-  'the margin becomes a surface only once it holds a review',
-);
-assert.match(
-  rooms,
-  /\.writing-workspace\[data-review='waiting'\],[\s\S]{0,120}?grid-template-columns: minmax\(0, 2\.1fr\)/,
-  'and the page takes the width until then',
-);
-assert.match(
-  rooms,
-  /\.writing-workspace\[data-review='ready'\] \{[\s\S]{0,80}?grid-template-columns: minmax\(0, 1\.15fr\)/,
-  'then the two settle into a working balance',
-);
+assert.match(writing, /\.writing-workspace\[data-review='waiting'\] \.workspace-result \{\s*display: none;/, 'there is no second pane until then');
 /* Chrome does not interpolate `minmax(0, <n>fr)`, so a transition on the
    columns held the starting width and the rebalance never arrived. */
 assert.doesNotMatch(rooms, /transition:[^;]*grid-template-columns/, 'the columns change at once');

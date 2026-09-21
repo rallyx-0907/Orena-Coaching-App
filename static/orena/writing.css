@@ -1,0 +1,262 @@
+/* The Writing room (D-066, D-067), drawn from Orena Writing, "Writing workspace" (1920x1080, 390x784).
+
+   A top bar: back, the piece's title, whether it is saved, the count and the one primary action. Under
+   it a 920px column: the prompt card, then the piece itself as a document (24px serif). When a review
+   arrives the room becomes two panes - the draft and the review - as the "Writing review" frame draws
+   it. The room has no rail and no tab bar. Colour from theme.css only. */
+
+#main:has(> .wr-top) {
+  padding: 0;
+}
+
+/* --- The top bar ------------------------------------------------------------------------------ */
+#main > .wr-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  block-size: 76px;
+  box-sizing: border-box;
+  padding: 0 40px;
+  max-width: none;
+  margin: 0;
+}
+.wr-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-78);
+  font-size: 16px;
+  text-decoration: none;
+}
+.wr-title {
+  min-width: 0;
+  margin-inline-start: 14px;
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+.wr-top .draft-status {
+  color: var(--ink-60);
+}
+.wr-count {
+  margin-inline-start: auto;
+  font-family: var(--mono-font);
+  font-size: 13.5px;
+  color: var(--ink-62);
+}
+.wr-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  block-size: 48px;
+  min-block-size: 0;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  color: #fff;
+  font-family: var(--display-font);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.wr-go:disabled {
+  opacity: 0.6;
+}
+
+/* --- The piece -------------------------------------------------------------------------------- */
+#main > .writing-workspace {
+  max-width: none;
+  margin: 0;
+  display: block;
+  padding: 0 40px 40px;
+}
+.writing-workspace .workspace-activity {
+  max-width: 920px;
+  margin: 26px auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.writing-workspace .writing-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.wr-prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: var(--ink-70);
+}
+.wr-prompt > svg {
+  flex: none;
+}
+.wr-prompt__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.wr-prompt__text,
+.wr-prompt input {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #fff;
+  font: inherit;
+  font-size: 16.5px;
+  line-height: 26px;
+  outline: none;
+}
+.wr-prompt input {
+  inline-size: 100%;
+  min-block-size: 0;
+  block-size: auto;
+  border-radius: 0;
+}
+.wr-prompt input::placeholder {
+  color: var(--ink-60);
+}
+.writing-workspace .writing-sheet textarea {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: none;
+  min-block-size: 50vh;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-90);
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 24px;
+  line-height: 1.95;
+  resize: none;
+  outline: none;
+}
+.writing-workspace .writing-sheet textarea::placeholder {
+  color: var(--ink-50);
+}
+.writing-workspace .writing-sheet [data-character-count]:empty {
+  display: none;
+}
+
+/* --- Waiting has no second pane; a review makes two --------------------------------------------- */
+.writing-workspace[data-review='waiting'] .workspace-result {
+  display: none;
+}
+#main > .writing-workspace:not([data-review='waiting']) {
+  display: grid;
+  grid-template-columns: minmax(0, 994fr) minmax(0, 820fr);
+  gap: 26px;
+  padding: 20px 40px 36px;
+}
+.writing-workspace:not([data-review='waiting']) :is(.workspace-activity, .workspace-result) {
+  max-width: none;
+  margin: 0;
+  padding: 28px 30px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+}
+.writing-workspace:not([data-review='waiting']) :is(.workspace-activity, .workspace-result) {
+  min-block-size: calc(100dvh - 76px - 20px - 36px);
+  box-sizing: border-box;
+}
+.writing-workspace:not([data-review='waiting']) .writing-sheet {
+  gap: 16px;
+}
+.writing-workspace:not([data-review='waiting']) .writing-sheet textarea {
+  font-size: 22px;
+  line-height: 1.95;
+}
+
+/* --- The phone -------------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .wr-top {
+    gap: 12px;
+    block-size: auto;
+    padding: 14px 20px 0;
+  }
+  .wr-back > span {
+    display: none;
+  }
+  .wr-title {
+    flex: 1;
+    margin-inline-start: 0;
+    font-size: 15px;
+  }
+  /* The count and the one action are a bar at the foot of the screen. */
+  #main:has(> .wr-top)::after {
+    content: '';
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 4;
+    block-size: 90px;
+    background: var(--glass-base);
+    box-shadow: var(--bar-edge-top);
+    backdrop-filter: blur(24px);
+  }
+  .wr-count {
+    position: fixed;
+    inset: auto auto 52px 20px;
+    z-index: 5;
+    margin: 0;
+    font-size: 12px;
+  }
+  .wr-go {
+    position: fixed;
+    inset: auto 20px 30px auto;
+    z-index: 5;
+    padding: 0 22px;
+    font-size: 15px;
+  }
+  #main > .writing-workspace,
+  #main > .writing-workspace:not([data-review='waiting']) {
+    display: block;
+    padding: 0 20px 110px;
+  }
+  .writing-workspace .workspace-activity {
+    margin-top: 14px;
+  }
+  .writing-workspace .writing-sheet {
+    gap: 20px;
+  }
+  .wr-prompt {
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 14px;
+  }
+  .wr-prompt__text,
+  .wr-prompt input {
+    font-size: 13.5px;
+    line-height: 20px;
+  }
+  .writing-workspace .writing-sheet textarea {
+    font-size: 17px;
+    line-height: 1.9;
+  }
+  .writing-workspace:not([data-review='waiting']) .workspace-activity {
+    padding: 18px 16px;
+  }
+}

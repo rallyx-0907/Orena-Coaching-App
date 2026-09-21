@@ -174,19 +174,10 @@ assert.ok(
   /task && `\$\{c\.writingTask\} \$\{task\}`/.test(expressionSource),
   'the stated task must travel with the text as the writing task',
 );
-/* Proficiency is optional guidance, not a prerequisite. `c778005` made the
-   request target optional, so the surface must let a learner write and press
-   Review with nothing chosen and let the evaluator infer the demonstrated
-   band; an unchosen target has to travel as null, never as an empty string. */
-assert.ok(
-  !/name="target"\s+required/.test(expressionSource),
-  'the feedback target must not be a required field',
-);
-assert.match(
-  expressionSource,
-  /\[name=target\]'\)\.value\s*\|\|\s*null/,
-  'an unchosen target must travel as null so the evaluator infers the level',
-);
+/* Proficiency is guidance the frame gives no control for (D-067): the request carries no target and the
+   evaluator infers the demonstrated band, so the target travels as null, never as an empty string. */
+assert.ok(!/name="target"/.test(expressionSource), 'no level control is drawn');
+assert.match(expressionSource, /target_cefr:\s*null/, 'the target travels as null so the evaluator infers the level');
 for (const ui of ['en', 'zh']) {
   for (const key of ['writingTask', 'writingTaskNote', 'chooseTarget', 'reviewReworked'])
     assert.ok(copy[ui][key], `${ui}: missing copy for "${key}"`);
@@ -231,11 +222,10 @@ assert.match(feedbackSource, /api\.sentenceSheet\(\{\s*text: issue\.fragment/, '
 assert.match(feedbackSource, /find\(\(part\) => part\.includes\(issue\.fragment\)\)/, 'the sentence travels with it');
 assert.match(expression, /api\.essayReview\(/, 'the review is read from its contract');
 assert.match(expression, /api\.essayRevision\(/, 'and so is the revision');
-assert.match(
-  expression,
-  /openRegisters\(ctx, \{ text: root\.querySelector\('textarea'\)\.value, title \}\)/,
-  'registers are asked about what the learner wrote',
-);
+/* Register exploration has no place in the "Writing workspace" frame (D-067), so the room no longer
+   opens it; the module stays, tested above, until the human gives it a place or removes it
+   (UI_BACKEND_GAPS.md, Writing decisions). */
+assert.doesNotMatch(expression, /openRegisters\(ctx/, 'the room offers no entry the frame does not draw');
 assert.match(
   expression,
   /data-retry-review/,
