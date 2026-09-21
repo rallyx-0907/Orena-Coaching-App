@@ -151,7 +151,9 @@ for (const [name, expected, answer, want] of [
   ['one of a repeated pair wrong', 'the cat and the dog', 'the cat and teh dog', 'the cat and t*e dog'],
   // Characters missing, and characters too many: neither shifts the rest.
   ['missing characters', 'tomorrow morning', 'tomorow moring', 'tomor*ow mor*ing'],
-  ['extra characters', 'tomorrow morning', 'tommorrow moorning', 'tomorrow morning'],
+  // An extra letter still leaves the word wrong, so it is never shown whole: the place where the attempt
+  // parts from the word stays masked (the letters after it are still credited).
+  ['extra characters', 'tomorrow morning', 'tommorrow moorning', 'tom*rrow mo*ning'],
   // A contraction is one word whose apostrophe still has to be earned.
   ['contraction', "I don't think it's", 'I dont think its', "I don*t think it*s"],
   // Punctuation is structure, not something to guess.
@@ -275,6 +277,16 @@ assert.equal(
   0,
   'and a word from the end earns no anchor at the start',
 );
+
+/* A word typed with an extra letter is still wrong, and a hint never shows it whole: "breack" for "break"
+   lines up against every letter of the target, and the hint must keep the place they part masked. */
+for (const answer of ['Take a breack', 'Take a breaks', 'Take a bbreak']) {
+  const view = dictationHint({ expected: 'Take a break', answer, source_language: 'en' });
+  const last = view.slots.at(-1);
+  assert.ok(last.text.includes('*'), `"${answer}": the wrong word is not shown whole (${last.text})`);
+  assert.notEqual(last.text, 'break');
+}
+assert.equal(dictationHint({ expected: 'Take a break', answer: 'Take a breack', source_language: 'en' }).slots.at(-1).text, 'brea*');
 
 console.log(
   'Dictation hints: structure, earned characters, EN/ZH slot shapes, positional reveal that never runs ahead of the learner, and a ladder that never reaches the answer PASS',

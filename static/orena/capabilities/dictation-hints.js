@@ -161,6 +161,15 @@ export function dictationHint({
     // Every character the learner has actually produced for this word shows;
     // every position they have not stays masked.
     const earned = earnedCharacters(token.text, entry.attempt);
+    /* A word that was typed and is still wrong is never shown whole. "breack" for "break" lines up
+       against every letter of the target as a subsequence, and showing them all would hand the word
+       over while calling it a hint. The place where what they wrote first parts from the target
+       stays masked - that is what tells them where to look. */
+    if (entry.attempt && earned.every(Boolean)) {
+      const typed = [...String(entry.attempt)].map((c) => c.toLowerCase());
+      const parts = characters.findIndex((c, i) => typed[i] !== c.toLowerCase());
+      earned[parts >= 0 ? parts : characters.length - 1] = false;
+    }
     /* The deeper level offers one character the learner has not earned - the
        first still-masked one - and never the last, so a hint cannot finish a
        word for them. */

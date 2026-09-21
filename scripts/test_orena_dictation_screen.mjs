@@ -139,4 +139,12 @@ const KEYS = Object.keys(referenceCopy.en).filter((key) => /^dict(Name|Line|Ask|
 assert.ok(KEYS.length >= 25);
 for (const locale of ['zh', 'vi']) for (const key of KEYS) assert.ok(referenceCopy[locale][key], `${locale} has ${key}`);
 
+/* The whole task is one screen on a desk and on a phone, whatever the length of the line (bugs 10 and 15). */
+const dictationCss = readFileSync(new URL('../static/orena/dictation.css', import.meta.url), 'utf8');
+const desk = dictationCss.slice(dictationCss.indexOf('@media (min-width: 901px) {'));
+assert.match(desk, /\.dz-cols \{[^}]*block-size: calc\(100dvh - 84px\);/s, 'a desk: the columns are the height under the 84px bar');
+assert.match(desk, /\.dz-cells \{[^}]*max-block-size: clamp\([^}]*overflow-y: auto;/s, 'a long line scrolls in its own pane');
+assert.match(desk, /\.dz-media \{[^}]*block-size: clamp\(/s, 'the picture takes what the height allows');
+assert.match(dictationCss, /max-block-size: 118px;\s*overflow-y: auto;/, 'a phone: the line has its own scrolling pane too');
+
 console.log('Dictation screen: DictationResult contract, hint bounds, readings, marks, escaping, EN/ZH/VI copy: PASS');

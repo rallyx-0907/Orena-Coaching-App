@@ -628,6 +628,69 @@
 }
 
 /* --- The phone: one column, the task, then the result below it -------------------------- */
+/* A desk keeps the whole task on one screen, whatever the length of the line: the picture takes what the
+   height allows, the line wraps in a pane that scrolls on its own, and the field and the check stay under
+   it (Orena's patterns: the height budget is worked out in advance - the bar, then the room that is left). */
+@media (min-width: 901px) {
+  .dz-cols {
+    box-sizing: border-box;
+    block-size: calc(100dvh - 84px);
+    min-block-size: 0;
+    padding: 16px 36px 24px;
+  }
+  .dz-task {
+    min-block-size: 0;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 24px 40px;
+    overflow: hidden;
+  }
+  .dz-media {
+    aspect-ratio: auto;
+    block-size: clamp(110px, 28dvh, 349px);
+  }
+  .dz-shape {
+    flex: 0 1 auto;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+  .dz-cells {
+    min-block-size: 0;
+    max-block-size: clamp(64px, 24dvh, 240px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .dz-form textarea {
+    min-height: 0;
+    block-size: clamp(56px, 9dvh, 76px);
+  }
+  .dz-result {
+    max-block-size: 100%;
+    overflow-y: auto;
+  }
+}
+/* A short desk (a laptop) gives the picture less and the line more. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .dz-task {
+    gap: 12px;
+    padding: 18px 32px;
+  }
+  .dz-ask {
+    font-size: 22px;
+  }
+  .dz-media {
+    block-size: 19dvh;
+  }
+  .dz-cells {
+    max-block-size: 30dvh;
+  }
+}
+/* The rights block under the room is not part of the task: it waits under the fold of the room, and
+   while Dictation has the screen the page is exactly one screen. */
+#main:has(.listen-workspace[data-dictation]) > .source {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .dz-top {
     gap: 12px;
