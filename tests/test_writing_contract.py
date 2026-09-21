@@ -50,7 +50,7 @@ def error(category: str, fragment: str, suggestion: str, **more: Any) -> dict[st
 
 
 V1 = {
-    "id": 1, "series_id": 1, "revision_no": 1, "word_count": 142, "text": "Jeg ønsker å informere deg. På et kafé.",
+    "id": 1, "series_id": 1, "revision_no": 1, "word_count": 142, "text": "Jeg ønsker å informere deg om noe. På et kafé, han hjelper meg.",
     "grammar": 84.0, "vocabulary": 80.0, "coherence": 88.0, "naturalness": 72.0, "task_achievement": 70.0, "overall": 79.0,
     "summary_vi": "Thư đủ ý.", "strengths_vi": ["Mở thư đúng kiểu.", "Câu hỏi cuối giữ mạch."],
     "errors": [
@@ -61,7 +61,7 @@ V1 = {
     "grammar_links": [{"issue_id": "article-et kafé", "grammar_id": "no-gender", "title": "Gender"}],
 }
 V2 = {
-    **V1, "id": 2, "revision_no": 2, "word_count": 151, "text": "Jeg må bare fortelle deg. På en kafé.",
+    **V1, "id": 2, "revision_no": 2, "word_count": 151, "text": "Jeg må bare fortelle deg noe. På en kafé, han hjelper meg. Det er veldig masse.",
     "naturalness": 88.0, "grammar": 90.0, "vocabulary": 78.0, "coherence": 88.0,
     "errors": [
         error("punctuation", ", han hjelper meg", ", og han hjelper meg"),

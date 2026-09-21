@@ -953,6 +953,44 @@ def revision_delta(current: dict[str, Any], previous: dict[str, Any] | None) -> 
     unmatched_previous = sorted(set(previous_items) - set(current_items))
     unmatched_current = sorted(set(current_items) - set(previous_items))
 
+    # The evaluator words a finding differently from one review to the next - a
+    # longer or shorter stretch of the same sentence - so identical wording is too
+    # strict a test of "the same problem". When both texts are known the question
+    # is put to the words themselves: a finding whose words are gone from the new
+    # text is fixed; one whose words are still there, and are flagged again, is
+    # still there; and a finding on words that were already in the old text is not
+    # a problem the revision introduced.
+    current_text, previous_text = current.get("text"), previous.get("text")
+    if isinstance(current_text, str) and current_text and isinstance(previous_text, str) and previous_text:
+        def words(item: dict[str, Any]) -> str:
+            return str(item.get("fragment", item.get("quote", "")) or "")
+
+        def overlap(a: dict[str, Any], b: dict[str, Any]) -> bool:
+            first, second = words(a), words(b)
+            return bool(first and second and (first in second or second in first))
+
+        persistent_current = set(persistent_keys)
+        unmatched_previous = []
+        for key, item in sorted(previous_items.items()):
+            if key in current_items:
+                continue
+            flagged_again = next((k for k, cur in current_items.items() if k not in persistent_current and overlap(cur, item)), None)
+            if flagged_again is not None:
+                persistent_current.add(flagged_again)
+            elif words(item) not in current_text:
+                unmatched_previous.append(key)
+            # Otherwise the words are unchanged and not flagged again: neither fixed nor
+            # still a finding, so it is not claimed either way.
+        unmatched_current = []
+        for key, item in sorted(current_items.items()):
+            if key in persistent_current:
+                continue
+            if words(item) and words(item) in previous_text:
+                persistent_current.add(key)
+            else:
+                unmatched_current.append(key)
+        persistent_keys = sorted(persistent_current)
+
     # What remains may hold a genuine revision: the same problem, reworded. That
     # can only be claimed where the correspondence is unambiguous - exactly one
     # unmatched issue on each side of a category. With several, which became
