@@ -86,8 +86,8 @@ export function mergeListeningEvidence(stored, local) {
     last_answer: local.last_answer || stored.last_answer || '',
     // The hint belongs to the last checked attempt: this session's replaces the stored one only if this
     // session checked one; a session that only revealed keeps what was stored.
-    last_used_hint: local.presentation === 'checked' ? Boolean(local.last_used_hint) : Boolean(stored.last_used_hint),
-    last_hint_level: local.presentation === 'checked' ? local.last_hint_level || 0 : number(stored.last_hint_level),
+    last_used_hint: number(local.checked_attempt_count) > 0 ? Boolean(local.last_used_hint) : Boolean(stored.last_used_hint),
+    last_hint_level: number(local.checked_attempt_count) > 0 ? local.last_hint_level || 0 : number(stored.last_hint_level),
   };
 }
 

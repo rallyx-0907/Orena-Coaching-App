@@ -2308,3 +2308,10 @@ rehearsal, not a live account.
   outcome is recorded below before the migration is applied to the sandbox.
 
 **Supersedes / Superseded by:** Amends D-068 point 3.
+
+**Re-review outcome (2026-09-21):** `APPROVED` by the same independent reviewer for commit
+`670ec798d156fddf3d1e17a6d3f2084af0a08e62` - no P0 or P1; remaining P2 items were a sturdier test for "this
+session checked an attempt" (taken: the merge now keys on the checked-attempt count), a note that the CHECK
+constraints validate existing rows under a brief lock (acceptable: the table is small and every row holds the
+defaults), and commit scope (that commit also carried the Chinese Quick Sheet sizing). The migration is applied
+to the sandbox database only, after this record.

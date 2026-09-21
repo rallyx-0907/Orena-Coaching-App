@@ -25,7 +25,6 @@ from writing_coach.persistence.models import (
 )
 
 
-
 def _hint_level(values: dict[str, Any]) -> int:
     """The Dictation hint level of a progress record: an integer 0-3, or a refusal (a ValueError, so a route answers 422)."""
     level = values.get("last_hint_level", 0)
