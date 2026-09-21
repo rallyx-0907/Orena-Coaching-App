@@ -47,7 +47,7 @@ schema on that date at `76e69b9`; none has been run against the baseline UI.
 | Writing review | `WritingReview` | `GET /api/essays/{id}/review` (`writing_contract.py`); `example` in the evaluator contract (v2.5), English `register` category; `ui/writing-feedback.js` | `essays` | `tests/test_writing_contract.py` (held to the pinned contract), `test_writing_evaluation`, `test_orena_writing_review.mjs` | IN_PROGRESS (S2 built; see log) |
 | Writing revision | `RevisionCompare` | `GET /api/essays/{id}/revision`; `revision_delta` judged by the words | `essays` chain | `test_writing_revision_contract`, `test_writing_contract` | IN_PROGRESS (S2 built; see log) |
 | Writing entry, workspace | `ContentCard`, draft | `/api/drafts`, `/api/tasks/generate`; prompt library | account backbone, catalogue | `test_work_api`, `test_orena_writing_workspace.mjs` | BLOCKED (`[CONTENT]` prompts; drafts past sandbox) |
-| Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; add `content_type`, duration and remaining labels | catalogue JSON, `listening_progress` | `test_listening_*`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3) |
+| Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; `content_type` derived; library `ui/library-browse.js`; workspace details open (see log) | catalogue JSON, `listening_progress`, device memory | `test_listening_*`, `test_orena_library.mjs`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3a built, S3b open) |
 | Dictation | `DictationResult` | client evaluator, `practiceOutcome`; assisted flag | outcomes | `test_dictation_evaluator.mjs`, `test_orena_dictation_*.mjs` | IN_PROGRESS (S3) |
 | Reading library, book detail | `ContentCard`, `Chapter` | `reading_library_api`; add kind, level, duration | `reading_books`, `reading_book_chapters` | `test_reading_library_api`, `test_orena_reading_library.mjs` | BLOCKED (`[REVIEW]` catalogue schema) |
 | Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache | `test_reading_translation`, `test_orena_reading_room.mjs` | IN_PROGRESS (S4) |
@@ -135,9 +135,9 @@ change. Group headers name the contract, data source and tests once.
 
 | ID | Canonical UI | Have → Need | Slice | Status |
 | --- | --- | --- | --- | --- |
-| LS-1 | Nine type chips | lessons have topic and tags, no `content_type` → add it to the catalogue content | S3 | IN_PROGRESS |
-| LS-2 | Card: duration, level, time left, video badge | all exist → `durationLabel`, remaining | S3 | IN_PROGRESS |
-| LS-3 | Library search | none → S5 | S5 | IN_PROGRESS |
+| LS-1 | Nine type chips | `content_type` derived from playback, topic and tags (`listening_catalog.content_type`, served in `lesson_metadata`); chips only for types some item has; a lesson that says nothing gets none; imported = the learner's own media | S3a | IN_PROGRESS (built; see log) |
+| LS-2 | Card: duration, level, time left, video badge | duration on the cover, level, "time left" and a progress bar from the place in device memory, video and provenance badges | S3a | IN_PROGRESS (built; see log) |
+| LS-3 | Library search | the bar's search filters the room's own items (title, level, type); catalogue-wide search stays S5 | S5 | IN_PROGRESS |
 | LS-4 | Player: scrubber, transport, speed, loop | lesson and progress read/write → none | S3 | IN_PROGRESS |
 | LS-5 | Transcript with pinyin, translation, active word, autoscroll | timeline, annotate, translate → none | S3 | IN_PROGRESS |
 | LS-6 | Listening comprehension | none → items and scoring | L | BLOCKED `[CONTENT]` |
@@ -254,6 +254,39 @@ Not READY yet - what is left before S1 can be called READY:
 - Found on the way, fixed: the Listening transcript's words could not be tapped
   (a stale `.media-encounter` root); `.media-encounter` selectors remain as dead
   CSS to remove in S3.
+
+**S3a Library** (2026-09-21, `f75991f`). Built: the baseline's library for Reading and
+Listening as one surface (`ui/library-browse.js`): a bar with the room's name, a search and
+the import action; one row of single-choice type chips offered only for types some item
+really has; a grid of ContentCards with the length on the cover, a progress bar and "time
+left" from the place the learner reached (device memory), a video badge and a provenance
+badge (said once, not repeated in the line), and an authored "3 min" shown in the interface
+language. Backend: `content_type` for listening lessons, derived and tested
+(`test_every_lesson_carries_a_type_the_baseline_names_or_none`). The D-060 facet layout and its
+CSS are deleted; a new gate `scripts/test_orena_library.mjs` (in CI) holds the contract and the
+copy for every catalogue type in en, zh and vi. Checked in a browser on the sandbox (vi):
+desktop Reading and Listening, phone Listening with touch (chip tap filters, no horizontal
+overflow, chips scroll). Local: pytest 1160 passed / 118 skipped; every CI `.mjs` gate passes
+except `test_m3_pronunciation_contract.mjs`.
+
+Not READY yet - S3 as a whole:
+
+- The Listening workspace has the baseline's structure (player, scrubber, transport, speeds,
+  comprehension button, bookmark, transcript with VI) but not its details: the transcript
+  header is the shared learning toolbar's row of icon buttons where the baseline draws
+  "Tự cuộn", PINYIN and VI chips and puts the deep actions (dictation, shadow, read the
+  line, keep, inspect) behind one "⋯"; the scrubber is amber where the baseline's is violet
+  with a white knob. `learning-toolbar.js` is shared with Reading, so it changes in one pass.
+- The catalogue's lesson `en-travel-rainy-day-taxi` is a single 71 s segment (one very long
+  transcript line): a content-segmentation gap `[CONTENT]`, not code.
+- Dictation is a panel beside the player; the baseline draws its own screen (segmented
+  progress, the player inside a centred card with the hint-level pill, hint shape with pinyin,
+  a result column with the score ring, marks and actions). The evaluator, hint levels, score,
+  wrong/missing/extra and save already exist and are reused. DC-3 (pinyin per character) and
+  DC-5 (assisted flag kept) are still open.
+- Search (S5) and the catalogue-wide result page are untouched; the Library page
+  (`#/content`, all kinds) uses the same component with type chips only.
+- Browser checks of the zh interface and of imported items in the library.
 
 **S2 Writing review and revision** (2026-09-21). Built: `writing_contract.py` and two
 endpoints (WR-5..9, 11..14); `example` per finding and the English `register`
