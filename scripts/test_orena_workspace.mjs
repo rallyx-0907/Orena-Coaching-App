@@ -119,18 +119,20 @@ assert.ok(
 );
 
 const world = read('static/orena/world.css');
+const dictationCss = read('static/orena/dictation.css');
 assert.ok(
-  world.includes('.media-encounter:has(.practice-space:not([hidden]))'),
-  'the encounter re-composes when a practice opens',
+  dictationCss.includes('.listen-workspace[data-dictation]'),
+  'the room re-composes when Dictation opens: the screen takes the whole room',
 );
 assert.ok(world.includes('@media (min-width: 1600px)'), 'wide screens get their own composition');
 assert.ok(
   /@media \(min-width: 1600px\)[\s\S]{0,900}\.text-encounter/.test(world),
   'reading keeps a comfortable measure instead of stretching with the window',
 );
-assert.ok(
-  /max-width: 800px\)[\s\S]{0,2000}\.seek-line,[\s\S]{0,200}display: none/.test(world),
-  'narrow practice hides scrubbing it does not need',
+assert.match(
+  dictationCss,
+  /\.listen-workspace\[data-dictation\] > :not\(\.practice-space\) \{\s*display: none;/,
+  'Dictation hides the scrubbing and the transport it does not need: the player plays the line but is not on screen',
 );
 
 /* Motion says something or it is noise, and it is off for anyone who asked. */

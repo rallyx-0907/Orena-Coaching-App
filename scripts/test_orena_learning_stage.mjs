@@ -51,25 +51,22 @@ assert.equal((encounter.match(/const transcriptRow = /g) || []).length, 1,
    reading arriving late cannot move the list. */
 assert.match(encounter, /transcript\.dataset\.showMeaning/, 'meanings are a panel-wide display preference');
 assert.match(encounter, /transcript\.dataset\.showReading/, 'so are readings');
-assert.match(rooms, /\.transcript-panel\[data-show-meaning='on'\] \.line-meaning \{[^}]*min-block-size/,
+const listening = read('static/orena/listening.css');
+assert.match(listening, /\.transcript-panel\[data-show-meaning='on'\] \.line-meaning \{[^}]*min-block-size/,
   'the meaning slot keeps its height on every row');
-assert.match(rooms, /\.transcript-panel\[data-show-reading='on'\] \.line-pinyin \{[^}]*min-block-size/,
-  'and so does the reading slot');
-/* The current row is drawn, never re-laid-out: only properties that occupy no
-   space may differ between a current row and any other. */
-const currentRow = rooms.slice(
-  rooms.indexOf(".transcript-panel li[data-current] > [data-segment] {"),
-  rooms.indexOf('.transcript-note {'),
-);
-for (const property of [
-  'padding', 'margin', 'border-width', 'display', 'min-height', 'min-block-size',
-  // A bolder line is a wider line, and a wider line can take one more row.
-  'font-weight', 'font-size', 'line-height', 'letter-spacing',
-])
-  assert.ok(!new RegExp(`^\s*${property}:`, 'm').test(currentRow),
-    `the current row does not change ${property}`);
-assert.match(currentRow, /box-shadow: inset/, 'its edge is drawn inside the row it already had');
-assert.match(encounter, /data-back-to-current/, 'a learner who reads ahead is offered one way back');
+assert.match(listening, /\.transcript-panel\[data-show-reading='on'\] li\[data-current\] \.line-pinyin \{[^}]*min-block-size/,
+  'and the reading slot keeps its own, on the lit line - the only one the design draws it under');
+/* The lit line, as the design draws it (D-067): it steps up - a larger line, more padding, its reading
+   and a glow - but it is never made bolder, since a bolder line is a wider line and a wider line can
+   take one more row. Its ground, edge and glow are drawn by the row itself. */
+const litStart = listening.indexOf('.listen-workspace .transcript-panel li[data-current] > [data-segment] {');
+const currentRow = listening.slice(litStart, listening.indexOf('}', litStart));
+assert.ok(litStart > 0, 'the lit row rule was found');
+for (const property of ['font-weight', 'letter-spacing', 'display'])
+  assert.ok(!new RegExp(`^\s*${property}:`, 'm').test(currentRow), `the lit row does not change ${property}`);
+assert.match(currentRow, /padding: 16px 74px 16px 16px;/, "the frame's lit row: 16 padding, room for its round action");
+assert.match(currentRow, /box-shadow: var\(--glass-ring-focus\), var\(--row-glow\);/, 'its edge and glow are drawn, not laid out');
+assert.doesNotMatch(encounter, /data-back-to-current/, 'the design draws no "back to the current line" button; auto-scroll is the way back');
 
 /* --- The actions belong to a shared bar, not to a row ------------------- */
 assert.doesNotMatch(encounter, /class="stage-actions"/, 'no action row inside the transcript');
@@ -96,12 +93,11 @@ assert.match(foundation, /\.learning-menu\[data-drop='up'\]/, 'and a short windo
 assert.match(foundation, /@media \(max-width: 600px\)[\s\S]*?\.learning-menu \{[\s\S]*?position: fixed/,
   'a phone gets a sheet rather than a popover that can overflow');
 
-/* Media and transcript share one viewport: the transcript scrolls inside its
-   own pane rather than the page scrolling between them. */
-assert.match(rooms, /@media \(min-width: 801px\)[\s\S]*?grid-template-columns: minmax\(0, 1\.3fr\) minmax\(320px, 1fr\)/,
-  'desktop uses its width before stacking');
-assert.match(rooms, /\.transcript-panel \{[\s\S]{0,200}?position: sticky/,
-  'the transcript pane keeps its place while the media stays visible');
+/* Media and transcript share one viewport: the transcript scrolls inside its own pane rather than the
+   page scrolling between them - a 700px pane beside the stage, the whole room one screen tall. */
+assert.match(listening, /grid-template-columns: minmax\(0, 1fr\) 700px;/, 'desktop: the stage, then a 700px transcript');
+assert.match(listening, /block-size: 100dvh;/, 'the room is one screen');
+assert.match(listening, /\.transcript-panel ol \{[^}]*overflow-y: auto;/s, 'the transcript scrolls inside its own pane');
 
 /* --- Playback and word class are different signals ---------------------- */
 const speakingWordStart = experiences.indexOf('.line-original .word[data-speaking]');
@@ -128,8 +124,11 @@ const actions = encounter.slice(
   encounter.indexOf('/* The approved listening workspace'),
 );
 assert.ok(actions.length > 200, "the bar's actions were actually found");
-for (const name of ['autoscroll', 'meaning', 'pinyin', 'deep'])
+for (const name of ['autoscroll', 'meaning', 'pinyin'])
   assert.match(actions, new RegExp(`name: '${name}'`), `${name} is a control of the bar`);
+/* Everything deeper is the top bar's own button in the frame, not a member of the transcript's bar. */
+assert.doesNotMatch(actions, /name: 'deep'/, 'the deeper actions are not in the transcript head');
+assert.match(encounter, /data-deep-open/, "the top bar's more button opens them");
 for (const toggle of ['autoscroll', 'meaning', 'pinyin'])
   assert.match(actions, new RegExp(`name: '${toggle}',[^}]*kind: 'toggle'`),
     `${toggle} is a display preference, not an action`);
@@ -146,14 +145,12 @@ assert.doesNotMatch(encounter, /class="stage-toggles"/, 'and so is the row of te
 assert.doesNotMatch(actions, /<button/, 'the bar is built from named actions, not from markup');
 
 /* --- Dictation is not Writing ------------------------------------------- */
-assert.match(encounter, /data-response-host/, 'the writing response is addressable');
-const openPractice = encounter.slice(encounter.indexOf('async function openPractice('));
-assert.match(openPractice, /responseHost\.hidden = true/, 'a practice mode hides the writing response');
-const closePractice = encounter.slice(
-  encounter.indexOf('function closePractice('),
-  encounter.indexOf('function setRecordingLock('),
-);
-assert.match(closePractice, /responseHost\.hidden = false/, 'and leaving it brings the response back');
+/* The Listening room has no writing response under it - the design draws none, and "what stayed with
+   you" beneath a recording was a different module wearing this one's page (D-067 rule 44). */
+const listeningRoom = encounter.slice(encounter.indexOf('<div class="listen-workspace"'), encounter.indexOf('</details>`;'));
+assert.ok(listeningRoom.length > 500, 'the Listening room markup was found');
+assert.doesNotMatch(listeningRoom, /data-response-host|responseComposer|reached-the-end/, 'no writing response and no end-of-recording panel');
+assert.doesNotMatch(encounter, /responseHost/, 'and nothing toggles one');
 
 /* --- Speaking is a module, entered without Listening -------------------- */
 assert.match(speaking, /function speakingLanding\(/, 'Speaking has a landing of its own');

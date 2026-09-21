@@ -123,29 +123,28 @@ assert.ok(
   'time, then the line, then what it means',
 );
 
-const worldCss = readFileSync(new URL('../static/orena/world.css', import.meta.url), 'utf8');
-/* The row rule is scoped to actual transcript rows: the panel also holds
-   ordinary controls now, and they are not rows. */
-const segmentRule = worldCss.slice(
-  worldCss.indexOf('.transcript-panel ol > li > button[data-segment] {'),
-  worldCss.indexOf('.transcript-panel time {'),
-);
+const listeningCss = readFileSync(new URL('../static/orena/listening.css', import.meta.url), 'utf8');
+/* The row rule is scoped to actual transcript rows: the panel also holds ordinary controls (the head's
+   chips, the hint), and they are not rows. */
+const rowStart = listeningCss.indexOf('.listen-workspace .transcript-panel li > [data-segment] {');
+const segmentRule = listeningCss.slice(rowStart, listeningCss.indexOf('}', rowStart));
+assert.ok(rowStart > 0, 'the row rule was found');
 assert.ok(
-  /display:\s*grid/.test(segmentRule),
-  'the segment stacks rather than laying its parts out in a row',
+  /display:\s*grid/.test(segmentRule) && /grid-template-columns:\s*56px/.test(segmentRule),
+  "the segment is a grid of the time and the line's own stack, as the frame draws it",
 );
 assert.ok(
   !/display:\s*flex/.test(segmentRule),
   'a flex row is what made the original and its meaning parallel columns',
 );
 assert.ok(
-  worldCss.includes(".transcript-panel [data-segment][aria-current='true'] .line-meaning"),
-  'the active block carries its meaning with it rather than highlighting half of itself',
+  listeningCss.includes("li[data-current] .line-meaning {"),
+  'the lit block carries its meaning with it, set off by an edge, rather than highlighting half of itself',
 );
 
 /* --- Support text ships in its own writing system --- */
 assert.ok(
-  !/\.transcript-panel \[data-segment\] > span/.test(worldCss),
+  !/\.transcript-panel \[data-segment\] > span/.test(listeningCss),
   'styling every child alike is what flattened the meaning into a second original',
 );
 

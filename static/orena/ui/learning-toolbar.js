@@ -25,6 +25,7 @@
    reports names back. */
 import { esc } from './html.js';
 import { symbol } from './symbols.js';
+import { icon as phosphor } from './phosphor.js';
 
 const EDGE = 8;
 
@@ -35,7 +36,7 @@ function actionHtml(action) {
     /* A display layer the design names on the surface - the reading, the
        support language - wears that name as a chip; the rest stay icon-first. */
     return action.chip
-      ? `<button type="button" class="learning-chip" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${esc(action.chip)}</button>`
+      ? `<button type="button" class="learning-chip" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${action.chipIcon ? phosphor(action.chipIcon, { size: 14 }) : ''}<span>${esc(action.chip)}</span></button>`
       : `<button type="button" class="learning-action" data-toggle="${esc(name)}" aria-pressed="${action.pressed ? 'true' : 'false'}" ${tip}>${symbol(icon, 18)}</button>`;
   if (kind === 'menu')
     return `<span class="learning-action-menu"><button type="button" class="learning-action" data-menu-toggle="${esc(name)}" aria-haspopup="menu" aria-expanded="false" ${tip}>${symbol(icon, 18)}</button><div class="learning-menu" data-menu="${esc(name)}" role="menu" hidden>${(action.items || [])

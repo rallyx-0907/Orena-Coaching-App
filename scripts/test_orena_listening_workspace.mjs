@@ -26,7 +26,7 @@ const hostile = lineSheetHtml({ r: referenceCopy.en, c: copy.en, when: '0:01', t
 assert.doesNotMatch(hostile, /<img/, 'the line is escaped');
 
 const encounter = read('static/orena/ui/encounter.js');
-const rooms = read('static/orena/rooms.css');
+const listening = read('static/orena/listening.css');
 
 /* A tapped line is picked, not jumped to; only "jump here" moves the voice. */
 const pickHandler = encounter.slice(encounter.indexOf('const unpick = () => {'), encounter.indexOf('root.querySelectorAll(\'[data-seek-here]\')'));
@@ -37,7 +37,7 @@ assert.match(seekHere, /model\.select\(/, '"jump here" selects the line');
 assert.match(seekHere, /replaySegment\(playerRoot, payload\.playback, s\.start_ms, null/, 'and plays on from it');
 const loop = encounter.slice(encounter.indexOf("root.querySelectorAll('[data-loop-line]')"), encounter.indexOf("const seekInput"));
 assert.match(loop, /s\.start_ms, s\.end_ms/, '"replay line" plays that line only');
-assert.match(rooms, /li\[data-picked\] > \.line-pick \{\s*display: flex/, "a picked line's actions are shown by the attribute alone");
+assert.match(listening, /li:is\(\[data-current\], \[data-picked\]\) > \.line-pick \{\s*display: flex/, "a picked line's actions are shown by the attribute alone");
 
 /* Auto-scroll is a kept preference that really stops the list following the voice. */
 assert.match(encounter, /autoscroll: savedStage\.autoscroll !== false/, 'on by default, and kept');
@@ -48,6 +48,23 @@ assert.match(encounter, /colors: false,/, 'a stored colour preference cannot lea
 
 /* The played part of the scrubber follows its position. */
 assert.match(encounter, /seekInput\.style\.setProperty\('--fill'/);
-assert.match(rooms, /::-webkit-slider-thumb \{[^}]*background: #fff/, 'a white knob');
+assert.match(listening, /::-webkit-slider-thumb \{[^}]*background: #fff/, 'a white knob');
+
+/* The frame's numbers (D-067, Design Contract rule 42): "Listening workspace" at 1920x1080. */
+for (const [what, pattern] of [
+  ['a 76px top bar over a stage and a 700px transcript', /grid-template-columns: minmax\(0, 1fr\) 700px;\s*grid-template-rows: 76px/],
+  ['the stage padded 10/36/36 with 24 between its parts', /\.listen-stage \{[^}]*gap: 24px;[^}]*padding: 10px 36px 36px;/s],
+  ['a 32px display title', /\.listen-identity h1 \{[^}]*font-size: 32px;[^}]*font-weight: 800;/s],
+  ['a 6px track and a 15px knob', /::-webkit-slider-thumb \{[^}]*inline-size: 15px;/s],
+  ['54px controls and a 64px play', /\.listen-controls \.icon-button \{[^}]*inline-size: 54px;/s],
+  ['a 58px comprehension action', /\.listen-quiz \{[^}]*block-size: 58px;/s],
+  ['the transcript padded 26/24/30', /padding: 26px 24px 30px;/],
+  ['rows of 56px time and the line, 18 apart', /grid-template-columns: 56px minmax\(0, 1fr\);\s*column-gap: 18px;/],
+]) assert.match(listening, pattern, what);
+/* The room draws nothing the frame does not: no writing response, no end-of-recording panel. */
+const room = encounter.slice(encounter.indexOf('<div class="listen-workspace"'), encounter.indexOf('</details>`;'));
+assert.doesNotMatch(room, /data-response-host|reached-the-end|data-back-to-current/, 'nothing the frame does not draw');
+assert.match(room, /data-deep-open/, "the frame's top-right button opens the deeper actions");
+for (const locale of ['en', 'zh', 'vi']) assert.ok(referenceCopy[locale].listenHint, `${locale} has the transcript hint`);
 
 console.log('Listening workspace: deep sheet, picked line, auto-scroll, scrubber, EN/ZH/VI: PASS');

@@ -103,7 +103,7 @@ function fromMedia(item, language, memory) {
     type: own ? 'imported' : String(item.content_type || ''),
     badge: own ? 'imported' : '',
     video,
-    length: length > 0 ? duration(length).replace(/^(\d):/, '0$1:') : '',
+    length: length > 0 ? duration(length) : '',
     percent: percentOf(place),
     left,
     href: link('encounter', { id: item.id, intent: 'follow' }),

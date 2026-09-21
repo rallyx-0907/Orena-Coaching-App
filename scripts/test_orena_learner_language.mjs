@@ -114,7 +114,7 @@ assert.match(referenceSource, /referenceCopy\.vi = \{/, 'the shell pack has a Vi
 const BORROWED_BY_VIETNAMESE = new Set(['dictVideo', 'dictAudio']);
 /* The design's own product vocabulary (Design Contract, rule 45): the baseline names its destinations and
    skills in English in its Vietnamese interface, and the design's rule is to keep the names already used. */
-const DESIGN_PRODUCT_NAMES = new Set(['home', 'library', 'vocabulary', 'progress', 'profile', 'reading', 'listening', 'speaking', 'writing', 'dictation', 'tabVocabulary']);
+const DESIGN_PRODUCT_NAMES = new Set(['home', 'library', 'vocabulary', 'progress', 'profile', 'reading', 'listening', 'speaking', 'writing', 'dictation', 'tabVocabulary', 'listenTranscript']);
 for (const locale of ['zh', 'vi']) {
   const echoed = Object.keys(referenceCopy.en).filter(
     (key) =>

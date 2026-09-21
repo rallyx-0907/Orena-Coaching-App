@@ -1,0 +1,798 @@
+/* The Listening workspace (D-066, D-067), every number taken from Orena Listening - "Listening workspace"
+   at 1920x1080 and "Listening workspace mobile" at 390x752. Colour comes only from theme.css.
+
+   A top bar (back, what this is, more); on the left the picture, the title, the transport and the two
+   actions under it; on the right a 700px transcript - the rows, the layers chosen in the head, and one
+   line of how to use it. The room has no rail and no tab bar. On a phone the transcript is the page
+   and the transport is pinned under it. Nothing here is drawn that the frames do not draw. */
+
+#main:has(> .listen-workspace) {
+  padding: 0;
+}
+#main > .listen-workspace {
+  max-width: none;
+  margin: 0;
+}
+#main > .source {
+  max-width: none;
+  margin: 0;
+  padding: 22px 40px;
+}
+
+.listen-workspace:not([data-dictation]) {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 700px;
+  grid-template-rows: 76px minmax(0, 1fr);
+  block-size: 100dvh;
+  overflow: hidden;
+}
+
+/* --- The top bar ---------------------------------------------------------------------------- */
+.listen-top {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 40px;
+  min-width: 0;
+}
+.listen-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-80);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.listen-where {
+  color: var(--ink-60);
+  font-size: 13px;
+  line-height: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.listen-more {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 0;
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: var(--chip-quiet);
+  box-shadow: var(--chip-quiet-ring);
+  color: var(--ink-80);
+  cursor: pointer;
+}
+
+/* --- The stage: picture, title, transport ---------------------------------------------------- */
+.listen-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 36px 36px;
+}
+.listen-art {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  block-size: clamp(220px, 43.5vh, 470px);
+  border-radius: 16px;
+  background: var(--artwork-wash);
+  box-shadow: var(--glass-ring);
+}
+.listen-art :is(video, iframe, .media-player) {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  border: 0;
+  object-fit: contain;
+}
+.listen-poster {
+  position: absolute;
+  inset: 0;
+}
+.listen-poster > :is(img, .content-cover) {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+.listen-poster + .media-player,
+.listen-poster + audio {
+  display: none;
+}
+.listen-stage > .notice {
+  margin: 0;
+}
+.listen-identity h1 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.022em;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.listen-meta {
+  margin: 9px 0 0;
+  color: var(--ink-60);
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.listen-transport {
+  display: grid;
+  gap: 20px;
+  margin-block-start: auto;
+}
+.listen-seek {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+}
+.listen-seek > output,
+.listen-seek__total {
+  flex: none;
+  color: var(--ink-60);
+  font-size: 13px;
+  line-height: normal;
+}
+.listen-seek__total {
+  color: var(--ink-55);
+}
+.listen-seek input[type='range'] {
+  flex: 1;
+  inline-size: auto;
+  min-block-size: 0;
+  block-size: 15px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.listen-seek input[type='range']::-webkit-slider-runnable-track {
+  block-size: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7b4de8, #c7b2ff) 0 0 / var(--fill, 0%) 100% no-repeat, var(--track);
+}
+.listen-seek input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  inline-size: 15px;
+  block-size: 15px;
+  margin-block-start: -4.5px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--knob-shadow);
+}
+.listen-seek input[type='range']::-moz-range-track {
+  block-size: 6px;
+  border-radius: 999px;
+  background: var(--track);
+}
+.listen-seek input[type='range']::-moz-range-progress {
+  block-size: 6px;
+  border-radius: 999px;
+  background: var(--progress-violet);
+}
+.listen-seek input[type='range']::-moz-range-thumb {
+  inline-size: 15px;
+  block-size: 15px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--knob-shadow);
+}
+.listen-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+}
+.listen-controls .icon-button {
+  inline-size: 54px;
+  block-size: 54px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 17px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: #fff;
+}
+.listen-play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 64px;
+  block-size: 64px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: var(--play-glow);
+  color: #fff;
+}
+.listen-rates {
+  display: flex;
+  gap: 9px;
+  margin-inline-start: auto;
+}
+.listen-rate {
+  min-block-size: 0;
+  block-size: 44px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: var(--ink-70);
+  font-family: var(--mono-font);
+  font-size: 14.5px;
+  line-height: 1;
+}
+.listen-rate[aria-checked='true'] {
+  background: var(--chip-on);
+  box-shadow: var(--chip-on-ring);
+  color: #fff;
+}
+.listen-actions {
+  display: flex;
+  gap: 14px;
+  margin-block-start: -4px;
+}
+.listen-quiz {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  block-size: 58px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 17px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: #fff;
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: 700;
+}
+.listen-quiz:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.listen-actions .icon-button {
+  inline-size: 58px;
+  block-size: 58px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 17px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: #fff;
+}
+
+/* --- The transcript --------------------------------------------------------------------------- */
+.listen-workspace .transcript-panel {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  min-height: 0;
+  padding: 26px 24px 30px;
+  border: 0;
+  border-radius: 0;
+  background: var(--glass-soft);
+  box-shadow: var(--panel-edge);
+}
+.transcript-panel__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 14px;
+}
+.transcript-panel__head .ds-label {
+  color: var(--ink-68);
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+/* The toolbar is only a group for the script; its chips sit in the head's own row. */
+.transcript-panel__head .learning-toolbar {
+  display: contents;
+}
+.listen-workspace .learning-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-block-size: 0;
+  block-size: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: var(--ink-80);
+  font-size: 12.5px;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+}
+.listen-workspace .learning-chip[data-toggle='autoscroll'] {
+  block-size: 31px;
+  padding: 0 13px;
+}
+.listen-workspace .learning-chip:is([data-toggle='pinyin'], [data-toggle='meaning']) {
+  font-family: var(--mono-font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.listen-workspace .learning-chip[data-toggle='autoscroll'] + .learning-chip {
+  margin-inline-start: auto;
+}
+.listen-workspace .learning-chip[aria-pressed='true']:is([data-toggle='pinyin'], [data-toggle='meaning']) {
+  background: var(--chip-on);
+  box-shadow: var(--chip-on-ring);
+  color: #fff;
+}
+.listen-workspace .learning-chip[aria-pressed='false'] {
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: var(--ink-70);
+}
+
+.transcript-note {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+  color: var(--ink-60);
+  font-size: 12.5px;
+}
+.transcript-note[hidden] {
+  display: none;
+}
+.transcript-note button {
+  min-block-size: 0;
+  padding-block: 0;
+  font-size: 12.5px;
+}
+
+.listen-workspace .transcript-panel ol {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 6px;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.listen-workspace .transcript-panel li {
+  position: relative;
+  margin: 0;
+}
+.listen-workspace .transcript-panel li > [data-segment] {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  column-gap: 18px;
+  row-gap: 7px;
+  inline-size: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-72);
+  text-align: start;
+  transition:
+    background-color 0.18s ease-out,
+    box-shadow 0.18s ease-out;
+}
+.listen-workspace .line-when {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  display: block;
+  color: var(--ink-50);
+  font-family: var(--mono-font);
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.listen-workspace .line-when time {
+  font-size: inherit;
+  color: inherit;
+}
+/* Which line is playing is said by the lit row itself; the words stay for assistive technology. */
+.line-state {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.listen-workspace .line-original {
+  grid-column: 2;
+  display: block;
+  font-size: 22px;
+  line-height: 34px;
+}
+.listen-workspace .line-original:lang(zh) {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+}
+.listen-workspace .line-pinyin,
+.listen-workspace .line-meaning {
+  grid-column: 2;
+  display: none;
+}
+.listen-workspace .line-meaning {
+  color: var(--ink-50);
+  font-size: 16px;
+  line-height: 24px;
+}
+.listen-workspace .transcript-panel[data-show-meaning='on'] .line-meaning {
+  display: block;
+  padding: 0;
+  border: 0;
+  min-block-size: 24px;
+}
+/* The reading is the lit line's: the design draws it under that line only. */
+.listen-workspace .transcript-panel[data-show-reading='on'] li[data-current] .line-pinyin {
+  display: block;
+  min-block-size: 18px;
+  color: var(--ink-78);
+  font-family: var(--mono-font);
+  font-size: 14px;
+  line-height: 18px;
+}
+
+/* The lit line: a lit glass ground, its edge and a glow; its layers step up with it. */
+.listen-workspace .transcript-panel li[data-current] > [data-segment] {
+  row-gap: 9px;
+  padding: 16px 74px 16px 16px;
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring-focus), var(--row-glow);
+  color: #fff;
+}
+.listen-workspace li[data-current] .line-when {
+  color: var(--o-accent-ink);
+}
+.listen-workspace li[data-current] .line-original {
+  font-size: 23px;
+  line-height: 36px;
+}
+.listen-workspace .transcript-panel[data-show-meaning='on'] li[data-current] .line-meaning {
+  color: var(--ink-80);
+  font-size: 16.5px;
+}
+/* The edge belongs to a meaning that is there; a line that has none gets no bare stub. */
+.listen-workspace .transcript-panel[data-show-meaning='on'] li[data-current] .line-meaning:not(:empty) {
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--quote-edge);
+}
+.listen-workspace .transcript-panel[data-gap='true'] li[data-current] .line-original {
+  opacity: 0.62;
+}
+.listen-workspace .transcript-panel li[data-picked] > [data-segment] {
+  background: var(--glass-raised);
+  box-shadow: var(--glass-ring);
+}
+.listen-workspace .transcript-panel li > [data-segment]:hover {
+  background: var(--chip-quiet);
+}
+.listen-workspace .transcript-panel li[data-current] > [data-segment]:hover {
+  background: var(--glass-focus);
+}
+
+/* A line's own actions: a round button at its edge - hear the line again, and on a picked line
+   jump here. The words are for assistive technology; the design draws the icon. */
+.line-pick {
+  position: absolute;
+  inset: 16px 16px auto auto;
+  display: none;
+  gap: 8px;
+}
+.listen-workspace li:is([data-current], [data-picked]) > .line-pick {
+  display: flex;
+}
+.listen-workspace li:not([data-picked]) > .line-pick .line-pick__go {
+  display: none;
+}
+.line-pick button {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--round-action);
+  box-shadow: var(--round-action-ring);
+  color: #fff;
+  cursor: pointer;
+}
+.line-pick button > span {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.line-pick button > svg {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.transcript-hint {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: 13px;
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: var(--ink-78);
+  font-size: 15px;
+  line-height: 23.5px;
+}
+.transcript-hint > svg {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  color: var(--ink-78);
+}
+
+/* --- The phone ----------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .listen-workspace:not([data-dictation]) {
+    display: flex;
+    flex-direction: column;
+  }
+  .listen-workspace:not([data-dictation]) :is(.listen-stage, .transcript-panel) {
+    display: contents;
+  }
+  #main > .source {
+    padding: 22px 20px;
+  }
+
+  .listen-top {
+    order: 1;
+    gap: 10px;
+    padding: 14px 20px 0;
+    min-block-size: 38px;
+  }
+  .listen-back > span,
+  .listen-where {
+    display: none;
+  }
+  .listen-more {
+    inline-size: 24px;
+    block-size: 24px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  /* The reading and the support language sit in the top bar's middle, as the frame draws them. */
+  .transcript-panel__head {
+    position: absolute;
+    inset: 14px auto auto 50%;
+    z-index: 2;
+    gap: 7px;
+    transform: translateX(-50%);
+  }
+  .transcript-panel__head .ds-label,
+  .listen-workspace .learning-chip[data-toggle='autoscroll'] {
+    display: none;
+  }
+  .listen-workspace .learning-chip {
+    block-size: 24px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+  .listen-workspace .learning-chip[data-toggle='autoscroll'] + .learning-chip {
+    margin-inline-start: 0;
+  }
+
+  .listen-art {
+    order: 2;
+    flex: none;
+    margin: 14px 20px 0;
+    block-size: 196px;
+    border-radius: 15px;
+  }
+  .listen-stage > .notice {
+    order: 3;
+    margin: 14px 20px 0;
+  }
+  .listen-identity {
+    order: 3;
+    padding: 14px 20px 0;
+  }
+  .listen-identity h1 {
+    font-size: 21px;
+    line-height: 31px;
+  }
+  .listen-meta {
+    margin: 0;
+    font-size: 11.5px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .transcript-note {
+    order: 4;
+    margin: 8px 20px 0;
+  }
+  .listen-workspace .transcript-panel ol {
+    order: 4;
+    gap: 5px;
+    padding: 14px 20px 0;
+  }
+  .listen-workspace .transcript-panel li > [data-segment] {
+    grid-template-columns: 38px minmax(0, 1fr);
+    column-gap: 11px;
+    row-gap: 5px;
+    padding: 8px 10px;
+  }
+  .listen-workspace .line-when {
+    font-size: 10.5px;
+  }
+  .listen-workspace .line-original {
+    font-size: 16.5px;
+    line-height: 25px;
+  }
+  .listen-workspace .line-meaning {
+    font-size: 13.5px;
+    line-height: 20px;
+  }
+  .listen-workspace .transcript-panel li[data-current] > [data-segment] {
+    row-gap: 7px;
+    padding: 13px 12px;
+    border-radius: 15px;
+  }
+  .listen-workspace li[data-current] .line-original {
+    font-size: 17px;
+    line-height: 26px;
+  }
+  .listen-workspace .transcript-panel[data-show-reading='on'] li[data-current] .line-pinyin {
+    font-size: 11.5px;
+    line-height: 15px;
+  }
+  .listen-workspace .transcript-panel[data-show-meaning='on'] li[data-current] .line-meaning {
+    padding-inline-start: 10px;
+    font-size: 13.5px;
+  }
+  /* A tapped line offers its actions under it as two pills; the current line offers none of its own. */
+  .line-pick {
+    position: static;
+    flex-wrap: wrap;
+    padding: 4px 0 6px 49px;
+  }
+  .listen-workspace li[data-current]:not([data-picked]) > .line-pick {
+    display: none;
+  }
+  .line-pick button {
+    display: inline-flex;
+    gap: 7px;
+    inline-size: auto;
+    block-size: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .line-pick button > span {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    clip-path: none;
+  }
+  .line-pick__go {
+    background: #fff;
+    color: #1a1330;
+  }
+
+  .listen-transport {
+    order: 5;
+    gap: 12px;
+    padding: 12px 20px 30px;
+  }
+  .listen-seek {
+    gap: 11px;
+  }
+  .listen-seek > output,
+  .listen-seek__total {
+    font-size: 11px;
+  }
+  .listen-seek input[type='range'] {
+    block-size: 12px;
+  }
+  .listen-seek input[type='range']::-webkit-slider-runnable-track {
+    block-size: 5px;
+  }
+  .listen-seek input[type='range']::-webkit-slider-thumb {
+    inline-size: 12px;
+    block-size: 12px;
+    margin-block-start: -3.5px;
+  }
+  .listen-controls {
+    gap: 10px;
+  }
+  .listen-controls .icon-button {
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: 15px;
+  }
+  .listen-controls [data-replay] {
+    order: 1;
+  }
+  .listen-controls [data-step='prev'] {
+    order: 2;
+  }
+  .listen-play {
+    order: 3;
+    inline-size: 107px;
+    block-size: 56px;
+    border-radius: 999px;
+  }
+  .listen-controls [data-step='next'] {
+    order: 4;
+  }
+  .listen-rates {
+    order: 5;
+    margin-inline-start: 0;
+  }
+  /* Speed is the one chip that is chosen on a phone: tapping it takes the next. */
+  .listen-rate {
+    inline-size: 59px;
+    block-size: 48px;
+    padding: 0;
+    border-radius: 15px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .listen-rate:not([aria-checked='true']) {
+    display: none;
+  }
+  .listen-rate[aria-checked='true'] {
+    background: var(--glass-base);
+    box-shadow: var(--glass-ring);
+    color: #fff;
+  }
+  .listen-actions,
+  .transcript-hint {
+    display: none;
+  }
+}

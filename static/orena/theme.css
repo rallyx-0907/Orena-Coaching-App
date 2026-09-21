@@ -133,6 +133,26 @@
   --ink-60: rgba(255, 255, 255, 0.6);
   --ink-62: rgba(255, 255, 255, 0.62);
   --ink-68: rgba(255, 255, 255, 0.68);
+  --ink-50: rgba(255, 255, 255, 0.5);
+  --ink-70: rgba(255, 255, 255, 0.7);
+  --ink-72: rgba(255, 255, 255, 0.72);
+  --ink-78: rgba(255, 255, 255, 0.78);
+  --ink-80: rgba(255, 255, 255, 0.8);
+  /* The Listening workspace (Orena Listening, "Listening workspace"): a quiet chip, a chosen chip,
+     the lit line, the play button's glow, the panel's left edge, a round action on a line. */
+  --chip-quiet: rgba(196, 178, 255, 0.12);
+  --chip-quiet-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+  --chip-on: rgba(155, 103, 255, 0.26);
+  --chip-on-ring: inset 0 0 0 1px rgba(197, 164, 255, 0.45);
+  --row-glow: 0 10px 34px rgba(123, 77, 232, 0.2);
+  --play-glow: 0 12px 34px rgba(123, 77, 232, 0.45);
+  --panel-edge: inset 1px 0 0 rgba(255, 255, 255, 0.08);
+  --word-mark: rgba(255, 255, 255, 0.24);
+  --quote-edge: rgba(213, 192, 255, 0.7);
+  --round-action: rgba(255, 255, 255, 0.14);
+  --round-action-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.28);
+  --track: rgba(255, 255, 255, 0.12);
+  --knob-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   --scrim-play: rgba(6, 5, 9, 0.5);
   --scrim-badge: rgba(6, 5, 9, 0.62);
 

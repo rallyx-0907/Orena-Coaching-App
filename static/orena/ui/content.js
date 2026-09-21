@@ -4,7 +4,7 @@ import { contentCover } from './cover.js';
 // Content presentation is shared by discovery, practice and the encounter.
 export const duration = (ms) => {
   const seconds = Math.round((Number(ms) || 0) / 1000);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 };
 export function origin(item, c) {
   if(item.rights?.status==='cleared')return c.publishedText;

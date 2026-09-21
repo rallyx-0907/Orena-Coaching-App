@@ -806,22 +806,6 @@ input[type='radio'] {
   .conversation-turn:nth-last-child(1) {
     animation-delay: 0.04s;
   }
-  /* The line being spoken. A change of line is a real event in the media, so
-     it is worth marking - once, briefly. */
-  /* The line being spoken. A change of line is a real event in the media, so
-     it is worth marking - and marking it must not move anything: the row keeps
-     its geometry and only its ground, its edge and its ink settle in. */
-  .transcript-panel li[data-current] > [data-segment] {
-    transition:
-      background-color 0.18s ease-out,
-      box-shadow 0.18s ease-out,
-      color 0.18s ease-out;
-  }
-  .transcript-panel button {
-    transition:
-      background 0.18s ease-out,
-      color 0.18s ease-out;
-  }
   /* A word that has just become an anchor: the learner earned it. */
   .hint-word[data-kind='anchor'],
   .hint-word[data-kind='partial'] {
