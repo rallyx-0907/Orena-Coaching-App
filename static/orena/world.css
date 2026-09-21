@@ -831,13 +831,6 @@
 .expression-tools > button {
   flex: none;
 }
-.correction {
-  border-top: 1px solid var(--line);
-  padding: 20px 0;
-}
-.correction del {
-  color: var(--accent);
-}
 .language-summary {
   display: flex;
   align-items: center;

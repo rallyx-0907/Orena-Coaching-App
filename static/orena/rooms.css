@@ -1253,18 +1253,7 @@
   [data-experience='speaking'] .voice-situation { padding: var(--space-3) var(--space-4); }
   [data-experience='speaking'] .voice-situation h2 { font-size: 1.1rem; }
   [data-experience='speaking'] .voice-prompt { font-size: var(--text-base); line-height: 1.55; padding: var(--space-3); }
-
-  /* Feedback: the same hierarchy, closer together. A dimension is one line -
-     its name, its bar, its number - rather than a stack of three. */
-  .review-headline b { font-size: 1.4rem; }
-  .review-dimension { grid-template-columns: minmax(6rem, 7.5rem) 1fr auto; gap: var(--space-2); font-size: var(--text-sm); }
   .review-bar { grid-column: auto; order: 0; }
-  .review-strengths blockquote {
-    margin: 2px 0;
-    padding-block: 2px;
-    line-height: 1.55;
-  }
-  .review-issues .correction { padding: var(--space-2) var(--space-3); }
 }
 
 /* The line being practised is the phrase the learner is repeating, and it is
@@ -1618,71 +1607,6 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 .review-working { color: var(--muted); font-size: var(--text-sm); }
 
-/* ---------------------------------------------------------------------------
-   The review: the few things worth doing now, then everything else, folded.
-   --------------------------------------------------------------------------- */
-/* Where the learner is, before what to fix.
-
-   The score, the level, the movement since last time and the dimensions the
-   evaluator actually scored - a few rows of numbers, not a dashboard, and not
-   a card each. It leads the review because "how am I doing?" is the question a
-   learner asks first; the corrections answer the second one. */
-.review-overview {
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--line);
-}
-.review-overview .review-headline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-3);
-}
-.review-overview .review-summary {
-  margin: var(--space-2) 0 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-.review-overview .review-dimensions { margin-top: var(--space-3); }
-.review-issues > h3 { margin: 0 0 var(--space-2); font-size: var(--text-lead); }
-.review-fold { margin-top: var(--space-3); }
-.review-fold > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--tap-quiet);
-  cursor: pointer;
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  list-style: none;
-}
-.review-fold > summary::-webkit-details-marker { display: none; }
-.review-fold > summary::before {
-  content: '';
-  inline-size: 0;
-  block-size: 0;
-  border-inline-start: 5px solid currentColor;
-  border-block: 4px solid transparent;
-  transition: transform 0.15s ease-out;
-}
-.review-fold[open] > summary::before { transform: rotate(90deg); }
-.review-fold > summary span {
-  color: var(--muted);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-@media (prefers-reduced-motion: reduce) {
-  .review-fold > summary::before { transition: none; }
-}
-/* A correction is one thing to do, so its actions are quiet and its own words
-   lead. Nothing here is a card: the rule under each one is the separator. */
-.correction { padding-block: var(--space-3); border-block-start: 1px solid var(--line); }
-.review-issues .correction:first-of-type { border-block-start: 0; padding-block-start: 0; }
-.correction .button-row { margin-block-start: var(--space-2); gap: var(--space-1) var(--space-3); }
-.correction .button-row button { min-height: 30px; padding-inline: 0; font-size: var(--text-sm); }
-.correction .button-row .outline { padding-inline: var(--space-3); }
-
 /* A review that belongs to words the learner has since changed.
 
    It is not removed - a learner mid-revision is looking at it precisely
@@ -1700,7 +1624,6 @@ ul.pronunciation-words small { color: var(--muted); }
   font-size: var(--text-sm);
 }
 .review-stale button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
-[data-experience='writing'] .writing-workspace[data-review-stale='true'] .review { opacity: 0.72; }
 
 /* ---------------------------------------------------------------------------
    My Language: the language leads, the count follows.

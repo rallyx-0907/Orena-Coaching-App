@@ -295,7 +295,7 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
     try {
       const full = await api.wordDetail({ ...request(), context: state.context.slice(0, 1200), depth: 'full' });
       if (full?.available) {
-        state.detail = { ...state.detail, ...full, contextMeaning: full.contextMeaning || state.detail?.contextMeaning || '' };
+        state.detail = { ...state.detail, ...full, contextMeaning: state.detail?.contextMeaning || full.contextMeaning || '' };
         state.full = 'ready';
       } else state.full = 'failed';
     } catch {
