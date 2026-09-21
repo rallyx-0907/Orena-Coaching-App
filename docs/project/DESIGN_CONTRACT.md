@@ -68,12 +68,14 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
     removed, not restyled: a row of icon buttons where the source has chips and
     a "⋯", a tap that acts before a choice is offered, a practice group in the
     rail, a destination sheet on a phone. The code is deleted, not hidden.
-45. **The source's vocabulary.** Product names and copy are as drawn (Home,
-    Library, Vocabulary, Progress, Profile; Reading, Listening, Speaking,
-    Writing; Dictation), in the Vietnamese interface as the source has them,
-    because the design project's rule is to keep the names already used. A
-    string the source does not draw follows the same pattern in the support
-    language, and the learner language contract below still applies.
+45. **The source's words are sample content (D-068).** The design fixes how a
+    surface looks and behaves - colour, layout, type, component style, pattern -
+    not what its mockup text says. Every name and label (destinations, skills,
+    chips, actions) is in the learner's language setting, translated, whatever
+    the frame's sample shows; lessons, numbers and states in a frame are not
+    copied as data. A piece of copy the frame draws where the product has none
+    is still written, in the support language, to the learner language
+    contract below.
 46. **Icons are Phosphor 2.1.1, official paths only.** Regular by default,
     fill where the source fills (active tab, earned state). Paths are taken from
     the official package, never typed or adapted, and an icon the source uses
@@ -160,8 +162,7 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
    every interface string its surfaces ask for. A locale with no pack at all
    falls back to English rather than showing keys, but a supported locale that
    quietly renders English is a defect, detected by regression, recorded and
-   visible. The one recorded exception is the design's own product vocabulary
-   (rule 45), listed by name in `scripts/test_orena_learner_language.mjs`.
+   visible. There is no exception for the design's own words (rule 45).
    Learner material is never translated by this rule.
 27. **The writing revision loop.** Reviewing never replaces the learner's
    editor, and a quoted phrase is findable in the learner's text. A review
@@ -192,8 +193,7 @@ Generated guidance is **requested** in the support language, not translated
 afterwards, and a stored one carries the language it was written in. There is
 no third, independently chosen interface language: the support language decides
 what language the product speaks. A mixed interface is a defect unless the
-content deliberately contains those languages, or the strings are the design's
-own product vocabulary (rule 45). A supported locale owns every string; English
+content deliberately contains those languages. A supported locale owns every string; English
 arriving silently in its place is a defect (rule 26).
 
 ## Art direction owner

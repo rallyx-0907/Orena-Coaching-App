@@ -2238,3 +2238,42 @@ disagree with the design, and the sentence of D-066's Design Contract section
 that kept old rules standing. D-066's authority, metric rule, backend-adapts
 rule and pronunciation rule stand. D-057's Art Bible authority and D-061's
 faces stand.
+
+
+## D-068 — The design is the standard for how things look, not the content to copy; the open points of the fidelity pass are closed
+
+**Status:** Accepted, explicit current human instruction (2026-09-21), closing
+the decisions the Listening fidelity pass left open.
+
+**Decision:**
+
+1. **The design's words and data are sample content.** The canonical design is
+   the standard for colour, layout, typography, component style and visual
+   pattern. Its literal copy, lessons, numbers and states in the mockups are not
+   copied. The interface speaks the learner's language setting (the support
+   language): destination, skill and label names are translated, and rule 45 of
+   the Design Contract no longer keeps English names in the Vietnamese
+   interface. This amends D-067 point 5.
+2. **The logo stays as it is** (the Orena tail mark and its wordmark) until the
+   human decides otherwise; the frames' violet square is not adopted.
+3. **DC-5:** a dictation attempt records `used_hint` (and the hint level reached)
+   with the attempt. No effect on the score is inferred until a scoring rule
+   exists. It is stored inside the existing evidence record and needs no new
+   learner-data schema.
+4. **The taxi lesson is removed** from the listening catalogue.
+5. **Phone search and library paging** may be implemented as function needs, as
+   long as they keep the visual system.
+6. **Vietnamese keeps Roboto Mono** (D-061) until a new typography decision.
+7. **"Kiểm tra hiểu" reflects real data:** with no questions it is disabled.
+8. **The rights block stays under the workspace**, styled with the current
+   design system.
+
+**Reason:** the human reviewed the Listening work: the design fixes how the
+product looks and behaves, not what its sample text says, and the product
+language must follow the learner.
+
+**Consequences:** `DESIGN_CONTRACT.md` rules 26 and 45 and the language section
+are rewritten; the learner-language gate no longer exempts any product name;
+the Vietnamese pack has Vietnamese names again.
+
+**Supersedes / Superseded by:** Amends D-067 point 5. D-067 otherwise stands.

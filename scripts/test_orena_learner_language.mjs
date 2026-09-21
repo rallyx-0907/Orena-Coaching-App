@@ -112,14 +112,13 @@ assert.match(referenceSource, /referenceCopy\.vi = \{/, 'the shell pack has a Vi
 /* Vietnamese borrows these two whole, as the Canonical UI Baseline's own Vietnamese does
    ("VIDEO", "Nhập audio"); translating them would be inventing a word. */
 const BORROWED_BY_VIETNAMESE = new Set(['dictVideo', 'dictAudio']);
-/* The design's own product vocabulary (Design Contract, rule 45): the baseline names its destinations and
-   skills in English in its Vietnamese interface, and the design's rule is to keep the names already used. */
-const DESIGN_PRODUCT_NAMES = new Set(['home', 'library', 'vocabulary', 'progress', 'profile', 'reading', 'listening', 'speaking', 'writing', 'dictation', 'tabVocabulary', 'listenTranscript']);
+/* The interface follows the learner's language setting (D-067, as amended): the words in the design's frames are
+   sample content, so no destination, skill or label is exempt from being translated. */
 for (const locale of ['zh', 'vi']) {
   const echoed = Object.keys(referenceCopy.en).filter(
     (key) =>
       !platformAdmin(key) &&
-      !(locale === 'vi' && (BORROWED_BY_VIETNAMESE.has(key) || DESIGN_PRODUCT_NAMES.has(key))) &&
+      !(locale === 'vi' && BORROWED_BY_VIETNAMESE.has(key)) &&
       referenceCopy[locale][key] === referenceCopy.en[key],
   );
   assert.deepEqual(

@@ -67,7 +67,7 @@ renderLibraryBrowse(host, ctxOf([{ id: 'media:dialogue', place: { index: 5, tota
   onImport: () => {},
 });
 const shell = host.innerHTML;
-assert.match(shell, /<h1>Listening<\/h1>/, 'the bar names the room as the design does');
+assert.match(shell, new RegExp(`<h1>${r.listening}</h1>`), "the bar names the room in the learner's interface language");
 assert.match(shell, new RegExp(r.libraryImportListening), 'the bar offers the import');
 assert.match(shell, /role="radiogroup"/, 'the type chips are a single-choice group');
 
@@ -114,7 +114,7 @@ assert.match(shelf, /aria-valuenow="50"/, 'a book shows the chapter place from d
 assert.match(shelf, /3 phút/, 'the authored "3 min" is shown in the interface language');
 assert.equal((shelf.match(/Tạo riêng/g) || []).length, 1, 'provenance is said once');
 assert.match(shelf, /An Author/);
-assert.match(reading.innerHTML, /<h1>Reading<\/h1>/);
+assert.match(reading.innerHTML, new RegExp(`<h1>${r.reading}</h1>`));
 
 const failing = root();
 renderLibraryBrowse(failing, ctxOf([], { libraryBooks: async () => { throw new Error('down'); } }), { readable: [], media: [] }, { only: ['books'] });

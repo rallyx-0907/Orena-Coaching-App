@@ -90,7 +90,7 @@ None identified.
   at short dwell; never isolated (0/130). Self-recovers.
 - Cross-device continuity: device memory current; account sync gated.
 - Content: Reading breadth is a rights decision per text; Vocabulary packs stay
-  gated until published; the listening catalogue holds 7 lessons.
+  gated until published; the listening catalogue holds 6 lessons.
 - Non-CI r8/r10/r11 matrices retired; r20 frozen native.
 
 ## HUMAN GATES

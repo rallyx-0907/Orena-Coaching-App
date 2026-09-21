@@ -69,6 +69,11 @@ place in the source goes where the source's patterns say (behind "⋯", in a
 sheet) or is reported to the human as a decision. If you are unsure whether the
 source draws something, look it up in the source before adding it.
 
+**4b. The design's words are sample content (D-068).** Layout, colour, type and
+component style are the standard; the frame's copy, lessons and numbers are not.
+Every label is in the learner's language setting, translated. The logo stays as
+the app has it.
+
 **5. Icons are official.** Phosphor 2.1.1 from the package
 (`https://unpkg.com/@phosphor-icons/core@2.1.1/assets/{regular|fill}/<name>[-fill].svg`),
 inlined in `static/orena/ui/phosphor.js`. Never type a path from memory (two

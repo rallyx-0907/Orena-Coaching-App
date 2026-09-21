@@ -29,13 +29,12 @@ body {
   line-height: 1;
   color: var(--text-primary);
 }
-.brand-mark {
+.brand-tail {
   display: block;
   flex: none;
   inline-size: 32px;
   block-size: 32px;
-  border-radius: 11px;
-  background: var(--brand-mark);
+  background: url('/orena-assets/assets/mark.svg') center / contain no-repeat;
 }
 
 /* ---- The rail -------------------------------------------------------- */

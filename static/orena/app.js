@@ -201,7 +201,7 @@ function shell() {
      destination; on a phone a slim bar (mark, language pair, the learner) and
      the tab bar. Bringing your own content lives in Library. */
   document.getElementById('shell').innerHTML =
-    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
+    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
   document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
   /* The rail and the tab bar belong to Home, Library, Vocabulary and Progress. A room where the
      learner works - the reader, the player, Dictation, the editor, a review - has none: the

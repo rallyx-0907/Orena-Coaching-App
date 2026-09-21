@@ -101,8 +101,8 @@ def test_one_source_can_publish_multiple_natural_excerpts_without_copying_transc
 
 
 def test_catalog_exposes_reviewed_level_evidence_and_verified_rights() -> None:
-    assert len(CATALOG_SOURCES) == 6
-    assert len(CATALOG) == 7
+    assert len(CATALOG_SOURCES) == 5
+    assert len(CATALOG) == 6
     metadata = listening_library(language="en", level="A1", topic=None, tag=None)["items"][0]
 
     assert metadata["level"] == metadata["reviewed_level"] == "A1"
@@ -259,7 +259,6 @@ def test_every_lesson_carries_a_type_the_baseline_names_or_none() -> None:
     kinds = {lesson.lesson_id: content_type(lesson) for lesson in CATALOG}
     assert set(kinds.values()) <= {*CONTENT_TYPES, None}
     assert kinds["en-daily-pen-in-my-bag"] == "dialogue"
-    assert kinds["en-travel-rainy-day-taxi"] == "dialogue"
     assert kinds["zh-culture-nationalities"] == "culture"
     # Real playable video is a video whatever else its tags say.
     assert kinds["en-science-cosmic-calendar"] == "video"

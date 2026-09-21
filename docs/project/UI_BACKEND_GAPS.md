@@ -147,7 +147,7 @@ change. Group headers name the contract, data source and tests once.
 | DC-2 | Hint level 1-3, "5 / 11 ký tự" | three levels, leading units, never the whole line (held by a gate); typed-earned units also shown | S3b | IN_PROGRESS (built; see log) |
 | DC-3 | Pinyin per revealed character | `pinyin_alignment.py` cuts the reviewed reading into one syllable per character; served as `pinyin_chars_by_segment`; a line that does not agree draws none | S3b | IN_PROGRESS (built; see log) |
 | DC-4 | Result: score, count, wrong / missing / extra | `capabilities/dictation-result.js` maps the evaluator to `DictationResult`; a substitution is one wrong place; the count under the ring is the count the score is made of | S3b | IN_PROGRESS (built; see log) |
-| DC-5 | "Đã dùng gợi ý — không tính vào chuỗi" | LearnerSummary knows assisted for dictation → durable assisted flag | L | BLOCKED `[REVIEW]` |
+| DC-5 | "Đã dùng gợi ý — không tính vào chuỗi" | `used_hint` + hint level stored with the attempt (D-068); no score effect | L | BLOCKED (migration chain awaiting authorization + architecture review) |
 | DC-6 | Keep a word from the result | "Lưu <term>": the lesson's own vocabulary term found in the line, else the whole line, into device memory | S3b | IN_PROGRESS (built; see log) |
 
 ### Speaking — `PronunciationResult` · `speaking_attempts` (no raw audio, D-066 rule 7) · `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs`
@@ -320,18 +320,17 @@ the pinned frames (Orena Listening 02, 03, 04), not from the previous implementa
 - Deleted: the old Dictation panel's CSS and code (`revealAnswer`, `.dictate-*`, `.hint-line`,
   `data-mode='dictation'`), the audio identity block, the D-060 library layout.
 
-Decisions the human owns (not built, and not guessed):
+Decisions the human closed (D-068, 2026-09-21):
 
-- **DC-5 assisted flag.** Hint levels are not stored; the learner summary marks a line assisted
-  only when its answer was revealed, and the screen no longer has a reveal. Saying "không tính vào
-  chuỗi câu tự làm" needs a stored flag on `listening_progress` (a schema change for learner-owned
-  data, which needs independent architecture review) and a definition of the streak (`[DEF]`).
-- **The lesson `en-travel-rainy-day-taxi`.** Its one segment spans the whole 71 s recording
-  and its text does not match the audio: the audio opens with "Dialogue one. A rainy day. I need a
-  taxi." which the text lacks, and the dialogue is spoken with long pauses. A timed AI transcript
-  (Gemini, tried once) agrees with the measured silences only to about a second, so a per-sentence
-  cut would be a guess. It needs an editorial re-cut (or unpublishing until then) - a content and
-  rights decision, not code.
+- **DC-5.** Approved: the used-hint state is stored with the attempt, and no scoring effect is
+  inferred without a scoring rule. Storing it means two columns on `listening_progress` (the last
+  attempt's `used_hint` and hint level), a schema change for learner-owned data: it is authored as a
+  migration after the chain still awaiting human authorization (`20260916_0008` and
+  `20260916_0009`, sandbox at `20260912_0007`) and needs a recorded independent architecture review
+  before it is applied. Until then nothing about it is built and the screen says nothing about
+  hints used.
+- **The lesson `en-travel-rainy-day-taxi` is removed** from the catalogue (six lessons remain); its
+  source `commons-taxi-dialogue-1` goes with it.
 - **Reveal in Dictation.** The baseline draws no "show the answer", and a hint never shows the whole
   line, so the screen has none; the recorded `revealed` evidence path is now unreachable from the UI.
 

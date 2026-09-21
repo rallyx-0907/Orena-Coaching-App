@@ -98,7 +98,6 @@
 
   /* AppShell (Orena Listening / Reading, "Navigation"): the mark, where the learner is, and the
      hairlines between the rail's groups. */
-  --brand-mark: linear-gradient(145deg, #9b6bff, #6e7bff);
   --nav-active: oklch(0.7 0.19 296 / 0.14);
   --nav-active-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
   --nav-skill-active: rgba(196, 178, 255, 0.12);

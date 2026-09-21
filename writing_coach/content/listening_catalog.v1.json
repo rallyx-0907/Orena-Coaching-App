@@ -46,40 +46,6 @@
       ]
     },
     {
-      "source_media_id": "commons-taxi-dialogue-1",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Dialogue1.ogg",
-      "source_provider": "wikimedia-commons",
-      "source_type": "licensed-audio",
-      "source_title": "Taxi Language dialogue 1",
-      "source_creator": "Ferenc6 / Taxi Language Wikibook",
-      "language": "en",
-      "duration_ms": 71138,
-      "playback": {
-        "provider": "wikimedia-commons",
-        "kind": "audio",
-        "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dialogue1.ogg"
-      },
-      "rights": {
-        "license_name": "CC BY-SA 4.0",
-        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-        "provenance_url": "https://commons.wikimedia.org/wiki/File:Dialogue1.ogg",
-        "allowed_usage_type": "creative-commons-attribution-sharealike",
-        "review_status": "verified"
-      },
-      "segments": [
-        {
-          "segment_id": "commons-taxi-dialogue-1:000",
-          "start_ms": 0,
-          "end_ms": 71138,
-          "original_text": "Oh no! It's raining! Taxi! Taxi! I need a taxi. Taxi! Taxi! Oh no, I'm in a hurry! I'm going to be late! Taxi! Taxi! It's eight o'clock already. Taxi! Taxi! I see you're in a hurry. Do you need a taxi? Yes, I'm really late. I need a taxi. Taxi! Phew! Thanks a lot. You're welcome.",
-          "translations": {
-            "vi": "Ôi không, trời đang mưa! Taxi! Tôi cần một chiếc taxi. Tôi đang vội và sắp muộn. Đã tám giờ rồi. Bạn có cần taxi không? Có, tôi muộn thật rồi. Cảm ơn rất nhiều. Không có gì.",
-            "zh": "糟了，下雨了！出租车！我需要一辆出租车。我很着急，要迟到了。已经八点了。你需要出租车吗？是的，我真的迟到了。非常感谢。不客气。"
-          }
-        }
-      ]
-    },
-    {
       "source_media_id": "commons-zh-lesson-7-dialogue-1",
       "source_url": "https://commons.wikimedia.org/wiki/File:Chinese-lesson-7-dialogue-1.ogg",
       "source_provider": "wikimedia-commons",
@@ -431,51 +397,6 @@
         "quick-practice",
         "dictation",
         "beginner",
-        "new"
-      ]
-    },
-    {
-      "lesson_id": "en-travel-rainy-day-taxi",
-      "source_media_id": "commons-taxi-dialogue-1",
-      "excerpt_start_ms": 0,
-      "excerpt_end_ms": 71138,
-      "title": "A rainy day taxi",
-      "description": "A lively exchange about finding a taxi before work.",
-      "topic": "travel",
-      "subtopics": [
-        "conversations",
-        "work"
-      ],
-      "tags": [
-        "conversation",
-        "travel",
-        "work",
-        "story"
-      ],
-      "estimated_level": "A2",
-      "reviewed_level": "A2",
-      "level_evidence": {
-        "vocabulary_band": "high-frequency",
-        "sentence_complexity": "short-connected-utterances",
-        "speech_speed": "natural",
-        "review_note": "Repeated high-frequency phrases with time pressure and connected dialogue."
-      },
-      "available_modes": [
-        "listen",
-        "active",
-        "shadowing"
-      ],
-      "status": "PUBLISHED",
-      "artwork": "travel",
-      "vocabulary": [
-        "in a hurry",
-        "late",
-        "taxi"
-      ],
-      "sections": [
-        "recommended",
-        "beginner",
-        "popular",
         "new"
       ]
     },

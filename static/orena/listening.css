@@ -13,10 +13,26 @@
   max-width: none;
   margin: 0;
 }
+/* Where the recording came from and under what licence: kept under the room (D-068), in the system's
+   own ink and glass, since the frame gives it no place. */
 #main > .source {
   max-width: none;
   margin: 0;
-  padding: 22px 40px;
+  padding: 22px 40px 40px;
+  border: 0;
+  color: var(--ink-60);
+  font-size: 13px;
+}
+#main > .source > summary {
+  color: var(--ink-70);
+  font-size: 14px;
+  cursor: pointer;
+}
+#main > .source p {
+  margin: 8px 0 0;
+}
+#main > .source a {
+  color: var(--o-accent-ink);
 }
 
 .listen-workspace:not([data-dictation]) {
