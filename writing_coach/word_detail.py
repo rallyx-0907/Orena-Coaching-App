@@ -199,6 +199,8 @@ class WordDetailIn(BaseModel):
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
     question: str = Field(default="", max_length=400)
+    # What was asked and answered before, so a follow-up can build on it.
+    history: list[media_interaction.TutorTurn] = Field(default_factory=list, max_length=6)
 
     @field_validator("target_language")
     @classmethod
@@ -214,6 +216,7 @@ class SentenceSheetIn(BaseModel):
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
     question: str = Field(default="", max_length=400)
+    history: list[media_interaction.TutorTurn] = Field(default_factory=list, max_length=6)
 
     @field_validator("target_language")
     @classmethod
@@ -255,6 +258,24 @@ def _explain(text: str, context: str, source: str, target: str, question: str) -
     return result if _text(result.get("summary")) else None
 
 
+def _tutor(text: str, context: str, source: str, target: str, question: str, history: Any) -> dict[str, Any] | None:
+    """The tutor's answer to the learner's own question, or None when the capability is unavailable."""
+    try:
+        result = media_interaction.answer_learner_question(
+            text=text,
+            context=context,
+            source_language=source,
+            target_language=target,
+            question=question,
+            history=history,
+        )
+    except HTTPException as exc:
+        if exc.status_code in {502, 503}:
+            return None
+        raise
+    return result if _text(result.get("answer")) else None
+
+
 def _saved() -> set[str]:
     try:
         return {term.casefold() for term in (_saved_terms() if _saved_terms else set())}
@@ -280,10 +301,26 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
             lookup = _lookup(text, context, source, payload.target_language).to_dict()
         except Exception:  # noqa: BLE001 - a failed dictionary must not fail the sheet
             lookup = {}
-    if payload.depth == "sheet" and not payload.question.strip():
+    if payload.question.strip():
+        # The learner's own question is a conversation with a tutor, not a request for the fixed
+        # explanation: the answer is the tutor's, whatever the question is about.
+        tutor = _tutor(text, context, source, payload.target_language, payload.question, payload.history)
+        detail = project_word_detail(
+            selection=text, context=context, language=source, lookup=lookup, explanation=None, saved=text.casefold() in _saved()
+        )
+        answer = _text((tutor or {}).get("answer"))
+        return {
+            **detail,
+            "depth": payload.depth,
+            "answer": answer,
+            "followUps": [_text(item) for item in (tutor or {}).get("follow_ups") or () if _text(item)],
+            "available": bool(answer),
+            "claim": "word_detail_answer" if answer else "word_detail_unavailable",
+        }
+    if payload.depth == "sheet":
         explanation = _gloss(text, context, source, payload.target_language)
     else:
-        explanation = _explain(text, context, source, payload.target_language, payload.question)
+        explanation = _explain(text, context, source, payload.target_language, "")
     detail = project_word_detail(
         selection=text,
         context=context,
@@ -295,10 +332,8 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     available = detail["meaningSource"] != "none"
     return {
         **detail,
-        # A follow-up is this same call carrying the learner's question; the
-        # explanation's summary is then the answer to it, not the word's meaning.
         "depth": payload.depth,
-        "answer": _text(explanation.get("summary")) if payload.question.strip() and explanation else "",
+        "answer": "",
         # The questions the baseline offers first, phrased for this word.
         "followUps": [_text(item) for item in (explanation or {}).get("follow_ups") or () if _text(item)],
         "available": available,
@@ -309,12 +344,23 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
 @router.post("/sentence-sheet")
 def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
     sentence = payload.text.strip()
+    source = media_interaction._primary_language(payload.source_language)
+    if payload.question.strip():
+        tutor = _tutor(sentence, payload.context.strip() or sentence, source, payload.target_language, payload.question, payload.history)
+        answer = _text((tutor or {}).get("answer"))
+        return {
+            "sentence": sentence,
+            "answer": answer,
+            "followUps": [_text(item) for item in (tutor or {}).get("follow_ups") or () if _text(item)],
+            "available": bool(answer),
+            "claim": "sentence_answer" if answer else "sentence_sheet_unavailable",
+        }
     explanation = _explain(
         sentence,
         payload.context.strip() or sentence,
-        media_interaction._primary_language(payload.source_language),
+        source,
         payload.target_language,
-        payload.question,
+        "",
     )
     if explanation is None:
         return {
@@ -324,7 +370,7 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
         }
     return {
         **project_sentence_sheet(sentence=sentence, explanation=explanation, saved_terms=_saved()),
-        "answer": _text(explanation.get("summary")) if payload.question.strip() else "",
+        "answer": "",
         "available": True,
         "claim": "sentence_sheet",
     }

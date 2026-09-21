@@ -248,13 +248,22 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
     kept: false,
   };
   let turns = 0;
-  const render = () => alive() && paint(quickSheetHtml(c, state), state);
+  /* The latest lookup wins: a sheet that has been replaced or closed is cancelled, and whatever its
+     requests bring back later is ignored instead of being painted over the word that replaced it. */
+  let cancelled = false;
+  const render = () => !cancelled && alive() && paint(quickSheetHtml(c, state), state);
+  // What was already asked and answered in this sheet, so a follow-up builds on it.
+  const earlierTurns = () =>
+    state.thread
+      .filter((turn) => turn.state === 'ready' && turn.answer)
+      .slice(-4)
+      .map((turn) => ({ question: String(turn.question).slice(0, 400), answer: String(turn.answer).slice(0, 1500) }));
   const request = (question = '') => ({
     text: kind === 'word' ? target.text.slice(0, 80) : target.text.slice(0, 1600),
     context: state.context,
     source_language: language,
     target_language: support,
-    ...(question ? { question } : {}),
+    ...(question ? { question, history: earlierTurns() } : {}),
   });
 
   async function load() {
@@ -351,6 +360,7 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
   }
 
   const act = async (action, data = {}) => {
+    if (cancelled) return undefined;
     switch (action) {
       case 'close':
         return close();
@@ -414,5 +424,14 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
     }
   };
 
-  return { state, load, act, ask, render };
+  return {
+    state,
+    load,
+    act,
+    ask,
+    render,
+    cancel() {
+      cancelled = true;
+    },
+  };
 }

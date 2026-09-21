@@ -472,7 +472,7 @@ referenceCopy.vi = {
   dictReplay: 'Nghe lại',
   dictHint: 'Gợi ý',
   dictReveal: 'Xem bản gốc',
-  dictName: 'Dictation · Nghe chép',
+  dictName: 'Nghe chép',
   dictLine: 'dòng {i} / {n}',
   dictAsk: 'Nghe và gõ lại điều bạn nghe được',
   dictVideo: 'Video',

@@ -441,6 +441,90 @@ def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
     }
 
 
+class TutorTurn(BaseModel):
+    """One earlier exchange of the learner's conversation, so a follow-up can build on it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: str = Field(max_length=400)
+    answer: str = Field(max_length=1500)
+
+
+def _tutor_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "follow_ups": {"type": "array", "maxItems": 3, "items": {"type": "string"}},
+        },
+        "required": ["answer", "follow_ups"],
+    }
+
+
+def answer_learner_question(
+    *,
+    text: str,
+    context: str,
+    source_language: str,
+    target_language: str,
+    question: str,
+    history: list[TutorTurn] | tuple[TutorTurn, ...] = (),
+) -> dict[str, Any]:
+    """Answer the learner's own question, as a contextual tutor and not as a fixed explanation.
+
+    The selection and its context are supporting data: they make the answer exact, or give it an
+    example. They never decide the shape of the answer - the question does. So there is no template
+    here: no verdict, no summary of the selection, nothing restated. A question about the forms of a
+    verb is answered with the forms.
+    """
+    language = _validated_source_language(source_language)
+    target = _support_language(target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    system = (
+        f"You are a contextual language tutor. A learner of {source_name} asks you one question and you "
+        f"answer it in {target_name}. Speak to them directly in the second person (in Vietnamese, say bạn); "
+        "never call them 'the learner' or 'the student'. "
+        "Begin with the answer itself. Never restate, paraphrase or announce the question "
+        "(no 'You are asking about...', no 'Great question', no preamble). "
+        "The selected text and its sentence are supporting data only: use them when they make the answer "
+        "more exact or give you an example, but the question alone decides what the answer looks like. "
+        "If the question is general - the forms of a verb, a grammar point, a comparison - answer it in "
+        "general first and tie it to the sentence only if that helps. "
+        "You can be asked about the meaning of a word or phrase, grammar, tense, word forms, collocation, "
+        "pronunciation (give the IPA, or pinyin with tone marks, and say what is hard), naturalness, why A "
+        "is right and B is wrong, how two words or structures differ, a rewrite, a translation, or "
+        "examples: do what was asked, in the form it needs (a list of forms is a short list, a rewrite is "
+        "the rewrite, a translation is the translation). "
+        "For the forms of a verb, give every form in one compact line (base, third person singular, past, "
+        "past participle, -ing), then one short line on when each is used. "
+        "Default to short and direct: one to four sentences, or a compact list of lines. Go deeper only when "
+        "the learner asks for depth (explain fully, in detail, why). "
+        f"Quote {source_name} forms exactly as they are written; write everything else in {target_name}. "
+        "Plain text, no headings, no markdown. Do not invent rules, sources or cultural claims; if you are "
+        "not sure, say so in one clause. "
+        f"Also give up to three follow_ups: short, natural next questions the learner might ask, in {target_name}."
+    )
+    earlier = "".join(
+        f"Q: {turn.question.strip()}\nA: {turn.answer.strip()}\n\n" for turn in list(history)[-4:]
+    )
+    user = (
+        f"SELECTED TEXT:\n{text.strip()}\n\nSENTENCE IT IS IN:\n{context.strip() or text.strip()}\n\n"
+        + (f"EARLIER IN THIS CONVERSATION:\n{earlier}" if earlier else "")
+        + f"THE LEARNER'S QUESTION:\n{question.strip()}"
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        schema=_tutor_schema(),
+        max_output_tokens=900,
+    )
+    return {
+        "answer": str(raw.get("answer") or "").strip()[:2400],
+        "follow_ups": [str(item).strip()[:200] for item in raw.get("follow_ups", []) if str(item).strip()][:3],
+    }
+
+
 @router.post("/explain")
 def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     """Explain selected text, optionally answering the learner's own question.

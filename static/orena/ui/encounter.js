@@ -402,7 +402,7 @@ export async function renderEncounter(root, ctx) {
      once and a change of line never changes a height. */
   const transcriptRow = (s) => {
     const reading = payload.catalog?.pinyin_by_segment?.[s.segment_id];
-    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__go" data-seek-here="${esc(s.segment_id)}">${icon('play', { size: 15, filled: true })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenSeekHere)}</span></button><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenLoopLine)}</span></button></div></li>`;
+    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenLoopLine)}</span></button></div></li>`;
   };
   /* The bar that owns the actions of the current line (`ui/learning-toolbar.js`).
      Icon-first, because these are the reusable learner actions - hear it
@@ -435,7 +435,7 @@ export async function renderEncounter(root, ctx) {
     `<button type="button" class="listen-rate" role="radio" aria-checked="${value === 1}" data-rate-value="${value}">${value === 1 ? '1.0' : value}×</button>`;
   const kindLabel = r['libraryKind_' + payload.catalog?.content_type] || c['topic_' + payload.catalog?.topic] || '';
   const where = [kindLabel.toLocaleLowerCase(ctx.ui), payload.catalog?.level].filter(Boolean).join(' · ');
-  root.innerHTML = `<div class="listen-workspace" data-mode="${esc(location.intent || 'follow')}"><header class="listen-top"><button type="button" class="listen-back" data-listen-back aria-label="${esc(r.listenBack)}">${icon('arrow-left', { size: 20 })}<span>${esc(r.listening)}</span></button><small class="listen-where ds-data">${esc(where)}</small><button type="button" class="listen-more" data-deep-open aria-label="${esc(r.listenMore)}">${icon('dots-three', { size: 19 })}</button></header><section class="listen-stage media-stage"><div class="listen-art player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? `<div class="listen-poster">${art(item)}</div>` : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url, controls: false })}</div><div class="listen-identity"><h1 lang="${language}">${esc(item.title)}</h1><p class="ds-data listen-meta">${meta}</p></div><div class="listen-transport"><label class="seek-line listen-seek"><span class="sr-only">${esc(c.seek)}</span><output class="ds-data" data-time>0:00</output><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${esc(c.seek)}"><span class="ds-data listen-seek__total">${esc(duration(totalMs))}</span></label><div class="listen-controls"><button type="button" class="icon-button" data-step="prev" aria-label="${esc(r.listenPrevLine)}">${icon('skip-back', { size: 22 })}</button><button type="button" class="listen-play" data-play aria-label="${esc(c.play)}">${icon('play', { size: 26, filled: true })}</button><button type="button" class="icon-button" data-step="next" aria-label="${esc(r.listenNextLine)}">${icon('skip-forward', { size: 22 })}</button><button type="button" class="icon-button" data-replay aria-label="${esc(c.replay)}">${icon('arrow-counter-clockwise', { size: 22 })}</button><div class="listen-rates" role="radiogroup" aria-label="${esc(c.speed)}">${[0.75, 1, 1.25].map(rateChip).join('')}</div></div></div><div class="listen-actions"><button type="button" class="listen-quiz" disabled title="${esc(r.bookSoon)}" aria-label="${esc(`${r.listenQuiz} — ${r.bookSoon}`)}">${icon('list-checks', { size: 21 })}<span>${esc(r.listenQuiz)}</span></button><button type="button" class="icon-button" data-keep aria-pressed="${kept}" aria-label="${esc(kept ? c.saved : c.keep)}">${icon('bookmark-simple', { size: 22, filled: kept })}</button></div></section><section class="practice-space" hidden></section><aside class="transcript-panel" data-show-meaning="off" data-show-reading="off"><div class="transcript-panel__head"><span class="ds-label">${esc(r.listenTranscript)}</span>${learningToolbar(lineActions, { label: c.lineActionsLabel })}</div><p class="transcript-note" data-line-note hidden><span role="status" data-line-note-text></span><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button></p><ol>${model.segments.map(transcriptRow).join('')}</ol><p class="transcript-hint">${icon('hand-tap', { size: 20 })}<span>${esc(r.listenHint)}</span></p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>`;
+  root.innerHTML = `<div class="listen-workspace" data-mode="${esc(location.intent || 'follow')}"><header class="listen-top"><button type="button" class="listen-back" data-listen-back aria-label="${esc(r.listenBack)}">${icon('arrow-left', { size: 20 })}<span>${esc(r.listening)}</span></button><small class="listen-where ds-data">${esc(where)}</small><button type="button" class="listen-more" data-deep-open aria-label="${esc(r.listenMore)}">${icon('list', { size: 20 })}</button></header><section class="listen-stage media-stage"><div class="listen-art player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? `<div class="listen-poster">${art(item)}</div>` : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url, controls: false })}</div><div class="listen-identity"><h1 lang="${language}">${esc(item.title)}</h1><p class="ds-data listen-meta">${meta}</p></div><div class="listen-transport"><label class="seek-line listen-seek"><span class="sr-only">${esc(c.seek)}</span><output class="ds-data" data-time>0:00</output><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${esc(c.seek)}"><span class="ds-data listen-seek__total">${esc(duration(totalMs))}</span></label><div class="listen-controls"><button type="button" class="icon-button" data-step="prev" aria-label="${esc(r.listenPrevLine)}">${icon('skip-back', { size: 22 })}</button><button type="button" class="listen-play" data-play aria-label="${esc(c.play)}">${icon('play', { size: 26, filled: true })}</button><button type="button" class="icon-button" data-step="next" aria-label="${esc(r.listenNextLine)}">${icon('skip-forward', { size: 22 })}</button><button type="button" class="icon-button" data-replay aria-label="${esc(c.replay)}">${icon('arrow-counter-clockwise', { size: 22 })}</button><div class="listen-rates" role="radiogroup" aria-label="${esc(c.speed)}">${[0.75, 1, 1.25].map(rateChip).join('')}</div></div></div><div class="listen-actions"><button type="button" class="listen-quiz" disabled title="${esc(r.bookSoon)}" aria-label="${esc(`${r.listenQuiz} — ${r.bookSoon}`)}">${icon('list-checks', { size: 21 })}<span>${esc(r.listenQuiz)}</span></button><button type="button" class="icon-button" data-keep aria-pressed="${kept}" aria-label="${esc(kept ? c.saved : c.keep)}">${icon('bookmark-simple', { size: 22, filled: kept })}</button></div></section><section class="practice-space" hidden></section><aside class="transcript-panel" data-show-meaning="off" data-show-reading="off"><div class="transcript-panel__head"><span class="ds-label">${esc(r.listenTranscript)}</span>${learningToolbar(lineActions, { label: c.lineActionsLabel })}</div><p class="transcript-note" data-line-note hidden><span role="status" data-line-note-text></span><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button></p><ol>${model.segments.map(transcriptRow).join('')}</ol><p class="transcript-hint">${icon('hand-tap', { size: 20 })}<span>${esc(r.listenHint)}</span></p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details>`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -521,7 +521,10 @@ export async function renderEncounter(root, ctx) {
     const practised = event.target.closest('[data-practice-line]');
     if (practised) return lexical.tapWord(event);
     const line = event.target.closest('.line-original');
-    if (!line || line.closest('li')?.hasAttribute('data-current') !== true) return;
+    const row = line?.closest('li');
+    if (!row) return;
+    // A word in another visible line is asked about too: that line becomes the current one, paused where it starts.
+    if (!row.hasAttribute('data-current')) goToLine(segmentIdOf(line), { play: false });
     lexical.tapWord(event);
   });
   const original = () => slot('.line-original');
@@ -580,9 +583,6 @@ export async function renderEncounter(root, ctx) {
     transcript
       .querySelectorAll('li')
       .forEach((li) => li.toggleAttribute('data-current', li === item));
-    // The line the voice reached is no longer one the learner picked; the row's own actions
-    // are shown by the attribute alone, so nothing here moves or hides a node.
-    item?.removeAttribute('data-picked');
     return row;
   }
   /* A row that stops being the current line gives back exactly what being the
@@ -960,41 +960,28 @@ export async function renderEncounter(root, ctx) {
       button.disabled = false;
     }
   };
-  /* A tapped line is picked, not jumped to (Orena Listening frame 03 A): the voice stays where
-     it is until the learner says "jump here", and "replay line" hears just that line. A line the
-     voice is already on has nothing to pick; a tap in it is a tap on a word. */
-  const picked = () => transcript.querySelector('li[data-picked]');
-  const unpick = () => {
-    const was = picked();
-    if (!was) return;
-    was.removeAttribute('data-picked');
+  /* Tapping a line goes to it and plays it (Orena Listening: "chạm một dòng để nghe lại"); tapping a word in a
+     line asks about that word instead. Either way the line tapped becomes the current one, so the
+     highlight, the scrubber and the voice never disagree. */
+  const goToLine = (segmentId, { play = true } = {}) => {
+    if (recording) return;
+    const s = model.segments.find((x) => x.segment_id === segmentId);
+    if (!s) return;
+    model.select(s.segment_id);
+    practice = null;
+    closePractice();
+    if (play) replaySegment(playerRoot, payload.playback, s.start_ms, null, rate);
+    else seekPlayback(playerRoot, payload.playback, s.start_ms);
+    paintFollow();
+    keepCurrentInView();
+    remember();
   };
   root.querySelectorAll('[data-segment]').forEach(
     (button) =>
-      (button.onclick = () => {
-        if (recording) return;
-        const li = button.closest('li');
-        if (li.hasAttribute('data-current')) return unpick();
-        const same = li.hasAttribute('data-picked');
-        unpick();
-        if (same) return;
-        li.setAttribute('data-picked', '');
-      }),
-  );
-  root.querySelectorAll('[data-seek-here]').forEach(
-    (button) =>
-      (button.onclick = () => {
-        if (recording) return;
-        unpick();
-        model.select(button.dataset.seekHere);
-        practice = null;
-        closePractice();
-        const s = model.current;
-        replaySegment(playerRoot, payload.playback, s.start_ms, null, rate);
-        paintFollow();
-        // The line becomes the current one in place; the learner's place moves with it.
-        keepCurrentInView();
-        remember();
+      (button.onclick = (event) => {
+        // A word is the learner's question, answered by the lexical layer's own listener.
+        if (event.target.closest('.line-original')) return;
+        goToLine(button.dataset.segment);
       }),
   );
   root.querySelectorAll('[data-loop-line]').forEach(

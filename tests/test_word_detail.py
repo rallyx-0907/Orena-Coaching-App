@@ -208,8 +208,47 @@ def test_endpoint_returns_the_contract_and_marks_a_saved_word(monkeypatch) -> No
     assert body["answer"] == "", "no question was asked"
 
     assert body["followUps"] == ["Why not slokket?"]
+
+    seen: dict[str, Any] = {}
+
+    def tutor(capability_key, *, messages, schema, max_output_tokens):
+        seen["properties"] = list(schema["properties"])
+        seen["user"] = messages[-1]["content"]
+        seen["system"] = messages[0]["content"]
+        return {"answer": "slokket is not a form of the verb.", "follow_ups": ["Which forms are there?"]}
+
+    monkeypatch.setattr(media_interaction, "_run_structured", tutor)
     asked = word_detail.word_detail(_request(question="Why not slokket?"))
-    assert asked["answer"] == EXPLANATION["summary"]
+    # A learner's own question is answered by a tutor, not by the fixed explanation's summary.
+    assert asked["answer"] == "slokket is not a form of the verb."
+    assert asked["available"] is True and asked["claim"] == "word_detail_answer"
+    assert asked["followUps"] == ["Which forms are there?"]
+    assert seen["properties"] == ["answer", "follow_ups"]
+    assert "THE LEARNER'S QUESTION:\nWhy not slokket?" in seen["user"]
+    assert "Never restate" in seen["system"], "the tutor is told not to paraphrase the question"
+
+
+def test_a_follow_up_carries_the_conversation_and_the_tutor_may_be_down(monkeypatch) -> None:
+    _configure(monkeypatch, EN_LOOKUP)
+    seen: dict[str, Any] = {}
+
+    def tutor(capability_key, *, messages, schema, max_output_tokens):
+        seen["user"] = messages[-1]["content"]
+        return {"answer": "buy, buys, bought, bought, buying.", "follow_ups": []}
+
+    monkeypatch.setattr(media_interaction, "_run_structured", tutor)
+    body = word_detail.word_detail(
+        _request(text="slukket", question="which forms does it have?", history=[{"question": "what is it?", "answer": "A participle."}])
+    )
+    assert "EARLIER IN THIS CONVERSATION:\nQ: what is it?\nA: A participle." in seen["user"]
+    assert body["answer"].startswith("buy,")
+
+    def down(*_a: Any, **_k: Any) -> dict[str, Any]:
+        raise HTTPException(503, "unavailable")
+
+    monkeypatch.setattr(media_interaction, "_run_structured", down)
+    gone = word_detail.word_detail(_request(question="why?"))
+    assert gone["available"] is False and gone["answer"] == ""
 
 
 def test_the_first_layer_asks_only_for_a_short_gloss(monkeypatch) -> None:

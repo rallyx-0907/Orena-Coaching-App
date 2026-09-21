@@ -156,6 +156,7 @@ export function mountLexicalLayer({
   const dockNode = () => (typeof dock === 'function' ? dock() : dock) || null;
   // Replacing one sheet with the next is not closing: the host is told only when the layer ends.
   const closePanel = (notify = true) => {
+    sheet?.cancel?.();
     panel?.remove();
     scrim?.remove();
     panel = null;
@@ -269,7 +270,8 @@ export function mountLexicalLayer({
   /* One sheet per selection. A word opens the word sheet, and a phrase or a
      passage opens the sentence sheet: the same layer, never a second surface. */
   function openSheet(target) {
-    if (panel && panelTarget && panelTarget.text === target.text) return;
+    // The same word in another sentence is another question: only the very same selection is left alone.
+    if (panel && panelTarget && panelTarget.text === target.text && panelTarget.context === target.context) return;
     if (panel) closePanel(false);
     panelTarget = target;
     sheet = createQuickSheet({
@@ -339,7 +341,13 @@ export function mountLexicalLayer({
     return tokens;
   }
 
+  /* Only the latest tap is answered: the tagger may still be working on the word before it. */
+  let tapSeq = 0;
+  // What the last tap selected. Inside a control (a transcript row is a button) a later press does not
+  // clear a selection, so a selection that is only our own last tap must not read as the learner's drag.
+  let tapMade = '';
   async function tapWord(event) {
+    const seq = ++tapSeq;
     const root = units.root();
     const unit = units.unitOf(event.target);
     /* A real control keeps its tap. A transcript row is one - a button that
@@ -350,17 +358,18 @@ export function mountLexicalLayer({
     if (!root || !unit || !root.contains(unit)) return;
     const selection = window.getSelection?.();
     // A learner who dragged a selection meant that selection, not this tap.
-    if (selection && !selection.isCollapsed && squash(selection.toString())) return;
+    if (selection && !selection.isCollapsed && squash(selection.toString()) && squash(selection.toString()) !== tapMade) return;
     const text = units.textOf(unit);
     if (!text) return;
     const offset = offsetAt(unit, event.clientX, event.clientY);
     if (offset == null) return;
     const tokens = await tokensFor(units.keyOf(unit), text);
-    if (!alive()) return;
+    if (!alive() || seq !== tapSeq) return;
     const span =
       tokens?.find((token) => offset >= token.start && offset < token.end) ||
       plainWordAt(text, offset);
     if (!span || !selectRange(unit, span.start, span.end)) return;
+    tapMade = squash(window.getSelection?.()?.toString() || '');
     evaluateSelection();
   }
 

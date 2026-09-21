@@ -516,10 +516,6 @@
 .listen-workspace .transcript-panel[data-gap='true'] li[data-current] .line-original {
   opacity: 0.62;
 }
-.listen-workspace .transcript-panel li[data-picked] > [data-segment] {
-  background: var(--glass-raised);
-  box-shadow: var(--glass-ring);
-}
 .listen-workspace .transcript-panel li > [data-segment]:hover {
   background: var(--chip-quiet);
 }
@@ -527,19 +523,16 @@
   background: var(--glass-focus);
 }
 
-/* A line's own actions: a round button at its edge - hear the line again, and on a picked line
-   jump here. The words are for assistive technology; the design draws the icon. */
+/* A line's own action: a round button at the current line's edge - hear that line again. The words are
+   for assistive technology; the design draws the icon. */
 .line-pick {
   position: absolute;
   inset: 16px 16px auto auto;
   display: none;
   gap: 8px;
 }
-.listen-workspace li:is([data-current], [data-picked]) > .line-pick {
+.listen-workspace li[data-current] > .line-pick {
   display: flex;
-}
-.listen-workspace li:not([data-picked]) > .line-pick .line-pick__go {
-  display: none;
 }
 .line-pick button {
   display: grid;
@@ -709,37 +702,6 @@
     padding-inline-start: 10px;
     font-size: 13.5px;
   }
-  /* A tapped line offers its actions under it as two pills; the current line offers none of its own. */
-  .line-pick {
-    position: static;
-    flex-wrap: wrap;
-    padding: 4px 0 6px 49px;
-  }
-  .listen-workspace li[data-current]:not([data-picked]) > .line-pick {
-    display: none;
-  }
-  .line-pick button {
-    display: inline-flex;
-    gap: 7px;
-    inline-size: auto;
-    block-size: 34px;
-    padding: 0 14px;
-    border-radius: 999px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .line-pick button > span {
-    position: static;
-    inline-size: auto;
-    block-size: auto;
-    clip-path: none;
-  }
-  .line-pick__go {
-    background: #fff;
-    color: #1a1330;
-  }
-
   .listen-transport {
     order: 5;
     gap: 12px;

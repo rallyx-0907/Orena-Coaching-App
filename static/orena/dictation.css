@@ -125,12 +125,38 @@
   display: none;
 }
 
-/* Which line of how many: 4px segments, amber. */
-.dz-progress {
+/* Which line of how many: 4px segments, amber, with a way to the line before and the line after. */
+.dz-steps {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   align-self: stretch;
+}
+.dz-step {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 34px;
+  block-size: 34px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: var(--ink-78);
+  cursor: pointer;
+}
+.dz-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.dz-progress {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 .dz-progress__segments {
   display: flex;
@@ -614,25 +640,67 @@
   .dz-name {
     margin: 0;
     font-size: 17px;
+    white-space: nowrap;
   }
   .dz-cols {
     flex-direction: column;
-    padding: 0 20px 30px;
+    padding: 0 20px 24px;
+  }
+  /* Hearing, the line, the field and the check all fit one screen: the picture is a strip, the
+     line wraps in a pane that scrolls on its own when a line is long, the field is two lines. */
+  .dz-top {
+    block-size: 56px;
   }
   .dz-task {
-    padding: 20px 16px 22px;
+    padding: 14px 16px 16px;
     justify-content: flex-start;
-    gap: 18px;
+    gap: 12px;
   }
   .dz-ask {
-    font-size: 22px;
+    font-size: 18px;
+  }
+  .dz-media {
+    inline-size: 100%;
+    aspect-ratio: auto;
+    block-size: 96px;
+    border-radius: 14px;
   }
   .dz-play {
-    inline-size: 74px;
-    block-size: 74px;
+    inline-size: 52px;
+    block-size: 52px;
+  }
+  .dz-glow {
+    inline-size: 96px;
+    block-size: 96px;
+  }
+  .dz-shape {
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .dz-cells {
+    gap: 6px 7px;
+    max-block-size: 118px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .dz-cell b {
-    font-size: 30px;
+    font-size: 22px;
+  }
+  .dz-cell small {
+    font-size: 10.5px;
+  }
+  .dz-shape__foot {
+    padding-top: 8px;
+  }
+  .dz-form {
+    gap: 10px;
+  }
+  .dz-form textarea {
+    min-height: 0;
+    block-size: 68px;
+    padding: 10px 14px;
+    font-size: 17px;
+    line-height: 1.5;
   }
   .dz-result {
     inline-size: auto;

@@ -18,9 +18,12 @@ import { verdictOf } from '../capabilities/dictation-result.js';
 const fill = (template, values) =>
   Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), String(template));
 
-export function progressHtml(index, total) {
+/* The rail of lines, with the way to the line before and the line after on either side of it. */
+export function progressHtml(index, total, c = {}) {
   const segments = Array.from({ length: total }, (_, at) => `<i${at < index ? ' data-done' : ''}></i>`).join('');
-  return `<div class="dz-progress" role="progressbar" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${index}"><span class="dz-progress__segments">${segments}</span><span class="dz-progress__count">${index}/${total}</span></div>`;
+  const step = (name, iconName, label) =>
+    `<button type="button" class="dz-step" data-${name}-moment aria-label="${esc(label || '')}" data-tip="${esc(label || '')}">${icon(iconName, { size: 18 })}</button>`;
+  return `<div class="dz-steps">${step('prev', 'caret-left', c.previousLine)}<div class="dz-progress" role="progressbar" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${index}"><span class="dz-progress__segments">${segments}</span><span class="dz-progress__count">${index}/${total}</span></div>${step('next', 'caret-right', c.nextLine)}</div>`;
 }
 
 /* The shape of the line (HintRow): revealed characters with their reading beneath; the rest as marks. */
@@ -104,7 +107,7 @@ export function resultHtml({ result, language, r, meaning = '', keep = null, las
 export function screenHtml({ title, level, index, total, kind, range, poster, rate, r, c, ask }) {
   const where = [level, fill(r.dictLine, { i: index, n: total })].filter(Boolean).join(' · ');
   return `<header class="dz-top"><button type="button" class="dz-back" data-exit-practice aria-label="${esc(c.exitPractice)}">${icon('arrow-left', { size: 20 })}<span class="dz-lesson">${esc(title)}</span></button><h2 class="dz-name">${esc(r.dictName)}</h2><small class="dz-where">${esc(where)}</small><span class="dz-streak" title="${esc(r.streakUnmeasured)}">${icon('flame', { size: 16, filled: true })}<b>0</b></span></header>
-<div class="dz-cols"><section class="dz-task">${progressHtml(index, total)}<h3 class="dz-ask" id="dictateAsk">${esc(ask)}</h3>
+<div class="dz-cols"><section class="dz-task">${progressHtml(index, total, c)}<h3 class="dz-ask" id="dictateAsk">${esc(ask)}</h3>
 <div class="dz-media" data-dz-media><span class="dz-media__art">${poster}</span><span class="dz-glow" aria-hidden="true"></span><button type="button" class="dz-play" data-listen aria-label="${esc(r.dictReplay)}">${icon('play', { size: 38, filled: true })}</button><span class="dz-badge">${icon(kind === 'video' ? 'video-camera' : 'headphones', { size: 14, filled: kind === 'video' })}<span>${esc(kind === 'video' ? r.dictVideo : r.dictAudio)}</span></span><span class="dz-range">${esc(range)}</span><span class="dz-clip"><i data-dz-clip></i></span></div>
 <div class="dz-pills"><button type="button" class="dz-pill dz-pill--raised" data-listen>${icon('arrow-counter-clockwise', { size: 14 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="dz-pill dz-pill--raised" data-dz-rate aria-label="${esc(r.dictSpeed)}">${esc(rate)}×</button><span class="dz-pill dz-pill--hint" data-dz-hint-pill hidden></span></div>
 <section class="dz-shape" data-hint-panel></section>

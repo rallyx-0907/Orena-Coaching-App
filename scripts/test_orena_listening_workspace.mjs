@@ -28,16 +28,19 @@ assert.doesNotMatch(hostile, /<img/, 'the line is escaped');
 const encounter = read('static/orena/ui/encounter.js');
 const listening = read('static/orena/listening.css');
 
-/* A tapped line is picked, not jumped to; only "jump here" moves the voice. */
-const pickHandler = encounter.slice(encounter.indexOf('const unpick = () => {'), encounter.indexOf('root.querySelectorAll(\'[data-seek-here]\')'));
-assert.ok(pickHandler.length > 100, 'the pick handler was found');
-assert.doesNotMatch(pickHandler, /replaySegment|model\.select/, 'tapping a line does not move the voice');
-const seekHere = encounter.slice(encounter.indexOf("root.querySelectorAll('[data-seek-here]')"), encounter.indexOf("root.querySelectorAll('[data-loop-line]')"));
-assert.match(seekHere, /model\.select\(/, '"jump here" selects the line');
-assert.match(seekHere, /replaySegment\(playerRoot, payload\.playback, s\.start_ms, null/, 'and plays on from it');
+/* A tapped line goes to that line and plays it; a tapped word asks about the word (bugs 7 and 12). */
+const goTo = encounter.slice(encounter.indexOf('const goToLine = ('), encounter.indexOf("root.querySelectorAll('[data-loop-line]')"));
+assert.ok(goTo.length > 200, 'the line handler was found');
+assert.match(goTo, /model\.select\(s\.segment_id\)/, 'the tapped line becomes the current one');
+assert.match(goTo, /replaySegment\(playerRoot, payload\.playback, s\.start_ms, null, rate\)/, 'and the voice plays on from it');
+assert.match(goTo, /event\.target\.closest\('\.line-original'\)\) return;/, 'a tap on a word is left to the lexical layer');
+assert.match(encounter, /goToLine\(segmentIdOf\(line\), \{ play: false \}\)/, 'a word in another visible line moves the current line there, paused, before it is asked about');
+assert.doesNotMatch(encounter, /data-seek-here|data-picked/, 'there is no second, half-way "picked" state');
 const loop = encounter.slice(encounter.indexOf("root.querySelectorAll('[data-loop-line]')"), encounter.indexOf("const seekInput"));
 assert.match(loop, /s\.start_ms, s\.end_ms/, '"replay line" plays that line only');
-assert.match(listening, /li:is\(\[data-current\], \[data-picked\]\) > \.line-pick \{\s*display: flex/, "a picked line's actions are shown by the attribute alone");
+assert.match(listening, /li\[data-current\] > \.line-pick \{\s*display: flex/, "the current line's own round action is shown by the attribute alone");
+/* The overflow is a menu icon, not a bare "..." (bug 13). */
+assert.match(encounter, /data-deep-open[^>]*>\$\{icon\('list'/, 'the top bar\'s overflow is the menu icon');
 
 /* Auto-scroll is a kept preference that really stops the list following the voice. */
 assert.match(encounter, /autoscroll: savedStage\.autoscroll !== false/, 'on by default, and kept');
