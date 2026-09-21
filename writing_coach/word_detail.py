@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -190,6 +190,10 @@ def project_sentence_sheet(
 class WordDetailIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    # "sheet" is the first layer: a short gloss, answered at once. "full" is the
+    # explanation behind "why here?", asked for only when the learner opens it.
+    depth: Literal["sheet", "full"] = "full"
+
     text: str = Field(min_length=1, max_length=80)
     context: str = Field(min_length=1, max_length=1200)
     source_language: str = Field(min_length=2, max_length=32)
@@ -215,6 +219,21 @@ class SentenceSheetIn(BaseModel):
     @classmethod
     def _normalize_target(cls, value: str) -> str:
         return value.strip().casefold()
+
+
+def _gloss(text: str, context: str, source: str, target: str) -> dict[str, Any] | None:
+    """A short contextual gloss, or None when the capability is unavailable."""
+    try:
+        result = media_interaction.meaning_in_context(
+            media_interaction.MediaExplainIn(
+                text=text, context=context, source_language=source, target_language=target
+            )
+        )
+    except HTTPException as exc:
+        if exc.status_code in {502, 503}:
+            return None
+        raise
+    return result if _text(result.get("context_meaning")) else None
 
 
 def _explain(text: str, context: str, source: str, target: str, question: str) -> dict[str, Any] | None:
@@ -261,7 +280,10 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
             lookup = _lookup(text, context, source, payload.target_language).to_dict()
         except Exception:  # noqa: BLE001 - a failed dictionary must not fail the sheet
             lookup = {}
-    explanation = _explain(text, context, source, payload.target_language, payload.question)
+    if payload.depth == "sheet" and not payload.question.strip():
+        explanation = _gloss(text, context, source, payload.target_language)
+    else:
+        explanation = _explain(text, context, source, payload.target_language, payload.question)
     detail = project_word_detail(
         selection=text,
         context=context,
@@ -275,6 +297,7 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         **detail,
         # A follow-up is this same call carrying the learner's question; the
         # explanation's summary is then the answer to it, not the word's meaning.
+        "depth": payload.depth,
         "answer": _text(explanation.get("summary")) if payload.question.strip() and explanation else "",
         # The questions the baseline offers first, phrased for this word.
         "followUps": [_text(item) for item in (explanation or {}).get("follow_ups") or () if _text(item)],

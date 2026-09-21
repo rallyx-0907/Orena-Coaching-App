@@ -127,7 +127,11 @@ function layerOne(c, s, v) {
   return `${wordHead(c, v, s)}<hr class="qs-rule">${label(c.quickMeaningLabel)}${meaning}<blockquote class="qs-well" lang="${esc(s.language)}">${highlighted(s.context, s.selection)}</blockquote><div class="qs-actions">${button('save', saveBody, { cls: 'qs-btn', attrs: v.saved ? 'aria-pressed="true"' : '' })}${button('why', `${icon('sparkle', { size: 19 })}${esc(why)}`, { cls: 'qs-btn qs-btn--primary', attrs: loading ? '' : '' })}</div><p class="meta qs-status" role="status" data-panel-status></p>`;
 }
 
-function verdictCard(c, v, support) {
+function verdictCard(c, v, support, full = 'ready') {
+  if (full === 'loading')
+    return `<section class="qs-verdict" role="status" aria-label="${esc(c.quickThinking)}"><span class="qs-skeleton"><span></span></span><span class="qs-skeleton"><span></span></span></section>`;
+  if (full === 'failed')
+    return `<section class="qs-verdict"><p>${esc(c.lookupFailed)} ${button('retry-full', esc(c.retry), { cls: 'qs-link' })}</p></section>`;
   const verdict = v.verdict;
   if (!verdict) return '';
   const text = v.deeper.whyHere || v.meaning;
@@ -136,7 +140,7 @@ function verdictCard(c, v, support) {
 
 function askView(c, s, v) {
   const chips = [...v.followUps.slice(0, 1), ...CHIPS.map((key) => c[key])];
-  return `${wordHead(c, v, s, { small: true })}${verdictCard(c, v, s.support)}${label(c.quickAskNext)}<div class="qs-chips">${chips
+  return `${wordHead(c, v, s, { small: true })}${verdictCard(c, v, s.support, s.full)}${label(c.quickAskNext)}<div class="qs-chips">${chips
     .map((text) => button('chip', esc(text), { cls: 'qs-chip qs-chip--ask', attrs: `data-text="${esc(text)}"` }))
     .join('')}</div>${thread(c, s.thread, s.support)}<div class="qs-foot">${composer(c, c.quickFreeQuestion)}<div class="qs-actions">${button('save', `${icon('bookmark-simple', { filled: v.saved, size: 18 })}${esc(v.saved ? c.selectionSaved : c.quickSaveWord)}`, { cls: 'qs-btn' })}${button('deeper', `${icon('arrows-out-simple', { size: 18 })}${esc(c.quickDeeper)}`, { cls: 'qs-btn' })}</div></div><p class="meta qs-status" role="status" data-panel-status></p>`;
 }
@@ -160,7 +164,7 @@ function deeperView(c, s, v) {
     ? `<div class="qs-chips">${d.relatedExpressions.map((item) => `<span class="qs-chip qs-chip--plain" title="${esc(item.note)}">${esc(item.term)}</span>`).join('')}</div>`
     : '';
   const p = (text) => (text ? `<p class="qs-text" lang="${esc(s.support)}">${esc(text)}</p>` : '');
-  return `<div class="qs-top"><span class="qs-grab" aria-hidden="true"></span><div class="qs-top__row"><strong class="qs-word qs-word--small qs-word--${v.script}" lang="${esc(s.language)}">${esc(v.headword)}</strong><span class="qs-reading">${esc(v.reading)}</span>${button('close', esc(c.quickClose), { cls: 'qs-link qs-top__close' })}</div></div><div class="qs-scroll">${section(c.quickCore, p(d.coreIdea))}${section(c.quickMental, p(d.mentalModel))}${section(c.quickContrast, contrast)}${section(c.quickExamples, examples)}${section(c.quickWhyHere, p(d.whyHere))}${section(c.quickMistake, p(d.commonMistake))}${section(c.quickGrammarNote, grammar)}${section(c.quickRelated, related)}${thread(c, s.thread, s.support)}</div><div class="qs-foot qs-foot--bar">${(v.followUps || []).length ? `${label(c.quickMightAsk)}${button('chip', esc(v.followUps[0]), { cls: 'qs-chip qs-chip--ask', attrs: `data-text="${esc(v.followUps[0])}"` })}` : ''}${composer(c, c.quickFollowUp)}${button('save-explanation', `${icon('bookmark-simple', { size: 18 })}${esc(c.quickSaveExplanation)}`, { cls: 'qs-btn qs-btn--primary', attrs: `aria-disabled="true" title="${esc(c.quickExplanationSoon)}"` })}</div>`;
+  return `<div class="qs-top"><span class="qs-grab" aria-hidden="true"></span><div class="qs-top__row"><strong class="qs-word qs-word--small qs-word--${v.script}" lang="${esc(s.language)}">${esc(v.headword)}</strong><span class="qs-reading">${esc(v.reading)}</span>${button('close', esc(c.quickClose), { cls: 'qs-link qs-top__close' })}</div></div><div class="qs-scroll">${s.full === 'loading' ? `<p class="qs-meaning qs-skeleton" role="status" aria-label="${esc(c.quickThinking)}"><span></span></p>` : s.full === 'failed' ? `<p class="qs-text">${esc(c.lookupFailed)} ${button('retry-full', esc(c.retry), { cls: 'qs-link' })}</p>` : ''}${section(c.quickCore, p(d.coreIdea))}${section(c.quickMental, p(d.mentalModel))}${section(c.quickContrast, contrast)}${section(c.quickExamples, examples)}${section(c.quickWhyHere, p(d.whyHere))}${section(c.quickMistake, p(d.commonMistake))}${section(c.quickGrammarNote, grammar)}${section(c.quickRelated, related)}${thread(c, s.thread, s.support)}</div><div class="qs-foot qs-foot--bar">${(v.followUps || []).length ? `${label(c.quickMightAsk)}${button('chip', esc(v.followUps[0]), { cls: 'qs-chip qs-chip--ask', attrs: `data-text="${esc(v.followUps[0])}"` })}` : ''}${composer(c, c.quickFollowUp)}${button('save-explanation', `${icon('bookmark-simple', { size: 18 })}${esc(c.quickSaveExplanation)}`, { cls: 'qs-btn qs-btn--primary', attrs: `aria-disabled="true" title="${esc(c.quickExplanationSoon)}"` })}</div>`;
 }
 
 /* Sentence parts: each chunk the model named, coloured by its role, with the
@@ -234,6 +238,8 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
     lookup: null,
     detail: null,
     detailState: 'loading',
+    // The explanation behind "why here?" is asked for when opened: idle, loading, ready, failed.
+    full: 'idle',
     sentence: null,
     sentenceState: 'loading',
     thread: [],
@@ -260,7 +266,7 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
         })
         .catch(() => {});
       try {
-        const detail = await api.wordDetail({ ...request(), context: state.context.slice(0, 1200) });
+        const detail = await api.wordDetail({ ...request(), context: state.context.slice(0, 1200), depth: 'sheet' });
         state.detail = detail;
         state.detailState = detail?.available ? 'ready' : 'unavailable';
         state.kept = state.kept || Boolean(detail?.saved);
@@ -275,6 +281,25 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
       } catch {
         state.sentenceState = 'failed';
       }
+    }
+    render();
+  }
+
+  /* The full explanation, once, when the learner opens what sits behind the
+     first layer. It fills in the verdict, the questions and the deeper sections
+     and leaves the meaning and the reading already on screen as they were. */
+  async function ensureFull() {
+    if (kind !== 'word' || state.full === 'loading' || state.full === 'ready') return;
+    state.full = 'loading';
+    render();
+    try {
+      const full = await api.wordDetail({ ...request(), context: state.context.slice(0, 1200), depth: 'full' });
+      if (full?.available) {
+        state.detail = { ...state.detail, ...full, contextMeaning: full.contextMeaning || state.detail?.contextMeaning || '' };
+        state.full = 'ready';
+      } else state.full = 'failed';
+    } catch {
+      state.full = 'failed';
     }
     render();
   }
@@ -331,10 +356,15 @@ export function createQuickSheet({ ctx, target, title, alive, paint, close, spea
         return speak(target.text);
       case 'why':
         state.view = 'ask';
-        return render();
+        render();
+        return ensureFull();
       case 'deeper':
         state.view = 'deeper';
-        return render();
+        render();
+        return ensureFull();
+      case 'retry-full':
+        state.full = 'idle';
+        return ensureFull();
       case 'parts':
         state.view = 'parts';
         return render();

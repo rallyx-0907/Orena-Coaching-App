@@ -397,6 +397,50 @@ def _explanation_schema() -> dict[str, Any]:
     }
 
 
+def _gloss_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {"context_meaning": {"type": "string"}},
+        "required": ["context_meaning"],
+    }
+
+
+def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
+    """Only what the first layer of the Quick Sheet needs: a short gloss.
+
+    The full explanation is a large structured answer and takes seconds; the
+    first layer of the sheet is meant to answer at once, so it asks for one
+    clause and the rest is asked for only when the learner opens it.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    source = payload.text.strip()
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    f"You are a dictionary for a learner of {source_name}. Answer in {target_name}. "
+                    "Give context_meaning: what the selected text means in this sentence, as one short "
+                    "clause a dictionary would give for this use. No explanation, no examples."
+                ),
+            },
+            {"role": "user", "content": f"SELECTED TEXT:\n{source}\n\nCONTEXT:\n{payload.context.strip() or source}"},
+        ],
+        schema=_gloss_schema(),
+        max_output_tokens=120,
+    )
+    return {
+        "source_language": language,
+        "target_language": target,
+        "selected_text": source,
+        "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
+    }
+
+
 @router.post("/explain")
 def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     """Explain selected text, optionally answering the learner's own question.

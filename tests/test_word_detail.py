@@ -212,6 +212,25 @@ def test_endpoint_returns_the_contract_and_marks_a_saved_word(monkeypatch) -> No
     assert asked["answer"] == EXPLANATION["summary"]
 
 
+def test_the_first_layer_asks_only_for_a_short_gloss(monkeypatch) -> None:
+    _configure(monkeypatch, EN_LOOKUP)
+    seen: dict[str, Any] = {}
+
+    def fake(capability_key, *, messages, schema, max_output_tokens):
+        seen["properties"] = list(schema["properties"])
+        seen["tokens"] = max_output_tokens
+        return {"context_meaning": "went dark"}
+
+    monkeypatch.setattr(media_interaction, "_run_structured", fake)
+
+    body = word_detail.word_detail(_request(depth="sheet"))
+
+    assert seen["properties"] == ["context_meaning"] and seen["tokens"] <= 200
+    assert body["contextMeaning"] == "went dark" and body["meaningSource"] == "context"
+    assert body["depth"] == "sheet"
+    assert body["usageVerdict"] is None and body["deeper"]["coreIdea"] == "", "the rest is asked for later"
+
+
 def test_endpoint_survives_the_provider_being_down(monkeypatch) -> None:
     _configure(monkeypatch, EN_LOOKUP)
 
