@@ -39,7 +39,7 @@ touch swipe, phone sheet and library in a touch-enabled context), not READY.
 Migration slices, in order, each through UI, contract, API, service,
 persistence, reload, errors and tests: (1) Word and Sentence Sheet and (2) Writing
 review and revision - built and browser-checked, remaining checks in the tracker's
-log; the Dark Glass foundation landed with (1); (3) Listening and Dictation - 3a the Library and 3b the workspace details and the Dictation screen built (per-character pinyin from the backend), open: DC-5 and the taxi lesson need a human decision, phone composition of the workspace, (4) Reading
+log; the Dark Glass foundation landed with (1); (3) Listening and Dictation - 3a the Library and 3b the workspace details and the Dictation screen built (per-character pinyin from the backend), open: DC-5 and the taxi lesson need a human decision, (4) Reading
 comprehension per question, (5) catalogue Search. Then learner persistence, progress measurement,
 pronunciation providers. Rules that bind every slice (D-066): a metric with no
 measurement renders 0 in its canonical component and is never stored as data;
@@ -52,6 +52,15 @@ Backbone lane (Opus), D-054 delegation: sandbox only, chain `20260912_0007`,
 flag on, backbone `active` (runbook section 7). Writing drafts kept with the
 account there (`4e1f0a5`). I4 `/api/collection`. Deletion gated (D-055). No
 I1-I7 claim implies human approval.
+
+Fidelity pass (D-067, the design read at its source and measured, not eyeballed): the shell (280px
+rail, five-tab bar, no shell in a working room), Dictation, the Listening and Reading library and the
+Listening workspace now match their frames at 1920x1080 and 390x844 (workspace 390x752), in EN, VI and
+ZH; Phosphor icons are the official set. Deleted as not drawn: the destination sheet, the Practice
+group, the writing response under a recording, the end-of-recording panel, the back-to-current
+button, library skeleton/empty visuals. Not yet measured against the frames: the Quick Sheet layers,
+the Writing surfaces. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
+workspace, Writing entry; the old top bar and the Practice hub go with them.
 
 ## PENDING
 
@@ -93,9 +102,15 @@ the human approves product direction.
 
 ## NEXT EXACT TASK
 
-Human decisions on DC-5 (store hint use?) and the taxi lesson (`UI_BACKEND_GAPS.md`, S3b log); the phone composition of the workspace; delete the dead word-colour code. Also finish the remaining checks of slices 1 and 2 (`UI_BACKEND_GAPS.md`, Progress log:
-error states in a browser, the two stale
-`verify_writing_*_browser.mjs` scripts, unused copy keys), then slice 4, Reading comprehension per question.
+Human decisions (`UI_BACKEND_GAPS.md`, S3b log): DC-5 (store hint use?), the taxi lesson, the logo (the
+frame's violet square, or the orange mascot), the Vietnamese pack keeping the design's English product
+names, the phone search that expands on focus and the library's "load more", the DM Mono to Roboto
+Mono fallback for Vietnamese, the disabled "Kiểm tra hiểu" action (no listening items yet), the
+rights block kept under the workspace (the frame draws none). Then continue the fidelity pass surface
+by surface with the D-067 method (read the frame from the design project, measure it, compare the
+running app, fix, gate): Quick Sheet, Writing review and revision, then migrate Home, Reading (slice
+4, comprehension per question), Speaking, Vocabulary, Progress, and delete the legacy pieces each
+leaves behind. Also the stale `verify_writing_*_browser.mjs` scripts and unused copy keys.
 Operate only sandbox `orena-foundation-web`:8011; restart
 after Python changes. For AI-backed checks select Gemini there (`PUT /api/admin/ai/config`,
 `gemini-3.5-flash-lite`; the key is already in the sandbox env, never print it): the
