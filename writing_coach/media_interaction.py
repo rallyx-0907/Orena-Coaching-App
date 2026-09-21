@@ -227,6 +227,46 @@ USAGE_JUDGEMENTS = (
 )
 
 
+# The roles a sentence's parts can play in the Quick Sheet (SentenceSheet.json).
+# Deliberately few and language-neutral: an object or a modifier that is not one
+# of the first three is a complement.
+STRUCTURE_ROLES = ("adverbial", "verb", "subject", "complement")
+
+
+def _contrast(raw: Any) -> list[dict[str, str]]:
+    items: list[dict[str, str]] = []
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        term = str(item.get("term") or "").strip()[:120]
+        note = str(item.get("note") or "").strip()[:400]
+        if term and note:
+            items.append({"term": term, "note": note})
+    return items[:4]
+
+
+def _structure(raw: Any, source: str) -> list[dict[str, str]]:
+    """Sentence parts, in order, each a literal piece of the selection.
+
+    A chunk the model paraphrased, or one out of order, is dropped rather than
+    shown: a structure that does not match the sentence the learner is looking at
+    teaches the wrong thing.
+    """
+    items: list[dict[str, str]] = []
+    cursor = 0
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        chunk = str(item.get("chunk") or "").strip()
+        role = str(item.get("role") or "").strip().casefold()
+        at = source.find(chunk, cursor) if chunk else -1
+        if at < 0 or role not in STRUCTURE_ROLES:
+            continue
+        items.append({"chunk": chunk, "role": role})
+        cursor = at + len(chunk)
+    return items[:12]
+
+
 def _judgement(value: Any) -> str:
     candidate = str(value or "").strip().casefold()
     return candidate if candidate in USAGE_JUDGEMENTS else "natural"
@@ -309,6 +349,30 @@ def _explanation_schema() -> dict[str, Any]:
                 "maxItems": 4,
                 "items": {"type": "string"},
             },
+            "core_idea": {"type": "string"},
+            "mental_model": {"type": "string"},
+            "common_mistake": {"type": "string"},
+            "contrast": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {"term": {"type": "string"}, "note": {"type": "string"}},
+                    "required": ["term", "note"],
+                },
+            },
+            "structure": {
+                "type": "array",
+                "maxItems": 12,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "chunk": {"type": "string"},
+                        "role": {"type": "string", "enum": list(STRUCTURE_ROLES)},
+                    },
+                    "required": ["chunk", "role"],
+                },
+            },
         },
         "required": [
             "summary",
@@ -322,6 +386,11 @@ def _explanation_schema() -> dict[str, Any]:
             "examples",
             "counter_examples",
             "follow_ups",
+            "core_idea",
+            "mental_model",
+            "common_mistake",
+            "contrast",
+            "structure",
         ],
     }
 
@@ -363,6 +432,15 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         "would plausibly produce or misread, each labelled with its own "
         "judgement. Counter-examples must be realistic mistakes, not absurd ones. "
         "Offer follow_ups the learner might ask next, phrased as their question. "
+        "Also give: core_idea, one plain sentence on what the selection means in "
+        "general; mental_model, a short image or analogy that makes the meaning "
+        "stick; common_mistake, the misunderstanding learners most often have, "
+        "or an empty string if there is no real one; contrast, near-equivalents a "
+        "learner might confuse it with, each with the one-line difference, or an "
+        "empty list if there is none; structure, only when the selection is a whole "
+        "sentence: its consecutive parts, each copied exactly from the selection and "
+        "in order, with the role subject, verb, adverbial or complement (an object "
+        "or any other part is a complement), otherwise an empty list. "
         "Never cite a source, rule number, dictionary or corpus you were not "
         "given; explain from the language itself instead. "
         + language_specific
@@ -422,6 +500,11 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             for item in raw.get("follow_ups", [])
             if str(item).strip()
         ][:4],
+        "core_idea": str(raw.get("core_idea") or "").strip()[:600],
+        "mental_model": str(raw.get("mental_model") or "").strip()[:800],
+        "common_mistake": str(raw.get("common_mistake") or "").strip()[:800],
+        "contrast": _contrast(raw.get("contrast")),
+        "structure": _structure(raw.get("structure"), source),
         "question": question,
         "claim": "contextual_ai_explanation",
     }

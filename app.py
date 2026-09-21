@@ -67,6 +67,7 @@ from writing_coach.media_translation import (
     resolve_translation_provider_id,
 )
 from writing_coach.reading_lookup import ReadingLookupService
+from writing_coach.word_detail import configure_word_detail, router as word_detail_router
 from writing_coach.reading_translation import (
     ReadingTranslationService,
     resolve_reading_translation_provider_id,
@@ -497,12 +498,15 @@ def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
         return None
 
 
-configure_reading_lookup(
-    ReadingLookupService(
-        _persistence_runtime.vocabulary_repository,
-        _reading_english_dictionary,
-        _reading_translation_service,
-    )
+_reading_lookup_service = ReadingLookupService(
+    _persistence_runtime.vocabulary_repository,
+    _reading_english_dictionary,
+    _reading_translation_service,
+)
+configure_reading_lookup(_reading_lookup_service)
+configure_word_detail(
+    lookup=_reading_lookup_service.lookup,
+    saved_terms=lambda: {item["word"] for item in list_library_vocabulary()["items"]},
 )
 configure_media_timing(
     MediaTimingService(
@@ -519,6 +523,7 @@ configure_media_fallback(
 )
 app.include_router(media_learning_router)
 app.include_router(contextual_dictionary_router)
+app.include_router(word_detail_router)
 app.include_router(reading_translation_router)
 configure_speech_asr(_speech_asr_provider)
 configure_speech_pronunciation(build_speech_pronunciation_provider())
