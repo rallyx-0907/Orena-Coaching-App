@@ -3390,3 +3390,136 @@ ul.pronunciation-words small { color: var(--muted); }
   }
   .listen-workspace[data-mode='dictation'] .listen-play > svg { inline-size: 28px; block-size: 28px; }
 }
+
+/* --- The Listening workspace, drawn to the baseline (D-066, Orena Listening frames 02-03) ---
+   The transcript header is three named chips (auto-scroll, the reading, the support language) and
+   one button for everything deeper; a tapped line offers "jump here" and "replay line"; the
+   scrubber is violet with a white knob; an audio lesson has a poster like a video does. */
+.learning-chip {
+  border: 0;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: var(--text-on-glass-dim);
+}
+.learning-chip[aria-pressed='true'] {
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: #fff;
+}
+.learning-chip[aria-pressed='false'] {
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.listen-workspace .transcript-panel__head .learning-toolbar {
+  gap: 6px;
+}
+.listen-workspace .transcript-panel__head .learning-chip {
+  min-block-size: 0;
+  min-height: 0;
+  block-size: 30px;
+  padding: 0 13px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.listen-workspace .transcript-panel__head .learning-action[data-action='deep'] {
+  min-block-size: 0;
+  min-height: 0;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 12px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+}
+.listen-poster {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.listen-poster > :is(img, .content-cover) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.listen-poster + .media-player,
+.listen-poster + audio {
+  display: none;
+}
+
+.line-pick {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0 6px 56px;
+}
+.listen-workspace li[data-picked] > .line-pick {
+  display: flex;
+}
+.line-pick button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  block-size: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.line-pick__go {
+  background: #fff;
+  color: #1a1330;
+}
+.line-pick__loop {
+  background: var(--glass-raised);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+}
+.listen-workspace li[data-picked] > [data-segment] {
+  background: var(--glass-raised);
+  box-shadow: var(--glass-ring);
+}
+
+.listen-seek input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  background: var(--progress-track);
+  accent-color: var(--accent);
+}
+.listen-seek input[type='range']::-webkit-slider-runnable-track {
+  block-size: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent) var(--fill, 0%), var(--progress-track) var(--fill, 0%));
+}
+.listen-seek input[type='range']::-moz-range-track {
+  block-size: 5px;
+  border-radius: 999px;
+  background: var(--progress-track);
+}
+.listen-seek input[type='range']::-moz-range-progress {
+  block-size: 5px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.listen-seek input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  inline-size: 14px;
+  block-size: 14px;
+  margin-block-start: -4.5px;
+  border-radius: 50%;
+  border: 0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(123, 77, 232, 0.35);
+}
+.listen-seek input[type='range']::-moz-range-thumb {
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 50%;
+  border: 0;
+  background: #fff;
+}

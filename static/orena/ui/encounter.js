@@ -50,9 +50,10 @@ import {
   acquireMedia,
   translationRequest,
 } from '../capabilities/media-acquisition.js';
-import { origin, duration, bindImages, audioIdentity, art } from './content.js';
+import { origin, duration, bindImages, art } from './content.js';
 import { dictationHintView, dictationResult, HINT_LEVELS, readingsFor, readingLineFor } from '../capabilities/dictation-result.js';
 import { screenHtml, shapeHtml, hintLevelHtml, resultHtml } from './dictation-screen.js';
+import { openLineSheet } from './line-sheet.js';
 import { symbol } from './symbols.js';
 
 /* How to read the follow panel - the words of the line being spoken, the
@@ -401,7 +402,7 @@ export async function renderEncounter(root, ctx) {
      once and a change of line never changes a height. */
   const transcriptRow = (s) => {
     const reading = payload.catalog?.pinyin_by_segment?.[s.segment_id];
-    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button></li>`;
+    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__go" data-seek-here="${esc(s.segment_id)}">${icon('play', { size: 15, filled: true })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenSeekHere)}</span></button><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenLoopLine)}</span></button></div></li>`;
   };
   /* The bar that owns the actions of the current line (`ui/learning-toolbar.js`).
      Icon-first, because these are the reusable learner actions - hear it
@@ -410,34 +411,12 @@ export async function renderEncounter(root, ctx) {
      assistive technology. Pinyin is not a quiet control here; it is absent
      when the learning language has no reading to show. */
   const lineActions = [
-    { name: 'replay', icon: 'replay', label: c.replay },
-    {
-      name: 'practice',
-      icon: 'practice',
-      kind: 'menu',
-      label: c.stagePractice,
-      items: [
-        { name: 'shadowing', label: c.stageShadowLine },
-        { name: 'speaking', label: c.stageSayYourself },
-      ],
-    },
+    { name: 'autoscroll', kind: 'toggle', label: (referenceCopy[ctx.ui] || referenceCopy.en).listenAutoScroll, chip: (referenceCopy[ctx.ui] || referenceCopy.en).listenAutoScroll },
     language === 'zh'
       ? { name: 'pinyin', icon: 'reading', kind: 'toggle', label: c.stagePinyin, chip: (referenceCopy[ctx.ui] || referenceCopy.en).readerPinyin }
       : null,
     { name: 'meaning', icon: 'meaning', kind: 'toggle', label: c.stageMeaning, chip: String(ctx.support || '').toUpperCase() },
-    { name: 'colors', icon: 'palette', kind: 'toggle', label: c.stageWordColors },
-    { name: 'legend', icon: 'info', label: c.stagePartsOfSpeech },
-    {
-      name: 'more',
-      icon: 'more',
-      kind: 'menu',
-      label: c.stageMore,
-      items: [
-        { name: 'inspect', label: c.inspect },
-        { name: 'save-sentence', label: c.stageSaveSentence },
-        { name: 'dictation', label: c.dictate },
-      ],
-    },
+    { name: 'deep', icon: 'more', label: (referenceCopy[ctx.ui] || referenceCopy.en).listenMore },
   ];
   /* The approved listening workspace (D-059 Phase 7, Screens part 1 section
      04): one card, two panes. The artwork, what this is, the rail and the
@@ -446,14 +425,16 @@ export async function renderEncounter(root, ctx) {
      has no items yet, so its control keeps its place and says so (GAP-025). */
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const totalMs = (payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0);
+  // What the baseline's identity line says: how hard, what kind, how long.
   const meta = [
-    esc(c['topic_' + payload.catalog?.topic] || c.follow),
+    esc(payload.catalog?.level || ''),
+    esc(r['libraryKind_' + payload.catalog?.content_type] || c['topic_' + payload.catalog?.topic] || ''),
     esc(duration(totalMs)),
   ].filter(Boolean).join(' · ');
   const kept = memory.value.kept.includes(id);
   const rateChip = (value) =>
     `<button type="button" class="listen-rate" role="radio" aria-checked="${value === 1}" data-rate-value="${value}">${value}×</button>`;
-  root.innerHTML = `<button type="button" class="icon-button listen-back" data-listen-back aria-label="${esc(r.listenBack)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</button><div class="listen-workspace" data-mode="${esc(location.intent || 'follow')}"><section class="listen-stage media-stage"><div class="listen-art player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? audioIdentity(item, c) : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url, controls: false })}</div><div class="listen-identity"><h1 lang="${language}">${esc(item.title)}</h1><p class="ds-data listen-meta">${meta}</p></div><div class="listen-transport"><label class="seek-line listen-seek"><span class="sr-only">${esc(c.seek)}</span><output class="ds-data" data-time>0:00</output><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${esc(c.seek)}"><span class="ds-data listen-seek__total">${esc(duration(totalMs))}</span></label><div class="listen-controls"><button type="button" class="icon-button" data-step="prev" aria-label="${esc(r.listenPrevLine)}">${icon('skip-back', { size: 19 })}</button><button type="button" class="listen-play" data-play aria-label="${esc(c.play)}">${icon('play', { size: 24, filled: true })}</button><button type="button" class="icon-button" data-step="next" aria-label="${esc(r.listenNextLine)}">${icon('skip-forward', { size: 19 })}</button><button type="button" class="icon-button" data-replay aria-label="${esc(c.replay)}">${icon('arrow-counter-clockwise', { size: 19 })}</button><div class="listen-rates" role="radiogroup" aria-label="${esc(c.speed)}">${[0.75, 1, 1.25].map(rateChip).join('')}</div></div></div><div class="listen-actions"><button type="button" class="outline listen-quiz" disabled title="${esc(r.bookSoon)}" aria-label="${esc(`${r.listenQuiz} — ${r.bookSoon}`)}">${icon('info', { size: 17 })}<span>${esc(r.listenQuiz)}</span></button><button type="button" class="icon-button" data-keep aria-pressed="${kept}" aria-label="${esc(kept ? c.saved : c.keep)}">${icon('bookmark-simple', { size: 19, filled: kept })}</button></div><div class="state-panel reached-the-end" data-reached hidden>${icon('check-circle', { size: 20, filled: true })}<div><strong>${esc(c.reachedTheEnd)}</strong><p>${esc(c.reachedTheEndNote)}</p></div><div class="button-row"><button type="button" class="outline" data-again>${esc(c.hearItAgain)}</button><button type="button" class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></div></section><section class="practice-space" hidden></section><aside class="transcript-panel" data-show-meaning="off" data-show-reading="off"><div class="transcript-panel__head"><span class="ds-label">${esc(r.listenTranscript)}</span><span class="section-head__tools">${learningToolbar(lineActions, { label: c.lineActionsLabel })}<span data-meaning-note hidden>${hint({ text: c.allMeaningNote })}</span></span></div><div class="word-legend" data-word-legend hidden><span data-role="noun">${esc(c.wordThings)}</span><span data-role="verb">${esc(c.wordActions)}</span><span data-role="detail">${esc(c.wordDetails)}</span><span data-role="other">${esc(c.wordConnectors)}</span></div><p class="transcript-note" data-line-note hidden><span role="status" data-line-note-text></span><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button></p><button class="quiet" data-back-to-current hidden>${esc(c.stageBackToCurrent)}</button><ol>${model.segments.map(transcriptRow).join('')}</ol><p class="transcript-hint">${icon('hand-tap', { size: 16 })}<span>${esc(r.readerTapWord)}</span></p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details><div data-response-host>${responseComposer(ctx, item)}</div>`;
+  root.innerHTML = `<button type="button" class="icon-button listen-back" data-listen-back aria-label="${esc(r.listenBack)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</button><div class="listen-workspace" data-mode="${esc(location.intent || 'follow')}"><section class="listen-stage media-stage"><div class="listen-art player-wrap ${payload.playback.kind === 'audio' ? 'audio-player' : ''}">${payload.playback.kind === 'audio' ? `<div class="listen-poster">${art(item)}</div>` : ''}${mediaPlayer(payload.playback, item.title, { startMs: payload.catalog?.excerpt_start_ms || 0, endMs: payload.catalog?.excerpt_end_ms, poster: payload.catalog?.poster_url, controls: false })}</div><div class="listen-identity"><h1 lang="${language}">${esc(item.title)}</h1><p class="ds-data listen-meta">${meta}</p></div><div class="listen-transport"><label class="seek-line listen-seek"><span class="sr-only">${esc(c.seek)}</span><output class="ds-data" data-time>0:00</output><input data-seek type="range" min="${payload.catalog?.excerpt_start_ms || 0}" max="${payload.catalog?.excerpt_end_ms || payload.asset.duration_ms}" value="${model.current.start_ms}" step="100" aria-label="${esc(c.seek)}"><span class="ds-data listen-seek__total">${esc(duration(totalMs))}</span></label><div class="listen-controls"><button type="button" class="icon-button" data-step="prev" aria-label="${esc(r.listenPrevLine)}">${icon('skip-back', { size: 19 })}</button><button type="button" class="listen-play" data-play aria-label="${esc(c.play)}">${icon('play', { size: 24, filled: true })}</button><button type="button" class="icon-button" data-step="next" aria-label="${esc(r.listenNextLine)}">${icon('skip-forward', { size: 19 })}</button><button type="button" class="icon-button" data-replay aria-label="${esc(c.replay)}">${icon('arrow-counter-clockwise', { size: 19 })}</button><div class="listen-rates" role="radiogroup" aria-label="${esc(c.speed)}">${[0.75, 1, 1.25].map(rateChip).join('')}</div></div></div><div class="listen-actions"><button type="button" class="outline listen-quiz" disabled title="${esc(r.bookSoon)}" aria-label="${esc(`${r.listenQuiz} — ${r.bookSoon}`)}">${icon('info', { size: 17 })}<span>${esc(r.listenQuiz)}</span></button><button type="button" class="icon-button" data-keep aria-pressed="${kept}" aria-label="${esc(kept ? c.saved : c.keep)}">${icon('bookmark-simple', { size: 19, filled: kept })}</button></div><div class="state-panel reached-the-end" data-reached hidden>${icon('check-circle', { size: 20, filled: true })}<div><strong>${esc(c.reachedTheEnd)}</strong><p>${esc(c.reachedTheEndNote)}</p></div><div class="button-row"><button type="button" class="outline" data-again>${esc(c.hearItAgain)}</button><button type="button" class="quiet" data-read-through>${esc(c.readItThrough)} ↗</button></div></div></section><section class="practice-space" hidden></section><aside class="transcript-panel" data-show-meaning="off" data-show-reading="off"><div class="transcript-panel__head"><span class="ds-label">${esc(r.listenTranscript)}</span><span class="section-head__tools">${learningToolbar(lineActions, { label: c.lineActionsLabel })}</span></div><p class="transcript-note" data-line-note hidden><span role="status" data-line-note-text></span><button class="quiet" data-retry-annotation hidden>${esc(c.retry)}</button><button class="quiet" data-meaning hidden>${esc(c.recoverMeaning)} ↗</button></p><button class="quiet" data-back-to-current hidden>${esc(c.stageBackToCurrent)}</button><ol>${model.segments.map(transcriptRow).join('')}</ol><p class="transcript-hint">${icon('hand-tap', { size: 16 })}<span>${esc(r.readerTapWord)}</span></p></aside></div><details class="source"><summary>${c.rights}</summary><p>${esc(payload.catalog?.source?.creator || origin(item, c))}</p><p>${esc(payload.catalog?.source?.license || '')}</p><a href="${esc(safeExternal(payload.catalog?.source?.provenance_url || payload.asset.source_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a></details><div data-response-host>${responseComposer(ctx, item)}</div>`;
   const playerRoot = root.querySelector('.media-stage');
   const mediaStatus = document.createElement('p');
   mediaStatus.className = 'notice';
@@ -598,6 +579,9 @@ export async function renderEncounter(root, ctx) {
     transcript
       .querySelectorAll('li')
       .forEach((li) => li.toggleAttribute('data-current', li === item));
+    // The line the voice reached is no longer one the learner picked; the row's own actions
+    // are shown by the attribute alone, so nothing here moves or hides a node.
+    item?.removeAttribute('data-picked');
     return row;
   }
   /* A row that stops being the current line gives back exactly what being the
@@ -844,7 +828,9 @@ export async function renderEncounter(root, ctx) {
   const stage = {
     meaning: savedStage.meaning !== false,
     pinyin: savedStage.pinyin !== false,
-    colors: savedStage.colors === true,
+    // Word-class colours have no switch on the baseline's transcript, so a stored "on" would be one nobody can turn off.
+    colors: false,
+    autoscroll: savedStage.autoscroll !== false,
   };
   const showPinyin = () => language === 'zh' && stage.pinyin && ctx.profile.pinyin !== 'off';
   const keepStage = () => {
@@ -878,35 +864,45 @@ export async function renderEncounter(root, ctx) {
      (DESIGN_CONTRACT: shared action toolbar, icon-first shared actions). */
   const bar = bindLearningToolbar(transcript.querySelector('.learning-toolbar'), {
     onAction: (name) => {
-      if (name === 'replay') return playLine();
-      if (name === 'legend') {
-        const legend = transcript.querySelector('[data-word-legend]');
-        const opener = transcript.querySelector('[data-action="legend"]');
-        legend.hidden = !legend.hidden;
-        opener?.setAttribute('aria-expanded', String(!legend.hidden));
-        return;
-      }
-      if (name === 'inspect') return inspectCurrentLine();
-      if (name === 'save-sentence') return saveCurrentSentence();
-      if (deeperPractice.includes(name)) return openPractice(name);
+      if (name === 'deep') openDeep();
     },
     onToggle: (name, on) => {
       if (name === 'meaning') showAllMeaning(on);
       else if (name === 'pinyin') {
         stage.pinyin = on;
         showAllReadings();
+      } else if (name === 'autoscroll') {
+        stage.autoscroll = on;
+        readingAheadUntil = 0;
       } else {
         stage.colors = on;
         closeLook = on;
       }
       keepStage();
       paintFollow();
-      keepCurrentInView('instant');
+      if (stage.autoscroll) keepCurrentInView('instant');
     },
   });
-  bar.setToggle('colors', stage.colors);
+  bar.setToggle('autoscroll', stage.autoscroll);
   showAllMeaning(stage.meaning);
   showAllReadings();
+  /* Everything deeper than hearing and asking, behind one button (ui/line-sheet.js). */
+  function openDeep() {
+    const line = model.current;
+    if (!line) return;
+    openLineSheet({
+      r,
+      c,
+      when: duration(line.start_ms),
+      text: line.original_text,
+      language,
+      onPick: (way) => {
+        if (way === 'keep') return saveCurrentSentence();
+        if (way === 'inspect') return inspectCurrentLine();
+        if (deeperPractice.includes(way)) openPractice(way);
+      },
+    });
+  }
   function saveCurrentSentence() {
     const line = model.current;
     if (!line) return;
@@ -997,23 +993,58 @@ export async function renderEncounter(root, ctx) {
       button.disabled = false;
     }
   };
+  /* A tapped line is picked, not jumped to (Orena Listening frame 03 A): the voice stays where
+     it is until the learner says "jump here", and "replay line" hears just that line. A line the
+     voice is already on has nothing to pick; a tap in it is a tap on a word. */
+  const picked = () => transcript.querySelector('li[data-picked]');
+  const unpick = () => {
+    const was = picked();
+    if (!was) return;
+    was.removeAttribute('data-picked');
+  };
   root.querySelectorAll('[data-segment]').forEach(
     (button) =>
       (button.onclick = () => {
         if (recording) return;
-        model.select(button.dataset.segment);
+        const li = button.closest('li');
+        if (li.hasAttribute('data-current')) return unpick();
+        const same = li.hasAttribute('data-picked');
+        unpick();
+        if (same) return;
+        li.setAttribute('data-picked', '');
+      }),
+  );
+  root.querySelectorAll('[data-seek-here]').forEach(
+    (button) =>
+      (button.onclick = () => {
+        if (recording) return;
+        unpick();
+        model.select(button.dataset.seekHere);
         practice = null;
         closePractice();
         const s = model.current;
         replaySegment(playerRoot, payload.playback, s.start_ms, null, rate);
         paintFollow();
-        // The row that was pressed becomes the current line in place; the
-        // learner's place moves with it rather than falling back to the page.
-        if (!practice) keepCurrentInView();
+        // The line becomes the current one in place; the learner's place moves with it.
+        keepCurrentInView();
         remember();
       }),
   );
+  root.querySelectorAll('[data-loop-line]').forEach(
+    (button) =>
+      (button.onclick = () => {
+        if (recording) return;
+        const s = model.segments.find((x) => x.segment_id === button.dataset.loopLine);
+        if (s) replaySegment(playerRoot, payload.playback, s.start_ms, s.end_ms, rate);
+      }),
+  );
   const seekInput = root.querySelector('[data-seek]');
+  // The played part of the scrubber is drawn from its position, the way the baseline has it.
+  const paintFill = () => {
+    const span = Number(seekInput.max) - Number(seekInput.min);
+    seekInput.style.setProperty('--fill', `${span > 0 ? Math.max(0, Math.min(100, ((Number(seekInput.value) - Number(seekInput.min)) / span) * 100)) : 0}%`);
+  };
+  paintFill();
   const timeOutput = root.querySelector('[data-time]');
   const playButton = root.querySelector('[data-play]');
   // While the learner is holding the handle, the clock must not write the
@@ -1034,6 +1065,7 @@ export async function renderEncounter(root, ctx) {
   seekInput.addEventListener('blur', releaseScrub);
   seekInput.oninput = (event) => {
     timeOutput.textContent = duration(Number(event.target.value));
+    paintFill();
     seekPlayback(playerRoot, payload.playback, Number(event.target.value));
   };
   function onClock(event) {
@@ -1041,6 +1073,7 @@ export async function renderEncounter(root, ctx) {
     if (!scrubbing) {
       timeOutput.textContent = duration(event.detail.time_ms);
       seekInput.value = String(event.detail.time_ms);
+      paintFill();
     }
     playButton.textContent = playing ? 'Ⅱ' : '▶';
     playButton.setAttribute('aria-label', playing ? c.pause : c.playAction);
@@ -1093,7 +1126,7 @@ export async function renderEncounter(root, ctx) {
       paintFollow(!s);
       if (s) {
         remember();
-        if (!readingAhead()) keepCurrentInView();
+        if (stage.autoscroll && !readingAhead()) keepCurrentInView();
       }
     }
   }

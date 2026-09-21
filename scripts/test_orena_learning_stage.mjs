@@ -113,13 +113,9 @@ assert.doesNotMatch(speakingWord, /^\s*color:/m, 'where the voice is does not sp
 assert.match(speakingWord, /background:/, 'it reads as a ground');
 assert.match(rooms, /\.token\[data-pos='verb'\]\s*\{[^}]*color:/s, 'what a word is stays the colour signal');
 
-/* --- One legend, on request, never under the sentence ------------------- */
-assert.equal((encounter.match(/data-word-legend/g) || []).length, 2, 'one legend node, and one reference to it');
-assert.match(encounter, /name: 'legend'/, 'the legend is opened from its own control');
-assert.ok(
-  encounter.indexOf('data-word-legend') > encounter.indexOf('learningToolbar(lineActions'),
-  'the legend belongs to the bar, not to the line',
-);
+/* --- The transcript header is the baseline's (D-066) -------------------- */
+assert.doesNotMatch(encounter, /data-word-legend|name: 'legend'|name: 'colors'/,
+  'the word-class legend and colour switch are not on the baseline transcript, so neither is drawn');
 assert.ok(
   encounter.indexOf('learningToolbar(lineActions') < encounter.indexOf('<ol>'),
   'the display preferences sit with the transcript heading, not in the list',
@@ -132,13 +128,16 @@ const actions = encounter.slice(
   encounter.indexOf('/* The approved listening workspace'),
 );
 assert.ok(actions.length > 200, "the bar's actions were actually found");
-for (const name of ['replay', 'practice', 'meaning', 'pinyin', 'colors', 'legend', 'more'])
+for (const name of ['autoscroll', 'meaning', 'pinyin', 'deep'])
   assert.match(actions, new RegExp(`name: '${name}'`), `${name} is a control of the bar`);
-for (const toggle of ['meaning', 'pinyin', 'colors'])
+for (const toggle of ['autoscroll', 'meaning', 'pinyin'])
   assert.match(actions, new RegExp(`name: '${toggle}',[^}]*kind: 'toggle'`),
     `${toggle} is a display preference, not an action`);
-for (const intent of ['shadowing', 'speaking', 'dictation'])
-  assert.match(actions, new RegExp(`name: '${intent}'`), `${intent} lives inside a menu`);
+assert.doesNotMatch(actions, /name: '(replay|practice|colors|legend|more)'/,
+  'everything deeper than hearing and asking is behind the one button');
+const lineSheet = readFileSync(new URL('../static/orena/ui/line-sheet.js', import.meta.url), 'utf8');
+for (const intent of ['dictation', 'shadowing', 'speaking', 'keep', 'inspect'])
+  assert.match(lineSheet, new RegExp(`name: '${intent}'`), `${intent} is one of the ways to work on a line`);
 assert.match(encounter, /localStorage\.setItem\(STAGE_KEY/, 'the three preferences are kept as the reader keeps its own');
 assert.doesNotMatch(encounter, /class="moment-actions"/, 'the row of equal buttons is gone');
 assert.doesNotMatch(encounter, /class="stage-toggles"/, 'and so is the row of text pills');
