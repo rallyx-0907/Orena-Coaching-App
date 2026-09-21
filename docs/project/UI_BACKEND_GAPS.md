@@ -42,8 +42,8 @@ schema on that date at `76e69b9`; none has been run against the baseline UI.
 
 | Canonical UI | Required contract | Backend implementation | Data source / DB | Tests | Status |
 | --- | --- | --- | --- | --- | --- |
-| Quick Sheet, word | `WordDetail` | `reading_lookup` (deterministic), `media_interaction` contextual explain; extend with `core_idea`, `mental_model`, `contrast` | vocabulary catalog, tagger, AI capability | `test_media_interaction`, `test_reading_lookup`, `test_orena_understanding.mjs`; add contract test | IN_PROGRESS (S1) |
-| Sentence sheet | `SentenceSheet` | explain + lookup; add `structure[]` | as above | as above | IN_PROGRESS (S1) |
+| Quick Sheet, word | `WordDetail` | `/api/dictionary/word-detail` (projection in `word_detail.py`) over `reading_lookup` and the contextual explanation; `ui/quick-sheet.js` | vocabulary catalog, tagger, AI capability | `tests/test_word_detail.py` (held to the pinned contract), `test_orena_reading_room.mjs`, `test_media_interaction` | IN_PROGRESS (S1 built; see log) |
+| Sentence sheet | `SentenceSheet` | `/api/dictionary/sentence-sheet`; parts and vocabulary in `ui/quick-sheet.js` | as above | as above | IN_PROGRESS (S1 built; see log) |
 | Writing review | `WritingReview` | `/api/evaluate` through a serializer; `issue.examples` and `issue.kind` in the evaluator contract | `essays` | `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_orena_writing_review.mjs` | IN_PROGRESS (S2) |
 | Writing revision | `RevisionCompare` | `revision_delta` through a serializer | `essays` chain | `test_writing_revision_contract` | IN_PROGRESS (S2) |
 | Writing entry, workspace | `ContentCard`, draft | `/api/drafts`, `/api/tasks/generate`; prompt library | account backbone, catalogue | `test_work_api`, `test_orena_writing_workspace.mjs` | BLOCKED (`[CONTENT]` prompts; drafts past sandbox) |
@@ -223,6 +223,37 @@ Every value below renders `0` (a chart, its zero state) until measured.
 | PG-12 | Improving over four weeks | only comparable measures may show a trend → series where comparable, `0` otherwise | L | BLOCKED `[DEF]` |
 | PG-13 | Recurring errors | `error-memory` covers Writing → cross-domain read model | L | IN_PROGRESS |
 | PG-14 | "Dựa trên gì" counts | derivable → after PG-7 | L | IN_PROGRESS |
+
+## Progress log
+
+**S1 Quick Sheet** (2026-09-21, `codex/work`). Built: `word_detail.py` and two endpoints
+(QS-1..6, 11); `context_meaning`, `core_idea`, `mental_model`, `contrast`,
+`common_mistake`, `structure` in the explanation schema; `ui/quick-sheet.js` and
+`quick-sheet.css` (layer one, ask, deeper, sentence and its parts) called from
+Reading and the Listening transcript through `ui/lexical.js`; the old lookup panel,
+selection toolbar and reader panel styles removed. Checked in a browser on the
+sandbox (:8011), vi interface, English text: docked in the reader, popover in
+Listening, phone sheet with scrim. Local: pytest 1148 passed / 118 skipped, all CI
+`.mjs` gates pass except `test_m3_pronunciation_contract.mjs`, which has failed
+since D-065 removed the score from the report (it is a Speaking-slice item).
+
+Not READY yet - what is left before S1 can be called READY:
+
+- Chinese in a browser (hanzi, pinyin, the grammar-word label) and the zh interface.
+- Phone: the ask, deeper and sentence views, not only layer one.
+- Save from the sheet end to end with a reload, and the provider-down and retry states.
+- Speaking still mounts the layer (`ui/speaking.js`): check it.
+- The explanation and summary come back in English when the support language is
+  Vietnamese on the sandbox's provider; the request names Vietnamese, so this is the
+  provider's output (handoff: local model quality), to be checked with the live one.
+- `QS-7` `sources` / `learnerSentences` are empty until their read models exist;
+  `QS-8` "Lưu giải thích" keeps its place, disabled and saying so.
+- Writing feedback, Vocabulary and Practice still open the older Understanding
+  surface (`ui/understanding.js`); it is retired when S2 and the Vocabulary work
+  move onto the sheet.
+- Found on the way, fixed: the Listening transcript's words could not be tapped
+  (a stale `.media-encounter` root); `.media-encounter` selectors remain as dead
+  CSS to remove in S3.
 
 ## Old tracker (GAP-001..052) mapped
 

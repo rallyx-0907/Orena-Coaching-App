@@ -20,24 +20,26 @@ not restore the deleted learner product. Native mobile stays frozen.
 
 D-046 and the product reset. D-066 accepted 2026-09-21: the frozen Dark Glass
 baseline, pinned in `docs/design/canonical-ui/`, replaces D-059 and D-065 as
-visual authority. Paper is retired; the code still carries Ink/Paper and D-065
-compositions until each surface migrates, then they are deleted. Governance is
+visual authority. Paper, sepia and the theme picker are already gone from the
+code (`d0820ba`); the D-065 compositions remain until each surface migrates, then
+they are deleted. Governance is
 updated: Decision Log, tombstone, Design Contract, AGENTS Theme, product state,
 and `UI_BACKEND_GAPS.md` (the one tracker, absorbing the Phase 1-3 audit).
 
 ## Last verified batch
 
-Pytest `1136 passed, 118 skipped` and the CI `.mjs` gates were last run before
-D-065; D-066 changes no code, so they are not re-run for it. Each slice reruns
-them. Project-memory and architecture validators pass locally after D-066. No CI
-claim.
+Local, after slice 1 (Quick Sheet): pytest `1148 passed, 118 skipped`; every CI
+`.mjs` gate passes except `test_m3_pronunciation_contract.mjs`, failing since
+D-065 removed the score (Speaking slice); ESM graph, memory and architecture
+validators pass. No CI claim. Browser-checked on :8011 (vi, EN text), not READY.
 
 ## IN PROGRESS
 
 Migration slices, in order, each through UI, contract, API, service,
-persistence, reload, errors and tests: (1) Word and Sentence Sheet, (2) Writing
-review and revision, (3) Listening and Dictation, (4) Reading comprehension per
-question, (5) catalogue Search. Then learner persistence, progress measurement,
+persistence, reload, errors and tests: (1) Word and Sentence Sheet - built, the
+Dark Glass foundation landed with it, remaining checks in the tracker's log; (2)
+Writing review and revision, (3) Listening and Dictation, (4) Reading
+comprehension per question, (5) catalogue Search. Then learner persistence, progress measurement,
 pronunciation providers. Rules that bind every slice (D-066): a metric with no
 measurement renders 0 in its canonical component and is never stored as data;
 no fake pronunciation result; basic lookup stays deterministic while "meaning
@@ -71,7 +73,7 @@ None identified.
 
 ## OPEN P1
 
-- Ink/Paper and D-065 compositions remain in code until each surface migrates.
+- D-065 compositions (rail, Home, Progress, cards) remain until each surface migrates.
 - The baseline has no design for Profile, My Content, Admin, Onboarding,
   Loading/Empty/Error, Modal/Drawer or tablet: existing implementation stays.
 - `#/language` renders "temporarily unavailable" only in long multi-room sweeps
@@ -90,7 +92,7 @@ the human approves product direction.
 
 ## NEXT EXACT TASK
 
-Slice 1, Word and Sentence Sheet, on the baseline's Dark Glass foundation (the
-foundation lands with it: tokens from `docs/design/canonical-ui/tokens.json`,
-one theme, no hybrid). Operate only sandbox `orena-foundation-web`:8011; restart
+Finish slice 1 (the list in `UI_BACKEND_GAPS.md`, Progress log), then slice 2,
+Writing review and revision, which also retires `ui/understanding.js`. Operate
+only sandbox `orena-foundation-web`:8011; restart
 after Python changes; never production 8000, preview 8010, Cloudflare or volumes.
