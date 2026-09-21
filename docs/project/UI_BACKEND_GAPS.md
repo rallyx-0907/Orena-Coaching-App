@@ -44,8 +44,8 @@ schema on that date at `76e69b9`; none has been run against the baseline UI.
 | --- | --- | --- | --- | --- | --- |
 | Quick Sheet, word | `WordDetail` | `/api/dictionary/word-detail` (projection in `word_detail.py`) over `reading_lookup` and the contextual explanation; `ui/quick-sheet.js` | vocabulary catalog, tagger, AI capability | `tests/test_word_detail.py` (held to the pinned contract), `test_orena_reading_room.mjs`, `test_media_interaction` | IN_PROGRESS (S1 built; see log) |
 | Sentence sheet | `SentenceSheet` | `/api/dictionary/sentence-sheet`; parts and vocabulary in `ui/quick-sheet.js` | as above | as above | IN_PROGRESS (S1 built; see log) |
-| Writing review | `WritingReview` | `/api/evaluate` through a serializer; `issue.examples` and `issue.kind` in the evaluator contract | `essays` | `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_orena_writing_review.mjs` | IN_PROGRESS (S2) |
-| Writing revision | `RevisionCompare` | `revision_delta` through a serializer | `essays` chain | `test_writing_revision_contract` | IN_PROGRESS (S2) |
+| Writing review | `WritingReview` | `GET /api/essays/{id}/review` (`writing_contract.py`); `example` in the evaluator contract (v2.5), English `register` category; `ui/writing-feedback.js` | `essays` | `tests/test_writing_contract.py` (held to the pinned contract), `test_writing_evaluation`, `test_orena_writing_review.mjs` | IN_PROGRESS (S2 built; see log) |
+| Writing revision | `RevisionCompare` | `GET /api/essays/{id}/revision`; `revision_delta` judged by the words | `essays` chain | `test_writing_revision_contract`, `test_writing_contract` | IN_PROGRESS (S2 built; see log) |
 | Writing entry, workspace | `ContentCard`, draft | `/api/drafts`, `/api/tasks/generate`; prompt library | account backbone, catalogue | `test_work_api`, `test_orena_writing_workspace.mjs` | BLOCKED (`[CONTENT]` prompts; drafts past sandbox) |
 | Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; add `content_type`, duration and remaining labels | catalogue JSON, `listening_progress` | `test_listening_*`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3) |
 | Dictation | `DictationResult` | client evaluator, `practiceOutcome`; assisted flag | outcomes | `test_dictation_evaluator.mjs`, `test_orena_dictation_*.mjs` | IN_PROGRESS (S3) |
@@ -174,16 +174,16 @@ change. Group headers name the contract, data source and tests once.
 | WR-2 | "Theo gợi ý": prompt list by kind, level, target words | AI task generation only → curated prompt library | L | BLOCKED `[CONTENT]` |
 | WR-3 | Four modes | free, own prompt, `practice_context` exist → wire | L | IN_PROGRESS |
 | WR-4 | Workspace: autosave, word count, target | limits, count, `saveDraft` → none | S2 | IN_PROGRESS |
-| WR-5 | Review: summary, strengths, three issues, rule, related grammar, ask more | `summary_vi`, `strengths_vi`, `errors[]`, `grammar_links` → serializer | S2 | IN_PROGRESS |
-| WR-6 | Example sentence per issue | no such field → add to the evaluator contract, versioned | S2 | IN_PROGRESS |
-| WR-7 | Issue kind: register, grammar, punctuation, vocabulary, naturalness | categories are rubric keys → extend the taxonomy, EN and ZH together | S2 | IN_PROGRESS |
-| WR-8 | Four dimensions, 0-100 | five rubric keys → serialize the four drawn; keep `task_achievement` | S2 | IN_PROGRESS |
-| WR-9 | "Lưu nhận xét" | every review is stored as an essay → none | S2 | IN_PROGRESS |
+| WR-5 | Review: summary, strengths, three issues, rule, related grammar, ask more | `summary_vi`, `strengths_vi`, `errors[]`, `grammar_links` → serializer | S2 | IN_PROGRESS (built) |
+| WR-6 | Example sentence per issue | no such field → add to the evaluator contract, versioned | S2 | IN_PROGRESS (built) |
+| WR-7 | Issue kind: register, grammar, punctuation, vocabulary, naturalness | categories are rubric keys → extend the taxonomy, EN and ZH together | S2 | IN_PROGRESS (built) |
+| WR-8 | Four dimensions, 0-100 | five rubric keys → serialize the four drawn; keep `task_achievement` | S2 | IN_PROGRESS (built) |
+| WR-9 | "Lưu nhận xét" | every review is stored as an essay → none | S2 | IN_PROGRESS (built) |
 | WR-10 | "Lưu khái niệm" | no saved concept from a review → saved concept | L | BLOCKED `[REVIEW]` |
-| WR-11 | Apply a fix | client, uses `anchored` → none | S2 | IN_PROGRESS |
-| WR-12 | Revision: v1 and v2, fixed / remaining / new, headline | `revision_delta` → titles, details and headline from the data | S2 | IN_PROGRESS |
-| WR-13 | Dimension change "72 → 88" | delta is a difference → return `from` and `to` | S2 | IN_PROGRESS |
-| WR-14 | Done, edit again | client → none | S2 | IN_PROGRESS |
+| WR-11 | Apply a fix | client, uses `anchored` → none | S2 | IN_PROGRESS (built) |
+| WR-12 | Revision: v1 and v2, fixed / remaining / new, headline | `revision_delta` → titles, details and headline from the data | S2 | IN_PROGRESS (built) |
+| WR-13 | Dimension change "72 → 88" | delta is a difference → return `from` and `to` | S2 | IN_PROGRESS (built) |
+| WR-14 | Done, edit again | client → none | S2 | IN_PROGRESS (built) |
 
 ### Vocabulary — `VocabularyCollection`, `VocabularyCard`, `WordDetail`, `ContextClip` · `vocabulary_collections`, `vocabulary_entries`, memberships, `saved_words` · `test_vocabulary_library*`, `test_vocabulary_cards`, `test_chinese_stroke_order`, `test_orena_vocabulary_*.mjs`
 
@@ -254,6 +254,35 @@ Not READY yet - what is left before S1 can be called READY:
 - Found on the way, fixed: the Listening transcript's words could not be tapped
   (a stale `.media-encounter` root); `.media-encounter` selectors remain as dead
   CSS to remove in S3.
+
+**S2 Writing review and revision** (2026-09-21). Built: `writing_contract.py` and two
+endpoints (WR-5..9, 11..14); `example` per finding and the English `register`
+category (evaluator contract `writing-evaluation-v2.5`); one table maps every
+category of both languages to the baseline's five kinds; `ui/writing-feedback.js` and
+`writing-feedback.css` (overview, findings, dimensions, the finding sheet with apply,
+the version comparison) replace the old report renderer, the revision workbench and
+the locate helper. Checked in a browser on the sandbox with the real provider
+(vi interface, English text, desktop): review, opening a finding, applying it (draft
+changed, count fell), a second version and its comparison. Two root causes found and
+fixed on the way: the comparison was handed an unparsed earlier review and saw none of
+its findings; and it matched findings by identical wording, so it called a reworded
+finding fixed and new at once - it now asks the words. Local: pytest and every CI
+`.mjs` gate pass except `test_m3_pronunciation_contract.mjs`.
+
+Not READY yet:
+
+- Chinese (zh text, zh interface) and the phone in a browser; the provider-down state.
+- WR-1..4 (entry with four modes, prompt library, workspace top bar) and WR-10 (save a
+  concept) are untouched; the room's frame is still the earlier composition.
+- Dead styles from the old review (`.review-*` overview/issue/dimension rules,
+  `.correction*`) and now-unused copy keys (`reviewFocus`, `reviewDeeper`,
+  `reviewLocate`, ...) remain to be removed; they share names with the Vocabulary review
+  session's classes, so they need a careful pass.
+- `ui/understanding.js` is still used by comprehension, conversation, the encounter,
+  voice response and grammar; it goes when those move onto the Quick Sheet.
+- The comparison shows the two drafts side by side only when the frame is 820px or
+  wider; in the room's result column it shows the banner and the changes, as the
+  baseline's phone does.
 
 ## Old tracker (GAP-001..052) mapped
 

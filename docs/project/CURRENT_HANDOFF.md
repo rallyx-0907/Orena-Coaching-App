@@ -28,7 +28,7 @@ and `UI_BACKEND_GAPS.md` (the one tracker, absorbing the Phase 1-3 audit).
 
 ## Last verified batch
 
-Local, after slice 1 (Quick Sheet): pytest `1148 passed, 118 skipped`; every CI
+Local, after slices 1 and 2: pytest `1158 passed, 118 skipped`; every CI
 `.mjs` gate passes except `test_m3_pronunciation_contract.mjs`, failing since
 D-065 removed the score (Speaking slice); ESM graph, memory and architecture
 validators pass. No CI claim. Browser-checked on :8011 (vi, EN text), not READY.
@@ -36,9 +36,9 @@ validators pass. No CI claim. Browser-checked on :8011 (vi, EN text), not READY.
 ## IN PROGRESS
 
 Migration slices, in order, each through UI, contract, API, service,
-persistence, reload, errors and tests: (1) Word and Sentence Sheet - built, the
-Dark Glass foundation landed with it, remaining checks in the tracker's log; (2)
-Writing review and revision, (3) Listening and Dictation, (4) Reading
+persistence, reload, errors and tests: (1) Word and Sentence Sheet and (2) Writing
+review and revision - built and browser-checked, remaining checks in the tracker's
+log; the Dark Glass foundation landed with (1); (3) Listening and Dictation, (4) Reading
 comprehension per question, (5) catalogue Search. Then learner persistence, progress measurement,
 pronunciation providers. Rules that bind every slice (D-066): a metric with no
 measurement renders 0 in its canonical component and is never stored as data;
@@ -92,7 +92,7 @@ the human approves product direction.
 
 ## NEXT EXACT TASK
 
-Finish slice 1 (the list in `UI_BACKEND_GAPS.md`, Progress log), then slice 2,
-Writing review and revision, which also retires `ui/understanding.js`. Operate
-only sandbox `orena-foundation-web`:8011; restart
+Finish the remaining checks of slices 1 and 2 (`UI_BACKEND_GAPS.md`, Progress log:
+Chinese, phone, error states, dead styles), then slice 3, Listening and Dictation.
+Operate only sandbox `orena-foundation-web`:8011; restart
 after Python changes; never production 8000, preview 8010, Cloudflare or volumes.
