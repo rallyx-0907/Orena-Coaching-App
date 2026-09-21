@@ -135,7 +135,8 @@ function fromCollection(collection) {
 
 function card(entry, r) {
   // A provenance the cover already says (a badge) is not said again in the line.
-  const kindLabel = entry.type && entry.type !== entry.badge ? r[`libraryKind_${entry.type}`] || '' : '';
+  // The baseline's meta line is lowercase for the type ("hội thoại · HSK 2 · còn 2 phút").
+  const kindLabel = entry.type && entry.type !== entry.badge ? (r[`libraryKind_${entry.type}`] || '').toLocaleLowerCase() : '';
   const left = entry.left ? r.libraryLeft.replace('{n}', String(entry.left)) : '';
   const stated = /(\d+)/.exec(String(entry.time || ''));
   const time = stated ? r.libraryMinutes.replace('{n}', stated[1]) : '';
@@ -148,7 +149,7 @@ function card(entry, r) {
   const meta = parts.filter(Boolean).join(' · ');
   const badges = `${entry.video ? `<span class="lib-badge lib-badge--icon" title="${esc(r.libraryKind_video)}">${icon('video-camera', { size: 15 })}</span>` : ''}${entry.badge ? `<span class="lib-badge">${esc(r[`libraryKind_${entry.badge}`] || '')}</span>` : ''}`;
   const bar = entry.percent != null ? `<span class="lib-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${entry.percent}"><span style="width:${entry.percent}%"></span></span>` : '';
-  return `<a class="lib-card" href="${esc(entry.href)}" data-skill="${entry.skill}" data-kind="${entry.kind}"><span class="lib-cover">${entry.visual}${badges ? `<span class="lib-badges">${badges}</span>` : ''}${entry.length ? `<span class="lib-length">${esc(entry.length)}</span>` : ''}${bar}</span><strong class="lib-title" lang="${esc(entry.language)}">${esc(entry.title)}</strong>${entry.sub ? `<span class="lib-sub">${esc(entry.sub)}</span>` : ''}${meta ? `<small class="lib-meta">${esc(meta)}</small>` : ''}</a>`;
+  return `<a class="lib-card" href="${esc(entry.href)}" data-skill="${entry.skill}" data-kind="${entry.kind}"${entry.percent != null ? ' data-progress' : ''}><span class="lib-cover">${entry.visual}${badges ? `<span class="lib-badges">${badges}</span>` : ''}${entry.length ? `<span class="lib-length">${esc(entry.length)}</span>` : ''}${bar}</span><strong class="lib-title" lang="${esc(entry.language)}">${esc(entry.title)}</strong>${entry.sub ? `<span class="lib-sub">${esc(entry.sub)}</span>` : ''}${meta ? `<small class="lib-meta">${esc(meta)}</small>` : ''}</a>`;
 }
 
 /* `only` scopes the whole surface to one room's kinds. `onImport` is the room's own

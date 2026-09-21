@@ -128,7 +128,7 @@ assert.equal((progressHtml(2, 5).match(/data-done/g) || []).length, 2);
 const screen = screenHtml({
   title: 'Lesson', level: 'HSK 2', index: 2, total: 5, kind: 'video', range: '01:12 – 01:19', poster: '', rate: 0.75, r: referenceCopy.vi, c: copy.vi, ask: referenceCopy.vi.dictAsk,
 });
-for (const hook of ['data-exit-practice', 'data-hint-panel', 'data-hint', 'data-dz-rate', 'data-listen', 'data-evidence-status', 'id="reconstruction"', 'class="dz-result']) {
+for (const hook of ['data-exit-practice', 'data-hint-panel', 'data-hint', 'data-dz-rate', 'data-listen', 'data-evidence-status', 'id="reconstruction"', 'data-dz-result']) {
   assert.ok(screen.includes(hook), `the screen carries ${hook}, which the encounter binds`);
 }
 assert.match(screen, /<b>0<\/b>/, 'the streak is not measured, so the pill shows 0');

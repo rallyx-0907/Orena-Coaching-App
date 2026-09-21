@@ -900,30 +900,8 @@
 .practice-nav { align-items: center; }
 .practice-nav > button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
 @media (max-width: 1079px) {
-  /* Narrow, the source strip above already carries "hear this line again",
-     so the question keeps its line to itself; the two ways out share a row. */
-  .dictation-ask [data-listen] { display: none; }
   .practice-nav { flex-basis: 100%; justify-content: space-between; margin-inline-start: 0; }
 }
-.dictation-ask {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin: var(--space-1) 0;
-}
-.practice-space .dictation-ask label { margin: 0; }
-.dictation-ask [data-listen] { min-height: 32px; font-size: var(--text-sm); white-space: nowrap; }
-#dictationForm textarea { min-block-size: 3.5rem; padding: var(--space-2) var(--space-3); line-height: 1.5; }
-#dictationForm .button-row { margin: var(--space-2) 0 0; gap: var(--space-1) var(--space-4); align-items: center; }
-#dictationForm .button-row button:not(.primary) { font-size: var(--text-sm); }
-.practice-space .hint-line { padding: var(--space-2) var(--space-4) var(--space-3); margin: 0 0 var(--space-2); }
-.hint-line__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
-.hint-line__head small { letter-spacing: 0.06em; }
-.hint-line__head .meta { margin: 0; font-size: var(--text-xs); }
-.hint-line .hint__trigger { color: var(--on-sage-muted); }
-.practice-space .hint-slots { font-size: 1.05rem; line-height: 1.75; margin: var(--space-1) 0 0; }
-.dictation-result .comparison:not(:empty) { padding-top: var(--space-2); margin-top: var(--space-2); }
 /* The result says how close the attempt was and offers what to do next in one
    row; the words themselves follow. */
 .comparison-head {
@@ -934,22 +912,6 @@
   gap: var(--space-1) var(--space-3);
   margin: 0 0 var(--space-2);
 }
-.dictation-result .comparison h3 { font-size: 1rem; margin: 0; white-space: nowrap; }
-.dictation-result .comparison-head .button-row { margin: 0; gap: var(--space-1) var(--space-3); flex-wrap: nowrap; }
-.dictation-result .comparison-head .button-row button { white-space: nowrap; padding-inline: 0; }
-.dictation-result .comparison-head .button-row button { font-size: var(--text-sm); }
-/* Once there is a result, the instruction for before the attempt has done its
-   work and yields its row. */
-.practice-space:has(.dictation-result .comparison:not(:empty)) > h2 { display: none; }
-.dictation-aids { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
-.dictation-result .diff { font-size: var(--text-base); gap: 4px; margin: 0 0 var(--space-2); }
-.dictation-result .diff > span { padding: 1px 6px; }
-.dictation-result .diff > span { line-height: 1.5; }
-/* The original line, then what it means - quieter, because it supports it. */
-.dictation-result .comparison > p { font-size: var(--text-base); line-height: 1.5; margin: var(--space-1) 0; }
-.dictation-result .comparison > p + p { font-size: var(--text-sm); color: var(--muted); }
-.dictation-result [data-evidence-status] { font-size: var(--text-xs); color: var(--muted); margin: var(--space-1) 0 0; }
-.dictation-result [data-evidence-status]:empty { display: none; }
 
 @media (min-width: 1080px) {
   /* The work gets more of the width than the source, so a long line's
@@ -957,14 +919,6 @@
   .media-encounter:has(.practice-space:not([hidden])) {
     grid-template-columns: minmax(0, 0.8fr) minmax(420px, 1fr);
   }
-  /* A pointer does not need 44px under a quiet action; the attempt's own
-     button keeps its full size. */
-  #dictationForm .button-row button:not(.primary),
-  .dictation-result .comparison .button-row button { min-height: 24px; padding-block: 0; }
-  /* The two quiet aids stack beside the attempt's own button rather than
-     wrapping onto a row of their own. */
-  .dictation-actions { flex-wrap: nowrap; }
-  .dictation-aids { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
   .media-encounter:has(.practice-space:not([hidden])) .practice-space {
     display: flex;
     flex-direction: column;
@@ -981,21 +935,6 @@
   /* The lesson's topic and length are for choosing it; while practising,
      the title is enough. */
   main:has(.practice-space:not([hidden])) .encounter-heading .heading-with-hint { display: none; }
-  .practice-space:has(#dictationForm) > [data-practice-body] {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-  .practice-space:has(#dictationForm) [data-practice-body] > * { flex: none; }
-  /* Only an unusually long line can outgrow the region; it then scrolls
-     there, never the page and never the attempt above it. */
-  .practice-space:has(#dictationForm) .dictation-result {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1088,16 +1027,6 @@
   .encounter-heading { padding-block: var(--space-1) var(--space-2); }
   .encounter-heading h1 { font-size: 1.2rem; margin: 0; }
   .encounter-heading small { font-size: var(--text-xs); }
-  .audio-identity {
-    min-height: 0;
-    padding: var(--space-2) var(--space-3);
-    gap: var(--space-3);
-  }
-  .audio-identity .voice-orbit { width: 32px; height: 32px; box-shadow: none; }
-  .audio-identity .voice-orbit > span { width: 20px; height: 20px; border-width: 5px; box-shadow: none; }
-  .audio-identity small { font-size: var(--text-xs); }
-  .audio-identity p { font-size: var(--text-sm); margin: 0; }
-  .audio-identity > div > span { display: none; }
   .transport { padding-block: var(--space-1); gap: var(--space-2); }
   .transport > button:first-child { width: 40px; height: var(--tap); }
   .transport > button:nth-child(2) { min-height: var(--tap); font-size: var(--text-sm); }
@@ -1128,19 +1057,6 @@
   .practice-top small { font-size: var(--text-xs); }
   .practice-nav > button { min-height: var(--tap-quiet); font-size: var(--text-xs); }
   .practice-space label { margin: var(--space-1) 0; }
-  /* Dictation: the shape of the line, the attempt and the answer, one screen. */
-  .practice-space .hint-line { padding: var(--space-2) var(--space-3); margin: 0 0 var(--space-1); }
-  .practice-space .hint-slots { font-size: 0.9375rem; line-height: 1.55; }
-  .hint-line__head small { font-size: var(--text-xs); }
-  #dictationForm textarea { min-block-size: 3.25rem; font-size: var(--text-base); }
-  #dictationForm .button-row { margin-top: var(--space-2); }
-  #dictationForm .button-row button:not(.primary),
-  .dictation-result .comparison .button-row button { min-height: var(--tap-quiet); font-size: var(--text-xs); padding-block: 0; }
-  .dictation-result .comparison h3 { font-size: var(--text-base); }
-  .dictation-result .diff { font-size: var(--text-sm); gap: 3px; }
-  .dictation-result .diff > span { padding: 0 4px; }
-  .dictation-result .comparison > p { font-size: var(--text-sm); }
-  .dictation-result .comparison > p + p { font-size: var(--text-xs); }
   /* Shadowing and Speaking inside an encounter: the line to say, what it
      means, what to do, and the two controls - one screen, not three. */
   .practice-space blockquote {
@@ -3003,107 +2919,6 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 
 /* ---------------------------------------------------------------------------
-   Dictation (D-059 Phase 7, Screens part 2 section 07). Typing: the ask, the
-   aids as chips, one bordered field in the dictation hue with what has been
-   written counted under it, then Check. Result: the score as a ring, what was
-   typed against what was said, and the actions as pills.
-   --------------------------------------------------------------------------- */
-/* Title first, data after: the screen opens on what to do, at display size. */
-.dictate-ask {
-  margin: 0 0 12px;
-  max-inline-size: 22ch;
-  font-family: var(--display-font);
-  font-size: 29px;
-  font-weight: var(--weight-heavy);
-  line-height: 1.12;
-  letter-spacing: -0.032em;
-}
-.dictate-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 10px 12px; }
-.dictate-chips .chip {
-  min-block-size: 34px;
-  padding: 8px 12px;
-  color: var(--text-secondary);
-  font-family: var(--mono-font);
-  font-size: 11.5px;
-  font-weight: var(--weight-regular);
-  text-transform: uppercase;
-}
-.dictate-chips .chip:hover { color: var(--text-primary); }
-.dictate-form { display: grid; gap: 12px; }
-.dictate-box {
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 16px;
-}
-.dictate-box textarea {
-  min-block-size: 68px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--text-primary);
-  font-size: 17px;
-  line-height: 1.6;
-  resize: vertical;
-}
-.dictate-box textarea:focus-visible { outline: none; }
-/* No skill colour on a learning surface: the field lights violet, like every
-   other action in the system. */
-.dictate-box:focus-within { box-shadow: var(--card-edge-lit), var(--card-ring), var(--card-shadow); }
-.dictate-box__foot { display: flex; justify-content: space-between; gap: 10px; color: var(--text-muted); }
-.dictate-actions { display: flex; gap: 10px; }
-.dictate-actions .primary { flex: 1; justify-content: center; min-block-size: 52px; border-radius: var(--radius-pill); }
-
-.dictate-result__head { display: flex; align-items: center; gap: 18px; margin-block-end: 16px; }
-.dictate-score {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex: none;
-  inline-size: 88px;
-  block-size: 88px;
-  border-radius: 50%;
-  background: conic-gradient(var(--progress) 0 var(--score, 0%), var(--progress-track) var(--score, 0%) 100%);
-}
-.dictate-score::before {
-  content: '';
-  position: absolute;
-  inset: 7px;
-  border-radius: 50%;
-  background: var(--surface-panel);
-}
-.dictate-score > * { position: relative; }
-.dictate-score strong { font-family: var(--display-font); font-size: 24px; font-weight: var(--weight-heavy); }
-.dictate-score small { color: var(--text-muted); font-size: 10.5px; }
-.dictate-result__copy { display: grid; gap: 4px; }
-.dictate-result__copy strong { font-family: var(--display-font); font-size: 19px; font-weight: var(--weight-heavy); }
-.dictate-result__copy p { margin: 0; color: var(--text-secondary); font-size: 13.5px; }
-.dictate-blocks { display: grid; gap: 14px; }
-.dictate-block { display: grid; gap: 8px; }
-.dictate-block .ds-label { color: var(--text-muted); }
-.dictate-line {
-  padding: 14px 16px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  background: var(--surface-secondary);
-  font-size: 19px;
-  line-height: 1.95;
-}
-.dictate-line--right {
-  border-color: color-mix(in srgb, var(--status-success) 30%, transparent);
-  background: color-mix(in srgb, var(--status-success) 8%, transparent);
-}
-.dictate-meaning { margin: 0; color: var(--text-secondary); font-size: 13.5px; }
-.dictate-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-block-start: 14px; }
-.dictate-pills .outline { min-block-size: 42px; padding-inline: 14px; border-radius: var(--radius-pill); font-size: 14px; font-weight: var(--weight-bold); }
-
-@media (max-width: 700px) {
-  .dictate-line { font-size: 17px; line-height: 1.8; }
-  .dictate-score { inline-size: 72px; block-size: 72px; }
-  .dictate-result__head { gap: 14px; }
-}
-
-/* ---------------------------------------------------------------------------
    The card, recalibrated (design update 2026-09-20, "Card Component").
 
    No border and no solid fill. Four layers instead: a translucent ground, an
@@ -3132,9 +2947,6 @@ ul.pronunciation-words small { color: var(--muted); }
   backdrop-filter: var(--card-blur);
   box-shadow: var(--card-edge), var(--card-shadow);
 }
-/* The smaller cards inside them - a row, a tile, a chip-sized surface - take
-   the same ground and edge without the blur, which would cost more than it
-   shows at that size. */
 .chapter-tile,
 .chapter-next,
 .chapter-word,
@@ -3147,8 +2959,6 @@ ul.pronunciation-words small { color: var(--muted); }
 .quiz-answer,
 .review-grade,
 .review-meaning,
-.dictate-box,
-.dictate-line,
 .saved-word,
 .saved-row,
 .history-row,
@@ -3353,42 +3163,6 @@ ul.pronunciation-words small { color: var(--muted); }
 @media (max-width: 900px) {
   .home-hero { grid-template-columns: minmax(0, 1fr); }
   .home-greeting h2 { font-size: 27px; }
-}
-/* --- Dictation's transport (D-065, recalibration) ------------------------
-   A dictation clip is one sentence long, so there is no scrubber anywhere:
-   the transport is a single circular play button - 102px at a desk, 66px on a
-   phone - with replay, speed and hint as the chips beside the field. */
-.listen-workspace[data-mode='dictation'] .listen-art,
-.listen-workspace[data-mode='dictation'] .listen-meta,
-.listen-workspace[data-mode='dictation'] .listen-seek,
-.listen-workspace[data-mode='dictation'] .listen-rates,
-.listen-workspace[data-mode='dictation'] .listen-actions,
-.listen-workspace[data-mode='dictation'] [data-step] { display: none; }
-.listen-workspace[data-mode='dictation'] .listen-controls { justify-content: center; gap: 18px; }
-.listen-workspace[data-mode='dictation'] .listen-play {
-  inline-size: 102px;
-  block-size: 102px;
-  min-block-size: 102px;
-}
-.listen-workspace[data-mode='dictation'] .listen-play > svg { inline-size: 38px; block-size: 38px; }
-.listen-workspace[data-mode='dictation'] .listen-identity h1 {
-  font-family: var(--display-font);
-  font-size: 22px;
-  text-align: center;
-}
-.listen-workspace[data-mode='dictation'] .listen-stage { align-items: center; }
-/* Dictation is one column: the clip, then the line being written. */
-.listen-workspace[data-mode='dictation'] { flex-direction: column; }
-.listen-workspace[data-mode='dictation'] .listen-stage { inline-size: 100%; min-inline-size: 0; }
-.listen-workspace[data-mode='dictation'] .practice-space { inline-size: 100%; }
-.listen-workspace[data-mode='dictation'] .transcript-panel { display: none; }
-@media (max-width: 700px) {
-  .listen-workspace[data-mode='dictation'] .listen-play {
-    inline-size: 66px;
-    block-size: 66px;
-    min-block-size: 66px;
-  }
-  .listen-workspace[data-mode='dictation'] .listen-play > svg { inline-size: 28px; block-size: 28px; }
 }
 
 /* --- The Listening workspace, drawn to the baseline (D-066, Orena Listening frames 02-03) ---

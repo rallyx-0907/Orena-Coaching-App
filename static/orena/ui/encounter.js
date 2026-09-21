@@ -1211,29 +1211,6 @@ export async function renderEncounter(root, ctx) {
     paintFollow();
     remember();
   }
-  /* The answer to "compare" or "show the original" is the thing the learner
-     just asked for, so it is brought into view rather than left below the
-     hint. Wide, the practice panel is bounded to the frame and scrolls on its
-     own: it moves only as far as the answer needs, keeping as much of the
-     learner's attempt on screen as fits. Narrow, the page carries the work
-     below a sticky source strip, and the answer is scrolled to. */
-  function revealAnswer(answer) {
-    if (!answer?.isConnected) return;
-    // Wide, the answer arrives in the result region of a frame that already
-    // fits; that region scrolls only if a very long line outgrows it.
-    const panel = answer.closest('.dictation-result') || practiceRoot;
-    // A scroll container is the wide composition; the page is never moved
-    // there, only the region, and only if the answer does not already fit.
-    if (getComputedStyle(panel).overflowY === 'visible') {
-      answer.scrollIntoView({ block: 'nearest' });
-      return;
-    }
-    const frame = panel.getBoundingClientRect();
-    const box = answer.getBoundingClientRect();
-    const below = box.bottom - frame.bottom + 16;
-    if (below > 0)
-      panel.scrollTop += Math.min(below, box.top - frame.top - 16);
-  }
   async function openPractice(intent) {
     if (recording) return;
     voiceCleanup();
@@ -1333,7 +1310,7 @@ export async function renderEncounter(root, ctx) {
       const shapeHost = body.querySelector('[data-hint-panel]');
       const hintPill = body.querySelector('[data-dz-hint-pill]');
       const hintButton = body.querySelector('[data-hint]');
-      const resultHost = body.querySelector('.comparison');
+      const resultHost = body.querySelector('[data-dz-result]');
       const clip = body.querySelector('[data-dz-clip]');
       const rateButton = body.querySelector('[data-dz-rate]');
       const emptyResult = resultHost.innerHTML;

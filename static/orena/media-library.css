@@ -548,8 +548,12 @@
   .lib {
     --lib-min: 140px;
   }
+  /* The baseline's phone: two columns, and the one thing in progress leads at full width. */
   .lib[data-skill='listening'] {
-    --lib-min: 100%;
+    --lib-min: 150px;
+  }
+  .lib[data-skill='listening'] .lib-card[data-progress]:first-child {
+    grid-column: 1 / -1;
   }
   .lib-grid {
     gap: 20px 12px;

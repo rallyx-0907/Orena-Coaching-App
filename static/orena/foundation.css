@@ -798,7 +798,6 @@ input[type='radio'] {
   .conversation-turn,
   .quiz-answer,
   .spoken-coaching,
-  .hint-line,
   .sheet .understanding {
     animation: orena-settle 0.28s ease-out both;
   }

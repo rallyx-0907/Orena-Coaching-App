@@ -107,5 +107,5 @@ export function screenHtml({ title, level, index, total, kind, range, poster, ra
 <div class="dz-pills"><button type="button" class="dz-pill" data-listen>${icon('arrow-counter-clockwise', { size: 14 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="dz-pill" data-dz-rate aria-label="${esc(r.dictSpeed)}">${esc(rate)}×</button><span class="dz-pill dz-pill--hint" data-dz-hint-pill hidden></span></div>
 <section class="dz-shape" data-hint-panel></section>
 <form class="dz-form"><label class="sr-only" for="reconstruction">${esc(ask)}</label><textarea id="reconstruction" rows="3" placeholder="${esc(r.dictPlaceholder)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="dictateAsk"></textarea><div class="dz-actions"><button type="button" class="dz-hintbtn" data-hint>${icon('lightbulb', { size: 16 })}<span>${esc(r.dictMoreHint)}</span></button><button type="submit" class="primary dz-check">${icon('check', { size: 16 })}<span>${esc(r.dictCheck)}</span></button></div><p class="notice dz-status" data-evidence-status role="status"></p></form></section>
-<aside class="dz-result comparison" aria-live="polite"><p class="dz-empty">${esc(r.dictResultHere)}</p></aside></div>`;
+<aside class="dz-result" data-dz-result aria-live="polite"><p class="dz-empty">${esc(r.dictResultHere)}</p></aside></div>`;
 }

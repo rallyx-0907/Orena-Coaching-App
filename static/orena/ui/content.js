@@ -54,7 +54,3 @@ export function bindImages(root, c) {
     ),
   );
 }
-
-export function audioIdentity(item, c) {
-  return `<div class="audio-identity"><div class="voice-orbit" aria-hidden="true"><span></span></div><div><small>${esc(c.audio)}</small><p>${esc(item.source?.creator || c.audioMoment)}</p><span>${esc(c.audioMoment)}</span></div></div>`;
-}
