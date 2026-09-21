@@ -149,8 +149,28 @@ export async function renderExpression(root, ctx) {
      the workspace gives the page more width until the review arrives
      (DESIGN_CONTRACT rules 19, 24, 27). */
   const intention = memory.value.expressions[`${id}::task`] || '';
+  /* The level the review aims at comes from what the app already knows: the level the learner declared in
+     their profile, else the level of the text they are answering. With neither there is nothing to aim at
+     and the evaluator reads the level the writing shows, as it always did. */
+  const isLevel = (value) => (/^(A1|A2|B1|B2|C1|C2)$/.test(String(value || '')) ? String(value) : '');
+  const targetLevel = isLevel(ctx.profile?.declared_level) || isLevel(original?.level) || isLevel(source?.level) || null;
+  /* What the frame gives no button of its own stays reachable behind the menu: exploring how a
+     sentence sounds in other registers, and the versions of this piece (D-068, rule 4 of the design's
+     patterns: everything deeper sits behind one button). */
+  const writingActions = [
+    {
+      name: 'more',
+      icon: 'menu',
+      kind: 'menu',
+      label: c.stageMore,
+      items: [
+        { name: 'registers', label: c.registerExplore },
+        { name: 'history', label: c.revisionHistory },
+      ],
+    },
+  ];
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
-  root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('practice')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('practice')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button><span class="wr-menu">${learningToolbar(writingActions, { label: c.writingName })}</span></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
@@ -172,6 +192,16 @@ export async function renderExpression(root, ctx) {
      room says plainly whose version it belongs to rather than deleting it or
      letting it pass for an answer about what is now in the box. */
   let reviewedText = null;
+  const writingMenu = bindLearningToolbar(root.querySelector('.wr-menu .learning-toolbar'), {
+    onAction: (name) => {
+      if (name === 'registers')
+        return openRegisters(ctx, { text: root.querySelector('textarea').value, title });
+      if (name === 'history')
+        root
+          .querySelector('[data-revisions]')
+          ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    },
+  });
   /* One compact line beside the action, never a pane. A provider that is not
      configured changes nothing about the writing, so it takes one row to say
      so and the workspace stays the workspace. */
@@ -442,7 +472,7 @@ export async function renderExpression(root, ctx) {
               .filter(Boolean)
               .join('\n'),
             text,
-            target_cefr: null,
+            target_cefr: targetLevel,
             learning_language: language,
             parent_essay_id: parent,
           }),

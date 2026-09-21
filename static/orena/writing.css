@@ -68,6 +68,55 @@
 .wr-go:disabled {
   opacity: 0.6;
 }
+/* The menu: the actions the frame gives no button of, behind one icon. */
+.wr-menu .learning-toolbar {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.wr-menu .learning-action {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: var(--chip-quiet);
+  box-shadow: var(--chip-quiet-ring);
+  color: var(--ink-80);
+}
+
+.wr-menu {
+  position: relative;
+}
+.wr-menu .learning-menu {
+  inset-inline-end: 0;
+  inset-inline-start: auto;
+  min-inline-size: 240px;
+  padding: 8px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--glass-sheet);
+  backdrop-filter: var(--glass-sheet-filter);
+  box-shadow: var(--glass-ring-focus), var(--shadow-overlay);
+}
+.wr-menu .learning-menu button {
+  inline-size: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink-90);
+  font-size: 14.5px;
+  text-align: start;
+  white-space: nowrap;
+}
+.wr-menu .learning-menu button:hover,
+.wr-menu .learning-menu button:focus-visible {
+  background: var(--chip-quiet);
+}
 
 /* --- The piece -------------------------------------------------------------------------------- */
 #main > .writing-workspace {

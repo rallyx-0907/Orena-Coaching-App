@@ -174,10 +174,11 @@ assert.ok(
   /task && `\$\{c\.writingTask\} \$\{task\}`/.test(expressionSource),
   'the stated task must travel with the text as the writing task',
 );
-/* Proficiency is guidance the frame gives no control for (D-067): the request carries no target and the
-   evaluator infers the demonstrated band, so the target travels as null, never as an empty string. */
-assert.ok(!/name="target"/.test(expressionSource), 'no level control is drawn');
-assert.match(expressionSource, /target_cefr:\s*null/, 'the target travels as null so the evaluator infers the level');
+/* The level is not a control in the frame (D-067, D-068): it comes from the learner's declared level or the
+   text's own, and with neither the target is null - never an empty string - so the evaluator infers it. */
+assert.ok(!/name="target"/.test(expressionSource), 'no level selector is drawn');
+assert.match(expressionSource, /target_cefr:\s*targetLevel/, 'the target is the level the app knows');
+assert.match(expressionSource, /\|\| null;/, 'and is null when it knows none');
 for (const ui of ['en', 'zh']) {
   for (const key of ['writingTask', 'writingTaskNote', 'chooseTarget', 'reviewReworked'])
     assert.ok(copy[ui][key], `${ui}: missing copy for "${key}"`);
@@ -222,10 +223,12 @@ assert.match(feedbackSource, /api\.sentenceSheet\(\{\s*text: issue\.fragment/, '
 assert.match(feedbackSource, /find\(\(part\) => part\.includes\(issue\.fragment\)\)/, 'the sentence travels with it');
 assert.match(expression, /api\.essayReview\(/, 'the review is read from its contract');
 assert.match(expression, /api\.essayRevision\(/, 'and so is the revision');
-/* Register exploration has no place in the "Writing workspace" frame (D-067), so the room no longer
-   opens it; the module stays, tested above, until the human gives it a place or removes it
-   (UI_BACKEND_GAPS.md, Writing decisions). */
-assert.doesNotMatch(expression, /openRegisters\(ctx/, 'the room offers no entry the frame does not draw');
+/* Register exploration is kept (D-068): the frame has no button for it, so it sits behind the top bar's menu. */
+assert.match(
+  expression,
+  /openRegisters\(ctx, \{ text: root\.querySelector\('textarea'\)\.value, title \}\)/,
+  'registers are asked about what the learner wrote',
+);
 assert.match(
   expression,
   /data-retry-review/,

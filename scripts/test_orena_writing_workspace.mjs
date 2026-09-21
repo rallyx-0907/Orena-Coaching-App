@@ -32,7 +32,9 @@ assert.ok(expression.includes('<div class="wr-prompt">') && expression.includes(
 assert.ok(expression.indexOf('class="wr-prompt"') < expression.indexOf('id="expressionText"'), 'and the learner meets it before the document');
 for (const gone of ['writing-head', 'writing-intention', 'writing-bar', 'review-target', 'name="target"', 'class="back-row"'])
   assert.ok(!expression.slice(expression.indexOf('<header class="wr-top">'), expression.indexOf('const { showResult')).includes(gone), `${gone} is not drawn by the frame`);
-assert.match(expression, /target_cefr: null,/, 'the level is inferred: no level control exists in the frame');
+assert.match(expression, /target_cefr: targetLevel,/, 'the review aims at a level the app already knows');
+assert.match(expression, /ctx\.profile\?\.declared_level/, 'the learners declared level first, then the texts own level - never a guess, and no selector for it');
+assert.match(expression, /wr-menu/, 'registers and the version history sit behind the top bar menu');
 for (const ui of ['en', 'zh', 'vi']) {
   assert.ok(copy[ui].reviewAction?.trim(), `${ui} names the action`);
   assert.ok(copy[ui].reviewAction.length < copy[ui].review.length, `${ui}: the action is shorter than the room's own title for the review`);

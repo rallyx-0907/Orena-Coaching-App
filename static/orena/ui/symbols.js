@@ -29,6 +29,8 @@ const strokes = {
   palette: '<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.4 0 2-.9 2-1.8 0-1.4-1.3-1.8-1.3-3 0-.9.7-1.6 1.7-1.6h1.4a4.7 4.7 0 0 0 4.7-4.7c0-3.3-3.8-5.9-8.5-5.9Z"/><path d="M7.5 11.5h.1"/><path d="M10 8h.1"/><path d="M14.5 7.5h.1"/>',
   // Three marks in a row: the rest of what can be done here.
   more: '<path d="M6 12h.1"/><path d="M12 12h.1"/><path d="M18 12h.1"/>',
+  // A menu: more actions behind it, said by three lines rather than three dots.
+  menu: '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>',
   // A cross: leave this task and go back to where it was opened from.
   close: '<path d="m6.5 6.5 11 11"/><path d="m17.5 6.5-11 11"/>',
   // A pen over a line: write down the line you are hearing.
