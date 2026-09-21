@@ -80,7 +80,7 @@ const grid = at(host, '[data-lib-results]').innerHTML;
 assert.match(grid, /aria-valuenow="50"/, 'the bar is the place the learner reached');
 assert.match(grid, /còn 1 phút/, 'time left comes from the place and the length');
 assert.equal((grid.match(/class="lib-bar"/g) || []).length, 1, 'no place, no bar');
-assert.match(grid, /0:46/, 'the length is on the cover');
+assert.match(grid, />00:46</, 'the length is on the cover, minutes padded as the design draws it');
 assert.match(grid, /lib-badge--icon/, 'a video is marked as one');
 assert.doesNotMatch(grid, /<img src=x/, 'a hostile title is escaped');
 assert.match(grid, /&lt;img src=x/);

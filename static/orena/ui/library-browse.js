@@ -103,7 +103,7 @@ function fromMedia(item, language, memory) {
     type: own ? 'imported' : String(item.content_type || ''),
     badge: own ? 'imported' : '',
     video,
-    length: length > 0 ? duration(length) : '',
+    length: length > 0 ? duration(length).replace(/^(\d):/, '0$1:') : '',
     percent: percentOf(place),
     left,
     href: link('encounter', { id: item.id, intent: 'follow' }),
@@ -189,7 +189,7 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
   const importButton = onImport
     ? `<button type="button" class="lib-import" data-lib-import>${icon('upload-simple', { size: 16 })}<span>${esc(r[skill === 'reading' ? 'libraryImportReading' : 'libraryImportListening'])}</span></button>`
     : '';
-  root.innerHTML = `<div class="lib" data-skill="${skill}"><header class="lib-head"><${titleTag}>${esc(skill === 'reading' ? r.reading : skill === 'listening' ? r.listening : r.library)}</${titleTag}><label class="lib-search">${icon('magnifying-glass', { size: 16 })}<span class="sr-only">${esc(r.librarySearch)}</span><input type="search" autocomplete="off" placeholder="${esc(r.librarySearch)}" data-lib-query></label>${importButton}</header><div class="lib-chips" role="radiogroup" aria-label="${esc(r.libraryType)}" data-lib-chips></div><div data-lib-results></div></div>`;
+  root.innerHTML = `<div class="lib" data-skill="${skill}"><header class="lib-head"><${titleTag}>${esc(skill === 'reading' ? r.reading : skill === 'listening' ? r.listening : r.library)}</${titleTag}><label class="lib-search">${icon('magnifying-glass', { size: 16 })}<span class="sr-only">${esc(r.librarySearch)}</span><input type="search" autocomplete="off" placeholder="${esc(r.librarySearch)}" data-lib-query></label>${importButton}</header><div class="lib-chips" role="radiogroup" aria-label="${esc(r.libraryType)}" data-lib-chips></div><div class="lib-results" data-lib-results></div></div>`;
   const chipsRoot = root.querySelector('[data-lib-chips]');
   const results = root.querySelector('[data-lib-results]');
 

@@ -296,140 +296,156 @@
   .media-grid--rail { grid-auto-columns: calc(100% - 24px); }
 }
 
-/* --- Library (D-066) --------------------------------------------------------------
-   The Canonical UI Baseline's library: a bar (room name, search, import), one row of
-   single-choice type chips, and a grid of ContentCards. Reading and Listening are the
-   same surface; only the cover's shape differs (a book is portrait, a recording is
-   16:9). Colour from the semantic tokens only. */
+/* --- Library (D-066, D-067) ---------------------------------------------------------
+   Every number is the design's: Orena Listening "Listening library" and Orena Reading "Reading
+   library", desktop at 1920x1080 and the phone frames at 390x844. A top bar (84px, glass) with the
+   room's name, a search and the import action; a row of single-choice chips; a grid of cards - four
+   columns of 362px for a recording, six of 236px for a book, gap 28. Colour from theme.css only. */
+#main:has(.lib) {
+  padding: 0;
+}
+/* The room fills the width the rail leaves; the 1480px column belongs to the legacy pages. */
+#main > :is(.listening-library, .reading-library) {
+  max-width: none;
+  margin-inline: 0;
+}
 .lib {
-  --lib-ratio: 3 / 4;
-  --lib-min: 150px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
   min-width: 0;
 }
-.lib[data-skill='listening'] {
-  --lib-ratio: 16 / 9;
-  --lib-min: 236px;
-}
 .lib-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
+  block-size: 84px;
+  box-sizing: border-box;
+  padding: 0 var(--page-gutter);
+  background: var(--glass-base);
+  backdrop-filter: blur(24px) saturate(1.3);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
 }
 .lib-head > :is(h1, h2) {
   margin: 0;
   font-family: var(--display-font);
   font-weight: 800;
   font-size: 26px;
-  letter-spacing: -0.02em;
-  color: #fff;
+  letter-spacing: -0.022em;
+  color: var(--text-primary);
 }
 .lib-search {
   display: flex;
   align-items: center;
-  gap: 9px;
-  flex: 0 1 380px;
-  min-width: 0;
-  padding: 0 14px;
-  block-size: 40px;
-  border-radius: 999px;
-  background: var(--glass-well);
-  box-shadow: var(--glass-ring);
-  color: var(--text-on-glass-dim);
+  gap: 11px;
+  flex: 1;
+  max-inline-size: 490px;
+  block-size: 44px;
+  box-sizing: border-box;
+  padding: 0 15px;
+  border-radius: 14px;
+  background: rgba(196, 178, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+  color: var(--ink-60);
+  font-size: 15px;
 }
 .lib-search:focus-within {
-  box-shadow: var(--glass-ring-focus);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.4);
+}
+.lib-search > svg {
+  flex: none;
 }
 .lib-search input {
   flex: 1;
   min-width: 0;
+  padding: 0;
   background: none;
   border: 0;
   outline: 0;
-  color: var(--text-on-glass);
+  color: var(--text-primary);
   font: inherit;
-  font-size: 14px;
+}
+.lib-search input::placeholder {
+  color: var(--ink-60);
 }
 .lib-import {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   margin-inline-start: auto;
-  padding: 0 16px;
-  block-size: 40px;
+  padding: 10px 16px;
   border-radius: 999px;
   border: 0;
-  background: var(--glass-raised);
-  box-shadow: var(--glass-ring);
-  color: var(--text-on-glass);
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: #fff;
   font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 20px;
+  min-block-size: 40px;
   cursor: pointer;
-}
-.lib-import:hover {
-  box-shadow: var(--glass-ring-focus);
 }
 
 .lib-chips {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-  touch-action: pan-x pan-y;
-}
-.lib-chips::-webkit-scrollbar {
-  display: none;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 28px var(--page-gutter) 0;
 }
 .lib-chip {
-  flex: none;
-  padding: 0 15px;
-  block-size: 34px;
-  border-radius: 999px;
+  padding: 10px 18px;
   border: 0;
-  background: var(--glass-well);
-  box-shadow: var(--glass-ring);
-  color: var(--text-on-glass);
+  border-radius: 999px;
+  background: rgba(196, 178, 255, 0.13);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.2);
+  color: rgba(255, 255, 255, 0.86);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  line-height: 20px;
+  min-block-size: 40px;
   cursor: pointer;
   white-space: nowrap;
 }
-.lib-chip:hover {
-  box-shadow: var(--glass-ring-focus);
-}
 .lib-chip[aria-checked='true'] {
   background: var(--accent-gradient);
-  box-shadow: var(--accent-shadow);
-  color: var(--text-on-action);
+  box-shadow: 0 8px 24px rgba(123, 77, 232, 0.35);
+  color: #fff;
+  font-family: var(--display-font);
+  font-weight: 700;
+}
+.lib-results {
+  padding: 24px var(--page-gutter) 30px;
 }
 
 .lib-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--lib-min), 1fr));
-  gap: 22px 16px;
+  grid-template-columns: repeat(auto-fill, 362px);
+  gap: 28px;
+}
+.lib[data-skill='reading'] .lib-grid {
+  grid-template-columns: repeat(auto-fill, 236px);
 }
 .lib-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   min-width: 0;
-  color: var(--text-on-glass);
+  color: var(--text-primary);
   text-decoration: none;
 }
 .lib-cover {
   position: relative;
   display: block;
   overflow: hidden;
-  aspect-ratio: var(--lib-ratio);
-  margin-bottom: 8px;
-  border-radius: 14px;
+  aspect-ratio: 362 / 204;
+  margin-bottom: 13px;
+  border-radius: 16px;
   background: var(--artwork-wash);
   box-shadow: var(--glass-ring);
+}
+.lib[data-skill='reading'] .lib-cover {
+  aspect-ratio: 236 / 315;
 }
 .lib-cover > :is(img, .content-cover, .image-unavailable) {
   width: 100%;
@@ -442,120 +458,256 @@
 }
 .lib-badges {
   position: absolute;
-  inset: 8px auto auto 8px;
+  inset: 12px auto auto 12px;
   display: flex;
   gap: 6px;
 }
 .lib-badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
+  padding: 5px 11px;
   border-radius: 999px;
-  background: var(--artwork-control);
-  box-shadow: inset 0 0 0 1px var(--artwork-control-edge);
+  background: rgba(6, 5, 9, 0.7);
+  backdrop-filter: blur(8px);
   color: #fff;
   font-family: var(--mono-font);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .lib-badge--icon {
-  padding: 5px 7px;
+  padding: 6px 8px;
 }
 .lib-length {
   position: absolute;
-  inset: auto 9px 10px auto;
-  padding: 2px 8px;
+  inset: auto 13px 13px auto;
+  padding: 5px 11px;
   border-radius: 999px;
-  background: var(--artwork-control);
+  background: rgba(6, 5, 9, 0.7);
+  backdrop-filter: blur(8px);
   color: #fff;
   font-family: var(--mono-font);
-  font-size: 11px;
-}
-.lib-cover:has(.lib-bar) .lib-length {
-  inset-block-end: 22px;
+  font-size: 12.5px;
+  line-height: normal;
 }
 .lib-bar {
   position: absolute;
-  inset: auto 12px 12px 12px;
-  block-size: 4px;
+  inset: auto 14px 14px 14px;
+  block-size: 5px;
+  max-inline-size: 220px;
   border-radius: 999px;
-  background: var(--artwork-control);
+  background: rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 .lib-bar > span {
   display: block;
   height: 100%;
-  border-radius: inherit;
-  background: var(--accent-gradient);
+  border-radius: 999px;
+  background: var(--progress-violet);
 }
 .lib-title {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: 14px;
+  display: block;
+  font-family: var(--display-font);
   font-weight: 700;
+  font-size: 18px;
   line-height: 1.3;
-  color: #fff;
+  color: var(--text-primary);
 }
 .lib-sub {
-  font-size: 12.5px;
-  color: var(--text-on-glass-soft);
+  margin-top: 5px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.72);
 }
 .lib-meta {
+  margin-top: 5px;
   font-family: var(--mono-font);
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  color: var(--text-on-glass-dim);
-}
-.lib-placeholders {
-  display: contents;
-}
-.lib-skeleton {
-  display: block;
-  aspect-ratio: var(--lib-ratio);
-  border-radius: 14px;
+  font-size: 12.5px;
+  line-height: normal;
+  color: var(--ink-62);
 }
 .lib-more {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  align-self: center;
-  margin-top: 8px;
-  padding: 0 18px;
-  block-size: 40px;
+  margin: 24px auto 0;
+  padding: 10px 18px;
   border-radius: 999px;
   border: 0;
-  background: var(--glass-well);
-  box-shadow: var(--glass-ring);
-  color: var(--text-on-glass);
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: #fff;
   font: inherit;
+  font-size: 14.5px;
   cursor: pointer;
 }
-@media (max-width: 700px) {
+
+/* --- The phone: a title with two 42px icon buttons, chips in a rail, two columns ------------ */
+@media (max-width: 900px) {
   .lib-head {
-    flex-wrap: wrap;
+    position: relative;
     gap: 12px;
+    block-size: auto;
+    padding: 20px var(--page-gutter) 12px;
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
   }
+  .lib-head > :is(h1, h2) {
+    flex: 1;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+  }
+  /* Search is an icon button until it is used; the design draws only the icon. */
   .lib-search {
-    order: 3;
-    flex-basis: 100%;
+    flex: none;
+    inline-size: 42px;
+    block-size: 42px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 13px;
+    background: var(--accent-chip);
+    box-shadow: var(--accent-chip-ring);
+    color: rgba(255, 255, 255, 0.78);
+  }
+  .lib-search > svg {
+    inline-size: 19px;
+    block-size: 19px;
+  }
+  .lib-search input {
+    position: absolute;
+    inline-size: 1px;
+    opacity: 0;
+  }
+  .lib-search:focus-within {
+    position: absolute;
+    inset: 12px var(--page-gutter) auto var(--page-gutter);
+    inline-size: auto;
+    block-size: 44px;
+    padding: 0 15px;
+    justify-content: flex-start;
+    z-index: 5;
+    border-radius: 14px;
+    background: var(--glass-focus);
+    backdrop-filter: blur(24px);
+  }
+  .lib-search:focus-within input {
+    position: static;
+    inline-size: auto;
+    opacity: 1;
   }
   .lib-import {
-    margin-inline-start: auto;
+    inline-size: 42px;
+    block-size: 42px;
+    padding: 0;
+    justify-content: center;
+    margin-inline-start: 0;
+    border-radius: 13px;
   }
-  .lib {
-    --lib-min: 140px;
+  .lib-import > span {
+    display: none;
   }
-  /* The baseline's phone: two columns, and the one thing in progress leads at full width. */
-  .lib[data-skill='listening'] {
-    --lib-min: 150px;
+  .lib-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 0 var(--page-gutter) 14px;
+    scrollbar-width: none;
+    touch-action: pan-x pan-y;
   }
+  .lib-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .lib-chip {
+    flex: none;
+    padding: 9px 15px;
+    min-block-size: 0;
+    font-size: 13.5px;
+    line-height: 19px;
+  }
+  .lib-results {
+    padding: 0 var(--page-gutter) 30px;
+  }
+  .lib-grid,
+  .lib[data-skill='reading'] .lib-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
+  }
+  .lib-cover {
+    margin-bottom: 8px;
+  }
+  .lib[data-skill='listening'] .lib-cover {
+    aspect-ratio: auto;
+    block-size: 98px;
+    border-radius: 13px;
+  }
+  .lib[data-skill='reading'] .lib-cover {
+    aspect-ratio: auto;
+    block-size: 222px;
+    border-radius: 14px;
+  }
+  /* The one thing in progress leads at full width, its cover 196px. */
   .lib[data-skill='listening'] .lib-card[data-progress]:first-child {
     grid-column: 1 / -1;
   }
-  .lib-grid {
-    gap: 20px 12px;
+  .lib[data-skill='listening'] .lib-card[data-progress]:first-child .lib-cover {
+    block-size: 196px;
+    margin-bottom: 9px;
+    border-radius: 15px;
+  }
+  .lib-title {
+    font-size: 14.5px;
+    line-height: 19px;
+  }
+  .lib[data-skill='listening'] .lib-card[data-progress]:first-child .lib-title {
+    font-size: 16.5px;
+    line-height: 21px;
+  }
+  .lib-sub {
+    margin-top: 3px;
+    font-size: 13px;
+  }
+  .lib-meta {
+    margin-top: 3px;
+    font-size: 10.5px;
+  }
+  .lib[data-skill='listening'] .lib-card[data-progress]:first-child .lib-meta {
+    margin-top: 4px;
+    font-size: 11.5px;
+  }
+  .lib-length {
+    inset: auto 8px 9px auto;
+    padding: 3px 9px;
+    font-size: 10.5px;
+  }
+  .lib[data-skill='listening'] .lib-card[data-progress]:first-child .lib-length {
+    inset: auto 10px 11px auto;
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+  .lib-bar {
+    inset: auto 12px 12px 12px;
+    block-size: 4px;
+    max-inline-size: 150px;
+  }
+  .lib[data-skill='reading'] .lib-grid {
+    gap: 18px;
+  }
+  .lib[data-skill='reading'] .lib-cover {
+    margin-bottom: 9px;
+  }
+  .lib[data-skill='reading'] .lib-title {
+    font-size: 15px;
+    line-height: 20px;
+  }
+  .lib[data-skill='reading'] .lib-sub {
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .lib[data-skill='reading'] .lib-meta {
+    font-size: 11px;
+    line-height: 14px;
+  }
+  .lib[data-skill='reading'] .lib-bar {
+    inset: auto 11px 11px 11px;
   }
 }
