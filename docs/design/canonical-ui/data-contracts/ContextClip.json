@@ -1,0 +1,16 @@
+{
+  "_usedBy": [
+    "VocabularyTemplate"
+  ],
+  "wordId": "string",
+  "clips": [
+    {
+      "sourceTitle": "string",
+      "timestamp": "string",
+      "sentence": "string",
+      "pinyin": "string | null",
+      "translation": "string",
+      "hue": "number"
+    }
+  ]
+}

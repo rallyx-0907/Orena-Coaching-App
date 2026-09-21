@@ -1,0 +1,21 @@
+{
+  "_usedBy": [
+    "ReadingWorkspaceTemplate"
+  ],
+  "sentence": "string",
+  "translation": "string",
+  "shortExplanation": "string",
+  "structure": [
+    {
+      "chunk": "string",
+      "role": "adverbial | verb | subject | complement"
+    }
+  ],
+  "vocabulary": [
+    {
+      "term": "string",
+      "meaning": "string",
+      "saved": "boolean"
+    }
+  ]
+}

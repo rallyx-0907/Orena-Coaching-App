@@ -1,0 +1,30 @@
+{
+  "_usedBy": [
+    "WritingReviewTemplate"
+  ],
+  "draftId": "string",
+  "version": "number",
+  "wordCount": "number",
+  "summary": "string",
+  "strengths": "string",
+  "issues": [
+    {
+      "id": "string",
+      "fragment": "string",
+      "correction": "string",
+      "why": "string",
+      "rule": "string",
+      "grammarRef": "string | null",
+      "examples": [
+        "string"
+      ],
+      "kind": "register | grammar | punctuation | vocabulary | naturalness"
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "string",
+      "value": "number 0-100"
+    }
+  ]
+}

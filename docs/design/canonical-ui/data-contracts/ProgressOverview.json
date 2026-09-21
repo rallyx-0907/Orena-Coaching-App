@@ -1,0 +1,60 @@
+{
+  "_usedBy": [
+    "ProgressTemplate"
+  ],
+  "allTime": {
+    "streakDays": "number",
+    "studyHours": "number",
+    "wordsMastered": "number"
+  },
+  "sevenDay": {
+    "learnedWords": "number",
+    "learnedSamples": [
+      "string"
+    ],
+    "reviewing": "number",
+    "reviewDue": "number",
+    "reviewDone": "number",
+    "comprehensionCorrect": "number",
+    "comprehensionTotal": "number",
+    "comprehensionSeq": [
+      "boolean"
+    ],
+    "recallAccuracy": "number",
+    "recallCards": "number",
+    "recallGot": "number",
+    "recallUnsure": "number",
+    "recallForgot": "number"
+  },
+  "evidence": [
+    {
+      "skill": "string",
+      "title": "string",
+      "meta": "string",
+      "score": "string",
+      "scoreLabel": "string",
+      "hue": "number"
+    }
+  ],
+  "skills": [
+    {
+      "name": "string",
+      "percent": "number",
+      "label": "string"
+    }
+  ],
+  "heatmap": [
+    "number 0-3"
+  ],
+  "tier": {
+    "name": "string",
+    "level": "number",
+    "current": "number",
+    "target": "number"
+  },
+  "nextAction": {
+    "title": "string",
+    "detail": "string",
+    "skill": "string"
+  }
+}

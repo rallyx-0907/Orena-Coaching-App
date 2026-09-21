@@ -1,0 +1,20 @@
+{
+  "_usedBy": [
+    "tất cả template"
+  ],
+  "user": {
+    "name": "string",
+    "level": "string",
+    "language": "string",
+    "tierLabel": "string"
+  },
+  "streakDays": "number",
+  "activeNav": "home | library | vocabulary | progress | profile",
+  "activeSkill": "reading | listening | speaking | writing | null",
+  "skillLevels": [
+    {
+      "skill": "string",
+      "level": "string"
+    }
+  ]
+}
