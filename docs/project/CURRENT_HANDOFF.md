@@ -28,10 +28,11 @@ and `UI_BACKEND_GAPS.md` (the one tracker, absorbing the Phase 1-3 audit).
 
 ## Last verified batch
 
-Local, after slices 1 and 2: pytest `1158 passed, 118 skipped`; every CI
+Local, after slices 1 and 2 and the six-bug pass: pytest `1159 passed, 118 skipped`; every CI
 `.mjs` gate passes except `test_m3_pronunciation_contract.mjs`, failing since
 D-065 removed the score (Speaking slice); ESM graph, memory and architecture
-validators pass. No CI claim. Browser-checked on :8011 (vi, EN text), not READY.
+validators pass. No CI claim. Browser-checked on :8011 (vi, EN text; zh word via API;
+touch swipe and phone sheet in a touch-enabled context), not READY.
 
 ## IN PROGRESS
 
@@ -93,6 +94,7 @@ the human approves product direction.
 ## NEXT EXACT TASK
 
 Finish the remaining checks of slices 1 and 2 (`UI_BACKEND_GAPS.md`, Progress log:
-Chinese, phone, error states, dead styles), then slice 3, Listening and Dictation.
+zh interface on the sheets, error states in a browser, the two stale
+`verify_writing_*_browser.mjs` scripts, unused copy keys), then slice 3, Listening and Dictation.
 Operate only sandbox `orena-foundation-web`:8011; restart
 after Python changes; never production 8000, preview 8010, Cloudflare or volumes.

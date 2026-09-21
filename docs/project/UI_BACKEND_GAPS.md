@@ -298,3 +298,39 @@ Not drawn by the baseline, so no longer tracked (git history keeps them): GAP-00
 033, 037, 038, 041, 042, 046, 050. Profile, My Content, Admin, Onboarding, states,
 Modal/Drawer and tablet have no canonical design; their current implementation
 stays until the human supplies one (D-066).
+
+**Bug pass on S1/S2** (2026-09-21, commits `fb9a9ec`, `3651ed0`). Six reported defects,
+each with its root cause:
+
+- The ask-more input looked dead: a repaint on every state change rebuilt the sheet and
+  erased the question being typed. The draft and its focus now survive a repaint, and the
+  newest answer scrolls into view. Checked: a 52 s repaint kept text and focus.
+- A sheet outlived the screen it was opened from. Every sheet (word, sentence, finding) now
+  closes on a route change. Checked with `history.back()` and a hash change, for the word
+  sheet and the Writing finding sheet.
+- Feedback spoke about "the learner". `VOICE_POLICY` in the writing evaluator and the tutor
+  prompts sets second person (bạn / you / 你); the evaluator contract is `writing-evaluation-v2.6`,
+  so stored reviews in the old voice are retired. The answer language is now named in the last
+  line of the tutor prompt, naming `judgement_reason` and `follow_ups`, which a model otherwise
+  leaves in the text's language. Checked live in vi: gloss, verdict, follow-ups and a typed
+  question all in Vietnamese; zh word (`终于`) gives pinyin, no IPA, Vietnamese explanations.
+- Rails could not be swiped on a phone: `touch-action: pan-y` blocked horizontal panning.
+  Checked with a real touch swipe (touch-enabled mobile context, CDP touch events): the
+  For-you rail moved from 0 to 217 px. Not a resized mouse viewport.
+- The reader's back link went to a route that answered `{"detail":"Not Found"}`; it now
+  returns to the book, or to Practice when there is none.
+- The For-you cards were unequal (a legacy `align-items:start` in `rooms.css`): now one height (183 px).
+
+Also: the first-layer gloss is no longer replaced when the full explanation loads (for Chinese
+the full answer can be a sentence translation). Deleted the old Writing review layout's CSS
+(`.review-*`, `.correction*`, ~250 lines across four files), including a legacy
+`.review-bar` box that also clipped the vocabulary session's header. Phone sheet checked with
+touch (bottom sheet, scrim, no horizontal overflow, closes on navigation).
+
+Still open from S1/S2: the zh *interface* on the sheets and the phone views of ask/deeper
+for zh; provider-down states are covered by unit tests, not a browser pass; the two
+`verify_*_browser.mjs` scripts (cited in docs) wait for the deleted `.review-headline` and
+must be rewritten for the new markup; unused copy keys (`reviewFocus`, `reviewDeeper`,
+`reviewLocate`, ...); WR-1..4, WR-10, QS-7, QS-8; `ui/understanding.js` stays for its other
+callers. The provider's 15-50 s latency for the full explanation and about 40 s for a review
+is provider speed, shown by the loading states, not fixed here.
