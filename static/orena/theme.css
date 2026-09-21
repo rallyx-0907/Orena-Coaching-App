@@ -137,6 +137,11 @@
   --ink-72: rgba(255, 255, 255, 0.72);
   --ink-78: rgba(255, 255, 255, 0.78);
   --ink-80: rgba(255, 255, 255, 0.8);
+  --ink-85: rgba(255, 255, 255, 0.85);
+  --ink-90: rgba(255, 255, 255, 0.9);
+  --chip-soft: rgba(196, 178, 255, 0.13);
+  --chip-tag: rgba(196, 178, 255, 0.16);
+  --chip-tag-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.2);
   /* The Listening workspace (Orena Listening, "Listening workspace"): a quiet chip, a chosen chip,
      the lit line, the play button's glow, the panel's left edge, a round action on a line. */
   --chip-quiet: rgba(196, 178, 255, 0.12);

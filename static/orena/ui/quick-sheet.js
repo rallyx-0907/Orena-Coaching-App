@@ -124,7 +124,7 @@ function layerOne(c, s, v) {
   const saveBody = v.saved
     ? `${icon('bookmark-simple', { filled: true, size: 19 })}${esc(c.selectionSaved)}`
     : `${icon('bookmark-simple', { size: 19 })}${esc(c.quickSave)}`;
-  return `${wordHead(c, v, s)}<hr class="qs-rule">${label(c.quickMeaningLabel)}${meaning}<blockquote class="qs-well" lang="${esc(s.language)}">${highlighted(s.context, s.selection)}</blockquote><div class="qs-actions">${button('save', saveBody, { cls: 'qs-btn', attrs: v.saved ? 'aria-pressed="true"' : '' })}${button('why', `${icon('sparkle', { size: 19 })}${esc(why)}`, { cls: 'qs-btn qs-btn--primary', attrs: loading ? '' : '' })}</div><p class="meta qs-status" role="status" data-panel-status></p>`;
+  return `${wordHead(c, v, s)}<hr class="qs-rule"><div class="qs-group">${label(c.quickMeaningLabel)}${meaning}</div><blockquote class="qs-well" lang="${esc(s.language)}">${highlighted(s.context, s.selection)}</blockquote><div class="qs-actions">${button('save', saveBody, { cls: 'qs-btn', attrs: v.saved ? 'aria-pressed="true"' : '' })}${button('why', `${icon('sparkle', { size: 19 })}${esc(why)}`, { cls: 'qs-btn qs-btn--primary', attrs: loading ? '' : '' })}</div><p class="meta qs-status" role="status" data-panel-status></p>`;
 }
 
 function verdictCard(c, v, support, full = 'ready') {
@@ -157,14 +157,16 @@ function deeperView(c, s, v) {
   const examples = (d.examples || []).length
     ? `<div class="qs-examples" lang="${esc(s.language)}">${d.examples.map((line) => `<span>${highlighted(line, s.selection)}</span>`).join('')}</div>`
     : '';
-  const grammar = d.grammarNote
-    ? `<div class="qs-note" lang="${esc(s.support)}">${esc(d.grammarNote).replace(/\n/g, '<br>')}</div>`
+  /* The note is a headline (the forms) and what follows it, as the frame draws it. */
+  const noteLines = d.grammarNote ? String(d.grammarNote).split('\n') : [];
+  const grammar = noteLines.length
+    ? `<div class="qs-note" lang="${esc(s.support)}"><span class="qs-note__head" lang="${esc(s.language)}">${esc(noteLines[0])}</span>${noteLines.length > 1 ? `<span class="qs-note__body">${esc(noteLines.slice(1).join(' '))}</span>` : ''}</div>`
     : '';
   const related = (d.relatedExpressions || []).length
     ? `<div class="qs-chips">${d.relatedExpressions.map((item) => `<span class="qs-chip qs-chip--plain" title="${esc(item.note)}">${esc(item.term)}</span>`).join('')}</div>`
     : '';
   const p = (text) => (text ? `<p class="qs-text" lang="${esc(s.support)}">${esc(text)}</p>` : '');
-  return `<div class="qs-top"><span class="qs-grab" aria-hidden="true"></span><div class="qs-top__row"><strong class="qs-word qs-word--small qs-word--${v.script}" lang="${esc(s.language)}">${esc(v.headword)}</strong><span class="qs-reading">${esc(v.reading)}</span>${button('close', esc(c.quickClose), { cls: 'qs-link qs-top__close' })}</div></div><div class="qs-scroll">${s.full === 'loading' ? `<p class="qs-meaning qs-skeleton" role="status" aria-label="${esc(c.quickThinking)}"><span></span></p>` : s.full === 'failed' ? `<p class="qs-text">${esc(c.lookupFailed)} ${button('retry-full', esc(c.retry), { cls: 'qs-link' })}</p>` : ''}${section(c.quickCore, p(d.coreIdea))}${section(c.quickMental, p(d.mentalModel))}${section(c.quickContrast, contrast)}${section(c.quickExamples, examples)}${section(c.quickWhyHere, p(d.whyHere))}${section(c.quickMistake, p(d.commonMistake))}${section(c.quickGrammarNote, grammar)}${section(c.quickRelated, related)}${thread(c, s.thread, s.support)}</div><div class="qs-foot qs-foot--bar">${(v.followUps || []).length ? `${label(c.quickMightAsk)}${button('chip', esc(v.followUps[0]), { cls: 'qs-chip qs-chip--ask', attrs: `data-text="${esc(v.followUps[0])}"` })}` : ''}${composer(c, c.quickFollowUp)}${button('save-explanation', `${icon('bookmark-simple', { size: 18 })}${esc(c.quickSaveExplanation)}`, { cls: 'qs-btn qs-btn--primary', attrs: `aria-disabled="true" title="${esc(c.quickExplanationSoon)}"` })}</div>`;
+  return `<div class="qs-top"><span class="qs-grab" aria-hidden="true"></span><div class="qs-top__row"><strong class="qs-word qs-word--small qs-word--${v.script}" lang="${esc(s.language)}">${esc(v.headword)}</strong><span class="qs-reading">${esc(v.reading)}</span>${button('close', esc(c.quickClose), { cls: 'qs-link qs-top__close' })}</div></div><div class="qs-scroll">${s.full === 'loading' ? `<p class="qs-meaning qs-skeleton" role="status" aria-label="${esc(c.quickThinking)}"><span></span></p>` : s.full === 'failed' ? `<p class="qs-text">${esc(c.lookupFailed)} ${button('retry-full', esc(c.retry), { cls: 'qs-link' })}</p>` : ''}${section(c.quickCore, p(d.coreIdea), 'qs-section--core')}${section(c.quickMental, p(d.mentalModel))}${section(c.quickContrast, contrast)}${section(c.quickExamples, examples)}${section(c.quickWhyHere, p(d.whyHere), 'qs-section--why')}${section(c.quickMistake, p(d.commonMistake), 'qs-section--mistake')}${section(c.quickGrammarNote, grammar)}${section(c.quickRelated, related)}${thread(c, s.thread, s.support)}</div><div class="qs-foot qs-foot--bar">${(v.followUps || []).length ? `${label(c.quickMightAsk)}${button('chip', esc(v.followUps[0]), { cls: 'qs-chip qs-chip--ask', attrs: `data-text="${esc(v.followUps[0])}"` })}` : ''}${composer(c, c.quickFollowUp)}${button('save-explanation', `${icon('bookmark-simple', { size: 18 })}${esc(c.quickSaveExplanation)}`, { cls: 'qs-btn qs-btn--primary', attrs: `aria-disabled="true" title="${esc(c.quickExplanationSoon)}"` })}</div>`;
 }
 
 /* Sentence parts: each chunk the model named, coloured by its role, with the

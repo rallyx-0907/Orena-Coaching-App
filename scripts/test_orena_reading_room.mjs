@@ -234,7 +234,7 @@ const c = copy.en;
   const deeper = quickSheetHtml(c, { ...base, view: 'deeper', detail, detailState: 'ready' });
   for (const key of ['quickCore', 'quickMental', 'quickContrast', 'quickExamples', 'quickWhyHere', 'quickMistake', 'quickGrammarNote', 'quickRelated'])
     assert.ok(deeper.includes(c[key]), `deeper draws ${key}`);
-  assert.match(deeper, /Động từ yếu nhóm 1\.<br>Phân từ/);
+  assert.match(deeper, /qs-note__head[^>]*>Động từ yếu nhóm 1\.<\/span><span class="qs-note__body">Phân từ/, 'the note is a headline and what follows it, as the frame draws it');
   assert.match(deeper, /aria-disabled="true"/, 'saving an explanation keeps its place and says it is not available yet');
 
   // Nothing the backend did not send is invented.
