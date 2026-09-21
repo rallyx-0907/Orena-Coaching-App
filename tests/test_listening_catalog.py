@@ -250,3 +250,21 @@ def test_unknown_curated_lesson_is_not_fabricated() -> None:
         assert getattr(exc, "status_code", None) == 404
     else:
         raise AssertionError("missing lesson must be rejected")
+
+
+def test_every_lesson_carries_a_type_the_baseline_names_or_none() -> None:
+    """ContentCard.type (D-066): derived from playback, topic and tags, never guessed."""
+    from writing_coach.listening_catalog import CONTENT_TYPES, content_type
+
+    kinds = {lesson.lesson_id: content_type(lesson) for lesson in CATALOG}
+    assert set(kinds.values()) <= {*CONTENT_TYPES, None}
+    assert kinds["en-daily-pen-in-my-bag"] == "dialogue"
+    assert kinds["en-travel-rainy-day-taxi"] == "dialogue"
+    assert kinds["zh-culture-nationalities"] == "culture"
+    # Real playable video is a video whatever else its tags say.
+    assert kinds["en-science-cosmic-calendar"] == "video"
+    assert kinds["zh-technology-search-wikipedia"] == "video"
+    for lesson in CATALOG:
+        assert lesson_metadata(lesson)["content_type"] == kinds[lesson.lesson_id]
+    # The documented set is the baseline's: nothing here is a type the chips do not name.
+    assert set(CONTENT_TYPES) == {"video", "interview", "podcast", "speech", "culture", "dialogue", "story", "situation"}

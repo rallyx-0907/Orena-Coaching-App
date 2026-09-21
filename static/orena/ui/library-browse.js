@@ -1,65 +1,85 @@
-/* Library (D-059, D-060) - the approved "browse at scale" composition:
-   facets beside a grid on a desk (type, level, topic, clear), a library search,
-   a sort and a grid/list switch above the grid, one titled section per kind,
-   and on a phone the facets as a bottom sheet with "show N results".
+/* Library (D-066) - the Canonical UI Baseline's library: one bar (the room's name,
+   a search, the import action), one row of single-choice type chips, and a grid of
+   ContentCards. Reading and Listening are this same surface scoped to what can be
+   read or listened to, not two libraries.
 
-   Everything shown is real: the shared book library (paged), every readable
-   passage and imported text the learner has, the listening catalogue and the
-   learner's own media, and the vocabulary collections. Facets are built from
-   the values the items actually carry - a level or topic nobody has is never
-   offered. Missing catalogue facts (a total title count, a "recently added"
-   date, levels on books) are tracked gaps (GAP-022), not invented. */
+   Everything shown is real. A chip is offered only for a type some item in the
+   room actually has; a card shows a progress bar and a "time left" only from a
+   place the learner has really reached (device memory), and a type only when the
+   catalogue or the item's own provenance says so. Missing catalogue facts are
+   tracked in docs/project/UI_BACKEND_GAPS.md, never invented. */
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { art, duration, bindImages } from './content.js';
 import { contentCover } from './cover.js';
-import { libraryCoverUrl, readingFromMemory } from './library.js';
+import { libraryCoverUrl } from './library.js';
 import { referenceCopy } from './reference.js';
 import { link } from '../product/intent.js';
 
 const KINDS = ['books', 'audio', 'video', 'collections'];
-const KIND_ICON = { books: 'book-open', audio: 'headphones', video: 'play', collections: 'cards' };
-const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'];
-const levelRank = (level) => {
-  const index = LEVEL_ORDER.indexOf(String(level || '').toUpperCase().replace(/^HSK(\d)/, 'HSK $1'));
-  return index < 0 ? 99 : index;
-};
-const topicKey = (topic) => String(topic || '').trim().toLowerCase().replace(/_/g, '-');
 
-/* A topic is offered only when the interface can name it in the learner's
-   support language; a raw content tag in another language is metadata, not a
-   label (Design Contract rule 26). */
-function topicLabel(c, key) {
-  return c[`topic_${key}`] || '';
+/* The order the chips read in: what a room's items are made of, most concrete
+   first, then where they came from. */
+const TYPE_ORDER = [
+  'book', 'excerpt', 'article', 'news', 'essay', 'story', 'dialogue', 'quote',
+  'interview', 'podcast', 'speech', 'video', 'situation', 'culture', 'collection',
+  'generated', 'imported',
+];
+const READING_MATERIALS = new Set(['article', 'news', 'essay', 'story', 'dialogue', 'quote', 'excerpt']);
+
+/* Where the learner stands in an item, from device memory: `place` is the line
+   (or chapter) they reached out of the total, exactly as the continuation
+   already records it. Never a second progress store. */
+function placeOf(memory, id) {
+  for (const item of memory?.value?.continuation || []) {
+    if (String(item?.id || '') !== id) continue;
+    const index = Number(item?.place?.index) || 0;
+    const total = Number(item?.place?.total) || 0;
+    if (index >= 1 && total >= 1) return { index, total };
+  }
+  return null;
+}
+const percentOf = (place) => (place ? Math.min(100, Math.max(1, Math.round((place.index / place.total) * 100))) : null);
+
+function provenance(item) {
+  if (item.origin === 'imported') return 'imported';
+  if (item.origin === 'generated' || item.generation_mode === 'generated') return 'generated';
+  return '';
 }
 
-/* Every source normalised to one entry shape. */
 function fromReadable(item, language) {
+  const material = String(item.material || item.content_type || '').trim().toLowerCase();
+  const made = provenance(item);
   return {
     kind: 'books',
+    skill: 'reading',
     id: item.id,
     title: item.title,
     sub: item.author || '',
     level: item.level || item.target_level || '',
-    topic: topicKey(item.topic || item.material),
+    type: made || (READING_MATERIALS.has(material) ? material : ''),
+    badge: made,
+    time: item.time || '',
     href: link('encounter', { id: item.id, intent: 'reading' }),
     visual: art(item),
     language: item.language || language,
   };
 }
-function fromBook(book, reading) {
-  const state = reading?.[book.id];
-  const total = Number(state?.total) || Number(book.chapter_count) || 0;
-  const index = Number(state?.index) || 0;
-  const percent = state && index >= 1 && total >= 1 ? Math.max(1, Math.round((index / total) * 100)) : null;
+function fromBook(book, memory) {
+  const state = (memory?.value?.continuation || []).find((item) => String(item?.id || '').startsWith(`book:${book.id}/`));
+  const total = Number(state?.place?.total) || Number(book.chapter_count) || 0;
+  const index = Number(state?.place?.index) || 0;
   return {
     kind: 'books',
+    skill: 'reading',
     id: `book:${book.id}`,
     title: book.title,
     sub: book.author || '',
     level: '',
-    topic: '',
-    percent,
+    type: 'book',
+    badge: '',
+    time: '',
+    percent: state && index >= 1 && total >= 1 ? Math.max(1, Math.round((index / total) * 100)) : null,
     href: link('book', { id: book.id }),
     visual: book.cover_asset_key
       ? `<img src="${esc(libraryCoverUrl(book.id))}" alt="" loading="lazy" referrerpolicy="no-referrer">`
@@ -67,16 +87,25 @@ function fromBook(book, reading) {
     language: book.learning_language || '',
   };
 }
-function fromMedia(item, language) {
+function fromMedia(item, language, memory) {
   const video = (item.kind || item.media_type || item.playback_kind) === 'video';
+  const own = item.origin && item.origin !== 'curated';
+  const length = Number(item.duration_ms) || 0;
+  const place = placeOf(memory, item.id);
+  const left = place && length > 0 ? Math.max(1, Math.ceil(((place.total - place.index) / place.total) * (length / 60000))) : null;
   return {
     kind: video ? 'video' : 'audio',
+    skill: 'listening',
     id: item.id,
     title: item.title,
     sub: '',
     level: item.level || '',
-    topic: topicKey(item.topic),
-    length: Number(item.duration_ms) > 0 ? duration(item.duration_ms) : '',
+    type: own ? 'imported' : String(item.content_type || ''),
+    badge: own ? 'imported' : '',
+    video,
+    length: length > 0 ? duration(length) : '',
+    percent: percentOf(place),
+    left,
     href: link('encounter', { id: item.id, intent: 'follow' }),
     visual: art(item),
     language: item.language || language,
@@ -88,11 +117,13 @@ function fromCollection(collection) {
   const learned = Number(progress.learned_count ?? progress.mastered_count) || 0;
   return {
     kind: 'collections',
+    skill: 'vocabulary',
     id: `collection:${collection.id}`,
     title: collection.title || '',
     sub: collection.topic || '',
     level: collection.level || collection.level_range || '',
-    topic: topicKey(collection.topic),
+    type: 'collection',
+    badge: '',
     total,
     learned,
     percent: total ? Math.round((learned / total) * 100) : null,
@@ -102,152 +133,119 @@ function fromCollection(collection) {
   };
 }
 
-function card(entry, c, view) {
-  const meta = [entry.level, entry.length, entry.percent != null && entry.kind === 'books' ? `${entry.percent}%` : '', entry.kind === 'collections' && entry.total ? `${entry.learned} / ${entry.total}` : ''].filter(Boolean).join(' · ');
-  const bar = entry.percent != null ? `<span class="progress-bar library-item__bar"><span style="width:${entry.percent}%"></span></span>` : '';
-  if (view === 'list')
-    return `<a class="library-row" href="${esc(entry.href)}" data-kind="${entry.kind}"><span class="library-row__visual">${entry.visual}</span><span class="library-row__text"><strong lang="${esc(entry.language)}">${esc(entry.title)}</strong>${entry.sub ? `<span class="library-row__sub">${esc(entry.sub)}</span>` : ''}${meta ? `<small>${esc(meta)}</small>` : ''}</span>${icon('caret-right', { size: 18, className: 'library-row__go' })}</a>`;
-  return `<a class="library-item" href="${esc(entry.href)}" data-kind="${entry.kind}"><span class="library-item__visual">${entry.visual}${bar}</span><strong lang="${esc(entry.language)}">${esc(entry.title)}</strong>${meta ? `<small>${esc(meta)}</small>` : ''}</a>`;
+function card(entry, r) {
+  // A provenance the cover already says (a badge) is not said again in the line.
+  const kindLabel = entry.type && entry.type !== entry.badge ? r[`libraryKind_${entry.type}`] || '' : '';
+  const left = entry.left ? r.libraryLeft.replace('{n}', String(entry.left)) : '';
+  const stated = /(\d+)/.exec(String(entry.time || ''));
+  const time = stated ? r.libraryMinutes.replace('{n}', stated[1]) : '';
+  const parts =
+    entry.skill === 'listening'
+      ? [kindLabel, entry.level, left]
+      : entry.skill === 'vocabulary'
+        ? [entry.level, entry.total ? `${entry.learned} / ${entry.total}` : '']
+        : [entry.level, kindLabel, time];
+  const meta = parts.filter(Boolean).join(' · ');
+  const badges = `${entry.video ? `<span class="lib-badge lib-badge--icon" title="${esc(r.libraryKind_video)}">${icon('video-camera', { size: 15 })}</span>` : ''}${entry.badge ? `<span class="lib-badge">${esc(r[`libraryKind_${entry.badge}`] || '')}</span>` : ''}`;
+  const bar = entry.percent != null ? `<span class="lib-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${entry.percent}"><span style="width:${entry.percent}%"></span></span>` : '';
+  return `<a class="lib-card" href="${esc(entry.href)}" data-skill="${entry.skill}" data-kind="${entry.kind}"><span class="lib-cover">${entry.visual}${badges ? `<span class="lib-badges">${badges}</span>` : ''}${entry.length ? `<span class="lib-length">${esc(entry.length)}</span>` : ''}${bar}</span><strong class="lib-title" lang="${esc(entry.language)}">${esc(entry.title)}</strong>${entry.sub ? `<span class="lib-sub">${esc(entry.sub)}</span>` : ''}${meta ? `<small class="lib-meta">${esc(meta)}</small>` : ''}</a>`;
 }
 
-/* `only` scopes the whole surface to one kind - the Reading room is this same
-   library with books and texts in it, not a second library. The type facet
-   goes with the choice it no longer offers. */
-export function renderLibraryBrowse(root, ctx, sources, { only = null } = {}) {
-  const { api, c, language, alive } = ctx;
+/* `only` scopes the whole surface to one room's kinds. `onImport` is the room's own
+   way of bringing something in; the bar offers it and owns nothing about it. */
+export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport = null, titleTag = 'h1' } = {}) {
+  const { api, c, language, alive, memory } = ctx;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
-  const reading = readingFromMemory(ctx.memory);
-  const scope = only ? KINDS.filter((kind) => only.includes(kind)) : null;
+  const scope = only ? KINDS.filter((kind) => only.includes(kind)) : KINDS;
+  const skill = scope.length === 1 && scope[0] === 'books' ? 'reading' : scope.every((kind) => kind === 'audio' || kind === 'video') ? 'listening' : 'library';
   const state = {
-    kinds: new Set(scope || []),
-    levels: new Set(),
-    topics: new Set(),
+    type: '',
     query: '',
-    sort: 'title',
-    view: 'grid',
-    sheet: false,
-    books: null,
+    books: scope.includes('books') ? null : [],
     booksCursor: null,
     booksFailed: false,
     booksMore: false,
-    collections: null,
-    collectionsFailed: false,
+    collections: scope.includes('collections') ? null : [],
   };
   const base = [
     ...(sources.readable || []).map((item) => fromReadable(item, language)),
-    ...(sources.media || []).map((item) => fromMedia(item, language)),
+    ...(sources.media || []).map((item) => fromMedia(item, language, memory)),
   ];
-
-  const everything = () => [
-    ...(state.books || []).map((book) => fromBook(book, reading)),
-    ...base,
-    ...(state.collections || []).map(fromCollection),
-  ];
-  const matches = (entry, { ignore = '' } = {}) => {
-    if (ignore !== 'kind' && state.kinds.size && !state.kinds.has(entry.kind)) return false;
-    if (ignore !== 'level' && state.levels.size && !state.levels.has(entry.level)) return false;
-    if (ignore !== 'topic' && state.topics.size && !state.topics.has(entry.topic)) return false;
+  const everything = () =>
+    [
+      ...(state.books || []).map((book) => fromBook(book, memory)),
+      ...base,
+      ...(state.collections || []).map(fromCollection),
+    ].filter((entry) => scope.includes(entry.kind));
+  const shown = () => {
     const q = state.query.trim().toLowerCase();
-    if (q && !`${entry.title} ${entry.sub} ${entry.topic}`.toLowerCase().includes(q)) return false;
-    return true;
+    return everything()
+      .filter((entry) => !state.type || entry.type === state.type)
+      .filter((entry) => !q || `${entry.title} ${entry.sub} ${entry.level} ${r[`libraryKind_${entry.type}`] || ''}`.toLowerCase().includes(q))
+      .sort((a, b) => (b.percent ? 1 : 0) - (a.percent ? 1 : 0) || a.title.localeCompare(b.title));
   };
-  const sorted = (list) =>
-    [...list].sort((a, b) =>
-      state.sort === 'level'
-        ? levelRank(a.level) - levelRank(b.level) || a.title.localeCompare(b.title)
-        : a.title.localeCompare(b.title),
-    );
+  const pending = () => state.books === null || state.collections === null;
 
-  const facets = () => {
-    const all = everything();
-    const levels = [...new Set(all.map((x) => x.level).filter(Boolean))].sort((a, b) => levelRank(a) - levelRank(b));
-    const topics = [...new Set(all.map((x) => x.topic).filter((topic) => topic && topicLabel(c, topic)))].sort();
-    const kindRow = (kind) =>
-      `<label class="facet-check"><input type="checkbox" data-facet-kind="${kind}"${state.kinds.has(kind) ? ' checked' : ''}><span class="facet-check__box" aria-hidden="true">${icon('check', { size: 12 })}</span><span>${esc(r[`libraryType_${kind}`])}</span></label>`;
-    const chip = (group, value, label) =>
-      `<button type="button" class="facet-chip" data-facet-${group}="${esc(value)}" aria-pressed="${state[group === 'level' ? 'levels' : 'topics'].has(value)}">${esc(label)}</button>`;
-    return `<div class="library-facets__head"><strong>${esc(r.libraryFilters)}</strong><button type="button" class="quiet" data-facet-clear>${esc(r.libraryClear)}</button></div>${scope ? '' : `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryType)}</legend>${KINDS.map(kindRow).join('')}</fieldset>`}${levels.length ? `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryLevel)}</legend><div class="facet-chips">${levels.map((level) => chip('level', level, level)).join('')}</div></fieldset>` : ''}${topics.length ? `<fieldset class="facet-group"><legend class="ds-label">${esc(r.libraryTopic)}</legend><div class="facet-topics">${topics.map((topic) => chip('topic', topic, topicLabel(c, topic))).join('')}</div></fieldset>` : ''}<button type="button" class="library-facets__clear" data-facet-clear>${icon('x', { size: 14 })}<span>${esc(r.libraryClearFilters)}</span></button><button type="button" class="primary library-facets__show" data-sheet-close>${esc(r.libraryShowResults.replace('{n}', String(everything().filter((x) => matches(x)).length)))}</button>`;
-  };
-
-  const section = (kind, entries) => {
-    const title = `${r[`libraryType_${kind}`]}`;
-    let body;
-    if (kind === 'books' && state.books === null && !state.booksFailed)
-      body = `<div class="library-grid library-grid--books" aria-hidden="true">${Array.from({ length: 5 }, () => '<span class="skeleton library-skeleton"></span>').join('')}</div>`;
-    else if (!entries.length) return '';
-    else
-      body = `<div class="library-${state.view === 'list' ? 'list' : `grid library-grid--${kind}`}">${sorted(entries).map((entry) => card(entry, c, state.view)).join('')}</div>`;
-    const failed = kind === 'books' && state.booksFailed
-      ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-books-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
-      : '';
-    const more = kind === 'books' && state.booksCursor
-      ? `<button type="button" class="library-more" data-books-more${state.booksMore ? ' disabled' : ''}>${icon(state.booksMore ? 'clock' : 'caret-down', { size: 16 })}<span>${esc(r.libraryLoadMore.replace('{n}', String((state.books || []).length)))}</span></button>`
-      : '';
-    return `<section class="library-section" data-library-section="${kind}"><header class="library-section__head"><h2>${icon(KIND_ICON[kind], { size: 18 })}<span>${esc(title)}</span></h2><span class="ds-label library-section__count">${esc(r.libraryTitles.replace('{n}', String(entries.length)))}</span></header>${failed}${body}${more}</section>`;
-  };
+  const importButton = onImport
+    ? `<button type="button" class="lib-import" data-lib-import>${icon('upload-simple', { size: 16 })}<span>${esc(r[skill === 'reading' ? 'libraryImportReading' : 'libraryImportListening'])}</span></button>`
+    : '';
+  root.innerHTML = `<div class="lib" data-skill="${skill}"><header class="lib-head"><${titleTag}>${esc(skill === 'reading' ? r.reading : skill === 'listening' ? r.listening : r.library)}</${titleTag}><label class="lib-search">${icon('magnifying-glass', { size: 16 })}<span class="sr-only">${esc(r.librarySearch)}</span><input type="search" autocomplete="off" placeholder="${esc(r.librarySearch)}" data-lib-query></label>${importButton}</header><div class="lib-chips" role="radiogroup" aria-label="${esc(r.libraryType)}" data-lib-chips></div><div data-lib-results></div></div>`;
+  const chipsRoot = root.querySelector('[data-lib-chips]');
+  const results = root.querySelector('[data-lib-results]');
 
   function paint() {
     if (!alive()) return;
-    const focusId = document.activeElement?.id;
-    const all = everything().filter((x) => matches(x));
-    const byKind = Object.fromEntries(KINDS.map((kind) => [kind, all.filter((x) => x.kind === kind)]));
-    const shown = KINDS.filter((kind) => !state.kinds.size || state.kinds.has(kind));
-    const sections = shown.map((kind) => section(kind, byKind[kind])).join('');
-    const active = (scope ? 0 : state.kinds.size) + state.levels.size + state.topics.size;
-    const empty = !all.length && state.books !== null
-      ? `<div class="state-panel state-panel--empty">${icon('magnifying-glass', { size: 22 })}<div><strong>${esc(r.libraryNoResults)}</strong></div><button type="button" class="primary" data-facet-clear>${esc(r.libraryClearFilters)}</button></div>`
+    const types = TYPE_ORDER.filter((type) => everything().some((entry) => entry.type === type));
+    if (state.type && !types.includes(state.type)) state.type = '';
+    const chip = (value, label) => `<button type="button" role="radio" class="lib-chip" aria-checked="${state.type === value}" data-lib-type="${esc(value)}">${esc(label)}</button>`;
+    chipsRoot.innerHTML = types.length ? chip('', r.libraryAll) + types.map((type) => chip(type, r[`libraryKind_${type}`] || type)).join('') : '';
+    chipsRoot.hidden = !types.length;
+
+    const list = shown();
+    let body;
+    // Whatever has arrived is shown at once; what is still on its way is a placeholder
+    // after it, so a slow shelf never hides the ones that are ready.
+    const placeholders = `<span class="lib-placeholders" aria-hidden="true">${Array.from({ length: list.length ? 3 : 6 }, () => '<span class="skeleton lib-skeleton"></span>').join('')}</span>`;
+    if (!list.length && pending()) body = `<div class="lib-grid">${placeholders}</div>`;
+    else if (!list.length)
+      body = `<div class="state-panel state-panel--empty">${icon('magnifying-glass', { size: 22 })}<div><strong>${esc(r.libraryNoResults)}</strong></div>${state.query || state.type ? `<button type="button" class="primary" data-lib-clear>${esc(r.libraryClearFilters)}</button>` : ''}</div>`;
+    else body = `<div class="lib-grid">${list.map((entry) => card(entry, r)).join('')}${pending() ? placeholders : ''}</div>`;
+    const failed = state.booksFailed
+      ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-books-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
       : '';
-    root.innerHTML = `<h1 class="sr-only">${esc(r.library)}</h1><div class="library-browse" data-sheet="${state.sheet ? 'open' : 'closed'}"><aside class="library-facets" aria-label="${esc(r.libraryFilters)}">${facets()}</aside><button type="button" class="library-sheet-backdrop" data-sheet-close tabindex="-1" aria-hidden="true"></button><div class="library-main"><div class="library-toolbar"><label class="library-search"><span class="sr-only">${esc(r.librarySearch)}</span>${icon('magnifying-glass', { size: 18 })}<input id="librarySearch" type="search" autocomplete="off" placeholder="${esc(r.librarySearch)}" value="${esc(state.query)}" data-library-query></label><button type="button" class="library-tool library-tool--filters" data-sheet-open aria-expanded="${state.sheet}">${icon('funnel', { size: 16 })}<span>${esc(r.libraryFilters)}</span>${active ? `<span class="library-tool__count">${active}</span>` : ''}</button><button type="button" class="library-tool" data-library-sort>${icon('sliders-horizontal', { size: 16 })}<span>${esc(state.sort === 'level' ? r.librarySortLevel : r.librarySortTitle)}</span></button><div class="segmented library-view" role="radiogroup" aria-label="${esc(r.libraryView)}"><button type="button" role="radio" aria-checked="${state.view === 'grid'}" data-library-view="grid" aria-label="${esc(r.libraryViewGrid)}">${icon('squares-four', { size: 16 })}</button><button type="button" role="radio" aria-checked="${state.view === 'list'}" data-library-view="list" aria-label="${esc(r.libraryViewList)}">${icon('list', { size: 16 })}</button></div></div>${empty}${sections}</div></div>`;
-    bindImages(root, c);
+    const more = state.booksCursor
+      ? `<button type="button" class="lib-more" data-books-more${state.booksMore ? ' disabled' : ''}>${icon(state.booksMore ? 'clock' : 'caret-down', { size: 16 })}<span>${esc(r.libraryLoadMore.replace('{n}', String((state.books || []).length)))}</span></button>`
+      : '';
+    results.innerHTML = `${failed}${body}${more}`;
+    bindImages(results, c);
     bind();
-    if (focusId) document.getElementById(focusId)?.focus();
-    if (focusId === 'librarySearch') {
-      const input = document.getElementById('librarySearch');
-      input?.setSelectionRange(input.value.length, input.value.length);
-    }
   }
 
-  function toggle(set, value) {
-    if (set.has(value)) set.delete(value);
-    else set.add(value);
-    paint();
-  }
   function bind() {
-    root.querySelectorAll('[data-facet-kind]').forEach((input) => (input.onchange = () => toggle(state.kinds, input.dataset.facetKind)));
-    root.querySelectorAll('[data-facet-level]').forEach((button) => (button.onclick = () => toggle(state.levels, button.dataset.facetLevel)));
-    root.querySelectorAll('[data-facet-topic]').forEach((button) => (button.onclick = () => toggle(state.topics, button.dataset.facetTopic)));
-    root.querySelectorAll('[data-facet-clear]').forEach((button) => (button.onclick = () => {
-      state.kinds = new Set(scope || []);
-      state.levels.clear();
-      state.topics.clear();
-      state.query = '';
-      paint();
-    }));
-    const query = root.querySelector('[data-library-query]');
-    query.oninput = () => {
-      state.query = query.value;
-      paint();
-    };
-    root.querySelector('[data-library-sort]').onclick = () => {
-      state.sort = state.sort === 'title' ? 'level' : 'title';
-      paint();
-    };
-    root.querySelectorAll('[data-library-view]').forEach((button) => (button.onclick = () => {
-      state.view = button.dataset.libraryView;
-      paint();
-    }));
-    root.querySelector('[data-sheet-open]').onclick = () => {
-      state.sheet = true;
-      paint();
-      root.querySelector('.library-facets input, .library-facets button')?.focus();
-    };
-    root.querySelectorAll('[data-sheet-close]').forEach((button) => (button.onclick = () => {
-      state.sheet = false;
-      paint();
-    }));
-    root.querySelector('[data-books-more]')?.addEventListener('click', loadMoreBooks);
-    root.querySelector('[data-books-retry]')?.addEventListener('click', loadBooks);
+    chipsRoot.querySelectorAll('[data-lib-type]').forEach((button) => {
+      button.onclick = () => {
+        state.type = button.dataset.libType;
+        paint();
+      };
+    });
+    results.querySelectorAll('[data-lib-clear]').forEach((button) => {
+      button.onclick = () => {
+        state.type = '';
+        state.query = '';
+        root.querySelector('[data-lib-query]').value = '';
+        paint();
+      };
+    });
+    results.querySelector('[data-books-more]')?.addEventListener('click', loadMoreBooks);
+    results.querySelector('[data-books-retry]')?.addEventListener('click', loadBooks);
   }
+  const query = root.querySelector('[data-lib-query]');
+  query.oninput = () => {
+    state.query = query.value;
+    paint();
+  };
+  const importAction = root.querySelector('[data-lib-import]');
+  if (importAction) importAction.onclick = onImport;
 
   async function loadBooks() {
     state.books = null;
@@ -288,21 +286,12 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null } = {}) {
       state.collections = data.items || data.collections || [];
     } catch {
       state.collections = [];
-      state.collectionsFailed = true;
     }
     paint();
   }
 
-  const onKey = (event) => {
-    if (event.key === 'Escape' && state.sheet) {
-      state.sheet = false;
-      paint();
-      root.querySelector('[data-sheet-open]')?.focus();
-    }
-  };
-  document.addEventListener('keydown', onKey);
   paint();
-  loadBooks();
-  loadCollections();
-  return () => document.removeEventListener('keydown', onKey);
+  if (scope.includes('books')) loadBooks();
+  if (scope.includes('collections')) loadCollections();
+  return () => {};
 }

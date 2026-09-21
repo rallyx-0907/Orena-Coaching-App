@@ -176,26 +176,16 @@ export async function renderWorld(root, ctx) {
     /* Listening opens on the voices, for the same reason Reading opens on the
        books: the headline and its paragraph told a learner nothing and cost
        the first viewport (D-057 rule 13). */
-    const intro = intent === 'reading'
-      ? pageIntro({ title: r.reading, compact: true })
-      : intent === 'follow'
-      ? pageIntro({ title: r.listening, compact: true })
+    const libraryRoom = intent === 'reading' || intent === 'follow';
+    const intro = libraryRoom
+      ? ''
       : !intent
       ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
       : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
     /* The way back sits above the heading, and the heading's eyebrow names
        the room - the way back already says "Practice". */
-    const practiceContinuation = intent === 'follow'
-      ? ''
-      : intent === 'reading'
-        ? continuationShelf(ctx, 12, {
-            title: r.continueLearning,
-            compact: true,
-            experience: 'reading',
-            rail: true,
-          })
-        : continuation;
-    root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
+    const practiceContinuation = libraryRoom ? '' : continuation;
+    root.innerHTML = `${intent && !libraryRoom ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
         /* Reading opens on the library the design draws (D-059 Phase 5), with
            books and the learner's own texts in it: the same search, facets,
@@ -203,7 +193,7 @@ export async function renderWorld(root, ctx) {
            one library, not a second one - a book card leads to the book page
            (#/book), which is where a chapter is chosen. Bringing a passage in
            stays the room's own action. */
-        ? `${readingError}<div class="reading-library" data-library-browse></div><div class="button-row reading-bring"><button class="quiet" type="button" data-read>＋ ${esc(c.readingBring)}</button></div>`
+        ? `${readingError}<div class="reading-library" data-library-browse></div>`
         : (() => {
             /* Listening opens on the same approved library as Reading, scoped
                to what can be listened to (D-059 Phase 7): one library, one set
@@ -211,7 +201,7 @@ export async function renderWorld(root, ctx) {
                filtered list: those are practice modes over a source, not
                browsing. */
             if (!intent || intent === 'follow')
-              return `${catalogError}<div class="listening-library" data-library-browse></div><div class="button-row reading-bring"><button class="quiet" type="button" data-bring>＋ ${esc(c.bring)}</button></div>`;
+              return `${catalogError}<div class="listening-library" data-library-browse></div>`;
             return `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
               practiceMedia
                 .filter((x) => supports(x, intent))
@@ -225,7 +215,11 @@ export async function renderWorld(root, ctx) {
         root.querySelector('[data-library-browse]'),
         ctx,
         intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
-        { only: intent === 'reading' ? ['books'] : ['audio', 'video'] },
+        {
+          only: intent === 'reading' ? ['books'] : ['audio', 'video'],
+          onImport: intent === 'reading' ? () => openReadingRequest(ctx) : ctx.import,
+          titleTag: intent ? 'h1' : 'h2',
+        },
       ) || (() => {});
   } else if (location.page === 'search') {
     releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});

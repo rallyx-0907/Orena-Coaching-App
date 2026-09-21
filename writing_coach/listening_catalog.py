@@ -305,6 +305,37 @@ def discovery_sections(lesson: CuratedListeningLesson) -> tuple[str, ...]:
     return tuple(sections)
 
 
+# The kinds of listening content the Canonical UI Baseline names as its type
+# chips (ContentCard.type, D-066). Like the discovery rails, the type is DERIVED from
+# what the lesson already says about itself - its playback, topic and tags - so the
+# bulk importer does not need an editor to classify each lesson by hand. The order
+# is the precedence: the first row that matches wins. A lesson that matches none has
+# no type, and the card says none rather than guessing; "imported" is a learner's
+# own media and is never a catalogue type.
+CONTENT_TYPE_RULES: tuple[tuple[str, frozenset[str]], ...] = (
+    ("interview", frozenset({"interview", "interviews"})),
+    ("podcast", frozenset({"podcast"})),
+    ("speech", frozenset({"speech", "talk", "lecture"})),
+    ("culture", frozenset({"culture", "history"})),
+    ("dialogue", frozenset({"conversation", "conversations", "dialogue"})),
+    ("story", frozenset({"story", "stories", "narrative", "storytelling"})),
+    ("situation", frozenset({"travel", "work", "how-to", "situation"})),
+)
+CONTENT_TYPES: tuple[str, ...] = ("video", *(kind for kind, _ in CONTENT_TYPE_RULES))
+
+
+def content_type(lesson: CuratedListeningLesson) -> str | None:
+    """The one type a lesson is shown as, or None when its metadata does not say."""
+
+    if lesson.playback.kind == "video":
+        return "video"
+    vocabulary = {lesson.topic, *lesson.subtopics, *lesson.content_tags}
+    for kind, matches in CONTENT_TYPE_RULES:
+        if vocabulary & matches:
+            return kind
+    return None
+
+
 def is_real_media(lesson: CuratedListeningLesson) -> bool:
     """Real playable video with a real poster, as the spec means it in 3.5."""
 
@@ -591,6 +622,7 @@ def lesson_metadata(lesson: CuratedListeningLesson) -> dict[str, object]:
         "artwork": lesson.artwork,
         "poster_url": source.poster_url,
         "playback_kind": source.playback.kind,
+        "content_type": content_type(lesson),
         "published_state": lesson.content_status.casefold(),
         "curation_state": lesson.curation_state,
         "is_development_candidate": lesson.content_status == DEV_CONTENT_STATUS,
