@@ -35,6 +35,7 @@ ERROR_CATEGORIES = (
     "coherence",
     "task",
     "naturalness",
+    "register",
     "spelling",
     "other",
 )

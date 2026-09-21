@@ -47,7 +47,7 @@ from typing import Any
 # same question: the response schema, the rubric or its weights, the system
 # prompt, or how the request is built. Do not raise it for a change that cannot
 # alter the answer - every raise costs every learner their stored reviews.
-EVALUATOR_CONTRACT_VERSION = "writing-evaluation-v2.4"
+EVALUATOR_CONTRACT_VERSION = "writing-evaluation-v2.5"
 
 _IDENTITY_KEY = "review"
 

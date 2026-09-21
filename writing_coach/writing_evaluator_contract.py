@@ -36,6 +36,7 @@ ERROR_FIELDS = (
     "explanation_vi",
     "suggestion",
     "mini_rule_vi",
+    "example",
     "confidence",
 )
 _STABLE_IDENTIFIER = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -310,6 +311,13 @@ def build_writing_evaluator_schema(
             "explanation_vi": {"type": "string", "minLength": 1},
             "suggestion": {"type": "string", "minLength": 1},
             "mini_rule_vi": {"type": "string", "minLength": 1},
+            "example": {
+                "type": "string",
+                "description": (
+                    "One short sentence in the learner's target language that uses the rule "
+                    "correctly; an empty string if none is natural."
+                ),
+            },
             "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         },
         "required": list(ERROR_FIELDS),

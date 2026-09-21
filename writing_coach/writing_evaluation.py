@@ -258,6 +258,7 @@ def _normalize_errors(
         explanation = _bounded_text(item.get("explanation_vi", ""), 2000)
         suggestion = _bounded_text(item.get("suggestion", ""), 1000)
         rule = _bounded_text(item.get("mini_rule_vi", ""), 1500)
+        example = _bounded_text(item.get("example", ""), 500)
         confidence = _normalized_confidence(item.get("confidence", 1.0))
         # A finding that cannot be pointed at is still a finding.
         #
@@ -303,6 +304,7 @@ def _normalize_errors(
                 "explanation_vi": explanation,
                 "suggestion": suggestion,
                 "mini_rule_vi": rule,
+                "example": example,
                 "confidence": round(confidence, 2),
             }
         )

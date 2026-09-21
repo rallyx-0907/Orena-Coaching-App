@@ -43,6 +43,7 @@ from writing_coach.writing_evaluator_contract import (
     build_writing_evaluator_request,
     build_writing_evaluator_schema,
 )
+from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
 from auth_support import APP_ENV, AUTH_ENABLED, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
@@ -896,7 +897,7 @@ def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
                 "why": item.get("why", item.get("explanation_vi", "")),
                 "how": item.get("how", item.get("mini_rule_vi", "")),
                 "suggestion": item.get("suggestion", ""),
-                "examples": item.get("examples", []),
+                "examples": [item["example"]] if item.get("example") else item.get("examples", []),
             }
             for index, item in enumerate(d["errors"])
             if isinstance(item, dict)
@@ -2122,6 +2123,11 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
             )
         series_id = int(previous["series_id"] or previous["id"])
         revision_no = _learning_repository.next_revision_no(series_id)
+        # The repository hands back the stored row, whose findings are still a
+        # JSON string. The comparison reads parsed findings, so it is given the
+        # row in the same shape a review is returned in; without it every earlier
+        # issue was invisible and every current one looked new.
+        previous = row_to_dict(previous, detail=True)
 
     # Has this exact review already been earned?
     #
@@ -2262,6 +2268,7 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     series_id = int(row["series_id"] or row["id"])
     series_rows = _learning_repository.list_series_revisions(series_id)
     previous = _learning_repository.previous_revision(series_id, int(row["revision_no"] or 1))
+    previous = row_to_dict(previous, detail=True) if previous else None
     d = row_to_dict(row, detail=True)
     d["revisions"] = series_rows
     d["delta"] = revision_delta(d, previous)
@@ -2269,6 +2276,23 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     # does not come back without it.
     d["app_cefr"] = app_cefr(float(d.get("overall") or 0))
     return d
+
+@app.get("/api/essays/{essay_id}/review")
+def essay_review(essay_id: int) -> dict[str, Any]:
+    """The review in the Writing room's canonical shape (WritingReview)."""
+    detail = essay_detail(essay_id)
+    return {**project_writing_review(detail), "id": detail["id"], "parentId": detail.get("parent_id")}
+
+
+@app.get("/api/essays/{essay_id}/revision")
+def essay_revision(essay_id: int) -> dict[str, Any]:
+    """This version beside the one before it (RevisionCompare)."""
+    detail = essay_detail(essay_id)
+    row = _learning_repository.previous_revision(int(detail["series_id"] or detail["id"]), int(detail["revision_no"] or 1))
+    if not row:
+        raise HTTPException(404, "This is the first version; there is nothing to compare it with.")
+    return project_revision_compare(detail, row_to_dict(row, detail=True))
+
 
 @app.delete("/api/essays/{essay_id}")
 def delete_essay(essay_id: int) -> dict[str, bool]:
