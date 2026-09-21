@@ -202,7 +202,23 @@ export function bindWritingFeedback({ ctx, host, review, draft, language, alive,
     }
     sheet.className = 'qs qs--issue';
     sheet.setAttribute('aria-label', open.issue.fragment);
+    // What the learner is typing survives the repaint that an answer causes.
+    const typing = sheet.querySelector('input[name="question"]');
+    const kept = typing ? { value: typing.value, focused: document.activeElement === typing, at: typing.selectionStart } : null;
     sheet.innerHTML = issueSheetHtml(c, open.issue, { language, support, thread: open.thread, canApply: applyFix(draft.value, open.issue) !== null });
+    const typed = sheet.querySelector('input[name="question"]');
+    if (kept && typed) {
+      typed.value = kept.value;
+      if (kept.focused) {
+        typed.focus({ preventScroll: true });
+        try {
+          typed.setSelectionRange(kept.at, kept.at);
+        } catch {
+          // A caret that cannot be restored is not worth failing the paint for.
+        }
+      }
+    }
+    sheet.querySelector('.qs-turn:last-child')?.scrollIntoView({ block: 'nearest' });
   };
   const openIssue = (index) => {
     const issue = review.issues[index];
@@ -262,11 +278,14 @@ export function bindWritingFeedback({ ctx, host, review, draft, language, alive,
     if (event.key === 'Escape' && sheet) closeSheet();
   };
   document.addEventListener('keydown', onKey);
+  // The sheet belongs to the screen it was opened on: going anywhere else closes it.
+  window.addEventListener('hashchange', closeSheet);
   return {
     applied: () => new Set(applied),
     close: closeSheet,
     destroy() {
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('hashchange', closeSheet);
       closeSheet();
     },
   };

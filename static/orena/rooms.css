@@ -1365,7 +1365,7 @@
   overflow-x: auto;
   padding-bottom: var(--space-2);
   scroll-snap-type: x mandatory;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 .speak-rail__item {
   display: grid;
@@ -3663,11 +3663,6 @@ ul.pronunciation-words small { color: var(--muted); }
   .home-hero { grid-template-columns: minmax(0, 1fr); }
   .home-greeting h2 { font-size: 27px; }
 }
-/* One rail, one card height: a mixed shelf aligns to the top rather than
-   stretching every card to the tallest cover in it. */
-[data-content-rail='for-you'] .content-rail__track,
-[data-content-rail='saved'] .content-rail__track { align-items: start; }
-
 /* --- Dictation's transport (D-065, recalibration) ------------------------
    A dictation clip is one sentence long, so there is no scrubber anywhere:
    the transport is a single circular play button - 102px at a desk, 66px on a

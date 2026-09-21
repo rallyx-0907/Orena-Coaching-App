@@ -20,6 +20,14 @@ class WritingEvaluatorContractInvalid(ValueError):
     """Raised when a language's Writing evaluator policy is inconsistent."""
 
 
+# How the feedback addresses the person. It is said to them, not about them: a review
+# that calls its reader "the learner" reads like a report on somebody else.
+VOICE_POLICY = (
+    "VOICE: Speak to the learner directly, in the second person, the way a teacher talks to the "
+    "person in front of them (you, in English; bạn in Vietnamese; 你 in Chinese). Never describe "
+    "them in the third person as 'the learner', 'the student', 'học viên' or 'người học'."
+)
+
 SHARED_RESULT_FIELDS = (
     "band_status",
     "cefr_estimate",
@@ -135,6 +143,7 @@ def build_writing_evaluator_request(
                 f"SUPPORT LANGUAGE: {support_language_name}\n",
                 "SUPPORT LANGUAGE POLICY:\n",
                 f"Write explanations, summaries, strengths, priorities and reusable rules in {support_language_name}.\n",
+                VOICE_POLICY + "\n",
                 "Keep learner fragments, corrections and target-language examples in the TARGET LANGUAGE.\n",
             ]
         )
@@ -266,6 +275,7 @@ def build_writing_evaluator_request(
                 "text happens to be written in.\n",
                 "Keep learner fragments, corrections and target-language examples in the TARGET "
                 "LANGUAGE.\n",
+                VOICE_POLICY + "\n",
             ]
         )
     # Keep construction explicit so learner text and authored context are never

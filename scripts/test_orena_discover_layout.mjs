@@ -234,8 +234,10 @@ assert.match(styles, /\.content-rail__track\s*\{[^}]*display:\s*flex;/s);
 assert.match(styles, /\.content-rail__track\s*\{[^}]*overflow-x:\s*auto;/s);
 assert.match(styles, /\.content-rail__track\s*\{[^}]*scroll-snap-type:\s*x\s+mandatory;/s);
 assert.match(styles, /\.content-rail__track\s*\{[^}]*flex-wrap:\s*nowrap;/s);
-assert.match(styles, /\.content-rail__track\s*\{[^}]*touch-action:\s*pan-y;/s,
-  'touch rails leave vertical page movement to the browser');
+// A rail that scrolls sideways has to let a thumb scroll it sideways: `pan-y` alone
+// switched native horizontal touch scrolling off, and a phone could not swipe a rail.
+assert.match(styles, /\.content-rail__track\s*\{[^}]*touch-action:\s*pan-x\s+pan-y;/s,
+  'touch rails scroll sideways under a thumb and leave vertical movement to the page');
 assert.doesNotMatch(styles, /\.content-rail__track\s*\{[^}]*padding[^}]*38px/s,
   'desktop rail controls overlay the rail edge instead of consuming card space');
 assert.match(styles, /\.content-rail__viewport:(?:hover|focus-within)[^}]*\.content-rail__control/s,
@@ -271,8 +273,9 @@ assert.match(styles, /\.content-rail__item\s*\{[^}]*scroll-snap-align:\s*start;/
 assert.match(styles, /@media\s*\(max-width:\s*600px\)[\s\S]*?--rail-columns:\s*1;/s,
   'a phone shows one whole card and the same deliberate peek of the next');
 assert.match(styles, /\.discover-listening-card__visual\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9;/s);
-// D-059 rule 37: covers are 2:3.
-assert.match(styles, /\.discover-reading-card__visual\s*\{[^}]*aspect-ratio:\s*2\s*\/\s*3;/s);
+// D-066: a card on Home is the baseline's wide ContentCard whatever it carries, so a rail
+// that mixes reading and listening has one height. Portrait covers belong to the Library.
+assert.match(styles, /\.discover-reading-card__visual\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9;/s);
 assert.doesNotMatch(styles, /\.content-rail[^}]*background:\s*#(?:[0-9a-f]{3}|[0-9a-f]{6})/i,
   'rails and cards use semantic Orena tokens, not a new palette');
 /* The skin is the material a level is cut from. Declaring the property on the

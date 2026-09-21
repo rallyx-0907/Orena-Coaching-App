@@ -381,3 +381,17 @@ def test_app_uses_shared_builders_once_and_preserves_normalizer_and_capability(
         "_ai_model",
     }
     assert result["_ai_provider"] == "test-provider"
+
+
+def test_the_review_is_addressed_to_the_person_not_written_about_them() -> None:
+    """Feedback that calls its reader "the learner" reads like a report on someone else."""
+    request = build_writing_evaluator_request(
+        language_name="English",
+        support_language_name="Vietnamese",
+        target_level=None,
+        task_prompt="A note",
+        learner_text="I go to shop.",
+        free_writing_context="",
+    )
+    assert request.count("second person") == 2, "said once with the policy and again at the end, where it wins"
+    assert "bạn" in request and "'the learner'" in request

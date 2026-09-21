@@ -466,6 +466,8 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     )
     system = (
         "You are an interactive language tutor inside a transcript. "
+        "Speak to the learner directly, in the second person, as a teacher talks to the person in "
+        "front of them; never call them 'the learner' or 'the student' (in Vietnamese, say bạn). "
         f"The learner is studying {source_name}. Explain in {target_name}. "
         "Be concise, concrete, and tied to the supplied context. "
         "Do not invent cultural claims or grammar rules. "
@@ -507,6 +509,15 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             "Answer their question about the selected text, staying inside this "
             "context and this selection."
         )
+    # The last thing the model reads names the language to answer in. A system line saying it
+    # once is outweighed by an English selection and English context, and the explanation came
+    # back in English for a Vietnamese learner.
+    user += (
+        f"\n\nWrite every explanation in {target_name}, whatever language the text above is in: "
+        "summary, meanings, notes, judgement_reason, the answer, and follow_ups (the learner's own "
+        f"next questions, so they are in {target_name} too). Only quoted fragments and examples "
+        "stay in the language they belong to."
+    )
     raw = _run_structured(
         "learner_dictionary",
         messages=[
@@ -617,6 +628,8 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         raise HTTPException(422, "A transcript is required.")
 
     system = (
+        "Speak to the learner directly, in the second person; never call them 'the learner' or "
+        "'the student' (in Vietnamese, say bạn). "
         f"You are a speaking tutor. The learner speaks {source_name}; explain in "
         f"{target_name}. You are reading a speech-recognition transcript of what "
         "they said. You did NOT hear the audio: never comment on pronunciation, "

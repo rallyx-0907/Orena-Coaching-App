@@ -520,7 +520,7 @@
   scroll-snap-type: x mandatory;
   scroll-padding-inline: 2px;
   scrollbar-width: none;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 .content-rail__track.is-dragging { cursor: grabbing; user-select: none; scroll-snap-type: none; }
 .content-rail__track::-webkit-scrollbar { display: none; }
@@ -632,10 +632,25 @@
   color: var(--on-artwork);
 }
 
-/* Reading: book-sized 2:3 covers, the title and one line under each. */
-.discover-reading-card { gap: 8px; }
-.discover-reading-card__visual { aspect-ratio: 2 / 3; border: 1px solid var(--border-subtle); border-radius: 12px; }
-.discover-reading-card .discover-content-card__body strong { font-size: 12.5px; }
+/* Reading on Home: the same wide 16:9 card as Listening (the baseline's ContentCard), so a rail
+   that mixes both has one height. Portrait covers belong to the Library grid. */
+/* It is built exactly like the listening card - a surface, the artwork, the title and one
+   line under it - so the two are interchangeable on one shelf. */
+.discover-reading-card {
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.discover-reading-card__visual { aspect-ratio: 16 / 9; }
+.discover-reading-card .discover-content-card__body { padding: 10px 12px; }
+.discover-reading-card .discover-content-card__body strong { font-size: 13.5px; }
+/* One height on a shelf: every card fills its row, and a title takes two lines' room
+   whether it needs them or not, so a short title does not make a short card. */
+.content-rail__track { align-items: stretch; }
+.content-rail__item { display: flex; }
+.content-rail__item > .discover-content-card { flex: 1 1 auto; min-width: 0; grid-template-rows: auto 1fr; }
+.discover-content-card__body strong { min-height: calc(2 * 1.3em); }
 .content-rail--stories { --rail-gap: 12px; }
 .content-rail--stories .content-rail__item { flex: 0 0 104px; }
 

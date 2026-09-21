@@ -131,6 +131,7 @@ export function mountLexicalLayer({
   let panelTarget = null;
   let selectionTimer = 0;
   let pointerDown = false;
+  let lastThread = '';
   const coarse = window.matchMedia?.('(pointer: coarse)')?.matches;
 
   const readSelection = () => {
@@ -161,6 +162,7 @@ export function mountLexicalLayer({
     scrim = null;
     panelTarget = null;
     sheet = null;
+    lastThread = '';
     if (notify) onPanel(false);
   };
   /* A popover hangs off its word; on a phone CSS makes the same element the
@@ -209,7 +211,31 @@ export function mountLexicalLayer({
     const host = dockNode();
     const docked = Boolean(host);
     panel.className = `qs qs--${state.kind} qs--${state.view}${docked ? ' qs--docked' : ''}`;
+    /* The sheet repaints whenever an answer arrives, which is seconds after the
+       learner has started typing the next question. What they typed, and where
+       the caret was, survive the repaint. */
+    const typing = panel.querySelector('input[name="question"]');
+    const draft = typing
+      ? { value: typing.value, focused: document.activeElement === typing, at: typing.selectionStart }
+      : null;
     panel.innerHTML = html;
+    const typed = panel.querySelector('input[name="question"]');
+    if (draft && typed) {
+      typed.value = draft.value;
+      if (draft.focused) {
+        typed.focus({ preventScroll: true });
+        try {
+          typed.setSelectionRange(draft.at, draft.at);
+        } catch {
+          // A caret that cannot be restored is not worth failing the paint for.
+        }
+      }
+    }
+    /* A new answer arrives above the composer and may be below the fold in a
+       tall panel; when the thread changed, bring the newest turn into view. */
+    const threadKey = (state.thread || []).map((turn) => `${turn.id}:${turn.state}`).join(',');
+    if (threadKey && threadKey !== lastThread) panel.querySelector('.qs-turn:last-child')?.scrollIntoView({ block: 'nearest' });
+    lastThread = threadKey;
     if (docked) {
       panel.removeAttribute('style');
       if (panel.parentElement !== host) host.replaceChildren(panel);
@@ -378,6 +404,9 @@ export function mountLexicalLayer({
   document.addEventListener('pointerup', onPointerUp, true);
   document.addEventListener('keydown', onKeyDown);
   window.addEventListener('scroll', onPageScroll, { passive: true });
+  // The sheet belongs to the screen it was opened on: going anywhere else closes it.
+  const onRouteChange = () => closePanel();
+  window.addEventListener('hashchange', onRouteChange);
 
   return {
     /* The support-language layer a room can turn on over its own text. It is
@@ -424,6 +453,7 @@ export function mountLexicalLayer({
       document.removeEventListener('pointerup', onPointerUp, true);
       document.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('scroll', onPageScroll);
+      window.removeEventListener('hashchange', onRouteChange);
       closePanel();
     },
   };
