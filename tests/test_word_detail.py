@@ -67,6 +67,7 @@ EXPLANATION = {
     "examples": [{"text": "Hun slukket lyset.", "note": ""}, {"text": "Brannen ble slukket.", "note": ""}],
     "counter_examples": [],
     "follow_ups": ["Why not slokket?"],
+    "context_meaning": "went dark",
     "core_idea": "To make a light or a flame stop.",
     "mental_model": "A hand closing over a candle.",
     "common_mistake": "Reading it as the main verb.",
@@ -100,7 +101,7 @@ def test_word_detail_matches_the_canonical_contract() -> None:
     assert detail["script"] == "latin"
     assert detail["ipa"] == "/ˈslʊkət/" and detail["pinyin"] is None
     assert detail["partOfSpeech"] == "verb"
-    assert detail["contextMeaning"] == EXPLANATION["summary"]
+    assert detail["contextMeaning"] == "went dark", "the short gloss, not the longer summary"
     assert detail["meaningSource"] == "context"
     assert detail["usageVerdict"] == "natural"
     deeper = detail["deeper"]
@@ -204,6 +205,11 @@ def test_endpoint_returns_the_contract_and_marks_a_saved_word(monkeypatch) -> No
     assert_covers(contract("WordDetail"), body)
     assert body["saved"] is True
     assert body["usageVerdict"] == "natural"
+    assert body["answer"] == "", "no question was asked"
+
+    assert body["followUps"] == ["Why not slokket?"]
+    asked = word_detail.word_detail(_request(question="Why not slokket?"))
+    assert asked["answer"] == EXPLANATION["summary"]
 
 
 def test_endpoint_survives_the_provider_being_down(monkeypatch) -> None:
@@ -251,5 +257,6 @@ def test_sentence_endpoint_drops_a_structure_that_does_not_match_the_sentence(mo
     )
 
     assert body["available"] is True and body["claim"] == "sentence_sheet"
+    assert body["answer"] == ""
     assert body["structure"] == []
     assert next(item for item in body["vocabulary"] if item["term"] == "forsvant")["saved"] is True

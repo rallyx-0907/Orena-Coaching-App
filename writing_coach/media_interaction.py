@@ -349,6 +349,7 @@ def _explanation_schema() -> dict[str, Any]:
                 "maxItems": 4,
                 "items": {"type": "string"},
             },
+            "context_meaning": {"type": "string"},
             "core_idea": {"type": "string"},
             "mental_model": {"type": "string"},
             "common_mistake": {"type": "string"},
@@ -386,6 +387,7 @@ def _explanation_schema() -> dict[str, Any]:
             "examples",
             "counter_examples",
             "follow_ups",
+            "context_meaning",
             "core_idea",
             "mental_model",
             "common_mistake",
@@ -432,7 +434,9 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         "would plausibly produce or misread, each labelled with its own "
         "judgement. Counter-examples must be realistic mistakes, not absurd ones. "
         "Offer follow_ups the learner might ask next, phrased as their question. "
-        "Also give: core_idea, one plain sentence on what the selection means in "
+        "Also give: context_meaning, a short gloss - one clause, no more - of what the "
+        "selection means in this sentence, as a dictionary would give it for this use; "
+        "core_idea, one plain sentence on what the selection means in "
         "general; mental_model, a short image or analogy that makes the meaning "
         "stick; common_mistake, the misunderstanding learners most often have, "
         "or an empty string if there is no real one; contrast, near-equivalents a "
@@ -500,6 +504,7 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             for item in raw.get("follow_ups", [])
             if str(item).strip()
         ][:4],
+        "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
         "core_idea": str(raw.get("core_idea") or "").strip()[:600],
         "mental_model": str(raw.get("mental_model") or "").strip()[:800],
         "common_mistake": str(raw.get("common_mistake") or "").strip()[:800],

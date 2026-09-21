@@ -1,8 +1,8 @@
 /* One way to ask about language on screen, wherever it is on screen.
 
-   Reading built this: tap a word and it is looked up, select a phrase and it
-   can be translated, explained, asked how it works, kept, or spoken. Listening
-   needs exactly the same thing over a transcript line, and the one way to be
+   Reading built this: tap a word or select a sentence and the Quick Sheet
+   (ui/quick-sheet.js, D-066) opens on it. Listening needs exactly the same
+   thing over a transcript line, and the one way to be
    sure a learner meets the same behaviour in both rooms - and that the two do
    not drift apart the first time either is touched - is for there to be one
    implementation. So the layer lives here and both rooms mount it.
@@ -12,21 +12,14 @@
    difference is the `units` adapter, and it is the whole difference.
 
    Nothing here runs on its own. A lookup, a translation, a tokenisation and an
-   explanation each happen because the learner asked for one. Explain is the
-   only path to a provider, exactly as it was in the reader. */
-import { esc, focusRegion } from './html.js';
-import { openUnderstanding } from './understanding.js';
-import { progressReporter, savedLanguageLink } from './patterns.js';
+   explanation each happen because the learner asked for one. */
+import { focusRegion } from './html.js';
+import { createQuickSheet } from './quick-sheet.js';
 import {
   EXPLAIN_LIMITS,
   LOOKUP_LIMITS,
   TRANSLATE_LIMITS,
-  explainBounds,
-  keepPayload,
-  lookupPanelHtml,
-  selectionActions,
   selectionKind,
-  selectionToolbarHtml,
   sentenceAround,
 } from './reading-room.js';
 
@@ -104,7 +97,7 @@ function selectRange(unit, start, end) {
   return true;
 }
 
-/* `surface` hosts the toolbar and the panel and must be positioned. `units`
+/* `surface` hosts the sheet and must be positioned. `units`
    answers two questions about wherever the learner touched: which element is
    the smallest containing unit of text, and what that unit's text says. */
 export function mountLexicalLayer({
@@ -126,16 +119,15 @@ export function mountLexicalLayer({
   const support = ctx.support;
   const translatable = Boolean(support) && support !== language;
   const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
-  const answers = new Map();
   const tokenised = new Map();
   const savedTerms = new Set(
     Object.keys(memory?.value?.keptLanguage || {}).map((term) => term.toLocaleLowerCase()),
   );
   const alreadyKept = (text) => savedTerms.has(String(text).trim().toLocaleLowerCase());
 
-  let active = null;
-  let toolbar = null;
+  let sheet = null;
   let panel = null;
+  let scrim = null;
   let panelTarget = null;
   let selectionTimer = 0;
   let pointerDown = false;
@@ -160,164 +152,82 @@ export function mountLexicalLayer({
     return { text, kind, context, rect: range.getBoundingClientRect() };
   };
 
-  const hideToolbar = () => {
-    toolbar?.remove();
-    toolbar = null;
-  };
   const dockNode = () => (typeof dock === 'function' ? dock() : dock) || null;
-  const closePanel = () => {
+  // Replacing one sheet with the next is not closing: the host is told only when the layer ends.
+  const closePanel = (notify = true) => {
     panel?.remove();
+    scrim?.remove();
     panel = null;
+    scrim = null;
     panelTarget = null;
-    onPanel(false);
+    sheet = null;
+    if (notify) onPanel(false);
   };
+  /* A popover hangs off its word; on a phone CSS makes the same element the
+     bottom sheet, so nothing is positioned there. */
   const anchorBelow = (element, rect) => {
     if (narrow()) return element.removeAttribute('style');
     const gap = 10;
     const width = element.offsetWidth;
     const height = element.offsetHeight;
     const room = document.documentElement.clientWidth;
-    const above = rect.top - gap - height;
-    const top = above > gap ? above : Math.min(window.innerHeight - height - gap, rect.bottom + gap);
+    // Below the word, as the baseline draws it; above only when there is no room below.
+    const below = rect.bottom + gap;
+    const fits = below + height <= window.innerHeight - gap;
+    const top = fits ? below : Math.max(gap, rect.top - gap - height);
+    element.dataset.placement = fits ? 'below' : 'above';
     const left = Math.min(Math.max(gap, rect.left + rect.width / 2 - width / 2), room - width - gap);
     element.style.top = `${Math.round(top)}px`;
     element.style.left = `${Math.round(left)}px`;
   };
 
-  const showToolbar = (target) => {
-    const actions = selectionActions(target.kind, { canSpeak }).filter(
-      (action) => translatable || action !== 'translate',
-    );
-    if (!actions.length) return hideToolbar();
-    active = target;
-    if (!toolbar) {
-      toolbar = document.createElement('div');
-      toolbar.className = 'reader-selection';
-      surface.append(toolbar);
-      // Pressing a tool must not take the selection away with the mouse press.
-      toolbar.addEventListener('mousedown', (event) => event.preventDefault());
-      toolbar.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-selection-action]');
-        if (button) runAction(button.dataset.selectionAction);
-      });
-    }
-    toolbar.innerHTML = selectionToolbarHtml(c, actions);
-    anchorBelow(toolbar, target.rect);
-  };
-
-  const renderPanel = (target, state, result = {}) => {
+  const paintSheet = (html, state) => {
+    const first = !panel?.isConnected;
     if (!panel) {
       panel = document.createElement('div');
-      panel.className = 'reader-panel';
       panel.setAttribute('role', 'dialog');
       panel.setAttribute('aria-modal', 'false');
-      panel.setAttribute('aria-label', target.text);
+      panel.setAttribute('aria-label', panelTarget.text);
       panel.tabIndex = -1;
+      // Pressing a control must not take the selection away with the mouse press.
       panel.addEventListener('mousedown', (event) => {
         if (event.target.closest('button')) event.preventDefault();
       });
       panel.addEventListener('click', (event) => {
-        if (event.target.closest('[data-panel-close]')) return closePanel();
-        const button = event.target.closest('[data-panel-action]');
-        if (button) runAction(button.dataset.panelAction);
+        const control = event.target.closest('[data-qs]');
+        if (control && sheet) sheet.act(control.dataset.qs, control.dataset);
+      });
+      panel.addEventListener('submit', (event) => {
+        const form = event.target.closest('[data-qs-form]');
+        if (!form || !sheet) return;
+        event.preventDefault();
+        const question = form.elements.question?.value || '';
+        form.reset();
+        sheet.ask(question);
       });
     }
     const host = dockNode();
-    if (host) {
-      panel.classList.add('reader-panel--docked');
+    const docked = Boolean(host);
+    panel.className = `qs qs--${state.kind} qs--${state.view}${docked ? ' qs--docked' : ''}`;
+    panel.innerHTML = html;
+    if (docked) {
       panel.removeAttribute('style');
       if (panel.parentElement !== host) host.replaceChildren(panel);
     } else {
-      panel.classList.remove('reader-panel--docked');
+      if (narrow() && !scrim) {
+        scrim = document.createElement('div');
+        scrim.className = 'qs-scrim';
+        scrim.addEventListener('click', closePanel);
+        surface.append(scrim);
+      }
       if (panel.parentElement !== surface) surface.append(panel);
+      anchorBelow(panel, panelTarget.rect);
     }
-    panelTarget = target;
-    const closeLabel = document.documentElement.dataset.close || 'Close';
-    panel.innerHTML = `<button type="button" class="reader-panel__close" data-panel-close aria-label="${esc(closeLabel)}">×</button>${lookupPanelHtml(c, { selection: target.text, language, support, kind: target.kind, state, result, canSpeak, kept: alreadyKept(target.text) })}`;
-    if (!translatable) panel.querySelector('[data-panel-action="retry"]')?.remove();
-    if (!dockNode()) anchorBelow(panel, target.rect);
-    onPanel(true);
+    if (first) {
+      focusRegion(panel);
+      onPanel(true);
+    }
   };
-
-  // A word is looked up; a phrase or passage is translated. Never AI.
-  async function answer(target) {
-    const key = `${target.kind}:${target.text}`;
-    if (answers.has(key)) return answers.get(key);
-    let found = { state: 'failed', result: {} };
-    try {
-      if (target.kind === 'word') {
-        const value = await api.readingLookup({
-          text: target.text,
-          context: target.context,
-          source_language: language,
-          target_language: support,
-        });
-        found = { state: value?.available ? 'ready' : 'unavailable', result: value || {} };
-      } else {
-        const value = await api.readingTranslate({
-          source_language: language,
-          target_language: support,
-          segments: [{ segment_id: 's0', text: target.text.slice(0, TRANSLATE_LIMITS.text) }],
-        });
-        const translation =
-          value?.status === 'ready' ? value.translations?.[0]?.translated_meaning || '' : '';
-        found = translation
-          ? { state: 'ready', result: { translation } }
-          : { state: 'unavailable', result: {} };
-      }
-      answers.set(key, found);
-    } catch {
-      found = { state: 'failed', result: {} };
-    }
-    return found;
-  }
-
-  async function showAnswer(target) {
-    hideToolbar();
-    renderPanel(target, 'loading');
-    focusRegion(panel);
-    const found = await answer(target);
-    if (!alive() || panelTarget !== target) return found;
-    renderPanel(target, found.state, found.result);
-    return found;
-  }
-
-  async function keep(target) {
-    const found = translatable ? await showAnswer(target) : { result: {} };
-    if (!panel) renderPanel(target, 'ready', found.result);
-    const button = panel.querySelector('[data-panel-action="save"]');
-    const report = progressReporter(panel.querySelector('[data-panel-status]'), ctx, alive);
-    if (button) button.disabled = true;
-    report.saving();
-    try {
-      await ctx.mutate(() =>
-        api.saveLibraryVocabulary(
-          keepPayload({ selection: target.text, result: found.result, context: target.context, title }),
-        ),
-      );
-      if (origin?.why)
-        memory.rememberLanguage({
-          term: target.text,
-          origin: origin.id || '',
-          where: origin.where || title,
-          why: origin.why,
-          context: target.context,
-        });
-      savedTerms.add(String(target.text).trim().toLocaleLowerCase());
-      const control = panel?.querySelector('[data-panel-action="save"]');
-      if (control && alive()) {
-        const state = document.createElement('span');
-        state.className = 'reader-panel__kept';
-        state.dataset.panelKept = '';
-        state.textContent = c.selectionSaved;
-        control.replaceWith(state);
-      }
-      report.saved(savedLanguageLink(c));
-    } catch {
-      report.failed(c.failedSave, () => keep(target));
-      if (button && alive()) button.disabled = false;
-    }
-  }
 
   /* The device's own speech, for the selected language rather than for the
      interface. This is lexical pronunciation: hearing this word said, which is
@@ -330,44 +240,38 @@ export function mountLexicalLayer({
     window.speechSynthesis.speak(utterance);
   }
 
-  function runAction(action) {
-    const target = panelTarget || active;
-    if (!target) return;
-    switch (action) {
-      case 'translate':
-      case 'retry':
-        answers.delete(`${target.kind}:${target.text}`);
-        showAnswer(target);
-        break;
-      case 'explain':
-      case 'pattern': {
-        /* Both go to the one explanation surface. "How this works" is the same
-           request carrying the pattern question, which is what the Understanding
-           Engine already accepts - not a grammar module of its own, and not a
-           second way to reach AI. */
-        const whole = target.kind === 'passage' ? explainBounds(target.text) : null;
-        hideToolbar();
+  /* One sheet per selection. A word opens the word sheet, and a phrase or a
+     passage opens the sentence sheet: the same layer, never a second surface. */
+  function openSheet(target) {
+    if (panel && panelTarget && panelTarget.text === target.text) return;
+    if (panel) closePanel(false);
+    panelTarget = target;
+    sheet = createQuickSheet({
+      ctx,
+      target,
+      title,
+      alive,
+      paint: paintSheet,
+      close: () => {
         closePanel();
-        openUnderstanding(ctx, {
-          selection: whole ? whole.selection : target.text,
-          context: target.context.includes(whole ? whole.selection : target.text)
-            ? target.context
-            : whole?.context || target.text,
-          title,
-          origin,
-          question: action === 'pattern' ? c.askPattern || '' : '',
-        });
-        break;
-      }
-      case 'save':
-        keep(target);
-        break;
-      case 'pronounce':
-        speak(target.text);
-        break;
-      default:
-        break;
-    }
+        units.root()?.focus?.({ preventScroll: true });
+      },
+      speak,
+      statusEl: () => panel?.querySelector('[data-panel-status]'),
+      remember: (term, context) => {
+        savedTerms.add(String(term).trim().toLocaleLowerCase());
+        if (origin?.why)
+          memory.rememberLanguage({
+            term,
+            origin: origin.id || '',
+            where: origin.where || title,
+            why: origin.why,
+            context,
+          });
+      },
+    });
+    sheet.state.kept = alreadyKept(target.text);
+    sheet.load();
   }
 
   /* Tapping a word.
@@ -410,9 +314,13 @@ export function mountLexicalLayer({
   }
 
   async function tapWord(event) {
-    if (event.target.closest('button, a, [data-panel-close]')) return;
     const root = units.root();
     const unit = units.unitOf(event.target);
+    /* A real control keeps its tap. A transcript row is one - a button that
+       seeks - and the words inside it are what the learner meant, so a control
+       that holds the unit does not count. */
+    const control = event.target.closest('button, a, [data-qs]');
+    if (control && !(unit && control.contains(unit))) return;
     if (!root || !unit || !root.contains(unit)) return;
     const selection = window.getSelection?.();
     // A learner who dragged a selection meant that selection, not this tap.
@@ -427,45 +335,29 @@ export function mountLexicalLayer({
       tokens?.find((token) => offset >= token.start && offset < token.end) ||
       plainWordAt(text, offset);
     if (!span || !selectRange(unit, span.start, span.end)) return;
-    evaluateSelection({ tapped: true });
+    evaluateSelection();
   }
 
-  /* A tapped word answers itself. The approved reader shows the word panel -
-     reading, meaning, Save - the moment a word is touched, so the lookup runs
-     straight away. It is the dictionary, never AI: "explain" stays an explicit
-     action inside the panel. A dragged phrase or passage still offers the
-     toolbar first, because there the learner may have meant any of its tools. */
-  const evaluateSelection = ({ tapped = false } = {}) => {
+  /* Touching a word, or selecting a phrase or a sentence, opens the sheet on it
+     (D-066: one layer, in place, never a page change). Nothing is asked of a
+     provider until the learner asks: the first answer is the dictionary's. */
+  const evaluateSelection = () => {
     if (!alive()) return;
     const target = readSelection();
-    if (!target) return void (!panel && hideToolbar());
-    if (tapped && target.kind === 'word') {
-      hideToolbar();
-      active = target;
-      showAnswer(target);
-      return;
-    }
-    /* The selection a panel is already answering never re-opens the toolbar:
-       selecting the word is how the tap reaches the dictionary, so the delayed
-       selection pass that follows it must not talk over the answer. */
-    if (panel && panelTarget && panelTarget.text === target.text) return;
-    showToolbar(target);
+    if (!target) return;
+    openSheet(target);
   };
   const onSelectionChange = () => {
     clearTimeout(selectionTimer);
     const selection = window.getSelection?.();
-    if (!selection || selection.isCollapsed) {
-      if (!panel) hideToolbar();
-      return;
-    }
+    if (!selection || selection.isCollapsed) return;
     // A mouse drag is finished on pointerup; touch and keyboard settle here.
     if (coarse || !pointerDown) selectionTimer = setTimeout(evaluateSelection, coarse ? 450 : 200);
   };
   const onPointerDown = (event) => {
-    if (toolbar?.contains(event.target) || panel?.contains(event.target)) return;
+    if (panel?.contains(event.target) || scrim?.contains(event.target)) return;
     pointerDown = true;
     if (panel) closePanel();
-    hideToolbar();
   };
   const onPointerUp = () => {
     if (!pointerDown) return;
@@ -473,15 +365,12 @@ export function mountLexicalLayer({
     setTimeout(evaluateSelection, 10);
   };
   const onKeyDown = (event) => {
-    if (event.key !== 'Escape') return;
-    if (panel) {
-      closePanel();
-      units.root()?.focus?.({ preventScroll: true });
-    } else if (toolbar) hideToolbar();
+    if (event.key !== 'Escape' || !panel) return;
+    closePanel();
+    units.root()?.focus?.({ preventScroll: true });
   };
   const onPageScroll = () => {
-    if (toolbar && active) hideToolbar();
-    if (panel && !narrow()) closePanel();
+    if (panel && !narrow() && !dockNode()) closePanel();
   };
 
   document.addEventListener('selectionchange', onSelectionChange);
@@ -521,7 +410,6 @@ export function mountLexicalLayer({
     tapWord,
     evaluateSelection,
     closePanel,
-    hideToolbar,
     /* A room that repaints its own text drops whatever it had tokenised for
        the units it just replaced, rather than answering a tap from a cache
        about text that is no longer there. */
@@ -536,7 +424,6 @@ export function mountLexicalLayer({
       document.removeEventListener('pointerup', onPointerUp, true);
       document.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('scroll', onPageScroll);
-      hideToolbar();
       closePanel();
     },
   };

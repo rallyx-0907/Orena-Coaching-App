@@ -101,7 +101,9 @@ def project_word_detail(
         dictionary_meaning = _text(meanings[0].get("text"))
     elif found.get("definitions"):
         dictionary_meaning = _text(found["definitions"][0].get("definition"))
-    contextual = _text(said.get("summary"))
+    # The short gloss is the meaning in this sentence; the summary is the longer
+    # explanation and only stands in when the gloss is absent.
+    contextual = _text(said.get("context_meaning")) or _text(said.get("summary"))
     if contextual:
         meaning, source = contextual, "context"
     elif dictionary_meaning:
@@ -271,6 +273,11 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     available = detail["meaningSource"] != "none"
     return {
         **detail,
+        # A follow-up is this same call carrying the learner's question; the
+        # explanation's summary is then the answer to it, not the word's meaning.
+        "answer": _text(explanation.get("summary")) if payload.question.strip() and explanation else "",
+        # The questions the baseline offers first, phrased for this word.
+        "followUps": [_text(item) for item in (explanation or {}).get("follow_ups") or () if _text(item)],
         "available": available,
         "claim": "word_detail" if available else "word_detail_unavailable",
     }
@@ -294,6 +301,7 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
         }
     return {
         **project_sentence_sheet(sentence=sentence, explanation=explanation, saved_terms=_saved()),
+        "answer": _text(explanation.get("summary")) if payload.question.strip() else "",
         "available": True,
         "claim": "sentence_sheet",
     }

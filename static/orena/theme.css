@@ -136,6 +136,31 @@
   --status-error: var(--o-bad);
   --status-info: var(--o-info);
 
+  /* Ink on glass - the alphas the baseline sets text at. */
+  --text-on-glass: rgba(255, 255, 255, 0.88);
+  --text-on-glass-soft: rgba(255, 255, 255, 0.74);
+  --text-on-glass-dim: rgba(255, 255, 255, 0.68);
+  --glass-sheet: linear-gradient(180deg, rgba(120, 92, 200, 0.4), rgba(72, 56, 126, 0.34));
+
+  /* Usage verdicts that have no status colour of their own: still ink. */
+  --status-caution: #f0a35e;
+  --status-rare: #c9a8ff;
+  --status-impossible: #f26d6d;
+
+  /* Sentence roles: a fill, a ring and the ink that sits on it. */
+  --role-adverbial-fill: rgba(143, 192, 245, 0.18);
+  --role-adverbial-ring: inset 0 0 0 1px rgba(143, 192, 245, 0.4);
+  --role-adverbial-ink: #cfe4fa;
+  --role-verb-fill: rgba(155, 103, 255, 0.22);
+  --role-verb-ring: inset 0 0 0 1px rgba(197, 164, 255, 0.45);
+  --role-verb-ink: #e2d3ff;
+  --role-subject-fill: rgba(158, 230, 180, 0.16);
+  --role-subject-ring: inset 0 0 0 1px rgba(158, 230, 180, 0.38);
+  --role-subject-ink: #cff0dc;
+  --role-complement-fill: rgba(243, 201, 105, 0.18);
+  --role-complement-ring: inset 0 0 0 1px rgba(243, 201, 105, 0.4);
+  --role-complement-ink: #f7e3b0;
+
   /* Domain - the baseline's skill hues, one weight each. */
   --domain-reading: oklch(0.78 0.12 295);
   --domain-listening: oklch(0.78 0.12 235);

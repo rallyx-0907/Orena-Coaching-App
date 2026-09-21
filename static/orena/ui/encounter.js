@@ -506,14 +506,24 @@ export async function renderEncounter(root, ctx) {
      is repeating is the word they are most likely to ask about. */
   const lineOf = (unit) =>
     unit?.dataset?.practiceSegment || segmentIdOf(unit) || '';
+  let heldByTheSheet = false;
   const lexical = mountLexicalLayer({
     surface: root,
     ctx,
     title: item.title,
     origin: { id, where: item.title, why: 'from_listening' },
     alive: isAlive,
+    /* Asking about a word stops the voice where it is, and closing the sheet
+       carries on from there (the baseline's Quick Sheet, D-066). */
+    onPanel: (open) => {
+      if (open) heldByTheSheet = holdTheVoice() || heldByTheSheet;
+      else if (heldByTheSheet) {
+        heldByTheSheet = false;
+        togglePlayback(playerRoot, payload.playback);
+      }
+    },
     units: {
-      root: () => root.querySelector('.media-encounter'),
+      root: () => root.querySelector('.listen-workspace'),
       unitOf: (node) => node?.closest?.('.line-original, [data-practice-line]') || null,
       textOf: (unit) =>
         model.segments.find((segment) => segment.segment_id === lineOf(unit))?.original_text ||
@@ -742,7 +752,7 @@ export async function renderEncounter(root, ctx) {
     const box = transcript.getBoundingClientRect();
     if (box.top >= 0 && box.bottom <= window.innerHeight + 1) return;
     focusWork();
-    root.querySelector('.media-encounter').scrollIntoView({
+    root.querySelector('.listen-workspace').scrollIntoView({
       block: 'start',
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 'auto'

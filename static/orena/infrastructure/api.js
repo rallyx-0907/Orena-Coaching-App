@@ -103,6 +103,18 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
+  /* The Quick Sheet's two contracts (D-066): a word in its sentence, and a whole
+     sentence. The lookup below stays the deterministic first answer. */
+  wordDetail:(payload)=>request('/api/dictionary/word-detail',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload||{}),
+  }),
+  sentenceSheet:(payload)=>request('/api/dictionary/sentence-sheet',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload||{}),
+  }),
   readingLookup:(payload)=>request('/api/reading/lookup',{
     method:'POST',
     headers:JSON_HEADERS,
