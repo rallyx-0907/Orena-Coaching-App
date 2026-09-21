@@ -459,3 +459,16 @@ them - decisions for the human, not guesses:
 
 "Ink + Paper": the Paper theme was retired by D-066; there is one theme, so the check is desktop and phone
 in one theme.
+
+## Bugs 14-15 and the design sync (2026-09-22)
+
+| # | Result | Where |
+| --- | --- | --- |
+| 14 | PASS: a word typed with an extra letter ("breack") is still wrong and the hint never shows it whole - the place where it parts from the target stays masked; the old test that expected the word revealed is re-expressed | `capabilities/dictation-hints.js`, `scripts/test_orena_dictation_hints.mjs` |
+| 15 | PASS: on a desk the task is one screen (check button at 979/1080, 720/768, 686/720; with or without a result); the picture takes what the height allows, the line scrolls in its own pane | `dictation.css`, `scripts/test_orena_dictation_screen.mjs` |
+
+Design sync: tokens and the contracts checked are unchanged; the rules documents were read for the first time and
+are recorded in `docs/design/canonical-ui/SYNC_2026-09-22.md`. From them: the Writing review is a Draft / Review tab
+pair on a phone and the revision is three columns with a banner - both built now. Still to build from the templates:
+the Writing entry, Home (top bar with search, level and streak, the Continue strip, section rails at 300x170 / 232x132),
+Reading (library, book detail, workspace) - each read from the source when it is worked on.

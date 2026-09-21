@@ -139,6 +139,7 @@
   --ink-80: rgba(255, 255, 255, 0.8);
   --ink-85: rgba(255, 255, 255, 0.85);
   --ink-90: rgba(255, 255, 255, 0.9);
+  --ink-on-light: #171423;
   --chip-soft: rgba(196, 178, 255, 0.13);
   --chip-tag: rgba(196, 178, 255, 0.16);
   --chip-tag-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.2);

@@ -63,9 +63,10 @@ measured against `Orena Quick Sheet.dc.html` and matches; the Writing-feedback c
 checked. Bugs 7-13 are fixed (lookup race, a real tutor for follow-ups, Dictation steps and one-screen
 phone, a line tap plays, a menu icon); DC-5 is stored (migration `20260921_0010`, applied to the sandbox
 database, reviewed: D-069). The Writing workspace and the review's two panes are built to their frames (top bar, 920px prompt card and
-24px serif document; panes 994:820, each scrolling on its own). Still not the frame: the review pane's
-content (chips per finding, the top bar's "Lưu nhận xét" / "Sửa lại" pair), the revision compare, the error
-sheet and the entry. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
+24px serif document; panes 994:820, each scrolling on its own). The review on a phone is the Draft / Review tab pair; the revision compare takes the whole room in three columns
+(version 1, version 2, the changes) with the banner and its counts. Still not the frame: the draft's inline
+highlights of each fragment (the contract carries no positions), the changes column holding the dimensions, the
+top bar's "Lưu nhận xét" / "Sửa lại" / "Xong bài này" buttons, the error sheet and the entry. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
 workspace, Writing entry; the old top bar and the Practice hub go with them.
 
 ## PENDING

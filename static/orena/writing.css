@@ -265,6 +265,110 @@
   padding: 0;
 }
 
+/* --- Draft / Review: one pane at a time, chosen by a tab pair (the frame's phone review) ------------ */
+.wr-tabs {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .writing-workspace:not([data-review='waiting']) .wr-tabs {
+    display: flex;
+    gap: 7px;
+    margin: 14px 0 0;
+  }
+  .wr-tab {
+    flex: 1;
+    block-size: 40px;
+    min-block-size: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 13px;
+    background: var(--chip-quiet);
+    color: var(--ink-78);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .writing-workspace[data-workspace='activity'] [data-wr-tab='activity'],
+  .writing-workspace[data-workspace='result'] [data-wr-tab='result'] {
+    background: var(--accent-solid-light);
+    color: var(--ink-on-light);
+    font-weight: 800;
+  }
+  #main > .writing-workspace:not([data-review='waiting']) {
+    display: block;
+    block-size: auto;
+    padding: 0 20px 110px;
+  }
+  .writing-workspace:not([data-review='waiting']) :is(.workspace-activity, .workspace-result) {
+    block-size: auto;
+    overflow: visible;
+  }
+  .writing-workspace .workspace-result__bar {
+    display: none;
+  }
+}
+
+/* --- The revision: version 1, version 2 and the changes across the whole room ------------------------ */
+@media (min-width: 1001px) {
+  #main > .writing-workspace[data-compare='on'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .writing-workspace[data-compare='on'] .workspace-activity {
+    display: none;
+  }
+  .writing-workspace[data-compare='on'] .workspace-result__scroll {
+    padding: 0;
+  }
+}
+[data-experience='writing'] .writing-workspace[data-compare='on']:not([data-review='waiting']) .writing-result {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.writing-workspace .review-stale {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--chip-quiet);
+  box-shadow: var(--chip-quiet-ring);
+  color: var(--ink-80);
+  font-size: 14px;
+}
+.writing-workspace[data-compare='on'] .wf-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 24px;
+  padding: 20px 26px;
+  border-radius: 20px;
+}
+.writing-workspace[data-compare='on'] .wf-counts {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  gap: 8px;
+}
+.writing-workspace[data-compare='on'] .wf-count {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--chip-quiet);
+  box-shadow: var(--chip-quiet-ring);
+  font-size: 12.5px;
+}
+.writing-workspace[data-compare='on'] .wf-cols {
+  gap: 26px;
+}
+.writing-workspace[data-compare='on'] .wf-col {
+  padding: 22px;
+  border-radius: 20px;
+}
+.writing-workspace[data-compare='on'] .wf-draft {
+  font-size: 20px;
+  line-height: 1.85;
+  color: var(--ink-85);
+}
+
 /* --- The phone -------------------------------------------------------------------------------- */
 @media (max-width: 900px) {
   .wr-top {
