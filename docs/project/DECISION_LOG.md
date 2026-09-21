@@ -2047,3 +2047,137 @@ in the order `DESIGN_SYSTEM_MIGRATION.md` records.
 **Supersedes / Superseded by:** Supersedes the bordered-card treatment of
 D-059/D-060 across every surface, and the scorecard form of the speaking
 report. Extends D-060's authority to the updated documents.
+
+## D-066 — The Canonical UI Baseline (Dark Glass) is the learner-facing visual source of truth, and the backend adapts to it
+
+**Status:** Accepted, explicit current human instruction (2026-09-21), answering
+the question the Phase 1-3 audit left open (does the frozen baseline replace
+D-059/D-065?). The human's answer is yes.
+
+**Decision:** The Canonical UI Baseline in the approved design project
+`7a5604ca-1e11-4d8e-8305-7d0cb32d552d` - `Orena UI Baseline.dc.html`, the eight
+canonical screen files (Home Discover, Reading, Quick Sheet, Listening,
+Speaking, Writing, Vocabulary, Progress) and the `ui-baseline/` foundations,
+templates, components, states, responsive rules and 17 data contracts - is the
+highest source of truth for every learner-facing surface. A pinned copy lives
+in `docs/design/canonical-ui/` so the authority is in the repository and not
+in a design tool.
+
+1. **One visual system: Dark Glass.** Ground `#050310` with the cosmic field,
+   flat glass with a single ring, the violet accent gradient, semantic ink for
+   text and icons only, Nunito / Nunito Sans / DM Mono / Noto Serif, Phosphor
+   icons. There is no second approved colour or type system. D-059 and D-065 are
+   no longer the visual authority. Patterns the baseline lists as LEGACY (the
+   Device Overview, Design Overview, Screens parts 2-9, Card Component,
+   Recalibration, Visual Direction and Visual Grammar documents) are superseded.
+   There is no hybrid: a surface is either the baseline or awaiting migration,
+   and nothing new is built on the old look.
+2. **Paper is retired** from the active learner interface, and is not developed
+   in parallel. So is the reader's sepia block, because the baseline draws no
+   light reading surface. When migration finishes and nothing depends on them,
+   the obsolete theme registry entries, tokens, CSS and components are deleted;
+   Git keeps the history.
+3. **The canonical UI decides, the backend adapts.** Screen structure, layout,
+   hierarchy, interaction, states, responsive behaviour, the data a screen shows
+   and the user flow come from the baseline. Missing data is added to the
+   backend; a wrong shape is fixed in the API, serializer, service or contract;
+   an insufficient schema is extended under control; a legacy implementation
+   that no longer fits is migrated and then retired. No element is removed,
+   moved or replaced because the backend cannot supply it.
+4. **Metric rule.** A metric the baseline draws that has no measured value
+   renders **0** in its canonical place, in the canonical component, so the
+   layout is always complete: study time `0 h`, streak `0`, rank `0`, completed
+   `0`, attempts `0`, due `0`; charts and heatmaps keep their component in its
+   zero state and never generate activity. The 0 is a **presentation fallback,
+   not a measurement.** The data layer keeps the truth: a read model says
+   whether a metric is measured, `learner-summary/1`'s "unknown is not zero"
+   still governs what is stored, computed and sent as evidence, and nothing
+   writes a fallback 0 as data. When a metric is measured the real value
+   replaces the fallback with no UI change. Demo figures from the design (61 h,
+   128 days, rank 4, score 89) never appear in a production build.
+5. **Progress** keeps the canonical UI. Study time, streak, completion,
+   mastery, review due, the activity heatmap, per-domain progress and rank get
+   an official definition and a real measurement before they show a value; time
+   is never inferred from how long the app was open.
+6. **Pronunciation is real or absent.** The interface reads a normalized
+   pronunciation contract (overall, accuracy, fluency, completeness, words,
+   phonemes and, where the provider supports them, Chinese tones) behind a
+   provider abstraction; Azure Pronunciation Assessment and SpeechSuper are the
+   target providers, and the UI never depends on a raw provider response. With
+   no attempt the metrics read 0; with no configured provider the screen uses
+   the canonical unavailable / error / retry state and never a synthetic
+   assessment. This supersedes D-065's removal of the score, which was a
+   consequence of there being no real assessment.
+7. **Learner audio.** `speaking_attempts` keeps its policy of no durable raw
+   audio: record to a temporary buffer, assess, persist the normalized result
+   the product needs, discard the audio. Keeping recordings would need its own
+   privacy and storage review; pronunciation work does not wait for it.
+8. **Two different questions.** A basic lookup (headword, reading, part of
+   speech, dictionary meaning) stays deterministic. "Nghĩa ở câu này" is a
+   contextual semantic meaning and may use the AI/language capability through
+   the provider abstraction, as an explicit contextual request, with no model
+   named in the interface.
+9. **Vocabulary review has three grades** - Quên, Chưa chắc, Nhớ rồi. Before
+   the scheduler changes: map the two-grade state, update the SRS rule, add
+   tests, document the behaviour change, and preserve every learner's history;
+   nothing stored is silently reinterpreted.
+10. **Loading, empty and error** use the baseline's state where it draws one
+    and the existing pattern where it does not (the baseline marks them
+    incomplete); no new visual is invented in a backend-integration task.
+11. **Search** exists wherever the baseline draws it, over the content the
+    canonical screens use (books and readable content, listening, vocabulary,
+    collections) and nothing else.
+12. **Contracts come from the UI.** Each canonical screen's required and
+    optional fields, actions, persistence, states, permissions, filters,
+    pagination, search and processing state define the API contract. A schema
+    field must trace to a canonical requirement or a real business need.
+13. **Readiness.** A slice is READY only when it matches the baseline on desktop
+    and mobile, runs on real backend data with no production mock, keeps its
+    state across a reload, honours auth, has working loading / empty / error /
+    retry, returns the metric fallback correctly, passes existing and
+    integration tests, and leaves no duplicate active implementation. Rendering
+    is not READY.
+14. **Accessibility never redesigns the baseline.** A token that fails AA is
+    replaced by the smallest technical change that keeps the visual intent, and
+    the deviation is documented.
+15. **Migration ends in deletion.** After a canonical flow replaces an old one
+    and verification passes, the old component, duplicate, dead CSS, obsolete
+    token, obsolete service and unused API are removed. Old / New / V2 / Legacy
+    never coexist as active implementation.
+16. **Process.** This work proceeds directly on `codex/work` in the current
+    worktree, with no new branch or worktree, in logical commits, staging only
+    the files of each step. The lane rule in `AGENTS.md` section 3 is set aside
+    for this task by explicit instruction.
+
+**Not changed:** the Art Bible's authority for the mascot, scenes and real
+artwork (D-057); the artwork slot stands until real art exists. The multilingual
+invariants; PostgreSQL authority and the persistence rules; the native freeze;
+every human gate. Two are restated because the work now reaches them:
+a schema or migration for learner-owned data is authored against
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` and the backbone contracts and needs a
+recorded independent architecture review before it is applied to any shared or
+sandbox runtime, and production, provider credentials and billing remain human
+gates. An implementer does not approve its own high-risk schema change.
+
+**Reason:** D-060 already made the approved mockup the visual authority; the
+mockup changed. A frozen baseline that the design project itself marks as the
+official source, with data contracts, is a better basis for backend integration
+than the earlier prototype set, and keeping two visual systems would leave
+every surface half-migrated.
+
+**Consequences:** `docs/design/canonical-ui/` pins the baseline.
+`UI_BACKEND_GAPS.md` becomes the single tracker in the form canonical UI -
+contract - backend - data source - tests - status, and absorbs the Phase 1-3
+audit. `DESIGN_CONTRACT.md` replaces its D-059 section with the baseline;
+`AGENTS.md` (Theme) points at it; `LEGACY_TOMBSTONES.md` retires the Ink/Paper
+system; `DESIGN_SYSTEM_MIGRATION.md`, the tracker of the retired program, is
+removed. `CURRENT_HANDOFF.md` and `CURRENT_PRODUCT_STATE.yaml` record the new
+authority. The code still shows Ink and Paper until each surface migrates; that
+is the work, not a competing authority.
+
+**Supersedes / Superseded by:** Supersedes D-059 (palette, themes, navigation
+composition), D-060's unavailable-state clause for metrics (the metric rule
+above governs), D-062, D-063 and D-064 wherever their compositions disagree
+with the baseline (D-063's Reading capability scope stands), and D-065 in full.
+D-061's typefaces stand: the baseline uses the same set. D-057's artwork
+authority stands.

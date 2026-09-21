@@ -1,83 +1,240 @@
-# UI ↔ backend gaps
+# Canonical UI ↔ backend tracker
 
 ## Governance
 
-Purpose: the backlog of everything the approved Orena Design System draws that
-the backend, API, data or business logic does not provide yet. Authority: D-060
-- the approved mockup decides what the interface looks like; a backend gap is
-tracked here and never becomes a reason to remove, hide or redesign a component.
+Purpose: the single tracker of what the Canonical UI Baseline needs from the
+backend, API, data and business logic, and where each need stands. Authority:
+D-066. The baseline (`docs/design/canonical-ui/`) decides the interface and the
+data it shows; the backend adapts. A gap is worked, never a reason to remove,
+move or redesign a component. Change when a requirement, a contract or a status
+changes. Do not store secrets, screenshots or unverified claims. This file
+replaces the D-060 backlog (GAP-001..052) and absorbs the 2026-09-21 audit; it
+is the only tracker, so no audit file may run beside it.
 
-Rules for this file:
+Rules:
 
-- A gap keeps its component in the UI. The frontend shows the design system's
-  honest unavailable state (`—`, "not measured yet", a hatched track) in the
-  component's approved place; it never shows invented data.
-- New gaps start as `NOT_STARTED`. Nothing here is implemented by the audit that
-  created it.
-- Learner-data persistence, schema and account sync are an architecture hold
-  (`AGENTS.md` §7): a gap whose fix needs new learner-owned persistence needs
-  independent architecture review and human authorization before any schema.
-- Status values: `NOT_STARTED`, `PARTIAL`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
-  `PARTIAL` means the capability works in part and the row says exactly which
-  part, and what the rest depends on.
+- **Metric rule (D-066 rule 4).** A metric the baseline draws that has no
+  measured value renders `0` in its canonical component. The `0` is a UI
+  fallback and is never stored, sent or counted as a measurement; the read model
+  carries `measured: false`. Demo figures never ship.
+- **Status.** `READY` = the slice meets every point of D-066 rule 13 (canonical
+  visual on desktop and phone, real data, no production mock, state kept over a
+  reload, auth, loading/empty/error/retry, fallback correct, tests pass, no
+  duplicate implementation). `IN_PROGRESS` = in scope now and unfinished.
+  `BLOCKED` = waits on a gate named in the row. Nothing is `READY` until it has
+  been run in a browser against the real backend.
+- **Gates.** `[REVIEW]` a schema or migration for learner-owned data needs a
+  recorded independent architecture review before it is applied to a shared or
+  sandbox runtime. `[PROVIDER]` credentials are a human gate. `[CONTENT]` the
+  work is supplying content or metadata, not code. `[DEF]` a measurement or rule
+  needs an official definition before it is built.
+- **Slice.** S1 Word and Sentence Sheet, S2 Writing review and revision, S3
+  Listening and Dictation, S4 Reading comprehension per question, S5 catalogue
+  Search, L later (learner persistence, progress measurement, pronunciation).
+- Every schema field must trace to a row here or to a real business need.
 
-Mockup source: claude.ai design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
-(Design Overview, Screens parts 1-6, Checklist Status). "P1 §N" means Screens
-Part 1, section N.
+Baseline pin: 2026-09-21, design project
+`7a5604ca-1e11-4d8e-8305-7d0cb32d552d`; files and SHA-256 in
+`docs/design/canonical-ui/PINS.tsv`. Audit facts below were read from code and
+schema on that date at `76e69b9`; none has been run against the baseline UI.
 
-## Backlog
+## Summary by canonical screen
 
-| ID | Screen | UI element / feature | Mockup reference | Required backend capability | Current backend state | Frontend state | Dependency | Priority | Status | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GAP-001 | Progress, Profile | Learning streak ("18 days", "18 d") | P2 §10, P5 §20, P6 §27 | Daily activity streak aggregation across domains, per learner and timezone | None; LearnerSummary counts activity per window, no streak | Progress streak chip in place, value `—`, labelled not measured; Profile in Phase 10 | Evidence architecture decision on what counts as a study day | P1 | NOT_STARTED | Must follow LearnerSummary rules: assisted vs unassisted, no synthetic evidence |
-| GAP-002 | Progress | Study time this week ("3h 20m of study") | P2 §10, P5 §20, P6 §27 | Study-duration tracking per session and surface, weekly aggregate | None; no session duration is recorded | Headline figure in place, `—` with "study time is not measured yet" | New learner-owned telemetry → architecture hold (§7), privacy review | P1 | NOT_STARTED | Measurement definition (active vs idle time) is a product decision |
-| GAP-003 | Progress | Seven-day study chart, today highlighted in amber | P2 §10, P5 §20, P6 §27 | Per-day study-duration series (depends on GAP-002) | None | Seven day slots in place, hatched unmeasured bars, day labels localized | GAP-002 | P2 | NOT_STARTED | |
-| GAP-004 | Shell, Home, Library, Profile, Onboarding | Learner level ("HSK 2") in the account card, rail metadata, library level facet, profile, onboarding level step | P1 §01-§02, P2 §10-§11, P6 §25 | Stored proficiency level per learning language, in each language's framework (HSK for zh, CEFR for en) | `declared_level` exists as CEFR only and is `stored=False`; no HSK | Account card and rails show language pair and counts without a level | Profile schema → architecture hold (§7) | P1 | NOT_STARTED | Level must be declared or estimated honestly; an estimate needs its evaluator named |
-| GAP-005 | Profile | Total hours studied ("46") | P2 §10, P6 §27 | Lifetime study-duration aggregate (depends on GAP-002) | None | Phase 10 (Profile) will keep the tile with `—` | GAP-002 | P3 | NOT_STARTED | |
-| GAP-006 | Home | Progress on every Continue card ("42%", "87/150") | P1 §01, P6 §25, DIR Home 390 | A position and total for every continuation kind: chapter position, listening timestamp, vocabulary collection learned/total, writing draft state | Only continuation entries that record `place` (index/total) have one; most do not | Progress rail always in place; hatched unmeasured track where no position exists; real % where it does | Continuation contract (device memory by design, §7) | P1 | NOT_STARTED | Collection progress exists server-side (`progress.learned_count`), so vocabulary threads could carry it without schema |
-| GAP-007 | Progress | Listening card ("18 episodes · 41 min") | P2 §10, P5 §20, P6 §27 | Listening consumption aggregate: items followed to the end, minutes listened | `listeningProgress` per asset exists; LearnerSummary's listening domain holds dictation lines only | Card in place, "not measured yet"; dictation lines shown on the Dictation card | LearnerSummary domain extension (read model, no schema expected) | P2 | NOT_STARTED | |
-| GAP-008 | Progress | A progress bar on every domain card | P2 §10, P6 §27 | A defined per-domain progress fraction (numerator and denominator) | None defined; only Vocabulary has a real fraction (mastered / saved) | Vocabulary bar is real; the other five show the hatched unmeasured track | Product definition of "progress" per domain | P2 | NOT_STARTED | |
-| GAP-009 | Progress, Speaking, Writing, Dictation | Average scores ("avg 82", "avg 76", "avg 74") | P2 §10, P4 practice indexes | Averaged scores per domain over comparable evaluations | LearnerSummary deliberately does not average; comparability rules exist (`growth_comparable`) | Counts are shown; averages are not | Evidence policy decision (a new LearnerSummary policy version) | P2 | NOT_STARTED | An average across evaluator versions or assistance modes would break the evidence contract |
-| GAP-010 | Progress | Reading line ("4 titles · 2 in progress") | P2 §10, P5 §20 | Titles opened and in progress, per learner | LearnerSummary reading counts comprehension checks answered | Shows the checks-answered count | LearnerSummary domain extension | P3 | NOT_STARTED | |
-| GAP-011 | Shell (top bar), Search | Global search, results grouped by words, books, audio | P1 §01, P3 search, P5 §20 | Search across library books, listening catalogue, saved and library vocabulary | No search API | `#/search` groups words, the learner's passages and library titles client-side from existing reads (Phase 4) | A search API once the catalogue outgrows client-side filtering (see GAP-026) | P1 | NOT_STARTED | |
-| GAP-012 | Home, Library, Reader, Listening | Real cover and media artwork | DIR §05, P1 §00 (artwork slot), Grammar rule 10 | Cover/poster assets per book and curated audio, with rights recorded | Some media carry posters; books and most audio have none | Design-system artwork slot (dot field, domain-hue bloom) at the real 2:3 / 16:9 / 21:9 geometry; real images replace it with no layout change | Art supply and rights per title (Art Bible, rights gate) | P1 | NOT_STARTED | The retired Art Bible motif covers are not a fallback (D-060) |
-| GAP-013 | Shell, Profile | Learner display name and avatar ("Mai", avatar image) | P1 §01, P2 §10 | Profile display name and avatar (upload or provider picture) | `/api/me` gives email/mode; no display name, no avatar | Account card shows the account's name or email handle and the design's avatar disc | Profile schema → architecture hold (§7) | P3 | NOT_STARTED | |
-| GAP-014 | Home, Vocabulary | Words-due count in the top bar ("12 DUE") | P1 §01, P6 §25 | Due count endpoint (cheap) | Derived client-side from the full saved-vocabulary list | Real count shown; computed from `api.libraryVocabulary()` on each destination | None required; an endpoint would only reduce payload | P3 | NOT_STARTED | Works today; tracked as a scaling concern |
-| GAP-015 | Onboarding | Sign in / sign up with email and password, and with Apple | P2 §11, P5 onboarding | Email/password accounts and Sign in with Apple | Google OAuth only | Phase 10 | Human gate: OAuth providers and credentials | P2 | NOT_STARTED | |
-| GAP-016 | Onboarding | Content interests step | P5 onboarding | Stored interests and their use in Discover ordering | None | Phase 10 | Profile schema → architecture hold (§7) | P3 | NOT_STARTED | |
-| GAP-017 | Profile | "Autoplay audio" and "Review reminders" toggles | P2 §10, P6 §27 | Preference fields; reminder scheduling and delivery | None | Phase 10 | Notifications channel (human gate if it uses a paid provider) | P3 | NOT_STARTED | |
-| GAP-018 | Profile | Separate "Interface" language row | P2 §10, P6 §27 | A third, interface-only language setting | Deliberately absent: Design Contract rule 9 and D-051 make the support language the interface language | Phase 10 | Product decision - conflicts with an accepted rule | P3 | NOT_STARTED | Needs a human decision before any build; recorded, not resolved |
-| GAP-019 | Vocabulary | Four-grade review with visible intervals (Again <1m, Hard 1d, Good 4d, Easy 10d) | P1 §05, P6 §27 | Scheduler that accepts four grades and previews next intervals | `reviewLibraryVocabulary` takes again / got_it | Phase 6 | Scheduler change; evidence of review is learner data → architecture review | P2 | NOT_STARTED | |
-| GAP-020 | Vocabulary | Collection tier ("TIER II") and mastery rank rim | P1 §05, P5 §21 | Tier/rank per collection for the learner | Collection progress exists; tier is not defined | Phase 6 | Product definition of tiers | P3 | NOT_STARTED | |
-| GAP-021 | Speaking | Pronunciation score, accuracy / fluency / completeness, phoneme and tone detail | P2 §08, P5 §21 | A configured pronunciation assessment provider | ASR/assessment unconfigured in the sandbox; a synthetic result is never a score | Phase 8 | Human gate: provider and credentials | P1 | NOT_STARTED | |
-| GAP-022 | Library | Level and topic facets, "Recently added" sort, total title count | P1 §02, P6 §26 | Level and topic metadata on books and media; server-side facet counts | Partial metadata; paginated list | Phase 4 | GAP-004 for level facets | P2 | NOT_STARTED | |
-| GAP-023 | History | 30-day history with a score per activity | P3 history, P5 §20 | Activity history across domains with results | `practiceOutcomes` and domain reads exist separately | Phase 4 | Read model over existing owners (no schema expected) | P2 | NOT_STARTED | |
-| GAP-024 | Saved content | Saved content kept apart in four kinds (words, highlights, notes, bookmarks) with counts | P3 saved, P5 §20 | Persisted highlights, notes and bookmarks per learner | Saved words exist; highlights/notes are device memory by design | Phase 4 | Learner-data persistence → architecture hold (§7), human gate | P2 | NOT_STARTED | |
-| GAP-025 | Listening | Comprehension quiz, replay-limited | P3 quizzes | Listening comprehension items and scoring | Reading comprehension exists; listening quiz does not | Phase 7 | Content authoring | P3 | NOT_STARTED | |
-| GAP-026 | Search | "In your books": the sentence in context inside shared-library books | P3 search, P5 §20 | Full-text index over imported book chapters, queryable per learner language | Chapters are served one at a time; no search endpoint | The group searches the full text of passages the learner has (built-in, published, imported) and states that book chapters are not searched yet | Search API (GAP-011) | P2 | NOT_STARTED | |
-| GAP-027 | Library | "Recently added" sort and a total title count ("248 titles") | P1 §02, P6 §26 | `created_at` and a total count on the book and media listings | Books list has neither; media has no added date | Sort offers Title and Level; counts are of what is loaded, with "Load more" while a cursor remains | Catalogue API fields (no learner data) | P3 | NOT_STARTED | |
-| GAP-028 | Reader | Pinyin layer on a Chinese text | P1 §04, P6 §26 | Per-token pinyin for any library text, at reading speed | The word panel reads pinyin per looked-up word; nothing produces a whole-text layer | The layer chip is in the bar, disabled, saying the text does not support it yet | Tokenisation + reading contract for library books | P2 | NOT_STARTED | A generated layer would be AI output over the text (Design Contract rule 12); it needs a source, not a guess |
-| GAP-029 | Book detail | Per-chapter length in minutes ("9 MIN") | P4 §16 | A reading-time estimate or measurement per chapter | Chapters carry `word_count` only | The chapter row shows the real word count in the same slot | A product decision on reading speed, or GAP-002 measurement | P3 | NOT_STARTED | Minutes from words is an estimate; it needs an owner before it is printed as fact |
-| GAP-030 | Book detail | "Time read" per book | P4 §16 | Per-book study duration (depends on GAP-002) | None | The tile is in place with `—` and "not measured yet" | GAP-002 | P2 | NOT_STARTED | |
-| GAP-031 | Book detail | "Quiz average" per book | P4 §16 | Comprehension items on library chapters, and an average per book | Comprehension checks exist for prepared passages; imported book chapters carry none | The tile is in place with `—` | Content authoring per book, then an aggregate | P2 | NOT_STARTED | The averaging rule is GAP-009's evidence decision |
-| GAP-032 | Book detail | "Audio · Available" on a book | P4 §16 | Audio editions for library books, with rights | None; the listening catalogue is separate content | The tile is in place, saying no audio yet | Audio supply and rights per title | P3 | NOT_STARTED | |
-| GAP-033 | Book detail | "Similar level" recommendations | P4 §16 | Level metadata on books plus a recommendation rule | No level is stored (GAP-004) | The section is in place, stating it needs level data | GAP-004 | P3 | NOT_STARTED | |
-| GAP-034 | Book detail | Bookmark a book, download for offline, more | P4 §16 | Saved books per learner; offline chapter storage; a per-book action set | Saved content is imports and kept words only; nothing stores a bookmarked library book | The three controls are in place, disabled, each naming why | Learner-data persistence → architecture hold (§7) | P2 | NOT_STARTED | |
-| GAP-035 | Book detail, Reader | Chapter completion state | P4 §16, P3 §13 | A per-chapter "finished" record | Device memory records the chapter the learner is in and its place in the book | Chapters before the current one read as done, from that same place; nothing else is claimed | Learner-data persistence → architecture hold (§7) | P2 | NOT_STARTED | A chapter opened and abandoned is indistinguishable from one read |
-| GAP-036 | Reader | Notes beside the text | P1 §04 | Per-text learner notes | None; highlights and kept words are device memory | The notes tab is in place, saying notes are not available yet | Learner-data persistence → architecture hold (§7) | P3 | NOT_STARTED | |
-| GAP-037 | Reader, Saved | Durable highlight of a word, sentence or paragraph | P1 §04, P3 saved | Highlights stored per text and per learner, with their place in it | The reader's marks are transient (evidence only); a kept phrase is device memory | Selection and keeping work; a highlight does not survive the session as a mark on the text | Learner-data persistence → architecture hold (§7) | P2 | NOT_STARTED | Approved Reading scope, D-063 |
-| GAP-038 | Reader, Vocabulary | Spoken audio for a sentence, paragraph or chapter, and a real voice on a card | P1 §04 | A pronunciation/TTS provider, or recorded audio per text | The panel speaks a selection with the device's own speech synthesis; no provider voice and no recorded reading | A word or phrase can be spoken; a paragraph or chapter cannot | Human gate: provider and credentials; rights for recorded audio (GAP-032) | P2 | PARTIAL | Approved Reading scope, D-063 |
-| GAP-039 | Reader | Grammar note and pattern explanation anchored in the text | P1 §04, R5 contracts | Grammar patterns resolved for a sentence, by Concept ID, and kept with the text | The shared contextual explanation answers a selection on demand; nothing is anchored or kept | "Explain" is available on a selection; a note on the sentence is not | R5 Concept ID contracts; persistence hold (§7) | P2 | NOT_STARTED | Approved Reading scope, D-063 |
-| GAP-040 | Reader | Exact resume position inside a chapter | P1 §04, P4 §16 | The place in a chapter, not only which chapter | Continuation records the chapter and its place in the book | Reopening a chapter starts at its beginning | Continuation contract (device memory by design, §7) | P2 | NOT_STARTED | Approved Reading scope, D-063 |
-| GAP-041 | Reading check | Open-answer comprehension | P3 §13 | Free written answers to a passage, evaluated against it | `submitReadingAnswers` scores multiple choice only | The check is multiple choice; the written response after a text is a reflection, not a scored answer | Evaluation contract; evidence policy | P2 | NOT_STARTED | Approved Reading scope, D-063 |
-| GAP-042 | Saved | Review of saved highlights and notes | P3 saved | Highlights and notes as reviewable items, with their own scheduling | Saved lists kept phrases; only words carry review state | Highlights are listed, never reviewed | GAP-037, GAP-036 | P3 | NOT_STARTED | Approved Reading scope, D-063 |
-| GAP-043 | Reader, Vocabulary | Review scheduling from what a text taught | P1 §04-§05, P3 §13 | Scheduling that accepts what was saved while reading and returns it at the right time | Saving from the reader is real and lands in library vocabulary; review is again / got_it (GAP-019) | The end of a chapter links to review; the schedule behind it is the two-grade one | GAP-019 | P2 | PARTIAL | Approved Reading scope, D-063 |
-| GAP-044 | Library, Reading | Reading content types: articles, news, essays, dialogues, imported texts | P1 §02, Content Architecture | A content kind and its metadata on every readable thing, not only books | Books carry their own table; passages, published texts and imports carry no kind or topic of their own | Every readable thing is in the library and reachable; they are grouped under one section label | Catalogue metadata (no learner data) | P1 | NOT_STARTED | Reading's approved scope is not books-only (D-063) |
-| GAP-045 | Reader | Support-language layer over a whole text | P1 §04 | Translation of a long text at reading speed | `readingTranslate` answers a batch; the reader asks for the first twelve paragraphs | The layer appears on the paragraphs it has; the rest of a long chapter is untranslated | Batch or streaming translation contract | P2 | PARTIAL | Approved Reading scope, D-063 |
-| GAP-046 | Vocabulary | "Review 12 words · About four minutes" | P4 §18 | A time estimate for a review session, from real session durations | None; nothing measures how long a review takes | The due card states how many words are due and names the first of them | GAP-002 measurement | P3 | NOT_STARTED | An estimate needs a measured basis before it is printed as one |
-| GAP-047 | Vocabulary | A card's place in its collection ("HSK 1 · 88/150") | P1 §05 | The position of a word inside the collection being studied | A card carries its level and review state, not its index in a collection | The card shows the level it carries | Collection contract (no learner data) | P3 | NOT_STARTED | |
-| GAP-048 | Progress, Profile, shell | Rank and XP ("Virtuoso · bậc 6 trên 8", "15 840 XP", "6 160 → Luminary") | Device overview 06, shell rail | A rank ladder and an XP model per learner | None; LearnerSummary counts evidence and deliberately does not score | Phase 9 keeps the panel with `—` and names what it needs | Evidence policy decision, then learner-data persistence (§7) | P2 | NOT_STARTED | A rank is a product definition before it is a number; recorded from the 2026-09-20 design update |
-| GAP-049 | Progress | Activity heatmap, 18 weeks desktop / 10 weeks mobile | Device overview 06 | A per-day activity series across domains | None (depends on GAP-002, GAP-003) | Phase 9 keeps the grid with unmeasured cells | GAP-002 | P2 | NOT_STARTED | |
-| GAP-050 | Plans | Plans, prices and payment ("Plus / Pro / Miễn phí", QR on desktop, link by email) | Recalibration, plans screen | Entitlements, prices, payment and the email link | `billing_ready` is false by design; commerce surfaces stay read-only | Not built; the plan/usage block stays read-only | Human gate: payments, provider, prices | P2 | NOT_STARTED | Commerce is a human gate, not an implementation task |
-| GAP-051 | Dictation | The per-character reveal with its reading ("我 wǒ · 〇 ···") | Recalibration, device overview 08 | Per-character readings for the line being written | The reveal is positional and character-based; readings exist per looked-up word only | The reveal shows characters and `＊` for what is still hidden, without per-character readings | GAP-028 (a reading layer with a source) | P2 | PARTIAL | The reveal itself works; only its reading row is missing |
-| GAP-052 | Home | "For you" - a personalised shelf | Device overview 01 | A recommender over the catalogue and the learner's history | None; nothing ranks content for a learner | The shelf is what the catalogue holds, in the catalogue's own order, under the design's title | Evidence and content architecture decision | P2 | NOT_STARTED | The shelf is real content; only its ordering is not personalised |
+| Canonical UI | Required contract | Backend implementation | Data source / DB | Tests | Status |
+| --- | --- | --- | --- | --- | --- |
+| Quick Sheet, word | `WordDetail` | `reading_lookup` (deterministic), `media_interaction` contextual explain; extend with `core_idea`, `mental_model`, `contrast` | vocabulary catalog, tagger, AI capability | `test_media_interaction`, `test_reading_lookup`, `test_orena_understanding.mjs`; add contract test | IN_PROGRESS (S1) |
+| Sentence sheet | `SentenceSheet` | explain + lookup; add `structure[]` | as above | as above | IN_PROGRESS (S1) |
+| Writing review | `WritingReview` | `/api/evaluate` through a serializer; `issue.examples` and `issue.kind` in the evaluator contract | `essays` | `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_orena_writing_review.mjs` | IN_PROGRESS (S2) |
+| Writing revision | `RevisionCompare` | `revision_delta` through a serializer | `essays` chain | `test_writing_revision_contract` | IN_PROGRESS (S2) |
+| Writing entry, workspace | `ContentCard`, draft | `/api/drafts`, `/api/tasks/generate`; prompt library | account backbone, catalogue | `test_work_api`, `test_orena_writing_workspace.mjs` | BLOCKED (`[CONTENT]` prompts; drafts past sandbox) |
+| Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; add `content_type`, duration and remaining labels | catalogue JSON, `listening_progress` | `test_listening_*`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3) |
+| Dictation | `DictationResult` | client evaluator, `practiceOutcome`; assisted flag | outcomes | `test_dictation_evaluator.mjs`, `test_orena_dictation_*.mjs` | IN_PROGRESS (S3) |
+| Reading library, book detail | `ContentCard`, `Chapter` | `reading_library_api`; add kind, level, duration | `reading_books`, `reading_book_chapters` | `test_reading_library_api`, `test_orena_reading_library.mjs` | BLOCKED (`[REVIEW]` catalogue schema) |
+| Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache | `test_reading_translation`, `test_orena_reading_room.mjs` | IN_PROGRESS (S4) |
+| Reading comprehension | comprehension | per-question check endpoint; per-chapter generation | `reading_sessions`, `reading_attempts` | none for the routes yet: add before changing | IN_PROGRESS (S4) |
+| Search (all libraries) | `ContentCard[]` | catalogue search API, read-only | books, listening, vocabulary, collections | add | IN_PROGRESS (S5) |
+| Speaking library | `ContentCard` | Speaking catalogue | catalogue | add | BLOCKED (`[CONTENT]`) |
+| Speaking workspace | `PronunciationResult` | provider abstraction, normalized contract, Azure and SpeechSuper adapters, tone contour | `speaking_attempts` (no raw audio) | `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs` | IN_PROGRESS (L); E2E `[PROVIDER]` |
+| Vocabulary library, card, strokes | `VocabularyCollection`, `WordDetail` | `vocabulary_library`, stroke order | `vocabulary_*` | `test_vocabulary_library*`, `test_chinese_stroke_order`, `test_orena_vocabulary_library.mjs` | IN_PROGRESS (L) |
+| Vocabulary context clips | `ContextClip` | word to clip index over listening transcripts | new index | add | BLOCKED (`[REVIEW]`/index design) |
+| Vocabulary review | `VocabularyCard` | three-grade scheduler and interval preview | `saved_words` | `test_vocabulary_cards`, `test_orena_vocabulary_card.mjs`; add SRS tests | BLOCKED (`[REVIEW]` rule change) |
+| Progress overview, trends | `ProgressOverview`, `ProgressTrends` | read model over the domain owners; every metric carries `measured` | LearnerSummary, events (new) | `test_learner_summary`, `test_orena_growth_summary.mjs` | BLOCKED (`[DEF]`, `[REVIEW]`) |
+| Home / Discover | `AppShell`, `ContentCard` | shared card serializer; Continue read model | catalogues, device continuation | `test_orena_discover_layout.mjs` | IN_PROGRESS (L) |
+| App shell | `AppShell` | profile fields; metric fallback | profile, LearnerSummary | `test_orena_foundation.mjs` | IN_PROGRESS (foundation with S1) |
+
+## Requirements
+
+Legend for each table: **Have** is what the backend does today; **Need** is the
+change. Group headers name the contract, data source and tests once.
+
+### Shell — `AppShell` · profile, LearnerSummary · `test_orena_foundation.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| SH-1 | Display name and avatar | `/api/me` gives email and mode → profile fields | L | BLOCKED `[REVIEW]` |
+| SH-2 | Level next to the language ("B1", "HSK 2") | CEFR `declared_level`, not stored, no HSK → stored level per language framework | L | BLOCKED `[REVIEW]` |
+| SH-3 | Language ("NORSK" in the mock) | `/api/platform/languages` is en and zh → none; Norwegian is demo data | - | IN_PROGRESS |
+| SH-4 | Rank label ("Virtuoso · bậc 4") | none → rank definition and ladder; shows `0` until measured | L | BLOCKED `[DEF]` |
+| SH-5 | Streak in the top bar and headers | none → streak definition and measurement; shows `0` | L | BLOCKED `[DEF]` |
+| SH-6 | Level per skill in the rail | none → stored level per skill | L | BLOCKED `[REVIEW]` |
+| SH-7 | Search field, desktop and phone | none server-side → S5 | S5 | IN_PROGRESS |
+| SH-8 | Active nav and skill, five-item phone bar | client routing → none | - | IN_PROGRESS |
+| SH-9 | Loading, empty, error | baseline draws none → keep the existing skeleton and degraded panel | - | IN_PROGRESS |
+| SH-10 | Auth | Google OAuth, session guard, admin guard → none | - | IN_PROGRESS |
+
+### Home — `AppShell`, `ContentCard` · catalogues, device continuation · `test_orena_discover_layout.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| HM-1 | Continue strip: kind, title, 68%, "còn 4 phút", resume | device `continuation`; progress only where a place is recorded → a `ContinueLearning` read model; cross-device is gated | L | BLOCKED `[REVIEW]` |
+| HM-2 | "Mới cho bạn · phù hợp trình độ" | nothing ranks content → level-based ordering (needs SH-2) | L | BLOCKED `[REVIEW]` |
+| HM-3 | Reading, Listening, Vocabulary rails | separate shapes per domain → the shared `ContentCard` serializer | L | IN_PROGRESS |
+| HM-4 | Speaking rail | no Speaking library → SP-1 | L | BLOCKED `[CONTENT]` |
+| HM-5 | Writing rail "Gợi ý viết mỗi ngày" | only AI task generation → WR-2 | L | BLOCKED `[CONTENT]` |
+| HM-6 | Card: 17 types, skill, hue, badge (ĐANG LUYỆN, ĐÃ LƯU, TẠO RIÊNG, ĐÃ NHẬP) | per-domain fields; hue is artwork → one serializer | L | IN_PROGRESS |
+| HM-7 | Populated rails | 7 listening lessons, books only after admin import → supply content | L | BLOCKED `[CONTENT]` |
+
+### Reading — `ReadingChapter`, `Chapter`, `ContentCard` · `reading_books`, `reading_book_chapters`, assets · `test_reading_library_api`, `test_reading_translation`, `test_orena_reading_library.mjs`, `test_orena_reading_room.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| RD-1 | 11 type chips (books, excerpts, articles, news, essays, stories, dialogues, quotes, own, imported) | books carry no kind, level or topic → catalogue metadata | L | BLOCKED `[REVIEW]` |
+| RD-2 | Card: author, level, kind, minutes | author and word count only → level, kind, and an owned reading-speed rule for minutes | L | BLOCKED `[REVIEW]` |
+| RD-3 | Search inside the library | none → S5 | S5 | IN_PROGRESS |
+| RD-4 | "Nhập văn bản", TẠO RIÊNG / ĐÃ NHẬP | import exists, device memory → wire the badge | L | IN_PROGRESS |
+| RD-5 | Paged cover grid | cursor and `/cover` exist → none (real art is supply) | - | IN_PROGRESS |
+| RD-6 | Book hero: continue chapter, 34%, time left | `libraryBook`; percent from continuation → `Chapter.progress` | L | IN_PROGRESS |
+| RD-7 | Chapter state read / reading / unread | only the current chapter (device) → durable chapter state | L | BLOCKED `[REVIEW]` |
+| RD-8 | "Bạn đã lưu từ đây … + 83 từ" | saved words carry no book link → word-to-book link | L | BLOCKED `[REVIEW]` |
+| RD-9 | Book bookmark, menu, listen | none; device speech for words → saved items, audio | L | BLOCKED `[REVIEW]` `[PROVIDER]` |
+| RD-10 | Position inside a chapter | chapter only → exact position | L | BLOCKED `[REVIEW]` |
+| RD-11 | Bilingual layer | `readingTranslate`, first 12 paragraphs → whole chapter, batched and cached | S4 | IN_PROGRESS |
+| RD-12 | Panel tabs Word, Grammar, Notes | Word only → grammar notes and notes | L | BLOCKED `[REVIEW]` |
+| RD-13 | Action bar: save, listen, check, discuss, write a response, read later | check, discuss (`conversation-turn`) and response (`practice_context`) partly exist; save and read-later do not → wire and add saved items | L | IN_PROGRESS |
+| RD-14 | Comprehension: one question, verdict and "đoạn giúp bạn trả lời", skippable | generated sessions hold answer, explanation and evidence, but `/answer` grades the whole set → per-question check; sessions for library chapters | S4 | IN_PROGRESS |
+| RD-15 | "Bỏ qua vẫn tính đã đọc" | no completion record → part of RD-7 | L | BLOCKED `[REVIEW]` |
+
+### Quick Sheet — `WordDetail`, `SentenceSheet` · vocabulary catalog, tagger, AI capability · `test_media_interaction`, `test_reading_lookup`, `test_orena_understanding.mjs`, `test_r16_contextual_dictionary.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| QS-1 | Layer 1: headword, IPA or pinyin, part of speech, speaker, save | lookup returns all of it → serializer | S1 | IN_PROGRESS |
+| QS-2 | "Nghĩa ở câu này" in layer 1 | dictionary meaning only; contextual meaning is an AI explain → a contextual-meaning request through the provider abstraction, distinct from lookup | S1 | IN_PROGRESS |
+| QS-3 | Seven usage levels | `USAGE_JUDGEMENTS` are the same seven → rename to the contract values | S1 | IN_PROGRESS |
+| QS-4 | "Vì sao ở đây?": verdict, reason, examples, common mistake, grammar note, related | `judgement`, `judgement_reason`, `examples`, `counter_examples`, `grammar_notes`, `vocabulary` → map | S1 | IN_PROGRESS |
+| QS-5 | Core idea, mental model, contrast | not in the schema → extend the explanation schema | S1 | IN_PROGRESS |
+| QS-6 | "Hỏi tiếp" chips and free question | `follow_ups`, `question` → none | S1 | IN_PROGRESS |
+| QS-7 | Where you met it; your own sentences | provenance is device memory; essays not indexed by word → `learnerSentences` read model; sources gated | S1 / L | IN_PROGRESS / BLOCKED `[REVIEW]` |
+| QS-8 | "Lưu giải thích" | no saved explanation → saved explanations | L | BLOCKED `[REVIEW]` |
+| QS-9 | Chinese variant with pinyin | annotate and explain cover it → none | S1 | IN_PROGRESS |
+| QS-10 | Writing-feedback variant | same contract plus `errors[].suggestion` → S2 | S2 | IN_PROGRESS |
+| QS-11 | Sentence sheet: translation, short explanation, structure, vocabulary with saved state | all but structure → `structure[{chunk, role}]`, language-neutral roles | S1 | IN_PROGRESS |
+| QS-12 | Audio pauses and resumes | client → none | - | IN_PROGRESS |
+
+### Listening, Dictation — `ContentCard`, `AudioPlayer`, `Transcript`, `DictationResult` · catalogue JSON, `listening_progress`, `shadowing_progress`, outcomes · `test_listening_*`, `test_orena_pure_listening.mjs`, `test_dictation_evaluator.mjs`, `test_orena_dictation_*.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| LS-1 | Nine type chips | lessons have topic and tags, no `content_type` → add it to the catalogue content | S3 | IN_PROGRESS |
+| LS-2 | Card: duration, level, time left, video badge | all exist → `durationLabel`, remaining | S3 | IN_PROGRESS |
+| LS-3 | Library search | none → S5 | S5 | IN_PROGRESS |
+| LS-4 | Player: scrubber, transport, speed, loop | lesson and progress read/write → none | S3 | IN_PROGRESS |
+| LS-5 | Transcript with pinyin, translation, active word, autoscroll | timeline, annotate, translate → none | S3 | IN_PROGRESS |
+| LS-6 | Listening comprehension | none → items and scoring | L | BLOCKED `[CONTENT]` |
+| LS-7 | Bookmark | none → saved items | L | BLOCKED `[REVIEW]` |
+| LS-8 | Deep actions: dictation, shadow, read line, keep phrase, inspect | all exist → none | S3 | IN_PROGRESS |
+| DC-1 | Line 2 of 5, clip range, replay | progress and excerpt → none | S3 | IN_PROGRESS |
+| DC-2 | Hint level 1-3, "5 / 11 ký tự" | positional reveal → none | S3 | IN_PROGRESS |
+| DC-3 | Pinyin per revealed character | reveal is characters only → per-character reading | L | IN_PROGRESS |
+| DC-4 | Result: score, count, wrong / missing / extra | evaluator has all → map `status` to `kind` | S3 | IN_PROGRESS |
+| DC-5 | "Đã dùng gợi ý — không tính vào chuỗi" | LearnerSummary knows assisted for dictation → durable assisted flag | L | BLOCKED `[REVIEW]` |
+| DC-6 | Keep a word from the result | `saveLibraryVocabulary` → none | S3 | IN_PROGRESS |
+
+### Speaking — `PronunciationResult` · `speaking_attempts` (no raw audio, D-066 rule 7) · `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| SP-1 | Six practice types, "2/5 câu" | no Speaking library → catalogue of clip, sentences, type, level | L | BLOCKED `[CONTENT]` |
+| SP-2 | "Ghi âm của tôi" library | no durable audio by policy → show `0` saved; durable audio needs its own review | L | BLOCKED `[REVIEW]` |
+| SP-3 | Clip, sentence, waveform, mic controls | clip, transcript, recorder, mic readiness → none | L | IN_PROGRESS |
+| SP-4 | Transcribe | `/api/speech/transcribe`, unconfigured → credentials | L | BLOCKED `[PROVIDER]` |
+| SP-5 | Score panel: overall, accuracy, fluency, passed | Azure adapter, unconfigured → normalized contract, provider abstraction, SpeechSuper adapter; metrics `0` with no attempt; canonical unavailable state without a provider | L | IN_PROGRESS (E2E `[PROVIDER]`) |
+| SP-6 | Timing note | offsets available → compare with the model clip | L | IN_PROGRESS |
+| SP-7 | Per-word note in words | phoneme accuracy only → tone and phoneme rules, or coaching | L | IN_PROGRESS |
+| SP-8 | Tone curve, target and actual | none → pitch contour service | L | IN_PROGRESS |
+| SP-9 | Compare, hear your take | client blob → none | L | IN_PROGRESS |
+| SP-10 | Free talk: topic, phrases, what you said, comment | `evaluateSpeaking` needs ASR → topic and phrase content | L | BLOCKED `[CONTENT]` `[PROVIDER]` |
+| SP-11 | Recording state | client → none | L | IN_PROGRESS |
+
+### Writing — `WritingReview`, `RevisionCompare`, draft · `essays`, `essay_revisions`, account drafts · `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_writing_revision_contract`, `test_writing_evaluator_contract`, `test_work_api`, `test_orena_writing_review.mjs`, `test_orena_writing_workspace.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| WR-1 | Entry: continue draft, "lưu 6 phút trước" | account drafts (sandbox) and device → `updated_at` | L | BLOCKED `[REVIEW]` |
+| WR-2 | "Theo gợi ý": prompt list by kind, level, target words | AI task generation only → curated prompt library | L | BLOCKED `[CONTENT]` |
+| WR-3 | Four modes | free, own prompt, `practice_context` exist → wire | L | IN_PROGRESS |
+| WR-4 | Workspace: autosave, word count, target | limits, count, `saveDraft` → none | S2 | IN_PROGRESS |
+| WR-5 | Review: summary, strengths, three issues, rule, related grammar, ask more | `summary_vi`, `strengths_vi`, `errors[]`, `grammar_links` → serializer | S2 | IN_PROGRESS |
+| WR-6 | Example sentence per issue | no such field → add to the evaluator contract, versioned | S2 | IN_PROGRESS |
+| WR-7 | Issue kind: register, grammar, punctuation, vocabulary, naturalness | categories are rubric keys → extend the taxonomy, EN and ZH together | S2 | IN_PROGRESS |
+| WR-8 | Four dimensions, 0-100 | five rubric keys → serialize the four drawn; keep `task_achievement` | S2 | IN_PROGRESS |
+| WR-9 | "Lưu nhận xét" | every review is stored as an essay → none | S2 | IN_PROGRESS |
+| WR-10 | "Lưu khái niệm" | no saved concept from a review → saved concept | L | BLOCKED `[REVIEW]` |
+| WR-11 | Apply a fix | client, uses `anchored` → none | S2 | IN_PROGRESS |
+| WR-12 | Revision: v1 and v2, fixed / remaining / new, headline | `revision_delta` → titles, details and headline from the data | S2 | IN_PROGRESS |
+| WR-13 | Dimension change "72 → 88" | delta is a difference → return `from` and `to` | S2 | IN_PROGRESS |
+| WR-14 | Done, edit again | client → none | S2 | IN_PROGRESS |
+
+### Vocabulary — `VocabularyCollection`, `VocabularyCard`, `WordDetail`, `ContextClip` · `vocabulary_collections`, `vocabulary_entries`, memberships, `saved_words` · `test_vocabulary_library*`, `test_vocabulary_cards`, `test_chinese_stroke_order`, `test_orena_vocabulary_*.mjs`
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| VC-1 | Collections with language, size, percent | `vocabularyLibraryCollections` → shared card | L | IN_PROGRESS |
+| VC-2 | Real packs | catalog gated until a pack is published → supply | L | BLOCKED `[CONTENT]` |
+| VC-3 | Search words or collections | inside one collection only → S5 | S5 | IN_PROGRESS |
+| VC-4 | Card front and back, mastery 0-3 | entries, `review_stage` → define mastery mapping once | L | IN_PROGRESS |
+| VC-5 | Deep card: senses, collocations, contrast, mistake, mental model, related | free-text fields → structured entry or on-demand explain | L | IN_PROGRESS |
+| VC-6 | "Lấy từ đâu" | device provenance → durable source link | L | BLOCKED `[REVIEW]` |
+| VC-7 | "Câu của bạn" | essays not indexed by word → read model (as QS-7) | L | IN_PROGRESS |
+| VC-8 | Han strokes: radical, components, order, animation | offline stroke pack → check the pack for decomposition | L | IN_PROGRESS |
+| VC-9 | Trace along, free write | no canvas → client capability | L | IN_PROGRESS |
+| VC-10 | Context clips for a word | no word-to-clip index → inverted index over listening transcripts | L | BLOCKED `[REVIEW]` |
+| VC-11 | Review: three grades with intervals, 3 / 24 | `again` / `got_it` → three-grade scheduler, interval preview, server-chosen queue; map old states, add tests, keep history | L | BLOCKED `[REVIEW]` |
+| VC-12 | Tier, 87/150, "chưa thuộc", show all | progress and filters exist; tier does not → tier definition | L | BLOCKED `[DEF]` |
+| VC-13 | Han or Latin script | `orthography` → none | L | IN_PROGRESS |
+
+### Progress — `ProgressOverview`, `ProgressTrends` · LearnerSummary, `saved_words`, `reading_attempts`, `essays` · `test_learner_summary`, `test_orena_growth_summary.mjs`, `test_writing_analytics`
+
+Every value below renders `0` (a chart, its zero state) until measured.
+
+| ID | Canonical UI | Have → Need | Slice | Status |
+| --- | --- | --- | --- | --- |
+| PG-1 | Streak | none → definition and measurement | L | BLOCKED `[DEF]` |
+| PG-2 | Study time and per-skill time | no duration is recorded → official rule (time of completed work, never app-open time) and telemetry | L | BLOCKED `[DEF]` `[REVIEW]` |
+| PG-3 | Words mastered | `review_stage` → one threshold | L | IN_PROGRESS |
+| PG-4 | Just learned, with samples | `saved_words.added_at` → none | L | IN_PROGRESS |
+| PG-5 | Reviewing, due, done today | due from `next_review_at`; no event → review events | L | BLOCKED `[REVIEW]` |
+| PG-6 | Comprehension 9/11 and sequence | `reading_attempts` for generated passages → chapter quizzes (S4) | L | IN_PROGRESS |
+| PG-7 | Recall accuracy, cards, got / unsure / forgot | cumulative counters only → review event table; needs VC-11 | L | BLOCKED `[REVIEW]` |
+| PG-8 | Recent evidence per skill | LearnerSummary latest observations → `EvidenceItem` projection | L | IN_PROGRESS |
+| PG-9 | Rank panel | none → SH-4 | L | BLOCKED `[DEF]` |
+| PG-10 | 18-week heatmap | none → per-day activity | L | BLOCKED `[DEF]` `[REVIEW]` |
+| PG-11 | Next action | `practiceRecommendation`, `crossSkillCue`, `reviewCue` → one contract | L | IN_PROGRESS |
+| PG-12 | Improving over four weeks | only comparable measures may show a trend → series where comparable, `0` otherwise | L | BLOCKED `[DEF]` |
+| PG-13 | Recurring errors | `error-memory` covers Writing → cross-domain read model | L | IN_PROGRESS |
+| PG-14 | "Dựa trên gì" counts | derivable → after PG-7 | L | IN_PROGRESS |
+
+## Old tracker (GAP-001..052) mapped
+
+Carried into a row above: GAP-001 SH-5 PG-1 · 002/003/008 PG-2 · 004 SH-2 SH-6 ·
+006 HM-1 · 011/026 SH-7 · 012 HM-6 RD-5 · 013 SH-1 · 014 PG-5 · 019 superseded
+by VC-11 (three grades) · 020 VC-12 · 021 SP-5..8 · 022/027/029 RD-1 RD-2 LS-1 ·
+025 LS-6 · 028 (per-word only) DC-3 · 032/034 RD-9 RD-13 · 035 RD-7 RD-15 · 036/039
+RD-12 · 040 RD-10 · 043 VC-11 · 044 RD-1 · 045 RD-11 · 047 VC-12 · 048 SH-4 PG-9 ·
+049 PG-10 · 051 DC-3 · 052 HM-2.
+
+Not drawn by the baseline, so no longer tracked (git history keeps them): GAP-005,
+007, 009, 010, 015, 016, 017, 018, 023, 024, 028 (whole-text pinyin), 030, 031,
+033, 037, 038, 041, 042, 046, 050. Profile, My Content, Admin, Onboarding, states,
+Modal/Drawer and tablet have no canonical design; their current implementation
+stays until the human supplies one (D-066).

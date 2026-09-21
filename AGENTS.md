@@ -69,6 +69,8 @@ Before any learner-facing product, UX, UI, visual, content-discovery, Library,
 Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
 navigation task, read and obey:
 
+- `docs/design/canonical-ui/` - the Canonical UI Baseline (D-066), the visual,
+  interaction and data authority for every learner-facing surface;
 - `docs/product/ORENA_PRODUCT_CONSTITUTION.md`;
 - `docs/product/ORENA_CONTENT_ARCHITECTURE.md`;
 - `docs/project/DESIGN_CONTRACT.md`, including its acceptance gates;
@@ -76,7 +78,8 @@ navigation task, read and obey:
   art-direction authority;
 - the current verified state the cold start in §2 already requires.
 
-Precedence for these tasks: explicit current human instruction → the Product
+Precedence for these tasks: explicit current human instruction → the Canonical
+UI Baseline (how a surface looks, behaves and what data it shows) → the Product
 Constitution → the Content Architecture → the Design Contract → current
 verified product state → the task brief → existing implementation. Legacy UI
 and screenshots are evidence of what was built, never design authority. If a
@@ -241,31 +244,21 @@ IDs, environment-specific paths, migration records, API responses or temporary
 UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
-**Theme.** Orena's interface follows the approved Orena Design System (D-059).
-A theme has an identity (`ink`, `paper`) and, separately, an appearance
-(`dark`, `light`); never treat the two as the same thing. The registry, not a
-light/dark switch, is the mechanism: a later theme is a registration, not a
-rewrite.
+**Theme.** The learner interface is the Canonical UI Baseline (D-066): one Dark
+Glass system, pinned in `docs/design/canonical-ui/`. D-059's Ink and Paper
+themes are retired and D-065 is superseded; there is no hybrid and no second
+visual system. Legacy compositions still in the code are work to migrate, not
+authority to preserve.
 
-- Colour has one owner: `static/orena/theme.css`. A foundation layer names the
-  approved palette, grouped by family; a semantic block per theme says what
-  each colour is *for*. Components read only semantic tokens. Do not add a
-  second `:root` colour block anywhere - that is the defect this replaced.
-- Interface colour derives from the approved design system: violet acts
-  (action, navigation, selection), lamp amber records (progress, completion,
-  earned), six domain hues appear in small doses, grounds are cool ink greys.
-  A button is never amber and a progress fill is never violet. Do not invent a
-  colour skin, and do not recolour canonical mascot or brand artwork.
-- Orena Orange `#FF7A3D` stays canonical as the mascot's and the artwork's
-  colour; it has no interface role (D-059). Paper takes darker partners of
-  violet and amber so both hold AA on white. Never change a canonical value to
-  make one component pass contrast - use its contrast-safe partner.
-- Every theme must pass AA for body text, secondary text, controls, links and
-  tinted panels. `scripts/test_orena_foundation.mjs` enforces this for every
-  registered theme.
-- A new approved theme is registered - a block in `theme.css`, an entry in
-  `theme.js`, a name and note in `ui/copy.js` for EN and ZH. It is never a new
-  component, a component fork, or a rewrite of the settings UI.
+- Colour has one owner: `static/orena/theme.css`, with the values of
+  `docs/design/canonical-ui/tokens.json`. Components read only its semantic
+  tokens. Do not add a second `:root` colour block anywhere. Semantic colour
+  (good, warn, bad, info) is ink for text and icons, never a fill on glass.
+- Do not invent a colour skin, and do not recolour canonical mascot or brand
+  artwork. Orena Orange `#FF7A3D` stays the mascot's and the artwork's colour.
+- Accessibility never redesigns the baseline. A token that fails AA is replaced
+  by the smallest technical change that keeps the visual intent, and the
+  deviation is documented. `scripts/test_orena_foundation.mjs` enforces AA.
 - Content artwork - covers, thumbnails, scenes, illustration - may be more
   vivid than the interface, under the Art Bible. That licence is artwork's
   alone and changes nothing above: it creates no second colour owner, exempts

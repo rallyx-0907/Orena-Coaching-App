@@ -300,61 +300,56 @@ Explicit human direction after a learning-surface review. Rules 1-18 stand.
     concurrent duplicates cost nothing; only a genuine change earns a new call.
     A stored answer is never served past the contract that produced it.
 
-## The Orena Design System (D-059)
+## The Canonical UI Baseline (D-066)
 
-Explicit human direction, 2026-09-19: the approved Orena Design System is the
-visual source of truth for the learner web. Rules 1-29 stand; this section says
-how a surface looks, not what it is for. Colour values live only in
-`static/orena/theme.css`; non-colour tokens (type, radius, motion, layers) in
-`static/orena/foundation.css`.
+Explicit human direction, 2026-09-21: the Canonical UI Baseline, pinned in
+`docs/design/canonical-ui/`, is the visual, interaction and data source of truth
+for the learner web. It replaces the D-059 design system (rules 30-40 as they
+stood) and D-065. Rules 1-29 stand where they do not name a colour, a theme or
+a component the baseline replaces. Colour values live only in
+`static/orena/theme.css`, taken from `docs/design/canonical-ui/tokens.json`;
+non-colour tokens live in `static/orena/foundation.css`.
 
-30. **Three greys, one hairline.** Ground, surface and raised surface on cool
-    ink; separation is a hairline. Depth on Ink is a light pool, never a drop
-    shadow; Paper replaces the pool with a faint wash and a soft shadow.
-31. **Violet acts, amber records.** Violet is action, navigation and
-    selection; amber is progress, completion and anything earned. One filled
-    violet pill per screen - the primary action. Everything else is a hairline
-    surface.
-32. **Domain hue in small doses.** Reading, Listening, Speaking, Dictation,
-    Writing and Vocabulary each have a hue at equal weight. It appears in a
-    tile, a label, a timeline fill or a transcript highlight - never as a card
-    background, never as the only signal.
-33. **A light pool marks the live thing.** An in-progress or selected card
-    carries the bloom; everything else stays flat, so the glow itself says
-    where the learner left off. At most one page-level bloom per screen.
-34. **Type (D-061).** Three faces, three jobs, as the mockup draws them:
-    Nunito 800 for display and headline figures, Nunito Sans for interface and
-    reading copy, DM Mono for data and the small uppercase labels. Where a face
-    has no glyphs for a locale the same role falls back technically, never by
-    redesign: Roboto Mono carries the mono role in a Vietnamese interface, Noto
-    Sans SC carries Han characters. Stories keep the serif (rule 18).
-35. **Radius by size.** Inline chips and covers 10px, rows and icon buttons
-    14px, cards and sheets 20px, anything pressable that holds a label a pill,
-    a sheet's top corners 24px.
-36. **Feedback: number, then detail.** A graded surface opens with one score
-    and one word, lists what went wrong as tappable items, and keeps
-    dimensions, phonemes and explanations one step deeper. Wrong is never
-    colour alone: it carries an underline, a dash, a glyph or a label too.
-37. **Artwork is the brightest object.** Covers are 2:3, media artwork 16:9 in
-    rails and 21:9 on detail pages. Until real artwork exists, content uses the
-    design system's artwork slot - dark ground, domain-hued bloom, dot field -
-    at the real geometry, so real artwork drops in with no layout change
-    (D-060). Artwork keeps its own light in both themes.
-38. **Navigation.** Exactly the approved rail: Home, Library, Vocabulary,
-    Progress, then Practice with Reading, Listening, Speaking, Dictation and
-    Writing, then the learner's card; each destination carries the top bar
-    (global search, language pair, due chip). A phone has the five-tab bar.
-    Nothing is removed to fit: Continue, Recall, Grammar, bringing your own
-    content and Admin each keep a named home one step away (D-060).
-39. **Designed states.** Empty is an icon, one line and one action; loading is
-    a skeleton at the real geometry, never a centre-screen spinner; a failing
-    service degrades one panel with two ways forward, never the whole screen.
-40. **The mockup decides the interface.** The approved mockup is reproduced,
-    not reinterpreted. When the backend lacks what a component shows, the
-    component keeps its place and shape in the design system's unavailable
-    state, and the gap is recorded in `docs/project/UI_BACKEND_GAPS.md`
-    (D-060). No component is removed, hidden or redesigned because of a
-    backend gap, and none shows invented data.
+30. **One system: Dark Glass.** Ground `#050310` with the cosmic field, flat
+    glass with one ring and no bevel, a shallow shadow, the violet accent
+    gradient. There is no second theme: Paper and the Ink/Paper registry are
+    retired. Nothing is built on the old look and nothing hybrid is shipped.
+31. **Light is light, not a coloured surface.** Semantic colour (good, warn,
+    bad, info) colours ink and icons on glass and never fills a surface. The
+    one recorded exception is the "not sure" amber chip on a review grade.
+32. **Skill hue** belongs to artwork, icons and small markers, as the baseline
+    draws it, and is never the only signal.
+33. **Explanations open in place.** A popover on a desk, a bottom sheet on a
+    phone; audio pauses at its position and resumes when the layer closes; the
+    learner never changes page to ask.
+34. **Type.** Nunito for display, Nunito Sans for interface, DM Mono for labels
+    and figures, Noto Serif for reading text and Han characters (D-061 faces).
+    A face with no glyphs for a locale falls back technically, never by
+    redesign.
+35. **Geometry is the baseline's.** Radii, spacing, the 280px rail and 88px
+    phone bar, and the two frames (desktop 1920x1080, phone 390x844) are read
+    from the screens, not chosen. There is no invented breakpoint.
+36. **A card carries only what decides.** Title, artwork, level or length when
+    it changes the decision, progress if the learner is partway. No source,
+    licence or model on a card.
+37. **Artwork.** Until real artwork exists, content uses the artwork slot the
+    baseline defines (dot field and a hue bloom at the real ratio); real artwork
+    replaces it with no layout change (D-057 keeps the Art Bible's authority for
+    the mascot, scenes and real artwork).
+38. **Navigation** is the baseline's: Home, Library, Vocabulary, Progress and
+    Profile, with the four skills grouped under it, and the five-item phone bar.
+39. **States.** Use the baseline's loading, empty and error where it draws one;
+    where it does not (it marks them incomplete), keep the existing pattern -
+    a skeleton at the real geometry, one degraded panel with two ways forward -
+    and invent no new visual.
+40. **The baseline decides, the backend adapts.** No component is removed,
+    moved or redesigned because a backend cannot supply it. A metric with no
+    measured value shows **0** in its canonical component and never an invented
+    figure; the 0 is a fallback for the layout and never data (D-066). Gaps are
+    tracked in `docs/project/UI_BACKEND_GAPS.md`.
+41. **Accessibility never redesigns.** A token that fails AA is replaced by the
+    smallest technical change that keeps the visual intent, and the deviation is
+    documented.
 
 ## The learner language contract
 

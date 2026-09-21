@@ -119,6 +119,23 @@ removed merely because current code conflicts with them.
   domain-count authority — `ORENA_CONTENT_ARCHITECTURE.md` and
   `ORENA_UNDERSTANDING_ENGINE.md` are.
 
+## The Ink / Paper design system (D-059) and the D-065 update
+
+- **Status:** RETIRED (D-066, explicit human instruction 2026-09-21). Removal
+  from the code is part of the migration and finishes when nothing depends on it.
+- **Current replacement:** the Canonical UI Baseline, one Dark Glass system
+  (`docs/design/canonical-ui/`).
+- **Why retired:** the human approved a frozen baseline as the single visual and
+  data authority; it lists the D-059/D-065 source documents as legacy.
+- **What may remain until migrated:** the Ink/Paper tokens, the theme registry,
+  the borderless-card block and the surfaces built on them, only as code that
+  has not yet been replaced. A surface is migrated to the baseline, then the old
+  pieces are deleted.
+- **What must not happen:** building anything new on Ink, Paper, the reader's
+  sepia block, borderless cards or the learning-surface opening sentence; a
+  hybrid of the two systems; a Paper or light theme returning as a setting;
+  reading D-059 or D-065 as design authority.
+
 ## `writing_coach/becoming_*`
 
 - **Status:** LEGACY TECHNICAL NAMESPACE
