@@ -140,6 +140,7 @@ const submit = expression.slice(expression.indexOf("root.querySelector('form').o
 assert.doesNotMatch(submit, /box\.value = |textarea'\)\.value = /, 'a review never writes into the box');
 assert.match(expression, /data-revise/, 'revising is offered');
 assert.match(contract, /27\. \*\*The writing revision loop\.\*\*/, 'the durable rule is recorded');
+assert.match(contract, /never substitutes generated text for the learner's\s+writing/, "and says a review never replaces the learner's writing");
 assert.match(contract, /28\. \*\*Bounded before it is spent on\.\*\*/, 'and so is the resource bound');
 assert.match(contract, /29\. \*\*A valid evaluation is reused, never recomputed\.\*\*/, 'and the reuse rule');
 
@@ -161,7 +162,7 @@ assert.match(identity, /EVALUATOR_CONTRACT_VERSION/, 'and so is the evaluator ag
 assert.match(expression, /const reviewSpeaksTo = /, 'the room asks the stored identity, not a device record');
 assert.match(expression, /identity\.support_language/, 'about the support language');
 assert.doesNotMatch(expression, /entry\.support === ctx\.support/, 'the device-only guess is retired');
-assert.match(contract, /does not replay it\./, 'the durable rule is recorded');
+assert.match(contract, /Generated guidance is \*\*requested\*\* in the support language, not translated\s+afterwards, and a stored one carries the language it was written in\./, 'the durable rule is recorded');
 
 /* --- EN, ZH and VI all say it ------------------------------------------- */
 for (const ui of ['en', 'zh', 'vi'])

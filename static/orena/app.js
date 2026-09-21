@@ -9,11 +9,8 @@ import { renderSpeaking } from './ui/speaking.js';
 import { renderConversation } from './ui/conversation.js';
 import {
   referenceNavigation,
-  navigationToggle,
   navigationTabs,
   operatorEntry,
-  accountCard,
-  accountAvatarButton,
   topBar,
   referenceCopy,
   experienceFor,
@@ -204,49 +201,22 @@ function shell() {
      destination; on a phone a slim bar (mark, language pair, the learner) and
      the tab bar. Bringing your own content lives in Library. */
   document.getElementById('shell').innerHTML =
-    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}<div class="shell-bar">${accountAvatarButton(ctx)}${navigationToggle(ctx)}</div><div class="shell-foot">${accountCard(ctx)}</div>${navigationTabs(ctx)}`;
+    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
   document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  /* The rail and the tab bar belong to Home, Library, Vocabulary and Progress. A room where the
+     learner works - the reader, the player, Dictation, the editor, a review - has none: the
+     baseline's templates for them begin at a bar of their own. */
+  document.documentElement.dataset.shell = shellBelongsTo(ctx.location) ? 'on' : 'off';
   paintTopBar();
-  /* The narrow-screen destination sheet. The shell is rebuilt on every route,
-     so choosing a destination closes it without anything having to remember
-     that it was open - and Escape closes it from the keyboard. */
-  const shellEl = document.getElementById('shell');
-  const toggle = shellEl.querySelector('[data-nav-toggle]');
-  /* The curtain behind the sheet. A button rather than a div, so closing by
-     tapping away is one thing to a pointer and to a keyboard both, and so it
-     is announced as something that does something. */
-  let backdrop = document.querySelector('.nav-backdrop');
-  if (!backdrop) {
-    backdrop = document.createElement('button');
-    backdrop.className = 'nav-backdrop';
-    backdrop.type = 'button';
-    backdrop.tabIndex = -1;
-    backdrop.setAttribute('aria-hidden', 'true');
-    shellEl.insertAdjacentElement('afterend', backdrop);
-  }
-  const setMenu = (open) => {
-    // Looking for somewhere else to go is navigating, not working.
-    if (open) header.set(false);
-    shellEl.dataset.menu = open ? 'open' : 'closed';
-    toggle.setAttribute('aria-expanded', String(open));
-  };
-  setMenu(false);
-  toggle.onclick = () => setMenu(shellEl.dataset.menu !== 'open');
-  backdrop.onclick = () => setMenu(false);
-  const closeSheet = shellEl.querySelector('[data-nav-close]');
-  if (closeSheet)
-    closeSheet.onclick = () => {
-      setMenu(false);
-      toggle.focus();
-    };
-  shellEl.onkeydown = (event) => {
-    if (event.key !== 'Escape' || shellEl.dataset.menu !== 'open') return;
-    setMenu(false);
-    toggle.focus();
-  };
   // The approved design has no page footer; settings live in the learner's
   // card and the You tab.
   document.getElementById('footer').innerHTML = '';
+}
+const WORKING_PAGES = new Set(['encounter', 'book', 'expression', 'conversation']);
+function shellBelongsTo(location) {
+  if (WORKING_PAGES.has(location.page)) return false;
+  if (location.page === 'practice' && ['recall', 'dictation', 'shadowing'].includes(location.intent)) return false;
+  return true;
 }
 /* The destinations that carry the top bar. Rooms where the learner works do
    not: the content comes forward (Design Contract rule 11). */

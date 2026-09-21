@@ -67,7 +67,7 @@ renderLibraryBrowse(host, ctxOf([{ id: 'media:dialogue', place: { index: 5, tota
   onImport: () => {},
 });
 const shell = host.innerHTML;
-assert.match(shell, /<h1>Nghe<\/h1>/, 'the bar names the room');
+assert.match(shell, /<h1>Listening<\/h1>/, 'the bar names the room as the design does');
 assert.match(shell, new RegExp(r.libraryImportListening), 'the bar offers the import');
 assert.match(shell, /role="radiogroup"/, 'the type chips are a single-choice group');
 
@@ -96,7 +96,7 @@ assert.match(narrowed, /The cosmic calendar/);
 assert.doesNotMatch(narrowed, /Ordering food/);
 at(host, '[data-lib-query]').value = 'zzzz';
 at(host, '[data-lib-query]').oninput();
-assert.match(at(host, '[data-lib-results]').innerHTML, /state-panel--empty/, 'nothing found says so and offers a way out');
+assert.doesNotMatch(at(host, '[data-lib-results]').innerHTML, /state-panel|lib-card/, 'nothing found is an empty grid: the design draws no empty state');
 
 /* Reading: provenance is a badge, said once; time is localised; books load and fail visibly. */
 const reading = root();
@@ -106,7 +106,7 @@ renderLibraryBrowse(
   { readable: [{ id: 'generated:1', title: 'Made', origin: 'generated', level: 'B1', time: '3 min' }], media: [] },
   { only: ['books'], onImport: () => {} },
 );
-assert.match(at(reading, '[data-lib-results]').innerHTML, /skeleton/, 'books still loading are shown as loading');
+assert.doesNotMatch(at(reading, '[data-lib-results]').innerHTML, /skeleton|placeholder/, 'loading is not drawn in the design, so no placeholder is drawn for it');
 await tick();
 const shelf = at(reading, '[data-lib-results]').innerHTML;
 assert.match(shelf, /A Book/);
@@ -114,7 +114,7 @@ assert.match(shelf, /aria-valuenow="50"/, 'a book shows the chapter place from d
 assert.match(shelf, /3 phút/, 'the authored "3 min" is shown in the interface language');
 assert.equal((shelf.match(/Tạo riêng/g) || []).length, 1, 'provenance is said once');
 assert.match(shelf, /An Author/);
-assert.match(reading.innerHTML, /<h1>Đọc<\/h1>/);
+assert.match(reading.innerHTML, /<h1>Reading<\/h1>/);
 
 const failing = root();
 renderLibraryBrowse(failing, ctxOf([], { libraryBooks: async () => { throw new Error('down'); } }), { readable: [], media: [] }, { only: ['books'] });

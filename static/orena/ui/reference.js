@@ -34,7 +34,7 @@ export const referenceCopy = {
     destinations: 'Destinations', closeDestinations: 'Close destinations',
     home: 'Home', library: 'Library', progress: 'Progress', profile: 'Profile', you: 'You',
     dictation: 'Dictation', settings: 'Settings', allPractice: 'All practice',
-    allDestinations: 'Everything in Orena', mainNavigation: 'Main', practiceNavigation: 'Practice',
+    allDestinations: 'Everything in Orena', mainNavigation: 'Main', navSkills: 'Skills', tabVocabulary: 'Vocab', practiceNavigation: 'Practice',
     languagePair: 'Learning {learning}, explained in {support}',
     searchPlaceholder: 'Search books, audio, words…', dueCount: '{n} due',
     libraryFilters: 'Filters', libraryClear: 'Clear', libraryClearFilters: 'Clear filters',
@@ -88,8 +88,6 @@ export const referenceCopy = {
     dictHintLevel: 'Hint {n}/{m}',
     dictMoreHint: 'More hint',
     dictCheck: 'Check',
-    dictPlaceholder: 'Type what you heard…',
-    dictResultHere: 'The result appears here once you check.',
     dictCharactersOf: '{n} / {m} characters',
     dictAssisted: 'Hint used.',
     dictNeverAll: 'A hint never shows the whole line.',
@@ -208,7 +206,7 @@ export const referenceCopy = {
     destinations: '去处', closeDestinations: '收起去处',
     home: '首页', library: '书库', progress: '进度', profile: '个人', you: '我',
     dictation: '听写', settings: '设置', allPractice: '全部练习',
-    allDestinations: 'Orena 的全部去处', mainNavigation: '主要', practiceNavigation: '练习',
+    allDestinations: 'Orena 的全部去处', mainNavigation: '主要', navSkills: '技能', tabVocabulary: '词汇', practiceNavigation: '练习',
     languagePair: '正在学{learning}，用{support}讲解',
     searchPlaceholder: '搜索书、音频、词…', dueCount: '{n} 个待复习',
     libraryFilters: '筛选', libraryClear: '清除', libraryClearFilters: '清除筛选',
@@ -262,8 +260,6 @@ export const referenceCopy = {
     dictHintLevel: '提示 {n}/{m}',
     dictMoreHint: '再给点提示',
     dictCheck: '检查',
-    dictPlaceholder: '写下你听到的…',
-    dictResultHere: '检查之后，结果会显示在这里。',
     dictCharactersOf: '{n} / {m} 个字',
     dictAssisted: '已使用提示。',
     dictNeverAll: '提示不会显示整句话。',
@@ -362,11 +358,11 @@ referenceCopy.vi = {
   ...referenceCopy.en,
   discover: 'Khám phá',
   practice: 'Luyện tập',
-  reading: 'Đọc',
-  listening: 'Nghe',
-  writing: 'Viết',
-  speaking: 'Nói',
-  vocabulary: 'Từ vựng',
+  reading: 'Reading',
+  listening: 'Listening',
+  writing: 'Writing',
+  speaking: 'Speaking',
+  vocabulary: 'Vocabulary',
   understanding: 'Cấu trúc & ý nghĩa',
   language: 'Ngôn ngữ của tôi',
   recall: 'Ôn lại',
@@ -378,16 +374,18 @@ referenceCopy.vi = {
   keep: 'Những gì bạn giữ lại',
   destinations: 'Các điểm đến',
   closeDestinations: 'Đóng danh sách',
-  home: 'Trang chủ',
-  library: 'Thư viện',
-  progress: 'Tiến độ',
-  profile: 'Hồ sơ',
+  home: 'Home',
+  library: 'Library',
+  progress: 'Progress',
+  profile: 'Profile',
   you: 'Bạn',
-  dictation: 'Chính tả',
+  dictation: 'Dictation',
   settings: 'Cài đặt',
   allPractice: 'Tất cả bài luyện',
   allDestinations: 'Mọi nơi trong Orena',
   mainNavigation: 'Chính',
+  navSkills: 'KỸ NĂNG',
+  tabVocabulary: 'Vocab',
   practiceNavigation: 'Luyện tập',
   languagePair: 'Đang học {learning}, giải thích bằng {support}',
   searchPlaceholder: 'Tìm sách, audio, từ vựng…',
@@ -479,8 +477,6 @@ referenceCopy.vi = {
   dictHintLevel: 'Gợi ý mức {n}/{m}',
   dictMoreHint: 'Thêm gợi ý',
   dictCheck: 'Kiểm tra',
-  dictPlaceholder: 'Gõ lại điều bạn nghe được…',
-  dictResultHere: 'Kết quả sẽ hiện ở đây sau khi bạn kiểm tra.',
   dictCharactersOf: '{n} / {m} ký tự',
   dictAssisted: 'Đã dùng gợi ý.',
   dictNeverAll: 'Không bao giờ hiện cả câu.',
@@ -727,112 +723,89 @@ export function experienceFor(location) {
   if (page === 'practice' && intent === 'follow') return 'listening';
   return page === 'preferences' ? 'discover' : page;
 }
-/* The shell's destinations (D-059, D-060; Design Contract rule 38).
+/* The shell's destinations, drawn from the Canonical UI Baseline (D-066, AppShell in
+   Orena Reading / Orena Listening and MobileBottomNav in Orena Home Discover).
 
-   Exactly the approved rail: Home, Library, Vocabulary, Progress, then a
-   Practice group of Reading, Listening, Speaking, Dictation, Writing, then the
-   learner's card. The design system is the visual source of truth (D-060), so
-   nothing sits in the rail that the approved design does not draw. Nothing that
-   existed is lost either - each has a named home one step away:
-   - Continue: the Continue cards on Home, and their "See all";
-   - Recall: the due chip in the top bar, and Vocabulary's review action;
-   - Grammar and the whole practice map: the Practice heading itself;
-   - bringing your own content: Library;
-   - Platform Admin: an operator entry, rendered only for admins.
+   Five destinations - Home, Library, Vocabulary, Progress, Profile - and, under the
+   heading KỸ NĂNG, four skills: Reading, Listening, Speaking, Writing. Nothing else is in
+   the rail: no Practice group, no Dictation entry (Dictation is reached inside Listening),
+   no account card. On a phone the same five are the tab bar and the skills are reached
+   from Library and Home, as the baseline draws it.
 
-   `current` is derived from the same `experienceFor` the rooms use, so the
-   rail, the tab bar and the room can never disagree about where the learner
-   is. A room without its own entry lights the entry that leads to it. */
+   `current` is derived from the same `experienceFor` the rooms use, so the rail, the tab
+   bar and the room can never disagree about where the learner is. */
 const DESTINATIONS = [
   { id: 'discover', page: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue'] },
-  { id: 'content', page: 'content', icon: 'books', label: 'library', owns: ['content', 'book', 'search'] },
+  { id: 'content', page: 'content', icon: 'books', label: 'library', owns: ['content', 'search', 'reading', 'listening', 'speaking', 'writing', 'practice', 'understanding'] },
   { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall', 'collection'] },
   { id: 'progress', page: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress', 'history'] },
-  /* The fifth destination the updated design draws. Until the profile screen
-     is built it opens the profile and settings sheet - the same place the
-     account card and the phone's own tab open - so the rail is never a link
-     to nothing. */
-  { id: 'profile', page: '', icon: 'user-circle', label: 'you', owns: ['profile'], sheet: true },
+  /* Profile has no canonical screen yet (INCOMPLETE in the baseline), so it opens the
+     profile and settings sheet that already existed rather than a page. */
+  { id: 'profile', page: '', icon: 'user', label: 'profile', owns: ['profile'], sheet: true },
 ];
-const PRACTICE = [
-  { id: 'reading', page: 'practice', intent: 'reading', icon: 'book-open', domain: 'reading' },
-  { id: 'listening', page: 'practice', intent: 'follow', icon: 'headphones', domain: 'listening' },
-  { id: 'speaking', page: 'practice', intent: 'speaking', icon: 'microphone', domain: 'speaking' },
-  { id: 'dictation', page: 'practice', intent: 'dictation', icon: 'keyboard', domain: 'dictation' },
-  { id: 'writing', page: 'expression', icon: 'pencil-simple', domain: 'writing' },
+const SKILLS = [
+  { id: 'reading', page: 'practice', intent: 'reading', icon: 'book-open' },
+  { id: 'listening', page: 'practice', intent: 'follow', icon: 'headphones' },
+  { id: 'speaking', page: 'practice', intent: 'speaking', icon: 'microphone' },
+  { id: 'writing', page: 'expression', icon: 'pen-nib' },
 ];
-/* The phone's tab bar. Each tab owns the rooms it leads to, so the one that
-   lights up is the way back to where the learner is. */
+/* The phone's tab bar: the same five, the last one a button. The Library tab owns the skill
+   rooms, so the one that lights up is the way back to where the learner is. */
 const TABS = [
-  { id: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue', 'practice', 'speaking', 'dictation', 'writing', 'understanding'] },
-  { id: 'content', icon: 'books', label: 'library', owns: ['content', 'reading', 'listening', 'book', 'search'] },
-  { id: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall', 'collection'] },
+  { id: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue'] },
+  { id: 'content', icon: 'books', label: 'library', owns: ['content', 'reading', 'listening', 'speaking', 'writing', 'practice', 'understanding', 'book', 'search'] },
+  { id: 'language', icon: 'cards', label: 'tabVocabulary', owns: ['language', 'recall', 'collection'] },
   { id: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress', 'history'] },
 ];
 
-/* Which navigation entry the learner is in. Practice over media - dictation,
-   shadowing - is its own entry where one exists and the Practice map where
-   it does not; Grammar, which has no rail entry, lights the Practice map. */
+/* Which navigation entry the learner is in. Dictation and shadowing are Listening; a page that
+   is none of the five lights nothing rather than the wrong thing. */
 export function navigationCurrent(location) {
   const experience = experienceFor(location);
-  if (experience === 'practice')
-    return location.intent === 'dictation' ? 'dictation' : location.intent === 'shadowing' ? 'listening' : 'practice';
+  if (experience === 'practice') return location.intent === 'dictation' || location.intent === 'shadowing' ? 'listening' : 'practice';
   if (experience === 'understanding') return 'practice';
   return experience;
 }
 export function navigationEntries(ui) {
   const c = referenceCopy[ui] || referenceCopy.en;
   const main = DESTINATIONS.map((x) => ({ ...x, label: c[x.label], href: link(x.page) }));
-  const practice = PRACTICE.map((x) => ({ ...x, label: c[x.id], href: link(x.page, { intent: x.intent }) }));
-  return { main, practice, practiceHref: link('practice') };
+  const skills = SKILLS.map((x) => ({ ...x, label: c[x.id], href: link(x.page, { intent: x.intent }) }));
+  return { main, skills };
 }
 const current = (on) => (on ? ' aria-current="page"' : '');
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const here = navigationCurrent(ctx.location);
-  const { main, practice, practiceHref } = navigationEntries(ctx.ui);
+  const { main, skills } = navigationEntries(ctx.ui);
   const mainLinks = main
     .map((entry) => {
       const on = entry.owns.includes(here);
-      const inside = `${icon(entry.icon, { filled: on, size: 20 })}<span class="nav-label">${esc(entry.label)}</span>`;
+      const inside = `${icon(entry.icon, { filled: on, size: 23 })}<span class="nav-label">${esc(entry.label)}</span>`;
       return entry.sheet
         ? `<button type="button" class="nav-link" data-preference data-nav="${entry.id}">${inside}</button>`
         : `<a class="nav-link" href="${entry.href}"${current(on)} data-nav="${entry.id}">${inside}</a>`;
     })
     .join('');
-  // A practice room's icon wears its domain hue; the row itself stays neutral.
-  const practiceLinks = practice
+  const skillLinks = skills
     .map((entry) => {
       const on = here === entry.id;
-      /* The design prints the learner's level beside each domain. Nothing
-         stores one yet (GAP-004), so the slot reads as a dash rather than as
-         a level nobody declared. */
-      return `<a class="nav-link nav-link--practice" href="${entry.href}"${current(on)} data-nav="${entry.id}" data-domain="${entry.domain}">${icon(entry.icon, { filled: on, size: 18 })}<span class="nav-label">${esc(entry.label)}</span><span class="nav-level ds-data" title="${esc(c.levelUnknown)}">—</span></a>`;
+      return `<a class="nav-link nav-link--skill" href="${entry.href}"${current(on)} data-nav="${entry.id}">${icon(entry.icon, { size: 20 })}<span class="nav-label">${esc(entry.label)}</span></a>`;
     })
     .join('');
-  return `<nav id="shellNav" aria-label="Orena"><div class="nav-sheet-head"><strong>${esc(c.allDestinations)}</strong><button class="nav-close" type="button" data-nav-close aria-label="${esc(c.closeDestinations)}">${icon('x', { size: 20 })}</button></div><div class="nav-group nav-group--main" role="group" aria-label="${esc(c.mainNavigation)}">${mainLinks}</div><div class="nav-group nav-group--practice" role="group" aria-labelledby="navPractice"><a class="nav-heading" id="navPractice" href="${practiceHref}"${current(here === 'practice')} data-nav="practice"><span>${esc(c.practiceNavigation)}</span><span class="sr-only">, ${esc(c.allPractice)}</span></a>${practiceLinks}</div></nav>`;
+  return `<nav id="shellNav" aria-label="Orena"><div class="nav-group">${mainLinks}</div><div class="nav-group nav-group--skills"><span class="nav-heading">${esc(c.navSkills)}</span>${skillLinks}</div></nav>`;
 }
 
-/* The phone's destinations: four tabs and the learner's own. "You" opens the
-   profile and settings sheet, so it is a button, not a link. */
+/* The phone's tab bar: five tabs, the last the learner's own, which opens the profile and settings
+   sheet, so it is a button, not a link. */
 export function navigationTabs(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const here = navigationCurrent(ctx.location);
   const tabs = TABS.map((tab) => {
     const on = tab.owns.includes(here);
     const href = tab.id === 'discover' ? link() : link(tab.id);
-    return `<a class="shell-tab" href="${href}"${current(on)}>${icon(tab.icon, { filled: on, size: 22 })}<span>${esc(c[tab.label])}</span></a>`;
+    return `<a class="shell-tab" href="${href}"${current(on)}>${icon(tab.icon, { filled: on, size: 23 })}<span>${esc(c[tab.label])}</span></a>`;
   }).join('');
-  return `<nav class="shell-tabs" aria-label="${esc(c.mainNavigation)}">${tabs}<button class="shell-tab" type="button" data-preference>${icon('user-circle', { size: 22 })}<span>${esc(c.you)}</span></button></nav>`;
-}
-
-/* The practice map on a phone. The approved phone composition draws five tabs
-   and no practice list; until the Library phase gives Practice its phone home,
-   this one control keeps every practice room reachable (tracked as parity
-   drift in DESIGN_SYSTEM_MIGRATION.md, not a design of its own). */
-export function navigationToggle(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  return `<button class="nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="shellNav" aria-label="${esc(c.allDestinations)}">${icon('squares-four', { size: 20 })}</button>`;
+  return `<nav class="shell-tabs" aria-label="${esc(c.mainNavigation)}">${tabs}<button class="shell-tab" type="button" data-preference>${icon('user', { size: 23 })}<span>${esc(c.profile)}</span></button></nav>`;
 }
 
 
@@ -877,19 +850,6 @@ export function languagePair(ctx) {
   return { learning, support, text: `${learning} → ${support}` };
 }
 
-/* The learner, at the foot of the rail: who they are, what they are learning,
-   and the way into settings. Only what the account actually says is shown -
-   the design's level ("HSK 2") has no source yet and is tracked as GAP-004. */
-export function accountCard(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  const user = ctx.user || {};
-  const name = String(user.name || user.display_name || (user.email ? user.email.split('@')[0] : '') || c.you);
-  return `<button class="account-card" type="button" data-preference aria-label="${esc(`${c.profile} · ${c.settings}`)}"><span class="account-avatar" aria-hidden="true"></span><span class="account-text"><strong>${esc(name)}</strong><small>${esc(languagePair(ctx).text)}</small></span>${icon('gear-six', { size: 16, className: 'account-gear' })}</button>`;
-}
-export function accountAvatarButton(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
-  return `<button class="account-avatar account-avatar--button" type="button" data-preference aria-label="${esc(`${c.profile} · ${c.settings}`)}"></button>`;
-}
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
   return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;
 }

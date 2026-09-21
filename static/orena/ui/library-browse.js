@@ -185,7 +185,6 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
       .filter((entry) => !q || `${entry.title} ${entry.sub} ${entry.level} ${r[`libraryKind_${entry.type}`] || ''}`.toLowerCase().includes(q))
       .sort((a, b) => (b.percent ? 1 : 0) - (a.percent ? 1 : 0) || a.title.localeCompare(b.title));
   };
-  const pending = () => state.books === null || state.collections === null;
 
   const importButton = onImport
     ? `<button type="button" class="lib-import" data-lib-import>${icon('upload-simple', { size: 16 })}<span>${esc(r[skill === 'reading' ? 'libraryImportReading' : 'libraryImportListening'])}</span></button>`
@@ -203,14 +202,9 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
     chipsRoot.hidden = !types.length;
 
     const list = shown();
-    let body;
-    // Whatever has arrived is shown at once; what is still on its way is a placeholder
-    // after it, so a slow shelf never hides the ones that are ready.
-    const placeholders = `<span class="lib-placeholders" aria-hidden="true">${Array.from({ length: list.length ? 3 : 6 }, () => '<span class="skeleton lib-skeleton"></span>').join('')}</span>`;
-    if (!list.length && pending()) body = `<div class="lib-grid">${placeholders}</div>`;
-    else if (!list.length)
-      body = `<div class="state-panel state-panel--empty">${icon('magnifying-glass', { size: 22 })}<div><strong>${esc(r.libraryNoResults)}</strong></div>${state.query || state.type ? `<button type="button" class="primary" data-lib-clear>${esc(r.libraryClearFilters)}</button>` : ''}</div>`;
-    else body = `<div class="lib-grid">${list.map((entry) => card(entry, r)).join('')}${pending() ? placeholders : ''}</div>`;
+    // Loading and empty are not drawn in the design (D-067, rule 39), so nothing is drawn for them:
+    // whatever has arrived is shown, and a search that finds nothing shows an empty grid.
+    const body = `<div class="lib-grid">${list.map((entry) => card(entry, r)).join('')}</div>`;
     const failed = state.booksFailed
       ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-books-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
       : '';
@@ -226,14 +220,6 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
     chipsRoot.querySelectorAll('[data-lib-type]').forEach((button) => {
       button.onclick = () => {
         state.type = button.dataset.libType;
-        paint();
-      };
-    });
-    results.querySelectorAll('[data-lib-clear]').forEach((button) => {
-      button.onclick = () => {
-        state.type = '';
-        state.query = '';
-        root.querySelector('[data-lib-query]').value = '';
         paint();
       };
     });

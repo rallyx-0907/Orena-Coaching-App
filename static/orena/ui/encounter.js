@@ -1313,7 +1313,11 @@ export async function renderEncounter(root, ctx) {
       const resultHost = body.querySelector('[data-dz-result]');
       const clip = body.querySelector('[data-dz-clip]');
       const rateButton = body.querySelector('[data-dz-rate]');
-      const emptyResult = resultHost.innerHTML;
+      // The result panel is drawn only once there is a result; until then, and after "try again", it is not.
+      const clearResult = () => {
+        resultHost.hidden = true;
+        resultHost.innerHTML = '';
+      };
       const key = `${payload.asset.asset_id}:${target.segment_id}`;
       const keepTerm = (payload.catalog?.vocabulary || []).find((term) => term && target.original_text.includes(term)) || '';
       /* The hint is a working aid, not an outcome: it lives for this visit only and
@@ -1337,7 +1341,7 @@ export async function renderEncounter(root, ctx) {
       hintButton.onclick = () => {
         hintLevel = Math.min(HINT_LEVELS, hintLevel + 1);
         // Asking for a hint is going back to work on the line.
-        resultHost.innerHTML = emptyResult;
+        clearResult();
         paintHint();
       };
       answer.oninput = () => {
@@ -1378,11 +1382,13 @@ export async function renderEncounter(root, ctx) {
       });
       body.querySelectorAll('form button').forEach((x) => (x.disabled = false));
       const recover = recoverListeningEvidence(readPrior);
-      const report = progressReporter(
+      const reporter = progressReporter(
         body.querySelector('[data-evidence-status]'),
         ctx,
         () => isAlive() && version === practiceVersion,
       );
+      // Nothing in the frame says "saving" or "saved"; only a failure is worth telling the learner.
+      const report = { saving() {}, saved() {}, note: (message) => reporter.note(message), failed: (message, retry) => reporter.failed(message, retry) };
       if (!priorRead) report.note(c.priorProgressUnread);
       const persist = async () => {
         const snapshot = dictation.value;
@@ -1426,6 +1432,7 @@ export async function renderEncounter(root, ctx) {
             note: (mark) =>
               mark.kind === 'wrong' ? `${mark.from} → ${mark.to}` : mark.kind === 'missing' ? `${r.dictMissing} ${mark.to}` : `${r.dictExtra} ${mark.from}`,
           });
+          resultHost.hidden = false;
           resultHost.innerHTML = resultHtml({
             result,
             language,
@@ -1443,7 +1450,7 @@ export async function renderEncounter(root, ctx) {
           });
           resultHost.querySelector('[data-listen-again]').onclick = playLine;
           resultHost.querySelector('[data-again]').onclick = () => {
-            resultHost.innerHTML = emptyResult;
+            clearResult();
             answer.focus();
             playLine();
           };

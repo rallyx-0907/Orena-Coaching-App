@@ -210,15 +210,13 @@ assert.ok(
   'the full map primitive remains for surfaces that want it',
 );
 
-/* --- The shell's destinations (D-059, Design Contract rule 38) ---
+/* --- The shell's destinations: the baseline's (D-066, D-067; Design Contract rules 38, 45, 47) ---
 
-   Five destinations and a Practice group replace the eleven-link rail, and a
-   phone reaches them through a tab bar plus one control that opens the whole
-   map as a sheet. The reshape must not cost a single way in: every earlier
-   destination's href is still in the map, and these hold the parts that would
-   silently undo that. */
+   Five destinations (Home, Library, Vocabulary, Progress, Profile) and four skills under KỸ NĂNG
+   (Reading, Listening, Speaking, Writing) on a desk; the same five as an 88px tab bar on a phone.
+   Nothing else is in the chrome: no Practice group, no Dictation entry, no account card, no
+   destination sheet. The rooms where the learner works have neither. */
 const {
-  navigationToggle,
   navigationTabs,
   referenceNavigation,
   navigationCurrent,
@@ -234,24 +232,23 @@ const shellCtx = (ui, location, extra = {}) => ({
 
 for (const ui of ['en', 'zh', 'vi']) {
   const c = referenceCopy[ui];
-  for (const key of ['home', 'library', 'vocabulary', 'progress', 'you', 'dictation', 'allDestinations', 'practiceNavigation'])
+  for (const key of ['home', 'library', 'vocabulary', 'progress', 'profile', 'reading', 'listening', 'speaking', 'writing', 'navSkills', 'tabVocabulary'])
     assert.ok(c[key], `${ui}: the shell needs "${key}"`);
   const nav = referenceNavigation(shellCtx(ui, route('#/')));
-  assert.match(nav, /id="shellNav"/, 'the control has something to point at');
-  /* D-060: the rail is exactly the approved one - four destinations, the
-     Practice heading, five practice rooms. */
-  const railHrefs = [...nav.matchAll(/<a class="nav-(?:link|heading)[^"]*" (?:id="navPractice" )?href="([^"]+)"/g)].map((m) => m[1]);
+  assert.match(nav, /id="shellNav"/, 'the nav has an id to point at');
+  const railHrefs = [...nav.matchAll(/<a class="nav-link[^"]*" href="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(railHrefs, [
     link(), link('content'), link('language'), link('progress'),
-    link('practice'),
     link('practice', { intent: 'reading' }), link('practice', { intent: 'follow' }),
-    link('practice', { intent: 'speaking' }), link('practice', { intent: 'dictation' }), link('expression'),
-  ], `${ui}: the approved rail`);
-  assert.equal((nav.match(/aria-current="page"/g) || []).length, 1, 'exactly one is current');
-  // A practice room's icon wears its domain hue; the row stays neutral.
-  assert.match(nav, /class="nav-link nav-link--practice" href="[^"]+" data-nav="reading" data-domain="reading"/);
-  /* Nothing that existed is lost: every earlier destination is still reached
-     from its named home - the rail, the top bar, the practice map, or Home. */
+    link('practice', { intent: 'speaking' }), link('expression'),
+  ], `${ui}: the baseline's rail`);
+  assert.match(nav, /<button type="button" class="nav-link" data-preference data-nav="profile">/, `${ui}: Profile opens the profile sheet`);
+  assert.equal((nav.match(/nav-link--skill/g) || []).length, 4, `${ui}: four skills`);
+  assert.equal((nav.match(/aria-current="page"/g) || []).length, 1, 'exactly one is current on Home');
+  assert.doesNotMatch(nav, /navPractice|nav-link--practice|account-card|data-nav="dictation"|nav-toggle/, `${ui}: nothing the design does not draw`);
+  /* Nothing is lost: the rooms that left the chrome are reached from where the design puts them
+     (Home, Library, a skill's library, the Listening deep sheet). Continue and Recall are Home's and
+     Vocabulary's; the Practice map still exists for the surfaces that ask for it. */
   const threeThreads = { value: { continuation: ['a', 'b', 'c'].map((x) => ({ id: `story:${x}`, title: x, intent: 'reading' })), expressions: {}, conversations: {} } };
   const reachable = [
     nav,
@@ -259,62 +256,57 @@ for (const ui of ['en', 'zh', 'vi']) {
     practiceOverview({ c: copy[ui === 'vi' ? 'vi' : ui] || copy.en, ui }),
     discoverySpread({ c: copy[ui] || copy.en, ui, language: 'en', support: 'vi', memory: threeThreads }, {}),
   ].join('');
-  for (const entry of entryPoints(ui))
+  // The Practice map (#/practice) is the one entry the design does not draw: it left the chrome with the
+  // Practice group and is a legacy page awaiting deletion (UI_BACKEND_GAPS.md), so it is not required here.
+  for (const entry of entryPoints(ui).filter((x) => x.id !== 'practice'))
     assert.ok(reachable.includes(`href="${entry.href}"`), `${ui}: ${entry.id} is no longer reachable`);
 
-  const toggle = navigationToggle(shellCtx(ui, route('#/')));
-  assert.match(toggle, /aria-expanded="false"/, 'it reports its own state');
-  assert.match(toggle, /aria-controls="shellNav"/, 'it names what it opens');
-  assert.ok(toggle.includes(`aria-label="${c.allDestinations}"`), 'an icon-only control is named');
-
-  // The tab bar: four places and the learner's own, the way back lit.
+  // The tab bar: five tabs, the last the learner's own, the way back lit.
   const tabs = navigationTabs(shellCtx(ui, route('#/')));
   assert.equal((tabs.match(/class="shell-tab"/g) || []).length, 5, `${ui}: five tabs`);
-  assert.match(tabs, /<button class="shell-tab" type="button" data-preference>/, 'You opens the profile sheet');
+  assert.match(tabs, /<button class="shell-tab" type="button" data-preference>/, 'Profile opens the profile sheet');
   for (const [hash, tab] of [
     ['#/', '#/'],
     ['#/practice?intent=reading', '#/content'],
     ['#/encounter?id=media:test', '#/content'],
     ['#/practice?intent=recall', '#/language'],
     ['#/progress', '#/progress'],
-    ['#/expression', '#/'],
+    ['#/expression', '#/content'],
   ]) {
     const lit = navigationTabs(shellCtx(ui, route(hash)));
     assert.ok(lit.includes(`href="${tab}" aria-current="page"`), `${ui} ${hash}: the ${tab} tab leads back`);
     assert.equal((lit.match(/aria-current="page"/g) || []).length, 1, `${ui} ${hash}: one tab is current`);
   }
 }
-// Rail, tab bar and room agree about where the learner is.
-assert.equal(navigationCurrent(route('#/encounter?id=media:x&intent=dictation')), 'dictation');
+// Rail, tab bar and room agree about where the learner is; Dictation is Listening.
+assert.equal(navigationCurrent(route('#/encounter?id=media:x&intent=dictation')), 'listening');
 assert.equal(navigationCurrent(route('#/encounter?id=media:x&intent=shadowing')), 'listening');
 assert.equal(navigationCurrent(route('#/practice')), 'practice');
 assert.equal(experienceFor(route('#/progress')), 'progress');
+{
+  // A skill's library lights both the Library destination and the skill, as the baseline's frames do.
+  const listening = referenceNavigation(shellCtx('en', route('#/practice?intent=follow')));
+  assert.match(listening, /href="#\/content" aria-current="page"/);
+  assert.match(listening, /nav-link--skill" href="#\/practice\?intent=follow" aria-current="page"/);
+}
 
 const shellCss = readFileSync(new URL('../static/orena/shell.css', import.meta.url), 'utf8');
-// The phone-only parts do not exist on a desk.
-assert.match(shellCss, /\.shell-bar,\n\.shell-tabs,\n\.nav-backdrop \{\n  display: none;/);
+// The baseline's geometry: a 280px rail, an 88px phone bar, five tabs, no destination sheet.
+assert.match(shellCss, /--rail-width: 280px;/);
+assert.match(shellCss, /--tabbar-height: 88px;/);
+assert.match(shellCss, /#shell \{[^}]*padding: 26px 18px;/, 'the rail is padded 26/18');
+assert.match(shellCss, /\.nav-link \{[^}]*padding: 13px 16px;[^}]*border-radius: 14px;/s, 'rows of 13/16 at radius 14');
+assert.match(shellCss, /\.nav-link--skill \{[^}]*padding: 11px 16px;[^}]*border-radius: 12px;/s, 'skills of 11/16 at radius 12');
+assert.doesNotMatch(shellCss, /nav-backdrop|data-menu|account-card|shell-foot|nav-toggle/, 'no destination sheet, no account card');
+// The rooms where the learner works have neither the rail nor the tab bar.
+assert.match(shellCss, /html\[data-shell='off'\] #shell \{\s*display: none;/);
+assert.match(shellCss, /html\[data-shell='off'\] \.shell-tabs \{\s*display: none;/);
+const appJs = readFileSync(new URL('../static/orena/app.js', import.meta.url), 'utf8');
+assert.match(appJs, /document\.documentElement\.dataset\.shell = shellBelongsTo\(ctx\.location\)/);
+assert.match(appJs, /WORKING_PAGES = new Set\(\['encounter', 'book', 'expression', 'conversation'\]\)/);
+// A filter on the phone's shell would trap the fixed tab bar inside it.
 const phoneNav = shellCss.slice(shellCss.indexOf('@media (max-width: 900px)'));
-/* The map is a sheet over the room, not a wedge above it, and closed it is
-   out of the tab order and the accessibility tree. */
-assert.match(phoneNav, /#shellNav \{[^}]*position: fixed/, 'the sheet must overlay, not displace');
-assert.match(phoneNav, /#shellNav \{[^}]*visibility: hidden/, 'closed means unreachable, not just invisible');
-assert.match(phoneNav, /#shell\[data-menu='open'\] #shellNav \{[^}]*visibility: visible/, 'it opens on the shell state');
-// Tapping the room behind it closes it; the curtain sits below the shell's
-// own layer, or it would cover the sheet it opened.
-assert.match(phoneNav, /\.nav-backdrop \{[^}]*z-index: var\(--z-sticky\)/);
-assert.match(phoneNav, /#shell\[data-menu='open'\] ~ \.nav-backdrop \{\s*display: block;/);
-assert.match(
-  readFileSync(new URL('../static/orena/app.js', import.meta.url), 'utf8'),
-  /backdrop\.onclick = \(\) => setMenu\(false\)/,
-  'the backdrop must actually close it',
-);
-// A filter on the sticky bar would trap the fixed sheet and tab bar inside it.
-assert.doesNotMatch(phoneNav.split('#shellNav {')[0], /^\s*(-webkit-)?backdrop-filter\s*:/m, 'the sticky bar carries no filter');
-// Working, the tab bar steps aside so the learning has the height (rule 12).
-assert.match(phoneNav, /#shell\[data-compact\] \.shell-tabs \{\s*transform: translateY\(100%\);/);
-// Motion is a courtesy, not a requirement.
-assert.match(phoneNav, /prefers-reduced-motion: reduce/, 'the animation can be turned off');
-// Touch targets are not the thing that gives when space is short.
-assert.match(phoneNav, /\.shell-tab \{[^}]*min-block-size: 48px/);
+assert.match(phoneNav, /#shell \{[^}]*backdrop-filter: none;/, 'the phone shell carries no filter');
+assert.match(phoneNav, /\.shell-tabs \{[^}]*position: fixed/);
 
 console.log('Golden Star: approved destinations, intact intent contract, local in-room navigation, row composition, phone-reachable destinations and room measures: PASS');

@@ -1,13 +1,15 @@
-/* The Dictation screen (D-066): its own screen, not a panel beside the player.
+/* The Dictation screen (D-066, D-067), drawn from Orena Listening, "Dictation · Nghe chép"
+   (frame "Dictation · result inline" and "Dictation mobile · entry").
 
-   Left: the task - which line of how many, the ask, the line's clip, the pills (hear it
-   again, speed, hint level), the shape of the line with a reading under each character,
-   the field and its two actions. Right: the result - a ring, what was typed with the
-   wrong, missing and extra places marked, the right line, and the way on.
+   Left: the task - which line of how many, the ask, the line's clip, the pills (hear it again,
+   speed, hint level), the shape of the line with a reading under each character, the field and its
+   two actions. Right: the result, drawn only once there is one - a ring, what was typed with each
+   wrong, missing and extra place marked, the right line, and the way on.
 
-   These are markup builders over `capabilities/dictation-result.js` (one honest source
-   for the numbers and the shapes); the behaviour - hearing a line, saving evidence,
-   moving on - stays with the encounter that owns the player and the learner's memory. */
+   These are markup builders over `capabilities/dictation-result.js` (one honest source for the
+   numbers and the shapes); the behaviour - hearing a line, saving evidence, moving on - stays with
+   the encounter that owns the player and the learner's memory. Nothing is drawn that the frame does
+   not draw: no empty result panel, no save notice, no reveal. */
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { hintTokens } from '../capabilities/dictation-hints.js';
@@ -21,7 +23,7 @@ export function progressHtml(index, total) {
   return `<div class="dz-progress" role="progressbar" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${index}"><span class="dz-progress__segments">${segments}</span><span class="dz-progress__count">${index}/${total}</span></div>`;
 }
 
-/* The shape of the line: revealed characters with their reading beneath; the rest as marks. */
+/* The shape of the line (HintRow): revealed characters with their reading beneath; the rest as marks. */
 export function shapeHtml(view, language, r) {
   const zh = language === 'zh';
   const cells = view.cells
@@ -32,29 +34,28 @@ export function shapeHtml(view, language, r) {
     })
     .join('');
   const used = view.level > 0;
-  return `<div class="dz-cells" lang="${esc(language)}" role="text" aria-label="${esc(fill(r.dictCharacters, { n: view.charRevealed }))}">${cells}</div><footer class="dz-shape__foot"><span class="ds-data">${esc(fill(r.dictCharactersOf, { n: view.charRevealed, m: view.charTotal }))}</span><span class="dz-shape__note">${esc(used ? r.dictAssisted : r.dictNeverAll)}</span></footer>`;
+  return `<div class="dz-cells" lang="${esc(language)}" role="text" aria-label="${esc(fill(r.dictCharacters, { n: view.charRevealed }))}">${cells}</div><footer class="dz-shape__foot"><span>${esc(fill(r.dictCharactersOf, { n: view.charRevealed, m: view.charTotal }))}</span><span class="dz-shape__note">${esc(used ? r.dictAssisted : r.dictNeverAll)}</span></footer>`;
 }
 
 export function hintLevelHtml(view, r) {
-  return view.level > 0 ? `${icon('lightbulb', { size: 14 })}<span>${esc(fill(r.dictHintLevel, { n: view.level, m: view.maxLevel }))}</span>` : '';
+  return view.level > 0 ? `${icon('lightbulb', { size: 14, filled: true })}<span>${esc(fill(r.dictHintLevel, { n: view.level, m: view.maxLevel }))}</span>` : '';
 }
 
-/* The typed line with each mistake marked by shape as well as colour: a wrong or extra
-   character is underlined, a missing one is a small chip that says so. Each mark is a
-   button: it opens the explanation of the right word. */
+/* The typed line with each mistake marked as the frame marks it: a wrong character on a red tint
+   with a solid underline, an extra one the same and struck through, a missing one a dashed blue chip
+   that says so. Each mark is a button: it opens the explanation of the right word. */
 export function typedHtml(result, language, r) {
   const parts = result.marks.map((mark, at) => {
     if (mark.kind === 'correct') return esc(mark.from);
     if (mark.kind === 'missing')
-      return `<button type="button" class="dz-mark dz-mark--missing" data-mark="${at}" lang="${esc(language)}">${icon('minus-circle', { size: 13 })}<span>${esc(r.dictMissing)}</span> <b>${esc(mark.to)}</b></button>`;
+      return `<button type="button" class="dz-mark dz-mark--missing" data-mark="${at}" lang="${esc(language)}">${icon('minus-circle', { size: 14 })}<span>${esc(r.dictMissing)} ${esc(mark.to)}</span></button>`;
     return `<button type="button" class="dz-mark dz-mark--${mark.kind}" data-mark="${at}" lang="${esc(language)}" aria-label="${esc(mark.kind === 'wrong' ? `${mark.from} → ${mark.to}` : `${r.dictExtra}: ${mark.from}`)}">${esc(mark.from)}</button>`;
   });
-  const spaced = language === 'zh' ? '' : ' ';
-  return parts.join(spaced);
+  return parts.join(language === 'zh' ? '' : ' ');
 }
 
-/* The right line, with the places the learner missed lit. Units are matched in order to
-   the line's own tokens, so punctuation and spacing stay where the line has them. */
+/* The right line, with the places the learner missed in bold teal. Units are matched in order to the
+   line's own tokens, so punctuation and spacing stay where the line has them. */
 export function rightLineHtml(original, result, language) {
   const lit = new Set();
   let unit = 0;
@@ -92,20 +93,21 @@ function verdictText(result, r, language) {
 
 export function resultHtml({ result, language, r, meaning = '', keep = null, last = false }) {
   const { title, detail } = verdictText(result, r, language);
-  return `<div class="dz-result__head"><span class="dz-ring" style="--score:${result.score}%" role="img" aria-label="${esc(`${result.score}%`)}"><b>${result.score}</b><small class="ds-data">${result.correctCount} / ${result.totalCount}</small></span><div class="dz-result__copy"><strong>${esc(title)}</strong><p>${esc(detail)}</p></div></div>
-<section class="dz-block"><span class="ds-label">${esc(r.dictYouTyped)}</span><div class="dz-line dz-line--typed" lang="${esc(language)}">${typedHtml(result, language, r)}</div></section>
-<section class="dz-block"><span class="ds-label ds-label--good">${esc(r.dictCorrect)}</span><div class="dz-line dz-line--right" lang="${esc(language)}">${rightLineHtml(result.original, result, language)}</div>${result.originalPinyin ? `<p class="dz-reading" lang="zh-Latn-pinyin">${esc(result.originalPinyin)}</p>` : ''}${meaning ? `<p class="dz-meaning">${esc(meaning)}</p>` : ''}</section>
-<div class="dz-next"><button type="button" class="primary" data-next-line${last ? ' disabled' : ''}>${icon('arrow-right', { size: 15 })}<span>${esc(r.dictNextLine)}</span></button><button type="button" class="dz-pill" data-again>${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc(r.dictTryAgain)}</span></button><button type="button" class="dz-pill" data-listen-again>${icon('speaker-high', { size: 15 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="dz-pill" data-keep-line>${icon('bookmark-simple', { size: 15 })}<span>${esc(keep ? fill(r.dictKeepTerm, { term: keep }) : r.dictKeepLine)}</span></button></div>`;
+  return `<div class="dz-result__head"><span class="dz-ring" style="--score:${result.score}%" role="img" aria-label="${esc(`${result.score}%`)}"><span class="dz-ring__text"><b>${result.score}</b><small>${result.correctCount} / ${result.totalCount}</small></span></span><div class="dz-result__copy"><strong>${esc(title)}</strong><p>${esc(detail)}</p></div></div>
+<div class="dz-result__body"><section class="dz-block"><span class="dz-label">${esc(r.dictYouTyped)}</span><div class="dz-line dz-line--typed" lang="${esc(language)}">${typedHtml(result, language, r)}</div></section>
+<section class="dz-block"><span class="dz-label dz-label--good">${esc(r.dictCorrect)}</span><div class="dz-line dz-line--right" lang="${esc(language)}">${rightLineHtml(result.original, result, language)}</div>${result.originalPinyin ? `<div class="dz-reading">${esc(result.originalPinyin)}</div>` : ''}${meaning ? `<div class="dz-meaning">${esc(meaning)}</div>` : ''}</section>
+<div class="dz-next"><button type="button" class="dz-go" data-next-line${last ? ' disabled' : ''}>${icon('arrow-right', { size: 18 })}<span>${esc(r.dictNextLine)}</span></button><button type="button" class="dz-pill dz-pill--raised" data-again>${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(r.dictTryAgain)}</span></button><button type="button" class="dz-pill dz-pill--raised" data-listen-again>${icon('speaker-high', { size: 18 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="dz-pill dz-pill--raised" data-keep-line>${icon('bookmark-simple', { size: 18 })}<span>${esc(keep ? fill(r.dictKeepTerm, { term: keep }) : r.dictKeepLine)}</span></button></div></div>`;
 }
 
-/* The whole screen, before the learner has typed anything. */
+/* The whole screen, before the learner has typed anything: the top bar, the task, and a result panel
+   that is not drawn until there is a result. */
 export function screenHtml({ title, level, index, total, kind, range, poster, rate, r, c, ask }) {
   const where = [level, fill(r.dictLine, { i: index, n: total })].filter(Boolean).join(' · ');
-  return `<header class="dz-top"><button type="button" class="dz-back" data-exit-practice aria-label="${esc(c.exitPractice)}">${icon('arrow-left', { size: 18 })}<span class="dz-lesson">${esc(title)}</span></button><h2 class="dz-name">${esc(r.dictName)}</h2><small class="dz-where">${esc(where)}</small><span class="dz-streak" title="${esc(r.streakUnmeasured)}">${icon('fire', { size: 14, filled: true })}<b>0</b></span></header>
+  return `<header class="dz-top"><button type="button" class="dz-back" data-exit-practice aria-label="${esc(c.exitPractice)}">${icon('arrow-left', { size: 20 })}<span class="dz-lesson">${esc(title)}</span></button><h2 class="dz-name">${esc(r.dictName)}</h2><small class="dz-where">${esc(where)}</small><span class="dz-streak" title="${esc(r.streakUnmeasured)}">${icon('flame', { size: 16, filled: true })}<b>0</b></span></header>
 <div class="dz-cols"><section class="dz-task">${progressHtml(index, total)}<h3 class="dz-ask" id="dictateAsk">${esc(ask)}</h3>
-<div class="dz-media" data-dz-media><span class="dz-media__art">${poster}</span><span class="dz-badge">${icon(kind === 'video' ? 'video-camera' : 'headphones', { size: 13 })}<span>${esc(kind === 'video' ? r.dictVideo : r.dictAudio)}</span></span><span class="dz-range ds-data">${esc(range)}</span><button type="button" class="dz-play" data-listen aria-label="${esc(r.dictReplay)}">${icon('play', { size: 26, filled: true })}</button><span class="dz-clip"><i data-dz-clip></i></span></div>
-<div class="dz-pills"><button type="button" class="dz-pill" data-listen>${icon('arrow-counter-clockwise', { size: 14 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="dz-pill" data-dz-rate aria-label="${esc(r.dictSpeed)}">${esc(rate)}×</button><span class="dz-pill dz-pill--hint" data-dz-hint-pill hidden></span></div>
+<div class="dz-media" data-dz-media><span class="dz-media__art">${poster}</span><span class="dz-glow" aria-hidden="true"></span><button type="button" class="dz-play" data-listen aria-label="${esc(r.dictReplay)}">${icon('play', { size: 38, filled: true })}</button><span class="dz-badge">${icon(kind === 'video' ? 'video-camera' : 'headphones', { size: 14, filled: kind === 'video' })}<span>${esc(kind === 'video' ? r.dictVideo : r.dictAudio)}</span></span><span class="dz-range">${esc(range)}</span><span class="dz-clip"><i data-dz-clip></i></span></div>
+<div class="dz-pills"><button type="button" class="dz-pill dz-pill--raised" data-listen>${icon('arrow-counter-clockwise', { size: 14 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="dz-pill dz-pill--raised" data-dz-rate aria-label="${esc(r.dictSpeed)}">${esc(rate)}×</button><span class="dz-pill dz-pill--hint" data-dz-hint-pill hidden></span></div>
 <section class="dz-shape" data-hint-panel></section>
-<form class="dz-form"><label class="sr-only" for="reconstruction">${esc(ask)}</label><textarea id="reconstruction" rows="3" placeholder="${esc(r.dictPlaceholder)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="dictateAsk"></textarea><div class="dz-actions"><button type="button" class="dz-hintbtn" data-hint>${icon('lightbulb', { size: 16 })}<span>${esc(r.dictMoreHint)}</span></button><button type="submit" class="primary dz-check">${icon('check', { size: 16 })}<span>${esc(r.dictCheck)}</span></button></div><p class="notice dz-status" data-evidence-status role="status"></p></form></section>
-<aside class="dz-result" data-dz-result aria-live="polite"><p class="dz-empty">${esc(r.dictResultHere)}</p></aside></div>`;
+<form class="dz-form"><label class="sr-only" for="reconstruction">${esc(ask)}</label><textarea id="reconstruction" rows="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="dictateAsk"></textarea><div class="dz-actions"><button type="button" class="dz-btn dz-btn--glass" data-hint>${icon('lightbulb', { size: 17 })}<span>${esc(r.dictMoreHint)}</span></button><button type="submit" class="dz-btn dz-btn--accent">${icon('check', { size: 17 })}<span>${esc(r.dictCheck)}</span></button></div><p class="dz-status" data-evidence-status role="status"></p></form></section>
+<aside class="dz-result" data-dz-result aria-live="polite" hidden></aside></div>`;
 }

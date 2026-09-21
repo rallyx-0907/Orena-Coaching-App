@@ -96,6 +96,46 @@
   --accent-highlight: rgba(155, 103, 255, 0.32);
   --accent-highlight-ring: inset 0 0 0 1.5px rgba(197, 164, 255, 0.7);
 
+  /* AppShell (Orena Listening / Reading, "Navigation"): the mark, where the learner is, and the
+     hairlines between the rail's groups. */
+  --brand-mark: linear-gradient(145deg, #9b6bff, #6e7bff);
+  --nav-active: oklch(0.7 0.19 296 / 0.14);
+  --nav-active-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+  --nav-skill-active: rgba(196, 178, 255, 0.12);
+  --nav-hairline: rgba(255, 255, 255, 0.07);
+  --nav-ink: rgba(255, 255, 255, 0.72);
+  --nav-ink-skill: rgba(255, 255, 255, 0.7);
+  --rail-edge: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  --bar-edge-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* Dictation (Orena Listening, "Dictation · Nghe chép"): the streak pill, the amber progress, the
+     diff marks, the right line, and the skill's own lime. */
+  --streak: oklch(0.8 0.14 68);
+  --streak-wash: oklch(0.8 0.14 68 / 0.12);
+  --streak-ink: oklch(0.9 0.1 68);
+  --progress-violet: linear-gradient(90deg, #7b4de8, #c7b2ff);
+  --diff-wrong-wash: oklch(0.7 0.15 25 / 0.22);
+  --diff-extra-wash: oklch(0.7 0.15 25 / 0.18);
+  --diff-mark: oklch(0.72 0.16 25);
+  --diff-missing-wash: rgba(42, 30, 68, 0.38);
+  --diff-missing-edge: rgba(143, 192, 245, 0.7);
+  --diff-missing-ink: #cfe4fa;
+  --right-label: oklch(0.85 0.1 170);
+  --right-wash: oklch(0.74 0.13 170 / 0.08);
+  --right-ink: oklch(0.86 0.12 170);
+  --dictation-ink: oklch(0.88 0.11 110);
+  --dictation-glow: oklch(0.62 0.16 110 / 0.35);
+  --dictation-head-wash: oklch(0.58 0.15 110 / 0.2);
+  --dictation-hint-wash: oklch(0.74 0.13 110 / 0.16);
+  --dictation-hint-ink: oklch(0.9 0.1 110);
+  --hint-hidden: oklch(0.62 0.02 300);
+  --ink-55: rgba(255, 255, 255, 0.55);
+  --ink-60: rgba(255, 255, 255, 0.6);
+  --ink-62: rgba(255, 255, 255, 0.62);
+  --ink-68: rgba(255, 255, 255, 0.68);
+  --scrim-play: rgba(6, 5, 9, 0.5);
+  --scrim-badge: rgba(6, 5, 9, 0.62);
+
   /* Surfaces - opaque, so contrast can be measured. */
   --surface-canvas: var(--o-canvas);
   --surface-primary: #1a1530;
