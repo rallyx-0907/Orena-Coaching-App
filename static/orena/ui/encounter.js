@@ -45,16 +45,14 @@ import {
   activeWordIndex,
   wordSpans,
 } from '../capabilities/word-timeline.js';
-import {
-  dictationHint,
-  MAX_HINT_LEVEL,
-} from '../capabilities/dictation-hints.js';
 import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import {
   acquireMedia,
   translationRequest,
 } from '../capabilities/media-acquisition.js';
-import { origin, duration, bindImages, audioIdentity } from './content.js';
+import { origin, duration, bindImages, audioIdentity, art } from './content.js';
+import { dictationHintView, dictationResult, HINT_LEVELS, readingsFor, readingLineFor } from '../capabilities/dictation-result.js';
+import { screenHtml, shapeHtml, hintLevelHtml, resultHtml } from './dictation-screen.js';
 import { symbol } from './symbols.js';
 
 /* How to read the follow panel - the words of the line being spoken, the
@@ -1114,6 +1112,8 @@ export async function renderEncounter(root, ctx) {
     take = null;
     practiceTarget = null;
     practiceRoot.hidden = true;
+    root.removeAttribute('data-dictation');
+    root.querySelector('.listen-workspace')?.removeAttribute('data-dictation');
     const responseHost = root.querySelector('[data-response-host]');
     if (responseHost) responseHost.hidden = false;
     transcript.hidden = false;
@@ -1225,7 +1225,24 @@ export async function renderEncounter(root, ctx) {
        is chrome - a cross, in the panel's top row, next to the name of the
        task - and moving is task navigation, with the line's place in the
        lesson between its two directions. */
-    practiceRoot.innerHTML = `<div class="practice-top"><small>${c[intent + 'Name']}</small><button type="button" class="quiet practice-exit" data-exit-practice>${symbol('close', 18)}<span>${esc(c.exitPractice)}</span></button></div><h2>${intent === 'dictation' ? c.hearFirst : intent === 'speaking' ? c.voiceResponse : c.shadowPrompt}</h2><nav class="practice-steps" aria-label="${esc(c.lineNavigation)}"><button type="button" class="quiet" data-prev-moment aria-label="${esc(c.previousLine)}" data-tip="${esc(c.previousLine)}">${symbol('back', 18)}</button><span class="practice-place">${at + 1} / ${model.segments.length}</span><button type="button" class="quiet" data-next-moment aria-label="${esc(c.nextLine)}" data-tip="${esc(c.nextLine)}">${symbol('forward', 18)}</button></nav><div data-practice-body></div>`;
+    const dictating = intent === 'dictation';
+    root.toggleAttribute('data-dictation', dictating);
+    root.querySelector('.listen-workspace')?.toggleAttribute('data-dictation', dictating);
+    practiceRoot.innerHTML = dictating
+      ? screenHtml({
+          title: item.title,
+          level: payload.catalog?.level || '',
+          index: at + 1,
+          total: model.segments.length,
+          kind: payload.playback?.kind === 'video' ? 'video' : 'audio',
+          range: `${duration(target.start_ms)} – ${duration(target.end_ms)}`,
+          poster: art(item),
+          rate,
+          r,
+          c,
+          ask: r.dictAsk,
+        })
+      : `<div class="practice-top"><small>${c[intent + 'Name']}</small><button type="button" class="quiet practice-exit" data-exit-practice>${symbol('close', 18)}<span>${esc(c.exitPractice)}</span></button></div><h2>${intent === 'dictation' ? c.hearFirst : intent === 'speaking' ? c.voiceResponse : c.shadowPrompt}</h2><nav class="practice-steps" aria-label="${esc(c.lineNavigation)}"><button type="button" class="quiet" data-prev-moment aria-label="${esc(c.previousLine)}" data-tip="${esc(c.previousLine)}">${symbol('back', 18)}</button><span class="practice-place">${at + 1} / ${model.segments.length}</span><button type="button" class="quiet" data-next-moment aria-label="${esc(c.nextLine)}" data-tip="${esc(c.nextLine)}">${symbol('forward', 18)}</button></nav><div data-practice-body></div>`;
     practiceRoot.querySelector('[data-exit-practice]').onclick = closePractice;
     /* Narrow screens put the work below a sticky strip of source, which is the
        right shape but starts out of sight. Opening a practice brings it to the
@@ -1241,13 +1258,13 @@ export async function renderEncounter(root, ctx) {
       });
     }
     focusRegion(practiceRoot.querySelector('h2'));
-    const body = practiceRoot.querySelector('[data-practice-body]');
+    const body = dictating ? practiceRoot : practiceRoot.querySelector('[data-practice-body]');
     const nextIndex = at + 1;
     const nextButton = practiceRoot.querySelector('[data-next-moment]');
     const previousButton = practiceRoot.querySelector('[data-prev-moment]');
     const exhausted = nextIndex >= model.segments.length;
-    nextButton.disabled = exhausted;
-    previousButton.disabled = at <= 0;
+    if (nextButton) nextButton.disabled = exhausted;
+    if (previousButton) previousButton.disabled = at <= 0;
     /* Moving to another line stays inside the task: the same intention, a
        different segment. openPractice() already discards the take, the
        recorder and the previous version, so this is a move rather than a
@@ -1257,8 +1274,8 @@ export async function renderEncounter(root, ctx) {
       model.select(model.segments[index].segment_id);
       openPractice(intent);
     };
-    nextButton.onclick = () => moveTo(nextIndex);
-    previousButton.onclick = () => moveTo(at - 1);
+    if (nextButton) nextButton.onclick = () => moveTo(nextIndex);
+    if (previousButton) previousButton.onclick = () => moveTo(at - 1);
     /* Previous, where you are, Next - and nothing else.
 
        Two attempts at arbitrary segment selection have now been removed. A
@@ -1271,61 +1288,61 @@ export async function renderEncounter(root, ctx) {
        The position between the arrows is a state, not a control. Leaving is
        its own act, in the chrome. */
     if (intent === 'dictation') {
-      /* One frame, no scrolling: the shape of the line, the question with its
-         replay beside it, the attempt, the actions, and a result region that
-         takes the height left. The comparison replaces the shape of the line
-         rather than stacking under it - both answer "what did I get right",
-         and the comparison is the fuller answer. */
-      body.innerHTML = `<section class="hint-line" data-hint-panel hidden></section><h2 class="dictate-ask" id="dictateAsk">${esc(c.dictatePrompt)}</h2><div class="dictate-chips"><button type="button" class="chip" data-listen>${icon('arrow-counter-clockwise', { size: 14 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="chip" data-hint>${icon('info', { size: 14 })}<span>${esc(r.dictHint)}</span></button><button type="button" class="chip" data-reveal>${icon('eye', { size: 14 })}<span>${esc(r.dictReveal)}</span></button></div><form id="dictationForm" class="dictate-form"><div class="dictate-box"><textarea id="reconstruction" lang="${language}" maxlength="2000" rows="2" aria-labelledby="dictateAsk" required></textarea><div class="dictate-box__foot"><span class="ds-label" data-dictate-count>${esc(String(r.dictCharacters).replace('{n}', '0'))}</span></div></div><div class="dictate-actions"><button class="primary">${esc(c.check)}</button></div></form><div class="dictation-result"><div class="comparison" aria-live="polite"></div><p data-evidence-status role="status"></p></div>`;
-      /* The design's own count of what has been written, from the field. */
-      const countSlot = body.querySelector('[data-dictate-count]');
-      const paintCount = () => {
-        countSlot.textContent = String(r.dictCharacters).replace(
-          '{n}',
-          String([...body.querySelector('#reconstruction').value.trim()].length),
-        );
-      };
-      body.querySelector('#reconstruction').addEventListener('input', paintCount);
-      paintCount();
-      body.querySelector('[data-listen]').onclick = playLine;
-      /* The hint is a working aid, not an outcome: it lives for this visit
-         only and never becomes evidence. Revealing the answer stays the
-         separate, recorded act it already was. */
-      let hintLevel = 1;
-      const hintPanel = body.querySelector('[data-hint-panel]');
+      /* The baseline's Dictation screen (D-066, ui/dictation-screen.js): the task on the
+         left - the line's clip, the shape of the line with a reading under each
+         character, the field - and the result on the right. The comparison, the hint
+         and the evidence are the ones that were here before; what changed is how they
+         are drawn and that a hint has three levels and never shows the whole line. */
+      const spoken = target.spoken_text || target.original_text;
+      const readings = readingsFor(spoken, target.original_text, payload.catalog?.pinyin_chars_by_segment?.[target.segment_id]);
+      const readingLine = readingLineFor(spoken, target.original_text, payload.catalog?.pinyin_by_segment?.[target.segment_id]);
+      const answer = body.querySelector('#reconstruction');
+      const shapeHost = body.querySelector('[data-hint-panel]');
+      const hintPill = body.querySelector('[data-dz-hint-pill]');
       const hintButton = body.querySelector('[data-hint]');
-      const comparison = body.querySelector('.comparison');
+      const resultHost = body.querySelector('.comparison');
+      const clip = body.querySelector('[data-dz-clip]');
+      const rateButton = body.querySelector('[data-dz-rate]');
+      const emptyResult = resultHost.innerHTML;
+      const key = `${payload.asset.asset_id}:${target.segment_id}`;
+      const keepTerm = (payload.catalog?.vocabulary || []).find((term) => term && target.original_text.includes(term)) || '';
+      /* The hint is a working aid, not an outcome: it lives for this visit only and
+         never becomes evidence. */
+      let hintLevel = 0;
+      answer.value = memory.value.answers[key] || '';
       const paintHint = () => {
-        const shape = dictationHint({
-          expected: target.spoken_text || target.original_text,
-          answer: body.querySelector('textarea').value,
-          source_language: language,
-          level: hintLevel,
-        });
-        // While a comparison is on screen it is the answer; the shape waits.
-        hintPanel.hidden = comparison.childElementCount > 0;
-        hintPanel.innerHTML = `<div class="hint-line__head"><small>${esc(c.hintTitle)}</small>${shape.anchors ? `<span class="meta">${shape.anchors}/${shape.total} ${esc(c.hintAnchors)}</span>` : ''}${shape.complete ? `<span class="meta">${esc(c.hintComplete)}</span>` : hint({ text: c.hintNote })}</div><p class="hint-slots" lang="${language}">${shape.slots.map((slot) => (slot.kind === 'structure' ? esc(slot.text) : `<span class="hint-word" data-kind="${slot.kind}"${slot.known ? ` data-known="${slot.known}"` : ''}>${[...slot.text].map((mark, index) => `<span class="hint-mark" data-state="${slot.kind === 'anchor' ? 'anchor' : slot.earned?.[index] ? 'known' : 'unknown'}">${esc(mark)}</span>`).join('')}</span>`)).join('')}</p>`;
-        hintButton.textContent =
-          hintLevel >= MAX_HINT_LEVEL ? c.hintMore : c.hint;
-        hintButton.disabled = hintLevel >= MAX_HINT_LEVEL;
+        const view = dictationHintView({ expected: spoken, answer: answer.value, language, level: hintLevel, readings });
+        shapeHost.innerHTML = shapeHtml(view, language, r);
+        hintPill.hidden = view.level === 0;
+        hintPill.innerHTML = hintLevelHtml(view, r);
+        hintButton.disabled = view.level >= HINT_LEVELS;
+      };
+      body.querySelectorAll('[data-listen]').forEach((x) => (x.onclick = playLine));
+      rateButton.onclick = () => {
+        const order = rateChips.map((chip) => Number(chip.dataset.rateValue));
+        const next = order[(order.indexOf(rate) + 1) % order.length];
+        chooseRate(rateChips.find((chip) => Number(chip.dataset.rateValue) === next) || rateChips[0]);
+        rateButton.textContent = `${rate}×`;
       };
       hintButton.onclick = () => {
-        hintLevel = Math.min(MAX_HINT_LEVEL, hintLevel + 1);
+        hintLevel = Math.min(HINT_LEVELS, hintLevel + 1);
         // Asking for a hint is going back to work on the line.
-        comparison.innerHTML = '';
+        resultHost.innerHTML = emptyResult;
         paintHint();
       };
-      const answer = body.querySelector('textarea'),
-        key = `${payload.asset.asset_id}:${target.segment_id}`;
-      answer.value = memory.value.answers[key] || '';
-      paintCount();
       answer.oninput = () => {
         memory.write(key, answer.value, 'answers');
         paintHint();
       };
-      // The shape of the line is there from the moment the learner arrives,
-      // and follows what they type. Nothing has to be asked for to begin.
       paintHint();
+      /* The clip's own bar: where in the line the voice is, from the player itself. */
+      const media = playerRoot.querySelector('audio, video');
+      const clipTimer = setInterval(() => {
+        if (!isAlive() || version !== practiceVersion) return clearInterval(clipTimer);
+        if (!media || !clip) return;
+        const span = Math.max(1, target.end_ms - target.start_ms);
+        clip.style.width = `${Math.max(0, Math.min(100, ((media.currentTime * 1000 - target.start_ms) / span) * 100))}%`;
+      }, 120);
       body.querySelectorAll('form button').forEach((x) => (x.disabled = true));
       let previous = {},
         priorRead = false;
@@ -1384,48 +1401,59 @@ export async function renderEncounter(root, ctx) {
       body.querySelector('form').onsubmit = async (event) => {
         event.preventDefault();
         try {
-          const { result, diff } = dictation.compare(answer.value.trim());
-          /* The approved result (Screens part 2 section 07): the score as a
-             ring, then what was typed against what was said - a wrong token
-             marked by shape as well as by colour, a missing one labelled - and
-             the actions as pills. Every figure comes from the comparison
-             itself: the percentage the scorer returned, and the count of
-             tokens that still differ. */
-          const toFix = diff.filter((part) => part.status !== 'correct').length;
-          const meaningLine = model.meaning(target.segment_id) || '';
-          body.querySelector('.comparison').innerHTML =
-            `<div class="dictate-result__head"><span class="dictate-score" style="--score:${result.accuracy_percent}%" aria-hidden="true"><strong>${result.accuracy_percent}</strong><small class="ds-data">${diff.length - toFix} / ${diff.length}</small></span><div class="dictate-result__copy"><strong>${result.accuracy_percent}% ${esc(c.match)}</strong><p>${esc(String(r.dictToFix).replace('{n}', String(toFix)))}${hint({ text: c.comparisonNote })}</p></div></div><div class="dictate-blocks"><div class="dictate-block"><span class="ds-label">${esc(r.dictYouTyped)}</span><div class="dictate-line diff" lang="${language}">${diff
-              .map((x) => `<span class="${x.status}"><span class="sr-only">${esc(x.status === 'correct' ? c.correct : x.status === 'extra' ? c.extra : c.missing)}: </span>${x.status === 'wrong' ? `<del>${esc(x.actual)}</del> → ` : x.status === 'missing' ? '+ ' : x.status === 'extra' ? '− ' : ''}${esc(x.expected || x.actual)}</span>`)
-              .join('')}</div></div><div class="dictate-block"><span class="ds-label">${esc(r.dictCorrect)}</span><div class="dictate-line dictate-line--right" lang="${language}">${esc(target.original_text)}</div>${meaningLine ? `<p class="dictate-meaning" lang="${esc(ctx.support)}">${esc(meaningLine)}</p>` : ''}</div></div><div class="dictate-pills"><button type="button" class="outline" data-again>${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc(c.tryAgain)}</span></button><button type="button" class="outline" data-listen-again>${icon('speaker-high', { size: 15 })}<span>${esc(r.dictReplay)}</span></button><button type="button" class="outline" data-understand>${icon('info', { size: 15 })}<span>${esc(c.inspect)}</span></button></div>`;
-          body.querySelector('[data-listen-again]').onclick = playLine;
-          hintPanel.hidden = true;
-          revealAnswer(body.querySelector('.comparison'));
-          body.querySelector('[data-understand]').onclick = () =>
-            inspectPhrase(
-              ctx,
-              target.original_text,
-              item.title,
-              target.original_text,
-              { id, where: item.title, why: 'from_listening' },
-            );
-          body.querySelector('[data-again]').onclick = () => {
-            body.querySelector('.comparison').innerHTML = '';
-            paintHint();
+          const typed = answer.value.trim();
+          // The evidence and the score are the evaluator's, as before; the screen only reads them.
+          dictation.compare(typed);
+          const result = dictationResult({
+            lineIndex: at + 1,
+            lineTotal: model.segments.length,
+            expected: spoken,
+            answer: typed,
+            language,
+            reading: readingLine,
+            readings,
+            level: hintLevel,
+            note: (mark) =>
+              mark.kind === 'wrong' ? `${mark.from} → ${mark.to}` : mark.kind === 'missing' ? `${r.dictMissing} ${mark.to}` : `${r.dictExtra} ${mark.from}`,
+          });
+          resultHost.innerHTML = resultHtml({
+            result,
+            language,
+            r,
+            meaning: model.meaning(target.segment_id) || '',
+            keep: keepTerm,
+            last: nextIndex >= model.segments.length,
+          });
+          /* Each mark opens the explanation of the right word, in this line. */
+          resultHost.querySelectorAll('[data-mark]').forEach((button) => {
+            button.onclick = () => {
+              const mark = result.marks[Number(button.dataset.mark)];
+              inspectPhrase(ctx, mark.to || mark.from, item.title, spoken, { id, where: item.title, why: 'from_listening' });
+            };
+          });
+          resultHost.querySelector('[data-listen-again]').onclick = playLine;
+          resultHost.querySelector('[data-again]').onclick = () => {
+            resultHost.innerHTML = emptyResult;
             answer.focus();
             playLine();
           };
+          resultHost.querySelector('[data-next-line]').onclick = () => moveTo(nextIndex);
+          resultHost.querySelector('[data-keep-line]').onclick = (click) => {
+            memory.rememberLanguage({
+              term: keepTerm || target.original_text,
+              origin: id,
+              where: item.title,
+              why: 'from_listening',
+              context: target.original_text,
+            });
+            click.currentTarget.disabled = true;
+            status(c.persisted);
+          };
+          resultHost.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
           await persist();
         } catch (error) {
-          body.querySelector('.comparison').textContent = error.message;
+          resultHost.textContent = error.message;
         }
-      };
-      body.querySelector('[data-reveal]').onclick = () => {
-        dictation.reveal();
-        body.querySelector('.comparison').innerHTML =
-          `<p lang="${language}">${esc(target.original_text)}</p><p>${esc(model.meaning(target.segment_id) || c.noMeaning)}</p>`;
-        hintPanel.hidden = true;
-        revealAnswer(body.querySelector('.comparison'));
-        persist();
       };
       playLine();
     } else if (intent === 'speaking') {

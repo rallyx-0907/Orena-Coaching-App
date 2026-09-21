@@ -1,0 +1,521 @@
+/* The Dictation screen (D-066), drawn from Orena Listening, "Dictation · Nghe chép".
+   The screen is `ui/dictation-screen.js`; colour comes from the semantic tokens only.
+   While it is open the listening workspace gives the room over to it: the player is
+   still there and still plays the line, it is just not on screen. */
+
+.listen-workspace[data-dictation] {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.listen-workspace[data-dictation] > :not(.practice-space) {
+  display: none;
+}
+[data-dictation] > .listen-back {
+  display: none;
+}
+.listen-workspace[data-dictation] .practice-space {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  max-height: none;
+}
+
+.dz {
+  display: contents;
+}
+.dz-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  margin-bottom: 18px;
+}
+.dz-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-on-glass-dim);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.dz-back:hover {
+  color: #fff;
+}
+.dz-lesson {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dz-name {
+  margin: 0;
+  outline: none;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.dz-where {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-on-glass-dim);
+}
+.dz-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--progress-text);
+  font-family: var(--mono-font);
+  font-size: 12px;
+}
+
+.dz-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.dz-task,
+.dz-result {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 26px 30px 30px;
+  border-radius: 22px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+}
+.dz-task {
+  align-items: stretch;
+}
+.dz-task > :not(.dz-progress, .dz-form) {
+  align-self: center;
+  width: min(100%, 440px);
+}
+
+/* Which line of how many. */
+.dz-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dz-progress__segments {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+}
+.dz-progress__segments i {
+  flex: 1;
+  block-size: 3px;
+  border-radius: 999px;
+  background: var(--progress-track);
+}
+.dz-progress__segments i[data-done] {
+  background: var(--progress);
+}
+.dz-progress__count {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  color: var(--text-on-glass-dim);
+}
+.dz-ask {
+  margin: 4px 0 0;
+  text-align: center;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.015em;
+  color: #fff;
+}
+
+/* The clip: the line's own picture, its range, and a way to hear it. */
+.dz-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--artwork-wash);
+  box-shadow: var(--glass-ring-focus);
+}
+.dz-media__art,
+.dz-media__art > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dz-badge,
+.dz-range {
+  position: absolute;
+  top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--artwork-control);
+  color: #fff;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dz-badge {
+  inset-inline-start: 10px;
+}
+.dz-range {
+  inset-inline-end: 10px;
+  letter-spacing: 0.04em;
+}
+.dz-play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  inline-size: 62px;
+  block-size: 62px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(8, 6, 18, 0.62);
+  color: var(--progress-text);
+  box-shadow: 0 0 0 1px var(--artwork-control-edge);
+  cursor: pointer;
+}
+.dz-clip {
+  position: absolute;
+  inset: auto 12px 10px 12px;
+  block-size: 3px;
+  border-radius: 999px;
+  background: var(--artwork-control);
+  overflow: hidden;
+}
+.dz-clip > i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent-gradient);
+}
+
+.dz-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.dz-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  block-size: 32px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.dz-pill:hover {
+  box-shadow: var(--glass-ring-focus);
+}
+.dz-pill--hint {
+  color: var(--status-caution);
+  cursor: default;
+}
+
+/* The shape of the line: what has been found, with its reading, and marks for the rest. */
+.dz-shape {
+  padding: 14px 18px 12px;
+  border-radius: 16px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.dz-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  justify-content: center;
+}
+.dz-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 1.4em;
+}
+.dz-cell b {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.25;
+  color: #fff;
+}
+.dz-cell small {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  color: var(--text-on-glass-dim);
+}
+.dz-cell--hidden b,
+.dz-cell--partial b {
+  color: var(--text-on-glass-soft);
+}
+.dz-shape__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-hairline);
+  font-size: 12px;
+  color: var(--text-on-glass-dim);
+}
+
+/* The field and its two actions. */
+.dz-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 520px);
+  align-self: center;
+}
+.dz-form textarea {
+  min-height: 108px;
+  padding: 14px 16px;
+  resize: vertical;
+  border: 0;
+  border-radius: 16px;
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring-focus);
+  color: #fff;
+  font: inherit;
+  font-size: 19px;
+  line-height: 1.5;
+}
+.dz-form textarea::placeholder {
+  color: var(--text-on-glass-soft);
+}
+.dz-actions {
+  display: flex;
+  gap: 12px;
+}
+.dz-hintbtn,
+.dz-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  block-size: 46px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dz-hintbtn {
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+}
+.dz-hintbtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dz-check {
+  flex: 1;
+}
+.dz-status:empty {
+  display: none;
+}
+
+/* The result. */
+.dz-result {
+  min-height: 220px;
+  margin: 0;
+}
+.dz-empty {
+  margin: auto;
+  max-width: 26ch;
+  text-align: center;
+  color: var(--text-on-glass-dim);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.dz-result__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.dz-ring {
+  --score: 0%;
+  position: relative;
+  flex: none;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  inline-size: 72px;
+  block-size: 72px;
+  border-radius: 50%;
+  background: conic-gradient(var(--progress) var(--score), var(--progress-track) 0);
+}
+.dz-ring::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: #1a1330;
+}
+.dz-ring > * {
+  position: relative;
+}
+.dz-ring b {
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 24px;
+  color: #fff;
+  line-height: 1;
+}
+.dz-ring small {
+  font-size: 9.5px;
+  color: var(--text-on-glass-dim);
+}
+.dz-result__copy strong {
+  display: block;
+  font-family: var(--display-font);
+  font-size: 19px;
+  color: #fff;
+}
+.dz-result__copy p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-on-glass-dim);
+}
+.dz-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--glass-hairline);
+}
+.ds-label--good {
+  color: var(--status-success);
+}
+.dz-line {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.7;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.dz-line--right {
+  background: var(--glass-focus);
+}
+.dz-mark {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.dz-mark--wrong,
+.dz-mark--extra {
+  text-decoration: underline wavy var(--status-error);
+  text-underline-offset: 4px;
+}
+.dz-mark--missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px dashed var(--text-on-glass-soft);
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--text-on-glass);
+}
+.dz-mark--missing b {
+  font-weight: 400;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 15px;
+}
+.dz-fix {
+  background: none;
+  color: var(--status-success);
+}
+.dz-reading {
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--text-on-glass-dim);
+}
+.dz-meaning {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-on-glass);
+}
+.dz-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--glass-hairline);
+}
+.dz-next .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  block-size: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .dz-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dz-task,
+  .dz-result {
+    padding: 20px 16px 22px;
+  }
+  .dz-lesson {
+    display: none;
+  }
+  .dz-cell b {
+    font-size: 26px;
+  }
+}

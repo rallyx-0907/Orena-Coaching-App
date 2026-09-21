@@ -109,9 +109,15 @@ for (const locale of supportedLocales) {
    forty-five English headings sitting over Vietnamese. */
 const referenceSource = read('static/orena/ui/reference.js');
 assert.match(referenceSource, /referenceCopy\.vi = \{/, 'the shell pack has a Vietnamese pack');
+/* Vietnamese borrows these two whole, as the Canonical UI Baseline's own Vietnamese does
+   ("VIDEO", "Nhập audio"); translating them would be inventing a word. */
+const BORROWED_BY_VIETNAMESE = new Set(['dictVideo', 'dictAudio']);
 for (const locale of ['zh', 'vi']) {
   const echoed = Object.keys(referenceCopy.en).filter(
-    (key) => !platformAdmin(key) && referenceCopy[locale][key] === referenceCopy.en[key],
+    (key) =>
+      !platformAdmin(key) &&
+      !(locale === 'vi' && BORROWED_BY_VIETNAMESE.has(key)) &&
+      referenceCopy[locale][key] === referenceCopy.en[key],
   );
   assert.deepEqual(
     echoed,

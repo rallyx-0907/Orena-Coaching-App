@@ -312,7 +312,7 @@
           "start_ms": 16120,
           "end_ms": 22000,
           "original_text": "现在看到的是中文维基百科的首页(Vector版)",
-          "pinyin": "Xiànzài kàndào de shì Zhōngwén Wéijī Bǎkē de shǒuyè (Vector bǎn)",
+          "pinyin": "Xiànzài kàndào de shì Zhōngwén Wéijī Bǎikē de shǒuyè (Vector bǎn)",
           "translations": {
             "en": "What you see now is the Chinese Wikipedia home page (Vector skin).",
             "vi": "Đây là trang chủ Wikipedia tiếng Trung (giao diện Vector)."
@@ -367,7 +367,7 @@
           "start_ms": 42120,
           "end_ms": 50440,
           "original_text": "这样，你便可以找到所需的条目了",
-          "pinyin": "Zhèyàng, nǐ biàn kěyǐ zhǎdào suǒ xū de tiáomù le",
+          "pinyin": "Zhèyàng, nǐ biàn kěyǐ zhǎodào suǒ xū de tiáomù le",
           "translations": {
             "en": "This way, you can find the article you need.",
             "vi": "Như vậy, bạn có thể tìm được mục từ mình cần."

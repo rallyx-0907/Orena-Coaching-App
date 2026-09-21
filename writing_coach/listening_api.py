@@ -28,6 +28,7 @@ from writing_coach.media_source_import import (
 from writing_coach.becoming_memory import get_learner_profile
 from writing_coach.core.support_languages import resolve_support_language
 from writing_coach.media_meaning import pinyin_for_segments, resolve_segment_meanings
+from writing_coach.pinyin_alignment import align_readings
 from writing_coach.media_learning import (
     MediaLearningAsset,
     MediaLearningObject,
@@ -170,6 +171,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
         pinyin = dict(pinyin_for_segments(media_object.transcript.segments)) if media_object.transcript else {}
         if media_object.asset.source_language.strip().casefold().startswith("zh") and pinyin:
             response["catalog"]["pinyin_by_segment"] = pinyin
+            response["catalog"]["pinyin_chars_by_segment"] = align_readings(media_object.transcript.segments, pinyin)
         return response
     # No transcript: an imported file or a direct media URL. The learner gets
     # the player and the truth, which is the same 'source only' room a
@@ -560,6 +562,8 @@ def open_listening_library_lesson(
             if not pinyin.get(segment_id):
                 pinyin[segment_id] = reading
     metadata["pinyin_by_segment"] = pinyin
+    # One reading under each character, where the line and its reading agree (DC-3).
+    metadata["pinyin_chars_by_segment"] = align_readings(segments, pinyin)
     response["catalog"] = metadata
     return response
 

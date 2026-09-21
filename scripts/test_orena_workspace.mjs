@@ -106,9 +106,11 @@ assert.ok(
 /* The hint is present from the moment the learner arrives. Asking for the
    shape of the line before you can begin is a step that helps nobody, and a
    hint that appears only on request is a hint most learners never see. */
+/* On the baseline's Dictation screen (D-066) the shape is always there - masks and whatever
+   the learner has earned by typing - and a hint level adds to it; level 0 is "no hint yet". */
 assert.ok(
-  /let hintLevel = 1;/.test(encounter),
-  'the shape of the line is there to begin with',
+  /let hintLevel = 0;/.test(encounter),
+  'the shape of the line is there to begin with, before any hint is asked for',
 );
 assert.ok(
   encounter.indexOf('paintHint();') <
