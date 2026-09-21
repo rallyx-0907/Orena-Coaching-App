@@ -28,7 +28,7 @@ and `UI_BACKEND_GAPS.md` (the one tracker, absorbing the Phase 1-3 audit).
 
 ## Last verified batch
 
-Local, after slices 1 and 2 and the six-bug pass: pytest `1160 passed, 118 skipped`; every CI
+Local, after slices 1 and 2 and the six-bug pass: pytest `1171 passed, 118 skipped`; every CI
 `.mjs` gate passes except `test_m3_pronunciation_contract.mjs`, failing since
 D-065 removed the score (Speaking slice); ESM graph, memory and architecture
 validators pass. No CI claim. Browser-checked on :8011 (vi, EN text; zh word via API;
@@ -39,7 +39,7 @@ touch swipe, phone sheet and library in a touch-enabled context), not READY.
 Migration slices, in order, each through UI, contract, API, service,
 persistence, reload, errors and tests: (1) Word and Sentence Sheet and (2) Writing
 review and revision - built and browser-checked, remaining checks in the tracker's
-log; the Dark Glass foundation landed with (1); (3) Listening and Dictation - 3a the Library (Reading and Listening, chips, cards) built, 3b workspace details and Dictation open, (4) Reading
+log; the Dark Glass foundation landed with (1); (3) Listening and Dictation - 3a the Library and 3b the workspace details and the Dictation screen built (per-character pinyin from the backend), open: DC-5 and the taxi lesson need a human decision, phone composition of the workspace, (4) Reading
 comprehension per question, (5) catalogue Search. Then learner persistence, progress measurement,
 pronunciation providers. Rules that bind every slice (D-066): a metric with no
 measurement renders 0 in its canonical component and is never stored as data;
@@ -93,8 +93,8 @@ the human approves product direction.
 
 ## NEXT EXACT TASK
 
-S3b: the Listening workspace details and the Dictation screen (`UI_BACKEND_GAPS.md`, S3a log). Also finish the remaining checks of slices 1 and 2 (`UI_BACKEND_GAPS.md`, Progress log:
-zh interface on the sheets, error states in a browser, the two stale
+Human decisions on DC-5 (store hint use?) and the taxi lesson (`UI_BACKEND_GAPS.md`, S3b log); the phone composition of the workspace; delete the dead word-colour code. Also finish the remaining checks of slices 1 and 2 (`UI_BACKEND_GAPS.md`, Progress log:
+error states in a browser, the two stale
 `verify_writing_*_browser.mjs` scripts, unused copy keys), then slice 4, Reading comprehension per question.
 Operate only sandbox `orena-foundation-web`:8011; restart
 after Python changes. For AI-backed checks select Gemini there (`PUT /api/admin/ai/config`,

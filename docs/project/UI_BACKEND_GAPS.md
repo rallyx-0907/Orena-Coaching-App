@@ -48,7 +48,7 @@ schema on that date at `76e69b9`; none has been run against the baseline UI.
 | Writing revision | `RevisionCompare` | `GET /api/essays/{id}/revision`; `revision_delta` judged by the words | `essays` chain | `test_writing_revision_contract`, `test_writing_contract` | IN_PROGRESS (S2 built; see log) |
 | Writing entry, workspace | `ContentCard`, draft | `/api/drafts`, `/api/tasks/generate`; prompt library | account backbone, catalogue | `test_work_api`, `test_orena_writing_workspace.mjs` | BLOCKED (`[CONTENT]` prompts; drafts past sandbox) |
 | Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; `content_type` derived; library `ui/library-browse.js`; workspace details open (see log) | catalogue JSON, `listening_progress`, device memory | `test_listening_*`, `test_orena_library.mjs`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3a built, S3b open) |
-| Dictation | `DictationResult` | client evaluator, `practiceOutcome`; assisted flag | outcomes | `test_dictation_evaluator.mjs`, `test_orena_dictation_*.mjs` | IN_PROGRESS (S3) |
+| Dictation | `DictationResult` | `capabilities/dictation-result.js`, `ui/dictation-screen.js`; `pinyin_alignment.py`; the evaluator and evidence save unchanged | outcomes, catalogue JSON | `test_orena_dictation_screen.mjs`, `test_pinyin_alignment.py`, `test_dictation_evaluator.mjs` | IN_PROGRESS (S3b built; DC-5 needs a decision) |
 | Reading library, book detail | `ContentCard`, `Chapter` | `reading_library_api`; add kind, level, duration | `reading_books`, `reading_book_chapters` | `test_reading_library_api`, `test_orena_reading_library.mjs` | BLOCKED (`[REVIEW]` catalogue schema) |
 | Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache | `test_reading_translation`, `test_orena_reading_room.mjs` | IN_PROGRESS (S4) |
 | Reading comprehension | comprehension | per-question check endpoint; per-chapter generation | `reading_sessions`, `reading_attempts` | none for the routes yet: add before changing | IN_PROGRESS (S4) |
@@ -138,17 +138,17 @@ change. Group headers name the contract, data source and tests once.
 | LS-1 | Nine type chips | `content_type` derived from playback, topic and tags (`listening_catalog.content_type`, served in `lesson_metadata`); chips only for types some item has; a lesson that says nothing gets none; imported = the learner's own media | S3a | IN_PROGRESS (built; see log) |
 | LS-2 | Card: duration, level, time left, video badge | duration on the cover, level, "time left" and a progress bar from the place in device memory, video and provenance badges | S3a | IN_PROGRESS (built; see log) |
 | LS-3 | Library search | the bar's search filters the room's own items (title, level, type); catalogue-wide search stays S5 | S5 | IN_PROGRESS |
-| LS-4 | Player: scrubber, transport, speed, loop | lesson and progress read/write → none | S3 | IN_PROGRESS |
-| LS-5 | Transcript with pinyin, translation, active word, autoscroll | timeline, annotate, translate → none | S3 | IN_PROGRESS |
+| LS-4 | Player: scrubber, transport, speed, loop | scrubber violet with a white knob and a played part that follows the position; transport, speeds and "replay line" as before | S3b | IN_PROGRESS (built; see log) |
+| LS-5 | Transcript with pinyin, translation, active word, autoscroll | header chips (auto-scroll, the reading, the support language); auto-scroll is a kept preference that really stops the list following; a tapped line is picked ("Tua tới đây", "Nghe lại dòng") and the voice does not move | S3b | IN_PROGRESS (built; see log) |
 | LS-6 | Listening comprehension | none → items and scoring | L | BLOCKED `[CONTENT]` |
 | LS-7 | Bookmark | none → saved items | L | BLOCKED `[REVIEW]` |
-| LS-8 | Deep actions: dictation, shadow, read line, keep phrase, inspect | all exist → none | S3 | IN_PROGRESS |
-| DC-1 | Line 2 of 5, clip range, replay | progress and excerpt → none | S3 | IN_PROGRESS |
-| DC-2 | Hint level 1-3, "5 / 11 ký tự" | positional reveal → none | S3 | IN_PROGRESS |
-| DC-3 | Pinyin per revealed character | reveal is characters only → per-character reading | L | IN_PROGRESS |
-| DC-4 | Result: score, count, wrong / missing / extra | evaluator has all → map `status` to `kind` | S3 | IN_PROGRESS |
+| LS-8 | Deep actions: dictation, shadow, read line, keep phrase, inspect | one "⋯" button and a sheet (`ui/line-sheet.js`); the five ways run the practices that already existed | S3b | IN_PROGRESS (built; see log) |
+| DC-1 | Line 2 of 5, clip range, replay | its own screen: segmented progress, the clip with its range and a bar of where the voice is, replay | S3b | IN_PROGRESS (built; see log) |
+| DC-2 | Hint level 1-3, "5 / 11 ký tự" | three levels, leading units, never the whole line (held by a gate); typed-earned units also shown | S3b | IN_PROGRESS (built; see log) |
+| DC-3 | Pinyin per revealed character | `pinyin_alignment.py` cuts the reviewed reading into one syllable per character; served as `pinyin_chars_by_segment`; a line that does not agree draws none | S3b | IN_PROGRESS (built; see log) |
+| DC-4 | Result: score, count, wrong / missing / extra | `capabilities/dictation-result.js` maps the evaluator to `DictationResult`; a substitution is one wrong place; the count under the ring is the count the score is made of | S3b | IN_PROGRESS (built; see log) |
 | DC-5 | "Đã dùng gợi ý — không tính vào chuỗi" | LearnerSummary knows assisted for dictation → durable assisted flag | L | BLOCKED `[REVIEW]` |
-| DC-6 | Keep a word from the result | `saveLibraryVocabulary` → none | S3 | IN_PROGRESS |
+| DC-6 | Keep a word from the result | "Lưu <term>": the lesson's own vocabulary term found in the line, else the whole line, into device memory | S3b | IN_PROGRESS (built; see log) |
 
 ### Speaking — `PronunciationResult` · `speaking_attempts` (no raw audio, D-066 rule 7) · `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs`
 
@@ -287,6 +287,64 @@ Not READY yet - S3 as a whole:
 - Search (S5) and the catalogue-wide result page are untouched; the Library page
   (`#/content`, all kinds) uses the same component with type chips only.
 - Browser checks of the zh interface and of imported items in the library.
+
+**S3b Listening workspace and Dictation** (2026-09-21, `8bdb649`, `3c70516`, `3df3aee`). Built from
+the pinned frames (Orena Listening 02, 03, 04), not from the previous implementation:
+
+- Workspace: header chips (Tự cuộn, the reading, the support language) and one "⋯"; a tapped
+  line is picked and offers "Tua tới đây" and "Nghe lại dòng", the voice stays where it is; the
+  deep ways (dictation, shadow, read the line, keep, look closer) are a sheet over the workspace
+  (popover on a desk, bottom sheet on a phone, closes on navigation); an audio lesson has a poster;
+  the identity line is level · type · length; the scrubber is violet with a white knob. Word-class
+  colours have no switch on the baseline, so they are off and their legend is gone.
+- Dictation: its own screen - segmented progress, the clip, the pills (hear again, speed, hint
+  level), the shape of the line with a reading under each character, the field, and a result
+  column (ring, what was typed with each wrong, missing and extra place marked and tappable, the
+  right line with the missed characters lit, the reading and the meaning, next line / try again /
+  replay / keep). The comparison, score, hint module and evidence save are the ones that existed;
+  `capabilities/dictation-result.js` only puts them in the baseline's shapes. The streak pill
+  shows 0 (not measured). A used hint says "Đã dùng gợi ý." and nothing more.
+- Backend/data: `pinyin_alignment.py` and `pinyin_chars_by_segment` in the lesson payloads;
+  the aligner is verifiable (pypinyin only says where a syllable ends), left a line unaligned
+  rather than wrong, and caught two real typos in the reviewed readings (`zhǎodào`, `Bǎikē`),
+  corrected in the catalogue. Every Chinese line the catalogue ships aligns (a test holds it).
+- Chinese and localization: keys are in parity across en, zh and vi in both copy packs; the
+  library, the workspace, the deep sheet, Dictation, the Quick Sheet (word, deeper, typed
+  question) and the Writing review with its finding sheet were run in a browser in a Chinese
+  interface with Chinese text and real answers (Gemini): second person, Chinese throughout.
+- Checked in a browser on the sandbox with real touch: Dictation and the workspace on a phone (no
+  horizontal overflow, the deep sheet is a bottom sheet with a scrim, the result follows the task),
+  the library on a phone (two columns, the item in progress leads). Local: pytest 1171 passed /
+  118 skipped; every CI `.mjs` gate passes except `test_m3_pronunciation_contract.mjs`; new gates
+  `test_orena_library.mjs`, `test_orena_dictation_screen.mjs`, `test_orena_listening_workspace.mjs`.
+- Deleted: the old Dictation panel's CSS and code (`revealAnswer`, `.dictate-*`, `.hint-line`,
+  `data-mode='dictation'`), the audio identity block, the D-060 library layout.
+
+Decisions the human owns (not built, and not guessed):
+
+- **DC-5 assisted flag.** Hint levels are not stored; the learner summary marks a line assisted
+  only when its answer was revealed, and the screen no longer has a reveal. Saying "không tính vào
+  chuỗi câu tự làm" needs a stored flag on `listening_progress` (a schema change for learner-owned
+  data, which needs independent architecture review) and a definition of the streak (`[DEF]`).
+- **The lesson `en-travel-rainy-day-taxi`.** Its one segment spans the whole 71 s recording
+  and its text does not match the audio: the audio opens with "Dialogue one. A rainy day. I need a
+  taxi." which the text lacks, and the dialogue is spoken with long pauses. A timed AI transcript
+  (Gemini, tried once) agrees with the measured silences only to about a second, so a per-sentence
+  cut would be a guess. It needs an editorial re-cut (or unpublishing until then) - a content and
+  rights decision, not code.
+- **Reveal in Dictation.** The baseline draws no "show the answer", and a hint never shows the whole
+  line, so the screen has none; the recorded `revealed` evidence path is now unreachable from the UI.
+
+Not READY yet - what is left of S3:
+
+- LS-6 (comprehension) and LS-7 (bookmark as a saved item) stay `BLOCKED` as before; the bookmark
+  is device memory.
+- The workspace on a phone stacks the poster, the transport and the transcript; the baseline's
+  phone puts a top bar (back, the reading and support chips, bookmark) over a longer transcript with
+  the transport at the bottom. Functional and touch-checked, not yet the same composition.
+- Word-class colouring code (`closeLook`, annotation of the current line) has no UI; delete it.
+- The two `verify_writing_*_browser.mjs` scripts still wait for the deleted `.review-headline`.
+- The library's chips show only types that exist; the baseline draws the full fixed set.
 
 **S2 Writing review and revision** (2026-09-21). Built: `writing_contract.py` and two
 endpoints (WR-5..9, 11..14); `example` per finding and the English `register`
