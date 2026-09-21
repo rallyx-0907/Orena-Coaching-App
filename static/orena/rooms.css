@@ -2468,8 +2468,7 @@ ul.pronunciation-words small { color: var(--muted); }
   background: radial-gradient(70% 90% at 12% 0%, var(--bloom-hero, transparent), transparent 62%),
     var(--surface-panel);
 }
-[data-theme='ink'] .book-hero { --bloom-hero: rgba(144, 101, 240, 0.22); }
-[data-theme='paper'] .book-hero { --bloom-hero: rgba(116, 69, 206, 0.07); }
+.book-hero { --bloom-hero: rgba(144, 101, 240, 0.22); }
 .book-hero__cover { inline-size: 176px; flex: none; }
 .book-hero__cover .library-cover--large,
 .book-page .library-cover--large {
@@ -2800,8 +2799,7 @@ ul.pronunciation-words small { color: var(--muted); }
   border-bottom: 1px solid var(--border-subtle);
   background: radial-gradient(75% 70% at 12% 0%, var(--bloom-vocab, transparent), transparent 62%);
 }
-[data-theme='ink'] .vocab-home__head { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 18%, transparent); }
-[data-theme='paper'] .vocab-home__head { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 8%, transparent); }
+.vocab-home__head { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 18%, transparent); }
 .vocab-home__title { flex: 1; min-inline-size: 0; }
 .vocab-home__title h1 {
   margin: 0;
@@ -2925,8 +2923,7 @@ ul.pronunciation-words small { color: var(--muted); }
   border-radius: 20px 20px 0 0;
   background: radial-gradient(85% 65% at 16% 0%, var(--bloom-vocab, transparent), transparent 62%), var(--surface-panel);
 }
-[data-theme='ink'] .vocab-collection__hero { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 22%, transparent); }
-[data-theme='paper'] .vocab-collection__hero { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 9%, transparent); }
+.vocab-collection__hero { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 22%, transparent); }
 .vocab-collection__art {
   flex: none;
   inline-size: 120px;
@@ -3190,8 +3187,7 @@ ul.pronunciation-words small { color: var(--muted); }
   border-radius: 0;
   background: radial-gradient(100% 60% at 50% 0%, var(--bloom-listen, transparent), transparent 65%), var(--surface-primary);
 }
-[data-theme='ink'] .listen-workspace .transcript-panel { --bloom-listen: rgba(144, 101, 240, 0.18); }
-[data-theme='paper'] .listen-workspace .transcript-panel { --bloom-listen: rgba(116, 69, 206, 0.06); }
+.listen-workspace .transcript-panel { --bloom-listen: rgba(144, 101, 240, 0.18); }
 .transcript-panel__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 10px; }
 .transcript-panel__head .ds-label { white-space: nowrap; }
 .transcript-panel__head .ds-label { color: var(--text-muted); }

@@ -307,39 +307,8 @@ function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : secondarySurfaces(ctx)}${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : secondarySurfaces(ctx)}${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}`,
   });
-  /* The theme chooser is built from the registry, so registering a theme is
-     the whole of adding one - there is no list of themes written out a second
-     time here. Each card carries `data-theme` itself, which means the sample
-     inside it is painted by that theme's own tokens rather than by swatches
-     copied into this file: a preview cannot drift from the theme it previews.
-
-     Named themes rather than a light/dark switch, so the labels are read from
-     copy like every other learner-facing string, in both interface languages. */
-  const themeControl = document.createElement('fieldset');
-  themeControl.className = 'theme-control';
-  const choices = [
-    { id: 'system', appearance: '' },
-    ...window.orenaTheme.themes,
-  ];
-  themeControl.innerHTML = `<legend>${esc(c.theme)}</legend><div class="theme-choices">${choices
-    .map(({ id }) => {
-      const name = id === 'system' ? c.themesystem : c['theme_' + id];
-      const note = id === 'system' ? c.themesystemNote : c['theme_' + id + 'Note'];
-      // The sample is the theme's own canvas, surface, text and accent. A
-      // theme that cannot paint this cannot paint a room either.
-      const sample =
-        id === 'system'
-          ? ''
-          : `<span class="theme-sample" data-theme="${esc(id)}" aria-hidden="true"><span class="theme-sample-card"><b></b><i></i></span><span class="theme-sample-accent"></span></span>`;
-      return `<label class="theme-choice"><input type="radio" name="orenaTheme" value="${esc(id)}" ${window.orenaTheme.preference === id ? 'checked' : ''}>${sample}<span class="theme-choice-text"><strong>${esc(name)}</strong><span>${esc(note)}</span></span></label>`;
-    })
-    .join('')}</div>`;
-  sheet.querySelector('#themeButton').replaceWith(themeControl);
-  themeControl.onchange = (event) => {
-    if (event.target.name === 'orenaTheme') window.orenaTheme.set(event.target.value);
-  };
   sheet.querySelector('#preferencesForm').onsubmit = async (event) => {
     event.preventDefault();
     if (pendingWrites) return;

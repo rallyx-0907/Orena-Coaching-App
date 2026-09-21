@@ -184,7 +184,7 @@ export function mountReader(
   const contentsColumn = place
     ? `<nav class="reader-contents-column" aria-label="${esc(r.readerContents)}"><span class="ds-label">${esc(r.readerContents)}</span>${tocHtml(c, { bookId: book.id, chapters: book.chapters, currentId: book.chapterId, provenance: book.provenance })}</nav>`
     : '';
-  host.innerHTML = `<div class="reader" data-reader><header class="reader-bar"><a class="reader-bar__back" href="${esc(origin || link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button><button type="button" class="reader-layer" data-reader-paper aria-pressed="false">${esc(r.readerPaper)}</button><button type="button" class="reader-layer" data-reader-listen aria-disabled="true" title="${esc(r.bookSoon)}">${esc(r.readerListen)}</button>${book ? '' : `<button type="button" class="reader-tool" data-keep aria-pressed="${kept()}" aria-label="${esc(c.readerKeep)}">${symbol('bookmark', 20)}</button>`}</div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
+  host.innerHTML = `<div class="reader" data-reader><header class="reader-bar"><a class="reader-bar__back" href="${esc(origin || link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button><button type="button" class="reader-layer" data-reader-listen aria-disabled="true" title="${esc(r.bookSoon)}">${esc(r.readerListen)}</button>${book ? '' : `<button type="button" class="reader-tool" data-keep aria-pressed="${kept()}" aria-label="${esc(c.readerKeep)}">${symbol('bookmark', 20)}</button>`}</div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
     .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
     .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside></div><footer class="reader-foot"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span><span class="reader-progress" aria-hidden="true"><span data-reader-progress></span></span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</footer>${chapterCompleteHtml()}${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
 
@@ -235,13 +235,6 @@ export function mountReader(
     const presentation = readerPresentation(settings);
     reader.setAttribute('style', presentation.style);
     reader.dataset.readerFont = presentation.font;
-    if (presentation.theme) {
-      reader.dataset.theme = presentation.theme.theme;
-      reader.dataset.appearance = presentation.theme.appearance;
-    } else {
-      delete reader.dataset.theme;
-      delete reader.dataset.appearance;
-    }
   };
   const paintSettings = (focusSelector) => {
     settingsPop.innerHTML = settingsHtml(c, settings);
@@ -269,7 +262,7 @@ export function mountReader(
       settings = readerSettings({ ...settings, size: settings.size + step });
       focus = `[data-reader-size="${button.dataset.readerSize}"]`;
     }
-    for (const key of ['font', 'spacing', 'width', 'appearance']) {
+    for (const key of ['font', 'spacing', 'width']) {
       const value = button.dataset[`reader${key[0].toUpperCase()}${key.slice(1)}`];
       if (value) {
         settings = readerSettings({ ...settings, [key]: value });
@@ -281,20 +274,6 @@ export function mountReader(
     paintSettings(focus);
     updateProgress();
   });
-  /* "Paper" is the design's one-tap way to the light reading appearance; it is
-     the same setting the panel offers, so the two can never disagree. */
-  const paperToggle = host.querySelector('[data-reader-paper]');
-  const paintPaper = () => {
-    paperToggle.setAttribute('aria-pressed', String(settings.appearance === 'light'));
-  };
-  paperToggle.onclick = () => {
-    settings = readerSettings({ ...settings, appearance: settings.appearance === 'light' ? 'auto' : 'light' });
-    saveSettings(settings);
-    applySettings();
-    paintPaper();
-    if (!settingsPop.hidden) paintSettings();
-  };
-  paintPaper();
   host.querySelector('[data-reader-listen]').onclick = (event) => event.preventDefault();
   applySettings();
 

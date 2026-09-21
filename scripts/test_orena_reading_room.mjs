@@ -145,25 +145,18 @@ const c = copy.en;
   );
 }
 
-/* --- Reader settings: real, bounded, and theme-honest --------------------- */
+/* --- Reader settings: real and bounded ------------------------------------ */
 {
   assert.deepEqual(readerSettings(null), READER_DEFAULTS);
+  // D-066: appearance is not a reader setting. There is one Dark Glass system,
+  // so a stored 'appearance' from an older build is simply dropped.
   assert.deepEqual(
     readerSettings({ size: 99, font: 'comic', spacing: 'relaxed', width: 'wide', appearance: 'sepia' }),
-    { ...READER_DEFAULTS, size: 1.4, spacing: 'relaxed', width: 'wide', appearance: 'sepia' },
+    { ...READER_DEFAULTS, size: 1.4, spacing: 'relaxed', width: 'wide' },
   );
+  assert.ok(!('appearance' in READER_DEFAULTS), 'the reader has no appearance of its own');
   assert.equal(readerSettings({ size: 0.1 }).size, 0.85);
-  // Appearance maps onto the Orena themes, plus the reader-only sepia block
-  // theme.css declares beside them, rather than inventing colours (D-059).
-  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'light' }).theme, { theme: 'paper', appearance: 'light' });
-  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'sepia' }).theme, { theme: 'sepia', appearance: 'light' });
-  assert.deepEqual(readerPresentation({ ...READER_DEFAULTS, appearance: 'dark' }).theme, { theme: 'ink', appearance: 'dark' });
-  for (const theme of ['paper', 'sepia', 'ink'])
-    assert.ok(
-      readFileSync('static/orena/theme.css', 'utf8').includes(`[data-theme='${theme}'] {`),
-      `the reader's ${theme} appearance has a token block`,
-    );
-  assert.equal(readerPresentation(READER_DEFAULTS).theme, null, 'by default the reader follows the Orena theme');
+  assert.equal(readerPresentation(READER_DEFAULTS).theme, undefined, 'the reader wears no theme of its own');
   const style = readerPresentation({ ...READER_DEFAULTS, size: 1.2, spacing: 'compact', width: 'narrow', font: 'sans' });
   assert.match(style.style, /--reader-scale: 1\.2/);
   assert.match(style.style, /--reader-leading: 1\.55/);
@@ -171,10 +164,10 @@ const c = copy.en;
   assert.match(readerPresentation(READER_DEFAULTS).style, /--reader-measure: 44rem/, 'the default column is about 700px');
   assert.equal(style.font, 'sans');
 
-  const panel = settingsHtml(c, { ...READER_DEFAULTS, appearance: 'dark' });
-  for (const hook of ['data-reader-size="-1"', 'data-reader-size="1"', 'data-reader-font="serif"', 'data-reader-spacing="relaxed"', 'data-reader-width="wide"', 'data-reader-appearance="dark"'])
+  const panel = settingsHtml(c, { ...READER_DEFAULTS });
+  for (const hook of ['data-reader-size="-1"', 'data-reader-size="1"', 'data-reader-font="serif"', 'data-reader-spacing="relaxed"', 'data-reader-width="wide"'])
     assert.ok(panel.includes(hook), `settings control missing: ${hook}`);
-  assert.match(panel, /data-reader-appearance="dark"[^>]*aria-pressed="true"/);
+  assert.doesNotMatch(panel, /data-reader-appearance|reader-swatch/, 'no light, sepia or paper choice remains');
   assert.match(panel, new RegExp(c.readerTextSize));
 }
 
@@ -300,7 +293,6 @@ const keys = [
   'readerTextSize', 'readerSmaller', 'readerLarger', 'readerTypeface', 'readerSerif', 'readerSans',
   'readerSpacing', 'readerSpacingCompact', 'readerSpacingNormal', 'readerSpacingRelaxed',
   'readerWidth', 'readerWidthNarrow', 'readerWidthMedium', 'readerWidthWide',
-  'readerAppearance', 'readerAppearanceAuto', 'readerAppearanceLight', 'readerAppearanceSepia', 'readerAppearanceDark',
   'selectionActions', 'selectionTranslate', 'selectionExplain', 'selectionSave', 'selectionPronounce',
   'selectionPattern', 'selectionSaved', 'askPattern',
   'lookupLoading', 'translationLoading', 'lookupUnavailable', 'lookupFailed', 'lookupSourceCollection',
@@ -372,7 +364,7 @@ assert.doesNotMatch(api, /contextualGloss/);
 
 /* --- The three columns of the updated design (D-065) -------------------- */
 assert.match(reader, /class="reader-contents-column"/, 'a book keeps its contents beside the text');
-assert.match(reader, /data-reader-paper/, 'the reading appearance has the one-tap control the design draws');
+assert.doesNotMatch(reader, /data-reader-paper/, 'Paper is retired with the light theme (D-066)');
 assert.match(reader, /data-reader-listen/, 'and the listen control keeps its place');
 assert.match(reader, /const tabs = \['word', 'grammar', 'notes'\]/, 'the panel carries the three tabs the design draws');
 assert.match(reader, /class="reader-foot"/, 'how far through it sits under the text');

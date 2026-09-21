@@ -160,26 +160,15 @@ export const READER_DEFAULTS = Object.freeze({
   font: 'serif',
   spacing: 'normal',
   width: 'medium',
-  appearance: 'auto',
 });
 const CHOICES = {
   font: ['serif', 'sans'],
   spacing: ['compact', 'normal', 'relaxed'],
   width: ['narrow', 'medium', 'wide'],
-  appearance: ['auto', 'light', 'sepia', 'dark'],
 };
 export const READER_SIZE = Object.freeze({ min: 0.85, max: 1.4, step: 0.05 });
 const LEADING = { compact: 1.55, normal: 1.75, relaxed: 2 };
 const MEASURE = { narrow: '36rem', medium: '44rem', wide: '50rem' };
-/* Light and dark are the two Orena themes; sepia is the reader-only warm paper
-   declared beside them in theme.css. All three pass AA. "Auto" follows the
-   app. */
-const APPEARANCE = {
-  light: { theme: 'paper', appearance: 'light' },
-  sepia: { theme: 'sepia', appearance: 'light' },
-  dark: { theme: 'ink', appearance: 'dark' },
-};
-
 export function readerSettings(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   const settings = { ...READER_DEFAULTS };
@@ -197,7 +186,6 @@ export function readerPresentation(settings) {
   return {
     style: `--reader-scale: ${s.size}; --reader-leading: ${LEADING[s.spacing]}; --reader-measure: ${MEASURE[s.width]};`,
     font: s.font,
-    theme: APPEARANCE[s.appearance] || null,
   };
 }
 
@@ -205,13 +193,13 @@ const choiceRow = (c, label, key, current, labels) =>
   `<div class="reader-setting"><span class="reader-setting__label">${esc(label)}</span><div class="reader-segmented">${CHOICES[key]
     .map(
       (value) =>
-        `<button type="button" data-reader-${key}="${value}" aria-pressed="${value === current ? 'true' : 'false'}">${key === 'appearance' ? `<span class="reader-swatch" data-swatch="${value}" aria-hidden="true"></span>` : ''}<span>${esc(labels[value])}</span></button>`,
+        `<button type="button" data-reader-${key}="${value}" aria-pressed="${value === current ? 'true' : 'false'}"><span>${esc(labels[value])}</span></button>`,
     )
     .join('')}</div></div>`;
 
 export function settingsHtml(c, settings) {
   const s = readerSettings(settings);
-  return `<div class="reader-settings" role="group" aria-label="${esc(c.readerSettings)}"><div class="reader-setting"><span class="reader-setting__label">${esc(c.readerTextSize)}</span><div class="reader-stepper"><button type="button" data-reader-size="-1" aria-label="${esc(c.readerSmaller)}"${s.size <= READER_SIZE.min ? ' disabled' : ''}>A−</button><output aria-live="polite">${Math.round(s.size * 100)}%</output><button type="button" data-reader-size="1" aria-label="${esc(c.readerLarger)}"${s.size >= READER_SIZE.max ? ' disabled' : ''}>A+</button></div></div>${choiceRow(c, c.readerTypeface, 'font', s.font, { serif: c.readerSerif, sans: c.readerSans })}${choiceRow(c, c.readerSpacing, 'spacing', s.spacing, { compact: c.readerSpacingCompact, normal: c.readerSpacingNormal, relaxed: c.readerSpacingRelaxed })}${choiceRow(c, c.readerWidth, 'width', s.width, { narrow: c.readerWidthNarrow, medium: c.readerWidthMedium, wide: c.readerWidthWide })}${choiceRow(c, c.readerAppearance, 'appearance', s.appearance, { auto: c.readerAppearanceAuto, light: c.readerAppearanceLight, sepia: c.readerAppearanceSepia, dark: c.readerAppearanceDark })}</div>`;
+  return `<div class="reader-settings" role="group" aria-label="${esc(c.readerSettings)}"><div class="reader-setting"><span class="reader-setting__label">${esc(c.readerTextSize)}</span><div class="reader-stepper"><button type="button" data-reader-size="-1" aria-label="${esc(c.readerSmaller)}"${s.size <= READER_SIZE.min ? ' disabled' : ''}>A−</button><output aria-live="polite">${Math.round(s.size * 100)}%</output><button type="button" data-reader-size="1" aria-label="${esc(c.readerLarger)}"${s.size >= READER_SIZE.max ? ' disabled' : ''}>A+</button></div></div>${choiceRow(c, c.readerTypeface, 'font', s.font, { serif: c.readerSerif, sans: c.readerSans })}${choiceRow(c, c.readerSpacing, 'spacing', s.spacing, { compact: c.readerSpacingCompact, normal: c.readerSpacingNormal, relaxed: c.readerSpacingRelaxed })}${choiceRow(c, c.readerWidth, 'width', s.width, { narrow: c.readerWidthNarrow, medium: c.readerWidthMedium, wide: c.readerWidthWide })}</div>`;
 }
 
 /* --- Selection ----------------------------------------------------------- */

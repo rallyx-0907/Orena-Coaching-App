@@ -305,8 +305,7 @@ body:has(.reader) #shellNav:focus-within {
   background: radial-gradient(90% 90% at 50% -20%, var(--bloom-done, transparent), transparent 62%),
     var(--surface-panel);
 }
-[data-theme='ink'] .chapter-complete { --bloom-done: rgba(248, 171, 79, 0.22); }
-[data-theme='paper'] .chapter-complete { --bloom-done: rgba(192, 100, 0, 0.09); }
+.chapter-complete { --bloom-done: rgba(248, 171, 79, 0.22); }
 .chapter-complete__label {
   display: inline-flex;
   align-items: center;
@@ -454,25 +453,6 @@ body:has(.reader) #shellNav:focus-within {
   opacity: 0.45;
   cursor: default;
 }
-.reader-swatch {
-  width: 13px;
-  height: 13px;
-  border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
-  border-radius: 50%;
-}
-.reader-swatch[data-swatch='auto'] {
-  background: linear-gradient(135deg, var(--paper) 50%, var(--ink) 50%);
-}
-.reader-swatch[data-swatch='light'] {
-  background: #f4f7f3;
-}
-.reader-swatch[data-swatch='sepia'] {
-  background: #f8f3e9;
-}
-.reader-swatch[data-swatch='dark'] {
-  background: #102538;
-}
-
 /* --- Contents ------------------------------------------------------------ */
 
 .reader-toc-sheet .reader-toc {

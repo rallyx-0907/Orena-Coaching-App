@@ -18,19 +18,11 @@ import {
 } from '../static/orena/product/evidence.js';
 
 // The first-paint adapter runs without auth, even with inaccessible storage.
+// D-066: there is one visual system, so it marks the document and reads nothing.
 const themeCode = fs.readFileSync('static/orena/theme.js', 'utf8');
-function themeHarness(saved, dark = false, blocked = false) {
-  const callbacks = {},
-    dataset = {},
-    values = new Map([['orena.theme', saved]]);
-  const media = {
-    matches: dark,
-    addEventListener: (_, fn) => (callbacks.system = fn),
-  };
-  const window = {
-    matchMedia: () => media,
-    addEventListener: (_, fn) => (callbacks.storage = fn),
-  };
+function themeHarness(blocked = false) {
+  const dataset = {};
+  const callbacks = {};
   const document = {
     documentElement: { dataset },
     readyState: 'complete',
@@ -42,111 +34,29 @@ function themeHarness(saved, dark = false, blocked = false) {
   /* The browser chrome colour is read from the resolved token rather than
      kept as a second copy of the palette, so the harness has to answer the
      same question a stylesheet would. */
-  const grounds = {
-    ink: '#0b0a0d',
-    paper: '#f7f6f9',
-  };
   vm.runInNewContext(themeCode, {
-    window,
     document,
     getComputedStyle: () => ({
-      getPropertyValue: (name) =>
-        name === '--paper' ? grounds[dataset.theme] || '' : '',
+      getPropertyValue: (name) => (name === '--paper' ? '#050310' : ''),
     }),
     localStorage: {
-      getItem: (key) => {
-        if (blocked) throw Error('denied');
-        return values.get(key);
-      },
-      setItem: (key, value) => {
-        if (blocked) throw Error('denied');
-        values.set(key, value);
+      getItem: () => {
+        throw Error(blocked ? 'denied' : 'theme.js must not read a stored theme');
       },
     },
   });
-  return { theme: window.orenaTheme, dataset, callbacks, media };
+  return { dataset, callbacks };
 }
-/* A theme has an identity and, separately, an appearance. The product used to
-   store the appearance as the preference - the string was literally 'light' or
-   'dark' - which is why a third theme could not exist. These hold the two
-   apart, because every future theme depends on the distinction. */
-const auto = themeHarness(null, true);
-assert.equal(auto.dataset.theme, 'ink', 'a dark device gets a named theme');
-assert.equal(auto.dataset.appearance, 'dark', 'appearance is tracked separately');
-auto.media.matches = false;
-auto.callbacks.system();
-assert.equal(auto.dataset.theme, 'paper');
-assert.equal(auto.dataset.appearance, 'light');
-auto.theme.set('ink');
-auto.callbacks.system();
-assert.equal(auto.dataset.theme, 'ink', 'Explicit choice survives OS changes');
-assert.equal(
-  auto.dataset.appearance,
-  'dark',
-  'a chosen theme brings its own appearance, whatever the device says',
-);
-auto.callbacks.storage({ key: 'orena.theme', newValue: 'system' });
-assert.equal(
-  auto.dataset.theme,
-  'paper',
-  'Another tab can restore the live device preference',
-);
-
-// Every registered theme is selectable and declares an appearance, so the
-// settings UI can be built from the registry rather than from a second list.
-const registry = auto.theme.themes;
-/* D-059: the Orena Design System is one identity in two appearances. */
-assert.deepEqual(
-  // Rebuilt in this realm: the registry comes from the vm context.
-  Array.from(registry, (entry) => [String(entry.id), String(entry.appearance)]),
-  [
-    ['ink', 'dark'],
-    ['paper', 'light'],
-  ],
-  'the registry carries the approved themes',
-);
-for (const entry of registry) {
-  assert.ok(entry.id && entry.mood, `${entry.id}: incomplete registration`);
-  assert.ok(['light', 'dark'].includes(entry.appearance), `${entry.id}: appearance`);
-  auto.theme.set(entry.id);
-  assert.equal(auto.dataset.theme, entry.id);
-  assert.equal(auto.dataset.appearance, entry.appearance);
-  // Named in both interface languages, like every other learner-facing string.
-  for (const ui of ['en', 'zh']) {
-    assert.ok(copy[ui][`theme_${entry.id}`], `${ui}: ${entry.id} has no name`);
-    assert.ok(copy[ui][`theme_${entry.id}Note`], `${ui}: ${entry.id} has no note`);
-  }
+for (const blocked of [false, true]) {
+  const page = themeHarness(blocked);
+  assert.equal(page.dataset.theme, 'glass', 'the one theme is applied');
+  assert.equal(page.dataset.appearance, 'dark', 'and it is dark');
+  assert.equal(page.callbacks.chrome, '#050310', 'chrome matches the ground it frames');
 }
-// An unknown theme falls back rather than leaving the page with no tokens.
-auto.theme.set('not-a-theme');
-assert.equal(auto.dataset.theme, 'paper', 'an unknown id is not applied');
-
-/* A preference written by an older build - 'light' or 'dark', or one of the
-   four themes D-059 retired - is read as the theme that now carries its
-   appearance: nobody loses their choice to an upgrade, and a dark choice never
-   wakes up light. */
-for (const [saved, device, expected] of [
-  ['light', true, 'paper'],
-  ['dark', false, 'ink'],
-  ['night-ink', false, 'ink'],
-  ['deep-forest', false, 'ink'],
-  ['sage-field', true, 'paper'],
-  ['paper', true, 'paper'],
-])
-  assert.equal(themeHarness(saved, device).dataset.theme, expected, `${saved} keeps its appearance`);
-
-/* The browser chrome follows the resolved ground rather than a hardcoded
-   pair, which is how it came to be serving a pre-brand green while the page
-   had been ivory for some time. */
-const chrome = themeHarness('ink', false);
-assert.equal(chrome.callbacks.chrome, '#0b0a0d', 'chrome matches the theme it frames');
-
-const blocked = themeHarness(null, true, true);
-blocked.theme.set('paper');
-assert.equal(
-  blocked.dataset.theme,
-  'paper',
-  'A storage failure must not break a live theme choice',
+assert.ok(
+  !fs.existsSync('static/orena/theme-paper.css') &&
+    !/data-theme='(?:ink|paper|sepia)'/.test(fs.readFileSync('static/orena/theme.css', 'utf8')),
+  'Ink, Paper and sepia are retired (D-066)',
 );
 
 const data = new Map();
@@ -346,9 +256,12 @@ const foundation = declarations(themeCss.split(':root {')[1].split('}')[0]);
 function tokens(selector) {
   const block = themeCss.split(selector)[1].split('}')[0];
   const own = declarations(block);
-  const resolve = (value) => {
+  // A token may point at another semantic token, or at the foundation.
+  const resolve = (value, hops = 0) => {
     const reference = /^var\((--[\w-]+)\)$/.exec(value);
-    return reference ? foundation[reference[1]] : value;
+    if (!reference || hops > 4) return value;
+    const next = own[reference[1]] ?? foundation[reference[1]];
+    return next === undefined ? undefined : resolve(next, hops + 1);
   };
   return Object.fromEntries(
     Object.entries(own).map(([name, value]) => [name, resolve(value)]),
@@ -390,11 +303,11 @@ const pairings = [
 const themeBlocks = [...themeCss.matchAll(/\[data-theme='([\w-]+)'\] \{/g)].map(
   (m) => [m[1], m[0]],
 );
-for (const theme of ['ink', 'paper'])
-  assert.ok(
-    themeBlocks.some(([name]) => name === theme),
-    `${theme} declares its tokens`,
-  );
+assert.deepEqual(
+  themeBlocks.map(([name]) => name),
+  ['glass'],
+  'Dark Glass is the only theme (D-066)',
+);
 for (const [themeName, selector] of themeBlocks) {
   const palette = tokens(selector);
   for (const [surface, ink, need] of pairings) {
@@ -425,38 +338,53 @@ for (const name of ['foundation', 'world', 'experiences', 'reference', 'rooms'])
   }
 }
 
-/* Every theme names an appearance, and appearance is styled separately from
-   identity - form controls, scrollbars and the part-of-speech inks need to
-   know how bright a theme is, not which theme it is. */
-assert.match(themeCss, /\[data-appearance='light'\] \{\s*color-scheme: light;/);
-assert.match(themeCss, /\[data-appearance='dark'\] \{\s*color-scheme: dark;/);
-for (const ink of ['--word-thing', '--word-action', '--word-detail']) {
-  const uses = themeCss.split(ink).length - 1;
-  assert.equal(uses, 2, `${ink} is defined once per appearance, not per theme`);
-}
+/* One appearance, dark, and the part-of-speech inks that track it. */
+assert.match(themeCss, /color-scheme: dark;/);
+assert.doesNotMatch(themeCss, /color-scheme: light|data-appearance/);
+for (const ink of ['--word-thing', '--word-action', '--word-detail'])
+  assert.equal(themeCss.split(ink + ':').length - 1, 1, `${ink} is defined once`);
 
-/* The canonical colours stay canonical (D-059). Violet is the action colour
-   and amber the progress colour; each keeps its design-system value and is
-   given a darker partner for paper, rather than being quietly redefined to
-   whatever passes a check. Orena Orange remains the artwork's colour. */
-assert.equal(foundation['--o-violet'], '#9065f0', 'Violet .62 .20 294 is the canonical action');
-assert.equal(foundation['--o-amber'], '#f8ab4f', 'Amber .80 .14 68 is the canonical progress');
-assert.equal(foundation['--o-ink-ground'], '#0b0a0d', 'the ink ground is canonical');
+/* The colours are the pinned baseline's (D-066). theme.css is checked against
+   docs/design/canonical-ui/tokens.json rather than against a second copy of the
+   values written here, so the stylesheet cannot drift from the baseline and the
+   baseline cannot be edited to match the stylesheet without the pin changing. */
+const baseline = JSON.parse(fs.readFileSync('docs/design/canonical-ui/tokens.json', 'utf8'));
+const norm = (value) =>
+  String(value)
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/(\.\d*?)0+(?!\d)/g, '$1')
+    .replace(/\.(?=\D)/g, '');
+const css = norm(themeCss);
+const mustCarry = (label, value) =>
+  assert.ok(css.includes(norm(value)), `theme.css does not carry the baseline's ${label}: ${value}`);
+mustCarry('canvas', baseline.base.canvas);
+mustCarry('ink', baseline.base.ink);
+for (const layer of baseline.cosmicField.layers) mustCarry('cosmic layer', layer);
+mustCarry('cosmic size', baseline.cosmicField.size);
+for (const [name, value] of Object.entries(baseline.glass)) mustCarry(`glass.${name}`, value);
+for (const [name, value] of Object.entries(baseline.accent)) {
+  if (name === 'gradient') continue; // written from its two stops, checked below
+  mustCarry(`accent.${name}`, value);
+}
+for (const [name, value] of Object.entries(baseline.semantic)) {
+  // warn and bad are oklch in the baseline and a hex here (see the note in theme.css).
+  if (!value.startsWith('oklch')) mustCarry(`semantic.${name}`, value);
+}
+assert.equal(foundation['--o-accent-top'], '#9b67ff');
+assert.equal(foundation['--o-accent-base'], '#6a32e0');
+assert.equal(foundation['--o-accent-ink'], '#d5c0ff');
+assert.equal(foundation['--o-canvas'], '#050310');
 assert.equal(foundation['--o-orange'], '#ff7a3d', 'Orena Orange stays the artwork colour');
-for (const [brand, partner] of [
-  ['--o-violet', '--o-violet-deep'],
-  ['--o-amber', '--o-amber-text'],
-]) {
-  assert.ok(foundation[partner], `${partner}: the contrast-safe partner exists`);
-  assert.notEqual(foundation[partner], foundation[brand], `${partner} is a partner, not a replacement`);
+for (const [skill, hue] of Object.entries(baseline.skillHue)) {
+  const token = { Reading: 'reading', Listening: 'listening', Speaking: 'speaking', Writing: 'writing', Vocabulary: 'vocabulary', Dictation: 'dictation' }[skill];
+  assert.ok(themeCss.includes(`--domain-${token}: oklch(0.78 0.12 ${hue});`), `${skill} hue ${hue}`);
 }
-/* Violet acts, amber records: a theme never paints progress with the action
-   colour or an action with the progress colour. */
-for (const [themeName, selector] of themeBlocks) {
-  const palette = tokens(selector);
-  if (palette['--progress'] && palette['--action-primary'])
-    assert.notEqual(palette['--progress'], palette['--action-primary'], `${themeName}: progress is not violet`);
-}
+/* Semantic colour is ink, not a fill: no surface token is a status colour. */
+const glass = tokens("[data-theme='glass'] {");
+for (const surface of Object.keys(glass).filter((name) => name.startsWith('--surface-')))
+  for (const status of ['--o-good', '--o-warn', '--o-bad', '--o-info'])
+    assert.notEqual(glass[surface], foundation[status], `${surface} is not painted with ${status}`);
 
 // A panel colour must never be used as a background without its paired ink.
 for (const name of ['foundation', 'world', 'experiences']) {
@@ -469,5 +397,5 @@ for (const name of ['foundation', 'world', 'experiences']) {
 }
 
 console.log(
-  'Golden Star: first-paint/live themes, paired panel tokens, EN/ZH patterns, contextual drafts, continuation and retry-safe evidence PASS',
+  'Golden Star: Dark Glass foundation pinned to the baseline, first paint, paired panel tokens, EN/ZH patterns, contextual drafts, continuation and retry-safe evidence PASS',
 );

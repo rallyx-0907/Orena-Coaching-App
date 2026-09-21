@@ -85,12 +85,8 @@ for (const locale of supportedLocales) {
 const SAME_IN_EVERY_LANGUAGE = new Set([
   'vocabularyFramework_toeic',
   'vocabularyFramework_hsk',
-  // A theme's identity is its name. Paper is Paper in every room.
-  'theme_ink',
-  'theme_paper',
   'vocabularySortAlpha',
   'readerProgress',
-  'readerAppearanceAuto',
   // Vietnamese borrows this one whole; translating it would be inventing a word.
   'mediaVideo',
   'adminVocabularyCollectionTitlePlaceholder',
