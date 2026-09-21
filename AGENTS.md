@@ -43,10 +43,11 @@ Domain owners:
 
 | Domain | Authority |
 | --- | --- |
-| Learner-facing product, UX, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
+| How a learner surface looks, behaves and what data it shows | the Claude Design project at its source (D-067) |
+| Learner-facing product intent, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
 | Content, discovery, import, learner content | `docs/product/ORENA_CONTENT_ARCHITECTURE.md` |
-| Durable learner-facing design rules, web and native | `docs/project/DESIGN_CONTRACT.md` |
-| What a web surface inherits and owes | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
+| Durable rules for building and judging a learner surface | `docs/project/DESIGN_CONTRACT.md` |
+| Where code lives in `static/orena` (descriptive only, sets no UI rule) | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
 | Brand, mascot, illustration, generated art | `assets/brand/orena/` |
 | Current capability behaviour and review state | `docs/product/ORENA_STATUS.md` |
 | Invariants that must not drift | `docs/project/ARCHITECTURE_INVARIANTS.md` |
@@ -69,22 +70,29 @@ Before any learner-facing product, UX, UI, visual, content-discovery, Library,
 Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
 navigation task, read and obey:
 
-- `docs/design/canonical-ui/` - the Canonical UI Baseline (D-066), the visual,
-  interaction and data authority for every learner-facing surface;
-- `docs/product/ORENA_PRODUCT_CONSTITUTION.md`;
-- `docs/product/ORENA_CONTENT_ARCHITECTURE.md`;
-- `docs/project/DESIGN_CONTRACT.md`, including its acceptance gates;
-- `assets/brand/orena/` for anything visual — it is the Art Bible and the only
+- **The Claude Design project, at its source** (D-066, D-067):
+  `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`. It is the visual, interaction and data
+  authority for every learner-facing surface. `docs/project/DESIGN_CONTRACT.md`
+  ("The authority") lists exactly what to read from it. The copy in
+  `docs/design/canonical-ui/` is an incomplete cache pinned on 2026-09-21; where
+  it and the source differ, the source wins, and a lane that cannot read the
+  source says so instead of deciding from the cache;
+- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-48 (measured, not
+  invented, old interaction deleted) and the fidelity gate;
+- `docs/product/ORENA_PRODUCT_CONSTITUTION.md` and
+  `docs/product/ORENA_CONTENT_ARCHITECTURE.md`: what Orena is for and how content
+  is organised (not how a surface looks);
+- `assets/brand/orena/` for artwork - it is the Art Bible and the only
   art-direction authority;
 - the current verified state the cold start in §2 already requires.
 
-Precedence for these tasks: explicit current human instruction → the Canonical
-UI Baseline (how a surface looks, behaves and what data it shows) → the Product
-Constitution → the Content Architecture → the Design Contract → current
-verified product state → the task brief → existing implementation. Legacy UI
-and screenshots are evidence of what was built, never design authority. If a
-requested change would violate a contract, stop and surface the conflict before
-implementing it.
+Precedence for these tasks: explicit current human instruction → the design at
+its source → the Design Contract → the Product Constitution → the Content
+Architecture → current verified product state → the task brief → existing
+implementation. Old UI, screenshots, code comments and any UI rule that
+pre-dates D-066 are evidence of what was built, never design authority, and a
+rule that conflicts with the design is void (D-067). If a requested change would
+violate the design, stop and surface the conflict before implementing it.
 
 The rules themselves live in those files and are not repeated here.
 
@@ -245,7 +253,8 @@ UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
 **Theme.** The learner interface is the Canonical UI Baseline (D-066): one Dark
-Glass system, pinned in `docs/design/canonical-ui/`. D-059's Ink and Paper
+Glass system, read at its source in the Claude Design project (D-067; the copy in
+`docs/design/canonical-ui/` is a cache). D-059's Ink and Paper
 themes are retired and D-065 is superseded; there is no hybrid and no second
 visual system. Legacy compositions still in the code are work to migrate, not
 authority to preserve.

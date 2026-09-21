@@ -2181,3 +2181,60 @@ above governs), D-062, D-063 and D-064 wherever their compositions disagree
 with the baseline (D-063's Reading capability scope stands), and D-065 in full.
 D-061's typefaces stand: the baseline uses the same set. D-057's artwork
 authority stands.
+
+
+## D-067 — The design is read at its source, the UI rules that pre-date the baseline are void, and "the same" is measured
+
+**Status:** Accepted, explicit current human instruction (2026-09-21), after the
+human reviewed the built screens and found that they were not identical to the
+design, that old UI and old interactions remained, and that things the design
+does not draw had been added.
+
+**Decision:**
+
+1. **The source is the Claude Design project itself.** The design project
+   `7a5604ca-1e11-4d8e-8305-7d0cb32d552d` is read live (with `DesignSync`,
+   reads only). The pinned copy in `docs/design/canonical-ui/` is a cache, and an
+   incomplete one (no `Orena Quick Sheet.dc.html`, no design `CLAUDE.md`, no
+   `UI_BASELINE.md`, no `ui-baseline/*.md` rules, no `ui-implementation/`).
+   Where the cache and the source differ, the source wins. Before a
+   learner-facing task the design project's own rules documents are read, not
+   only the screens.
+2. **UI rules older than D-066 that conflict with the design are void.** The
+   layout, composition and interaction rules of D-046, D-051 and D-057 (rules
+   1-8, 10-13, 15, 17-25 of the old Design Contract), the D-057 beginner and art
+   gates, D-060's approved-mockup measurements and D-065's compositions no
+   longer bind any surface. `DESIGN_CONTRACT.md` is rewritten to keep only what
+   is still true; numbers that survive keep their number.
+3. **"The same as the design" is measured** (rule 42): computed style against
+   the source frame at true scale, deviation by deviation, on desktop and on a
+   phone with real touch, and a surface is not `REVIEWABLE` with an unlisted
+   deviation.
+4. **Nothing is invented** (rule 43) and **old interaction is deleted, not
+   restyled** (rule 44). Loading, empty and error are not drawn in the design,
+   so no visual or copy is invented for them.
+5. **The design's product vocabulary is kept** (rule 45), in the Vietnamese
+   interface as the design has it (Home, Library, Vocabulary, Progress,
+   Profile, Reading, Listening, Speaking, Writing, Dictation); icons are
+   Phosphor 2.1.1 official paths only (rule 46); the rail and tab bar exist
+   only on Home, Library, Vocabulary and Progress (rule 47); two frames, no
+   invented breakpoint (rule 48).
+
+**Reason:** the earlier rule that "rules 1-29 stand where they do not name a
+colour, a theme or a component the baseline replaces" let the old layout rules
+outrank the design, and reading the design from a partial local copy hid the
+design's own rules. The human's instruction is that the design is the authority
+and old UI rules must not obstruct it.
+
+**Consequences:** `DESIGN_CONTRACT.md`, `AGENTS.md` and `CLAUDE.md` are
+rewritten accordingly; `LEGACY_TOMBSTONES.md` records the retired rules;
+`UI_BACKEND_GAPS.md` lists the measured deviations of every surface built so
+far. Code comments that cite retired rules are stale and are removed as the
+surface they sit in is migrated.
+
+**Supersedes / Superseded by:** Supersedes the visual and interaction rules of
+D-046 (Design Contract part), D-051, D-057 (gates), D-060 and D-065 wherever they
+disagree with the design, and the sentence of D-066's Design Contract section
+that kept old rules standing. D-066's authority, metric rule, backend-adapts
+rule and pronunciation rule stand. D-057's Art Bible authority and D-061's
+faces stand.

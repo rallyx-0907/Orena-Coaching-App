@@ -2,10 +2,18 @@
 
 ## Governance
 
+**This folder is a cache, not the authority (D-067).** The authority is the
+Claude Design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`, read at its
+source. This copy was pinned on 2026-09-21 and is incomplete: it has no
+`Orena Quick Sheet.dc.html`, no design `CLAUDE.md`, no `UI_BASELINE.md`, no
+`ui-baseline/*.md` rules documents and no `ui-implementation/`. Where it and the
+source differ, the source wins (`docs/project/DESIGN_CONTRACT.md`, "The
+authority").
+
 Purpose: a repository copy of the frozen learner-facing UI baseline, so the
-visual and data authority does not live only in a design tool. Authority: D-066.
-The screens here are the visual source of truth; nothing under `static/` or
-`templates/` outranks them. Change when the human approves a new baseline
+frames can be rendered and measured offline. Authority: D-066, D-067.
+Never edit these files to make an implementation pass; nothing under `static/`
+or `templates/` outranks the design. Change when the human approves a new baseline
 revision; never edit these files to make an implementation pass. Do not store
 demo data here that could reach production.
 

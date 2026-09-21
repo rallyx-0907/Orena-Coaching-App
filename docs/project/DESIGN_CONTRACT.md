@@ -2,496 +2,229 @@
 
 ## Governance
 
-**Purpose:** preserve the approved Orena experience across responsive web and
-native clients. **Authority:** fundamental principles are human-governed.
-Agents may document an accepted mapping but may not change the design strategy
-to fit an implementation.
+**Purpose:** say how the learner-facing UI is built and judged, so that what
+ships is the approved design and nothing else. **Authority:** the human. This
+file states the rules; the design itself is not in this file, it is in the
+Claude Design project named below. Agents may document an accepted mapping but
+may not change the design to fit an implementation, and may not add to it.
 
-**Change when:** an explicit human decision changes durable design direction or
-an approved product surface establishes a new shared contract. **Do not store:**
-page-specific polish lists, temporary defects, or generic framework guidance.
+**Rewritten by D-067 (2026-09-21).** The rules that stood here from D-046, D-051
+and D-057 (rules 1-8, 10-13, 15, 17-25) and the D-057 acceptance gates described
+an older design language and were being used to overrule the baseline. They are
+retired (see `LEGACY_TOMBSTONES.md`). Numbers that survive keep their number,
+because code and tests cite them.
 
-## Current human direction (D-046)
+**Change when:** the human changes the design or the durable rules. **Do not
+store:** page-specific polish lists, temporary defects, screenshots, or generic
+framework guidance. What is left to build or fix lives in
+`docs/project/UI_BACKEND_GAPS.md`.
 
-The historical learner product is retired. Current mainline UI is technical
-history, not design authority. The Product Constitution, Content Architecture
-and approved brand govern the new web foundation. Experience-centered does not
-mean discovery-only; direct practice must converge with contextual practice.
+## The authority: the Claude Design project (D-066, D-067)
 
-Native mobile is frozen by explicit human scope update on 2026-09-06. No further
-native work belongs to this mission. Its existing working-tree state is retained.
-A future native mission follows coherent, human-approved web direction. Nothing
-in the older full-port rule authorizes rebuilding the deleted product.
+The visual, interaction and data source of truth for every learner surface is
+the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
+("Orena visual direction analysis") in Claude Design, **read at its source**.
 
-## Learner-facing experience rules (D-051)
+- An agent with the `DesignSync` tool reads the project directly
+  (`list_files`, `get_file`; reads only, never a write). The repository copy in
+  `docs/design/canonical-ui/` is a **cache** pinned on 2026-09-21, and an
+  incomplete one: it lacks `Orena Quick Sheet.dc.html`, the design project's
+  own `CLAUDE.md`, `UI_BASELINE.md` and the `ui-baseline/*.md` rules, and
+  `ui-implementation/`. Where the cache and the source differ, the source wins.
+  A lane that cannot read the source says so and asks the human to re-pin; it
+  does not decide from the cache alone.
+- Before any learner-facing task, read: the design project's `CLAUDE.md`,
+  `UI_BASELINE.md`, `ui-baseline/components/components.md`,
+  `patterns/patterns.md`, `templates/templates.md`, `states/states.md`,
+  `responsive/responsive.md`, `screens/screen-matrix.md`, the canonical
+  screen file for the surface, and `Orena Quick Sheet.dc.html` for any
+  explanation layer. `ui-implementation/` (Home, Reading library and
+  workspace) is reference for structure, not a second visual authority.
+- Within the design: the canonical `.dc.html` frame, then the data contract,
+  then the `.md` indexes (derived, corrected by the frames), then
+  `ui-implementation/`. The design's own LEGACY list (Device Overview, Design
+  Overview, Screens and Parts 2-9, Card Component, Visual Direction, Visual
+  Grammar, Checklist, Recalibration) is never a visual source.
+- The human's current instruction outranks all of it. Every existing UI rule in
+  this repository, in code comments and in older decisions is subordinate to the
+  design; a rule that conflicts with it is void, not "balanced" against it.
 
-Explicit human direction, 2026-09-12. These govern every learner surface on the
-responsive web and therefore the native port. They sit under the Product
-Constitution and Content Architecture; they do not change domain ownership,
-evidence meaning or capability semantics.
+## What "the same as the design" means (D-067)
 
-1. **Every visible element earns its place.** It must help the learner
-   understand the content or the task, do the task, understand the result,
-   improve, or continue. Otherwise remove it, compress it, turn it into a
-   symbol, lower its priority, or move it after the learning loop. Existing UI
-   is evidence of what was built, not a reason to keep it.
-2. **Desktop: the core learning loop is one frame.** The source needed now, the
-   activity, the learner's work, its essential controls, the submit action, the
-   immediate result and the primary feedback share one viewport-sized
-   workspace wherever the experience can support it. Long content scrolls inside
-   its own region; the page does not scroll just because feedback arrived, and
-   the learner never loses their work to see its result.
-3. **Narrow: sequential frames of the same loop.** Frame 1 is the activity with
-   its controls; after submission the learner is placed at the start of Frame 2,
-   the result and primary feedback, never halfway between the two, with a
-   natural way back to edit or retry. Long results scroll inside Frame 2.
-4. **Secondary material comes after the loop.** History, earlier attempts,
-   deeper theory, extra examples, alternative starting points, related content
-   and continuation shelves sit below the desktop frame (Frame 3+ on narrow
-   screens) and never take space the activity or its immediate feedback needs.
-5. **Rooms where the learner works open compactly.** Entry, discovery and empty
-   states may carry full openings and approved artwork — permitted, never a
-   default page template (amended by rule 13 below); an activity room's
-   heading orients and yields the first viewport to the work. The way back sits
-   above the heading and does not repeat it.
-6. **Supplementary guidance is a symbol with words on demand.** Optional-field
-   explanations, minor status (such as where a draft is kept), secondary
-   annotations and minor warnings use a semantic symbol from Orena's icon
-   language that reveals a short explanation on hover, keyboard focus or tap.
-   The control is labelled for assistive technology, touch-sized on small
-   screens, theme-safe, and never relies on colour alone.
-7. **Essential instructions stay visible as text.** Anything the learner needs
-   to understand or complete the task, and any consent or privacy statement that
-   must be read before data leaves the device, is never hidden behind a symbol.
-8. **Roles are distinguishable at a glance.** Title, learning material, task
-   instruction, learner input, the learner's original error, correction,
-   explanation, reusable rule, score or result, next action, optional help,
-   metadata and secondary content each read differently through Orena's type
-   scale, weight, semantic colour, surface, spacing and grouping. Supporting
-   information recedes; not everything becomes an equally weighted card.
-9. **One interface language.** Navigation, controls, headings, instructions,
-   helper text, errors, feedback scaffolding and labels follow one language;
-   the learning language governs the material learned or produced. Which
-   language that is, is settled by "The learner language contract" below: it is
-   the support language, not a separately chosen interface language.
-   Learning, support and interface language remain distinct concepts
-   internally, and coherence comes from the shared localisation architecture,
-   never from a special case for one language.
-10. **One design language, distinct compositions.** Writing, Reading,
-    Listening/Follow, Speaking, Dictation, Grammar, Recall and Vocabulary keep
-    their own attention shapes and learning logic; they share Orena's
-    primitives, tokens, themes and the single Understanding surface. Solve a
-    repeated problem in the shared layer; do not copy one room's markup into
-    another or build page-local design systems.
-11. **Learning content is the protagonist during active learning.** Brand
-    atmosphere belongs to discovery, entry, transitions, completion and empty
-    states, and never displaces the learner's text, media, work or feedback.
+42. **Measured, not eyeballed.** A surface is compared with its source frame
+    number by number: size, radius, gap, padding, weight, letter-spacing,
+    colour, type stack, icon and its fill state, taken from the frame's own
+    computed style at true scale (the desktop frame is drawn at 62% of
+    1920x1080; the phone frame is 1:1). A surface is not `REVIEWABLE` while a
+    deviation is unlisted, and a deviation is either removed or recorded as a
+    human decision. Looking similar is not a result.
+43. **No invention.** The screen carries what the source draws and nothing
+    else: no extra button, chip, badge, hint, notice, heading, empty or loading
+    visual, animation, confirmation, or explanatory line, and none of the
+    source's pieces missing. Behaviour the source gives no place to is either
+    put where the source's own patterns say (behind the "⋯" button, in a sheet)
+    or reported to the human; it is never quietly surfaced as new UI.
+44. **Old interaction is old UI.** An interaction the source does not draw is
+    removed, not restyled: a row of icon buttons where the source has chips and
+    a "⋯", a tap that acts before a choice is offered, a practice group in the
+    rail, a destination sheet on a phone. The code is deleted, not hidden.
+45. **The source's vocabulary.** Product names and copy are as drawn (Home,
+    Library, Vocabulary, Progress, Profile; Reading, Listening, Speaking,
+    Writing; Dictation), in the Vietnamese interface as the source has them,
+    because the design project's rule is to keep the names already used. A
+    string the source does not draw follows the same pattern in the support
+    language, and the learner language contract below still applies.
+46. **Icons are Phosphor 2.1.1, official paths only.** Regular by default,
+    fill where the source fills (active tab, earned state). Paths are taken from
+    the official package, never typed or adapted, and an icon the source uses
+    but the app lacks is added from the package.
+47. **The shell belongs to four places.** The rail (desktop) and the five-tab
+    bar (phone) exist on Home, Library (including each skill's library),
+    Vocabulary and Progress. A room where the learner works - reader, player,
+    Dictation, editor, a review - has neither; its template starts at its own
+    bar.
+48. **Two frames.** Desktop 1920x1080 and phone 390x844. There is no
+    intermediate breakpoint; the tablet is a recorded gap in the design. Height
+    budgets are the design's (936px of content on desktop, about 636px of
+    scrolling area on a phone).
 
-12. **Phone: the screen belongs to the learning (D-052, D-053).** Priority is learning
-    content and learner work, then controls, then navigation and secondary
-    chrome. The narrow layout is adapted, not the desktop shrunk:
-    - the header is expanded on arrival, near the top and while navigating,
-      and compacts while the learner scrolls into the room - to the smallest
-      state that still reaches every destination - releasing real viewport
-      height rather than overlaying content; a deliberate scroll up, the top,
-      or tapping the navigation expands it again;
-    - a phone has its own scale, not the desktop's carried over (D-053): type
-      a step smaller and still readable (body 15px, nothing the learner reads
-      below 12px, the line being learned the largest text in its frame);
-      controls tappable at 36px, quiet inline controls at 32px, inline targets
-      such as words at least 24px by height and spacing, never widened to a
-      thumb; a checkbox or radio sized to its text, its label the target; rows,
-      labels, selectors, media controls and cards take only the room they need;
-    - learning content itself is set denser - type, line height, paragraph and
-      block spacing, media and transcript framing - while staying comfortable
-      to read, so a spoken line wraps into two to four lines, not six;
-      decorative margins go first;
-    - a sticky source, a result frame or any destination the learner is moved
-      to clears the header at its current height, never sits underneath it;
-    - Listening shows the current line, its meaning and a run of the transcript
-      together; Writing gives the editor the frame; Reading keeps a readable
-      line and loses oversized framing; action rooms keep activity, input and
-      action in Frame 1, the result in Frame 2, secondary material after.
+## The baseline's visual rules
 
-How the current web implements these rules is described, not governed, in
-`docs/product/ORENA_WEB_EXTENSION_GUIDE.md`.
-
-## Learner-facing experience rules, continued (D-057)
-
-Explicit human direction, 2026-09-17, continuing the numbering above. Rules
-1-12 stand unchanged except where rule 13 amends rule 5. Product authority for
-this direction is `docs/product/ORENA_PRODUCT_CONSTITUTION.md`; this section
-governs how a surface must be built, not what Orena is for.
-
-13. **Less words, more life.** Show first; say only what is needed. A full
-    opening with a headline and approved artwork remains permitted where it
-    earns its place, but it is not the default template for a page, and the
-    sequence *eyebrow + giant headline + slogan + paragraph + mascot* must
-    never be repeated across surfaces simply because the primitive exists.
-    Headlines and slogans do not substitute for hierarchy, artwork, content or
-    interaction. Every screen has a copy budget, spent in this order: content
-    title, action, essential context, metadata, optional explanation, and
-    marketing or slogan prose last. If a screen needs two or three sentences to
-    say where the learner is, the hierarchy or the artwork is not doing its
-    work. If a screen feels empty, fix composition, content density, imagery or
-    hierarchy before adding copy, a slogan or a mascot. This amends rule 5: it
-    removes the default, not the permission.
-
-14. **Artwork is a system, not decoration.** All production artwork belongs to
-    one Art Bible, owned by `assets/brand/orena/` (see "Art direction owner"
-    below). Do not mix unrelated rendering styles without an explicit system.
-    A piece of artwork must do at least one job: identify content, create
-    curiosity, communicate mood, support navigation, create continuity, explain
-    meaning, or reinforce a learning action. Artwork placed only to fill an
-    empty hero fails. Artwork with no narrative, navigational, emotional or
-    semantic role is removed rather than rebalanced. The mascot's own placement
-    rules stay where they already live, in
-    `assets/brand/orena/BRAND_MASCOT_GUIDE.md`.
-
-15. **Content imagery carries the visual authority.** On Discover, Library,
-    Reading and Listening surfaces, covers, thumbnails, scenes and meaningful
-    imagery are normally more prominent than metadata: the learner sees
-    something worth entering before reading information about it. Cards lead
-    with the image and a title, carry minimal metadata, and leave author,
-    level, description, chapter count, progress, source, rights and related
-    content to the detail view. Generic placeholders — a single letter, a
-    repeated `Aa 字` tile, repeated abstract rectangles, geometric filler — are
-    development-only and must not stand as the product's visual language.
-
-16. **Vivid, but one colour owner.** Content artwork, covers, thumbnails,
-    scenes and illustration may use a rich authored palette: warm, vivid,
-    playful, editorial, memorable. That licence belongs to artwork, and it
-    creates no second colour owner. UI chrome, components, surfaces, text and
-    interactive states still read their colour only from the semantic tokens in
-    `static/orena/theme.css`; no component re-invents the brand palette and no
-    second `:root` colour block appears anywhere. Icons used as UI controls may
-    carry colour, fill, shape, active/inactive states and small tactile motion,
-    through those same semantic tokens. Nothing here exempts anything from
-    accessibility: body text, secondary text, controls, links, tinted panels
-    and any UI or text overlaid on artwork must still pass AA, as
-    `scripts/test_orena_foundation.mjs` enforces for every registered theme.
-    Vivid does not mean arbitrary — saturation, contrast and palette
-    relationships are governed by the Art Bible.
-
-17. **Discover is not a list of skills.** Skill labels are valid navigation
-    vocabulary and Reading, Listening, Speaking, Writing, Vocabulary, Library
-    and Practice remain valid doors and shortcuts. But a discovery surface must
-    not be organised primarily as those modules: it uses content, topic, theme,
-    mood, context, person, situation and continuity, and it may mix media
-    within one rail. Level, type and duration are secondary metadata.
-    Horizontal rails remain valid when they stay compact, reveal the next card
-    on narrow screens, never capture vertical scrolling, and lead with imagery
-    and title. Library may be the practical, searchable surface; search and
-    filter are secondary controls on a discovery surface, not its opening move.
-
-18. **UI speaks sans. Stories speak serif.** The interface is set in the sans
-    family; story, book and editorial reading content may be set in the serif
-    family. Serif and sans are not chosen per component by taste.
-
-Rule 11 already gives the focused-learning direction; under this section it
-reads as **world recedes, content comes forward**: entering Reader, Listening,
-Writing, Speaking or another focused experience reduces navigation and shell
-noise, keeps the learning tools and explanations within reach, and adds no
-decorative immersion that competes with the task.
-
-## Learner-facing experience rules, continued (2026-09-18)
-
-Explicit human direction after a learning-surface review. Rules 1-18 stand.
-
-19. **The core learning viewport.** Everything the immediate learning task needs
-    at the same time stays available in one learning viewport. A learner never
-    page-scrolls to trade the media for the transcript, the prompt for the
-    recording, the recording for its immediate result, or the audio for the
-    dictation input. Secondary material - earlier attempts, deeper analysis,
-    measurement detail, history - may scroll inside its own region, collapse,
-    or open progressively. On a desktop the width is used before core elements
-    are stacked; a wide empty area beside vertically stacked learning content is
-    the defect this rule names. A phone recomposes the workspace rather than
-    receiving the desktop columns end to end.
-
-20. **No duplicated learning stage.** Before adding a panel, ask whether the
-    information already exists in a visible learning object. If it does, that
-    object is enhanced instead. The line being spoken is the active transcript
-    row, opened in place - not a second card above the list repeating it. The
-    same applies to a source title stated three times, or a mode label the
-    navigation already carries.
-
-21. **The card wall is not a layout.** Repeated equal bordered rectangles are
-    not the default shape of a learner surface, and changing their border,
-    radius, shadow or background does not fix one - the composition has to
-    change. A container is earned when it carries real content identity, an
-    interaction boundary, an active or selected state, a bounded scroll region,
-    a continuation object, or a form control. Ordinary text does not become a
-    group by being wrapped in a white rounded rectangle. Compose with content
-    imagery, source artwork, typography, spacing, rails, active state, icons,
-    semantic colour, progress and relationships first; reach for a border when
-    one of those is genuinely what is meant.
-
-22. **Composition order.** Actual learning content, then the source's own visual
-    identity, then active state, then typography, then spatial grouping, then
-    semantic colour, then icons, then progress - and only then a container. A
-    surface that begins from a card for every piece of content has started in
-    the wrong place.
-
-23. **Active state does not restructure.** On a transcript, timeline, list or
-    any surface where the current item changes while the learner is reading,
-    becoming current must not change a row's height, padding, container or the
-    number of controls it holds. Every row carries the slots it can ever show;
-    which of those are shown is a property of the surface, so it is true of all
-    rows at once. Mark the current one with ground, edge, typography, state
-    text and non-layout transition - visual emphasis before structural
-    expansion. A list that grows where the voice is and collapses behind it is
-    the defect this rule names.
-
-24. **Reusable learner actions live in a shared toolbar.** An action that
-    repeats across items - replay, practise, show meaning, show reading, colour
-    the word classes, and the deeper intentions behind an overflow - belongs to
-    one compact bar with a stable place in the workspace, acting on the current
-    or selected item. It is not duplicated inside each content row, and each
-    surface adopting it extends the shared primitive rather than building its
-    own. A menu or popover is placed by measuring against the viewport and its
-    pane, opens inward at an edge, and on a phone becomes a sheet; it never
-    creates page scroll and never carries a hard-coded coordinate.
-
-25. **Icon first for shared actions, text carries the meaning.** Where a stable
-    semantic icon exists, a reusable learner control uses it, and the support
-    language supplies the tooltip, the accessible name, and a compact companion
-    label or menu item where the icon alone would be ambiguous. Oversized
-    text-only buttons are not the default shape of an action. Nothing depends
-    on the symbol alone.
-
-26. **No silent support-language fallback.** A supported learner locale owns
-    every interface string its surfaces ask for. A locale with no pack at all
-    falls back to English rather than showing keys, but a supported locale that
-    quietly renders English is a defect, not a shortfall: the gap is detected
-    by regression, recorded, and visible to whoever can close it. Learner
-    material is never translated by this rule - a target-language line, title
-    or passage is content.
-
-27. **The writing revision loop.** A writing surface keeps the learner's own
-    text and the feedback about it in one working context: reviewing never
-    replaces the editor, and a quoted phrase is findable in the learner's text
-    rather than something to hunt for by eye. Feedback leads with the few
-    things worth doing now and keeps the rest whole behind progressive
-    disclosure - a full report shown at once is not feedback a learner can act
-    on. A review offers revision; it never substitutes generated text for the
-    learner's writing, and a whole-piece rewrite is one way to say it, never
-    the answer. Review is one primary action named in one word; the settings
-    that steer it are secondary controls, because a learner should not have to
-    understand model configuration to be read. A review that cannot be produced
-    is one compact line beside the action, not a pane.
-
-28. **Bounded before it is spent on.** Learner content is untrusted input.
-    Every surface that accepts it states one product bound - shared by the
-    browser, the request model, the route, the repository and the evaluator -
-    and refuses what exceeds it before anything is spent: before a row, a
-    tokenizer pass, a prompt or a provider call. A refusal carries the
-    measurement, never the content, so an oversized request cannot put a
-    learner's work into a log. Nothing is silently truncated and no encoding is
-    cut mid-character: refusing a piece whole is the honest answer, keeping
-    part of it is not. A database column type is not a product limit.
-
-29. **A valid evaluation is reused, never recomputed.** Generated work that
-    costs money and is deterministic in its inputs - a writing review, and
-    anything like it - carries the identity it was produced under: the content,
-    both languages, the relevant settings, and the version of the agreement
-    that produced it. A request for the same identity is answered from what is
-    stored. Reopening a piece, pressing the action again, a second tab and
-    concurrent duplicates cost nothing; only a genuine change earns a new call.
-    A stored answer is never served past the contract that produced it.
-
-## The Canonical UI Baseline (D-066)
-
-Explicit human direction, 2026-09-21: the Canonical UI Baseline, pinned in
-`docs/design/canonical-ui/`, is the visual, interaction and data source of truth
-for the learner web. It replaces the D-059 design system (rules 30-40 as they
-stood) and D-065. Rules 1-29 stand where they do not name a colour, a theme or
-a component the baseline replaces. Colour values live only in
-`static/orena/theme.css`, taken from `docs/design/canonical-ui/tokens.json`;
-non-colour tokens live in `static/orena/foundation.css`.
-
-30. **One system: Dark Glass.** Ground `#050310` with the cosmic field, flat
-    glass with one ring and no bevel, a shallow shadow, the violet accent
-    gradient. There is no second theme: Paper and the Ink/Paper registry are
-    retired. Nothing is built on the old look and nothing hybrid is shipped.
+30. **One system: Dark Glass.** Ground `#050310` with the cosmic field
+    (`tokens.json`), flat glass with one inset ring (no bevel, no bright top
+    edge), a shallow shadow, the violet accent gradient. There is no second
+    theme; Paper and Ink/Paper are retired. Colour values live only in
+    `static/orena/theme.css`, taken from the design's tokens; no component
+    invents a colour.
 31. **Light is light, not a coloured surface.** Semantic colour (good, warn,
-    bad, info) colours ink and icons on glass and never fills a surface. The
-    one recorded exception is the "not sure" amber chip on a review grade.
-32. **Skill hue** belongs to artwork, icons and small markers, as the baseline
+    bad, info, the seven usage verdicts) colours text and icons and never fills
+    a glass surface. The one recorded exception is the "chưa chắc" amber chip
+    on a review grade. Diffs follow the design: wrong is amber, missing is blue,
+    extra is red and struck through.
+32. **Skill hue** belongs to artwork, icons and small markers, as the design
     draws it, and is never the only signal.
 33. **Explanations open in place.** A popover on a desk, a bottom sheet on a
     phone; audio pauses at its position and resumes when the layer closes; the
-    learner never changes page to ask.
-34. **Type.** Nunito for display, Nunito Sans for interface, DM Mono for labels
-    and figures, Noto Serif for reading text and Han characters (D-061 faces).
-    A face with no glyphs for a locale falls back technically, never by
-    redesign.
-35. **Geometry is the baseline's.** Radii, spacing, the 280px rail and 88px
-    phone bar, and the two frames (desktop 1920x1080, phone 390x844) are read
-    from the screens, not chosen. There is no invented breakpoint.
+    learner never changes page to ask. Disclosure is progressive: the first
+    layer answers the commonest question, everything deeper is behind one
+    button.
+34. **Type.** Nunito 700/800 for display, Nunito Sans for interface, DM Mono
+    for labels and figures (10.5-12px, letter-spacing 0.12-0.14em), Noto Serif
+    for reading text and Han characters. The scale is the design's (page title
+    44, section 26, card title 17, body 15.5, meta 12.5). A face with no glyphs
+    for a locale falls back technically (Vietnamese labels set in Roboto Mono),
+    never by redesign.
+35. **Geometry is the design's.** Radii (sheet 26, panel 20, card 17,
+    control 15), spacing, the 280px rail, the 84px top bar, the 88px phone bar
+    and the sheet handle (42x4) are read from the frames, not chosen.
 36. **A card carries only what decides.** Title, artwork, level or length when
     it changes the decision, progress if the learner is partway. No source,
-    licence or model on a card.
+    licence, description or model on a card.
 37. **Artwork.** Until real artwork exists, content uses the artwork slot the
-    baseline defines (dot field and a hue bloom at the real ratio); real artwork
-    replaces it with no layout change (D-057 keeps the Art Bible's authority for
-    the mascot, scenes and real artwork).
-38. **Navigation** is the baseline's: Home, Library, Vocabulary, Progress and
-    Profile, with the four skills grouped under it, and the five-item phone bar.
-39. **States.** Use the baseline's loading, empty and error where it draws one;
-    where it does not (it marks them incomplete), keep the existing pattern -
-    a skeleton at the real geometry, one degraded panel with two ways forward -
-    and invent no new visual.
-40. **The baseline decides, the backend adapts.** No component is removed,
-    moved or redesigned because a backend cannot supply it. A metric with no
-    measured value shows **0** in its canonical component and never an invented
-    figure; the 0 is a fallback for the layout and never data (D-066). Gaps are
+    design defines (dot field and a hue bloom at the real ratio); real artwork
+    replaces it with no layout change. The mascot, scenes and real artwork stay
+    under the Art Bible (see "Art direction owner").
+38. **Navigation** is the design's: Home, Library, Vocabulary, Progress and
+    Profile, the four skills under KỸ NĂNG, and the five-item phone bar. Nothing
+    is added to it.
+39. **States.** Loading, empty and error are **not drawn** in the design (it
+    marks them incomplete). Until the human supplies them, show only what is
+    functionally necessary in the existing pattern, with no new visual and no
+    new copy beyond a plain statement, and record it as a gap. Do not invent
+    skeletons, empty-state cards or reassurance text.
+40. **The design decides, the backend adapts.** No component is removed, moved
+    or redesigned because a backend cannot supply it. A metric with no measured
+    value shows **0** in its canonical component and never an invented figure;
+    the 0 is a fallback for the layout and never data (D-066). Gaps are
     tracked in `docs/project/UI_BACKEND_GAPS.md`.
 41. **Accessibility never redesigns.** A token that fails AA is replaced by the
-    smallest technical change that keeps the visual intent, and the deviation is
-    documented.
+    smallest technical change that keeps the visual intent, and the deviation
+    is documented.
+
+## Rules that are not about how it looks
+
+9. **One interface language.** Navigation, controls, headings, instructions,
+   helper text, errors and labels follow one language; the learning language
+   governs the material learned or produced. Which language that is, is
+   settled by "The learner language contract" below.
+14. **Artwork is one system.** All production artwork belongs to one Art Bible,
+   owned by `assets/brand/orena/`. A piece of artwork must do a job
+   (identify content, communicate mood, support navigation, explain meaning);
+   artwork with no role is removed. The mascot's placement rules live in
+   `assets/brand/orena/BRAND_MASCOT_GUIDE.md`.
+16. **One colour owner.** Content artwork may use a rich authored palette; UI
+   chrome, surfaces, text and states read colour only from the semantic tokens
+   in `static/orena/theme.css`, and no second `:root` colour block appears.
+   Text and controls pass AA (`scripts/test_orena_foundation.mjs`).
+26. **No silent support-language fallback.** A supported learner locale owns
+   every interface string its surfaces ask for. A locale with no pack at all
+   falls back to English rather than showing keys, but a supported locale that
+   quietly renders English is a defect, detected by regression, recorded and
+   visible. The one recorded exception is the design's own product vocabulary
+   (rule 45), listed by name in `scripts/test_orena_learner_language.mjs`.
+   Learner material is never translated by this rule.
+27. **The writing revision loop.** Reviewing never replaces the learner's
+   editor, and a quoted phrase is findable in the learner's text. A review
+   offers revision; it never substitutes generated text for the learner's
+   writing. Feedback is addressed to the learner in the second person.
+28. **Bounded before it is spent on.** Learner content is untrusted input.
+   Every surface that accepts it states one product bound shared by the
+   browser, the request model, the route, the repository and the evaluator, and
+   refuses what exceeds it before anything is spent. A refusal carries the
+   measurement, never the content. Nothing is silently truncated.
+29. **A valid evaluation is reused, never recomputed.** Generated work that
+   costs money and is deterministic in its inputs carries the identity it was
+   produced under and is answered from storage for the same identity; a stored
+   answer is never served past the contract that produced it.
 
 ## The learner language contract
 
 Orena has two learner language roles, and only two.
 
 **Learning language** owns the material: lesson and book text, media
-transcripts, target vocabulary, practice sentences, target-language prompts and
-the source content itself.
+transcripts, target vocabulary, practice sentences and the source content.
 
 **Support language** owns everything Orena itself says: navigation, labels,
-controls, instructions, guidance, feedback, explanations, errors, tooltips,
-status and system messages.
+controls, instructions, feedback, explanations, errors and status. Learner
+output keeps whatever language the learner produced.
 
-Learner output keeps whatever language the learner actually produced.
-
-Generated guidance - a writing review, an explanation, a coaching note - is
-**requested** in the support language, not translated around afterwards. A
-stored one carries the language it was written in: a surface that cannot
-establish that a saved answer matches the learner's current support language
-does not replay it.
-
-There is no third, independently chosen learner-facing interface language. A
-stored legacy preference may remain for compatibility, but it no longer decides
-what language the product speaks; the support language does. A mixed interface
-is a defect unless the content itself deliberately contains those languages -
-and a target-language title or passage appearing in target language is content,
-never leakage.
-
-A locale with no copy pack at all falls back to English rather than showing
-keys. A **supported** locale is a different promise: it owns every interface
-string the learner surfaces ask for, and English arriving silently in its place
-is a defect. Rule 26 states it; `scripts/test_orena_learner_language.mjs`
-enforces it against the surfaces themselves, and the shell reports any
-shortfall where it can be fixed rather than letting it reach a learner untold.
+Generated guidance is **requested** in the support language, not translated
+afterwards, and a stored one carries the language it was written in. There is
+no third, independently chosen interface language: the support language decides
+what language the product speaks. A mixed interface is a defect unless the
+content deliberately contains those languages, or the strings are the design's
+own product vocabulary (rule 45). A supported locale owns every string; English
+arriving silently in its place is a defect (rule 26).
 
 ## Art direction owner
 
-`assets/brand/orena/` is the canonical owner of Orena's art direction and is
-the Art Bible referred to by rule 14. There is no second artwork authority, and
-any future `ART_BIBLE.md` belongs inside that package rather than beside it.
+`assets/brand/orena/` is the canonical owner of Orena's art direction and the
+Art Bible referred to by rule 14. There is no second artwork authority. Its
+scope: mascot and character, world and scene illustration, content thumbnail,
+book cover, badge, background and pattern, and motion. Where it does not yet
+specify something, that is a recorded gap for an art-direction task, not an
+invitation to invent a style. The baseline decides the interface; the Art Bible
+decides the artwork inside it; neither recolours the other.
 
-Its governed scope is: mascot and character, world and scene illustration,
-content thumbnail, book cover, icon, badge, empty state, background and
-pattern, and motion. Where that package does not yet specify part of the scope,
-that is a recorded gap to be closed by an explicit art-direction task, not an
-invitation for a surface to invent its own style.
+## Acceptance: the fidelity gate
 
-## Acceptance gates (D-057)
+A learner-facing surface may be called `REVIEWABLE` only when all of these hold,
+in addition to `docs/project/REVIEW_POLICY.md`:
 
-Both gates apply to every learner-facing surface before it may be called
-`REVIEWABLE`. They are additional to `docs/project/REVIEW_POLICY.md`'s existing
-completion evidence, not a replacement for it.
+- every deviation from its source frame, measured as in rule 42, is fixed or
+  recorded as a human decision, on desktop and on a phone with real touch;
+- nothing on it is invented (rule 43) and no interaction the design does not
+  draw survives (rule 44);
+- the source was read at its source (see the authority above), not from memory,
+  a screenshot or the cache alone;
+- English, Chinese and Vietnamese are each verified, in the same batch;
+- every colour comes from the semantic tokens and contrast passes;
+- no legacy implementation of the same surface remains: it is deleted.
 
-**Beginner clarity gate.** A new-user surface fails if:
+## Native (frozen)
 
-- there is no obvious primary action;
-- the learner must understand an Orena metaphor before acting;
-- exploration overwhelms or obscures the guided start;
-- labels are clever but unclear;
-- a slogan stands where an instruction is needed;
-- the first content is inappropriate for a true beginner;
-- a phone's first viewport hides the start or continue action beneath copy;
-- English or Chinese lacks the same beginner-safe entry.
-
-**Art gate.** A redesigned surface fails if:
-
-- its artwork does not follow the same Art Bible, or mixes unrelated styles;
-- placeholder visuals survive into the reviewed build;
-- text is compensating for weak artwork or composition;
-- the screen cannot be understood without reading marketing copy;
-- colour is arbitrary rather than authored, or a component invents colour
-  outside the semantic tokens;
-- contrast fails for text, controls, interactive states, or UI over artwork;
-- the narrow layout loses the meaning the wide one carries;
-- English and Chinese are not both verified.
-
-## Source of truth
-
-```text
-APPROVED RESPONSIVE ORENA WEB
-→ native implementation mapping
-→ SAME ORENA PRODUCT EXPERIENCE
-```
-
-Responsive web is the approved product design source of truth. Native is a full
-native port, not a redesign, simplified version, WebView shell, or generic
-Expo/Material/iOS reinterpretation.
-
-## Required parity
-
-Native must preserve, where the web experience exists:
-
-- design tokens, colors, typography, hierarchy, spacing, surfaces, cards,
-  borders, elevation, and navigation identity;
-- feature behavior, information architecture, interactions, animation intent,
-  focus/selection behavior, progress, and cross-skill handoffs;
-- loading, empty, degraded, error, retry, offline, and authentication states;
-- responsive intent across supported phone/tablet layouts;
-- accessibility, reduced motion, system text sizing, keyboard/safe-area
-  behavior, EN/ZH parity, and light/dark parity.
-
-Platform mechanics may differ only when native APIs require it: permissions,
-secure storage, audio/microphone, deep links, system navigation, and equivalent
-accessibility controls. Those differences must preserve the same learner
-outcome and truthful state.
-
-## Review rule
-
-Native review asks whether the implementation faithfully ports approved Orena
-web behavior—not whether a reviewer prefers a different mobile design. A
-native-only flow, reduced feature set, contradictory navigation, or separate
-state/domain model is a product-memory regression.
-
-## Agent checklist (derived)
-
-A convenience checklist for an agent about to touch a learner-facing surface.
-It is **derived**, not a source of law: where it and the rules above differ,
-the rules above win, and this checklist is corrected. It is not a second design
-contract and must never grow into one.
-
-Before starting, read `docs/product/ORENA_PRODUCT_CONSTITUTION.md`,
-`docs/product/ORENA_CONTENT_ARCHITECTURE.md`, this contract, and
-`assets/brand/orena/` for visual work. Legacy UI and screenshots are evidence
-of what was built, never design authority.
-
-Before calling the work done, ask:
-
-1. Remove the slogans mentally — is the screen still clear and still alive?
-2. Remove the labels Reading / Listening / Speaking / Writing mentally — does
-   the surface still give the learner a reason to enter?
-3. Can a complete beginner find the next action within a few seconds?
-4. Does the artwork look like one product, with no placeholder surviving?
-5. Are imagery, icons and interaction doing more work than prose?
-6. Does the phone layout keep the same meaning without excessive scrolling?
-7. Are English and Chinese both verified, in the same batch?
-8. Does every colour still come from the semantic tokens, and does contrast
-   still pass — including UI placed over artwork?
-
-Do not: redesign from a blank canvas without reading the contracts and assets;
-repeat the hero template; add copy to cover weak composition; turn "world" into
-lore; rename clear navigation into poetic phrases; scatter unrelated artwork
-styles; ship letter or geometry placeholders; add mascot art to fill space;
-make every element a rounded white card; duplicate one content item into
-per-skill copies; hide core learner actions below the fold; or regress phone,
-English or Chinese.
+Native mobile is frozen (D-046, 2026-09-06). When it thaws, it ports the
+approved web behaviour and the same design; it is not a redesign, a reduced
+feature set, a WebView shell or an Expo/Material reinterpretation, and it keeps
+tokens, hierarchy, navigation identity, states, accessibility and EN/ZH parity.
+A native-only flow or a separate state model is a product-memory regression.

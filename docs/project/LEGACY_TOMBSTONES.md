@@ -136,6 +136,24 @@ removed merely because current code conflicts with them.
   hybrid of the two systems; a Paper or light theme returning as a setting;
   reading D-059 or D-065 as design authority.
 
+## The UI rules before the baseline (D-046, D-051, D-057, D-060 measurements)
+
+- **Status:** RETIRED where they conflict with the design (D-067, explicit human
+  instruction 2026-09-21).
+- **Current replacement:** the Claude Design project read at its source, and
+  `DESIGN_CONTRACT.md` as rewritten by D-067.
+- **Why retired:** they described an older design language ("one design language,
+  distinct compositions", a shared icon toolbar, "the card wall is not a layout",
+  Discover not organised by skills, a compacting phone header, the core learning
+  viewport, a Practice group in the rail, dense phone scale) and were being used
+  to overrule the design.
+- **What may remain until migrated:** code built to them, only as code that has
+  not yet been replaced; the surface is migrated to the design and the old
+  implementation is deleted.
+- **What must not happen:** citing one of these rules against the design;
+  restyling an old interaction instead of removing it; adding UI the design does
+  not draw because an old rule asked for it.
+
 ## `writing_coach/becoming_*`
 
 - **Status:** LEGACY TECHNICAL NAMESPACE
