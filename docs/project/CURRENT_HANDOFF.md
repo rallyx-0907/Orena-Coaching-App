@@ -58,8 +58,12 @@ rail, five-tab bar, no shell in a working room), Dictation, the Listening and Re
 Listening workspace now match their frames at 1920x1080 and 390x844 (workspace 390x752), in EN, VI and
 ZH; Phosphor icons are the official set. Deleted as not drawn: the destination sheet, the Practice
 group, the writing response under a recording, the end-of-recording panel, the back-to-current
-button, library skeleton/empty visuals. Not yet measured against the frames: the Quick Sheet layers,
-the Writing surfaces. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
+button, library skeleton/empty visuals. The Quick Sheet (layer one, ask, deeper; desktop popover and phone sheet) is measured against
+`Orena Quick Sheet.dc.html` and matches; its Chinese layer and the Writing-feedback context are not yet
+checked. The Writing workspace is measured and does NOT match: the frame is a top bar (back, title,
+saved, count, "Nhận xét"), a centred 920px prompt card and a 24px serif document; the app still has
+the D-065 composition (an intention field, a hint popover, a level select, a side result pane, a
+starters aside). The review (two panes), revision and entry frames are likewise unbuilt. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
 workspace, Writing entry; the old top bar and the Practice hub go with them.
 
 ## PENDING
@@ -108,7 +112,7 @@ names, the phone search that expands on focus and the library's "load more", the
 Mono fallback for Vietnamese, the disabled "Kiểm tra hiểu" action (no listening items yet), the
 rights block kept under the workspace (the frame draws none). Then continue the fidelity pass surface
 by surface with the D-067 method (read the frame from the design project, measure it, compare the
-running app, fix, gate): Quick Sheet, Writing review and revision, then migrate Home, Reading (slice
+running app, fix, gate): Writing (workspace first: rebuild the frame's composition around the existing draft, review and revision plumbing; the intention field, level select and starters need a place from the source or a recorded decision), then migrate Home, Reading (slice
 4, comprehension per question), Speaking, Vocabulary, Progress, and delete the legacy pieces each
 leaves behind. Also the stale `verify_writing_*_browser.mjs` scripts and unused copy keys.
 Operate only sandbox `orena-foundation-web`:8011; restart
