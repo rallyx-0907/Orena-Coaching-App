@@ -15,7 +15,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
-import { writingReview, writingReviewFailure, orderedIssues } from '../static/orena/ui/writing-review.js';
+import { writingReviewFailure } from '../static/orena/ui/writing-feedback.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const expression = read('static/orena/ui/expression.js');
@@ -91,110 +91,6 @@ assert.match(expression, /sayTrouble\(writingReviewFailure\(c, error\)\)/,
 assert.match(expression, /showActivity\(\);\n\s+const retry/, 'and the learner is put back on their page');
 assert.match(rooms, /\.writing-trouble,\n\.review-trouble \{/, 'it is styled as a row, not a panel');
 
-/* --- Feedback leads with what is worth doing now ------------------------ */
-const text = 'I go to the shop yesterday and buyed some bread and I dont finished it.';
-const result = {
-  overall: 55,
-  app_cefr: 'B1',
-  summary: { interpretation: 'Your meaning comes through.' },
-  corrected_text: 'I went to the shop yesterday and bought some bread.',
-  dimensions: { grammar: 50 },
-  strengths: [{ quote: 'some bread', why: 'clear', category: 'vocabulary' }],
-  next_actions: ['Practise the past tense.'],
-  issues: [
-    { quote: 'dont finished it', priority: 'low', category: 'tense', suggestion: "didn't finish it" },
-    { quote: 'I go to', priority: 'high', category: 'tense', suggestion: 'I went to', why: 'Past.' },
-    { quote: 'buyed', priority: 'medium', category: 'word_form', suggestion: 'bought' },
-    { quote: 'the shop yesterday', priority: 'medium', category: 'other', suggestion: 'the shop' },
-  ],
-};
-const ordered = orderedIssues(result, text);
-assert.deepEqual(
-  ordered.map((entry) => entry.item.quote),
-  ['I go to', 'buyed', 'the shop yesterday', 'dont finished it'],
-  'the most useful come first, and equal ones keep the order they arrived in',
-);
-assert.deepEqual(
-  ordered.map((entry) => entry.index),
-  [1, 2, 3, 0],
-  'an issue keeps the position the room binds its handlers to',
-);
-const html = writingReview(c, result, { language: 'en', text });
-const focus = html.slice(html.indexOf('review-issues'), html.indexOf('</section>', html.indexOf('review-issues')));
-assert.equal((focus.match(/class="correction"/g) || []).length, 3, 'three lead, no more');
-assert.ok(html.includes(`<h3>${c.reviewFocus}</h3>`), 'and they are named as the place to start');
-/* Where to begin is never folded away: a review that is a score and some
-   accordions is a report, not coaching. */
-assert.ok(
-  !/<details[^>]*>(?:(?!<\/details>)[\s\S])*?review-issues/.test(html),
-  'the place to start is not inside a fold',
-);
-assert.ok(html.indexOf('review-issues') < html.indexOf(c.reviewStrengths), 'corrections come before praise');
-for (const folded of [c.reviewStrengths, c.reviewNext, c.reviewDeeper, c.reviewWholePiece])
-  assert.ok(html.includes(`<summary>${folded}</summary>`), `${folded} is kept, as its own step`);
-/* Everything the evaluator found stays reachable: the rest of the corrections
-   are a step of their own rather than a fold inside the first three. */
-const deep = html.slice(html.indexOf('review-deeper'), html.indexOf('</section>', html.indexOf('review-deeper')));
-assert.equal((deep.match(/class="correction"/g) || []).length, 1, 'the remaining findings are all kept');
-assert.ok(
-  html.indexOf(c.reviewNext) < html.indexOf('review-deeper'),
-  'and they come after what to practise next',
-);
-
-/* --- One rubric dimension is one row ------------------------------------ */
-/* Label, bar, score, change. They were four items in a three-column grid, so
-   the change wrapped under every dimension and each row doubled in height. */
-const experiences = read('static/orena/experiences.css');
-assert.match(experiences, /\.review-dimension \{[^}]*grid-template-columns: minmax\(6rem, 8\.5rem\) 1fr auto auto/,
-  'four columns for four things');
-assert.doesNotMatch(experiences, /\.review-dimension dd \{[^}]*display: contents/,
-  'the cells are cells, not a contents passthrough that loses the count');
-/* The bar shows where the learner was and where they are now. The previous
-   score is arithmetic on the change the evaluator returned, never a guess. */
-const improved = writingReview(c, { ...result, dimensions: { grammar: 45 }, delta: { grammar: 7 } }, { language: 'en', text });
-assert.match(improved, /review-dimension" data-direction="up"/, 'a gain says so');
-assert.match(improved, /review-bar__held" style="inline-size:38%"/, 'the ground held is where they were');
-assert.match(improved, /review-bar__shift" style="inline-size:7%"/, 'and the stretch is what they added');
-const slipped = writingReview(c, { ...result, dimensions: { grammar: 45 }, delta: { grammar: -10 } }, { language: 'en', text });
-assert.match(slipped, /review-dimension" data-direction="down"/, 'a loss says so too');
-assert.match(slipped, /review-bar__held" style="inline-size:45%"/, 'held is where they are now');
-assert.match(slipped, /review-bar__shift" style="inline-size:10%"/, 'and the shift is the ground given up');
-assert.match(experiences, /\[data-direction='down'\] \.review-bar__shift \{[^}]*repeating-linear-gradient/,
-  'so a drop cannot read as progress');
-const flat = writingReview(c, { ...result, dimensions: { grammar: 45 }, delta: {} }, { language: 'en', text });
-assert.match(flat, /data-direction="none"/, 'no previous review means no direction');
-assert.doesNotMatch(flat, /class="dimension-move"/, 'and no change is invented');
-assert.match(flat, /review-bar__held" style="inline-size:45%"/, 'just the score');
-
-/* --- Where am I, before what do I fix ----------------------------------- */
-/* The corrections were moved to the front of the review, which left the
-   measurement several folds down - so a learner met "fix this" before "how am
-   I doing". The overview leads now: the score, the level, the movement since
-   the last version, and the dimensions the evaluator actually scored. */
-assert.ok(html.includes('class="review-overview"'), 'the review opens on an overview');
-assert.ok(
-  html.indexOf('review-overview') < html.indexOf('review-issues'),
-  'and it comes before the corrections',
-);
-assert.ok(
-  html.indexOf('review-dimensions') < html.indexOf('review-issues'),
-  'the dimensions are part of that overview, not a fold below the corrections',
-);
-assert.ok(
-  html.indexOf('review-headline') < html.indexOf('review-dimensions'),
-  'the score leads the overview',
-);
-assert.doesNotMatch(html, new RegExp(`<summary>${c.reviewDimensions}</summary>`),
-  'and they are no longer folded away');
-/* Only what the evaluator returned. No average, no invented confidence. */
-const scoreless = writingReview(c, { ...result, overall: null, dimensions: {} }, { language: 'en', text });
-assert.doesNotMatch(scoreless, /review-headline|review-dimensions/,
-  'no score and no dimensions means none are drawn');
-assert.doesNotMatch(scoreless, /(100|50|0)\s*%/, 'and nothing is computed to fill the gap');
-const partial = writingReview(c, { ...result, dimensions: { grammar: 50 } }, { language: 'en', text });
-assert.equal((partial.match(/class="review-dimension"/g) || []).length, 1,
-  'one scored dimension draws one row, not a full rubric of blanks');
-
 /* --- A review belongs to the words it was written about ----------------- */
 assert.match(expression, /let reviewedText = null/, 'the room remembers which words were reviewed');
 assert.match(expression, /function markReviewFreshness\(\)/, 'and says whether that is still current');
@@ -239,21 +135,6 @@ for (const name of ['MAX_CHARACTERS', 'MAX_BYTES', 'MAX_LINES']) {
   assert.ok(inJs && inPy, `${name} is stated on both sides`);
   assert.equal(inJs, inPy, `${name} must be the same number in the browser and on the server`);
 }
-/* Nothing is dropped: a folded section is still whole. */
-assert.ok(html.includes('Practise the past tense.'), 'the priorities survive the fold');
-assert.ok(html.includes(result.corrected_text), 'and so does the whole-piece rewrite');
-/* A section behind a fold is named once, by its summary. */
-assert.equal((html.match(new RegExp(c.reviewStrengths, 'g')) || []).length, 1, 'named once');
-
-/* --- The learner's own text is where a quote is found ------------------- */
-assert.match(html, /data-locate="\d+"/, 'every correction can be found in the text');
-const locate = read('static/orena/ui/writing-locate.js');
-assert.match(locate, /export function locateInText/, 'finding it is a shared thing, not a page trick');
-assert.match(locate, /setSelectionRange/, "it uses the browser's own selection");
-assert.doesNotMatch(locate, /innerHTML|value\s*=/, 'and never rewrites what the learner wrote');
-assert.match(expression, /locateInText\(box, issue\.quote\)/, 'the room asks it for the quoted phrase');
-assert.match(expression, /showActivity\(\);\n\s+if \(!locateInText/, 'on a phone that means coming back to the page');
-
 /* --- Nothing replaces the learner's writing ----------------------------- */
 const submit = expression.slice(expression.indexOf("root.querySelector('form').onsubmit"));
 assert.doesNotMatch(submit, /box\.value = |textarea'\)\.value = /, 'a review never writes into the box');

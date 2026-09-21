@@ -113,7 +113,7 @@ assert.ok(
 
 const sites = {
   'static/orena/ui/encounter.js': ['from_reading', 'from_listening'],
-  'static/orena/ui/expression.js': ['from_writing', 'from_grammar'],
+  'static/orena/ui/expression.js': ['from_grammar'], // the review no longer keeps language: its finding sheet asks and applies (D-066)
   'static/orena/ui/conversation.js': ['from_speaking'],
   'static/orena/ui/voice-response.js': ['from_speaking'],
 };

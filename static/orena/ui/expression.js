@@ -26,18 +26,16 @@ import {
 } from './vocabulary-experience.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import {
-  writingReview,
+  bindWritingFeedback,
+  revisionHtml,
   writingReviewFailure,
   writingReviewWaiting,
-  shownIssues,
-} from './writing-review.js';
-import { locateInText } from './writing-locate.js';
+} from './writing-feedback.js';
 import {
   MAX_CHARACTERS,
   editWouldFit,
   measureWriting,
 } from '../capabilities/writing-limits.js';
-import {bindRevisionWorkbench} from './revision-workbench.js';
 import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
 import { icon } from './phosphor.js';
 import { contentCover } from './cover.js';
@@ -267,52 +265,44 @@ export async function renderExpression(root, ctx) {
   };
   updateCount();
   paintRevisions();
-  const presentReview = (result, text) => {
+  /* The review in the baseline's shape: the version beside the one before it when
+     there is one, then the findings, each of which opens as a sheet and can be
+     applied to the draft. Both come from the contract endpoints, so what is
+     shown is what the evaluator said and nothing else. */
+  let feedbackBinding = null;
+  const presentReview = async (result, text) => {
     const feedback = root.querySelector('#writingFeedback');
-    // Only show a finding whose wording is genuinely in what the learner
-    // wrote, so a struck-through phrase is always one of their own.
-    const corrections = shownIssues(result, text);
-    feedback.innerHTML = writingReview(c, result, { language, text });
-    bindRevisionWorkbench(feedback,ctx,{issues:corrections,reviewedText:text,draft:root.querySelector('#expressionText'),id,title});
-    feedback.querySelector('[data-revise]').onclick = () =>
-      root.querySelector('textarea').focus();
-    feedback.querySelector('[data-registers]').onclick = () =>
-      openRegisters(ctx, { text, title });
+    feedbackBinding?.destroy();
+    feedbackBinding = null;
+    feedback.innerHTML = `<div class="wf" role="status" aria-label="${esc(c.quickThinking)}"><p class="qs-skeleton"><span></span></p></div>`;
     workspace.dataset.review = 'ready';
+    let review;
+    let compare = null;
+    try {
+      review = await api.essayReview(result.id);
+      if ((result.revision_no || 1) > 1) compare = await api.essayRevision(result.id).catch(() => null);
+    } catch (error) {
+      if (!alive()) return;
+      feedback.innerHTML = writingReviewWaiting(c);
+      sayTrouble(writingReviewFailure(c, error));
+      const retry = trouble.querySelector('[data-retry-review]');
+      if (retry) retry.onclick = () => presentReview(result, text);
+      return;
+    }
+    if (!alive()) return;
+    feedback.innerHTML = `${compare ? revisionHtml(c, compare, { language }) : ''}<div data-wf-review></div><div class="wf-actions"><button type="button" class="qs-btn" data-revise>${icon('pencil-simple', { size: 18 })}${esc(c.revision)}</button></div>`;
+    feedbackBinding = bindWritingFeedback({
+      ctx,
+      host: feedback.querySelector('[data-wf-review]'),
+      review,
+      draft: root.querySelector('#expressionText'),
+      language,
+      alive,
+    });
+    feedback.querySelector('[data-revise]').onclick = () => root.querySelector('textarea').focus();
     reviewedText = text;
     markReviewFreshness();
     sayTrouble('');
-    /* A quoted phrase is findable in the learner's own words rather than
-       something to hunt for by eye, and the caret is left in it, so the
-       revision has already begun (`ui/writing-locate.js`). */
-    feedback.querySelectorAll('[data-locate]').forEach((button) => {
-      button.onclick = () => {
-        const issue = corrections[Number(button.dataset.locate)];
-        const box = root.querySelector('#expressionText');
-        if (!issue || !box) return;
-        showActivity();
-        if (!locateInText(box, issue.quote)) status(c.revisionAmbiguous);
-      };
-    });
-    // "Why?" opens the same explanation surface reading and listening use,
-    // with the learner's own sentence as the context it reasons about.
-    feedback.querySelectorAll('[data-why]').forEach((button) => {
-      button.onclick = () => {
-        const issue = corrections[Number(button.dataset.why)];
-        if (!issue) return;
-        const sentence =
-          text
-            .split(/(?<=[.!?。！？])\s+/)
-            .find((part) => part.includes(issue.quote)) || text;
-        openUnderstanding(ctx, {
-          selection: issue.quote,
-          context: sentence.slice(0, 2400),
-          title,
-          question: c.askWhy,
-          origin: { id, where: title, why: 'from_writing' },
-        });
-      };
-    });
   };
   /* Reopened, the latest review is already there: the piece comes back with
      what was said about it, not as a blank result frame - and without asking a

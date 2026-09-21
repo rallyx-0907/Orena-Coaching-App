@@ -316,6 +316,9 @@ export const api={
   }),
   essays:()=>request('/api/essays'),
   essay:(id)=>request(`/api/essays/${encodeURIComponent(id)}`),
+  /* The review and the revision in the Writing room's canonical shapes (D-066). */
+  essayReview:(id)=>request(`/api/essays/${encodeURIComponent(id)}/review`),
+  essayRevision:(id)=>request(`/api/essays/${encodeURIComponent(id)}/revision`),
   linguisticAnnotations:(id)=>request(`/api/essays/${encodeURIComponent(id)}/linguistic-annotations`,{
     method:'POST',
   }),
