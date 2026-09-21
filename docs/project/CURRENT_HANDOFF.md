@@ -58,12 +58,14 @@ rail, five-tab bar, no shell in a working room), Dictation, the Listening and Re
 Listening workspace now match their frames at 1920x1080 and 390x844 (workspace 390x752), in EN, VI and
 ZH; Phosphor icons are the official set. Deleted as not drawn: the destination sheet, the Practice
 group, the writing response under a recording, the end-of-recording panel, the back-to-current
-button, library skeleton/empty visuals. The Quick Sheet (layer one, ask, deeper; desktop popover and phone sheet) is measured against
-`Orena Quick Sheet.dc.html` and matches; its Chinese layer and the Writing-feedback context are not yet
-checked. The Writing workspace is measured and does NOT match: the frame is a top bar (back, title,
-saved, count, "Nhận xét"), a centred 920px prompt card and a 24px serif document; the app still has
-the D-065 composition (an intention field, a hint popover, a level select, a side result pane, a
-starters aside). The review (two panes), revision and entry frames are likewise unbuilt. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
+button, library skeleton/empty visuals. The Quick Sheet (layer one, ask, deeper; desktop popover and phone sheet, Chinese layer one on a phone) is
+measured against `Orena Quick Sheet.dc.html` and matches; the Writing-feedback context sheet is not yet
+checked. Bugs 7-13 are fixed (lookup race, a real tutor for follow-ups, Dictation steps and one-screen
+phone, a line tap plays, a menu icon); DC-5 is stored (migration `20260921_0010`, applied to the sandbox
+database, reviewed: D-069). The Writing workspace and the review's two panes are built to their frames (top bar, 920px prompt card and
+24px serif document; panes 994:820, each scrolling on its own). Still not the frame: the review pane's
+content (chips per finding, the top bar's "Lưu nhận xét" / "Sửa lại" pair), the revision compare, the error
+sheet and the entry. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
 workspace, Writing entry; the old top bar and the Practice hub go with them.
 
 ## PENDING

@@ -229,7 +229,6 @@
   box-shadow: var(--glass-ring);
 }
 .writing-workspace:not([data-review='waiting']) :is(.workspace-activity, .workspace-result) {
-  min-block-size: calc(100dvh - 76px - 20px - 36px);
   box-sizing: border-box;
 }
 .writing-workspace:not([data-review='waiting']) .writing-sheet {
@@ -238,6 +237,32 @@
 .writing-workspace:not([data-review='waiting']) .writing-sheet textarea {
   font-size: 22px;
   line-height: 1.95;
+}
+
+/* The room takes the height its panes need (the older workspace clamps it), and the review pane is the
+   frame's glass, not the older ruled card with its accent edge. */
+#main > .writing-workspace {
+  block-size: auto;
+}
+/* With a review the two panes fill the screen under the bar and each scrolls on its own, as the frame draws. */
+#main > .writing-workspace:not([data-review='waiting']) {
+  box-sizing: border-box;
+  block-size: calc(100dvh - 76px);
+  grid-template-rows: minmax(0, 1fr);
+}
+.writing-workspace:not([data-review='waiting']) :is(.workspace-activity, .workspace-result) {
+  min-block-size: 0;
+  block-size: 100%;
+  overflow-y: auto;
+}
+[data-experience='writing'] .writing-workspace:not([data-review='waiting']) .writing-result {
+  border: 0;
+  border-radius: 20px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+}
+[data-experience='writing'] .writing-workspace .writing-result .workspace-result__scroll {
+  padding: 0;
 }
 
 /* --- The phone -------------------------------------------------------------------------------- */

@@ -444,3 +444,18 @@ them - decisions for the human, not guesses:
 - Still not the frame: the review pane's own content (overview, "làm tốt", "ba chỗ cần sửa" cards with
   three chips each, "các mặt" bars), the top bar's "Lưu nhận xét" / "Sửa lại" pair, the revision
   compare frame, the error sheet, and the entry.
+
+## Bugs 7-13 (2026-09-21) - what changed and where
+
+| # | Result | Where |
+| --- | --- | --- |
+| 7 | PASS: a replaced or closed sheet is cancelled; only the latest tap is answered; the last tap's own selection no longer reads as a drag; words in any visible line are askable (the line becomes current, paused) | `ui/lexical.js`, `ui/quick-sheet.js`, `ui/encounter.js`, `scripts/test_orena_lookup_race.mjs` |
+| 8 | PASS: follow-ups go to a contextual tutor (answer first, never restated, short by default, earlier turns carried) | `media_interaction.answer_learner_question`, `word_detail.py`, `tests/test_word_detail.py` |
+| 9 | PASS: Previous / Next on the Dictation rail, in step with the progress | `ui/dictation-screen.js`, `dictation.css` |
+| 10 | PASS: hear, line, field and check fit 390x844 (check at y 572-622); a long line scrolls in its own pane | `dictation.css` |
+| 11 | PASS as built in S3b (ring, count, marks, right line; no invented number); no new deviation found | `ui/dictation-screen.js` |
+| 12 | PASS: a tap on a line goes to it and plays it; the half-way picked state is deleted | `ui/encounter.js`, `listening.css` |
+| 13 | PASS: the overflow is the menu icon (three lines) | `ui/encounter.js`, `ui/symbols.js`, `ui/expression.js` |
+
+"Ink + Paper": the Paper theme was retired by D-066; there is one theme, so the check is desktop and phone
+in one theme.
