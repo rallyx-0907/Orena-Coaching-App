@@ -136,30 +136,28 @@ body {
 }
 
 /* ---- The top bar over a destination not yet migrated to the baseline ------ */
+/* The bar of a destination, measured from the source (Progress overview,
+   Reading library, Profile all draw the same one): 84 tall, glass, the page
+   gutter either side, and a hairline where it meets the page. */
 #topbar {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
+  min-block-size: 84px;
   margin-inline-start: var(--rail-width);
-  padding: 22px var(--page-gutter) 0;
+  padding: 0 var(--page-gutter);
+  background: var(--glass-soft);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
 }
 #topbar[hidden] {
   display: none;
 }
-/* The one page-level bloom, off the top-right of the page. */
-#topbar::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset-block-start: -220px;
-  inset-inline-end: -80px;
-  inline-size: 620px;
-  block-size: 460px;
-  border-radius: 50%;
-  background: var(--bloom-page);
-  pointer-events: none;
-}
+/* No page-level bloom: the source lights the whole field at once and the brief
+   is explicit that there is no single blob or spotlight. The one blob that used
+   to sit off the top-right is deleted rather than moved - it was also what made
+   the light read as cut off, because it was clipped by the page's own
+   overflow. */
 .topbar-search {
   display: flex;
   align-items: center;
@@ -235,6 +233,12 @@ body {
 }
 html[data-topbar='on'] #main {
   padding-block-start: 26px;
+}
+/* A destination's page fills the width the rail leaves, as the source draws it;
+   the 1480px column is the legacy pages' measure. */
+#main > :is(.progress-page, .profile-page) {
+  max-width: none;
+  margin-inline: 0;
 }
 #footer {
   display: none;

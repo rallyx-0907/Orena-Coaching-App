@@ -70,12 +70,21 @@
 * {
   box-sizing: border-box;
 }
-body {
-  margin: 0;
+/* The cosmic field belongs to the canvas, not to the body box.
+   `html, body { overflow-x: clip }` keeps a stray wide child from scrolling the
+   page - and it also clipped this background to the document's 1905px, leaving
+   the scrollbar's gutter unlit and making the light look cut off at the edge.
+   Declared on `html` it paints the whole viewport, under the rail and under the
+   gutter, which is how the source draws it: one field the glass sits on. */
+html {
   background-color: var(--ground-color);
   background-image: var(--ground);
   background-size: var(--ground-size);
   background-attachment: fixed;
+}
+body {
+  margin: 0;
+  background: transparent;
   color: var(--text-primary);
   font: var(--weight-regular) var(--text-base) / 1.7 var(--font);
   -webkit-font-smoothing: antialiased;

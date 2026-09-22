@@ -57,7 +57,7 @@
   /* A screen's ground: the UI Baseline's own (Orena UI Baseline.dc.html, read 2026-09-22) - a deep indigo
      brighter than the old field, stars, soft nebulae and a slow 170-degree wash. It is the page behind every
      room. */
-  --ground-color: #0A0722;
+  --ground-color: #060509;
   --ground:
     radial-gradient(circle 1.6px at 14% 12%, rgba(255,255,255,0.95), transparent 100%),
     radial-gradient(circle 1.4px at 68% 62%, rgba(226,214,255,0.85), transparent 100%),
@@ -69,14 +69,10 @@
     radial-gradient(circle at 86% 16%, rgba(255,255,255,0.28) 0.6px, transparent 1.2px),
     radial-gradient(circle at 34% 74%, rgba(198,216,255,0.22) 0.6px, transparent 1.2px),
     radial-gradient(circle at 8% 62%, rgba(255,255,255,0.16) 0.5px, transparent 1px),
-    radial-gradient(42% 30% at 10% 14%, rgba(168,120,255,0.26), transparent 72%),
-    radial-gradient(30% 22% at 16% 20%, rgba(255,206,160,0.10), transparent 74%),
-    radial-gradient(46% 34% at 4% 88%, rgba(140,92,240,0.24), transparent 72%),
-    radial-gradient(40% 46% at 99% 66%, rgba(120,96,255,0.24), transparent 70%),
-    radial-gradient(34% 26% at 96% 18%, rgba(96,110,220,0.16), transparent 72%),
-    radial-gradient(90% 70% at 50% 40%, rgba(46,32,96,0.34), transparent 78%),
-    linear-gradient(170deg, #120C33 0%, #0B0722 44%, #080518 100%);
-  --ground-size: cover, cover, cover, cover, cover, 240px 240px, 300px 300px, 380px 380px, 460px 460px, 180px 180px, cover, cover, cover, cover, cover, cover, cover;
+    radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.26), transparent 62%),
+    radial-gradient(80% 60% at 94% 20%, rgba(70,92,210,0.18), transparent 60%),
+    radial-gradient(100% 70% at 55% 112%, rgba(96,58,182,0.20), transparent 64%);
+  --ground-size: 190px 190px, 240px 240px, 300px 300px, 420px 420px, 150px 150px, 260px 260px, 330px 330px, 390px 390px, 470px 470px, 180px 180px, cover, cover, cover;
 
   /* The older twelve-layer cosmic field of tokens.json: superseded by the ground above, kept declared
      because the foundation gate pins tokens.json, and it paints nothing in the app. */
