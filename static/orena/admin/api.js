@@ -79,6 +79,33 @@ export const adminApi = {
   testProvider: (id, body = {}) => raw(`/api/admin/ai/credentials/${encodeURIComponent(id)}/test`, json('POST', body)),
   saveProvider: (id, body) => raw(`/api/admin/ai/credentials/${encodeURIComponent(id)}`, json('PUT', body)),
   removeProvider: (id) => raw(`/api/admin/ai/credentials/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  // Reading Content Engine. Submitting is multipart because a file may ride
+  // with it; everything else is JSON. Nothing here decides who may call it.
+  readingSources: () => request('/api/admin/reading/sources'),
+  readingSetSourceState: (id, state) =>
+    request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state })),
+  readingSetPolling: (id, state, enabled) =>
+    request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state, polling_enabled: enabled })),
+  readingQueue: (params) => request(`/api/admin/reading/queue${query(params)}`),
+  readingArticle: (id) => request(`/api/admin/reading/articles/${encodeURIComponent(id)}`),
+  readingEditArticle: (id, body) =>
+    request(`/api/admin/reading/articles/${encodeURIComponent(id)}`, json('POST', body)),
+  readingSetStatus: (id, status, reason = '') =>
+    request(`/api/admin/reading/articles/${encodeURIComponent(id)}/status`, json('POST', { status, reason })),
+  readingDecideTarget: (articleId, targetId, approved) =>
+    request(
+      `/api/admin/reading/articles/${encodeURIComponent(articleId)}/targets/${encodeURIComponent(targetId)}`,
+      json('POST', { approved }),
+    ),
+  readingJobs: (params) => request(`/api/admin/reading/jobs${query(params)}`),
+  readingRetryJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
+  readingOperations: () => request('/api/admin/reading/operations'),
+  readingSubmit: (submitted, file = null) => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(submitted)) form.append(key, value === true ? 'true' : value === false ? 'false' : String(value ?? ''));
+    if (file) form.append('upload', file, file.name);
+    return request('/api/admin/reading/jobs', { method: 'POST', body: form });
+  },
   readiness: () => request('/api/admin/readiness-summary'),
   productActivity: (days = 7) => request(`/api/admin/product-activity${query({ window_days: days })}`),
 };

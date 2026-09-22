@@ -1,6 +1,6 @@
 /* The Platform Admin console frame.
 
-   Six sections behind one route: `#/admin` is the Overview and
+   Seven sections behind one route: `#/admin` is the Overview and
    `#/admin?id=<section>` is every other section, so the router needs nothing
    new and every section can be linked to. The frame is operator tooling: a
    small heading, the runtime facts an operator checks first, the sections,
@@ -16,15 +16,17 @@ import { renderOverview } from './overview.js';
 import { renderAi } from './ai.js';
 import { renderUsers } from './users.js';
 import { renderContent } from './content.js';
+import { renderReading } from './reading.js';
 import { renderImports } from './imports.js';
 import { renderOperations } from './operations.js';
 
-export const SECTIONS = ['overview', 'ai', 'users', 'content', 'imports', 'operations'];
+export const SECTIONS = ['overview', 'ai', 'users', 'content', 'reading', 'imports', 'operations'];
 const RENDERERS = {
   overview: renderOverview,
   ai: renderAi,
   users: renderUsers,
   content: renderContent,
+  reading: renderReading,
   imports: renderImports,
   operations: renderOperations,
 };

@@ -1255,3 +1255,40 @@
     grid-template-columns: minmax(4.5rem, 6.5rem) minmax(0, 1fr) minmax(1.5rem, auto);
   }
 }
+
+/* Reading: sub-views inside one section, the three add forms side by side, and
+   the article text in the preview drawer. Semantic tokens only - the console
+   has no colours of its own. */
+.ac-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+.ac-forms {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+}
+.ac-forms .ac-form {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+  padding: var(--space-3);
+  min-width: 0;
+}
+.ac-forms h3 {
+  margin: 0 0 var(--space-1);
+  font-size: 0.95rem;
+}
+/* The article as an operator reads it: measured line length, and text that
+   never carries the source's markup because the server never sends any. */
+.ac-reading-body {
+  max-width: 62ch;
+  white-space: normal;
+}
+.ac-reading-body p {
+  margin: 0 0 var(--space-2);
+  line-height: 1.6;
+}

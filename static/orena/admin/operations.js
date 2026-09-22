@@ -145,19 +145,40 @@ export function impactView(activity, t, ui) {
   return panel({ title: t.impactTitle, body });
 }
 
-export function operationsSectionView({ readiness, runtime, operations, activity }, t, ui) {
-  return `<div class="ac-stack">${readinessView(readiness, t)}<div class="ac-grid ac-grid--2">${activationView(runtime, t)}${systemView(runtime, t)}</div>${operationsView(operations, t, ui, runtime?.ai?.health_rules)}${impactView(activity, t, ui)}</div>`;
+export function readingEngineView(reading, t, ui) {
+  /* The engine's own state, from its own endpoint: queue depth by state and
+     how much is published. A runtime where the reviewed schema is not applied
+     says so plainly rather than showing zeros that look like calm. */
+  if (!reading) return panel({ title: t.readingOpsTitle, body: notice(t.readingOpsUnavailable, 'neutral') });
+  const queue = reading.queue || {};
+  return panel({
+    title: t.readingOpsTitle,
+    note: t.readingOpsWorkerNote,
+    body: kv([
+      [t.readingOpsQueued, esc(num(queue.queued || 0, ui))],
+      [t.readingOpsRunning, esc(num(queue.running || 0, ui))],
+      [t.readingOpsFailed, queue.failed ? chip('invalid', t, { label: num(queue.failed, ui) }) : esc(num(0, ui))],
+      [t.readingOpsPublished, esc(num(reading.published || 0, ui))],
+    ]),
+  });
+}
+
+export function operationsSectionView({ readiness, runtime, operations, activity, reading = null }, t, ui) {
+  return `<div class="ac-stack">${readinessView(readiness, t)}<div class="ac-grid ac-grid--2">${activationView(runtime, t)}${systemView(runtime, t)}</div>${readingEngineView(reading, t, ui)}${operationsView(operations, t, ui, runtime?.ai?.health_rules)}${impactView(activity, t, ui)}</div>`;
 }
 
 export async function renderOperations(container, env) {
   const { t, ui, alive } = env;
   const api = env.api || adminApi;
-  const [readiness, runtime, operations, activity] = await Promise.all([
+  const [readiness, runtime, operations, activity, reading] = await Promise.all([
     api.readiness().catch(() => ({ available: false })),
     api.runtime().catch(() => null),
     api.aiOperations(200).catch(() => ({ available: false })),
     api.productActivity(7).catch(() => ({ available: false })),
+    // A runtime without the reviewed Reading schema answers 503 here; that is
+    // a state to report, not an error to fail the section on.
+    api.readingOperations?.().catch(() => null) ?? null,
   ]);
   if (!alive()) return;
-  container.innerHTML = operationsSectionView({ readiness, runtime, operations, activity }, t, ui);
+  container.innerHTML = operationsSectionView({ readiness, runtime, operations, activity, reading }, t, ui);
 }

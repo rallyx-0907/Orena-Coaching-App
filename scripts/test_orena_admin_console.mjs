@@ -31,6 +31,7 @@ import {
 } from '../static/orena/admin/imports.js';
 import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
 import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, SECTIONS } from '../static/orena/admin/shell.js';
+import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows } from '../static/orena/admin/reading.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = adminCopy.en;
@@ -421,7 +422,7 @@ assert.match(operationsTable, /50%/, 'and with its failure-rate rule');
 assert.doesNotMatch(operationsView({ available: true, has_data: true, recent: [], by_capability: [] }, en, 'en'), new RegExp(en.opsHealthRule.split('{')[0]), 'no rule is shown when the server did not state one');
 
 // ---- shell -------------------------------------------------------------------
-assert.deepEqual(SECTIONS, ['overview', 'ai', 'users', 'content', 'imports', 'operations']);
+assert.deepEqual(SECTIONS, ['overview', 'ai', 'users', 'content', 'reading', 'imports', 'operations']);
 assert.equal(sectionFrom({ id: 'ai' }), 'ai');
 assert.equal(sectionFrom({ id: 'nope' }), 'overview');
 assert.equal(sectionHref('overview'), '#/admin');
@@ -431,7 +432,42 @@ assert.deepEqual(badgeCounts(attention), { ai: 1, content: 1, operations: 1 });
 const frame = frameView({ section: 'users', t: zh, attention });
 assert.match(frame, /aria-current="page">用户/);
 assert.match(frame, /<h1>平台管理<\/h1>/);
-assert.equal((frame.match(/class="ac-tab"/g) || []).length, 6);
+assert.equal((frame.match(/class="ac-tab"/g) || []).length, 7);
+
+// ---- reading ------------------------------------------------------------------
+/* The engine's operator surface: six views of one catalog, a preview that is
+   the only place a body appears, and copy that is honest about what publishing
+   does. Nothing here decides - every action names a server route. */
+const article = {
+  id: 'a1', title: 'Rain returns to the valley', language: 'en', topic: 'environment',
+  level: 'B1', estimated_level: 'B1', reviewed_level: null, effective_level: 'B1',
+  word_count: 240, reading_time_seconds: 90, status: 'needs_review', body: 'First para.\n\nSecond para.',
+  analysis: { quality_issues: ['language_mismatch'] },
+  targets: [{ id: 't1', text: 'higher ground', canonical_form: 'higher ground', target_type: 'phrase',
+              context: 'They moved to higher ground.', machine_suggested: true, admin_approved: false, admin_rejected: false }],
+  source: { canonical_url: 'https://example.com/a', author: 'M. Tran', content_hash: 'abc123def456',
+            rights: { can_republish: false }, metadata: { input_kind: 'url' } },
+  events: [{ action: 'created', actor: 'engine', created_at: '2026-09-22T08:00:00+00:00' }],
+  duplicates: [],
+};
+assert.deepEqual(VIEWS, ['queue', 'published', 'rejected', 'archived', 'sources', 'add']);
+assert.equal(viewFrom({ view: 'sources' }), 'sources');
+assert.equal(viewFrom({ view: 'nonsense' }), 'queue', 'an unknown view falls back rather than blanking the section');
+assert.equal(viewFrom({}), 'queue');
+const queueTable = table({ head: ['a', 'b', 'c', 'd', 'e', 'f', 'g'], rows: articleRows([article], en, 'en') });
+assert.match(queueTable, /Rain returns to the valley/);
+assert.doesNotMatch(queueTable, /First para/, 'a list never carries the article body');
+const preview = previewBody(article, en, 'en');
+assert.match(preview, /First para/, 'the preview is where the body is');
+assert.match(preview, /machine estimate|B1/, 'the machine estimate stays visible beside a correction');
+assert.match(preview, new RegExp(en.readingRightsUnknown), 'an unanswered rights question is shown, not assumed');
+assert.match(preview, new RegExp(en.readingIssue_language_mismatch), 'the processor flags an operator should see');
+assert.match(preview, /data-ac-action="published"/, 'publishing is an explicit action');
+assert.doesNotMatch(previewBody({ ...article, status: 'published' }, en, 'en'), /data-ac-action="published"/,
+  'a published article offers unpublish rather than publish again');
+assert.match(zh.readingNote_queue, /[一-鿿]/, 'the Chinese console is written in Chinese');
+for (const key of Object.keys(en)) assert.ok(key in zh, `zh is missing ${key}`);
+for (const key of Object.keys(zh)) assert.ok(key in en, `en is missing ${key}`);
 
 // ---- hostile data is text, never markup ---------------------------------------
 /* Every string the console shows can come from outside: a book's metadata, a
