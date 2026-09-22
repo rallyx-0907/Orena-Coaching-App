@@ -2344,3 +2344,23 @@ it paints nothing.
 
 **Supersedes / Superseded by:** Supersedes D-070 (its `--screen-*` and `--room-glow-*` tokens and `data-room` are
 removed).
+
+## D-072 — Three answers from the human: saved reviews, discussion over a text, the rail's learner card
+
+**Status:** Accepted, explicit current human instruction (2026-09-22), answering the five points reported
+after the Writing, Home and Reading slices.
+
+**Decision:**
+
+1. **"Lưu nhận xét" means keeping the review with the learner's graded work.** A review saved in the Writing
+   room belongs to the skill-assessment record of that piece - the evaluation the server already stores -
+   so the learner can read it again where their graded work lives, not as a second copy somewhere else.
+   Building it must not make a new persistence decision for learner data (AGENTS.md, architecture holds):
+   if it needs schema, it needs independent architecture review first, as DC-5 did (D-069).
+2. **A discussion over a whole text is wanted** ("Thảo luận" in the Reading frame's bar). Today only the
+   per-selection understanding surface exists. The thread is learner-owned data, so the same hold applies.
+3. **The rail carries the learner's card and per-skill levels**, as the AppShell frames draw. The card is
+   built (2026-09-22); the level beside each skill renders only from a profile field nothing serves yet, and
+   is never the one declared level repeated four times.
+
+**Supersedes / Superseded by:** Answers the open points left by D-067's fidelity work; does not change D-068.
