@@ -41,6 +41,12 @@ from writing_coach.ai.credentials import (
     encrypt_credentials,
 )
 from writing_coach.ai.pricing import estimate_token_cost
+from writing_coach.ai.routing import (
+    Attempt,
+    ProviderTarget,
+    build_chain,
+    run_chain,
+)
 from writing_coach.ai.providers import build_providers, provider_definitions
 from writing_coach.persistence.platform_repository import PlatformRepository
 
@@ -276,6 +282,49 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
         return
 
 
+def _record_attempt(capability_key: str | None) -> Callable[[Attempt], None]:
+    """Every rung is logged, not only the one that answered.
+
+    Without this a fallback is invisible: the operator sees one success and
+    never learns that the primary provider is down. The successful attempt is
+    logged by `finish()` with its usage and cost, so only the ones that did not
+    answer are recorded here.
+    """
+
+    def record(attempt: Attempt) -> None:
+        if attempt.outcome == "success":
+            return
+        model_display, model_redacted = safe_model_display(attempt.model)
+        # The telemetry vocabulary is success/failure; a provider skipped
+        # because it is cooling down did not succeed, and the error class says
+        # why it was never asked.
+        error_class = (
+            "ProviderCoolingDown" if attempt.outcome == "skipped_unhealthy" else attempt.error_class
+        )
+        _persist_operation_telemetry(
+            {
+                "capability": safe_capability_display(capability_key)
+                if capability_key
+                else "legacy",
+                "origin": "learner",
+                "provider": attempt.provider,
+                "model": model_display or None,
+                "model_redacted": model_redacted,
+                "outcome": "failure",
+                "error_class": error_class,
+                "latency_ms": normalized_latency(attempt.latency_ms)
+                if attempt.latency_ms is not None
+                else None,
+                "usage": normalized_usage(None),
+                "rate_limit": normalized_rate_limit(None),
+                "cost": estimate_token_cost(attempt.provider, model_display, None),
+                "quota_available": "unknown",
+            }
+        )
+
+    return record
+
+
 def generate_structured(
     *,
     messages: list[dict[str, str]],
@@ -347,20 +396,39 @@ def generate_structured(
             raise AICapabilityDisabled(f"AI capability {definition.key!r} is disabled.")
         validate_capability_config(definition.key, config)
 
-        item = providers().get(config.provider)
-        if item is None:
-            raise AICapabilityUnsupported(f"Unknown AI provider: {config.provider!r}.")
-        if not item.configured:
-            raise AIProviderUnavailable(f"{item.name} is not configured.")
-        generate_once = getattr(item, "generate_json_once", None) or item.generate_json
-        return finish(generate_once(
-            messages=messages,
-            schema=schema,
+        # The operator configured a backup pair; until now nothing used it, so
+        # one rate-limited provider stopped the capability. The chain asks each
+        # rung once - never twice, so a learner turn cannot be answered twice -
+        # and a malformed request still fails on the first rung, unchanged.
+        chain = build_chain(
+            provider=config.provider,
             model=config.model,
-            max_output_tokens=max_output_tokens,
-            temperature=config.temperature if config.temperature is not None else temperature,
-            seed=seed,
-        ))
+            backup_provider=config.backup_provider,
+            backup_model=config.backup_model,
+            timeout_seconds=config.timeout_seconds,
+        )
+
+        def _ask(target: ProviderTarget) -> AIResult:
+            nonlocal provider_id, model
+            provider_id, model = target.provider, target.model
+            item = providers().get(target.provider)
+            if item is None:
+                raise AIProviderUnavailable(f"Unknown AI provider: {target.provider!r}.")
+            if not item.configured:
+                raise AIProviderUnavailable(f"{item.name} is not configured.")
+            generate_once = getattr(item, "generate_json_once", None) or item.generate_json
+            return generate_once(
+                messages=messages,
+                schema=schema,
+                model=target.model,
+                max_output_tokens=max_output_tokens,
+                temperature=config.temperature if config.temperature is not None else temperature,
+                seed=seed,
+            )
+
+        routed = run_chain(chain, _ask, on_attempt=_record_attempt(capability_key))
+        provider_id, model = routed.target.provider, routed.target.model
+        return finish(routed.value)
     except (AICapabilityError, AIProviderError) as exc:
         model_display, model_redacted = safe_model_display(model)
         exc.telemetry = {
