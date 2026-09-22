@@ -1,36 +1,37 @@
 /* The learner's rank, drawn as the frame around their avatar (D-067).
 
-   Ported from the design project's master, "Orena Rank Frame Master v2" - the
-   whole thing is one generator: give it a rank and it returns the geometry.
-   Nothing here is a picture. There is no raster, no sprite and no per-rank
-   artwork to keep in step: one SVG of 400x400 built from polar coordinates,
-   plus two CSS discs for the aura.
+   Ported from the design project's master, "Orena Rank Frame Master v2", read
+   at the source on 2026-09-22. The whole thing is one generator: give it a
+   rank and it returns the geometry. Nothing here is a picture - no raster, no
+   sprite, no per-rank artwork to keep in step. One SVG of 400x400 built from
+   polar coordinates, plus two CSS discs for the aura.
 
    The rules the master sets, kept exactly:
 
    - **One light, at -48 degrees.** Every gradient is `userSpaceOnUse` with its
      axis along that direction, so all the facets agree about where the light
      is and the ring reads as one solid of crystal rather than a ring of tiles.
-   - **Five bands of four.** Amethyst, Sapphire, Orchid, Amber, Prismatic. A
-     band decides the colour and which layers of geometry exist; the four steps
-     inside a band only raise the intensity - a little more bevel, a little
-     more aura, a few more shards.
+   - **Thirty-two ranks in eight bands of four.** Amethyst, Sapphire, Orchid,
+     Amber, Aquamarine, Carnelian, Moonstone, Prismatic. A band decides the
+     palette and which layers exist; the four steps inside a band only raise
+     the intensity. From Amber up each facet is lit from two hues at once, so
+     a high rank reads multi-coloured instead of pale.
    - **The glow is separate from the material.** Turn off every blur and the
      crystal still reads, because the shape is in the facets, not the light.
-   - **Small sizes drop layers, not quality.** At 96px and under the engraved
-     ring, the shards, the petals and the orbit go; the girdle and its lit
-     edges stay.
+   - **Three levels of detail.** Full on the profile and the master's 470px
+     hero: every layer, a gradient per facet, bevels and cuts. `mid` up to
+     170px: the same ornaments and orbit but shared gradients, no sparks, at
+     most twenty facets. `min` at 96px and under: the girdle alone.
 
    What this file will not do is decide a learner's rank. `ProgressOverview`'s
-   contract carries `tier: {name, level, current, target}` and nothing serves it
-   yet, so the frame is drawn only where a tier is known. No thresholds are
-   invented here. */
+   contract carries `tier: {name, level, current, target}`; the thresholds are
+   the product's to state, not this lane's. */
 
 export const RANK_NAMES = [
-  'Initiate', 'Apprentice', 'Scribe', 'Reader', 'Cantor',
-  'Artisan', 'Adept', 'Voyager', 'Linguist', 'Virtuoso',
-  'Luminary', 'Oracle', 'Sage', 'Maestro', 'Herald',
-  'Polyglot', 'Archivist', 'Aurora', 'Celestial', 'Paragon',
+  'Initiate', 'Apprentice', 'Scribe', 'Reader', 'Cantor', 'Artisan', 'Adept', 'Voyager',
+  'Linguist', 'Virtuoso', 'Luminary', 'Oracle', 'Sage', 'Maestro', 'Herald', 'Polyglot',
+  'Navigator', 'Cartographer', 'Wayfinder', 'Chronicler', 'Rhapsode', 'Orator', 'Vesper', 'Ember',
+  'Archivist', 'Curator', 'Lumen', 'Aurora', 'Celestial', 'Empyrean', 'Zenith', 'Paragon',
 ];
 
 export const RANK_BANDS = [
@@ -38,25 +39,31 @@ export const RANK_BANDS = [
   { name: 'Sapphire', from: 5, to: 8 },
   { name: 'Orchid', from: 9, to: 12 },
   { name: 'Amber', from: 13, to: 16 },
-  { name: 'Prismatic', from: 17, to: 20 },
+  { name: 'Aquamarine', from: 17, to: 20 },
+  { name: 'Carnelian', from: 21, to: 24 },
+  { name: 'Moonstone', from: 25, to: 28 },
+  { name: 'Prismatic', from: 29, to: 32 },
 ];
 
 export const RANK_COUNT = RANK_NAMES.length;
 
 /* Per-rank constants, straight from the master. Index 0 is rank 1. */
-const HUE = [302, 296, 290, 284, 276, 270, 263, 256, 320, 330, 339, 348, 80, 71, 62, 52, 300, 282, 266, 314];
-const CHR = [0.055, 0.07, 0.085, 0.10, 0.115, 0.125, 0.135, 0.145, 0.15, 0.16, 0.17, 0.18, 0.135, 0.145, 0.155, 0.165, 0.075, 0.09, 0.10, 0.115];
-const FACETS = [8, 10, 12, 14, 16, 18, 20, 22, 24, 24, 26, 28, 28, 30, 30, 32, 32, 34, 36, 36];
-const TICKS = [0, 12, 18, 24, 24, 30, 36, 42, 48, 48, 54, 54, 60, 60, 66, 72, 72, 78, 84, 90];
-const PETALS = [0, 0, 0, 4, 6, 6, 8, 8, 10, 12, 12, 12, 14, 14, 16, 16, 16, 18, 18, 20];
-const NODES = [0, 0, 3, 4, 4, 5, 6, 6, 6, 6, 8, 8, 8, 10, 10, 12, 12, 12, 16, 16];
-const SHARDS = [0, 0, 0, 0, 0, 4, 4, 6, 6, 8, 8, 8, 8, 10, 10, 12, 12, 14, 16, 16];
-const STARP = [0, 0, 0, 0, 6, 6, 8, 8, 10, 12, 12, 12, 12, 14, 14, 14, 16, 16, 18, 18];
+const HUE = [302, 296, 290, 284, 276, 270, 263, 256, 320, 330, 339, 348, 80, 71, 62, 52, 196, 188, 178, 168, 32, 25, 18, 10, 250, 264, 278, 292, 302, 274, 246, 318];
+const CHR = [0.055, 0.07, 0.085, 0.10, 0.115, 0.125, 0.135, 0.145, 0.15, 0.16, 0.17, 0.18, 0.135, 0.145, 0.155, 0.165, 0.13, 0.14, 0.15, 0.16, 0.15, 0.16, 0.17, 0.18, 0.135, 0.15, 0.16, 0.17, 0.18, 0.19, 0.205, 0.22];
+const FACETS = [8, 10, 12, 14, 16, 18, 20, 22, 24, 24, 26, 28, 28, 30, 30, 32, 32, 34, 34, 36, 36, 38, 38, 40, 40, 40, 42, 42, 44, 44, 46, 48];
+const TICKS = [0, 12, 18, 24, 24, 30, 36, 42, 48, 48, 54, 54, 60, 60, 66, 72, 72, 78, 84, 84, 90, 90, 96, 96, 96, 102, 102, 108, 108, 114, 120, 120];
+const PETALS = [0, 0, 0, 4, 6, 6, 8, 8, 10, 12, 12, 12, 14, 14, 16, 16, 16, 18, 18, 20, 20, 20, 22, 22, 22, 24, 24, 24, 24, 26, 26, 28];
+const NODES = [0, 0, 3, 4, 4, 5, 6, 6, 6, 6, 8, 8, 8, 10, 10, 12, 12, 12, 14, 14, 16, 16, 16, 18, 18, 18, 20, 20, 20, 22, 24, 24];
+const SHARDS = [0, 0, 0, 0, 0, 4, 4, 6, 6, 8, 8, 8, 8, 10, 10, 12, 12, 12, 14, 14, 16, 16, 16, 18, 18, 18, 20, 20, 20, 22, 22, 24];
+const STARP = [0, 0, 0, 0, 6, 6, 8, 8, 10, 12, 12, 12, 12, 14, 14, 14, 16, 16, 16, 18, 18, 18, 20, 20, 20, 22, 22, 24, 24, 24, 26, 26];
+/* The second hue a band splits its facets towards, from Amber up. */
+const SPLIT = [0, 0, 0, 14, 20, 26, 34, 44];
 
 const C = 200;
 const LIGHT = -48;
-/* At and below this the master says to drop the outer layers. */
+/* The master's own two cut-offs: `min` at and below LITE_SIZE, `mid` up to MID_SIZE. */
 export const LITE_SIZE = 96;
+export const MID_SIZE = 170;
 
 const rad = (d) => ((d - 90) * Math.PI) / 180;
 const f2 = (n) => Math.round(n * 100) / 100;
@@ -87,19 +94,27 @@ export function rankName(rank) {
 
 function specFor(rank) {
   const i = clampRank(rank) - 1;
-  const band = Math.min(4, Math.floor(i / 4));
+  const band = Math.min(7, Math.floor(i / 4));
   const h = HUE[i];
   const ch = CHR[i];
+  /* Above Orchid a band splits into two hues, so each facet reads as two
+     colours meeting rather than one wash. */
+  const split = band < 3 ? 0 : SPLIT[band];
+  const h2 = (h + split) % 360;
+  const h3 = ((h - split * 0.7) + 360) % 360;
   const pal = {
-    spec: band === 4 ? '#FFFFFF' : `oklch(0.96 ${f2(ch * 0.35)} ${h})`,
-    light: `oklch(0.84 ${f2(ch)} ${h})`,
-    mid: `oklch(0.60 ${f2(ch * 1.05)} ${h})`,
-    deep: `oklch(0.22 ${f2(ch * 0.55)} ${h})`,
-    accent: `oklch(0.80 ${f2(ch)} ${(h + 20) % 360})`,
-    aura: (a) => `oklch(0.68 ${f2(ch)} ${h} / ${f2(a)})`,
+    spec: `oklch(0.97 ${f2(ch * (band >= 5 ? 0.5 : 0.3))} ${f2(h3)})`,
+    light: `oklch(0.85 ${f2(ch)} ${h})`,
+    warm: `oklch(0.80 ${f2(ch * 1.1)} ${f2(h2)})`,
+    cool: `oklch(0.72 ${f2(ch * 1.15)} ${f2(h3)})`,
+    mid: `oklch(0.60 ${f2(ch * 1.15)} ${h})`,
+    deep: `oklch(0.22 ${f2(ch * 0.6)} ${h})`,
+    accent: `oklch(0.82 ${f2(ch * 1.1)} ${f2(h2)})`,
+    aura: (a) => `oklch(0.70 ${f2(ch * 1.1)} ${h} / ${f2(a)})`,
+    aura2c: (a) => `oklch(0.74 ${f2(ch * 1.15)} ${f2(h2)} / ${f2(a)})`,
     avHue: h,
   };
-  const rankNo = i + 1;
+  const n = i + 1;
   const shape = {
     facets: FACETS[i],
     ticks: TICKS[i],
@@ -108,16 +123,16 @@ function specFor(rank) {
     nodes: NODES[i],
     shards: SHARDS[i],
     starPts: STARP[i],
-    star2: rankNo >= 17 ? 0.42 : 0,
-    orbit: rankNo >= 9 ? 1 : 0,
-    tilt: ((rankNo * 29) % 70) - 35,
-    sparks: Math.max(0, Math.min(5, Math.floor((rankNo - 2) / 3.6))),
-    prism: rankNo >= 15 ? Math.min(3, rankNo - 14) : 0,
-    aura: f2(0.04 + rankNo * 0.016),
-    scatter: f2(0.05 + rankNo * 0.013),
-    ring: f2(0.2 + rankNo * 0.031),
-    dodeca: rankNo >= 4 ? f2(0.16 + rankNo * 0.016) : 0,
-    rot: (rankNo * 11) % 30,
+    star2: n >= 17 ? 0.42 : 0,
+    orbit: n >= 9 ? 1 : 0,
+    tilt: ((n * 29) % 70) - 35,
+    sparks: Math.max(0, Math.min(5, Math.floor((n - 2) / 3.6))),
+    prism: n >= 15 ? Math.min(3, n - 14) : 0,
+    aura: f2((0.04 + n * 0.010) * (n > 16 ? 1.5 : 1)),
+    scatter: f2((0.05 + n * 0.008) * (n > 16 ? 1.7 : 1)),
+    ring: f2(Math.min(0.92, 0.2 + n * 0.022)),
+    dodeca: n >= 4 ? f2(Math.min(0.56, 0.16 + n * 0.011)) : 0,
+    rot: (n * 11) % 30,
   };
   return { pal, shape, band };
 }
@@ -125,20 +140,38 @@ function specFor(rank) {
 const sparkPath = (cx, cy, s) =>
   `M ${cx} ${cy - s} Q ${cx} ${cy} ${cx + s} ${cy} Q ${cx} ${cy} ${cx} ${cy + s} Q ${cx} ${cy} ${cx - s} ${cy} Q ${cx} ${cy} ${cx} ${cy - s} Z`;
 
+/* Which level of detail a size asks for, as the master's own build() takes it:
+   'min', 'mid', or false for the full crystal. */
+export function detailFor(size) {
+  if (size <= LITE_SIZE) return 'min';
+  if (size <= MID_SIZE) return 'mid';
+  return false;
+}
+
 /* The geometry only, with no markup, so a gate can assert what a rank is made
    of without parsing SVG. */
 export function rankGeometry(rank, { lite = false } = {}) {
   const { pal, shape, band } = specFor(rank);
   const c = { ...shape };
-  if (lite) {
-    c.ticks = Math.min(c.ticks, 24);
-    c.major = c.ticks ? 6 : 0;
+  if (lite === 'min' || lite === true) {
+    c.facets = Math.min(c.facets, 14);
+    c.ticks = 0;
+    c.major = 0;
     c.petals = 0;
     c.shards = 0;
-    c.nodes = Math.min(c.nodes, 6);
-    c.sparks = Math.min(c.sparks, 2);
+    c.nodes = 0;
+    c.starPts = 0;
+    c.sparks = 0;
     c.star2 = 0;
     c.orbit = 0;
+  } else if (lite === 'mid') {
+    c.facets = Math.min(c.facets, 20);
+    c.ticks = Math.min(c.ticks, 24);
+    c.major = c.ticks ? 8 : 0;
+    c.petals = Math.min(c.petals, 12);
+    c.shards = Math.min(c.shards, 8);
+    c.nodes = Math.min(c.nodes, 6);
+    c.sparks = 0;
   }
   return { pal, shape: c, band };
 }
@@ -147,34 +180,42 @@ export function rankFrame(options = {}) {
   const rank = clampRank(options.rank);
   const size = Number(options.size) || 152;
   const uid = String(options.uid || `r${rank}`).replace(/[^a-zA-Z0-9_-]/g, '');
-  const lite = options.lite === undefined ? size <= LITE_SIZE : Boolean(options.lite);
-  const { pal, shape: c } = rankGeometry(rank, { lite });
+  const lite = options.lite === undefined ? detailFor(size) : options.lite;
+  const { pal, shape: c, band } = rankGeometry(rank, { lite });
   const step = (rank - 1) % 4;
   const boost = step * 0.035;
 
   const grads = [];
-  let sharedId = null;
-  const gradient = (key, deg, r1, r2) => {
+  const sharedIds = {};
+  /* Below the full crystal the master shares two gradients - one for the odd
+     facets, one for the even - instead of one per facet, which is what keeps a
+     ladder of thirty-two frames cheap without changing the material. */
+  const gradient = (key, deg, r1, r2, spread) => {
+    const odd = (parseInt(String(key).replace(/\D/g, ''), 10) || 0) % 2 === 1;
+    const c1c = band < 3 ? pal.light : odd ? pal.warm : pal.cool;
     if (lite) {
-      if (!sharedId) {
-        sharedId = `${uid}-sh`;
+      const id = `${uid}-sh${odd ? 'b' : 'a'}`;
+      if (!sharedIds[id]) {
+        sharedIds[id] = 1;
         const [ax, ay] = P(LIGHT, 130);
         const [bx, by] = P(LIGHT + 180, 130);
         grads.push({
-          id: sharedId, x1: f2(ax), y1: f2(ay), x2: f2(bx), y2: f2(by),
-          c0: pal.spec, o0: 0.95, c1: pal.light, o1: 0.72, c2: pal.deep, o2: 0.78,
+          id, x1: f2(ax), y1: f2(ay), x2: f2(bx), y2: f2(by),
+          c0: band >= 4 ? (odd ? pal.light : pal.warm) : pal.spec, o0: 0.95,
+          c1: c1c, o1: band >= 4 ? 0.95 : 0.78,
+          c2: pal.deep, o2: 0.78,
         });
       }
-      return sharedId;
+      return id;
     }
     const id = `${uid}-${key}`;
     const [cx, cy] = P(deg, (r1 + r2) / 2);
-    const s = (r2 - r1) * 0.9;
+    const s = spread || (r2 - r1) * 0.9;
     grads.push({
       id,
       x1: f2(cx - lx * s), y1: f2(cy - ly * s), x2: f2(cx + lx * s), y2: f2(cy + ly * s),
-      c0: pal.spec, o0: f2(0.55 + 0.42 * lit(deg)),
-      c1: pal.light, o1: f2(0.42 + 0.38 * lit(deg)),
+      c0: band >= 4 ? (odd ? pal.light : pal.warm) : pal.spec, o0: f2(0.6 + 0.38 * lit(deg)),
+      c1: c1c, o1: f2(0.55 + 0.4 * lit(deg)),
       c2: pal.deep, o2: 0.72,
     });
     return id;
@@ -240,13 +281,14 @@ export function rankFrame(options = {}) {
     star += ' Z';
   }
   let star2 = '';
-  if (c.star2) {
+  if (c.star2 && c.starPts) {
     const k2 = (c.starPts + 2) * 2;
     const sp2 = 360 / k2;
     for (let i = 0; i < k2; i += 1) star2 += `${i ? ' L ' : 'M '}${pt(c.rot + 9 + i * sp2, i % 2 ? 112 : 150)}`;
     star2 += ' Z';
   }
 
+  /* The master widens the engraved polygon with the facet count. */
   const dn = c.facets >= 30 ? 16 : c.facets >= 24 ? 12 : 8;
   let dode = '';
   for (let i = 0; i < dn; i += 1) dode += `${i ? ' L ' : 'M '}${pt(c.rot + i * (360 / dn) + 180 / dn, 150)}`;
@@ -263,7 +305,9 @@ export function rankFrame(options = {}) {
     const dots = [40, 215]
       .map((t, i) => {
         const [rx, ry] = rotate(C + 186 * Math.cos((t * Math.PI) / 180), C + 62 * Math.sin((t * Math.PI) / 180), c.tilt);
-        return `<circle cx="${f2(rx)}" cy="${f2(ry)}" r="${i ? 2.2 : 3.2}" fill="${pal.spec}" opacity="0.9"/>`;
+        const r0 = i ? 2.2 : 3.2;
+        return `<circle cx="${f2(rx)}" cy="${f2(ry)}" r="${f2(r0 * 2.6)}" fill="${pal.spec}" opacity="0.2"/>`
+          + `<circle cx="${f2(rx)}" cy="${f2(ry)}" r="${r0}" fill="${pal.spec}" opacity="0.92"/>`;
       })
       .join('');
     orbitSvg = `<g class="rank-frame__orbit"><ellipse cx="200" cy="200" rx="186" ry="62" fill="none" stroke="${pal.light}" stroke-opacity="0.3" stroke-width="0.9" transform="rotate(${c.tilt} 200 200)"/>${dots}</g>`;
@@ -278,10 +322,22 @@ export function rankFrame(options = {}) {
     .map((p) => `<circle cx="200" cy="200" r="${p.r}" fill="none" stroke="${p.color}" stroke-width="${p.w}" opacity="${p.op}" stroke-dasharray="${p.dash}" transform="rotate(${p.rot} 200 200)"/>`)
     .join('');
 
+  /* From Amber up the master lays three coloured rings over the girdle: this
+     is what makes a high band read as dispersion rather than a brighter wash. */
+  const extraRings = band >= 4
+    ? [
+      { r: 123.5, color: pal.warm, op: f2(0.4 + band * 0.06), w: 1.5 },
+      { r: 96.4, color: pal.cool, op: f2(0.36 + band * 0.06), w: 1.4 },
+      { r: 131, color: pal.accent, op: f2(0.14 + band * 0.04), w: 0.9 },
+    ]
+      .map((e) => `<circle cx="200" cy="200" r="${e.r}" fill="none" stroke="${e.color}" stroke-opacity="${e.op}" stroke-width="${e.w}"/>`)
+      .join('')
+    : '';
+
   const spots = [[200, 4, 9, 0], [338, 92, 6, 1.4], [62, 292, 5, 2.8], [306, 318, 4, 4.2], [96, 76, 5, 5.4]];
   const sparks = spots
     .slice(0, c.sparks)
-    .map(([x, y, s, delay]) => `<path d="${sparkPath(x, y, s)}" fill="#FFFFFF" opacity="${lite ? 0.72 : 0.9}" style="transform-origin:${x}px ${y}px;animation-delay:${delay}s"/>`)
+    .map(([x, y, s, delay]) => `<path d="${sparkPath(x, y, s)}" fill="#FFFFFF" opacity="0.9" style="transform-origin:${x}px ${y}px;animation-delay:${delay}s"/>`)
     .join('');
 
   const [rx1, ry1] = P(LIGHT, 200);
@@ -292,10 +348,10 @@ export function rankFrame(options = {}) {
     .map((g) => `<linearGradient id="${g.id}" gradientUnits="userSpaceOnUse" x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}"><stop offset="0" stop-color="${g.c0}" stop-opacity="${g.o0}"/><stop offset="0.38" stop-color="${g.c1}" stop-opacity="${g.o1}"/><stop offset="1" stop-color="${g.c2}" stop-opacity="${g.o2}"/></linearGradient>`)
     .join('');
 
-  const aura1 = `radial-gradient(closest-side, ${pal.aura(c.aura + boost)}, ${pal.aura((c.aura + boost) * 0.35)} 56%, transparent 78%)`;
-  const aura2 = `radial-gradient(closest-side, ${pal.aura(c.aura * 0.55)}, transparent 72%)`;
+  const aura1 = `radial-gradient(closest-side, ${pal.aura(c.aura + boost)}, ${pal.aura2c((c.aura + boost) * 0.5)} 52%, transparent 78%)`;
+  const aura2 = `radial-gradient(60% 60% at 34% 26%, ${pal.aura2c(c.aura * 0.7)}, transparent 70%), radial-gradient(closest-side, ${pal.aura(c.aura * 0.55)}, transparent 72%)`;
 
-  return `<span class="rank-frame" data-rank="${rank}" style="inline-size:${size}px;block-size:${size}px">`
+  return `<span class="rank-frame" data-rank="${rank}" data-band="${bandOf(rank).name}" style="inline-size:${size}px;block-size:${size}px">`
     + `<span class="rank-frame__aura" style="background:${aura1}"></span>`
     + `<span class="rank-frame__aura rank-frame__aura--inner" style="background:${aura2}"></span>`
     + `<svg class="rank-frame__art" viewBox="0 0 400 400" aria-hidden="true" focusable="false">`
@@ -306,20 +362,25 @@ export function rankFrame(options = {}) {
     + `<radialGradient id="${uid}-sheen" cx="0.3" cy="0.16" r="0.58"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.4"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>`
     + `<clipPath id="${uid}-clip"><circle cx="200" cy="200" r="92"/></clipPath>`
     + `</defs>`
-    + `<g class="rank-frame__ring"><circle cx="200" cy="200" r="196" fill="none" stroke="url(#${uid}-rim)" stroke-width="1" opacity="${f2(c.ring)}"/>${tickSvg}${nodeSvg}${shardSvg}</g>`
-    + `<g class="rank-frame__petals">${petalSvg}${c.dodeca ? `<path d="${dode}" fill="none" stroke="url(#${uid}-eng)" stroke-width="0.7" opacity="${c.dodeca}"/>` : ''}</g>`
-    + (star ? `<path class="rank-frame__star" d="${star}" fill="none" stroke="url(#${uid}-eng)" stroke-width="0.9" opacity="${f2(0.42 + boost)}"/>` : '')
-    + (star2 ? `<path d="${star2}" fill="none" stroke="${pal.spec}" stroke-opacity="0.22" stroke-width="0.6" opacity="${c.star2}"/>` : '')
-    + orbitSvg
+    /* The master's order, outside in: the scattered core, the dispersion arcs,
+       the girdle, its rims, the band's own rings, the caustic and the sheen. */
     + `<circle cx="200" cy="200" r="110" fill="url(#${uid}-core)" opacity="0.9"/>`
     + prisms
     + facetSvg
     + `<circle cx="200" cy="200" r="121" fill="none" stroke="url(#${uid}-rim)" stroke-width="1.1" opacity="0.8"/>`
     + `<circle cx="200" cy="200" r="97.5" fill="none" stroke="url(#${uid}-rim)" stroke-width="1.8" opacity="0.95"/>`
     + `<circle cx="200" cy="200" r="93.8" fill="none" stroke="${pal.spec}" stroke-opacity="0.55" stroke-width="0.7"/>`
+    + extraRings
     + (lite ? '' : `<path d="${caustic}" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1.1"/>`)
     + `<g clip-path="url(#${uid}-clip)"><ellipse cx="152" cy="126" rx="118" ry="80" fill="url(#${uid}-sheen)" opacity="0.5"/></g>`
-    + `<g class="rank-frame__sparks">${sparks}</g>`
+    + (sparks ? `<g class="rank-frame__sparks">${sparks}</g>` : '')
+    /* The turning layers, which the master keeps in their own groups so the
+       still material underneath never moves. */
+    + `<g class="rank-frame__ring"><circle cx="200" cy="200" r="196" fill="none" stroke="url(#${uid}-rim)" stroke-width="1" opacity="${f2(c.ring)}"/>${tickSvg}${nodeSvg}${shardSvg}</g>`
+    + `<g class="rank-frame__petals">${petalSvg}${c.dodeca ? `<path d="${dode}" fill="none" stroke="url(#${uid}-eng)" stroke-width="0.7" opacity="${c.dodeca}"/>` : ''}</g>`
+    + (star ? `<path class="rank-frame__star" d="${star}" fill="none" stroke="url(#${uid}-eng)" stroke-width="0.9" opacity="${f2(0.42 + boost + band * 0.05)}"/>` : '')
+    + (star2 ? `<path d="${star2}" fill="none" stroke="${pal.spec}" stroke-opacity="0.22" stroke-width="0.6" opacity="${c.star2}"/>` : '')
+    + orbitSvg
     + `</svg>`
     + `<span class="rank-frame__avatar" style="box-shadow:inset 0 2px 14px rgba(255,255,255,0.12), inset 0 -10px 28px rgba(0,0,0,0.62), 0 0 46px ${pal.aura(0.16 + c.aura * 0.6)};background:radial-gradient(125% 125% at 32% 22%, oklch(0.42 0.04 ${pal.avHue}), oklch(0.17 0.014 292) 74%)">${options.avatar || ''}</span>`
     + `</span>`;

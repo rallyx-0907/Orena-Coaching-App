@@ -900,3 +900,53 @@ in the interface yet. The button is therefore **not drawn**, and the decision is
 recorded here rather than made: either commerce opens, or the frame's button
 waits for it.
 
+## The rank system, re-read at the source (2026-09-22, later)
+
+`Orena Rank Frame Master v2` is the current master and the app is now a
+faithful port of it: **thirty-two ranks in eight bands of four** - Amethyst,
+Sapphire, Orchid, Amber, Aquamarine, Carnelian, Moonstone, Prismatic - one
+generator, one light at −48°, no raster anywhere. What the earlier port was
+missing and now has: the two-hue split from Amber up (so a high band reads
+multi-coloured rather than pale), the band's three extra rings, the second
+star from rank 17, the orbit's glow dots, the master's own aura pair, and its
+**three** levels of detail rather than two (`min` at 96px and under, `mid` up
+to 170, the full crystal above).
+
+**The conflict, recorded rather than decided (rule 7).** Two design sources
+count ranks differently:
+
+| Source | Ranks | States thresholds? |
+| --- | ---: | --- |
+| `Orena Rank Frame Master v2` (and `Orena Hạn mức sử dụng`: "bậc 10 / 32") | **32** | no - it is a material spec |
+| The Progress frame's ladder ("THANG CẤP BẬC · 20 BẬC") | **20** | yes, a word count per tile |
+
+Taken as newest-wins the master is current, and the app follows it: the ladder
+draws thirty-two. The Progress frame's numbers are kept **by name**, not by
+position - its first sixteen names are the master's first sixteen, and
+Archivist, Aurora, Celestial and Paragon are the master's 25th, 28th, 29th and
+32nd - so a number the design states for a rank stays with that rank.
+
+- **GAP-R1 · fourteen ranks have no threshold.** Virtuoso (which the frame drew
+  "BẬC HIỆN TẠI" over), Navigator, Cartographer, Wayfinder, Chronicler,
+  Rhapsode, Orator, Vesper, Ember, Curator, Lumen, Empyrean and Zenith have no
+  stated word count, so their tiles show a dash and no one can be counted into
+  them. Fourteen numbers are the product's to state.
+- **GAP-R2 · is the ladder twenty or thirty-two?** If the Progress frame is the
+  current one, the ladder is twenty and the master's other twelve ranks are not
+  yet in play. One line from the human settles it; nothing else in the code
+  needs to change, because both read `static/orena/product/rank.js`.
+
+**Where the rank comes from.** Not from a backend - `tier` is still unserved.
+It is derived from the one thing Orena really counts, the learner's mastered
+words (past review stage three), against the thresholds above, in
+`static/orena/product/rank.js`. Progress and Hồ sơ both read it, so they cannot
+disagree. At zero words nobody holds a rank: Hồ sơ draws the plain well and the
+Progress card says "Chưa có bậc", and the crystal appears at the first fifty
+words rather than being shown for a rank nobody earned.
+
+**One layout consequence.** Thirty-two tiles do not fit the Progress screen at
+1920x1080, and that screen must stay inside one viewport. The page now takes
+exactly the room the bar leaves and the **ladder scrolls inside its own panel**
+(the side column too, if it ever runs longer). Nothing is clipped away and the
+screen itself never scrolls.
+
