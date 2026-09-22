@@ -76,17 +76,24 @@ body:has(.reader) #shellNav:focus-within {
   white-space: nowrap;
 }
 .reader-bar__meta { color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; }
-/* How far through, and the way on, under the text - where the design puts it. */
+/* How far through, and the way on, at the foot of the reading column - where
+   the source puts it ("34% - còn 9 phút" beside "Chương sau", inside the 780
+   measure, not a bar across the window). The only progress bar is the hairline
+   at the very top of the screen. */
 .reader-foot {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
-  max-inline-size: 1160px;
-  margin-block-start: var(--space-4);
-  padding: 14px 4px;
+  inline-size: calc(100% - 440px);
+  max-inline-size: none;
+  margin-block-start: 0;
+  padding: 0 40px 28px;
 }
-.reader-foot__place { flex: none; color: var(--text-secondary); font-size: 11.5px; }
-.reader-foot .reader-progress { flex: 1; max-inline-size: none; }
+.reader:has(.reader-contents-column) .reader-foot { inline-size: calc(100% - 740px); margin-inline-start: 300px; }
+.reader-foot > * { flex: none; }
+.reader-foot__place { flex: none; color: var(--text-secondary); font-size: 13px; }
 .reader-foot__next { flex: none; min-block-size: 44px; padding-inline: 18px; border-radius: var(--radius-pill); }
 .reader-progress {
   flex: 1;
@@ -594,8 +601,9 @@ body:has(.reader) #shellNav:focus-within {
 }
 
 /* --- The frame's hairline and the bar under the text (D-067) ------------------------------------
-   "Reading · bilingual + panel" draws the learner's place twice: a 4px rail across the very top of
-   the screen, and the rail under the text with its figure. Under the text column floats one bar of
+   "Reading · bilingual + panel" draws the learner's place twice, but only one of them is a bar: a 4px
+   rail across the very top of the screen, and the same figure as text ("34% - còn 9 phút") at the foot
+   of the reading column, beside the way on to the next chapter. Measured 2026-09-22. Under the text column floats one bar of
    what can be done with this whole text; what it opens is a sheet, so the room stays one screen. */
 .reader-rail {
   position: absolute;
@@ -733,9 +741,21 @@ body:has(.reader) #shellNav:focus-within {
   background: var(--glass-soft);
 }
 .reader-foot {
+  /* Aligned with the 780 measure, as the source draws it - not a band across
+     the window. The aside is 440 wide, so the column's own box is what is left. */
+  inline-size: calc(100% - 440px);
   max-inline-size: none;
   margin: 0;
-  padding: 14px 40px 20px;
+  padding: 0 40px 28px;
+}
+.reader-foot__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  inline-size: 100%;
+  max-inline-size: 780px;
+  margin-inline: auto;
 }
 @media (max-width: 900px) {
   .reader-bar {

@@ -623,3 +623,34 @@ right shape.
   chip only for a type some item in the room actually has (`library-browse.js`), so today it shows
   four. Offering a filter that can only ever return nothing is the opposite trade; **which rule
   wins is the human's call**, and nothing here changes until it is made.
+
+## Reading workspace, measured against the source (2026-09-22, D-067)
+
+The human reported the layout is wrong when a source is opened to read. Measured
+`[data-screen-label="Reading · bilingual + panel"]` against `#/encounter?…&intent=reading` at
+1920x1080.
+
+**The skeleton was already the frame's**: the 4px hairline across the top, the 72px bar with
+`0 40px` padding, the 780 reading measure, the 440 aside with its Từ / Ngữ pháp / Ghi chú tabs, and
+the floating action bar (radius 999, 12 padding, 10 gap, six 48px pills, the last one primary and
+ringless).
+
+**Corrected:** the app drew a **second progress bar** in a band across the whole window
+(`.reader-foot`, 1905 wide, with its own `.reader-progress`). The source draws the place **once as a
+bar** - the top hairline - and repeats the figure only as text (`34% · còn 9 phút`, DM Mono 13) at
+the **foot of the 780 column**, beside the way on to the next chapter. The second bar is deleted and
+the row now sits exactly on the column (measured x=343 w=780, identical to `.reader-page`). A code
+comment claiming the frame "draws the same figure twice" as two rails is corrected in place.
+
+**Still different, and each is a decision rather than a value:**
+
+- **The bar's controls.** The frame draws a "Song ngữ" pill (121x40) and one 40x40 icon button
+  (radius 13, ringed). The app draws a back arrow (32), the support-language chip (`VI`, 35x32) and
+  `Aa` (34x34, radius 10). Same purpose, different controls.
+- **The six actions are named differently.** Frame: Lưu bài · Nghe · Kiểm tra hiểu · Thảo luận ·
+  Viết phản hồi · **Đọc tiếp sau** (primary). App: Giữ lại để sau · Nghe · Điều bạn thu được ·
+  **Câu trả lời của bạn** (primary) · Những từ đáng chú ý · Nguồn & bản quyền. The count, the sizes
+  and the shape match; which six, and which one is primary, is product wording.
+- **Spacing:** bar gap 20 in the frame against 14; aside padding 26 / gap 20 against 22 / 16. Left
+  alone in this pass because the aside's contents are not yet the frame's, so matching its padding
+  alone would not make it the frame.
