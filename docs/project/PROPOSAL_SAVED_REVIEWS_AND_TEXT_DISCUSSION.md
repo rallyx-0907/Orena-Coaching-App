@@ -269,4 +269,180 @@ committed `POST` can still double-answer and double-meter: the endpoint accepts 
 returns the existing turns unchanged when it repeats, which is the dedup contract this endpoint owns; the
 general idempotency weakness of `record_usage` is older than this proposal and is not solved here.
 
-**Status: awaiting re-review of this correction.** No migration is written until it passes.
+**Status: superseded by the third correction below.**
+
+---
+
+## (b), third correction (2026-09-22) — the ten blockers of the second re-review
+
+The re-review of `3deab1e` found all ten items below and returned `CHANGES REQUIRED`, with the migration
+withheld. Every one was re-verified against the tree before writing this; none is disputed. Blockers 1-6 are
+answered by **withdrawing the gate**, blockers 7-10 by naming the mechanisms that were missing. Numbering
+matches the review.
+
+### Blockers 1-3, 6 — the entitlement gate is withdrawn from this proposal
+
+The second correction's 403/429 gate is **withdrawn in full**. It was wrong three ways at once, and each
+would have been enough on its own:
+
+- **It is forbidden today.** `writing_coach/product/commerce.py:1-8` — "it enforces nothing: `billing_ready`
+  stays `False` and no route may deny a request from `resolveEntitlement` yet."
+  `ORENA_COMMERCE_ARCHITECTURE.md:113` — "Existing non-enforced behavior remains until the explicit
+  activation gate. Do not quietly enable billing during account or UI implementation." Making a learner-facing
+  feature proposal the product's first enforcing route is an activation decision, and it is not this lane's.
+- **As specified it denied every learner.** `reading.discussion_turn` is in neither plan
+  (`product/catalog.py:42-76`), so `ProductService._feature_access_for_plan` (`service.py:60-63`) answers
+  `entitlement_state="unavailable"`, `enabled=False`, and `resolveEntitlement` turns that into
+  `allowed=False, reason="not_in_plan"` — a 403 for Free *and* Premium. The "unknown → proceed" escape never
+  fires for an unlisted feature: `allowed=None` is reached only when `monthly_usage` itself raises
+  (`reason="usage_unavailable"`). `tests/test_product_commerce.py:121` locks that behaviour deliberately.
+- **The symbol and the decision shape were wrong.** It is `resolveEntitlement(user_key, feature, *,
+  service=None)`, not `resolve_entitlement`, and `EntitlementDecision` carries
+  `allowed: bool | None, reason, entitlement_state, quota` — there is no `exhausted` decision to switch on.
+
+**What the handler does instead:** it resolves nothing and denies nothing. It meters
+(`record_usage`, below) and answers the learner. This keeps the endpoint exactly as
+non-enforcing as every other AI surface in the product, which is the state the commerce architecture
+requires until its own gate.
+
+**Escalated to the human as an activation gate, not decided here** (`AGENTS.md`, "Safety" → human gates;
+`ORENA_COMMERCE_ARCHITECTURE.md` §5):
+
+> Should `reading.discussion_turn` become the product's **first entitlement-enforcing route**? That requires
+> (i) authorization to switch enforcement on at all, (ii) the feature key and its per-plan monthly limits
+> added to `FREE` and `PREMIUM` as policy values, and (iii) the admission ledger named in blocker 4. Until
+> the human answers, the endpoint meters and does not deny, and this proposal assumes no denial path exists.
+
+**Which identity is metered (blocker 6).** One key, the learner's: `current_user_key()` from
+`writing_coach/core/request_context.py` — the same `USER_KEY_CTX` value the thread's `user_id` resolves from,
+so the metered row and the learner's rows can never belong to different accounts. The handler does **not**
+call `product/api.py:current_user_key`, which answers `"local-development"` while `AUTH_ENABLED` is false and
+would meter the sandbox's turns against an account that owns no threads. With auth on, both are `user_sub`
+and the distinction disappears. Recorded, not resolved: while auth is off, `/api/product/me` reads
+`"local-development"` and will therefore not show usage recorded under `"legacy"` — a local-development
+reporting discrepancy that exists already and that only the account architecture should close.
+
+### Blocker 4 — the quota ledger seam, and why this proposal does not meter into it
+
+`writing_coach/persistence/quota_repository.py` ("DEPLOYED, INACTIVE") implements
+reserve / dispatch / settle / release over migration `20260912_0007`, exactly-once by `operation_id`, and is
+the sanctioned atomic admission path. `ORENA_COMMERCE_ARCHITECTURE.md:98` says plainly that
+"existing monthly_usage is a reporting read; it does not make parallel admission atomic."
+
+This proposal writes to `usage_events` and **not** to the quota ledger, for one reason: the ledger keys every
+bucket, reservation and lock off an **account incarnation** (`reference_backbone.Scope`), and nothing in this
+codebase resolves a live incarnation from a request — `commerce.py:9-14` says so, and `account_profile.scope_of()`
+has no production caller. Wiring incarnation resolution into a request path is learner-account architecture,
+which is a reserved hold (`AGENTS.md`, "Architecture holds").
+
+That is also the honest argument against the withdrawn gate: a feature that cannot reach the atomic ledger has
+no business being the first one to deny. `usage_events` is adequate for a reporting count and inadequate for
+admission; since nothing is admitted or refused on it, the weakness costs nothing. **If the human activates
+enforcement, it must go through `PostgresQuotaRepository`, and incarnation resolution becomes a prerequisite
+of that gate — not of this feature.**
+
+### Blocker 5 — where `record_usage` runs
+
+`PostgresProductRepository.record_usage` opens `Session(self.engine) … session.begin()`
+(`persistence/product_repository.py:70`): its own transaction. It cannot run "before the commit" and cannot be
+rolled back with the turn. The contract is therefore **ordering**, stated as such:
+
+`record_usage` is called **after** the transaction that stores the two turn rows has committed, and only then.
+One accepted turn writes exactly one `usage_events` row; a turn refused by the cap, refused by ownership,
+rejected as a duplicate `request_id`, or lost to a provider or storage failure writes none. The tests assert
+the ordering (no usage row when the turn is absent), not an atomicity the call cannot offer. A crash between
+the two commits under-counts by one turn; under-counting a reporting read that gates nothing is the cheaper
+error, and the alternative — metering before the turn is durable — over-counts against a learner.
+
+### Blocker 7 — the reservation is owner-scoped, and its zero-row case is disambiguated
+
+```sql
+UPDATE text_discussions
+   SET turn_count = turn_count + 2, updated_at = now()
+ WHERE id = :discussion_id AND user_id = :user_id AND turn_count <= 198
+RETURNING turn_count;      -- the pair takes ordinals (count - 1) and count
+```
+
+Zero rows now means cap **or** deleted **or** not yours, so it is never answered blind: in the same
+transaction the handler re-reads `SELECT turn_count FROM text_discussions WHERE id = :discussion_id AND
+user_id = :user_id`. A row → the cap was reached → `409` naming the cap. No row → `404`. A thread belonging to
+another learner is indistinguishable from a missing one, deliberately.
+
+### Blocker 8 — the first turn, and two concurrent first submits
+
+The thread is get-or-created before the reservation, in one statement pair that cannot raise on the race the
+`UNIQUE (user_id, language_code, source_kind, source_id)` constraint creates:
+
+```sql
+INSERT INTO text_discussions (id, user_id, language_code, source_kind, source_id,
+                              reading_session_id, turn_count, created_at, updated_at)
+VALUES (:id, :user_id, :language_code, :source_kind, :source_id, :reading_session_id, 0, now(), now())
+ON CONFLICT (user_id, language_code, source_kind, source_id) DO NOTHING;
+
+SELECT id, turn_count FROM text_discussions
+ WHERE user_id = :user_id AND language_code = :language_code
+   AND source_kind = :source_kind AND source_id = :source_id;
+```
+
+The loser of the race inserts nothing and selects the winner's row; both then contend on the reservation
+`UPDATE` above, which serialises them on that row. No unique violation reaches the learner as a 500.
+
+`reading_session_id` is resolved here and nowhere else: when `source_kind='reading_session'`, `source_id` is
+the session id, and the handler looks it up through the existing learner-scoped reading-session lookup before
+the insert — not found, or not this learner's, is `404` and no thread is created. For the other three kinds it
+is `NULL`, which is what the `CHECK ((source_kind = 'reading_session') = (reading_session_id IS NOT NULL))`
+already requires.
+
+### Blocker 9 — the transaction boundary, named
+
+**The reservation commits before the provider is called.** Three transactions, in this order:
+
+1. **T1** — get-or-create (blocker 8) and the owner-scoped reservation (blocker 7). Commits. No lock is held
+   after it.
+2. **the provider call** — outside any transaction.
+3. **T2** — insert the learner turn and the assistant turn at the reserved ordinals. Commits.
+4. **`record_usage`** — its own transaction, after T2 (blocker 5).
+
+**The compensating behaviour is deliberately none, and the cost is a gap.** If the provider fails, the
+reserved ordinal pair is never written: `ordinal` stays unique and monotonic with a hole in it, which the read
+path does not care about because it orders by `ordinal` and never assumes contiguity. `turn_count` is *not*
+decremented — a decrement would re-issue ordinals that a concurrent submit may already hold, turning a failed
+call into a `UNIQUE (discussion_id, ordinal)` violation for an unrelated learner request. A failed attempt
+therefore consumes two of the thread's 200 turns permanently.
+
+The alternative — holding T1 open across the provider call — was rejected: the thread row's lock would be held
+for the whole provider latency (17-54 s on the sandbox's Ollama default, `CLAUDE.md`), so every concurrent
+submit to that thread would block for it, and a provider timeout would hold it longer still. Leaking cap on
+failure is bounded, visible and recoverable by a future `ALTER … CHECK`; blocking a learner's thread for a
+minute is not.
+
+### Blocker 10 — the dedup column, which is schema
+
+`text_discussion_turns` gains:
+
+- `request_id VARCHAR(64) NOT NULL DEFAULT ''` — the client's idempotency key, stored on the **learner** turn
+  only; the assistant turn of the pair keeps `''`.
+- `CREATE UNIQUE INDEX … ON text_discussion_turns (discussion_id, request_id) WHERE request_id <> ''` — a
+  partial unique index, so the empty default and every pre-existing row are unconstrained.
+
+The contract: `POST` accepts an optional `request_id`. Before reserving, the handler selects the learner turn
+with that `(discussion_id, request_id)`; found → it returns that turn and the one at the next ordinal
+unchanged, with **no** reservation, no provider call and no `usage_events` row. A repeat that arrives while
+the original is still in flight loses the partial unique index at T2 instead: the handler catches that one
+violation, re-reads the committed pair and returns it the same way (its own reserved ordinals become a gap,
+exactly as in blocker 9). A `POST` with no `request_id` is not deduplicated and says so.
+
+`request_id` is also what is passed to `record_usage(request_id=...)`, so a usage row can be traced back to
+the turn that caused it.
+
+### What this changes about the migration
+
+The migration is still one Alembic revision creating two tables, but its text now differs from the second
+correction in three places: `text_discussion_turns.request_id` and its partial unique index (blocker 10), and
+no entitlement-related column or constraint anywhere (blockers 1-3). Nothing in `usage_events`, `quota_*` or
+`commerce_*` is touched. The ledger question (blocker 4) does not change which tables this creates — it
+changes what a future activation gate must do, and is recorded above rather than resolved.
+
+**Status: awaiting re-review of this correction, and a human answer on the activation gate raised under
+blockers 1-3.** No migration is written until the re-review passes; nothing gates on entitlement in any case
+until the human opens that gate.
