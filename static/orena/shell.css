@@ -153,24 +153,9 @@ body {
 #topbar[hidden] {
   display: none;
 }
-/* Layer 2 of the Glass System's three: the focus halo. The system is explicit
-   about its size and its job - "280-420px, một đến hai mỗi màn, đặt lệch khỏi
-   tâm" - and equally explicit that the 620px low-alpha blob this used to be is
-   the mistake it names by name: "một quầng 620px ở alpha thấp chỉ nâng toàn bộ
-   nền lên xám". So it is 380px, off-centre, at the system's own alpha, and it
-   sits on the page rather than inside the bar, where the page's overflow used
-   to cut it. */
-#main::before {
-  content: '';
-  position: fixed;
-  z-index: -1;
-  inset-block-start: -90px;
-  inset-inline-start: calc(var(--rail-width) + 18%);
-  inline-size: 380px;
-  block-size: 320px;
-  background: var(--bloom-page);
-  pointer-events: none;
-}
+/* No separate halo: the current baseline carries the light in the ground
+   itself - two magenta radials off the top and a vertical fall - so a second
+   blob would be the "quầng 620px" mistake again, just smaller. */
 .topbar-search {
   display: flex;
   align-items: center;

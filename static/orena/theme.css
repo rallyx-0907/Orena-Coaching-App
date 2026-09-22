@@ -57,11 +57,11 @@
   /* A screen's ground: the UI Baseline's own (Orena UI Baseline.dc.html, read 2026-09-22) - a deep indigo
      brighter than the old field, stars, soft nebulae and a slow 170-degree wash. It is the page behind every
      room. */
-  --ground-color: #050408;
+  --ground-color: #0B0A0F;
   --ground:
-    radial-gradient(120% 80% at 18% -10%, rgba(116,74,214,0.30), transparent 62%),
-    radial-gradient(100% 70% at 92% 8%, rgba(70,92,210,0.22), transparent 60%),
-    radial-gradient(130% 90% at 60% 108%, rgba(96,58,182,0.24), transparent 66%);
+    radial-gradient(76% 52% at 62% -6%, rgba(168,84,190,0.32), transparent 72%),
+    radial-gradient(46% 32% at 92% 2%, rgba(196,104,196,0.20), transparent 74%),
+    linear-gradient(180deg, #17101F 0%, #0D0A12 44%, #0A090D 100%);
   --ground-size: cover, cover, cover;
 
   /* The older twelve-layer cosmic field of tokens.json: superseded by the ground above, kept declared
