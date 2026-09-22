@@ -950,3 +950,23 @@ exactly the room the bar leaves and the **ladder scrolls inside its own panel**
 (the side column too, if it ever runs longer). Nothing is clipped away and the
 screen itself never scrolls.
 
+## GAP-H7 · the usage bars can only ever read zero (2026-09-22)
+
+Found while seeding a learner to review Hồ sơ. The plan's limits are real -
+`account_state()` answers with each feature's `monthly_limit` - but **nothing
+records a use**. `record_usage` has exactly one caller in the whole codebase,
+`writing_coach/text_discussion.py`, and `reading.discussion_turn` is not one of
+the features a plan lists. So after 1 600 saved words and a dictionary lookup,
+`/api/product/me` still reports `used: 0` for `vocabulary.save` and
+`dictionary.lookup`, and the panel draws six bars at zero.
+
+This is a backend gap, not a surface one: the panel is the component the source
+draws and the numbers it shows are the ones the product reports. Metering the
+endpoints that a plan charges for - writing evaluation and rewriting, lookups,
+saved words - is what makes the panel say anything. Until then the bars are
+honest and uninformative.
+
+`scripts/seed_sandbox_learner.py` fills the sandbox learner through the app's
+own endpoints so the rank, the ladder and the vocabulary panels can be
+reviewed with real data; it cannot fill these bars, for the reason above.
+
