@@ -99,6 +99,7 @@ liệu. Các mục ở trên là ghi chép chi tiết theo từng màn; phần n
 | # | Việc |
 | --- | --- |
 | F1 | `scripts/test_orena_vocabulary_theme_tokens.mjs` và `scripts/test_orena_writing_workspace.mjs` **fail sẵn từ `3deab1e`**, kiểm chứng trên cây sạch. Chưa sửa vì ngoài phạm vi. |
+| F4 | **Sandbox `:8011` mất sạch dữ liệu học viên sau khi Docker engine treo và được khởi động lại (2026-09-22 05:51).** Bảng còn nguyên, schema vẫn ở `20260922_0012`, nhưng `essays`, `reading_sessions`, `text_discussions`, `usage_events` đều **0 dòng**; sáng cùng ngày có 10 bài viết, một luồng thảo luận và các dòng usage. Nguyên nhân **không xác định được** từ đây. Điều xác minh được: container `orena-foundation-postgres` có `Mounts: []` - **không gắn volume nào**, dữ liệu nằm trong lớp ghi của container, nên runtime này chưa bao giờ bền vững. Volume của production và preview (`ai-writing-coach-data`, `ai-writing-coach-postgres-data`) vẫn còn nguyên, không bị đụng tới. |
 | F2 | Sandbox `:8011` đang có 1 EPUB thử ("Kafka pa stranden", 5 chương, id `ce71a298…`) tôi nhập để đo màn Book detail. Giữ để anh xem, hay archive? |
 | F3 | Chưa đo lại Reader và Library ở **390 mobile** sau các thay đổi hôm nay; đã đo desktop 1920. |
 
