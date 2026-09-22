@@ -540,3 +540,14 @@ is not deleted because the mockup omits it; it goes where the design's patterns 
   has one bookmark and remembers the place by itself, so a second one would be the same action twice.
 - **The sheet is the app's existing dialog, not the design's sheet pattern.** The Quick Sheet's glass is not
   yet a shared primitive; restyling every sheet is its own slice.
+
+## The rail's learner card and per-skill levels (2026-09-22, human decision)
+
+The human asked for both (answer (c) to the five points). Built: the card at the foot of the rail - who this
+is, the level they declared and the language they are learning - opening the profile and settings sheet, as
+the frames draw it; hidden on a phone, where the Profile tab is that door.
+
+**Per-skill levels are drawn only when the profile carries one** (`profile.skill_levels[skill]`). Nothing
+serves that field today (`skillLevels` in `AppShell.json` is unserved), so no level prints. Repeating the one
+declared level on all four skills would be a figure nobody measured. **Backend needed:** a per-skill level on
+the learner profile, derived from real evidence, before those slots can fill.

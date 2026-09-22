@@ -246,7 +246,11 @@ for (const ui of ['en', 'zh', 'vi']) {
   assert.match(nav, /<button type="button" class="nav-link" data-preference data-nav="profile">/, `${ui}: Profile opens the profile sheet`);
   assert.equal((nav.match(/nav-link--skill/g) || []).length, 4, `${ui}: four skills`);
   assert.equal((nav.match(/aria-current="page"/g) || []).length, 1, 'exactly one is current on Home');
-  assert.doesNotMatch(nav, /navPractice|nav-link--practice|account-card|data-nav="dictation"|nav-toggle/, `${ui}: nothing the design does not draw`);
+  assert.doesNotMatch(nav, /navPractice|nav-link--practice|data-nav="dictation"|nav-toggle/, `${ui}: nothing the design does not draw`);
+  /* The learner's card at the foot of the rail is what every desktop frame draws (AppShell), asked for by
+     the human on 2026-09-22; it opens the profile sheet rather than being a sixth destination. */
+  assert.match(nav, /<button type="button" class="account-card" data-preference>/, `${ui}: the rail ends in the learner's card`);
+  assert.doesNotMatch(nav, /class="nav-level"/, `${ui}: a skill prints a level only when the profile carries one`);
   /* Nothing is lost: the rooms that left the chrome are reached from where the design puts them
      (Home, Library, a skill's library, the Listening deep sheet). Continue and Recall are Home's and
      Vocabulary's; the Practice map still exists for the surfaces that ask for it. */
@@ -298,7 +302,9 @@ assert.match(shellCss, /--tabbar-height: 88px;/);
 assert.match(shellCss, /#shell \{[^}]*padding: 26px 18px;/, 'the rail is padded 26/18');
 assert.match(shellCss, /\.nav-link \{[^}]*padding: 13px 16px;[^}]*border-radius: 14px;/s, 'rows of 13/16 at radius 14');
 assert.match(shellCss, /\.nav-link--skill \{[^}]*padding: 11px 16px;[^}]*border-radius: 12px;/s, 'skills of 11/16 at radius 12');
-assert.doesNotMatch(shellCss, /nav-backdrop|data-menu|account-card|shell-foot|nav-toggle/, 'no destination sheet, no account card');
+assert.doesNotMatch(shellCss, /nav-backdrop|data-menu|shell-foot|nav-toggle/, 'no destination sheet');
+assert.match(shellCss, /\.account-card \{[^}]*margin-block-start: auto;/s, "the learner's card sits at the foot of the rail, as the frames draw it");
+assert.match(shellCss, /@media \(max-width: 900px\)[\s\S]*\.account-card \{\s*display: none;/s, 'and a phone keeps it in the Profile tab instead');
 // The rooms where the learner works have neither the rail nor the tab bar.
 assert.match(shellCss, /html\[data-shell='off'\] #shell \{\s*display: none;/);
 assert.match(shellCss, /html\[data-shell='off'\] \.shell-tabs \{\s*display: none;/);

@@ -812,6 +812,19 @@ export function navigationEntries(ui) {
   return { main, skills };
 }
 const current = (on) => (on ? ' aria-current="page"' : '');
+/* The learner's own card at the foot of the rail, as every desktop frame draws it (AppShell): who this
+   is, the level they declared and the language they are learning. It opens the profile and settings
+   sheet, which is where those settings live. Nothing is invented: without a name or a level the card
+   says only what the app actually knows (D-068, the human asked for the card, 2026-09-22). */
+const LEARNING_NAME = { en: 'ENGLISH', zh: '中文' };
+export function accountCard(ctx) {
+  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const name = String(ctx.user?.name || '').trim() || String(ctx.user?.email || '').split('@')[0] || c.profile;
+  const level = /^(A1|A2|B1|B2|C1|C2)$/.test(String(ctx.profile?.declared_level || '')) ? ctx.profile.declared_level : '';
+  const learning = LEARNING_NAME[ctx.language] || String(ctx.language || '').toUpperCase();
+  const meta = [level, learning].filter(Boolean).join(' · ');
+  return `<button type="button" class="account-card" data-preference><span class="account-card__mark">${icon('user', { size: 18 })}</span><span class="account-card__body"><strong>${esc(name)}</strong>${meta ? `<small class="ds-data">${esc(meta)}</small>` : ''}</span></button>`;
+}
 export function referenceNavigation(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const here = navigationCurrent(ctx.location);
@@ -828,10 +841,14 @@ export function referenceNavigation(ctx) {
   const skillLinks = skills
     .map((entry) => {
       const on = here === entry.id;
-      return `<a class="nav-link nav-link--skill" href="${entry.href}"${current(on)} data-nav="${entry.id}">${icon(entry.icon, { size: 20 })}<span class="nav-label">${esc(entry.label)}</span></a>`;
+      /* The frame prints the level of each skill beside it. The app knows a level per skill only when the
+         profile carries one (`skill_levels`); it never repeats the one declared level on all four, which
+         would be a figure nobody measured. */
+      const level = String(ctx.profile?.skill_levels?.[entry.id] || '').trim();
+      return `<a class="nav-link nav-link--skill" href="${entry.href}"${current(on)} data-nav="${entry.id}">${icon(entry.icon, { size: 20 })}<span class="nav-label">${esc(entry.label)}</span>${level ? `<span class="nav-level ds-data">${esc(level)}</span>` : ''}</a>`;
     })
     .join('');
-  return `<nav id="shellNav" aria-label="Orena"><div class="nav-group">${mainLinks}</div><div class="nav-group nav-group--skills"><span class="nav-heading">${esc(c.navSkills)}</span>${skillLinks}</div></nav>`;
+  return `<nav id="shellNav" aria-label="Orena"><div class="nav-group">${mainLinks}</div><div class="nav-group nav-group--skills"><span class="nav-heading">${esc(c.navSkills)}</span>${skillLinks}</div></nav>${accountCard(ctx)}`;
 }
 
 /* The phone's tab bar: five tabs, the last the learner's own, which opens the profile and settings
