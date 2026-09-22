@@ -2902,10 +2902,19 @@ ul.pronunciation-words small { color: var(--muted); }
    eighteen weeks of days, the skills, and the one thing to do next. The week
    panel and the seven-bar chart the app used to draw are gone: the source
    draws neither. */
+/* The page's own rows. The source's content column is `padding: 26px 40px 34px`
+   with `gap: 20px`, and the page had no layout rule at all - so the figures and
+   the columns below them were touching, with no gap between them. */
+.progress-page {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  padding-block-end: 14px;
+}
 .progress-figures {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 22px;
+  gap: 20px;
 }
 .progress-figure {
   display: grid;
@@ -2927,7 +2936,7 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 .progress-figure__note { color: var(--text-secondary); font-size: 13px; }
 
-.progress-columns { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+.progress-columns { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
 .progress-column { display: grid; gap: 22px; align-content: start; }
 .progress-column--main { flex: 1; min-inline-size: 320px; }
 .progress-column--side {

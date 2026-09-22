@@ -69,6 +69,11 @@ body {
      exactly where it was and gives the ring somewhere to land. */
   margin-inline: -5px;
   padding-inline: 5px;
+  /* The same on the block axis: the first row sat exactly on the scroll box's
+     top edge, so its ring was cut along the top. Pulled back and padded by the
+     same 5px, so every row stays where it was. */
+  margin-block: -5px;
+  padding-block: 5px;
 }
 #shellNav::-webkit-scrollbar {
   display: none;
