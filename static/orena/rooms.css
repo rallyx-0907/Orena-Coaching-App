@@ -3146,19 +3146,45 @@ ul.pronunciation-words small { color: var(--muted); }
 .ptab {
   display: inline-flex;
   align-items: center;
-  min-block-size: 38px;
-  padding: 9px 16px;
+  block-size: 38px;
+  padding: 0 16px;
   border-radius: var(--radius-pill);
   background: var(--accent-chip, rgba(196, 178, 255, 0.12));
+  box-shadow: var(--glass-ring);
   color: var(--text-on-glass-soft, rgba(255, 255, 255, 0.78));
   font-size: 14.5px;
   text-decoration: none;
 }
 .ptab[aria-current='page'] {
   background: var(--text-primary);
+  box-shadow: none;
   color: var(--ground-color, #0B0A0F);
   font-family: var(--display-font);
   font-weight: var(--weight-heavy);
+}
+
+/* The head and the tab row belong to the phone: on the desktop the bar draws
+   both, so the page's copies are not drawn at all. */
+.progress-head,
+.ptabs--page { display: none; }
+@media (max-width: 600px) {
+  .progress-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+  }
+  .progress-head .progress-title { flex: 1; margin: 0; font-size: 24px; }
+  .progress-head__meta { color: var(--text-secondary); font-size: 10.5px; }
+  .ptabs--page { display: flex; gap: 7px; }
+  .ptabs--page .ptab {
+    flex: 1;
+    justify-content: center;
+    min-block-size: 38px;
+    padding: 0;
+    border-radius: 13px;
+    font-size: 13.5px;
+  }
 }
 
 .progress-panels {
@@ -3209,8 +3235,7 @@ ul.pronunciation-words small { color: var(--muted); }
 .trend-block .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
 .trend-rows { display: grid; gap: 12px; }
 .trend-row { display: flex; align-items: center; gap: 16px; }
-.trend-row__name { flex: none; inline-size: 170px; font-size: 13px; }
-.trend-row__bar { flex: 1; min-inline-size: 0; block-size: 10px; }
+.trend-row__name { flex: 1; min-inline-size: 0; font-size: 13px; }
 .trend-row__value { flex: none; inline-size: 60px; text-align: end; font-size: 14.5px; font-weight: var(--weight-bold); }
 .trend-note { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; }
 .trend-chips { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -3223,12 +3248,37 @@ ul.pronunciation-words small { color: var(--muted); }
   font-size: 11.5px;
 }
 
+/* The phone frame keeps both rows as rows: three tiles across, then four,
+   at gap 8 - 11/10 padding, radius 14, label 9, figure 20/1, note 10. At that
+   width a panel has no room for a bar, chips or a three-way split, and the
+   frame draws none, so the extra line is not drawn either. */
+@media (max-width: 600px) {
+  .progress-figures,
+  .progress-panels { display: flex; gap: 8px; }
+  .progress-figure,
+  .pstat {
+    flex: 1;
+    min-inline-size: 0;
+    gap: 4px;
+    padding: 11px 10px;
+    border-radius: 14px;
+  }
+  .progress-figure__label,
+  .pstat__label { font-size: 9px; letter-spacing: 0.1em; }
+  .pstat__label > svg { display: none; }
+  .progress-figure__value,
+  .pstat__figure { font-size: 20px; line-height: 1; }
+  .progress-figure__note,
+  .pstat__note { font-size: 10px; }
+  .pstat__extra { display: none; }
+}
+
 @media (max-width: 900px) {
   .progress-panels { grid-template-columns: 1fr; gap: 12px; }
   .pstat { min-block-size: 0; padding: 14px 16px; }
   .pstat__figure { font-size: 22px; }
   .trend-block { padding: 16px 18px; }
-  .trend-row__name { inline-size: 120px; font-size: 12.5px; }
+  .trend-row__name { font-size: 12.5px; }
 }
 
 /* The hero's two actions, as the source draws them: pills of 46 with 0/20
@@ -3256,3 +3306,10 @@ ul.pronunciation-words small { color: var(--muted); }
   .profile-actions { inline-size: 100%; }
   .profile-action { flex: 1; justify-content: center; min-block-size: 42px; padding: 0 14px; font-size: 14px; }
 }
+
+/* Progress names the window its numbers cover, next to the tabs, where the
+   source puts it. */
+.topbar-window { margin-inline-start: auto; color: var(--text-secondary); font-size: 13px; }
+/* On the overview the bar ends with the streak, so the window keeps its place
+   beside the tabs and the chip takes the right edge. */
+.topbar-window:not(:last-child) { margin-inline-start: 0; }

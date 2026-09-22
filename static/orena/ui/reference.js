@@ -78,6 +78,7 @@ export const referenceCopy = {
     progressActivityWeeks: '{n} weeks of activity', progressHeatLegend: 'one square = one day',
     progressHeatUnavailable: 'Daily activity is not recorded yet',
     progressTabOverview: 'Overview', progressTabTrends: 'Trends',
+    progressWindowOverview: 'the last seven days', progressWindowTrends: 'against four weeks ago',
     progressJustLearned: 'Just learned', progressJustLearnedNote: 'words added recently',
     progressReviewing: 'In review', progressDueToday: '{n} due today',
     progressComprehension: 'Comprehension', progressComprehensionNote: 'questions answered correctly',
@@ -311,6 +312,7 @@ export const referenceCopy = {
     progressActivityWeeks: '{n} 周活动', progressHeatLegend: '一格＝一天',
     progressHeatUnavailable: '尚未记录每日活动',
     progressTabOverview: '总览', progressTabTrends: '趋势',
+    progressWindowOverview: '最近七天', progressWindowTrends: '对比四周前',
     progressJustLearned: '刚学会', progressJustLearnedNote: '最近新增的词',
     progressReviewing: '复习中', progressDueToday: '今天到期 {n}',
     progressComprehension: '理解检测', progressComprehensionNote: '答对的题',
@@ -578,6 +580,8 @@ referenceCopy.vi = {
   progressActivityWeeks: 'Hoạt động {n} tuần',
   progressHeatLegend: 'mỗi ô = 1 ngày',
   progressHeatUnavailable: 'Chưa ghi nhận hoạt động theo ngày',
+  progressWindowOverview: 'bảy ngày gần đây',
+  progressWindowTrends: 'so với 4 tuần trước',
   progressTabOverview: 'Tổng quan',
   progressTabTrends: 'Xu hướng',
   progressJustLearned: 'Vừa học xong',
@@ -1071,6 +1075,24 @@ export function topBar(ctx) {
   const here = navigationCurrent(ctx.location);
   /* The bar names the destination with the same word the rail uses. */
   const title = (here === 'discover' ? c.home : c[here]) || c.home;
+  /* Progress draws no search: its bar is the destination, the two screens
+     behind it, and the window those numbers cover. Putting the tabs here is
+     what the source does - its trends frame carries them in the bar - and it
+     is also what keeps the screen inside one viewport. */
+  if (here === 'progress') {
+    const r = referenceCopy[ctx.ui] || referenceCopy.en;
+    const trends = ctx.location?.tab === 'trends';
+    const tab = (id, label) =>
+      `<a class="ptab" href="${esc(link('progress', id === 'overview' ? {} : { tab: id }))}"${
+        (trends ? 'trends' : 'overview') === id ? ' aria-current="page"' : ''
+      }>${esc(label)}</a>`;
+    return `<h1 class="topbar-title">${esc(title)}</h1>`
+      + `<nav class="ptabs" aria-label="${esc(title)}">${tab('overview', r.progressTabOverview)}${tab('trends', r.progressTabTrends)}</nav>`
+      + `<span class="topbar-window ds-data">${esc(trends ? r.progressWindowTrends : r.progressWindowOverview)}</span>`
+      /* The streak belongs to the overview bar; the trends bar ends at the
+         window it compares against, as the frame draws it. */
+      + (trends ? '' : `<div class="topbar-chips">${streakChip(ctx)}</div>`);
+  }
   return `<h1 class="topbar-title">${esc(title)}</h1><form class="topbar-search" role="search" data-global-search><label class="sr-only" for="globalSearch">${esc(c.searchPlaceholder)}</label>${icon('magnifying-glass', { size: 18 })}<input id="globalSearch" type="search" name="q" autocomplete="off" placeholder="${esc(c.searchPlaceholder)}"></form><div class="topbar-chips">${streakChip(ctx)}</div>`;
 }
 

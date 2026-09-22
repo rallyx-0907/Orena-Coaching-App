@@ -58,6 +58,25 @@ function domainLine(c, r, entry, summary, words) {
   return { text: row.value, label: row.label, bar: unavailableBar, measured: true };
 }
 
+/* --- The head the phone draws (D-067) -----------------------------------
+   The desktop bar carries the destination, the two tabs and the window its
+   numbers cover; on the phone that bar is not drawn at all, so the page draws
+   the frame's own head instead: the name at 24/800 (22 on Xu hướng), the
+   window beside it, and the two tabs as a full-width row of 38 with radius 13.
+   Without it the phone could see Tổng quan and never reach Xu hướng. */
+function pageHead(ctx, r, current) {
+  const trends = current === 'trends';
+  const tab = (id, label) => `<a class="ptab" href="${esc(link('progress', id === 'overview' ? {} : { tab: id }))}"`
+    + `${current === id ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
+  return `<div class="progress-head">`
+    + `<h1 class="progress-title">${esc(trends ? r.progressTabTrends : r.progress)}</h1>`
+    + `<span class="progress-head__meta ds-data">${esc(trends ? r.progressWindowTrends : r.progressWindowOverview)}</span>`
+    + `</div>`
+    + `<nav class="ptabs ptabs--page" aria-label="${esc(r.progress)}">`
+    + tab('overview', r.progressTabOverview) + tab('trends', r.progressTabTrends)
+    + `</nav>`;
+}
+
 /* --- The second row the frame draws (D-067) ------------------------------
    Four panels of 375x147, 16/18 padding, radius 18, gap 20 between them: what
    was just learned, what is being reviewed, comprehension, and recall. The
@@ -100,16 +119,6 @@ function overviewPanels(r, words, recent) {
   ].join('');
 }
 
-/* The two screens behind one destination, as the frame's bar draws them. */
-function tabs(r, current) {
-  const one = (id, label) => `<a class="ptab" href="${esc(link('progress', id === 'overview' ? {} : { tab: id }))}"`
-    + `${current === id ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
-  return `<nav class="ptabs" aria-label="${esc(r.progress)}">`
-    + one('overview', r.progressTabOverview)
-    + one('trends', r.progressTabTrends)
-    + `</nav>`;
-}
-
 /* --- Xu hướng (D-067, "Progress trends") --------------------------------
    Four measures against four weeks ago, what each one is drawn from, the
    mistakes that keep coming back, and the one thing to do next.
@@ -123,16 +132,18 @@ function trendsView(ctx) {
   const measures = [
     r.evidenceNaturalness, r.evidencePronunciation, r.progressRecall, r.progressListening,
   ].map((label) => `<div class="trend-row">`
+    /* The frame draws a name and the move it made - "72 → 88" - and no bar at
+       all. Nothing measures either end of that move yet, so the row keeps its
+       place and says nothing rather than drawing a length or an arrow that
+       would stand for a direction nobody knows. */
     + `<span class="trend-row__name">${esc(label)}</span>`
-    + `<span class="progress-bar trend-row__bar" data-unavailable aria-hidden="true"></span>`
     + `<span class="trend-row__value ds-data metric-unavailable">&mdash;</span>`
     + `</div>`).join('');
   const sources = [r.progressSourceCards, r.progressSourceWriting, r.progressSourceQuestions,
     r.progressSourceSpeaking, r.progressSourceReading]
     .map((label) => `<span class="trend-chip ds-data">${esc(String(label).replace('{n}', '0'))}</span>`).join('');
   return `<section class="progress-page">`
-    + `<h1 class="progress-title">${esc(r.progress)}</h1>`
-    + tabs(r, 'trends')
+    + pageHead(ctx, r, 'trends')
     + `<section class="trend-block">`
     + `<span class="ds-label">${esc(r.progressImproving)}</span>`
     + `<div class="trend-rows">${measures}</div>`
@@ -146,6 +157,9 @@ function trendsView(ctx) {
     + `<span class="ds-label">${esc(r.progressRepeated)}</span>`
     + `<p class="trend-note">${esc(r.progressRepeatedNone)}</p>`
     + `</section>`
+    /* The frame closes Xu hướng with the same "what to do next" card the
+       overview ends on, so it is drawn here too. */
+    + nextAction(r, null)
     + `</section>`;
 }
 
@@ -318,8 +332,7 @@ function view(ctx, { summary, words, summaryFailed, recent }) {
   ].join('');
 
   return `<section class="progress-page">`
-    + `<h1 class="progress-title">${esc(r.progress)}</h1>`
-    + tabs(r, 'overview')
+    + pageHead(ctx, r, 'overview')
     + degraded
     + `<div class="progress-figures">${figures}</div>`
     + `<div class="progress-panels">${overviewPanels(r, words, recent)}</div>`

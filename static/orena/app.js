@@ -238,13 +238,17 @@ function paintTopBar() {
   }
   bar.innerHTML = topBar(ctx);
   bar.querySelectorAll('[data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  /* Not every destination's bar carries the search: Progress draws tabs and
+     the window its numbers cover instead, as the source does. */
   const form = bar.querySelector('[data-global-search]');
-  form.onsubmit = (event) => {
-    event.preventDefault();
-    const query = String(new FormData(form).get('q') || '').trim();
-    if (!query) return;
-    ctx.go('search', { q: query });
-  };
+  if (form) {
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      const query = String(new FormData(form).get('q') || '').trim();
+      if (!query) return;
+      ctx.go('search', { q: query });
+    };
+  }
 }
 /* Read-only account fact, never an access decision - accountCommerce() in
    writing_coach/product/commerce.py is the one server resolver this renders.

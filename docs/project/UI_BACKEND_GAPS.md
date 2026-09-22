@@ -814,3 +814,45 @@ against Gemini.
   words say. If they are meant to be one action, the bar drops to five.
 - "Nghe" stays unavailable with its "coming" title: a text has no audio to read aloud yet. The frame
   draws it enabled. Same open question as the disabled "Kiểm tra hiểu".
+
+## Progress: the bar, the two screens, and what no backend can fill (2026-09-22)
+
+Measured against the re-pinned `Orena-Progress.dc.html`, all four frames: `Progress overview`,
+`Progress overview mobile`, `Progress trends`, `Progress trends mobile`.
+
+**The bar.** Progress draws no search. Its bar is the destination name (26/800), the window its
+numbers cover in mono 13 - "bảy ngày gần đây" on Tổng quan, "so với 4 tuần trước" on Xu hướng - and
+the streak chip, which the overview bar carries and the trends bar does not. The search form the app
+used to draw there is deleted (rule 44), and with it the screen fits one viewport at 1920x1080:
+nothing on Tổng quan or Xu hướng needs scrolling any more.
+
+**The two tabs.** The frame draws the tab pair only on its *trends* frames - `Tổng quan` inactive,
+`Xu hướng` solid - and the overview frames draw none. Taken literally that leaves Xu hướng
+unreachable, so the pair is drawn on both screens: it is one component with two states, and the
+inactive `Tổng quan` pill the trends frame draws is that component's other half. **Open for the
+human:** if the overview really is meant to carry no tabs, the way into Xu hướng needs to be drawn
+somewhere.
+
+**Xu hướng has no data at all.** Every figure on it renders 0 or a dash in its canonical component
+(D-066 rule 4), because nothing serves it:
+
+- **GAP-P1 · no trend model.** The frame draws each measure as the move it made ("72 → 88") against
+  four weeks ago. Orena stores no per-measure history, so neither end of that move exists. The rows
+  keep their place and say nothing. The frame draws no bar on these rows, so the app draws none
+  either - and no trend arrow, which would be a direction nobody measured.
+- **GAP-P2 · no repeated-error model.** "Lỗi lặp lại" lists a mistake, how many times it came back,
+  why, and where. Nothing counts a mistake across sessions, so the block carries its empty line.
+- **GAP-P3 · no comprehension or recall figures.** Row two's third and fourth panels - "Kiểm tra
+  hiểu" and "Nhớ lại" - have no source; they render 0 and say what they would count.
+- **GAP-P4 · no time on task.** "Thời gian học" and every per-skill row measure time. Orena records
+  none, so those tracks are the unavailable hatch and every value is a dash.
+- **GAP-P5 · the tier-10 threshold.** The ladder's own tiles state every threshold except tier 10,
+  where the frame draws "BẬC HIỆN TẠI" over the number. That tile shows a dash rather than a guess.
+  The number is the product's to state.
+
+**The phone.** The desktop bar is not drawn below 600px, so the page draws the frame's own head
+there instead - the name at 24/800 (22 on Xu hướng), the window beside it, and the two tabs as a
+full-width row of 38 at radius 13 - and both stat rows stay rows, three tiles then four, at the
+frame's 8px gap and 11/10 padding. Without that head the phone could reach Tổng quan and never
+Xu hướng.
+
