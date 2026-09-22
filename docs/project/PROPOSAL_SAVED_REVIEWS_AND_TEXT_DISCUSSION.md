@@ -446,3 +446,65 @@ changes what a future activation gate must do, and is recorded above rather than
 **Status: awaiting re-review of this correction, and a human answer on the activation gate raised under
 blockers 1-3.** No migration is written until the re-review passes; nothing gates on entitlement in any case
 until the human opens that gate.
+
+---
+
+## (b), fourth correction (2026-09-22) — the one blocker of the third re-review
+
+The third re-review of `f39d22e` found the entitlement withdrawal, the metered identity, the `record_usage`
+ordering, the quota-ledger reasoning, the owner-scoped reservation, the get-or-create, the transaction
+boundary and the dedup index all sound and verified against the code, and raised **one** blocker.
+
+**The `reading_session_id` CHECK contradicts its own `ON DELETE SET NULL`.** With
+`CHECK ((source_kind = 'reading_session') = (reading_session_id IS NOT NULL))`, deleting the referenced
+`reading_sessions` row makes PostgreSQL run `UPDATE text_discussions SET reading_session_id = NULL`, and that
+UPDATE is checked against the table's CHECKs. `source_kind` is untouched and still `'reading_session'`, so the
+biconditional evaluates `true = false` and the constraint is violated — the *deletion of the reading session*
+fails outright. The state the read path promises ("`reading_session_id` is returned as `null` when the session
+was deleted") could never be reached.
+
+Nothing exercises it today: no code path deletes a `ReadingSession` independently of its owning user, and
+account deletion cascades `text_discussions` from `users.id` at the same time. It is latent, not inert — the
+first retention job, admin tool or moderation path that deletes a session would meet it as an incident.
+
+**Corrected**, replacing that line in the table definition:
+
+```sql
+CHECK (source_kind = 'reading_session' OR reading_session_id IS NULL)
+```
+
+A one-directional implication. It still forbids the wrong direction — no `story`, `media` or `book_chapter`
+thread may carry a `reading_session_id` — and it permits the one legitimate state the FK action produces: a
+`reading_session` thread whose session is gone, which is what the read path already describes.
+
+**Noted from the same review, no change to the shape:**
+
+- `source_id` and `reading_session_id` are **different id spaces**. The app's reading-session identity is the
+  per-user `legacy_id` integer (`specialized_repository.py:617`), while the FK must hold the internal UUID
+  primary key. The learner-scoped lookup returns both, so the handler translates; the migration author must
+  not treat them as interchangeable.
+- The 200-turn cap leaks two turns per failed provider call and two per raced duplicate. Both are accepted
+  under the third correction's blocker 9; the migration's docstring says so, so accumulated ordinal gaps are
+  not later read as a bug.
+- `record_usage` builds its `UsageEvent.id` from `stable_uuid(..., request_id, now.isoformat())`, which
+  includes wall-clock time. The dedup path does not call `record_usage` at all, so the two mechanisms do not
+  interact.
+
+### Architecture review record — (b) approved (2026-09-22)
+
+- **Reviewer role:** Delegated Architecture Reviewer (`AGENTS.md`, "Architecture review authority")
+- **Reviewer identity:** an independent Claude subagent, read-only, not the implementer's context
+- **Reviewed commit:** `f39d22e80664f0220d826a014627e88b9d01339d`, plus this fourth correction read from the
+  working tree
+- **Round 3 outcome:** `CHANGES REQUIRED` — one blocker, the `reading_session_id` CHECK above
+- **Round 4 outcome:** **`APPROVED`.** "May the migration be written: yes." Everything else — the entitlement
+  withdrawal, the metered identity, the `record_usage` ordering, the quota-ledger reasoning, the owner-scoped
+  reservation, the get-or-create, the transaction boundary and the dedup index — verified against the tree
+  across rounds 3 and 4.
+- **For the migration author, from the reviewer:** chain off `20260922_0011` (part (a), already committed),
+  not `20260921_0010`. No CHECK, partial unique index or FK action needs a SQLite accommodation in the
+  revision itself; instead the new repository methods must refuse on SQLite with
+  `RuntimeError("… requires the PostgreSQL runtime.")`, the `save_listening_progress_record` pattern.
+
+**Status: (b) APPROVED. The migration may be written and applied to the sandbox only.** The activation gate
+raised under blockers 1-3 is unchanged, still the human's, and nothing gates on entitlement until it opens.
