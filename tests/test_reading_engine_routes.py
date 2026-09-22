@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -92,7 +91,7 @@ def call(app, method, path, *, admin=True, origin="http://testserver", **kwargs)
 
 
 def _publish_one(setup, *, language="en", topic="environment"):
-    """Submit, process and publish one article through the real路径."""
+    """Submit, process and publish one article through the real routes."""
     response = call(setup["admin"], "POST", "/api/admin/reading/jobs",
                     data={"kind": "text", "text": ARTICLE, "title": "Rain returns", "language": language})
     assert response.status_code == 202
