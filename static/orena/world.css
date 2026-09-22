@@ -2406,3 +2406,69 @@
 .admin-import-ok::before { content: "✓ "; }
 .admin-import-error::before { content: "⚠ "; }
 .admin-import-duplicate::before { content: "↺ "; }
+
+/* --- The rank frame (D-067, ported from "Orena Rank Frame Master v2") -----
+   The crystal itself is one SVG generated in static/orena/ui/rank-frame.js.
+   What belongs here is only what the master keeps in CSS: the two aura discs,
+   the avatar well at 47% of the frame, and the slow rotations. The material
+   must read with every one of these turned off, which is why none of them
+   carries shape. */
+.rank-frame {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+.rank-frame__aura {
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  filter: blur(14px);
+  animation: rank-breathe 9s ease-in-out infinite;
+  pointer-events: none;
+}
+.rank-frame__aura--inner { inset: 0; filter: blur(7px); animation: none; }
+.rank-frame__art {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.rank-frame__ring { transform-origin: 50% 50%; animation: rank-spin 240s linear infinite; }
+.rank-frame__petals { transform-origin: 50% 50%; animation: rank-spin-rev 330s linear infinite; }
+.rank-frame__orbit { transform-origin: 50% 50%; animation: rank-spin 100s linear infinite; }
+.rank-frame__star { animation: rank-sheen 12s ease-in-out infinite; }
+.rank-frame__sparks > path { animation: rank-twinkle 6s ease-in-out infinite; }
+.rank-frame__avatar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  inline-size: 47%;
+  block-size: 47%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.32);
+}
+.rank-frame__avatar > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+@keyframes rank-spin { to { transform: rotate(360deg); } }
+@keyframes rank-spin-rev { to { transform: rotate(-360deg); } }
+@keyframes rank-breathe { 0%, 100% { opacity: 0.74; transform: scale(1); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes rank-twinkle { 0%, 100% { opacity: 0.22; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes rank-sheen { 0%, 100% { opacity: 0.34; } 50% { opacity: 0.7; } }
+
+/* The crystal is the rank; motion is decoration, and decoration is optional. */
+@media (prefers-reduced-motion: reduce) {
+  .rank-frame__ring,
+  .rank-frame__petals,
+  .rank-frame__orbit,
+  .rank-frame__star,
+  .rank-frame__aura,
+  .rank-frame__sparks > path { animation: none; }
+}
