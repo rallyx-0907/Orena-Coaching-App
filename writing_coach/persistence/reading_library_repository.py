@@ -63,6 +63,23 @@ def _decode_cursor(cursor: str) -> tuple[datetime, str]:
         raise InvalidCursor(cursor) from exc
 
 
+def _as_uuid(value: str) -> uuid.UUID | None:
+    """The identity a row can actually have, or nothing.
+
+    `reading_books.id` and `reading_book_chapters.id` are `uuid` columns, so a
+    string that is not a UUID cannot name a row - PostgreSQL does not treat it
+    as a miss, it raises `InvalidTextRepresentation` and the request becomes a
+    500. A learner can arrive with such an id: the Library's own cards carry
+    routing identities like `text:book-probe`. Parsing here turns "cannot name
+    a row" into "found nothing", which is what it means, and keeps the
+    malformed value away from the query entirely.
+    """
+    try:
+        return uuid.UUID(str(value))
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
 class PostgresReadingLibraryRepository:
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
@@ -170,13 +187,16 @@ class PostgresReadingLibraryRepository:
         Sets `status='archived'` so it stops appearing in `list_books()`/
         `get_book()` (both already filter `status = 'ready'`); never deletes
         the row or its assets. Returns whether a `'ready'` row was found."""
+        identity = _as_uuid(book_id)
+        if identity is None:
+            return False
         with self._engine.begin() as connection:
             updated_id = connection.execute(
                 text(
                     "UPDATE reading_books SET status = 'archived', updated_at = :now "
                     "WHERE id = :id AND status = 'ready' RETURNING id"
                 ),
-                {"id": book_id, "now": datetime.now(UTC)},
+                {"id": identity, "now": datetime.now(UTC)},
             ).scalar_one_or_none()
         return updated_id is not None
 
@@ -224,6 +244,9 @@ class PostgresReadingLibraryRepository:
         }
 
     def get_book(self, book_id: str) -> dict[str, Any] | None:
+        identity = _as_uuid(book_id)
+        if identity is None:
+            return None
         with self._engine.connect() as connection:
             book = connection.execute(
                 text(
@@ -231,7 +254,7 @@ class PostgresReadingLibraryRepository:
                     "chapter_count, word_count, content_revision, created_at "
                     "FROM reading_books WHERE id = :id AND status = 'ready'"
                 ),
-                {"id": book_id},
+                {"id": identity},
             ).mappings().first()
             if book is None:
                 return None
@@ -240,7 +263,7 @@ class PostgresReadingLibraryRepository:
                     "SELECT id, position, title, word_count FROM reading_book_chapters "
                     "WHERE book_id = :id ORDER BY position ASC"
                 ),
-                {"id": book_id},
+                {"id": identity},
             ).mappings().all()
         return {
             "id": str(book["id"]), "title": book["title"], "author": book["author"],
@@ -257,6 +280,9 @@ class PostgresReadingLibraryRepository:
         }
 
     def get_chapter(self, book_id: str, chapter_id: str) -> dict[str, Any] | None:
+        book_identity, chapter_identity = _as_uuid(book_id), _as_uuid(chapter_id)
+        if book_identity is None or chapter_identity is None:
+            return None
         with self._engine.connect() as connection:
             row = connection.execute(
                 text(
@@ -266,6 +292,6 @@ class PostgresReadingLibraryRepository:
                     "JOIN reading_books b ON b.id = c.book_id "
                     "WHERE c.book_id = :book_id AND c.id = :chapter_id AND b.status = 'ready'"
                 ),
-                {"book_id": book_id, "chapter_id": chapter_id},
+                {"book_id": book_identity, "chapter_id": chapter_identity},
             ).mappings().first()
         return dict(row) if row else None

@@ -415,3 +415,44 @@ def test_schema_not_applied_yet_is_503_not_a_raw_500():
     with pytest.raises(HTTPException) as excinfo:
         _call_repository(_boom)
     assert excinfo.value.status_code == 503
+
+
+def test_an_id_that_is_not_a_uuid_is_not_found_rather_than_a_server_error():
+    """The Library's own cards carry ids like `text:book-probe`, so a reader can
+    arrive here with one. A string that cannot name a row is a miss, not a
+    failure: PostgreSQL raises InvalidTextRepresentation when a non-UUID reaches
+    a uuid column, which surfaced as a 500 on `#/book`."""
+    client, _repo, _store = _client()
+    for book_id in ("text:book-probe", "not-a-uuid", "12345"):
+        response = client.get(f"/api/reading/library/books/{book_id}")
+        assert response.status_code == 404, (book_id, response.status_code)
+        chapter = client.get(f"/api/reading/library/books/{book_id}/chapters/{book_id}")
+        assert chapter.status_code == 404, (book_id, chapter.status_code)
+
+
+def test_a_malformed_id_never_reaches_the_database():
+    """The guard has to be in the PostgreSQL repository, not only in the route:
+    the 500 came from the driver casting the string to `uuid`. An engine that
+    raises if it is touched proves the query is never built."""
+    from writing_coach.persistence.reading_library_repository import (
+        PostgresReadingLibraryRepository,
+        _as_uuid,
+    )
+
+    class _ExplodingEngine:
+        def connect(self):
+            raise AssertionError("the database was queried with a malformed id")
+
+        def begin(self):
+            raise AssertionError("the database was queried with a malformed id")
+
+    repository = PostgresReadingLibraryRepository(_ExplodingEngine())
+    assert repository.get_book("text:book-probe") is None
+    assert repository.get_chapter("text:book-probe", "also-not-a-uuid") is None
+    assert repository.archive_book("text:book-probe") is False
+
+    # A well-formed id is not swallowed: it reaches the engine.
+    valid = "6f1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d"
+    assert _as_uuid(valid) is not None
+    with pytest.raises(AssertionError, match="the database was queried"):
+        repository.get_book(valid)
