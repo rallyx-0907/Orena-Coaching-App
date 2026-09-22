@@ -127,22 +127,104 @@ const evidenceHtml = (r, rows) =>
         .join('')}</ol></section>`
     : '';
 
+/* --- The three figures the source leads with (D-067) ---------------------
+   507x123 panels: a mono label, the figure at Nunito 34/800, and a line under
+   it saying what the figure counts. Orena measures one of the three today, so
+   the other two render as the baseline's rule requires - the canonical
+   component with nothing in it, saying so - and never as a number nobody
+   counted (D-066 rule 4). */
+function statPanel(label, value, note, { measured = true } = {}) {
+  return `<div class="progress-figure"${measured ? '' : ' data-unmeasured'}>
+    <span class="ds-label progress-figure__label">${esc(label)}</span>
+    <strong class="progress-figure__value${measured ? '' : ' metric-unavailable'}">${esc(measured ? value : '0')}</strong>
+    <span class="progress-figure__note">${esc(note)}</span>
+  </div>`;
+}
+
+/* Eighteen weeks of days, the source's own grid: 126 cells of 18px with a 5px
+   gap. Orena records no daily activity, so every cell is the empty one - which
+   is the honest picture of a thing that is not counted, not an empty div. */
+const HEAT_WEEKS = 18;
+const HEAT_DAYS = 7;
+function heatmap(r, days) {
+  const cells = Array.from({ length: HEAT_WEEKS * HEAT_DAYS }, (_, i) => {
+    const level = days && days[i] ? Math.max(0, Math.min(3, Number(days[i]) || 0)) : 0;
+    return `<span class="heat-cell" data-level="${level}"></span>`;
+  }).join('');
+  return `<div class="heat">
+    <div class="heat__head"><span class="heat__title">${esc(String(r.progressActivityWeeks).replace('{n}', String(HEAT_WEEKS)))}</span><span class="ds-data heat__legend">${esc(r.progressHeatLegend)}</span></div>
+    <div class="heat__grid" role="img" aria-label="${esc(r.progressHeatUnavailable)}">${cells}</div>
+  </div>`;
+}
+
+/* The per-skill rows the source puts under the heatmap. It draws seven days of
+   time; Orena records no time at all, so each row carries what it does record
+   for that skill - the same words the settings sheet uses, through
+   growthDomainRow - and says "not measured" where it records nothing. */
+function skillRows(c, r, summary, words) {
+  const rows = DOMAINS.map((entry) => {
+    const line = domainLine(c, r, entry, summary, words);
+    const value = line.measured ? line.text : r.progressNotMeasured;
+    return `<a class="skill-row" href="${entry.href()}" data-domain="${entry.domain}">
+      <span class="skill-row__name ds-data">${esc(r[entry.key])}</span>
+      <span class="skill-row__value ds-data${line.measured ? '' : ' metric-unavailable'}">${line.measured && entry.evidence !== 'vocabulary' ? value : esc(value)}</span>
+    </a>`;
+  }).join('');
+  return `<div class="skill-time">
+    <span class="ds-label skill-time__label">${esc(r.progressBySkill)}</span>
+    <div class="skill-time__rows">${rows}</div>
+  </div>`;
+}
+
+/* The source closes the column with the one thing to do next. Orena knows this
+   only when something is actually due; with nothing due it says so rather than
+   inventing an errand. */
+function nextAction(r, words) {
+  const due = Number(words?.due || 0);
+  const detail = due > 0
+    ? String(r.progressNextDue).replace('{n}', String(due))
+    : r.progressNextNothing;
+  return `<div class="next-action">
+    <span class="next-action__title">${esc(r.progressNextTitle)}</span>
+    <p class="next-action__detail">${esc(detail)}</p>
+  </div>`;
+}
+
 function view(ctx, { summary, words, summaryFailed, essays }) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
-  const dueValue = words ? String(words.due) : '—';
-  const cards = DOMAINS.map((entry) => {
-    const line = domainLine(c, r, entry, summary, words);
-    const name = r[entry.key];
-    return `<a class="progress-domain" href="${entry.href()}" data-domain="${entry.domain}"><span class="progress-domain__head">${icon(entry.icon, { size: 18 })}<span>${esc(name)}</span></span><span class="progress-domain__line${line.measured ? '' : ' metric-unavailable'}">${line.measured && entry.evidence !== 'vocabulary' ? line.text : esc(line.text)}</span>${line.bar}</a>`;
-  }).join('');
-  const days = dayLabels(ctx.ui)
-    .map((day) => `<span class="progress-day"><span class="progress-day__bar" aria-hidden="true"></span><span class="progress-day__label">${esc(day)}</span></span>`)
-    .join('');
   const degraded = summaryFailed
     ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.growthUnavailable)}</strong></div><button class="outline" type="button" data-progress-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
     : '';
-  return `<section class="progress-page"><h1 class="progress-title">${esc(r.progress)}</h1><div class="progress-panel"><div class="progress-week"><div class="progress-week__time"><span class="progress-label">${esc(r.progressThisWeek)}</span><strong class="progress-week__value metric-unavailable" aria-describedby="progressTimeNote">—</strong><span class="progress-week__note" id="progressTimeNote">${esc(r.progressStudyUnavailable)}</span></div><div class="progress-stats"><div class="progress-stat progress-stat--streak"><span class="progress-label">${esc(r.progressStreak)}</span><strong class="metric-unavailable" aria-label="${esc(r.progressNotMeasured)}">—</strong></div><div class="progress-stat"><span class="progress-label">${esc(r.progressWordsDue)}</span><strong>${esc(dueValue)}</strong></div><div class="progress-stat progress-stat--words"><span class="progress-label">${esc(r.progressWords)}</span><strong>${esc(words ? String(words.saved) : '—')}</strong></div></div></div><div class="progress-chart" role="img" aria-label="${esc(r.progressChartUnavailable)}">${days}</div><span class="progress-label progress-by-domain">${esc(r.progressByDomain)}</span>${degraded}<div class="progress-domains">${cards}</div></div>${evidenceHtml(r, evidenceRows(r, summary, essays))}</section>`;
+
+  /* Nothing counts days in a row or time spent (GAP-001, GAP-002). Words that
+     have passed the remembering threshold are counted, so that figure is real. */
+  const figures = [
+    statPanel(r.progressStreak, '', r.progressStreakNote, { measured: false }),
+    statPanel(r.progressStudyTime, '', r.progressStudyNote, { measured: false }),
+    statPanel(
+      r.progressWordsMastered,
+      words ? Number(words.mastered).toLocaleString() : '0',
+      r.progressWordsMasteredNote,
+      { measured: Boolean(words) },
+    ),
+  ].join('');
+
+  return `<section class="progress-page">
+  <h1 class="progress-title">${esc(r.progress)}</h1>
+  ${degraded}
+  <div class="progress-figures">${figures}</div>
+  <div class="progress-columns">
+    <div class="progress-column progress-column--evidence">
+      ${evidenceHtml(r, evidenceRows(r, summary, essays))}
+    </div>
+    <aside class="progress-column progress-column--side">
+      ${heatmap(r, null)}
+      ${skillRows(c, r, summary, words)}
+      ${nextAction(r, words)}
+    </aside>
+  </div>
+</section>`;
 }
 
 function skeleton(ctx) {

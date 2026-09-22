@@ -2896,3 +2896,104 @@ ul.pronunciation-words small { color: var(--muted); }
   .quota-row__value { font-size: 12px; }
   .quota-bar { block-size: 6px; }
 }
+
+/* --- Progress, to the source's composition (D-067, measured) -------------
+   Three figures across the top, then the evidence beside a column that holds
+   eighteen weeks of days, the skills, and the one thing to do next. The week
+   panel and the seven-bar chart the app used to draw are gone: the source
+   draws neither. */
+.progress-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+}
+.progress-figure {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-block-size: 123px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.progress-figure__label { color: var(--text-secondary); font-size: 10.5px; letter-spacing: 0.12em; }
+.progress-figure__value {
+  font-family: var(--display-font);
+  font-size: 34px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.progress-figure__note { color: var(--text-secondary); font-size: 13px; }
+
+.progress-columns { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+.progress-column { display: grid; gap: 22px; align-content: start; }
+.progress-column--evidence { flex: 1; min-inline-size: 320px; }
+.progress-column--side {
+  inline-size: 600px;
+  flex: none;
+  gap: 20px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+
+.heat { display: grid; gap: 12px; }
+.heat__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.heat__title {
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.018em;
+}
+.heat__legend { margin-inline-start: auto; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; }
+.heat__grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 18px);
+  grid-auto-columns: 18px;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.heat__grid::-webkit-scrollbar { display: none; }
+.heat-cell { inline-size: 18px; block-size: 18px; border-radius: 5px; background: var(--heat-empty, rgba(34, 25, 56, 0.34)); }
+.heat-cell[data-level='1'] { background: color-mix(in srgb, var(--action-primary) 30%, transparent); }
+.heat-cell[data-level='2'] { background: color-mix(in srgb, var(--action-primary) 60%, transparent); }
+.heat-cell[data-level='3'] { background: var(--action-primary); }
+
+.skill-time { display: grid; gap: 10px; }
+.skill-time__label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
+.skill-time__rows { display: grid; gap: 9px; }
+.skill-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.skill-row:hover, .skill-row:focus-visible { color: var(--text-primary); }
+.skill-row__name { font-size: 13.5px; }
+.skill-row__value { margin-inline-start: auto; font-size: 13px; text-align: end; }
+
+.next-action { display: grid; gap: 5px; padding-block-start: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07); }
+.next-action__title {
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: var(--weight-heavy);
+}
+.next-action__detail { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .progress-figures { grid-template-columns: 1fr; gap: 12px; }
+  .progress-figure { min-block-size: 0; padding: 14px 16px; }
+  .progress-figure__value { font-size: 28px; }
+  .progress-columns { flex-direction: column; gap: 14px; }
+  .progress-column--side, .progress-column--evidence { inline-size: 100%; min-inline-size: 0; }
+  .progress-column--side { padding: 18px; }
+  .heat__grid { grid-template-rows: repeat(7, 13px); grid-auto-columns: 13px; gap: 4px; }
+  .heat-cell { inline-size: 13px; block-size: 13px; border-radius: 4px; }
+  .heat__title { font-size: 17px; }
+}
