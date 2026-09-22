@@ -522,3 +522,21 @@ are deleted (rule 44).
   draws; Home draws no navigation of its own.
 - **Not drawn because nothing supplies them:** a per-card "ĐANG LUYỆN / ĐÃ LƯU" badge (`badge` in
   `ContentCard.json` is unserved), the frame's "còn 4 phút" (a thread records a place, not a remaining time).
+
+## Reading workspace, to its frame (2026-09-22)
+
+"Reading · bilingual + panel" is one screen, and now so is the room: a 4px hairline of the learner's place
+across the top, a 72px bar, the text at its 780px measure beside the 440px panel, each scrolling on its own,
+and the frame's floating bar under the text. What used to sit under the text - the prepared notes, the
+optional check, the response, the rights - is reached from that bar and opens as a sheet (D-068: a function
+is not deleted because the mockup omits it; it goes where the design's patterns put it).
+
+- **The frame's bar has six pills; the app draws what exists.** Lưu bài (keep), Nghe (unavailable, as
+  before), Kiểm tra hiểu (disabled with no questions, D-068), Viết phản hồi (the response composer, primary),
+  the prepared notes when the text has them, and the rights. **"Thảo luận" is not drawn**: there is no
+  discussion over a whole text, only the per-selection understanding surface. Decision needed: either a
+  thread against a text (learner data, so the account architecture holds it) or the pill leaves the design.
+- **"Đọc tiếp sau" is not drawn either.** The frame draws both "Lưu bài" and a primary "Đọc tiếp sau"; the app
+  has one bookmark and remembers the place by itself, so a second one would be the same action twice.
+- **The sheet is the app's existing dialog, not the design's sheet pattern.** The Quick Sheet's glass is not
+  yet a shared primitive; restyling every sheet is its own slice.

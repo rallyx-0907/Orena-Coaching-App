@@ -143,6 +143,7 @@ body:has(.reader) #shellNav:focus-within {
 /* Three columns (D-065, device overview 03): the contents at 300px, the text
    at its own measure, the word panel at 440px. */
 .reader-layout {
+  position: relative;
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr) 440px;
   align-items: start;
@@ -590,4 +591,179 @@ body:has(.reader) #shellNav:focus-within {
   .reader-body { padding: var(--space-4) 0 var(--space-8); }
   .reader-bar { padding: 10px 0; margin-bottom: var(--space-4); }
   .reader-bar__tools { gap: 4px; }
+}
+
+/* --- The frame's hairline and the bar under the text (D-067) ------------------------------------
+   "Reading · bilingual + panel" draws the learner's place twice: a 4px rail across the very top of
+   the screen, and the rail under the text with its figure. Under the text column floats one bar of
+   what can be done with this whole text; what it opens is a sheet, so the room stays one screen. */
+.reader-rail {
+  position: absolute;
+  inset: 0 0 auto;
+  display: block;
+  block-size: 4px;
+  background: var(--progress-track);
+  overflow: hidden;
+}
+.reader-rail > i {
+  display: block;
+  inline-size: 0;
+  block-size: 100%;
+  background: var(--accent-gradient);
+}
+.reader-actions {
+  position: absolute;
+  inset: auto auto 40px 50%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 999px;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring-focus), var(--card-shadow);
+  transform: translateX(-50%);
+}
+.reader-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  block-size: 48px;
+  min-block-size: 0;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip-quiet);
+  box-shadow: var(--chip-quiet-ring);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.reader-action[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: default;
+}
+.reader-action[aria-pressed='true'] {
+  background: var(--chip-on);
+  box-shadow: var(--chip-on-ring);
+}
+.reader-action--primary {
+  padding: 0 22px;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  font-family: var(--display-font);
+  font-weight: 800;
+}
+/* The text column keeps room for the bar so the last line is never under it. */
+.reader-layout:has(.reader-actions) .reader-body {
+  padding-bottom: 116px;
+}
+.reader-after[hidden] {
+  display: none;
+}
+.reader-after-sheet .quiz,
+.reader-after-sheet .response-composer {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .reader-actions {
+    inset: auto 16px calc(16px + env(safe-area-inset-bottom)) 16px;
+    gap: 8px;
+    padding: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    transform: none;
+  }
+  .reader-action {
+    block-size: 44px;
+    padding: 0 16px;
+    font-size: 14.5px;
+  }
+  .reader-layout:has(.reader-actions) .reader-body {
+    padding-bottom: 92px;
+  }
+}
+
+/* --- The room is the screen (D-067, "Reading · bilingual + panel") -------------------------------
+   The frame is one screen: the hairline, a 72px bar, then the text and the panel filling what is
+   left, each scrolling on its own. Nothing is under the fold, because the frame draws nothing there. */
+#main:has(> [data-reader-host]) {
+  padding: 0;
+}
+#main > [data-reader-host] {
+  max-width: none;
+  margin: 0;
+}
+.reader {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  block-size: 100dvh;
+  padding-bottom: 0;
+}
+.reader-bar {
+  flex: none;
+  block-size: 72px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 40px;
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+}
+.reader-layout {
+  flex: 1;
+  min-block-size: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.reader-body {
+  block-size: 100%;
+  overflow-y: auto;
+}
+.reader-aside {
+  block-size: 100%;
+  overflow-y: auto;
+  border-inline-start: 1px solid var(--border-subtle);
+  background: var(--glass-soft);
+}
+.reader-foot {
+  max-inline-size: none;
+  margin: 0;
+  padding: 14px 40px 20px;
+}
+@media (max-width: 900px) {
+  .reader-bar {
+    block-size: auto;
+    padding: 14px 20px;
+  }
+  .reader-foot {
+    padding: 12px 20px 16px;
+  }
+}
+
+/* The text column keeps its measure at the top of the room, as the frame draws it, and the reveal that
+   a dialogue uses stays a button rather than stretching to the column. */
+.reader-body {
+  align-content: start;
+  padding-top: 44px;
+}
+.reader-next-line {
+  justify-self: center;
+  inline-size: auto;
+  min-inline-size: 0;
+}
+/* The learner's place is the design's violet, here as everywhere. */
+.reader-progress > span,
+.reader-rail > i {
+  background: var(--accent-gradient);
+}
+/* The sheet already carries the name of what it opened; the section inside does not repeat it. */
+.reader-after-sheet .response > div > small {
+  display: none;
 }

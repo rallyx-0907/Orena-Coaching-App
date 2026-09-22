@@ -102,8 +102,23 @@ function textEncounter(root, ctx, item, book = null) {
   const notes = (item.phrases || []).length
     ? `<details class="reader-notes"><summary>${esc(c.readerNotes)}</summary>${item.phrases.map((p, i) => `<div class="reader-note"><p class="reader-note__word" lang="${language}">${esc(p.word)}</p>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p lang="${esc(ctx.support)}">${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button class="quiet" data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></div>`).join('')}</details>`
     : '';
-  root.innerHTML = `<div data-reader-host></div><div class="reader-after">${notes}${comprehensionSection(c, item.questions, item.latest_attempt)}${responseComposer(ctx, item)}${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p></div>`;
+  /* The frame draws the text and nothing under it: what follows reading - the prepared notes, the
+     optional check, the response, where the text came from - is reached from the bar under the text and
+     opens as a sheet (the design's pattern for anything deeper), so the room is one screen (D-067). */
+  const rights = `${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
+  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions, item.latest_attempt)}</div><div data-after="respond">${responseComposer(ctx, item)}</div><div data-after="source">${rights}</div></div>`;
 
+  const after = root.querySelector('[data-reader-after]');
+  const openAfter = (name, heading) => {
+    const section = after.querySelector(`[data-after="${name}"]`);
+    if (!section) return;
+    const home = document.createComment('');
+    section.replaceWith(home);
+    const sheet = dialog({ title: heading, body: '' });
+    sheet.classList.add('reader-after-sheet');
+    sheet.append(section);
+    sheet.addEventListener('close', () => home.replaceWith(section), { once: true });
+  };
   const reader = mountReader(root.querySelector('[data-reader-host]'), ctx, {
     item,
     blocks: item.blocks,
@@ -111,6 +126,15 @@ function textEncounter(root, ctx, item, book = null) {
     progressive: item.kind === 'conversation',
     title,
     origin: from,
+    /* Only what this text actually has. A check with no questions is drawn as the frame draws it and
+       says so rather than opening an empty sheet (D-068). */
+    actions: [
+      { name: 'check', glyph: 'check-square-offset', label: c.comprehension, available: Boolean(item.questions?.length), title: item.questions?.length ? '' : c.readingOnlyNote },
+      { name: 'respond', glyph: 'pen-nib', label: c.respond, primary: true },
+      (item.phrases || []).length ? { name: 'notes', glyph: 'book-open', label: c.readerNotes } : null,
+      { name: 'source', glyph: 'info', label: c.rights },
+    ].filter(Boolean),
+    onAction: (name) => openAfter(name, { check: c.comprehension, respond: c.respond, notes: c.readerNotes, source: c.rights }[name] || ''),
   });
 
   root.querySelectorAll('[data-note]').forEach(

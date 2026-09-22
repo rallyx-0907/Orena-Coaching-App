@@ -60,7 +60,7 @@ review (two panes; Draft / Review tabs on a phone), revision (three columns) and
 ground is the UI Baseline's lit indigo (D-071). Bugs 7-15 are fixed. Writing review and revision are the frames too (findings marked in the draft, one primary action, three-column
 comparison). Not the frame yet: "Lưu nhận xét" (no meaning for it yet), the Writing-feedback context sheet.
 Home is its frames too (top bar, Continue strip, six rails; the old Discover composition deleted).
-Not migrated (legacy): Progress, Speaking, Vocabulary, Reading; the old top bar and the Practice hub go
+The Reading workspace is one screen with the frame's bar. Not migrated (legacy): Progress, Speaking, Vocabulary, the Reading library's own frame; the old top bar and the Practice hub go
 with them.
 
 ## PENDING

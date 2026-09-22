@@ -60,7 +60,7 @@ function saveSettings(settings) {
 export function mountReader(
   host,
   ctx,
-  { item, blocks: sourceBlocks, book = null, progressive = false, title, origin },
+  { item, blocks: sourceBlocks, book = null, progressive = false, title, origin, actions = [], onAction = null },
 ) {
   const { api, c, language, memory } = ctx;
   const alive = ctx.alive || (() => host.isConnected);
@@ -183,12 +183,27 @@ export function mountReader(
   const metaLine = [where, readerWords ? String(r.readerWords).replace('{n}', readerWords.toLocaleString()) : '']
     .filter(Boolean)
     .join(' · ');
+  /* The frame's floating bar under the text: what the learner can do with this whole text, once, in
+     one place. The reader owns the two it can answer itself - keeping the text and hearing it - and the
+     room that mounted it supplies the rest, because only that room knows whether they exist here. */
+  const barAction = ({ name, glyph, label, primary = false, available = true, title = '', pressed = null }) =>
+    `<button type="button" class="reader-action${primary ? ' reader-action--primary' : ''}" data-reader-action="${esc(name)}"${pressed === null ? '' : ` aria-pressed="${pressed}"`}${available ? '' : ` aria-disabled="true"`}${title ? ` title="${esc(title)}"` : ''}>${icon(glyph, { size: 19, filled: primary })}<span>${esc(label)}</span></button>`;
+  const actionBar = () => {
+    const own = [
+      book ? null : { name: 'keep', glyph: 'bookmark-simple', label: c.readerKeep, pressed: kept() },
+      { name: 'listen', glyph: 'speaker-high', label: r.readerListen, available: false, title: r.bookSoon },
+    ].filter(Boolean);
+    const all = [...own, ...actions];
+    return all.length
+      ? `<div class="reader-actions" role="group" aria-label="${esc(r.readerActions)}">${all.map(barAction).join('')}</div>`
+      : '';
+  };
   const contentsColumn = place
     ? `<nav class="reader-contents-column" aria-label="${esc(r.readerContents)}"><span class="ds-label">${esc(r.readerContents)}</span>${tocHtml(c, { bookId: book.id, chapters: book.chapters, currentId: book.chapterId, provenance: book.provenance })}</nav>`
     : '';
-  host.innerHTML = `<div class="reader" data-reader><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button><button type="button" class="reader-layer" data-reader-listen aria-disabled="true" title="${esc(r.bookSoon)}">${esc(r.readerListen)}</button>${book ? '' : `<button type="button" class="reader-tool" data-keep aria-pressed="${kept()}" aria-label="${esc(c.readerKeep)}">${symbol('bookmark', 20)}</button>`}</div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
+  host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
     .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
-    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside></div><footer class="reader-foot"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span><span class="reader-progress" aria-hidden="true"><span data-reader-progress></span></span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</footer>${chapterCompleteHtml()}${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
+    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span><span class="reader-progress" aria-hidden="true"><span data-reader-progress></span></span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</footer>${chapterCompleteHtml()}${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
 
   const reader = host.querySelector('[data-reader]');
   const body = host.querySelector('[data-reader-body]');
@@ -230,6 +245,7 @@ export function mountReader(
   const settingsToggle = host.querySelector('[data-reader-settings-toggle]');
   const percentLabel = host.querySelector('[data-reader-percent]');
   const progressBar = host.querySelector('[data-reader-progress]');
+  const rail = host.querySelector('[data-reader-rail]');
   const page = () => body.querySelector('[data-reader-page]');
 
   /* --- Settings --- */
@@ -276,7 +292,6 @@ export function mountReader(
     paintSettings(focus);
     updateProgress();
   });
-  host.querySelector('[data-reader-listen]').onclick = (event) => event.preventDefault();
   applySettings();
 
   /* --- Reading layers --- */
@@ -306,13 +321,22 @@ export function mountReader(
     };
   });
 
-  /* --- Keep, contents, dialogue --- */
-  const keepButton = host.querySelector('[data-keep]');
-  if (keepButton)
-    keepButton.onclick = () => {
-      memory.keep(item.id);
-      keepButton.setAttribute('aria-pressed', String(kept()));
+  /* --- The bar under the text: keeping and hearing are the reader's own; the rest belong to the room
+     that mounted it, which is told by name which one was pressed. --- */
+  host.querySelectorAll('[data-reader-action]').forEach((button) => {
+    button.onclick = (event) => {
+      event.preventDefault();
+      if (button.getAttribute('aria-disabled') === 'true') return;
+      const name = button.dataset.readerAction;
+      if (name === 'keep') {
+        memory.keep(item.id);
+        button.setAttribute('aria-pressed', String(kept()));
+        return;
+      }
+      if (name === 'listen') return;
+      onAction?.(name, button);
     };
+  });
   function bindContents() {
     host.querySelectorAll('[data-reader-toc]').forEach(
     (button) =>
@@ -369,6 +393,9 @@ export function mountReader(
     const percent = Math.max(0, Math.min(100, Math.round(read * 100)));
     percentLabel.textContent = progressLabel(c, percent);
     progressBar.style.inlineSize = `${percent}%`;
+    // The frame draws the same figure twice: a hairline across the top of the screen and the rail
+    // under the text. One measurement, both.
+    if (rail) rail.style.inlineSize = `${percent}%`;
   }
   const onScroll = () => {
     if (!progressFrame) progressFrame = requestAnimationFrame(updateProgress);

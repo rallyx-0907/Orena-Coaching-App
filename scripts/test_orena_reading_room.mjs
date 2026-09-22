@@ -374,7 +374,9 @@ assert.doesNotMatch(api, /contextualGloss/);
 /* --- The three columns of the updated design (D-065) -------------------- */
 assert.match(reader, /class="reader-contents-column"/, 'a book keeps its contents beside the text');
 assert.doesNotMatch(reader, /data-reader-paper/, 'Paper is retired with the light theme (D-066)');
-assert.match(reader, /data-reader-listen/, 'and the listen control keeps its place');
+assert.match(reader, /name: 'listen'/, 'and the listen control keeps its place, in the bar the frame draws under the text');
+assert.match(reader, /class="reader-actions"/, 'which is one bar of what can be done with this whole text');
+assert.match(reader, /class="reader-rail"/, 'where the learner is, as a hairline across the top, as the frame draws it');
 assert.match(reader, /const tabs = \['word', 'grammar', 'notes'\]/, 'the panel carries the three tabs the design draws');
 assert.match(reader, /class="reader-foot"/, 'how far through it sits under the text');
 const readerCss = readFileSync('static/orena/reader.css', 'utf8');
