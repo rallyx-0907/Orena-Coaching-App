@@ -62,6 +62,13 @@ body {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  /* The selected row's ring is drawn outside its box - the source's own
+     `0 0 0 1.5px` glow - and a scroll container clips horizontally as well as
+     vertically, so it was being sliced off at both edges. The scroll box is
+     widened by the same amount it is pulled back, which leaves every row
+     exactly where it was and gives the ring somewhere to land. */
+  margin-inline: -5px;
+  padding-inline: 5px;
 }
 #shellNav::-webkit-scrollbar {
   display: none;

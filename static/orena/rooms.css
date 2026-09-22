@@ -2929,7 +2929,7 @@ ul.pronunciation-words small { color: var(--muted); }
 
 .progress-columns { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
 .progress-column { display: grid; gap: 22px; align-content: start; }
-.progress-column--evidence { flex: 1; min-inline-size: 320px; }
+.progress-column--main { flex: 1; min-inline-size: 320px; }
 .progress-column--side {
   inline-size: 600px;
   flex: none;
@@ -2959,7 +2959,13 @@ ul.pronunciation-words small { color: var(--muted); }
   scrollbar-width: none;
 }
 .heat__grid::-webkit-scrollbar { display: none; }
-.heat-cell { inline-size: 18px; block-size: 18px; border-radius: 5px; background: var(--heat-empty, rgba(34, 25, 56, 0.34)); }
+.heat-cell {
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 5px;
+  background: rgba(34, 25, 56, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.07);
+}
 .heat-cell[data-level='1'] { background: color-mix(in srgb, var(--action-primary) 30%, transparent); }
 .heat-cell[data-level='2'] { background: color-mix(in srgb, var(--action-primary) 60%, transparent); }
 .heat-cell[data-level='3'] { background: var(--action-primary); }
@@ -2991,9 +2997,131 @@ ul.pronunciation-words small { color: var(--muted); }
   .progress-figure { min-block-size: 0; padding: 14px 16px; }
   .progress-figure__value { font-size: 28px; }
   .progress-columns { flex-direction: column; gap: 14px; }
-  .progress-column--side, .progress-column--evidence { inline-size: 100%; min-inline-size: 0; }
+  .progress-column--side, .progress-column--main { inline-size: 100%; min-inline-size: 0; }
   .progress-column--side { padding: 18px; }
   .heat__grid { grid-template-rows: repeat(7, 13px); grid-auto-columns: 13px; gap: 4px; }
   .heat-cell { inline-size: 13px; block-size: 13px; border-radius: 4px; }
   .heat__title { font-size: 17px; }
+}
+
+/* --- The rank ladder (D-067, the reworked Progress frame, measured) ------
+   Four columns of 226.5 with a 10px gap; a tile is 227x56 with 11/12 padding
+   and radius 14. Three states, each the source's own material: open is the
+   base glass with the ring at 0.16, the current tier is the focus glass with
+   the ring at 0.30, and a locked tier is a well - rgba(34,25,56,0.3) with the
+   ring down at 0.10 - rather than the same tile dimmed. */
+.ladder { display: grid; gap: 12px; }
+.ladder__head { display: flex; align-items: baseline; gap: 12px; }
+.ladder__head .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
+.ladder__open { margin-inline-start: auto; color: var(--text-secondary); font-size: 11px; }
+.ladder__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.tier {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-block-size: 56px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.tier[data-state='current'] { background: var(--glass-focus); box-shadow: var(--glass-ring-focus); }
+.tier[data-state='locked'] { background: var(--surface-well, rgba(34, 25, 56, 0.3)); box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.1); }
+.tier__no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  font-size: 11px;
+}
+.tier[data-state='locked'] .tier__no { color: var(--text-muted); }
+.tier__text { display: grid; gap: 2px; min-inline-size: 0; line-height: 1.25; }
+.tier__name {
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 13.5px;
+  font-weight: var(--weight-heavy);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tier[data-state='locked'] .tier__name { color: var(--text-secondary); }
+.tier__note { color: var(--text-muted); font-size: 10.5px; line-height: 1.2; }
+.tier[data-state='current'] .tier__note { color: var(--accent-ink); }
+
+/* The card under the ladder: 102 tall, 16/18 padding, radius 18. */
+.rank-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  min-block-size: 102px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.rank-card__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 58px;
+  block-size: 58px;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  color: var(--text-muted);
+}
+.rank-card__text { display: grid; gap: 4px; }
+.rank-card__text .ds-label { color: var(--text-secondary); font-size: 10.5px; }
+.rank-card__name {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.rank-card__track { flex: 1; min-inline-size: 180px; block-size: 8px; }
+.rank-card__to { flex: none; color: var(--text-secondary); font-size: 12px; }
+
+/* The skill rows carry the frame's bar; the value sits after it. */
+.skill-row { display: flex; align-items: center; gap: 16px; }
+.skill-row__bar { flex: 1; min-inline-size: 90px; block-size: 10px; }
+.skill-row__name { flex: none; min-inline-size: 84px; }
+
+/* "Việc nên làm tiếp" is a card with a way in, not a paragraph. */
+.next-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 78px;
+  padding: 16px 20px;
+  border-radius: 17px;
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.next-action:hover, .next-action:focus-visible { box-shadow: var(--glass-ring-focus); }
+.next-action__go { display: inline-flex; flex: none; color: var(--accent-ink); }
+.next-action__text { display: grid; gap: 3px; min-inline-size: 0; }
+
+@media (max-width: 900px) {
+  .ladder__grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .tier { min-block-size: 50px; padding: 9px 10px; gap: 9px; }
+  .tier__name { font-size: 12.5px; }
+  .rank-card { min-block-size: 0; padding: 14px 16px; gap: 12px; }
+  .rank-card__avatar { inline-size: 46px; block-size: 46px; }
+  .rank-card__name { font-size: 17px; }
+  .next-action { min-block-size: 0; padding: 14px 16px; }
 }

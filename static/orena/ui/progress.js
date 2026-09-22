@@ -19,6 +19,7 @@ import { icon } from './phosphor.js';
 import { growthDomainRow } from './growth-summary.js';
 import { referenceCopy } from './reference.js';
 import { link } from '../product/intent.js';
+import { RANK_NAMES } from './rank-frame.js';
 
 /* The six approved domain cards, in the design's order, and the evidence each
    one reads. Listening's own measure (episodes, minutes) is not recorded; the
@@ -57,75 +58,82 @@ function domainLine(c, r, entry, summary, words) {
   return { text: row.value, label: row.label, bar: unavailableBar, measured: true };
 }
 
-/* --- The evidence the learner actually left (D-067) ----------------------
-   The source draws "BẰNG CHỨNG GẦN NHẤT" as a short list of what was last
-   judged: the piece, a mono line about it, the figure, and which measure that
-   figure is. Every one of those comes from LearnerSummary's observations -
-   nothing here averages, estimates or invents.
+/* --- The rank ladder (D-067, the reworked Progress frame) ---------------
+   The frame that used to carry "BẰNG CHỨNG GẦN NHẤT" now carries the twenty
+   tiers, so the evidence list is deleted with it (rule 44) rather than kept
+   beside the thing that replaced it.
 
-   A writing observation can be titled, because the essay list carries the task
-   the learner answered, the version and the word count - the frame's own meta
-   line. The other domains have no title in the read model yet, so the row says
-   which practice it was, which is what it is, rather than a made-up name. */
-const MEASURE_KEYS = {
-  overall: 'evidenceOverall',
-  naturalness: 'evidenceNaturalness',
-  grammar: 'evidenceGrammar',
-  vocabulary: 'evidenceVocabulary',
-  coherence: 'evidenceCoherence',
-  task_achievement: 'evidenceTask',
-  accuracy: 'evidenceAccuracy',
-  pronunciation: 'evidencePronunciation',
-  dictation_best_match: 'evidenceAccuracy',
-};
+   The thresholds are the frame's own, read off its tiles: they are what makes
+   a tier mean anything, and they are the product's numbers, not this lane's.
+   Tier 10 is the one the frame does not state - it draws "BẬC HIỆN TẠI" over
+   its own number - so that tier shows a dash and the gap is recorded rather
+   than filled in with a guess. */
+const RANK_THRESHOLDS = [
+  50, 150, 300, 500, 700, 950, 1200, 1450, 1600, null,
+  3000, 4500, 6000, 8000, 10000, 13000, 16000, 20000, 25000, 30000,
+];
 
-function whenWord(r, iso) {
-  const at = Date.parse(iso || '');
-  if (!Number.isFinite(at)) return '';
-  const days = Math.floor((Date.now() - at) / 86400000);
-  if (days <= 0) return r.evidenceToday;
-  if (days === 1) return r.evidenceYesterday;
-  return String(r.evidenceDaysAgo).replace('{n}', String(days));
+/* The highest tier whose threshold the learner has passed. A tier with no
+   stated threshold cannot be reached by counting, so it is skipped rather than
+   guessed at. */
+function tierOf(known) {
+  let tier = 0;
+  RANK_THRESHOLDS.forEach((threshold, index) => {
+    if (threshold !== null && known >= threshold) tier = index + 1;
+  });
+  return tier;
 }
 
-function evidenceRows(r, summary, essays) {
-  if (!summary?.domains) return [];
-  const byId = new Map((essays || []).map((essay) => [String(essay.id), essay]));
-  const rows = [];
-  for (const [domain, block] of Object.entries(summary.domains)) {
-    for (const observation of block?.observations || []) {
-      const value = Number(observation?.value);
-      if (!Number.isFinite(value)) continue;
-      const essay = domain === 'writing' ? byId.get(String(observation?.ref?.id ?? '')) : null;
-      const meta = [
-        essay && Number(essay.revision_no) > 1 ? String(r.evidenceVersion).replace('{n}', String(essay.revision_no)) : '',
-        essay && Number(essay.word_count) > 0 ? String(r.evidenceWords).replace('{n}', Number(essay.word_count).toLocaleString()) : '',
-        whenWord(r, observation.observedAt),
-      ].filter(Boolean).join(' · ');
-      rows.push({
-        title: essay?.prompt || r[domain] || domain,
-        meta,
-        value: Math.round(value),
-        /* A measure the interface has no word for is left blank rather than
-           printed as the read model's own key. */
-        measure: r[MEASURE_KEYS[observation.measure] || ''] || '',
-        at: Date.parse(observation.observedAt || '') || 0,
-      });
-    }
-  }
-  return rows.sort((a, b) => b.at - a.at).slice(0, 4);
+function ladderHtml(r, known) {
+  const current = tierOf(known);
+  const unlocked = RANK_THRESHOLDS.filter((t) => t !== null && known >= t).length;
+  const tiles = RANK_NAMES.map((name, index) => {
+    const tier = index + 1;
+    const threshold = RANK_THRESHOLDS[index];
+    const isCurrent = tier === current;
+    const isOpen = threshold !== null && known >= threshold;
+    const state = isCurrent ? 'current' : isOpen ? 'open' : 'locked';
+    const note = isCurrent
+      ? esc(r.progressTierCurrent)
+      : threshold === null
+        ? '—'
+        : esc(`${threshold.toLocaleString()} ${r.progressTierWords}${isOpen ? ` · ${r.progressTierOpen}` : ''}`);
+    return `<li class="tier" data-state="${state}">`
+      + `<span class="tier__no ds-data">${isOpen || isCurrent ? String(tier).padStart(2, '0') : icon('lock-simple', { size: 13 })}</span>`
+      + `<span class="tier__text"><span class="tier__name">${esc(name)}</span><span class="tier__note ds-data">${note}</span></span>`
+      + `</li>`;
+  }).join('');
+  const head = String(r.progressLadder).replace('{n}', String(RANK_NAMES.length));
+  const opened = String(r.progressTierOpened).replace('{n}', String(unlocked)).replace('{t}', String(RANK_NAMES.length));
+  return `<section class="ladder" aria-label="${esc(head)}">`
+    + `<div class="ladder__head"><span class="ds-label">${esc(head)}</span><span class="ds-data ladder__open">${esc(opened)}</span></div>`
+    + `<ol class="ladder__grid">${tiles}</ol>`
+    + `</section>`;
 }
 
-const evidenceHtml = (r, rows) =>
-  rows.length
-    ? `<section class="evidence" aria-label="${esc(r.evidenceRecent)}"><span class="ds-label evidence__label">${esc(r.evidenceRecent)}</span><ol class="evidence-list">${rows
-        .map(
-          (row) => `<li class="evidence-row"><span class="evidence-row__text"><span class="evidence-row__title">${esc(row.title)}</span>${
-            row.meta ? `<span class="evidence-row__meta ds-data">${esc(row.meta)}</span>` : ''
-          }</span><span class="evidence-row__score"><strong>${esc(String(row.value))}</strong><span class="ds-label">${esc(row.measure)}</span></span></li>`,
-        )
-        .join('')}</ol></section>`
-    : '';
+/* The card under the ladder: which tier the learner is on and how far to the
+   next one. The avatar is drawn plain until the human finishes the rank frame
+   they are revising. */
+function rankCardHtml(r, known) {
+  const current = tierOf(known);
+  const nextIndex = RANK_THRESHOLDS.findIndex((t, i) => i >= current && t !== null && known < t);
+  const next = nextIndex >= 0 ? { name: RANK_NAMES[nextIndex], at: RANK_THRESHOLDS[nextIndex] } : null;
+  const name = current ? RANK_NAMES[current - 1] : r.progressTierNone;
+  const percent = next ? Math.max(0, Math.min(100, Math.round((known / next.at) * 100))) : 100;
+  const line = next
+    ? `${known.toLocaleString()} / ${next.at.toLocaleString()} → ${next.name}`
+    : r.progressTierTop;
+  const title = current
+    ? `${name} · ${String(r.progressTierOf).replace('{n}', String(current)).replace('{t}', String(RANK_NAMES.length))}`
+    : name;
+  return `<section class="rank-card">`
+    + `<span class="rank-card__avatar">${icon('user', { size: 26 })}</span>`
+    + `<div class="rank-card__text"><span class="ds-label">${esc(r.progressTierLabel)}</span>`
+    + `<span class="rank-card__name">${esc(title)}</span></div>`
+    + `<span class="progress-bar rank-card__track"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span>`
+    + `<span class="rank-card__to ds-data">${esc(line)}</span>`
+    + `</section>`;
+}
 
 /* --- The three figures the source leads with (D-067) ---------------------
    507x123 panels: a mono label, the figure at Nunito 34/800, and a line under
@@ -165,15 +173,20 @@ function skillRows(c, r, summary, words) {
   const rows = DOMAINS.map((entry) => {
     const line = domainLine(c, r, entry, summary, words);
     const value = line.measured ? line.text : r.progressNotMeasured;
-    return `<a class="skill-row" href="${entry.href()}" data-domain="${entry.domain}">
-      <span class="skill-row__name ds-data">${esc(r[entry.key])}</span>
-      <span class="skill-row__value ds-data${line.measured ? '' : ' metric-unavailable'}">${line.measured && entry.evidence !== 'vocabulary' ? value : esc(value)}</span>
-    </a>`;
+    /* The frame draws a bar per skill against seven days of time. Orena records
+       no time, so the bar is the unavailable one and the row carries what the
+       skill does record instead - never a length standing for a number nobody
+       measured. */
+    return `<a class="skill-row" href="${entry.href()}" data-domain="${entry.domain}">`
+      + `<span class="skill-row__name ds-data">${esc(r[entry.key])}</span>`
+      + `<span class="progress-bar skill-row__bar" data-unavailable aria-hidden="true"></span>`
+      + `<span class="skill-row__value ds-data${line.measured ? '' : ' metric-unavailable'}">${line.measured && entry.evidence !== 'vocabulary' ? value : esc(value)}</span>`
+      + `</a>`;
   }).join('');
-  return `<div class="skill-time">
-    <span class="ds-label skill-time__label">${esc(r.progressBySkill)}</span>
-    <div class="skill-time__rows">${rows}</div>
-  </div>`;
+  return `<div class="skill-time">`
+    + `<span class="ds-label skill-time__label">${esc(r.progressBySkill)}</span>`
+    + `<div class="skill-time__rows">${rows}</div>`
+    + `</div>`;
 }
 
 /* The source closes the column with the one thing to do next. Orena knows this
@@ -184,47 +197,37 @@ function nextAction(r, words) {
   const detail = due > 0
     ? String(r.progressNextDue).replace('{n}', String(due))
     : r.progressNextNothing;
-  return `<div class="next-action">
-    <span class="next-action__title">${esc(r.progressNextTitle)}</span>
-    <p class="next-action__detail">${esc(detail)}</p>
-  </div>`;
+  const href = due > 0 ? link('practice', { intent: 'recall' }) : link('practice', { intent: 'reading' });
+  return `<a class="next-action" href="${esc(href)}">`
+    + `<span class="next-action__go">${icon('arrow-right', { size: 18 })}</span>`
+    + `<span class="next-action__text"><span class="next-action__title">${esc(r.progressNextTitle)}</span>`
+    + `<span class="next-action__detail">${esc(detail)}</span></span>`
+    + `</a>`;
 }
 
-function view(ctx, { summary, words, summaryFailed, essays }) {
+function view(ctx, { summary, words, summaryFailed }) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const degraded = summaryFailed
     ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.growthUnavailable)}</strong></div><button class="outline" type="button" data-progress-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
     : '';
+  const known = Number(words?.mastered || 0);
 
-  /* Nothing counts days in a row or time spent (GAP-001, GAP-002). Words that
-     have passed the remembering threshold are counted, so that figure is real. */
   const figures = [
     statPanel(r.progressStreak, '', r.progressStreakNote, { measured: false }),
     statPanel(r.progressStudyTime, '', r.progressStudyNote, { measured: false }),
-    statPanel(
-      r.progressWordsMastered,
-      words ? Number(words.mastered).toLocaleString() : '0',
-      r.progressWordsMasteredNote,
-      { measured: Boolean(words) },
-    ),
+    statPanel(r.progressWordsMastered, known.toLocaleString(), r.progressWordsMasteredNote, { measured: Boolean(words) }),
   ].join('');
 
-  return `<section class="progress-page">
-  <h1 class="progress-title">${esc(r.progress)}</h1>
-  ${degraded}
-  <div class="progress-figures">${figures}</div>
-  <div class="progress-columns">
-    <div class="progress-column progress-column--evidence">
-      ${evidenceHtml(r, evidenceRows(r, summary, essays))}
-    </div>
-    <aside class="progress-column progress-column--side">
-      ${heatmap(r, null)}
-      ${skillRows(c, r, summary, words)}
-      ${nextAction(r, words)}
-    </aside>
-  </div>
-</section>`;
+  return `<section class="progress-page">`
+    + `<h1 class="progress-title">${esc(r.progress)}</h1>`
+    + degraded
+    + `<div class="progress-figures">${figures}</div>`
+    + `<div class="progress-columns">`
+    + `<div class="progress-column progress-column--main">${ladderHtml(r, known)}${rankCardHtml(r, known)}</div>`
+    + `<aside class="progress-column progress-column--side">${heatmap(r, null)}${skillRows(c, r, summary, words)}${nextAction(r, words)}</aside>`
+    + `</div>`
+    + `</section>`;
 }
 
 function skeleton(ctx) {
@@ -239,12 +242,9 @@ export async function renderProgress(root, ctx) {
   };
   async function load() {
     paint(skeleton(ctx));
-    const [summaryResult, wordsResult, essayResult] = await Promise.allSettled([
+    const [summaryResult, wordsResult] = await Promise.allSettled([
       ctx.growth ? Promise.resolve(ctx.growth) : ctx.api.learnerSummary('all'),
       ctx.api.libraryVocabulary(),
-      /* Only to title a writing row with the task it answered; a failure here
-         costs the title, never the evidence. */
-      ctx.api.essays(),
     ]);
     const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
     const items = wordsResult.status === 'fulfilled' ? wordsResult.value.items || [] : null;
@@ -255,8 +255,7 @@ export async function renderProgress(root, ctx) {
           mastered: items.filter((item) => (Number(item.review_stage) || 0) >= 3).length,
         }
       : null;
-    const essays = essayResult.status === 'fulfilled' ? essayResult.value || [] : [];
-    paint(view(ctx, { summary, words, summaryFailed: !summary, essays }));
+    paint(view(ctx, { summary, words, summaryFailed: !summary }));
     root.querySelector('[data-progress-retry]')?.addEventListener('click', () => {
       ctx.growth = null;
       load();

@@ -85,7 +85,7 @@ khi có `tier`. Hai file vẽ hai thứ khác nhau cho cùng một chỗ.
 
 | # | Ở đâu | Tình trạng |
 | --- | --- | --- |
-| B1 | **Progress** | **Đã dựng theo frame** (2026-09-22): 3 panel số lớn (507x123, r18, pad 18/20, nhãn DM Mono 10.5/0.12em, số Nunito 34/800, dòng phụ 13), heatmap **18 tuần = 126 ô 18px r5 gap 5**, hàng theo kỹ năng, "Việc nên làm tiếp", cột phụ 600 pad 22/24, và hàng bằng chứng. Panel tuần cũ và biểu đồ 7 cột đã **xoá** - frame không vẽ. Mobile 390: 1 cột, số 28px, ô 13px, không tràn. **Khối CẤP BẬC chưa dựng** - human đang cập nhật khung rank, sẽ áp vào Hồ sơ sau. Chuỗi ngày, thời gian học, hoạt động theo ngày, thời gian theo kỹ năng đều render 0 theo rule 4 vì chưa đo (C4). |
+| B1 | **Progress** | **Dựng lại theo frame MỚI** (2026-09-22, sau khi re-pin - frame cũ trong cache đã lệch 22 KB). Frame mới **bỏ hẳn** hàng "Bằng chứng gần nhất", thay bằng **thang cấp bậc 20 bậc** (lưới 4 cột, ô 227x56 r14, ba trạng thái: mở / hiện tại / khoá) + **thẻ CẤP BẬC** (102 cao, pad 16/18, r18). Cột phụ 600 giữ heatmap, hàng kỹ năng **có thanh**, và "Việc nên làm tiếp" là **thẻ có mũi tên** (78 cao, r17, kính tiêu điểm). Ngưỡng 20 bậc lấy từ chính frame: 50 · 150 · 300 · 500 · 700 · 950 · 1200 · 1450 · 1600 · **?** · 3000 · 4500 · 6000 · 8000 · 10000 · 13000 · 16000 · 20000 · 25000 · 30000 từ. **Bậc 10 (Virtuoso) frame không ghi số** - nó vẽ "BẬC HIỆN TẠI" đè lên - nên app hiển thị "—" và không đoán. Còn thiếu so với frame: **hàng 4 panel thứ hai** (Vừa học xong · Từ đang ôn · Kiểm tra hiểu · Nhớ lại) vì cần số liệu ôn tập/hiểu mà backend chưa có (C4). |
 | B2 | **Hệ cấp bậc (rank)** | **Component đã dựng** (`ui/rank-frame.js`, port từ "Rank Frame Master v2": 20 bậc, 5 chặng, một nguồn sáng −48°, SVG sinh từ toạ độ cực, không raster; gate `test_orena_rank_frame.mjs`). **Chưa hiện ở đâu** vì `ProgressOverview.tier {name, level, current, target}` chưa ai phục vụ - cần **ngưỡng mỗi bậc**, là quyết định sản phẩm. Ngày có `tier`, khung pha lê hiện luôn, không cần sửa code. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
 | B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
 | B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |
@@ -99,6 +99,7 @@ khi có `tier`. Hai file vẽ hai thứ khác nhau cho cùng một chỗ.
 | C3 | Cấp độ theo từng kỹ năng (`profile.skill_levels`) | Rail không in được level cho Đọc/Nghe/Nói/Viết. |
 | C4 | Chuỗi ngày, thời gian học 90 ngày, hoạt động 18 tuần, ngưỡng rank | Các ô Progress sẽ phải in "—" nếu dựng theo frame ngay bây giờ. |
 | C5 | Câu hỏi hiểu cho sách nhập | A3 ở trên. |
+| C6 | **Ngưỡng bậc 10 (Virtuoso)** | Frame vẽ "BẬC HIỆN TẠI" đè lên số của chính nó, nên 19/20 ngưỡng có số, riêng bậc 10 không. Learner ở giữa 1 600 và 3 000 từ sẽ bị tính là bậc 9. Cần anh cho **một con số**. |
 
 ## D. Quyết định quy tắc, không phải quyết định code
 
