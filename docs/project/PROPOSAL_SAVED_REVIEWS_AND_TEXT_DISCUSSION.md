@@ -217,3 +217,56 @@ cascades from `users`. Risk is unchanged in kind — this is still the first lea
 content to leave the device — and the migration is applied to the sandbox only, after re-review.
 
 **Status: awaiting re-review of this revision.** No migration is written until it passes.
+
+---
+
+## (b), second correction (2026-09-22) — the two changes the re-review required
+
+The re-review (commit `ba64504`) found all six earlier changes closed and raised two more. Both are corrected
+here; they replace the sentences they name.
+
+**1. Entitlement gating is new integration too — the earlier sentence was wrong.**
+The revision said the turn handler checks entitlement "by the same path the other AI features use". That is
+false and is withdrawn: `resolve_entitlement` (`writing_coach/product/commerce.py`) is called only from
+`tests/test_product_commerce.py`, `app.py` does not import it at all (verified: zero occurrences), and
+`product/api.py`'s `account_state` only surfaces plan and usage to the interface — it gates nothing. **No live
+AI endpoint in this repository gates on entitlement today.**
+
+So, exactly like `record_usage`, this is **new integration with no call site to copy**. The handler calls
+`resolve_entitlement(user_key=..., feature="reading.discussion_turn", service=product_service)` before the
+provider, and answers:
+- decision *allowed* → proceed;
+- decision *denied* (the plan does not include the feature) → `403` with the feature name and the plan's own
+  label, no provider call, no `usage_events` row;
+- decision *exhausted* (included but over the monthly limit) → `429` with the limit and what it resets on,
+  no provider call, no `usage_events` row;
+- decision *unknown* / commerce unavailable → the request proceeds and is metered, which is the behaviour the
+  rest of the product already has while `billing_ready` is false everywhere upstream
+  (`docs/product/ORENA_COMMERCE_ARCHITECTURE.md`); it must not become a silent denial of a learner's work.
+
+Because this is the first endpoint to gate at all, the same test file asserts each of the four decisions, and
+that a refused request writes no `usage_events` row.
+
+**2. `turn_count` and `ordinal` are taken atomically, not read-then-written.**
+The two ordinals and the permission to write come from one statement, so two concurrent submits to the same
+thread cannot compute the same ordinals:
+
+```sql
+UPDATE text_discussions
+   SET turn_count = turn_count + 2, updated_at = now()
+ WHERE id = :discussion_id AND turn_count <= 198
+RETURNING turn_count;      -- the new count; the pair takes ordinals (count - 1) and count
+```
+
+No row returned means the cap was reached: the request answers `409` naming the cap, before any provider
+call. The `UNIQUE (discussion_id, ordinal)` constraint and the `turn_count <= 200` CHECK stay as the hard
+backstops they were, but under this statement a raced double-submit serialises on the thread row and answers
+cleanly rather than surfacing a constraint violation as a 500.
+
+**3. Noted, not changed.** 200 turns / 4000 characters is a product-tunable bound, deliberately expressed as a
+CHECK so a future change is an `ALTER … CHECK` swap and not a redesign. A retry after a timed-out but
+committed `POST` can still double-answer and double-meter: the endpoint accepts a client `request_id` and
+returns the existing turns unchanged when it repeats, which is the dedup contract this endpoint owns; the
+general idempotency weakness of `record_usage` is older than this proposal and is not solved here.
+
+**Status: awaiting re-review of this correction.** No migration is written until it passes.
