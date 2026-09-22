@@ -1,9 +1,5 @@
-import {
-  bindContentRails,
-  discoverySpread,
-  bindTodayWords,
-  practiceOverview,
-} from './discovery.js';
+import { bindTodayWords, practiceOverview } from './discovery.js';
+import { homeHtml, bindHome } from './home.js';
 import { referenceCopy, editorialIntro } from './reference.js';
 import { duration, origin, art, bindImages } from './content.js';
 import { companionArt, scene } from './brand.js';
@@ -83,6 +79,7 @@ export async function renderWorld(root, ctx) {
   // The library paints itself asynchronously into its own container and binds
   // its own shelves there; this is how that binding is released with the room.
   let releaseLibrary = () => {};
+  let unbindHome = () => {};
   const text = contentFor(language).map((x) => ({
     ...x,
     id: `story:${x.id}`,
@@ -93,6 +90,10 @@ export async function renderWorld(root, ctx) {
     api.readingSessions(12),
     location.page === 'discover'
       ? api.dailyVocabularyFeed(language)
+      : Promise.resolve({ items: [] }),
+    // The vocabulary collections the Home rail shows.
+    location.page === 'discover'
+      ? api.vocabularyLibraryCollections(language)
       : Promise.resolve({ items: [] }),
   ]);
   if (!alive()) return;
@@ -243,16 +244,17 @@ export async function renderWorld(root, ctx) {
       due = 0;
     }
     if (!alive()) return;
-    root.innerHTML = discoverySpread(ctx, {
+    root.innerHTML = homeHtml(ctx, {
       media,
       reading: readable,
       vocabulary,
       saved: [...(memory.value.imports || []), ...(memory.value.mediaImports || [])],
       due,
+      collections: result[3].status === 'fulfilled' ? result[3].value.items || result[3].value.collections || [] : [],
       catalogError,
     });
+    unbindHome = bindHome(root, ctx);
   }
-  const unbindContentRails = bindContentRails(root);
   bindTodayWords(root);
   root.querySelectorAll('[data-discover-vocabulary-save]').forEach((button) => {
     button.addEventListener('click', async () => {
@@ -309,7 +311,7 @@ export async function renderWorld(root, ctx) {
   );
   bindImages(root, c);
   return () => {
-    unbindContentRails();
+    unbindHome();
     releaseLibrary();
   };
 }

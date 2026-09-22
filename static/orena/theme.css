@@ -132,6 +132,7 @@
   --rail-edge: inset -1px 0 0 rgba(255, 255, 255, 0.06);
   --bar-edge-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --rule-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --scrim-track: rgba(0, 0, 0, 0.45);
 
   /* Dictation (Orena Listening, "Dictation · Nghe chép"): the streak pill, the amber progress, the
      diff marks, the right line, and the skill's own lime. */

@@ -352,43 +352,7 @@
    system's Home · desktop 1280, Home · 390 and Home · paper: a Continue label
    and two lit cards, the Listening shelf, the Reading shelf beside Today's
    words. Colour is read only from theme.css; artwork from the slot in
-   components.css. */
-.discover-feed { display: grid; gap: 26px; padding-bottom: var(--space-6); }
-.home-label-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin: 0 0 12px;
-}
-.discover-start .home-label {
-  margin: 0;
-  color: var(--text-secondary);
-  font-family: var(--mono-font);
-  font-size: 10.5px;
-  font-weight: var(--weight-regular);
-  letter-spacing: 0.14em;
-  line-height: 1.3;
-  text-transform: uppercase;
-}
-.home-rail-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-  font-weight: var(--weight-medium);
-}
-.home-rail-all:hover { color: var(--action-text); }
-.discover-start { margin: 0 0 26px; }
-
-/* The two most recent threads, each a lit card (both are in progress). */
-.continue-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.continue-card {
+   components.css. *//* The two most recent threads, each a lit card (both are in progress). */.continue-card {
   display: flex;
   gap: 14px;
   min-width: 0;
@@ -429,49 +393,8 @@
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.continue-card__progress { display: flex; align-items: center; gap: 9px; }
-.continue-card__progress .progress-bar { flex: 1; block-size: 4px; }
-.continue-card__progress .progress-bar > span { background: var(--progress); }
-.continue-card__progress small {
-  color: var(--text-secondary);
-  font-family: var(--mono-font);
-  font-size: 10.5px;
-  font-weight: var(--weight-regular);
-  font-variant-numeric: tabular-nums;
-}
-.continue-card__play,
-.continue-card__go {
-  align-self: center;
-  flex: none;
-  inline-size: 40px;
-  block-size: 40px;
-  min-height: 40px;
-  padding: 0;
-  border-radius: 999px;
-}
-.continue-card__play { gap: 0; }
-
-/* A learner with no thread yet: one lit card that begins. */
-.discover-start--begin {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  border: 1px solid var(--border-strong);
-  border-radius: 18px;
-  background: var(--bloom), var(--surface-secondary);
-  box-shadow: var(--shadow-raised);
-}
-.discover-start__body { display: grid; flex: 1; gap: 4px; min-width: 0; }
-.discover-start h2 { margin: 0; font-size: 15px; font-weight: var(--weight-bold); line-height: 1.3; letter-spacing: 0; }
-.discover-start__body > small {
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: var(--weight-medium);
-}
-
-/* One shelf mechanic for every rail in the product.
+}.continue-card__progress .progress-bar { flex: 1; block-size: 4px; }
+.continue-card__progress .progress-bar > span { background: var(--progress); }/* A learner with no thread yet: one lit card that begins. *//* One shelf mechanic for every rail in the product.
    A rail states how many cards it shows (`--rail-columns`) and the primitive
    works out the width, so a card is never accidentally cut: what is left over
    is exactly `--rail-peek` of the next card - the signal on a phone that there
@@ -563,25 +486,6 @@
 .is-flipped { transform: scaleX(-1); }
 
 /* Cards. */
-.discover-content-card,
-.discover-prompt-card,
-.discover-continuation-card {
-  width: 100%;
-  height: 100%;
-  color: var(--text-primary);
-  text-decoration: none;
-}
-.discover-content-card { display: grid; align-content: start; }
-.discover-content-card__body { display: grid; gap: 3px; min-width: 0; }
-.discover-content-card__body strong {
-  display: -webkit-box;
-  overflow: hidden;
-  font-weight: var(--weight-bold);
-  line-height: 1.3;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.discover-content-card__body small,
 .thread--rail p {
   color: var(--text-secondary);
   font-family: var(--mono-font);
@@ -591,77 +495,14 @@
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
 }
-.discover-writing-card__source {
-  color: var(--text-secondary);
-  font-size: 11.5px;
-  line-height: 1.4;
-}
-.discover-reading-card__visual,
-.discover-listening-card__visual {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  background: var(--artwork-wash);
-}
-.discover-reading-card__visual > img,
-.discover-listening-card__visual > img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Listening: artwork 16:9 inside a surface card; title and length below. */
-.discover-listening-card {
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-secondary);
-}
-.discover-listening-card__visual { aspect-ratio: 16 / 9; }
-.discover-listening-card .discover-content-card__body { padding: 10px 12px; }
-.discover-listening-card .discover-content-card__body strong { font-size: 13.5px; }
-/* On artwork, a control carries its own translucent disc - artwork keeps its
-   own light in both themes. */
-.discover-listening-card__play {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--artwork-control);
-  border: 1px solid var(--artwork-control-edge);
-  color: var(--on-artwork);
-}
-
-/* Reading on Home: the same wide 16:9 card as Listening (the baseline's ContentCard), so a rail
-   that mixes both has one height. Portrait covers belong to the Library grid. */
-/* It is built exactly like the listening card - a surface, the artwork, the title and one
-   line under it - so the two are interchangeable on one shelf. */
-.discover-reading-card {
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-secondary);
-}
-.discover-reading-card__visual { aspect-ratio: 16 / 9; }
-.discover-reading-card .discover-content-card__body { padding: 10px 12px; }
-.discover-reading-card .discover-content-card__body strong { font-size: 13.5px; }
-/* One height on a shelf: every card fills its row, and a title takes two lines' room
-   whether it needs them or not, so a short title does not make a short card. */
+/* One height on a shelf: every card fills its row. */
 .content-rail__track { align-items: stretch; }
 .content-rail__item { display: flex; }
-.content-rail__item > .discover-content-card { flex: 1 1 auto; min-width: 0; grid-template-rows: auto 1fr; }
-.discover-content-card__body strong { min-height: calc(2 * 1.3em); }
 .content-rail--stories { --rail-gap: 12px; }
 .content-rail--stories .content-rail__item { flex: 0 0 104px; }
 
-/* The Reading shelf and Today's words share a row on a desk. */
-.home-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 312px;
-  gap: 14px;
-  align-items: start;
-}
-.home-rail-head {
+/* The Reading shelf and Today's words share a row on a desk. */.home-rail-head {
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -789,81 +630,9 @@
   line-height: 1;
 }
 
-/* Speaking and Writing prompts, in the shelf's approved card shape. */
-.discover-prompt-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 8px 12px;
-  padding: 14px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-secondary);
-}
-.discover-prompt-card__icon { display: inline-flex; color: var(--tile-ink); }
-.discover-prompt-card__body { display: grid; gap: 5px; min-width: 0; }
-.discover-prompt-card strong {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: 13.5px;
-  font-weight: var(--weight-bold);
-  line-height: 1.35;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-.discover-speaking-card__turn {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-.discover-writing-card__source { color: var(--text-secondary); }
-.content-rail--say { --rail-columns: 4; }
+/* Speaking and Writing prompts, in the shelf's approved card shape. */.content-rail--say { --rail-columns: 4; }
 
-/* Continue room's shelf card (the Continue page, not Home). */
-.discover-continuation-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  gap: 3px var(--space-3);
-  min-height: 96px;
-  padding: var(--space-3);
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-secondary);
-}
-.discover-continuation-card__visual {
-  grid-row: 1 / 3;
-  overflow: hidden;
-  width: 48px;
-  aspect-ratio: 2 / 3;
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle);
-}
-.discover-continuation-card__visual > img { width: 100%; height: 100%; object-fit: cover; }
-.discover-continuation-card > small {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: end;
-  color: var(--text-secondary);
-}
-.discover-continuation-card > small svg { width: 15px; height: 15px; }
-.discover-continuation-card > strong { align-self: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.content-rail--continue { --rail-columns: 3; }
-.discover-content-card:hover,
-.discover-content-card:focus-visible,
-.discover-prompt-card:hover,
-.discover-prompt-card:focus-visible,
-.discover-continuation-card:hover,
-.discover-continuation-card:focus-visible { color: var(--text-primary); }
-.discover-listening-card:hover,
-.discover-prompt-card:hover { border-color: var(--border-strong); }
-
-/* A desk shows whole cards; the peek is the phone's signal. */
+/* Continue room's shelf card (the Continue page, not Home). */.content-rail--continue { --rail-columns: 3; }/* A desk shows whole cards; the peek is the phone's signal. */
 @media (min-width: 901px) {
   .content-rail--voices,
   .content-rail--say { --rail-peek: 0px; }
@@ -878,14 +647,10 @@
   .content-rail,
   .content-rail--continue,
   .content-rail--say,
-  .content-rail--voices { --rail-columns: 2; }
-  .home-pair { grid-template-columns: 1fr; gap: 26px; }
-}
+  .content-rail--voices { --rail-columns: 2; }}
 @media (max-width: 600px) {
   /* A phone: one Continue card, shelves of about 1.6 cards (the approved
-     phone composition), the words stack at full width. */
-  .continue-cards { grid-template-columns: 1fr; }
-  .continue-card:not([data-lead]) { display: none; }
+     phone composition), the words stack at full width. */  .continue-card:not([data-lead]) { display: none; }
   .continue-card { padding: 12px; gap: 12px; }
   .continue-card__visual { inline-size: 54px; block-size: 76px; }
   .content-rail__header { margin-bottom: 10px; }

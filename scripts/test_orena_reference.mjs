@@ -222,7 +222,8 @@ const {
   navigationCurrent,
   topBar,
 } = await import('../static/orena/ui/reference.js');
-const { practiceOverview, discoverySpread } = await import('../static/orena/ui/discovery.js');
+const { practiceOverview } = await import('../static/orena/ui/discovery.js');
+const { homeHtml } = await import('../static/orena/ui/home.js');
 const shellCtx = (ui, location, extra = {}) => ({
   ui,
   location,
@@ -254,7 +255,7 @@ for (const ui of ['en', 'zh', 'vi']) {
     nav,
     topBar({ ui, language: 'en', support: 'vi', location: route('#/') }),
     practiceOverview({ c: copy[ui === 'vi' ? 'vi' : ui] || copy.en, ui }),
-    discoverySpread({ c: copy[ui] || copy.en, ui, language: 'en', support: 'vi', memory: threeThreads }, {}),
+    homeHtml({ c: copy[ui] || copy.en, ui, language: 'en', support: 'vi', memory: threeThreads }, {}),
   ].join('');
   // The Practice map (#/practice) is the one entry the design does not draw: it left the chrome with the
   // Practice group and is a legacy page awaiting deletion (UI_BACKEND_GAPS.md), so it is not required here.

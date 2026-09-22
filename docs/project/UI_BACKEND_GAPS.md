@@ -502,3 +502,23 @@ their foot. The phone's revision bar is "Revise more" beside "Done".
   gives no button to revise again from the desktop comparison; it is behind the same menu (the phone has it in the bar).
 - **The design's Vietnamese sentences are sample text.** The changes list shows the evaluator's own words (the
   fragment, its kind, the correction and reason), not the frame's "Giọng văn đã thân mật".
+
+## Home, built to its frames (2026-09-22)
+
+`ui/home.js` + `home.css` replace `discoverySpread`: the baseline's top bar (the one search, the level, the
+streak), the Continue strip, then the rails the frames draw - what is new for you, Reading, Listening,
+Speaking, Writing, Vocabulary - and what the learner kept. Every card is a real item; a rail with nothing
+in it is not drawn. The old composition (greeting, hero pair, "for you"/"saved" only) and its stylesheet
+are deleted (rule 44).
+
+- **The frames' sidebar draws an account card and per-skill levels; the app's rail does not.** The shell is
+  already built to `AppShell` (D-066) and the human kept the current logo; the account lives in the profile
+  sheet. Per-skill levels have no source (`skillLevels` in `AppShell.json` is unserved). Decision needed
+  before the rail grows a card.
+- **The streak is still unmeasured (GAP-001).** The chip keeps its place and shows "—", as everywhere else.
+- **"For you" is the catalogue's own order (GAP-052).** There is no recommender; the rail alternates
+  listening and reading so the phone's first two cards show both, and says nothing about why.
+- **The frame's phone tab bar holds Home / Library / Vocab / Progress / Profile**, which the shell already
+  draws; Home draws no navigation of its own.
+- **Not drawn because nothing supplies them:** a per-card "ĐANG LUYỆN / ĐÃ LƯU" badge (`badge` in
+  `ContentCard.json` is unserved), the frame's "còn 4 phút" (a thread records a place, not a remaining time).
