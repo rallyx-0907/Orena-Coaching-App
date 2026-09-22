@@ -143,3 +143,77 @@ is what `UI_BACKEND_GAPS.md` already records.
 **Where this leaves the work.** (a) may be implemented. (b) is not migrated: the proposal is revised against
 the six required changes, then re-reviewed, then the migration is written and applied to the sandbox only -
 the pattern D-069 followed.
+
+---
+
+## (b), revised against the required changes (2026-09-22) — for re-review
+
+This replaces the shape proposed above for (b). Numbers match the reviewer's required changes.
+
+### Tables
+
+`text_discussions`
+- `id UUID PK`, `user_id UUID NOT NULL FK users(id) ON DELETE CASCADE`, `language_code VARCHAR(20) NOT NULL`
+- `source_kind VARCHAR(32) NOT NULL`, `source_id VARCHAR(255) NOT NULL`
+- `reading_session_id UUID NULL FK reading_sessions(id) ON DELETE SET NULL` — **(5)** a real FK for the one
+  kind the app owns a typed row for. It is set when and only when `source_kind='reading_session'`; the other
+  kinds (`story`, `media`, `book_chapter`) are catalogue content the app owns no row for, so they keep the
+  free-form identity string and nothing more. `SET NULL` rather than `CASCADE`: losing the session must not
+  delete the learner's words.
+- `turn_count INTEGER NOT NULL DEFAULT 0` — **(3)** maintained in the same transaction as a turn insert, so
+  the cap is enforced with one read of the thread row rather than a count over turns.
+- `created_at`, `updated_at TIMESTAMPTZ NOT NULL`
+- `UNIQUE (user_id, language_code, source_kind, source_id)` — one thread per learner per text
+- `CHECK (source_kind IN ('story','media','reading_session','book_chapter'))` — **(4)**
+- `CHECK ((source_kind = 'reading_session') = (reading_session_id IS NOT NULL))` — the FK and the kind agree
+- `CHECK (turn_count >= 0 AND turn_count <= 200)` — **(3)**
+
+`text_discussion_turns`
+- `id UUID PK`, `discussion_id UUID NOT NULL FK text_discussions(id) ON DELETE CASCADE`
+- `ordinal INTEGER NOT NULL` — **(2)** assigned server-side as `turn_count + 1`, `+2` for the pair written in
+  one request, so replay order is deterministic and cannot tie
+- `role VARCHAR(16) NOT NULL`, `body TEXT NOT NULL`, `context TEXT NOT NULL DEFAULT ''`
+- `provider VARCHAR(64) NOT NULL DEFAULT ''`, `model VARCHAR(128) NOT NULL DEFAULT ''` (empty for a learner turn)
+- `created_at TIMESTAMPTZ NOT NULL`
+- `UNIQUE (discussion_id, ordinal)` — **(2)**, the `WritingError` precedent
+- `CHECK (role IN ('learner','assistant'))` — **(4)**
+- `CHECK (char_length(body) <= 4000)` — **(3)** one turn is bounded too, not only the thread
+
+### API
+
+- `GET /api/texts/discussion?source_kind=&source_id=` — the thread for this learner and language, or an empty
+  one. **(6)** It reads `text_discussions` and `text_discussion_turns` **only** — it never joins to the
+  source table and never resolves `source_id` against the catalogue, so a withdrawn or unknown source cannot
+  fail the read. The response carries `source_kind`/`source_id` back unresolved and the room decides what to
+  show; `reading_session_id` is returned as `null` when the session was deleted. Turns come back in
+  `ordinal` order, newest page last, `limit` ≤ 100 with an `ordinal` cursor — **(3)** the stated pagination
+  contract.
+- `POST /api/texts/discussion/turns` — the learner's message; the assistant's answer is produced and both
+  rows are written in one transaction with `ordinal` `n+1`, `n+2`, and `turn_count` updated. Refused with
+  `409` once `turn_count` would exceed 200, naming the cap.
+  **(1)** The handler itself calls
+  `ProductRepository.record_usage(user_key=..., feature="reading.discussion_turn", amount=1, request_id=...)`
+  after the provider answers and before the commit. This is **new integration, not a copy of an existing
+  call site**: `record_usage` is today called only from `writing_coach/persistence/selftest.py` and tests, and
+  no live AI endpoint meters itself. A test asserts exactly one `usage_events` row per accepted turn, and
+  none when the turn is refused by the cap or the provider fails. Entitlement is checked before the provider
+  is called, by the same path the other AI features use.
+- `DELETE /api/texts/discussion` — the learner clears their own thread (rows deleted, not flagged).
+- Export: the thread is included in whatever the account export produces, as `source_kind`, `source_id`, and
+  the turns in `ordinal` order with their roles and timestamps.
+
+### Backend shape
+
+- Repository methods live beside the other specialized ones; the SQLite backend raises
+  `RuntimeError("… requires the PostgreSQL runtime.")` rather than no-op, as `save_listening_progress_record`
+  already does, so CI's SQLite never becomes a second persistence path.
+- **(7)** and for (a): `POST/DELETE /api/essays/{id}/keep` go through `PostgresLearningRepository`'s existing
+  `(user_id, language_code, legacy_id)` scoped lookup, not a new query.
+
+### What is still true
+
+One Alembic revision, two new tables, nothing to backfill, reversible by dropping them; account deletion
+cascades from `users`. Risk is unchanged in kind — this is still the first learner-owned conversational
+content to leave the device — and the migration is applied to the sandbox only, after re-review.
+
+**Status: awaiting re-review of this revision.** No migration is written until it passes.
