@@ -52,15 +52,20 @@ export function route(hash = '') {
       ? path
       : 'discover',
     id: q.get('id') || '',
+    /* Progress draws two screens behind one destination - Tổng quan and Xu
+       hướng - so which one is open belongs in the address and survives a
+       reload. */
+    tab: q.get('tab') || '',
     intent: practiceIntentions.includes(q.get('intent'))
       ? q.get('intent')
       : null,
     q: q.get('q') || '',
   };
 }
-export function link(page = 'discover', { id = '', intent = null, q = '' } = {}) {
+export function link(page = 'discover', { id = '', intent = null, q = '', tab = '' } = {}) {
   const query = new URLSearchParams();
   if (id) query.set('id', id);
+  if (tab) query.set('tab', tab);
   if (q) query.set('q', q);
   if (practiceIntentions.includes(intent)) query.set('intent', intent);
   return `#/${page === 'discover' ? '' : page}${query.size ? '?' + query : ''}`;

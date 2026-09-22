@@ -121,6 +121,10 @@ export function profileSection(ctx, { account, profile } = {}) {
         ${planName ? `<span class="profile-pill profile-pill--plan ds-data">${esc(planName)}</span>` : ''}
       </div>
       <p class="profile-hero__meta">${identity}</p>
+      <div class="profile-actions">
+        <button type="button" class="profile-action" data-preference>${icon('pencil-simple', { size: 17 })}<span>${esc(r.profileEdit)}</span></button>
+        <button type="button" class="profile-action" disabled title="${esc(r.profileSoon)}" aria-label="${esc(`${r.profileShare} — ${r.profileSoon}`)}">${icon('share-network', { size: 17 })}<span>${esc(r.profileShare)}</span></button>
+      </div>
       <div class="profile-xp">
         <div class="profile-xp__head"><span class="ds-data metric-unavailable">${esc(r.profileXpUnavailable)}</span></div>
         <span class="profile-xp__bar" data-unavailable aria-hidden="true"></span>

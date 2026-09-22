@@ -88,8 +88,8 @@ khi có `tier`. Hai file vẽ hai thứ khác nhau cho cùng một chỗ.
 | B1 | **Progress** | **Dựng lại theo frame MỚI** (2026-09-22, sau khi re-pin - frame cũ trong cache đã lệch 22 KB). Frame mới **bỏ hẳn** hàng "Bằng chứng gần nhất", thay bằng **thang cấp bậc 20 bậc** (lưới 4 cột, ô 227x56 r14, ba trạng thái: mở / hiện tại / khoá) + **thẻ CẤP BẬC** (102 cao, pad 16/18, r18). Cột phụ 600 giữ heatmap, hàng kỹ năng **có thanh**, và "Việc nên làm tiếp" là **thẻ có mũi tên** (78 cao, r17, kính tiêu điểm). Ngưỡng 20 bậc lấy từ chính frame: 50 · 150 · 300 · 500 · 700 · 950 · 1200 · 1450 · 1600 · **?** · 3000 · 4500 · 6000 · 8000 · 10000 · 13000 · 16000 · 20000 · 25000 · 30000 từ. **Bậc 10 (Virtuoso) frame không ghi số** - nó vẽ "BẬC HIỆN TẠI" đè lên - nên app hiển thị "—" và không đoán. Còn thiếu so với frame: **hàng 4 panel thứ hai** (Vừa học xong · Từ đang ôn · Kiểm tra hiểu · Nhớ lại) vì cần số liệu ôn tập/hiểu mà backend chưa có (C4). |
 | B2 | **Hệ cấp bậc (rank)** | **Component đã dựng** (`ui/rank-frame.js`, port từ "Rank Frame Master v2": 20 bậc, 5 chặng, một nguồn sáng −48°, SVG sinh từ toạ độ cực, không raster; gate `test_orena_rank_frame.mjs`). **Chưa hiện ở đâu** vì `ProgressOverview.tier {name, level, current, target}` chưa ai phục vụ - cần **ngưỡng mỗi bậc**, là quyết định sản phẩm. Ngày có `tier`, khung pha lê hiện luôn, không cần sửa code. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
 | B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
-| B5 | **Progress · tab "Xu hướng"** | Frame có **màn thứ hai** `Progress trends` (`data-screen-label="Progress trends"` + bản mobile) với các hàng xu hướng và thẻ độ khó. App **chưa có tab nào** để tới đó, và chưa dựng màn. Cần dữ liệu xu hướng theo thời gian (`ProgressTrends.json`) mà backend chưa phục vụ. |
-| B6 | **Progress · hàng 4 panel thứ hai** | **Nằm giữa** hàng 3 số lớn và thang cấp bậc, chạy hết chiều ngang: *Vừa học xong* (14 từ · HSK 2 · trong 3 ngày + chip từ) · *Từ đang ôn* (42 từ · 18 chữ tới hạn hôm nay + thanh 24/42) · *Kiểm tra hiểu* (9/11 · câu đúng · 3 bài đọc + dải ô đúng/sai) · *Nhớ lại* (86% · 312 thẻ trong 7 ngày + thanh + 268 nhớ / 31 chưa chắc / 13 quên). Chưa dựng vì cần số liệu ôn tập và hiểu backend chưa có (C4). |
+| B5 | **Progress · tab "Xu hướng"** | **ĐÃ DỰNG** (2026-09-22): tab Tổng quan / Xu hướng ở `#/progress?tab=trends`, ba khối *Đang tốt lên · Dựa trên gì · Lỗi lặp lại*. **Mọi con số là 0 / "—"** vì chưa có mô hình xu hướng, mô hình lỗi lặp lại, hay lịch sử theo từng thước đo - `ProgressTrends.json` chưa ai phục vụ. Frame gốc: `Progress trends` (`data-screen-label="Progress trends"` + bản mobile) với các hàng xu hướng và thẻ độ khó. App **chưa có tab nào** để tới đó, và chưa dựng màn. Cần dữ liệu xu hướng theo thời gian (`ProgressTrends.json`) mà backend chưa phục vụ. |
+| B6 | **Progress · hàng 4 panel thứ hai** | **ĐÃ DỰNG** (2026-09-22), 4 panel 375x147 pad 16/18 r18 gap 20. *Vừa học xong* và *Từ đang ôn* chạy bằng số thật từ kho từ của học viên; *Kiểm tra hiểu* và *Nhớ lại* render **0** vì chưa có số liệu (C4). Vị trí: **nằm giữa** hàng 3 số lớn và thang cấp bậc, chạy hết chiều ngang: *Vừa học xong* (14 từ · HSK 2 · trong 3 ngày + chip từ) · *Từ đang ôn* (42 từ · 18 chữ tới hạn hôm nay + thanh 24/42) · *Kiểm tra hiểu* (9/11 · câu đúng · 3 bài đọc + dải ô đúng/sai) · *Nhớ lại* (86% · 312 thẻ trong 7 ngày + thanh + 268 nhớ / 31 chưa chắc / 13 quên). Chưa dựng vì cần số liệu ôn tập và hiểu backend chưa có (C4). |
 | B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |
 
 ## C. Thiếu dữ liệu backend — UI không được bịa
@@ -102,6 +102,24 @@ khi có `tier`. Hai file vẽ hai thứ khác nhau cho cùng một chỗ.
 | C4 | Chuỗi ngày, thời gian học 90 ngày, hoạt động 18 tuần, ngưỡng rank | Các ô Progress sẽ phải in "—" nếu dựng theo frame ngay bây giờ. |
 | C5 | Câu hỏi hiểu cho sách nhập | A3 ở trên. |
 | C6 | **Ngưỡng bậc 10 (Virtuoso)** | Frame vẽ "BẬC HIỆN TẠI" đè lên số của chính nó, nên 19/20 ngưỡng có số, riêng bậc 10 không. Learner ở giữa 1 600 và 3 000 từ sẽ bị tính là bậc 9. Cần anh cho **một con số**. |
+
+## C. Dữ liệu backend cần cho UI đã dựng sẵn (2026-09-22)
+
+Human: *"Backend chưa có thì note lại làm sau. UI phải có hoàn chỉnh đã."* Các màn dưới đây **đã dựng đủ
+component**, đang render 0 / "—" đúng rule 4, và sẽ tự có số khi backend phục vụ:
+
+| Ô đang trống | Cần gì |
+| --- | --- |
+| Progress · Kiểm tra hiểu | số câu đúng / tổng, theo 7 ngày |
+| Progress · Nhớ lại | số thẻ đã chấm 7 ngày + tách nhớ / chưa chắc / quên |
+| Progress · Chuỗi ngày, Thời gian học | đếm ngày liên tiếp, thời gian học 90 ngày |
+| Progress · heatmap 18 tuần | hoạt động theo từng ngày |
+| Progress · thời gian 7 ngày theo kỹ năng | thời gian theo kỹ năng (chép chính tả tính vào Nghe) |
+| Xu hướng · Đang tốt lên | 4 thước đo so với 4 tuần trước |
+| Xu hướng · Dựa trên gì | đếm thẻ / bản viết / câu hỏi / phiên nói / bài đọc |
+| Xu hướng · Lỗi lặp lại | mô hình lỗi lặp: tên lỗi, số lần, ví dụ, nguồn |
+| Hồ sơ · XP và chuỗi ngày | điểm kinh nghiệm và chuỗi ngày |
+| Hồ sơ · khung rank trên avatar | `ProgressOverview.tier` + ngưỡng bậc 10 (C6) |
 
 ## D. Quyết định quy tắc, không phải quyết định code
 

@@ -58,6 +58,97 @@ function domainLine(c, r, entry, summary, words) {
   return { text: row.value, label: row.label, bar: unavailableBar, measured: true };
 }
 
+/* --- The second row the frame draws (D-067) ------------------------------
+   Four panels of 375x147, 16/18 padding, radius 18, gap 20 between them: what
+   was just learned, what is being reviewed, comprehension, and recall. The
+   figure is Nunito 26/800 over a 13.5 line that says what it counts.
+
+   Orena measures the first two from the learner's own vocabulary; the other
+   two need review and comprehension figures nothing serves yet, so they render
+   0 in the canonical component and say what they would count (D-066 rule 4).
+   The panel is built either way - a component the backend cannot fill yet is
+   still the component. */
+function panel(label, glyph, figure, note, extra = '', { measured = true } = {}) {
+  return `<section class="pstat"${measured ? '' : ' data-unmeasured'}>`
+    + `<span class="ds-label pstat__label">${icon(glyph, { size: 14 })}${esc(label)}</span>`
+    + `<strong class="pstat__figure${measured ? '' : ' metric-unavailable'}">${esc(figure)}</strong>`
+    + `<span class="pstat__note">${esc(note)}</span>`
+    + (extra ? `<div class="pstat__extra">${extra}</div>` : '')
+    + `</section>`;
+}
+
+function overviewPanels(r, words, recent) {
+  const saved = Number(words?.saved || 0);
+  const due = Number(words?.due || 0);
+  const chips = (recent || []).slice(0, 3)
+    .map((w) => `<span class="pstat__chip" lang="${esc(w.language || '')}">${esc(w.word)}</span>`).join('');
+  const reviewing = Math.max(0, saved - Number(words?.mastered || 0));
+  const reviewed = Math.max(0, reviewing - due);
+  return [
+    panel(r.progressJustLearned, 'sparkle', `${(recent || []).length}`, r.progressJustLearnedNote, chips,
+      { measured: Boolean(words) }),
+    panel(r.progressReviewing, 'cards', `${reviewing}`, String(r.progressDueToday).replace('{n}', String(due)),
+      `<span class="progress-bar pstat__bar"><span style="width:${reviewing ? Math.round((reviewed / reviewing) * 100) : 0}%"></span></span>`
+      + `<span class="pstat__ratio ds-data">${reviewed}/${reviewing}</span>`,
+      { measured: Boolean(words) }),
+    panel(r.progressComprehension, 'check-square-offset', '0', r.progressComprehensionNote, '', { measured: false }),
+    panel(r.progressRecall, 'arrow-counter-clockwise', '0', r.progressRecallNote,
+      `<div class="pstat__split ds-data"><span>${esc(String(r.progressRecallGot).replace('{n}', '0'))}</span>`
+      + `<span>${esc(String(r.progressRecallUnsure).replace('{n}', '0'))}</span>`
+      + `<span>${esc(String(r.progressRecallForgot).replace('{n}', '0'))}</span></div>`,
+      { measured: false }),
+  ].join('');
+}
+
+/* The two screens behind one destination, as the frame's bar draws them. */
+function tabs(r, current) {
+  const one = (id, label) => `<a class="ptab" href="${esc(link('progress', id === 'overview' ? {} : { tab: id }))}"`
+    + `${current === id ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
+  return `<nav class="ptabs" aria-label="${esc(r.progress)}">`
+    + one('overview', r.progressTabOverview)
+    + one('trends', r.progressTabTrends)
+    + `</nav>`;
+}
+
+/* --- Xu hướng (D-067, "Progress trends") --------------------------------
+   Four measures against four weeks ago, what each one is drawn from, the
+   mistakes that keep coming back, and the one thing to do next.
+
+   None of it is served: there is no trend model, no repeated-error model, and
+   no per-measure history. Every figure is therefore 0 in its canonical
+   component and every list says it has nothing yet, which is the honest
+   picture of a screen whose data has not been built. */
+function trendsView(ctx) {
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const measures = [
+    r.evidenceNaturalness, r.evidencePronunciation, r.progressRecall, r.progressListening,
+  ].map((label) => `<div class="trend-row">`
+    + `<span class="trend-row__name">${esc(label)}</span>`
+    + `<span class="progress-bar trend-row__bar" data-unavailable aria-hidden="true"></span>`
+    + `<span class="trend-row__value ds-data metric-unavailable">&mdash;</span>`
+    + `</div>`).join('');
+  const sources = [r.progressSourceCards, r.progressSourceWriting, r.progressSourceQuestions,
+    r.progressSourceSpeaking, r.progressSourceReading]
+    .map((label) => `<span class="trend-chip ds-data">${esc(String(label).replace('{n}', '0'))}</span>`).join('');
+  return `<section class="progress-page">`
+    + `<h1 class="progress-title">${esc(r.progress)}</h1>`
+    + tabs(r, 'trends')
+    + `<section class="trend-block">`
+    + `<span class="ds-label">${esc(r.progressImproving)}</span>`
+    + `<div class="trend-rows">${measures}</div>`
+    + `</section>`
+    + `<section class="trend-block">`
+    + `<span class="ds-label">${esc(r.progressBasedOn)}</span>`
+    + `<p class="trend-note">${esc(r.progressBasedOnNote)}</p>`
+    + `<div class="trend-chips">${sources}</div>`
+    + `</section>`
+    + `<section class="trend-block">`
+    + `<span class="ds-label">${esc(r.progressRepeated)}</span>`
+    + `<p class="trend-note">${esc(r.progressRepeatedNone)}</p>`
+    + `</section>`
+    + `</section>`;
+}
+
 /* --- The rank ladder (D-067, the reworked Progress frame) ---------------
    The frame that used to carry "BẰNG CHỨNG GẦN NHẤT" now carries the twenty
    tiers, so the evidence list is deleted with it (rule 44) rather than kept
@@ -212,7 +303,7 @@ function nextAction(r, words) {
     + `</a>`;
 }
 
-function view(ctx, { summary, words, summaryFailed }) {
+function view(ctx, { summary, words, summaryFailed, recent }) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const degraded = summaryFailed
@@ -228,8 +319,10 @@ function view(ctx, { summary, words, summaryFailed }) {
 
   return `<section class="progress-page">`
     + `<h1 class="progress-title">${esc(r.progress)}</h1>`
+    + tabs(r, 'overview')
     + degraded
     + `<div class="progress-figures">${figures}</div>`
+    + `<div class="progress-panels">${overviewPanels(r, words, recent)}</div>`
     + `<div class="progress-columns">`
     + `<div class="progress-column progress-column--main">${ladderHtml(r, known)}${rankCardHtml(r, known)}</div>`
     + `<aside class="progress-column progress-column--side">${heatmap(r, null)}${skillRows(c, r, summary, words)}${nextAction(r, words)}</aside>`
@@ -244,6 +337,13 @@ function skeleton(ctx) {
 
 export async function renderProgress(root, ctx) {
   let released = false;
+  /* Xu hướng needs nothing from the account: every figure on it is unserved,
+     so it paints at once rather than waiting on two requests to tell the
+     learner the same nothing. */
+  if (ctx.location?.tab === 'trends') {
+    if (ctx.alive()) root.innerHTML = trendsView(ctx);
+    return () => {};
+  }
   const paint = (html) => {
     if (!released && ctx.alive()) root.innerHTML = html;
   };
@@ -255,6 +355,9 @@ export async function renderProgress(root, ctx) {
     ]);
     const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
     const items = wordsResult.status === 'fulfilled' ? wordsResult.value.items || [] : null;
+    /* The three most recently saved words, which is what "vừa học xong"
+       counts; the list is already sorted newest first by the library. */
+    const recent = (items || []).slice(0, 3).map((item) => ({ word: item.word, language: item.language_code }));
     const words = items
       ? {
           saved: items.length,
@@ -262,7 +365,7 @@ export async function renderProgress(root, ctx) {
           mastered: items.filter((item) => (Number(item.review_stage) || 0) >= 3).length,
         }
       : null;
-    paint(view(ctx, { summary, words, summaryFailed: !summary }));
+    paint(view(ctx, { summary, words, summaryFailed: !summary, recent }));
     root.querySelector('[data-progress-retry]')?.addEventListener('click', () => {
       ctx.growth = null;
       load();

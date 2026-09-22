@@ -3137,3 +3137,122 @@ ul.pronunciation-words small { color: var(--muted); }
   .rank-card__name { font-size: 17px; }
   .next-action { min-block-size: 0; padding: 14px 16px; }
 }
+
+/* --- Progress: row two, the tabs and Xu hướng (D-067, measured) ---------
+   Row two is four panels of 375x147 with 16/18 padding, radius 18, gap 20.
+   The tabs are pills of 38 with 9/16 padding: the one you are on is the solid
+   light, the other is the accent chip. */
+.ptabs { display: flex; gap: 8px; }
+.ptab {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 38px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip, rgba(196, 178, 255, 0.12));
+  color: var(--text-on-glass-soft, rgba(255, 255, 255, 0.78));
+  font-size: 14.5px;
+  text-decoration: none;
+}
+.ptab[aria-current='page'] {
+  background: var(--text-primary);
+  color: var(--ground-color, #0B0A0F);
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+}
+
+.progress-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+.pstat {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-block-size: 147px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.pstat__label { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 10.5px; letter-spacing: 0.12em; }
+.pstat__figure {
+  font-family: var(--display-font);
+  font-size: 26px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.pstat__note { color: var(--text-secondary); font-size: 13.5px; }
+.pstat__extra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-block-start: auto; }
+.pstat__chip {
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  font-family: var(--reading-font, Georgia, serif);
+  font-size: 13.5px;
+}
+.pstat__bar { flex: 1; min-inline-size: 80px; block-size: 6px; }
+.pstat__ratio { flex: none; color: var(--text-muted); font-size: 11.5px; }
+.pstat__split { display: flex; gap: 12px; color: var(--text-muted); font-size: 11px; }
+
+.trend-block {
+  display: grid;
+  gap: 12px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.trend-block .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
+.trend-rows { display: grid; gap: 12px; }
+.trend-row { display: flex; align-items: center; gap: 16px; }
+.trend-row__name { flex: none; inline-size: 170px; font-size: 13px; }
+.trend-row__bar { flex: 1; min-inline-size: 0; block-size: 10px; }
+.trend-row__value { flex: none; inline-size: 60px; text-align: end; font-size: 14.5px; font-weight: var(--weight-bold); }
+.trend-note { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; }
+.trend-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.trend-chip {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+@media (max-width: 900px) {
+  .progress-panels { grid-template-columns: 1fr; gap: 12px; }
+  .pstat { min-block-size: 0; padding: 14px 16px; }
+  .pstat__figure { font-size: 22px; }
+  .trend-block { padding: 16px 18px; }
+  .trend-row__name { inline-size: 120px; font-size: 12.5px; }
+}
+
+/* The hero's two actions, as the source draws them: pills of 46 with 0/20
+   padding at 15.5/700. "Chỉnh sửa" opens the settings the app already has;
+   "Chia sẻ" has no behaviour yet and says so rather than pretending. */
+.profile-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.profile-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-block-size: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15.5px;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.profile-action[disabled] { opacity: 0.55; cursor: default; }
+@media (max-width: 900px) {
+  .profile-actions { inline-size: 100%; }
+  .profile-action { flex: 1; justify-content: center; min-block-size: 42px; padding: 0 14px; font-size: 14px; }
+}
