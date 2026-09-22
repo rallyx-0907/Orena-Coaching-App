@@ -36,7 +36,15 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 # Markup that is never article text, whatever it contains.
 _DROPPED_ELEMENTS = frozenset(
-    {"script", "style", "noscript", "template", "svg", "nav", "header", "footer", "aside", "form"}
+    {
+        # Executable or presentational, never prose.
+        "script", "style", "noscript", "template", "svg",
+        # Document metadata: `<title>` is the page's title, extracted by the
+        # adapter as a title - it is not the article's first sentence.
+        "head", "title",
+        # Page chrome that surrounds an article without being one.
+        "nav", "header", "footer", "aside", "form",
+    }
 )
 # Elements whose end is a paragraph boundary rather than a space.
 _BLOCK_ELEMENTS = frozenset(
