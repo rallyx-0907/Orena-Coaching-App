@@ -44,6 +44,25 @@ import { referenceCopy } from './reference.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
+
+/* One review sitting, not a library: what is due comes a page at a time, and
+   the room asks again when it has worked through the page. */
+const RECALL_QUEUE = 60;
+
+/* The room opens on a page of saved words and asks for the next one when
+   the learner wants it. Searching, filtering and ordering that page are the
+   server's work: the browser must not hold a learner's whole vocabulary to
+   answer a question about part of it. */
+const SAVED_PAGE = 50;
+const SAVED_SEARCH_DEBOUNCE_MS = 220;
+/* Which server filter each of the room's chips means. `new` and `saved` have
+   no stored state of their own, so they stay the whole list and the chip
+   narrows what is drawn from the page. */
+const SAVED_STATUS = { learning: 'learning', due: 'due', mastered: 'mastered' };
+/* And which server order each sort option means. `level` is not a stored
+   field - it comes from the curated catalogue - so it orders the page the
+   room is holding rather than the library. */
+const SAVED_ORDER = { recommended: 'due', due: 'due', alpha: 'word' };
 import {
   grammarShelf,
   filterGrammar,
@@ -677,7 +696,10 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
    streak and no mastery invented for the occasion. */
 async function renderRecallLanguage(root, ctx) {
   const { api, c, language, alive, memory } = ctx;
-  const data = await api.libraryVocabulary();
+  /* The queue is what is due, asked for as what is due and in that order. A
+     learner with ten thousand saved words reviews the same handful today as a
+     learner with fifty, so the room reads a page of them, not a library. */
+  const data = await api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE });
   if (!alive()) return;
   let items = data.items || [],
     revealed = false,
@@ -802,7 +824,7 @@ async function renderRecallLanguage(root, ctx) {
           // retry fetch the list again instead of re-submitting the grade.
           const refresh = async () => {
             try {
-              const updated = await api.libraryVocabulary();
+              const updated = await api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE });
               if (!alive()) return;
               items = updated.items || [];
               revealed = false;
@@ -887,7 +909,7 @@ export async function renderLanguage(root, ctx) {
   const copy = vocabularyCopy(c, support);
   const pinyinAllowed = language !== 'zh' || ctx.profile.pinyin !== 'off';
   const results = await Promise.allSettled([
-    api.libraryVocabulary(),
+    api.libraryVocabulary({ limit: SAVED_PAGE, order: 'recent' }),
     api.vocabularyLibraryCollections(language),
   ]);
   if (!alive()) return;
@@ -911,6 +933,9 @@ export async function renderLanguage(root, ctx) {
   let notMastered = false;
   let collectionSearchTimer = null;
   let collectionRequest = 0;
+  let savedSearchTimer = null;
+  let savedRequest = 0;
+  let savedLoading = false;
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -918,6 +943,34 @@ export async function renderLanguage(root, ctx) {
     );
   };
   refreshSavedCards();
+
+  /* One page of saved words, asked for the way the toolbar is set. `append`
+     continues the page the learner is looking at; without it the page is
+     replaced, which is what a new search or filter means. */
+  async function loadSavedPage({ append = false } = {}) {
+    const token = (savedRequest += 1);
+    savedLoading = true;
+    try {
+      const page = await api.libraryVocabulary({
+        limit: SAVED_PAGE,
+        cursor: append ? savedData.next_cursor || '' : '',
+        query,
+        status: SAVED_STATUS[filter] || '',
+        order: SAVED_ORDER[sort] || 'recent',
+      });
+      if (!alive() || token !== savedRequest) return;
+      savedData = append
+        ? { ...page, items: [...(savedData.items || []), ...(page.items || [])] }
+        : page;
+      refreshSavedCards();
+      if (view === 'saved') activeItems = savedCards;
+    } catch {
+      if (!alive() || token !== savedRequest) return;
+    } finally {
+      if (token === savedRequest) savedLoading = false;
+    }
+    if (alive() && token === savedRequest) paint();
+  }
 
   const summary = () => savedData.summary || {
     saved: savedCards.length,
@@ -1027,11 +1080,13 @@ export async function renderLanguage(root, ctx) {
       : `<section class="empty vocabulary-empty"><h2>${esc(c.vocabularyNoMatches)}</h2></section>`;
     const pagination = view === 'collection' && activeCollection?.pagination?.has_more
       ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-load-more>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
-      : '';
+      : view === 'saved' && savedData.has_more
+        ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-saved-more${savedLoading ? ' disabled' : ''}>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
+        : '';
     const collectionProgress = view === 'collection' && activeCollection
       ? (() => { const progress = activeCollection.progress || {}; const learned = Number(progress.learned_count) || 0; const total = Number(activeCollection.item_count) || 0; const percent = total ? Math.round((learned / total) * 100) : 0; return `<section class="vocabulary-collection-detail-progress" aria-label="${esc(c.vocabularyProgress || 'Progress')}"><div><span>${esc(c.vocabularyProgress || 'Progress')}</span><strong>${esc(learned)} / ${esc(total)} ${esc(c.vocabularyWordCount)}</strong></div><div class="vocabulary-progress" aria-hidden="true"><span style="width:${percent}%"></span></div></section>`; })()
       : '';
-    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
+    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(view === 'saved' ? Number(savedData.total || visibleItems.length) : visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
   };
 
   const studyView = () => {
@@ -1135,7 +1190,11 @@ export async function renderLanguage(root, ctx) {
   };
 
   const bind = () => {
-    root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => { activeItems = savedCards; query = ''; filter = 'all'; levelFilter = 'all'; sort = 'recommended'; view = 'saved'; paint(); }));
+    root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => {
+      activeItems = savedCards; query = ''; filter = 'all'; levelFilter = 'all'; sort = 'recommended'; view = 'saved';
+      paint();
+      loadSavedPage();
+    }));
     root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => { view = 'library'; paint(); }));
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
     root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : view === 'collection-list' ? 'collection' : 'overview'; paint(); }));
@@ -1152,7 +1211,16 @@ export async function renderLanguage(root, ctx) {
       }
       setStudy(order);
     });
-    root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', () => setStudy(savedCards.filter((card) => card.due)));
+    root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', async () => {
+      try {
+        const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: SAVED_PAGE });
+        if (!alive()) return;
+        setStudy((page.items || []).map((item) => vocabularyCardFromSavedItem(item, language, support, pinyinAllowed)));
+      } catch {
+        /* The card said what is due; if the queue cannot be read the room
+           stays where it is rather than opening an empty study. */
+      }
+    });
     root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => {
       query = event.target.value;
       if (view === 'collection' && activeCollection) {
@@ -1166,10 +1234,18 @@ export async function renderLanguage(root, ctx) {
         }, 250);
         return;
       }
+      if (view === 'saved') {
+        if (savedSearchTimer) clearTimeout(savedSearchTimer);
+        savedSearchTimer = setTimeout(() => loadSavedPage(), SAVED_SEARCH_DEBOUNCE_MS);
+      }
       paint();
       const input = root.querySelector('[data-vocabulary-search]');
       input?.focus();
       input?.setSelectionRange(query.length, query.length);
+    });
+    root.querySelector('[data-vocabulary-saved-more]')?.addEventListener('click', (event) => {
+      event.currentTarget.disabled = true;
+      loadSavedPage({ append: true });
     });
     root.querySelector('[data-vocabulary-load-more]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
@@ -1185,7 +1261,11 @@ export async function renderLanguage(root, ctx) {
         paint();
       } catch { button.disabled = false; }
     });
-    root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => { filter = button.dataset.vocabularyFilter; paint(); }));
+    root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => {
+      filter = button.dataset.vocabularyFilter;
+      if (view === 'saved') { loadSavedPage(); return; }
+      paint();
+    }));
     root.querySelectorAll('[data-vocabulary-level-filter]').forEach((button) => (button.onclick = () => {
       levelFilter = button.dataset.vocabularyLevelFilter;
       if (view === 'collection' && activeCollection) {
@@ -1197,7 +1277,11 @@ export async function renderLanguage(root, ctx) {
         paint();
       }
     }));
-    root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => { sort = event.target.value; paint(); });
+    root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => {
+      sort = event.target.value;
+      if (view === 'saved' && SAVED_ORDER[sort]) { loadSavedPage(); return; }
+      paint();
+    });
     const interactionPool = () => vocabularyInteractionItems(view, { visibleItems, savedCards, studyItems });
     root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => setStudy(interactionPool(), Number(button.dataset.vocabularyStudy))));
     root.querySelectorAll('[data-vocabulary-save]').forEach((button) => (button.onclick = () => saveCard(interactionPool()[Number(button.dataset.vocabularySave)], view === 'collection' ? 'collection' : 'manual')));

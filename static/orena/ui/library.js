@@ -184,6 +184,10 @@ export function librarySection(c, state = {}) {
    vocabulary: a word is from this book when it was kept while reading one of
    its chapters (`focus_note` is the chapter title the reader passed). This is
    a read of existing saved data, never a second store and never an estimate. */
+/* How many kept words a book page shows before it stops counting: a page,
+   because the panel lists them rather than tallying a library. */
+const BOOK_WORDS_LIMIT = 200;
+
 export function wordsFromBook(items, book) {
   const titles = new Set(
     [book?.title, ...(book?.chapters || []).map((chapter) => chapter.title)]
@@ -246,8 +250,19 @@ function bindBookControls(container, view, paint) {
 async function loadBookWords(open, paint, ctx) {
   const { api, alive } = ctx;
   const book = open.book;
+  /* A word kept from this book carries the book's or the chapter's title as
+     its note, so the titles are the query: the server returns the words saved
+     under them instead of the learner's whole vocabulary being read here. */
+  const titles = [book?.title, ...(book?.chapters || []).map((chapter) => chapter.title)]
+    .map((title) => String(title || '').trim())
+    .filter(Boolean);
+  if (!titles.length) {
+    open.words = [];
+    paint();
+    return;
+  }
   try {
-    const data = await api.libraryVocabulary();
+    const data = await api.libraryVocabulary({ focus: titles, limit: BOOK_WORDS_LIMIT });
     if (!alive() || open.book !== book) return;
     open.words = wordsFromBook(data?.items || data || [], book);
   } catch {

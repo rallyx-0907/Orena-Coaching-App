@@ -2,7 +2,7 @@
 
    Two rooms, one contract. My Language is where saved language lives; Recall
    is the review loop over the part of it that is due. Neither owns a store of
-   its own - both read `api.libraryVocabulary()` and grade through
+   its own - both read pages of `api.libraryVocabulary(...)` and grade through
    `api.reviewLibraryVocabulary()`, which is also the scheduler. A second
    vocabulary database or a second review algorithm is the failure these
    assertions exist to prevent.
@@ -28,12 +28,16 @@ const api = read('static/orena/infrastructure/api.js');
    endpoint. Nothing here keeps its own copy of a learner's vocabulary. */
 for (const contract of ['libraryVocabulary', 'saveLibraryVocabulary', 'reviewLibraryVocabulary', 'deleteLibraryVocabulary'])
   assert.match(api, new RegExp(`${contract}:`), `${contract} is the shared contract`);
-assert.match(expression, /api\.libraryVocabulary\(\)/, 'My Language reads the saved language');
+/* A page of the saved language, asked for as a page. Reading all of it was
+   what made Vocabulary, Tiến độ and Hồ sơ cost more with every saved word. */
+assert.match(expression, /api\.libraryVocabulary\(\{[^}]*limit:/, 'My Language reads a page of the saved language');
+assert.doesNotMatch(expression, /api\.libraryVocabulary\(\s*\)/, 'and never the whole of it');
+assert.match(expression, /status: 'due', order: 'due'/, 'and asks the server for what is due');
 const recallRoom = expression.slice(
   expression.indexOf('async function renderRecallLanguage('),
   expression.indexOf('export async function renderLanguage('),
 );
-assert.match(recallRoom, /api\.libraryVocabulary\(\)/, 'and so does Recall');
+assert.match(recallRoom, /api\.libraryVocabulary\(\{ status: 'due', order: 'due'/, 'and Recall asks for the due queue');
 assert.match(recallRoom, /api\.reviewLibraryVocabulary\(current\.word, button\.dataset\.grade\)/,
   'which grades through the scheduler that already exists');
 assert.doesNotMatch(recallRoom, /localStorage|indexedDB|new Map\(\)/, 'Recall keeps no store of its own');

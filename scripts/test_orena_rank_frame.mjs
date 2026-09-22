@@ -19,7 +19,7 @@ import {
   LITE_SIZE,
   MID_SIZE,
 } from '../static/orena/ui/rank-frame.js';
-import { RANK_LADDER, RANK_TOTAL, masteredCount, nextTier, tierOf } from '../static/orena/product/rank.js';
+import { ladderTiles, openTierCount, rankProgress, rankSummary } from '../static/orena/product/rank.js';
 
 /* --- Thirty-two ranks in eight bands of four --------------------------- */
 
@@ -48,31 +48,50 @@ assert.equal(clampRank(0), 1);
 assert.equal(clampRank(99), 32);
 assert.equal(clampRank('nonsense'), 1);
 
-/* --- The ladder: the design's own thresholds, joined by name ------------ */
+/* --- The ladder is read, not recomputed -------------------------------- */
 
-assert.equal(RANK_TOTAL, 32, 'the ladder is the master ladder');
-assert.equal(RANK_LADDER[0].words, 50, 'Initiate is fifty words');
-assert.equal(RANK_LADDER.find((e) => e.name === 'Archivist').words, 16000,
-  'a threshold follows its name, not its position');
-assert.equal(RANK_LADDER.find((e) => e.name === 'Virtuoso').words, null,
-  'the frame states no number for Virtuoso, so neither do we');
-assert.equal(RANK_LADDER.find((e) => e.name === 'Navigator').words, null,
-  'and none for the ranks it never drew');
+/* `writing_coach/product/rank_ladder.py` owns the thresholds and answers with
+   the learner's rank on the vocabulary summary. What the browser owns is the
+   reading of that answer: no screen counts words to find a rank, and a screen
+   with no answer yet shows no rank rather than a wrong one. */
+const summaryPayload = {
+  summary: { saved: 1612, mastered: 1600, learning: 12, due: 3 },
+  rank: 9,
+  rank_total: 32,
+  rank_name: 'Linguist',
+  band: 'Orchid',
+  next_rank_name: 'Luminary',
+  next_rank_words: 3000,
+  next_rank_remaining: 1400,
+  ladder: [
+    { tier: 1, name: 'Initiate', band: 'Amethyst', words: 50 },
+    { tier: 9, name: 'Linguist', band: 'Orchid', words: 1600 },
+    { tier: 10, name: 'Virtuoso', band: 'Orchid', words: null },
+    { tier: 11, name: 'Luminary', band: 'Orchid', words: 3000 },
+  ],
+};
 
-/* Nobody holds a rank they have not passed the stated threshold for. */
-assert.equal(tierOf(0), 0, 'no words, no rank');
-assert.equal(tierOf(49), 0);
-assert.equal(tierOf(50), 1, 'the first rank is earned at fifty');
-assert.equal(tierOf(1600), 9, 'Linguist at 1 600');
-assert.equal(tierOf(2999), 9, 'and Virtuoso cannot be counted into');
-assert.equal(tierOf(3000), 11, 'Luminary is the next one the design numbers');
-assert.equal(nextTier(0).name, 'Initiate');
-assert.equal(nextTier(30000), null, 'nothing beyond the last stated threshold');
+const state = rankSummary(summaryPayload);
+assert.equal(state.rank, 9, 'the rank is the server\'s');
+assert.equal(state.rankName, 'Linguist');
+assert.equal(state.band, 'Orchid');
+assert.equal(state.mastered, 1600);
+assert.equal(state.nextRankRemaining, 1400);
+assert.equal(rankProgress(state), 53, 'and so is how far along it is');
 
-/* One rule for "mastered", so the rank and the panel that shows the same
-   number cannot disagree. */
-assert.equal(masteredCount(null), null, 'an unreadable library is not zero');
-assert.equal(masteredCount([{ review_stage: 3 }, { review_stage: 1 }, {}]), 1);
+const tiles = ladderTiles(state);
+assert.equal(tiles.length, 4, 'the ladder is the one that arrived');
+assert.deepEqual(tiles.map((tile) => tile.open), [true, true, false, false]);
+assert.deepEqual(tiles.map((tile) => tile.current), [false, true, false, false]);
+assert.equal(tiles[2].words, null, 'a rank the design gives no number to stays without one');
+assert.equal(openTierCount(state), 2);
+
+/* Nothing read means nothing shown - never a rank nobody earned. */
+const empty = rankSummary(null);
+assert.equal(empty.known, false);
+assert.equal(empty.rank, 0);
+assert.deepEqual(ladderTiles(empty), []);
+assert.equal(rankProgress(empty), 0);
 
 /* --- The crystal grows with the rank ----------------------------------- */
 

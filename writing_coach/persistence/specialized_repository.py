@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import sqlite3
 from datetime import datetime, timezone
@@ -32,6 +33,70 @@ def _hint_level(values: dict[str, Any]) -> int:
         raise ValueError("last_hint_level must be an integer from 0 to 3")
     return level
 
+"""Paging and counting the learner's saved words, in the database.
+
+A screen that needs a number asks for the number; a screen that needs a page
+asks for a page. Nothing reads the whole vocabulary to count it, to search it,
+or to take three words off the top of it - that cost grew with everything the
+learner had ever saved, and Vocabulary, Tiến độ and Hồ sơ all paid it.
+
+The page is keyset-paged, not offset-paged, so a word saved while the learner
+is reading page two cannot push a word from page one onto page three. The key
+is (sort value, word): a word is unique per learner and language, so the pair
+is a total order and a cursor can never land between two equal rows.
+"""
+
+LIBRARY_PAGE_DEFAULT = 50
+LIBRARY_PAGE_MAX = 200
+# Below this review stage a word is still being learned; at or above it, the
+# learner is counted as holding it. One definition, used by every count.
+LIBRARY_MASTERED_STAGE = 3
+
+
+CURSOR_SEPARATOR = chr(31)
+
+
+def _library_cursor(sort_value: str, word: str) -> str:
+    raw = (sort_value + CURSOR_SEPARATOR + word).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_library_cursor(cursor: str) -> tuple[str, str] | None:
+    text = str(cursor or "").strip()
+    if not text:
+        return None
+    try:
+        padded = text + "=" * (-len(text) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8")
+    except Exception:
+        return None
+    sort_value, _, word = raw.partition(CURSOR_SEPARATOR)
+    if not word:
+        return None
+    return sort_value, word
+
+
+def _library_status(status: str) -> str:
+    wanted = str(status or "").strip().casefold()
+    return wanted if wanted in {"learning", "mastered", "due"} else ""
+
+
+def _library_order(order: str) -> str:
+    """One of the three orders the database can hold: newest first, soonest
+    due first, or alphabetical. Anything else is the default."""
+
+    wanted = str(order or "").strip().casefold()
+    return wanted if wanted in {"due", "word"} else "recent"
+
+
+def _library_limit(limit: int) -> int:
+    try:
+        value = int(limit)
+    except (TypeError, ValueError):
+        value = LIBRARY_PAGE_DEFAULT
+    return max(1, min(value, LIBRARY_PAGE_MAX))
+
+
 class SpecializedLearningRepository(Protocol):
     def get_profile_record(self) -> dict[str, Any] | None: ...
     def upsert_profile_record(self, values: dict[str, Any]) -> None: ...
@@ -39,6 +104,18 @@ class SpecializedLearningRepository(Protocol):
     def get_outcome_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def list_outcome_essays(self, limit: int) -> list[dict[str, Any]]: ...
     def list_library_records(self) -> list[dict[str, Any]]: ...
+    def library_counts(self, *, now: str) -> dict[str, int]: ...
+    def list_library_page(
+        self,
+        *,
+        limit: int,
+        cursor: str = "",
+        search: str = "",
+        status: str = "",
+        order: str = "recent",
+        focus: tuple[str, ...] = (),
+        now: str = "",
+    ) -> dict[str, Any]: ...
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def get_library_progress(self, word: str) -> dict[str, Any] | None: ...
     def update_library_review(self, word: str, values: dict[str, Any]) -> dict[str, Any] | None: ...
@@ -142,6 +219,38 @@ class SQLiteSpecializedLearningRepository:
                 FROM saved_words
                 """,
                 (now, now),
+            )
+
+            # --- The indexes the vocabulary queries need -------------------
+            #
+            # Measured, not guessed: with ten thousand saved words, counting
+            # them took fourteen seconds, because `saved_words` joins
+            # `vocabulary_learning` on `lower(word)` and a function over a
+            # column cannot use the primary key - so every row was compared
+            # with every row. An expression index on the same expression makes
+            # the join a lookup. The other three serve the orders and filters
+            # the screens actually ask for: newest first, soonest due, and
+            # held-or-learning.
+            if self._has_table(conn, "saved_words"):
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_saved_words_word_folded"
+                    " ON saved_words(lower(word))"
+                )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_saved_words_added_at"
+                    " ON saved_words(added_at DESC, word)"
+                )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vocabulary_learning_word_folded"
+                " ON vocabulary_learning(lower(word))"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vocabulary_learning_next_review"
+                " ON vocabulary_learning(next_review_at)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vocabulary_learning_stage"
+                " ON vocabulary_learning(review_stage)"
             )
 
             conn.execute(
@@ -258,12 +367,22 @@ class SQLiteSpecializedLearningRepository:
             ).fetchall()
         return [dict(r) for r in rows]
 
-    @staticmethod
-    def _library_select() -> str:
-        return """SELECT s.word,s.phonetic,s.part_of_speech,s.definition,s.translation_vi,s.added_at,
-                         v.source_essay_id,v.source_fragment,v.source_kind,v.focus_note,v.review_stage,
-                         v.successful_recalls,v.lapse_count,v.last_reviewed_at,v.next_review_at
-                  FROM saved_words s LEFT JOIN vocabulary_learning v ON lower(v.word)=lower(s.word)"""
+    _LIBRARY_COLUMNS = (
+        "SELECT s.word,s.phonetic,s.part_of_speech,s.definition,s.translation_vi,s.added_at,"
+        "v.source_essay_id,v.source_fragment,v.source_kind,v.focus_note,v.review_stage,"
+        "v.successful_recalls,v.lapse_count,v.last_reviewed_at,v.next_review_at"
+    )
+    _LIBRARY_FROM = " FROM saved_words s LEFT JOIN vocabulary_learning v ON lower(v.word)=lower(s.word)"
+
+    @classmethod
+    def _library_select(cls) -> str:
+        """The learner's saved words with their review state.
+
+        A caller that pages puts a sort value between the columns and the
+        FROM, which is why the two halves are kept apart.
+        """
+
+        return cls._LIBRARY_COLUMNS + cls._LIBRARY_FROM
 
     def list_library_records(self) -> list[dict[str, Any]]:
         with self._db() as conn:
@@ -286,6 +405,149 @@ class SQLiteSpecializedLearningRepository:
                        FROM saved_words s ORDER BY s.added_at DESC"""
                 ).fetchall()
         return [dict(r) for r in rows]
+
+    # --- Counting and paging, in SQL (see the module docstring) ----------
+    # `datetime(...)` normalises an ISO string with an offset to UTC, so two
+    # words scheduled in different timezones still order and compare
+    # correctly; a bare string comparison would not.
+    _DUE_EXPR = "datetime(COALESCE(NULLIF(v.next_review_at,''),'0001-01-01T00:00:00+00:00'))"
+    _STAGE_EXPR = "COALESCE(v.review_stage,0)"
+
+    def library_counts(self, *, now: str) -> dict[str, int]:
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return {"saved": 0, "mastered": 0, "learning": 0, "due": 0}
+            if not self._has_table(conn, "vocabulary_learning"):
+                total = int(conn.execute("SELECT COUNT(*) AS n FROM saved_words").fetchone()["n"])
+                # Without the Active Recall table every saved word is new, and
+                # a word that has never been scheduled is due now.
+                return {"saved": total, "mastered": 0, "learning": total, "due": total}
+            row = conn.execute(
+                "SELECT COUNT(*) AS saved,"
+                f" SUM(CASE WHEN {self._STAGE_EXPR} >= ? THEN 1 ELSE 0 END) AS mastered,"
+                f" SUM(CASE WHEN {self._DUE_EXPR} <= datetime(?) THEN 1 ELSE 0 END) AS due"
+                + self._LIBRARY_FROM,
+                (LIBRARY_MASTERED_STAGE, now),
+            ).fetchone()
+            saved = int(row["saved"] or 0)
+            mastered = int(row["mastered"] or 0)
+            return {
+                "saved": saved,
+                "mastered": mastered,
+                "learning": max(0, saved - mastered),
+                "due": int(row["due"] or 0),
+            }
+
+    def _library_filters(
+        self, *, search: str, status: str, focus: tuple[str, ...], now: str
+    ) -> tuple[list[str], list[Any]]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        needle = str(search or "").strip().casefold()
+        if needle:
+            clauses.append(
+                "(lower(s.word) LIKE ? OR lower(COALESCE(s.translation_vi,'')) LIKE ?"
+                " OR lower(COALESCE(s.definition,'')) LIKE ?)"
+            )
+            pattern = "%" + needle + "%"
+            params.extend([pattern, pattern, pattern])
+        wanted = _library_status(status)
+        if wanted == "mastered":
+            clauses.append(self._STAGE_EXPR + " >= ?")
+            params.append(LIBRARY_MASTERED_STAGE)
+        elif wanted == "learning":
+            clauses.append(self._STAGE_EXPR + " < ?")
+            params.append(LIBRARY_MASTERED_STAGE)
+        elif wanted == "due":
+            clauses.append(self._DUE_EXPR + " <= datetime(?)")
+            params.append(now)
+        if focus:
+            clauses.append("COALESCE(v.focus_note,'') IN (" + ",".join("?" for _ in focus) + ")")
+            params.extend(list(focus))
+        return clauses, params
+
+    def list_library_page(
+        self,
+        *,
+        limit: int,
+        cursor: str = "",
+        search: str = "",
+        status: str = "",
+        order: str = "recent",
+        focus: tuple[str, ...] = (),
+        now: str = "",
+    ) -> dict[str, Any]:
+        bounded = _library_limit(limit)
+        wanted_order = _library_order(order)
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return {"rows": [], "next_cursor": None, "total": 0}
+            if not self._has_table(conn, "vocabulary_learning"):
+                # Legacy language database: the saved words are durable, the
+                # review state has never existed. Page the words themselves.
+                rows = conn.execute(
+                    "SELECT s.word,s.phonetic,s.part_of_speech,s.definition,"
+                    "COALESCE(s.translation_vi,'') AS translation_vi,s.added_at,"
+                    "NULL AS source_essay_id,'' AS source_fragment,'manual' AS source_kind,"
+                    "'' AS focus_note,0 AS review_stage,0 AS successful_recalls,"
+                    "0 AS lapse_count,'' AS last_reviewed_at,'' AS next_review_at,"
+                    "s.added_at AS sort_value"
+                    " FROM saved_words s ORDER BY s.added_at DESC, s.word ASC LIMIT ?",
+                    (bounded + 1,),
+                ).fetchall()
+                total = int(conn.execute("SELECT COUNT(*) AS n FROM saved_words").fetchone()["n"])
+                page = [dict(row) for row in rows[:bounded]]
+                next_cursor = None
+                if len(rows) > bounded and page:
+                    next_cursor = _library_cursor(str(page[-1]["sort_value"] or ""), str(page[-1]["word"]))
+                for item in page:
+                    item.pop("sort_value", None)
+                return {"rows": page, "next_cursor": next_cursor, "total": total}
+
+            if wanted_order == "due":
+                # Soonest first: what is due leads, because it already is.
+                sort_expr = self._DUE_EXPR
+                keyset = "(" + sort_expr + " > ? OR (" + sort_expr + " = ? AND s.word > ?))"
+                order_by = "ORDER BY " + sort_expr + " ASC, s.word ASC"
+            elif wanted_order == "word":
+                # The word is both the key and the order; a tie in the folded
+                # form is broken by the word as it was saved, so the comparison
+                # keeps the same shape as the other two.
+                sort_expr = "lower(s.word)"
+                keyset = "(" + sort_expr + " > ? OR (" + sort_expr + " = ? AND s.word > ?))"
+                order_by = "ORDER BY " + sort_expr + " ASC, s.word ASC"
+            else:
+                sort_expr = "s.added_at"
+                keyset = "(" + sort_expr + " < ? OR (" + sort_expr + " = ? AND s.word > ?))"
+                order_by = "ORDER BY " + sort_expr + " DESC, s.word ASC"
+
+            clauses, params = self._library_filters(search=search, status=status, focus=focus, now=now)
+            page_clauses = list(clauses)
+            page_params = list(params)
+            after = _decode_library_cursor(cursor)
+            if after is not None:
+                page_clauses.append(keyset)
+                page_params.extend([after[0], after[0], after[1]])
+            page_where = (" WHERE " + " AND ".join(page_clauses)) if page_clauses else ""
+            rows = conn.execute(
+                self._LIBRARY_COLUMNS + ", " + sort_expr + " AS sort_value" + self._LIBRARY_FROM
+                + page_where + " " + order_by + " LIMIT ?",
+                (*page_params, bounded + 1),
+            ).fetchall()
+            count_where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+            total = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS n" + self._LIBRARY_FROM + count_where,
+                    tuple(params),
+                ).fetchone()["n"]
+            )
+        page = [dict(row) for row in rows[:bounded]]
+        next_cursor = None
+        if len(rows) > bounded and page:
+            next_cursor = _library_cursor(str(page[-1]["sort_value"] or ""), str(page[-1]["word"]))
+        for item in page:
+            item.pop("sort_value", None)
+        return {"rows": page, "next_cursor": next_cursor, "total": total}
 
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
         term=values["word"]; now=values["now"]
@@ -532,6 +794,104 @@ class PostgresSpecializedLearningRepository:
             rows=s.scalars(select(SavedWord).where(SavedWord.user_id==uid,SavedWord.language_code==lang).order_by(SavedWord.added_at.desc())).all()
             return [self._saved_payload(r) for r in rows]
 
+    def library_counts(self, *, now: str) -> dict[str, int]:
+        uid, lang = self._scope()
+        scope = (SavedWord.user_id == uid, SavedWord.language_code == lang)
+        moment = self._dt(now) if now else datetime.now(timezone.utc)
+        with Session(self.engine) as session:
+            row = session.execute(
+                select(
+                    func.count(SavedWord.id),
+                    func.count(SavedWord.id).filter(SavedWord.review_stage >= LIBRARY_MASTERED_STAGE),
+                    func.count(SavedWord.id).filter(
+                        (SavedWord.next_review_at.is_(None)) | (SavedWord.next_review_at <= moment)
+                    ),
+                ).where(*scope)
+            ).one()
+        saved, mastered, due = int(row[0] or 0), int(row[1] or 0), int(row[2] or 0)
+        return {"saved": saved, "mastered": mastered, "learning": max(0, saved - mastered), "due": due}
+
+    def list_library_page(
+        self,
+        *,
+        limit: int,
+        cursor: str = "",
+        search: str = "",
+        status: str = "",
+        order: str = "recent",
+        focus: tuple[str, ...] = (),
+        now: str = "",
+    ) -> dict[str, Any]:
+        bounded = _library_limit(limit)
+        wanted_order = _library_order(order)
+        wanted_status = _library_status(status)
+        uid, lang = self._scope()
+        moment = self._dt(now) if now else datetime.now(timezone.utc)
+        conditions = [SavedWord.user_id == uid, SavedWord.language_code == lang]
+        needle = str(search or "").strip().casefold()
+        if needle:
+            pattern = "%" + needle + "%"
+            conditions.append(
+                func.lower(SavedWord.word).like(pattern)
+                | func.lower(func.coalesce(SavedWord.translation_vi, "")).like(pattern)
+                | func.lower(func.coalesce(SavedWord.definition, "")).like(pattern)
+            )
+        if wanted_status == "mastered":
+            conditions.append(SavedWord.review_stage >= LIBRARY_MASTERED_STAGE)
+        elif wanted_status == "learning":
+            conditions.append(SavedWord.review_stage < LIBRARY_MASTERED_STAGE)
+        elif wanted_status == "due":
+            conditions.append((SavedWord.next_review_at.is_(None)) | (SavedWord.next_review_at <= moment))
+        if focus:
+            conditions.append(func.coalesce(SavedWord.focus_note, "").in_(list(focus)))
+
+        # A word never scheduled is due now, so it sorts where "now" sorts.
+        due_sort = func.coalesce(SavedWord.next_review_at, datetime(1, 1, 1, tzinfo=timezone.utc))
+        after = _decode_library_cursor(cursor)
+        page_conditions = list(conditions)
+        if after is not None:
+            if wanted_order == "word":
+                folded = after[0].casefold()
+                page_conditions.append(
+                    (func.lower(SavedWord.word) > folded)
+                    | ((func.lower(SavedWord.word) == folded) & (SavedWord.word > after[1]))
+                )
+            elif wanted_order == "due":
+                boundary = self._dt(after[0]) if after[0] else datetime(1, 1, 1, tzinfo=timezone.utc)
+                page_conditions.append(
+                    (due_sort > boundary) | ((due_sort == boundary) & (SavedWord.word > after[1]))
+                )
+            else:
+                boundary = self._dt(after[0]) if after[0] else datetime(1, 1, 1, tzinfo=timezone.utc)
+                page_conditions.append(
+                    (SavedWord.added_at < boundary)
+                    | ((SavedWord.added_at == boundary) & (SavedWord.word > after[1]))
+                )
+        if wanted_order == "due":
+            ordering = (due_sort.asc(), SavedWord.word.asc())
+        elif wanted_order == "word":
+            ordering = (func.lower(SavedWord.word).asc(), SavedWord.word.asc())
+        else:
+            ordering = (SavedWord.added_at.desc(), SavedWord.word.asc())
+        with Session(self.engine) as session:
+            rows = session.scalars(
+                select(SavedWord).where(*page_conditions).order_by(*ordering).limit(bounded + 1)
+            ).all()
+            total = int(session.scalar(select(func.count(SavedWord.id)).where(*conditions)) or 0)
+            page = list(rows[:bounded])
+            payloads = [self._saved_payload_from_session(session, row) for row in page]
+        next_cursor = None
+        if len(rows) > bounded and page:
+            last = page[-1]
+            if wanted_order == "due":
+                sort_value = self._iso(last.next_review_at)
+            elif wanted_order == "word":
+                sort_value = last.word
+            else:
+                sort_value = self._iso(last.added_at)
+            next_cursor = _library_cursor(sort_value, last.word)
+        return {"rows": payloads, "next_cursor": next_cursor, "total": total}
+
     def _saved_payload(self,r: SavedWord) -> dict[str,Any]:
         source_legacy=None
         if r.source_essay_id:
@@ -600,9 +960,14 @@ class PostgresSpecializedLearningRepository:
             s.delete(r); return True
 
     def select_library_terms(self, limit: int = 3) -> list[str]:
-        rows=self.list_library_records()
-        rows.sort(key=lambda r:(0 if int(r["review_stage"] or 0)<3 else 1,r["next_review_at"] or r["added_at"],r["word"].casefold()))
-        return [str(r["word"]) for r in rows[:limit]]
+        """The few words a generated text should recycle - asked for as a few.
+
+        This used to read every saved word, sort them in Python and take the
+        first three.
+        """
+
+        page = self.list_library_page(limit=max(1, int(limit)), order="due")
+        return [str(row["word"]) for row in page["rows"] if str(row["word"] or "").strip()]
 
     def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]:
         uid,lang=self._scope()

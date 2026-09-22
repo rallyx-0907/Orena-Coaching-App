@@ -136,8 +136,28 @@ export const api={
     body:JSON.stringify(payload||{}),
   }),
   chineseStrokeOrder:(word)=>request(`/api/chinese/stroke-order?word=${encodeURIComponent(word)}`),
-  libraryVocabulary:()=>retryOnce(
-    ()=>request('/api/library/vocabulary'),
+  /* The learner's saved words, a page at a time. `limit`, `cursor`, `query`,
+     `status` ('learning' | 'mastered' | 'due') and `order` ('recent' | 'due')
+     are the server's work: no screen may read the whole vocabulary to count,
+     search or filter it. Every page carries `summary` and the rank with it. */
+  libraryVocabulary:(params={})=>{
+    const query=new URLSearchParams();
+    if(params.limit!=null)query.set('limit',String(params.limit));
+    if(params.cursor)query.set('cursor',String(params.cursor));
+    if(params.query)query.set('query',String(params.query));
+    if(params.status)query.set('status',String(params.status));
+    if(params.order)query.set('order',String(params.order));
+    for(const note of params.focus||[])if(note)query.append('focus',String(note));
+    const suffix=query.toString()?`?${query.toString()}`:'';
+    return retryOnce(
+      ()=>request(`/api/library/vocabulary${suffix}`),
+      isTransientRequestError,
+    );
+  },
+  /* The counts and the rank alone - what Hồ sơ, Tiến độ and Home need, with no
+     saved word crossing the wire. */
+  libraryVocabularySummary:()=>retryOnce(
+    ()=>request('/api/library/vocabulary/summary'),
     isTransientRequestError,
   ),
   saveLibraryVocabulary:(payload)=>request('/api/library/vocabulary',{

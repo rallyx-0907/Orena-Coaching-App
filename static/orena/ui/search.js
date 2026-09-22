@@ -19,6 +19,10 @@ import { link } from '../product/intent.js';
 import { masteryStars } from './vocabulary-experience.js';
 
 const CHIPS = ['all', 'words', 'books', 'audio', 'collections'];
+/* A search shows matches, not a library: the server returns the first
+   page of words that match and the count of everything that does. */
+const SEARCH_LIMIT = 40;
+const SEARCH_DEBOUNCE_MS = 180;
 const norm = (value) => String(value || '').toLowerCase();
 
 function textOf(item) {
@@ -45,7 +49,8 @@ export function renderSearch(root, ctx, sources) {
   function results() {
     const q = norm(state.query.trim());
     if (!q) return { words: [], texts: [], library: [] };
-    const words = (state.words || []).filter((w) => norm(w.word).includes(q) || norm(w.translation_vi).includes(q) || norm(Object.values(w.support_translations || {}).join(' ')).includes(q));
+    /* Already the matches: the database found them. */
+    const words = state.words || [];
     const texts = (sources.readable || [])
       .map((item) => ({ item, hit: snippet(textOf(item), state.query.trim()) }))
       .filter((x) => x.hit);
@@ -92,12 +97,15 @@ export function renderSearch(root, ctx, sources) {
       state.query = input.value;
       history.replaceState(null, '', link('search', { q: state.query }));
       paint();
+      queryWords();
     };
     root.querySelector('[data-search-form]').onsubmit = (event) => event.preventDefault();
     root.querySelector('[data-search-clear]')?.addEventListener('click', () => {
       state.query = '';
       history.replaceState(null, '', link('search'));
+      state.words = [];
       paint();
+      queryWords();
       root.querySelector('[data-search-query]')?.focus();
     });
     root.querySelectorAll('[data-search-chip]').forEach((button) => (button.onclick = () => {
@@ -111,13 +119,45 @@ export function renderSearch(root, ctx, sources) {
     }
   }
 
+  /* The saved words are searched where they live. Typing here used to pull the
+     learner's whole vocabulary into the browser and filter it there, which
+     cost more with every word they had ever saved. Now each query is a query:
+     debounced, and only the latest answer is kept, so a slow reply for "mor"
+     cannot overwrite the answer for "morning". */
+  let queryToken = 0;
+  let pending = 0;
+  function queryWords() {
+    const wanted = state.query.trim();
+    clearTimeout(pending);
+    if (!wanted) {
+      queryToken += 1;
+      state.words = [];
+      paint();
+      return;
+    }
+    const token = (queryToken += 1);
+    pending = setTimeout(() => {
+      api.libraryVocabulary({ query: wanted, limit: SEARCH_LIMIT })
+        .then((data) => {
+          if (!alive() || token !== queryToken) return;
+          state.words = data.items || [];
+          paint();
+        })
+        .catch(() => {
+          if (!alive() || token !== queryToken) return;
+          state.words = [];
+          paint();
+        });
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
   paint();
-  Promise.allSettled([api.libraryVocabulary(), api.libraryBooks(language), api.vocabularyLibraryCollections(language)]).then(([words, books, collections]) => {
+  queryWords();
+  Promise.allSettled([api.libraryBooks(language), api.vocabularyLibraryCollections(language)]).then(([books, collections]) => {
     if (!alive()) return;
-    state.words = words.status === 'fulfilled' ? words.value.items || [] : [];
     state.books = books.status === 'fulfilled' ? books.value.items || [] : [];
     state.collections = collections.status === 'fulfilled' ? collections.value.items || collections.value.collections || [] : [];
     paint();
   });
-  return () => {};
+  return () => clearTimeout(pending);
 }

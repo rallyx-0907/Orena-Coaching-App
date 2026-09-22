@@ -19,8 +19,11 @@ import { icon } from './phosphor.js';
 import { growthDomainRow } from './growth-summary.js';
 import { referenceCopy } from './reference.js';
 import { link } from '../product/intent.js';
-import { bandOf, rankFrame } from './rank-frame.js';
-import { RANK_LADDER, RANK_TOTAL, masteredCount, nextTier, tierEntry, tierOf } from '../product/rank.js';
+import { rankFrame } from './rank-frame.js';
+import { ladderTiles, openTierCount, rankProgress, rankSummary } from '../product/rank.js';
+
+/* What "vừa học xong" shows: three words, so three words are asked for. */
+const RECENT_WORDS = 3;
 
 /* The six approved domain cards, in the design's order, and the evidence each
    one reads. Listening's own measure (episodes, minutes) is not recorded; the
@@ -183,28 +186,28 @@ function trendsView(ctx) {
    A rank the design gives no word count to shows a dash. There are fourteen of
    them, and that is a gap recorded for the human, not a licence to invent
    numbers. */
-function ladderHtml(r, known) {
-  const current = tierOf(known);
-  const unlocked = RANK_LADDER.filter((e) => e.words !== null && known >= e.words).length;
-  const tiles = RANK_LADDER.map((entry) => {
-    const isCurrent = entry.tier === current;
-    const isOpen = entry.words !== null && known >= entry.words;
-    const state = isCurrent ? 'current' : isOpen ? 'open' : 'locked';
-    const note = isCurrent
+function ladderHtml(r, state) {
+  const tiles = ladderTiles(state);
+  const total = state.rankTotal || tiles.length;
+  const rungs = tiles.map((tile) => {
+    const shown = tile.current ? 'current' : tile.open ? 'open' : 'locked';
+    const note = tile.current
       ? esc(r.progressTierCurrent)
-      : entry.words === null
+      : tile.words === null
         ? '&mdash;'
-        : esc(`${entry.words.toLocaleString()} ${r.progressTierWords}${isOpen ? ` · ${r.progressTierOpen}` : ''}`);
-    return `<li class="tier" data-state="${state}" data-band="${esc(bandOf(entry.tier).name)}">`
-      + `<span class="tier__no ds-data">${isOpen || isCurrent ? String(entry.tier).padStart(2, '0') : icon('lock-simple', { size: 13 })}</span>`
-      + `<span class="tier__text"><span class="tier__name">${esc(entry.name)}</span><span class="tier__note ds-data">${note}</span></span>`
+        : esc(`${tile.words.toLocaleString()} ${r.progressTierWords}${tile.open ? ` · ${r.progressTierOpen}` : ''}`);
+    return `<li class="tier" data-state="${shown}" data-band="${esc(tile.band)}">`
+      + `<span class="tier__no ds-data">${tile.open || tile.current ? String(tile.tier).padStart(2, '0') : icon('lock-simple', { size: 13 })}</span>`
+      + `<span class="tier__text"><span class="tier__name">${esc(tile.name)}</span><span class="tier__note ds-data">${note}</span></span>`
       + `</li>`;
   }).join('');
-  const head = String(r.progressLadder).replace('{n}', String(RANK_TOTAL));
-  const opened = String(r.progressTierOpened).replace('{n}', String(unlocked)).replace('{t}', String(RANK_TOTAL));
+  const head = String(r.progressLadder).replace('{n}', String(total));
+  const opened = String(r.progressTierOpened)
+    .replace('{n}', String(openTierCount(state)))
+    .replace('{t}', String(total));
   return `<section class="ladder" aria-label="${esc(head)}">`
     + `<div class="ladder__head"><span class="ds-label">${esc(head)}</span><span class="ds-data ladder__open">${esc(opened)}</span></div>`
-    + `<ol class="ladder__grid">${tiles}</ol>`
+    + `<ol class="ladder__grid">${rungs}</ol>`
     + `</section>`;
 }
 
@@ -212,17 +215,15 @@ function ladderHtml(r, known) {
    next one. The crystal is the master's, at the `mid` level of detail this
    size asks for; before the first rank there is no crystal to draw, so the
    well is plain. */
-function rankCardHtml(r, known) {
-  const current = tierOf(known);
-  const next = nextTier(known);
-  const entry = tierEntry(current);
-  const name = entry ? entry.name : r.progressTierNone;
-  const percent = next ? Math.max(0, Math.min(100, Math.round((known / next.words) * 100))) : 100;
-  const line = next
-    ? `${known.toLocaleString()} / ${next.words.toLocaleString()} → ${next.name}`
+function rankCardHtml(r, state) {
+  const current = state.rank;
+  const name = current ? state.rankName : r.progressTierNone;
+  const percent = rankProgress(state);
+  const line = state.nextRankName
+    ? `${state.mastered.toLocaleString()} / ${Number(state.nextRankWords).toLocaleString()} → ${state.nextRankName}`
     : r.progressTierTop;
   const title = current
-    ? `${name} · ${String(r.progressTierOf).replace('{n}', String(current)).replace('{t}', String(RANK_TOTAL))}`
+    ? `${name} · ${String(r.progressTierOf).replace('{n}', String(current)).replace('{t}', String(state.rankTotal))}`
     : name;
   const face = `<span class="rank-card__face">${icon('user', { size: 26 })}</span>`;
   const avatar = current
@@ -230,7 +231,7 @@ function rankCardHtml(r, known) {
     : `<span class="rank-card__avatar">${icon('user', { size: 26 })}</span>`;
   return `<section class="rank-card">`
     + avatar
-    + `<div class="rank-card__text"><span class="ds-label">${esc(r.progressTierLabel)}${current ? ` · ${esc(bandOf(current).name)}` : ''}</span>`
+    + `<div class="rank-card__text"><span class="ds-label">${esc(r.progressTierLabel)}${current ? ` · ${esc(state.band)}` : ''}</span>`
     + `<span class="rank-card__name">${esc(title)}</span></div>`
     + `<span class="progress-bar rank-card__track"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span>`
     + `<span class="rank-card__to ds-data">${esc(line)}</span>`
@@ -314,18 +315,23 @@ function nextAction(r, words) {
     + `</a>`;
 }
 
-function view(ctx, { summary, words, summaryFailed, recent }) {
+function view(ctx, { summary, vocabulary, summaryFailed, recent }) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const degraded = summaryFailed
     ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.growthUnavailable)}</strong></div><button class="outline" type="button" data-progress-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
     : '';
-  const known = Number(words?.mastered || 0);
+  /* Counted by the database, read here. The words themselves are not on this
+     screen and are not fetched for it. */
+  const state = rankSummary(vocabulary);
+  const words = state.known
+    ? { saved: state.saved, due: state.due, mastered: state.mastered }
+    : null;
 
   const figures = [
     statPanel(r.progressStreak, '', r.progressStreakNote, { measured: false }),
     statPanel(r.progressStudyTime, '', r.progressStudyNote, { measured: false }),
-    statPanel(r.progressWordsMastered, known.toLocaleString(), r.progressWordsMasteredNote, { measured: Boolean(words) }),
+    statPanel(r.progressWordsMastered, state.mastered.toLocaleString(), r.progressWordsMasteredNote, { measured: state.known }),
   ].join('');
 
   return `<section class="progress-page">`
@@ -334,7 +340,7 @@ function view(ctx, { summary, words, summaryFailed, recent }) {
     + `<div class="progress-figures">${figures}</div>`
     + `<div class="progress-panels">${overviewPanels(r, words, recent)}</div>`
     + `<div class="progress-columns">`
-    + `<div class="progress-column progress-column--main">${ladderHtml(r, known)}${rankCardHtml(r, known)}</div>`
+    + `<div class="progress-column progress-column--main">${ladderHtml(r, state)}${rankCardHtml(r, state)}</div>`
     + `<aside class="progress-column progress-column--side">${heatmap(r, null)}${skillRows(c, r, summary, words)}${nextAction(r, words)}</aside>`
     + `</div>`
     + `</section>`;
@@ -359,23 +365,20 @@ export async function renderProgress(root, ctx) {
   };
   async function load() {
     paint(skeleton(ctx));
-    const [summaryResult, wordsResult] = await Promise.allSettled([
+    /* Three requests, each for what it is actually for: the growth summary,
+       the vocabulary counts and rank, and the three words "vừa học xong"
+       names. None of them reads the learner's library. */
+    const [summaryResult, countsResult, recentResult] = await Promise.allSettled([
       ctx.growth ? Promise.resolve(ctx.growth) : ctx.api.learnerSummary('all'),
-      ctx.api.libraryVocabulary(),
+      ctx.api.libraryVocabularySummary(),
+      ctx.api.libraryVocabulary({ limit: RECENT_WORDS, order: 'recent' }),
     ]);
     const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
-    const items = wordsResult.status === 'fulfilled' ? wordsResult.value.items || [] : null;
-    /* The three most recently saved words, which is what "vừa học xong"
-       counts; the list is already sorted newest first by the library. */
-    const recent = (items || []).slice(0, 3).map((item) => ({ word: item.word, language: item.language_code }));
-    const words = items
-      ? {
-          saved: items.length,
-          due: items.filter((item) => item.due).length,
-          mastered: masteredCount(items),
-        }
-      : null;
-    paint(view(ctx, { summary, words, summaryFailed: !summary, recent }));
+    const vocabulary = countsResult.status === 'fulfilled' ? countsResult.value : null;
+    const recent = recentResult.status === 'fulfilled'
+      ? (recentResult.value.items || []).map((item) => ({ word: item.word, language: item.language_code }))
+      : [];
+    paint(view(ctx, { summary, vocabulary, summaryFailed: !summary, recent }));
     root.querySelector('[data-progress-retry]')?.addEventListener('click', () => {
       ctx.growth = null;
       load();

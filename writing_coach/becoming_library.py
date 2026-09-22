@@ -6,7 +6,12 @@ from typing import Any
 from pydantic import BaseModel, Field
 from writing_coach.core.request_context import current_language_code
 from writing_coach.orthography import orthography_for_word
-from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
+from writing_coach.persistence.specialized_repository import (
+    LIBRARY_PAGE_DEFAULT,
+    SpecializedLearningRepository,
+)
+from writing_coach.product.rank_ladder import ladder as rank_ladder
+from writing_coach.product.rank_ladder import rank_state
 from writing_coach.persistence.vocabulary_repository import VocabularyRepository, VocabularyContentUnavailable
 from writing_coach.vocabulary_library import normalize_vocabulary_word, vocabulary_entry_for
 
@@ -205,21 +210,91 @@ def _row_to_item(row: dict[str, Any], resolve: Any = None) -> dict[str, Any]:
     return item
 
 
-def list_library_vocabulary() -> dict[str, Any]:
+def library_summary() -> dict[str, Any]:
+    """The learner's vocabulary as numbers, counted in the database.
+
+    Every count is one aggregate query. No surface reads the words to count
+    them: a summary must not cost what the whole vocabulary costs, or Hồ sơ and
+    Tiến độ get slower every time the learner saves a word.
+
+    The rank comes from the mastered count through
+    `writing_coach.product.rank_ladder`, so the two screens that show a rank
+    cannot disagree about it, and neither has to know the thresholds.
+    """
+
+    counts = _repo().library_counts(now=_iso(_now()))
+    saved = int(counts.get("saved", 0))
+    mastered = int(counts.get("mastered", 0))
+    summary = {
+        "total": saved,
+        "saved": saved,
+        "due": int(counts.get("due", 0)),
+        "learning": int(counts.get("learning", max(0, saved - mastered))),
+        "mastered": mastered,
+        # The older name for the same number, kept so existing callers of this
+        # payload do not break.
+        "available": mastered,
+    }
+    # The ladder travels with the summary: it is thirty-two short entries, it
+    # is the same for everyone, and sending it means Tiến độ draws the rungs
+    # the product defines rather than keeping its own copy of them.
+    return {"summary": summary, "ladder": rank_ladder(), **rank_state(mastered)}
+
+
+def library_page(
+    *,
+    limit: int = LIBRARY_PAGE_DEFAULT,
+    cursor: str = "",
+    search: str = "",
+    status: str = "",
+    order: str = "recent",
+    focus: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """One page of the learner's saved words, with the counts beside it.
+
+    Ordering, filtering and searching happen in the database; this only turns
+    the rows it is given into items. The default order is the newest first;
+    `order="due"` puts what is waiting for review at the front, which is the
+    order the review panel and the recall queue want.
+    """
+
     resolve = _catalog_resolver(current_language_code().strip().casefold())
-    items = [_row_to_item(row, resolve) for row in _repo().list_library_records()]
-    items.sort(key=lambda item: (0 if item["due"] else 1, item["next_review_at"] or item["added_at"], item["word"].casefold()))
+    page = _repo().list_library_page(
+        limit=limit, cursor=cursor, search=search, status=status,
+        order=order, focus=tuple(focus or ()), now=_iso(_now()),
+    )
+    items = [_row_to_item(row, resolve) for row in page["rows"]]
+    counts = library_summary()
     return {
         "items": items,
-        "summary": {
-            "total": len(items),
-            "saved": len(items),
-            "due": sum(1 for item in items if item["due"]),
-            "learning": sum(1 for item in items if item["review_stage"] < 3),
-            "mastered": sum(1 for item in items if item["review_stage"] >= 3),
-            "available": sum(1 for item in items if item["review_stage"] >= 3),
-        },
+        "next_cursor": page.get("next_cursor"),
+        "has_more": bool(page.get("next_cursor")),
+        "total": int(page.get("total", len(items))),
+        **counts,
     }
+
+
+def list_library_vocabulary(
+    *,
+    limit: int = LIBRARY_PAGE_DEFAULT,
+    cursor: str = "",
+    search: str = "",
+    status: str = "",
+    order: str = "recent",
+    focus: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """The saved-vocabulary listing, one page at a time.
+
+    This used to answer with every word the learner had ever saved. It cannot:
+    a learner with ten thousand words would have that whole library read,
+    built, serialised, sent, parsed and rendered every time any screen asked
+    a question about their vocabulary. Callers now ask for what they need -
+    a page, a count, the few due words - and page on with `next_cursor`.
+    """
+
+    return library_page(
+        limit=limit, cursor=cursor, search=search, status=status, order=order, focus=focus,
+    )
 
 
 def save_library_vocabulary(payload: LibraryVocabularyIn) -> dict[str, Any]:

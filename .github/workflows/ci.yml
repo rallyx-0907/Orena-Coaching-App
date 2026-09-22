@@ -91,6 +91,8 @@ jobs:
           node scripts/test_orena_vocabulary_experience.mjs
           node scripts/test_orena_vocabulary_library.mjs
           node scripts/test_orena_vocabulary_feed.mjs
+          node scripts/test_orena_vocabulary_paging.mjs
+          node scripts/test_orena_rank_frame.mjs
           node scripts/test_orena_vocabulary_saved_card.mjs
       - run: python -m pytest -q test_app.py tests
         env:

@@ -970,3 +970,63 @@ honest and uninformative.
 own endpoints so the rank, the ladder and the vocabulary panels can be
 reviewed with real data; it cannot fill these bars, for the reason above.
 
+## Vocabulary is read by the page, and counted in the database (2026-09-22)
+
+The three-minute listing was one symptom; the architecture was the disease.
+`GET /api/library/vocabulary` answered with **every** word a learner had ever
+saved, and Vocabulary, Tiến độ, Hồ sơ, Home, Search, the recall queue and the
+book page all read it - to show a count, three words, a due queue or a filtered
+list. Every one of those screens cost what the whole library cost, and one slow
+vocabulary request made all of them wait.
+
+**What each screen asks for now**
+
+| Surface | Before | Now |
+| --- | --- | --- |
+| Hồ sơ | whole library, counted in the browser | `/api/library/vocabulary/summary` |
+| Tiến độ | whole library | the summary, plus `?limit=3&order=recent` |
+| Home ("what is due") | whole library, `.filter(due)` | the summary's `due` |
+| Recall queue | whole library, `.filter(due)` | `?status=due&order=due&limit=60` |
+| My Language | whole library | `?limit=50`, then `?cursor=…`; search, status and order go to the server |
+| Saved panel | whole library, searched and sorted in the browser | the same paged query |
+| Search | whole library, filtered per keystroke | `?query=…&limit=40`, debounced |
+| Book page | whole library, matched on the note | `?focus=<title>&focus=<chapter>…` |
+
+`summary` (and the learner's rank) travels with every page, counted by
+aggregate queries, so no screen adds items up and Hồ sơ and Tiến độ cannot
+disagree. The rank ladder moved to `writing_coach/product/rank_ladder.py`: the
+product states the thirty-two ranks and their thresholds, the browser reads the
+answer, and `static/orena/product/rank.js` holds no thresholds any more.
+
+**Indexes, measured rather than guessed.** At ten thousand saved words the
+counts took fourteen seconds, because `saved_words` joins `vocabulary_learning`
+on `lower(word)` and a function over a column cannot use the primary key - so
+every row met every row. `SQLiteSpecializedLearningRepository.initialize()` now
+creates expression indexes on `lower(word)` for both tables, plus
+`saved_words(added_at DESC, word)`, `vocabulary_learning(next_review_at)` and
+`vocabulary_learning(review_stage)` for the orders and filters the screens ask
+for. Nothing else was added.
+
+**Measured, on the schema the runtime creates** (best of five, in the app
+image; the learner has that many saved words):
+
+| | 0 | 12 | 1 600 | 10 000 |
+| --- | ---: | ---: | ---: | ---: |
+| summary (counts + rank) | 0.2 ms | 0.3 ms | 0.8 ms | 3.9 ms |
+| first page (50) | 0.3 ms | 0.6 ms | 1.5 ms | 7.6 ms |
+| recent three | 0.5 ms | 0.3 ms | 1.3 ms | 7.4 ms |
+| due queue (25) | 0.3 ms | 0.3 ms | 2.9 ms | 13.5 ms |
+| search one page | 0.3 ms | 0.3 ms | 1.9 ms | 7.9 ms |
+
+Over HTTP in the sandbox, with the seeded 1 612-word learner: the summary is
+6 ms and 2.4 KB, a 50-word page 20 ms and 23 KB, the due queue 24 ms, three
+recent words 20 ms. The old full listing was **185 s** and would have been
+~1.5 MB.
+
+**What this does not change.** The endpoint keeps its name, its payload's
+`items` and `summary`, and its save/review/delete siblings; it gained `limit`,
+`cursor`, `query`, `status`, `order` and `focus`, and `next_cursor`,
+`has_more` and `total`. A caller that passes nothing now gets the first fifty
+words instead of all of them - which is the point, and is why every caller in
+this repository was changed in the same commit.
+

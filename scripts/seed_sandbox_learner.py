@@ -7,7 +7,8 @@ be reviewed. This fills it **through the app's own endpoints**: every word is
 saved with POST /api/library/vocabulary and carried to "mastered" by three
 POST .../review calls, exactly as a learner would. Nothing is written into a
 database behind the app's back, so what appears on the screen is what the
-product really produced.
+product really produced. Counts come from /api/library/vocabulary/summary and
+the listing is paged, the same way the interface reads them.
 
 Sandbox only, by construction. `AGENTS.md` ("Safety") reserves production on
 8000 and preview on 8010 for the human; this refuses any host but the sandbox
@@ -17,15 +18,14 @@ not create.
     python scripts/seed_sandbox_learner.py --rank 5
     python scripts/seed_sandbox_learner.py --words 120 --reset
 
---rank seeds just past that rank's threshold. The thresholds are the design's,
-read from static/orena/product/rank.js so this script and the interface cannot
-drift apart.
+--rank seeds just past that rank's threshold. The thresholds come from
+writing_coach/product/rank_ladder.py, the module the app itself answers from,
+so this script and the interface cannot drift apart.
 """
 from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 import time
 import urllib.error
@@ -36,7 +36,7 @@ from pathlib import Path
 SANDBOX = "http://127.0.0.1:8011"
 RESERVED_PORTS = {"8000", "8010"}
 ROOT = Path(__file__).resolve().parent.parent
-RANK_SOURCE = ROOT / "static" / "orena" / "product" / "rank.js"
+sys.path.insert(0, str(ROOT))
 
 # Plain English words a learner could plausibly have met. Kept boring on
 # purpose: this is test data, not content, and it is never shown to anyone but
@@ -54,12 +54,11 @@ SUFFIXES = ["", "s", "-note", "-again", "-more", "-still", "-yet", "-anew"]
 
 
 def rank_thresholds() -> list[tuple[str, int]]:
-    """The design's own thresholds, read from the module the app renders from."""
-    text = RANK_SOURCE.read_text(encoding="utf-8")
-    block = text[text.index("export const RANK_THRESHOLDS = {"):]
-    block = block[: block.index("};")]
-    pairs = re.findall(r"(\w+):\s*(\d+)", block)
-    return [(name, int(value)) for name, value in pairs]
+    """The product's own thresholds - the module the app answers from."""
+
+    from writing_coach.product.rank_ladder import ladder
+
+    return [(entry["name"], entry["words"]) for entry in ladder() if entry["words"] is not None]
 
 
 def words_for(count: int) -> list[str]:
@@ -114,18 +113,27 @@ def main() -> int:
         label = f"{name} ({words} words)"
 
     try:
-        before = call(base, "GET", "/api/library/vocabulary")
+        before = call(base, "GET", "/api/library/vocabulary/summary")
     except urllib.error.URLError as error:
         print(f"Cannot reach {base}: {error}", file=sys.stderr)
         return 1
-    held = [item["word"] for item in before.get("items", [])]
-    print(f"sandbox {base}: {len(held)} words held, seeding {label}")
+    already = int(before.get("summary", {}).get("saved", 0))
+    print(f"sandbox {base}: {already} words held, seeding {label}")
 
-    if args.reset and held:
-        for word in held:
-            call(base, "DELETE", f"/api/library/vocabulary/{urllib.parse.quote(word)}")
-        print(f"  removed {len(held)} words")
-        held = []
+    if args.reset and already:
+        # The listing is paged, so the reset pages: ask for a page, delete it,
+        # ask again. Deleting shifts the page under a cursor, so the first page
+        # is asked for each time rather than the next one.
+        removed = 0
+        while True:
+            page = call(base, "GET", "/api/library/vocabulary?limit=200")
+            words = [item["word"] for item in page.get("items", [])]
+            if not words:
+                break
+            for word in words:
+                call(base, "DELETE", f"/api/library/vocabulary/{urllib.parse.quote(word)}")
+            removed += len(words)
+        print(f"  removed {removed} words")
 
     started = time.time()
     plan = words_for(target + args.learning)
@@ -144,7 +152,7 @@ def main() -> int:
         if index and index % 100 == 0:
             print(f"  {index}/{len(plan)} …")
 
-    after = call(base, "GET", "/api/library/vocabulary")
+    after = call(base, "GET", "/api/library/vocabulary/summary")
     summary = after.get("summary", {})
     print(f"done in {time.time() - started:.0f}s: "
           f"saved {summary.get('saved')}, mastered {summary.get('mastered')}, "

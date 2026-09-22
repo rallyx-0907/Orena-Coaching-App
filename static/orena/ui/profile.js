@@ -24,8 +24,8 @@
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { referenceCopy } from './reference.js';
-import { bandOf, rankFrame } from './rank-frame.js';
-import { RANK_TOTAL, masteredCount, nextTier, tierEntry, tierOf } from '../product/rank.js';
+import { rankFrame } from './rank-frame.js';
+import { rankProgress, rankSummary } from '../product/rank.js';
 
 /* The features the source lists, in its order, against the catalogue keys the
    product service already answers with. A key the plan does not carry is left
@@ -83,7 +83,7 @@ function settingRow(glyph, label, value, { ready = true } = {}) {
   </button>`;
 }
 
-export function profileSection(ctx, { account, profile, known = null } = {}) {
+export function profileSection(ctx, { account, profile, vocabulary = null } = {}) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const languageName = ctx.language === 'zh' ? '中文' : 'English';
@@ -91,14 +91,15 @@ export function profileSection(ctx, { account, profile, known = null } = {}) {
   const planName = account?.plan?.name || '';
   const features = account?.features || {};
 
-  /* The rank the learner actually holds, from the one measure Orena really
-     counts - their mastered words - against the design's own thresholds
-     (product/rank.js). Progress reads the same function, so the two screens
-     cannot disagree. Below the first rank there is no crystal to draw, and
-     none is invented: the frame's plain well stands until it is earned. */
-  const tier = known === null ? 0 : tierOf(known);
-  const entry = tierEntry(tier);
-  const next = known === null ? null : nextTier(known);
+  /* The rank the learner actually holds. The server works it out from the one
+     measure Orena really counts - their mastered words - and answers with it
+     on the vocabulary summary; Tiến độ reads the same answer, so the two
+     screens cannot disagree, and neither counts words in the browser. Below
+     the first rank there is no crystal to draw, and none is invented: the
+     frame's plain well stands until it is earned. */
+  const state = rankSummary(vocabulary);
+  const tier = state.rank;
+  const known = state.known ? state.mastered : null;
   const avatarInner = `<span class="profile-avatar__face">${icon('user', { size: 40 })}</span>`;
   const avatar = tier
     ? rankFrame({ rank: tier, size: 168, uid: 'profile', avatar: avatarInner })
@@ -129,14 +130,14 @@ export function profileSection(ctx, { account, profile, known = null } = {}) {
     <div class="profile-hero__copy">
       <div class="profile-hero__identity">
         <h2 class="profile-hero__name">${esc(profile?.name || r.profileYou)}</h2>
-        ${tier ? `<span class="profile-pill profile-pill--rank">${esc(entry.name)} · ${esc(String(r.profileRankOf).replace('{n}', String(tier)).replace('{t}', String(RANK_TOTAL)))}</span>` : ''}
+        ${tier ? `<span class="profile-pill profile-pill--rank">${esc(state.rankName)} · ${esc(String(r.profileRankOf).replace('{n}', String(tier)).replace('{t}', String(state.rankTotal)))}</span>` : ''}
         ${planName ? `<span class="profile-pill profile-pill--plan ds-data">${esc(planName)}</span>` : ''}
       </div>
-      <p class="profile-hero__meta">${identity}${tier ? ` <span class="profile-hero__dot"></span> ${esc(bandOf(tier).name)}` : ''}</p>
+      <p class="profile-hero__meta">${identity}${tier ? ` <span class="profile-hero__dot"></span> ${esc(state.band)}` : ''}</p>
       <div class="profile-xp">
-        ${next
-          ? `<div class="profile-xp__head"><span class="ds-data">${esc(`${Number(known).toLocaleString()} ${r.progressTierWords}`)}</span><span class="ds-data profile-xp__to">${esc(`${r.profileRankTo} ${next.name}`.replace('{n}', (next.words - Number(known)).toLocaleString()))}</span></div>`
-            + `<span class="profile-xp__bar"><span style="inline-size:${Math.max(0, Math.min(100, Math.round((Number(known) / next.words) * 100)))}%"></span></span>`
+        ${state.known && state.nextRankName
+          ? `<div class="profile-xp__head"><span class="ds-data">${esc(`${state.mastered.toLocaleString()} ${r.progressTierWords}`)}</span><span class="ds-data profile-xp__to">${esc(`${r.profileRankTo} ${state.nextRankName}`.replace('{n}', state.nextRankRemaining.toLocaleString()))}</span></div>`
+            + `<span class="profile-xp__bar"><span style="inline-size:${rankProgress(state)}%"></span></span>`
           : `<div class="profile-xp__head"><span class="ds-data metric-unavailable">${esc(r.profileXpUnavailable)}</span></div>`
             + `<span class="profile-xp__bar" data-unavailable aria-hidden="true"></span>`}
       </div>
@@ -176,10 +177,10 @@ export async function renderProfile(root, ctx) {
   const [accountResult, profileResult, wordsResult] = await Promise.allSettled([
     ctx.api.productMe(),
     ctx.api.learnerProfile ? ctx.api.learnerProfile() : Promise.resolve(ctx.profile || {}),
-    /* The rank is measured from the learner's own mastered words. A failure
-       here costs the crystal, never the page: the ring falls back to the plain
-       well rather than to a rank nobody counted. */
-    ctx.api.libraryVocabulary(),
+    /* Counts and rank only - no saved word is read to draw this page. A
+       failure here costs the crystal, never the page: the ring falls back to
+       the plain well rather than to a rank nobody counted. */
+    ctx.api.libraryVocabularySummary(),
   ]);
   if (released || !ctx.alive()) return () => {};
   const account = accountResult.status === 'fulfilled' ? accountResult.value : null;
@@ -191,10 +192,8 @@ export async function renderProfile(root, ctx) {
     root.querySelector('[data-profile-retry]')?.addEventListener('click', () => renderProfile(root, ctx));
     return () => { released = true; };
   }
-  const known = wordsResult.status === 'fulfilled'
-    ? masteredCount(wordsResult.value && wordsResult.value.items)
-    : null;
-  paint(profileSection(ctx, { account, profile, known }));
+  const vocabulary = wordsResult.status === 'fulfilled' ? wordsResult.value : null;
+  paint(profileSection(ctx, { account, profile, vocabulary }));
   return () => {
     released = true;
   };

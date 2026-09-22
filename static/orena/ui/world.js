@@ -233,13 +233,13 @@ export async function renderWorld(root, ctx) {
       media: practiceMedia,
     }) || (() => {});
   } else {
-    /* What is due is the learner's own saved vocabulary, read once for the
-       card that offers the review (D-065). A failed read leaves the card
-       saying nothing is due rather than inventing a number. */
+    /* The card offers a review, so it asks how much is due - one counted
+       number, not the learner's whole vocabulary (D-065). A failed read leaves
+       the card saying nothing is due rather than inventing a number. */
     let due = 0;
     try {
-      const saved = await api.libraryVocabulary();
-      due = (saved.items || []).filter((item) => item.due).length;
+      const counts = await api.libraryVocabularySummary();
+      due = Number(counts?.summary?.due || 0);
     } catch {
       due = 0;
     }

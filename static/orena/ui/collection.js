@@ -27,16 +27,27 @@ export function collectionItems(ctx) {
   return out;
 }
 
+/* A page of saved words, and how long to wait before asking again while
+   somebody is still typing. */
+const SAVED_PAGE = 60;
+const SAVED_SEARCH_DEBOUNCE_MS = 220;
+
 export function renderCollection(root, ctx) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const { memory, api, alive, language } = ctx;
   const highlights = Object.entries(memory.value.keptLanguage || {}).map(([term, kept]) => ({ term, ...kept }));
   const content = [...(memory.value.imports || []), ...(memory.value.mediaImports || [])];
-  const state = { kind: 'words', words: null, failed: false, query: '', starred: false, sort: 'recent' };
+  /* `total` is how many saved words match what the panel is asking for, and
+     `due` how many are waiting - both counted in the database. `words` is the
+     page being shown, never the whole vocabulary. */
+  const state = {
+    kind: 'words', words: null, failed: false, query: '', starred: false, sort: 'recent',
+    total: 0, due: 0, cursor: '', hasMore: false, loading: false, request: 0, timer: null,
+  };
 
   const count = (kind) =>
-    kind === 'words' ? (state.words ? String(state.words.length) : '…')
+    kind === 'words' ? (state.words ? String(state.total) : '…')
       : kind === 'highlights' ? String(highlights.length)
         : kind === 'content' ? String(content.length)
           : '—';
@@ -48,11 +59,9 @@ export function renderCollection(root, ctx) {
       return `<div class="saved-grid" aria-hidden="true">${Array.from({ length: 4 }, () => '<span class="skeleton skeleton--card"></span>').join('')}</div>`;
     if (!state.words.length)
       return `<div class="state-panel state-panel--empty">${icon('bookmark-simple', { size: 22 })}<div><strong>${esc(r.savedNoWords)}</strong><p>${esc(r.savedNoWordsNote)}</p></div><a class="primary" href="${esc(link('practice', { intent: 'reading' }))}">${icon('book-open', { size: 16 })}<span>${esc(r.savedOpenBook)}</span></a></div>`;
-    const q = state.query.trim().toLowerCase();
-    let list = state.words.filter((w) => !q || `${w.word} ${w.translation_vi || ''} ${Object.values(w.support_translations || {}).join(' ')}`.toLowerCase().includes(q));
-    if (state.starred) list = list.filter((w) => (Number(w.review_stage) || 0) < 2);
-    list = [...list].sort((a, b) => (state.sort === 'recent' ? String(b.added_at || '').localeCompare(String(a.added_at || '')) : String(a.word).localeCompare(String(b.word))));
-    const due = state.words.filter((w) => w.due).length;
+    /* Already searched, filtered and ordered by the database. */
+    const list = state.words;
+    const due = state.due;
     const rows = list.map((w) => {
       const stars = masteryStars(w);
       const filled = (stars.match(/★/g) || []).length;
@@ -60,7 +69,10 @@ export function renderCollection(root, ctx) {
       const meaning = w.support_translations?.[ctx.support] || w.translation_vi || '';
       return `<a class="saved-word" href="${esc(w.source_essay_id ? link('expression', { id: `essay:${w.source_essay_id}` }) : link('language'))}"><span class="saved-word__text"><strong lang="${esc(language)}">${esc(w.word)}</strong><small>${esc([w.phonetic, meaning].filter(Boolean).join(' · '))}${from ? ` · ${esc(r.savedFrom)} <span class="saved-word__from">${esc(r[from] || from)}</span>` : ''}</small></span><span class="vocabulary-stars" aria-label="${esc(stars)}">${[0, 1, 2].map((n) => icon('star', { filled: n < filled, size: 12, className: n < filled ? 'is-earned' : '' })).join('')}</span></a>`;
     }).join('');
-    return `<div class="saved-tools"><label class="library-search"><span class="sr-only">${esc(r.savedSearchWords)}</span>${icon('magnifying-glass', { size: 18 })}<input id="savedQuery" type="search" autocomplete="off" placeholder="${esc(r.savedSearchWords)}" value="${esc(state.query)}" data-saved-query></label><button type="button" class="saved-filter" aria-pressed="${state.starred}" data-saved-starred>${icon('funnel', { size: 14 })}<span>${esc(r.savedOneStar)}</span></button><button type="button" class="saved-filter" data-saved-sort>${icon('sliders-horizontal', { size: 14 })}<span>${esc(state.sort === 'recent' ? r.savedRecent : r.librarySortTitle)}</span></button></div><div class="saved-grid">${rows || `<p class="meta">${esc(r.libraryNoResults)}</p>`}</div>${due ? `<div class="saved-due" data-live><span class="saved-due__icon" data-domain="vocabulary">${icon('cards', { filled: true, size: 20 })}</span><div><strong>${esc(r.savedDue.replace('{n}', String(due)))}</strong></div><a class="primary" href="${esc(link('practice', { intent: 'recall' }))}">${esc(r.recall)}</a></div>` : ''}`;
+    const more = state.hasMore
+      ? `<div class="button-row saved-more"><button type="button" class="outline" data-saved-more${state.loading ? ' disabled' : ''}>${esc(String(r.libraryLoadMore).replace('{n}', String((state.words || []).length)))}</button></div>`
+      : '';
+    return `<div class="saved-tools"><label class="library-search"><span class="sr-only">${esc(r.savedSearchWords)}</span>${icon('magnifying-glass', { size: 18 })}<input id="savedQuery" type="search" autocomplete="off" placeholder="${esc(r.savedSearchWords)}" value="${esc(state.query)}" data-saved-query></label><button type="button" class="saved-filter" aria-pressed="${state.starred}" data-saved-starred>${icon('funnel', { size: 14 })}<span>${esc(r.savedOneStar)}</span></button><button type="button" class="saved-filter" data-saved-sort>${icon('sliders-horizontal', { size: 14 })}<span>${esc(state.sort === 'recent' ? r.savedRecent : r.librarySortTitle)}</span></button></div><div class="saved-grid">${rows || `<p class="meta">${esc(r.libraryNoResults)}</p>`}</div>${more}${due ? `<div class="saved-due" data-live><span class="saved-due__icon" data-domain="vocabulary">${icon('cards', { filled: true, size: 20 })}</span><div><strong>${esc(r.savedDue.replace('{n}', String(due)))}</strong></div><a class="primary" href="${esc(link('practice', { intent: 'recall' }))}">${esc(r.recall)}</a></div>` : ''}`;
   }
 
   function highlightsView() {
@@ -85,10 +97,11 @@ export function renderCollection(root, ctx) {
     root.innerHTML = `<section class="saved-page"><h1 class="saved-title">${esc(r.savedTitle)}</h1><div class="saved-panel"><div class="saved-tabs" role="tablist" aria-label="${esc(r.savedTitle)}">${KINDS.map((kind) => `<button type="button" role="tab" class="saved-tab" aria-selected="${state.kind === kind}" data-saved-kind="${kind}">${icon(KIND_ICON[kind], { size: 14, filled: state.kind === kind })}<span>${esc(r[`saved_${kind}`])}</span><span class="saved-tab__count">${esc(count(kind))}</span></button>`).join('')}</div><div class="saved-body" role="tabpanel">${body}</div></div></section>`;
     root.querySelectorAll('[data-saved-kind]').forEach((b) => (b.onclick = () => { state.kind = b.dataset.savedKind; paint(); }));
     const query = root.querySelector('[data-saved-query]');
-    if (query) query.oninput = () => { state.query = query.value; paint(); };
-    root.querySelector('[data-saved-starred]')?.addEventListener('click', () => { state.starred = !state.starred; paint(); });
-    root.querySelector('[data-saved-sort]')?.addEventListener('click', () => { state.sort = state.sort === 'recent' ? 'title' : 'recent'; paint(); });
-    root.querySelector('[data-words-retry]')?.addEventListener('click', load);
+    if (query) query.oninput = () => { state.query = query.value; paint(); reload(); };
+    root.querySelector('[data-saved-starred]')?.addEventListener('click', () => { state.starred = !state.starred; load(); });
+    root.querySelector('[data-saved-sort]')?.addEventListener('click', () => { state.sort = state.sort === 'recent' ? 'title' : 'recent'; load(); });
+    root.querySelector('[data-saved-more]')?.addEventListener('click', (event) => { event.currentTarget.disabled = true; load({ append: true }); });
+    root.querySelector('[data-words-retry]')?.addEventListener('click', () => load());
     root.querySelectorAll('[data-bring]').forEach((b) => (b.onclick = () => ctx.import?.()));
     if (focused) {
       const el = document.getElementById(focused);
@@ -96,18 +109,46 @@ export function renderCollection(root, ctx) {
       if (el?.setSelectionRange) el.setSelectionRange(el.value.length, el.value.length);
     }
   }
-  async function load() {
-    state.words = null;
+  /* One page of saved words, in the order and with the filter the panel is
+     set to. Searching used to pull every saved word into the browser and
+     filter it there; now the query goes to the database and only what matches
+     comes back. `append` continues the page the learner is on. */
+  async function load({ append = false } = {}) {
+    const token = (state.request += 1);
     state.failed = false;
-    paint();
-    try {
-      const data = await api.libraryVocabulary();
-      state.words = data.items || [];
-    } catch {
-      state.failed = true;
+    state.loading = true;
+    if (!append) {
+      state.words = null;
+      state.cursor = '';
+      paint();
     }
-    paint();
+    try {
+      const data = await api.libraryVocabulary({
+        limit: SAVED_PAGE,
+        cursor: append ? state.cursor : '',
+        query: state.query.trim(),
+        status: state.starred ? 'learning' : '',
+        order: state.sort === 'recent' ? 'recent' : 'word',
+      });
+      if (!alive() || token !== state.request) return;
+      state.words = append ? [...(state.words || []), ...(data.items || [])] : data.items || [];
+      state.total = Number(data.total || state.words.length);
+      state.due = Number(data.summary?.due || 0);
+      state.cursor = data.next_cursor || '';
+      state.hasMore = Boolean(data.has_more);
+    } catch {
+      if (!alive() || token !== state.request) return;
+      state.failed = true;
+    } finally {
+      if (token === state.request) state.loading = false;
+    }
+    if (alive() && token === state.request) paint();
   }
+
+  const reload = () => {
+    if (state.timer) clearTimeout(state.timer);
+    state.timer = setTimeout(() => load(), SAVED_SEARCH_DEBOUNCE_MS);
+  };
   load();
   return () => {};
 }

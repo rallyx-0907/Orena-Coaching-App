@@ -176,7 +176,10 @@ assert.match(world, /api\.listeningLibrary\(language\)/);
 assert.match(world, /api\.readingSessions\(12\)/);
 assert.match(world, /api\.dailyVocabularyFeed\(language\)/);
 assert.match(world, /api\.vocabularyLibraryCollections\(language\)/, 'the Vocabulary rail is the learner\'s own sets');
-assert.match(world, /api\.libraryVocabulary\(\)/, 'what is due on Home is the saved vocabulary itself');
+/* Home offers a review, so it asks how much is due - a counted number. It
+   must never read the learner's vocabulary to find that out. */
+assert.match(world, /api\.libraryVocabularySummary\(\)/, 'what is due on Home is a counted number');
+assert.doesNotMatch(world, /api\.libraryVocabulary\(\s*\)/, 'Home does not read the whole vocabulary');
 assert.match(world, /unbindHome\(\);\s+releaseLibrary\(\);/, 'renderWorld hands Home\'s bindings back to the route lifecycle');
 assert.doesNotMatch(world, /discoverySpread/, 'the retired composition is not rendered anywhere');
 assert.doesNotMatch(discovery, /discoverySpread|discover-start|home-hero/, 'and it no longer exists');
