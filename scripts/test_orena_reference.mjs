@@ -269,7 +269,7 @@ for (const ui of ['en', 'zh', 'vi']) {
   // The tab bar: five tabs, the last the learner's own, the way back lit.
   const tabs = navigationTabs(shellCtx(ui, route('#/')));
   assert.equal((tabs.match(/class="shell-tab"/g) || []).length, 5, `${ui}: five tabs`);
-  assert.match(tabs, /<button class="shell-tab" type="button" data-preference>/, 'Profile opens the profile sheet');
+  assert.match(tabs, /<a class="shell-tab" href="#\/profile"/, 'Profile is a destination, as the source draws it');
   for (const [hash, tab] of [
     ['#/', '#/'],
     ['#/practice?intent=reading', '#/content'],

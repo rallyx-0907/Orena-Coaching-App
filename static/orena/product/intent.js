@@ -45,6 +45,9 @@ export function route(hash = '') {
       'search',
       // The learner's last thirty days of work, read from the owners that hold it.
       'history',
+      // The learner's own page: who they are, what they have set, and what
+      // their plan still allows (D-067, "Orena Hạn mức sử dụng").
+      'profile',
     ].includes(path)
       ? path
       : 'discover',

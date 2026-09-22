@@ -57,13 +57,36 @@ liệu. Các mục ở trên là ghi chép chi tiết theo từng màn; phần n
 | A3 | Reader · "Kiểm tra hiểu" | Disabled khi bài không kèm câu hỏi (sách nhập không có). | Sinh câu hỏi bằng AI, hay ẩn nút khi không có? |
 | A4 | Listening · "Kiểm tra hiểu" | Cùng câu hỏi, đã treo từ trước. | Như trên. |
 | A5 | Book detail · 3 nút icon (bookmark, tải về, ⋯) | Disabled, "sắp có". Frame **không vẽ** chúng. | Xoá theo frame, hay giữ và làm chức năng? |
+| A6 | Profile · "Chia sẻ", "Chỉnh sửa", huy hiệu kim cương trên avatar | Frame vẽ cả ba; app chưa có hành vi nào cho chúng nên chưa dựng. | Chia sẻ cái gì và sửa được những gì? Huy hiệu kim cương là bậc, hay là thứ khác? |
+
+## A2. Hồ sơ (Profile) — đã dựng 2026-09-22
+
+Thiết kế **có** màn này, ở `Orena Hạn mức sử dụng.dc.html` (human chỉ chỗ; file **không nằm trong cache**
+ghim, phải đọc từ nguồn). Trước đó Profile chỉ là một dialog; nay là một điểm đến `#/profile`, tab thứ năm
+trỏ tới nó thay vì mở sheet.
+
+Dựng theo số đo frame, đã verify trong app: hero padding 30 / r20 / gap 30, avatar 132, tên Nunito 34/800,
+panel hạn mức rộng 560 padding 26; mobile 390: avatar 96, tên 24, hai cột xếp dọc, không tràn ngang.
+
+**Dữ liệu thật**: gói và hạn mức đọc từ `/api/product/me` - tên gói, giới hạn tháng và số đã dùng cho từng
+tính năng. Không mock, không phần trăm bịa.
+
+**Chưa có, nên để trống và nói rõ** (rule 4): **XP** và **chuỗi ngày** - frame vẽ "15 840 XP" và "128 ngày
+liên tiếp" nhưng Orena không đếm cái nào. **Khung rank** chờ `tier`. Nút **Chia sẻ / Chỉnh sửa** và huy hiệu
+kim cương trên avatar: frame có vẽ, app chưa có hành vi cho chúng - xem A6 bên dưới.
+
+**Mâu thuẫn trong chính thiết kế, cần anh chốt**: `Orena Hạn mức sử dụng` vẽ avatar bằng **vòng
+conic-gradient + huy hiệu kim cương**, còn `Orena Rank Frame Master v2` vẽ **khung pha lê nhiều mặt cắt**.
+Brief của anh nói rõ là pha lê, nên tôi dựng component pha lê; màn Profile hiện đang để avatar trơn cho tới
+khi có `tier`. Hai file vẽ hai thứ khác nhau cho cùng một chỗ.
 
 ## B. Thành phần frame vẽ mà app chưa dựng
+
 
 | # | Ở đâu | Tình trạng |
 | --- | --- | --- |
 | B1 | **Progress** | **Hàng bằng chứng đã dựng** (2026-09-22): "Bằng chứng gần nhất" đọc từ LearnerSummary, đúng số đo frame (nhãn DM Mono 11 / 0.14em, hàng r17 pad 16 trên kính có ring, gap 12, tên Nunito 17/700, meta 12, điểm Nunito 23/800, nhãn đo 10.5). Còn thiếu so với frame: **3 panel số lớn** (chuỗi ngày, thời gian học, từ đã thuộc), **khối CẤP BẬC**, **heatmap 18 tuần**, **thời gian 7 ngày theo kỹ năng** - tất cả đều thiếu dữ liệu, xem C4. Phần trên trang vẫn là composition cũ D-065. |
-| B2 | **Hệ cấp bậc (rank)** | Chưa dựng gì. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
+| B2 | **Hệ cấp bậc (rank)** | **Component đã dựng** (`ui/rank-frame.js`, port từ "Rank Frame Master v2": 20 bậc, 5 chặng, một nguồn sáng −48°, SVG sinh từ toạ độ cực, không raster; gate `test_orena_rank_frame.mjs`). **Chưa hiện ở đâu** vì `ProgressOverview.tier {name, level, current, target}` chưa ai phục vụ - cần **ngưỡng mỗi bậc**, là quyết định sản phẩm. Ngày có `tier`, khung pha lê hiện luôn, không cần sửa code. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
 | B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
 | B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |
 

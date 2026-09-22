@@ -18,6 +18,7 @@ import {
 } from './ui/reference.js';
 import { icon } from './ui/phosphor.js';
 import { renderProgress } from './ui/progress.js';
+import { renderProfile } from './ui/profile.js';
 import { paintBookPage } from './ui/library.js';
 import { renderHistory } from './ui/history.js';
 import { renderCollection } from './ui/collection.js';
@@ -449,6 +450,8 @@ async function render() {
         ? renderCollection(root, scope)
         : page === 'progress'
           ? await renderProgress(root, scope)
+        : page === 'profile'
+          ? await renderProfile(root, scope)
         : page === 'book'
           ? paintBookPage(root, scope, ctx.location.id)
         : page === 'history'
