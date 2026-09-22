@@ -28,7 +28,7 @@ and `UI_BACKEND_GAPS.md` (the one tracker, absorbing the Phase 1-3 audit).
 
 ## Last verified batch
 
-Local, after slices 1 and 2 and the six-bug pass: pytest `1171 passed, 118 skipped`; every CI
+Local, after slices 1-3 and the bug passes: pytest `1173 passed, 118 skipped`; every CI
 `.mjs` gate passes except `test_m3_pronunciation_contract.mjs`, failing since
 D-065 removed the score (Speaking slice); ESM graph, memory and architecture
 validators pass. No CI claim. Browser-checked on :8011 (vi, EN text; zh word via API;
@@ -53,23 +53,14 @@ flag on, backbone `active` (runbook section 7). Writing drafts kept with the
 account there (`4e1f0a5`). I4 `/api/collection`. Deletion gated (D-055). No
 I1-I7 claim implies human approval.
 
-Fidelity pass (D-067, the design read at its source and measured, not eyeballed): the shell (280px
-rail, five-tab bar, no shell in a working room), Dictation, the Listening and Reading library and the
-Listening workspace now match their frames at 1920x1080 and 390x844 (workspace 390x752), in EN, VI and
-ZH; Phosphor icons are the official set. Deleted as not drawn: the destination sheet, the Practice
-group, the writing response under a recording, the end-of-recording panel, the back-to-current
-button, library skeleton/empty visuals. The Quick Sheet (layer one, ask, deeper; desktop popover and phone sheet, Chinese layer one on a phone) is
-measured against `Orena Quick Sheet.dc.html` and matches; the Writing-feedback context sheet is not yet
-checked. Bugs 7-13 are fixed (lookup race, a real tutor for follow-ups, Dictation steps and one-screen
-phone, a line tap plays, a menu icon); DC-5 is stored (migration `20260921_0010`, applied to the sandbox
-database, reviewed: D-069). The Writing workspace and the review's two panes are built to their frames (top bar, 920px prompt card and
-24px serif document; panes 994:820, each scrolling on its own). The review on a phone is the Draft / Review tab pair; the revision compare takes the whole room in three columns
-(version 1, version 2, the changes) with the banner and its counts. Still not the frame: the draft's inline
-highlights of each fragment (the contract carries no positions), the changes column holding the dimensions, the
-top bar's "Lưu nhận xét" / "Sửa lại" / "Xong bài này" buttons. The Writing entry (`#/writing`: the library's top bar,
-the draft in progress when there is one, four ways to begin, a rail of prompts) is built and is where the rail's
-Writing leads; a screen's ground is the design's #060509 with the room's glow (D-070). Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
-workspace, Writing entry; the old top bar and the Practice hub go with them.
+Fidelity pass (D-067, measured against the design at its source): built to their frames at 1920x1080 and
+390x844, in EN, VI and ZH - the shell, Library, Listening workspace, Dictation (steps, one screen on a desk and a
+phone, DC-5 stored: migration `20260921_0010` in the sandbox, D-069), the Quick Sheet, the Writing workspace,
+review (two panes; Draft / Review tabs on a phone), revision (three columns) and entry (`#/writing`). A screen's
+ground is #060509 with the room's glow (D-070). Bugs 7-15 are fixed. Not the frame yet: the Writing draft's inline
+highlights (no positions in the contract), the top bar's review buttons, the Writing-feedback context sheet.
+Not migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading; the old top bar and the Practice hub go
+with them.
 
 ## PENDING
 
