@@ -192,7 +192,9 @@ def test_saved_library_projection_prefers_imported_orthography(monkeypatch) -> N
     monkeypatch.setattr(
         becoming_library,
         "_catalog_entry_for",
-        lambda word: {"orthography": source_orthography},
+        # _row_to_item now hands the lookup a resolver it decided once for the
+        # whole list, so the stub takes it too.
+        lambda word, resolve=None: {"orthography": source_orthography},
     )
     monkeypatch.setattr(
         becoming_library,

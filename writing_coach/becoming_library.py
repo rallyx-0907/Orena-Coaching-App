@@ -8,7 +8,7 @@ from writing_coach.core.request_context import current_language_code
 from writing_coach.orthography import orthography_for_word
 from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
 from writing_coach.persistence.vocabulary_repository import VocabularyRepository, VocabularyContentUnavailable
-from writing_coach.vocabulary_library import all_vocabulary_entries, normalize_vocabulary_word
+from writing_coach.vocabulary_library import normalize_vocabulary_word, vocabulary_entry_for
 
 
 _repository: SpecializedLearningRepository | None = None
@@ -87,33 +87,78 @@ def _stage_label(stage: int) -> str:
     return STAGE_LABELS.get(max(0, min(4, int(stage or 0))), "New")
 
 
-def _catalog_entry_for(word: str) -> dict[str, Any] | None:
+CATALOG_INDEX_LIMIT = 5000
+
+
+def _catalog_entry_for(word: str, resolve: Any = None) -> dict[str, Any] | None:
     normalized = normalize_vocabulary_word(word)
     if not normalized:
         return None
     language = current_language_code().strip().casefold()
-    if _content_repository is not None:
+    if resolve is not None:
+        persisted = resolve(normalized)
+    elif _content_repository is not None:
         try:
             persisted = _content_repository.find_entry(language, normalized)
         except (VocabularyContentUnavailable, RuntimeError, OSError):
             persisted = None
-        if persisted is not None:
-            return persisted
-    return next(
-        (
-            entry
-            for entry in all_vocabulary_entries(language)
-            if entry.get("normalized_word") == normalized
-        ),
-        None,
-    )
+    else:
+        persisted = None
+    if persisted is not None:
+        return persisted
+    return vocabulary_entry_for(language, normalized)
 
 
-def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
+def _catalog_resolver(language: str):
+    """How to find one word's curated entry while listing many of them.
+
+    Listing a learner's saved words used to ask the content repository about
+    each word on its own, and every one of those calls re-checks that the
+    shared schema is there - an inspector pass, and until it was cached, a
+    rebuild of Alembic's revision map. A learner with sixteen hundred saved
+    words waited minutes for their own vocabulary, and Hồ sơ and Tiến độ, which
+    read the same list, waited with them.
+
+    So the decision is made once, for the whole list:
+
+    - the repository cannot answer at all - ask it nothing, and let the static
+      catalogue answer;
+    - it can, and the language fits one page - read that page once and look
+      each word up in it;
+    - it can, but the language has more entries than a page - keep the per-word
+      call, because a partial index would quietly stop finding words the old
+      path found.
+    """
+
+    if _content_repository is None:
+        return lambda normalized: None
+    try:
+        entries = _content_repository.list_entries_for_language(language, limit=CATALOG_INDEX_LIMIT)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        return lambda normalized: None
+    if len(entries) >= CATALOG_INDEX_LIMIT:
+        repository = _content_repository
+
+        def by_word(normalized: str) -> dict[str, Any] | None:
+            try:
+                return repository.find_entry(language, normalized)
+            except (VocabularyContentUnavailable, RuntimeError, OSError):
+                return None
+
+        return by_word
+    index: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        key = str(entry.get("normalized_term") or entry.get("normalized_word") or "")
+        if key:
+            index.setdefault(key, entry)
+    return index.get
+
+
+def _row_to_item(row: dict[str, Any], resolve: Any = None) -> dict[str, Any]:
     stage = int(row["review_stage"] or 0)
     word = str(row["word"])
     language = current_language_code().strip().casefold()
-    catalog_entry = _catalog_entry_for(word)
+    catalog_entry = _catalog_entry_for(word, resolve)
     orthography = None
     item = {
         "word": word,
@@ -161,7 +206,8 @@ def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def list_library_vocabulary() -> dict[str, Any]:
-    items = [_row_to_item(row) for row in _repo().list_library_records()]
+    resolve = _catalog_resolver(current_language_code().strip().casefold())
+    items = [_row_to_item(row, resolve) for row in _repo().list_library_records()]
     items.sort(key=lambda item: (0 if item["due"] else 1, item["next_review_at"] or item["added_at"], item["word"].casefold()))
     return {
         "items": items,

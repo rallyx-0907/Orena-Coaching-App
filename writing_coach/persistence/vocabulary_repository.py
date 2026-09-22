@@ -18,6 +18,7 @@ import os
 import uuid
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -96,8 +97,18 @@ _VOCABULARY_CONTENT_SNAPSHOT_FIELDS = (
 )
 
 
+@lru_cache(maxsize=32)
 def _vocabulary_revision_is_usable(current_revision: str) -> bool:
-    """Accept the vocabulary migration and any later linear descendant."""
+    """Accept the vocabulary migration and any later linear descendant.
+
+    Cached on the revision string. Answering this reads every file in
+    `migrations/` and builds Alembic's revision map, which costs about a tenth
+    of a second - and `available()` asks it on every repository call. Listing a
+    learner's saved words asks once per word, so sixteen hundred words spent
+    three minutes rebuilding the same map from the same unchanging directory.
+    The migrations on disk cannot change while the process runs, so the answer
+    for a given revision cannot either.
+    """
 
     if current_revision == VOCABULARY_SCHEMA_REVISION:
         return True
