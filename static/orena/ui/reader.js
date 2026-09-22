@@ -124,44 +124,10 @@ export function mountReader(
      just finished, what it left behind, and the one way on. What nothing
      measures keeps its tile and says so - the quiz a library chapter does not
      carry (GAP-031) and the time nobody records (GAP-030). New words are the
-     words kept since this chapter opened: a real count of real saves. */
-  const chapterCompleteHtml = () => {
-    if (!place) return '';
-    const done = place.index + 1;
-    const percent = place.total ? Math.max(1, Math.round((done / place.total) * 100)) : 0;
-    const fresh = Object.entries(memory.value.keptLanguage || {}).filter(
-      ([term, entry]) =>
-        !savedTerms.has(String(term).trim().toLocaleLowerCase()) &&
-        (!entry?.where || entry.where === item.title || entry.where === barTitle),
-    );
-    const tile = (label, value, note = '') =>
-      `<div class="chapter-tile"><span class="ds-label">${esc(label)}</span><strong>${esc(value)}</strong>${note ? `<small>${esc(note)}</small>` : ''}</div>`;
-    const next = place.next;
-    const nextWords = Number(next?.word_count) > 0
-      ? String(r.bookChapterWords || '{n}').replace('{n}', Number(next.word_count).toLocaleString())
-      : '';
-    return `<section class="chapter-complete" data-chapter-complete aria-label="${esc(r.chapterComplete)}"><span class="ds-label chapter-complete__label">${icon('check-circle', { size: 16, filled: true })}${esc(r.chapterComplete)}</span><h2 class="chapter-complete__line">${esc(
-      String(r.chapterDoneLine).replace('{n}', String(done)).replace('{p}', String(percent)),
-    )}</h2><div class="chapter-tiles">${tile(r.chapterQuiz, '—', r.bookNotMeasured)}${tile(
-      r.chapterNewWords,
-      String(fresh.length),
-    )}${tile(r.chapterTime, '—', r.bookNotMeasured)}</div>${
-      fresh.length
-        ? `<div class="chapter-saved"><div class="chapter-saved__head"><span class="ds-label">${esc(r.chapterSavedHere)}</span><a class="chapter-saved__review" href="${esc(link('practice', { intent: 'recall' }))}">${esc(r.chapterReviewNow)}</a></div><div class="chapter-words">${fresh
-            .slice(0, 6)
-            .map(([term, entry]) => `<span class="chapter-word"><span lang="${esc(language)}">${esc(term)}</span>${entry?.reading || entry?.pronunciation ? `<small class="ds-data">${esc(entry.reading || entry.pronunciation)}</small>` : ''}</span>`)
-            .join('')}${fresh.length > 6 ? `<span class="chapter-word chapter-word--more ds-data">+${fresh.length - 6}</span>` : ''}</div></div>`
-        : ''
-    }${
-      next
-        ? `<a class="chapter-next" href="${esc(nextHref)}"><span class="chapter-next__cover">${contentCover({ id: `${book.id}/${next.id}`, title: next.title, material: 'book' })}</span><span class="chapter-next__text"><span class="ds-label">${esc(r.chapterUpNext)}</span><strong lang="${esc(language)}">${esc(next.title)}</strong>${nextWords ? `<small class="ds-data">${esc(nextWords)}</small>` : ''}</span></a>`
-        : `<p class="chapter-complete__last">${esc(r.chapterLast)}</p>`
-    }<div class="chapter-actions">${
-      nextHref
-        ? `<a class="primary" href="${esc(nextHref)}">${icon('book-open', { size: 18, filled: true })}<span>${esc(r.chapterContinue)}</span></a>`
-        : `<a class="primary" href="${esc(link('book', { id: book.id }))}">${icon('books', { size: 18 })}<span>${esc(c.libraryChapters)}</span></a>`
-    }<button type="button" class="icon-button chapter-contents" data-reader-toc aria-label="${esc(c.readerContents)}">${icon('list', { size: 20 })}</button></div></section>`;
-  };
+  /* The source draws no end-of-chapter sheet. The D-059 composition that
+     covered half the screen the moment a chapter opened is deleted (rule 44),
+     not restyled: what it reported - the words kept here, the way on - is
+     already the side panel's and the foot row's work.  */
 
   /* The approved reader (D-059 Phase 5): a compact bar - the way back, where
      the learner is, the progress rail, the reading layers and the type size -
@@ -203,7 +169,7 @@ export function mountReader(
     : '';
   host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
     .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
-    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><div class="reader-foot__row"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</div></footer>${chapterCompleteHtml()}${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
+    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><div class="reader-foot__row"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</div></footer>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
 
   const reader = host.querySelector('[data-reader]');
   const body = host.querySelector('[data-reader-body]');
@@ -372,15 +338,7 @@ export function mountReader(
     body.innerHTML = bodyHtml();
     lexical.forget();
   };
-  /* The end-of-chapter panel counts what has been kept, so it is repainted
-     whenever a word is saved - the same moment the side panel goes back to
-     its own placeholder. */
-  const repaintComplete = () => {
-    const panel = host.querySelector('[data-chapter-complete]');
-    if (!panel) return;
-    panel.outerHTML = chapterCompleteHtml();
-    bindContents();
-  };
+
 
   /* --- Progress through this text --- */
   let progressFrame = 0;
@@ -421,7 +379,6 @@ export function mountReader(
     onPanel: (open) => {
       if (open) return;
       paintPanel();
-      repaintComplete();
     },
     units: {
       root: () => page(),

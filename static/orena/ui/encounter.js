@@ -106,7 +106,7 @@ function textEncounter(root, ctx, item, book = null) {
      optional check, the response, where the text came from - is reached from the bar under the text and
      opens as a sheet (the design's pattern for anything deeper), so the room is one screen (D-067). */
   const rights = `${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
-  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions, item.latest_attempt)}</div><div data-after="respond">${responseComposer(ctx, item)}</div><div data-after="source">${rights}</div></div>`;
+  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions, item.latest_attempt)}</div><div data-after="respond">${responseComposer(ctx, item)}</div></div><div class="reader-rights">${rights}</div>`;
 
   const after = root.querySelector('[data-reader-after]');
   const openAfter = (name, heading) => {
@@ -132,9 +132,12 @@ function textEncounter(root, ctx, item, book = null) {
       { name: 'check', glyph: 'check-square-offset', label: c.comprehension, available: Boolean(item.questions?.length), title: item.questions?.length ? '' : c.readingOnlyNote },
       { name: 'respond', glyph: 'pen-nib', label: c.respond, primary: true },
       (item.phrases || []).length ? { name: 'notes', glyph: 'book-open', label: c.readerNotes } : null,
-      { name: 'source', glyph: 'info', label: c.rights },
+      /* The source draws no "Nguồn & bản quyền" action (human, 2026-09-22), so
+         the bar does not carry one. Attribution itself is not a design choice -
+         a published text owes it - so the block stays under the text, which is
+         where UI_BACKEND_GAPS.md already records it as the human's open call. */
     ].filter(Boolean),
-    onAction: (name) => openAfter(name, { check: c.comprehension, respond: c.respond, notes: c.readerNotes, source: c.rights }[name] || ''),
+    onAction: (name) => openAfter(name, { check: c.comprehension, respond: c.respond, notes: c.readerNotes }[name] || ''),
   });
 
   root.querySelectorAll('[data-note]').forEach(

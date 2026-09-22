@@ -71,7 +71,10 @@ function bookStat(label, value, { note = '', tone = '' } = {}) {
 }
 
 function bookDetail(c, r, open, reading, view = {}) {
-  const back = `<button type="button" class="icon-button book-back" data-close-book aria-label="${esc(c.libraryBack)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</button>`;
+  /* A link, not history.back(): the reader reaches this page by navigating to
+     it, so a history step here lands back in the reader and the two bounce off
+     each other with no way out of the book. */
+  const back = `<a class="icon-button book-back" href="${esc(link('practice', { intent: 'reading' }))}" aria-label="${esc(c.libraryBack)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a>`;
   if (open.error)
     return `${back}<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-book-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`;
   if (!open.book)
@@ -267,7 +270,6 @@ export function paintBookPage(container, ctx, id) {
     });
     bindImages(container, c);
     bindBookControls(container, view, paint);
-    container.querySelector('[data-close-book]')?.addEventListener('click', () => history.back());
     container.querySelector('[data-book-retry]')?.addEventListener('click', load);
   };
   async function load() {

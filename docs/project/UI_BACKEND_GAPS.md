@@ -654,3 +654,21 @@ comment claiming the frame "draws the same figure twice" as two rails is correct
 - **Spacing:** bar gap 20 in the frame against 14; aside padding 26 / gap 20 against 22 / 16. Left
   alone in this pass because the aside's contents are not yet the frame's, so matching its padding
   alone would not make it the frame.
+
+## Reading workspace, three faults the human found (2026-09-22)
+
+- **The end-of-chapter sheet is deleted.** `chapter-complete` (a D-059 composition) rendered the
+  moment any book chapter opened - not when one was finished - and took about half the desktop
+  viewport, more on a phone. The source draws no such sheet, so it is deleted with its markup, its
+  repaint and its CSS (rule 44), not restyled. What it reported lives on where the source puts it:
+  the words kept here in the side panel, the way on in the foot row.
+- **"Nguồn & bản quyền" has left the action bar.** The source draws no such action (human,
+  2026-09-22). Attribution itself is not a design choice - a published text owes its credit - so the
+  block now sits quietly under the text instead of behind a bar action. **Open for the human:** the
+  frame draws no attribution anywhere; where it should live is still the call recorded in the
+  fidelity notes.
+- **The way out of a book was a loop.** The book page's back was `history.back()` while the reader's
+  back *navigates* to `#/book`, so back from the reader pushed the book page, and back from there
+  returned to the reader: a learner could not leave the book. The book page's back is now a link to
+  the reading library, so library → book → reader unwinds one step at a time. Verified:
+  `#/encounter…` → `#/book?id=…` → `#/practice?intent=reading`.
