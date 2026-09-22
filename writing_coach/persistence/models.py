@@ -15,6 +15,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -493,3 +494,275 @@ class VocabularyCollectionMembership(Base):
     membership_metadata: Mapped[dict] = mapped_column(
         "metadata", JSON, default=dict, nullable=False
     )
+
+
+# ---------------------------------------------------------------------------
+# Reading Content Engine - shared, admin-curated article content.
+#
+# These six mirror `migrations/proposed/20260922_0010_reading_content_engine.py`
+# and exist so the hermetic suite can create the same tables from metadata, the
+# way the vocabulary catalog already does. Two rules when either side changes:
+# the migration is the authority for the runtime, and every partial index is
+# declared for *both* dialects - a `postgresql_where` alone silently becomes a
+# full index on SQLite, which would let a test pass against a constraint the
+# runtime does not have and, for the native-id key, forbid a second manual
+# paste the runtime allows.
+#
+# Nothing here is learner-owned: no account column, no foreign key into
+# `users`, no reading position or progress.
+# ---------------------------------------------------------------------------
+
+
+class ReadingSource(Base):
+    """Where content comes from, with its rights answers and polling state."""
+
+    __tablename__ = "reading_sources"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_reading_source_slug"),
+        Index("ix_reading_sources_state", "state", "source_type"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(120), nullable=False)
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    base_url: Mapped[str] = mapped_column(String(600), default="", nullable=False)
+    state: Mapped[str] = mapped_column(String(20), default="needs_review", nullable=False)
+    languages: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    topic_hints: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    automation_allowed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    can_republish: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    can_adapt: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    attribution_required: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    license_note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    polling_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    polling_policy: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    polling_cursor: Mapped[str] = mapped_column(String(600), default="", nullable=False)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    approved_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingSourceItem(Base):
+    """The immutable original snapshot a candidate article is built from."""
+
+    __tablename__ = "reading_source_items"
+    __table_args__ = (
+        Index(
+            "uq_reading_source_items_native",
+            "source_id",
+            "source_native_id",
+            unique=True,
+            postgresql_where=text("source_native_id <> '' AND superseded_at IS NULL"),
+            sqlite_where=text("source_native_id <> '' AND superseded_at IS NULL"),
+        ),
+        Index("uq_reading_source_items_hash", "source_id", "content_hash", unique=True),
+        Index(
+            "ix_reading_source_items_canonical",
+            "canonical_url",
+            postgresql_where=text("canonical_url <> ''"),
+            sqlite_where=text("canonical_url <> ''"),
+        ),
+        Index("ix_reading_source_items_hash_any", "content_hash"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_sources.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_native_id: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    canonical_url: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    original_title: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    original_author: Mapped[str] = mapped_column(String(300), default="", nullable=False)
+    original_published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    original_language: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    original_content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    rights_snapshot_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    supersedes_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_source_items.id", ondelete="RESTRICT"), nullable=True
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingArticle(Base):
+    """The learner-oriented processed version, and its review lifecycle."""
+
+    __tablename__ = "reading_articles"
+    __table_args__ = (
+        UniqueConstraint("source_item_id", name="uq_reading_article_source_item"),
+        Index(
+            "ix_reading_articles_published",
+            "language",
+            "published_at",
+            "id",
+            postgresql_where=text("status = 'published'"),
+            sqlite_where=text("status = 'published'"),
+        ),
+        Index(
+            "ix_reading_articles_published_level",
+            "language",
+            "effective_level",
+            "published_at",
+            "id",
+            postgresql_where=text("status = 'published'"),
+            sqlite_where=text("status = 'published'"),
+        ),
+        Index(
+            "ix_reading_articles_published_topic",
+            "language",
+            "topic",
+            "published_at",
+            "id",
+            postgresql_where=text("status = 'published'"),
+            sqlite_where=text("status = 'published'"),
+        ),
+        Index("ix_reading_articles_queue", "status", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    source_item_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_source_items.id", ondelete="RESTRICT"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    excerpt: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    language: Mapped[str] = mapped_column(String(20), nullable=False)
+    topic: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    subtopic: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    estimated_level: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    estimated_level_confidence: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    reviewed_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    effective_level: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    word_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reading_time_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_adapted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    adaptation_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    analysis_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)
+    rejection_reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    content_revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    unpublished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ReadingArticleTarget(Base):
+    """One learning target: suggested by the machine, decided by an admin."""
+
+    __tablename__ = "reading_article_targets"
+    __table_args__ = (
+        Index(
+            "uq_reading_target_form",
+            "article_id",
+            "canonical_form",
+            unique=True,
+            postgresql_where=text("canonical_form <> ''"),
+            sqlite_where=text("canonical_form <> ''"),
+        ),
+        Index("ix_reading_targets_article", "article_id", "rank"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_articles.id", ondelete="CASCADE"), nullable=False
+    )
+    text: Mapped[str] = mapped_column(String(300), nullable=False)
+    canonical_form: Mapped[str] = mapped_column(String(300), default="", nullable=False)
+    target_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    context: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    meaning: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    estimated_level: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    rank: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    machine_suggested: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    admin_approved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    admin_rejected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingReviewEvent(Base):
+    """What an admin did to an article, as the Review Queue renders it."""
+
+    __tablename__ = "reading_review_events"
+    __table_args__ = (Index("ix_reading_review_events_article", "article_id", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_articles.id", ondelete="CASCADE"), nullable=False
+    )
+    actor: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    action: Mapped[str] = mapped_column(String(60), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    changes_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingIngestionJob(Base):
+    """One durable unit of ingestion work, claimed by a worker."""
+
+    __tablename__ = "reading_ingestion_jobs"
+    __table_args__ = (
+        Index(
+            "uq_reading_job_request_hash",
+            "request_hash",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running')"),
+            sqlite_where=text("status IN ('queued', 'running')"),
+        ),
+        Index(
+            "ix_reading_jobs_claim",
+            "created_at",
+            "id",
+            postgresql_where=text("status = 'queued'"),
+            sqlite_where=text("status = 'queued'"),
+        ),
+        Index(
+            "ix_reading_jobs_stale",
+            "heartbeat_at",
+            postgresql_where=text("status = 'running'"),
+            sqlite_where=text("status = 'running'"),
+        ),
+        Index("ix_reading_jobs_recent", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    job_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_sources.id", ondelete="RESTRICT"), nullable=False
+    )
+    input_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    input_asset_key: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False)
+    stage: Mapped[str] = mapped_column(String(30), default="queued", nullable=False)
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    last_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    last_error_code: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    next_retry_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    claimed_by: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    result_source_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_source_items.id", ondelete="SET NULL"), nullable=True
+    )
+    result_article_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_articles.id", ondelete="SET NULL"), nullable=True
+    )
+    result_kind: Mapped[str] = mapped_column(String(30), default="", nullable=False)
+    submitted_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
