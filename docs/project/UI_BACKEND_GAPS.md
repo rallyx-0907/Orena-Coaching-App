@@ -472,3 +472,12 @@ are recorded in `docs/design/canonical-ui/SYNC_2026-09-22.md`. From them: the Wr
 pair on a phone and the revision is three columns with a banner - both built now. Still to build from the templates:
 the Writing entry, Home (top bar with search, level and streak, the Continue strip, section rails at 300x170 / 232x132),
 Reading (library, book detail, workspace) - each read from the source when it is worked on.
+
+## Writing entry and the ground (2026-09-22)
+
+Built to "Writing entry": `ui/writing-entry.js`, `writing-entry.css`, route `#/writing`. The draft card is drawn only when
+the device holds a continuation for Writing; the prompt rail is the texts' own prompts (badge = the text's kind, meta =
+its level and length); "search" filters the prompts; "See all" opens the rail into a grid. Not drawn because the
+app holds no such data: "saved N minutes ago" on the draft card, a category badge for prompts that have no kind,
+a target length. The error sheet is the finding sheet (`issueSheetHtml`), already the frame's: fragment struck,
+correction, kind, why, rule well, example, ask / save concept / apply.

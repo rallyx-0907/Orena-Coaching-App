@@ -29,6 +29,8 @@ export function route(hash = '') {
       'content',
       'language',
       'expression',
+      // The Writing skill's own library: the way in to a piece.
+      'writing',
       'preferences',
       'conversation',
       'continue',

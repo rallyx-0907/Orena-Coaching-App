@@ -15,6 +15,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
+import { referenceCopy } from '../static/orena/ui/reference.js';
 import { writingReviewFailure } from '../static/orena/ui/writing-feedback.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -158,5 +159,25 @@ for (const key of ['reviewAction', 'reviewFocus', 'writingKeepWriting'])
 /* --- A phone recomposes rather than stacking the desktop ---------------- */
 assert.match(rooms, /\.writing-bar \{[\s\S]{0,160}?display: flex/, 'the actions are one row');
 assert.doesNotMatch(expression, /class="writing-sheet"[\s\S]{0,400}?<h2/, 'the page carries no heading of its own');
+
+/* The entry (Orena Writing, "Writing entry"): the skill's own library, four ways to begin, a rail of prompts. */
+const entry = read('static/orena/ui/writing-entry.js');
+const entryCss = read('static/orena/writing-entry.css');
+const intent = read('static/orena/product/intent.js');
+const referenceJs = read('static/orena/ui/reference.js');
+assert.match(intent, /'writing',/, 'the Writing entry is a route of its own');
+assert.match(referenceJs, /\{ id: 'writing', page: 'writing', icon: 'pen-nib' \}/, 'the rail Writing leads to it');
+assert.equal((entry.match(/mode\('/g) || []).length, 4, 'four ways to begin');
+assert.match(entry, /data-new-piece/, 'a new piece is made when it is asked for');
+assert.match(entry, /class="we-rail"/, 'and a rail of prompts');
+assert.doesNotMatch(entry, /draft \?\s*`<section class="we-continue">[\s\S]*: `<section/, 'no draft, no card: nothing is drawn for what does not exist');
+for (const [what, pattern] of [
+  ['mode cards padded 22 at radius 18 in four columns', /\.we-modes \{[^}]*repeat\(4, minmax\(0, 1fr\)\);[^}]*gap: 20px;/s],
+  ['prompt cards 300 wide with a 150 cover', /\.we-card \{[^}]*inline-size: 300px;/s],
+  ['a 232 card on a phone', /\.we-card \{\s*inline-size: 232px;/],
+]) assert.match(entryCss, pattern, what);
+for (const ui of ['en', 'zh', 'vi'])
+  for (const key of ['writingEntrySearch', 'writingNew', 'writingDraftNow', 'writingContinue', 'writingModeFree', 'writingModePrompt', 'writingModeTopic', 'writingModeReply', 'writingSuggestions', 'writingSeeAll'])
+    assert.ok(referenceCopy[ui][key], `${ui} has ${key}`);
 
 console.log('Writing workspace: intention first, one action, feedback that leads, text that stays: PASS');

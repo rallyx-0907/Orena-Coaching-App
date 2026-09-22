@@ -1,0 +1,294 @@
+/* The Writing entry (D-066, D-067), every number from Orena Writing, "Writing entry" (1920x1080) and its
+   phone frame. The top bar is the library's (media-library.css); this is what is under it. Colour from
+   theme.css only. */
+
+.we-page {
+  min-width: 0;
+}
+#main > .we-page {
+  max-width: none;
+  margin: 0;
+}
+#main:has(> .we-page) {
+  padding: 0;
+}
+.we-body {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 28px var(--page-gutter) 40px;
+}
+.lib-import.lib-import--primary {
+  block-size: 44px;
+  padding: 0 20px;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 15.5px;
+  text-decoration: none;
+}
+
+/* The draft in progress: a tile, what it is, and the way back in. */
+.we-continue {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring-focus);
+}
+.we-tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 60px;
+  block-size: 60px;
+  border-radius: 18px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: var(--ink-90);
+}
+.we-tile--small {
+  inline-size: 46px;
+  block-size: 46px;
+  border-radius: 14px;
+}
+.we-continue__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.we-continue__text small {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-68);
+}
+.we-continue__text strong {
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.022em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.we-continue__text span {
+  font-size: 15px;
+  color: var(--ink-78);
+}
+.we-go {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  block-size: 54px;
+  padding: 0 26px;
+  border-radius: 999px;
+  background: var(--accent-solid-light);
+  color: var(--ink-on-light);
+  font-family: var(--display-font);
+  font-size: 16.5px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* Four ways to begin. */
+.we-modes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+.we-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.we-mode:hover,
+.we-mode:focus-visible {
+  box-shadow: var(--glass-ring-focus);
+}
+.we-mode .we-tile {
+  margin-bottom: 11px;
+}
+.we-mode strong {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: 800;
+}
+.we-mode > span:last-child {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-70);
+}
+
+/* Prompts for you: a rail, and the whole shelf on request. */
+.we-rail > header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.we-rail h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.we-rail > header > span {
+  font-size: 15px;
+  color: var(--ink-62);
+}
+.we-all {
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-78);
+  font: inherit;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.we-cards {
+  display: flex;
+  gap: 20px;
+  overflow: hidden;
+}
+.we-rail[data-all] .we-cards {
+  flex-wrap: wrap;
+}
+.we-card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 13px;
+  inline-size: 300px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.we-card[hidden] {
+  display: none;
+}
+.we-card__art {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  block-size: 150px;
+  border-radius: 16px;
+  background: var(--artwork-wash);
+  box-shadow: var(--glass-ring);
+}
+.we-card__art > .content-cover {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.we-badge {
+  position: absolute;
+  inset: 12px auto auto 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--scrim-badge);
+  color: #fff;
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.we-card strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.we-card small {
+  font-family: var(--mono-font);
+  font-size: 12.5px;
+  color: var(--ink-62);
+}
+
+/* The phone: one column of ways to begin, the rail keeps its edge. */
+@media (max-width: 900px) {
+  .lib-import.lib-import--primary {
+    inline-size: 42px;
+    block-size: 42px;
+    padding: 0;
+  }
+  .we-body {
+    gap: 22px;
+    padding: 4px var(--page-gutter) 30px;
+  }
+  .we-continue {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 18px;
+  }
+  .we-tile {
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: 15px;
+  }
+  .we-continue__text strong {
+    font-size: 20px;
+  }
+  .we-go {
+    inline-size: 100%;
+    justify-content: center;
+    block-size: 48px;
+    font-size: 15px;
+  }
+  .we-modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .we-mode {
+    gap: 6px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .we-mode strong {
+    font-size: 16px;
+  }
+  .we-mode > span:last-child {
+    font-size: 12.5px;
+  }
+  .we-rail h2 {
+    font-size: 20px;
+  }
+  .we-card {
+    inline-size: 232px;
+    gap: 9px;
+  }
+  .we-card__art {
+    block-size: 132px;
+    border-radius: 14px;
+  }
+  .we-card strong {
+    font-size: 15px;
+  }
+  .we-cards {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .we-rail[data-all] .we-cards {
+    overflow-x: visible;
+  }
+}

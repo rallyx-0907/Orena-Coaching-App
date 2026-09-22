@@ -240,7 +240,7 @@ for (const ui of ['en', 'zh', 'vi']) {
   assert.deepEqual(railHrefs, [
     link(), link('content'), link('language'), link('progress'),
     link('practice', { intent: 'reading' }), link('practice', { intent: 'follow' }),
-    link('practice', { intent: 'speaking' }), link('expression'),
+    link('practice', { intent: 'speaking' }), link('writing'),
   ], `${ui}: the baseline's rail`);
   assert.match(nav, /<button type="button" class="nav-link" data-preference data-nav="profile">/, `${ui}: Profile opens the profile sheet`);
   assert.equal((nav.match(/nav-link--skill/g) || []).length, 4, `${ui}: four skills`);

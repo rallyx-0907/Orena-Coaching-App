@@ -66,7 +66,9 @@ database, reviewed: D-069). The Writing workspace and the review's two panes are
 24px serif document; panes 994:820, each scrolling on its own). The review on a phone is the Draft / Review tab pair; the revision compare takes the whole room in three columns
 (version 1, version 2, the changes) with the banner and its counts. Still not the frame: the draft's inline
 highlights of each fragment (the contract carries no positions), the changes column holding the dimensions, the
-top bar's "Lưu nhận xét" / "Sửa lại" / "Xong bài này" buttons, the error sheet and the entry. Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
+top bar's "Lưu nhận xét" / "Sửa lại" / "Xong bài này" buttons. The Writing entry (`#/writing`: the library's top bar,
+the draft in progress when there is one, four ways to begin, a rail of prompts) is built and is where the rail's
+Writing leads; a screen's ground is the design's #060509 with the room's glow (D-070). Not yet migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading
 workspace, Writing entry; the old top bar and the Practice hub go with them.
 
 ## PENDING

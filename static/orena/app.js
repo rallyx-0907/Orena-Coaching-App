@@ -26,6 +26,7 @@ import {
   renderLanguage,
   renderGrammar,
 } from './ui/expression.js';
+import { renderWritingEntry } from './ui/writing-entry.js';
 import { installHints } from './ui/patterns.js';
 import { bindContentRails } from './ui/content-rail.js';
 import { growthSummarySection } from './ui/growth-summary.js';
@@ -462,6 +463,8 @@ async function render() {
         ? await renderEncounter(root, scope)
         : page === 'conversation'
           ? renderConversation(root, scope)
+          : page === 'writing'
+            ? renderWritingEntry(root, scope)
           : page === 'expression'
             ? await renderExpression(root, scope)
             : page === 'language' || ctx.location.intent === 'recall'
