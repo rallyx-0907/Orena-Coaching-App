@@ -162,6 +162,13 @@ revert the current row can carry a lower `revision` than a superseded one, and
 `supersedes_id` records what a row was created after - never which row is live.
 `superseded_at IS NULL` is the only test for "current", everywhere.
 
+One consequence of that, for whoever renders a history: after a revert followed
+by a further change, two rows can share one `supersedes_id`, because each
+records the row that was current when it was created and the reverted-to row
+was current twice. `ck_reading_source_item_chain` permits it deliberately - the
+chain is a tree, not a list, and a renderer that walks it expecting a list will
+be wrong.
+
 ## Deletes
 
 `RESTRICT` upward (item -> source, article -> item, job -> source, item ->
@@ -299,8 +306,17 @@ BUILT_IN_SOURCES = (
 # equality operator, so `NEW.rights_snapshot_json IS DISTINCT FROM OLD...`
 # raises `operator does not exist: json = json` at *runtime* - which would have
 # made this trigger reject every update to the table, including the one legal
-# `superseded_at` stamp. The rehearsal caught it; the cast is the fix, and it
-# makes the comparison textual, so any rewrite at all is refused.
+# `superseded_at` stamp. The rehearsal caught it.
+#
+# The textual comparison is the right semantics, not a tolerated side effect,
+# so do not "fix" this to `jsonb` for its native `=`. `json` stores the exact
+# input text - whitespace, key order and duplicate keys preserved - so
+# `CAST(json AS text)` compares the bytes as stored, and byte-identity is what
+# "unchanged" has to mean for a column whose whole purpose is evidence. It
+# fails closed: the cost is that a writer which re-serialises the value with a
+# different key order is refused although the meaning did not change, which is
+# why every write to this table must be a targeted `UPDATE ... SET
+# superseded_at = ...` and never a whole-row write or an ORM merge.
 _IMMUTABLE_SNAPSHOT_FUNCTION = """
 CREATE OR REPLACE FUNCTION reading_source_item_is_immutable() RETURNS trigger AS $func$
 BEGIN
@@ -741,6 +757,19 @@ def upgrade() -> None:
     op.create_index("ix_reading_jobs_recent", "reading_ingestion_jobs", ["created_at"])
 
     # ---- 7. The three built-in input paths --------------------------------
+    # Three notes for whoever edits these, none of them obvious:
+    #
+    # * `CURRENT_TIMESTAMP`, not `now()`: standard SQL, valid on every dialect
+    #   this repository might rehearse on, still the server's clock.
+    # * `created_by` reads `migration 20260922_0010` with a space, not a colon.
+    #   Alembic wraps `op.execute` strings in `text()`, and SQLAlchemy reads
+    #   `:` followed by word characters - digits included - as a bind parameter.
+    # * The ids render in their dashed form, which is what PostgreSQL's `uuid`
+    #   type expects. On a non-native backend `sa.Uuid()` stores `value.hex`
+    #   instead, so these literals would not match what the ORM writes; that is
+    #   another reason this migration targets the PostgreSQL runtime it names.
+    #   `BUILT_IN_SOURCES` names must also stay apostrophe-free.
+    #
     # Written as literal statements rather than `op.bulk_insert`: offline mode
     # (`alembic upgrade --sql`, the natural way for a human to read this DDL
     # before authorizing it) renders parameters as literals, and SQLAlchemy has
@@ -758,7 +787,8 @@ def upgrade() -> None:
             "(id, slug, name, source_type, state, languages, topic_hints, polling_policy, "
             " created_by, created_at, updated_at) VALUES "
             f"('{source_id}', '{slug}', '{name}', '{source_type}', 'active', "
-            """'["en", "zh"]', '[]', '{}', 'migration 20260922_0010', now(), now())"""
+            """'["en", "zh"]', '[]', '{}', 'migration 20260922_0010',
+             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"""
         )
 
 

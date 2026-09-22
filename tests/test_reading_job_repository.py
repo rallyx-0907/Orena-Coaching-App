@@ -87,7 +87,7 @@ def test_the_same_submission_twice_is_one_job(repository):
 def test_a_text_whose_job_failed_can_be_submitted_again(repository):
     first = _enqueue(repository)
     repository.claim("worker-1")
-    repository.fail(first["id"], code="fetch_failed", message="upstream refused", retry_in=None)
+    repository.fail(first["id"], worker_id="worker-1", code="fetch_failed", message="upstream refused", retry_in=None)
     second = _enqueue(repository)
     assert second["duplicate"] is False and second["id"] != first["id"]
 
@@ -95,7 +95,7 @@ def test_a_text_whose_job_failed_can_be_submitted_again(repository):
 def test_admin_retry_makes_a_new_job_and_leaves_the_failure_readable(repository):
     first = _enqueue(repository)
     repository.claim("worker-1")
-    repository.fail(first["id"], code="fetch_failed", message="upstream refused", retry_in=None)
+    repository.fail(first["id"], worker_id="worker-1", code="fetch_failed", message="upstream refused", retry_in=None)
     retried = repository.retry(first["id"], actor="admin@example.com")
     assert retried["id"] != first["id"] and retried["status"] == "queued"
     failed = repository.get_job(first["id"])
@@ -124,7 +124,7 @@ def test_the_claim_stamps_the_worker_the_attempt_and_the_heartbeat(repository):
 def test_a_job_waiting_for_its_backoff_is_not_claimed_yet(repository):
     job = _enqueue(repository)
     repository.claim("worker-1")
-    repository.fail(job["id"], code="fetch_failed", message="timeout", retry_in=timedelta(minutes=5))
+    repository.fail(job["id"], worker_id="worker-1", code="fetch_failed", message="timeout", retry_in=timedelta(minutes=5))
     assert repository.claim("worker-2") is None
     assert repository.claim("worker-2", now=datetime.now(UTC) + timedelta(minutes=6))["id"] == job["id"]
 
@@ -148,6 +148,42 @@ def test_a_live_worker_keeps_its_job_by_reporting_in(repository):
     repository.heartbeat(job["id"], "worker-1", now=later)
     assert repository.reap_stale(timedelta(minutes=5), now=later) == 0
     assert repository.get_job(job["id"])["status"] == "running"
+
+
+def test_a_late_worker_cannot_finish_a_job_that_was_taken_from_it(repository):
+    """The zombie-worker sequence, deterministic and single-threaded.
+
+    A worker that stalls past the stale window loses its job to the reaper and
+    to whoever claims it next. If it then wakes and reports, that report must
+    not land: it would finish, fail or re-queue a job another worker is in the
+    middle of, and overwrite the result with a stale one.
+    """
+    job = _enqueue(repository)
+    moment = datetime.now(UTC)
+    late = repository.claim("worker-a", now=moment)
+    repository.reap_stale(timedelta(minutes=5), now=moment + timedelta(minutes=10))
+    fresh = repository.claim("worker-b", now=moment + timedelta(minutes=11))
+    assert fresh["id"] == late["id"] and fresh["claimed_by"] == "worker-b"
+
+    assert repository.complete(job["id"], worker_id="worker-a", result_kind="article_created") is False
+    assert repository.fail(job["id"], worker_id="worker-a", code="boom", message="", retry_in=None) is False
+    assert repository.advance_stage(job["id"], "analyzing", worker_id="worker-a") is False
+
+    still_running = repository.get_job(job["id"])
+    assert still_running["status"] == "running" and still_running["claimed_by"] == "worker-b"
+    assert repository.complete(job["id"], worker_id="worker-b", result_kind="article_created") is True
+    assert repository.get_job(job["id"])["status"] == "completed"
+
+
+def test_the_reaper_leaves_a_job_whose_worker_reported_in_after_the_read(repository):
+    """The reaper's write carries its own predicate, so a heartbeat that lands
+    between deciding and writing keeps the job with its worker."""
+    job = _enqueue(repository)
+    moment = datetime.now(UTC)
+    repository.claim("worker-a", now=moment)
+    repository.heartbeat(job["id"], "worker-a", now=moment + timedelta(minutes=9))
+    assert repository.reap_stale(timedelta(minutes=5), now=moment + timedelta(minutes=10)) == 0
+    assert repository.get_job(job["id"])["claimed_by"] == "worker-a"
 
 
 def test_a_queued_job_with_no_attempts_left_is_swept_rather_than_left_pending(repository):
@@ -183,7 +219,7 @@ def test_a_job_that_keeps_killing_its_worker_fails_instead_of_cycling(repository
 def test_a_completed_job_records_what_it_produced(repository):
     job = _enqueue(repository)
     repository.claim("worker-1")
-    repository.complete(job["id"], result_kind="article_created", article_id=None, source_item_id=None)
+    repository.complete(job["id"], worker_id="worker-1", result_kind="article_created", article_id=None, source_item_id=None)
     done = repository.get_job(job["id"])
     assert done["status"] == "completed" and done["stage"] == "done"
     assert done["result_kind"] == "article_created" and done["finished_at"] is not None
@@ -192,7 +228,7 @@ def test_a_completed_job_records_what_it_produced(repository):
 def test_a_duplicate_is_a_completed_job_not_a_failure(repository):
     job = _enqueue(repository)
     repository.claim("worker-1")
-    repository.complete(job["id"], result_kind="duplicate", article_id=None, source_item_id=None)
+    repository.complete(job["id"], worker_id="worker-1", result_kind="duplicate", article_id=None, source_item_id=None)
     assert repository.get_job(job["id"])["status"] == "completed"
 
 
@@ -217,7 +253,7 @@ def test_the_job_list_carries_no_submitted_payload(repository):
 def test_failing_without_a_retry_ends_the_job_and_frees_the_hash(repository):
     job = _enqueue(repository)
     repository.claim("worker-1")
-    repository.fail(job["id"], code="unsafe_url", message="private address", retry_in=None)
+    repository.fail(job["id"], worker_id="worker-1", code="unsafe_url", message="private address", retry_in=None)
     failed = repository.get_job(job["id"])
     assert failed["status"] == "failed" and failed["finished_at"] is not None
     with repository.engine.connect() as connection:

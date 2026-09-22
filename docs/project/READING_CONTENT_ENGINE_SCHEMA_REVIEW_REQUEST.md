@@ -267,6 +267,22 @@ mechanical rebase of this revision onto that lane's head. Nothing from
 `codex/work` is merged into this lane to "clean it up", and this engine
 depends on no code that exists only there.
 
+**Until the `git mv`, `alembic revision --autogenerate` on this lane will
+propose creating all six tables again.** `migrations/env.py` compares the
+database against `Base.metadata`, and the six models are in it while the
+revision that creates them is not in `versions/`. That is expected, not a
+defect to fix by deleting the models; anyone autogenerating a revision here
+must discard those six `create_table` calls. The state ends the moment the
+migration moves.
+
+Two more consequences of the models existing, stated so nobody assumes
+otherwise: `Base.metadata.create_all()` creates the six tables in a SQLite
+fixture but creates **neither the trigger nor the seed rows**, so a hermetic
+test seeds its own source through
+`ReadingContentRepository.ensure_built_in_sources()`; and the partial indexes
+are declared for both dialects in `models.py` and for PostgreSQL in the
+migration, which §11.4's proof is what keeps honest.
+
 ## 10. What changed in response to the independent review
 
 | Finding | Change |
@@ -333,8 +349,12 @@ authorize DDL that has never been executed.
    `uq_reading_source_items_native`, `uq_reading_source_items_hash`,
    `uq_reading_article_source_item` and `uq_reading_job_request_hash` rejects
    its violation, and that the immutability trigger refuses a snapshot
-   rewrite. CI runs on SQLite and exercises none of these, which is exactly
-   why the proof is named here rather than assumed.
+   rewrite. It must also assert that each partial index carries its predicate
+   on the applied schema (`pg_indexes.indexdef`): the same indexes are declared
+   twice — in the migration for the runtime and in `models.py` for the hermetic
+   suite — and this is the only place that can catch the two drifting apart.
+   CI runs on SQLite and exercises none of these, which is exactly why the
+   proof is named here rather than assumed.
 
 Until then the engine ships with its schema inactive: every Reading engine
 route answers an explicit `503 reading_engine_schema_unavailable`, exactly as

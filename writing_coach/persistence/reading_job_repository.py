@@ -10,19 +10,24 @@ Why a table and not a dictionary: the registry this replaces
 container restart drops every pending import with no trace. A table survives
 the process, and every property below follows from that one decision.
 
-Claiming is a `SELECT ... FOR UPDATE SKIP LOCKED` inside the same transaction
-as the `UPDATE`, never a read followed by a later write: on PostgreSQL two
-workers can never take the same row, and a job whose processing hangs does not
-block the ones behind it. SQLite ignores `FOR UPDATE` (the hermetic suite is
-single-writer anyway), which is the one place this module's behaviour differs
-by dialect - the `UPDATE ... WHERE status = 'queued'` guard is what makes the
-claim safe there too.
+Claiming is one `UPDATE` whose target comes from a locking subquery - never a
+read followed by a later write. PostgreSQL renders `FOR UPDATE SKIP LOCKED`,
+so two workers never take the same row and a hung job never blocks the ones
+behind it; SQLite drops the locking clause, and the repeated
+`status = 'queued'` in the outer `WHERE` is the whole of the exclusion there.
 
 `attempt` is consumed by the *claim*, not by the failure: a worker that dies
 before it can report anything has still used one of its chances, which is what
 stops a job that reliably kills its worker from cycling forever. The claim
 therefore also refuses a job that has no attempts left, so the database's
 `attempt <= max_attempts` bound is never the thing that reports the exhaustion.
+
+**A worker can lose a job it is still working on.** If it stalls past the
+stale window, the reaper returns the job and someone else claims it. Every
+mutating path therefore carries `_owned_by(job, worker)` - still running, still
+this worker's - so a late report lands nowhere instead of finishing, failing or
+re-queueing a job another worker is in the middle of. That is the difference
+between a queue and a shared mutable row.
 """
 from __future__ import annotations
 
@@ -32,7 +37,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import case, select, update
 from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.models import ReadingIngestionJob
@@ -223,29 +228,40 @@ class ReadingJobRepository:
 
     # ---- the worker ------------------------------------------------------
     def claim(self, worker_id: str, *, now: datetime | None = None) -> dict[str, Any] | None:
-        """Take the oldest due job, exclusively, or return None."""
+        """Take the oldest due job, exclusively, or return None.
+
+        One statement, which is what the schema proposal claims for it: the
+        `UPDATE` selects its own target through a locking subquery, so there is
+        no window between deciding and writing. PostgreSQL renders
+        `FOR UPDATE SKIP LOCKED`, so two workers never take the same row and a
+        locked row never blocks the queue; SQLite drops the locking clause and
+        the repeated `status = 'queued'` in the outer `WHERE` is the whole of
+        the exclusion there, which is enough for a single-writer hermetic
+        suite.
+
+        `attempt < max_attempts` belongs in the predicate because the claim is
+        what increments `attempt`: without it the last retry would violate
+        `ck_reading_job_attempt_bound` instead of failing cleanly.
+        """
         moment = _now(now)
+        candidate = (
+            select(ReadingIngestionJob.id)
+            .where(
+                ReadingIngestionJob.status == "queued",
+                ReadingIngestionJob.next_retry_at <= moment,
+                ReadingIngestionJob.attempt < ReadingIngestionJob.max_attempts,
+            )
+            .order_by(ReadingIngestionJob.created_at, ReadingIngestionJob.id)
+            .limit(1)
+            .with_for_update(skip_locked=True)
+            .scalar_subquery()
+        )
         with self.engine.begin() as connection:
-            candidate = connection.execute(
-                select(ReadingIngestionJob.id)
-                .where(
-                    ReadingIngestionJob.status == "queued",
-                    ReadingIngestionJob.next_retry_at <= moment,
-                    ReadingIngestionJob.attempt < ReadingIngestionJob.max_attempts,
-                )
-                .order_by(ReadingIngestionJob.created_at, ReadingIngestionJob.id)
-                .limit(1)
-                .with_for_update(skip_locked=True)
-            ).first()
-            if candidate is None:
-                return None
-            taken = connection.execute(
+            claimed = connection.execute(
                 update(ReadingIngestionJob)
                 .where(
-                    ReadingIngestionJob.id == candidate[0],
-                    # Repeated deliberately: on a dialect without row locking
-                    # this guard is the whole of the exclusion.
                     ReadingIngestionJob.status == "queued",
+                    ReadingIngestionJob.id == candidate,
                 )
                 .values(
                     status="running",
@@ -255,58 +271,76 @@ class ReadingJobRepository:
                     started_at=moment,
                     heartbeat_at=moment,
                 )
-            ).rowcount
-            if not taken:
+                .returning(ReadingIngestionJob.id)
+            ).first()
+            if claimed is None:
                 return None
             row = connection.execute(
-                select(ReadingIngestionJob).where(ReadingIngestionJob.id == candidate[0])
+                select(ReadingIngestionJob).where(ReadingIngestionJob.id == claimed[0])
             ).first()
         return _job(row)
+
+    def _owned_by(self, job_id: str, worker_id: str):
+        """`this job, still running, still this worker's`.
+
+        Every mutating path uses it, because a worker can lose a job it is
+        still working on: the reaper hands a stalled worker's job to someone
+        else, and the original's late report must then land nowhere.
+        """
+        return (
+            (ReadingIngestionJob.id == uuid.UUID(str(job_id)))
+            & (ReadingIngestionJob.status == "running")
+            & (ReadingIngestionJob.claimed_by == worker_id)
+        )
 
     def heartbeat(self, job_id: str, worker_id: str, *, now: datetime | None = None) -> bool:
         """"I am still working on this." Returns whether the job was still ours."""
         with self.engine.begin() as connection:
             updated = connection.execute(
                 update(ReadingIngestionJob)
-                .where(
-                    ReadingIngestionJob.id == uuid.UUID(str(job_id)),
-                    ReadingIngestionJob.status == "running",
-                    ReadingIngestionJob.claimed_by == worker_id,
-                )
+                .where(self._owned_by(job_id, worker_id))
                 .values(heartbeat_at=_now(now))
             ).rowcount
         return bool(updated)
 
-    def advance_stage(self, job_id: str, stage: str, *, now: datetime | None = None) -> None:
+    def advance_stage(
+        self, job_id: str, stage: str, *, worker_id: str, now: datetime | None = None
+    ) -> bool:
+        """Name the stage this worker has reached, if the job is still its own."""
         with self.engine.begin() as connection:
-            connection.execute(
+            updated = connection.execute(
                 update(ReadingIngestionJob)
-                .where(
-                    ReadingIngestionJob.id == uuid.UUID(str(job_id)),
-                    ReadingIngestionJob.status == "running",
-                )
+                .where(self._owned_by(job_id, worker_id))
                 .values(stage=stage, heartbeat_at=_now(now))
-            )
+            ).rowcount
+        return bool(updated)
 
     def complete(
         self,
         job_id: str,
         *,
+        worker_id: str,
         result_kind: str,
         article_id: str | None = None,
         source_item_id: str | None = None,
         now: datetime | None = None,
-    ) -> None:
+    ) -> bool:
         """A finished job, including the `duplicate` outcome.
 
         A duplicate is a *completed* job: the engine did exactly what it was
         asked and found the content already present. Reporting it as a failure
         would put a red row in Imports for a correct outcome.
+
+        Returns whether the write landed. It does not when the job is no longer
+        this worker's - a worker that stalled past the stale window has had its
+        job reaped and re-claimed, and its late report would otherwise finish a
+        job another worker is in the middle of and overwrite the result with a
+        stale one.
         """
         with self.engine.begin() as connection:
-            connection.execute(
+            updated = connection.execute(
                 update(ReadingIngestionJob)
-                .where(ReadingIngestionJob.id == uuid.UUID(str(job_id)))
+                .where(self._owned_by(job_id, worker_id))
                 .values(
                     status="completed",
                     stage="done",
@@ -318,36 +352,41 @@ class ReadingJobRepository:
                     finished_at=_now(now),
                     heartbeat_at=_now(now),
                 )
-            )
+            ).rowcount
+        return bool(updated)
 
     def fail(
         self,
         job_id: str,
         *,
+        worker_id: str,
         code: str,
         message: str,
         retry_in: timedelta | None,
         now: datetime | None = None,
-    ) -> None:
+    ) -> bool:
         """Record why a job stopped, and whether it will come back.
 
         `retry_in=None` means this failure is not worth retrying (a private
         address, an unsupported file type): the job ends `failed` immediately
         rather than burning its remaining attempts on the same refusal.
+
+        Guarded like `complete()`: a late worker's failure must not re-queue a
+        job that already belongs to someone else.
         """
         moment = _now(now)
         with self.engine.begin() as connection:
             row = connection.execute(
                 select(ReadingIngestionJob.attempt, ReadingIngestionJob.max_attempts).where(
-                    ReadingIngestionJob.id == uuid.UUID(str(job_id))
+                    self._owned_by(job_id, worker_id)
                 )
             ).first()
             if row is None:
-                return
+                return False
             exhausted = retry_in is None or row.attempt >= row.max_attempts
-            connection.execute(
+            updated = connection.execute(
                 update(ReadingIngestionJob)
-                .where(ReadingIngestionJob.id == uuid.UUID(str(job_id)))
+                .where(self._owned_by(job_id, worker_id))
                 .values(
                     status="failed" if exhausted else "queued",
                     stage="done" if exhausted else "queued",
@@ -358,7 +397,8 @@ class ReadingJobRepository:
                     finished_at=moment if exhausted else None,
                     heartbeat_at=moment,
                 )
-            )
+            ).rowcount
+        return bool(updated)
 
     def reap_stale(self, stale_after: timedelta, *, now: datetime | None = None) -> int:
         """Return work whose worker stopped reporting in, and sweep dead ends.
@@ -375,7 +415,7 @@ class ReadingJobRepository:
         """
         moment = _now(now)
         cutoff = moment - stale_after
-        swept = 0
+        exhausted = ReadingIngestionJob.attempt >= ReadingIngestionJob.max_attempts
         with self.engine.begin() as connection:
             swept = connection.execute(
                 update(ReadingIngestionJob)
@@ -393,33 +433,28 @@ class ReadingJobRepository:
                     heartbeat_at=moment,
                 )
             ).rowcount
+            # One set-based statement, exactly as the migration docstring
+            # specifies it, so the guard travels with the write: a heartbeat
+            # landing between a read and a write cannot be overtaken, because
+            # there is no read.
             stranded = connection.execute(
-                select(
-                    ReadingIngestionJob.id,
-                    ReadingIngestionJob.attempt,
-                    ReadingIngestionJob.max_attempts,
-                ).where(
+                update(ReadingIngestionJob)
+                .where(
                     ReadingIngestionJob.status == "running",
                     ReadingIngestionJob.heartbeat_at < cutoff,
                 )
-            ).all()
-            for row in stranded:
-                exhausted = row.attempt >= row.max_attempts
-                connection.execute(
-                    update(ReadingIngestionJob)
-                    .where(ReadingIngestionJob.id == row.id)
-                    .values(
-                        status="failed" if exhausted else "queued",
-                        stage="done" if exhausted else "queued",
-                        claimed_by="",
-                        last_error_code="worker_lost",
-                        last_error="the worker holding this job stopped reporting in",
-                        next_retry_at=moment,
-                        finished_at=moment if exhausted else None,
-                        heartbeat_at=moment,
-                    )
+                .values(
+                    status=case((exhausted, "failed"), else_="queued"),
+                    stage=case((exhausted, "done"), else_="queued"),
+                    claimed_by="",
+                    last_error_code="worker_lost",
+                    last_error="the worker holding this job stopped reporting in",
+                    next_retry_at=moment,
+                    finished_at=case((exhausted, moment), else_=None),
+                    heartbeat_at=moment,
                 )
-        return len(stranded) + int(swept)
+            ).rowcount
+        return int(stranded) + int(swept)
 
     # ---- reads -----------------------------------------------------------
     def get_job(self, job_id: str) -> dict[str, Any] | None:

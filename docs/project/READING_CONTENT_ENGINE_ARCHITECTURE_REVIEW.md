@@ -1,7 +1,8 @@
 # Reading Content Engine — independent architecture review
 
 Status: round 1 `CHANGES REQUIRED` (seven P1), round 2 `REQUEST CHANGES` (two
-new P1, six P2). Each round is recorded in full below, condensed without loss
+new P1, six P2), round 3 `REQUEST CHANGES` (one P1 in the worker
+implementation, four P2; the schema itself carried none). Each round is recorded in full below, condensed without loss
 of substance — the verdict, every finding, every required change and the
 authorization boundary are the reviewer's own. What each round changed is under
 "Resolution" at the end of this file.
@@ -482,3 +483,108 @@ trigger and its function present, three seed rows with the fixed ids at
 permitted updates, the polling CHECK refusing `polling_enabled` without
 `automation_allowed`, `[down] reading engine tables left=0 function left=0`,
 `[up-again] seed rows=3`.
+
+---
+
+# Round 3 — the revision and the worker implementation reviewed
+
+- Reviewed commit: `a78521653d09edc4fb2100de342f24db0b1c7aec`
+- Same reviewer role, model and read-only constraints as rounds 1 and 2.
+- Review date: 2026-09-22
+
+## Verdict
+
+**REQUEST CHANGES** — one P1 and four P2. Every round-2 finding verified fixed,
+and **the block was not in the schema**: the migration carried no outstanding
+P1. The P1 was in `writing_coach/persistence/reading_job_repository.py`, which
+did not hold the exclusion property the proposal claims for it.
+
+## The two direct questions, answered
+
+**Is the textual rights comparison the right call?** Yes, and stronger than
+claimed: `json` stores the exact input text, so `CAST(json AS text)` compares
+the bytes as stored, and byte-identity is the correct definition of
+"unchanged" for a column whose purpose is evidence. Switching to `jsonb` for a
+native `=` would make the guard semantic rather than byte-exact — weaker for
+evidence. Residual to write down: the guard's freedom from false positives
+depends on every write being a targeted `UPDATE ... SET superseded_at = ...`;
+a whole-row write or an ORM `merge()` that re-serialises the JSON would be
+refused although nothing changed.
+
+**Does anything else in the trigger have the same problem?** No — verified
+column by column. `json` was the only protected type without an equality
+operator; `metadata_json`, the other `json` column, is deliberately writable
+and never reaches the comparison.
+
+## P1 — The queue's state transitions did not verify the job was still the worker's
+
+`heartbeat()` guarded on `status='running' AND claimed_by=:worker`, proving the
+design intent that a worker can lose its job. No other mutating path acted on
+it: `complete()` and `fail()` filtered on `id` alone, `advance_stage()` on `id`
+and status, and the reaper's per-row `UPDATE` on `id` alone after an unlocked
+`SELECT`.
+
+The deterministic sequence: worker A claims J; A stalls past the stale window;
+the reaper returns J to `queued`; worker B claims it; A wakes and calls
+`complete()`, which lands unconditionally — finishing a job B is in the middle
+of and overwriting the result with A's stale one. The two-reaper variant
+re-queues a running job and produces genuine double processing, which §5 of the
+request states flatly cannot happen.
+
+P1 rather than P0 because concurrency defaults to 1, the schema is not applied
+and nothing runs anywhere; it becomes live the moment a second worker process
+runs, which §5 explicitly contemplates.
+
+**Required:** ownership guards on `complete`, `fail` and `advance_stage`,
+reported to the caller the way `heartbeat()` already does; the reaper's write
+carrying `status = 'running' AND heartbeat_at < cutoff`, preferably as the
+single set-based statement the migration docstring already specifies; and the
+step-by-step regression test, which is fully deterministic with the injectable
+`now=`.
+
+## P2-A — The documented claim was one statement; the implementation was read-then-write
+
+Safe as written — all three statements ran inside one transaction and the
+`UPDATE` re-checked `status='queued'` — but the proposal asserts a property of
+a statement that was not the statement being run, on the one design point the
+review exists to approve. Either implement the single statement or document
+the two-statement form and why it is equivalent.
+
+## P2-B — The seed statements were PostgreSQL-only SQL in an otherwise portable migration
+
+`now()` does not exist on SQLite; the UUID literal renders in the dashed form
+while `sa.Uuid()` stores `value.hex` on a non-native backend; and `name` is
+interpolated unescaped, so a future source called `Reader's Digest` would break
+the statement. Nothing breaks today. Verified positively, and worth a comment
+so nobody "fixes" it back: `created_by` had to become `migration 20260922_0010`
+with a space, because Alembic wraps `op.execute` in `text()` and SQLAlchemy
+reads `:` followed by word characters — digits included — as a bind parameter.
+
+## P2-C — Six models now sit in `Base.metadata` with no revision in `versions/`
+
+`alembic revision --autogenerate` on this lane will propose creating all six
+tables until the `git mv`. The more serious version of the risk is **absent**:
+`readiness()` classifies on the Alembic revision and the emptiness of the table
+set, never on `Base.metadata`, so startup does not refuse a database that lacks
+these tables. Two consequences to state once: `create_all()` creates the tables
+but neither the trigger nor the seeds, so hermetic tests seed their own source;
+and the partial indexes are now declared twice, which only the PostgreSQL proof
+can keep from drifting.
+
+## P2-D — The revision chain is a tree after a revert
+
+After a revert followed by a further change, two rows can share one
+`supersedes_id`. `ck_reading_source_item_chain` permits it and the docstring is
+consistent with it, but a history renderer that walks the chain expecting a
+list will be wrong.
+
+## Round 3 resolution
+
+| Finding | Change |
+| --- | --- |
+| P1 | `_owned_by(job, worker)` — still running, still this worker's — now guards `complete()`, `fail()`, `advance_stage()` and `heartbeat()`, each returning whether the write landed; the engine threads the claiming worker's id through every report. The reaper is two set-based `UPDATE`s with their predicates built in (`status='running' AND heartbeat_at < cutoff`, and the exhausted-queue sweep), so there is no read to overtake. Two regression tests, written red first: a late worker cannot finish, fail or advance a job that was taken from it, and a heartbeat landing inside the reaper's window keeps the job with its worker. |
+| P2-A | `claim()` is now the single `UPDATE ... WHERE status='queued' AND id = (SELECT ... FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id` the proposal describes. Verified rendering on both dialects: PostgreSQL emits `FOR UPDATE SKIP LOCKED`, SQLite emits the subquery without it, and `RETURNING` is supported by both (SQLite 3.46 in the image). The module docstring now describes what the code does. |
+| P2-B | `CURRENT_TIMESTAMP` instead of `now()`; the UUID-literal and apostrophe constraints, and the colon/bind-parameter reason for `migration 20260922_0010`, written as comments at the seeding block. Re-rehearsed after the change: up/down/up clean, three seeds landing, all five trigger refusals at SQLSTATE 23514, offline `--sql` rendering 3 inserts with `CURRENT_TIMESTAMP`. |
+| P2-C | §9 of the request now states the autogenerate consequence, that it ends at the `git mv`, that `create_all()` creates neither trigger nor seeds (so hermetic tests seed their own source), and that the doubly-declared partial indexes are what §11.4's proof must check with `pg_indexes.indexdef`. |
+| P2-D | The tree consequence written into the migration docstring's revert section. |
+| Trigger residual | The `CAST` rationale ("do not fix this to jsonb") written into the migration, and the targeted-`UPDATE` requirement into `reading_content_repository.py`'s module docstring, where the code that must honour it lives. |

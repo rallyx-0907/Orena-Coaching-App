@@ -8,9 +8,13 @@ Three rules this module exists to keep, each of which a learner would feel if
 it broke:
 
 - **A snapshot is never rewritten.** The only `UPDATE` this module issues
-  against `reading_source_items` sets `superseded_at`. On PostgreSQL a trigger
-  enforces that; here it is a design constraint with a test that watches the
-  SQL actually issued.
+  against `reading_source_items` sets `superseded_at`, and it names that one
+  column. On PostgreSQL a trigger enforces the rule; here it is a design
+  constraint with a test that watches the SQL actually issued. The targeting
+  matters as much as the rule: the trigger compares `rights_snapshot_json` by
+  its stored bytes, so a whole-row write - or an ORM `merge()` that
+  re-serialises that JSON with a different key order - would be refused even
+  though nothing about it changed.
 - **`estimated_level` is the machine's and stays the machine's.** An admin
   correction writes `reviewed_level`; `effective_level` - the column the
   learner list filters on - is maintained here as `reviewed_level` when set,
