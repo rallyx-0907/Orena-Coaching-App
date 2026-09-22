@@ -729,68 +729,104 @@ async function renderRecallLanguage(root, ctx) {
        (GAP-019); no interval is printed, because nothing previews one. */
     const r = referenceCopy[ctx.ui] || referenceCopy.en;
     const passed = Math.min(reviewed, reviewed + due.length);
-    const rail = `<div class="review-rail" aria-hidden="true">${Array.from(
-      { length: Math.min(reviewed + due.length, 12) },
-      (_, position) => `<span class="review-rail__step"${position < passed ? ' data-tone="done"' : ''}></span>`,
+    const total = reviewed + due.length;
+
+    /* The bar the source draws over the card: the way back, one segment per
+       card in this sitting, and how far through it the learner is. */
+    const rail = `<div class="vocab-review__rail" aria-hidden="true">${Array.from(
+      { length: Math.min(total, 12) },
+      (_, position) => `<span class="vocab-review__step"${position < passed ? ' data-tone="done"' : ''}></span>`,
     ).join('')}</div>`;
-    const grade = (key, label, live) =>
-      `<button type="button" class="review-grade${live === 'good' ? ' review-grade--good' : ''}"${live ? ` data-grade="${key}"` : ` disabled title="${esc(r.vocabGradeUnavailable)}"`}>${icon(
-        key === 'again' ? 'arrow-counter-clockwise' : key === 'hard' ? 'clock' : key === 'got_it' ? 'check' : 'lightning',
-        { size: 15 },
-      )}<span>${esc(label)}</span><span class="ds-data review-grade__when">—</span></button>`;
-    const grades = `<div class="review-grades"><span class="ds-label">${esc(r.vocabHowWell)}</span>${grade('again', c.again, 'again')}${grade('hard', r.vocabGradeHard, '')}${grade('got_it', c.gotIt, 'good')}${grade('easy', r.vocabGradeEasy, '')}</div>`;
+
+    /* Three diamonds for how well this word is held, from the same review
+       stage every other surface counts. */
+    const mastery = (item) => {
+      const held = Math.max(0, Math.min(3, Math.round((Number(item.review_stage) || 0) * 3 / 4)));
+      return `<span class="vocab-card__mastery" aria-hidden="true">${
+        [0, 1, 2].map((index) => `<span class="vocab-card__gem"${index < held ? ' data-earned="true"' : ''}></span>`).join('')
+      }</span>`;
+    };
+
+    /* What each grade will do, taken from the scheduler that will do it - the
+       card carries its own intervals, so nothing here is a written-in number
+       (D-066 rule 4). */
+    const when = (plan) => {
+      if (!plan) return '';
+      if (plan.minutes) return `${plan.minutes}m`;
+      if (plan.days) return `${plan.days}d`;
+      return '';
+    };
+    const grade = (key, label, tone) => {
+      const plan = current?.schedule?.[key];
+      return `<button type="button" class="vocab-grade" data-tone="${tone}" data-grade="${key}">`
+        + `<span class="vocab-grade__label">${esc(label)}</span>`
+        + `<span class="vocab-grade__when ds-data">${esc(when(plan))}</span>`
+        + `</button>`;
+    };
+    const grades = `<div class="vocab-grades">`
+      + grade('again', r.vocabGradeAgain, 'again')
+      + grade('unsure', r.vocabGradeUnsure, 'unsure')
+      + grade('got_it', r.vocabGradeGotIt, 'got')
+      + `</div>`;
+
+    /* The card itself. Opened, it carries the word, its reading, the meaning
+       and the sentence it was met in; closed, the word alone and the way in.
+       The question the learner is asked still depends on how the word entered
+       their life - the product's rule, which this composition keeps. */
+    const front = shape === 'in_context' && gap
+      ? `<blockquote class="vocab-card__context" lang="${language}">${withheld('&nbsp;'.repeat(3))}</blockquote>`
+      : `<span class="vocab-card__word" lang="${language}">${esc(shape === 'say' ? '···' : current?.word || '')}</span>`
+        + (shape === 'say' ? `<span class="vocab-card__meaning" lang="${esc(ctx.support)}">${esc(current?.definition || current?.translation_vi || '')}</span>` : '');
+    const back = `<span class="vocab-card__word" lang="${language}">${esc(current?.word || '')}</span>`
+      + (current?.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off')
+        ? `<span class="vocab-card__reading ds-data">${esc(current.phonetic)}</span>`
+        : '')
+      + `<span class="vocab-card__rule" aria-hidden="true"></span>`
+      + `<span class="vocab-card__meaning" lang="${esc(ctx.support)}">${esc(current?.definition || current?.translation_vi || '')}</span>`
+      + (current?.source_fragment
+        ? `<span class="vocab-card__example" lang="${language}">${esc(current.source_fragment)}</span>`
+        : '')
+      /* Where the word was met, said after the learner has committed and not
+         before - the product's rule about a kept word keeping its source. The
+         frame draws the sentence but not its title; this line is the
+         difference, recorded in UI_BACKEND_GAPS.md. */
+      + (current?.focus_note ? `<span class="recall-where">${esc(current.focus_note)}</span>` : '');
     const card = current
-      ? `<section class="review-session" data-shape="${shape}"><header class="review-bar"><span class="ds-data">${esc(due.length)} ${esc(c.vocabularyDueState)}</span>${rail}<span class="ds-data">${esc(passed)} / ${esc(reviewed + due.length)}</span></header><div class="review-body"><div class="review-prompt"><small>${esc(c[`recallAsk_${shape}`])}</small>${
-          shape === 'in_context' && gap
-            ? `<blockquote class="recall-gap" lang="${language}">${withheld(revealed ? esc(current.word) : '&nbsp;'.repeat(3))}</blockquote>`
-            : `<h2 lang="${language}">${revealed || shape !== 'say' ? esc(current.word) : '···'}</h2>${current.phonetic && revealed && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}${shape === 'say' && !revealed ? `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>` : ''}${shape !== 'in_context' && current.source_fragment ? `<blockquote class="${gap && !revealed ? 'recall-gap' : ''}" lang="${language}">${gap && !revealed ? withheld('&nbsp;'.repeat(3)) : esc(current.source_fragment)}</blockquote>` : ''}`
-        }${
-          revealed
-            ? `${shape === 'say' ? '' : `<p class="review-meaning" lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${current.focus_note ? `<p class="recall-where">${esc(current.focus_note)}</p>` : ''}${keptProvenance(c, keptNow)}${current.source_fragment ? `<button class="quiet" data-word-explain="${esc(current.word)}">${esc(c.lookCloser)} ↗</button>` : ''}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}`
-            : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
-        }<p role="status" data-recall-status></p></div>${revealed ? grades : ''}</div></section>`
+      ? `<section class="vocab-review">`
+        + `<header class="vocab-review__bar">`
+        + `<a class="vocab-review__back" href="${esc(link('language'))}" aria-label="${esc(c.back)}">${icon('caret-left', { size: 22 })}</a>`
+        + rail
+        + `<span class="vocab-review__count ds-data">${esc(passed)} / ${esc(total)}</span>`
+        + `</header>`
+        + `<div class="vocab-review__stage">`
+        + `<button type="button" class="vocab-card" data-flip aria-pressed="${revealed}" data-state="${revealed ? 'open' : 'closed'}" data-shape="${shape}">`
+        + mastery(current)
+        + `<span class="vocab-card__body"><small class="vocab-card__ask">${esc(c[`recallAsk_${shape}`])}</small>${revealed ? back : front}</span>`
+        + `<span class="vocab-card__flip">${esc(revealed ? r.vocabFlipBack : r.vocabFlipOpen)}</span>`
+        + `</button>`
+        + (revealed ? grades : `<p class="vocab-review__hint">${esc(r.vocabGradesAfterOpen)}</p>`)
+        + `<p role="status" data-recall-status></p>`
+        + `</div>`
+        + `</section>`
       : '';
-    /* What is waiting, before the first item. A learner dropped straight into
-       item one has no idea whether this is three words or thirty. */
+    /* What is waiting, before the first card. The source opens straight on the
+       card; this step is the product's, and it is kept because a learner
+       dropped into card one has no idea whether this is three words or thirty
+       (pinned by test_orena_language_and_recall.mjs). Recorded for the human
+       in UI_BACKEND_GAPS.md as a difference from the frame. */
     const landing = due.length
       ? `<section class="recall-landing"><small>${esc(c.vocabularyDueState)}</small><h2>${due.length} ${esc(c.vocabularyWordCount)}</h2><p>${esc(due.slice(0, 3).map((x) => x.word).join(' · '))}${due.length > 3 ? ' …' : ''}</p><button class="primary" data-recall-start>${esc(c.recallName)} →</button></section>`
       : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`;
-    /* What actually happened. Real counts only: what was reviewed in this
-       sitting and what is still waiting. No score, no streak, no mastery. */
     const done = `<section class="empty recall-done">${scene('completion', { size: 'medium' })}<h2>${esc(c.allDone)}</h2><p>${reviewed} ${esc(c.vocabularyWordCount)}${due.length ? ` · ${due.length} ${esc(c.vocabularyDueState)}` : ''}</p><p class="meta">${esc(c.allDoneNote)}</p><div class="button-row">${due.length ? `<button class="primary" data-recall-start>${esc(c.vocabularyContinueReview)} →</button>` : ''}<a class="outline" href="${link('language')}">${c.language} →</a></div></section>`;
     const reviewing = stage !== 'landing' && current;
-    root.innerHTML = `${practiceReturn(c, 'recall')}${
+    /* While a card is up the screen is the card: its own caret is the way
+       back, so the room's return link and the page intro stay out of it. */
+    root.innerHTML = `${reviewing ? '' : practiceReturn(c, 'recall')}${
       reviewing ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
     }${stage === 'landing' ? landing : current ? card : done}`;
-    /* A kept word already carries the sentence it came from, which is exactly
-       the context the shared explanation needs. Without this, the collection
-       is a list to reread rather than something a learner can question - the
-       same gap Grammar had. */
-    root.querySelectorAll('[data-word-explain]').forEach((button) => {
-      button.onclick = () => {
-        const entry = items.find((x) => x.word === button.dataset.wordExplain);
-        if (!entry?.source_fragment) return;
-        const kept = memory.value.keptLanguage?.[entry.word];
-        openUnderstanding(ctx, {
-          selection: entry.word,
-          context: entry.source_fragment.slice(0, 2400),
-          title: entry.focus_note || c.sourceContext,
-          question: c.askWhy,
-          // Asking again about a word already kept must not lose where it came
-          // from, so its own provenance rides along unchanged.
-          origin: kept
-            ? { id: kept.origin, where: kept.where, why: kept.why }
-            : null,
-        });
-      };
-    });
     root.querySelector('[data-recall-start]')?.addEventListener('click', () => {
       stage = 'card';
       revealed = false;
-      paint(true);
-    });
-    root.querySelector('[data-reveal]')?.addEventListener('click', () => {
-      revealed = true;
       paint(true);
     });
     root.querySelectorAll('[data-grade]').forEach(
@@ -838,8 +874,12 @@ async function renderRecallLanguage(root, ctx) {
           await refresh();
         }),
     );
+    root.querySelector('[data-flip]')?.addEventListener('click', () => {
+      revealed = !revealed;
+      paint(true);
+    });
     if (moveFocus)
-      focusRegion(root.querySelector('.review-prompt h2, .review-prompt blockquote, .empty h2'));
+      focusRegion(root.querySelector('.vocab-card, .empty h2'));
   }
   paint();
 }
@@ -1203,6 +1243,28 @@ export async function renderLanguage(root, ctx) {
   };
 
   const bind = () => {
+    /* A kept word already carries the sentence it came from, which is exactly
+       the context the shared explanation needs. Without this the list is
+       something to reread rather than something a learner can question - the
+       same gap Grammar had. */
+    root.querySelectorAll('[data-word-explain]').forEach((button) => {
+      button.onclick = () => {
+        const entry = (savedData.items || []).find((x) => x.word === button.dataset.wordExplain);
+        if (!entry?.source_fragment) return;
+        const kept = ctx.memory.value.keptLanguage?.[entry.word];
+        openUnderstanding(ctx, {
+          selection: entry.word,
+          context: entry.source_fragment.slice(0, 2400),
+          title: entry.focus_note || c.sourceContext,
+          question: c.askWhy,
+          // Asking again about a word already kept must not lose where it came
+          // from, so its own provenance rides along unchanged.
+          origin: kept
+            ? { id: kept.origin, where: kept.where, why: kept.why }
+            : null,
+        });
+      };
+    });
     root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => {
       activeItems = savedCards; query = ''; filter = 'all'; levelFilter = 'all'; sort = 'recommended'; view = 'saved';
       paint();

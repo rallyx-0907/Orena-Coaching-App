@@ -1172,7 +1172,8 @@ invented:**
 weeks and passing in CI. It asserts `/showActivity\(\);
 \s+const retry/`
 against `ui/expression.js`. Git stores that file with LF and checks it out with
-CRLF here, so the `` sits where the pattern expects `
+CRLF here, so the `
+` sits where the pattern expects `
 ` and the match
 fails - the source is identical either way. It now passes locally only because
 this lane rewrote that file with LF endings.
@@ -1183,6 +1184,75 @@ mismatch (a pronunciation projection that no longer carries the score the test
 expects) and fails on a clean HEAD tree as well. Same family as the CRLF note
 already recorded for `test_orena_grammar.mjs`: an environment failure, not an
 application regression - and the gates that are written against source text
-would be steadier matching `?
+would be steadier matching `
+?
 `.
+
+## Vocabulary review, rebuilt on its frame (2026-09-22)
+
+The next flow on the checklist. Measured against `Orena Vocabulary.dc.html`
+frames "Vocabulary review", "Vocabulary review mobile" and "… mobile hidden"
+(the cached copy is byte-identical to the source today).
+
+**The blocker was a data contract, and it is fixed.** The source has always
+drawn three grades - Quên · Chưa chắc · Nhớ rồi - while the API accepted two,
+so the middle button sat on the screen disabled (GAP-019). `VocabularyReviewIn`
+now takes `unsure`: it neither promotes the card nor sends it back, counts
+neither a recall nor a lapse, and brings the card round tomorrow - between
+`again`'s ten minutes and `got_it`'s next step. Seven tests hold that behaviour
+and the schedule.
+
+**Each grade says what it will do.** The source prints an interval under every
+grade. Rather than writing those numbers on the buttons, every saved word now
+carries `schedule` - the scheduler's own answer for that card at its own stage
+- and the buttons print it. A card at stage 0 shows 10m / 1d / 1d; at stage 1,
+10m / 1d / 3d.
+
+**The screen is the card.** 420x560 at 1920, the violet ring and the bloom when
+it is open, the plain glass when it is closed; the word in Noto Serif 54 (39 on
+the phone), the reading, the rule, the meaning at 21/800, the sentence in
+italics; one caret back, one segment per card, the count; three grades of 64
+under it, and on a closed card the line that says the grades come after it is
+opened. Measured and matching at 1920.
+
+**Deleted with the old panel** (rule 44): the two grades the scheduler could
+not take, the separate reveal button (the card turns instead), the second way
+back while a card is up, and the review room's own "ask about this word"
+control.
+
+**Kept, and recorded as differences from the frame - for human review:**
+
+- **The question still fits the word's origin.** The frame draws one card
+  (word → meaning); the product decides the question from how the word entered
+  the learner's life (`product/recall.js`: in context, by meaning, by saying
+  it, to reuse), which two gates pin as learner memory. The composition is the
+  frame's; the question inside it is the product's. **DESIGN DECISION NEEDED:**
+  whether the four question shapes stay.
+- **The landing step stays.** The frame opens straight on the card; the product
+  shows what is waiting first, so a learner is not dropped into card one
+  without knowing whether this is three words or thirty. **DESIGN DECISION
+  NEEDED.**
+- **Where the word was met** is said on the back of the card, under the
+  sentence. The frame draws the sentence but not its title.
+- **"Nghe phát âm"** on the closed card is not drawn: nothing stores audio for
+  a saved word, and a button that plays nothing is worse than no button.
+  **BACKEND GAP.**
+- **The collection panel** (560px, cover, tier, "TỪ TRONG BỘ", "Xem cả 150 từ")
+  belongs to reviewing a collection. This review is of the learner's own saved
+  words, which have no collection, so the panel is not drawn. **DESIGN DECISION
+  NEEDED:** what that side carries for a saved-words review.
+- **The "ask about this word" capability** moved rather than disappeared: the
+  line that says where a word was met is now the way to ask about it, on the
+  saved list - a screen the design's own matrix marks INCOMPLETE, so nothing is
+  contradicted.
+
+**Viewports**: 1920 (card 420x560, grades 420x64, word 54, meaning 21, flip 44,
+rail gap 6 - all the frame's numbers), 1440 and 1024 (the same card, the page
+scrolls at 1024), 390 (the card fills the screen above the grades, word 39,
+grades 58). No horizontal scroll and nothing clipped at any of the four.
+
+**Vocabulary Library (frame 01) is not migrated yet.** It draws a grid of
+collection covers; the sandbox has no published collection (packs are gated),
+so the screen would be an empty state. Left for the human to decide whether to
+build it now against an empty catalogue.
 

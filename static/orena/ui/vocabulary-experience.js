@@ -411,7 +411,12 @@ function sourceLine(card, language) {
   if (!encounter) return '';
   const fragment = value(encounter.fragment).replace(/\s+/g, ' ');
   const where = value(encounter.where);
-  return `<p class="vocabulary-row__source">${where ? `<span class="vocabulary-row__where">${esc(where)}</span>` : ''}<q lang="${esc(language)}">${esc(fragment)}</q></p>`;
+  /* The sentence a word was met in is also the way to ask about it: the line
+     is the control, so the row gains no button it did not have. */
+  return `<button type="button" class="vocabulary-row__source" data-word-explain="${esc(value(card.headword))}">`
+    + `${where ? `<span class="vocabulary-row__where">${esc(where)}</span>` : ''}`
+    + `<q lang="${esc(language)}">${esc(fragment)}</q>`
+    + `</button>`;
 }
 
 export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {

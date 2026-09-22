@@ -68,18 +68,28 @@ assert.ok(
 assert.match(overview, /const due = dueItems[.]length/, 'a review block appears only when there is one');
 assert.match(recallRoom, /const landing = due[.]length/, 'and so does the Recall landing');
 
-/* The approved review session: what is due, how far through it, and - once the
-   learner has committed - how well they knew it. The scheduler takes two
-   answers, so the other two say they are not available yet (GAP-019) and no
-   interval is printed, because nothing previews one. */
-assert.match(recallRoom, /class="review-session"/, 'the session is the approved composition');
-assert.match(recallRoom, /class="review-rail"/, 'with the rail the design draws');
-assert.match(recallRoom, /vocabHowWell/, 'and the question it asks after the answer');
-assert.match(recallRoom, /vocabGradeUnavailable/, 'a grade the scheduler cannot take says so');
-assert.ok(
-  (recallRoom.match(/grade\('/g) || []).length === 4,
-  'all four approved grades keep their place',
+/* The review, as "Vocabulary review" draws it: the card is the screen. One way
+   back, one segment per card, the count, the card itself, and - only once it is
+   open - three grades, each printing what it will do to this card.
+
+   The scheduler takes all three now, so nothing on this screen is disabled and
+   nothing is drawn that cannot be pressed (the two dead buttons and GAP-019
+   went with the old panel). */
+assert.match(recallRoom, /class="vocab-review"/, 'the session is the card composition');
+assert.match(recallRoom, /class="vocab-review__rail"/, 'with the segmented rail the source draws');
+assert.match(recallRoom, /class="vocab-card" data-flip/, 'and the card the learner turns');
+assert.doesNotMatch(recallRoom, /class="review-session"/, 'the old panel is gone, not restyled');
+assert.doesNotMatch(recallRoom, /vocabGradeUnavailable|vocabGradeHard|vocabGradeEasy/,
+  'and so are the grades the scheduler could not take');
+assert.deepEqual(
+  (recallRoom.match(/grade\('(\w+)'/g) || []).map((call) => call.slice(7, -1)),
+  ['again', 'unsure', 'got_it'],
+  'three grades, in the source\'s order',
 );
+/* The interval under each grade comes from the card, which carries the
+   scheduler's own answer - never a number written on the button. */
+assert.match(recallRoom, /current\?\.schedule\?\.\[key\]/, 'each grade reads its own interval');
+assert.doesNotMatch(recallRoom, /'<1m'|'4d'/, 'no interval is written into the room');
 
 /* --- A saved word keeps where it was met -------------------------------- */
 assert.match(experience, /function sourceLine\(/, 'a row can say where its word came from');
@@ -154,15 +164,21 @@ assert.equal(recallShape({ source_fragment: 'a sentence with cloak in it', word:
   'a word met in a sentence comes back inside it');
 assert.equal(recallShape({ word: 'cloak' }, null), 'meaning', 'one met without a sentence comes back by meaning');
 assert.equal(recallShape({ word: 'cloak' }, { why: 'from_speaking' }), 'say', 'something said comes back by saying it');
-assert.ok(
-  recallRoom.indexOf('data-grade="again"') < recallRoom.indexOf('data-reveal>'),
-  'grades belong to the revealed branch, the reveal button to the other one',
-);
+/* The grades exist only once the card is open - the source says so on the
+   closed card itself ("the grades appear once the card is open"). */
+assert.match(recallRoom, /revealed \? grades : `<p class="vocab-review__hint">/,
+  'the grades belong to the open card, and the closed one says so');
+assert.doesNotMatch(recallRoom, /data-reveal>/, 'there is no separate reveal button: the card turns');
 
 /* --- Where it came from, after the answer, not before ------------------- */
-assert.match(recallRoom, /revealed\s*\n?\s*\? .*recall-where/s, 'the source is shown once the learner has committed');
-assert.match(recallRoom, /current\.source_fragment \? `<button/, 'and can be asked about through the shared surface');
-assert.match(recallRoom, /openUnderstanding\(ctx, \{/, 'which is the same one every other room uses');
+assert.match(recallRoom, /const back = [\s\S]*recall-where/, 'the back of the card says where the word was met');
+assert.match(recallRoom, /\$\{revealed \? back : front\}/, 'and the back is only shown once the card is open');
+/* The card draws no way to question the word: the source draws none there, so
+   the control and its handler went together (rule 44). The shared explanation
+   is still reached from the Quick Sheet and the reader, where the source does
+   draw it - recorded in UI_BACKEND_GAPS.md. */
+assert.doesNotMatch(recallRoom, /data-word-explain/, 'no control the source does not draw');
+assert.doesNotMatch(recallRoom, /openUnderstanding\(/, 'and no handler left bound to nothing');
 
 /* --- Support language owns every word Orena says ------------------------ */
 for (const ui of ['en', 'zh', 'vi'])
@@ -180,6 +196,9 @@ assert.ok(copy.en.recallTruth.toLowerCase().includes('not a test score'), 'the t
 
 /* --- The phone gets a composition, not a tower of cards ----------------- */
 assert.match(rooms, /\.recall-landing \{/, 'the Recall landing has a shape of its own');
+assert.match(rooms, /\.vocab-card \{/, 'and the card has the source\'s measurements');
+assert.match(rooms, /inline-size: 420px/, 'four hundred and twenty wide');
+assert.match(rooms, /block-size: 560px/, 'five hundred and sixty tall');
 assert.match(rooms, /\.language-due \{/, 'and so does what is due in My Language');
 assert.match(rooms, /\.vocabulary-row__source \{[^}]*grid-column: 1 \/ -1/,
   'the source takes its own line in the row rather than a column of chips');

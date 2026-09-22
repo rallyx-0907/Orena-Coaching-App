@@ -44,7 +44,15 @@ class LibraryVocabularyIn(BaseModel):
 
 
 class VocabularyReviewIn(BaseModel):
-    result: str = Field(pattern=r"^(again|got_it)$")
+    """How well the learner knew the card: the three the review is drawn with.
+
+    `unsure` is the middle one the source has always shown ("Chưa chắc"): the
+    learner got there, but not cleanly. It neither promotes the card nor sends
+    it back - the stage stands and the card returns tomorrow, between `again`'s
+    few minutes and `got_it`'s next step.
+    """
+
+    result: str = Field(pattern=r"^(again|unsure|got_it)$")
 
 
 def configure_becoming_library(repository: SpecializedLearningRepository) -> None:
@@ -183,6 +191,8 @@ def _row_to_item(row: dict[str, Any], resolve: Any = None) -> dict[str, Any]:
         "last_reviewed_at": str(row["last_reviewed_at"] or ""),
         "next_review_at": str(row["next_review_at"] or ""),
         "due": _due(str(row["next_review_at"] or "")),
+        # What each grade would do to this card, from the scheduler itself.
+        "schedule": review_schedule(stage),
     }
     if catalog_entry is not None:
         for field in ("level", "framework", "topic"):
@@ -357,6 +367,31 @@ def save_library_vocabulary(payload: LibraryVocabularyIn) -> dict[str, Any]:
     return {"saved": True, "item": _row_to_item(row)}
 
 
+# The scheduler, in one place, so the buttons can say what they will do before
+# the learner presses them. Days per stage after a clean recall, the few
+# minutes a forgotten card waits, and the day an unsure one does.
+REVIEW_STAGE_DAYS = {1: 1, 2: 3, 3: 7, 4: 21}
+AGAIN_MINUTES = 10
+UNSURE_DAYS = 1
+MAX_REVIEW_STAGE = 4
+
+
+def review_schedule(stage: int) -> dict[str, dict[str, int]]:
+    """When each grade would bring this card back.
+
+    The source draws an interval under every grade. These are that scheduler's
+    own numbers, read from it rather than written on the buttons, so the two
+    can never drift apart.
+    """
+
+    held = max(0, min(MAX_REVIEW_STAGE, int(stage or 0)))
+    return {
+        "again": {"minutes": AGAIN_MINUTES},
+        "unsure": {"days": UNSURE_DAYS},
+        "got_it": {"days": REVIEW_STAGE_DAYS[min(MAX_REVIEW_STAGE, held + 1)]},
+    }
+
+
 def review_library_vocabulary(word: str, payload: VocabularyReviewIn) -> dict[str, Any]:
     clean = _clean_term(word); now_dt = _now(); now = _iso(now_dt)
     row = _repo().get_library_progress(clean)
@@ -364,9 +399,16 @@ def review_library_vocabulary(word: str, payload: VocabularyReviewIn) -> dict[st
         return {"found": False}
     stage=int(row["review_stage"] or 0); success=int(row["successful_recalls"] or 0); lapses=int(row["lapse_count"] or 0)
     if payload.result == "got_it":
-        next_stage=min(4,stage+1); success+=1; intervals={1:1,2:3,3:7,4:21}; next_dt=now_dt+timedelta(days=intervals[next_stage])
+        next_stage=min(MAX_REVIEW_STAGE,stage+1); success+=1
+        next_dt=now_dt+timedelta(days=REVIEW_STAGE_DAYS[next_stage])
+    elif payload.result == "unsure":
+        # Neither a step forward nor a step back: the card stands where it is
+        # and comes back tomorrow. Nothing is counted as recalled, because it
+        # was not, and nothing as lapsed, because it was not that either.
+        next_stage=stage
+        next_dt=now_dt+timedelta(days=UNSURE_DAYS)
     else:
-        next_stage=max(0,stage-1); lapses+=1; next_dt=now_dt+timedelta(minutes=10)
+        next_stage=max(0,stage-1); lapses+=1; next_dt=now_dt+timedelta(minutes=AGAIN_MINUTES)
     updated=_repo().update_library_review(clean,{"review_stage":next_stage,"successful_recalls":success,"lapse_count":lapses,
         "last_reviewed_at":now,"next_review_at":_iso(next_dt),"updated_at":now})
     return {"found": updated is not None, "item": _row_to_item(updated) if updated else None}
