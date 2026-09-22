@@ -54,7 +54,20 @@
 [data-theme='glass'] {
   color-scheme: dark;
 
-  /* The cosmic field: twelve layers under every screen, fixed to the viewport. */
+  /* A screen's ground (every frame of the design draws it): #060509 with one violet glow at the top left
+     and one glow per room at the bottom right. The hues are the design's own per skill. */
+  --screen-canvas: var(--o-screen);
+  --screen-glow: radial-gradient(90% 70% at 16% -10%, rgba(116, 74, 214, 0.22), transparent 62%);
+  --screen-glow-phone: radial-gradient(100% 60% at 20% -6%, rgba(116, 74, 214, 0.24), transparent 62%);
+  --room-glow-reading: radial-gradient(100% 70% at 70% 112%, rgba(96, 58, 182, 0.2), transparent 64%);
+  --room-glow-listening: radial-gradient(100% 70% at 80% 108%, rgba(70, 92, 210, 0.2), transparent 64%);
+  --room-glow-speaking: radial-gradient(100% 70% at 80% 108%, rgba(46, 142, 134, 0.16), transparent 64%);
+  --room-glow-writing: radial-gradient(100% 70% at 82% 108%, rgba(192, 122, 70, 0.14), transparent 64%);
+  --room-glow-vocabulary: radial-gradient(100% 70% at 82% 108%, rgba(192, 88, 148, 0.14), transparent 64%);
+  --room-glow-progress: radial-gradient(80% 60% at 88% 104%, rgba(70, 92, 210, 0.16), transparent 62%);
+
+  /* The cosmic field is the design's canvas around its frames, not a screen's ground: it stays pinned
+     to tokens.json and paints nothing in the app. */
   --cosmic-field:
     radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.55) 1px, transparent 1.8px),
     radial-gradient(circle at 68% 64%, rgba(222, 206, 255, 0.42) 0.8px, transparent 1.5px),

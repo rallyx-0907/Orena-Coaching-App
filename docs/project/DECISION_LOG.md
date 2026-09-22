@@ -2315,3 +2315,16 @@ session checked an attempt" (taken: the merge now keys on the checked-attempt co
 constraints validate existing rows under a brief lock (acceptable: the table is small and every row holds the
 defaults), and commit scope (that commit also carried the Chinese Quick Sheet sizing). The migration is applied
 to the sandbox database only, after this record.
+
+## D-070 — A screen's ground is #060509 with the room's glows, not the cosmic field
+
+**Status:** Accepted, explicit current human instruction (2026-09-22: the background still did not follow the new design).
+
+**Decision:** Every frame of the design draws `#060509` with one violet glow at the top left and one glow per room
+at the bottom right (reading violet, listening blue, speaking teal, writing amber, vocabulary pink, progress and
+home blue). The twelve-layer cosmic field in `tokens.json` is the design's canvas around its frames, not a
+screen's ground. The app paints the screen's ground: `theme.css` (`--screen-canvas`, `--screen-glow`,
+`--room-glow-*`), `foundation.css` (body, `html[data-room]`), `app.js` (sets `data-room`). The cosmic field
+stays declared because the foundation gate pins `tokens.json`, and paints nothing.
+
+**Supersedes / Superseded by:** Corrects the reading of "one Dark Glass field under every screen" in D-066.

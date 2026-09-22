@@ -70,11 +70,38 @@
 * {
   box-sizing: border-box;
 }
+html[data-room='reading'] {
+  --room-glow: var(--room-glow-reading);
+}
+html[data-room='listening'],
+html[data-room='practice'] {
+  --room-glow: var(--room-glow-listening);
+}
+html[data-room='speaking'] {
+  --room-glow: var(--room-glow-speaking);
+}
+html[data-room='writing'] {
+  --room-glow: var(--room-glow-writing);
+}
+html[data-room='language'],
+html[data-room='recall'],
+html[data-room='collection'] {
+  --room-glow: var(--room-glow-vocabulary);
+}
+html[data-room='progress'],
+html[data-room='discover'],
+html[data-room='content'] {
+  --room-glow: var(--room-glow-progress);
+}
+@media (max-width: 900px) {
+  body {
+    background-image: var(--screen-glow-phone), var(--room-glow, none);
+  }
+}
 body {
   margin: 0;
-  background-color: var(--surface-canvas);
-  background-image: var(--cosmic-field);
-  background-size: var(--cosmic-size);
+  background-color: var(--screen-canvas);
+  background-image: var(--screen-glow), var(--room-glow, none);
   background-attachment: fixed;
   color: var(--text-primary);
   font: var(--weight-regular) var(--text-base) / 1.7 var(--font);
