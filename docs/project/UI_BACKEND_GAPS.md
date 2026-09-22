@@ -595,3 +595,31 @@ make that a decision, not a fix:**
   `rgba(255,255,255,0.55)`; the app reads `--text-secondary` / `--text-muted`. Components may only
   read semantic tokens (`AGENTS.md`, Theme), so if these must match exactly it is a token question
   for `theme.css`, not a component override.
+
+## Reading library, re-checked against the source (2026-09-22, D-067)
+
+Re-read `Orena Reading.dc.html` from the design project itself. It is **byte-identical to the
+pinned cache** (94 122 bytes, sha256 `fc7f7640…`, the hash `PINS.tsv` records), so the cache was
+not stale - the earlier "Reading library matches its frame" claim was simply too broad: it covered
+the bar, the grid and the card box, not the whole composition.
+
+**Corrected to the frame:** the cover badge ("ĐÃ NHẬP", "TẠO RIÊNG") was 10.5px / 0.1em tracking in
+plain white with no ring; the frame draws 11px / 0.08em in the accent ink `#D5C0FF` with the glass
+ring and 6/12 padding. The badge now reads from `--accent-ink` and `--glass-ring`, so no literal
+colour entered a component. Verified in the running app after a cache-busted stylesheet reload.
+
+Also confirmed, against an earlier misreading of mine: `TẠO RIÊNG` / `ĐÃ NHẬP` are **cover badges on
+cards**, not section headings - the frame has one grid of twelve. The app's per-card badge is the
+right shape.
+
+**Still different, and each needs a decision or a backend fact rather than a CSS change:**
+
+- **Card meta is often absent.** The frame prints `B1 · tiểu thuyết · 22 phút` on every card -
+  level, type, minutes. The app prints that only where the catalogue carries it: an imported book
+  shows nothing, `Kafka pa stranden` shows `sách` alone. **Backend needed:** a CEFR level and a
+  reading-time estimate per catalogue item; the app refuses to invent either.
+- **Four filter chips where the frame draws eleven.** The frame offers Tất cả, Sách, Chương trích,
+  Bài báo, Tin tức, Tiểu luận, Truyện, Hội thoại, Trích dẫn, Tạo riêng, Đã nhập. The app offers a
+  chip only for a type some item in the room actually has (`library-browse.js`), so today it shows
+  four. Offering a filter that can only ever return nothing is the opposite trade; **which rule
+  wins is the human's call**, and nothing here changes until it is made.

@@ -462,17 +462,21 @@
   display: flex;
   gap: 6px;
 }
+/* Measured against the cover badge in Orena Reading.dc.html ("Reading
+   library"): 11px, 0.08em tracking, the accent ink rather than plain white,
+   and the glass ring the frame draws around it. */
 .lib-badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 11px;
+  padding: 6px 12px;
   border-radius: 999px;
   background: rgba(6, 5, 9, 0.7);
+  box-shadow: var(--glass-ring);
   backdrop-filter: blur(8px);
-  color: #fff;
+  color: var(--accent-ink);
   font-family: var(--mono-font);
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .lib-badge--icon {
