@@ -68,6 +68,10 @@
 .wr-go:disabled {
   opacity: 0.6;
 }
+/* "Revise more" beside "Done" is the phone's revision bar; a desktop reaches it behind the menu. */
+.wr-second {
+  display: none;
+}
 /* The menu: the actions the frame gives no button of, behind one icon. */
 .wr-menu .learning-toolbar {
   border: 0;
@@ -201,6 +205,58 @@
   line-height: 1.95;
   resize: none;
   outline: none;
+}
+/* The two panes of a review name themselves, as the frame draws (a phone has the tab pair instead). */
+.wr-pane-label {
+  display: none;
+}
+@media (min-width: 1001px) {
+  .writing-workspace:not([data-review='waiting']) .wr-pane-label {
+    display: block;
+    margin-bottom: 16px;
+    font-family: var(--mono-font);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+  }
+}
+
+/* The draft, with the review's findings marked behind the words the learner is still editing. The layer
+   repeats the box's own type exactly; only its washes show. */
+.wr-draft {
+  position: relative;
+}
+.wr-mirror {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: transparent;
+  pointer-events: none;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 24px;
+  line-height: 1.95;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+.wr-mirror:empty {
+  display: none;
+}
+.wr-mirror mark {
+  padding: 1px 4px;
+  margin: 0 -4px;
+  border-radius: 4px;
+  color: transparent;
+}
+.writing-workspace:not([data-review='waiting']) .wr-mirror {
+  font-size: 22px;
+}
+.writing-workspace .wr-draft textarea {
+  position: relative;
+}
+.writing-workspace:not([data-review='waiting']) .wr-draft textarea {
+  overflow: hidden;
+  min-block-size: 0;
 }
 .writing-workspace .writing-sheet textarea::placeholder {
   color: var(--ink-50);
@@ -336,37 +392,82 @@
   color: var(--ink-80);
   font-size: 14px;
 }
-.writing-workspace[data-compare='on'] .wf-banner {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 24px;
-  padding: 20px 26px;
-  border-radius: 20px;
+/* The banner and the three columns are a desktop room; a phone keeps the stacked banner and the list. */
+@media (min-width: 1001px) {
+  .writing-workspace[data-compare='on'] .wf-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 24px;
+    padding: 20px 26px;
+    border-radius: 20px;
+  }
+  .writing-workspace[data-compare='on'] .wf-counts {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    gap: 8px;
+  }
+  .writing-workspace[data-compare='on'] .wf-count {
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: var(--chip-quiet);
+    box-shadow: var(--chip-quiet-ring);
+    font-size: 12.5px;
+  }
+  .writing-workspace[data-compare='on'] .wf-cols {
+    gap: 26px;
+  }
+  .writing-workspace[data-compare='on'] .wf-col {
+    padding: 22px;
+    border-radius: 20px;
+  }
+  .writing-workspace[data-compare='on'] .wf-draft {
+    font-size: 20px;
+    line-height: 1.85;
+    color: var(--ink-85);
+  }
 }
-.writing-workspace[data-compare='on'] .wf-counts {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  gap: 8px;
+
+/* The three columns take the room's height under the banner, and each scrolls on its own (the frame's
+   height budget: nothing is pushed below the fold). */
+@media (min-width: 1001px) {
+  [data-experience='writing'] .writing-workspace[data-compare='on'] .writing-result {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .writing-workspace[data-compare='on'] .workspace-result__scroll {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+  .writing-workspace[data-compare='on'] .wf-revision {
+    flex: 1;
+    min-block-size: 0;
+    margin: 0;
+  }
+  .writing-workspace[data-compare='on'] .wf-cols {
+    flex: 1;
+    min-block-size: 0;
+  }
+  .writing-workspace[data-compare='on'] .wf-col {
+    overflow-y: auto;
+  }
 }
-.writing-workspace[data-compare='on'] .wf-count {
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: var(--chip-quiet);
-  box-shadow: var(--chip-quiet-ring);
-  font-size: 12.5px;
+
+/* A revision is the whole room; the findings of the version are one menu item away, and back. */
+.writing-workspace[data-compare='on'] [data-wf-review],
+.writing-workspace[data-compare='on'] .wr-pane-label {
+  display: none;
 }
-.writing-workspace[data-compare='on'] .wf-cols {
-  gap: 26px;
+.writing-workspace:not([data-compare='on']) .wf-revision {
+  display: none;
 }
-.writing-workspace[data-compare='on'] .wf-col {
-  padding: 22px;
-  border-radius: 20px;
-}
-.writing-workspace[data-compare='on'] .wf-draft {
-  font-size: 20px;
-  line-height: 1.85;
-  color: var(--ink-85);
+.wr-top:not([data-compare='on']) [data-action='seeReview'],
+.wr-top:not([data-compare='off']) [data-action='seeCompare'] {
+  display: none;
 }
 
 /* --- The phone -------------------------------------------------------------------------------- */
@@ -408,6 +509,37 @@
     z-index: 5;
     padding: 0 22px;
     font-size: 15px;
+  }
+  .wr-top[data-mode='done'] .wr-count {
+    display: none;
+  }
+  .wr-top[data-mode='done'] .wr-go,
+  .wr-top[data-mode='done'] .wr-second {
+    inline-size: calc(50% - 25px);
+    justify-content: center;
+    block-size: 48px;
+    min-block-size: 0;
+    padding: 0 10px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+  .wf-legend {
+    display: none;
+  }
+  .wr-top[data-mode='done'] .wr-second {
+    position: fixed;
+    inset: auto auto 30px 20px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0;
+    border: 0;
+    background: var(--chip-quiet);
+    box-shadow: var(--chip-quiet-ring);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
   }
   #main > .writing-workspace,
   #main > .writing-workspace:not([data-review='waiting']) {

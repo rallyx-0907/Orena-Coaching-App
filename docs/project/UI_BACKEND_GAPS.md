@@ -481,3 +481,24 @@ its level and length); "search" filters the prompts; "See all" opens the rail in
 app holds no such data: "saved N minutes ago" on the draft card, a category badge for prompts that have no kind,
 a target length. The error sheet is the finding sheet (`issueSheetHtml`), already the frame's: fragment struck,
 correction, kind, why, rule well, example, ask / save concept / apply.
+
+## Writing review and revision, second pass (2026-09-22)
+
+Built to "Writing review" and "Writing revision" (desktop and phone): the findings are marked in the draft itself
+(`ui/draft-marks.js`), the pane labels are drawn, the top bar's one primary action follows the room (Review / Revise /
+Done), and a revision is the banner, the legend, the two versions marked and the changes with the dimension deltas at
+their foot. The phone's revision bar is "Revise more" beside "Done".
+
+- **A mark is earned.** The contracts carry the words of a finding (`fragment`; a change's `title`), not where they
+  are. A mark is drawn only where the words occur exactly once in the text, the rule apply-fix uses; otherwise the
+  finding stays guidance and marks nothing. The revision marks what was fixed and what is still there in the earlier
+  version, what is still there and what is new in the later one; it cannot mark the words that replaced a fix
+  (`detail` carries the evaluator's suggestion, not the learner's words). Positions in the contract would end both limits.
+- **"Lưu nhận xét" (save the review) is not drawn.** A review is already kept with the piece; saving it as something
+  else needs a place in learner data that is held for the account architecture (AGENTS.md, holds). Decision needed:
+  what "saved" means here (a kept set of rules in My Language?), then it is one button.
+- **Where the findings of a revision went.** The revision frame draws no findings, so a version with a version before
+  it opens on the comparison and its findings are one menu item away ("Review of this version"), and back. The frame
+  gives no button to revise again from the desktop comparison; it is behind the same menu (the phone has it in the bar).
+- **The design's Vietnamese sentences are sample text.** The changes list shows the evaluator's own words (the
+  fragment, its kind, the correction and reason), not the frame's "Giọng văn đã thân mật".

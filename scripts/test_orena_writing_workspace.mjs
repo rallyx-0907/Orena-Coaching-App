@@ -116,7 +116,7 @@ for (const name of ['MAX_CHARACTERS', 'MAX_BYTES', 'MAX_LINES']) {
 /* --- Nothing replaces the learner's writing ----------------------------- */
 const submit = expression.slice(expression.indexOf("root.querySelector('form').onsubmit"));
 assert.doesNotMatch(submit, /box\.value = |textarea'\)\.value = /, 'a review never writes into the box');
-assert.match(expression, /data-revise/, 'revising is offered');
+assert.match(expression, /fresh \? 'revise'/, 'revising is offered, in the top bar, while the review on screen is current');
 assert.match(contract, /27\. \*\*The writing revision loop\.\*\*/, 'the durable rule is recorded');
 assert.match(contract, /never substitutes generated text for the learner's\s+writing/, "and says a review never replaces the learner's writing");
 assert.match(contract, /28\. \*\*Bounded before it is spent on\.\*\*/, 'and so is the resource bound');

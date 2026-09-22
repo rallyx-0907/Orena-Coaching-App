@@ -131,6 +131,7 @@
   --nav-ink-skill: rgba(255, 255, 255, 0.7);
   --rail-edge: inset -1px 0 0 rgba(255, 255, 255, 0.06);
   --bar-edge-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --rule-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
   /* Dictation (Orena Listening, "Dictation · Nghe chép"): the streak pill, the amber progress, the
      diff marks, the right line, and the skill's own lime. */
@@ -179,6 +180,13 @@
   --panel-edge: inset 1px 0 0 rgba(255, 255, 255, 0.08);
   --word-mark: rgba(255, 255, 255, 0.24);
   --quote-edge: rgba(213, 192, 255, 0.7);
+  /* The Writing review's marks in the draft: a wash and the line under it (amber; blue for punctuation). */
+  --mark-warm: oklch(0.72 0.16 60 / 0.22);
+  --mark-warm-line: oklch(0.8 0.15 65);
+  --mark-good: rgba(158, 230, 180, 0.2);
+  --mark-good-line: rgba(158, 230, 180, 0.85);
+  --mark-info: rgba(143, 192, 245, 0.2);
+  --mark-info-line: rgba(143, 192, 245, 0.85);
   --round-action: rgba(255, 255, 255, 0.14);
   --round-action-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.28);
   --track: rgba(255, 255, 255, 0.12);

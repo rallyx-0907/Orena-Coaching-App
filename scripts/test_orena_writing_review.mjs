@@ -17,6 +17,7 @@ import {
   writingReviewFailure,
 } from '../static/orena/ui/writing-feedback.js';
 import { REGISTERS, registerLabel } from '../static/orena/ui/registers.js';
+import { issueMarks, marksIn, markedHtml } from '../static/orena/ui/draft-marks.js';
 
 const c = copy.en;
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -244,5 +245,18 @@ assert.match(
   /form\.requestSubmit\(\)/,
   'retry submits the captured form after the original submit event has finished',
 );
+
+/* --- The findings marked in the draft are earned ---------------------------------------------------- */
+const draftText = 'Jeg jobber på et kafé nå. Sjefen min er hyggelig, han hjelper meg. Jeg jobber på et kafé.';
+const finding = (id, fragment, kind = 'grammar') => ({ id, fragment, correction: 'x', kind });
+{
+  const found = marksIn(draftText, issueMarks([finding('a', 'hyggelig, han', 'punctuation'), finding('b', 'ikke der'), finding('c', 'på et kafé')]));
+  assert.deepEqual(found.map((mark) => mark.id), ['a'], 'a finding whose words are absent, or occur twice, marks nothing');
+  assert.equal(found[0].tone, 'info', 'punctuation is marked in blue, everything else in amber');
+  const overlapping = marksIn('one two three', issueMarks([finding('a', 'one two'), finding('b', 'two three')]));
+  assert.deepEqual(overlapping.map((mark) => mark.id), ['a'], 'marks never overlap: the earlier finding keeps its words');
+  const html = markedHtml('a <b> & c', issueMarks([finding('a', '<b>')]));
+  assert.equal(html, 'a <mark data-tone="warm">&lt;b&gt;</mark> &amp; c', "the learner's words are escaped, never taken for markup");
+}
 
 console.log('Orena writing review, rubric parity and register comparison: PASS');

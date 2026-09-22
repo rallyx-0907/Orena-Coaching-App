@@ -11,6 +11,7 @@
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { applyRevision, revisionTarget } from '../product/revision.js';
+import { markedHtml } from './draft-marks.js';
 
 // The four dimensions the baseline draws, in its order. The evaluator scores a
 // fifth (task achievement) and keeps it; the baseline does not draw it.
@@ -123,8 +124,19 @@ export function revisionHtml(c, compare, { language } = {}) {
     `<li class="wf-change" data-state="${state}"><span class="wf-change__state qs-tone--${state === 'fixed' ? 'good' : state === 'added' ? 'info' : 'warn'}">${icon(state === 'fixed' ? 'check-circle' : state === 'added' ? 'plus' : 'warning-circle', { filled: state !== 'added', size: 16 })}</span><span><strong lang="${esc(language)}">${esc(item.title)}</strong><small>${esc(kindLabel(c, item.kind))}</small>${item.detail ? `<em lang="${esc(language)}">${esc(item.detail)}</em>` : ''}</span></li>`;
   const changes = [...fixed.map((i) => change(i, 'fixed')), ...remaining.map((i) => change(i, 'remaining')), ...added.map((i) => change(i, 'added'))];
   const deltas = (compare.dimensionDeltas || []).map((d) => ({ name: d.name, value: d.to }));
+  // The words each change is about, marked in the versions they are found in: what was fixed and what is
+  // still there in the earlier one, what is still there and what is new in the later one.
+  const words = (list, tone) => list.map((item) => ({ fragment: item.title, tone }));
+  const legend = [
+    [fixed.length, c.writingLegendFixed, 'good'],
+    [remaining.length, c.writingLegendRemaining, 'warm'],
+    [added.length, c.writingLegendNew, 'info'],
+  ]
+    .filter(([n]) => n > 0)
+    .map(([, text, tone]) => `<span class="wf-key"><i data-tone="${tone}"></i>${esc(text)}</span>`)
+    .join('');
   const before = Object.fromEntries((compare.dimensionDeltas || []).map((d) => [d.name, d.from]));
-  return `<div class="wf-revision"><header class="wf-banner">${label(esc(c.writingVsPrevious), 'soft')}<p class="wf-headline">${esc(headline)}</p><div class="wf-counts">${counts}</div></header><div class="wf-cols">${column(fill(c.writingVersion, { n: previous.version }), fill(c.writingWords, { n: previous.wordCount }), `<p class="wf-draft" lang="${esc(language)}">${esc(previous.text)}</p>`)}${column(fill(c.writingVersion, { n: current.version }), fill(c.writingWords, { n: current.wordCount }), `<p class="wf-draft" lang="${esc(language)}">${esc(current.text)}</p>`, 'now')}${column(c.writingChanges, '', changes.length ? `<ul class="wf-changes">${changes.join('')}</ul>` : `<p class="wf-text">${esc(c.writingNoChanges)}</p>`, 'changes')}</div>${dimensionsHtml(c, deltas, before)}</div>`;
+  return `<div class="wf-revision"><header class="wf-banner">${label(esc(c.writingVsPrevious), 'soft')}<p class="wf-headline">${esc(headline)}</p><div class="wf-counts">${counts}</div></header>${legend ? `<div class="wf-legend">${legend}</div>` : ''}<div class="wf-cols">${column(fill(c.writingVersion, { n: previous.version }), fill(c.writingWords, { n: previous.wordCount }), `<p class="wf-draft" lang="${esc(language)}">${markedHtml(previous.text, [...words(fixed, 'good'), ...words(remaining, 'warm')])}</p>`)}${column(fill(c.writingVersion, { n: current.version }), fill(c.writingWords, { n: current.wordCount }), `<p class="wf-draft" lang="${esc(language)}">${markedHtml(current.text, [...words(remaining, 'warm'), ...words(added, 'info')])}</p>`, 'now')}${column(c.writingChanges, '', `${changes.length ? `<ul class="wf-changes">${changes.join('')}</ul>` : `<p class="wf-text">${esc(c.writingNoChanges)}</p>`}${dimensionsHtml(c, deltas, before)}`, 'changes')}</div></div>`;
 }
 
 /* A review that did not arrive is news about the review, not about the writing:

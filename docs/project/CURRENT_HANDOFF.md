@@ -57,8 +57,8 @@ Fidelity pass (D-067, measured against the design at its source): built to their
 390x844, in EN, VI and ZH - the shell, Library, Listening workspace, Dictation (steps, one screen on a desk and a
 phone, DC-5 stored: migration `20260921_0010` in the sandbox, D-069), the Quick Sheet, the Writing workspace,
 review (two panes; Draft / Review tabs on a phone), revision (three columns) and entry (`#/writing`). A screen's
-ground is the UI Baseline's lit indigo (D-071). Bugs 7-15 are fixed. Not the frame yet: the Writing draft's inline
-highlights (no positions in the contract), the top bar's review buttons, the Writing-feedback context sheet.
+ground is the UI Baseline's lit indigo (D-071). Bugs 7-15 are fixed. Writing review and revision are the frames too (findings marked in the draft, one primary action, three-column
+comparison). Not the frame yet: "Lưu nhận xét" (no meaning for it yet), the Writing-feedback context sheet.
 Not migrated (legacy): Home, Progress, Speaking, Vocabulary, Reading; the old top bar and the Practice hub go
 with them.
 

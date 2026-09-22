@@ -12,6 +12,7 @@ import {
   refreshDraftStatus,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
+import { markedHtml, issueMarks } from './draft-marks.js';
 import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
@@ -164,13 +165,15 @@ export async function renderExpression(root, ctx) {
       kind: 'menu',
       label: c.stageMore,
       items: [
+        { name: 'seeReview', label: c.writingSeeReview },
+        { name: 'seeCompare', label: c.writingSeeCompare },
         { name: 'registers', label: c.registerExplore },
         { name: 'history', label: c.revisionHistory },
       ],
     },
   ];
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
-  root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('writing')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button><span class="wr-menu">${learningToolbar(writingActions, { label: c.writingName })}</span></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting" data-compare="off"><div class="wr-tabs" role="group" aria-label="${esc(c.review)}"><button type="button" class="wr-tab" data-wr-tab="activity">${esc(r.writingTabDraft)}</button><button type="button" class="wr-tab" data-wr-tab="result">${esc(r.writingTabReview)}</button></div><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('writing')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button><button type="button" class="wr-second" data-revise-more>${icon('pencil-simple', { size: 17 })}<span>${esc(c.revision)}</span></button><span class="wr-menu">${learningToolbar(writingActions, { label: c.writingName })}</span></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting" data-compare="off"><div class="wr-tabs" role="group" aria-label="${esc(c.review)}"><button type="button" class="wr-tab" data-wr-tab="activity">${esc(r.writingTabDraft)}</button><button type="button" class="wr-tab" data-wr-tab="result">${esc(r.writingTabReview)}</button></div><div class="workspace-activity"><span class="wr-pane-label">${esc(r.writingTabDraft)}</span><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><div class="wr-draft"><div class="wr-mirror" data-draft-marks aria-hidden="true" lang="${language}"></div><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea></div><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><span class="wr-pane-label">${esc(r.writingTabReview)}</span><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
@@ -186,9 +189,19 @@ export async function renderExpression(root, ctx) {
   const workspace = root.querySelector('.writing-workspace');
   /* The revision compare takes the whole room (three columns, as the frame draws it); going back to the
      draft gives the room back to the two panes. */
+  /* Whether a version has one before it to be read against, and which of the two views is up. */
+  const topBar = root.querySelector('.wr-top');
+  let hasCompare = false;
+  const setCompare = (on) => {
+    workspace.dataset.compare = on ? 'on' : 'off';
+    topBar.dataset.compare = hasCompare ? workspace.dataset.compare : 'none';
+    paintGo();
+  };
+  topBar.dataset.compare = 'none';
   const toActivity = () => {
-    workspace.dataset.compare = 'off';
+    setCompare(false);
     showActivity();
+    fitDraft();
   };
   workspace.querySelector('[data-wr-tab="activity"]').onclick = toActivity;
   workspace.querySelector('[data-wr-tab="result"]').onclick = showResult;
@@ -202,6 +215,14 @@ export async function renderExpression(root, ctx) {
   let reviewedText = null;
   const writingMenu = bindLearningToolbar(root.querySelector('.wr-menu .learning-toolbar'), {
     onAction: (name) => {
+      if (name === 'seeReview') {
+        setCompare(false);
+        return showResult();
+      }
+      if (name === 'seeCompare') {
+        setCompare(true);
+        return showResult();
+      }
       if (name === 'registers')
         return openRegisters(ctx, { text: root.querySelector('textarea').value, title });
       if (name === 'history')
@@ -224,12 +245,57 @@ export async function renderExpression(root, ctx) {
   function markReviewFreshness() {
     const stale = reviewedText !== null && reviewedText !== box.value;
     workspace.dataset.reviewStale = String(stale);
+    paintGo();
+    paintMarks();
     // A distinct name from the workspace's own flag above: one selector that
     // matched both would have hidden the whole workspace, and only the grid's
     // own `display` kept that from showing.
     const note = root.querySelector('[data-review-stale-note]');
     if (note) note.hidden = !stale;
   }
+  /* The top bar's one primary action follows the room, as the frame draws it: Review while there is
+     nothing current to read, "Revise" once there is (it takes the learner back to the draft). */
+  const go = root.querySelector('[data-review-action]');
+  function paintGo() {
+    const fresh = workspace.dataset.review === 'ready' && workspace.dataset.reviewStale !== 'true';
+    const mode = fresh && workspace.dataset.compare === 'on' ? 'done' : fresh ? 'revise' : 'review';
+    go.dataset.mode = mode;
+    topBar.dataset.mode = mode;
+    const shown = { done: ['check', c.writingDone], revise: ['pencil-simple', c.revision] }[mode] || ['sparkle', workspace.dataset.review === 'ready' ? c.reviewAgain : c.reviewAction];
+    go.innerHTML = `${icon(shown[0], { size: 18 })}<span>${esc(shown[1])}</span>`;
+  }
+  root.querySelector('[data-revise-more]').onclick = () => {
+    toActivity();
+    root.querySelector('textarea').focus();
+  };
+  go.onclick = (event) => {
+    if (go.dataset.mode === 'done') {
+      event.preventDefault();
+      location.hash = link('writing');
+      return;
+    }
+    if (go.dataset.mode !== 'revise') return;
+    event.preventDefault();
+    toActivity();
+    root.querySelector('textarea').focus();
+  };
+  /* The review's findings, marked in the draft, and the box fitted to its words so the pane - not the box -
+     is what scrolls. */
+  const marks = root.querySelector('[data-draft-marks]');
+  let appliedNow = () => new Set();
+  function paintMarks() {
+    const on = workspace.dataset.review === 'ready' && reviewIssues.length > 0;
+    marks.innerHTML = on ? markedHtml(box.value, issueMarks(reviewIssues.filter((issue) => !appliedNow().has(issue.id)))) : '';
+    fitDraft();
+  }
+  // A pane that is not on screen (a phone shows one at a time) has no height to measure: it is fitted when it appears.
+  function fitDraft() {
+    box.style.blockSize = '';
+    if (workspace.dataset.review === 'waiting' || !box.offsetParent) return;
+    box.style.blockSize = 'auto';
+    box.style.blockSize = `${box.scrollHeight}px`;
+  }
+  let reviewIssues = [];
   const sayTrouble = (html) => {
     trouble.innerHTML = html || '';
     trouble.hidden = !html;
@@ -306,8 +372,10 @@ export async function renderExpression(root, ctx) {
       return;
     }
     if (!alive()) return;
-    workspace.dataset.compare = compare ? 'on' : 'off';
-    feedback.innerHTML = `${compare ? revisionHtml(c, compare, { language }) : ''}<div data-wf-review></div><div class="wf-actions"><button type="button" class="qs-btn" data-revise>${icon('pencil-simple', { size: 18 })}${esc(c.revision)}</button></div>`;
+    hasCompare = Boolean(compare);
+    setCompare(hasCompare);
+    feedback.innerHTML = `${compare ? revisionHtml(c, compare, { language }) : ''}<div data-wf-review></div>`;
+    reviewIssues = review.issues || [];
     feedbackBinding = bindWritingFeedback({
       ctx,
       host: feedback.querySelector('[data-wf-review]'),
@@ -315,11 +383,9 @@ export async function renderExpression(root, ctx) {
       draft: root.querySelector('#expressionText'),
       language,
       alive,
+      onApplied: () => paintMarks(),
     });
-    feedback.querySelector('[data-revise]').onclick = () => {
-      toActivity();
-      root.querySelector('textarea').focus();
-    };
+    appliedNow = feedbackBinding.applied;
     reviewedText = text;
     markReviewFreshness();
     sayTrouble('');
@@ -347,6 +413,13 @@ export async function renderExpression(root, ctx) {
      device always. The status says which is true, and a version changed on
      another device is shown for the learner to choose, never merged. */
   const box = root.querySelector('#expressionText');
+  // It goes with the page: a width that changes (the window, or the pane appearing) fits the box again.
+  let fittedWidth = 0;
+  new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width === fittedWidth) return;
+    fittedWidth = entry.contentRect.width;
+    fitDraft();
+  }).observe(box.parentElement);
   const taskInput = root.querySelector('[name=task]');
   const elsewhereNode = root.querySelector('[data-draft-elsewhere]');
   // The piece comes back with what was said about it. Nothing is asked of a
@@ -541,7 +614,7 @@ export async function renderExpression(root, ctx) {
     } finally {
       if (alive()) {
         button.disabled = false;
-        button.querySelector('span').textContent = workspace.dataset.review === 'ready' ? c.reviewAgain : c.reviewAction;
+        paintGo();
       }
     }
   };

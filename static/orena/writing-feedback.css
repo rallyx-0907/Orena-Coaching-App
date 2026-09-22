@@ -212,6 +212,62 @@
   color: var(--text-on-glass);
 }
 
+/* The words a review or a revision speaks about, marked in the text: a wash and the line under it. */
+:is(.wr-mirror, .wf-draft) mark[data-tone] {
+  border-radius: 4px;
+}
+:is(.wr-mirror, .wf-draft) mark[data-tone='warm'] {
+  background: var(--mark-warm);
+  border-bottom: 2px solid var(--mark-warm-line);
+}
+:is(.wr-mirror, .wf-draft) mark[data-tone='info'] {
+  background: var(--mark-info);
+  border-bottom: 2px solid var(--mark-info-line);
+}
+:is(.wr-mirror, .wf-draft) mark[data-tone='good'] {
+  background: var(--mark-good);
+  border-bottom: 2px solid var(--mark-good-line);
+}
+.wf-draft mark {
+  padding: 1px 4px;
+  color: inherit;
+}
+.wf-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 0 4px;
+}
+.wf-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--ink-70);
+}
+.wf-key i {
+  inline-size: 16px;
+  block-size: 6px;
+  border-radius: 2px;
+  opacity: 0.65;
+}
+.wf-key i[data-tone='good'] {
+  background: var(--mark-good-line);
+}
+.wf-key i[data-tone='warm'] {
+  background: var(--mark-warm-line);
+}
+.wf-key i[data-tone='info'] {
+  background: var(--mark-info-line);
+}
+/* What moved sits at the foot of the changes, as the frame draws it. */
+.wf-col--changes .wf-section {
+  margin-top: auto;
+  padding-top: 16px;
+  box-shadow: var(--rule-top);
+}
+
 /* --- The version beside the one before it -------------------------------------------- */
 .wf-revision {
   display: flex;
