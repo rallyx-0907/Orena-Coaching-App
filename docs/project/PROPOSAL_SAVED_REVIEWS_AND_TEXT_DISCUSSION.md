@@ -110,3 +110,36 @@ and the UI says so. This ships now and does not pre-empt the account architectur
 
 Until then the Reading bar draws no "Thảo luận" pill and the Writing top bar draws no "Lưu nhận xét", which
 is what `UI_BACKEND_GAPS.md` already records.
+
+---
+
+## Architecture review record (2026-09-22)
+
+- **Reviewer role:** Delegated Architecture Reviewer (`AGENTS.md`, "Architecture review authority")
+- **Reviewer identity:** an independent Claude subagent, not the implementer's context
+- **Reviewed commit:** `6e9774a92074ed8135ff6822aa56170c600371e3`
+- **Outcome (a) `essays.review_kept_at`:** `APPROVED` — additive, nullable, no backfill, the same shape as
+  D-069's additive columns on `listening_progress`; inherits the essay's `(user_id, language_code)` scoping
+  and its cascade from `users`. One required check at implementation: the `keep`/`unkeep` endpoints must
+  reuse the existing scoped lookup in `PostgresLearningRepository` so an owner check cannot be skipped.
+- **Outcome (b) `text_discussions` + `text_discussion_turns`:** `CHANGES REQUIRED`. The two-table shape is
+  right and correctly identified as the first learner-owned conversational content to leave the device, but
+  three code-level gaps must close before any migration:
+  1. **Metering is new integration, not a copy.** `ProductRepository.record_usage` is called today only from
+     `persistence/selftest.py` and tests — no live AI endpoint calls it, including the sentence-sheet surface
+     this proposal cited. The turn-creation handler must call it itself
+     (`feature="reading.discussion_turn"`), with a test asserting one `usage_events` row per turn.
+  2. **Turn order is not deterministic.** Both turns are inserted in one request; `created_at` can tie and
+     UUID keys cannot break it. `text_discussion_turns` needs an explicit `ordinal INTEGER NOT NULL`, unique
+     with `discussion_id`, as `WritingError` already does.
+  3. **Growth is unbounded.** A concrete bound must be stated and enforced: a maximum number of turns per
+     thread, or a pagination/truncation contract on `GET …/discussion`.
+  Also required: DB-level `CHECK` constraints on `source_kind` and `role` (the `listening_progress` house
+  style); a real FK, or a documented reason not to, for `source_kind='reading_session'`, which the app
+  already owns a typed row for; and the named mechanism by which a withdrawn source cannot 500 the read.
+  Noted with no change required: no EN/ZH parity problem, and the SQLite backend should raise
+  `RuntimeError("… requires the PostgreSQL runtime.")` rather than silently no-op, as it already does.
+
+**Where this leaves the work.** (a) may be implemented. (b) is not migrated: the proposal is revised against
+the six required changes, then re-reviewed, then the migration is written and applied to the sandbox only -
+the pattern D-069 followed.
