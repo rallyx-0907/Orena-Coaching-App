@@ -390,15 +390,21 @@ def adapter_for(kind: str) -> ReadingSourceAdapter:
     return factory()
 
 
-def request_digest(submitted: SubmittedInput) -> str:
-    """The idempotency key a queued job is unique on.
+def request_digest(submitted: SubmittedInput, *, source_id: str) -> str:
+    """The idempotency key a live job is unique on.
 
     Built from the canonical form of the submission, so the same URL typed
     with different tracking parameters, or the same text submitted twice by a
     double-clicked button, is one job - decided here and enforced by a unique
     constraint in the database, never by a disabled button in a browser.
+
+    `source_id` is part of the key because the uniqueness is per source: the
+    same text legitimately arrives from two sources with two different rights
+    answers, and one of them must not be unable to ingest it because the other
+    got there first.
     """
     canonical = {
+        "source_id": (source_id or "").strip(),
         "kind": (submitted.kind or "").strip().casefold(),
         "url": normalize_url(submitted.url),
         "text": content_fingerprint(submitted.text) if submitted.text else "",

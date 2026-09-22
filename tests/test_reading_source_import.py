@@ -245,20 +245,31 @@ def test_every_supported_kind_has_an_adapter_and_an_unknown_kind_does_not():
     assert failure.value.code == "unsupported_input"
 
 
+SOURCE = "0a52e5d0-0000-4000-8000-000000000002"
+
+
 def test_the_request_digest_is_the_idempotency_key_the_queue_needs():
     first = SubmittedInput(kind="url", url="https://www.example.com/a?utm_source=x", rights=RIGHTS)
     same = SubmittedInput(kind="url", url="https://example.com/a", rights=RIGHTS)
     other = SubmittedInput(kind="url", url="https://example.com/b", rights=RIGHTS)
-    assert request_digest(first) == request_digest(same)
-    assert request_digest(first) != request_digest(other)
-    assert len(request_digest(first)) == 64
+    assert request_digest(first, source_id=SOURCE) == request_digest(same, source_id=SOURCE)
+    assert request_digest(first, source_id=SOURCE) != request_digest(other, source_id=SOURCE)
+    assert len(request_digest(first, source_id=SOURCE)) == 64
+
+
+def test_the_same_text_from_two_sources_is_two_submissions_not_one():
+    """Rights differ per source, so one source must not lock the other out."""
+    submitted = SubmittedInput(kind="url", url="https://example.com/a", rights=RIGHTS)
+    other_source = "0a52e5d0-0000-4000-8000-000000000003"
+    assert request_digest(submitted, source_id=SOURCE) != request_digest(submitted, source_id=other_source)
 
 
 def test_two_pastes_of_the_same_text_share_a_digest_and_differ_from_a_third():
     first = SubmittedInput(kind="text", text="The river rose overnight.", rights=RIGHTS)
     same = SubmittedInput(kind="text", text="The river rose overnight.", rights=RIGHTS)
     other = SubmittedInput(kind="text", text="The river fell overnight.", rights=RIGHTS)
-    assert request_digest(first) == request_digest(same) != request_digest(other)
+    assert request_digest(first, source_id=SOURCE) == request_digest(same, source_id=SOURCE)
+    assert request_digest(first, source_id=SOURCE) != request_digest(other, source_id=SOURCE)
 
 
 def test_the_adapter_contract_is_the_same_shape_for_every_kind():

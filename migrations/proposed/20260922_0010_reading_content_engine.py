@@ -1,10 +1,11 @@
 """Reading Content Engine - six tables behind Admin -> Content -> Reading.
 
-PROPOSED - not yet reviewed. Additive only; no existing table is altered and
-no existing row is rewritten. Alembic does not read this directory (see its
-`README.md`), so nothing here is applied by being committed: it becomes real
-by one `git mv` into `versions/`, after the independent architecture review
-and the human schema/runtime authorization this docstring names.
+PROPOSED - reviewed once (`CHANGES REQUIRED`, commit `5eeaac7`), revised, and
+awaiting re-review then human schema/runtime authorization. Additive only; no
+existing table is altered and no existing row is rewritten. Alembic does not
+read this directory (see its `README.md`), so nothing here is applied by being
+committed: it becomes real by one `git mv` into `versions/`, after the
+re-review and the authorization this docstring names.
 
 Chain position: revises `20260916_0009` (`reading_library`), the head of
 `migrations/versions/` on `admin/control-center`. `codex/work` has since
@@ -23,10 +24,10 @@ Revises: 20260916_0009
 This is shared, platform-owned *content* persistence - an admin ingests a
 text, an admin reviews it, every learner reads the published result. It is
 not learner-owned data: no reading position, no highlight, no per-learner
-progress, no account relationship. The persistence hold `AGENTS.md` SS7
-reserves for learner/account architecture is therefore untouched, the same
-reasoning `20260916_0008`/`20260916_0009` already recorded for their own
-catalogs.
+progress, no account relationship, and no foreign key into `users`. The
+persistence hold `AGENTS.md` SS7 reserves for learner/account architecture is
+therefore untouched, the same reasoning `20260916_0008`/`20260916_0009`
+already recorded for their own catalogs.
 
 It also does not replace `reading_books`/`reading_book_chapters`. A book is a
 whole work the learner reads chapter by chapter; an article is one short text
@@ -39,8 +40,8 @@ existing table.
 - `reading_sources` is where content comes from, including its rights and
   polling state. One row per source, edited over time - mutable.
 - `reading_source_items` is the immutable original snapshot. Never rewritten;
-  a changed source produces a new revision row pointing back at the previous
-  one, so "the source changed under us" is detectable instead of silent.
+  a changed source supersedes the previous row and points back at it, so
+  "the source changed under us" is detectable instead of silent.
 - `reading_articles` is the learner-oriented processed version, which an
   admin edits and publishes. Separating it from the snapshot is what lets the
   original stay immutable while the article is corrected.
@@ -49,57 +50,150 @@ existing table.
   because the admin reviews, reorders, approves and rejects them one by one,
   and because a future "which articles teach this collocation" query is a
   join, not a JSON scan.
-- `reading_review_events` is the admin's own decision history, kept next to
-  the article it belongs to. `audit_logs` remains the platform audit trail
-  and every mutation still writes there; this table is what the Review Queue
-  renders as "what happened to this article", which is a product surface, not
-  an audit export.
+- `reading_review_events` is the admin's own decision history, rendered as the
+  Review Queue's "what happened to this article". It is not folded into
+  `audit_logs` for two structural reasons: that table is indexed only on
+  `created_at`, so one article's history would be a full scan, and fixing that
+  would mean adding an index to a shared platform table - destroying this
+  migration's purely-additive property; and `audit_logs.user_id` is a foreign
+  key into `users`, so reusing it for a product surface would couple this
+  engine to the very account table SS7 reserves. `audit_logs` remains the
+  platform audit trail and still receives every mutation - it, not this table,
+  is the retention authority, which is why this table may cascade with its
+  article (see "Deletes" below).
 - `reading_ingestion_jobs` is the durable queue. It is a table because the
   requirement is that a restart loses nothing - an in-memory registry (what
   `media_fallback.py` uses today) cannot satisfy that.
 
-## Job claiming, stated explicitly
+## Job claiming and crash recovery, written out in full
 
-The worker claims work with a single atomic statement, never read-then-write:
+The worker claims work with one atomic statement, never read-then-write. The
+outer `WHERE` repeats `status = 'queued'` as defense in depth, so correctness
+does not rest on the subquery alone:
 
-    UPDATE reading_ingestion_jobs SET status='running', ...
-    WHERE id = (SELECT id FROM reading_ingestion_jobs
-                WHERE status='queued' AND next_retry_at <= now()
-                ORDER BY created_at, id
-                FOR UPDATE SKIP LOCKED LIMIT 1)
+    UPDATE reading_ingestion_jobs
+       SET status       = 'running',
+           stage        = 'fetching',
+           attempt      = attempt + 1,
+           claimed_by   = :worker_id,
+           started_at   = now(),
+           heartbeat_at = now()
+     WHERE status = 'queued'
+       AND id = (SELECT id FROM reading_ingestion_jobs
+                  WHERE status = 'queued' AND next_retry_at <= now()
+                    AND attempt < max_attempts
+                  ORDER BY created_at, id
+                  FOR UPDATE SKIP LOCKED LIMIT 1)
     RETURNING id
 
-`FOR UPDATE SKIP LOCKED` is why `ix_reading_jobs_claim` exists and why it is
-ordered `(status, next_retry_at, created_at)`: the claim query filters on the
-first two and orders by the third, so one index serves it whatever the queue
-depth. A crashed worker leaves a row in `running` with a `heartbeat_at` that
-stops advancing; the reaper returns those to `queued` after
-`stale_after`, which is why `heartbeat_at` is a column and not a log line.
+`attempt < max_attempts` is in the claim's own predicate, not only in the
+retry path: the claim is what increments `attempt`, so without it a job on its
+last allowed attempt would be claimed once more and violate
+`ck_reading_job_attempt_bound` instead of failing cleanly.
 
-## Index rationale - one endpoint each, no speculative indexes
+The claim sets `heartbeat_at` itself, and `heartbeat_at` is `NOT NULL`, so
+there is no window in which a claimed job has no heartbeat and no NULL for a
+reaper predicate to miss (the reviewer's P1-4 asked for `COALESCE`; making the
+column `NOT NULL` at claim time removes the NULL rather than coalescing it).
+A live worker refreshes it as it works.
+
+The reaper returns stranded work and consumes an attempt, so a job that
+reliably kills its worker fails instead of cycling forever (P2-10):
+
+    UPDATE reading_ingestion_jobs
+       SET status        = CASE WHEN attempt >= max_attempts THEN 'failed' ELSE 'queued' END,
+           stage         = CASE WHEN attempt >= max_attempts THEN 'done' ELSE 'queued' END,
+           claimed_by    = '',
+           last_error_code = 'worker_lost',
+           next_retry_at = now(),
+           finished_at   = CASE WHEN attempt >= max_attempts THEN now() ELSE NULL END
+     WHERE status = 'running' AND heartbeat_at < now() - :stale_after
+
+Retry after an ordinary failure is the same shape with an exponential
+`next_retry_at`. `ORDER BY created_at, id` means a retried job is claimed
+ahead of newer work once its backoff expires (P2-11): bounded by
+`max_attempts` and harmless at `READING_WORKER_CONCURRENCY=1`, recorded here
+for whenever concurrency rises.
+
+Admin "Retry" on a `failed` job inserts a **new** job row rather than mutating
+the old one, which is why `request_hash` is unique only over live submissions
+(see below): the failed attempt keeps its error and its history.
+
+## Immutability, enforced rather than asserted
+
+`reading_source_items` is the evidence behind a published article, so on
+PostgreSQL a `BEFORE UPDATE` trigger rejects any change to `source_id`,
+`original_content`, `content_hash`, `fetched_at` or `revision`. `superseded_at`
+and `supersedes_id` stay writable - marking a snapshot superseded is the one
+legitimate update. On any other dialect the same rule is a repository
+invariant with a test that proves no `UPDATE` is issued against those columns;
+the runtime is PostgreSQL, so the enforcement is real where it matters.
+
+## Deletes
+
+`RESTRICT` upward (item -> source, article -> item, job -> source, item ->
+superseded item): nothing may delete the evidence behind something a learner
+is reading, and a source with history is archived rather than deleted.
+`CASCADE` downward (targets and review events with their article): a target
+has no meaning without its article, and `audit_logs` - not
+`reading_review_events` - is the retention authority for what an admin did.
+Nothing in normal workflow hard-deletes an article; a purge is an explicit
+admin action that must write its audit row *before* the delete, because the
+review events go with it.
+
+## Index rationale - one query each, no speculative indexes
 
 | Index | The query it exists for |
 | --- | --- |
-| `ix_reading_articles_published` | learner list: `status='published' AND language=? ORDER BY published_at DESC, id DESC` |
-| `ix_reading_articles_published_level` | learner list filtered by effective level |
-| `ix_reading_articles_published_topic` | learner list filtered by topic |
-| `ix_reading_articles_queue` | admin Review Queue: `status IN (...) ORDER BY created_at DESC` |
-| `ix_reading_articles_source_item` | "which article came from this snapshot" |
-| `uq_reading_source_items_native` | dedupe by `(source_id, source_native_id)` |
+| `ix_reading_sources_state` | admin Sources list: `WHERE state = ? ORDER BY name`, and the worker's "which sources may poll" sweep |
+| `uq_reading_source_items_native` | dedupe by `(source_id, source_native_id)` over current (non-superseded) rows |
 | `uq_reading_source_items_hash` | dedupe by exact content hash within a source |
 | `ix_reading_source_items_canonical` | dedupe by canonical URL, and revision lookup |
-| `ix_reading_jobs_claim` | the worker claim above |
-| `ix_reading_jobs_recent` | admin Imports list, newest first |
+| `ix_reading_source_items_hash_any` | review-time "this content already exists, under another source" |
+| `ix_reading_articles_published` | learner list: `status='published' AND language=? ORDER BY published_at DESC, id DESC` |
+| `ix_reading_articles_published_level` | the same list filtered by effective level |
+| `ix_reading_articles_published_topic` | the same list filtered by topic |
+| `ix_reading_articles_queue` | admin Review Queue: `status IN (...) ORDER BY created_at DESC` (a multi-value `IN` still sorts; the index bounds the scan, it does not remove the sort) |
 | `ix_reading_targets_article` | targets of one article, in rank order |
 | `ix_reading_review_events_article` | one article's decision history |
+| `ix_reading_jobs_claim` | the claim above: walks `created_at` order *inside* the queued set, stops at the first row passing `next_retry_at` as a filter |
+| `ix_reading_jobs_stale` | the reaper above, over `running` rows only |
+| `ix_reading_jobs_recent` | admin Imports list, newest first |
 
-`effective_level` is deliberately a stored column maintained by the
-repository (`reviewed_level` when an admin set one, else `estimated_level`),
-not a view or an expression index: the learner list filters on it, and
-`estimated_level` must stay exactly as the processor computed it
-(spec SS17). Nothing overwrites `estimated_level` after insert.
+"Which article came from this snapshot" needs no index of its own: the
+`UNIQUE (source_item_id)` constraint already creates a unique btree on exactly
+that column (the reviewer's P2-3; the redundant index is gone).
+
+`effective_level` is deliberately a stored column maintained by the repository
+(`reviewed_level` when an admin set one, else `estimated_level`), not a view or
+an expression index: the learner list filters on it, and `estimated_level` must
+stay exactly as the processor computed it (spec SS17). A CHECK now ties the
+three together, so a repository bug or a one-off SQL fix cannot silently
+misfile an article at a level nothing can detect.
+
+## Seeded sources
+
+The three built-in input paths are not a source registry entry an admin
+creates - they are how manual ingestion reaches the same pipeline as a feed.
+This migration therefore seeds exactly three rows with fixed UUIDs, `state =
+'active'`, `automation_allowed = false` and polling off. Fixed ids matter:
+`uq_reading_source_items_hash` is `(source_id, content_hash)`, so manual
+dedupe works only because every manual paste shares one source id. Nothing
+else is seeded, and an external recurring source is still created by an admin
+and still starts at `needs_review`.
+
+## Rollback
+
+`downgrade()` drops six tables that may by then hold published, learner-visible
+content. Its order is correct (jobs -> review events -> targets -> articles ->
+source items -> sources), but it is a development-time reversal only: it must
+never be run against a runtime with published articles. Unpublish and export
+first, or do not run it.
 """
 from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime
 
 from alembic import op
 import sqlalchemy as sa
@@ -153,6 +247,37 @@ TARGET_TYPES = (
     "topic_term",
 )
 
+# The three built-in input paths, seeded below. Fixed so the dedupe key
+# `(source_id, content_hash)` is deterministic across environments.
+BUILT_IN_SOURCES = (
+    (uuid.UUID("0a52e5d0-0000-4000-8000-000000000001"), "orena-manual", "Manual paste", "manual"),
+    (uuid.UUID("0a52e5d0-0000-4000-8000-000000000002"), "orena-direct-url", "Direct URL", "direct_url"),
+    (uuid.UUID("0a52e5d0-0000-4000-8000-000000000003"), "orena-file-upload", "File upload", "file"),
+)
+
+_IMMUTABLE_SNAPSHOT_FUNCTION = """
+CREATE FUNCTION reading_source_item_is_immutable() RETURNS trigger AS $func$
+BEGIN
+    IF NEW.source_id IS DISTINCT FROM OLD.source_id
+       OR NEW.original_content IS DISTINCT FROM OLD.original_content
+       OR NEW.content_hash IS DISTINCT FROM OLD.content_hash
+       OR NEW.fetched_at IS DISTINCT FROM OLD.fetched_at
+       OR NEW.revision IS DISTINCT FROM OLD.revision
+    THEN
+        RAISE EXCEPTION
+            'reading_source_items is an immutable snapshot: supersede it instead of rewriting it';
+    END IF;
+    RETURN NEW;
+END;
+$func$ LANGUAGE plpgsql;
+"""
+
+_IMMUTABLE_SNAPSHOT_TRIGGER = """
+CREATE TRIGGER reading_source_item_immutable
+    BEFORE UPDATE ON reading_source_items
+    FOR EACH ROW EXECUTE FUNCTION reading_source_item_is_immutable();
+"""
+
 
 def _in_list(values: tuple[str, ...]) -> str:
     return ", ".join(f"'{value}'" for value in values)
@@ -198,8 +323,12 @@ def upgrade() -> None:
         # A source may not poll unless an admin approved it and the rights
         # answer says automation is allowed. The application checks this too;
         # this constraint is what makes the check impossible to forget.
+        # Consequence, named rather than discovered later: pausing a source
+        # (state -> 'paused') forces `polling_enabled` false, so resuming is an
+        # explicit re-enable, not an automatic resumption of a remembered
+        # intent. That is the safer default for something that fetches.
         sa.CheckConstraint(
-            "polling_enabled = false OR (state = 'active' AND automation_allowed = true)",
+            "NOT polling_enabled OR (state = 'active' AND automation_allowed)",
             name="ck_reading_source_polling_requires_approval",
         ),
         sa.UniqueConstraint("slug", name="uq_reading_source_slug"),
@@ -233,28 +362,39 @@ def upgrade() -> None:
         sa.Column("content_hash", sa.String(64), nullable=False),
         sa.Column("metadata_json", sa.JSON(), nullable=False),
         sa.Column("rights_snapshot_json", sa.JSON(), nullable=False),
-        # A changed source never overwrites: revision 2 points at revision 1.
+        # A changed source never overwrites. The new snapshot points back with
+        # `supersedes_id`, and the old one is stamped `superseded_at` - which
+        # is what keeps the "one current item per native id" index enforceable
+        # while the history stays readable.
         sa.Column("revision", sa.Integer(), nullable=False, server_default="1"),
         sa.Column(
             "supersedes_id",
             sa.Uuid(),
-            sa.ForeignKey("reading_source_items.id", ondelete="SET NULL"),
+            sa.ForeignKey("reading_source_items.id", ondelete="RESTRICT"),
             nullable=True,
         ),
+        sa.Column("superseded_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("fetched_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("revision >= 1", name="ck_reading_source_item_revision"),
-        sa.CheckConstraint("length(content_hash) = 64", name="ck_reading_source_item_hash"),
+        # Length *and* case: an uppercase SHA-256 of identical bytes is a
+        # different value under the dedupe key, which would silently defeat it.
+        sa.CheckConstraint(
+            "length(content_hash) = 64 AND content_hash = lower(content_hash)",
+            name="ck_reading_source_item_hash",
+        ),
     )
-    # Dedupe key 1: the source's own id for the item. Partial, because
-    # `source_native_id` is empty for a manual paste and empty is not an
-    # identity - two pasted texts are not "the same item".
+    # Dedupe key 1: the source's own id for the item, over *current* rows only,
+    # so revision 2 can exist while "one live item per native id" still holds.
+    # Partial on `source_native_id <> ''` as well, because an empty native id
+    # (a manual paste) is not an identity - two pasted texts are not the same
+    # item. A re-fetch resolves to the row with `superseded_at IS NULL`.
     op.create_index(
         "uq_reading_source_items_native",
         "reading_source_items",
         ["source_id", "source_native_id"],
         unique=True,
-        postgresql_where=sa.text("source_native_id <> ''"),
+        postgresql_where=sa.text("source_native_id <> '' AND superseded_at IS NULL"),
     )
     # Dedupe key 2: exact content within one source. If a source later
     # reverts to bytes it published before, that is the same item and
@@ -272,6 +412,14 @@ def upgrade() -> None:
         ["canonical_url"],
         postgresql_where=sa.text("canonical_url <> ''"),
     )
+    # Not unique, and deliberately not scoped to a source: identical bytes
+    # ingested under two sources are two legitimate snapshots (rights differ
+    # per source), but the review UI has to be able to say so before an admin
+    # publishes the second one.
+    op.create_index("ix_reading_source_items_hash_any", "reading_source_items", ["content_hash"])
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute(_IMMUTABLE_SNAPSHOT_FUNCTION)
+        op.execute(_IMMUTABLE_SNAPSHOT_TRIGGER)
 
     # ---- 3. The learner-oriented article ----------------------------------
     op.create_table(
@@ -325,31 +473,46 @@ def upgrade() -> None:
             "status <> 'published' OR published_at IS NOT NULL",
             name="ck_reading_article_published_at",
         ),
+        # The learner list filters on `effective_level`, so it may not drift
+        # from the two columns it is derived from, and an unset reviewed level
+        # is NULL - never the empty string, which would be a second sentinel.
+        sa.CheckConstraint(
+            "effective_level = COALESCE(reviewed_level, estimated_level)",
+            name="ck_reading_article_effective_level",
+        ),
+        sa.CheckConstraint(
+            "reviewed_level IS NULL OR reviewed_level <> ''",
+            name="ck_reading_article_reviewed_level",
+        ),
         # One article per snapshot: re-running the same input cannot produce a
-        # second candidate (SS16 idempotency), enforced in the database rather
-        # than by the pipeline remembering to check.
+        # second candidate *for that snapshot* (SS16 idempotency), enforced in
+        # the database rather than by the pipeline remembering to check. This
+        # constraint's unique btree is also the "which article came from this
+        # snapshot" index, so no second index exists for it.
         sa.UniqueConstraint("source_item_id", name="uq_reading_article_source_item"),
     )
+    # `id` is the third column in each of the three published indexes because
+    # the learner list paginates on the keyset `(published_at, id)` - without
+    # it the tiebreak falls to a filter instead of an index bound.
     op.create_index(
         "ix_reading_articles_published",
         "reading_articles",
-        ["language", "published_at"],
+        ["language", "published_at", "id"],
         postgresql_where=sa.text("status = 'published'"),
     )
     op.create_index(
         "ix_reading_articles_published_level",
         "reading_articles",
-        ["language", "effective_level", "published_at"],
+        ["language", "effective_level", "published_at", "id"],
         postgresql_where=sa.text("status = 'published'"),
     )
     op.create_index(
         "ix_reading_articles_published_topic",
         "reading_articles",
-        ["language", "topic", "published_at"],
+        ["language", "topic", "published_at", "id"],
         postgresql_where=sa.text("status = 'published'"),
     )
     op.create_index("ix_reading_articles_queue", "reading_articles", ["status", "created_at"])
-    op.create_index("ix_reading_articles_source_item", "reading_articles", ["source_item_id"])
 
     # ---- 4. Learning targets ----------------------------------------------
     op.create_table(
@@ -385,7 +548,17 @@ def upgrade() -> None:
         sa.CheckConstraint(
             "NOT (admin_approved AND admin_rejected)", name="ck_reading_target_decision"
         ),
-        sa.UniqueConstraint("article_id", "canonical_form", name="uq_reading_target_form"),
+    )
+    # Partial, for the same reason the native-id index is: an empty canonical
+    # form is not an identity. A full unique constraint here would cap an
+    # article at one uncanonicalized target and break the 3-8 target workflow
+    # the first time the processor could not canonicalize two of them.
+    op.create_index(
+        "uq_reading_target_form",
+        "reading_article_targets",
+        ["article_id", "canonical_form"],
+        unique=True,
+        postgresql_where=sa.text("canonical_form <> ''"),
     )
     op.create_index(
         "ix_reading_targets_article", "reading_article_targets", ["article_id", "rank"]
@@ -424,13 +597,17 @@ def upgrade() -> None:
         ),
         # The submitted input. Text and URL are bounded by SS33's limits; a
         # file upload is stored by `BookAssetStore` and referenced by key, so
-        # binary never lands in a row (SS46.10).
+        # binary never lands in a row (SS46.10). The JSON columns in this
+        # migration are deliberately NOT NULL with no server default: a writer
+        # must say what it means, and `{}` is a statement, not a default.
         sa.Column("input_json", sa.JSON(), nullable=False),
         sa.Column("input_asset_key", sa.String(400), nullable=False, server_default=""),
-        # The idempotency key of the submission itself: SHA-256 of the
-        # normalized input. A double-submitted form returns the first job
-        # instead of queueing a second one, at the database rather than in the
-        # browser's disabled button.
+        # The idempotency key of the submission: SHA-256 over the *canonical*
+        # input - source id, kind, canonical URL, text fingerprint, file
+        # digest and declared language. Unique only over live submissions, so
+        # a double-submitted form returns the first job while a text whose
+        # earlier job failed or was cancelled can be submitted again; admin
+        # Retry inserts a new row and the failed one keeps its history.
         sa.Column("request_hash", sa.String(64), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="queued"),
         sa.Column("stage", sa.String(30), nullable=False, server_default="queued"),
@@ -438,8 +615,15 @@ def upgrade() -> None:
         sa.Column("max_attempts", sa.Integer(), nullable=False, server_default="3"),
         sa.Column("last_error", sa.Text(), nullable=False, server_default=""),
         sa.Column("last_error_code", sa.String(80), nullable=False, server_default=""),
-        sa.Column("next_retry_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("heartbeat_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "next_retry_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
+        # NOT NULL with a default, and set again by the claim: there is no
+        # window in which a running job has no heartbeat, so the reaper needs
+        # no COALESCE and cannot miss a stranded row to a NULL.
+        sa.Column(
+            "heartbeat_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column("claimed_by", sa.String(120), nullable=False, server_default=""),
         sa.Column(
             "result_source_item_id",
@@ -462,32 +646,99 @@ def upgrade() -> None:
         sa.CheckConstraint(f"stage IN ({_in_list(JOB_STAGES)})", name="ck_reading_job_stage"),
         sa.CheckConstraint("attempt >= 0", name="ck_reading_job_attempt"),
         sa.CheckConstraint("max_attempts >= 1", name="ck_reading_job_max_attempts"),
-        sa.UniqueConstraint("request_hash", name="uq_reading_job_request_hash"),
+        # A job may never be claimed more times than it is allowed to be: the
+        # reaper and the retry path both consume an attempt, and this is what
+        # makes "a job that kills its worker fails" a fact rather than a hope.
+        sa.CheckConstraint("attempt <= max_attempts", name="ck_reading_job_attempt_bound"),
     )
-    # The claim query, and only it: filter on status + next_retry_at, order by
-    # created_at. Queue depth does not change its cost.
+    op.create_index(
+        "uq_reading_job_request_hash",
+        "reading_ingestion_jobs",
+        ["request_hash"],
+        unique=True,
+        postgresql_where=sa.text("status IN ('queued', 'running')"),
+    )
+    # The claim query, and only it. Partial on the queued set so the scan
+    # walks `created_at` order directly and stops at the first due row -
+    # `next_retry_at` is a *filter* here, never an index bound, because a
+    # range predicate before the sort column would destroy that ordering.
     op.create_index(
         "ix_reading_jobs_claim",
         "reading_ingestion_jobs",
-        ["status", "next_retry_at", "created_at"],
+        ["created_at", "id"],
+        postgresql_where=sa.text("status = 'queued'"),
+    )
+    # The reaper, over running rows only.
+    op.create_index(
+        "ix_reading_jobs_stale",
+        "reading_ingestion_jobs",
+        ["heartbeat_at"],
+        postgresql_where=sa.text("status = 'running'"),
     )
     op.create_index("ix_reading_jobs_recent", "reading_ingestion_jobs", ["created_at"])
 
+    # ---- 7. The three built-in input paths --------------------------------
+    now = datetime.now(UTC)
+    op.bulk_insert(
+        sa.table(
+            "reading_sources",
+            sa.column("id", sa.Uuid()),
+            sa.column("slug", sa.String),
+            sa.column("name", sa.String),
+            sa.column("source_type", sa.String),
+            sa.column("state", sa.String),
+            sa.column("languages", sa.JSON),
+            sa.column("topic_hints", sa.JSON),
+            sa.column("polling_policy", sa.JSON),
+            sa.column("created_by", sa.String),
+            sa.column("created_at", sa.DateTime(timezone=True)),
+            sa.column("updated_at", sa.DateTime(timezone=True)),
+        ),
+        [
+            {
+                "id": source_id,
+                "slug": slug,
+                "name": name,
+                "source_type": source_type,
+                # 'active' because an admin submitting a text through the
+                # console *is* the approval for these three; an external
+                # recurring source still starts at 'needs_review'. Polling
+                # stays off and `automation_allowed` keeps its false default,
+                # so `ck_reading_source_polling_requires_approval` holds.
+                "state": "active",
+                "languages": ["en", "zh"],
+                "topic_hints": [],
+                "polling_policy": {},
+                "created_by": "migration:20260922_0010",
+                "created_at": now,
+                "updated_at": now,
+            }
+            for source_id, slug, name, source_type in BUILT_IN_SOURCES
+        ],
+    )
+
 
 def downgrade() -> None:
+    """Development-time reversal only - see "Rollback" in the module docstring."""
     op.drop_index("ix_reading_jobs_recent", table_name="reading_ingestion_jobs")
+    op.drop_index("ix_reading_jobs_stale", table_name="reading_ingestion_jobs")
     op.drop_index("ix_reading_jobs_claim", table_name="reading_ingestion_jobs")
+    op.drop_index("uq_reading_job_request_hash", table_name="reading_ingestion_jobs")
     op.drop_table("reading_ingestion_jobs")
     op.drop_index("ix_reading_review_events_article", table_name="reading_review_events")
     op.drop_table("reading_review_events")
     op.drop_index("ix_reading_targets_article", table_name="reading_article_targets")
+    op.drop_index("uq_reading_target_form", table_name="reading_article_targets")
     op.drop_table("reading_article_targets")
-    op.drop_index("ix_reading_articles_source_item", table_name="reading_articles")
     op.drop_index("ix_reading_articles_queue", table_name="reading_articles")
     op.drop_index("ix_reading_articles_published_topic", table_name="reading_articles")
     op.drop_index("ix_reading_articles_published_level", table_name="reading_articles")
     op.drop_index("ix_reading_articles_published", table_name="reading_articles")
     op.drop_table("reading_articles")
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("DROP TRIGGER IF EXISTS reading_source_item_immutable ON reading_source_items")
+        op.execute("DROP FUNCTION IF EXISTS reading_source_item_is_immutable()")
+    op.drop_index("ix_reading_source_items_hash_any", table_name="reading_source_items")
     op.drop_index("ix_reading_source_items_canonical", table_name="reading_source_items")
     op.drop_index("uq_reading_source_items_hash", table_name="reading_source_items")
     op.drop_index("uq_reading_source_items_native", table_name="reading_source_items")
