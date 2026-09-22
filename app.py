@@ -2292,9 +2292,9 @@ def _review_payload(stored: dict[str, Any], previous: dict[str, Any] | None) -> 
 
 
 @app.get("/api/essays")
-def essays(limit: int = 200) -> list[dict[str, Any]]:
+def essays(limit: int = 200, kept: bool = False) -> list[dict[str, Any]]:
     limit = min(max(1, limit), 500)
-    rows = _learning_repository.list_essays(limit)
+    rows = _learning_repository.list_essays(limit, kept_only=kept)
     return [row_to_dict(r) for r in rows]
 
 
@@ -2330,6 +2330,25 @@ def essay_revision(essay_id: int) -> dict[str, Any]:
     if not row:
         raise HTTPException(404, "This is the first version; there is nothing to compare it with.")
     return project_revision_compare(detail, row_to_dict(row, detail=True))
+
+
+def _set_review_kept(essay_id: int, kept: bool) -> dict[str, Any]:
+    """D-072.1. The learner keeps a review to read again; the flag rides on the
+    essay row, so no review data is duplicated."""
+    row = _learning_repository.set_essay_review_kept(essay_id, kept)
+    if row is None:
+        raise HTTPException(404, "Essay not found")
+    return {"id": essay_id, "kept": bool(row.get("review_kept_at")), "kept_at": row.get("review_kept_at")}
+
+
+@app.post("/api/essays/{essay_id}/keep")
+def keep_essay_review(essay_id: int) -> dict[str, Any]:
+    return _set_review_kept(essay_id, True)
+
+
+@app.delete("/api/essays/{essay_id}/keep")
+def unkeep_essay_review(essay_id: int) -> dict[str, Any]:
+    return _set_review_kept(essay_id, False)
 
 
 @app.delete("/api/essays/{essay_id}")

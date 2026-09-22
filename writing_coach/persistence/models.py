@@ -92,6 +92,11 @@ class Essay(Base):
     errors: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     module_data: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     strength_evidence: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    # D-072.1: the learner kept this review to read again. NULL is "not kept",
+    # which is the truth for every row written before the column existed.
+    review_kept_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class EssayRevision(Base):
