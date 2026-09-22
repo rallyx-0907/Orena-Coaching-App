@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import sqlite3
 from datetime import datetime, timezone
@@ -47,6 +48,10 @@ is a total order and a cursor can never land between two equal rows.
 """
 
 LIBRARY_PAGE_DEFAULT = 50
+# How many words to ask about at once when a screen wants the saved state of
+# a set it already has. SQLite counts its bound variables; this stays well
+# under any version's limit.
+SAVED_ROWS_CHUNK = 400
 LIBRARY_PAGE_MAX = 200
 # Below this review stage a word is still being learned; at or above it, the
 # learner is counted as holding it. One definition, used by every count.
@@ -56,12 +61,37 @@ LIBRARY_MASTERED_STAGE = 3
 CURSOR_SEPARATOR = chr(31)
 
 
-def _library_cursor(sort_value: str, word: str) -> str:
-    raw = (sort_value + CURSOR_SEPARATOR + word).encode("utf-8")
-    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+def _library_fingerprint(*, search: str, status: str, focus: tuple[str, ...]) -> str:
+    """What the page was asked for, in eight characters.
+
+    A cursor is a place in one ordering of one filtered set. Carried into a
+    different question - a new search, another status, another book's notes -
+    it would point at a place that question never had, and the page after it
+    would be neither the next one nor an error. The fingerprint travels in the
+    cursor so a cursor from a different question is simply not used, and the
+    caller gets the first page of the question they actually asked.
+    """
+
+    material = "\u001e".join([
+        str(search or "").strip().casefold(),
+        _library_status(status),
+        "\u001d".join(sorted(str(item) for item in focus or ())),
+    ])
+    return hashlib.blake2s(material.encode("utf-8"), digest_size=4).hexdigest()
 
 
-def _decode_library_cursor(cursor: str) -> tuple[str, str] | None:
+def _library_cursor(order: str, fingerprint: str, sort_value: str, word: str) -> str:
+    raw = CURSOR_SEPARATOR.join([_library_order(order), fingerprint, sort_value, word])
+    return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def _decode_library_cursor(cursor: str, order: str, fingerprint: str) -> tuple[str, str] | None:
+    """The place this cursor marks, or ``None`` if it is not this question's.
+
+    Also ``None`` for anything malformed: a cursor is opaque to the caller, so
+    a damaged one is a first page, never an error the learner has to read.
+    """
+
     text = str(cursor or "").strip()
     if not text:
         return None
@@ -70,7 +100,12 @@ def _decode_library_cursor(cursor: str) -> tuple[str, str] | None:
         raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8")
     except Exception:
         return None
-    sort_value, _, word = raw.partition(CURSOR_SEPARATOR)
+    parts = raw.split(CURSOR_SEPARATOR)
+    if len(parts) != 4:
+        return None
+    cursor_order, cursor_fingerprint, sort_value, word = parts
+    if cursor_order != _library_order(order) or cursor_fingerprint != fingerprint:
+        return None
     if not word:
         return None
     return sort_value, word
@@ -105,6 +140,8 @@ class SpecializedLearningRepository(Protocol):
     def list_outcome_essays(self, limit: int) -> list[dict[str, Any]]: ...
     def list_library_records(self) -> list[dict[str, Any]]: ...
     def library_counts(self, *, now: str) -> dict[str, int]: ...
+    def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]: ...
+    def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]: ...
     def list_library_page(
         self,
         *,
@@ -438,6 +475,69 @@ class SQLiteSpecializedLearningRepository:
                 "due": int(row["due"] or 0),
             }
 
+    def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]:
+        """The saved rows for these words, with their review state.
+
+        For a screen that draws a set of words it already has - a collection's
+        cards, a feed - and needs to know which of them the learner keeps and
+        how far along they are. Bounded by what is being drawn, never by how
+        much the learner has saved.
+        """
+
+        folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+        if not folded:
+            return []
+        rows: list[dict[str, Any]] = []
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return []
+            has_learning = self._has_table(conn, "vocabulary_learning")
+            # SQLite counts bound variables, and a catalogue page can be long.
+            for start in range(0, len(folded), SAVED_ROWS_CHUNK):
+                chunk = folded[start:start + SAVED_ROWS_CHUNK]
+                placeholders = ",".join("?" for _ in chunk)
+                if has_learning:
+                    query = (
+                        self._LIBRARY_COLUMNS + self._LIBRARY_FROM
+                        + f" WHERE lower(s.word) IN ({placeholders})"
+                    )
+                else:
+                    query = (
+                        "SELECT s.word,s.phonetic,s.part_of_speech,s.definition,"
+                        "COALESCE(s.translation_vi,'') AS translation_vi,s.added_at,"
+                        "NULL AS source_essay_id,'' AS source_fragment,'manual' AS source_kind,"
+                        "'' AS focus_note,0 AS review_stage,0 AS successful_recalls,"
+                        "0 AS lapse_count,'' AS last_reviewed_at,'' AS next_review_at"
+                        f" FROM saved_words s WHERE lower(s.word) IN ({placeholders})"
+                    )
+                rows.extend(dict(row) for row in conn.execute(query, tuple(chunk)).fetchall())
+        return rows
+
+    def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]:
+        """The saved words themselves - one column, no review state, no catalogue.
+
+        For "is this word saved?", which is a question about a handful of
+        candidates. Given those candidates it asks about them; given none it
+        returns the index, which is still only words.
+        """
+
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return []
+            if words:
+                folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+                if not folded:
+                    return []
+                rows = conn.execute(
+                    "SELECT word FROM saved_words WHERE lower(word) IN ("
+                    + ",".join("?" for _ in folded)
+                    + ")",
+                    tuple(folded),
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT word FROM saved_words").fetchall()
+        return [str(row["word"]) for row in rows if str(row["word"] or "").strip()]
+
     def _library_filters(
         self, *, search: str, status: str, focus: tuple[str, ...], now: str
     ) -> tuple[list[str], list[Any]]:
@@ -499,7 +599,12 @@ class SQLiteSpecializedLearningRepository:
                 page = [dict(row) for row in rows[:bounded]]
                 next_cursor = None
                 if len(rows) > bounded and page:
-                    next_cursor = _library_cursor(str(page[-1]["sort_value"] or ""), str(page[-1]["word"]))
+                    next_cursor = _library_cursor(
+                        "recent",
+                        _library_fingerprint(search=search, status=status, focus=focus),
+                        str(page[-1]["sort_value"] or ""),
+                        str(page[-1]["word"]),
+                    )
                 for item in page:
                     item.pop("sort_value", None)
                 return {"rows": page, "next_cursor": next_cursor, "total": total}
@@ -522,9 +627,10 @@ class SQLiteSpecializedLearningRepository:
                 order_by = "ORDER BY " + sort_expr + " DESC, s.word ASC"
 
             clauses, params = self._library_filters(search=search, status=status, focus=focus, now=now)
+            fingerprint = _library_fingerprint(search=search, status=status, focus=focus)
             page_clauses = list(clauses)
             page_params = list(params)
-            after = _decode_library_cursor(cursor)
+            after = _decode_library_cursor(cursor, wanted_order, fingerprint)
             if after is not None:
                 page_clauses.append(keyset)
                 page_params.extend([after[0], after[0], after[1]])
@@ -544,7 +650,9 @@ class SQLiteSpecializedLearningRepository:
         page = [dict(row) for row in rows[:bounded]]
         next_cursor = None
         if len(rows) > bounded and page:
-            next_cursor = _library_cursor(str(page[-1]["sort_value"] or ""), str(page[-1]["word"]))
+            next_cursor = _library_cursor(
+                wanted_order, fingerprint, str(page[-1]["sort_value"] or ""), str(page[-1]["word"])
+            )
         for item in page:
             item.pop("sort_value", None)
         return {"rows": page, "next_cursor": next_cursor, "total": total}
@@ -811,6 +919,40 @@ class PostgresSpecializedLearningRepository:
         saved, mastered, due = int(row[0] or 0), int(row[1] or 0), int(row[2] or 0)
         return {"saved": saved, "mastered": mastered, "learning": max(0, saved - mastered), "due": due}
 
+    def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]:
+        folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+        if not folded:
+            return []
+        uid, lang = self._scope()
+        rows: list[dict[str, Any]] = []
+        with Session(self.engine) as session:
+            for start in range(0, len(folded), SAVED_ROWS_CHUNK):
+                chunk = folded[start:start + SAVED_ROWS_CHUNK]
+                found = session.scalars(
+                    select(SavedWord).where(
+                        SavedWord.user_id == uid,
+                        SavedWord.language_code == lang,
+                        SavedWord.normalized_word.in_(chunk),
+                    )
+                ).all()
+                rows.extend(self._saved_payload_from_session(session, row) for row in found)
+        return rows
+
+    def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]:
+        uid, lang = self._scope()
+        conditions = [SavedWord.user_id == uid, SavedWord.language_code == lang]
+        if words:
+            folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+            if not folded:
+                return []
+            conditions.append(SavedWord.normalized_word.in_(folded))
+        with Session(self.engine) as session:
+            return [
+                str(word)
+                for word in session.scalars(select(SavedWord.word).where(*conditions)).all()
+                if str(word or "").strip()
+            ]
+
     def list_library_page(
         self,
         *,
@@ -847,7 +989,8 @@ class PostgresSpecializedLearningRepository:
 
         # A word never scheduled is due now, so it sorts where "now" sorts.
         due_sort = func.coalesce(SavedWord.next_review_at, datetime(1, 1, 1, tzinfo=timezone.utc))
-        after = _decode_library_cursor(cursor)
+        fingerprint = _library_fingerprint(search=search, status=status, focus=focus)
+        after = _decode_library_cursor(cursor, wanted_order, fingerprint)
         page_conditions = list(conditions)
         if after is not None:
             if wanted_order == "word":
@@ -889,7 +1032,7 @@ class PostgresSpecializedLearningRepository:
                 sort_value = last.word
             else:
                 sort_value = self._iso(last.added_at)
-            next_cursor = _library_cursor(sort_value, last.word)
+            next_cursor = _library_cursor(wanted_order, fingerprint, sort_value, last.word)
         return {"rows": payloads, "next_cursor": next_cursor, "total": total}
 
     def _saved_payload(self,r: SavedWord) -> dict[str,Any]:

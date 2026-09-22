@@ -137,9 +137,15 @@ export const api={
   }),
   chineseStrokeOrder:(word)=>request(`/api/chinese/stroke-order?word=${encodeURIComponent(word)}`),
   /* The learner's saved words, a page at a time. `limit`, `cursor`, `query`,
-     `status` ('learning' | 'mastered' | 'due') and `order` ('recent' | 'due')
-     are the server's work: no screen may read the whole vocabulary to count,
-     search or filter it. Every page carries `summary` and the rank with it. */
+     `status` ('learning' | 'mastered' | 'due') and `order` ('recent' | 'due' |
+     'word') are the server's work: no screen may read the whole vocabulary to
+     count, search or filter it. Every page carries `summary` and the rank with
+     it.
+
+     `query` matches the word, its definition and the translation kept with it.
+     A `cursor` is only valid for the query, status, order and focus it came
+     from; change any of them and the server starts from the first page rather
+     than reading a cursor against a different ordering. */
   libraryVocabulary:(params={})=>{
     const query=new URLSearchParams();
     if(params.limit!=null)query.set('limit',String(params.limit));

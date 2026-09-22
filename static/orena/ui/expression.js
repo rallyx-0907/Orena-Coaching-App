@@ -1060,10 +1060,21 @@ export async function renderLanguage(root, ctx) {
       ? [...new Set((activeCollection?.levels || source.map((card) => vocabularyLevel(card))).filter(Boolean))].sort((left, right) => vocabularyLevelOrder(left) - vocabularyLevelOrder(right) || left.localeCompare(right))
       : [];
     const filtered = source.filter((card) => (levelFilter === 'all' || vocabularyLevel(card) === levelFilter) && vocabularyStatusMatches(card, filter) && `${card.headword} ${supportMeaning(card, support)} ${card.level || ''} ${card.framework || ''}`.toLowerCase().includes(query.toLowerCase()));
+    /* A level is not something the learner's database holds: it comes from the
+       curated catalogue and is attached when a word is read. So level cannot
+       be an order the server applies, and ordering the page that happens to be
+       loaded by it would tell the learner their whole vocabulary was sorted
+       when only part of it was. The option is therefore offered only when
+       everything the list claims to cover is actually here, and the sort falls
+       back to the one the server did apply until then. */
+    const complete = view === 'saved'
+      ? !savedData.has_more
+      : !activeCollection?.pagination?.has_more;
+    const applied = sort === 'level' && !complete ? 'recommended' : sort;
     visibleItems = [...filtered].sort((left, right) => {
-      if (sort === 'alpha') return String(left.headword).localeCompare(String(right.headword));
-      if (sort === 'level') return vocabularyLevelOrder(left.level) - vocabularyLevelOrder(right.level) || String(left.headword).localeCompare(String(right.headword));
-      if (sort === 'due') return Number(Boolean(right.due)) - Number(Boolean(left.due)) || String(left.headword).localeCompare(String(right.headword));
+      if (applied === 'alpha') return String(left.headword).localeCompare(String(right.headword));
+      if (applied === 'level') return vocabularyLevelOrder(left.level) - vocabularyLevelOrder(right.level) || String(left.headword).localeCompare(String(right.headword));
+      if (applied === 'due') return Number(Boolean(right.due)) - Number(Boolean(left.due)) || String(left.headword).localeCompare(String(right.headword));
       return 0;
     });
     const filterNames = ['all', 'new', 'learning', 'due', 'mastered', 'saved'];
@@ -1072,7 +1083,9 @@ export async function renderLanguage(root, ctx) {
     const levelFilters = collectionLevels.length
       ? `<div class="vocabulary-level-filter" role="group" aria-label="${esc(c.vocabularyLevelFilter || c.vocabularyFilter)}"><span class="vocabulary-level-filter__label">${esc(c.vocabularyLevelFilter || c.vocabularyFilter)}</span><div class="vocabulary-filter-row">${[['all', c.vocabularyFilterAll], ...collectionLevels.map((level) => [level, level])].map(([name, label]) => `<button class="vocabulary-filter ${levelFilter === name ? 'is-active' : ''}" data-vocabulary-level-filter="${esc(name)}" aria-pressed="${levelFilter === name}">${esc(label)}</button>`).join('')}</div></div>`
       : '';
-    const sortOptions = [['recommended', c.vocabularySortRecommended], ['alpha', c.vocabularySortAlpha], ['level', c.vocabularySortLevel], ['due', c.vocabularySortDue]].map(([value, label]) => `<option value="${value}" ${sort === value ? 'selected' : ''}>${esc(label)}</option>`).join('');
+    const sortOptions = [['recommended', c.vocabularySortRecommended], ['alpha', c.vocabularySortAlpha], ['level', c.vocabularySortLevel], ['due', c.vocabularySortDue]]
+      .map(([value, label]) => `<option value="${value}"${value === 'level' && !complete ? ' disabled' : ''} ${applied === value ? 'selected' : ''}>${esc(label)}</option>`)
+      .join('');
     const results = visibleItems.length
       ? view === 'collection'
         ? `<section class="vocabulary-browse-grid">${visibleItems.map((card, index) => renderVocabularyBrowseCard(copy, card, { index, source: 'collection' })).join('')}</section>`

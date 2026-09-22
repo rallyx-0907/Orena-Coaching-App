@@ -181,7 +181,16 @@ def _configure(monkeypatch, lookup: dict[str, Any] | Exception, saved: set[str] 
         return FakeLookup(lookup)
 
     monkeypatch.setattr(word_detail, "_lookup", do_lookup)
-    monkeypatch.setattr(word_detail, "_saved_terms", lambda: saved or set())
+    # The sheet now asks about the words it is drawing, so the stub takes them
+    # and answers only about those.
+    monkeypatch.setattr(
+        word_detail,
+        "_saved_terms",
+        lambda candidates: {
+            term for term in (saved or set())
+            if term.casefold() in {str(candidate).casefold() for candidate in candidates}
+        },
+    )
     monkeypatch.setattr(media_interaction, "current_language_code", lambda: "en")
 
 

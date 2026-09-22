@@ -276,3 +276,168 @@ def test_a_saved_word_is_still_saved_and_counted(library):
     assert counts["summary"]["saved"] == 6
     found = list_library_vocabulary(search="kestrel", limit=5)
     assert [item["word"] for item in found["items"]] == ["kestrel"]
+
+
+# --- The cursor ---------------------------------------------------------
+#
+# A cursor marks a place in one ordering of one filtered set. These hold the
+# two things that makes true: every ordering ends in a unique tie-breaker, and
+# a cursor is refused by any question it did not come from.
+
+def _same_moment_rows(repository, count: int, moment: str) -> None:
+    """Words saved at the very same instant, which is what a bulk import does."""
+
+    with repository._db() as connection:  # noqa: SLF001
+        connection.executemany(
+            "INSERT INTO saved_words (word, phonetic, part_of_speech, definition, translation_vi,"
+            " added_at) VALUES (?,'','','','',?)",
+            [(f"same-{index:04d}", moment) for index in range(count)],
+        )
+        connection.executemany(
+            "INSERT OR REPLACE INTO vocabulary_learning (word, source_essay_id, source_fragment,"
+            " source_kind, focus_note, review_stage, successful_recalls, lapse_count,"
+            " last_reviewed_at, next_review_at, updated_at)"
+            " VALUES (?, NULL, '', 'manual', '', 0, 0, 0, '', ?, ?)",
+            [(f"same-{index:04d}", moment, moment) for index in range(count)],
+        )
+        connection.commit()
+
+
+@pytest.mark.parametrize("order", ["recent", "due", "word"])
+def test_identical_sort_values_still_page_exactly_once(library, order):
+    """Two hundred words with one timestamp between them: the word breaks the tie."""
+
+    moment = _iso(datetime.now().astimezone())
+    _same_moment_rows(library, 200, moment)
+    words = walk(limit=25, order=order)
+    assert len(words) == 200
+    assert len(set(words)) == 200
+
+
+def test_a_word_saved_between_pages_neither_duplicates_nor_hides_the_rest(library):
+    seed(library, 120)
+    first = list_library_vocabulary(limit=40, order="recent")
+    seen = [item["word"] for item in first["items"]]
+
+    # A learner keeps a word while looking at page one. In this ordering it
+    # belongs before everything already seen, so it cannot displace page two.
+    save_library_vocabulary(LibraryVocabularyIn(word="kingfisher", definition="a bird"))
+
+    cursor = first["next_cursor"]
+    while cursor:
+        page = list_library_vocabulary(limit=40, order="recent", cursor=cursor)
+        seen.extend(item["word"] for item in page["items"])
+        cursor = page["next_cursor"]
+
+    assert len(seen) == len(set(seen)), "a word was paged twice"
+    assert set(f"word-{index:05d}" for index in range(120)) <= set(seen), "a word was skipped"
+
+
+def test_a_word_rescheduled_between_pages_does_not_disturb_the_others(library):
+    """Keyset paging promises this much: whatever does not move is seen once.
+
+    A word whose own sort key changes mid-walk may land either side of the
+    cursor - that is the ordering being honest about what happened, not a bug -
+    so the promise is about the words that did not move.
+    """
+
+    seed(library, 150, due=150)
+    first = list_library_vocabulary(limit=50, order="due")
+    seen = [item["word"] for item in first["items"]]
+
+    moved = seen[0]
+    with library._db() as connection:  # noqa: SLF001
+        connection.execute(
+            "UPDATE vocabulary_learning SET next_review_at = ? WHERE word = ?",
+            (_iso(datetime.now().astimezone() + timedelta(days=365)), moved),
+        )
+        connection.commit()
+
+    cursor = first["next_cursor"]
+    while cursor:
+        page = list_library_vocabulary(limit=50, order="due", cursor=cursor)
+        seen.extend(item["word"] for item in page["items"])
+        cursor = page["next_cursor"]
+
+    # The word that moved may be met again further along - its own key now
+    # sorts it there, which is the ordering telling the truth about what
+    # happened. Everything that did not move is seen exactly once.
+    untouched = [word for word in seen if word != moved]
+    assert len(untouched) == len(set(untouched)), "a word that never moved was paged twice"
+    assert {f"word-{index:05d}" for index in range(150)} - {moved} <= set(untouched), (
+        "a word that never moved was skipped"
+    )
+    assert seen.count(moved) <= 2, "the moved word is met at most where each of its keys put it"
+
+
+@pytest.mark.parametrize(
+    "first_call,second_call",
+    [
+        ({"order": "recent"}, {"order": "due"}),
+        ({"order": "recent"}, {"order": "word"}),
+        ({}, {"search": "word-000"}),
+        ({"search": "word-000"}, {}),
+        ({}, {"status": "mastered"}),
+        ({"status": "mastered"}, {"status": "learning"}),
+        ({}, {"focus": ("Chapter One",)}),
+    ],
+)
+def test_a_cursor_from_another_question_is_not_read(library, first_call, second_call):
+    seed(library, 300, mastered=150)
+    first = list_library_vocabulary(limit=20, **first_call)
+    assert first["next_cursor"], "the first question had more to give"
+
+    changed = list_library_vocabulary(limit=20, cursor=first["next_cursor"], **second_call)
+    fresh = list_library_vocabulary(limit=20, **second_call)
+    assert [item["word"] for item in changed["items"]] == [item["word"] for item in fresh["items"]], (
+        "the cursor was read against a question it did not come from"
+    )
+
+
+def test_a_cursor_is_read_when_the_question_is_the_same(library):
+    seed(library, 120, mastered=60)
+    question = {"limit": 20, "status": "mastered", "order": "word", "search": "word"}
+    first = list_library_vocabulary(**question)
+    second = list_library_vocabulary(cursor=first["next_cursor"], **question)
+    assert second["items"], "the same question must continue"
+    assert not ({item["word"] for item in first["items"]} & {item["word"] for item in second["items"]})
+
+
+def test_a_damaged_cursor_is_a_first_page_not_an_error(library):
+    seed(library, 60)
+    fresh = list_library_vocabulary(limit=10)
+    for cursor in ["not-base64!!", "", "  ", "YWJj", "x" * 400]:
+        page = list_library_vocabulary(limit=10, cursor=cursor)
+        assert [item["word"] for item in page["items"]] == [item["word"] for item in fresh["items"]]
+
+
+# --- What a search matches ----------------------------------------------
+
+def test_search_matches_the_fields_the_learner_database_holds(library):
+    """The stated contract: the word, its definition, and the kept translation.
+
+    Not the curated catalogue's support translations, which are attached when a
+    word is read rather than stored with it - every keep path writes the
+    meaning the learner saw into one of these three fields.
+    """
+
+    save_library_vocabulary(LibraryVocabularyIn(word="halcyon", definition="calm and peaceful"))
+    save_library_vocabulary(LibraryVocabularyIn(word="thuyền", translation_vi="chiếc thuyền nhỏ"))
+    save_library_vocabulary(LibraryVocabularyIn(word="petrichor", definition="rain on dry earth"))
+
+    by_word = list_library_vocabulary(search="halcy", limit=10)
+    by_definition = list_library_vocabulary(search="dry earth", limit=10)
+    by_translation = list_library_vocabulary(search="thuyền nhỏ", limit=10)
+
+    assert [item["word"] for item in by_word["items"]] == ["halcyon"]
+    assert [item["word"] for item in by_definition["items"]] == ["petrichor"]
+    assert [item["word"] for item in by_translation["items"]] == ["thuyền"]
+
+
+def test_search_is_case_insensitive_and_counts_only_matches(library):
+    seed(library, 40, prefix="Harbour")
+    seed(library, 10, prefix="meadow")
+    page = list_library_vocabulary(search="HARBOUR", limit=5)
+    assert page["total"] == 40
+    assert len(page["items"]) == 5
+    assert page["summary"]["saved"] == 50, "the counts describe the library, not the search"

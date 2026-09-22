@@ -49,13 +49,16 @@ _HAN = re.compile(r"[㐀-鿿豈-﫿]")
 # What a caller supplies. Both are set once at start-up (app.py) so the module
 # does not import the persistence layer.
 _lookup: Callable[[str, str, str, str], Any] | None = None
-_saved_terms: Callable[[], set[str]] | None = None
+# Given the words on the sheet, which of them the learner keeps. It takes the
+# candidates rather than answering with everything saved: a sheet asks about a
+# word and a sentence, not about a library.
+_saved_terms: Callable[[tuple[str, ...]], set[str]] | None = None
 
 
 def configure_word_detail(
     *,
     lookup: Callable[[str, str, str, str], Any] | None,
-    saved_terms: Callable[[], set[str]] | None,
+    saved_terms: Callable[[tuple[str, ...]], set[str]] | None,
 ) -> None:
     global _lookup, _saved_terms
     _lookup = lookup
@@ -276,9 +279,21 @@ def _tutor(text: str, context: str, source: str, target: str, question: str, his
     return result if _text(result.get("answer")) else None
 
 
-def _saved() -> set[str]:
+def _saved(candidates: object = ()) -> set[str]:
+    """Which of `candidates` the learner has saved, folded for comparison.
+
+    A failure here costs a "saved" mark, never the sheet.
+    """
+
+    wanted = tuple(
+        str(term).strip()
+        for term in (candidates or ())
+        if str(term or "").strip()
+    )
+    if not wanted:
+        return set()
     try:
-        return {term.casefold() for term in (_saved_terms() if _saved_terms else set())}
+        return {term.casefold() for term in (_saved_terms(wanted) if _saved_terms else set())}
     except Exception:
         return set()
 
@@ -306,7 +321,7 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         # explanation: the answer is the tutor's, whatever the question is about.
         tutor = _tutor(text, context, source, payload.target_language, payload.question, payload.history)
         detail = project_word_detail(
-            selection=text, context=context, language=source, lookup=lookup, explanation=None, saved=text.casefold() in _saved()
+            selection=text, context=context, language=source, lookup=lookup, explanation=None, saved=text.casefold() in _saved((text,))
         )
         answer = _text((tutor or {}).get("answer"))
         return {
@@ -327,7 +342,7 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         language=source,
         lookup=lookup,
         explanation=explanation,
-        saved=text.casefold() in _saved(),
+        saved=text.casefold() in _saved((text,)),
     )
     available = detail["meaningSource"] != "none"
     return {
@@ -369,7 +384,16 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
             "sentence": sentence,
         }
     return {
-        **project_sentence_sheet(sentence=sentence, explanation=explanation, saved_terms=_saved()),
+        **project_sentence_sheet(
+            sentence=sentence,
+            explanation=explanation,
+            # The chunks this sheet is about to draw, and nothing else.
+            saved_terms=_saved(
+                [_text(item.get("chunk")) for item in explanation.get("structure") or []]
+                + [_text(item.get("fragment")) for item in explanation.get("vocabulary") or []]
+                + [sentence]
+            ),
+        ),
         "answer": "",
         "available": True,
         "claim": "sentence_sheet",

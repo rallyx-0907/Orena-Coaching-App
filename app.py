@@ -160,7 +160,7 @@ from writing_coach.persistence.learning_repository import (
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
-from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
+from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
 from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
 from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
@@ -509,7 +509,7 @@ _reading_lookup_service = ReadingLookupService(
 configure_reading_lookup(_reading_lookup_service)
 configure_word_detail(
     lookup=_reading_lookup_service.lookup,
-    saved_terms=lambda: {item["word"] for item in list_library_vocabulary()["items"]},
+    saved_terms=saved_vocabulary_words,
 )
 configure_media_timing(
     MediaTimingService(
@@ -3027,6 +3027,12 @@ def becoming_practice_outcomes(limit: int = 20) -> dict[str, Any]:
 # not cost what ten thousand saved words cost. `summary` is counted with
 # aggregates and travels with every page, so a caller never has to add the
 # items up to know how many there are.
+#
+# `query` matches the word, its definition and the translation kept with it -
+# what the learner's own database holds. `cursor` belongs to the question it
+# came from: change `query`, `status`, `order` or `focus` and the old cursor is
+# ignored rather than read against a different ordering, so the caller gets the
+# first page of what they actually asked.
 @app.get("/api/library/vocabulary", name="becoming_library_vocabulary_list")
 def becoming_library_vocabulary_list(
     limit: int = Query(default=LIBRARY_PAGE_DEFAULT, ge=1, le=LIBRARY_PAGE_MAX),
@@ -3151,27 +3157,35 @@ def _vocabulary_feed_pool(language_code: str) -> list[dict[str, Any]]:
 @app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
 def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
     code = _require_vocabulary_language_code(language_code)
-    language_token = LANGUAGE_CODE_CTX.set(code)
-    try:
-        saved_items = list_library_vocabulary()["items"]
-    finally:
-        LANGUAGE_CODE_CTX.reset(language_token)
-    saved_by_word = {
-        normalize_vocabulary_word(item.get("word")): item for item in saved_items
-    }
     by_id = {summary["id"]: dict(summary) for summary in list_vocabulary_collections(code)}
     for summary in _persisted_vocabulary_collections(code):
         by_id[summary["id"]] = dict(summary)
-    summaries = []
-    for summary in by_id.values():
-        catalog = (
+    catalogs = {
+        summary["id"]: (
             _persisted_vocabulary_collection(summary["id"], limit=5000)
             if summary.get("origin") == "imported"
             else get_vocabulary_collection(summary["id"])
         ) or {"entries": []}
+        for summary in by_id.values()
+    }
+    # The learner's state for the words these collections contain - asked about
+    # those words, rather than by reading everything the learner has ever saved.
+    candidates = {
+        str(entry.get("word") or "")
+        for catalog in catalogs.values()
+        for entry in catalog.get("entries", [])
+        if entry.get("word")
+    }
+    language_token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        saved_by_word = saved_vocabulary_state(tuple(candidates))
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    summaries = []
+    for summary in by_id.values():
         summary = dict(summary)
         summary["progress"] = _vocabulary_collection_progress(
-            catalog.get("entries", []), saved_by_word
+            catalogs[summary["id"]].get("entries", []), saved_by_word
         )
         summaries.append(summary)
     summaries.sort(key=lambda item: (str(item.get("framework") or ""), str(item.get("title") or "")))
@@ -3228,12 +3242,12 @@ def becoming_vocabulary_library_collection_detail(
         ]
     language_token = LANGUAGE_CODE_CTX.set(collection["language_code"])
     try:
-        saved_items = list_library_vocabulary()["items"]
+        # Only the words on this page of the collection.
+        saved_by_word = saved_vocabulary_state(
+            tuple(str(entry.get("word") or "") for entry in entries if entry.get("word"))
+        )
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
-    saved_by_word = {
-        normalize_vocabulary_word(item.get("word")): item for item in saved_items
-    }
     items = []
     for entry in entries:
         card = vocabulary_card_from_catalog_entry(entry)
@@ -3275,10 +3289,9 @@ def becoming_vocabulary_feed(
     declared_level = target_level.strip() or None
     language_token = LANGUAGE_CODE_CTX.set(code)
     try:
-        exclude_normalized = {
-            normalize_vocabulary_word(item.get("word"))
-            for item in list_library_vocabulary()["items"]
-        }
+        # What the learner already keeps, as words: the feed only needs to know
+        # what to leave out, not what each one looks like.
+        exclude_normalized = saved_vocabulary_words()
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
     learner_context = LearnerFeedContext(

@@ -1030,3 +1030,67 @@ recent words 20 ms. The old full listing was **185 s** and would have been
 words instead of all of them - which is the point, and is why every caller in
 this repository was changed in the same commit.
 
+## Four decisions closing the vocabulary paging work (2026-09-22)
+
+**1. Sorting by level is not a global sort, and no longer pretends to be.** A
+level is not in the learner's database - it comes from the curated catalogue
+and is attached when a word is read - so the server cannot order by it, and a
+cross-store sort would mean denormalising level onto every saved word, which is
+a schema decision, not a UI one. The option is therefore offered only when the
+list in front of the learner is the whole set it claims to cover (`has_more` is
+false); while there is more to load it is disabled, and the order falls back to
+the one the server actually applied. The level **filter** on a collection is
+unaffected: that one has always been the server's, through the collection
+endpoint's own `level` parameter.
+
+**2. What a search matches is now stated, not left open.** The server matches
+the word, its definition and the translation kept with it - every field the
+learner's own database holds. It does not match the catalogue's
+`support_translations`, which are attached at read time. This is not a loss in
+practice: every way of keeping a word writes the meaning the learner was
+looking at into `definition` or `translation_vi` (`vocabularyKeepPayload`, the
+reader's keep, Quick Sheet's keep, Understanding's keep), so the words a
+learner can search by meaning are the words whose meaning is stored. The
+contract is written in `library_page`'s docstring, in the route, in the browser
+client, and pinned by
+`tests/test_vocabulary_paging.py::test_search_matches_the_fields_the_learner_database_holds`.
+Searching the shared catalogue and intersecting would put a second store in the
+search path for a case the keep paths already cover; if that ever becomes real,
+it is a bounded change - the catalogue can be asked for matching terms and the
+page filtered by them.
+
+**3. The cursor belongs to the question it came from.** Every ordering ends in
+a unique tie-breaker (`word`, which is unique per learner and language), so
+`(added_at, word)`, `(next_review_at, word)` and `(lower(word), word)` are
+total orders and no two rows share a key. The cursor carries the order and a
+fingerprint of the filters (`query`, `status`, `focus`) alongside the key:
+change any of them and the cursor is ignored rather than read against a
+different ordering, so the caller gets that question's first page. A damaged
+cursor is a first page too, never an error a learner has to read. What this
+promises, and what the tests hold: a word whose sort key does not change is
+seen exactly once; a word saved, rescheduled or graded mid-walk moves to where
+its new key belongs and is met there.
+
+**4. TRACKED · mobile `listLibraryVocabulary` owes pagination.** `mobile/` is
+frozen (`AGENTS.md` §5), so it was not touched, and this is the item to pick up
+when it thaws:
+
+- `mobile/src/api/client.ts` → `listLibraryVocabulary()` calls
+  `GET /api/library/vocabulary` with no parameters. The endpoint no longer
+  answers with the whole library: it returns the first fifty words, plus
+  `total`, `has_more` and `next_cursor`.
+- `mobile/src/query/useReadingLibrary.ts` → `useLibraryVocabulary` holds that
+  one response as a whole list.
+- What it needs: `limit`/`cursor` in the client, an infinite query (or an
+  explicit page) in the hook, and `summary` read for counts instead of the
+  items being counted. `librarySchema` should gain the three new fields.
+- Nothing is broken today - mobile is not shipped - and the mobile contract
+  test mocks its own response, so it still passes.
+
+**No other caller relies on the old behaviour.** Every browser caller asks for
+a bounded page (held by `scripts/test_orena_vocabulary_paging.mjs`), and the
+four server-side callers that used to read the listing to answer "is this word
+saved?" - the word sheet, the collections list, a collection's cards and the
+daily feed - now ask about the words they are drawing, through
+`saved_vocabulary_words` and `saved_vocabulary_state`.
+

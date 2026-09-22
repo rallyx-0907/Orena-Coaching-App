@@ -79,6 +79,32 @@ assert.match(rooms['ui/search.js'], /libraryVocabulary\(\{ query: wanted/, 'sear
 assert.match(rooms['ui/collection.js'], /query: state\.query\.trim\(\)/, 'so is the saved panel\'s search');
 assert.match(rooms['ui/expression.js'], /cursor: append \? savedData\.next_cursor/, 'and the room pages with the cursor');
 
+/* --- The server does not read the listing to answer membership --------- */
+
+/* Four routes used to read every saved word to answer "is this one saved?".
+   They ask about the words they are drawing instead. */
+const appPy = readFileSync(new URL('../app.py', import.meta.url), 'utf8');
+assert.doesNotMatch(
+  appPy,
+  /list_library_vocabulary\(\)/,
+  'no route reads the whole listing',
+);
+for (const helper of ['saved_vocabulary_words', 'saved_vocabulary_state'])
+  assert.ok(appPy.includes(helper), `the routes use ${helper}`);
+
+/* --- Level is sorted only where the whole set is present ---------------- */
+
+assert.match(
+  rooms['ui/expression.js'],
+  /const complete = view === 'saved'/,
+  'the room knows whether it holds everything it claims to sort',
+);
+assert.match(
+  rooms['ui/expression.js'],
+  /value === 'level' && !complete \? ' disabled' : ''/,
+  'and offers the level sort only then',
+);
+
 /* --- The rank is read from the server, never recomputed ----------------- */
 
 const rank = read('product/rank.js');

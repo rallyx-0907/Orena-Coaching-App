@@ -256,6 +256,24 @@ def library_page(
     the rows it is given into items. The default order is the newest first;
     `order="due"` puts what is waiting for review at the front, which is the
     order the review panel and the recall queue want.
+
+    **What the cursor promises**: a word whose sort key does not change while
+    the learner pages is seen exactly once - never twice, never skipped. A word
+    that is saved, rescheduled or graded mid-walk moves to where its new key
+    belongs and is met there, which is the ordering telling the truth rather
+    than a page being wrong. A cursor is only read for the question it came
+    from: change the search, the status, the order or the focus and it is
+    ignored, so the caller gets that question's first page.
+
+    **What a search matches**: the word, the definition and the translation the
+    learner kept with it - every field the learner's own database holds. Not
+    the curated catalogue's `support_translations`, which are attached when a
+    word is read, not stored with it. This costs nothing in practice, because
+    every way of keeping a word writes the meaning the learner was looking at
+    into `definition` or `translation_vi` (see `vocabularyKeepPayload` and the
+    reader's and Quick Sheet's keep actions). The alternative - searching the
+    shared catalogue and intersecting - would be a second store in the search
+    path for a case the keep paths already cover.
     """
 
     resolve = _catalog_resolver(current_language_code().strip().casefold())
@@ -295,6 +313,35 @@ def list_library_vocabulary(
     return library_page(
         limit=limit, cursor=cursor, search=search, status=status, order=order, focus=focus,
     )
+
+
+def saved_vocabulary_words(candidates: tuple[str, ...] = ()) -> set[str]:
+    """Which of these words the learner has saved, folded for comparison.
+
+    Membership, asked as membership. Callers used to read the whole listing -
+    items, review state, catalogue and all - to answer it.
+    """
+
+    return {
+        normalize_vocabulary_word(word) or str(word).casefold()
+        for word in _repo().list_saved_words(words=tuple(candidates or ()))
+    }
+
+
+def saved_vocabulary_state(candidates: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+    """The learner's saved items for these words, by normalized word.
+
+    What a collection's cards and its progress need: which of the words on the
+    page are kept, and how far along each one is. The cost is the page's, not
+    the library's.
+    """
+
+    resolve = _catalog_resolver(current_language_code().strip().casefold())
+    return {
+        normalize_vocabulary_word(row.get("word")) or str(row.get("word") or "").casefold():
+            _row_to_item(row, resolve)
+        for row in _repo().list_saved_rows(tuple(candidates or ()))
+    }
 
 
 def save_library_vocabulary(payload: LibraryVocabularyIn) -> dict[str, Any]:
