@@ -1872,13 +1872,13 @@ ul.pronunciation-words small { color: var(--muted); }
     var(--surface-panel);
 }
 .book-hero { --bloom-hero: rgba(144, 101, 240, 0.22); }
-.book-hero__cover { inline-size: 176px; flex: none; }
+.book-hero__cover { inline-size: 220px; flex: none; }
 .book-hero__cover .library-cover--large,
 .book-page .library-cover--large {
   display: block;
   max-inline-size: none;
   margin: 0;
-  border-radius: 14px;
+  border-radius: 18px;
   box-shadow: var(--shadow-overlay);
 }
 .book-hero__copy {
@@ -1893,7 +1893,7 @@ ul.pronunciation-words small { color: var(--muted); }
 .book-hero__title {
   margin: 0;
   font-family: var(--display-font);
-  font-size: 40px;
+  font-size: 38px;
   font-weight: var(--weight-heavy);
   line-height: 1.02;
   letter-spacing: -0.022em;
@@ -1935,6 +1935,14 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 .book-chapters { display: flex; flex: 1; min-inline-size: 320px; flex-direction: column; gap: 12px; }
 .book-section-head { display: flex; align-items: center; gap: 10px; }
+/* The source draws "Chương" as a section heading, not a mono label. */
+.book-section-title {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
 .book-section-head .ds-label { color: var(--text-muted); }
 .book-filter {
   display: inline-flex;
@@ -1950,23 +1958,23 @@ ul.pronunciation-words small { color: var(--muted); }
   background: var(--action-selected);
   color: var(--action-text);
 }
-.book-chapter-list { display: grid; gap: 7px; padding: 0; margin: 0; list-style: none; }
+.book-chapter-list { display: grid; gap: 9px; padding: 0; margin: 0; list-style: none; }
 .book-chapter {
   display: flex;
   align-items: center;
   gap: 13px;
-  padding: 12px 14px;
+  padding: 16px 20px;
   border: 1px solid var(--border-subtle);
-  border-radius: 13px;
+  border-radius: 15px;
   background: var(--surface-secondary);
   color: var(--text-secondary);
 }
 .book-chapter:hover,
 .book-chapter:focus-visible { border-color: var(--border-strong); color: var(--text-primary); }
-.book-chapter__n { flex: none; inline-size: 26px; color: var(--text-muted); }
+.book-chapter__n { flex: none; inline-size: 26px; font-size: 15px; color: var(--text-muted); }
 .book-chapter__text { display: grid; gap: 3px; flex: 1; min-inline-size: 0; }
-.book-chapter__title { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.book-chapter__text small { color: var(--text-muted); }
+.book-chapter__title { overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.book-chapter__text small { font-size: 13.5px; color: var(--text-muted); }
 .book-chapter__done { display: inline-flex; color: var(--status-success); }
 .book-chapter[data-current],
 .book-chapter[aria-current='true'] {
@@ -1975,7 +1983,7 @@ ul.pronunciation-words small { color: var(--muted); }
   color: var(--text-primary);
 }
 .book-chapter[aria-current='true'] .book-chapter__n { color: var(--action-text); }
-.book-chapter[aria-current='true'] .book-chapter__title { font-weight: var(--weight-bold); font-size: 14.5px; }
+.book-chapter[aria-current='true'] .book-chapter__title { font-weight: var(--weight-bold); font-size: 18px; }
 .book-chapter__next {
   min-block-size: 26px;
   padding: 3px 9px;

@@ -142,7 +142,7 @@ function bookDetail(c, r, open, reading, view = {}) {
           : ''
     }</a></li>`;
   };
-  const contents = `<section class="book-chapters" aria-label="${esc(c.libraryChapters)}"><div class="book-section-head"><span class="ds-label">${esc(c.libraryChapters)}</span><button type="button" class="book-filter ds-label" data-unread-only aria-pressed="${Boolean(view.unreadOnly)}">${icon('funnel', { size: 14 })}<span>${esc(r.bookUnreadOnly)}</span></button></div><ol class="book-chapter-list">${shown.map(chapterRow).join('')}</ol>${
+  const contents = `<section class="book-chapters" aria-label="${esc(c.libraryChapters)}"><div class="book-section-head"><h3 class="book-section-title">${esc(c.libraryChapters)}</h3><button type="button" class="book-filter ds-label" data-unread-only aria-pressed="${Boolean(view.unreadOnly)}">${icon('funnel', { size: 14 })}<span>${esc(r.bookUnreadOnly)}</span></button></div><ol class="book-chapter-list">${shown.map(chapterRow).join('')}</ol>${
     listed.length > shown.length
       ? `<button type="button" class="book-show-all" data-show-all-chapters>${esc(fill(r.bookShowAll, { n: listed.length }))}${icon('caret-down', { size: 16 })}</button>`
       : ''

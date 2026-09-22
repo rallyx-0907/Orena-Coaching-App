@@ -559,3 +559,39 @@ eight most recent) with the version, the level the evaluator estimated and the d
 opens the review stored with that piece (`GET /api/essays/{id}/review`) in a sheet: nothing is copied and
 nothing new is written. **The bookmark ("Lưu nhận xét", `essays.review_kept_at`) is approved but not built:**
 it waits on the independent architecture review, so the list is every reviewed piece, not a curated set.
+
+## Book detail, measured against the source (2026-09-22, D-067)
+
+Measured `[data-screen-label="Book detail · chapters"]` in `Orena Reading.dc.html` against
+`#/book?id=…` at 1920x1080. **Corrected to the frame** (each verified in the running app):
+book title 40→38, the chapters heading from a mono `ds-label` to the frame's Nunito 24/800 section
+heading, the cover 176→220 wide with radius 14→18, chapter rows padding 12/14→16/20 and radius
+13→15, list gap 7→9, chapter title 14→18, chapter number →15, chapter meta →13.5.
+
+Reading Library needed nothing: at 1920 it already measures the frame exactly (bar 84 / padding
+0 40, title Nunito 26/800, cover 236x315 radius 16 with the glass ring, grid gap 28, cover-to-text
+13, card title Nunito 18/700). The per-skill CSS (`.lib[data-skill='reading']`) is what carries it.
+
+**Not resolved here, because the design and the implementation differ in composition and rules 43-44
+make that a decision, not a fix:**
+
+- **The frame draws neither the chip row nor the stat tiles.** The app's hero carries
+  `Đọc · EN · 5 chương · 1,200 từ` as chips and four `book-stat` tiles (words saved, reading time,
+  average score, audio) that mostly render an honest dash. The frame carries one DM Mono line -
+  `B1 · tiểu thuyết · 12 chương · 22 phút còn lại` - and no tiles at all.
+- **The frame draws one action.** The app draws a primary plus three disabled icon buttons
+  (bookmark, download, more). The disabled-placeholder question is already open for
+  "Kiểm tra hiểu"; this is the same question on this screen.
+- **The frame puts the saved words in the hero**, under `BẠN ĐÃ LƯU TỪ ĐÂY`, as word pills with a
+  `+ 83 từ` overflow. The app has the same data but in a right-hand aside, beside an "About" section
+  and a "Similar" note the frame does not draw.
+- **The frame has no "chỉ chương chưa đọc" filter.**
+- **A chapter row is one line in the frame** (number · title · `18 phút`), 56px tall. The app stacks
+  the meta under the title, so the row is ~90px, and the meta is a **word count**, not minutes -
+  minutes would need a per-chapter reading-time estimate the catalogue does not carry.
+- **Cover proportion.** The frame's cover is 220x300; the app's artwork keeps its own ratio and
+  renders 220x322.
+- **Colour.** The frame's chapter text is `rgba(255,255,255,0.72)` and its number/meta
+  `rgba(255,255,255,0.55)`; the app reads `--text-secondary` / `--text-muted`. Components may only
+  read semantic tokens (`AGENTS.md`, Theme), so if these must match exactly it is a token question
+  for `theme.css`, not a component override.
