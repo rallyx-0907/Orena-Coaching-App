@@ -150,6 +150,23 @@ def test_a_live_worker_keeps_its_job_by_reporting_in(repository):
     assert repository.get_job(job["id"])["status"] == "running"
 
 
+def test_a_queued_job_with_no_attempts_left_is_swept_rather_than_left_pending(repository):
+    """The claim refuses a job with no attempts left, so nothing else would
+    ever look at it again: it would sit in Imports forever as pending work
+    that cannot run. The sweep is what closes that loop."""
+    job = _enqueue(repository)
+    with repository.engine.begin() as connection:
+        connection.execute(
+            ReadingIngestionJob.__table__.update()
+            .where(ReadingIngestionJob.id == uuid.UUID(job["id"]))
+            .values(attempt=3, max_attempts=3)
+        )
+    assert repository.claim("worker-1") is None
+    assert repository.reap_stale(timedelta(minutes=5)) == 1
+    swept = repository.get_job(job["id"])
+    assert swept["status"] == "failed" and swept["last_error_code"] == "attempts_exhausted"
+
+
 def test_a_job_that_keeps_killing_its_worker_fails_instead_of_cycling(repository):
     job = _enqueue(repository)
     moment = datetime.now(UTC)

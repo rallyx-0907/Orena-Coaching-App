@@ -122,12 +122,45 @@ the old one, which is why `request_hash` is unique only over live submissions
 ## Immutability, enforced rather than asserted
 
 `reading_source_items` is the evidence behind a published article, so on
-PostgreSQL a `BEFORE UPDATE` trigger rejects any change to `source_id`,
-`original_content`, `content_hash`, `fetched_at` or `revision`. `superseded_at`
-and `supersedes_id` stay writable - marking a snapshot superseded is the one
-legitimate update. On any other dialect the same rule is a repository
-invariant with a test that proves no `UPDATE` is issued against those columns;
-the runtime is PostgreSQL, so the enforcement is real where it matters.
+PostgreSQL a `BEFORE UPDATE` trigger rejects any change to the snapshot's
+content (`original_content`, `content_hash`), its provenance (`source_id`,
+`source_native_id`, `canonical_url`, `fetched_at`, `revision`,
+`supersedes_id`) and its **rights evidence** (`rights_snapshot_json`) - a
+mutable rights snapshot is not a snapshot, and `source_native_id` /
+`canonical_url` are part of the dedupe identity, so rewriting one would move a
+row into or out of the partial unique index the supersede rule depends on.
+
+`superseded_at` is the one column the trigger leaves writable, because marking
+a snapshot superseded is the one legitimate update to it. The descriptive
+columns an admin may correct after a mis-parse - `original_title`,
+`original_author`, `original_published_at`, `original_language`,
+`metadata_json` - stay writable deliberately: "immutable snapshot" here means
+content, identity and rights, not every column, and that distinction is
+stated rather than left to be discovered.
+
+On any other dialect the same rule is a repository invariant with a test that
+proves no `UPDATE` is issued against those columns; the runtime is PostgreSQL,
+so the enforcement is real where it matters.
+
+## Supersede, and what happens when a source reverts
+
+The order is forced by the partial unique index and must be one transaction:
+**stamp the old row's `superseded_at` first, then insert the new row.** The
+reverse collides, because two rows with `superseded_at IS NULL` for one
+`(source_id, source_native_id)` is exactly what that index forbids. That is
+also what makes two workers racing to supersede the same item safe without
+application locking: both try to insert a current row, and the index rejects
+the loser.
+
+If a source reverts to bytes it published before, the engine does **not**
+insert a third row - `uq_reading_source_items_hash` is `(source_id,
+content_hash)` over all rows, so those bytes already have a row. It clears
+`superseded_at` on that earlier row and stamps the row that had been current,
+in one transaction. The consequence, stated plainly rather than discovered:
+`revision` is a **creation-order counter, not a currency rank**, so after a
+revert the current row can carry a lower `revision` than a superseded one, and
+`supersedes_id` records what a row was created after - never which row is live.
+`superseded_at IS NULL` is the only test for "current", everywhere.
 
 ## Deletes
 
@@ -193,7 +226,6 @@ first, or do not run it.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 
 from alembic import op
 import sqlalchemy as sa
@@ -255,17 +287,37 @@ BUILT_IN_SOURCES = (
     (uuid.UUID("0a52e5d0-0000-4000-8000-000000000003"), "orena-file-upload", "File upload", "file"),
 )
 
+# OR REPLACE so a re-run after a partially failed migration is not blocked by
+# the function it created last time. ERRCODE 23514 (check_violation) rather
+# than plpgsql's default P0001, so the repository can recognise *this*
+# refusal and turn it into a clear admin message instead of a generic error.
+# No `:` appears anywhere in the body: Alembic wraps this in `text()`, which
+# would otherwise read `:name` as a bind parameter - which is also why the
+# rights comparison is written `CAST(x AS text)` rather than `x::text`.
+#
+# That comparison is a cast, not an oversight: PostgreSQL's `json` type has no
+# equality operator, so `NEW.rights_snapshot_json IS DISTINCT FROM OLD...`
+# raises `operator does not exist: json = json` at *runtime* - which would have
+# made this trigger reject every update to the table, including the one legal
+# `superseded_at` stamp. The rehearsal caught it; the cast is the fix, and it
+# makes the comparison textual, so any rewrite at all is refused.
 _IMMUTABLE_SNAPSHOT_FUNCTION = """
-CREATE FUNCTION reading_source_item_is_immutable() RETURNS trigger AS $func$
+CREATE OR REPLACE FUNCTION reading_source_item_is_immutable() RETURNS trigger AS $func$
 BEGIN
     IF NEW.source_id IS DISTINCT FROM OLD.source_id
        OR NEW.original_content IS DISTINCT FROM OLD.original_content
        OR NEW.content_hash IS DISTINCT FROM OLD.content_hash
        OR NEW.fetched_at IS DISTINCT FROM OLD.fetched_at
        OR NEW.revision IS DISTINCT FROM OLD.revision
+       OR CAST(NEW.rights_snapshot_json AS text)
+          IS DISTINCT FROM CAST(OLD.rights_snapshot_json AS text)
+       OR NEW.source_native_id IS DISTINCT FROM OLD.source_native_id
+       OR NEW.canonical_url IS DISTINCT FROM OLD.canonical_url
+       OR NEW.supersedes_id IS DISTINCT FROM OLD.supersedes_id
     THEN
         RAISE EXCEPTION
-            'reading_source_items is an immutable snapshot: supersede it instead of rewriting it';
+            'reading_source_items is an immutable snapshot: supersede it instead of rewriting it'
+            USING ERRCODE = '23514';
     END IF;
     RETURN NEW;
 END;
@@ -377,6 +429,13 @@ def upgrade() -> None:
         sa.Column("fetched_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("revision >= 1", name="ck_reading_source_item_revision"),
+        # A later revision always records what it was created after; the
+        # first never does. Without this, revision 5 with a NULL
+        # `supersedes_id` is a chain with no way back.
+        sa.CheckConstraint(
+            "(revision > 1) = (supersedes_id IS NOT NULL)",
+            name="ck_reading_source_item_chain",
+        ),
         # Length *and* case: an uppercase SHA-256 of identical bytes is a
         # different value under the dedupe key, which would silently defeat it.
         sa.CheckConstraint(
@@ -417,7 +476,11 @@ def upgrade() -> None:
     # per source), but the review UI has to be able to say so before an admin
     # publishes the second one.
     op.create_index("ix_reading_source_items_hash_any", "reading_source_items", ["content_hash"])
-    if op.get_bind().dialect.name == "postgresql":
+    # `get_context()`, not `get_bind()`: offline mode (`alembic upgrade --sql`,
+    # the natural way for a human to read this DDL before authorizing it) has
+    # no bind at all, and `get_bind().dialect` would raise before rendering a
+    # single statement.
+    if op.get_context().dialect.name == "postgresql":
         op.execute(_IMMUTABLE_SNAPSHOT_FUNCTION)
         op.execute(_IMMUTABLE_SNAPSHOT_TRIGGER)
 
@@ -678,44 +741,25 @@ def upgrade() -> None:
     op.create_index("ix_reading_jobs_recent", "reading_ingestion_jobs", ["created_at"])
 
     # ---- 7. The three built-in input paths --------------------------------
-    now = datetime.now(UTC)
-    op.bulk_insert(
-        sa.table(
-            "reading_sources",
-            sa.column("id", sa.Uuid()),
-            sa.column("slug", sa.String),
-            sa.column("name", sa.String),
-            sa.column("source_type", sa.String),
-            sa.column("state", sa.String),
-            sa.column("languages", sa.JSON),
-            sa.column("topic_hints", sa.JSON),
-            sa.column("polling_policy", sa.JSON),
-            sa.column("created_by", sa.String),
-            sa.column("created_at", sa.DateTime(timezone=True)),
-            sa.column("updated_at", sa.DateTime(timezone=True)),
-        ),
-        [
-            {
-                "id": source_id,
-                "slug": slug,
-                "name": name,
-                "source_type": source_type,
-                # 'active' because an admin submitting a text through the
-                # console *is* the approval for these three; an external
-                # recurring source still starts at 'needs_review'. Polling
-                # stays off and `automation_allowed` keeps its false default,
-                # so `ck_reading_source_polling_requires_approval` holds.
-                "state": "active",
-                "languages": ["en", "zh"],
-                "topic_hints": [],
-                "polling_policy": {},
-                "created_by": "migration:20260922_0010",
-                "created_at": now,
-                "updated_at": now,
-            }
-            for source_id, slug, name, source_type in BUILT_IN_SOURCES
-        ],
-    )
+    # Written as literal statements rather than `op.bulk_insert`: offline mode
+    # (`alembic upgrade --sql`, the natural way for a human to read this DDL
+    # before authorizing it) renders parameters as literals, and SQLAlchemy has
+    # no literal renderer for a JSON value - `bulk_insert` with a JSON column
+    # therefore fails to render at all. Literal SQL renders identically in both
+    # modes, and `now()` is the server's clock rather than the client's.
+    #
+    # 'active' because an admin submitting a text through the console *is* the
+    # approval for these three; an external recurring source still starts at
+    # 'needs_review'. Polling stays off and `automation_allowed` keeps its
+    # false default, so `ck_reading_source_polling_requires_approval` holds.
+    for source_id, slug, name, source_type in BUILT_IN_SOURCES:
+        op.execute(
+            "INSERT INTO reading_sources "
+            "(id, slug, name, source_type, state, languages, topic_hints, polling_policy, "
+            " created_by, created_at, updated_at) VALUES "
+            f"('{source_id}', '{slug}', '{name}', '{source_type}', 'active', "
+            """'["en", "zh"]', '[]', '{}', 'migration 20260922_0010', now(), now())"""
+        )
 
 
 def downgrade() -> None:
@@ -735,7 +779,7 @@ def downgrade() -> None:
     op.drop_index("ix_reading_articles_published_level", table_name="reading_articles")
     op.drop_index("ix_reading_articles_published", table_name="reading_articles")
     op.drop_table("reading_articles")
-    if op.get_bind().dialect.name == "postgresql":
+    if op.get_context().dialect.name == "postgresql":
         op.execute("DROP TRIGGER IF EXISTS reading_source_item_immutable ON reading_source_items")
         op.execute("DROP FUNCTION IF EXISTS reading_source_item_is_immutable()")
     op.drop_index("ix_reading_source_items_hash_any", table_name="reading_source_items")

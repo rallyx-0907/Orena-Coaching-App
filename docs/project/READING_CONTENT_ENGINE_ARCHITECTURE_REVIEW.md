@@ -1,16 +1,21 @@
 # Reading Content Engine — independent architecture review
 
-Status: `CHANGES REQUIRED` for the reviewed commit — seven P1 findings.
-Recorded here verbatim; the revision answering it is a separate commit and is
-summarised under "Resolution" at the end of this file.
+Status: round 1 `CHANGES REQUIRED` (seven P1), round 2 `REQUEST CHANGES` (two
+new P1, six P2). Each round is recorded in full below, condensed without loss
+of substance — the verdict, every finding, every required change and the
+authorization boundary are the reviewer's own. What each round changed is under
+"Resolution" at the end of this file.
 
 ## Review record
 
 - Reviewer role: Delegated Architecture Reviewer (`AGENTS.md`, "Architecture
-  review authority"). GPT-6/Codex, the preferred Principal Architect, was not
-  available for this round.
+  review authority").
 - Reviewer identity: independent Claude review session, dispatched read-only
   with no authority to edit, commit or implement.
+- Fallback justification (recorded by the implementer who dispatched the
+  review, not by the reviewer): GPT-6/Codex, the preferred Principal
+  Architect, was not reachable from this lane, so `AGENTS.md`'s delegated
+  reviewer role was used.
 - Reviewer model: Claude Opus 5
 - Reviewed commit: `5eeaac72d37f2c9d1a1460da248c21e2f99e9957`
 - Branch / worktree: `admin/control-center`, working tree clean at review time
@@ -343,7 +348,137 @@ Production (8000) and preview (8010) retain every gate in
 
 ---
 
-## Resolution
+## Round 1 resolution
 
-Recorded when the revision answering this review lands; see the commit that
-follows this one and the re-review appended below it.
+Answered in commit `e375ad3`. Every one of the seven P1s and eleven P2s was
+changed in the migration rather than argued with; §10 of
+`READING_CONTENT_ENGINE_SCHEMA_REVIEW_REQUEST.md` maps each finding to what
+changed, and the round-2 reviewer verified each against the code (table below).
+
+---
+
+# Round 2 — the revision reviewed
+
+- Reviewed commit: `e375ad3f164f1344b9635d41acdf4908369934d2`
+- Same reviewer role, model and read-only constraints as round 1.
+- Review date: 2026-09-22
+
+## Verdict
+
+**REQUEST CHANGES** — two new P1 and six P2. `REVIEW_POLICY.md`: "at least one
+P0 or P1 remains, **or required evidence is missing**" — both limbs applied.
+
+All seven round-1 P1s and all eleven round-1 P2s were verified fixed **against
+the code, not the summary**, with two fixes judged better than what was asked
+for (P1-4 removing the NULL rather than coalescing it; P1-5 taking the stronger
+of the two offered index shapes). Still purely additive, still no `users`
+foreign key, still no learner-owned column.
+
+## New findings
+
+### P1-A — The revert case is now reachable, and the two dedupe indexes disagree about it
+
+Round 1 called "a source reverts to earlier bytes" defensible but *unreachable*;
+P1-1's fix made it reachable. `uq_reading_source_items_hash` stayed a full
+`UNIQUE (source_id, content_hash)` while its sibling became scoped to current
+rows, so the three possible revert behaviours disagree: resolving to the
+existing row leaves a superseded row as the truth, inserting a fresh row is
+blocked by the unscoped hash index, and clearing `superseded_at` makes
+`revision` run backwards. Nothing stated which the repository does.
+
+**Required:** state the revert algorithm, or scope the hash index.
+Documentation-only is an acceptable resolution. Not reachable in Phase A —
+manual, URL and file sources all carry an empty `source_native_id` and never
+supersede — but the index scoping is being locked in now.
+
+### P1-B — Nothing had ever executed this DDL, and the revision added the constructs most likely to fail on first execution
+
+The revision introduced a plpgsql function, a trigger and a `bulk_insert` —
+the first `bulk_insert` anywhere in the repository. §11 ordered the gate
+re-review → human authorization → rehearsal, which asks a human to authorize
+DDL nobody has run. The 0009 precedent runs the other way: the standalone
+up/down/up rehearsal proves the migration sound *before* it is moved.
+
+**Required:** run the rehearsal against a throwaway PostgreSQL before the human
+gate and report that the function and trigger are created, that the trigger
+rejects a snapshot rewrite and permits a `superseded_at` stamp, and that the
+seed rows land satisfying the polling CHECK. The written commitment *is*
+sufficient for the PostgreSQL constraint test not yet existing (it cannot pass
+before the `git mv`); it is **not** sufficient for the rehearsal.
+
+### P2-C — The trigger protected content but not provenance or rights
+
+`rights_snapshot_json` (the whole point of snapshotting rights),
+`source_native_id` and `canonical_url` (the dedupe identity, and the partial
+index the supersede rule depends on) were left rewritable. **Required:** add
+them, and `supersedes_id`; say which descriptive columns stay writable.
+
+### P2-D — The `attempt < max_attempts` guard is correct, and leaves an unswept terminal state
+
+The guard is right and should stay: with it the claim can never violate
+`ck_reading_job_attempt_bound`. But a `queued` row with no attempts left is now
+invisible to the claim and to the reaper, so it sits in Admin → Imports forever
+as pending work that can never run. **Required:** the worker loop must also
+fail out `status = 'queued' AND attempt >= max_attempts`.
+
+### P2-E — Not offline-mode safe, and `--sql` is how a human would read it
+
+`op.get_bind().dialect.name` raises in offline mode (the context has no bind),
+and `op.bulk_insert` without `multiinsert=False` silently omits the seed rows
+from a `--sql` script. **Required:** use `op.get_context().dialect.name`; make
+the seeds render offline.
+
+### P2-F — `CREATE FUNCTION` without `OR REPLACE`; the exception carries no SQLSTATE
+
+A re-run after a partially failed migration is blocked, and plpgsql's default
+`P0001` is indistinguishable from any other raise, so the repository cannot
+recognise this refusal. Verified positively: the body contains no colon, so
+Alembic's `text()` cannot misparse it as a bind parameter.
+
+### P2-G — Supersede ordering is now load-bearing and unstated
+
+The partial index forces "stamp the old row, then insert the new one", in one
+transaction; the reverse collides. Recorded positive: that same index
+serializes two workers racing to supersede the same item, so the application
+does not have to. Optional: `CHECK ((revision > 1) = (supersedes_id IS NOT
+NULL))`.
+
+### P2-H — The recorded round-1 review is faithful in substance; three accuracy points
+
+Verdict, SHA, all findings, every "Required:", the six-tables answer and the
+authorization boundary are intact and unsoftened. But "verbatim" overstated a
+condensed record; the GPT-6 availability note was attributed to the reviewer
+rather than the implementer who dispatched it; and "Resolution" was still a
+placeholder.
+
+## Round 2 resolution
+
+| Finding | Change |
+| --- | --- |
+| P1-A | Revert algorithm stated in the migration docstring ("Supersede, and what happens when a source reverts"): the revert clears `superseded_at` on the earlier row and stamps the row that had been current, in one transaction; `revision` is documented as a creation-order counter, not a currency rank, and `superseded_at IS NULL` is the only test for "current". Documentation-only, as the reviewer allowed — the hash index keeps its shape. |
+| P1-B | **Rehearsal executed** against a throwaway PostgreSQL 16 (tmpfs, no named volume, removed afterwards): up → down → up, clean both ways. It found a real defect (see below). §11 of the request reordered so the rehearsal precedes the human gate, with its result reported. |
+| P2-C | Trigger now also refuses `rights_snapshot_json`, `source_native_id`, `canonical_url` and `supersedes_id`; the writable descriptive columns are named. |
+| P2-D | `reap_stale()` sweeps `queued` rows with no attempts left, failing them `attempts_exhausted`; proved by a test that was red first. |
+| P2-E | `op.get_context().dialect.name`; seeding rewritten as literal `op.execute` statements, because SQLAlchemy has **no literal renderer for a JSON value** — `bulk_insert` with a JSON column fails to render offline even with `multiinsert=False`. Offline `--sql` now renders 6 tables, 3 seed inserts, the function, the trigger and 10 partial indexes. |
+| P2-F | `CREATE OR REPLACE FUNCTION`; `USING ERRCODE = '23514'`. |
+| P2-G | Supersede ordering and the index-serializes-the-race property written into the docstring; `CHECK ((revision > 1) = (supersedes_id IS NOT NULL))` added. |
+| P2-H | "Verbatim" corrected to "recorded in full, condensed without loss of substance"; the GPT-6 note moved to an implementer-attributed line; this Resolution written. |
+
+**What the rehearsal caught, which is why the reviewer required it:** the
+trigger's `NEW.rights_snapshot_json IS DISTINCT FROM OLD.rights_snapshot_json`
+raised `operator does not exist: json = json` — PostgreSQL's `json` type has no
+equality operator. The trigger would have rejected **every** update to
+`reading_source_items`, including the one legitimate `superseded_at` stamp, and
+no amount of reading would have shown it. The comparison is now
+`CAST(... AS text)`, and the rehearsal proves the trigger refuses a rewrite of
+content, hash, rights, native id and canonical URL (SQLSTATE 23514 in each
+case), permits the `superseded_at` stamp and a descriptive correction, and that
+the partial index refuses two current rows for one native id.
+
+Rehearsal evidence (local execution, not CI): `[up] chain applied to head`,
+head `20260922_0010`, six engine tables, `reading_source_item_immutable`
+trigger and its function present, three seed rows with the fixed ids at
+`state=active automation=False polling=False`, five trigger refusals, two
+permitted updates, the polling CHECK refusing `polling_enabled` without
+`automation_allowed`, `[down] reading engine tables left=0 function left=0`,
+`[up-again] seed rows=3`.

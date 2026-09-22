@@ -361,16 +361,38 @@ class ReadingJobRepository:
             )
 
     def reap_stale(self, stale_after: timedelta, *, now: datetime | None = None) -> int:
-        """Return work whose worker stopped reporting in.
+        """Return work whose worker stopped reporting in, and sweep dead ends.
 
         `heartbeat_at` is NOT NULL and set by the claim itself, so there is no
         window in which a running job has no heartbeat for this predicate to
         miss. The attempt was already consumed at claim time; a job with none
         left fails here instead of returning to the queue.
+
+        The second sweep exists because the claim refuses a job with no
+        attempts left: without it such a job is invisible to the claim, to the
+        stale check and to everything else, and sits in Admin -> Imports
+        forever as pending work that can never run.
         """
         moment = _now(now)
         cutoff = moment - stale_after
+        swept = 0
         with self.engine.begin() as connection:
+            swept = connection.execute(
+                update(ReadingIngestionJob)
+                .where(
+                    ReadingIngestionJob.status == "queued",
+                    ReadingIngestionJob.attempt >= ReadingIngestionJob.max_attempts,
+                )
+                .values(
+                    status="failed",
+                    stage="done",
+                    claimed_by="",
+                    last_error_code="attempts_exhausted",
+                    last_error="this job had no attempts left and could never be claimed",
+                    finished_at=moment,
+                    heartbeat_at=moment,
+                )
+            ).rowcount
             stranded = connection.execute(
                 select(
                     ReadingIngestionJob.id,
@@ -397,7 +419,7 @@ class ReadingJobRepository:
                         heartbeat_at=moment,
                     )
                 )
-        return len(stranded)
+        return len(stranded) + int(swept)
 
     # ---- reads -----------------------------------------------------------
     def get_job(self, job_id: str) -> dict[str, Any] | None:

@@ -1,12 +1,13 @@
 # Reading Content Engine — schema and worker review request
 
-Status: `REVISED AFTER REVIEW — awaiting re-review, then human schema/runtime
-authorization`.
+Status: `REVISED TWICE, REHEARSED — awaiting re-review, then human
+schema/runtime authorization`.
 
-Round 1: `CHANGES REQUIRED` (seven P1 findings) for commit `5eeaac7`. The
-review is recorded verbatim in
-`docs/project/READING_CONTENT_ENGINE_ARCHITECTURE_REVIEW.md`; §10 below maps
-every finding to what changed.
+Round 1: `CHANGES REQUIRED` (seven P1) for commit `5eeaac7`. Round 2:
+`REQUEST CHANGES` (two new P1, six P2) for commit `e375ad3`, with every
+round-1 finding verified fixed. Both rounds and what each changed are
+recorded in `docs/project/READING_CONTENT_ENGINE_ARCHITECTURE_REVIEW.md`;
+§10 below maps the round-1 findings to the code.
 
 Proposed migration: `migrations/proposed/20260922_0010_reading_content_engine.py`
 (additive; six new tables; no existing table altered). Alembic does not read
@@ -101,11 +102,26 @@ and is therefore the *retention authority* — which is what makes it acceptable
 for `reading_review_events` to cascade with its article.
 
 **Immutability is enforced, not asserted.** On PostgreSQL a `BEFORE UPDATE`
-trigger rejects any change to `source_id`, `original_content`, `content_hash`,
-`fetched_at` or `revision` on `reading_source_items`; `superseded_at` and
-`supersedes_id` remain writable, because marking a snapshot superseded is the
-one legitimate update. On any other dialect the same rule is a repository
-invariant with a test proving no `UPDATE` is issued against those columns.
+trigger rejects any change to the snapshot's content (`original_content`,
+`content_hash`), its provenance (`source_id`, `source_native_id`,
+`canonical_url`, `fetched_at`, `revision`, `supersedes_id`) and its rights
+evidence (`rights_snapshot_json`) — a mutable rights snapshot is not a
+snapshot, and the two identity columns are what the partial dedupe index is
+built on. `superseded_at` is the one column left writable, because marking a
+snapshot superseded is the one legitimate update; the descriptive columns an
+admin may correct after a mis-parse (`original_title`, `original_author`,
+`original_published_at`, `original_language`, `metadata_json`) stay writable
+deliberately. On any other dialect the same rule is a repository invariant with
+a test proving no `UPDATE` is issued against those columns.
+
+**A source that reverts to earlier bytes** does not create a third snapshot:
+those bytes already have a row, so the engine clears `superseded_at` on it and
+stamps the row that had been current, in one transaction. `revision` is
+therefore a creation-order counter, not a currency rank —
+`superseded_at IS NULL` is the only test for "current", everywhere. Supersede
+order is forced and must be one transaction: stamp the old row, then insert the
+new one; the reverse collides on the partial index, which is also what
+serializes two workers racing to supersede the same item.
 
 Article lifecycle: `draft → processing → needs_review → ready → published ⇄
 unpublished`, plus terminal `rejected` and `archived`. `rejected` retains the
@@ -277,14 +293,39 @@ depends on no code that exists only there.
 
 ## 11. Required gate before the schema is applied
 
-1. **Re-review** by an independent architecture reviewer of the revised
-   migration — the six tables, the supersede rule and its trigger, the dedupe
-   and idempotency constraints, the claim/reaper statements, the delete
-   behaviour and the indexes. An implementer may not self-approve this.
-2. **Human schema/runtime authorization**, then rehearsal against a throwaway
-   PostgreSQL database (up/down/up), then one `git mv` into
+The order matters, and round 2 corrected it: nobody should be asked to
+authorize DDL that has never been executed.
+
+1. **Rehearsal against a throwaway PostgreSQL — done.** Executed 2026-09-22 on
+   a disposable PostgreSQL 16 container (tmpfs, no named volume, removed
+   afterwards; no shared runtime touched): `upgrade head` → `downgrade
+   20260916_0009` → `upgrade head`, clean in both directions, six engine tables
+   created and dropped, the immutability function and trigger created and
+   dropped, three seed rows landing with their fixed ids at `state=active
+   automation=False polling=False`. Proven in the same run: the trigger refuses
+   a rewrite of `original_content`, `content_hash`, `rights_snapshot_json`,
+   `source_native_id` and `canonical_url` (SQLSTATE 23514 each), permits the
+   `superseded_at` stamp and a descriptive title correction, the polling CHECK
+   refuses `polling_enabled` without `automation_allowed`, and the partial
+   native-id index refuses two current rows for one native id. `alembic upgrade
+   --sql` also renders offline: 6 tables, 3 seed inserts, the function, the
+   trigger and 10 partial indexes.
+
+   The rehearsal earned its place: it caught a defect no reading would have
+   found — `IS DISTINCT FROM` on a `json` column raises `operator does not
+   exist: json = json`, so the trigger would have rejected *every* update to
+   `reading_source_items`, including the one legitimate one. Fixed with
+   `CAST(... AS text)` and re-proven.
+
+   This is local execution evidence, not a CI claim.
+2. **Re-review** by an independent architecture reviewer of the revised
+   migration — the six tables, the supersede and revert rules and their
+   trigger, the dedupe and idempotency constraints, the claim/reaper
+   statements, the delete behaviour and the indexes. An implementer may not
+   self-approve this.
+3. **Human schema/runtime authorization**, then one `git mv` into
    `migrations/versions/` and application to the named sandbox runtime only.
-3. **PostgreSQL constraint proof** (`tests/test_reading_engine_persistence_postgres.py`,
+4. **PostgreSQL constraint proof** (`tests/test_reading_engine_persistence_postgres.py`,
    skipped unless `ORENA_TEST_POSTGRES_URL` is set), asserting that each of
    `ck_reading_source_polling_requires_approval`,
    `ck_reading_article_published_at`, `ck_reading_article_effective_level`,
