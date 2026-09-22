@@ -17,7 +17,18 @@ import {
 import { installHints } from './ui/patterns.js';
 import { bindContentRails } from './ui/content-rail.js';
 import { growthSummarySection } from './ui/growth-summary.js';
-import { renderAdmin } from './ui/admin.js';
+
+/* The console is admin-only, server-authorized and large, and a learner never
+   opens #/admin - so its module graph is fetched the first time that route is
+   entered rather than in every learner's initial load. The browser caches it
+   after that, so an admin pays for it once. Nothing about the route, its
+   authorization or its behaviour changes: the server decides who may read
+   admin data, exactly as before, and a learner who types the URL still gets a
+   room that tells them so. */
+const renderAdminRoom = async (root, scope) => {
+  const { renderAdmin } = await import('./ui/admin.js');
+  return renderAdmin(root, scope);
+};
 
 // Every hint in every room is one delegated behaviour, installed once.
 installHints(document);
@@ -422,7 +433,7 @@ async function render() {
       page === 'collection'
         ? renderCollection(root, scope)
         : page === 'admin'
-          ? await renderAdmin(root, scope)
+          ? await renderAdminRoom(root, scope)
         : page === 'continue'
         ? (renderContinue(root, scope), bindContentRails(root))
         : page === 'encounter'

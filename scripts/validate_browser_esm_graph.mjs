@@ -4,7 +4,11 @@ import path from 'node:path';
 
 const projectRoot = path.resolve(process.argv[2] || '.');
 const root = path.join(projectRoot, 'static', 'orena');
-const entry = path.join(root, 'app.js');
+// Every root the browser can start from. `app.js` is the learner's initial
+// load; `ui/admin.js` is reached by a dynamic import when an admin enters
+// #/admin, so it is not in the learner's static graph - and would stop being
+// validated at all if it were not named here.
+const entries = [path.join(root, 'app.js'), path.join(root, 'ui', 'admin.js')];
 const cache = new Map();
 
 async function load(file) {
@@ -42,7 +46,7 @@ async function load(file) {
 }
 
 try {
-  await load(entry);
+  for (const entry of entries) await load(entry);
   console.log(`Orena browser ESM graph validation OK (${cache.size} modules linked)`);
 } catch (error) {
   console.error('Orena browser ESM graph validation FAILED');
