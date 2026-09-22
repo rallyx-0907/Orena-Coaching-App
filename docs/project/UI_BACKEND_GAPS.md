@@ -38,6 +38,73 @@ Baseline pin: 2026-09-21, design project
 `docs/design/canonical-ui/PINS.tsv`. Audit facts below were read from code and
 schema on that date at `76e69b9`; none has been run against the baseline UI.
 
+# CHỜ NGƯỜI QUYẾT ĐỊNH — sổ đăng ký mở (cập nhật 2026-09-22)
+
+Đây là **danh sách duy nhất** cần anh duyệt. Mỗi mục ghi rõ đang làm gì và hai lựa chọn, để chỉ
+cần chọn chứ không phải đọc lại code. Các mục bên dưới sổ này là **bằng chứng đo đạc theo từng
+màn** - số liệu, cái gì đã sửa, sửa theo frame nào - không phải việc đang chờ.
+
+Human, 2026-09-22: "phần này chưa có chức năng thì note lại và tôi sẽ review lại sau và quyết định
+các hành động cho nó." Mọi việc dưới đây **đã dừng lại đúng chỗ này**, không tự quyết, không bịa dữ
+liệu. Các mục ở trên là ghi chép chi tiết theo từng màn; phần này là danh sách gọn để duyệt.
+
+## A. Nút đã vẽ nhưng chưa có hành vi
+
+| # | Ở đâu | Tình trạng | Cần anh quyết |
+| --- | --- | --- | --- |
+| A1 | Reader · "Lưu bài" và "Đọc tiếp sau" | Frame cho hai nút **cùng icon bookmark** và không nói hành vi. Đang làm: "Lưu bài" bật/tắt đánh dấu; "Đọc tiếp sau" đánh dấu rồi rời bài. | Hai hành động hay một? Nếu một thì thanh còn 5 nút. |
+| A2 | Reader · "Nghe" | Disabled, có title "sắp có". Văn bản chưa có audio đọc. Frame vẽ nút này bật. | Đọc bằng TTS, hay bỏ nút khỏi thanh cho tới khi có audio? |
+| A3 | Reader · "Kiểm tra hiểu" | Disabled khi bài không kèm câu hỏi (sách nhập không có). | Sinh câu hỏi bằng AI, hay ẩn nút khi không có? |
+| A4 | Listening · "Kiểm tra hiểu" | Cùng câu hỏi, đã treo từ trước. | Như trên. |
+| A5 | Book detail · 3 nút icon (bookmark, tải về, ⋯) | Disabled, "sắp có". Frame **không vẽ** chúng. | Xoá theo frame, hay giữ và làm chức năng? |
+
+## B. Thành phần frame vẽ mà app chưa dựng
+
+| # | Ở đâu | Tình trạng |
+| --- | --- | --- |
+| B1 | **Progress** | Vẫn là composition cũ D-065: **không có panel kính nào**, không có hàng bằng chứng, không có khối CẤP BẬC, không có heatmap 18 tuần. Frame vẽ 3 panel số lớn, hàng bằng chứng, cấp bậc, heatmap, thời gian 7 ngày theo kỹ năng. |
+| B2 | **Hệ cấp bậc (rank)** | Chưa dựng gì. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
+| B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
+| B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |
+
+## C. Thiếu dữ liệu backend — UI không được bịa
+
+| # | Thiếu gì | Hệ quả thấy được |
+| --- | --- | --- |
+| C1 | CEFR level + ước lượng **số phút đọc** cho từng mục catalogue | Thẻ thư viện thường trống dòng meta; frame luôn in `B1 · tiểu thuyết · 22 phút`. |
+| C2 | Thời gian đọc theo chương | Hàng chương in **số từ**, frame in **số phút**. |
+| C3 | Cấp độ theo từng kỹ năng (`profile.skill_levels`) | Rail không in được level cho Đọc/Nghe/Nói/Viết. |
+| C4 | Chuỗi ngày, thời gian học 90 ngày, hoạt động 18 tuần, ngưỡng rank | Các ô Progress sẽ phải in "—" nếu dựng theo frame ngay bây giờ. |
+| C5 | Câu hỏi hiểu cho sách nhập | A3 ở trên. |
+
+## D. Quyết định quy tắc, không phải quyết định code
+
+| # | Việc | Hai lựa chọn |
+| --- | --- | --- |
+| D1 | Chip lọc thư viện | Frame liệt kê **11** loại; app chỉ hiện chip cho loại **thực sự có nội dung** (nay là 4). Hiện đủ 11 thì có chip bấm vào không ra gì. |
+| D2 | Ghi công nguồn & bản quyền | Frame **không vẽ ở đâu cả**. Nút đã bỏ theo yêu cầu; khối ghi công hiện nằm dưới bài đọc vì văn bản đã xuất bản buộc phải có. Đặt ở đâu là của anh. |
+| D3 | Màu chữ | Frame dùng `rgba(255,255,255,0.72 / 0.55)`; app đọc token `--text-secondary` / `--text-muted`. Component chỉ được đọc token, nên nếu phải khớp tuyệt đối thì sửa ở `theme.css`, không sửa trong component. |
+| D4 | DM Mono → Roboto Mono cho tiếng Việt | Đã treo từ trước; mọi nhãn mono tiếng Việt đang rơi về Roboto Mono. |
+| D5 | Ink / Paper | Anh nhắc trong yêu cầu, nhưng D-066 đã khai tử và code đã gỡ theme picker. Đang làm **một** hệ Dark Glass. Muốn hai theme trở lại thì là quyết định sản phẩm mới. |
+
+## E. Cổng kích hoạt (không phải việc của lane này)
+
+| # | Việc |
+| --- | --- |
+| E1 | `reading.discussion_turn` hiện **đếm usage, không chặn ai**. Bật enforcement Free/Premium là cổng kích hoạt thương mại, cần anh mở, và khi mở thì phải đi qua quota ledger chứ không phải `usage_events`. |
+| E2 | Tầng fallback thứ ba cho AI router: chỉ cần thêm một trường config, không cần code. |
+
+## F. Nợ kỹ thuật thấy được trong phiên
+
+| # | Việc |
+| --- | --- |
+| F1 | `scripts/test_orena_vocabulary_theme_tokens.mjs` và `scripts/test_orena_writing_workspace.mjs` **fail sẵn từ `3deab1e`**, kiểm chứng trên cây sạch. Chưa sửa vì ngoài phạm vi. |
+| F2 | Sandbox `:8011` đang có 1 EPUB thử ("Kafka pa stranden", 5 chương, id `ce71a298…`) tôi nhập để đo màn Book detail. Giữ để anh xem, hay archive? |
+| F3 | Chưa đo lại Reader và Library ở **390 mobile** sau các thay đổi hôm nay; đã đo desktop 1920. |
+
+
+---
+
 ## Summary by canonical screen
 
 | Canonical UI | Required contract | Backend implementation | Data source / DB | Tests | Status |
@@ -702,65 +769,3 @@ against Gemini.
   words say. If they are meant to be one action, the bar drops to five.
 - "Nghe" stays unavailable with its "coming" title: a text has no audio to read aloud yet. The frame
   draws it enabled. Same open question as the disabled "Kiểm tra hiểu".
-
----
-
-# CHỜ NGƯỜI QUYẾT ĐỊNH — tổng hợp phiên 2026-09-22
-
-Human, 2026-09-22: "phần này chưa có chức năng thì note lại và tôi sẽ review lại sau và quyết định
-các hành động cho nó." Mọi việc dưới đây **đã dừng lại đúng chỗ này**, không tự quyết, không bịa dữ
-liệu. Các mục ở trên là ghi chép chi tiết theo từng màn; phần này là danh sách gọn để duyệt.
-
-## A. Nút đã vẽ nhưng chưa có hành vi
-
-| # | Ở đâu | Tình trạng | Cần anh quyết |
-| --- | --- | --- | --- |
-| A1 | Reader · "Lưu bài" và "Đọc tiếp sau" | Frame cho hai nút **cùng icon bookmark** và không nói hành vi. Đang làm: "Lưu bài" bật/tắt đánh dấu; "Đọc tiếp sau" đánh dấu rồi rời bài. | Hai hành động hay một? Nếu một thì thanh còn 5 nút. |
-| A2 | Reader · "Nghe" | Disabled, có title "sắp có". Văn bản chưa có audio đọc. Frame vẽ nút này bật. | Đọc bằng TTS, hay bỏ nút khỏi thanh cho tới khi có audio? |
-| A3 | Reader · "Kiểm tra hiểu" | Disabled khi bài không kèm câu hỏi (sách nhập không có). | Sinh câu hỏi bằng AI, hay ẩn nút khi không có? |
-| A4 | Listening · "Kiểm tra hiểu" | Cùng câu hỏi, đã treo từ trước. | Như trên. |
-| A5 | Book detail · 3 nút icon (bookmark, tải về, ⋯) | Disabled, "sắp có". Frame **không vẽ** chúng. | Xoá theo frame, hay giữ và làm chức năng? |
-
-## B. Thành phần frame vẽ mà app chưa dựng
-
-| # | Ở đâu | Tình trạng |
-| --- | --- | --- |
-| B1 | **Progress** | Vẫn là composition cũ D-065: **không có panel kính nào**, không có hàng bằng chứng, không có khối CẤP BẬC, không có heatmap 18 tuần. Frame vẽ 3 panel số lớn, hàng bằng chứng, cấp bậc, heatmap, thời gian 7 ngày theo kỹ năng. |
-| B2 | **Hệ cấp bậc (rank)** | Chưa dựng gì. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
-| B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
-| B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |
-
-## C. Thiếu dữ liệu backend — UI không được bịa
-
-| # | Thiếu gì | Hệ quả thấy được |
-| --- | --- | --- |
-| C1 | CEFR level + ước lượng **số phút đọc** cho từng mục catalogue | Thẻ thư viện thường trống dòng meta; frame luôn in `B1 · tiểu thuyết · 22 phút`. |
-| C2 | Thời gian đọc theo chương | Hàng chương in **số từ**, frame in **số phút**. |
-| C3 | Cấp độ theo từng kỹ năng (`profile.skill_levels`) | Rail không in được level cho Đọc/Nghe/Nói/Viết. |
-| C4 | Chuỗi ngày, thời gian học 90 ngày, hoạt động 18 tuần, ngưỡng rank | Các ô Progress sẽ phải in "—" nếu dựng theo frame ngay bây giờ. |
-| C5 | Câu hỏi hiểu cho sách nhập | A3 ở trên. |
-
-## D. Quyết định quy tắc, không phải quyết định code
-
-| # | Việc | Hai lựa chọn |
-| --- | --- | --- |
-| D1 | Chip lọc thư viện | Frame liệt kê **11** loại; app chỉ hiện chip cho loại **thực sự có nội dung** (nay là 4). Hiện đủ 11 thì có chip bấm vào không ra gì. |
-| D2 | Ghi công nguồn & bản quyền | Frame **không vẽ ở đâu cả**. Nút đã bỏ theo yêu cầu; khối ghi công hiện nằm dưới bài đọc vì văn bản đã xuất bản buộc phải có. Đặt ở đâu là của anh. |
-| D3 | Màu chữ | Frame dùng `rgba(255,255,255,0.72 / 0.55)`; app đọc token `--text-secondary` / `--text-muted`. Component chỉ được đọc token, nên nếu phải khớp tuyệt đối thì sửa ở `theme.css`, không sửa trong component. |
-| D4 | DM Mono → Roboto Mono cho tiếng Việt | Đã treo từ trước; mọi nhãn mono tiếng Việt đang rơi về Roboto Mono. |
-| D5 | Ink / Paper | Anh nhắc trong yêu cầu, nhưng D-066 đã khai tử và code đã gỡ theme picker. Đang làm **một** hệ Dark Glass. Muốn hai theme trở lại thì là quyết định sản phẩm mới. |
-
-## E. Cổng kích hoạt (không phải việc của lane này)
-
-| # | Việc |
-| --- | --- |
-| E1 | `reading.discussion_turn` hiện **đếm usage, không chặn ai**. Bật enforcement Free/Premium là cổng kích hoạt thương mại, cần anh mở, và khi mở thì phải đi qua quota ledger chứ không phải `usage_events`. |
-| E2 | Tầng fallback thứ ba cho AI router: chỉ cần thêm một trường config, không cần code. |
-
-## F. Nợ kỹ thuật thấy được trong phiên
-
-| # | Việc |
-| --- | --- |
-| F1 | `scripts/test_orena_vocabulary_theme_tokens.mjs` và `scripts/test_orena_writing_workspace.mjs` **fail sẵn từ `3deab1e`**, kiểm chứng trên cây sạch. Chưa sửa vì ngoài phạm vi. |
-| F2 | Sandbox `:8011` đang có 1 EPUB thử ("Kafka pa stranden", 5 chương, id `ce71a298…`) tôi nhập để đo màn Book detail. Giữ để anh xem, hay archive? |
-| F3 | Chưa đo lại Reader và Library ở **390 mobile** sau các thay đổi hôm nay; đã đo desktop 1920. |
