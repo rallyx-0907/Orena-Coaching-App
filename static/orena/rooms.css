@@ -2728,3 +2728,34 @@ ul.pronunciation-words small { color: var(--muted); }
   background: var(--glass-well);
   box-shadow: var(--glass-ring);
 }
+
+/* --- Most recent evidence (D-067, measured against Orena Progress.dc.html,
+   "Progress overview"): a mono section label, then rows of what was last
+   judged - the piece, a mono line about it, the figure and which measure it
+   is. Row 17 radius, 16 padding on the base glass with its ring, list gap 12. */
+.evidence { display: grid; gap: 14px; margin-block-start: var(--space-6); }
+/* 11px with the frame's 0.14em tracking, not the shorter ds-label default. */
+.evidence__label { color: var(--text-muted); font-size: 11px; letter-spacing: 0.14em; }
+.evidence-list { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.evidence-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 17px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.evidence-row__text { display: grid; gap: 5px; flex: 1; min-inline-size: 0; }
+.evidence-row__title {
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: var(--weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.evidence-row__meta { color: var(--text-muted); font-size: 12px; }
+.evidence-row__score { display: grid; justify-items: end; gap: 3px; flex: none; }
+.evidence-row__score strong { font-family: var(--display-font); font-size: 23px; font-weight: var(--weight-heavy); }
+.evidence-row__score .ds-label { color: var(--text-muted); font-size: 10.5px; }

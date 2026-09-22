@@ -62,7 +62,7 @@ liệu. Các mục ở trên là ghi chép chi tiết theo từng màn; phần n
 
 | # | Ở đâu | Tình trạng |
 | --- | --- | --- |
-| B1 | **Progress** | Vẫn là composition cũ D-065: **không có panel kính nào**, không có hàng bằng chứng, không có khối CẤP BẬC, không có heatmap 18 tuần. Frame vẽ 3 panel số lớn, hàng bằng chứng, cấp bậc, heatmap, thời gian 7 ngày theo kỹ năng. |
+| B1 | **Progress** | **Hàng bằng chứng đã dựng** (2026-09-22): "Bằng chứng gần nhất" đọc từ LearnerSummary, đúng số đo frame (nhãn DM Mono 11 / 0.14em, hàng r17 pad 16 trên kính có ring, gap 12, tên Nunito 17/700, meta 12, điểm Nunito 23/800, nhãn đo 10.5). Còn thiếu so với frame: **3 panel số lớn** (chuỗi ngày, thời gian học, từ đã thuộc), **khối CẤP BẬC**, **heatmap 18 tuần**, **thời gian 7 ngày theo kỹ năng** - tất cả đều thiếu dữ liệu, xem C4. Phần trên trang vẫn là composition cũ D-065. |
 | B2 | **Hệ cấp bậc (rank)** | Chưa dựng gì. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
 | B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
 | B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |

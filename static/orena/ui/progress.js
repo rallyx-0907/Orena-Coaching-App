@@ -57,7 +57,77 @@ function domainLine(c, r, entry, summary, words) {
   return { text: row.value, label: row.label, bar: unavailableBar, measured: true };
 }
 
-function view(ctx, { summary, words, summaryFailed }) {
+/* --- The evidence the learner actually left (D-067) ----------------------
+   The source draws "BẰNG CHỨNG GẦN NHẤT" as a short list of what was last
+   judged: the piece, a mono line about it, the figure, and which measure that
+   figure is. Every one of those comes from LearnerSummary's observations -
+   nothing here averages, estimates or invents.
+
+   A writing observation can be titled, because the essay list carries the task
+   the learner answered, the version and the word count - the frame's own meta
+   line. The other domains have no title in the read model yet, so the row says
+   which practice it was, which is what it is, rather than a made-up name. */
+const MEASURE_KEYS = {
+  overall: 'evidenceOverall',
+  naturalness: 'evidenceNaturalness',
+  grammar: 'evidenceGrammar',
+  vocabulary: 'evidenceVocabulary',
+  coherence: 'evidenceCoherence',
+  task_achievement: 'evidenceTask',
+  accuracy: 'evidenceAccuracy',
+  pronunciation: 'evidencePronunciation',
+  dictation_best_match: 'evidenceAccuracy',
+};
+
+function whenWord(r, iso) {
+  const at = Date.parse(iso || '');
+  if (!Number.isFinite(at)) return '';
+  const days = Math.floor((Date.now() - at) / 86400000);
+  if (days <= 0) return r.evidenceToday;
+  if (days === 1) return r.evidenceYesterday;
+  return String(r.evidenceDaysAgo).replace('{n}', String(days));
+}
+
+function evidenceRows(r, summary, essays) {
+  if (!summary?.domains) return [];
+  const byId = new Map((essays || []).map((essay) => [String(essay.id), essay]));
+  const rows = [];
+  for (const [domain, block] of Object.entries(summary.domains)) {
+    for (const observation of block?.observations || []) {
+      const value = Number(observation?.value);
+      if (!Number.isFinite(value)) continue;
+      const essay = domain === 'writing' ? byId.get(String(observation?.ref?.id ?? '')) : null;
+      const meta = [
+        essay && Number(essay.revision_no) > 1 ? String(r.evidenceVersion).replace('{n}', String(essay.revision_no)) : '',
+        essay && Number(essay.word_count) > 0 ? String(r.evidenceWords).replace('{n}', Number(essay.word_count).toLocaleString()) : '',
+        whenWord(r, observation.observedAt),
+      ].filter(Boolean).join(' · ');
+      rows.push({
+        title: essay?.prompt || r[domain] || domain,
+        meta,
+        value: Math.round(value),
+        /* A measure the interface has no word for is left blank rather than
+           printed as the read model's own key. */
+        measure: r[MEASURE_KEYS[observation.measure] || ''] || '',
+        at: Date.parse(observation.observedAt || '') || 0,
+      });
+    }
+  }
+  return rows.sort((a, b) => b.at - a.at).slice(0, 4);
+}
+
+const evidenceHtml = (r, rows) =>
+  rows.length
+    ? `<section class="evidence" aria-label="${esc(r.evidenceRecent)}"><span class="ds-label evidence__label">${esc(r.evidenceRecent)}</span><ol class="evidence-list">${rows
+        .map(
+          (row) => `<li class="evidence-row"><span class="evidence-row__text"><span class="evidence-row__title">${esc(row.title)}</span>${
+            row.meta ? `<span class="evidence-row__meta ds-data">${esc(row.meta)}</span>` : ''
+          }</span><span class="evidence-row__score"><strong>${esc(String(row.value))}</strong><span class="ds-label">${esc(row.measure)}</span></span></li>`,
+        )
+        .join('')}</ol></section>`
+    : '';
+
+function view(ctx, { summary, words, summaryFailed, essays }) {
   const c = ctx.c;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const dueValue = words ? String(words.due) : '—';
@@ -72,7 +142,7 @@ function view(ctx, { summary, words, summaryFailed }) {
   const degraded = summaryFailed
     ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.growthUnavailable)}</strong></div><button class="outline" type="button" data-progress-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
     : '';
-  return `<section class="progress-page"><h1 class="progress-title">${esc(r.progress)}</h1><div class="progress-panel"><div class="progress-week"><div class="progress-week__time"><span class="progress-label">${esc(r.progressThisWeek)}</span><strong class="progress-week__value metric-unavailable" aria-describedby="progressTimeNote">—</strong><span class="progress-week__note" id="progressTimeNote">${esc(r.progressStudyUnavailable)}</span></div><div class="progress-stats"><div class="progress-stat progress-stat--streak"><span class="progress-label">${esc(r.progressStreak)}</span><strong class="metric-unavailable" aria-label="${esc(r.progressNotMeasured)}">—</strong></div><div class="progress-stat"><span class="progress-label">${esc(r.progressWordsDue)}</span><strong>${esc(dueValue)}</strong></div><div class="progress-stat progress-stat--words"><span class="progress-label">${esc(r.progressWords)}</span><strong>${esc(words ? String(words.saved) : '—')}</strong></div></div></div><div class="progress-chart" role="img" aria-label="${esc(r.progressChartUnavailable)}">${days}</div><span class="progress-label progress-by-domain">${esc(r.progressByDomain)}</span>${degraded}<div class="progress-domains">${cards}</div></div></section>`;
+  return `<section class="progress-page"><h1 class="progress-title">${esc(r.progress)}</h1><div class="progress-panel"><div class="progress-week"><div class="progress-week__time"><span class="progress-label">${esc(r.progressThisWeek)}</span><strong class="progress-week__value metric-unavailable" aria-describedby="progressTimeNote">—</strong><span class="progress-week__note" id="progressTimeNote">${esc(r.progressStudyUnavailable)}</span></div><div class="progress-stats"><div class="progress-stat progress-stat--streak"><span class="progress-label">${esc(r.progressStreak)}</span><strong class="metric-unavailable" aria-label="${esc(r.progressNotMeasured)}">—</strong></div><div class="progress-stat"><span class="progress-label">${esc(r.progressWordsDue)}</span><strong>${esc(dueValue)}</strong></div><div class="progress-stat progress-stat--words"><span class="progress-label">${esc(r.progressWords)}</span><strong>${esc(words ? String(words.saved) : '—')}</strong></div></div></div><div class="progress-chart" role="img" aria-label="${esc(r.progressChartUnavailable)}">${days}</div><span class="progress-label progress-by-domain">${esc(r.progressByDomain)}</span>${degraded}<div class="progress-domains">${cards}</div></div>${evidenceHtml(r, evidenceRows(r, summary, essays))}</section>`;
 }
 
 function skeleton(ctx) {
@@ -87,9 +157,12 @@ export async function renderProgress(root, ctx) {
   };
   async function load() {
     paint(skeleton(ctx));
-    const [summaryResult, wordsResult] = await Promise.allSettled([
+    const [summaryResult, wordsResult, essayResult] = await Promise.allSettled([
       ctx.growth ? Promise.resolve(ctx.growth) : ctx.api.learnerSummary('all'),
       ctx.api.libraryVocabulary(),
+      /* Only to title a writing row with the task it answered; a failure here
+         costs the title, never the evidence. */
+      ctx.api.essays(),
     ]);
     const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
     const items = wordsResult.status === 'fulfilled' ? wordsResult.value.items || [] : null;
@@ -100,7 +173,8 @@ export async function renderProgress(root, ctx) {
           mastered: items.filter((item) => (Number(item.review_stage) || 0) >= 3).length,
         }
       : null;
-    paint(view(ctx, { summary, words, summaryFailed: !summary }));
+    const essays = essayResult.status === 'fulfilled' ? essayResult.value || [] : [];
+    paint(view(ctx, { summary, words, summaryFailed: !summary, essays }));
     root.querySelector('[data-progress-retry]')?.addEventListener('click', () => {
       ctx.growth = null;
       load();
