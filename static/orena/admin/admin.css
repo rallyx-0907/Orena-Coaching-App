@@ -1274,7 +1274,7 @@
 }
 .ac-forms .ac-form {
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius);
   padding: var(--space-3);
   min-width: 0;
 }

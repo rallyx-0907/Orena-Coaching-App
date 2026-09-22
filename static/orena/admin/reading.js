@@ -37,6 +37,14 @@ export const JOB_POLL_MS = 5000;
 const INPUT_KINDS = ['text', 'url', 'file'];
 const LANGUAGES = ['en', 'zh'];
 
+export function isUnavailable(error) {
+  /* The engine's own "not active yet", whichever shape the client surfaced it
+     in. Matched on the category the server sends, never on a message an
+     operator's language would change. */
+  const text = `${error?.category || ''} ${error?.message || ''} ${error?.body?.detail?.category || ''}`;
+  return text.includes('reading_engine_unavailable') || text.includes('reading_articles_unavailable');
+}
+
 export function viewFrom(params) {
   const value = String(params?.view || '');
   return VIEWS.includes(value) ? value : 'queue';
@@ -246,7 +254,7 @@ export async function renderReading(host, env) {
         await api.readingSetStatus(id, action.dataset.acAction, reason);
         env.notify(t[`readingDone_${action.dataset.acAction}`] || t.readingDone);
         drawer.close();
-        await load();
+        await loadOrExplain();
       });
       drawer.body.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -258,7 +266,7 @@ export async function renderReading(host, env) {
         });
         env.notify(t.readingSaved);
         drawer.set(previewBody(await api.readingArticle(id), t, ui));
-        await load();
+        await loadOrExplain();
       });
     } catch (error) {
       drawer.set(notice(error?.message || t.loadFailed, 'bad'));
@@ -297,7 +305,19 @@ export async function renderReading(host, env) {
     paint(panel({ title: t[`readingView_${view}`], note: t[`readingNote_${view}`], body: articleTable(page, t, ui) }));
   };
 
-  await load();
+  /* A runtime where the reviewed schema is not applied answers 503 for every
+     route here. That is a state, not a failure: the section keeps its views
+     and says so, rather than collapsing into the shell's generic error. */
+  const loadOrExplain = async () => {
+    try {
+      await load();
+    } catch (error) {
+      if (!isUnavailable(error)) throw error;
+      paint(panel({ title: t.readingOpsTitle, body: notice(t.readingOpsUnavailable, 'neutral') }));
+    }
+  };
+
+  await loadOrExplain();
 
   const onClick = async (event) => {
     const open = event.target.closest('[data-ac-open]');
@@ -309,14 +329,14 @@ export async function renderReading(host, env) {
     if (retry) {
       await api.readingRetryJob(retry.dataset.acRetry);
       env.notify(t.readingRetried);
-      await load();
+      await loadOrExplain();
       return;
     }
     const source = event.target.closest('[data-ac-source]');
     if (source) {
       await api.readingSetSourceState(source.dataset.acSource, source.dataset.acState);
       env.notify(t.readingSourceUpdated);
-      await load();
+      await loadOrExplain();
     }
   };
 
@@ -340,7 +360,7 @@ export async function renderReading(host, env) {
       const job = await api.readingSubmit(submitted, fields.upload?.files?.[0] || null);
       env.notify(job.duplicate ? t.readingSubmitDuplicate : t.readingSubmitted);
       form.reset();
-      await load();
+      await loadOrExplain();
     } catch (error) {
       env.notify(error?.message || t.readingSubmitFailed);
     }
@@ -356,7 +376,7 @@ export async function renderReading(host, env) {
         stop();
         return;
       }
-      load().catch(() => {});
+      loadOrExplain().catch(() => {});
     }, JOB_POLL_MS);
   }
 
