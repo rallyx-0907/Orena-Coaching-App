@@ -1,13 +1,18 @@
 # Reading Content Engine — schema and worker review request
 
-Status: `REVISED TWICE, REHEARSED — awaiting re-review, then human
-schema/runtime authorization`.
+Status: **`INDEPENDENT ARCHITECTURE REVIEW: APPROVED` — awaiting human
+schema/runtime authorization.**
 
-Round 1: `CHANGES REQUIRED` (seven P1) for commit `5eeaac7`. Round 2:
-`REQUEST CHANGES` (two new P1, six P2) for commit `e375ad3`, with every
-round-1 finding verified fixed. Both rounds and what each changed are
-recorded in `docs/project/READING_CONTENT_ENGINE_ARCHITECTURE_REVIEW.md`;
-§10 below maps the round-1 findings to the code.
+Four rounds: `CHANGES REQUIRED` (seven P1, `5eeaac7`) → `REQUEST CHANGES` (two
+new P1, `e375ad3`) → `REQUEST CHANGES` (one P1 in the worker implementation,
+`a785216`) → **`APPROVE`** (`e09c6ce`, three non-blocking P2s, all since
+resolved). Every round and its resolution is recorded in
+`docs/project/READING_CONTENT_ENGINE_ARCHITECTURE_REVIEW.md`; §10 below maps
+the round-1 findings to the code.
+
+The approval is an architecture-review verdict on the design and its
+implementation. It does not authorize schema activation, deployment or product
+approval — §11 below is what remains, and step 3 belongs to the human.
 
 Proposed migration: `migrations/proposed/20260922_0010_reading_content_engine.py`
 (additive; six new tables; no existing table altered). Alembic does not read
@@ -334,11 +339,11 @@ authorize DDL that has never been executed.
    `CAST(... AS text)` and re-proven.
 
    This is local execution evidence, not a CI claim.
-2. **Re-review** by an independent architecture reviewer of the revised
-   migration — the six tables, the supersede and revert rules and their
-   trigger, the dedupe and idempotency constraints, the claim/reaper
-   statements, the delete behaviour and the indexes. An implementer may not
-   self-approve this.
+2. **Independent architecture review — done, `APPROVE`** for commit
+   `e09c6ce`, covering the six tables, the supersede and revert rules and their
+   trigger, the dedupe and idempotency constraints, the claim/reaper design and
+   its implementation, the delete behaviour and the indexes. The implementer
+   did not approve it; `AGENTS.md` forbids that.
 3. **Human schema/runtime authorization**, then one `git mv` into
    `migrations/versions/` and application to the named sandbox runtime only.
 4. **PostgreSQL constraint proof** (`tests/test_reading_engine_persistence_postgres.py`,

@@ -1,0 +1,656 @@
+"""HTTP boundary of the Reading Content Engine's admin side.
+
+`/api/admin/reading/*` - submitting content, watching the queue, reviewing a
+candidate, publishing it, and managing sources. It keeps the rules the rest of
+the console already keeps, because they are the console's rules and not this
+feature's:
+
+* every route is administrator-only, through the guard the app installs;
+* every change must come from the console's own page (the `Origin` a browser
+  attaches), so a sibling site cannot ride the session cookie;
+* every privileged change writes an `audit_logs` row - one audit system, the
+  one that already exists;
+* nothing here answers with a body a list did not need: the queue is metadata,
+  the preview is where a body and a source snapshot are fetched.
+
+And two that belong to this engine:
+
+* **no route publishes as a side effect.** Publication is its own explicit
+  call, with an actor recorded on it.
+* **nothing does the work in the request.** Submitting returns `202` and a job
+  id; the worker does the fetching and the analysis.
+
+Until the reviewed migration is applied, every route here answers
+`503 reading_engine_unavailable` - the same shape Vocabulary import already
+uses, so an operator sees one truthful "not active yet" rather than a
+traceback.
+"""
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from typing import Any
+from urllib.parse import urlsplit
+
+from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.exc import SQLAlchemyError
+
+from writing_coach.core.errors import orena_http_error
+from writing_coach.persistence.reading_content_repository import (
+    MAX_ARTICLE_PAGE,
+    ReadingContentRepository,
+    TargetInput,
+)
+from writing_coach.persistence.reading_job_repository import (
+    MAX_JOB_PAGE,
+    InvalidCursor,
+    ReadingJobRepository,
+)
+from writing_coach.reading_content_engine import ReadingContentEngine
+from writing_coach.reading_source_import import (
+    MAX_FILE_BYTES,
+    ReadingSourceError,
+    SubmittedInput,
+)
+
+router = APIRouter(prefix="/api/admin/reading", tags=["admin-reading"])
+_logger = logging.getLogger(__name__)
+
+ARTICLE_ACTIONS = frozenset({"published", "unpublished", "rejected", "archived", "ready", "needs_review"})
+SOURCE_STATES = frozenset({"needs_review", "approved", "active", "paused", "blocked", "rejected", "archived"})
+_UPLOAD_CHUNK = 512 * 1024
+
+
+@dataclass
+class _Reading:
+    admin_guard: Callable[[Request], Mapping[str, Any]] | None = None
+    content: ReadingContentRepository | None = None
+    jobs: ReadingJobRepository | None = None
+    engine: ReadingContentEngine | None = None
+    audit: Callable[..., None] | None = None
+
+
+_state = _Reading()
+
+
+def configure_reading_admin(
+    *,
+    admin_guard: Callable[[Request], Mapping[str, Any]] | None,
+    content: ReadingContentRepository | None = None,
+    jobs: ReadingJobRepository | None = None,
+    engine: ReadingContentEngine | None = None,
+    audit: Callable[..., None] | None = None,
+) -> None:
+    global _state
+    _state = _Reading(
+        admin_guard=admin_guard, content=content, jobs=jobs, engine=engine, audit=audit
+    )
+
+
+# -- plumbing ------------------------------------------------------------------
+
+
+def _admin(request: Request) -> Mapping[str, Any]:
+    if _state.admin_guard is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not configured.")
+    return _state.admin_guard(request) or {}
+
+
+def _same_origin(request: Request) -> None:
+    """A change must come from the console's own page.
+
+    The session cookie is SameSite=Lax, which stops a cross-site form post but
+    not a same-site one from a sibling subdomain. A browser attaches `Origin`
+    to every request that changes something, so a change whose origin is
+    absent or names another host is refused - the check the rest of the
+    console already makes.
+    """
+    origin = request.headers.get("origin")
+    if not origin:
+        raise orena_http_error(403, "admin_origin_required", "Admin changes must be made from the admin console.")
+    try:
+        origin_host = urlsplit(origin).netloc
+    except ValueError:
+        origin_host = ""
+    if not origin_host or origin_host != request.headers.get("host", ""):
+        raise orena_http_error(403, "admin_origin_mismatch", "Admin changes must be made from the admin console.")
+
+
+def _no_store(response: Response) -> None:
+    response.headers["Cache-Control"] = "no-store"
+
+
+def _engine() -> ReadingContentEngine:
+    if _state.engine is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
+    return _state.engine
+
+
+def _content() -> ReadingContentRepository:
+    if _state.content is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
+    return _state.content
+
+
+def _jobs() -> ReadingJobRepository:
+    if _state.jobs is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
+    return _state.jobs
+
+
+def _actor(admin: Mapping[str, Any]) -> str:
+    return str(admin.get("google_sub") or admin.get("email") or "admin")
+
+
+def _audit(
+    admin: Mapping[str, Any],
+    action: str,
+    *,
+    entity_type: str = "",
+    entity_id: str = "",
+    payload: Mapping[str, Any] | None = None,
+) -> None:
+    """Record what an administrator did, in `audit_logs`.
+
+    Best-effort by design: the action has already happened by the time this
+    runs, so a failed record is logged rather than undoing a publish. The
+    review trail in `reading_review_events` is written inside the same
+    transaction as the change itself and is not best-effort.
+    """
+    if _state.audit is None:
+        return
+    try:
+        _state.audit(
+            action,
+            actor_key=_actor(admin),
+            entity_type=entity_type,
+            entity_id=entity_id,
+            payload=dict(payload or {}),
+        )
+    except Exception:  # noqa: BLE001 - never lose the action over its record
+        _logger.warning("reading admin: audit record failed for %s", action, exc_info=True)
+
+
+def _guarded(call: Callable[[], Any]) -> Any:
+    """Turn "the schema is not applied yet" into the same 503 as "not configured".
+
+    An operator opening Reading before the migration is authorised sees one
+    truthful message, never a raw database error naming a missing table.
+    """
+    try:
+        return call()
+    except HTTPException:
+        raise
+    except InvalidCursor as exc:
+        raise orena_http_error(422, "reading_invalid_cursor", "That page cursor is not valid.") from exc
+    except SQLAlchemyError as exc:
+        _logger.warning("reading admin: schema not ready", exc_info=True)
+        raise orena_http_error(
+            503, "reading_engine_unavailable", "The Reading engine is not active yet."
+        ) from exc
+
+
+def _limit(raw: int | None, ceiling: int) -> int:
+    return max(1, min(int(raw or ceiling), ceiling))
+
+
+# -- models --------------------------------------------------------------------
+
+
+class SourceBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    slug: str = Field(min_length=1, max_length=120)
+    name: str = Field(min_length=1, max_length=240)
+    source_type: str = Field(min_length=1, max_length=20)
+    base_url: str = Field(default="", max_length=600)
+    languages: list[str] = Field(default_factory=list)
+    automation_allowed: bool = False
+    can_republish: bool = False
+    can_adapt: bool = False
+    attribution_required: bool = True
+    license_note: str = Field(default="", max_length=2000)
+
+
+class SourceStateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    state: str
+    polling_enabled: bool | None = None
+
+
+class ArticleEditBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, max_length=500)
+    body: str | None = None
+    excerpt: str | None = Field(default=None, max_length=400)
+    topic: str | None = Field(default=None, max_length=120)
+    subtopic: str | None = Field(default=None, max_length=120)
+    # `""` clears the admin override and returns the article to the machine's
+    # estimate; omitting the field leaves it untouched. They are different
+    # requests, so they have different spellings.
+    reviewed_level: str | None = None
+    reason: str = Field(default="", max_length=2000)
+
+
+class ArticleStatusBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str
+    reason: str = Field(default="", max_length=2000)
+
+
+class TargetDecisionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    approved: bool
+
+
+class TargetBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=300)
+    canonical_form: str = Field(default="", max_length=300)
+    target_type: str = Field(default="word", max_length=30)
+    context: str = Field(default="", max_length=2000)
+    meaning: str = Field(default="", max_length=2000)
+
+
+# -- sources -------------------------------------------------------------------
+
+
+@router.get("/sources")
+def list_sources(request: Request, response: Response) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    return {"items": _guarded(lambda: _content().list_sources())}
+
+
+@router.post("/sources", status_code=201)
+def create_source(request: Request, response: Response, payload: SourceBody) -> dict[str, Any]:
+    """Register where content may come from. It starts unapproved, always.
+
+    Nothing an admin types here begins fetching: `state` is `needs_review` and
+    polling is off until a separate, deliberate approval - which is also what
+    the schema's CHECK constraint enforces.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    source = _guarded(
+        lambda: _content().create_source(
+            slug=payload.slug.strip(),
+            name=payload.name.strip(),
+            source_type=payload.source_type.strip(),
+            base_url=payload.base_url.strip(),
+            languages=[language.strip().casefold() for language in payload.languages if language.strip()],
+            rights={
+                "automation_allowed": payload.automation_allowed,
+                "can_republish": payload.can_republish,
+                "can_adapt": payload.can_adapt,
+                "attribution_required": payload.attribution_required,
+                "license_note": payload.license_note,
+            },
+            created_by=_actor(admin),
+        )
+    )
+    _audit(admin, "admin.reading_source_created", entity_type="reading_source", entity_id=source["id"],
+           payload={"slug": source["slug"], "source_type": source["source_type"]})
+    return source
+
+
+@router.post("/sources/{source_id}")
+def update_source(
+    request: Request, response: Response, source_id: str, payload: SourceStateBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    state = payload.state.strip().casefold()
+    if state not in SOURCE_STATES:
+        raise orena_http_error(422, "reading_invalid_state", "That is not a source state.")
+    source = _guarded(lambda: _content().set_source_state(source_id, state, actor=_actor(admin)))
+    if source is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    _audit(admin, "admin.reading_source_state", entity_type="reading_source", entity_id=source_id,
+           payload={"state": state})
+    if payload.polling_enabled is not None:
+        updated = _guarded(
+            lambda: _content().set_polling(
+                source_id, enabled=payload.polling_enabled, actor=_actor(admin)
+            )
+        )
+        if updated is None:
+            # Refused rather than failed: polling needs both an approved source
+            # and a rights answer that allows automation.
+            raise orena_http_error(
+                422,
+                "reading_polling_not_allowed",
+                "Polling needs an active source whose rights allow automation.",
+            )
+        _audit(admin, "admin.reading_source_polling", entity_type="reading_source", entity_id=source_id,
+               payload={"polling_enabled": payload.polling_enabled})
+        source = updated
+    return source
+
+
+# -- submission ----------------------------------------------------------------
+
+
+@router.post("/jobs", status_code=202)
+async def submit_content(
+    request: Request,
+    response: Response,
+    kind: str = Form(...),
+    text: str = Form(""),
+    url: str = Form(""),
+    title: str = Form(""),
+    author: str = Form(""),
+    language: str = Form(""),
+    published_at: str = Form(""),
+    source_name: str = Form(""),
+    can_republish: bool = Form(False),
+    can_adapt: bool = Form(False),
+    attribution_required: bool = Form(True),
+    license_note: str = Form(""),
+    upload: UploadFile | None = File(None),
+) -> dict[str, Any]:
+    """Accept one submission and return its job. 202, not 200.
+
+    The status code is the contract: this did not happen yet. Nothing is
+    fetched, parsed or analysed here - an admin pasting from a slow site waits
+    for a job id, not for that site.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    payload = b""
+    filename = ""
+    if upload is not None:
+        filename = upload.filename or ""
+        payload = await _read_upload(upload)
+    submitted = SubmittedInput(
+        kind=kind.strip().casefold(),
+        text=text,
+        url=url.strip(),
+        filename=filename,
+        payload=payload,
+        title=title.strip(),
+        author=author.strip(),
+        language=language.strip().casefold(),
+        published_at=published_at.strip(),
+        source_name=source_name.strip(),
+        rights={
+            "can_republish": can_republish,
+            "can_adapt": can_adapt,
+            "attribution_required": attribution_required,
+            "license_note": license_note.strip(),
+        },
+    )
+    try:
+        job = _guarded(lambda: _engine().submit(submitted, actor=_actor(admin)))
+    except ReadingSourceError as refusal:
+        raise orena_http_error(422, refusal.code, refusal.message) from refusal
+    _audit(admin, "admin.reading_ingestion_submitted", entity_type="reading_job", entity_id=job["id"],
+           payload={"kind": submitted.kind, "duplicate": job["duplicate"]})
+    return {
+        "id": job["id"],
+        "status": job["status"],
+        "stage": job["stage"],
+        "duplicate": job["duplicate"],
+        "job_type": job["job_type"],
+    }
+
+
+async def _read_upload(upload: UploadFile) -> bytes:
+    """Read an upload within its budget, never past it.
+
+    Reading first and checking after is how an oversized file costs exactly
+    the memory the limit exists to protect - the fix `vocabulary_source_import`
+    already made.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await upload.read(_UPLOAD_CHUNK)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_FILE_BYTES:
+            raise orena_http_error(413, "source_too_large", "This file is larger than the engine accepts.")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+@router.get("/jobs")
+def list_jobs(
+    request: Request,
+    response: Response,
+    status: str = "",
+    cursor: str = "",
+    limit: int = MAX_JOB_PAGE,
+) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    return _guarded(
+        lambda: _jobs().list_jobs(
+            status=status.strip() or None, cursor=cursor or None, limit=_limit(limit, MAX_JOB_PAGE)
+        )
+    )
+
+
+@router.get("/jobs/{job_id}")
+def get_job(request: Request, response: Response, job_id: str) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    job = _guarded(lambda: _jobs().get_job(job_id))
+    if job is None:
+        raise orena_http_error(404, "reading_job_not_found", "That import is not in the queue.")
+    # The submitted payload can be a whole article; an admin watching a job
+    # needs its state, not its contents.
+    job.pop("input_json", None)
+    return job
+
+
+@router.post("/jobs/{job_id}/retry", status_code=202)
+def retry_job(request: Request, response: Response, job_id: str) -> dict[str, Any]:
+    """Re-submit a finished job's input as a new job.
+
+    The failed row keeps its error and its attempts: an admin looking at
+    Imports is there to read what went wrong, and a mutated row would have
+    erased it.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    job = _guarded(lambda: _jobs().retry(job_id, actor=_actor(admin)))
+    if job is None:
+        raise orena_http_error(
+            409, "reading_job_not_retryable", "Only a finished import can be submitted again."
+        )
+    _audit(admin, "admin.reading_ingestion_retried", entity_type="reading_job", entity_id=job["id"],
+           payload={"from_job": job_id, "duplicate": job["duplicate"]})
+    return {"id": job["id"], "status": job["status"], "duplicate": job["duplicate"]}
+
+
+# -- review --------------------------------------------------------------------
+
+
+@router.get("/queue")
+def review_queue(
+    request: Request,
+    response: Response,
+    status: str = "",
+    cursor: str = "",
+    limit: int = MAX_ARTICLE_PAGE,
+) -> dict[str, Any]:
+    """Candidates waiting for a decision. Metadata only - Preview fetches the
+    article, the snapshot and the evidence."""
+    _admin(request)
+    _no_store(response)
+    statuses = tuple(part.strip() for part in status.split(",") if part.strip())
+    return _guarded(
+        lambda: _content().list_queue(
+            **({"statuses": statuses} if statuses else {}),
+            cursor=cursor or None,
+            limit=_limit(limit, MAX_ARTICLE_PAGE),
+        )
+    )
+
+
+@router.get("/articles/{article_id}")
+def preview_article(request: Request, response: Response, article_id: str) -> dict[str, Any]:
+    admin = _admin(request)
+    _no_store(response)
+    article = _guarded(lambda: _content().get_article(article_id))
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    article["events"] = _guarded(lambda: _content().list_review_events(article_id))
+    if article.get("source"):
+        article["duplicates"] = _guarded(
+            lambda: _content().find_duplicate_content(
+                article["source"]["content_hash"], exclude_source_id=article["source"]["source_id"]
+            )
+        )
+    _audit(admin, "admin.reading_article_previewed", entity_type="reading_article", entity_id=article_id)
+    return article
+
+
+@router.post("/articles/{article_id}")
+def edit_article(
+    request: Request, response: Response, article_id: str, payload: ArticleEditBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    article = _guarded(
+        lambda: _content().update_article(
+            article_id,
+            actor=_actor(admin),
+            title=payload.title,
+            body=payload.body,
+            excerpt=payload.excerpt,
+            topic=payload.topic,
+            subtopic=payload.subtopic,
+            # The model's `None` means "not supplied"; the repository's "" means
+            # that, and its `None` means "clear the override". Translating here
+            # keeps the two vocabularies from leaking into each other.
+            reviewed_level=(
+                "" if payload.reviewed_level is None else (payload.reviewed_level.strip() or None)
+            ),
+            reason=payload.reason,
+        )
+    )
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    _audit(
+        admin,
+        "admin.reading_level_override" if payload.reviewed_level is not None else "admin.reading_article_edited",
+        entity_type="reading_article",
+        entity_id=article_id,
+        payload={"reviewed_level": article["reviewed_level"], "effective_level": article["effective_level"]},
+    )
+    return article
+
+
+@router.post("/articles/{article_id}/status")
+def set_article_status(
+    request: Request, response: Response, article_id: str, payload: ArticleStatusBody
+) -> dict[str, Any]:
+    """Publish, unpublish, reject or archive - always an admin's own act.
+
+    Nothing in the pipeline reaches this route, which is what "no auto-publish"
+    means in code rather than in a policy document.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    status = payload.status.strip().casefold()
+    if status not in ARTICLE_ACTIONS:
+        raise orena_http_error(422, "reading_invalid_status", "That is not an article status.")
+    if status == "rejected" and not payload.reason.strip():
+        raise orena_http_error(
+            422, "reading_reason_required", "A rejection keeps its reason - say why."
+        )
+    article = _guarded(
+        lambda: _content().set_status(article_id, status, actor=_actor(admin), reason=payload.reason.strip())
+    )
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    _audit(admin, f"admin.reading_article_{status}", entity_type="reading_article", entity_id=article_id,
+           payload={"status": status, "reason": payload.reason.strip()})
+    return article
+
+
+@router.post("/articles/{article_id}/targets")
+def add_target(
+    request: Request, response: Response, article_id: str, payload: TargetBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    existing = _guarded(lambda: _content().get_article(article_id))
+    if existing is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    target = _guarded(
+        lambda: _content().add_target(
+            article_id,
+            target=TargetInput(
+                text=payload.text.strip(),
+                canonical_form=(payload.canonical_form.strip() or payload.text.strip().casefold()),
+                target_type=payload.target_type.strip(),
+                context=payload.context.strip(),
+                meaning=payload.meaning.strip(),
+                estimated_level="",
+                rank=len(existing["targets"]),
+                machine_suggested=False,
+            ),
+            actor=_actor(admin),
+        )
+    )
+    _audit(admin, "admin.reading_target_added", entity_type="reading_article", entity_id=article_id,
+           payload={"text": payload.text.strip()})
+    return target
+
+
+@router.post("/articles/{article_id}/targets/{target_id}")
+def decide_target(
+    request: Request, response: Response, article_id: str, target_id: str, payload: TargetDecisionBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    target = _guarded(
+        lambda: _content().decide_target(target_id, approved=payload.approved, actor=_actor(admin))
+    )
+    if target is None:
+        raise orena_http_error(404, "reading_target_not_found", "That learning target is not on this article.")
+    _audit(
+        admin,
+        "admin.reading_target_approved" if payload.approved else "admin.reading_target_rejected",
+        entity_type="reading_article",
+        entity_id=article_id,
+        payload={"target": target["text"]},
+    )
+    return target
+
+
+# -- operations ----------------------------------------------------------------
+
+
+@router.get("/operations")
+def operations(request: Request, response: Response) -> dict[str, Any]:
+    """Queue depth, article states and worker health, counted in the database."""
+    _admin(request)
+    _no_store(response)
+    return _guarded(
+        lambda: {
+            "queue": _jobs().counts_by_status(),
+            "articles": _content().counts_by_status(),
+            "published": _content().published_count(),
+            "recent": _jobs().list_jobs(limit=5)["items"],
+        }
+    )

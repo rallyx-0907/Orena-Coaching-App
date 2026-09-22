@@ -102,6 +102,19 @@ def _uuid(value: Any) -> uuid.UUID:
     return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
 
 
+def _lookup_uuid(value: Any) -> uuid.UUID | None:
+    """The id of a row that could exist, or None for a string that never can.
+
+    A route path is a string, so `/articles/queue` arrives here as an id. That
+    names no row - which is absence, the same answer as a well-formed id
+    nobody used, and not a 500.
+    """
+    try:
+        return _uuid(value)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
 def _encode_cursor(moment: datetime, row_id: str) -> str:
     payload = json.dumps({"at": moment.isoformat(), "id": row_id}).encode("utf-8")
     return base64.urlsafe_b64encode(payload).decode("ascii")
@@ -335,6 +348,8 @@ class ReadingContentRepository:
         return _source(row)
 
     def get_source(self, source_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(source_id) is None:
+            return None
         with self.engine.connect() as connection:
             row = connection.execute(
                 select(ReadingSource).where(ReadingSource.id == _uuid(source_id))
@@ -351,6 +366,8 @@ class ReadingContentRepository:
     def set_source_state(
         self, source_id: str, state: str, *, actor: str, now: datetime | None = None
     ) -> dict[str, Any] | None:
+        if _lookup_uuid(source_id) is None:
+            return None
         moment = _now(now)
         values: dict[str, Any] = {"state": state, "updated_at": moment}
         if state == "active":
@@ -434,7 +451,16 @@ class ReadingContentRepository:
                 # row that holds them becomes current again and the one that
                 # replaced it is stamped - `revision` is a creation-order
                 # counter, so it does not move.
-                if existing.superseded_at is not None:
+                #
+                # Only for the *same* native item, though. A feed that
+                # regenerates its guids can offer bytes we already hold under a
+                # new id; that is a plain content duplicate, and treating it as
+                # a revert would flip the currency of an item the incoming
+                # fetch never named.
+                if (
+                    existing.superseded_at is not None
+                    and existing.source_native_id == source_native_id
+                ):
                     connection.execute(
                         update(ReadingSourceItem)
                         .where(
@@ -501,6 +527,8 @@ class ReadingContentRepository:
         return {**_item(row), "duplicate": False}
 
     def get_source_item(self, item_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(item_id) is None:
+            return None
         with self.engine.connect() as connection:
             row = connection.execute(
                 select(ReadingSourceItem).where(ReadingSourceItem.id == _uuid(item_id))
@@ -620,6 +648,8 @@ class ReadingContentRepository:
     def get_article(self, article_id: str) -> dict[str, Any] | None:
         """Everything review needs: the body, the targets, the snapshot, the
         analysis. Not what a list returns - this is the Preview read."""
+        if _lookup_uuid(article_id) is None:
+            return None
         with self.engine.connect() as connection:
             row = connection.execute(
                 select(ReadingArticle).where(ReadingArticle.id == _uuid(article_id))
@@ -640,6 +670,8 @@ class ReadingContentRepository:
         return article
 
     def article_for_source_item(self, source_item_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(source_item_id) is None:
+            return None
         with self.engine.connect() as connection:
             row = connection.execute(
                 select(ReadingArticle).where(
@@ -797,7 +829,22 @@ class ReadingContentRepository:
         without a body - the one query whose cost must not grow with the
         corpus."""
         bounded = max(1, min(int(limit), MAX_ARTICLE_PAGE))
-        query = select(ReadingArticle).where(
+        # The ten columns a card draws, named rather than `select(Article)`:
+        # the entity form reads every body from disk and transfers it for up to
+        # sixty rows before Python throws them away, which is the cost the
+        # whole partial-index design exists to avoid.
+        query = select(
+            ReadingArticle.id,
+            ReadingArticle.title,
+            ReadingArticle.language,
+            ReadingArticle.effective_level,
+            ReadingArticle.topic,
+            ReadingArticle.reading_time_seconds,
+            ReadingArticle.word_count,
+            ReadingArticle.excerpt,
+            ReadingArticle.published_at,
+            ReadingArticle.content_revision,
+        ).where(
             ReadingArticle.status == LEARNER_VISIBLE_STATUS,
             ReadingArticle.language == language,
         )
@@ -828,6 +875,8 @@ class ReadingContentRepository:
         """What a learner opens: the text, the targets an admin approved, and
         the attribution the rights require. No analysis, no review history, no
         rights payload, no job state."""
+        if _lookup_uuid(article_id) is None:
+            return None
         with self.engine.connect() as connection:
             row = connection.execute(
                 select(ReadingArticle).where(
@@ -907,6 +956,8 @@ class ReadingContentRepository:
         human approved it" and "a human added this" are different facts, and a
         future processor re-run has to be able to tell them apart.
         """
+        if _lookup_uuid(target_id) is None:
+            return None
         moment = _now(now)
         with self.engine.begin() as connection:
             row = connection.execute(
@@ -1002,6 +1053,8 @@ class ReadingContentRepository:
 
     # ---- the review trail ------------------------------------------------
     def list_review_events(self, article_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
+        if _lookup_uuid(article_id) is None:
+            return []
         with self.engine.connect() as connection:
             rows = connection.execute(
                 select(ReadingReviewEvent)

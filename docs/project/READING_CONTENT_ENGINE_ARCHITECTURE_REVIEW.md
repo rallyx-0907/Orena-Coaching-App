@@ -1,8 +1,11 @@
 # Reading Content Engine — independent architecture review
 
-Status: round 1 `CHANGES REQUIRED` (seven P1), round 2 `REQUEST CHANGES` (two
-new P1, six P2), round 3 `REQUEST CHANGES` (one P1 in the worker
-implementation, four P2; the schema itself carried none). Each round is recorded in full below, condensed without loss
+Status: **round 4 `APPROVE`** — no P0 and no P1 remain. Round 1 `CHANGES
+REQUIRED` (seven P1), round 2 `REQUEST CHANGES` (two new P1, six P2), round 3
+`REQUEST CHANGES` (one P1 in the worker implementation, four P2; the schema
+itself carried none), round 4 `APPROVE` with three non-blocking P2s, all since
+resolved. The approval is an architecture-review verdict only: human
+schema/runtime authorization is still required before anything is applied. Each round is recorded in full below, condensed without loss
 of substance — the verdict, every finding, every required change and the
 authorization boundary are the reviewer's own. What each round changed is under
 "Resolution" at the end of this file.
@@ -588,3 +591,111 @@ list will be wrong.
 | P2-C | §9 of the request now states the autogenerate consequence, that it ends at the `git mv`, that `create_all()` creates neither trigger nor seeds (so hermetic tests seed their own source), and that the doubly-declared partial indexes are what §11.4's proof must check with `pg_indexes.indexdef`. |
 | P2-D | The tree consequence written into the migration docstring's revert section. |
 | Trigger residual | The `CAST` rationale ("do not fix this to jsonb") written into the migration, and the targeted-`UPDATE` requirement into `reading_content_repository.py`'s module docstring, where the code that must honour it lives. |
+
+---
+
+# Round 4 — APPROVE
+
+- Reviewed commit: `e09c6ce6fa42604cd0850075f2f0dda02160b922`
+- Same reviewer role, model and read-only constraints as rounds 1–3.
+- Review date: 2026-09-22
+
+## Verdict
+
+**APPROVE.** No P0 and no P1 remain. Three P2 findings, none elevated:
+`REVIEW_POLICY.md` makes P2 "non-blocking improvement unless the task or
+reviewer explicitly elevates it", and two of the three are unreachable in the
+authorized Phase A scope.
+
+Scope of the approval, in the reviewer's words: "the six-table schema, the
+supersede and revert rules and their immutability trigger, the dedupe and
+idempotency constraints, the claim/reaper design *and its implementation*, the
+delete behaviour, and the indexes". Not reviewed and not covered: the content
+repository's other tests, `reading_worker.py`'s loop structure, and any admin
+API route or authorization-matrix entry.
+
+## The round-3 P1 is properly fixed
+
+Checked by predicate rather than by description: `_owned_by()` guards
+`heartbeat`, `advance_stage`, `complete` and `fail`, including `fail()`'s
+attempt/max_attempts *decision* read — "that was the subtle half and it is
+closed". The reaper is two set-based `UPDATE`s with the predicate in the write
+and `case()` evaluated per row in the database, so a stranded job with no
+attempts left goes straight to `failed` without transiting `queued`. `claim()`
+is the single locking statement §5 has claimed since round 1. Both regression
+tests walk the sequences the reviewer specified.
+
+## The three questions, answered
+
+**Does the revert path match the documented algorithm?** Yes in mechanism —
+stamp-then-clear, `revision` and `supersedes_id` untouched, both statements
+writing only `superseded_at` (the targeted-`UPDATE` discipline the trigger
+requires), and a concurrent insert between the two statements rolls the
+transaction back rather than leaving two current rows. One keying defect,
+P2-B.
+
+**Can `process()` still write after losing its job?** Yes, to the content
+tables — P2-A.
+
+**Do the learner projections leak?** No, checked field by field. The list
+returns ten card fields; `estimated_level`, its confidence, `status`,
+`analysis_json`, `rejection_reason` and the rest are absent. The detail filters
+targets to `admin_approved`, projects them to five fields, and reads four
+columns of the source item — no `original_content`, no rights payload, no
+review events, no job state. Both entry points filter on `published`. "That is
+a clean boundary."
+
+## Findings
+
+### P2-A — `process()` threaded the worker id but ignored the signal it got back
+
+`advance_stage()` returns whether the write landed; `process()` discarded it,
+so a worker that had already lost its job continued through fetch, normalize,
+`record_source_item()` and `create_article()`. Content-addressing and
+`uq_reading_article_source_item` prevent a duplicate article, but the revert
+branch toggles `superseded_at` on two rows — a zombie worker reaching it
+changes which snapshot is current on behalf of a job it no longer owns.
+
+### P2-B — The revert branch keyed on the content hash alone
+
+The lookup is `(source_id, content_hash)` and the revert action was scoped by
+the *stored* row's native id, ignoring the incoming one. A feed that
+regenerates its guids can offer bytes already held under a new id; that fired
+the revert branch and flipped the currency of an item the fetch never named.
+Not reachable in Phase A — manual, URL and file sources all carry an empty
+native id and never supersede — but it must be closed before the RSS/API
+adapter ships.
+
+### P2-C — The learner list read every body it then threw away
+
+`select(ReadingArticle)` reads `body`, `analysis_json`, `adaptation_json` and
+`rejection_reason` from disk for up to sixty rows per page before `_learner_row()`
+discards them. The filtering and pagination were genuinely in the database; the
+projection was not.
+
+## Round 4 resolution
+
+| Finding | Change |
+| --- | --- |
+| P2-A | `process()` returns `{"result_kind": "job_lost"}` at each stage boundary whose `advance_stage()` says the job is no longer this worker's — including the one immediately before `record_source_item()`, which is the last point before anything is written to the content tables. The comment now promises what it delivers. |
+| P2-B | The revert branch requires `existing.source_native_id == source_native_id`; bytes arriving under a different native id are a plain content duplicate and touch no currency state. |
+| P2-C | `list_published()` names the ten columns a card draws. `_learner_row()` was unchanged. |
+| (found by a route test) | A path segment that is not an id — `/articles/queue` reaching the article route — is now absence rather than a cast error: `_lookup_uuid()` in both repositories answers `None`, and the routes turn that into 404. |
+
+Also landed alongside, outside the reviewer's scope but required by the
+specification: the admin and learner HTTP boundaries
+(`writing_coach/reading_admin_api.py`, `writing_coach/reading_articles_api.py`),
+34 route tests, and the authorization matrix extended from 36 routes to 50 so
+every new endpoint is proved anonymous-401 / learner-403 / admin-reached.
+
+## Authorization boundary (the reviewer's, unchanged)
+
+This review does not authorize schema activation, deployment, or product
+approval. `APPROVE` here is an architecture-review verdict on the design and
+its implementation, nothing else. The migration remains in
+`migrations/proposed/`; it still requires explicit **human schema/runtime
+authorization**, then one `git mv` into `migrations/versions/`, then
+application to the named sandbox runtime only, followed by the PostgreSQL
+constraint proof in §11.4. Production (8000) and preview (8010) retain every
+gate in `ARCHITECTURE_INVARIANTS.md § Human gates`. `APPROVED` as a product
+state remains the human's alone.

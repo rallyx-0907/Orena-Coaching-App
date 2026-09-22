@@ -58,6 +58,14 @@ def _now(value: datetime | None) -> datetime:
     return value or datetime.now(UTC)
 
 
+def _lookup_uuid(value: Any) -> uuid.UUID | None:
+    """The id of a job that could exist, or None for a string that never can."""
+    try:
+        return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
 def _aware(value: Any) -> datetime | None:
     """SQLite hands back naive datetimes; the runtime is timestamptz.
 
@@ -458,6 +466,8 @@ class ReadingJobRepository:
 
     # ---- reads -----------------------------------------------------------
     def get_job(self, job_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(job_id) is None:
+            return None
         with self.engine.connect() as connection:
             row = connection.execute(
                 select(ReadingIngestionJob).where(ReadingIngestionJob.id == uuid.UUID(str(job_id)))

@@ -29,6 +29,8 @@ ADMIN = {"google_sub": "matrix-admin", "email": "admin@example.com", "name": "Ad
 ACCOUNTS = {user["google_sub"]: user for user in (LEARNER, ADMIN)}
 
 BOOK = "9d0c5b2e-4a3c-4d1e-9a52-7a7b9b1d2c3e"
+ARTICLE = "5b8d2c1a-7e34-4f0b-9c6d-1a2b3c4d5e6f"
+TARGET = "7c9e4a2b-1d58-4b6f-8e0a-2b3c4d5e6f70"
 ACCOUNT = "3f1d2c4b-5a69-4e7f-8a9b-0c1d2e3f4a5b"
 UNREADABLE_MEDIA_URL = "ftp://media.example/clip.mp3"  # refused before any network use
 CSV = ("files", ("words.csv", b"term,meaning\nagenda,plan\n", "text/csv"))
@@ -89,6 +91,36 @@ MATRIX = {
     ("POST", "/api/reading/library/import"): (
         "/api/reading/library/import", {"files": [EPUB], "data": {"learning_language": "en"}}, {503}),
     ("POST", "/api/reading/library/books/{book_id}/archive"): (f"/api/reading/library/books/{BOOK}/archive", {}, {503}),
+    # Reading Content Engine. The runtime this suite builds is SQLite, so the
+    # engine is unconfigured and answers 503 - which is the point: the guard
+    # still runs first, so anonymous is 401 and a learner is 403 before the
+    # engine ever reports that it is inactive.
+    ("GET", "/api/admin/reading/sources"): ("/api/admin/reading/sources", {}, {200, 503}),
+    ("POST", "/api/admin/reading/sources"): (
+        "/api/admin/reading/sources",
+        {"json": {"slug": "matrix-source", "name": "Matrix", "source_type": "rss", "languages": ["en"]}},
+        {201, 503},
+    ),
+    ("POST", "/api/admin/reading/sources/{source_id}"): (
+        f"/api/admin/reading/sources/{ARTICLE}", {"json": {"state": "paused"}}, {404, 503}),
+    ("GET", "/api/admin/reading/queue"): ("/api/admin/reading/queue", {}, {200, 503}),
+    ("GET", "/api/admin/reading/jobs"): ("/api/admin/reading/jobs", {}, {200, 503}),
+    ("POST", "/api/admin/reading/jobs"): (
+        "/api/admin/reading/jobs", {"data": {"kind": "text", "text": "A pasted paragraph."}}, {202, 422, 503}),
+    ("GET", "/api/admin/reading/jobs/{job_id}"): (f"/api/admin/reading/jobs/{ARTICLE}", {}, {404, 503}),
+    ("POST", "/api/admin/reading/jobs/{job_id}/retry"): (
+        f"/api/admin/reading/jobs/{ARTICLE}/retry", {}, {409, 503}),
+    ("GET", "/api/admin/reading/articles/{article_id}"): (
+        f"/api/admin/reading/articles/{ARTICLE}", {}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}"): (
+        f"/api/admin/reading/articles/{ARTICLE}", {"json": {"topic": "environment"}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/status"): (
+        f"/api/admin/reading/articles/{ARTICLE}/status", {"json": {"status": "published"}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/targets"): (
+        f"/api/admin/reading/articles/{ARTICLE}/targets", {"json": {"text": "higher ground"}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/targets/{target_id}"): (
+        f"/api/admin/reading/articles/{ARTICLE}/targets/{TARGET}", {"json": {"approved": True}}, {404, 503}),
+    ("GET", "/api/admin/reading/operations"): ("/api/admin/reading/operations", {}, {200, 503}),
 }
 ADMIN_ONLY_WITHOUT_ADMIN_IN_PATH = {
     ("POST", "/api/reading/library/import"),
@@ -138,7 +170,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 36
+    assert len(routes) == 50
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

@@ -169,16 +169,24 @@ class ReadingContentEngine:
             return None
         job_id = job["id"]
         # The worker that claimed this job is the only one allowed to report on
-        # it: if this one stalled and lost it to the reaper, every write
-        # below lands nowhere rather than overwriting its successor's work.
+        # it. Every stage boundary re-asserts that and *stops* when the answer
+        # is no: the job writes would land nowhere anyway, but the content
+        # writes would not - a zombie worker reaching the supersede path would
+        # change which snapshot is current on behalf of a job it no longer
+        # owns. Checking here costs one round trip and a wasted fetch; not
+        # checking costs a corrupted currency flag.
         worker_id = job.get("claimed_by", "")
+        lost = {"job_id": job_id, "result_kind": "job_lost"}
         submitted = self._rebuild(job, payload=payload)
         try:
             adapter = self.adapters[submitted.kind]()
             raw = adapter.fetch(submitted)
-            self.jobs.advance_stage(job_id, "normalizing", worker_id=worker_id, now=now)
+            if not self.jobs.advance_stage(job_id, "normalizing", worker_id=worker_id, now=now):
+                return lost
             item = adapter.normalize(raw)
-            self.jobs.advance_stage(job_id, "deduplicating", worker_id=worker_id, now=now)
+            # The last check before anything is written to the content tables.
+            if not self.jobs.advance_stage(job_id, "deduplicating", worker_id=worker_id, now=now):
+                return lost
             snapshot = self.content.record_source_item(
                 source_id=job["source_id"],
                 source_native_id=item.source_native_id,
@@ -212,7 +220,8 @@ class ReadingContentEngine:
                     "article_id": existing["id"],
                     "source_item_id": snapshot["id"],
                 }
-            self.jobs.advance_stage(job_id, "analyzing", worker_id=worker_id, now=now)
+            if not self.jobs.advance_stage(job_id, "analyzing", worker_id=worker_id, now=now):
+                return lost
             article = self._build_candidate(item, snapshot, now=now)
             self.jobs.complete(
                 job_id,

@@ -614,6 +614,51 @@ def configure_admin_console_from_runtime() -> None:
 configure_admin_console_from_runtime()
 app.include_router(admin_console_router)
 
+# Reading Content Engine. Two boundaries over one engine: the admin side
+# (`/api/admin/reading`) submits, reviews and publishes; the learner side
+# (`/api/reading/articles`) reads published articles only. Both are wired
+# against the same repositories, and both answer 503 until the reviewed
+# migration is applied - the engine ships inert rather than half-active.
+from writing_coach.persistence.reading_content_repository import (  # noqa: E402
+    ReadingContentRepository,
+)
+from writing_coach.persistence.reading_job_repository import ReadingJobRepository  # noqa: E402
+from writing_coach.reading_admin_api import (  # noqa: E402
+    configure_reading_admin,
+    router as reading_admin_router,
+)
+from writing_coach.reading_articles_api import (  # noqa: E402
+    configure_reading_articles,
+    router as reading_articles_router,
+)
+from writing_coach.reading_content_engine import ReadingContentEngine  # noqa: E402
+
+
+def configure_reading_engine_from_runtime() -> None:
+    engine = _persistence_runtime.engine
+    content = ReadingContentRepository(engine) if engine is not None else None
+    jobs = ReadingJobRepository(engine) if engine is not None else None
+    audit_repository = AdminConsoleRepository(engine) if engine is not None else None
+    configure_reading_admin(
+        admin_guard=require_admin,
+        content=content,
+        jobs=jobs,
+        engine=(
+            ReadingContentEngine(content=content, jobs=jobs)
+            if content is not None and jobs is not None
+            else None
+        ),
+        # The same `audit_logs` table the console already writes to. One audit
+        # system, not a second one for this feature.
+        audit=audit_repository.record_event if audit_repository is not None else None,
+    )
+    configure_reading_articles(content, language_supported=is_enabled)
+
+
+configure_reading_engine_from_runtime()
+app.include_router(reading_admin_router)
+app.include_router(reading_articles_router)
+
 def weighted_overall(result: dict[str, Any]) -> float:
     return calculate_weighted_overall(result, active_rubric_weights())
 
