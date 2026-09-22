@@ -419,8 +419,6 @@ async function render() {
   document.querySelectorAll('dialog').forEach((x) => x.close());
   ctx.location = route(location.hash);
   root.dataset.experience = experienceFor(ctx.location);
-  // The ground behind the room takes the room's own glow (theme.css, --room-glow-*).
-  document.documentElement.dataset.room = root.dataset.experience;
   ctx.alive = () => generation === version;
   const scope = { ...ctx, alive: ctx.alive };
   shell();

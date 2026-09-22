@@ -2328,3 +2328,19 @@ screen's ground. The app paints the screen's ground: `theme.css` (`--screen-canv
 stays declared because the foundation gate pins `tokens.json`, and paints nothing.
 
 **Supersedes / Superseded by:** Corrects the reading of "one Dark Glass field under every screen" in D-066.
+
+## D-071 — A screen's ground is the UI Baseline's, a lit indigo, not #060509
+
+**Status:** Accepted, explicit current human instruction (2026-09-22: "the background is not the same because it
+is too dark; the one in the UI Baseline is much brighter").
+
+**Decision:** The app's ground is the body of `Orena UI Baseline.dc.html` at its source: `#0A0722` under seventeen
+layers - violet and blue nebulae, four fields of stars, and a 170-degree wash from `#120C33` to `#0A0722` - fixed to
+the viewport. It is one ground for every room; there are no per-room glows. `theme.css` owns it
+(`--ground-color`, `--ground`, `--ground-size`), `foundation.css` paints it on `body`, `theme-color` is `#0A0722`.
+The individual screen frames still draw `#060509` with a room glow: that is a conflict inside the design, and the
+human has chosen the baseline. `tokens.json` keeps its older cosmic field declared (the foundation gate pins it);
+it paints nothing.
+
+**Supersedes / Superseded by:** Supersedes D-070 (its `--screen-*` and `--room-glow-*` tokens and `data-room` are
+removed).
