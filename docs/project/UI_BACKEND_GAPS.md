@@ -1094,3 +1094,95 @@ saved?" - the word sheet, the collections list, a collection's cards and the
 daily feed - now ask about the words they are drawing, through
 `saved_vocabulary_words` and `saved_vocabulary_state`.
 
+## GAP-H7, checked: the meter works, nothing a plan sells is wired to it (2026-09-22)
+
+Asked to verify before closing, rather than assume. What is there:
+
+- **The machinery is real and tested.** `record_usage` writes a `usage_events`
+  row; `monthly_usage` sums this calendar month's rows; `account_state` reads
+  that for each feature a plan lists. Six tests cover it end to end - an
+  accepted turn is metered exactly once, nothing is metered when no provider
+  answers, nothing when the cap refuses, and a repeated `request_id` is not
+  metered again (`tests/test_text_discussion.py`, `tests/test_product_account_state.py`).
+- **One caller.** `writing_coach/text_discussion.py` meters
+  `reading.discussion_turn`, and that feature is in no plan's entitlements
+  (`writing_coach/product/catalog.py`), so it can never appear on Hồ sơ.
+- **Live sandbox, 2026-09-22**: `/api/product/me` reports `used: 0` for all
+  nine features with `usage_state: "known"` - the meter was read and it is
+  genuinely zero, not unreadable.
+
+**Deferred, and left at zero.** The features a plan charges for - writing
+evaluation, rewriting, lookups, saved words - do not call `record_usage` yet.
+That is backend work with a human gate on it (commerce is not open;
+`billing_ready` is false), not something a surface can fix, and nothing here
+will be seeded or faked to make the bars look alive: a bar that reads zero
+because nothing has been metered is telling the truth. The panel is the
+component the source draws, and it will start saying something the day those
+endpoints meter.
+
+## Viewport check: 1920 is the reference, and what breaks below it (2026-09-22)
+
+The source draws these screens at **1920x1080** and at **390x844**, and nothing
+in between. 1920 is the reference and was not touched. The other widths were
+tested for defects only - things that disappear, get crushed or run off the
+edge - not treated as a brief to invent a layout.
+
+**What was wrong, and is fixed** (neither changes 1920, both verified there):
+
+- **Progress collapsed below its own width.** Holding the page to one screen is
+  right at 1920, where the composition fits. Narrower, row two's four panels no
+  longer fit across, the rows above grow, and the clamp crushed what was under
+  them: at 1440 the rank ladder came out 40px tall, at 1024 the ladder and the
+  rank card had **no height at all** - thirty-two rungs and the learner's own
+  rank, invisible. The clamp now applies at 1600 and up, which is the
+  composition it came from; below that the page scrolls like any page and
+  everything is present (1440: all 32 rungs, ladder 1046px; 1024: all 32,
+  ladder 1292px).
+- **The Profile hero crushed its own copy.** The hero may wrap, but without a
+  floor the copy simply got thinner instead: at 1024 the name, the rank pill,
+  the plan pill and the XP line shared **94px** while the two actions kept
+  their 267. The copy now has a floor of 320px, so the actions wrap under it
+  instead (1024: copy 391px, actions on their own line). At 1920 the copy is
+  990px and nothing moves.
+
+**Verified clean**: Progress overview and Xu hướng, and Hồ sơ, at 1920, 1440,
+1024 and 390 - no horizontal page scroll, nothing clipped outside the viewport,
+the phone head and tabs intact at 390. Vocabulary, Library and Search were
+swept at 1024 with nothing clipped; Home's card rail is `overflow-x: auto` by
+design and is not a defect.
+
+**For human review - the design does not define these, so nothing was
+invented:**
+
+- **What Progress is between 390 and 1920.** At 1440 and 1024 row two wraps
+  from four panels to three and the screen becomes a scrolling page rather than
+  one screen. That is the honest fallback, not a decision: whether the panels
+  should shrink to stay four across, whether the ladder should stay a scrolling
+  panel, and whether "one screen" is a rule at those widths, are design calls.
+- **What Hồ sơ is at those widths.** The hero wraps its actions below the copy
+  and the two panels stack. The source draws neither state.
+- **Between 601px and about 900px** the phone composition has already been left
+  behind (the phone rules stop at 600) while the desktop one has no room. No
+  frame covers it; it is not currently drawn for any device Orena targets, so
+  it was left as it falls out.
+
+## One of the two "inherited failures" was the CRLF checkout, not the code (2026-09-22)
+
+`scripts/test_orena_writing_workspace.mjs` has been failing on this machine for
+weeks and passing in CI. It asserts `/showActivity\(\);
+\s+const retry/`
+against `ui/expression.js`. Git stores that file with LF and checks it out with
+CRLF here, so the `` sits where the pattern expects `
+` and the match
+fails - the source is identical either way. It now passes locally only because
+this lane rewrote that file with LF endings.
+
+So the local expectation is **one** inherited failure, not two:
+`scripts/test_m3_pronunciation_contract.mjs`, which is a real content
+mismatch (a pronunciation projection that no longer carries the score the test
+expects) and fails on a clean HEAD tree as well. Same family as the CRLF note
+already recorded for `test_orena_grammar.mjs`: an environment failure, not an
+application regression - and the gates that are written against source text
+would be steadier matching `?
+`.
+

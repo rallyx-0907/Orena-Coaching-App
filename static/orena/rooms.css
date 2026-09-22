@@ -2788,7 +2788,12 @@ ul.pronunciation-words small { color: var(--muted); }
   color: var(--text-muted);
 }
 .profile-avatar__face { display: inline-flex; }
-.profile-hero__copy { flex: 1; min-inline-size: 0; display: grid; gap: 12px; }
+/* The hero is already allowed to wrap; without a floor the copy simply gets
+   thinner instead, and at 1024 the name, the pills and the XP line were
+   sharing 94px while the two actions kept their 267. A floor makes the wrap
+   happen where it should. Nothing changes at the source's own width, where the
+   copy has a thousand pixels. */
+.profile-hero__copy { flex: 1; min-inline-size: 320px; display: grid; gap: 12px; }
 .profile-hero__identity { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .profile-hero__name {
   margin: 0;
@@ -2930,7 +2935,17 @@ ul.pronunciation-words small { color: var(--muted); }
    takes exactly the room the bar leaves - 84 of bar and the 26/30 the shell
    pads with - and the rows share it, so the ladder scrolls inside its panel
    instead of pushing the screen past the viewport. */
-@media (min-width: 601px) {
+/* The source draws this screen at 1920 and at 390, and nothing between. At
+   1920 it is one screen with nothing below the fold, which is what the clamp
+   below holds. Narrower than the composition's own width the four panels of
+   row two no longer fit across, the rows above grow, and holding the page to
+   one screen would crush what is under them - at 1440 the ladder came out
+   40px tall, at 1024 it had no height at all. So the clamp applies where the
+   composition it belongs to fits, and below that the page scrolls like any
+   page. What a 1440 or 1024 Progress should actually look like is a design
+   decision, recorded in docs/project/UI_BACKEND_GAPS.md, not one to invent
+   here. */
+@media (min-width: 1600px) {
   #main > .progress-page {
     block-size: calc(100dvh - 140px);
     align-content: stretch;
