@@ -40,6 +40,11 @@ from writing_coach.persistence.vocabulary_repository import (
     vocabulary_db_path,
 )
 from writing_coach.persistence.config import create_runtime_engine, runtime_url
+from writing_coach.persistence.discussion_repository import (
+    PostgresTextDiscussionRepository,
+    SQLiteTextDiscussionRepository,
+    TextDiscussionRepository,
+)
 from writing_coach.runtime_schema import (
     UNAVAILABLE,
     SchemaNotReady,
@@ -57,6 +62,7 @@ class PersistenceRuntime:
     learning_repository: LearningRepository
     specialized_learning_repository: SpecializedLearningRepository
     vocabulary_repository: VocabularyRepository
+    text_discussion_repository: TextDiscussionRepository
     engine: object | None = None
 
 
@@ -130,6 +136,7 @@ def build_runtime(
             PostgresLearningRepository(engine),
             PostgresSpecializedLearningRepository(engine),
             SQLAlchemyVocabularyRepository(engine),
+            PostgresTextDiscussionRepository(engine),
             engine,
         )
     if selected != "sqlite":
@@ -143,4 +150,5 @@ def build_runtime(
         learning,
         SQLiteSpecializedLearningRepository(learning.connect),
         sqlite_vocabulary_repository(vocabulary_db or vocabulary_db_path(product_db)),
+        SQLiteTextDiscussionRepository(),
     )

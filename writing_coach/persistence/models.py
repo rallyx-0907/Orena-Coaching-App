@@ -17,6 +17,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     false,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -506,3 +507,88 @@ class VocabularyCollectionMembership(Base):
     membership_metadata: Mapped[dict] = mapped_column(
         "metadata", JSON, default=dict, nullable=False
     )
+
+
+class TextDiscussion(Base):
+    """One learner's thread about one whole text (D-072.2).
+
+    Keyed to the content identity the app routes on, not to a catalogue row:
+    Orena owns no table for every kind of text. `turn_count` is the atomic
+    reservation counter the turn endpoint takes its ordinals from, not a
+    cached aggregate to read for display.
+    """
+
+    __tablename__ = "text_discussions"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "language_code", "source_kind", "source_id", name="uq_text_discussion_scope"
+        ),
+        CheckConstraint(
+            "source_kind IN ('story','media','reading_session','book_chapter')",
+            name="ck_text_discussion_source_kind",
+        ),
+        # One-directional: a non-session kind may never carry a session id, but
+        # a session thread whose session was deleted (ON DELETE SET NULL) is a
+        # legitimate state. The biconditional would make that deletion fail.
+        CheckConstraint(
+            "source_kind = 'reading_session' OR reading_session_id IS NULL",
+            name="ck_text_discussion_session_kind",
+        ),
+        CheckConstraint(
+            "turn_count >= 0 AND turn_count <= 200", name="ck_text_discussion_turn_cap"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    reading_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_sessions.id", ondelete="SET NULL"), nullable=True
+    )
+    turn_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TextDiscussionTurn(Base):
+    """One turn of that thread, ordered by `ordinal` and never by `created_at`,
+    which ties when both turns of an exchange are written in one request.
+
+    `request_id` is the client's idempotency key, carried by the learner turn
+    only; a partial unique index over the non-empty values is the endpoint's
+    dedup contract. Ordinals are not contiguous: a failed provider call or a
+    raced duplicate leaves its reserved pair unused, by design.
+    """
+
+    __tablename__ = "text_discussion_turns"
+    __table_args__ = (
+        UniqueConstraint("discussion_id", "ordinal", name="uq_text_discussion_turn_ordinal"),
+        CheckConstraint("role IN ('learner','assistant')", name="ck_text_discussion_turn_role"),
+        CheckConstraint("length(body) <= 4000", name="ck_text_discussion_turn_body"),
+        CheckConstraint("ordinal >= 1", name="ck_text_discussion_turn_ordinal_positive"),
+        Index("ix_text_discussion_turns_order", "discussion_id", "ordinal"),
+        Index(
+            "ux_text_discussion_turns_request",
+            "discussion_id",
+            "request_id",
+            unique=True,
+            postgresql_where=text("request_id <> ''"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    discussion_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("text_discussions.id", ondelete="CASCADE"), nullable=False
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    context: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    request_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
