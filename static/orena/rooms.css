@@ -2981,7 +2981,7 @@ ul.pronunciation-words small { color: var(--muted); }
 
 .skill-time { display: grid; gap: 10px; }
 .skill-time__label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
-.skill-time__rows { display: grid; gap: 9px; }
+.skill-time__rows { display: grid; gap: 12px; }
 .skill-row {
   display: flex;
   align-items: baseline;
@@ -2991,7 +2991,7 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 .skill-row:hover, .skill-row:focus-visible { color: var(--text-primary); }
 .skill-row__name { font-size: 13.5px; }
-.skill-row__value { margin-inline-start: auto; font-size: 13px; text-align: end; }
+.skill-row__value { font-size: 13px; }
 
 .next-action { display: grid; gap: 5px; padding-block-start: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07); }
 .next-action__title {
@@ -3104,9 +3104,12 @@ ul.pronunciation-words small { color: var(--muted); }
 .rank-card__to { flex: none; color: var(--text-secondary); font-size: 12px; }
 
 /* The skill rows carry the frame's bar; the value sits after it. */
+/* One geometry for every row - name 104, track 356x10, value 60, gap 16 -
+   because bars only compare if they are the same length. */
 .skill-row { display: flex; align-items: center; gap: 16px; }
-.skill-row__bar { flex: 1; min-inline-size: 90px; block-size: 10px; }
-.skill-row__name { flex: none; min-inline-size: 84px; }
+.skill-row__name { flex: none; inline-size: 104px; }
+.skill-row__bar { flex: 1; min-inline-size: 0; block-size: 10px; }
+.skill-row__value { flex: none; inline-size: 60px; text-align: end; }
 
 /* "Việc nên làm tiếp" is a card with a way in, not a paragraph. */
 .next-action {

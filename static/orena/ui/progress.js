@@ -165,22 +165,29 @@ function heatmap(r, days) {
   </div>`;
 }
 
-/* The per-skill rows the source puts under the heatmap. It draws seven days of
-   time; Orena records no time at all, so each row carries what it does record
-   for that skill - the same words the settings sheet uses, through
-   growthDomainRow - and says "not measured" where it records nothing. */
+/* The five the frame lists - Reading, Listening, Speaking, Writing,
+   Vocabulary. There is no Dictation row: the frame's own label says
+   "CHÉP CHÍNH TẢ TÍNH VÀO LISTENING", so dictation is counted into Listening
+   rather than given a row of its own.
+
+   Every row is one geometry - name 104, track 356x10, value 60 - so the bars
+   are all the same length, which is what makes them comparable. Letting the
+   value push the track about, as this did, is the thing that made them look
+   ragged.
+
+   The column measures seven days of time. Orena records no time at all, so
+   every track is the unavailable one and every value is a dash: a length or a
+   number here would be reading as time nobody counted (D-066 rule 4). What
+   each skill does record is not shown under a heading that says time. */
+const TIME_SKILLS = ['reading', 'listening', 'speaking', 'writing', 'vocabulary'];
+
 function skillRows(c, r, summary, words) {
-  const rows = DOMAINS.map((entry) => {
-    const line = domainLine(c, r, entry, summary, words);
-    const value = line.measured ? line.text : r.progressNotMeasured;
-    /* The frame draws a bar per skill against seven days of time. Orena records
-       no time, so the bar is the unavailable one and the row carries what the
-       skill does record instead - never a length standing for a number nobody
-       measured. */
+  const rows = TIME_SKILLS.map((key) => {
+    const entry = DOMAINS.find((d) => d.key === key);
     return `<a class="skill-row" href="${entry.href()}" data-domain="${entry.domain}">`
-      + `<span class="skill-row__name ds-data">${esc(r[entry.key])}</span>`
+      + `<span class="skill-row__name ds-data">${esc(r[key])}</span>`
       + `<span class="progress-bar skill-row__bar" data-unavailable aria-hidden="true"></span>`
-      + `<span class="skill-row__value ds-data${line.measured ? '' : ' metric-unavailable'}">${line.measured && entry.evidence !== 'vocabulary' ? value : esc(value)}</span>`
+      + `<span class="skill-row__value ds-data metric-unavailable">&mdash;</span>`
       + `</a>`;
   }).join('');
   return `<div class="skill-time">`
