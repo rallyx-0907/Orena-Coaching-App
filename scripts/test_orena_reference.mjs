@@ -238,12 +238,15 @@ for (const ui of ['en', 'zh', 'vi']) {
   const nav = referenceNavigation(shellCtx(ui, route('#/')));
   assert.match(nav, /id="shellNav"/, 'the nav has an id to point at');
   const railHrefs = [...nav.matchAll(/<a class="nav-link[^"]*" href="([^"]+)"/g)].map((m) => m[1]);
+  /* Profile is the fifth destination, not a sheet: the source draws it as a
+     screen - avatar, rank, settings and the plan's limits - in "Orena Hạn mức
+     sử dụng", and the app now has that screen. */
   assert.deepEqual(railHrefs, [
-    link(), link('content'), link('language'), link('progress'),
+    link(), link('content'), link('language'), link('progress'), link('profile'),
     link('practice', { intent: 'reading' }), link('practice', { intent: 'follow' }),
     link('practice', { intent: 'speaking' }), link('writing'),
   ], `${ui}: the baseline's rail`);
-  assert.match(nav, /<button type="button" class="nav-link" data-preference data-nav="profile">/, `${ui}: Profile opens the profile sheet`);
+  assert.doesNotMatch(nav, /data-preference data-nav="profile"/, `${ui}: Profile is a destination, not a sheet`);
   assert.equal((nav.match(/nav-link--skill/g) || []).length, 4, `${ui}: four skills`);
   assert.equal((nav.match(/aria-current="page"/g) || []).length, 1, 'exactly one is current on Home');
   assert.doesNotMatch(nav, /navPractice|nav-link--practice|data-nav="dictation"|nav-toggle/, `${ui}: nothing the design does not draw`);

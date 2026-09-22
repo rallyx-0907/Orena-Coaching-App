@@ -2775,12 +2775,13 @@ ul.pronunciation-words small { color: var(--muted); }
   background: var(--glass-soft);
   box-shadow: var(--glass-ring);
 }
-.profile-hero__avatar { flex: none; inline-size: 132px; block-size: 132px; }
+/* The frame draws the ring at 168 on the desktop and 126 on the phone. */
+.profile-hero__avatar { flex: none; inline-size: 168px; block-size: 168px; }
 .profile-avatar {
   display: grid;
   place-items: center;
-  inline-size: 132px;
-  block-size: 132px;
+  inline-size: 100%;
+  block-size: 100%;
   border-radius: 50%;
   background: var(--surface-secondary);
   box-shadow: var(--glass-ring);
@@ -3284,7 +3285,9 @@ ul.pronunciation-words small { color: var(--muted); }
 /* The hero's two actions, as the source draws them: pills of 46 with 0/20
    padding at 15.5/700. "Chỉnh sửa" opens the settings the app already has;
    "Chia sẻ" has no behaviour yet and says so rather than pretending. */
-.profile-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+/* The hero's third column: the frame keeps Chia sẻ and Chỉnh sửa at its far
+   right, not under the name. */
+.profile-actions { flex: none; display: flex; gap: 12px; flex-wrap: wrap; }
 .profile-action {
   display: inline-flex;
   align-items: center;
@@ -3304,6 +3307,23 @@ ul.pronunciation-words small { color: var(--muted); }
 .profile-action[disabled] { opacity: 0.55; cursor: default; }
 @media (max-width: 900px) {
   .profile-actions { inline-size: 100%; }
+  .profile-hero__avatar { inline-size: 126px; block-size: 126px; }
+  /* The phone frame draws the hero as the top of the screen, centred and with
+     no panel behind it, and puts the plan's limits above the settings. */
+  .profile-hero {
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    text-align: center;
+  }
+  .profile-hero__copy { inline-size: 100%; justify-items: center; }
+  .profile-hero__identity { justify-content: center; }
+  .profile-columns { flex-direction: column; }
+  .profile-panel--quota { order: -1; inline-size: 100%; }
+  .profile-panel--settings { inline-size: 100%; }
   .profile-action { flex: 1; justify-content: center; min-block-size: 42px; padding: 0 14px; font-size: 14px; }
 }
 

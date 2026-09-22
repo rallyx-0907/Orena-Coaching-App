@@ -224,7 +224,7 @@ function shellBelongsTo(location) {
    not: the content comes forward (Design Contract rule 11). */
 // Library carries its own search above the grid, so it does not repeat the
 // global one (rule 20).
-const TOP_BAR_PAGES = new Set(['language', 'progress', 'continue', 'collection']);
+const TOP_BAR_PAGES = new Set(['language', 'progress', 'continue', 'collection', 'profile']);
 function paintTopBar() {
   const bar = document.getElementById('topbar');
   if (!bar) return;

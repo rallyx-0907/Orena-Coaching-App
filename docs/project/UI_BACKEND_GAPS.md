@@ -856,3 +856,47 @@ full-width row of 38 at radius 13 - and both stat rows stay rows, three tiles th
 frame's 8px gap and 11/10 padding. Without that head the phone could reach Tổng quan and never
 Xu hướng.
 
+## Hồ sơ, measured against "Orena Hạn mức sử dụng" (2026-09-22)
+
+Read at the source with `DesignSync` - the screen is **not** in
+`docs/design/canonical-ui/`, so it has no pin and must be read there each time.
+
+**What now matches the frame.** Hồ sơ is a destination in the rail rather than a
+sheet, and it carries the bar the frame draws - "Hồ sơ" at 26/800, the global
+search at 46 tall, the streak chip. The hero is the frame's: the ring at 168
+(126 on the phone), the name at 34/800 with the rank and plan pills beside it,
+the XP line, and **Chia sẻ then Chỉnh sửa at the hero's far right**, in that
+order, at 46 tall. The settings card is "Cài đặt" with the frame's six rows, in
+its order and with its glyphs - Ngôn ngữ đang học, Mục tiêu mỗi ngày, Nhắc học,
+Gói, Nội dung riêng tư, Giao diện. Five Phosphor 2.1.1 icons the app lacked
+(`target`, `credit-card`, `moon-stars`, `lock-key`, `share-network`) were
+fetched from the package and inlined; none was typed from memory.
+
+**What no backend can fill:**
+
+- **GAP-H1 · XP and the rank.** The frame draws "15 840 XP", "Virtuoso · bậc
+  10 / 32" and "CÒN 6 160 → LUMINARY". Nothing counts XP and nothing serves a
+  tier, so the XP line says it is not counted, its bar is the unavailable one,
+  and the ring stays the plain well until a tier arrives.
+- **GAP-H2 · Nhắc học.** There is no study reminder: no schedule, no store, no
+  notification. The row keeps its place and says so, and does not open.
+- **GAP-H3 · Nội dung riêng tư.** Nothing counts a learner's imported texts for
+  this row. Same treatment.
+- **GAP-H4 · the reset date.** The frame's quota head reads "PLUS · ĐẶT LẠI
+  12/10". `account_state()` carries the plan and each feature's limit and use,
+  but no period or reset date, so the head carries the plan alone.
+- **GAP-H5 · the joined date and the streak in the hero's meta line.** Neither
+  is served; the line carries the language pair it does know.
+- **GAP-H6 · the rail's foot.** The frame draws the rank crystal, the day's
+  goal (18/30′) and the streak there. Orena measures none of the three, so the
+  rail keeps the learner card it has.
+
+**One conflict, for the human rather than for this lane (rule 7).** The frame
+closes the quota card with a **"Lên Pro"** button.
+`docs/product/ORENA_COMMERCE_ARCHITECTURE.md` §2 and §4 say the opposite:
+`billing_ready` is false everywhere upstream and "read-only UI badges are not
+access enforcement" - no price, upgrade action or provider identifier belongs
+in the interface yet. The button is therefore **not drawn**, and the decision is
+recorded here rather than made: either commerce opens, or the frame's button
+waits for it.
+

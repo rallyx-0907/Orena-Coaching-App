@@ -69,11 +69,15 @@ function quotaRow(r, row, feature) {
   </div>`;
 }
 
-function settingRow(glyph, label, value) {
-  return `<button type="button" class="profile-setting" data-preference>
+/* A row the learner can change opens the preferences sheet. Two of the six the
+   frame lists - the study reminder and their own content - have nothing behind
+   them yet, so the row keeps its place and its glyph, says it is not there yet,
+   and does not pretend to open anything (D-066 rule 4). */
+function settingRow(glyph, label, value, { ready = true } = {}) {
+  return `<button type="button" class="profile-setting"${ready ? ' data-preference' : ' disabled'}>
     <span class="profile-setting__icon">${icon(glyph, { size: 20 })}</span>
     <span class="profile-setting__label">${esc(label)}</span>
-    <span class="profile-setting__value">${esc(value)}</span>
+    <span class="profile-setting__value${ready ? '' : ' metric-unavailable'}">${esc(value)}</span>
     <span class="profile-setting__go">${icon('caret-right', { size: 17 })}</span>
   </button>`;
 }
@@ -92,7 +96,7 @@ export function profileSection(ctx, { account, profile } = {}) {
   const tier = account?.tier || null;
   const avatarInner = `<span class="profile-avatar__face">${icon('user', { size: 40 })}</span>`;
   const avatar = tier
-    ? rankFrame({ rank: tier.level, size: 132, uid: 'profile', avatar: avatarInner })
+    ? rankFrame({ rank: tier.level, size: 168, uid: 'profile', avatar: avatarInner })
     : `<span class="profile-avatar">${avatarInner}</span>`;
 
   const identity = [
@@ -101,13 +105,16 @@ export function profileSection(ctx, { account, profile } = {}) {
 
   const quotas = QUOTA_ROWS.map((row) => quotaRow(r, row, features[row.key])).filter(Boolean).join('');
 
+  /* The six rows the frame lists, in its order and with its glyphs. */
   const settings = [
     settingRow('translate', r.profileSettingLanguages, `${languageName} · ${ctx.supportLabel || String(ctx.support || '').toUpperCase()}`),
     /* One of the four goals `account_profile.py` allows. A value with no word
        of its own reads as "not set" rather than as the stored key: the
        interface never shows the read model's own vocabulary. */
     settingRow('target', r.profileSettingGoal, r[`profileGoal_${profile?.goal || ''}`] || r.profileNotSet),
+    settingRow('bell', r.profileSettingReminder, r.profileNotYet, { ready: false }),
     settingRow('credit-card', r.profileSettingPlan, planName || r.profileNotSet),
+    settingRow('lock-key', r.profileSettingPrivate, r.profileNotYet, { ready: false }),
     settingRow('moon-stars', r.profileSettingTheme, r.profileThemeDark),
   ].join('');
 
@@ -121,19 +128,19 @@ export function profileSection(ctx, { account, profile } = {}) {
         ${planName ? `<span class="profile-pill profile-pill--plan ds-data">${esc(planName)}</span>` : ''}
       </div>
       <p class="profile-hero__meta">${identity}</p>
-      <div class="profile-actions">
-        <button type="button" class="profile-action" data-preference>${icon('pencil-simple', { size: 17 })}<span>${esc(r.profileEdit)}</span></button>
-        <button type="button" class="profile-action" disabled title="${esc(r.profileSoon)}" aria-label="${esc(`${r.profileShare} — ${r.profileSoon}`)}">${icon('share-network', { size: 17 })}<span>${esc(r.profileShare)}</span></button>
-      </div>
       <div class="profile-xp">
         <div class="profile-xp__head"><span class="ds-data metric-unavailable">${esc(r.profileXpUnavailable)}</span></div>
         <span class="profile-xp__bar" data-unavailable aria-hidden="true"></span>
       </div>
     </div>
+    <div class="profile-actions">
+      <button type="button" class="profile-action" disabled title="${esc(r.profileSoon)}" aria-label="${esc(`${r.profileShare} — ${r.profileSoon}`)}">${icon('share-network', { size: 17 })}<span>${esc(r.profileShare)}</span></button>
+      <button type="button" class="profile-action" data-preference>${icon('pencil-simple', { size: 17 })}<span>${esc(r.profileEdit)}</span></button>
+    </div>
   </header>
   <div class="profile-columns">
     <section class="profile-panel profile-panel--settings">
-      <h3 class="profile-panel__title">${esc(c.preferences)}</h3>
+      <h3 class="profile-panel__title">${esc(r.profileSettingsTitle)}</h3>
       ${settings}
     </section>
     <section class="profile-panel profile-panel--quota">
