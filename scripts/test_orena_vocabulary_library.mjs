@@ -54,12 +54,12 @@ const card = renderVocabularyCollectionCard(copy.en, {
 assert.match(card, /87 \/ 150/, 'a collection says how far through it the learner is');
 assert.match(card, /data-open-collection="toeic-core"/, 'and opens on itself');
 
-/* --- Wiring: the approved Vocabulary home owns the collections ----------- */
+/* --- Wiring: the library room owns the collections (D-067) --------------- */
 const expression = read('static/orena/ui/expression.js');
 const world = read('static/orena/ui/world.js');
-assert.match(expression, /api\.vocabularyLibraryCollections\(language\)/, 'the home reads the catalogue');
-assert.match(expression, /vocabYourCollections/, 'and lists the learner’s collections');
-assert.match(expression, /data-vocabulary-library/, 'with a way into the whole catalogue');
+assert.match(expression, /api\.vocabularyLibraryCollections\(language\)/, 'the library reads the catalogue');
+assert.match(expression, /class="vocab-packs"/, 'and draws every collection it holds');
+assert.match(expression, /data-vocabulary-collection="/, 'each one opening on itself');
 assert.match(expression, /class="vocab-collection-page"/, 'a collection opens on the approved detail');
 assert.match(expression, /collectionError/, 'a failed read is stated, not left blank');
 assert.match(expression, /vocabularyLibraryEmpty/, 'and so is a language with no collections yet');

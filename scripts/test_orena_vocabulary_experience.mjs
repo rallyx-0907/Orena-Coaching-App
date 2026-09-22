@@ -88,22 +88,25 @@ const discoverySource = readFileSync(new URL('../static/orena/ui/discovery.js', 
 assert.match(expressionSource, /const management = \(title, note = '', withBack = false\)/, 'management views expose an in-content return affordance');
 assert.match(expressionSource, /view === 'saved' \? management\(c\.vocabularyManage, c\.vocabularyOverviewNote, true\)/, 'Saved management can return to Vocabulary Overview');
 assert.match(expressionSource, /view === 'library' \? libraryView\(\)/, 'Library is an expanded view rather than an in-page scroll target');
-/* Vocabulary home, as the approved design draws it (D-059 Phase 6, Screens
-   part 4 section 18): the domain tile and two real figures, what is due, the
-   learner's collections, and the way to everything saved. Bounded previews -
-   the home is a place to decide from, not the collection itself. */
-assert.match(expressionSource, /class="vocab-home"/, 'the room opens on the approved home panel');
-assert.match(expressionSource, /collections[\s\S]{0,40}slice\(0, 2\)/, 'the home bounds the collection preview');
-assert.match(expressionSource, /data-vocabulary-library/, 'browsing every collection is one tap away');
-assert.match(expressionSource, /data-vocabulary-manage/, 'and so is everything saved');
-assert.match(expressionSource, /data-vocabulary-continue/, 'what is due leads straight into review');
+/* Vocabulary opens on its library, as "Vocabulary library" draws it (D-067):
+   the filter chips, then the collections themselves - covers, names and one
+   line each - and under them the two rows for the learner's own words, which
+   the design has no screen for yet. */
+assert.match(expressionSource, /class="vocab-library"/, 'the room opens on the library');
+assert.doesNotMatch(expressionSource, /class="vocab-home"/, 'the old home panel is gone');
+assert.match(expressionSource, /class="vocab-packs"/, 'the collections are the room, not a preview of two');
+assert.match(expressionSource, /data-vocabulary-filter-pack/, 'with the chips that filter them');
+assert.match(expressionSource, /data-vocabulary-manage/, 'everything saved is one tap away');
+assert.match(expressionSource, /data-vocabulary-continue/, 'and what is due leads straight into review');
 /* The daily feed's home is Home, where the design draws it; the room carries
    no second copy of it (D-064). */
 assert.doesNotMatch(expressionSource, /data-vocabulary-feed/, 'the room carries no second feed surface');
 /* Nothing on the home is invented: a tier nobody defines reads as a dash
    (GAP-020), and the counts come from the learner's own saved vocabulary. */
-assert.match(expressionSource, /vocab-collection__tier[^`]*\$\{esc\(r\.vocabTier\)\} —/,
-  'a collection with no tier says so rather than being given one');
+assert.match(expressionSource, /const line = \[/,
+  'a collection card says the language, the size and the progress - and only what it has');
+assert.doesNotMatch(expressionSource, /vocab-collection__tier/,
+  'the tier nobody defines is not drawn at all now (GAP-020)');
 assert.match(expressionSource, /stateCount\('saved'\)/, 'saved is a real count');
 assert.match(expressionSource, /stateCount\('mastered'\)/, 'and so is mastered');
 assert.doesNotMatch(expressionSource, /vocabulary-summary-metrics/,

@@ -77,6 +77,7 @@ export const referenceCopy = {
     progressWordsMastered: 'Words known', progressWordsMasteredNote: 'past the remembering threshold',
     progressActivityWeeks: '{n} weeks of activity', progressHeatLegend: 'one square = one day',
     progressHeatUnavailable: 'Daily activity is not recorded yet',
+    vocabPacksReady: 'Ready-made packs',
     vocabGradeAgain: 'Forgot', vocabGradeUnsure: 'Not sure', vocabGradeGotIt: 'Knew it',
     vocabFlipOpen: 'Tap to open', vocabFlipBack: 'Tap to turn back',
     vocabGradesAfterOpen: 'The grades appear once the card is open',
@@ -318,6 +319,7 @@ export const referenceCopy = {
     progressWordsMastered: '已掌握词', progressWordsMasteredNote: '已过记忆门槛',
     progressActivityWeeks: '{n} 周活动', progressHeatLegend: '一格＝一天',
     progressHeatUnavailable: '尚未记录每日活动',
+    vocabPacksReady: '现成词包',
     vocabGradeAgain: '忘了', vocabGradeUnsure: '不确定', vocabGradeGotIt: '记得',
     vocabFlipOpen: '点一下翻开', vocabFlipBack: '点一下合上',
     vocabGradesAfterOpen: '翻开卡片后才会出现评分',
@@ -596,6 +598,7 @@ referenceCopy.vi = {
   progressHeatUnavailable: 'Chưa ghi nhận hoạt động theo ngày',
   progressWindowOverview: 'bảy ngày gần đây',
   progressWindowTrends: 'so với 4 tuần trước',
+  vocabPacksReady: 'Bộ có sẵn',
   vocabGradeAgain: 'Quên',
   vocabGradeUnsure: 'Chưa chắc',
   vocabGradeGotIt: 'Nhớ rồi',
@@ -1099,8 +1102,9 @@ export function navigationTabs(ctx) {
 export function topBar(ctx) {
   const c = referenceCopy[ctx.ui] || referenceCopy.en;
   const here = navigationCurrent(ctx.location);
-  /* The bar names the destination with the same word the rail uses. */
-  const title = (here === 'discover' ? c.home : c[here]) || c.home;
+  /* The bar names the destination with the same word the rail uses - which for
+     Vocabulary is the destination's own name, not the room's longer one. */
+  const title = (here === 'discover' ? c.home : here === 'language' ? c.vocabulary : c[here]) || c.home;
   /* Progress draws no search: its bar is the destination, the two screens
      behind it, and the window those numbers cover. Putting the tabs here is
      what the source does - its trends frame carries them in the bar - and it

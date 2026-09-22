@@ -1256,3 +1256,51 @@ collection covers; the sandbox has no published collection (packs are gated),
 so the screen would be an empty state. Left for the human to decide whether to
 build it now against an empty catalogue.
 
+## Vocabulary Library, rebuilt on its frame (2026-09-23)
+
+**The design was re-read at the source first.** `Orena Vocabulary.dc.html` on
+claude.ai is byte-identical to the pinned copy - 106 480 characters, the same
+sha as `PINS.tsv`, the same ten frames - so there is no newer Vocabulary design
+to load; what was missing was the part of it Orena had not built yet.
+
+`#/language` now opens on "Vocabulary library" instead of the D-059 home panel:
+the filter chips (42 tall, 10/18, radius 999, the selected one in the accent
+gradient), then the collections themselves - a cover of 290x186 at radius 16
+with the frame's own material (a dotted field, a lit corner, a diagonal fall),
+its progress along the bottom inset 14, the name at 18/700 and one mono line at
+12.5 saying the language, the size and how far through it the learner is. The
+phone frame is the same thing at two columns, covers of 150 and chips of 13.5.
+Measured: cards 290, gap 26, cover 186 at radius 16, name 18/700, line 12.5.
+
+**Deleted with the old home** (rule 44): the domain tile and its two figures,
+the bounded two-collection preview, the "browse the catalogue" button, the
+`vocab-collection` tile and the tier chip that said "—" because nothing defined
+a tier (GAP-020 goes with it - the frame's card has no tier).
+
+**Two rows the frame does not draw, kept and recorded.** Under the catalogue:
+what is due (only when something is) and the way to everything saved. The
+design's own matrix marks "My Content (bộ của tôi)" INCOMPLETE, so it draws no
+screen for a learner's own set, and their 1 615 words must stay reachable.
+**DESIGN DECISION NEEDED:** where the learner's own words live in the Library -
+a card in the same grid, a row under it as now, or a screen of their own.
+
+**The catalogue is empty in the sandbox** (packs are rights-gated), so the room
+shows the empty state and the two rows. The grid was measured by injecting six
+throwaway cards into the DOM, reading their geometry and discarding them on
+reload - nothing was seeded or stored.
+
+**One shared component was wrong and is fixed**: `.state-panel--empty` is a
+column, but its text kept the 14rem *basis* the row layout gives it, which in a
+column is a height - so every empty state in Orena drew a 224px box under two
+lines of text. Upright it now takes what it needs (the Vocabulary empty state
+went from 348px to 151px).
+
+**Also corrected**: the bar over Vocabulary said "Ngôn ngữ của tôi" while the
+rail and the tab bar said "Từ vựng". The frame's bar carries the destination's
+name, so the bar now says what the navigation says.
+
+**Viewports**: 1920 (the frame's numbers), 1440, 1024 and 390 - no horizontal
+scroll, nothing clipped, chips and rows at the phone frame's sizes. At 1920 the
+grid fits five covers across exactly as the frame does, unless a scrollbar is
+present, which costs 15px and drops it to four.
+

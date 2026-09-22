@@ -2501,6 +2501,122 @@ ul.pronunciation-words small { color: var(--muted); }
   .review-prompt h2 { font-size: 34px; }
   .review-grades { inline-size: 100%; }
 }
+/* --- Vocabulary library (D-067, "Vocabulary library", measured) ----------
+   Chips of 10/18 at radius 999, then a grid of 290px covers with 26 between
+   them: cover 186 tall at radius 16, its progress along the bottom inset 14,
+   the name at 18/700 and one mono line under it. The phone frame is the same
+   thing at two columns of 166, covers of 150 and 18 between. */
+.vocab-library {
+  display: grid;
+  gap: 24px;
+  align-content: start;
+  padding-block-end: var(--space-6);
+}
+.vocab-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.vocab-chip {
+  min-block-size: 42px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip, rgba(196, 178, 255, 0.13));
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.vocab-chip[aria-pressed='true'] {
+  background: var(--action-gradient);
+  box-shadow: 0 8px 24px rgba(123, 77, 232, 0.35);
+  color: #fff;
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+}
+.vocab-packs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 290px));
+  gap: 26px;
+}
+.vocab-pack {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.vocab-cover {
+  position: relative;
+  display: block;
+  block-size: 186px;
+  border-radius: 16px;
+  box-shadow: var(--glass-ring);
+  /* The frame's own recipe: a dotted field, a lit corner, a diagonal fall. */
+  background:
+    radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.15) 1.2px, transparent 1.3px) 0 0 / 10px 10px,
+    radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 var(--cover-hue, 296) / 0.55), transparent),
+    linear-gradient(150deg, oklch(0.30 0.05 var(--cover-hue, 296)), oklch(0.17 0.02 300));
+}
+.vocab-cover__progress {
+  position: absolute;
+  inset-inline: 14px;
+  inset-block-end: 14px;
+  block-size: 5px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+/* The frame fills this bar with the accent, not with the amber the rest of
+   Orena marks progress in - it is a cover, read at a glance, not a measure.
+   Both are the theme's own tokens; no colour is invented here. */
+.vocab-cover__progress > span { display: block; block-size: 100%; border-radius: var(--radius-pill); background: var(--accent-gradient); }
+.vocab-pack__text { display: grid; gap: 5px; }
+.vocab-pack__name { font-family: var(--display-font); font-size: 18px; font-weight: var(--weight-bold); line-height: 1.3; }
+.vocab-pack__line { color: var(--text-secondary); font-size: 12.5px; }
+
+/* The learner's own, under the catalogue. The design has no screen for a
+   learner's own set yet, so these two rows are Orena's and are recorded as a
+   difference from the frame rather than drawn as if the frame asked for them. */
+/* An empty catalogue says so once: the panel keeps its own height rather than
+   filling the room the covers would have taken. */
+.vocab-library > .state-panel { align-self: start; max-inline-size: 920px; }
+.vocab-own-rows { display: grid; gap: 12px; max-inline-size: 920px; }
+.vocab-own {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 64px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.vocab-own--due { background: var(--glass-focus); box-shadow: var(--glass-ring-focus); }
+.vocab-own__text { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.vocab-own__name { font-family: var(--display-font); font-size: 16px; font-weight: var(--weight-bold); }
+.vocab-own__line { color: var(--text-secondary); font-size: 12.5px; }
+.vocab-own > svg:last-child { color: var(--text-secondary); }
+
+@media (max-width: 600px) {
+  .vocab-library { gap: 14px; }
+  .vocab-chips { gap: 8px; }
+  .vocab-chip { min-block-size: 36px; padding: 9px 15px; font-size: 13.5px; }
+  .vocab-packs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+  .vocab-cover { block-size: 150px; border-radius: 14px; }
+  .vocab-cover__progress { inset-inline: 11px; inset-block-end: 11px; block-size: 4px; }
+  .vocab-pack__text { gap: 3px; }
+  .vocab-pack__name { font-size: 15px; }
+  .vocab-own { min-block-size: 58px; padding: 0 14px; }
+}
+
 /* --- The review, measured from "Vocabulary review" (D-067) ---------------
    The card is the screen and there is nothing around it: the way back, one
    segment per card, the count, then a card of 420x560 and three grades under

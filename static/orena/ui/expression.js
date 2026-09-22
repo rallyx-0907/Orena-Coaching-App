@@ -973,6 +973,9 @@ export async function renderLanguage(root, ctx) {
   let notMastered = false;
   let collectionSearchTimer = null;
   let collectionRequest = 0;
+  /* Which chip the library is filtered by: 'all', 'published', or a
+     language code the catalogue actually holds. */
+  let packFilter = 'all';
   let savedSearchTimer = null;
   let savedRequest = 0;
   let savedLoading = false;
@@ -1038,19 +1041,47 @@ export async function renderLanguage(root, ctx) {
     return saved ? { ...card, saved: true, review_stage: saved.review_stage, due: saved.due, successful_recalls: saved.successful_recalls, lapse_count: saved.lapse_count } : card;
   });
 
-  /* Vocabulary home, as the design draws it (D-059 Phase 6, Screens part 4
-     section 18): the domain tile, what the learner has kept and mastered, what
-     is due, their collections, and the way to everything saved. Every figure
-     is read from the learner's own saved vocabulary; a collection's tier has
-     no source yet and says so rather than inventing one (GAP-020). */
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
-  const collectionTile = (collection) => {
-    const progress = collection.progress || {};
-    const learned = Number(progress.learned_count) || 0;
-    const total = Number(collection.item_count) || 0;
-    const percent = total ? Math.round((learned / total) * 100) : 0;
-    return `<button type="button" class="vocab-collection" data-vocabulary-collection="${esc(collection.id)}"><span class="vocab-collection__head"><strong>${esc(collection.title || '')}</strong><span class="ds-label vocab-collection__tier" title="${esc(r.bookSoon)}">${esc(r.vocabTier)} —</span></span><span class="progress-bar"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span><span class="ds-data vocab-collection__count">${esc(learned)} / ${esc(total)}</span></button>`;
+  /* --- Vocabulary, on its own frame (D-067, "Vocabulary library") --------
+     The room is the library: the filter chips, then a grid of collections -
+     a cover of 290x186 with its progress along the bottom, the name at 18/700
+     and one mono line saying what it is. Two rows of the learner's own follow
+     it, because the design has no screen for a learner's own set yet (its
+     matrix marks "My Content" INCOMPLETE) and their words must stay reachable;
+     that difference is recorded in UI_BACKEND_GAPS.md.
+
+     Nothing is manufactured: what is due appears only when something is, and
+     an empty catalogue says it is empty rather than drawing placeholder
+     covers. */
+  const collectionCover = (collection) => {
+    /* The frame's own cover material: a dotted field, a lit corner and a
+       diagonal fall, hue by collection so two packs never look alike. */
+    const hue = [...String(collection.id || collection.title || '')]
+      .reduce((total, letter) => (total * 31 + letter.charCodeAt(0)) % 360, 7);
+    const progress = Number(collection.progress?.learned_count || 0);
+    const total = Number(collection.item_count || 0);
+    const percent = total ? Math.max(0, Math.min(100, Math.round((progress / total) * 100))) : 0;
+    return `<span class="vocab-cover" style="--cover-hue:${hue}">${
+      percent ? `<span class="vocab-cover__progress"><span style="inline-size:${percent}%"></span></span>` : ''
+    }</span>`;
   };
+
+  const collectionCard = (collection) => {
+    const total = Number(collection.item_count || 0);
+    const learned = Number(collection.progress?.learned_count || 0);
+    const percent = total ? Math.round((learned / total) * 100) : 0;
+    const line = [
+      String(collection.language_code || '').toUpperCase(),
+      total ? `${total.toLocaleString()} ${c.vocabularyWordCount}` : '',
+      percent ? `${percent}%` : '',
+    ].filter(Boolean).join(' · ');
+    return `<button type="button" class="vocab-pack" data-vocabulary-collection="${esc(collection.id)}">`
+      + collectionCover(collection)
+      + `<span class="vocab-pack__text"><span class="vocab-pack__name">${esc(collection.title)}</span>`
+      + `<span class="vocab-pack__line ds-data">${esc(line)}</span></span>`
+      + `</button>`;
+  };
+
   const overview = () => {
     const dueItems = savedCards.filter((item) => item.due);
     const saved = stateCount('saved');
@@ -1059,30 +1090,43 @@ export async function renderLanguage(root, ctx) {
       .slice(0, 3)
       .map((item) => item.headword)
       .join(' · ');
-    const due = dueItems.length
-      ? `<div class="vocab-due"><div><strong>${esc(dueItems.length)} ${esc(c.vocabularyWordCount)}</strong><small>${esc(preview)}${dueItems.length > 3 ? ' …' : ''}</small></div><button type="button" class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)}</button></div>`
-      : saved
-        ? `<div class="state-panel state-panel--empty">${icon('check-circle', { size: 20, filled: true })}<div><strong>${esc(c.allDone)}</strong><p>${esc(c.allDoneNote)}</p></div></div>`
-        : `<div class="state-panel state-panel--empty">${icon('cards', { size: 22 })}<div><strong>${esc(c.noWords)}</strong><p>${esc(c.noWordsNote)}</p></div><a class="primary" href="${esc(link('practice', { intent: 'reading' }))}">${icon('book-open', { size: 16 })}<span>${esc(c.readingName)}</span></a></div>`;
-    const collectionsBlock = collectionError
+
+    /* The chips the frame draws: everything, the published packs, then one per
+       language the catalogue actually holds. A chip for a language with no
+       collection would be a filter onto nothing. */
+    const languages = [...new Set(collections.map((item) => String(item.language_code || '').toLowerCase()).filter(Boolean))];
+    const chip = (id, label) =>
+      `<button type="button" class="vocab-chip" data-vocabulary-filter-pack="${esc(id)}" aria-pressed="${packFilter === id}">${esc(label)}</button>`;
+    const chips = `<div class="vocab-chips" role="group" aria-label="${esc(c.vocabularyLibraryTitle)}">`
+      + chip('all', c.vocabularyFilterAll)
+      + chip('published', r.vocabPacksReady)
+      + languages.map((code) => chip(code, code === 'zh' ? '中文' : code.toUpperCase())).join('')
+      + `</div>`;
+
+    const shown = collections.filter((item) => {
+      if (packFilter === 'all' || packFilter === 'published') return true;
+      return String(item.language_code || '').toLowerCase() === packFilter;
+    });
+
+    const packs = collectionError
       ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="collections">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
-      : `<div class="vocab-collections">${collections
-          .slice(0, 2)
-          .map(collectionTile)
-          .join('')}<button type="button" class="vocab-collection vocab-collection--browse" data-vocabulary-library>${icon('plus', { size: 20 })}<span>${esc(r.vocabBrowseCollections)}</span></button></div>${
-          collections.length ? '' : `<p class="vocab-note">${esc(c.vocabularyLibraryEmpty)}</p>`
-        }`;
-    const row = (attribute, name, label, count) =>
-      `<button type="button" class="vocab-row" ${attribute}>${icon(name, { size: 18 })}<span>${esc(label)}</span><span class="ds-data">${esc(count)}</span>${icon('caret-right', { size: 17 })}</button>`;
-    return `<section class="vocab-home"><header class="vocab-home__head"><span class="domain-tile" data-domain="vocabulary" aria-hidden="true">${icon('cards', { size: 21 })}</span><div class="vocab-home__title"><h1>${esc(c.vocabularyTitle)}</h1><p class="ds-label">${esc(saved)} ${esc(c.vocabularySavedCount)} · ${esc(mastered)} ${esc(c.vocabularyMasteredCount)}</p></div>${
-      dueItems.length
-        ? `<span class="chip vocab-home__due" data-domain="vocabulary">${icon('cards', { size: 14, filled: true })}${esc(dueItems.length)} ${esc(c.vocabularyDueState)}</span>`
-        : ''
-    }</header><div class="vocab-home__body">${due}<section class="vocab-block"><div class="vocab-block__head"><span class="ds-label">${esc(r.vocabYourCollections)}</span><button type="button" class="quiet vocab-block__browse" data-vocabulary-library>${esc(r.vocabBrowseCollections)}</button></div>${collectionsBlock}</section>${row('data-vocabulary-manage', 'bookmark-simple', r.vocabSavedWords, saved)}${
-      savedError
+      : shown.length
+        ? `<div class="vocab-packs">${shown.map(collectionCard).join('')}</div>`
+        : `<div class="state-panel state-panel--empty">${icon('cards', { size: 22 })}<div><strong>${esc(c.vocabularyLibraryEmpty)}</strong></div></div>`;
+
+    /* The learner's own, under the catalogue: what is waiting, and the way to
+       everything they have kept. */
+    const due = dueItems.length
+      ? `<button type="button" class="vocab-own vocab-own--due" data-vocabulary-continue>${icon('cards', { size: 18, filled: true })}<span class="vocab-own__text"><span class="vocab-own__name">${esc(c.vocabularyContinueReview)}</span><span class="vocab-own__line ds-data">${esc(dueItems.length)} ${esc(c.vocabularyDueState)}${preview ? ` · ${esc(preview)}` : ''}${dueItems.length > 3 ? ' …' : ''}</span></span>${icon('caret-right', { size: 17 })}</button>`
+      : '';
+    const own = `<div class="vocab-own-rows">${due}`
+      + `<button type="button" class="vocab-own" data-vocabulary-manage>${icon('bookmark-simple', { size: 18 })}<span class="vocab-own__text"><span class="vocab-own__name">${esc(r.vocabSavedWords)}</span><span class="vocab-own__line ds-data">${esc(saved)} ${esc(c.vocabularySavedCount)} · ${esc(mastered)} ${esc(c.vocabularyMasteredCount)}</span></span>${icon('caret-right', { size: 17 })}</button>`
+      + (savedError
         ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="saved">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
-        : ''
-    }</div></section>`;
+        : '')
+      + `</div>`;
+
+    return `<section class="vocab-library"><h1 class="sr-only">${esc(c.vocabularyTitle)}</h1>${chips}${packs}${own}</section>`;
   };
 
   const libraryView = () => {
@@ -1272,6 +1316,10 @@ export async function renderLanguage(root, ctx) {
     }));
     root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => { view = 'library'; paint(); }));
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
+    root.querySelectorAll('[data-vocabulary-filter-pack]').forEach((button) => (button.onclick = () => {
+      packFilter = button.dataset.vocabularyFilterPack;
+      paint();
+    }));
     root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : view === 'collection-list' ? 'collection' : 'overview'; paint(); }));
     root.querySelector('[data-vocabulary-not-mastered]')?.addEventListener('click', () => { notMastered = !notMastered; paint(); });
     root.querySelector('[data-vocabulary-show-all]')?.addEventListener('click', () => { view = 'collection-list'; paint(); });

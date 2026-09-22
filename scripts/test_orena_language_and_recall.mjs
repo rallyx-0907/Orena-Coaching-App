@@ -47,26 +47,36 @@ assert.match(recallRoom, /recallShape\(current, keptNow\)/, 'the question comes 
 assert.equal(gradable(false), false, 'seeing a card is not recall');
 assert.equal(gradable(true), true, 'committing to an answer is');
 
-/* --- The room opens on the approved Vocabulary home (D-059 Phase 6) ------
-   The domain tile and two real figures, what is due, the learner's own
-   collections, then the way to everything saved. */
+/* --- The room opens on its library (D-067, "Vocabulary library") --------
+   The filter chips, then a grid of collections - a cover with its progress,
+   the name and one line saying what the pack is. The learner's own two rows
+   follow, because the design has no screen for a learner's own set yet (its
+   matrix marks "My Content" INCOMPLETE) and their words must stay reachable;
+   that difference is recorded in UI_BACKEND_GAPS.md. */
 assert.doesNotMatch(expression, /vocabulary-summary-metrics/, 'the four metric tiles are gone');
+/* The library and the two helpers that draw its covers are read together:
+   they are one composition. */
 const overview = expression.slice(
-  expression.indexOf('const overview = () => {'),
+  expression.indexOf('const collectionCover = (collection) => {'),
   expression.indexOf('const libraryView = () => {'),
 );
-assert.match(overview, /class="vocab-home"/, 'the home is one panel');
+assert.match(overview, /class="vocab-library"/, 'the room is the library');
+assert.doesNotMatch(overview, /class="vocab-home"/, 'the old home panel is gone, not restyled');
+assert.match(overview, /class="vocab-chips"/, 'with the chips the frame draws');
+assert.match(overview, /class="vocab-packs"/, 'and the grid of collections');
 assert.ok(
-  overview.indexOf('${due}') < overview.indexOf('vocabYourCollections'),
-  'what is due comes first',
+  overview.indexOf('vocab-packs') < overview.indexOf('vocab-own-rows'),
+  'the catalogue first, the learner\'s own under it',
 );
-assert.ok(
-  overview.indexOf('vocabYourCollections') < overview.indexOf('vocabSavedWords'),
-  'then the collections, then everything saved',
-);
-/* Due is shown only when something is actually due. Nothing is manufactured. */
-assert.match(overview, /const due = dueItems[.]length/, 'a review block appears only when there is one');
+/* Due is shown only when something is actually due, and an empty catalogue
+   says so rather than drawing covers for packs that do not exist. */
+assert.match(overview, /const due = dueItems[.]length\s*\n?\s*\?/, 'a review row appears only when there is one');
+assert.match(overview, /vocabularyLibraryEmpty/, 'an empty catalogue says it is empty');
 assert.match(recallRoom, /const landing = due[.]length/, 'and so does the Recall landing');
+/* A cover is generated from the collection itself - no artwork to keep in
+   step, and no placeholder pretending to be one. */
+assert.match(overview, /const collectionCover = /, 'the cover is generated');
+assert.match(overview, /--cover-hue/, 'with a hue the collection decides');
 
 /* The review, as "Vocabulary review" draws it: the card is the screen. One way
    back, one segment per card, the count, the card itself, and - only once it is
