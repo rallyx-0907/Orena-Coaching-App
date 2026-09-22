@@ -2364,3 +2364,53 @@ after the Writing, Home and Reading slices.
    is never the one declared level repeated four times.
 
 **Supersedes / Superseded by:** Answers the open points left by D-067's fidelity work; does not change D-068.
+
+---
+
+## D-073 — The ground is the master preview's, and the cache had gone stale
+
+**Date:** 2026-09-22
+**Status:** Accepted
+
+**Context.** The human reported that the interface was being built against an
+out-of-date design, and they were right. `docs/design/canonical-ui/` was pinned
+on 2026-09-21; since then three files had moved at the source. Two of them are
+the ones this lane had been reading all day:
+
+| File | Pinned | Source |
+| --- | ---: | ---: |
+| `Orena-Progress.dc.html` | 78 947 | 101 462 (+22 515 - reworked) |
+| `Orena-UI-Baseline.dc.html` | 91 651 | 90 759 (the ground) |
+| `Orena-Listening.dc.html` | 95 578 | 95 302 |
+
+Measuring Progress against the pinned copy is why its composition kept coming
+out wrong, and reading the ground from the pinned master preview is why the
+interface lost the light the human kept asking for.
+
+**Decision.** The app's ground is the body of `Orena UI Baseline.dc.html` at its
+source, which is now `#0B0A0F` under two magenta radials - `rgba(168,84,190,0.32)`
+at 62% -6% and `rgba(196,104,196,0.20)` at 92% 2% - over
+`linear-gradient(180deg, #17101F 0%, #0D0A12 44%, #0A090D 100%)`, fixed.
+`theme.css` owns it as `--ground-color`, `--ground` and `--ground-size`;
+`foundation.css` paints it on `html` so the canvas carries it across the whole
+viewport rather than the body's clipped box. There is no separate page halo:
+this ground carries its own light from the top.
+
+Star dust is left out at the human's instruction - the dots read as crude. That
+is their call, recorded here, not a reading of the design.
+
+**Three sources in the design disagree about the ground, and only one is
+current.** The eight screen files' own `body` is the design document's page, the
+canvas their frames sit on, and was never the app's ground. `Orena Glass
+System.dc.html` §02 states the earlier system (`#050408`, a three-direction
+field, a 280-420px halo). The master preview is the product. Read the master
+preview and nothing else for this one value.
+
+**Consequence.** `PINS.tsv` is recomputed from disk on every re-pin so the record
+cannot drift from the files beside it, and `SYNC_2026-09-22b.md` holds the
+detail. A pinned cache is evidence of a moment, not of the present: before
+measuring a surface, check the pin against the source.
+
+**Supersedes / Superseded by:** Supersedes D-071's ground (`#0A0722` under
+seventeen layers), which was true of the master preview on 2026-09-21. D-070 was
+already superseded by D-071 and stays so.
