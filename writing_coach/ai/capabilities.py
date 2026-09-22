@@ -141,6 +141,17 @@ _DEFINITIONS = (
         implemented=True,
         fallback_policies=_DETERMINISTIC_FALLBACK,
     ),
+    # D-072.2: the learner's questions about a whole text. Provider-backed and
+    # configurable like every other tutor answer; no deterministic fallback,
+    # because a canned reply to a learner's own question would be worse than
+    # saying the tutor is unavailable and offering a retry.
+    _definition(
+        "text_discussion",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+    ),
     _definition(
         "reading_evaluator",
         operation=AIOperation.DETERMINISTIC,

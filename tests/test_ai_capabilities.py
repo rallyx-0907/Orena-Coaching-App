@@ -32,6 +32,7 @@ EXPECTED_KEYS = {
     "learner_translation",
     "grammar_lesson_generator",
     "reading_evaluator",
+    "text_discussion",
     "speech_asr",
     "pronunciation_evaluator",
     "speaking_evaluator",

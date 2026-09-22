@@ -148,6 +148,7 @@ from writing_coach.vocabulary_library import (
 )
 from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProviderUnavailable
 from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
+from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.product.service import configure_product_repository
 from writing_coach.persistence.runtime import build_runtime
@@ -543,6 +544,18 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
+
+# The learner's discussion about a whole text (D-072.2). The turn handler meters
+# and never denies: whether this becomes the product's first entitlement-gated
+# route is an activation decision the human has not taken.
+app.include_router(
+    install_text_discussion(
+        repository=_persistence_runtime.text_discussion_repository,
+        generate_structured=generate_structured,
+        product_repository=_persistence_runtime.product_repository,
+        learner_profile=get_learner_profile,
+    )
+)
 
 # Shared Listening Library (media). The store is Orena's own index of imported
 # sources, the asset store is where a generated thumbnail or an uploaded file
