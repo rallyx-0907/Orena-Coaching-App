@@ -551,3 +551,11 @@ the frames draw it; hidden on a phone, where the Profile tab is that door.
 serves that field today (`skillLevels` in `AppShell.json` is unserved), so no level prints. Repeating the one
 declared level on all four skills would be a figure nobody measured. **Backend needed:** a per-skill level on
 the learner profile, derived from real evidence, before those slots can fill.
+
+## Reviews read back (2026-09-22, D-072.1, no schema)
+
+The Writing room lists the pieces that were reviewed (`GET /api/essays`, this learner and this language,
+eight most recent) with the version, the level the evaluator estimated and the date the row states. A row
+opens the review stored with that piece (`GET /api/essays/{id}/review`) in a sheet: nothing is copied and
+nothing new is written. **The bookmark ("Lưu nhận xét", `essays.review_kept_at`) is approved but not built:**
+it waits on the independent architecture review, so the list is every reviewed piece, not a curated set.
