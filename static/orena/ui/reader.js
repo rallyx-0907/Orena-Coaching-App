@@ -135,8 +135,10 @@ export function mountReader(
      just looked up, notes and the contents. A phone drops the panel: the word
      arrives as the anchored sheet the design draws. */
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
-  const layerChip = (key, label, on, available) =>
-    `<button type="button" class="reader-layer" data-reader-layer="${key}" aria-pressed="${on}"${available ? '' : ` aria-disabled="true" title="${esc(r.readerLayerUnavailable)}"`}>${esc(label)}</button>`;
+  /* The source draws this as a pill with the translate glyph and a word, not a
+     bare language code: "Song ngữ" - the bilingual layer over the same text. */
+  const layerChip = (key, label, on, available, glyph = null) =>
+    `<button type="button" class="reader-layer${glyph ? ' reader-layer--pill' : ''}" data-reader-layer="${key}" aria-pressed="${on}"${available ? '' : ` aria-disabled="true" title="${esc(r.readerLayerUnavailable)}"`}>${glyph ? icon(glyph, { size: 19, filled: on }) : ''}<span>${esc(label)}</span></button>`;
   const tabs = ['word', 'grammar', 'notes'];
   /* The reader of the updated design (D-065, device overview 03): the contents
      on the left at 300px, the text in the middle at its own measure, and the
@@ -154,20 +156,27 @@ export function mountReader(
      room that mounted it supplies the rest, because only that room knows whether they exist here. */
   const barAction = ({ name, glyph, label, primary = false, available = true, title = '', pressed = null }) =>
     `<button type="button" class="reader-action${primary ? ' reader-action--primary' : ''}" data-reader-action="${esc(name)}"${pressed === null ? '' : ` aria-pressed="${pressed}"`}${available ? '' : ` aria-disabled="true"`}${title ? ` title="${esc(title)}"` : ''}>${icon(glyph, { size: 19, filled: primary })}<span>${esc(label)}</span></button>`;
+  /* The six the source draws, in its order, with its icons (measured
+     2026-09-22): Lưu bài · Nghe · Kiểm tra hiểu · Thảo luận · Viết phản hồi ·
+     Đọc tiếp sau, the last one the primary. The caller says which of the
+     middle ones this text can actually offer; nothing else joins the bar -
+     prepared notes are the side panel's third tab, where the frame puts them. */
   const actionBar = () => {
-    const own = [
-      book ? null : { name: 'keep', glyph: 'bookmark-simple', label: c.readerKeep, pressed: kept() },
+    const supplied = new Map(actions.map((action) => [action.name, action]));
+    const all = [
+      { name: 'keep', glyph: 'bookmark-simple', label: r.readerSave, pressed: kept() },
       { name: 'listen', glyph: 'speaker-high', label: r.readerListen, available: false, title: r.bookSoon },
+      supplied.get('check'),
+      supplied.get('discuss'),
+      supplied.get('respond'),
+      { name: 'later', glyph: 'bookmark-simple', label: c.readerKeep, primary: true },
     ].filter(Boolean);
-    const all = [...own, ...actions];
-    return all.length
-      ? `<div class="reader-actions" role="group" aria-label="${esc(r.readerActions)}">${all.map(barAction).join('')}</div>`
-      : '';
+    return `<div class="reader-actions" role="group" aria-label="${esc(r.readerActions)}">${all.map(barAction).join('')}</div>`;
   };
   const contentsColumn = place
     ? `<nav class="reader-contents-column" aria-label="${esc(r.readerContents)}"><span class="ds-label">${esc(r.readerContents)}</span>${tocHtml(c, { bookId: book.id, chapters: book.chapters, currentId: book.chapterId, provenance: book.provenance })}</nav>`
     : '';
-  host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a><span class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}</span><div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', String(support || '').toUpperCase(), false, true) : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
+  host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('arrow-left', { size: 20 })}<span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span></a>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}<div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', r.readerBilingual, false, true, 'translate') : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
     .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
     .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><div class="reader-foot__row"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</div></footer>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
 
@@ -300,6 +309,14 @@ export function mountReader(
         return;
       }
       if (name === 'listen') return;
+      /* "Đọc tiếp sau" is the frame's primary: keep the place - which the room
+         already records - and leave the text, so the learner comes back to it
+         from the library rather than staying on the page they stopped reading. */
+      if (name === 'later') {
+        if (!kept()) memory.keep(item.id);
+        location.hash = book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' });
+        return;
+      }
       onAction?.(name, button);
     };
   });

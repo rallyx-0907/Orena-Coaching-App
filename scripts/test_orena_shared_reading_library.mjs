@@ -40,8 +40,15 @@ assert.deepEqual(Object.keys(reading), ['book-1'], 'only book chapters become re
 assert.equal(reading['book-1'].index, 2);
 
 // --- The book page: loading, error and the happy path, each with a back
-//     affordance so it never strands the learner in the detail view ---
-assert.match(librarySection(c, { open: { id: 'book-1', book: null, error: false } }), /data-close-book/);
+//     affordance so it never strands the learner in the detail view.
+//     The way back is a LINK to the reading library, not a history step: the
+//     reader navigates forward to this page, so a history step landed back in
+//     the reader and the two bounced off each other with no way out (fixed
+//     2026-09-22). Pinning the destination is what keeps that from returning. ---
+const bookLoading = librarySection(c, { open: { id: 'book-1', book: null, error: false } });
+assert.match(bookLoading, /class="icon-button book-back"/);
+assert.match(bookLoading, /href="#\/practice\?intent=reading"/);
+assert.doesNotMatch(bookLoading, /data-close-book/);
 assert.match(librarySection(c, { open: { id: 'book-1', book: null, error: true } }), /data-book-retry/);
 
 const book = {

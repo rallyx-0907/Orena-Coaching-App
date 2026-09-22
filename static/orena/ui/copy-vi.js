@@ -598,7 +598,7 @@ export const vi = {
   readerPrevious: 'Chương trước',
   readerNext: 'Chương sau',
   readerEnd: 'Hết',
-  readerKeep: 'Giữ lại để sau',
+  readerKeep: 'Đọc tiếp sau',
   readingAsk: 'Một thứ để đọc',
   readingAskNote:
     'Chọn nội dung nói về điều gì và ở dạng nào. Hai thứ đó được đọc theo cách khác nhau.',

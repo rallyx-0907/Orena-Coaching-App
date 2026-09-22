@@ -9,6 +9,7 @@ import {
 import { esc, safeExternal, dialog, status, focusRegion, focusWork } from './html.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { mountReader } from './reader.js';
+import { discussionSection, discussionSource, mountDiscussion } from './discussion.js';
 import { mountLexicalLayer } from './lexical.js';
 import { icon } from './phosphor.js';
 import { referenceCopy } from './reference.js';
@@ -98,6 +99,7 @@ function textEncounter(root, ctx, item, book = null) {
       : null,
   });
   const title = `${origin(item, c)} · ${item.title}`;
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const from = { id: item.id, where: item.title, why: 'from_reading' };
   const notes = (item.phrases || []).length
     ? `<details class="reader-notes"><summary>${esc(c.readerNotes)}</summary>${item.phrases.map((p, i) => `<div class="reader-note"><p class="reader-note__word" lang="${language}">${esc(p.word)}</p>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p lang="${esc(ctx.support)}">${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button class="quiet" data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></div>`).join('')}</details>`
@@ -106,7 +108,7 @@ function textEncounter(root, ctx, item, book = null) {
      optional check, the response, where the text came from - is reached from the bar under the text and
      opens as a sheet (the design's pattern for anything deeper), so the room is one screen (D-067). */
   const rights = `${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
-  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions, item.latest_attempt)}</div><div data-after="respond">${responseComposer(ctx, item)}</div></div><div class="reader-rights">${rights}</div>`;
+  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions, item.latest_attempt)}</div><div data-after="respond">${responseComposer(ctx, item)}</div><div data-after="discuss">${discussionSection(c, r)}</div></div><div class="reader-rights">${rights}</div>`;
 
   const after = root.querySelector('[data-reader-after]');
   const openAfter = (name, heading) => {
@@ -129,15 +131,22 @@ function textEncounter(root, ctx, item, book = null) {
     /* Only what this text actually has. A check with no questions is drawn as the frame draws it and
        says so rather than opening an empty sheet (D-068). */
     actions: [
-      { name: 'check', glyph: 'check-square-offset', label: c.comprehension, available: Boolean(item.questions?.length), title: item.questions?.length ? '' : c.readingOnlyNote },
-      { name: 'respond', glyph: 'pen-nib', label: c.respond, primary: true },
+      { name: 'check', glyph: 'check-square-offset', label: r.readerCheck, available: Boolean(item.questions?.length), title: item.questions?.length ? '' : c.readingOnlyNote },
+      { name: 'discuss', glyph: 'chats-circle', label: r.readerDiscuss },
+      { name: 'respond', glyph: 'pen-nib', label: r.readerRespond },
       (item.phrases || []).length ? { name: 'notes', glyph: 'book-open', label: c.readerNotes } : null,
       /* The source draws no "Nguồn & bản quyền" action (human, 2026-09-22), so
          the bar does not carry one. Attribution itself is not a design choice -
          a published text owes it - so the block stays under the text, which is
          where UI_BACKEND_GAPS.md already records it as the human's open call. */
     ].filter(Boolean),
-    onAction: (name) => openAfter(name, { check: c.comprehension, respond: c.respond, notes: c.readerNotes }[name] || ''),
+    onAction: (name) => {
+      openAfter(name, { check: r.readerCheck, respond: r.readerRespond, notes: c.readerNotes, discuss: r.readerDiscuss }[name] || '');
+      if (name === 'discuss') {
+        const panel = document.querySelector('.reader-after-sheet [data-discussion]');
+        if (panel) mountDiscussion(panel, { c, r, source: discussionSource(item, book), language, support: ctx.support, alive: ctx.alive });
+      }
+    },
   });
 
   root.querySelectorAll('[data-note]').forEach(

@@ -50,7 +50,7 @@ body:has(.reader) #shellNav:focus-within {
   z-index: 6;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 20px;
   margin: 0 0 var(--space-6);
   padding: 13px 18px;
   border-bottom: 1px solid var(--border-subtle);
@@ -58,12 +58,7 @@ body:has(.reader) #shellNav:focus-within {
   backdrop-filter: blur(8px);
 }
 .reader-bar__back {
-  display: grid;
-  place-items: center;
   flex: none;
-  inline-size: 32px;
-  block-size: 32px;
-  border-radius: 50%;
   color: var(--text-secondary);
 }
 .reader-bar__back:hover { color: var(--text-primary); }
@@ -75,7 +70,8 @@ body:has(.reader) #shellNav:focus-within {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.reader-bar__meta { color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; }
+/* The source's place line: 13px, sentence case - not an uppercase tag. */
+.reader-bar__meta { color: var(--text-muted); font-size: 13px; }
 /* How far through, and the way on, at the foot of the reading column - where
    the source puts it ("34% - còn 9 phút" beside "Chương sau", inside the 780
    measure, not a bar across the window). The only progress bar is the hairline
@@ -717,3 +713,75 @@ body:has(.reader) #shellNav:focus-within {
 @media (max-width: 900px) {
   .reader-rights { inline-size: 100%; padding-inline: 0; }
 }
+
+/* --- The bar's controls and the discussion thread (D-067, measured) -------
+   The source draws the way back and the title as one link with an arrow, the
+   place beside it, then the bilingual pill (121x40) and the type-size button
+   (40x40, radius 13, ringed). */
+.reader-bar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 22px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+.reader-bar__back .reader-bar__title { font-size: 16px; font-weight: var(--weight-regular); }
+.reader-layer--pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-block-size: 40px;
+  block-size: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-family: var(--ui-font, inherit);
+  font-size: 16px;
+  text-transform: none;
+}
+.reader-tool--text {
+  inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 40px;
+  border-radius: 13px;
+  box-shadow: var(--glass-ring);
+}
+
+.discussion { display: grid; gap: 14px; min-inline-size: min(520px, 76vw); }
+.discussion-thread {
+  display: grid;
+  gap: 12px;
+  max-block-size: 46vh;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.discussion-turn {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 15px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.discussion-turn[data-role='learner'] { background: none; box-shadow: none; padding-inline: 0; }
+.discussion-turn p { margin: 0; font-size: 15px; line-height: 1.55; }
+.discussion-turn__who { display: inline-flex; color: var(--accent-ink); }
+.discussion-composer { display: flex; align-items: flex-end; gap: 10px; }
+.discussion-composer textarea {
+  flex: 1;
+  min-block-size: 48px;
+  padding: 13px 16px;
+  border-radius: 15px;
+  font-size: 15px;
+  resize: vertical;
+}
+.discussion-composer .primary { min-block-size: 48px; padding-inline: 20px; border-radius: var(--radius-pill); }
+.discussion-note { margin: 0; color: var(--text-muted); font-size: 13px; }
+.discussion-note[data-tone='error'] { color: var(--status-bad, var(--text-secondary)); }

@@ -672,3 +672,33 @@ comment claiming the frame "draws the same figure twice" as two rails is correct
   returned to the reader: a learner could not leave the book. The book page's back is now a link to
   the reading library, so library → book → reader unwinds one step at a time. Verified:
   `#/encounter…` → `#/book?id=…` → `#/practice?intent=reading`.
+
+## Reading workspace, matched to the frame's bar and actions (2026-09-22)
+
+The human asked for the layout, the button count, their wording and their places to match the source
+exactly. Measured `[data-screen-label="Reading · bilingual + panel"]` and built to those numbers.
+
+**The six actions, in the source's order, with its icons and sizes** - each width verified in the
+running app against the frame: Lưu bài 120 (`bookmark-simple`) · Nghe 107 (`speaker-high`) ·
+Kiểm tra hiểu 162 (`check-square-offset`) · Thảo luận 139/140 (`chats-circle`) · Viết phản hồi 163
+(`pen-nib`) · **Đọc tiếp sau 166, the primary** (`bookmark-simple`, the violet gradient, Nunito 800).
+All 48 tall, Nunito Sans 16/400 on the ringed glass. The prepared-notes action left the bar: the
+frame draws no seventh pill and the side panel's third tab is where notes belong.
+
+**The bar**: the way back and the title are one link with an arrow (Nunito Sans 16), the place line
+is 13px sentence case rather than a 10.5px uppercase tag, and the right cluster is the "Song ngữ"
+pill (40 tall, radius 999, translate glyph) with the 40x40 radius-13 type-size button. Bar gap 20.
+
+**"Thảo luận" is now real.** It opens the thread this lane built for D-072.2 and talks to
+`/api/texts/discussion`: the learner's questions and the tutor's answers are kept with the account,
+one `request_id` per submission so a retry cannot double-answer, and when no provider can answer the
+question stays in the box with a retry - no invented reply. Verified end to end in the sandbox
+against Gemini.
+
+**Two inferences, recorded for the human rather than decided:**
+
+- The frame gives "Lưu bài" and "Đọc tiếp sau" the same bookmark glyph and no behaviour. Built as:
+  "Lưu bài" toggles the bookmark; "Đọc tiếp sau" keeps it *and leaves the text*, which is what its
+  words say. If they are meant to be one action, the bar drops to five.
+- "Nghe" stays unavailable with its "coming" title: a text has no audio to read aloud yet. The frame
+  draws it enabled. Same open question as the disabled "Kiểm tra hiểu".

@@ -1993,7 +1993,7 @@ Object.assign(copy.en, {
   readerBackToReading: 'Reading',
   readerContents: 'Contents',
   readerSettings: 'Reader settings',
-  readerKeep: 'Keep for later',
+  readerKeep: 'Read on later',
   readerChapterOf: 'Chapter {current} of {total}',
   readerProgress: '{percent}%',
   readerPrevious: 'Previous chapter',
