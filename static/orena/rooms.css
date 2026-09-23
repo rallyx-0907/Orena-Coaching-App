@@ -4472,3 +4472,326 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   .word-deep__reading { font-size: 18px; }
   .word-deep__foot { display: none; }
 }
+
+
+/* --- The four other ways a card asks ------------------------------------
+   The canonical frames "Review typing retry / mobile", "Review listen choose
+   mobile", "Review dictation mobile", "Review cloze mobile" and "Review
+   settings mobile". The flashcard keeps its own shell (frames 08-10); this is
+   the shell the task frames draw. */
+.recall-run {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-block-size: 100%;
+}
+.recall-run__bar { display: flex; align-items: center; gap: 14px; }
+.recall-run__leave { display: flex; color: var(--text-secondary); }
+.recall-run__track {
+  flex: 1;
+  block-size: 4px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+.recall-run__track > span { display: block; block-size: 100%; background: var(--o-accent-top); }
+.recall-run__count { font-size: 11.5px; color: var(--text-secondary); }
+.recall-run__settings { inline-size: 32px; block-size: 32px; min-block-size: 32px; border: 0; background: none; }
+.recall-run__stage { flex: 1; min-block-size: 0; display: flex; flex-direction: column; gap: 14px; }
+
+.recall-task {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring-card), var(--glass-shadow-card);
+}
+.recall-task--listen { flex: none; block-size: 300px; }
+.recall-task--cloze { flex: none; block-size: 280px; }
+.recall-task__pillrow { display: flex; align-items: center; justify-content: space-between; }
+.recall-task__pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  block-size: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.recall-task__speak { inline-size: 28px; block-size: 28px; min-block-size: 28px; border: 0; background: none; }
+.recall-task__subject {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.recall-task__word {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: var(--weight-semibold);
+  font-size: 48px;
+  line-height: 1;
+}
+.recall-task__reading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.recall-task__answer { display: flex; flex-direction: column; gap: 9px; }
+.recall-field {
+  block-size: 52px;
+  border-radius: 15px;
+  background: var(--glass-well-field);
+  box-shadow: inset 0 0 0 1.5px var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 15px;
+  font-size: 17px;
+}
+.recall-field[data-tone='good'] { box-shadow: inset 0 0 0 1.5px var(--status-success); }
+.recall-field[data-tone='warn'] { box-shadow: inset 0 0 0 1.5px var(--status-warning); }
+.recall-field[data-tone='good'] svg { color: var(--status-success); }
+.recall-field[data-tone='warn'] svg { color: var(--status-warning); }
+.recall-field input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+.recall-field__said { flex: 1; }
+.recall-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 10px;
+  padding: 0 2px;
+  font-size: 13.5px;
+}
+.recall-verdict__head { font-weight: var(--weight-bold); }
+.recall-verdict[data-tone='good'] .recall-verdict__head { color: var(--status-success); }
+.recall-verdict[data-tone='warn'] .recall-verdict__head { color: var(--status-warning); }
+.recall-verdict[data-tone='warn'] svg { color: var(--status-warning); }
+.recall-verdict__body, .recall-verdict__hint { flex-basis: 100%; color: var(--text-secondary); }
+.recall-verdict__body b { color: var(--text-primary); }
+.recall-verdict__body b b { color: var(--status-success); }
+.recall-verdict__hint { flex-basis: auto; margin-inline-start: auto; }
+
+/* Hearing it: the one big control the frame draws, and the two chips under it. */
+.recall-task__hear {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.recall-play {
+  inline-size: 92px;
+  block-size: 92px;
+  min-block-size: 92px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 0 10px var(--accent-highlight), var(--accent-shadow);
+  color: var(--accent-solid-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.recall-task__again { display: flex; gap: 8px; }
+.recall-chip {
+  block-size: 32px;
+  min-block-size: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: inherit;
+  font-size: 12.5px;
+}
+.recall-choices { display: flex; flex-direction: column; gap: 9px; }
+.recall-choice {
+  block-size: 52px;
+  min-block-size: 52px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--glass-raised);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  color: inherit;
+  font-size: 15.5px;
+  text-align: start;
+}
+.recall-choice__n { font-size: 11.5px; color: var(--text-secondary); }
+.recall-choice[data-tone='good'], .recall-option[data-tone='good'] {
+  box-shadow: inset 0 0 0 1.5px var(--status-success);
+}
+.recall-choice[data-tone='warn'], .recall-option[data-tone='warn'] {
+  box-shadow: inset 0 0 0 1.5px var(--status-warning);
+}
+
+/* Hearing it and writing it back: what was typed, then the answer. */
+.recall-task__block { display: flex; flex-direction: column; gap: 6px; }
+.recall-attempt { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.recall-attempt s { color: var(--text-secondary); }
+.recall-attempt .ds-data { font-size: 11px; color: var(--text-secondary); }
+.recall-task__rule { block-size: 1px; background: var(--glass-hairline); }
+.recall-task__answerword {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: var(--weight-semibold);
+  font-size: 38px;
+  line-height: 1.1;
+}
+.recall-task__gloss { font-size: 14px; color: var(--text-secondary); }
+.recall-task__example {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--glass-well-sunk);
+  box-shadow: var(--glass-ring);
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Filling the sentence. */
+.recall-task__sentence {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 4px;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 24px;
+  line-height: 1.5;
+}
+.recall-task__sentence .recall-task__gloss { font-family: var(--font); font-size: 13.5px; }
+.recall-blank {
+  display: inline-block;
+  min-inline-size: 96px;
+  padding: 0 8px;
+  border-block-end: 2px solid var(--accent-ink);
+  color: var(--accent-ink);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+.recall-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.recall-option {
+  block-size: 54px;
+  min-block-size: 54px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--glass-raised);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  color: inherit;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 17px;
+}
+.recall-option[data-tone='chosen'] {
+  background: var(--accent-highlight);
+  box-shadow: var(--accent-highlight-ring);
+}
+
+/* The foot: how it was recorded, and the way on. */
+.recall-task__foot { display: flex; flex-direction: column; gap: 10px; padding-block-start: 14px; }
+.recall-task__foot--quiet { align-items: center; }
+.recall-task__recorded { align-self: center; font-size: 11px; color: var(--text-secondary); }
+.recall-task__recorded b[data-tone='got'] { color: var(--status-success); }
+.recall-task__recorded b[data-tone='unsure'] { color: var(--status-warning); }
+.recall-task__recorded b[data-tone='again'] { color: var(--status-error); }
+.recall-task__on { block-size: 54px; min-block-size: 54px; border-radius: 17px; font-size: 16px; }
+.recall-task__foot .outline { block-size: 54px; min-block-size: 54px; border-radius: 17px; }
+
+/* The settings sheet, as "Review settings mobile" draws it. */
+.recall-settings { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; }
+.recall-settings__scrim { position: absolute; inset: 0; border: 0; background: var(--glass-scrim); }
+.recall-settings__sheet {
+  position: relative;
+  inline-size: 100%;
+  max-block-size: 88vh;
+  overflow: auto;
+  border-radius: 26px 26px 0 0;
+  background: var(--glass-sheet);
+  backdrop-filter: var(--glass-sheet-filter);
+  box-shadow: inset 0 0 0 1px var(--border-subtle), var(--glass-shadow-lifted);
+  padding: 10px 20px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.recall-settings__grab {
+  align-self: center;
+  inline-size: 40px;
+  block-size: 5px;
+  border-radius: 999px;
+  background: var(--glass-hairline);
+}
+.recall-settings__sheet h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 20px;
+}
+.recall-settings__slider { display: flex; flex-direction: column; gap: 11px; }
+.recall-settings__row { display: flex; align-items: baseline; }
+.recall-settings__row > span:first-child { flex: 1; font-size: 15px; font-weight: var(--weight-bold); }
+.recall-settings__row .ds-data { font-size: 16px; color: var(--accent-ink); }
+.recall-settings__slider input[type='range'] { inline-size: 100%; block-size: 28px; accent-color: var(--o-accent-top); }
+.recall-settings__modes { display: flex; flex-direction: column; gap: 4px; }
+.recall-settings__modes-head { font-size: 15px; font-weight: var(--weight-bold); padding-block-end: 6px; }
+.recall-settings__mode {
+  display: flex;
+  align-items: center;
+  block-size: 46px;
+  box-shadow: inset 0 -1px 0 var(--glass-hairline);
+}
+.recall-settings__mode:last-child { box-shadow: none; }
+.recall-settings__mode > span:first-child { flex: 1; font-size: 14.5px; }
+.recall-settings__always { font-size: 12.5px; color: var(--text-secondary); }
+.recall-switch {
+  position: relative;
+  inline-size: 46px;
+  block-size: 28px;
+  min-block-size: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--track);
+  padding: 0;
+}
+.recall-switch[aria-checked='true'] { background: var(--o-accent-top); }
+.recall-switch > span {
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-start: 3px;
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: 50%;
+  background: var(--accent-solid-light);
+  transition: inset-inline-start 120ms ease;
+}
+.recall-switch[aria-checked='true'] > span { inset-inline-start: 21px; }

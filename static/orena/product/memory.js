@@ -3,6 +3,7 @@
 const volatile = new Map();
 import { restoreConversation } from './conversation.js';
 import { practiceIntentions } from './intent.js';
+import { readReviewSettings } from './recall-modes.js';
 
 /* Why a learner kept something. A small, stable vocabulary rather than free
    text, so the collection can say it in either interface language and group by
@@ -52,6 +53,13 @@ export function learnerMemory(storage, owner, language) {
       revisions: {},
       conversations: {},
       keptLanguage: {},
+      /* How this learner wants to be asked: the two limits and which review
+         modes are on. Device memory by design, like the kept-language
+         provenance above - it is a preference about this device's sessions,
+         it owns none of the learner's content, and no persistence decision is
+         made for learner-owned data by keeping it here (AGENTS "Architecture
+         holds"). */
+      reviewSettings: null,
     };
   try {
     const parsed =
@@ -144,6 +152,7 @@ export function learnerMemory(storage, owner, language) {
             .slice(-100)
             .map(([k, v]) => [k, v.slice(0, 12000)]),
         );
+      value.reviewSettings = readReviewSettings(parsed.reviewSettings);
       value.keptLanguage = Object.fromEntries(
         Object.entries(parsed.keptLanguage || {})
           .filter(
@@ -202,6 +211,13 @@ export function learnerMemory(storage, owner, language) {
           [term, keptRecord(term, { ...entry, at: new Date().toISOString() })],
         ].slice(-200),
       );
+      return save();
+    },
+    /* One settings sheet, written whole: the sheet reads what is there, changes
+       one thing and hands the lot back, so a half-written patch cannot leave
+       two settings disagreeing. Clamped on the way in and on the way out. */
+    setReview(next) {
+      value.reviewSettings = readReviewSettings(next);
       return save();
     },
     forgetLanguage(term) {

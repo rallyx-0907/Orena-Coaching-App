@@ -1851,3 +1851,44 @@ is. `GET /api/library/vocabulary/{word}/deep` is the whole screen in one read.
 
 The frame's strokes column (right, 640px) is frame 05's work and is not in this
 slice; the desktop screen is one column-pair until it lands.
+
+## The four other ways a card asks (2026-09-23)
+
+Frames **11 Review typing retry**, **12 Review typing mobile**, **13 Review
+listen choose mobile**, **14 Review dictation mobile**, **15 Review cloze
+mobile**, **27 Review settings desktop** and **28 Review settings mobile** —
+built and measured.
+
+**A mode is offered only when the card can honestly be asked in it.** No
+recording, no listening task, and none is synthesised to make one; no sentence
+that really contains the word, no cloze; too few neighbours to tell apart, no
+chooser. `product/recall-modes.js` decides that per card, and the choices are
+deterministic, so a learner who answers "2" and comes back finds the same "2".
+
+- **Distractors** are the learner's own due queue — words worth telling apart,
+  not strings.
+- **A typed answer** is judged exactly as the frame says: any of the answers
+  written in the meaning counts, and the marks may be left off ("chấp nhận
+  thiếu dấu"), with the full spelling shown afterwards. Two tries, then the
+  answer.
+- **What a task is worth**: right first time is `got_it`, right on the second
+  try is `unsure`, not getting there is `again` — the three answers the
+  scheduler already takes. No new grade, no new schedule.
+
+**Review settings are device memory, by design.** The sheet writes
+`newPerDay`, `limitPerDay` and which modes are on into the learner's own
+device memory, beside the kept-language provenance that AGENTS "Architecture
+holds" already names as device memory. No new column, no persistence decision
+for learner-owned data, and the numbers are clamped on the way in and out.
+
+Two things recorded rather than decided:
+
+1. **"Nói to" is drawn and not operated.** The settings frame lists it; saying
+   a word aloud is the Speaking capability's, which is another lane's work. The
+   row is drawn with the frame's own off state and a title saying where it
+   lives, and cannot be switched on here.
+2. **Turning every mode off leaves the flashcard, which draws no settings
+   control** (frames 08-10 draw none, and nothing was added). The second door
+   the frames draw is the sliders control on **frame 30 Deck nothing due
+   mobile**; until that frame is built, a learner who turns every mode off
+   reaches the sheet again from the next session that sets a task.

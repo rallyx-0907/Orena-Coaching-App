@@ -62,6 +62,17 @@ import {
   grammarFamilies,
 } from '../product/grammar-shelf.js';
 import { recallShape, blankContext } from '../product/recall.js';
+import {
+  NEW_PER_DAY,
+  REVIEW_LIMIT,
+  TYPING_TRIES,
+  checkTyped,
+  choicesFor,
+  meaningOf,
+  readReviewSettings,
+  taskFor,
+} from '../product/recall-modes.js';
+import { reviewSettingsSheet, taskCard, taskFoot } from './recall-tasks.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
 import { scene } from './brand.js';
@@ -708,6 +719,54 @@ async function renderRecallLanguage(root, ctx) {
      (recorded in UI_BACKEND_GAPS.md). */
   const heard = new Map();
   let playing = null;
+  /* How this learner wants to be asked, and where this card has got to in
+     answering. `taskState` is cleared with the card, never carried across one:
+     a wrong answer belongs to the word it was given for. */
+  let settings = readReviewSettings(memory.value.reviewSettings);
+  let settingsOpen = false;
+  let task = null;
+  let taskWord = '';
+  let taskState = null;
+  let recorded = null;
+
+  const freshTask = (item) => {
+    const hasAudio = Boolean(heard.get(item.word));
+    const pool = (items || []).filter((other) => other.word !== item.word);
+    const mode = taskFor({ ...item, language }, settings, { hasAudio, pool });
+    const options =
+      mode === 'listen_choose'
+        ? choicesFor(item, pool)
+        : mode === 'cloze'
+          ? choicesFor(
+              { ...item, definition: item.word },
+              pool.map((other) => ({ ...other, definition: other.word })),
+            )
+          : [];
+    return { mode, state: { typed: '', tries: 0, verdict: null, chosen: -1, options, attempts: [], speed: 1 } };
+  };
+
+  /* The card decides how it is asked once, when it comes up. Deciding again on
+     every paint would change the question under a learner mid-answer. */
+  const ensureTask = (item) => {
+    if (!item) {
+      task = null;
+      taskWord = '';
+      taskState = null;
+      return;
+    }
+    if (taskWord === item.word && task) return;
+    const fresh = freshTask(item);
+    task = fresh.mode;
+    taskWord = item.word;
+    taskState = fresh.state;
+    recorded = null;
+  };
+
+  /* What a task answer is worth. The scheduler takes three answers, and the
+     product's rule is the plain one: right first time is remembering it, right
+     on the second try is being unsure of it, and not getting there is
+     forgetting it. */
+  const gradeFor = (state, ok) => (!ok ? 'again' : state.tries <= 1 ? 'got_it' : 'unsure');
   let startedAt = 0;
   const tally = { got_it: 0, unsure: 0, again: 0 };
   const forgotten = [];
@@ -885,6 +944,32 @@ async function renderRecallLanguage(root, ctx) {
       + `<a class="primary" href="${esc(link('language'))}">${esc(r.reviewDone)}</a>`
       + `</div>`
       + `</section>`;
+    /* The four task frames draw their own shell: a way out of the sitting, one
+       continuous bar rather than a segment per card, the count, and - on the
+       desktop frame - the way to the settings. The flashcard keeps its own
+       (frames 08-10), so neither is bent to fit the other. */
+    ensureTask(current);
+    const asked = current && task && task !== 'flashcard' ? task : '';
+    const walked = total ? Math.round((passed / total) * 100) : 0;
+    const taskShell = asked
+      ? `<section class="recall-run">`
+        + `<header class="recall-run__bar">`
+        + `<a class="recall-run__leave" href="${esc(link('language'))}" aria-label="${esc(c.back)}">${icon('x', { size: 21 })}</a>`
+        + `<span class="recall-run__track"><span style="width:${walked}%"></span></span>`
+        + `<span class="recall-run__count ds-data">${esc(passed)} / ${esc(total)}</span>`
+        + `<button type="button" class="icon-button recall-run__settings" data-recall-settings aria-label="${esc(c.recallSettings)}">${icon('sliders-horizontal', { size: 20 })}</button>`
+        + `</header>`
+        + `<div class="recall-run__stage">${taskCard(c, asked, { ...current, language }, taskState)}</div>`
+        + taskFoot(c, asked, taskState, recorded)
+        + `<p role="status" data-recall-status></p>`
+        + `</section>`
+      : '';
+    /* The sheet outlives the card it was opened from: turning a mode off can
+       change what this card is asked, and the learner must not lose the sheet
+       they are still setting. */
+    const sheet = settingsOpen
+      ? reviewSettingsSheet(c, settings, { newPerDay: NEW_PER_DAY, limitPerDay: REVIEW_LIMIT })
+      : '';
     const reviewing = stage !== 'landing' && current;
     /* While a card is up the screen is the card, and when the sitting ends the
        screen is its summary: both carry their own way on, so the room's return
@@ -892,7 +977,7 @@ async function renderRecallLanguage(root, ctx) {
     const sitting = reviewing || (stage !== 'landing' && !current);
     root.innerHTML = `${sitting ? '' : practiceReturn(c, 'recall')}${
       sitting ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
-    }${stage === 'landing' ? landing : current ? card : done}`;
+    }${stage === 'landing' ? landing : current ? taskShell || card : done}${sheet}`;
     /* Asked once per word, when its card is on screen: the answer is cached
        on the server by (entry identity, reading), so a second sitting with the
        same word costs nothing. A word with no catalogue identity, or one whose
@@ -1017,6 +1102,157 @@ async function renderRecallLanguage(root, ctx) {
       control.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') play(event);
       });
+    });
+    /* The four task modes. Every answer goes through one place, so what a
+       task is worth cannot drift between modes. */
+    const settle = async (ok) => {
+      taskState.verdict = { ok };
+      const answer = gradeFor(taskState, ok);
+      recorded = {
+        tone: answer === 'got_it' ? 'got' : answer === 'unsure' ? 'unsure' : 'again',
+        label: answer === 'got_it' ? r.vocabGradeGotIt : answer === 'unsure' ? r.vocabGradeUnsure : r.vocabGradeAgain,
+        when: (() => {
+          const plan = current?.schedule?.[answer];
+          if (!plan) return '';
+          if (plan.minutes) return `${plan.minutes}m`;
+          if (plan.days) return `${plan.days}d`;
+          return '';
+        })(),
+      };
+      paint(false);
+      try {
+        await ctx.mutate(() => api.reviewLibraryVocabulary(current.word, answer));
+        if (!alive()) return;
+        if (answer in tally) tally[answer] += 1;
+        if (answer === 'again' && !forgotten.some((item) => item.word === current.word))
+          forgotten.push({
+            word: current.word,
+            meaning: meaningOf(current),
+            from: current.focus_note || (current.source_kind ? c[`saved_${current.source_kind}`] || '' : ''),
+          });
+      } catch {
+        /* The next card's read will say what the library really holds. */
+      }
+    };
+    root.querySelector('[data-recall-typed]')?.addEventListener('input', (event) => {
+      taskState.typed = event.target.value;
+      const on = root.querySelector('[data-recall-check]');
+      if (on) on.disabled = !taskState.typed.trim();
+    });
+    root.querySelector('[data-recall-typed]')?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') root.querySelector('[data-recall-check]')?.click();
+    });
+    root.querySelector('[data-recall-check]')?.addEventListener('click', async () => {
+      if (!taskState || taskState.verdict) return;
+      taskState.tries += 1;
+      if (asked === 'cloze') {
+        await settle(taskState.options[taskState.chosen] === current.word);
+        return;
+      }
+      const expected = asked === 'dictation' ? current.word : meaningOf(current);
+      const judged = checkTyped(taskState.typed, expected);
+      if (judged.ok) {
+        taskState.verdict = { ok: true, foldedOnly: judged.foldedOnly };
+        await settle(true);
+        return;
+      }
+      if (taskState.tries < TYPING_TRIES) {
+        /* Another go: what was typed is kept where the learner can see it was
+           not right, and the field is theirs again. */
+        if (asked === 'dictation') taskState.attempts.push(taskState.typed);
+        taskState.verdict = { ok: false };
+        paint(false);
+        taskState.verdict = null;
+        taskState.typed = '';
+        window.setTimeout(() => { if (alive()) paint(false); }, 900);
+        return;
+      }
+      if (asked === 'dictation') taskState.attempts.push(taskState.typed);
+      await settle(false);
+    });
+    root.querySelectorAll('[data-recall-choose]').forEach((button) => {
+      button.onclick = async () => {
+        if (!taskState || taskState.verdict) return;
+        taskState.chosen = Number(button.dataset.recallChoose);
+        if (asked === 'cloze') { paint(false); return; }
+        taskState.tries += 1;
+        await settle(taskState.options[taskState.chosen] === meaningOf(current));
+      };
+    });
+    root.querySelector('[data-recall-unknown]')?.addEventListener('click', async () => {
+      if (!taskState || taskState.verdict) return;
+      taskState.tries = TYPING_TRIES + 1;
+      if (asked === 'dictation' && taskState.typed) taskState.attempts.push(taskState.typed);
+      await settle(false);
+    });
+    root.querySelector('[data-recall-next]')?.addEventListener('click', async () => {
+      try {
+        const [updated, totals] = await Promise.all([
+          api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE }),
+          api.libraryVocabularySummary().catch(() => null),
+        ]);
+        if (!alive()) return;
+        items = updated.items || [];
+        counts = totals;
+        reviewed += 1;
+        task = null;
+        taskWord = '';
+        taskState = null;
+        recorded = null;
+        paint(true);
+      } catch {
+        status(c.savedNotRefreshed);
+      }
+    });
+    root.querySelectorAll('[data-recall-speak]').forEach((button) => {
+      button.onclick = async () => {
+        const found = heard.get(current?.word);
+        if (!found) return;
+        try {
+          const sound = new Audio(found.url);
+          sound.playbackRate = taskState?.speed || 1;
+          await sound.play();
+        } catch {
+          /* A recording that will not play is not an answer the learner owes. */
+        }
+      };
+    });
+    root.querySelector('[data-recall-speed]')?.addEventListener('click', () => {
+      taskState.speed = taskState.speed === 1 ? 0.75 : 1;
+      paint(false);
+    });
+    /* The settings sheet: read, changed one at a time, written whole. */
+    root.querySelector('[data-recall-settings]')?.addEventListener('click', () => {
+      settingsOpen = true;
+      paint(false);
+    });
+    root.querySelector('[data-recall-settings-close]')?.addEventListener('click', () => {
+      settingsOpen = false;
+      paint(false);
+    });
+    root.querySelectorAll('[data-recall-setting]').forEach((input) => {
+      input.oninput = () => {
+        settings = readReviewSettings({ ...settings, [input.dataset.recallSetting]: input.value });
+        memory.setReview(settings);
+        paint(false);
+      };
+    });
+    root.querySelectorAll('[data-recall-mode]').forEach((button) => {
+      button.onclick = () => {
+        const name = button.dataset.recallMode;
+        settings = readReviewSettings({
+          ...settings,
+          modes: { ...settings.modes, [name]: !settings.modes[name] },
+        });
+        memory.setReview(settings);
+        /* A mode turned on or off changes which question this card is set, so
+           the card is asked again from the start rather than half in one mode
+           and half in another. */
+        task = null;
+        taskWord = '';
+        taskState = null;
+        paint(false);
+      };
     });
     root.querySelector('[data-flip]')?.addEventListener('click', () => {
       revealed = !revealed;

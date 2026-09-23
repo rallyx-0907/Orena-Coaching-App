@@ -163,7 +163,9 @@ assert.ok(hanzi.includes('thư viện'), 'and the support-language meaning');
 assert.match(recallRoom, /stage = 'landing'/, 'a session starts by saying what is waiting');
 assert.match(recallRoom, /class="recall-landing"/, 'as its own step');
 assert.match(recallRoom, /data-recall-start/, 'with one way in');
-assert.match(recallRoom, /stage === 'landing' \? landing : current \? card : done/,
+/* One item at a time, then what happened - and the item is the flashcard
+   unless the card was set one of the four task frames' questions instead. */
+assert.match(recallRoom, /stage === 'landing' \? landing : current \? taskShell \|\| card : done/,
   'then one item at a time, then what happened');
 assert.match(recallRoom, /reviewed \+= 1/, 'what was reviewed is counted');
 assert.match(recallRoom, /class="review-done"/, 'and said at the end, as the design draws it');

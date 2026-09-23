@@ -77,7 +77,8 @@ for (const [what, rule] of [
   assert.match(css, rule, `${what} is the frame’s size`);
 
 /* Colour has one owner: this screen names no colour of its own. */
-const block = css.slice(css.indexOf('.word-deep {'));
+const from = css.indexOf('.word-deep {');
+const block = css.slice(from, css.indexOf('/* ---', from + 10));
 assert.doesNotMatch(block, /#[0-9a-fA-F]{3,8}\b/, 'the screen reads tokens, never a literal colour');
 
 /* --- The learner’s own words, never guessed ------------------------- */

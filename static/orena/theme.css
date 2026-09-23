@@ -87,12 +87,22 @@
   --glass-focus: linear-gradient(180deg, rgba(120, 92, 200, 0.38), rgba(72, 56, 126, 0.32));
   --glass-soft: linear-gradient(180deg, rgba(74, 60, 130, 0.3), rgba(48, 38, 86, 0.26));
   --glass-well: rgba(10, 7, 20, 0.35);
+  /* The same well, sunk further. The canonical frames use three depths:
+     a row on glass, a box set into it, and a field waiting to be typed
+     in. One owner, three named depths - not three literals spread
+     through the rooms. */
+  --glass-well-sunk: rgba(10, 7, 20, 0.4);
+  --glass-well-field: rgba(10, 7, 20, 0.46);
   --glass-filter: blur(24px) saturate(1.35) brightness(1.04);
   --glass-sheet-filter: blur(30px) saturate(1.5) brightness(1.05);
   --glass-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.16);
   --glass-ring-focus: inset 0 0 0 1px rgba(172, 144, 255, 0.3);
   --glass-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
   --glass-shadow-lifted: 0 10px 32px rgba(0, 0, 0, 0.4);
+  /* A card that is the screen - the review task frames draw one, lifted
+     further than a panel and ringed a little brighter. */
+  --glass-ring-card: inset 0 0 0 1px rgba(172, 144, 255, 0.26);
+  --glass-shadow-card: 0 18px 44px rgba(0, 0, 0, 0.3);
   --glass-glow-focus: 0 0 0 1.5px oklch(0.7 0.19 296 / 0.75), 0 22px 54px rgba(123, 77, 232, 0.3);
   --glass-hairline: rgba(255, 255, 255, 0.12);
   --glass-scrim: rgba(4, 3, 10, 0.55);
