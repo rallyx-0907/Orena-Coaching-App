@@ -77,6 +77,7 @@ jobs:
           node scripts/test_dictation_evaluator.mjs
           node scripts/test_audio_recorder.mjs
           node scripts/test_m3_pronunciation_contract.mjs
+          node scripts/test_speaking_take.mjs
           node scripts/test_media_learning_quality.mjs
           node scripts/test_real_media_catalog_contract.mjs
           node scripts/test_media_status_compact_accessor.mjs
