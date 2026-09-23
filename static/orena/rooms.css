@@ -2631,6 +2631,133 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
 }
 .vocab-listen:focus-visible { box-shadow: var(--accent-chip-ring), var(--glass-ring-focus); }
 
+/* --- Choosing several (D-067, "My library multi-select", "… delete confirm")
+   The header becomes a bar: a way out, how many, select-all. The foot becomes
+   four actions of 56 with a 21 icon and 11.5 words. Deleting asks first, in a
+   sheet of 24 radius with two buttons of 48, and says what is lost. */
+.my-library__chosen {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 84px;
+}
+.my-library__chosen strong {
+  flex: 1;
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+}
+.my-library-item__pick {
+  inline-size: 40px;
+  block-size: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  /* On a desk it appears with the pointer; while anything is chosen it stays,
+     and on a phone the long press is the way in, as the frame's spec says. */
+  opacity: 0;
+}
+.my-library-item:hover .my-library-item__pick,
+.my-library-item:focus-within .my-library-item__pick,
+.my-library-item[data-choosing] .my-library-item__pick { opacity: 1; }
+.my-library-item[data-chosen] { box-shadow: var(--glass-ring), var(--accent-chip-ring); }
+.my-library-item[data-chosen] .my-library-item__pick { color: var(--accent-ink); }
+.my-library__bulk {
+  position: sticky;
+  inset-block-end: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 18px 18px 0 0;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.2);
+}
+.my-library__bulk button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  block-size: 56px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.my-library__bulk button[disabled] { opacity: 0.45; cursor: not-allowed; }
+.my-library__bulk button[data-tone='danger'] { color: var(--status-error); }
+
+.my-library-confirm {
+  position: fixed;
+  z-index: 17;
+  inset-inline: 24px;
+  inset-block-start: 270px;
+  margin-inline: auto;
+  inline-size: min(560px, calc(100% - 48px));
+  box-sizing: border-box;
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  border-radius: 24px;
+  background: var(--glass-focus);
+  backdrop-filter: blur(30px) saturate(1.4);
+  box-shadow: var(--glass-ring-focus), 0 30px 70px rgba(0, 0, 0, 0.55);
+}
+.my-library-confirm strong { font-family: var(--display-font); font-size: 19px; font-weight: var(--weight-heavy); }
+.my-library-confirm p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-secondary); }
+.my-library-confirm__row { display: flex; gap: 10px; padding-block-start: 8px; }
+.my-library-confirm__row > * { flex: 1; min-block-size: 48px; border-radius: 14px; justify-content: center; }
+.my-library-confirm__go {
+  border: 0;
+  background: var(--status-error);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--weight-heavy);
+  cursor: pointer;
+}
+.my-library-toast {
+  position: fixed;
+  z-index: 18;
+  inset-block-end: 24px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring-focus), 0 18px 40px rgba(0, 0, 0, 0.45);
+  font-size: 14.5px;
+}
+.my-library-toast button {
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .my-library__chosen { min-block-size: 0; }
+  .my-library-confirm { inset-block-start: auto; inset-block-end: 24px; }
+  .my-library-toast { inset-inline: 16px; translate: none; inset-block-end: 96px; }
+}
+
 /* --- Thư viện của tôi: what is waiting, the sets, one thing in full -------
    Measured from "Thư viện của tôi · desktop": the due card 26/28 at radius 22
    over the lit glass, its label in mono 11 at 0.13em; the sets column 420 with

@@ -446,6 +446,47 @@ def save_library_vocabulary(payload: LibraryVocabularyIn) -> dict[str, Any]:
     return {"saved": True, "item": _row_to_item(row)}
 
 
+class RestoreVocabularyIn(BaseModel):
+    """A word exactly as it was, for the ten seconds Hoàn tác is offered.
+
+    Every field is what the listing already gave the surface, so undo puts
+    back what was deleted rather than saving a new word that happens to be
+    spelled the same.
+    """
+
+    word: str = Field(min_length=1, max_length=180)
+    phonetic: str = Field(default="", max_length=180)
+    part_of_speech: str = Field(default="", max_length=120)
+    definition: str = Field(default="", max_length=2400)
+    translation_vi: str = Field(default="", max_length=2400)
+    added_at: str = Field(default="", max_length=64)
+    source_essay_id: int | None = Field(default=None, ge=1)
+    source_fragment: str = Field(default="", max_length=1200)
+    source_kind: str = Field(default="manual", max_length=40)
+    focus_note: str = Field(default="", max_length=2400)
+    review_stage: int = Field(default=0, ge=0, le=10)
+    successful_recalls: int = Field(default=0, ge=0)
+    lapse_count: int = Field(default=0, ge=0)
+    last_reviewed_at: str = Field(default="", max_length=64)
+    next_review_at: str = Field(default="", max_length=64)
+    entry_identity_key: str = Field(default="", max_length=900)
+    entry_id: str = Field(default="", max_length=64)
+    reading_key: str = Field(default="", max_length=240)
+
+
+def restore_library_vocabulary(payload: RestoreVocabularyIn) -> dict[str, Any]:
+    """Undo a deletion: the word, its source and its schedule, as they were."""
+
+    term = _clean_term(payload.word)
+    if not term:
+        raise ValueError("Vocabulary item cannot be empty.")
+    values = payload.model_dump()
+    values["word"] = term
+    values["now"] = _iso(_now())
+    row = _repo().restore_library_record(values)
+    return {"restored": True, "item": _row_to_item(row)}
+
+
 # The scheduler, in one place, so the buttons can say what they will do before
 # the learner presses them. Days per stage after a clean recall, the few
 # minutes a forgotten card waits, and the day an unsure one does.

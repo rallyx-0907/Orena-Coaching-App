@@ -45,7 +45,22 @@ assert.match(
 /* Words are scheduled in `saved_words`. The library orders the queue by the
    pin and by that schedule; it never computes an interval of its own. */
 assert.doesNotMatch(repository, /next_review_at\s*=/, 'the library writes no review date');
-assert.doesNotMatch(room, /next_review_at\s*=|REVIEW_STAGE|interval/i, 'and the room invents none');
+/* The room computes no schedule of its own. It does carry the owner's own
+   numbers back when undoing a deletion - that is restoring what was there,
+   not inventing it - so every review field that appears in the room must be
+   part of that one payload, and nothing may be derived. */
+assert.doesNotMatch(room, /REVIEW_STAGE|AGAIN_MINUTES|addDays|Date\.now\(\) \+/,
+  'the room works out no interval');
+const reviewFields = room.match(
+  new RegExp(String.raw`(next_review_at|last_reviewed_at|review_stage|successful_recalls|lapse_count):[^,\r\n]*`, 'g'),
+) || [];
+assert.deepEqual(reviewFields, [
+  "review_stage: Number(detail.reviewStage || 0)",
+  "successful_recalls: Number(detail.successfulRecalls || 0)",
+  "lapse_count: Number(detail.lapseCount || 0)",
+  "last_reviewed_at: detail.lastReviewedAt || ''",
+  "next_review_at: detail.nextReviewAt || ''",
+], 'and the only review fields it names are the ones an undo puts back');
 assert.match(
   repository,
   /\.order_by\(LibraryItem\.pinned_at\)/,

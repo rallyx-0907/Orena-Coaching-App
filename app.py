@@ -164,7 +164,7 @@ from writing_coach.persistence.learning_repository import (
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
-from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
+from writing_coach.becoming_library import LibraryVocabularyIn, RestoreVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, restore_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
 from writing_coach.persistence.library_repository import LibraryRepository
 from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
@@ -3206,6 +3206,13 @@ def becoming_library_vocabulary_review(
     payload: VocabularyReviewIn,
 ) -> dict[str, Any]:
     return review_library_vocabulary(word, payload)
+
+@app.post("/api/library/vocabulary/restore", name="becoming_library_vocabulary_restore")
+def becoming_library_vocabulary_restore(payload: RestoreVocabularyIn) -> dict[str, Any]:
+    """Undo a deletion within the window the surface offers it in."""
+
+    return restore_library_vocabulary(payload)
+
 
 @app.delete("/api/library/vocabulary/{word}", name="becoming_library_vocabulary_delete")
 def becoming_library_vocabulary_delete(word: str) -> dict[str, Any]:

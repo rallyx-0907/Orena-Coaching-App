@@ -1759,3 +1759,28 @@ shared bar's search simply narrower than the baseline says?
 
 **Eleven of the thirty-two have a screen today.** Nothing in the list above was
 built or guessed at in this pass: what has no screen is named, not approximated.
+
+## Choosing several, and deleting with a way back (2026-09-23)
+
+Built from "My library multi-select" (desktop and mobile) and "My library
+delete confirm", including the frames' own spec panel.
+
+- **In and out**: a box on each row that appears with the pointer, Shift-click
+  for a range, a long press on a phone where there is no hover. Escape, the
+  cross, or un-choosing the last one leaves.
+- **The bar replaces the header**: a way out, "Đã chọn N", select-all - and the
+  foot becomes the frame's four actions at 56 with 21 icons and 11.5 words.
+- **Into a set** is on only when everything chosen is one kind, which is also
+  all the database will accept; otherwise it is dimmed and says why.
+- **Delete always asks**, names what is lost and what survives, and counts
+  itself on the button. Afterwards a toast offers **Hoàn tác for ten seconds**.
+
+**One thing had to be built for undo to be honest.** Deleting a word takes its
+review schedule with it, and re-saving would hand back a new card due today.
+`restore_library_record` (both repositories) and
+`POST /api/library/vocabulary/restore` put the word back as it was - stage,
+recalls, lapses, last and next review, and where it was met. Four tests hold
+the difference between restoring and saving again.
+
+Verified in the browser against the sandbox: choose one, Shift-click a range,
+"Đã chọn 3"; delete two; both gone; Hoàn tác; both back.

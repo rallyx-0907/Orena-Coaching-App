@@ -203,6 +203,14 @@ export const api={
   libraryReviewQueue:()=>retryOnce(()=>request('/api/library/review-queue'),isTransientRequestError),
   libraryCollections:(kind='')=>retryOnce(()=>request(`/api/library/collections${kind?`?kind=${encodeURIComponent(kind)}`:''}`),isTransientRequestError),
   libraryCollectionCreate:(payload)=>request('/api/library/collections',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  libraryItemDelete:(id)=>request(`/api/library/items/${encodeURIComponent(id)}`,{method:'DELETE'}),
+  /* Undo, within the ten seconds the surface offers it: the word exactly as it
+     was, schedule included - not a fresh save wearing the same spelling. */
+  restoreLibraryVocabulary:(payload)=>request('/api/library/vocabulary/restore',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload),
+  }),
   libraryCollectionAdd:(collectionId,itemId)=>request(`/api/library/collections/${encodeURIComponent(collectionId)}/items`,{method:'POST',headers:JSON_HEADERS,body:JSON.stringify({item_id:itemId})}),
   /* The counts and the rank alone - what Hồ sơ, Tiến độ and Home need, with no
      saved word crossing the wire. */

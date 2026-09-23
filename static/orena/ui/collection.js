@@ -80,6 +80,10 @@ export function renderCollection(root, ctx) {
        not there: the room still lists, and says what it cannot do. */
     own: new Map(), collections: [], queue: null, unavailable: false,
     detail: null, picking: null, busy: '', naming: null,
+    /* Choosing several at once: the refs chosen, the row a Shift-click
+       measures its range from, the confirmation, and the ten seconds an undo
+       is on offer for. */
+    picked: new Set(), anchor: '', confirming: false, toast: null, undo: null, undoTimer: null,
     /* What a word's recording may be played under, by word. Asked for only
        when a word's panel is open - this room draws no speaker, because its
        frames draw none; it credits what the review card plays. */
@@ -140,6 +144,62 @@ export function renderCollection(root, ctx) {
       + `</form>`;
   }
 
+  /* The header the frame replaces while things are chosen: a way out, how
+     many, and select-all. */
+  function chosenBar() {
+    const count = state.picked.size;
+    const all = (state.entries || []).length;
+    return `<header class="my-library__chosen"><button type="button" class="my-library-item__act" data-library-clear aria-label="${esc(r.myLibraryClose)}">${icon('x', { size: 22 })}</button>`
+      + `<strong>${esc(String(r.myLibraryChosen).replace('{n}', String(count)))}</strong>`
+      + `<button type="button" class="my-library__new-set" data-library-all>${esc(count >= all ? r.myLibraryChooseNone : r.myLibraryChooseAll)}</button>`
+      + `</header>`;
+  }
+
+  /* The four the frame draws, in its order. "Into a set" is only on when
+     everything chosen is one kind, because that is all the database will
+     accept - and the note says so rather than the button failing later. */
+  function chosenActions() {
+    const kinds = new Set([...state.picked].map((ref) => entryFor(ref)?.ref.domain).filter(Boolean));
+    const oneKind = kinds.size === 1;
+    const act = (name, iconName, label, extra = '') =>
+      `<button type="button" data-library-bulk="${name}"${extra}>${icon(iconName, { size: 21 })}<span>${esc(label)}</span></button>`;
+    return `<div class="my-library__bulk">`
+      + act('mark', 'bookmark-simple', r.myLibraryStateMarked)
+      + act('mastered', 'check-circle', r.myLibraryStateKnown)
+      + act('file', 'folder-plus', r.myLibraryBulkSet, oneKind ? '' : ' disabled title="' + esc(r.myLibraryBulkSetNote) + '"')
+      + act('delete', 'trash', r.myLibraryBulkDelete, ' data-tone="danger"')
+      + `</div>`;
+  }
+
+  /* What deleting costs, said before it happens: the frame names the review
+     progress, the sets the items leave, and what survives. */
+  function confirmDelete() {
+    if (!state.confirming) return '';
+    const count = state.picked.size;
+    const sets = new Set();
+    for (const ref of state.picked)
+      for (const set of (state.own.get(ref)?.collections || [])) sets.add(set.id);
+    const cost = String(sets.size ? r.myLibraryDeleteCostSets : r.myLibraryDeleteCost)
+      .replace('{n}', String(count))
+      .replace('{sets}', String(sets.size));
+    return `<div class="my-library-scrim" data-library-cancel></div>`
+      + `<div class="my-library-confirm" role="alertdialog" aria-label="${esc(r.myLibraryBulkDelete)}">`
+      + `<strong>${esc(String(r.myLibraryDeleteTitle).replace('{n}', String(count)))}</strong>`
+      + `<p>${esc(cost)}</p>`
+      + `<div class="my-library-confirm__row">`
+      + `<button type="button" class="outline" data-library-cancel>${esc(r.myLibraryCancel)}</button>`
+      + `<button type="button" class="my-library-confirm__go" data-library-delete>${esc(String(r.myLibraryDeleteGo).replace('{n}', String(count)))}</button>`
+      + `</div></div>`;
+  }
+
+  /* What just happened, and the ten seconds it can be taken back in. */
+  function toast() {
+    if (!state.toast) return '';
+    return `<div class="my-library-toast" role="status">${esc(state.toast)}`
+      + (state.undo ? `<button type="button" data-library-undo>${esc(r.myLibraryUndo)}</button>` : '')
+      + `</div>`;
+  }
+
   /* --- The rows --------------------------------------------------------- */
   function rows() {
     if (state.failed)
@@ -165,8 +225,12 @@ export function renderCollection(root, ctx) {
       const open = entry.action
         ? `<a class="my-library-item__act" href="${esc(entry.action.route)}" title="${esc(r.myLibraryOpenSource)}">${icon('arrow-square-out', { size: 17 })}</a>`
         : '';
-      return `<div class="my-library-item"${marked ? ' data-marked' : ''}>`
-        + `<button type="button" class="my-library-item__body" data-library-open="${ref}">`
+      const chosen = state.picked.has(refOf(entry));
+      const choosing = state.picked.size > 0;
+      const box = state.unavailable ? '' : `<button type="button" class="my-library-item__pick" aria-pressed="${chosen}" data-library-pick-row="${ref}" aria-label="${esc(r.myLibraryChoose)}">${icon(chosen ? 'check-square' : 'square', { filled: chosen, size: 22 })}</button>`;
+      return `<div class="my-library-item"${marked ? ' data-marked' : ''}${chosen ? ' data-chosen' : ''}${choosing ? ' data-choosing' : ''}>`
+        + box
+        + `<button type="button" class="my-library-item__body" data-library-open="${ref}" data-library-row="${ref}">`
         + `<span class="my-library-item__head"><span class="my-library-item__title"${kind?.serif ? ` lang="${esc(language)}"` : ''}>${esc(entry.title || '')}</span>`
         + (entry.snippet ? `<span class="my-library-item__gloss">${esc(entry.snippet)}</span>` : '') + `</span>`
         + `<span class="my-library-item__meta">${esc(meta)}</span></button>`
@@ -274,9 +338,14 @@ export function renderCollection(root, ctx) {
         : Number(state.totals[kind.id] || 0);
       return `<button type="button" class="my-library-chip" aria-pressed="${on}" data-library-kind="${kind.id}">${icon(kind.icon, { size: 16, filled: on })}<span>${esc(r[kind.label])}</span>${count == null ? '' : `<span class="my-library-chip__count ds-data">${esc(String(count))}</span>`}</button>`;
     }).join('');
-    root.innerHTML = `<section class="my-library"><header class="my-library__bar"><h1>${esc(r.myLibrary)}</h1>${counted ? `<span class="my-library__count ds-data">${esc(counted)}</span>` : ''}<label class="library-search my-library__search"><span class="sr-only">${esc(r.myLibrarySearch)}</span>${icon('magnifying-glass', { size: 18 })}<input id="myLibraryQuery" type="search" autocomplete="off" placeholder="${esc(r.myLibrarySearch)}" value="${esc(state.query)}" data-library-query></label></header>`
-      + `<div class="my-library__columns"><div class="my-library__main">${dueCard()}<div class="my-library__kinds">${chips}</div>${rows()}</div>${sets()}</div>`
-      + detail() + picker() + `</section>`;
+    const choosing = state.picked.size > 0;
+    const head = choosing
+      ? chosenBar()
+      : `<header class="my-library__bar"><h1>${esc(r.myLibrary)}</h1>${counted ? `<span class="my-library__count ds-data">${esc(counted)}</span>` : ''}<label class="library-search my-library__search"><span class="sr-only">${esc(r.myLibrarySearch)}</span>${icon('magnifying-glass', { size: 18 })}<input id="myLibraryQuery" type="search" autocomplete="off" placeholder="${esc(r.myLibrarySearch)}" value="${esc(state.query)}" data-library-query></label></header>`;
+    root.innerHTML = `<section class="my-library"${choosing ? ' data-choosing' : ''}>${head}`
+      + `<div class="my-library__columns"><div class="my-library__main">${choosing ? '' : dueCard()}<div class="my-library__kinds">${chips}</div>${rows()}</div>${choosing ? '' : sets()}</div>`
+      + (choosing ? chosenActions() : '')
+      + detail() + picker() + confirmDelete() + toast() + `</section>`;
     bind();
     if (focused) {
       const element = document.getElementById(focused);
@@ -314,6 +383,39 @@ export function renderCollection(root, ctx) {
       if (entry) { state.picking = { entry }; state.detail = null; paint(); }
     }));
     root.querySelectorAll('[data-library-pick]').forEach((button) => (button.onclick = () => file(button.dataset.libraryPick)));
+    /* Choosing: the box on a row, Shift for a range, a long press on a phone
+       where there is no hover to reveal a box. Escape leaves, and so does
+       un-choosing the last one. */
+    root.querySelectorAll('[data-library-pick-row]').forEach((button) => (button.onclick = (event) => {
+      pickRow(button.dataset.libraryPickRow, { range: event.shiftKey });
+    }));
+    root.querySelectorAll('[data-library-row]').forEach((button) => {
+      let timer = null;
+      const start = () => { timer = setTimeout(() => { timer = null; pickRow(button.dataset.libraryRow, {}); }, 450); };
+      const stop = () => { if (timer) { clearTimeout(timer); timer = null; } };
+      button.addEventListener('pointerdown', start);
+      button.addEventListener('pointerup', stop);
+      button.addEventListener('pointerleave', stop);
+      button.addEventListener('pointercancel', stop);
+      /* While things are chosen the body chooses too, rather than opening a
+         panel over a selection the learner is still making. */
+      button.addEventListener('click', (event) => {
+        if (state.picked.size === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        pickRow(button.dataset.libraryRow, { range: event.shiftKey });
+      }, true);
+    });
+    root.querySelector('[data-library-clear]')?.addEventListener('click', () => leaveChoosing());
+    root.querySelector('[data-library-all]')?.addEventListener('click', () => {
+      const all = (state.entries || []).map(refOf);
+      state.picked = state.picked.size >= all.length ? new Set() : new Set(all);
+      paint();
+    });
+    root.querySelectorAll('[data-library-bulk]').forEach((button) => (button.onclick = () => bulk(button.dataset.libraryBulk)));
+    root.querySelectorAll('[data-library-cancel]').forEach((button) => (button.onclick = () => { state.confirming = false; paint(); }));
+    root.querySelector('[data-library-delete]')?.addEventListener('click', () => removeChosen());
+    root.querySelector('[data-library-undo]')?.addEventListener('click', () => takeBack());
     root.querySelectorAll('[data-library-new-set]').forEach((button) => (button.onclick = () => {
       const entry = state.picking?.entry || null;
       state.naming = { kind: entry ? ITEM_KIND[entry.ref.domain] : ITEM_KIND[state.kind || 'language'], title: '' };
@@ -342,6 +444,153 @@ export function renderCollection(root, ctx) {
     } catch {
       /* No credit to show, and nothing to say about it. */
     }
+  }
+
+  /* --- Choosing several ------------------------------------------------- */
+
+  function leaveChoosing() {
+    state.picked = new Set();
+    state.anchor = '';
+    state.confirming = false;
+    paint();
+  }
+
+  function pickRow(ref, { range }) {
+    const order = (state.entries || []).map(refOf);
+    if (range && state.anchor) {
+      const from = order.indexOf(state.anchor);
+      const to = order.indexOf(ref);
+      if (from >= 0 && to >= 0) {
+        for (const item of order.slice(Math.min(from, to), Math.max(from, to) + 1)) state.picked.add(item);
+        paint();
+        return;
+      }
+    }
+    if (state.picked.has(ref)) state.picked.delete(ref);
+    else state.picked.add(ref);
+    state.anchor = ref;
+    if (state.picked.size === 0) { leaveChoosing(); return; }
+    paint();
+  }
+
+  /* Marking several needs no confirmation - the frame says so - and says what
+     it did. Filing several opens the same picker one item does. */
+  async function bulk(action) {
+    if (!state.picked.size) return;
+    if (action === 'delete') { state.confirming = true; paint(); return; }
+    if (action === 'file') {
+      const first = entryFor([...state.picked][0]);
+      if (first) { state.picking = { entry: first, many: [...state.picked] }; paint(); }
+      return;
+    }
+    const chosen = [...state.picked];
+    for (const ref of chosen) {
+      const entry = entryFor(ref);
+      if (!entry) continue;
+      try {
+        const item = await itemFor(entry);
+        const answer = await api.libraryItemPatch(item.id, {
+          expected_version: item.version,
+          pinned: action === 'mark',
+          state: action === 'mark' ? null : 'mastered',
+          clear_state: action === 'mark',
+        });
+        state.own.set(ref, { ...answer.item, collections: item.collections || [] });
+      } catch {
+        /* Whatever did not take is simply not shown as taken. */
+      }
+    }
+    state.queue = await api.libraryReviewQueue().catch(() => state.queue);
+    say(String(action === 'mark' ? r.myLibraryMarkedMany : r.myLibraryKnownMany).replace('{n}', String(chosen.length)), null);
+    leaveChoosing();
+  }
+
+  /* Deleting takes the thing itself: for a word, the word and its schedule,
+     which is what the confirmation says. Everything needed to put it back is
+     kept until the offer expires. */
+  async function removeChosen() {
+    const chosen = [...state.picked];
+    const undone = [];
+    for (const ref of chosen) {
+      const entry = entryFor(ref);
+      if (!entry) continue;
+      const own = state.own.get(ref) || null;
+      try {
+        if (entry.ref.domain === 'language') {
+          const detail = entry.detail || {};
+          undone.push({ kind: 'word', payload: {
+            word: entry.title,
+            definition: entry.snippet || '',
+            source_fragment: detail.sourceFragment || '',
+            source_kind: detail.sourceKind || 'manual',
+            review_stage: Number(detail.reviewStage || 0),
+            successful_recalls: Number(detail.successfulRecalls || 0),
+            lapse_count: Number(detail.lapseCount || 0),
+            last_reviewed_at: detail.lastReviewedAt || '',
+            next_review_at: detail.nextReviewAt || '',
+          }, own, entry });
+          await api.deleteLibraryVocabulary(entry.title);
+        } else if (own) {
+          undone.push({ kind: 'item', own, entry });
+          await api.libraryItemDelete(own.id);
+        }
+        state.own.delete(ref);
+      } catch {
+        /* A row that would not go stays, and the reload will show it. */
+      }
+    }
+    state.confirming = false;
+    state.picked = new Set();
+    say(String(r.myLibraryDeleted).replace('{n}', String(undone.length)), undone);
+    await load();
+  }
+
+  /* Ten seconds, the frame says. */
+  const UNDO_MS = 10000;
+
+  function say(text, undo) {
+    if (state.undoTimer) clearTimeout(state.undoTimer);
+    state.toast = text;
+    state.undo = undo && undo.length ? undo : null;
+    state.undoTimer = setTimeout(() => {
+      state.toast = null;
+      state.undo = null;
+      if (alive()) paint();
+    }, UNDO_MS);
+  }
+
+  async function takeBack() {
+    const undo = state.undo || [];
+    state.toast = null;
+    state.undo = null;
+    if (state.undoTimer) clearTimeout(state.undoTimer);
+    for (const entry of undo) {
+      try {
+        if (entry.kind === 'word') {
+          await api.restoreLibraryVocabulary(entry.payload);
+        }
+        /* The relationship, and what the learner had said about it. */
+        if (entry.own) {
+          const kind = ITEM_KIND[entry.entry.ref.domain];
+          const item = (await api.libraryKeep(kind === 'word'
+            ? { kind, word: entry.entry.title }
+            : { kind, source_id: entry.entry.ref.id, relationship: entry.own.relationship })).item;
+          if (entry.own.pinned || entry.own.state) {
+            await api.libraryItemPatch(item.id, {
+              expected_version: item.version,
+              pinned: Boolean(entry.own.pinned),
+              state: entry.own.state,
+              clear_state: !entry.own.state,
+            });
+          }
+          for (const set of entry.own.collections || [])
+            await api.libraryCollectionAdd(set.id, item.id).catch(() => null);
+        }
+      } catch {
+        /* What cannot be put back is simply not put back; the reload says so. */
+      }
+    }
+    await load();
   }
 
   /* --- Writing ---------------------------------------------------------- */
@@ -402,6 +651,26 @@ export function renderCollection(root, ctx) {
 
   async function file(collectionId) {
     if (!state.picking) return;
+    const many = state.picking.many || null;
+    if (many) {
+      for (const ref of many) {
+        const one = entryFor(ref);
+        if (!one) continue;
+        try {
+          const item = await itemFor(one);
+          await api.libraryCollectionAdd(collectionId, item.id);
+        } catch {
+          /* A kind the set will not take is refused by the database, and the
+             button that offered this was disabled for exactly that case. */
+        }
+      }
+      state.picking = null;
+      const sets = await api.libraryCollections().catch(() => null);
+      if (sets) state.collections = sets.collections || [];
+      say(String(r.myLibraryFiledMany).replace('{n}', String(many.length)), null);
+      leaveChoosing();
+      return;
+    }
     const entry = state.picking.entry;
     try {
       const item = await itemFor(entry);
@@ -523,8 +792,18 @@ export function renderCollection(root, ctx) {
     if (state.timer) clearTimeout(state.timer);
     state.timer = setTimeout(() => load(), SEARCH_DEBOUNCE_MS);
   };
+  /* Escape leaves a selection, a panel or a picker - the frame's own way out. */
+  const escape = (event) => {
+    if (event.key !== 'Escape') return;
+    if (state.confirming) { state.confirming = false; paint(); return; }
+    if (state.detail || state.picking) { state.detail = null; state.picking = null; paint(); return; }
+    if (state.picked.size) leaveChoosing();
+  };
+  document.addEventListener('keydown', escape);
   load();
   return () => {
     if (state.timer) clearTimeout(state.timer);
+    if (state.undoTimer) clearTimeout(state.undoTimer);
+    document.removeEventListener('keydown', escape);
   };
 }

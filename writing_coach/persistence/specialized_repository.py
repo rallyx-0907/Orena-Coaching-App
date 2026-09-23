@@ -172,6 +172,7 @@ class SpecializedLearningRepository(Protocol):
         now: str = "",
     ) -> dict[str, Any]: ...
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
+    def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def get_library_progress(self, word: str) -> dict[str, Any] | None: ...
     def update_library_review(self, word: str, values: dict[str, Any]) -> dict[str, Any] | None: ...
     def delete_library_record(self, word: str) -> bool: ...
@@ -746,6 +747,40 @@ class SQLiteSpecializedLearningRepository:
             row=conn.execute(self._library_select()+" WHERE lower(s.word)=lower(?) LIMIT 1",(canonical,)).fetchone()
         return dict(row)
 
+    def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Put a deleted word back as it was, review progress included.
+
+        Not `save_library_record` with extra fields: saving is what a learner
+        does when they meet a word, and it starts the schedule. This is undo,
+        and undo that reset the schedule would be a different word wearing the
+        same spelling.
+        """
+
+        term = values["word"]
+        with self._db() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO saved_words(word,phonetic,part_of_speech,definition,added_at,translation_vi)"
+                " VALUES(?,?,?,?,?,?)",
+                (term, values.get("phonetic", ""), values.get("part_of_speech", ""),
+                 values.get("definition", ""), values.get("added_at") or values["now"],
+                 values.get("translation_vi", "")),
+            )
+            conn.execute(
+                "INSERT OR REPLACE INTO vocabulary_learning(word,source_essay_id,source_fragment,source_kind,"
+                "focus_note,review_stage,successful_recalls,lapse_count,last_reviewed_at,next_review_at,updated_at)"
+                " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (term, values.get("source_essay_id"), values.get("source_fragment", ""),
+                 values.get("source_kind", "manual"), values.get("focus_note", ""),
+                 int(values.get("review_stage") or 0), int(values.get("successful_recalls") or 0),
+                 int(values.get("lapse_count") or 0), values.get("last_reviewed_at", "") or "",
+                 values.get("next_review_at") or values["now"], values["now"]),
+            )
+            conn.commit()
+            row = conn.execute(
+                self._library_select() + " WHERE lower(s.word)=lower(?) LIMIT 1", (term,)
+            ).fetchone()
+        return dict(row)
+
     def get_library_progress(self, word: str) -> dict[str, Any] | None:
         with self._db() as conn:
             row=conn.execute("SELECT review_stage,successful_recalls,lapse_count FROM vocabulary_learning WHERE lower(word)=lower(?) LIMIT 1",(word,)).fetchone()
@@ -1148,6 +1183,46 @@ class PostgresSpecializedLearningRepository:
                 "review_stage":r.review_stage,"successful_recalls":r.successful_recalls,"lapse_count":r.lapse_count,"last_reviewed_at":self._iso(r.last_reviewed_at),
                 "next_review_at":self._iso(r.next_review_at),
                 "entry_identity_key":r.entry_identity_key,"reading_key":r.reading_key}
+
+    def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Put a deleted word back as it was, review progress included."""
+
+        uid, lang = self._scope()
+        normalized = values["word"].casefold()
+        sid = stable_uuid("saved-word", self._key(), lang, normalized)
+        now = self._dt(values["now"])
+        with Session(self.engine) as s, s.begin():
+            r = s.get(SavedWord, sid)
+            if r is None:
+                r = SavedWord(id=sid, user_id=uid, language_code=lang, word=values["word"],
+                              normalized_word=normalized, added_at=now, updated_at=now)
+                s.add(r)
+            source_uuid = None
+            if values.get("source_essay_id"):
+                e = s.scalar(select(Essay).where(Essay.user_id == uid, Essay.language_code == lang,
+                                                 Essay.legacy_id == int(values["source_essay_id"])))
+                source_uuid = e.id if e else None
+            r.word = values["word"]
+            r.phonetic = values.get("phonetic", "") or ""
+            r.part_of_speech = values.get("part_of_speech", "") or ""
+            r.definition = values.get("definition", "") or ""
+            r.translation_vi = values.get("translation_vi", "") or ""
+            r.added_at = self._dt(values["added_at"]) if values.get("added_at") else now
+            r.source_essay_id = source_uuid
+            r.source_fragment = values.get("source_fragment", "") or ""
+            r.source_kind = values.get("source_kind", "manual") or "manual"
+            r.focus_note = values.get("focus_note", "") or ""
+            r.review_stage = int(values.get("review_stage") or 0)
+            r.successful_recalls = int(values.get("successful_recalls") or 0)
+            r.lapse_count = int(values.get("lapse_count") or 0)
+            r.last_reviewed_at = self._dt(values["last_reviewed_at"]) if values.get("last_reviewed_at") else None
+            r.next_review_at = self._dt(values["next_review_at"]) if values.get("next_review_at") else now
+            r.entry_identity_key = values.get("entry_identity_key", "") or ""
+            r.entry_id = _as_uuid(values.get("entry_id")) if values.get("entry_identity_key") else None
+            r.reading_key = values.get("reading_key", "") or ""
+            r.updated_at = now
+            s.flush()
+            return self._saved_payload_from_session(s, r)
 
     def get_library_progress(self, word: str) -> dict[str, Any] | None:
         with Session(self.engine) as s:
