@@ -135,4 +135,14 @@ assert.ok(calls.includes('readiness'), 'Operations reads readiness through the A
 assert.match(section, /Runtime activation/, 'the section renders returned readiness evidence');
 assert.match(section, /Not granted/, 'approval is the server’s, and it is not granted');
 
+/* Study 08: an account without the role gets the page that says so, not a
+   console that loads and then fails every request behind it. */
+const { noAccessView } = await import('../static/orena/admin/shell.js');
+const refused = element();
+const noCleanup = await renderAdmin(refused, { ui: 'en', location: route('#/admin'), alive: () => true, user: { is_admin: false } });
+assert.match(refused.innerHTML, /administrators/, 'a learner opening #/admin is told the page is not for them');
+assert.doesNotMatch(refused.innerHTML, /Platform Admin<\/h1>/, 'and is not shown the console frame');
+assert.equal(typeof noCleanup, 'function', 'the router still gets a cleanup');
+assert.match(noAccessView('zh'), /管理员/, 'and it is said in both console languages');
+
 console.log('orena admin entry checks passed');

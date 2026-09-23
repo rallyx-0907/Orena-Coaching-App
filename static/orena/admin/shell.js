@@ -38,6 +38,13 @@ const STYLESHEET = '/orena-assets/admin/admin.css';
    attention list (for the section badges) and the runtime facts. */
 const memory = { attention: null, runtime: null, runtimeAt: 0 };
 
+/* Study 08: the page someone without the role is shown. One sentence, one way
+   back, and nothing that looks like a console failing to load. */
+export function noAccessView(ui) {
+  const t = adminText(ui);
+  return `<section class="ac-noaccess"><h1>${esc(t.noAccessTitle)}</h1><p>${esc(t.noAccessNote)}</p><a class="ac-button" href="${esc(link('discover'))}">${esc(t.noAccessHome)}</a></section>`;
+}
+
 export function sectionFrom(location) {
   const id = String(location?.id || '');
   if (LEGACY_SECTIONS[id]) return LEGACY_SECTIONS[id].section;

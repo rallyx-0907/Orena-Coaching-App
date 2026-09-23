@@ -1460,3 +1460,30 @@
   border-radius: var(--radius);
   font-size: var(--text-sm);
 }
+
+/* A removal that states its cost: the block form of the inline confirm. */
+.ac-confirm--block {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.ac-consequences {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+/* Study 08: the page for an account without the role. */
+.ac-noaccess {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  max-width: 34rem;
+  padding: var(--space-6) 0;
+  font-family: var(--font);
+  color: var(--ink);
+}

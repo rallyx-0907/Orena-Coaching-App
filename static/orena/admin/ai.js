@@ -204,9 +204,36 @@ function providerForm(provider, state, t) {
   const needsKey = credentialState(provider) !== 'not_required';
   const storeNote = store === 'not_configured' ? t.storeUnavailable : store === 'invalid' ? t.storeInvalid : '';
   const allowed = models.map((model) => `<label class="ac-check"><input type="checkbox" name="models" value="${esc(model)}" checked><span>${esc(model)}</span></label>`).join('');
-  return `<form class="ac-editor" data-ac-provider-form="${esc(provider.id)}"><h3>${esc(fill(t.providerFormTitle, { provider: provider.name || provider.id }))}</h3><div class="ac-editor__fields"><label class="ac-field ac-field--wide"><span>${esc(t.endpoint)}</span><input type="url" name="base_url" value="${esc(configuration.endpoint_url || '')}" autocomplete="url"></label>${needsKey ? `<label class="ac-field ac-field--wide"><span>${esc(t.apiKey)}${info(t.apiKeyHint, t.apiKey)}</span><input type="password" name="api_key" autocomplete="new-password" placeholder="${esc(stored ? t.apiKeyKeep : '')}"></label>` : ''}<label class="ac-field"><span>${esc(t.defaultModel)}</span><select name="default_model"${models.length ? '' : ' disabled'}>${options(models.map((model) => [model, model]), provider.default_model || '', t.chooseModel)}</select></label></div><fieldset class="ac-models"><legend>${esc(t.allowedModels)}</legend>${allowed || `<p class="ac-note">${esc(t.allowedModelsHint)}</p>`}</fieldset>${storeNote ? notice(storeNote, 'warn') : ''}<div class="ac-editor__actions"><button type="button" class="ac-button" data-ac-action="form-test" data-provider="${esc(provider.id)}">${esc(t.testConnection)}</button><button type="submit" class="ac-button ac-button--primary"${storeNote || !models.length ? ' disabled' : ''}>${esc(t.saveSecurely)}</button>${stored ? (state.confirmRemove === provider.id
-    ? `<span class="ac-confirm" role="group"><span>${esc(fill(t.removeConfirm, { provider: provider.name || provider.id }))}</span><button type="button" class="ac-button ac-button--danger" data-ac-action="remove-provider" data-provider="${esc(provider.id)}">${esc(t.removeKey)}</button><button type="button" class="ac-button" data-ac-action="cancel-remove">${esc(t.cancel)}</button></span>`
+  return `<form class="ac-editor" data-ac-provider-form="${esc(provider.id)}"><h3>${esc(fill(t.providerFormTitle, { provider: provider.name || provider.id }))}</h3><div class="ac-editor__fields"><label class="ac-field ac-field--wide"><span>${esc(t.endpoint)}</span><input type="url" name="base_url" value="${esc(configuration.endpoint_url || '')}" autocomplete="url"></label>${needsKey ? `<label class="ac-field ac-field--wide"><span>${esc(t.apiKey)}${info(t.apiKeyHint, t.apiKey)}</span><input type="password" name="api_key" autocomplete="new-password" placeholder="${esc(stored ? t.apiKeyKeep : '')}"></label><label class="ac-check"><input type="checkbox" name="verify_first" checked> <span>${esc(t.verifyBeforeSave)}</span></label>${stored ? `<p class="ac-note">${esc(t.credentialStoredNote)}</p>` : ''}` : ''}<label class="ac-field"><span>${esc(t.defaultModel)}</span><select name="default_model"${models.length ? '' : ' disabled'}>${options(models.map((model) => [model, model]), provider.default_model || '', t.chooseModel)}</select></label></div><fieldset class="ac-models"><legend>${esc(t.allowedModels)}</legend>${allowed || `<p class="ac-note">${esc(t.allowedModelsHint)}</p>`}</fieldset>${storeNote ? notice(storeNote, 'warn') : ''}<div class="ac-editor__actions"><button type="button" class="ac-button" data-ac-action="form-test" data-provider="${esc(provider.id)}">${esc(t.testConnection)}</button><button type="submit" class="ac-button ac-button--primary"${storeNote || !models.length ? ' disabled' : ''}>${esc(t.saveSecurely)}</button>${stored ? (state.confirmRemove === provider.id
+    ? removeConfirm(provider, state, t)
     : `<button type="button" class="ac-button ac-button--danger" data-ac-action="ask-remove" data-provider="${esc(provider.id)}">${esc(t.removeKey)}</button>`) : ''}<button type="button" class="ac-button" data-ac-action="close-provider">${esc(t.close)}</button><span class="ac-editor__status" role="status">${esc(state.providerMessage || '')}</span></div></form>`;
+}
+
+
+/* Study 05: removing a credential says what it costs before it is removed.
+   Every capability routed through this provider is listed with what happens to
+   it - a named fallback, or nothing and it stops - and the provider's name is
+   typed to confirm, because the consequence is not reversible by undo. */
+export function removalConsequences(providerId, capabilities, providers, t) {
+  const name = (id) => providers.find((item) => item.id === id)?.name || id;
+  return (capabilities || [])
+    .filter((capability) => capability.config?.provider === providerId && capability.config?.enabled !== false)
+    .map((capability) => ({
+      key: capability.key,
+      fallback: capability.config?.backup_provider && capability.config.backup_provider !== providerId
+        ? name(capability.config.backup_provider)
+        : '',
+    }));
+}
+
+export function removeConfirm(provider, state, t) {
+  const affected = removalConsequences(provider.id, state.config?.capabilities, state.providers, t);
+  const typed = (state.removeTyped || '').trim();
+  const ready = typed === (provider.name || provider.id);
+  const list = affected.length
+    ? `<ul class="ac-consequences">${affected.map((row) => `<li><strong>${esc(capabilityLabel(row.key, t))}</strong> · ${esc(row.fallback ? fill(t.removeFallsBackTo, { provider: row.fallback }) : t.removeNoFallback)}</li>`).join('')}</ul>`
+    : `<p class="ac-muted">${esc(t.removeNoCapabilities)}</p>`;
+  return `<div class="ac-confirm ac-confirm--block" role="group"><p><strong>${esc(fill(t.removeConfirm, { provider: provider.name || provider.id }))}</strong></p><p class="ac-muted">${esc(t.removeBecomesUnconfigured)}</p>${list}<label class="ac-field"><span>${esc(fill(t.removeTypeToConfirm, { provider: provider.name || provider.id }))}</span><input type="text" name="confirm_provider" value="${esc(typed)}" autocomplete="off" data-ac-remove-typed></label><div class="ac-actions"><button type="button" class="ac-button" data-ac-action="cancel-remove">${esc(t.cancel)}</button><button type="button" class="ac-button ac-button--danger" data-ac-action="remove-provider" data-provider="${esc(provider.id)}"${ready ? '' : ' disabled'}>${esc(t.removeKey)}</button></div></div>`;
 }
 
 export function providersView(state, t, ui) {
@@ -494,6 +521,21 @@ export async function renderAi(container, env) {
     const key = elements.api_key?.value?.trim();
     if (key) body.api_key = key;
     if (elements.api_key) elements.api_key.value = '';
+    // "Test the key before saving": the same test endpoint, with the draft
+    // values, so a key that cannot connect is never stored.
+    if (key && elements.verify_first?.checked) {
+      state.providerMessage = t.testing;
+      paint();
+      const check = await api.testProvider(id, body);
+      if (!alive()) return;
+      if (!check.ok) {
+        state.providerTests.set(id, { state: 'failed', reason: failureReason(check) });
+        state.providerMessage = failureReason(check) || t.healthError_unknown;
+        paint();
+        return;
+      }
+      state.providerTests.set(id, { state: 'ok', models: check.body?.models || [] });
+    }
     state.providerMessage = t.saving;
     paint();
     const result = await api.saveProvider(id, body);
@@ -508,6 +550,20 @@ export async function renderAi(container, env) {
     }
   };
 
+  /* Typing the provider's name is what arms the removal. Re-painting on each
+     keystroke would take the focus with it, so only the button's disabled
+     state moves while the operator types. */
+  const onRemoveTyping = (event) => {
+    const field = event.target.closest?.('[data-ac-remove-typed]');
+    if (!field) return;
+    state.removeTyped = field.value;
+    const provider = state.providers.find((item) => item.id === state.confirmRemove);
+    const ready = field.value.trim() === (provider?.name || provider?.id || '');
+    const button = field.closest('.ac-confirm')?.querySelector('[data-ac-action="remove-provider"]');
+    if (button) button.disabled = !ready;
+  };
+
+  container.addEventListener('input', onRemoveTyping);
   container.addEventListener('click', onClick);
   container.addEventListener('change', onChange);
   container.addEventListener('submit', onSubmit);
