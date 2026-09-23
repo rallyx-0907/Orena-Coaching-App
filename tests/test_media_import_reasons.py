@@ -209,3 +209,16 @@ def test_every_failure_carries_a_category_the_console_can_translate():
             [{"url": "https://example.com/c.mp3"}], language="en", imported_by="admin").items[0]
         assert item.category == expected, (exc, item.category)
         assert item.detail and not item.detail.startswith("<")
+
+
+def test_an_address_that_is_not_media_keeps_its_own_category():
+    """A refusal this code authored is not an unexpected failure. Folding it
+    into the generic one told an operator to read a server log for something
+    the console already knew how to say."""
+    from writing_coach.media_source_import import UnsupportedMediaAddress
+
+    item = _importer(_Store(), _refuse(UnsupportedMediaAddress())).import_urls(
+        [{"url": "https://example.com/page.txt"}], language="en", imported_by="admin").items[0]
+    assert item.category == "unsupported_media_type"
+    assert "supported media file" in item.detail
+    assert "server log" not in item.detail

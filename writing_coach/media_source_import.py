@@ -183,6 +183,16 @@ def _lesson_projection(lesson_id: str, acquisition: MediaAcquisition, language: 
 _logger = logging.getLogger(__name__)
 
 
+class UnsupportedMediaAddress(Exception):
+    """A public address that is not a media file this importer can read.
+
+    Its own class rather than a bare `ValueError`, because the sentence that
+    goes with it was written for an operator and belongs to a category the
+    console can translate. A `ValueError` from anywhere else is an internal
+    detail and must not reach them.
+    """
+
+
 class MediaLibraryWriteFailed(Exception):
     """This deployment could not store what was imported.
 
@@ -233,6 +243,8 @@ def _failure_reason(exc: BaseException) -> tuple[str, str]:
             f"The media library could not be written: {said}. "
             "This is a deployment problem, not a problem with the source.",
         )
+    if isinstance(exc, UnsupportedMediaAddress):
+        return "unsupported_media_type", "This address is not a supported media file."
     if isinstance(exc, UnsafeMediaFetch):
         # Authored constants from `media_safe_fetch`, written to be shown.
         return "unsafe_source", str(exc)
@@ -438,7 +450,7 @@ class MediaSourceImporter:
         validate_public_http_url(url)
         suffix = _safe_suffix(urlsplit(url).path)
         if suffix not in DIRECT_MEDIA_SUFFIXES:
-            raise ValueError("This address is not a supported media file.")
+            raise UnsupportedMediaAddress
         token = hashlib.sha256(url.encode("utf-8")).hexdigest()[:32]
         asset_key = f"media/direct-{token}/original{suffix}"
         with TempMediaFile(suffix=suffix) as temp:
