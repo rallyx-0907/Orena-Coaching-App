@@ -10,6 +10,7 @@
    implements them. */
 import { adminApi } from './api.js';
 import { renderReading } from './reading.js';
+import { gapNote, loadingBlock } from './states.js';
 import { openDrawer } from './drawer.js';
 import { chip, dateShort, dateTime, duration, esc, fill, kv, languageName, notice, num, pager, panel, select, table } from './format.js';
 import { safeExternal } from '../ui/html.js';
@@ -123,10 +124,32 @@ export function publishForm(detail, t) {
   })}</div><label class="ac-check"><input type="checkbox" name="attested"><span>${esc(t.attest)}</span></label><div class="ac-editor__actions"><button type="submit" class="ac-button ac-button--primary">${esc(t.actionPublish)}</button><span class="ac-editor__status" role="status" data-ac-result></span></div></form>`;
 }
 
+
+/* The decision, in the pane's pinned footer. `confirmBlock` still renders in
+   the body when an action is armed - the footer offers the action, the body
+   carries what confirming it means. */
+export function contentDetailFooter(detail, t) {
+  const record = detail.record || {};
+  const buttons = [];
+  if (record.actions?.includes('archive')) {
+    buttons.push(`<button type="button" class="ac-button" data-ac-intent-open="archive">${esc(t.actionArchive)}</button>`);
+  }
+  if (record.actions?.includes('reprocess')) {
+    buttons.push(`<button type="button" class="ac-button" data-ac-intent-open="reprocess">${esc(t.actionReprocess)}</button>`);
+  }
+  if (record.actions?.includes('publish')) {
+    buttons.push(`<button type="button" class="ac-button ac-button--primary" data-ac-intent-open="publish">${esc(t.actionPublish)}</button>`);
+  }
+  return buttons.join('');
+}
+
 export function contentDetailView(detail, t, ui, intent = '') {
   const record = detail.record;
   const facts = record.facts || {};
-  const head = `<div class="ac-detail-head">${thumb(record)}<div><h3 lang="${esc(record.language)}">${esc(record.title)}</h3>${record.subtitle ? `<p class="ac-muted">${esc(record.subtitle)}</p>` : ''}<p class="ac-chips">${statusLabel(record, t)}<span class="ac-tag">${esc(t[`origin_${record.origin}`] || record.origin)}</span></p></div></div>`;
+  /* The design leads with what this is and the one state that matters, before
+     the title: an operator scanning a stack of previews reads that line first. */
+  const problem = record.kind === 'media' && facts.transcript !== 'available' ? chip('transcript_missing', t) : '';
+  const head = `<div class="ac-detail-head">${thumb(record)}<div><p class="ac-detail-badges"><span class="ac-detail-kind">${esc(t[`type_${record.kind}`] || record.kind)}</span>${statusLabel(record, t)}${problem}</p><h3 lang="${esc(record.language)}">${esc(record.title)}</h3>${record.subtitle ? `<p class="ac-muted">${esc(record.subtitle)}</p>` : ''}<p class="ac-chips"><span class="ac-tag">${esc(t[`origin_${record.origin}`] || record.origin)}</span></p></div></div>`;
   if (record.kind === 'book') {
     const book = detail.book || {};
     const chapters = book.chapters || [];
@@ -137,9 +160,9 @@ export function contentDetailView(detail, t, ui, intent = '') {
       [t.wordCount, esc(num(facts.word_count, ui))],
       [t.colCreated, esc(dateTime(record.created_at, ui))],
       [t.importedBy, esc(book.imported_by || '—')],
-    ])}${book.description ? `<p class="ac-note">${esc(book.description)}</p>` : ''}<section><h3>${esc(t.chapters)}</h3><ol class="ac-chapters">${shown.map((chapter) => `<li lang="${esc(record.language)}">${esc(chapter.title)}</li>`).join('')}</ol>${chapters.length > shown.length ? `<p class="ac-muted">${esc(fill(t.moreChapters, { count: num(chapters.length - shown.length, ui) }))}</p>` : ''}</section>${learnerLink(detail, t)}${record.actions.includes('archive') ? (intent === 'archive'
+    ])}${book.description ? `<p class="ac-note">${esc(book.description)}</p>` : ''}<section><h3>${esc(t.chapters)}</h3><ol class="ac-chapters">${shown.map((chapter) => `<li lang="${esc(record.language)}">${esc(chapter.title)}</li>`).join('')}</ol>${chapters.length > shown.length ? `<p class="ac-muted">${esc(fill(t.moreChapters, { count: num(chapters.length - shown.length, ui) }))}</p>` : ''}</section>${learnerLink(detail, t)}${gapNote(t, t.previewReadersGap)}${intent === 'archive'
       ? confirmBlock({ intent: 'archive', text: t.archiveConfirm, action: t.actionArchive, t })
-      : `<div class="ac-actions"><button type="button" class="ac-button" data-ac-intent-open="archive">${esc(t.actionArchive)}</button></div>`) : ''}</div>`;
+      : ''}</div>`;
   }
   if (record.kind === 'media') {
     const transcript = detail.transcript || { segments: [], segment_count: 0 };
@@ -148,7 +171,12 @@ export function contentDetailView(detail, t, ui, intent = '') {
     const lines = transcript.segments?.length
       ? `<ol class="ac-transcript">${transcript.segments.map((segment) => `<li><span class="ac-muted">${esc(duration(segment.start_ms))}</span><span lang="${esc(record.language)}">${esc(segment.text)}</span></li>`).join('')}</ol>${transcript.segment_count > transcript.segments.length ? `<p class="ac-muted">${esc(fill(t.entriesShown, { shown: num(transcript.segments.length, ui), total: num(transcript.segment_count, ui) }))}</p>` : ''}`
       : notice(t.noTranscript, 'warn');
-    return `<div class="ac-stack">${head}${kv([
+    /* A problem is stated before the evidence for it, which is the order an
+       operator reads in: what is wrong, then how it was found. */
+    const problemBlock = facts.transcript !== 'available'
+      ? `<div class="ac-problem" data-tone="warn"><strong>${esc(t.previewTranscriptProblem)}</strong><p class="ac-muted">${esc(t.previewTranscriptProblemNote)}</p></div>`
+      : '';
+    return `<div class="ac-stack">${head}${problemBlock}${kv([
       [t.colLanguage, esc(languageName(record.language, t))],
       [t.duration, esc(facts.duration_ms ? duration(facts.duration_ms) : '—')],
       [t.level, esc(facts.level || '—')],
@@ -160,9 +188,9 @@ export function contentDetailView(detail, t, ui, intent = '') {
       [t.license, esc(source.license || '—')],
       [t.rightsReview, esc(source.review_status || '—')],
       source.imported_by ? [t.importedBy, esc(source.imported_by)] : null,
-    ])}</section><section><h3>${esc(t.transcript)}</h3>${lines}</section>${learnerLink(detail, t)}${record.origin === 'curated' ? `<p class="ac-note">${esc(t.curatedNote)}</p>` : ''}${record.actions.includes('reprocess') ? (intent === 'reprocess'
-      ? confirmBlock({ intent: 'reprocess', text: t.reprocessConfirm, action: t.actionReprocess, t })
-      : `<div class="ac-actions"><button type="button" class="ac-button" data-ac-intent-open="reprocess">${esc(t.actionReprocess)}</button></div>`) : ''}</div>`;
+    ])}</section><section><h3>${esc(t.transcript)}</h3>${lines}</section>${learnerLink(detail, t)}${record.origin === 'curated' ? `<p class="ac-note">${esc(t.curatedNote)}</p>` : ''}${intent === 'reprocess'
+      ? `${confirmBlock({ intent: 'reprocess', text: t.reprocessConfirm, action: t.actionReprocess, t })}<fieldset class="ac-field" disabled><legend>${esc(t.reprocessOptions)}</legend><label class="ac-check"><input type="checkbox" checked> <span>${esc(t.reprocessKeepTargets)}</span></label><label class="ac-check"><input type="checkbox" checked> <span>${esc(t.reprocessRerunLevel)}</span></label></fieldset>${gapNote(t, t.reprocessOptionsGap)}`
+      : ''}</div>`;
   }
   const entries = table({
     head: [t.colTerm, t.colReading, t.colMeaning, t.level, t.colPos],
@@ -292,10 +320,12 @@ export async function renderContent(container, env) {
   const open = async (key, intent = '') => {
     const [kind, ...rest] = key.split(':');
     const id = rest.join(':');
-    const drawer = openDrawer({ title: t[`type_${kind}`] || kind, body: `<p class="ac-empty">${esc(t.loading)}</p>`, label: t.close });
+    const drawer = openDrawer({ title: t[`type_${kind}`] || kind, body: loadingBlock(t, { rows: 4 }), label: t.close });
     let detail = null;
     const paint = (currentIntent) => {
-      if (drawer.element.isConnected && detail) drawer.set(contentDetailView(detail, t, ui, currentIntent));
+      if (drawer.element.isConnected && detail) {
+        drawer.set(contentDetailView(detail, t, ui, currentIntent), contentDetailFooter(detail, t));
+      }
       drawer.element.querySelector('[data-ac-confirm] [data-ac-do]')?.focus();
     };
     const load = async () => {

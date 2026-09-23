@@ -98,6 +98,7 @@ export const adminApi = {
       json('POST', { approved }),
     ),
   readingJobs: (params) => request(`/api/admin/reading/jobs${query(params)}`),
+  readingJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}`),
   readingRetryJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
   readingOperations: () => request('/api/admin/reading/operations'),
   readingSubmit: (submitted, file = null) => {

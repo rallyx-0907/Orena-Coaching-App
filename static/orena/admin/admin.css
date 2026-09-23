@@ -1120,8 +1120,9 @@
 }
 
 /* ---- drawer ---------------------------------------------------------------------------------- */
+/* The canonical pane: 560px on desktop, a full-height sheet on a phone. */
 .ac-drawer {
-  width: min(680px, 100vw);
+  width: min(560px, 100vw);
   max-width: 100vw;
   height: 100vh;
   height: 100dvh;
@@ -1347,4 +1348,115 @@
 .ac-note[data-kind='gap'] {
   color: var(--muted);
   font-style: italic;
+}
+
+/* The drawer's footer: where a decision lives. On a phone it is pinned to the
+   bottom of the sheet (canonical study 02), so the primary action is reachable
+   without scrolling back up through the evidence that justified it. */
+.ac-drawer__foot {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.ac-drawer__foot[hidden] {
+  display: none;
+}
+.ac-drawer__foot .ac-button {
+  flex: 1 1 auto;
+}
+@media (min-width: 640px) {
+  .ac-drawer__foot .ac-button {
+    flex: 0 0 auto;
+  }
+}
+/* A preview's identity line: what kind of thing this is, and the one state an
+   operator needs before reading anything else. */
+.ac-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+  margin-bottom: var(--space-1);
+}
+.ac-detail-kind {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* A problem the record carries, stated before its detail. */
+.ac-problem {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.ac-problem strong {
+  font-weight: 650;
+}
+
+/* A job's stages, as a line an operator reads left to right: what is done,
+   where it is now, what has not started. */
+.ac-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ac-steps li {
+  position: relative;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.ac-steps li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+}
+.ac-steps li[data-state='done']::before {
+  background: var(--muted);
+  border-color: var(--muted);
+}
+.ac-steps li[data-state='current'] {
+  color: var(--ink);
+  font-weight: 650;
+}
+.ac-steps li[data-state='current']::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ac-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* The progress tray: what is in flight, and where to watch it. It sits above
+   the form it replaced rather than over the page - nothing here blocks. */
+.ac-tray {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
 }

@@ -21,6 +21,7 @@
      goes through `esc`; a title an admin pasted from a hostile page is text. */
 import { adminApi } from './api.js';
 import { openDrawer } from './drawer.js';
+import { errorBlock, failureDetail, loadingBlock, pending } from './states.js';
 import { chip, dateTime, esc, fill, kv, mono, notice, num, panel, select, table } from './format.js';
 
 export const VIEWS = ['queue', 'published', 'rejected', 'archived', 'sources', 'add'];
@@ -101,6 +102,45 @@ export function targetRows(targets, t) {
       `<div class="ac-actions"><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="approve">${esc(t.readingApprove)}</button><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="reject">${esc(t.readingReject)}</button></div>`,
     ],
   }));
+}
+
+
+/* One job, as study 02-C reads it: what failed, at which stage, how many
+   attempts are left, and the technical detail collapsed underneath rather than
+   removed. The two actions are the two things an operator can do about it. */
+export function jobDetailView(job, t, ui) {
+  const stages = ['queued', 'fetching', 'normalizing', 'deduplicating', 'analyzing', 'building_candidate', 'done'];
+  const reached = stages.indexOf(job.stage);
+  const progress = `<ol class="ac-steps">${stages.map((stage, index) => `<li data-state="${index < reached ? 'done' : index === reached ? 'current' : 'todo'}">${esc(t[`readingStage_${stage}`] || stage)}</li>`).join('')}</ol>`;
+  const failure = job.last_error_code
+    ? `<div class="ac-problem" data-tone="warn"><strong>${esc(t[`error_${job.last_error_code}`] || job.last_error_code)}</strong>${
+        job.last_error ? `<p class="ac-muted">${esc(job.last_error)}</p>` : ''
+      }<p class="ac-muted">${esc(fill(t.readingJobAttempts, { attempt: job.attempt, max: job.max_attempts }))}</p></div>`
+    : '';
+  return `<div class="ac-stack">${failure}${kv([
+    [t.readingColJob, esc(t[`readingJobType_${job.job_type}`] || job.job_type)],
+    [t.colStatus, chip(job.status === 'completed' ? 'ok' : job.status === 'failed' ? 'invalid' : 'info', t, { label: t[`readingJobStatus_${job.status}`] || job.status })],
+    [t.readingColStage, esc(t[`readingStage_${job.stage}`] || job.stage)],
+    [t.colDate, esc(dateTime(job.created_at, ui))],
+    [t.readingJobFinished, esc(job.finished_at ? dateTime(job.finished_at, ui) : '—')],
+    [t.readingJobSubmittedBy, esc(job.submitted_by || '—')],
+  ])}<section><h3>${esc(t.readingJobProgress)}</h3>${progress}</section><details class="ac-details"><summary>${esc(t.readingJobTechnical)}</summary>${kv([
+    [t.readingJobId, mono(job.id)],
+    [t.readingJobWorker, esc(job.claimed_by || '—')],
+    [t.readingJobHeartbeat, esc(job.heartbeat_at ? dateTime(job.heartbeat_at, ui) : '—')],
+    [t.readingJobNextRetry, esc(job.next_retry_at ? dateTime(job.next_retry_at, ui) : '—')],
+    [t.readingJobResult, esc(job.result_kind || '—')],
+  ])}</details></div>`;
+}
+
+export function jobDetailFooter(job, t) {
+  const article = job.result_article_id
+    ? `<a class="ac-button" href="#/admin?id=content&kind=reading">${esc(t.readingJobOpenArticle)}</a>`
+    : '';
+  const retry = job.status === 'failed'
+    ? `<button type="button" class="ac-button ac-button--primary" data-ac-retry="${esc(job.id)}">${esc(t.readingRetry)}</button>`
+    : '';
+  return `${article}${retry}`;
 }
 
 export function qualityNote(analysis, t) {
@@ -186,6 +226,16 @@ export function sourceRows(sources, t, ui) {
   }));
 }
 
+
+/* Study 04: submitting queues the work and the form goes away. What replaces
+   it is a tray that says how much is in flight and where to watch it - not a
+   modal an operator has to sit in front of while a fetch happens somewhere
+   else. */
+export function progressTray(inFlight, t, href) {
+  if (!inFlight) return '';
+  return `<div class="ac-tray" role="status"><span>${esc(fill(t.readingTrayCount, { count: inFlight }))}</span><a class="ac-link" href="${esc(href('imports'))}">${esc(t.readingTrayOpenImports)}</a></div>`;
+}
+
 export function addForms(t) {
   return INPUT_KINDS.map((kind) => `<form class="ac-form" data-ac-add="${kind}">
       <h3>${esc(t[`readingAdd_${kind}`])}</h3>
@@ -213,9 +263,11 @@ export function jobRows(jobs, t, ui) {
       esc(`${job.attempt}/${job.max_attempts}`),
       job.last_error_code ? esc(t[`error_${job.last_error_code}`] || job.last_error_code) : '—',
       esc(dateTime(job.created_at, ui)),
-      job.status === 'failed'
-        ? `<button type="button" class="ac-button" data-ac-retry="${esc(job.id)}">${esc(t.readingRetry)}</button>`
-        : '',
+      `<div class="ac-actions"><button type="button" class="ac-button" data-ac-job="${esc(job.id)}">${esc(t.actionPreview)}</button>${
+        job.status === 'failed'
+          ? `<button type="button" class="ac-button" data-ac-retry="${esc(job.id)}">${esc(t.readingRetry)}</button>`
+          : ''
+      }</div>`,
     ],
   }));
 }
@@ -228,6 +280,31 @@ function articleTable(page, t, ui) {
     empty: t.readingEmpty,
     caption: t.readingCaption,
   });
+}
+
+
+/* The job pane, opened from wherever a job is listed - the Reading section and
+   Imports both show the same failure, so they open the same view of it. */
+export async function openJob(api, jobId, { t, ui, onChange = null } = {}) {
+  const drawer = openDrawer({ title: t.readingJobTitle, body: loadingBlock(t, { rows: 3 }), label: t.close });
+  const paint = async () => {
+    try {
+      const job = await api.readingJob(jobId);
+      drawer.set(jobDetailView(job, t, ui), jobDetailFooter(job, t));
+    } catch (error) {
+      const failure = failureDetail(error, t);
+      drawer.set(errorBlock(t, { detail: failure.detail, reference: failure.reference, retry: false }), '');
+    }
+  };
+  await paint();
+  drawer.element.addEventListener('click', async (event) => {
+    const retry = event.target.closest('[data-ac-retry]');
+    if (!retry) return;
+    await api.readingRetryJob(retry.dataset.acRetry);
+    await paint();
+    onChange?.();
+  });
+  return drawer;
 }
 
 export async function renderReading(host, env) {
@@ -309,7 +386,8 @@ export async function renderReading(host, env) {
     }
     if (view === 'add') {
       const jobs = await api.readingJobs({ limit: 10, cursor: page.cursor || '' });
-      paint(`${panel({ title: t.readingAddTitle, note: t.readingAddNote, body: `<div class="ac-forms">${addForms(t)}</div>` })}
+      const inFlight = (jobs.items || []).filter((job) => job.status === 'queued' || job.status === 'running').length;
+      paint(`${progressTray(inFlight, t, href)}${panel({ title: t.readingAddTitle, note: t.readingAddNote, body: `<div class="ac-forms">${addForms(t)}</div>` })}
         ${panel({ title: t.readingJobsTitle, note: t.readingJobsNote, body: table({
           head: [t.readingColJob, t.colStatus, t.readingColStage, t.readingColAttempt, t.colError, t.colDate,
                  { label: t.colActions, hidden: true }],
@@ -361,6 +439,11 @@ export async function renderReading(host, env) {
       await openArticle(open.dataset.acOpen);
       return;
     }
+    const jobOpen = event.target.closest('[data-ac-job]');
+    if (jobOpen) {
+      await openJob(api, jobOpen.dataset.acJob, { t, ui, onChange: loadOrExplain });
+      return;
+    }
     const retry = event.target.closest('[data-ac-retry]');
     if (retry) {
       await api.readingRetryJob(retry.dataset.acRetry);
@@ -392,12 +475,18 @@ export async function renderReading(host, env) {
       can_republish: Boolean(fields.can_republish?.checked),
       license_note: fields.license_note?.value || '',
     };
+    const submit = form.querySelector('button[type="submit"]');
+    pending(submit, t, 'running');
     try {
       const job = await api.readingSubmit(submitted, fields.upload?.files?.[0] || null);
+      pending(submit, t, 'idle');
       env.notify(job.duplicate ? t.readingSubmitDuplicate : t.readingSubmitted);
+      // The form is done the moment the work is queued: it empties, and the
+      // tray takes over from here.
       form.reset();
       await loadOrExplain();
     } catch (error) {
+      pending(submit, t, 'failed');
       env.notify(error?.message || t.readingSubmitFailed);
     }
   };
