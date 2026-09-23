@@ -9,6 +9,7 @@
    The console's stylesheet is loaded when the console is first opened, so a
    learner's page never downloads admin styling. */
 import { link } from '../product/intent.js';
+import { icon } from '../ui/phosphor.js';
 import { adminApi } from './api.js';
 import { adminText } from './copy.js';
 import { chip, esc, fill, notice } from './format.js';
@@ -91,7 +92,11 @@ export function tabsView({ section, t, attention = null }) {
 }
 
 export function frameView({ section, t, attention = null }) {
-  return `<div class="ac-console" data-section="${esc(section)}"><header class="ac-head"><div class="ac-head__title"><h1>${esc(t.title)}</h1><div class="ac-head__env" data-ac-env></div></div>${tabsView({ section, t, attention })}<p class="ac-toast" role="status" aria-live="polite" data-ac-toast></p></header><div data-ac-tray-host></div><div class="ac-body" data-ac-section><p class="ac-empty" role="status">${esc(t.loading)}</p></div></div>`;
+  /* The rail stands down inside the console, so the way back is named here
+     instead - one link, at the top, before the title an operator is about to
+     read. A workspace inside Orena, not a separate site. */
+  const back = `<a class="ac-back" href="${esc(link('discover'))}">${icon('arrow-left', { size: 16 })}<span>${esc(t.backToOrena)}</span></a>`;
+  return `<div class="ac-console" data-section="${esc(section)}"><header class="ac-head">${back}<div class="ac-head__title"><h1>${esc(t.title)}</h1><div class="ac-head__env" data-ac-env></div></div>${tabsView({ section, t, attention })}<p class="ac-toast" role="status" aria-live="polite" data-ac-toast></p></header><div data-ac-tray-host></div><div class="ac-body" data-ac-section><p class="ac-empty" role="status">${esc(t.loading)}</p></div></div>`;
 }
 
 export function envView(runtime, t) {

@@ -8,6 +8,7 @@
 
 const en = {
   title: 'Platform Admin',
+  backToOrena: 'Back to Orena',
   sectionsLabel: 'Admin sections',
   section_overview: 'Overview',
   section_ai: 'AI & Models',
@@ -943,6 +944,7 @@ const en = {
 
 const zh = {
   title: '平台管理',
+  backToOrena: '返回 Orena',
   sectionsLabel: '管理分区',
   section_overview: '概览',
   section_ai: 'AI 与模型',
