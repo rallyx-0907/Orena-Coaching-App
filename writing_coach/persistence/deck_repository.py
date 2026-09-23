@@ -1,10 +1,11 @@
 """A learner's study sets - `vocabulary_decks` and their members.
 
-Schema: `migrations/proposed/20260923_0014_vocabulary_decks.py`, **proposed and
-not applied**. Independent architecture review is required before it moves into
-`migrations/versions/`; the request is
-`docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md`. `available()` is what
-lets the app run without the tables: every route answers 503 until they exist.
+Schema: `migrations/versions/20260923_0014_vocabulary_decks.py`, approved by
+independent architecture review round 1 and authorized for dev and sandbox on
+2026-09-23; the record is
+`docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md` §7. `available()` stays
+because a server that has not been migrated must say so rather than fall back
+to another domain's tables.
 
 A Deck belongs to Vocabulary and is a set the learner *made*. It is not a My
 Library Collection, which organises items the learner already has and which
@@ -171,6 +172,39 @@ class DeckRepository:
                 ).all()
             )
             return [self._dict(deck, size=int(counts.get(deck.id, 0))) for deck in decks]
+
+    def decks_for_word(self, word: str) -> list[dict[str, Any]]:
+        """Which of the learner's sets this word is in.
+
+        Read before deleting a word, so an undo can put the memberships back:
+        `saved_word_id` cascades, so deleting the word takes them with it and
+        restoring the word alone would silently lose them (architecture review
+        round 1, P2).
+        """
+
+        uid, lang = self._scope()
+        with Session(self.engine) as session:
+            try:
+                saved = self._saved_word(session, word)
+            except DeckConflict:
+                return []
+            rows = list(
+                session.execute(
+                    select(VocabularyDeck, VocabularyDeckMember.position)
+                    .join(VocabularyDeckMember, VocabularyDeckMember.deck_id == VocabularyDeck.id)
+                    .where(
+                        VocabularyDeckMember.saved_word_id == saved.id,
+                        VocabularyDeck.user_id == uid,
+                        VocabularyDeck.language_code == lang,
+                    )
+                    .order_by(VocabularyDeck.created_at)
+                    .limit(DECK_LIMIT)
+                ).all()
+            )
+            return [
+                {"id": str(deck.id), "title": deck.title, "position": int(position or 0)}
+                for deck, position in rows
+            ]
 
     def words(self, deck_id: str, *, limit: int = WORD_LIMIT) -> list[dict[str, Any]]:
         """The words in a set, in the learner's own order.

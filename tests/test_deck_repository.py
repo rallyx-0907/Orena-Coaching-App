@@ -199,3 +199,76 @@ def test_nothing_here_reads_or_writes_a_schedule():
     )
     for field in ("next_review_at", "review_stage", "last_reviewed_at", "lapse_count"):
         assert field not in source, f"the deck repository touches {field}"
+
+
+def test_the_sets_a_word_is_in_can_be_read_before_it_is_deleted(repo):
+    """What undo needs: membership cascades with the word, so it has to be
+    carried out of the delete and back in (architecture review round 1, P2)."""
+
+    one = repo.create(title="Sea", cover="sea")
+    two = repo.create(title="Coast")
+    repo.add_word(one["id"], "harbour")
+    repo.add_word(two["id"], "harbour")
+    repo.add_word(one["id"], "quay")
+
+    found = repo.decks_for_word("harbour")
+    assert {item["title"] for item in found} == {"Sea", "Coast"}
+    assert all(item["id"] and item["position"] >= 1 for item in found)
+    assert [item["title"] for item in repo.decks_for_word("quay")] == ["Sea"]
+
+
+def test_a_word_in_no_set_is_in_no_set(repo):
+    repo.create(title="Sea")
+    assert repo.decks_for_word("lantern") == []
+
+
+def test_a_word_the_learner_never_had_answers_empty_rather_than_failing(repo):
+    """Read on a delete path: it must not raise where the word is already gone."""
+
+    assert repo.decks_for_word("never-saved") == []
+
+
+def test_another_learner_cannot_read_which_sets_a_word_is_in(repo):
+    deck = repo.create(title="Sea")
+    repo.add_word(deck["id"], "harbour")
+    other = DeckRepository(
+        repo.engine, user_key_provider=lambda: "somebody-else", language_provider=lambda: LANGUAGE
+    )
+    assert other.decks_for_word("harbour") == []
+
+
+def test_deleting_and_restoring_a_word_can_put_its_sets_back(repo):
+    """The round trip the undo payload performs, at the repository level."""
+
+    import sqlalchemy
+
+    deck = repo.create(title="Sea")
+    repo.add_word(deck["id"], "harbour")
+    carried = repo.decks_for_word("harbour")
+    assert [item["title"] for item in carried] == ["Sea"]
+
+    with Session(repo.engine) as session:
+        session.execute(sqlalchemy.text("PRAGMA foreign_keys=ON"))
+        saved = session.scalar(select(SavedWord).where(SavedWord.word == "harbour"))
+        session.delete(saved)
+        session.commit()
+    assert repo.words(deck["id"]) == []
+
+    # The word comes back (what `restore_library_record` does), then its sets.
+    now = datetime.now(UTC)
+    with Session(repo.engine) as session:
+        session.add(
+            SavedWord(
+                id=uuid.uuid4(),
+                user_id=stable_uuid("user", USER_KEY),
+                language_code=LANGUAGE,
+                word="harbour",
+                normalized_word="harbour",
+                added_at=now,
+                updated_at=now,
+            )
+        )
+        session.commit()
+    for item in carried:
+        repo.add_word(item["id"], "harbour")
+    assert [row["word"] for row in repo.words(deck["id"])] == ["harbour"]

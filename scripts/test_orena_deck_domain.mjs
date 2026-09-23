@@ -18,7 +18,7 @@ const deckRepo = at('writing_coach/persistence/deck_repository.py');
 
 /* --- The Vocabulary screens use Vocabulary's own contract ---------------- */
 
-assert.match(api, /vocabularyDecks:\(\)=>/, 'there is a deck contract');
+assert.match(api, /vocabularyDecks:\(word=''\)=>/, 'there is a deck contract');
 assert.match(room, /api\.vocabularyDecks\(\)/, 'the room reads decks');
 assert.match(room, /api\.vocabularyDeckCreate\(/, 'and creates them');
 assert.match(room, /api\.vocabularyDeckAdd\(deckId, word\)/, 'and files words into them');
@@ -41,7 +41,14 @@ assert.doesNotMatch(screens, /collections = \[\]|collections\.find/, 'and hold n
 /* --- My Library keeps its own, and gains no study set ------------------- */
 
 assert.match(library, /api\.libraryCollections\(/, "My Library still has its collections");
-assert.ok(!library.includes('vocabularyDeck'), 'and knows nothing about decks');
+/* It reads decks for exactly one reason: deleting a word cascades its deck
+   memberships away, so undo has to carry them back (review round 1, P2). It
+   may read them and put a word back into one. It may not make, rename or
+   delete a deck - that is Vocabulary's. */
+assert.match(library, /\.vocabularyDecks\(entry\.title\)/, 'it reads which sets a word was in');
+assert.match(library, /api\.vocabularyDeckAdd\(deck\.id, entry\.payload\.word\)/, 'and puts it back');
+for (const owning of ['vocabularyDeckCreate', 'vocabularyDeckPatch', 'vocabularyDeckDelete'])
+  assert.ok(!library.includes(owning), `My Library must not ${owning}`);
 
 /* --- A set stores a reference, and no schedule -------------------------- */
 
@@ -60,18 +67,15 @@ assert.match(at('static/orena/rooms.css'), /\[data-cover='sea'\] \{ --cover-hue:
 
 assert.match(deckRepo, /def available\(self\) -> bool:/, 'the repository knows whether its tables exist');
 assert.match(deckApi, /"decks_unavailable"/, 'and the API says so');
-assert.ok(
-  at('migrations/proposed/20260923_0014_vocabulary_decks.py').includes('PROPOSED'),
-  'the migration is a proposal until a reviewer says otherwise',
-);
-/* It must not have been slipped into versions/ by the same hand that wrote it. */
-let applied = false;
-try {
-  at('migrations/versions/20260923_0014_vocabulary_decks.py');
-  applied = true;
-} catch {
-  applied = false;
-}
-assert.equal(applied, false, 'an implementer may not self-approve its own schema change');
+/* The migration landed only after an independent review, and the record says
+   who reviewed it and at which commit - which is what AGENTS.md requires to be
+   in Git, not just asserted. */
+const landed = at('migrations/versions/20260923_0014_vocabulary_decks.py');
+assert.match(landed, /Independent architecture review 2026-09-23: \*\*APPROVED\*\*/, 'the verdict is recorded');
+assert.match(landed, /Reviewer: Claude\s+Sonnet 5 as Delegated Architecture Reviewer/, 'and who gave it');
+assert.match(landed, /reviewed commit `9f94ad54/, 'and what they reviewed');
+assert.match(landed, /\*\*dev and sandbox\s+only\*\* - explicitly not production/, 'and how far it was authorized');
+const record = at('docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md');
+assert.match(record, /## 7\. Review round 1/, 'the full record is beside it');
 
 console.log('test_orena_deck_domain.mjs: a Deck is Vocabulary’s, a Collection is My Library’s');

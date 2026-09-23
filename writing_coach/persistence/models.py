@@ -670,9 +670,10 @@ class VocabularyDeck(Base):
     __tablename__ = "vocabulary_decks"
     __table_args__ = (
         CheckConstraint("title <> ''", name="ck_vocabulary_decks_title"),
+        CheckConstraint("version >= 1", name="ck_vocabulary_decks_version"),
         CheckConstraint(f"cover IN ({_DECK_COVER_LIST})", name="ck_vocabulary_decks_cover"),
         UniqueConstraint("user_id", "language_code", "title", name="uq_vocabulary_deck_title"),
-        Index("ix_vocabulary_decks_scope", "user_id", "language_code"),
+        Index("ix_vocabulary_decks_scope", "user_id", "language_code", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -697,7 +698,7 @@ class VocabularyDeckMember(Base):
     __tablename__ = "vocabulary_deck_members"
     __table_args__ = (
         UniqueConstraint("deck_id", "saved_word_id", name="uq_vocabulary_deck_member"),
-        Index("ix_vocabulary_deck_members_deck", "deck_id", "position"),
+        Index("ix_vocabulary_deck_members_deck", "deck_id", "position", "added_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)

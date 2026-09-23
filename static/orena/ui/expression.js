@@ -2218,10 +2218,19 @@ export async function renderLanguage(root, ctx) {
         if (!deepData) return;
         button.disabled = true;
         try {
-          if (deepData.saved) await ctx.mutate(() => api.deleteLibraryVocabulary(deepWord));
+          const wasSaved = deepData.saved;
+          if (wasSaved) await ctx.mutate(() => api.deleteLibraryVocabulary(deepWord));
           else await ctx.mutate(() => api.saveLibraryVocabulary({ word: deepWord }));
           if (!alive()) return;
-          deepData = { ...deepData, saved: !deepData.saved };
+          deepData = { ...deepData, saved: !wasSaved };
+          /* Just kept: frame 22 is the sheet titled with the word that was
+             saved, so this is where it belongs - the learner says which set it
+             goes in, or makes one. Unkeeping opens nothing. */
+          if (!wasSaved) {
+            await readDecks();
+            if (!alive()) return;
+            deckSheet = { word: deepWord, note: deepData.gloss || '', chosen: decks[0]?.id || '' };
+          }
           paint();
         } catch {
           button.disabled = false;

@@ -585,7 +585,16 @@ export function renderCollection(root, ctx) {
       try {
         if (entry.ref.domain === 'language') {
           const detail = entry.detail || {};
-          undone.push({ kind: 'word', payload: {
+          /* Which study sets this word is in, read **before** it goes: the
+             membership cascades with the word, so an undo that did not carry
+             it would put the word back and lose its sets in silence
+             (architecture review round 1, P2). A set is Vocabulary's, and is
+             asked for there. */
+          const inDecks = await api
+            .vocabularyDecks(entry.title)
+            .then((answer) => answer.items || [])
+            .catch(() => []);
+          undone.push({ kind: 'word', decks: inDecks, payload: {
             word: entry.title,
             definition: entry.snippet || '',
             source_fragment: detail.sourceFragment || '',
@@ -634,7 +643,11 @@ export function renderCollection(root, ctx) {
     for (const entry of undo) {
       try {
         if (entry.kind === 'word') {
+          /* The word first: a membership has nothing to attach to until the
+             row is back. */
           await api.restoreLibraryVocabulary(entry.payload);
+          for (const deck of entry.decks || [])
+            await api.vocabularyDeckAdd(deck.id, entry.payload.word).catch(() => null);
         }
         /* The relationship, and what the learner had said about it. */
         if (entry.own) {

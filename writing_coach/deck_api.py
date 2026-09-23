@@ -5,11 +5,11 @@ Collection** organises items inside My Library. The human settled on
 2026-09-23 that these are two different things, and this module is the
 Vocabulary one.
 
-Until `migrations/proposed/20260923_0014_vocabulary_decks.py` has passed
-independent architecture review and been applied, the tables do not exist and
-every route here answers `503 decks_unavailable`. That is deliberate: the
-screens are **not** wired back to `library_collections`, because shipping the
-wrong domain again to keep a screen green would be the worse failure.
+The schema landed on 2026-09-23 after independent architecture review, for dev
+and sandbox only. On a server that has not been migrated every route here
+answers `503 decks_unavailable` rather than falling back to
+`library_collections`: shipping the wrong domain to keep a screen green would
+be the worse failure.
 """
 
 from __future__ import annotations
@@ -97,10 +97,17 @@ def _conflict(error: DeckConflict) -> None:
 
 
 @router.get("/decks", name="orena_vocabulary_decks")
-def list_decks() -> dict[str, Any]:
-    """The learner's sets in the language they are learning, with their sizes."""
+def list_decks(word: str = Query(default="", max_length=180)) -> dict[str, Any]:
+    """The learner's sets in the language they are learning, with their sizes.
 
-    return {"items": _repo().list_decks(), "covers": list(DECK_COVERS)}
+    With `word`, the sets that word is in instead - which is what a surface
+    reads before deleting it, so an undo can put the memberships back.
+    """
+
+    repository = _repo()
+    if word.strip():
+        return {"items": repository.decks_for_word(word.strip()), "covers": list(DECK_COVERS)}
+    return {"items": repository.list_decks(), "covers": list(DECK_COVERS)}
 
 
 @router.post("/decks", name="orena_vocabulary_deck_create", status_code=201)

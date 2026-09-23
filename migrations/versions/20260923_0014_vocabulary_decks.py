@@ -1,9 +1,21 @@
 """A learner's own study set, in the domain that owns studying.
 
-PROPOSED. Not applied anywhere. Independent architecture review is required
-before this moves into `migrations/versions/`
-(`AGENTS.md`, "Architecture review authority"); the request is
-`docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md`.
+Independent architecture review 2026-09-23: **APPROVED**. Reviewer: Claude
+Sonnet 5 as Delegated Architecture Reviewer (`AGENTS.md`, "Architecture review
+authority"); reviewed commit `9f94ad540da318d640791b6b3ba1263bf9b6e274`. The
+request and the full record are in
+`docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md` §7.
+
+Human schema/runtime authorization given 2026-09-23 for **dev and sandbox
+only** - explicitly not production.
+
+Two of the reviewer's three P3s were taken before landing, both of which only
+move this schema closer to the precedent it was measured against: a
+`version >= 1` check, which `library_items` already carries, and the tie-break
+column in each index, so the read paths are index scans rather than sorts. The
+third - title uniqueness is not case-folded - was deliberately left, because
+`uq_library_collection_title` has the identical property and changing one
+without the other would make two sibling tables disagree for no product reason.
 
 --- Why this is not `library_collections` -----------------------------------
 
@@ -106,13 +118,18 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("title <> ''", name="ck_vocabulary_decks_title"),
+        sa.CheckConstraint("version >= 1", name="ck_vocabulary_decks_version"),
         sa.CheckConstraint(f"cover IN ({_COVER_LIST})", name="ck_vocabulary_decks_cover"),
         sa.UniqueConstraint(
             "user_id", "language_code", "title", name="uq_vocabulary_deck_title"
         ),
     )
     op.create_index(
-        "ix_vocabulary_decks_scope", "vocabulary_decks", ["user_id", "language_code"]
+        # `created_at` is in the index because `list_decks()` orders by it: the
+        # precedent's member index includes its tie-break for the same reason.
+        "ix_vocabulary_decks_scope",
+        "vocabulary_decks",
+        ["user_id", "language_code", "created_at"],
     )
 
     op.create_table(
@@ -135,9 +152,11 @@ def upgrade() -> None:
         sa.UniqueConstraint("deck_id", "saved_word_id", name="uq_vocabulary_deck_member"),
     )
     op.create_index(
+        # `added_at` is the tie-break the read path uses when two members share
+        # a position, so it belongs in the index with it.
         "ix_vocabulary_deck_members_deck",
         "vocabulary_deck_members",
-        ["deck_id", "position"],
+        ["deck_id", "position", "added_at"],
     )
 
 

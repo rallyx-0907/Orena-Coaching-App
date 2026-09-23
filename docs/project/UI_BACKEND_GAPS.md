@@ -2106,3 +2106,44 @@ sandbox should be carried over or left as My Library collections.
   radical's. That check caught three wrong radicals in the first draft. 89
   characters of the static Chinese catalogue still have no curated parts, and
   their section is simply absent.
+
+## The Deck landed, and Vocabulary closes (2026-09-23)
+
+`migrations/versions/20260923_0014_vocabulary_decks.py` — **APPROVED** by
+independent architecture review (Claude Sonnet 5 as Delegated Architecture
+Reviewer, reviewed commit `9f94ad54`), human-authorized for **dev and sandbox
+only**, and applied to the sandbox at `20260923_0013 → 20260923_0014`. The
+full record is `docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md` §7.
+
+Two of the reviewer's three P3s were taken before landing (`version >= 1`, and
+the tie-break column in each index); the third — title uniqueness is not
+case-folded — was left, because `uq_library_collection_title` has the identical
+property and changing one alone would make two sibling tables disagree.
+
+**P2, and the human's instruction, are done: undo restores deck memberships.**
+Membership cascades with the word, so the sets are read *before* the delete,
+carried in the undo payload, and re-filed after the word is restored — the
+word first, because a membership has nothing to attach to until the row is
+back. No schema change. My Library may read decks and put a word back into one
+for exactly this reason; it may not create, rename or delete one, and the gate
+refuses that.
+
+**The sandbox rows: nothing to convert.** Both word-kind `library_collections`
+pre-date `4f7b197` by hours (06:14 and 09:03 UTC against a 17:16 local commit),
+so they were made through My Library's own "new set" and are ordinary
+Collections. Per the human: generic Collections stay Collections.
+
+**Frames 22–25 verified end-to-end against the migrated sandbox**: a deck
+created with a chosen cover persists it (`Tiếng biển:ember` read back from the
+server); an unknown cover is refused `422`; keeping a word from the deep screen
+opens frame 22 titled with that word, over the learner's real decks, and saving
+files it — confirmed by reading `/api/vocabulary/decks?word=…` back. The
+verification decks were deleted afterwards and the 3010 saved words are
+untouched.
+
+**Vocabulary is closed.** 30 of the 32 frames are built and run against real
+data; frames 16 and 17 are the Speaking lane's.
+
+One door is still the human's to draw, unchanged from the earlier note: no
+populated Vocabulary frame draws a way to add a word by hand, so frames 23–24
+are reached from frame 29 (the empty room) and through frame 22's set picker.

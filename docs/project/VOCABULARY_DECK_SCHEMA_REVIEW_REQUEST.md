@@ -1,7 +1,7 @@
 # Independent architecture review: the Vocabulary Deck
 
-Status: **REQUESTED**, not reviewed, not applied anywhere.
-Proposal: `migrations/proposed/20260923_0014_vocabulary_decks.py`
+Status: **APPROVED** (round 1, §7), landed and applied to dev/sandbox only.
+Migration: `migrations/versions/20260923_0014_vocabulary_decks.py`
 Requested by: Claude lane (`claude/<task>`, working in `codex/work`)
 Date: 2026-09-23
 Reviewed commit: the tree at `eea6cf4`
@@ -88,3 +88,66 @@ domain again to keep a screen green would be the worse failure.
   reading)` contract.
 - No change to My Library's own collections, which keep doing what Collection
   Architecture says they do.
+
+---
+
+## 7. Review round 1 — the record (2026-09-23)
+
+**VERDICT: APPROVED.**
+**Reviewer:** Claude Sonnet 5, acting as Delegated Architecture Reviewer
+(`AGENTS.md`, "Architecture review authority" — the Principal Architect role is
+role-based, and a sufficiently capable independent model may fill it).
+**Reviewed commit:** `9f94ad540da318d640791b6b3ba1263bf9b6e274`, tree clean.
+**Human schema/runtime authorization:** given 2026-09-23 for **dev and sandbox
+only**, explicitly not production, conditional on this approval.
+
+### What the reviewer verified, not assumed
+
+- The revision chain: `down_revision = 20260923_0013` matches the actual head,
+  and does not collide with the unrelated chain also sitting in `proposed/`.
+- **`models.py` against the migration, field by field** — columns, types,
+  nullability, FK targets and `ondelete`, check constraints, uniques, indexes,
+  and that `DECK_COVERS` is the same tuple as the migration's `COVERS`. The
+  previous round's defect class (a partial index declared for one dialect only)
+  cannot occur here because this migration declares no partial indexes.
+- **Every citation in §2 of this request, against its source document.** All
+  three quotations are exact, and the domain-placement argument holds.
+- The cover palette: the six names are exactly the six `data-cover` selectors in
+  `rooms.css`, and the frontend sources its palette from the API's `covers`
+  field, which is `list(DECK_COVERS)` — one source of truth, no hex in learner
+  data.
+- Cross-tenant reachability: no DB constraint spans `vocabulary_decks.user_id`
+  and `saved_words.user_id`, and the repository closes that at the application
+  layer by scoping both lookups to `(user_id, language_code)` — verified by the
+  two tests that try to reach another learner's and another language's set.
+- Optimistic concurrency is actually enforced, and membership writes correctly
+  do not touch `version`, because the promise is about title and cover.
+- The read order is deterministic under a position tie.
+- `tests/test_deck_repository.py`: **17 passed**, local execution in the
+  hermetic container — not CI evidence.
+- That the 503-until-migrated behaviour is real: the router is included and
+  `configure_decks` is called, so the routes are reachable rather than dead.
+- **Against the architecture hold** (`AGENTS.md` §7): this does not conflict.
+  The hold reserves the canonical multi-user/account architecture, not ordinary
+  single-account schema evolution, and `20260923_0013` already established this
+  path — independent review, then a separate explicit human authorization for
+  dev/sandbox.
+
+### Findings, and what was done with each
+
+| | Finding | Disposition |
+| --- | --- | --- |
+| **P2** | Undo does not restore deck membership: `restore_library_record` puts the word back but knows nothing of `vocabulary_deck_members`, so a learner who deletes a word that was in a set and undoes gets the word back without its sets, silently. The reviewer agreed CASCADE is the right schema choice and recommended **option (b)** from §4.4 — carry memberships in the undo payload, a code change, not a schema one. | **Taken.** Built immediately after landing, as the human also directed. Not a blocker for the migration. |
+| **P3** | `version` has no `CHECK (version >= 1)`, unlike the sibling `library_items.version`. | **Taken** before landing. |
+| **P3** | `ix_vocabulary_decks_scope` and `ix_vocabulary_deck_members_deck` omit the tie-break columns the read paths order by, so ordering is a sort rather than an index scan. | **Taken** before landing — both indexes now carry them. |
+| **P3** | Title uniqueness is not case-folded, so "Reise" and "reise" can coexist. | **Deliberately left.** `uq_library_collection_title` has the identical property; changing one without the other would make two sibling tables disagree for no product reason. Recorded here instead. |
+
+### Out of scope, per the reviewer
+
+- Whether the `4f7b197` dev-only word-kind `library_collections` rows should be
+  carried over — a data/product question, left to the human. **Answered
+  2026-09-23:** do not convert; only sandbox/test records created by the wrong
+  Save-to-deck implementation are to be handled separately, and on inspection
+  there are none (both sandbox rows pre-date `4f7b197` by hours and were made
+  through My Library's own "new set", so they are ordinary Collections).
+- UI fidelity of the deck screens against the design — assessed elsewhere.
