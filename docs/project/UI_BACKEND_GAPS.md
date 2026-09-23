@@ -1439,3 +1439,32 @@ from the main checkout's `.env` by name, values never printed.
   backend: 1775 passed, 118 skipped. `test_orena_learning_stage.mjs` asserted the deleted four-ways-in
   landing; its Speaking section is retargeted to the library that replaced it, and the landing's
   styles and copy are deleted.
+
+## Speaking, second review run on `a5c7172` (2026-09-23, D-077)
+
+Everything below ran on `a5c7172` (the code under review; the commit after it is documentation only),
+with the sandbox :8013 recreated from that tree and the rotated Azure key. No result from an older
+commit is reused.
+
+- **Credentials.** The old Azure key is in no Git object (all refs and stashes), neither checkout,
+  no scratch file and no sandbox log; its only copy is the Claude Code transcript of the session
+  where the probe printed it (the key is revoked). The current key appears only in the main
+  checkout's `.env`. Checked by count, no value printed. Cause fixed in `f3eac72`.
+- **Scripted, 6 runs** (desk 1920 / phone 390 touch × zh-en, zh-vi, en-zh): Azure 200 on every
+  take; 99 / 99 / 96 with 6/6 passed; compare 40 + 40 bars, contours for zh only; shadowing lag
+  0.5-0.6 s with speed and again live during the take (56 / 50) around a 104 / 84 stop, no pill;
+  every run reaches the lesson summary; no overflow, no page error.
+- **Shadow restart** (phone): countdown shown; again and speed restart the take; one assessment
+  sent for three starts, graded 99.
+- **States, 18 checks** (vi, en, zh × desk, phone): A blocked → listen-only; B silence → not heard,
+  skip on the right; C offline with real speech → kept, and graded when the network returns
+  (72-76; the looping fake microphone starts mid-line).
+- **Free talk, 6 runs** (zh-vi, zh-en, en-zh × desk, phone): transcribe, pronunciation, coaching and
+  attempts 200; fluency 86-89, pronunciation 88-92, grammar and vocabulary 0, no overall; no row
+  of old actions on the result; "⋯" opens the deep-ways sheet with the three ways inside the
+  viewport; "look closer" opens its sheet; "say the corrected line" opens the workspace on that
+  line with no clip.
+- **Gates (local execution):** `pytest -q test_app.py tests` in the application image, SQLite
+  backend: 1787 passed, 118 skipped; every `.mjs` gate in `ci.yml` passes except the six inherited
+  ones (same first assertion on a clean `3bf2c3f`); ESM graph OK (107 modules); memory and
+  architecture validators and the Python contract scripts OK.

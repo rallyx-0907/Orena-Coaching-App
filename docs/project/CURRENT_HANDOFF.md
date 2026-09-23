@@ -52,7 +52,7 @@ Speaking lane (`feature/speaking`, `D:\Orena-Speaking`, sandbox :8013; not merge
 REVIEWABLE. The source design (D-075) is the Speaking UI: library, workspace, word detail, compare,
 summary, shadowing, states, free talk and its result, measured at 1920/390 in EN/VI/ZH (SP-1..15,
 S1-S23, D-076). Azure (scripted + unscripted), Groq ASR and Gemini ran for real
-(`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`). Human: S3, S14, S15, rotate the Azure key.
+(`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`). Review 2 (D-077): S14/S15 done, S3 known gap, key rotated; full E2E on `a5c7172`.
 
 Backbone lane (Opus), D-054 delegation: sandbox only, chain `20260912_0007`,
 flag on, backbone `active` (runbook section 7). Writing drafts kept with the
