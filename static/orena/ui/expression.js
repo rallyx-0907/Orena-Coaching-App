@@ -705,6 +705,13 @@ async function renderRecallLanguage(root, ctx) {
     revealed = false,
     reviewed = 0,
     stage = 'landing';
+  /* What the summary is made of, all of it measured here: when the sitting
+     started, how each card was graded, and which ones were forgotten - with
+     enough of each to say where it came from. */
+  let startedAt = 0;
+  const tally = { got_it: 0, unsure: 0, again: 0 };
+  const forgotten = [];
+  let counts = null;
   function paint(moveFocus = false) {
     if (!alive()) return;
     const due = items.filter((x) => x.due),
@@ -817,17 +824,85 @@ async function renderRecallLanguage(root, ctx) {
     const landing = due.length
       ? `<section class="recall-landing"><small>${esc(c.vocabularyDueState)}</small><h2>${due.length} ${esc(c.vocabularyWordCount)}</h2><p>${esc(due.slice(0, 3).map((x) => x.word).join(' · '))}${due.length > 3 ? ' …' : ''}</p><button class="primary" data-recall-start>${esc(c.recallName)} →</button></section>`
       : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`;
-    const done = `<section class="empty recall-done">${scene('completion', { size: 'medium' })}<h2>${esc(c.allDone)}</h2><p>${reviewed} ${esc(c.vocabularyWordCount)}${due.length ? ` · ${due.length} ${esc(c.vocabularyDueState)}` : ''}</p><p class="meta">${esc(c.allDoneNote)}</p><div class="button-row">${due.length ? `<button class="primary" data-recall-start>${esc(c.vocabularyContinueReview)} →</button>` : ''}<a class="outline" href="${link('language')}">${c.language} →</a></div></section>`;
+    /* The session's own account of itself (D-067, "Review summary"): how long
+       it took and how many cards, the three grades as a bar and as figures,
+       what was forgotten - each with where it came from - and what comes back
+       next. Every number here was measured in this sitting or counted by the
+       database; none of it is a score. */
+    const minutes = startedAt ? Math.max(0, Math.round((Date.now() - startedAt) / 1000)) : 0;
+    const spent = minutes >= 60
+      ? String(r.reviewSpentMinutes).replace('{m}', String(Math.floor(minutes / 60))).replace('{s}', String(minutes % 60))
+      : String(r.reviewSpentSeconds).replace('{s}', String(minutes));
+    const graded = tally.got_it + tally.unsure + tally.again;
+    const figure = (key, tone) =>
+      `<div class="review-done__figure" data-tone="${tone}"><strong>${esc(tally[key])}</strong>`
+      + `<span>${esc(key === 'got_it' ? r.vocabGradeGotIt : key === 'unsure' ? r.vocabGradeUnsure : r.vocabGradeAgain)}</span></div>`;
+    const bar = graded
+      ? `<div class="review-done__bar" aria-hidden="true">`
+        + `<span data-tone="got" style="flex:${tally.got_it}"></span>`
+        + `<span data-tone="unsure" style="flex:${tally.unsure}"></span>`
+        + `<span data-tone="again" style="flex:${tally.again}"></span>`
+        + `</div>`
+      : '';
+    const forgottenRows = forgotten.length
+      ? `<section class="review-done__block"><span class="ds-label">${esc(r.reviewForgotHere)}</span>`
+        + `<div class="review-done__list">${forgotten.map((item) => `<div class="review-done__row">`
+          + `<span class="review-done__word" lang="${esc(language)}">${esc(item.word)}</span>`
+          + `<span class="review-done__gloss" lang="${esc(ctx.support)}">${esc(item.meaning)}</span>`
+          + `<span class="review-done__from">${esc(item.from)}</span>`
+          + `</div>`).join('')}</div></section>`
+      : '';
+    const nextLine = counts
+      ? String(r.reviewNextDay)
+        .replace('{n}', String(Number(counts.summary?.due_next_day || 0)))
+        .replace('{w}', esc(c.vocabularyWordCount))
+      : '';
+    const done = `<section class="review-done">`
+      + `<div class="review-done__head">`
+      + `<span class="ds-label">${esc(String(r.reviewSession).replace('{t}', spent))}</span>`
+      + `<h2>${esc(String(r.reviewFinished).replace('{n}', String(reviewed)))}</h2>`
+      + `</div>`
+      + (graded ? `<div class="review-done__scores">${bar}<div class="review-done__figures">${figure('got_it', 'got')}${figure('unsure', 'unsure')}${figure('again', 'again')}</div></div>` : '')
+      + forgottenRows
+      + `<div class="review-done__foot">`
+      + (nextLine ? `<span class="review-done__next">${esc(nextLine)}</span>` : '')
+      + (tally.again ? `<button type="button" class="outline" data-recall-again>${esc(String(r.reviewAgainAll).replace('{n}', String(tally.again)))}</button>` : '')
+      + `<a class="primary" href="${esc(link('language'))}">${esc(r.reviewDone)}</a>`
+      + `</div>`
+      + `</section>`;
     const reviewing = stage !== 'landing' && current;
-    /* While a card is up the screen is the card: its own caret is the way
-       back, so the room's return link and the page intro stay out of it. */
-    root.innerHTML = `${reviewing ? '' : practiceReturn(c, 'recall')}${
-      reviewing ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
+    /* While a card is up the screen is the card, and when the sitting ends the
+       screen is its summary: both carry their own way on, so the room's return
+       link and the page intro stay out of them. */
+    const sitting = reviewing || (stage !== 'landing' && !current);
+    root.innerHTML = `${sitting ? '' : practiceReturn(c, 'recall')}${
+      sitting ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
     }${stage === 'landing' ? landing : current ? card : done}`;
     root.querySelector('[data-recall-start]')?.addEventListener('click', () => {
       stage = 'card';
       revealed = false;
+      startedAt = Date.now();
+      tally.got_it = 0;
+      tally.unsure = 0;
+      tally.again = 0;
+      forgotten.length = 0;
       paint(true);
+    });
+    /* "Review the ones you forgot" is the same queue again: the cards graded
+       `again` are due in ten minutes, so the room asks for what is due and
+       carries on. */
+    root.querySelector('[data-recall-again]')?.addEventListener('click', async () => {
+      try {
+        const again = await api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE });
+        if (!alive()) return;
+        items = again.items || [];
+        revealed = false;
+        stage = 'card';
+        startedAt = Date.now();
+        paint(true);
+      } catch {
+        /* Nothing to say here that the next paint will not say. */
+      }
     });
     root.querySelectorAll('[data-grade]').forEach(
       (button) =>
@@ -841,9 +916,10 @@ async function renderRecallLanguage(root, ctx) {
             alive,
           );
           report.saving();
+          const answer = button.dataset.grade;
           const grade = () =>
             ctx.mutate(() =>
-              api.reviewLibraryVocabulary(current.word, button.dataset.grade),
+              api.reviewLibraryVocabulary(current.word, answer),
             );
           try {
             await grade();
@@ -860,9 +936,23 @@ async function renderRecallLanguage(root, ctx) {
           // retry fetch the list again instead of re-submitting the grade.
           const refresh = async () => {
             try {
-              const updated = await api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE });
+              const [updated, totals] = await Promise.all([
+                api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE }),
+                api.libraryVocabularySummary().catch(() => null),
+              ]);
               if (!alive()) return;
+              /* Recorded once the grade is saved, so the summary can only ever
+                 describe what really happened. */
+              if (answer in tally) tally[answer] += 1;
+              if (answer === 'again' && !forgotten.some((item) => item.word === current.word)) {
+                forgotten.push({
+                  word: current.word,
+                  meaning: current.definition || current.translation_vi || '',
+                  from: current.focus_note || (current.source_kind ? c[`saved_${current.source_kind}`] || '' : ''),
+                });
+              }
               items = updated.items || [];
+              counts = totals;
               revealed = false;
               reviewed += 1;
               paint(true);

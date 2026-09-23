@@ -220,7 +220,7 @@ assert.equal(learnerMemory(shared, 'owner-b', 'en').value.continuation.length, 0
 // behind, so a thread from the previous language is never reopened.
 const app = read('static/orena/app.js');
 assert.ok(
-  /learningChanged\) history\.replaceState\(null, '', link\(\)\)/.test(app),
+  /learningChanged\) history\.replaceState\(null, ['"]{2}, link\(\)\)/.test(app),
   'a language switch must not stay on an encounter from the previous language',
 );
 

@@ -239,6 +239,9 @@ def library_summary() -> dict[str, Any]:
         "total": saved,
         "saved": saved,
         "due": int(counts.get("due", 0)),
+        # What the review's last line says is coming: not due now, due within
+        # a day.
+        "due_next_day": int(counts.get("due_next_day", 0)),
         "learning": int(counts.get("learning", max(0, saved - mastered))),
         "mastered": mastered,
         # The older name for the same number, kept so existing callers of this

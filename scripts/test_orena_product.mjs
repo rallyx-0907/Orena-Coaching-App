@@ -142,7 +142,7 @@ assert.match(app,/if \(location\.hash === next\) render\(\)/,'Re-entering the ro
 // the frozen mobile /me contract, no enforcement, no provider identifier.
 assert.match(app,/api\.productCommerce\(\)\.catch\(/,'A failed plan/usage read must never block boot the way the other three awaits do');
 assert.doesNotMatch(app,/api\.productMe\(\)/,'The web client must read the web-only canonical endpoint, not the frozen mobile one');
-assert.match(app,/onboarding \? '' : planUsageSection\(ctx\)/,'A first-run welcome sheet must not show usage numbers');
+assert.match(app,/onboarding \? ['"]{2} : planUsageSection\(ctx\)/,'A first-run welcome sheet must not show usage numbers');
 assert.doesNotMatch(app,/external_customer_id|external_subscription_id/,'No provider/customer identifier may reach a learner-facing template');
 const planUsageSource=app.slice(app.indexOf('function planUsageSection'),app.indexOf('function preferences('));
 assert.doesNotMatch(planUsageSource,/checkout|<button|<a /i,'billing_ready is false: no enforcement or checkout call-to-action, read-only markup only');

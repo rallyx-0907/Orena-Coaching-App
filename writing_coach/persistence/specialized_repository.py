@@ -4,7 +4,7 @@ import base64
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Protocol
 
 from sqlalchemy import Engine, func, select
@@ -453,18 +453,22 @@ class SQLiteSpecializedLearningRepository:
     def library_counts(self, *, now: str) -> dict[str, int]:
         with self._db() as conn:
             if not self._has_table(conn, "saved_words"):
-                return {"saved": 0, "mastered": 0, "learning": 0, "due": 0}
+                return {"saved": 0, "mastered": 0, "learning": 0, "due": 0, "due_next_day": 0}
             if not self._has_table(conn, "vocabulary_learning"):
                 total = int(conn.execute("SELECT COUNT(*) AS n FROM saved_words").fetchone()["n"])
                 # Without the Active Recall table every saved word is new, and
                 # a word that has never been scheduled is due now.
-                return {"saved": total, "mastered": 0, "learning": total, "due": total}
+                return {"saved": total, "mastered": 0, "learning": total, "due": total, "due_next_day": 0}
             row = conn.execute(
                 "SELECT COUNT(*) AS saved,"
                 f" SUM(CASE WHEN {self._STAGE_EXPR} >= ? THEN 1 ELSE 0 END) AS mastered,"
-                f" SUM(CASE WHEN {self._DUE_EXPR} <= datetime(?) THEN 1 ELSE 0 END) AS due"
+                f" SUM(CASE WHEN {self._DUE_EXPR} <= datetime(?) THEN 1 ELSE 0 END) AS due,"
+                # What the end of a review session says is coming back: cards
+                # that are not due now but fall due within a day.
+                f" SUM(CASE WHEN {self._DUE_EXPR} > datetime(?)"
+                f" AND {self._DUE_EXPR} <= datetime(?, '+1 day') THEN 1 ELSE 0 END) AS due_next_day"
                 + self._LIBRARY_FROM,
-                (LIBRARY_MASTERED_STAGE, now),
+                (LIBRARY_MASTERED_STAGE, now, now, now),
             ).fetchone()
             saved = int(row["saved"] or 0)
             mastered = int(row["mastered"] or 0)
@@ -473,6 +477,7 @@ class SQLiteSpecializedLearningRepository:
                 "mastered": mastered,
                 "learning": max(0, saved - mastered),
                 "due": int(row["due"] or 0),
+                "due_next_day": int(row["due_next_day"] or 0),
             }
 
     def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -914,10 +919,20 @@ class PostgresSpecializedLearningRepository:
                     func.count(SavedWord.id).filter(
                         (SavedWord.next_review_at.is_(None)) | (SavedWord.next_review_at <= moment)
                     ),
+                    func.count(SavedWord.id).filter(
+                        SavedWord.next_review_at > moment,
+                        SavedWord.next_review_at <= moment + timedelta(days=1),
+                    ),
                 ).where(*scope)
             ).one()
         saved, mastered, due = int(row[0] or 0), int(row[1] or 0), int(row[2] or 0)
-        return {"saved": saved, "mastered": mastered, "learning": max(0, saved - mastered), "due": due}
+        return {
+            "saved": saved,
+            "mastered": mastered,
+            "learning": max(0, saved - mastered),
+            "due": due,
+            "due_next_day": int(row[3] or 0),
+        }
 
     def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]:
         folded = [str(word or "").casefold() for word in words if str(word or "").strip()]

@@ -1304,3 +1304,57 @@ scroll, nothing clipped, chips and rows at the phone frame's sizes. At 1920 the
 grid fits five covers across exactly as the frame does, unless a scrollbar is
 present, which costs 15px and drops it to four.
 
+
+## Four designs arrived; what each one needs before it can be built (2026-09-23)
+
+The source gained two screens and grew two more (inventory and measurements:
+`docs/design/canonical-ui/SYNC_2026-09-23.md`). This entry says only what each
+one needs, and which of them this lane may not build at all. Nothing here is a
+decision.
+
+**Vocabulary (32 frames, was 10) - buildable, one frame at a time.** The only
+one of the four whose needs the backend already meets or can meet inside this
+lane. Built so far: **Review summary** (frames 18-19), measured at 1920, 1440,
+1024 and 390. Not built, in the order the room needs them:
+
+- Search (frames 20-21) - server-side search already exists behind
+  `GET /api/library/vocabulary?query=`; this is UI only.
+- Add word (23-24), create deck (25), save-to-deck sheet (22) - a learner's own
+  deck has no contract. **DESIGN DECISION NEEDED is not the blocker; a
+  persistence decision is** (AGENTS §7: no new persistence or schema decisions
+  for learner-owned data). Recorded, not chosen.
+- Four review modes the app does not have - typing (11-12), listen-and-choose
+  (13), dictation (14), cloze (15), speaking (16-17). Typing and cloze need
+  nothing new. Listen-and-choose and dictation need audio per word; speaking
+  needs grading, which is a provider credential (human gate).
+- Review settings (27-28) - needs a stored per-learner setting; same
+  persistence hold as decks.
+- States (29-32) - empty, nothing due, offline, load error. Buildable now.
+- Card deep view (3-4), strokes (5), context clips (6-7) - strokes and clips
+  need per-word data Orena does not hold.
+
+**Speaking (18 frames, was 7) - gated.** Free-talk result, lesson summary and
+compare-with-model all show a grading Orena cannot produce without a speech
+provider credential, which is a human gate (AGENTS §10). The frames that need
+no grading - settings (14), mic blocked (15), not heard (16), offline grading
+(17), empty (18), shadowing (13) - are buildable now.
+
+**Thư viện của tôi (26 frames, new) - blocked on a contract, not on UI.** It is
+one library over *every* kind of thing a learner kept: words, writing, speaking
+takes, reading, grammar, books, and collections across them. Orena has no
+cross-type "kept" contract; each capability keeps its own. Building one is a
+learner-data persistence decision, which AGENTS §7 reserves. **For the human:**
+this screen also answers the open question left by the Vocabulary Library entry
+above ("where do the learner's own words live"), so it should be decided with
+that one rather than separately.
+
+**Admin Control Center (21 frames, new) - held.** AGENTS §7 keeps Platform
+Admin inert: its APIs and `static/admin.js` survive, the historical shell was
+removed, and the hold says not to restore a host for it. The design now draws
+that host in full. **This lane will not build it until the human lifts the
+hold.** Nothing in the design changes the hold; only the human does.
+
+**Stale in the source, for the human:** `screens/screen-matrix.md` still marks
+Profile, My Content, Admin and Loading/Empty/Error INCOMPLETE while canonical
+screens for them now exist in the project. The matrix belongs to the design
+project; this lane does not edit it.

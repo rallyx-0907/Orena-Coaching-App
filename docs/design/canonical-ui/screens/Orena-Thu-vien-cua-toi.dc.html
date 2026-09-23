@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"><link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"><style>
+html{background:#050310}
+body{margin:0;background-color:#050310;background-attachment:fixed;background-image:radial-gradient(circle at 12% 22%, rgba(255,255,255,0.55) 1px, transparent 1.8px), radial-gradient(circle at 68% 64%, rgba(222,206,255,0.42) 0.8px, transparent 1.5px), radial-gradient(circle at 84% 12%, rgba(255,255,255,0.34) 0.7px, transparent 1.3px), radial-gradient(circle at 36% 78%, rgba(190,214,255,0.30) 0.7px, transparent 1.3px), radial-gradient(circle at 22% 54%, rgba(255,255,255,0.20) 0.5px, transparent 1.1px), radial-gradient(54% 64% at 76% 30%, transparent 58%, rgba(238,206,255,0.50) 63.5%, rgba(176,120,255,0.30) 68%, transparent 78%), radial-gradient(34% 30% at 74% 16%, rgba(220,170,255,0.44), transparent 72%), radial-gradient(96% 66% at 14% -14%, rgba(146,88,255,0.40), transparent 64%), radial-gradient(84% 58% at 96% 2%, rgba(96,112,255,0.26), transparent 62%), radial-gradient(104% 72% at 62% 112%, rgba(132,70,236,0.30), transparent 68%), radial-gradient(92% 62% at 2% 76%, rgba(80,104,244,0.18), transparent 64%), radial-gradient(76% 56% at 44% 46%, rgba(190,136,255,0.09), transparent 72%);background-size:190px 190px, 240px 240px, 300px 300px, 420px 420px, 150px 150px, cover, cover, cover, cover, cover, cover, cover;color:#f3f1f6;font-family:'Nunito Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#C7B2FF;text-decoration:none}
+a:hover{color:#E4D7FF}
+i[class^="ph"]{line-height:1;display:inline-block}
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none}
+</style></helmet>
+
+<div style="padding:48px 44px 110px;display:flex;flex-direction:column;gap:30px">
+
+<div style="display:flex;flex-direction:column;gap:14px;max-width:84ch">
+<span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.68)">Orena · thư viện của tôi</span>
+<h1 style="margin:0;font-family:'Nunito',sans-serif;font-weight:800;font-size:44px;line-height:1;letter-spacing:-0.03em">Mọi thứ đã học, ở một chỗ.</h1>
+<p style="margin:0;font-size:15.5px;line-height:1.6;color:rgba(255,255,255,0.66)">Phần trên là việc cần ôn hôm nay: lịch lặp lại ngắt quãng xếp hạn tự động, mục bạn tự đánh dấu Cần ôn được đẩy lên trước. Phần dưới là thư viện theo tám loại nội dung. Ôn ngay chạy một phiên gộp ngay tại đây; muốn xem lại ngữ cảnh thì mở màn gốc.</p>
+</div>
+
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">DESKTOP · 1920 × 1080 · 62%</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));backdrop-filter:blur(24px) saturate(1.35);padding:12px;box-sizing:border-box;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.64)">orena.app/my-library</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div data-screen-label="Thư viện của tôi · desktop" style="zoom:0.6198;position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), radial-gradient(80% 60% at 88% 104%, rgba(70,92,210,0.16), transparent 62%), #060509;color:#f3f1f6;display:flex;overflow:hidden">
+
+<div style="width:280px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset -1px 0 0 rgba(172,144,255,0.12);padding:26px 18px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px"><div style="width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg, #9B6BFF, #6E7BFF)"></div><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Orena</span></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:{{ n.bg }};box-shadow:{{ n.ring }};color:{{ n.color }};font-weight:{{ n.weight }};font-size:17px"><span style="font-size:23px"><i class="{{ n.icon }}"></i></span>{{ n.t }}<sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(155,103,255,0.28);color:#EFE6FF">{{ n.badge }}</span></sc-if></div>
+</sc-for>
+</div>
+</div>
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:84px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 -1px 0 rgba(172,144,255,0.12);padding:0 40px;display:flex;align-items:center;gap:20px">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Thư viện của tôi</span>
+<span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.62)">2 318 mục</span>
+<span style="margin-left:auto;width:380px;height:44px;box-sizing:border-box;border-radius:12px;background:rgba(6,4,12,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;gap:10px;padding:0 15px;font-size:15px;color:rgba(255,255,255,0.52)"><i class="ph ph-magnifying-glass" style="font-size:18px"></i>Tìm từ, bài đọc, ghi chú…</span>
+<div style="display:flex;gap:6px;padding:4px;border-radius:12px;background:rgba(6,4,12,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<sc-for list="{{ langs }}" as="l" hint-placeholder-count="3"><span onClick="{{ l.go }}" style="height:36px;padding:0 14px;border-radius:9px;cursor:pointer;display:flex;align-items:center;font-size:14.5px;font-weight:{{ l.weight }};background:{{ l.bg }};color:{{ l.color }}">{{ l.t }}</span></sc-for>
+</div>
+<span style="height:44px;padding:0 15px;border-radius:12px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);display:flex;align-items:center;gap:8px;font-size:14.5px;color:rgba(255,255,255,0.8)"><i class="ph ph-calendar-blank" style="font-size:17px"></i>30 ngày<i class="ph ph-caret-down" style="font-size:12px"></i></span>
+</div>
+
+<div style="flex:1;min-height:0;display:flex;gap:24px;padding:26px 40px 30px;overflow:hidden">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:22px;overflow-y:auto">
+
+<div style="flex:none;display:flex;gap:26px;padding:26px 28px;border-radius:22px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="width:300px;flex:none;display:flex;flex-direction:column;gap:12px">
+<span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:rgba(255,255,255,0.72)">CẦN ÔN HÔM NAY</span>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:56px;line-height:1;letter-spacing:-0.035em">{{ dueCount }}</span><span style="font-size:16px;color:rgba(255,255,255,0.74)">mục · khoảng 12 phút</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:7px">
+<sc-for list="{{ dueMix }}" as="d" hint-placeholder-count="5"><span style="display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);font-size:13px;color:rgba(255,255,255,0.86)"><i class="{{ d.icon }}" style="font-size:14px;color:#D5C0FF"></i>{{ d.t }}</span></sc-for>
+</div>
+<span onClick="{{ startReview }}" style="margin-top:6px;align-self:flex-start;display:flex;align-items:center;gap:9px;height:50px;padding:0 24px;border-radius:14px;cursor:pointer;background:linear-gradient(180deg, #9B67FF, #6A32E0);font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:#fff;box-shadow:0 10px 26px rgba(123,77,232,0.36)"><i class="ph-fill ph-play" style="font-size:16px"></i>Ôn ngay</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;letter-spacing:-0.02em">Thứ tự ôn</span><span style="font-size:13.5px;color:rgba(255,255,255,0.64)">mục bạn đánh dấu lên trước, sau đó theo hạn SRS</span></div>
+<sc-for list="{{ dueList }}" as="d" hint-placeholder-count="5">
+<div onClick="{{ d.go }}" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06)">
+<span style="width:36px;height:36px;flex:none;border-radius:10px;background:rgba(196,178,255,0.14);display:flex;align-items:center;justify-content:center;font-size:18px;color:#D5C0FF"><i class="{{ d.icon }}"></i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:{{ d.font }};font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.t }}</span><span style="font-size:13px;color:rgba(255,255,255,0.64)">{{ d.sub }}</span></div>
+<span style="flex:none;display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;background:{{ d.tagBg }};color:{{ d.tagColor }}"><i class="{{ d.tagIcon }}" style="font-size:12px"></i>{{ d.tag }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="flex:none;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ typeTabs }}" as="t" hint-placeholder-count="8"><span onClick="{{ t.go }}" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 15px;border-radius:12px;cursor:pointer;background:{{ t.bg }};box-shadow:{{ t.ring }};font-size:14.5px;font-weight:{{ t.weight }};color:{{ t.color }}"><i class="{{ t.icon }}" style="font-size:16px"></i>{{ t.t }}<span style="font-family:'DM Mono',monospace;font-size:12px;color:{{ t.countColor }}">{{ t.count }}</span></span></sc-for>
+</div>
+<sc-if value="{{ inColl }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px"><span style="display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 14px;border-radius:999px;background:rgba(155,103,255,0.22);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.34);font-size:14px;color:#F1EAFF"><i class="ph ph-folder-simple" style="font-size:15px"></i>Trong bộ: {{ collName }}<span onClick="{{ clearColl }}" style="width:24px;height:24px;border-radius:50%;cursor:pointer;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:12px"><i class="ph ph-x"></i></span></span><span style="font-size:13.5px;color:rgba(255,255,255,0.62)">{{ collSub }}</span><span onClick="{{ startColl }}" style="margin-left:auto;display:flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:10px;cursor:pointer;background:rgba(155,103,255,0.24);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.36);font-size:14px;font-weight:700;color:#F1EAFF"><i class="ph-fill ph-play" style="font-size:13px"></i>Ôn bộ này</span></div></sc-if>
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ items }}" as="it" hint-placeholder-count="5">
+<div onClick="{{ it.open }}" style="cursor:pointer;display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:18px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:baseline;gap:12px;min-width:0"><span style="font-family:{{ it.font }};font-size:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.t }}</span><span style="font-size:14.5px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.gloss }}</span></div>
+<span style="font-size:13.5px;color:rgba(255,255,255,0.62)">{{ it.meta }}</span>
+</div>
+<span style="flex:none;font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,0.62);width:130px;text-align:right">{{ it.next }}</span>
+<span style="flex:none;font-family:'DM Mono',monospace;font-size:11.5px;padding:5px 11px;border-radius:999px;background:{{ it.stBg }};color:{{ it.stColor }};width:84px;text-align:center">{{ it.status }}</span>
+<div style="flex:none;display:flex;gap:8px">
+<span onClick="{{ it.mark }}" title="Đánh dấu cần ôn" style="width:40px;height:40px;border-radius:11px;cursor:pointer;background:{{ it.markBg }};box-shadow:{{ it.markRing }};display:flex;align-items:center;justify-content:center;font-size:17px;color:{{ it.markColor }}"><i class="{{ it.markIcon }}"></i></span>
+<span onClick="{{ it.pick }}" title="Thêm vào bộ sưu tập" style="cursor:pointer;width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);display:flex;align-items:center;justify-content:center;font-size:17px;color:rgba(255,255,255,0.78)"><i class="ph ph-folder-plus"></i></span>
+<span onClick="{{ it.origin }}" title="Mở màn gốc" style="cursor:pointer;width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);display:flex;align-items:center;justify-content:center;font-size:17px;color:rgba(255,255,255,0.78)"><i class="ph ph-arrow-square-out"></i></span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="width:420px;flex:none;display:flex;flex-direction:column;gap:14px;overflow-y:auto">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.02em">Bộ sưu tập</span><span style="font-size:13.5px;color:rgba(255,255,255,0.62)">mỗi bộ một loại</span><span style="margin-left:auto;font-size:14px;font-weight:700;color:#C7B2FF">+ Bộ mới</span></div>
+<sc-for list="{{ collections }}" as="c" hint-placeholder-count="5">
+<div onClick="{{ c.go }}" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:{{ c.ring }}">
+<span style="width:44px;height:44px;flex:none;border-radius:12px;background:rgba(196,178,255,0.14);display:flex;align-items:center;justify-content:center;font-size:20px;color:#D5C0FF"><i class="{{ c.icon }}"></i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.t }}</span><span style="font-size:13px;color:rgba(255,255,255,0.62)">{{ c.sub }}</span></div>
+<sc-if value="{{ c.due }}" hint-placeholder-val="{{ false }}"><span style="font-family:'DM Mono',monospace;font-size:11.5px;padding:4px 9px;border-radius:999px;background:rgba(155,103,255,0.24);color:#EFE6FF">{{ c.due }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeDetail }}" style="position:absolute;inset:0;background:rgba(5,3,16,0.5);z-index:15"></div>
+<div style="position:absolute;top:0;right:0;bottom:0;width:560px;box-sizing:border-box;padding:30px 32px;z-index:16;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32)), #100B1E;backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 1px 0 0 rgba(172,144,255,0.26), -24px 0 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;gap:20px;overflow-y:auto">
+<div style="display:flex;align-items:center;gap:10px"><span style="display:flex;align-items:center;gap:7px;font-size:13.5px;padding:5px 12px;border-radius:999px;background:rgba(196,178,255,0.14);color:#E4D7FF"><i class="{{ dt.icon }}" style="font-size:14px"></i>{{ dt.kind }}</span><span style="font-size:13.5px;color:rgba(255,255,255,0.62)">{{ dt.lang }}</span><span onClick="{{ closeDetail }}" style="margin-left:auto;width:40px;height:40px;border-radius:11px;cursor:pointer;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:17px"><i class="ph ph-x"></i></span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:{{ dt.font }};font-size:34px;font-weight:600;line-height:1.25">{{ dt.t }}</span><span style="font-size:17px;color:rgba(255,255,255,0.8)">{{ dt.gloss }}</span></div>
+<div style="padding:16px 18px;border-radius:14px;background:rgba(6,4,12,0.34);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.07);display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.62)">NGỮ CẢNH GỐC</span><span style="font-family:'Noto Serif',serif;font-size:16.5px;line-height:1.6;color:rgba(255,255,255,0.88)">{{ dt.ctx }}</span><span onClick="{{ dt.origin }}" style="align-self:flex-start;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:#C7B2FF;cursor:pointer"><i class="ph ph-arrow-square-out" style="font-size:15px"></i>{{ dt.originLabel }}</span></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.62)">TRẠNG THÁI</span>
+<div style="display:flex;padding:4px;border-radius:12px;background:rgba(6,4,12,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><sc-for list="{{ dt.states }}" as="s" hint-placeholder-count="3"><span onClick="{{ s.go }}" style="flex:1;height:40px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;font-size:14.5px;font-weight:700;background:{{ s.bg }};color:{{ s.color }}"><i class="{{ s.icon }}" style="font-size:15px"></i>{{ s.t }}</span></sc-for></div>
+<span style="font-size:13px;line-height:1.5;color:rgba(255,255,255,0.62)">Cần ôn: đẩy lên đầu hàng ôn hôm nay. Đã thuộc: SRS giãn hạn ôn tối đa, vẫn nhắc lại định kỳ.</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><sc-for list="{{ dt.history }}" as="h" hint-placeholder-count="3"><div style="padding:13px 14px;border-radius:12px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.07);display:flex;flex-direction:column;gap:5px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.1em;color:rgba(255,255,255,0.6)">{{ h.k }}</span><span style="font-size:16px;font-weight:700">{{ h.v }}</span></div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.62)">BỘ SƯU TẬP</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ dt.colls }}" as="c" hint-placeholder-count="2"><span style="height:34px;padding:0 13px;border-radius:999px;background:rgba(155,103,255,0.2);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.3);display:flex;align-items:center;gap:7px;font-size:14px;color:#F1EAFF"><i class="ph ph-folder-simple" style="font-size:14px"></i>{{ c.t }}</span></sc-for><span onClick="{{ dt.pick }}" style="height:34px;padding:0 13px;border-radius:999px;cursor:pointer;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;gap:7px;font-size:14px;color:rgba(255,255,255,0.8)"><i class="ph ph-plus" style="font-size:13px"></i>Thêm vào bộ</span></div></div>
+<div style="margin-top:auto;display:flex;gap:10px;padding-top:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)"><span onClick="{{ dt.review }}" style="flex:1;height:48px;border-radius:13px;cursor:pointer;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff"><i class="ph-fill ph-play" style="font-size:14px"></i>Ôn mục này</span><span onClick="{{ dt.origin }}" style="flex:1;height:48px;border-radius:13px;cursor:pointer;background:rgba(255,255,255,0.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:700"><i class="ph ph-arrow-square-out" style="font-size:15px"></i>Mở màn gốc</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ pickOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closePick }}" style="position:absolute;inset:0;background:rgba(5,3,16,0.55);z-index:25;display:flex;align-items:center;justify-content:center">
+<div onClick="{{ keep }}" style="width:460px;padding:24px 26px;border-radius:22px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32)), #120C22;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.28), 0 24px 60px rgba(0,0,0,0.55);display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.02em">Thêm vào bộ sưu tập</span><span style="font-size:13.5px;color:rgba(255,255,255,0.64)">Chỉ hiện bộ cùng loại: {{ pickKind }}</span></div>
+<sc-for list="{{ pickList }}" as="p" hint-placeholder-count="2"><div onClick="{{ p.go }}" style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)"><i class="{{ p.icon }}" style="font-size:19px;color:{{ p.color }}"></i><span style="flex:1;font-size:15px;font-weight:600">{{ p.t }}</span><span style="font-size:13px;color:rgba(255,255,255,0.6)">{{ p.sub }}</span></div></sc-for>
+<span style="display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:14.5px;font-weight:700;color:#C7B2FF"><i class="ph ph-plus" style="font-size:14px"></i>Tạo bộ mới cùng loại</span>
+<span onClick="{{ closePick }}" style="align-self:flex-end;height:40px;padding:0 18px;border-radius:11px;cursor:pointer;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:14.5px;font-weight:700">Xong</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:14px;background:linear-gradient(180deg, rgba(120,92,200,0.5), rgba(58,44,104,0.5)), #140E26;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.28), 0 16px 40px rgba(0,0,0,0.5)"><i class="ph-fill ph-check-circle" style="font-size:19px;color:#7DEDB6"></i><span style="font-size:15px">{{ toast }}</span><sc-if value="{{ toastUndo }}" hint-placeholder-val="{{ false }}"><span onClick="{{ undo }}" style="margin-left:8px;font-size:14.5px;font-weight:700;color:#C7B2FF;cursor:pointer">Hoàn tác</span></sc-if></div>
+</sc-if>
+
+<sc-if value="{{ reviewing }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(5,3,16,0.72);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:20">
+<div style="width:760px;padding:30px 34px;border-radius:26px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32)), #120C22;backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.28), 0 30px 80px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.12em;color:rgba(255,255,255,0.72)">PHIÊN ÔN · {{ rvPos }}</span>
+<div style="flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,0.1);overflow:hidden"><div style="width:{{ rvPct }};height:100%;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div>
+<span onClick="{{ endReview }}" style="width:38px;height:38px;border-radius:11px;cursor:pointer;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:17px"><i class="ph ph-x"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:10px"><span style="display:flex;align-items:center;gap:7px;font-size:13.5px;padding:5px 12px;border-radius:999px;background:rgba(196,178,255,0.14);color:#E4D7FF"><i class="{{ rv.icon }}" style="font-size:14px"></i>{{ rv.kind }}</span><span style="font-size:13.5px;color:rgba(255,255,255,0.62)">{{ rv.why }}</span></div>
+<div style="min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:16px 0">
+<span style="font-family:'Noto Serif',serif;font-size:{{ rv.size }};line-height:1.35;text-wrap:balance">{{ rv.prompt }}</span>
+<sc-if value="{{ revealed }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px;align-items:center"><span style="font-size:20px;font-weight:700;color:#E4D7FF">{{ rv.answer }}</span><span style="font-family:'Noto Serif',serif;font-size:15.5px;font-style:italic;color:rgba(255,255,255,0.7)">{{ rv.ctx }}</span></div></sc-if>
+</div>
+<sc-if value="{{ hidden }}" hint-placeholder-val="{{ true }}"><span onClick="{{ reveal }}" style="align-self:center;display:flex;align-items:center;gap:9px;height:50px;padding:0 30px;border-radius:14px;cursor:pointer;background:rgba(155,103,255,0.24);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.36);font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#F1EAFF"><i class="ph ph-eye" style="font-size:17px"></i>Hiện đáp án</span></sc-if>
+<sc-if value="{{ revealed }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+<sc-for list="{{ grades }}" as="g" hint-placeholder-count="4"><span onClick="{{ g.go }}" style="height:60px;border-radius:14px;cursor:pointer;background:{{ g.bg }};box-shadow:{{ g.ring }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="font-size:15.5px;font-weight:700;color:{{ g.color }}">{{ g.t }}</span><span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.62)">{{ g.next }}</span></span></sc-for>
+</div>
+</sc-if>
+<div style="display:flex;align-items:center;gap:10px;padding-top:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)"><span style="font-size:13.5px;color:rgba(255,255,255,0.62)">{{ rv.origin }}</span><span style="margin-left:auto;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:#C7B2FF"><i class="ph ph-arrow-square-out" style="font-size:15px"></i>Mở màn gốc</span></div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">MOBILE · 390 × 844 · các màn còn lại: <a href="#l01">Phần 2</a></span>
+<div style="display:flex;gap:24px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ pw }}" height="{{ ph }}" dark="{{ true }}" hint-size="390px,844px">
+<div data-screen-label="Thư viện của tôi · mobile" style="min-height:100%;box-sizing:border-box;padding:60px 18px 26px;background:radial-gradient(90% 40% at 30% 0%, rgba(116,74,214,0.28), transparent 70%), #060509;color:#f3f1f6;font-family:'Nunito Sans',sans-serif;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.02em">Thư viện của tôi</span><span style="margin-left:auto;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,0.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:19px"><i class="ph ph-magnifying-glass"></i></span></div>
+<div style="padding:18px;border-radius:20px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26), 0 6px 22px rgba(0,0,0,0.20);display:flex;flex-direction:column;gap:12px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.72)">CẦN ÔN HÔM NAY</span>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:42px;line-height:1;letter-spacing:-0.03em">{{ dueCount }}</span><span style="font-size:14px;color:rgba(255,255,255,0.74)">mục · ~12 phút</span></div>
+<span style="font-size:13px;line-height:1.45;color:rgba(255,255,255,0.72)">3 mục bạn đánh dấu · 20 mục đến hạn SRS</span>
+<span onClick="{{ startReview }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:14px;cursor:pointer;background:linear-gradient(180deg, #9B67FF, #6A32E0);font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff"><i class="ph-fill ph-play"></i>Ôn ngay</span>
+</div>
+<div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px">
+<sc-for list="{{ typeTabs }}" as="t" hint-placeholder-count="8"><span onClick="{{ t.go }}" style="flex:none;display:flex;align-items:center;gap:6px;height:40px;padding:0 13px;border-radius:12px;cursor:pointer;background:{{ t.bg }};box-shadow:{{ t.ring }};font-size:14px;font-weight:{{ t.weight }};color:{{ t.color }}"><i class="{{ t.icon }}" style="font-size:15px"></i>{{ t.short }}</span></sc-for>
+</div>
+<sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:12px;padding:15px 16px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><span style="font-family:{{ it.font }};font-size:18px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.t }}</span><span style="font-size:13px;color:rgba(255,255,255,0.64);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.gloss }}</span><span style="align-self:flex-start;font-family:'DM Mono',monospace;font-size:10.5px;padding:3px 9px;border-radius:999px;background:{{ it.stBg }};color:{{ it.stColor }}">{{ it.status }}</span></div>
+<span onClick="{{ it.mark }}" style="width:44px;height:44px;flex:none;border-radius:12px;cursor:pointer;background:{{ it.markBg }};box-shadow:{{ it.markRing }};display:flex;align-items:center;justify-content:center;font-size:18px;color:{{ it.markColor }}"><i class="{{ it.markIcon }}"></i></span>
+</div>
+</sc-for>
+<div style="position:sticky;bottom:26px;margin:18px -4px 0;flex:none;height:66px;border-radius:22px;background:linear-gradient(180deg, rgba(84,68,146,0.62), rgba(54,44,96,0.66));backdrop-filter:blur(24px) saturate(1.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2), 0 10px 30px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:space-around">
+<sc-for list="{{ mNav }}" as="n" hint-placeholder-count="6"><span style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:{{ n.weight }};color:{{ n.color }}"><i class="{{ n.icon }}" style="font-size:21px"></i>{{ n.t }}</span></sc-for>
+</div>
+</div>
+</x-import>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:16px;padding:30px;border-radius:26px;max-width:1500px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.6)">SPEC</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Hành vi khi bấm</span><span style="font-size:14.5px;color:rgba(255,255,255,0.62)">Mọi hành vi dưới đây đều bấm thử được trong bản desktop ở trên.</span></div>
+<div style="display:grid;grid-template-columns:220px 240px minmax(0,1fr) minmax(0,1fr);gap:0;font-size:14px;line-height:1.5">
+<span style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.6);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.1)">THÀNH PHẦN</span><span style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.6);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.1)">THAO TÁC</span><span style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.6);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.1)">KẾT QUẢ</span><span style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:rgba(255,255,255,0.6);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.1)">GHI CHÚ TRIỂN KHAI</span>
+<sc-for list="{{ spec }}" as="s" hint-placeholder-count="14">
+<span style="padding:12px;font-weight:700;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.06)">{{ s.el }}</span>
+<span style="padding:12px;color:rgba(255,255,255,0.82);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.06)">{{ s.act }}</span>
+<span style="padding:12px;color:rgba(255,255,255,0.86);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.06);text-wrap:pretty">{{ s.res }}</span>
+<span style="padding:12px;font-family:'DM Mono',monospace;font-size:12.5px;color:#D5C0FF;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.06);text-wrap:pretty">{{ s.dev }}</span>
+</sc-for>
+</div>
+</div>
+
+
+<div id="l01" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">01</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Phiên ôn gộp</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Một hàng ôn trộn mọi loại · mục đánh dấu tay đi trước, sau đó theo hạn SRS</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">DESKTOP · MỤC NGỮ PHÁP · ĐÃ HIỆN ĐÁP ÁN</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.66)">orena.app/my-library/review</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="My library review desktop" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), radial-gradient(80% 60% at 90% 110%, rgba(192,88,148,0.12), transparent 64%), #060509;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:100px;flex:none;box-sizing:border-box;padding:0 56px;display:flex;align-items:center;gap:32px">
+<span style="display:flex;align-items:center;gap:12px;font-size:18px;color:rgba(255,255,255,0.78)"><i class="ph ph-x" style="font-size:22px"></i>Thư viện của tôi · Ôn tập</span>
+<div style="flex:1;display:flex;justify-content:center;align-items:center;gap:18px"><div style="width:560px;height:6px;border-radius:999px;background:rgba(255,255,255,0.14);overflow:hidden"><div style="width:39%;height:100%;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div><span style="font-family:'DM Mono',monospace;font-size:16px;color:rgba(255,255,255,0.74)">9 / 23</span></div>
+<span style="font-family:'DM Mono',monospace;font-size:15px;color:rgba(255,255,255,0.7)">~7 phút còn lại</span>
+</div>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;padding-bottom:70px">
+<div style="width:900px;box-sizing:border-box;padding:40px 56px;border-radius:30px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26), 0 22px 54px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:center;gap:12px"><span style="display:flex;align-items:center;gap:9px;height:36px;padding:0 15px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);font-family:'DM Mono',monospace;font-size:14px;letter-spacing:0.1em;color:#D5C0FF"><i class="ph ph-book-open-text" style="font-size:18px"></i>NGỮ PHÁP</span><span style="font-size:16px;color:rgba(255,255,255,0.7)">Bạn đánh dấu cần ôn · 2 ngày trước</span></div>
+<div style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center"><span style="font-family:'Noto Serif',Georgia,serif;font-size:40px;line-height:1.4">I går <span style="padding:0 10px;border-bottom:2px solid #B794FF;color:#D5C0FF;font-weight:600">spiste</span> vi middag hjemme.</span><span style="font-size:19px;color:rgba(255,255,255,0.74)">Chia động từ “spise” ở quá khứ</span></div>
+<div style="padding:20px 24px;border-radius:18px;background:rgba(10,7,20,0.42);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:14px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">ĐIỂM NGỮ PHÁP</span><span style="font-size:19px;line-height:1.55">Preteritum của động từ nhóm 2: gốc + <b>-te</b>. spise → spiste, lese → leste.</span></div>
+</div>
+<div style="width:900px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+<span style="height:74px;border-radius:18px;background:oklch(0.72 0.15 22 / 0.16);box-shadow:inset 0 0 0 1px oklch(0.72 0.15 22 / 0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font-size:19px;font-weight:700;color:oklch(0.86 0.11 22)">Quên</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.66)">&lt;1m · 1</span></span>
+<span style="height:74px;border-radius:18px;background:oklch(0.80 0.14 68 / 0.14);box-shadow:inset 0 0 0 1px oklch(0.80 0.14 68 / 0.42);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font-size:19px;font-weight:700;color:oklch(0.90 0.10 68)">Chưa chắc</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.66)">1d · 2</span></span>
+<span style="height:74px;border-radius:18px;background:oklch(0.78 0.13 160 / 0.14);box-shadow:inset 0 0 0 1px oklch(0.78 0.13 160 / 0.42);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font-size:19px;font-weight:700;color:oklch(0.88 0.11 160)">Nhớ rồi</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.66)">4d · 3</span></span>
+<span style="height:74px;border-radius:18px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font-size:19px;font-weight:700;color:#D5C0FF">Đã thuộc</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.66)">30d · 4</span></span>
+</div>
+<div style="width:900px;display:flex;align-items:center;gap:12px;font-size:16px;color:rgba(255,255,255,0.7)"><i class="ph ph-link-simple" style="font-size:18px"></i>Từ bài đọc “En vanlig tirsdag” · đoạn 3<span style="margin-left:auto;display:flex;align-items:center;gap:8px;font-weight:700;color:#D5C0FF">Mở màn gốc<i class="ph ph-arrow-square-out"></i></span></div>
+</div>
+</div>
+</div></div></div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · MỤC NGHE · CÂU TRONG LISTENING</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library review listening mobile" style="width:100%;height:100%;box-sizing:border-box;background:radial-gradient(100% 50% at 50% 0%, rgba(116,74,214,0.2), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 0;display:flex;align-items:center;gap:14px"><i class="ph ph-x" style="font-size:21px;color:rgba(255,255,255,0.78)"></i><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16);overflow:hidden"><div style="width:48%;height:100%;background:#8B5CF6"></div></div><span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.72)">11 / 23</span></div>
+<div style="flex:1;min-height:0;padding:18px 20px 0;display:flex">
+<div style="flex:1;border-radius:20px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));backdrop-filter:blur(24px) saturate(1.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26), 0 18px 44px rgba(0,0,0,0.3);padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:flex-start;display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.1em;color:#D5C0FF"><i class="ph ph-headphones" style="font-size:14px"></i>CÂU ĐÃ NGHE</span>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+<span style="width:84px;height:84px;border-radius:50%;background:linear-gradient(180deg, #9B67FF, #6A32E0);box-shadow:0 0 0 10px rgba(155,103,255,0.14), 0 14px 34px rgba(123,77,232,0.45);display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff"><i class="ph-fill ph-play"></i></span>
+<span style="font-size:14px;color:rgba(255,255,255,0.76);text-align:center">Nghe và nhắc lại trong đầu, rồi hiện câu</span>
+</div>
+<div style="padding:13px 14px;border-radius:14px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;flex-direction:column;gap:5px"><span style="font-family:'Noto Serif',Georgia,serif;font-size:19px;line-height:1.5">我们一起去喝咖啡吧。</span><span style="font-size:12.5px;color:rgba(255,255,255,0.72)">Mình cùng đi uống cà phê nhé.</span></div>
+</div>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+<span style="height:56px;border-radius:14px;background:oklch(0.72 0.15 22 / 0.16);box-shadow:inset 0 0 0 1px oklch(0.72 0.15 22 / 0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;color:oklch(0.86 0.11 22)">Quên<span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:rgba(255,255,255,0.62)">&lt;1m</span></span>
+<span style="height:56px;border-radius:14px;background:oklch(0.80 0.14 68 / 0.14);box-shadow:inset 0 0 0 1px oklch(0.80 0.14 68 / 0.42);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;color:oklch(0.90 0.10 68)">Chưa chắc<span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:rgba(255,255,255,0.62)">1d</span></span>
+<span style="height:56px;border-radius:14px;background:oklch(0.78 0.13 160 / 0.14);box-shadow:inset 0 0 0 1px oklch(0.78 0.13 160 / 0.42);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;color:oklch(0.88 0.11 160)">Nhớ rồi<span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:rgba(255,255,255,0.62)">4d</span></span>
+<span style="height:56px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;color:#D5C0FF">Đã thuộc<span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:rgba(255,255,255,0.62)">30d</span></span>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · MỤC GHI CHÚ · CHỈ ĐỌC LẠI</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library review note mobile" style="width:100%;height:100%;box-sizing:border-box;background:radial-gradient(100% 50% at 50% 0%, rgba(116,74,214,0.2), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 0;display:flex;align-items:center;gap:14px"><i class="ph ph-x" style="font-size:21px;color:rgba(255,255,255,0.78)"></i><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16);overflow:hidden"><div style="width:52%;height:100%;background:#8B5CF6"></div></div><span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.72)">12 / 23</span></div>
+<div style="flex:1;min-height:0;padding:18px 20px 0;display:flex">
+<div style="flex:1;border-radius:20px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));backdrop-filter:blur(24px) saturate(1.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26), 0 18px 44px rgba(0,0,0,0.3);padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:flex-start;display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.1em;color:#D5C0FF"><i class="ph ph-note-pencil" style="font-size:14px"></i>GHI CHÚ</span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;line-height:1.3">Khi nào dùng “seg”</span>
+<span style="font-size:15px;line-height:1.65;color:rgba(255,255,255,0.86)">Động từ phản thân cần “seg” khi chủ ngữ tự làm lên chính mình: glede seg, sette seg, legge seg. Chia theo ngôi: meg, deg, seg, oss, dere, seg.</span>
+<div style="margin-top:auto;padding:12px 13px;border-radius:13px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);font-family:'Noto Serif',Georgia,serif;font-size:14.5px;line-height:1.5;color:rgba(255,255,255,0.84)">Jeg setter <span style="color:#D5C0FF">meg</span> ned.</div>
+<span style="font-size:12.5px;color:rgba(255,255,255,0.66)">Viết trong Reading · Bokmål A2 · chương 4</span>
+</div>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:flex;gap:10px">
+<span style="flex:1;height:54px;border-radius:17px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:700;font-size:15px">Cần ôn lại</span>
+<span style="flex:1.3;height:54px;border-radius:17px;background:linear-gradient(180deg, #9B67FF, #6A32E0);box-shadow:0 10px 26px rgba(123,77,232,0.36);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff">Đã đọc lại</span>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">C · TỔNG KẾT PHIÊN</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library review summary mobile" style="width:100%;height:100%;box-sizing:border-box;background:radial-gradient(100% 50% at 50% 0%, rgba(116,74,214,0.2), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:1;min-height:0;padding:74px 20px 0;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">PHIÊN ÔN · 11 PHÚT</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.025em;line-height:1.1">Xong 23 mục</span></div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="height:8px;border-radius:999px;overflow:hidden;display:flex;gap:3px"><div style="flex:3;background:oklch(0.72 0.15 22)"></div><div style="flex:5;background:oklch(0.80 0.14 68)"></div><div style="flex:12;background:oklch(0.78 0.13 160)"></div><div style="flex:3;background:#B794FF"></div></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;color:oklch(0.86 0.11 22)">3</span><span style="font-size:12px;color:rgba(255,255,255,0.76)">Quên</span></div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;color:oklch(0.90 0.10 68)">5</span><span style="font-size:12px;color:rgba(255,255,255,0.76)">Chưa chắc</span></div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;color:oklch(0.88 0.11 160)">12</span><span style="font-size:12px;color:rgba(255,255,255,0.76)">Nhớ rồi</span></div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;color:#D5C0FF">3</span><span style="font-size:12px;color:rgba(255,255,255,0.76)">Đã thuộc</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">NÊN MỞ LẠI MÀN GỐC</span>
+<div style="border-radius:17px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.07)"><i class="ph ph-book-open-text" style="font-size:19px;color:#D5C0FF"></i><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Preteritum nhóm 2</span><span style="font-size:11.5px;color:rgba(255,255,255,0.66)">Ngữ pháp · En vanlig tirsdag</span></div><i class="ph ph-arrow-square-out" style="font-size:17px;color:#D5C0FF"></i></div>
+<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.07)"><i class="ph ph-headphones" style="font-size:19px;color:#D5C0FF"></i><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-family:'Noto Serif',Georgia,serif">我们一起去喝咖啡吧。</span><span style="font-size:11.5px;color:rgba(255,255,255,0.66)">Listening · 在咖啡店 · 01:42</span></div><i class="ph ph-arrow-square-out" style="font-size:17px;color:#D5C0FF"></i></div>
+<div style="display:flex;align-items:center;gap:12px;padding:13px 14px"><i class="ph ph-cards" style="font-size:19px;color:#D5C0FF"></i><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-family:'Noto Serif',Georgia,serif">认识</span><span style="font-size:11.5px;color:rgba(255,255,255,0.66)">Từ · Vocabulary · Mở sâu</span></div><i class="ph ph-arrow-square-out" style="font-size:17px;color:#D5C0FF"></i></div>
+</div>
+</div>
+<span style="font-size:13.5px;color:rgba(255,255,255,0.74)">Lần tới: 9 mục · ngày mai</span>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:flex;flex-direction:column;gap:10px">
+<span style="height:54px;border-radius:17px;background:linear-gradient(180deg, #9B67FF, #6A32E0);box-shadow:0 10px 26px rgba(123,77,232,0.36);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff">Về Thư viện</span>
+<span style="height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:700;font-size:15px">Ôn lại 3 mục Quên</span>
+</div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">THỨ TỰ HÀNG ÔN</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Mục đánh dấu “Cần ôn” trước, theo thời điểm đánh dấu. Sau đó mục đến hạn SRS, quá hạn lâu nhất lên trước. Trộn loại: không để quá 3 mục cùng loại liền nhau.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">CÁCH ÔN THEO LOẠI</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Từ: dùng chế độ trộn của Vocabulary. Ngữ pháp: câu điền chỗ trống từ ngữ cảnh gốc. Câu nghe: phát audio rồi hiện câu. Ghi chú, bài đọc, bài viết, bài nói: đọc lại hoặc nghe lại, chỉ có 2 nút Cần ôn lại / Đã đọc lại.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">4 MỨC CHẤM</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Quên, Chưa chắc, Nhớ rồi theo SRS. “Đã thuộc” giãn hạn tối đa và gỡ nhãn Cần ôn. Phím 1–4 trên desktop. Số dưới nút là hạn ôn tiếp theo.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">MỞ MÀN GỐC</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Trong phiên: mở màn gốc ở tab mới (desktop) hoặc tạm dừng phiên (mobile). Quay lại thì tiếp tục đúng mục đó. Màn tổng kết gợi ý mở lại các mục Quên có nguồn.</span></div>
+</div>
+</div>
+
+<div id="l02" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">02</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Chi tiết mục · mobile</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Desktop dùng ngăn bên phải đã có ở màn chính · mobile là màn toàn trang, cùng các khối</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · TỪ</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="Item detail word mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 12px;display:flex;align-items:center;gap:12px"><i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:rgba(196,178,255,0.14);color:#E4D7FF"><i class="ph ph-cards"></i>Từ · Na Uy</span><i class="ph ph-dots-three" style="margin-left:auto;font-size:22px;color:rgba(255,255,255,0.8)"></i></div>
+<div style="flex:1;min-height:0;padding:6px 20px 0;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:34px">glede seg</span><span style="font-size:15px;color:rgba(255,255,255,0.8)">mong chờ, háo hức</span></div>
+<div style="padding:13px 14px;border-radius:14px;background:rgba(6,4,12,0.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.62)">NGỮ CẢNH GỐC</span><span style="font-family:'Noto Serif',Georgia,serif;font-size:15px;line-height:1.55">Jeg <span style="color:#D5C0FF">gleder meg</span> til helgen.</span><span style="font-size:13px;font-weight:700;color:#C7B2FF">Mở bài đọc · đoạn 2</span></div>
+<div style="display:flex;padding:4px;border-radius:12px;background:rgba(6,4,12,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><span style="flex:1;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;color:rgba(255,255,255,0.72)">Bình thường</span><span style="flex:1;height:38px;border-radius:9px;background:rgba(155,103,255,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">Cần ôn</span><span style="flex:1;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;color:rgba(255,255,255,0.72)">Đã thuộc</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<div style="padding:10px 11px;border-radius:12px;background:rgba(255,255,255,0.05);display:flex;flex-direction:column;gap:3px"><span style="font-family:'DM Mono',monospace;font-size:9.5px;color:rgba(255,255,255,0.6)">LƯU</span><span style="font-size:13.5px;font-weight:700">12/9</span></div>
+<div style="padding:10px 11px;border-radius:12px;background:rgba(255,255,255,0.05);display:flex;flex-direction:column;gap:3px"><span style="font-family:'DM Mono',monospace;font-size:9.5px;color:rgba(255,255,255,0.6)">ĐÃ ÔN</span><span style="font-size:13.5px;font-weight:700">4 lần</span></div>
+<div style="padding:10px 11px;border-radius:12px;background:rgba(255,255,255,0.05);display:flex;flex-direction:column;gap:3px"><span style="font-family:'DM Mono',monospace;font-size:9.5px;color:rgba(255,255,255,0.6)">HẠN TỚI</span><span style="font-size:13.5px;font-weight:700;color:oklch(0.90 0.10 68)">hôm nay</span></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:7px"><span style="height:32px;padding:0 12px;border-radius:999px;background:rgba(155,103,255,0.2);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.3);display:flex;align-items:center;gap:6px;font-size:13px"><i class="ph ph-folder-simple"></i>Cảm xúc</span><span style="height:32px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,0.8)"><i class="ph ph-plus"></i>Thêm vào bộ</span></div>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:flex;gap:10px"><span style="flex:1;height:52px;border-radius:16px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px">Mở sâu</span><span style="flex:1.2;height:52px;border-radius:16px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;gap:7px;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:#fff"><i class="ph-fill ph-play"></i>Ôn mục này</span></div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · BÀI VIẾT ĐÃ NỘP</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="Item detail writing mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 12px;display:flex;align-items:center;gap:12px"><i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:rgba(196,178,255,0.14);color:#E4D7FF"><i class="ph ph-pen-nib"></i>Bài viết · Na Uy</span><i class="ph ph-dots-three" style="margin-left:auto;font-size:22px;color:rgba(255,255,255,0.8)"></i></div>
+<div style="flex:1;min-height:0;padding:6px 20px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;line-height:1.25">Min helg</span><span style="font-size:13px;color:rgba(255,255,255,0.7)">Nộp 18/9 · 142 từ · B1 ước tính</span></div>
+<div style="padding:14px;border-radius:14px;background:rgba(6,4,12,0.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);font-family:'Noto Serif',Georgia,serif;font-size:15px;line-height:1.65">I helgen <span style="text-decoration:underline wavy oklch(0.84 0.13 68);text-underline-offset:4px">jeg besøkte</span> bestemoren min. Vi <span style="text-decoration:underline wavy oklch(0.84 0.13 68);text-underline-offset:4px">spiset</span> middag og gikk en tur…</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.62)">2 LỖI ĐÃ SỬA · LƯU THÀNH ĐIỂM NGỮ PHÁP</span>
+<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,0.05)"><span style="flex:1;font-size:13.5px">Đảo ngữ V2: <b>besøkte jeg</b></span><i class="ph-fill ph-check-circle" style="font-size:18px;color:oklch(0.84 0.13 160)"></i></div>
+<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,0.05)"><span style="flex:1;font-size:13.5px">Preteritum: <b>spiste</b></span><i class="ph-fill ph-check-circle" style="font-size:18px;color:oklch(0.84 0.13 160)"></i></div>
+</div>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:flex;gap:10px"><span style="flex:1;height:52px;border-radius:16px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px">Viết lại</span><span style="flex:1.2;height:52px;border-radius:16px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:#fff">Mở nhận xét đầy đủ</span></div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">C · BÀI NÓI ĐÃ GHI ÂM</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="Item detail speaking mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 12px;display:flex;align-items:center;gap:12px"><i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:rgba(196,178,255,0.14);color:#E4D7FF"><i class="ph ph-microphone"></i>Bài nói · Trung</span><i class="ph ph-dots-three" style="margin-left:auto;font-size:22px;color:rgba(255,255,255,0.8)"></i></div>
+<div style="flex:1;min-height:0;padding:6px 20px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;line-height:1.25">Giới thiệu bản thân</span><span style="font-size:13px;color:rgba(255,255,255,0.7)">Ghi 20/9 · 0:48 · 3 lần thử</span></div>
+<div style="padding:14px;border-radius:14px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;align-items:center;gap:12px">
+<span style="width:44px;height:44px;flex:none;border-radius:50%;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></span>
+<div style="flex:1;height:36px;display:flex;align-items:center;gap:3px"><sc-for list="{{ p2_wave }}" as="h" hint-placeholder-count="30"><span style="width:3px;border-radius:999px;background:{{ h.c }};height:{{ h.px }}"></span></sc-for></div>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.7)">0:48</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:30px;color:oklch(0.88 0.11 160)">82</span><span style="font-size:13.5px;color:rgba(255,255,255,0.78)">Lần tốt nhất · lần đầu 64</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.62)">CẦN SỬA</span>
+<div style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,0.05);display:flex;align-items:center;gap:10px"><span style="font-family:'Noto Serif',Georgia,serif;font-size:17px">学生</span><span style="flex:1;font-size:13px;color:rgba(255,255,255,0.8)">xué · thanh 2 đọc thành thanh 4</span></div>
+</div>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:flex;gap:10px"><span style="flex:1;height:52px;border-radius:16px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px">So với mẫu</span><span style="flex:1.2;height:52px;border-radius:16px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;gap:7px;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:#fff"><i class="ph ph-microphone"></i>Nói lại</span></div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">KHỐI CHUNG</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Mọi loại có: nhãn loại + ngôn ngữ, nội dung chính, nguồn gốc, trạng thái 3 mức, lịch sử ôn, bộ sưu tập. Nút chính đổi theo loại: Ôn mục này, Mở nhận xét, Nói lại, Đọc tiếp.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">MENU ⋯</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Sửa (chỉ từ tự thêm, ghi chú) · Đặt lại tiến độ SRS · Xoá khỏi thư viện. Xoá và đặt lại đều hỏi xác nhận (màn 08C). Bài viết, bài nói đã nộp không sửa được, chỉ tạo bản mới.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">LỖI THÀNH ĐIỂM NGỮ PHÁP</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Lỗi đã sửa trong bài viết và âm đọc sai trong bài nói tự thêm vào Thư viện dưới loại Ngữ pháp / Phát âm, liên kết ngược về bài gốc.</span></div>
+</div>
+</div>
+
+<div id="l03" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">03</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Danh sách theo loại</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Chạm tab loại ở màn chính · mỗi loại hiện đúng thông tin của nó · lọc ngôn ngữ, kỹ năng, thời gian</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">DESKTOP · BÀI ĐỌC ĐÃ ĐỌC</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.66)">orena.app/my-library/reading</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="My library reading list desktop" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), #060509;display:flex;overflow:hidden">
+<div style="width:280px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset -1px 0 0 rgba(172,144,255,0.12);padding:26px 18px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px"><div style="width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg, #9B6BFF, #6E7BFF)"></div><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Orena</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ p2_nav }}" as="n" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:{{ n.bg }};box-shadow:{{ n.ring }};color:{{ n.color }};font-weight:{{ n.weight }};font-size:17px"><span style="font-size:23px"><i class="{{ n.icon }}"></i></span>{{ n.t }}</div></sc-for></div>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<div style="height:84px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 -1px 0 rgba(172,144,255,0.12);padding:0 40px;display:flex;align-items:center;gap:18px">
+<i class="ph ph-arrow-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Bài đọc đã đọc</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.62)">64 bài</span>
+<div style="margin-left:auto;display:flex;gap:10px">
+<span style="height:44px;padding:0 15px;border-radius:12px;background:rgba(155,103,255,0.2);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.34);display:flex;align-items:center;gap:8px;font-size:14.5px">Na Uy<i class="ph ph-caret-down" style="font-size:12px"></i></span>
+<span style="height:44px;padding:0 15px;border-radius:12px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);display:flex;align-items:center;gap:8px;font-size:14.5px;color:rgba(255,255,255,0.8)">Mọi trạng thái<i class="ph ph-caret-down" style="font-size:12px"></i></span>
+<span style="height:44px;padding:0 15px;border-radius:12px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);display:flex;align-items:center;gap:8px;font-size:14.5px;color:rgba(255,255,255,0.8)"><i class="ph ph-calendar-blank" style="font-size:17px"></i>30 ngày<i class="ph ph-caret-down" style="font-size:12px"></i></span>
+<span style="height:44px;padding:0 15px;border-radius:12px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);display:flex;align-items:center;gap:8px;font-size:14.5px;color:rgba(255,255,255,0.8)"><i class="ph ph-sort-descending" style="font-size:17px"></i>Mới đọc</span>
+</div>
+</div>
+<div style="flex:1;padding:26px 40px;display:flex;flex-direction:column;gap:10px;max-width:1400px">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 150px 200px 130px 120px;gap:20px;padding:0 22px 6px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.12em;color:rgba(255,255,255,0.6)"><span>BÀI</span><span>TRÌNH ĐỘ</span><span>ĐÃ ĐỌC</span><span>TỪ ĐÃ LƯU</span><span>TRẠNG THÁI</span></div>
+<sc-for list="{{ p2_reads }}" as="r" hint-placeholder-count="7">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 150px 200px 130px 120px;gap:20px;align-items:center;padding:18px 22px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="min-width:0;display:flex;flex-direction:column;gap:5px"><span style="font-family:'Noto Serif',Georgia,serif;font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><span style="font-size:13.5px;color:rgba(255,255,255,0.64)">{{ r.src }}</span></div>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.8)">{{ r.lv }}</span>
+<div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:5px;border-radius:999px;background:rgba(255,255,255,0.12);overflow:hidden"><div style="height:100%;border-radius:999px;background:#9B67FF;width:{{ r.pct }}"></div></div><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.7);width:40px">{{ r.pct }}</span></div>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.8)">{{ r.words }}</span>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;padding:5px 10px;border-radius:999px;text-align:center;background:{{ r.stBg }};color:{{ r.stC }}">{{ r.st }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div></div></div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · NGỮ PHÁP · NHÓM THEO CHỦ ĐIỂM</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library grammar list mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 12px;display:flex;align-items:center;gap:12px"><i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;flex:1">Điểm ngữ pháp</span><span style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,0.64)">38</span></div>
+<div style="flex:none;padding:0 20px 14px;display:flex;gap:8px;overflow:hidden">
+<span style="flex:none;height:36px;padding:0 13px;border-radius:999px;background:rgba(155,103,255,0.24);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.36);display:flex;align-items:center;gap:6px;font-size:13px">Na Uy<i class="ph ph-caret-down" style="font-size:11px"></i></span>
+<span style="flex:none;height:36px;padding:0 13px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,0.8)">Cần ôn · 5</span>
+<span style="flex:none;height:36px;padding:0 13px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,0.8)">30 ngày<i class="ph ph-caret-down" style="font-size:11px"></i></span>
+</div>
+<div style="flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.64);padding:4px 0">ĐỘNG TỪ · 14</span>
+<sc-for list="{{ p2_grammar }}" as="g" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:12px;padding:13px 2px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.07)"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:700">{{ g.t }}</span><span style="font-size:12.5px;color:rgba(255,255,255,0.66)">{{ g.sub }}</span></div><span style="font-family:'DM Mono',monospace;font-size:10.5px;padding:4px 9px;border-radius:999px;background:{{ g.bg }};color:{{ g.c }}">{{ g.st }}</span></div>
+</sc-for>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · SÁCH ĐANG ĐỌC</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library books mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px"><i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;flex:1">Sách đang đọc</span><span style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,0.64)">4</span></div>
+<div style="flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ p2_books }}" as="b" hint-placeholder-count="4">
+<div style="display:flex;gap:14px;padding:12px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="width:62px;height:88px;flex:none;border-radius:8px;background:{{ b.cover }};box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12)"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center"><span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.t }}</span><span style="font-size:12.5px;color:rgba(255,255,255,0.68)">{{ b.sub }}</span><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.12);overflow:hidden"><div style="height:100%;background:#9B67FF;width:{{ b.pct }}"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.7)">{{ b.pct }}</span></div></div>
+</div>
+</sc-for>
+</div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">CỘT THEO LOẠI</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Bài đọc: trình độ, % đã đọc, số từ đã lưu. Listening: thời lượng, % đã nghe. Từ: nghĩa, hạn ôn. Ngữ pháp: nhóm theo chủ điểm. Ghi chú: 2 dòng đầu. Bài viết/nói: ngày nộp, điểm. Sách: bìa, chương, %.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">LỌC</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Ngôn ngữ mặc định theo bộ lọc ở màn chính. Trạng thái: Mọi · Cần ôn · Đến hạn · Đã thuộc. Thời gian: 7 ngày, 30 ngày, 3 tháng, Tất cả. Bộ lọc giữ khi đổi loại và lưu vào URL.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">CHẠM HÀNG</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Mở chi tiết (02). Bài đọc, Listening, Sách: nút phụ “Đọc tiếp / Nghe tiếp” mở đúng vị trí dừng. Nhấn giữ (mobile) hoặc checkbox khi hover (desktop) để vào chọn nhiều (08).</span></div>
+</div>
+</div>
+
+<div id="l04" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">04</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Tìm kiếm</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Tìm trong mọi loại đã học · kết quả nhóm theo loại, tô chữ khớp</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">DESKTOP · KẾT QUẢ “helg”</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.66)">orena.app/my-library?q=helg</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="My library search desktop" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), #060509;display:flex;overflow:hidden">
+<div style="width:280px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset -1px 0 0 rgba(172,144,255,0.12);padding:26px 18px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px"><div style="width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg, #9B6BFF, #6E7BFF)"></div><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Orena</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ p2_nav }}" as="n" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:{{ n.bg }};box-shadow:{{ n.ring }};color:{{ n.color }};font-weight:{{ n.weight }};font-size:17px"><span style="font-size:23px"><i class="{{ n.icon }}"></i></span>{{ n.t }}</div></sc-for></div>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<div style="height:84px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 -1px 0 rgba(172,144,255,0.12);padding:0 40px;display:flex;align-items:center;gap:20px">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Thư viện của tôi</span>
+<div style="margin-left:auto;width:560px;height:48px;box-sizing:border-box;border-radius:12px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.85);display:flex;align-items:center;gap:10px;padding:0 15px;font-size:17px"><i class="ph ph-magnifying-glass" style="font-size:18px"></i><span style="flex:1">helg</span><i class="ph ph-x-circle" style="font-size:19px;color:rgba(255,255,255,0.6)"></i></div>
+</div>
+<div style="flex:1;padding:26px 40px;display:flex;flex-direction:column;gap:22px;max-width:1300px">
+<div style="display:flex;gap:8px"><span style="height:40px;padding:0 15px;border-radius:12px;background:rgba(155,103,255,0.24);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.36);display:flex;align-items:center;font-size:14.5px;font-weight:700">Tất cả · 9</span><span style="height:40px;padding:0 15px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:14.5px;color:rgba(255,255,255,0.8)">Từ · 3</span><span style="height:40px;padding:0 15px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:14.5px;color:rgba(255,255,255,0.8)">Bài đọc · 2</span><span style="height:40px;padding:0 15px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:14.5px;color:rgba(255,255,255,0.8)">Ghi chú · 1</span><span style="height:40px;padding:0 15px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:14.5px;color:rgba(255,255,255,0.8)">Bài viết · 1</span><span style="height:40px;padding:0 15px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:14.5px;color:rgba(255,255,255,0.8)">Listening · 2</span></div>
+<sc-for list="{{ p2_results }}" as="g" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)"><i class="{{ g.icon }}" style="font-size:15px;color:#D5C0FF"></i>{{ g.h }}</span>
+<div style="border-radius:18px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;flex-direction:column">
+<sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:20px;padding:16px 22px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.06)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:18px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.pre }}<span style="color:#D5C0FF;font-weight:600;background:rgba(155,103,255,0.22);border-radius:4px;padding:0 2px">{{ r.hit }}</span>{{ r.post }}</span><span style="font-size:14px;color:rgba(255,255,255,0.64)">{{ r.src }}</span><i class="ph ph-caret-right" style="font-size:16px;color:rgba(255,255,255,0.6)"></i></div></sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div></div></div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · MỚI MỞ · TÌM GẦN ĐÂY</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library search recent mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 16px;display:flex;align-items:center;gap:12px"><div style="flex:1;height:46px;border-radius:14px;background:rgba(196,178,255,0.16);box-shadow:inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.85);display:flex;align-items:center;gap:10px;padding:0 13px;font-size:15px;color:rgba(255,255,255,0.55)"><i class="ph ph-magnifying-glass" style="font-size:18px;color:rgba(255,255,255,0.8)"></i>Tìm từ, bài đọc, ghi chú…</div><span style="font-size:15px;color:#D5C0FF;font-weight:700">Hủy</span></div>
+<div style="padding:0 20px;display:flex;flex-direction:column;gap:6px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.64);padding-bottom:4px">TÌM GẦN ĐÂY</span>
+<div style="display:flex;align-items:center;gap:12px;height:48px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.07)"><i class="ph ph-clock-counter-clockwise" style="font-size:18px;color:rgba(255,255,255,0.66)"></i><span style="flex:1;font-size:15px">glede</span><i class="ph ph-x" style="font-size:15px;color:rgba(255,255,255,0.55)"></i></div>
+<div style="display:flex;align-items:center;gap:12px;height:48px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.07)"><i class="ph ph-clock-counter-clockwise" style="font-size:18px;color:rgba(255,255,255,0.66)"></i><span style="flex:1;font-size:15px">preteritum</span><i class="ph ph-x" style="font-size:15px;color:rgba(255,255,255,0.55)"></i></div>
+<div style="display:flex;align-items:center;gap:12px;height:48px"><i class="ph ph-clock-counter-clockwise" style="font-size:18px;color:rgba(255,255,255,0.66)"></i><span style="flex:1;font-size:15px;font-family:'Noto Serif',Georgia,serif">咖啡</span><i class="ph ph-x" style="font-size:15px;color:rgba(255,255,255,0.55)"></i></div>
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.64);padding:18px 0 6px">TÌM THEO LOẠI</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><span style="height:36px;padding:0 13px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px"><i class="ph ph-cards"></i>Từ</span><span style="height:36px;padding:0 13px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px"><i class="ph ph-book-open-text"></i>Ngữ pháp</span><span style="height:36px;padding:0 13px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px"><i class="ph ph-note-pencil"></i>Ghi chú</span><span style="height:36px;padding:0 13px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;font-size:13px"><i class="ph ph-article"></i>Bài đọc</span></div>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · KHÔNG CÓ KẾT QUẢ</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library search empty mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 16px;display:flex;align-items:center;gap:12px"><div style="flex:1;height:46px;border-radius:14px;background:rgba(196,178,255,0.16);box-shadow:inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.85);display:flex;align-items:center;gap:10px;padding:0 13px;font-size:15px"><i class="ph ph-magnifying-glass" style="font-size:18px;color:rgba(255,255,255,0.8)"></i><span style="flex:1">fjellet</span><i class="ph-fill ph-x-circle" style="font-size:18px;color:rgba(255,255,255,0.5)"></i></div><span style="font-size:15px;color:#D5C0FF;font-weight:700">Hủy</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 32px 120px;text-align:center">
+<span style="width:64px;height:64px;border-radius:50%;background:rgba(196,178,255,0.12);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:26px;color:rgba(255,255,255,0.84)"><i class="ph ph-magnifying-glass"></i></span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:19px">Chưa học “fjellet”</span>
+<span style="font-size:14px;line-height:1.55;color:rgba(255,255,255,0.76)">Không có trong thư viện của bạn. Có trong từ điển tiếng Na Uy.</span>
+<span style="margin-top:6px;height:48px;padding:0 20px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;gap:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14.5px">Tra trong Vocabulary<i class="ph ph-arrow-right"></i></span>
+</div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">PHẠM VI</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Tìm trong tiêu đề, nội dung, nghĩa tiếng Việt và ngữ cảnh gốc của mọi mục đã học. Theo bộ lọc ngôn ngữ đang chọn. Mỗi nhóm hiện tối đa 3 kết quả, “Xem tất cả” mở danh sách loại (03) đã lọc sẵn.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">KHÔNG CÓ KẾT QUẢ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Thư viện chỉ chứa thứ đã học, nên không tra từ điển ở đây. Nếu từ có trong từ điển thì hiện nút sang Vocabulary, ô tìm điền sẵn chữ đã gõ.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">PHÍM TẮT</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Desktop: “/” để tìm, ↑↓ chọn, Enter mở chi tiết, Esc xoá. Tìm gần đây lưu 8 mục, xoá được từng mục.</span></div>
+</div>
+</div>
+
+<div id="l05" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">05</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Bộ sưu tập</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Mỗi bộ một loại · ôn riêng một bộ · sắp xếp thủ công</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">DESKTOP · CHI TIẾT BỘ “CẢM XÚC”</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.66)">orena.app/my-library/collections/cam-xuc</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="Collection detail desktop" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), #060509;display:flex;overflow:hidden">
+<div style="width:280px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset -1px 0 0 rgba(172,144,255,0.12);padding:26px 18px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px"><div style="width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg, #9B6BFF, #6E7BFF)"></div><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Orena</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ p2_nav }}" as="n" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:{{ n.bg }};box-shadow:{{ n.ring }};color:{{ n.color }};font-weight:{{ n.weight }};font-size:17px"><span style="font-size:23px"><i class="{{ n.icon }}"></i></span>{{ n.t }}</div></sc-for></div>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:34px 48px;gap:26px;max-width:1400px">
+<span style="display:flex;align-items:center;gap:10px;font-size:16px;color:rgba(255,255,255,0.74)"><i class="ph ph-arrow-left"></i>Thư viện của tôi / Bộ sưu tập</span>
+<div style="display:flex;align-items:flex-end;gap:24px">
+<span style="width:96px;height:96px;border-radius:24px;background:rgba(196,178,255,0.16);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26);display:flex;align-items:center;justify-content:center;font-size:44px;color:#D5C0FF"><i class="ph ph-cards"></i></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:44px;letter-spacing:-0.03em">Cảm xúc</span><span style="font-size:17px;color:rgba(255,255,255,0.72)">Từ · Na Uy · 18 mục · 4 cần ôn · sửa 2 ngày trước</span></div>
+<span style="height:52px;padding:0 18px;border-radius:14px;background:rgba(255,255,255,0.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;gap:8px;font-size:16px"><i class="ph ph-pencil-simple"></i>Đổi tên</span>
+<span style="height:52px;padding:0 24px;border-radius:14px;background:linear-gradient(180deg, #9B67FF, #6A32E0);box-shadow:0 10px 26px rgba(123,77,232,0.36);display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:#fff"><i class="ph-fill ph-play"></i>Ôn bộ này · 4</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ p2_coll }}" as="c" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:18px;padding:16px 20px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<i class="ph ph-dots-six-vertical" style="font-size:20px;color:rgba(255,255,255,0.5)"></i>
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:20px;width:220px">{{ c.t }}</span>
+<span style="flex:1;font-size:16px;color:rgba(255,255,255,0.8)">{{ c.g }}</span>
+<span style="font-size:14px;color:rgba(255,255,255,0.64);width:240px">{{ c.src }}</span>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;padding:5px 10px;border-radius:999px;width:84px;text-align:center;background:{{ c.bg }};color:{{ c.c }}">{{ c.st }}</span>
+<i class="ph ph-minus-circle" style="font-size:20px;color:rgba(255,255,255,0.6)"></i>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div></div></div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · DANH SÁCH BỘ</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="Collections list mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 16px;display:flex;align-items:center;gap:12px"><i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;flex:1">Bộ sưu tập</span><span style="width:42px;height:42px;border-radius:13px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:19px"><i class="ph ph-plus"></i></span></div>
+<div style="flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ p2_colls }}" as="c" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:13px;padding:14px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<span style="width:42px;height:42px;flex:none;border-radius:12px;background:rgba(196,178,255,0.14);display:flex;align-items:center;justify-content:center;font-size:19px;color:#D5C0FF"><i class="{{ c.icon }}"></i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:700">{{ c.t }}</span><span style="font-size:12.5px;color:rgba(255,255,255,0.66)">{{ c.sub }}</span></div>
+<sc-if value="{{ c.due }}" hint-placeholder-val="{{ false }}"><span style="font-family:'DM Mono',monospace;font-size:11px;padding:4px 9px;border-radius:999px;background:rgba(155,103,255,0.24);color:#EFE6FF">{{ c.due }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">MỘT LOẠI MỘT BỘ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Loại chọn lúc tạo, không đổi được. Bộ Từ có thể trộn nhiều ngôn ngữ, các loại khác cũng vậy. Một mục có thể nằm trong nhiều bộ.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">ÔN BỘ NÀY</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Mở phiên ôn (01) chỉ với mục đến hạn hoặc Cần ôn trong bộ. Không có mục nào đến hạn: nút đổi thành “Luyện cả bộ” và không ghi vào SRS.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">SẮP XẾP VÀ GỠ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Kéo tay cầm để sắp xếp, lưu ngay. Nút (−) gỡ khỏi bộ, không xoá khỏi thư viện, toast có Hoàn tác. Xoá bộ ở menu Đổi tên, hỏi xác nhận, các mục vẫn còn.</span></div>
+</div>
+</div>
+
+<div id="l06" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">06</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Tạo bộ và thêm vào bộ</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Chọn loại trước, rồi đặt tên · sheet thêm vào bộ chỉ hiện bộ cùng loại</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · TẠO BỘ MỚI</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="Create collection mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08)"><span style="font-size:15px;color:rgba(255,255,255,0.8)">Hủy</span><span style="flex:1;text-align:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:17px">Bộ sưu tập mới</span><span style="font-size:15px;font-weight:700;color:#D5C0FF">Tạo</span></div>
+<div style="flex:1;min-height:0;padding:20px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.82)">Tên bộ</span><div style="height:52px;border-radius:15px;background:rgba(196,178,255,0.1);box-shadow:inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.85);display:flex;align-items:center;padding:0 14px;font-size:16px">Du lịch</div></div>
+<div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.82)">Loại mục</span>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+<sc-for list="{{ p2_kinds }}" as="k" hint-placeholder-count="8"><span style="height:48px;border-radius:14px;display:flex;align-items:center;gap:9px;padding:0 13px;font-size:14px;background:{{ k.bg }};box-shadow:{{ k.ring }};font-weight:{{ k.w }}"><i class="{{ k.icon }}" style="font-size:17px;color:#D5C0FF"></i>{{ k.t }}</span></sc-for>
+</div>
+<span style="font-size:12px;color:rgba(255,255,255,0.66)">Không đổi được loại sau khi tạo.</span></div>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · THÊM VÀO BỘ · SHEET</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="Add to collection sheet mobile" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:#060509;color:#f3f1f6;overflow:hidden">
+<div style="position:absolute;inset:0;background:rgba(4,2,12,0.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;border-radius:26px 26px 0 0;background:linear-gradient(180deg, rgba(88,70,152,0.86), rgba(50,40,90,0.9));backdrop-filter:blur(30px) saturate(1.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24), 0 -20px 50px rgba(0,0,0,0.5);padding:10px 20px 34px;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:center;width:40px;height:5px;border-radius:999px;background:rgba(255,255,255,0.3)"></span>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px">Thêm vào bộ</span><span style="font-size:13px;color:rgba(255,255,255,0.74)">“glede seg” · chỉ hiện bộ loại Từ</span></div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 14px;border-radius:15px;background:oklch(0.7 0.19 296 / 0.2);box-shadow:inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.7)"><i class="ph ph-cards" style="font-size:19px;color:#D5C0FF"></i><span style="flex:1;font-size:15px">Cảm xúc</span><span style="font-size:12px;color:rgba(255,255,255,0.64)">18</span><i class="ph-fill ph-check-square" style="font-size:22px;color:#D5C0FF"></i></div>
+<div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 14px;border-radius:15px;background:rgba(10,7,20,0.3);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><i class="ph ph-cards" style="font-size:19px;color:#D5C0FF"></i><span style="flex:1;font-size:15px">Hay nhầm</span><span style="font-size:12px;color:rgba(255,255,255,0.64)">26</span><i class="ph ph-square" style="font-size:22px;color:rgba(255,255,255,0.5)"></i></div>
+<div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 14px;border-radius:15px;background:rgba(10,7,20,0.3);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><i class="ph ph-cards" style="font-size:19px;color:#D5C0FF"></i><span style="flex:1;font-size:15px">Đi làm</span><span style="font-size:12px;color:rgba(255,255,255,0.64)">41</span><i class="ph ph-square" style="font-size:22px;color:rgba(255,255,255,0.5)"></i></div>
+<div style="display:flex;align-items:center;gap:12px;height:52px;padding:0 14px;color:#D5C0FF"><i class="ph ph-plus" style="font-size:18px"></i><span style="font-size:15px;font-weight:700">Tạo bộ Từ mới</span></div>
+</div>
+<span style="height:54px;border-radius:17px;background:linear-gradient(180deg, #9B67FF, #6A32E0);box-shadow:0 10px 26px rgba(123,77,232,0.36);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff">Xong</span>
+</div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">TẠO BỘ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Nút Tạo tắt khi thiếu tên hoặc loại. Tên tối đa 40 ký tự, trùng tên thì báo dưới ô. Mở từ sheet thêm vào bộ: loại đã chọn sẵn và khoá, tạo xong mục được thêm luôn.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">THÊM VÀO BỘ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Chọn được nhiều bộ. Mỗi lần tick lưu ngay, “Xong” chỉ đóng sheet. Bỏ tick là gỡ khỏi bộ. Desktop dùng popover có cùng nội dung, mở cạnh nút thư mục.</span></div>
+</div>
+</div>
+
+<div id="l07" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">07</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Trạng thái</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Trống · hết mục cần ôn · đang tải · lỗi và offline · desktop căn giữa cùng nội dung</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · NGƯỜI HỌC MỚI</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library empty mobile" style="width:100%;height:100%;box-sizing:border-box;background:radial-gradient(100% 55% at 20% -6%, rgba(116,74,214,0.26), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="padding:60px 20px 12px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.02em">Thư viện của tôi</span></div>
+<div style="padding:24px 20px 0;display:flex;flex-direction:column;gap:10px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Chưa có gì ở đây</span><span style="font-size:14.5px;line-height:1.6;color:rgba(255,255,255,0.76)">Mọi thứ bạn đọc, nghe, lưu, viết và nói sẽ tự vào đây để ôn lại.</span></div>
+<div style="padding:22px 20px 0;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:13px;padding:14px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><span style="width:40px;height:40px;border-radius:12px;background:rgba(196,178,255,0.14);display:flex;align-items:center;justify-content:center;font-size:19px;color:#D5C0FF"><i class="ph ph-article"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14.5px;font-weight:700">Đọc một bài</span><span style="font-size:12.5px;color:rgba(255,255,255,0.68)">Chạm từ để lưu</span></div><i class="ph ph-caret-right" style="color:rgba(255,255,255,0.6)"></i></div>
+<div style="display:flex;align-items:center;gap:13px;padding:14px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><span style="width:40px;height:40px;border-radius:12px;background:rgba(196,178,255,0.14);display:flex;align-items:center;justify-content:center;font-size:19px;color:#D5C0FF"><i class="ph ph-headphones"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14.5px;font-weight:700">Nghe một đoạn</span><span style="font-size:12.5px;color:rgba(255,255,255,0.68)">Lưu câu muốn nhớ</span></div><i class="ph ph-caret-right" style="color:rgba(255,255,255,0.6)"></i></div>
+<div style="display:flex;align-items:center;gap:13px;padding:14px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><span style="width:40px;height:40px;border-radius:12px;background:rgba(196,178,255,0.14);display:flex;align-items:center;justify-content:center;font-size:19px;color:#D5C0FF"><i class="ph ph-cards"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14.5px;font-weight:700">Mở Vocabulary</span><span style="font-size:12.5px;color:rgba(255,255,255,0.68)">Bắt đầu với bộ có sẵn</span></div><i class="ph ph-caret-right" style="color:rgba(255,255,255,0.6)"></i></div>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · HÔM NAY ĐÃ ÔN XONG</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library all done mobile" style="width:100%;height:100%;box-sizing:border-box;padding:60px 18px 0;background:radial-gradient(90% 40% at 30% 0%, rgba(116,74,214,0.28), transparent 70%), #060509;color:#f3f1f6;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.02em">Thư viện của tôi</span>
+<div style="padding:18px;border-radius:20px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;align-items:center;gap:14px">
+<span style="width:48px;height:48px;flex:none;border-radius:50%;background:oklch(0.78 0.13 160 / 0.14);box-shadow:inset 0 0 0 1px oklch(0.78 0.13 160 / 0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:oklch(0.88 0.11 160)"><i class="ph ph-check"></i></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:17px">Hôm nay đã ôn xong</span><span style="font-size:13px;color:rgba(255,255,255,0.74)">Lần tới: 9 mục · ngày mai</span></div>
+</div>
+<span style="font-size:13px;color:rgba(255,255,255,0.72);padding:0 2px">Thẻ “Cần ôn hôm nay” thu gọn thành dòng này. Phần thư viện bên dưới giữ nguyên.</span>
+<div style="display:flex;gap:8px;overflow:hidden"><span style="flex:none;height:36px;padding:0 13px;border-radius:12px;background:rgba(155,103,255,0.24);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.36);display:flex;align-items:center;font-size:13px;font-weight:700">Tất cả</span><span style="flex:none;height:36px;padding:0 13px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:13px">Từ</span><span style="flex:none;height:36px;padding:0 13px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:13px">Bài đọc</span><span style="flex:none;height:36px;padding:0 13px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);display:flex;align-items:center;font-size:13px">Ngữ pháp</span></div>
+<div style="height:72px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div>
+<div style="height:72px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div>
+<div style="height:72px;border-radius:16px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">C · ĐANG TẢI</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library loading mobile" style="width:100%;height:100%;box-sizing:border-box;padding:60px 18px 0;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.02em">Thư viện của tôi</span>
+<div style="height:170px;border-radius:20px;background:linear-gradient(180deg, rgba(120,92,200,0.24), rgba(72,56,126,0.2));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);padding:18px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px"><span style="width:120px;height:10px;border-radius:6px;background:rgba(255,255,255,0.12)"></span><span style="width:90px;height:34px;border-radius:8px;background:rgba(255,255,255,0.12)"></span><span style="width:200px;height:10px;border-radius:6px;background:rgba(255,255,255,0.1)"></span><span style="margin-top:auto;width:130px;height:40px;border-radius:12px;background:rgba(155,103,255,0.24)"></span></div>
+<div style="display:flex;gap:8px"><span style="width:70px;height:36px;border-radius:12px;background:rgba(255,255,255,0.08)"></span><span style="width:56px;height:36px;border-radius:12px;background:rgba(255,255,255,0.08)"></span><span style="width:80px;height:36px;border-radius:12px;background:rgba(255,255,255,0.08)"></span></div>
+<sc-for list="{{ p2_skel }}" as="s" hint-placeholder-count="5"><div style="height:72px;border-radius:16px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;justify-content:center"><span style="height:12px;border-radius:6px;background:rgba(255,255,255,0.12);width:{{ s.a }}"></span><span style="height:9px;border-radius:6px;background:rgba(255,255,255,0.08);width:{{ s.b }}"></span></div></sc-for>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">D · OFFLINE · CÓ DỮ LIỆU ĐÃ LƯU</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library offline mobile" style="width:100%;height:100%;box-sizing:border-box;padding:60px 18px 0;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.02em">Thư viện của tôi</span>
+<div style="padding:11px 13px;border-radius:13px;background:oklch(0.80 0.14 68 / 0.12);box-shadow:inset 0 0 0 1px oklch(0.80 0.14 68 / 0.4);display:flex;align-items:flex-start;gap:10px"><i class="ph ph-wifi-slash" style="font-size:18px;color:oklch(0.88 0.11 68)"></i><span style="font-size:12.5px;line-height:1.5;color:rgba(255,255,255,0.88)">Đang offline. Ôn được các mục đã tải sẵn. Bài nói và audio chưa tải sẽ bị bỏ qua.</span></div>
+<div style="padding:18px;border-radius:20px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26);display:flex;flex-direction:column;gap:10px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.72)">CẦN ÔN · CÓ SẴN OFFLINE</span>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:40px;line-height:1">19</span><span style="font-size:14px;color:rgba(255,255,255,0.74)">/ 23 mục</span></div>
+<span style="align-self:flex-start;height:46px;padding:0 20px;border-radius:14px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;gap:8px;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:#fff"><i class="ph-fill ph-play"></i>Ôn ngay</span>
+</div>
+<div style="padding:22px 18px;border-radius:18px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center"><i class="ph ph-cloud-x" style="font-size:26px;color:oklch(0.84 0.12 22)"></i><span style="font-size:14.5px;font-weight:700">Không tải được danh sách mới</span><span style="font-size:12.5px;color:rgba(255,255,255,0.7)">Đang hiện bản lưu lúc 08:12</span><span style="height:40px;padding:0 16px;border-radius:12px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700"><i class="ph ph-arrow-clockwise"></i>Thử lại</span></div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">TRỐNG</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Hiện khi chưa có mục nào. Lọc ra rỗng thì chỉ hiện dòng “Không có mục nào khớp bộ lọc” và nút Xoá bộ lọc, không dùng màn này.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">TẢI VÀ LỖI</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Skeleton giữ đúng khung màn chính. Quá 8 giây hoặc lỗi mạng: nếu có bản lưu thì hiện bản lưu kèm khối lỗi nhỏ, nếu không có thì khối lỗi toàn màn với Thử lại.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">OFFLINE</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Mục cần ôn hôm nay tải sẵn khi mở app. Kết quả ôn lưu trên máy, có mạng thì đồng bộ và báo “Đã đồng bộ N kết quả”. Tạo bộ, thêm vào bộ vẫn làm được offline.</span></div>
+</div>
+</div>
+
+<div id="l08" style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.64)">08</span><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Chọn nhiều</span><span style="font-size:14.5px;color:rgba(255,255,255,0.66)">Đánh dấu, gom vào bộ hoặc xoá hàng loạt · thao tác phá huỷ luôn hỏi xác nhận</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">DESKTOP · 3 MỤC ĐÃ CHỌN</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.66)">orena.app/my-library/words</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="My library multi-select desktop" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), #060509;display:flex;overflow:hidden">
+<div style="width:280px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));box-shadow:inset -1px 0 0 rgba(172,144,255,0.12);padding:26px 18px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px"><div style="width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg, #9B6BFF, #6E7BFF)"></div><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Orena</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ p2_nav }}" as="n" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:{{ n.bg }};box-shadow:{{ n.ring }};color:{{ n.color }};font-weight:{{ n.weight }};font-size:17px"><span style="font-size:23px"><i class="{{ n.icon }}"></i></span>{{ n.t }}</div></sc-for></div>
+</div>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<div style="height:84px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));box-shadow:inset 0 -1px 0 rgba(172,144,255,0.2);padding:0 40px;display:flex;align-items:center;gap:18px">
+<i class="ph ph-x" style="font-size:22px"></i><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:24px">Đã chọn 3</span><span style="font-size:15px;font-weight:700;color:#C7B2FF">Chọn tất cả 212</span>
+<div style="margin-left:auto;display:flex;gap:10px">
+<span style="height:46px;padding:0 16px;border-radius:13px;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700"><i class="ph ph-flag" style="font-size:17px"></i>Cần ôn</span>
+<span style="height:46px;padding:0 16px;border-radius:13px;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700"><i class="ph ph-check-circle" style="font-size:17px"></i>Đã thuộc</span>
+<span style="height:46px;padding:0 16px;border-radius:13px;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700"><i class="ph ph-folder-plus" style="font-size:17px"></i>Thêm vào bộ</span>
+<span style="height:46px;padding:0 16px;border-radius:13px;background:oklch(0.72 0.15 22 / 0.14);box-shadow:inset 0 0 0 1px oklch(0.72 0.15 22 / 0.45);display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:oklch(0.86 0.11 22)"><i class="ph ph-trash" style="font-size:17px"></i>Xoá</span>
+</div>
+</div>
+<div style="flex:1;padding:26px 40px;display:flex;flex-direction:column;gap:10px;max-width:1400px">
+<sc-for list="{{ p2_sel }}" as="s" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:18px;background:{{ s.bg }};box-shadow:{{ s.ring }}">
+<i class="{{ s.box }}" style="font-size:24px;color:{{ s.boxC }}"></i>
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:20px;width:220px">{{ s.t }}</span>
+<span style="flex:1;font-size:15px;color:rgba(255,255,255,0.78)">{{ s.g }}</span>
+<span style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,0.62)">{{ s.next }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div></div></div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">A · MOBILE · CHỌN NHIỀU</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library multi-select mobile" style="width:100%;height:100%;box-sizing:border-box;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px"><i class="ph ph-x" style="font-size:22px"></i><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:19px;flex:1">Đã chọn 3</span><span style="font-size:14px;font-weight:700;color:#C7B2FF">Chọn tất cả</span></div>
+<div style="flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ p2_sel }}" as="s" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:12px;padding:13px;border-radius:15px;background:{{ s.bg }};box-shadow:{{ s.ring }}"><i class="{{ s.box }}" style="font-size:22px;color:{{ s.boxC }}"></i><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:16px">{{ s.t }}</span><span style="font-size:12px;color:rgba(255,255,255,0.68)">{{ s.g }}</span></div></div>
+</sc-for>
+</div>
+<div style="flex:none;padding:10px 12px 30px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:linear-gradient(180deg, rgba(84,68,146,0.5), rgba(54,44,96,0.5));box-shadow:inset 0 1px 0 rgba(172,144,255,0.2)">
+<span style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11.5px"><i class="ph ph-flag" style="font-size:21px"></i>Cần ôn</span>
+<span style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11.5px"><i class="ph ph-check-circle" style="font-size:21px"></i>Đã thuộc</span>
+<span style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11.5px"><i class="ph ph-folder-plus" style="font-size:21px"></i>Vào bộ</span>
+<span style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11.5px;color:oklch(0.86 0.11 22)"><i class="ph ph-trash" style="font-size:21px"></i>Xoá</span>
+</div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.66)">B · XÁC NHẬN XOÁ</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ p2_isDark }}" width="{{ p2_fw }}" height="{{ p2_fh }}" hint-size="390px,844px">
+<div data-screen-label="My library delete confirm mobile" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:#060509;color:#f3f1f6;overflow:hidden">
+<div style="position:absolute;inset:0;background:rgba(4,2,12,0.66)"></div>
+<div style="position:absolute;left:24px;right:24px;top:270px;border-radius:24px;background:linear-gradient(180deg, rgba(88,70,152,0.9), rgba(54,44,98,0.92));backdrop-filter:blur(30px) saturate(1.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.26), 0 30px 70px rgba(0,0,0,0.55);padding:22px;display:flex;flex-direction:column;gap:12px">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:19px">Xoá 3 mục khỏi thư viện?</span>
+<span style="font-size:14px;line-height:1.55;color:rgba(255,255,255,0.8)">Tiến độ ôn của 3 mục này sẽ mất. Chúng cũng bị gỡ khỏi 2 bộ sưu tập. Bài đọc và audio gốc vẫn còn.</span>
+<div style="display:flex;gap:10px;padding-top:8px"><span style="flex:1;height:48px;border-radius:14px;background:rgba(255,255,255,0.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">Hủy</span><span style="flex:1;height:48px;border-radius:14px;background:oklch(0.60 0.17 22);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff">Xoá 3 mục</span></div>
+</div>
+</div>
+</x-import>
+</div>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px 28px;padding-top:6px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">VÀO VÀ RA</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Mobile: nhấn giữ một hàng. Desktop: tick ô khi hover, Shift-click chọn dải. Thanh thao tác thay header. Esc hoặc ✕ để thoát, bỏ chọn hết cũng thoát.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">GOM VÀO BỘ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Chỉ bật khi các mục đã chọn cùng loại. Khác loại thì nút mờ, có ghi chú “Chọn mục cùng loại để gom vào bộ”. Mở sheet 06B.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:#D5C0FF">XOÁ</span><span style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8)">Luôn hỏi xác nhận, nêu rõ mất gì và còn gì. Nút xoá ghi số lượng. Xoá xong: toast có Hoàn tác trong 10 giây. Đánh dấu hàng loạt không cần xác nhận, toast có Hoàn tác.</span></div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  extraVals() {
+    const v = (() => {
+    const st = {
+      due: ['đến hạn', 'oklch(0.80 0.14 68 / 0.16)', 'oklch(0.90 0.10 68)'],
+      mark: ['cần ôn', 'rgba(155,103,255,0.26)', '#EFE6FF'],
+      ok: ['đã thuộc', 'oklch(0.78 0.13 160 / 0.14)', 'oklch(0.88 0.11 160)'],
+      norm: ['đang học', 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.72)']
+    };
+    const s = k => ({ st: st[k][0], bg: st[k][1], c: st[k][2], stBg: st[k][1], stC: st[k][2] });
+    const nav = [['Home', 'ph ph-house'], ['Library', 'ph ph-books'], ['Vocabulary', 'ph ph-cards'], ['Thư viện của tôi', 'ph-fill ph-bookmarks-simple'], ['Progress', 'ph ph-chart-line-up'], ['Profile', 'ph ph-user']].map(n => {
+      const on = n[0] === 'Thư viện của tôi';
+      return { t: n[0], icon: n[1], bg: on ? 'oklch(0.7 0.19 296 / 0.14)' : 'transparent', ring: on ? 'inset 0 0 0 1px rgba(172,144,255,0.18), 0 0 0 1.5px oklch(0.70 0.19 296 / 0.75)' : 'none', color: on ? '#D5C0FF' : 'rgba(255,255,255,0.72)', weight: on ? 700 : 400 };
+    });
+    const reads = [
+      ['En vanlig tirsdag', 'Orena Reading · Hverdag', 'A2', '100%', '7', 'mark'],
+      ['Sykkel i Oslo', 'NRK Lett · 14/9', 'A2', '100%', '4', 'norm'],
+      ['Fjellet om vinteren', 'Orena Reading · Natur', 'B1', '62%', '11', 'due'],
+      ['Kaffe på jobben', 'Orena Reading · Arbeid', 'A2', '100%', '3', 'ok'],
+      ['Nytt år, nye vaner', 'NRK Lett · 2/9', 'B1', '38%', '6', 'norm'],
+      ['Middag med familien', 'Orena Reading · Hverdag', 'A1', '100%', '2', 'ok'],
+      ['Toget er forsinket', 'Orena Reading · Reise', 'A2', '100%', '5', 'due']
+    ].map(r => Object.assign({ t: r[0], src: r[1], lv: r[2], pct: r[3], words: r[4] }, s(r[5])));
+    const grammar = [
+      ['Preteritum nhóm 2', 'spise → spiste · 4 ví dụ', 'mark'],
+      ['Đảo ngữ V2', 'I går spiste vi… · 6 ví dụ', 'due'],
+      ['Động từ phản thân', 'glede seg, sette seg', 'norm'],
+      ['Modal + nguyên mẫu', 'kan, vil, må, skal', 'ok'],
+      ['Perfektum', 'har + partisipp', 'norm'],
+      ['Mệnh lệnh', 'Kom! Spis!', 'ok']
+    ].map(g => Object.assign({ t: g[0], sub: g[1] }, s(g[2])));
+    const books = [
+      ['Sofies verden', 'Na Uy · chương 6 / 35', '18%', 'linear-gradient(160deg, oklch(0.45 0.1 235), oklch(0.2 0.03 300))'],
+      ['骆驼祥子', 'Trung · chương 3 / 24', '12%', 'linear-gradient(160deg, oklch(0.45 0.1 25), oklch(0.2 0.03 300))'],
+      ['Doppler', 'Na Uy · chương 11 / 14', '79%', 'linear-gradient(160deg, oklch(0.45 0.1 160), oklch(0.2 0.03 300))'],
+      ['小王子', 'Trung · chương 20 / 27', '74%', 'linear-gradient(160deg, oklch(0.45 0.1 68), oklch(0.2 0.03 300))']
+    ].map(b => ({ t: b[0], sub: b[1], pct: b[2], cover: b[3] }));
+    const results = [
+      { h: 'TỪ · 3', icon: 'ph ph-cards', rows: [['', 'helg', 'en · cuối tuần', 'Cảm xúc · đến hạn'], ['', 'helg', 'edag · ngày nghỉ lễ', 'Bài đọc · 14/9']] },
+      { h: 'BÀI ĐỌC · 2', icon: 'ph ph-article', rows: [['En vanlig tirsdag · Jeg gleder meg til ', 'helg', 'en.', 'đoạn 2'], ['Kaffe på jobben · Hva gjør du i ', 'helg', 'a?', 'đoạn 5']] },
+      { h: 'BÀI VIẾT · 1', icon: 'ph ph-pen-nib', rows: [['Min ', 'helg', ' · I helgen besøkte jeg…', 'nộp 18/9']] }
+    ].map(g => ({ h: g.h, icon: g.icon, rows: g.rows.map(r => ({ pre: r[0], hit: r[1], post: r[2], src: r[3] })) }));
+    const coll = [
+      ['glede seg', 'mong chờ, háo hức', 'Bài đọc · En vanlig tirsdag', 'mark'],
+      ['lei seg', 'buồn', 'Listening · Hos legen', 'due'],
+      ['sint', 'tức giận', 'Bài đọc · Toget er forsinket', 'norm'],
+      ['stolt', 'tự hào', 'Vocabulary · Norsk A2', 'ok'],
+      ['redd', 'sợ', 'Listening · Mørket', 'due'],
+      ['overrasket', 'ngạc nhiên', 'Bài đọc · Nytt år, nye vaner', 'norm']
+    ].map(c => Object.assign({ t: c[0], g: c[1], src: c[2] }, s(c[3])));
+    const colls = [
+      ['ph ph-cards', 'Cảm xúc', 'Từ · 18 mục', '4'],
+      ['ph ph-book-open-text', 'Động từ quá khứ', 'Ngữ pháp · 9 mục', '2'],
+      ['ph ph-headphones', 'Câu hay ở quán cà phê', 'Listening · 12 câu', ''],
+      ['ph ph-article', 'Đọc lại cuối tuần', 'Bài đọc · 5 bài', ''],
+      ['ph ph-cards', 'Hay nhầm', 'Từ · 26 mục', '7']
+    ].map(c => ({ icon: c[0], t: c[1], sub: c[2], due: c[3] }));
+    const kinds = [['ph ph-cards', 'Từ & cụm từ', 1], ['ph ph-book-open-text', 'Ngữ pháp'], ['ph ph-article', 'Bài đọc'], ['ph ph-headphones', 'Listening'], ['ph ph-note-pencil', 'Ghi chú'], ['ph ph-pen-nib', 'Bài viết'], ['ph ph-microphone', 'Bài nói'], ['ph ph-book', 'Sách']].map(k => ({ icon: k[0], t: k[1], bg: k[2] ? 'oklch(0.7 0.19 296 / 0.2)' : 'rgba(10,7,20,0.3)', ring: k[2] ? 'inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.7)' : 'inset 0 0 0 1px rgba(172,144,255,0.16)', w: k[2] ? 700 : 400 }));
+    const sel = [['glede seg', 'mong chờ, háo hức', 'hôm nay', 1], ['lei seg', 'buồn', 'hôm nay', 1], ['sint', 'tức giận', '3d', 0], ['stolt', 'tự hào', '21d', 1], ['redd', 'sợ', 'hôm nay', 0], ['overrasket', 'ngạc nhiên', '6d', 0]].map(x => ({ t: x[0], g: x[1], next: x[2], box: x[3] ? 'ph-fill ph-check-square' : 'ph ph-square', boxC: x[3] ? '#C7B2FF' : 'rgba(255,255,255,0.5)', bg: x[3] ? 'linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32))' : 'linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28))', ring: x[3] ? 'inset 0 0 0 1.5px oklch(0.74 0.17 296 / 0.7)' : 'inset 0 0 0 1px rgba(172,144,255,0.16)' }));
+    const hs = [8,14,22,30,18,26,34,28,16,10,20,32,24,14,8,18,28,22,12,20,30,26,16,10,14,22,18,10,8,6];
+    const wave = hs.map((h, i) => ({ px: h + 'px', c: i < 12 ? '#C7B2FF' : 'rgba(255,255,255,0.3)' }));
+    const skel = [['60%', '40%'], ['72%', '30%'], ['50%', '44%'], ['66%', '36%'], ['58%', '28%']].map(x => ({ a: x[0], b: x[1] }));
+    return { isDark: true, fw: 390, fh: 844, nav, reads, grammar, books, results, coll, colls, kinds, sel, wave, skel };
+  })();
+    const o = {}; for (const k in v) o['p2_' + k] = v[k]; return o;
+  }
+  renderVals() { return Object.assign({}, this.extraVals(), this.baseVals()); }
+
+  state = { type: 'vocab', lang: 'all', marked: ['v1', 'g0'], reviewing: false, rvIdx: 0, revealed: false, detail: null, pick: null, coll: null, over: {}, added: {}, toast: null, undo: null };
+
+  stop(fn) { return e => { if (e && e.stopPropagation) e.stopPropagation(); fn(); }; }
+  flash(msg, undo) {
+    this.setState({ toast: msg, undo: undo || null });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null, undo: null }), 4000);
+  }
+  toggleMark(id, title) {
+    const was = this.state.marked.includes(id);
+    const apply = on => this.setState(s => ({ marked: on ? [...s.marked.filter(x => x !== id), id] : s.marked.filter(x => x !== id) }));
+    apply(!was);
+    this.flash(was ? 'Đã bỏ đánh dấu "' + title + '"' : 'Đã đưa "' + title + '" lên đầu hàng ôn', () => apply(was));
+  }
+
+  extra(DATA, TYPES, COLLS, serif, sans) {
+    const S = this.state;
+    const typeOf = id => ({ v: 'vocab', r: 'reading', l: 'listening', g: 'grammar', n: 'notes', w: 'writing', s: 'speaking', b: 'books' })[id[0]];
+    const find = id => { const t = typeOf(id); return [t, DATA[t].find(r => r[0] === id)]; };
+    const memberOf = (id, ci) => COLLS[ci].ids.includes(id) || (S.added[id] || []).includes(ci);
+    const ORIGIN = { vocab: 'Mở câu gốc trong bài đọc', reading: 'Mở Reading tại đoạn đọc dở', listening: 'Mở Listening tại câu 42', grammar: 'Mở bài viết có lỗi này', notes: 'Mở màn chứa ghi chú', writing: 'Mở Writing · bản đã chữa', speaking: 'Mở Speaking · bản ghi âm', books: 'Mở sách tại chương đang đọc' };
+    const CTX = { v0: '我想要一个靠窗的座位。', v1: 'Forskerne forventer høy aktivitet på sola denne høsten.', v2: 'Toget er forsinket på grunn av snø.', v3: '图书馆里很安静。', v4: 'En kraftig solstorm i september gjorde at mange kunne se nordlyset.', g0: 'I dag går jeg på jobb. — không viết "I dag jeg går…"', l0: 'Det er ikke så lett å finne parkering her.', r1: '火车上人很多，我想要一个靠窗的座位。' };
+    let dt = null;
+    if (S.detail) {
+      const [t, r] = find(S.detail);
+      const T = TYPES.find(x => x[0] === t);
+      const marked = S.marked.includes(r[0]);
+      const cur = marked ? 'due' : (S.over[r[0]] || r[6]);
+      const setSt = v => () => this.setState(s => ({ marked: v === 'due' ? [...s.marked.filter(x => x !== r[0]), r[0]] : s.marked.filter(x => x !== r[0]), over: { ...s.over, [r[0]]: v } }));
+      dt = {
+        kind: T[1], icon: T[3], lang: r[3] === 'no' ? 'Na Uy' : 'Trung', t: r[1], gloss: r[2],
+        font: ['vocab', 'reading', 'listening', 'books'].includes(t) ? serif : sans,
+        ctx: CTX[r[0]] || r[4], originLabel: ORIGIN[t], origin: () => this.flash(ORIGIN[t] + ' — đi tới đúng vị trí'),
+        states: [['due', 'Cần ôn', 'ph-fill ph-bookmark-simple'], ['know', 'Đang học', 'ph ph-circle-half'], ['known', 'Đã thuộc', 'ph-fill ph-check-circle']].map(([v, label, icon]) => ({ t: label, icon, go: setSt(v), bg: v === cur ? 'rgba(155,103,255,0.32)' : 'transparent', color: v === cur ? '#F1EAFF' : 'rgba(255,255,255,0.66)' })),
+        history: [{ k: 'LẦN ÔN', v: r[4].match(/(\d+) lần ôn/) ? r[4].match(/(\d+) lần ôn/)[1] : '0' }, { k: 'LẦN CUỐI', v: '19/09' }, { k: 'HẠN TỚI', v: marked ? 'Hôm nay' : r[5] }],
+        colls: COLLS.map((c, i) => ({ t: c.t, on: memberOf(r[0], i) })).filter(c => c.on),
+        pick: () => this.setState({ pick: r[0] }),
+        review: () => this.setState({ detail: null, reviewing: true, rvIdx: 0, revealed: false })
+      };
+    }
+    let pickKind = '', pickList = [];
+    if (S.pick) {
+      const [t] = find(S.pick);
+      pickKind = TYPES.find(x => x[0] === t)[1];
+      pickList = COLLS.map((c, i) => ({ c, i })).filter(x => x.c.type === t).map(({ c, i }) => {
+        const on = memberOf(S.pick, i);
+        return { t: c.t, sub: c.sub, icon: on ? 'ph-fill ph-check-square' : 'ph ph-square', color: on ? '#C7B2FF' : 'rgba(255,255,255,0.5)',
+          go: () => this.setState(s => { const cur = s.added[s.pick] || []; return { added: { ...s.added, [s.pick]: cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i] } }; }) };
+      });
+    }
+    const coll = S.coll != null ? COLLS[S.coll] : null;
+    return {
+      detailOpen: !!dt, dt: dt || { states: [], history: [], colls: [] }, closeDetail: () => this.setState({ detail: null }),
+      pickOpen: !!S.pick, pickKind, pickList, closePick: () => this.setState({ pick: null }), keep: e => e.stopPropagation(),
+      toast: S.toast, toastUndo: !!S.undo, undo: () => { if (S.undo) S.undo(); this.setState({ toast: null, undo: null }); },
+      inColl: !!coll, collName: coll ? coll.t : '', collSub: coll ? coll.sub + (coll.due ? ' · ' + coll.due : '') : '',
+      clearColl: () => this.setState({ coll: null }), startColl: () => this.setState({ reviewing: true, rvIdx: 0, revealed: false }),
+      spec: [
+        ['Thẻ Cần ôn hôm nay', 'Bấm Ôn ngay', 'Mở phiên ôn gộp ngay trong Thư viện, bắt đầu từ mục đầu hàng.', 'POST /review/session {scope:"today"} → queue đã sắp: pinned trước, rồi due_at tăng dần'],
+        ['Dòng trong Thứ tự ôn', 'Bấm vào dòng', 'Mở phiên ôn, nhảy thẳng tới mục đó; các mục trước vẫn còn trong hàng.', 'session.startAt(itemId)'],
+        ['Tab loại nội dung', 'Bấm', 'Lọc thư viện theo loại, bỏ lọc bộ sưu tập đang chọn. Số đếm theo bộ lọc ngôn ngữ.', 'Query ?type= · giữ ?lang= và ?q='],
+        ['Ngôn ngữ · thời gian · tìm kiếm', 'Chọn / gõ', 'Lọc cả hàng ôn lẫn thư viện. Tìm kiếm khớp từ, nghĩa và ghi chú.', 'Debounce 250 ms · lưu bộ lọc vào URL'],
+        ['Thẻ mục trong thư viện', 'Bấm vào thân thẻ', 'Mở panel chi tiết bên phải (mobile: bottom sheet). Danh sách phía sau giữ nguyên vị trí cuộn.', 'Route /my-library/item/:id dạng overlay · Esc hoặc bấm nền để đóng'],
+        ['Nút đánh dấu', 'Bấm', 'Bật/tắt Cần ôn. Bật: mục lên đầu hàng ôn hôm nay. Toast có Hoàn tác trong 4 giây.', 'PATCH item {pinned} · stopPropagation để không mở chi tiết'],
+        ['Nút thêm vào bộ', 'Bấm', 'Mở hộp chọn bộ sưu tập, chỉ liệt kê bộ cùng loại với mục. Tick nhiều bộ, lưu ngay.', 'Lọc collections.type = item.type · tạo bộ mới kế thừa type'],
+        ['Nút mở màn gốc', 'Bấm', 'Đi tới màn gốc tại đúng vị trí: câu trong bài đọc, câu audio, chương sách, bản chữa của bài viết.', 'Deep link {screen, anchor} lưu cùng item khi lưu'],
+        ['Panel chi tiết · Trạng thái', 'Chọn Cần ôn / Đang học / Đã thuộc', 'Đổi trạng thái ngay. Đã thuộc giãn hạn SRS, không xoá khỏi lịch.', 'PATCH item {status} · Cần ôn = pinned:true'],
+        ['Panel chi tiết · Ôn mục này', 'Bấm', 'Đóng panel, mở phiên ôn chỉ gồm mục này rồi quay về panel.', 'session {scope:"item"}'],
+        ['Thẻ bộ sưu tập', 'Bấm', 'Chuyển sang tab cùng loại, lọc theo bộ; hiện chip "Trong bộ" có nút × và Ôn bộ này.', 'Query ?collection= · chip × xoá tham số'],
+        ['Phiên ôn · Hiện đáp án', 'Bấm hoặc phím Space', 'Hiện nghĩa và câu ngữ cảnh gốc, bật 4 nút chấm.', 'Phím 1–4 tương ứng Quên / Khó / Nhớ / Dễ'],
+        ['Phiên ôn · Nút chấm', 'Bấm', 'Ghi kết quả, hiện hạn ôn kế tiếp dưới mỗi nút, chuyển sang mục sau. Quên đưa mục lại cuối phiên.', 'POST /review/grade {itemId, grade} · SRS tính due_at'],
+        ['Phiên ôn · Mở màn gốc', 'Bấm', 'Tạm dừng phiên, mở màn gốc; quay lại tiếp tục đúng mục đang ôn.', 'Lưu session.cursor · nút Quay lại phiên ở màn gốc'],
+        ['Phiên ôn · Đóng', 'Bấm ×', 'Kết thúc phiên, các mục đã chấm được lưu. Mục chưa chấm vẫn nằm trong hàng hôm nay.', 'Không cần xác nhận']
+      ].map(s => ({ el: s[0], act: s[1], res: s[2], dev: s[3] }))
+    };
+  }
+
+  baseVals() {
+    const S = this.state;
+    const TYPES = [
+      ['vocab', 'Từ & cụm từ', 'Từ', 'ph ph-cards', 1994],
+      ['reading', 'Bài đọc', 'Đọc', 'ph ph-book-open', 86],
+      ['listening', 'Nghe', 'Nghe', 'ph ph-headphones', 54],
+      ['grammar', 'Ngữ pháp', 'Ngữ pháp', 'ph ph-brackets-curly', 38],
+      ['notes', 'Ghi chú', 'Ghi chú', 'ph ph-note-pencil', 71],
+      ['writing', 'Bài viết', 'Viết', 'ph ph-pencil-simple-line', 24],
+      ['speaking', 'Bài nói', 'Nói', 'ph ph-microphone', 19],
+      ['books', 'Sách đang đọc', 'Sách', 'ph ph-books', 3]
+    ];
+    const serif = "'Noto Serif',serif", sans = "'Nunito Sans',sans-serif";
+    const DATA = {
+      vocab: [['v0', '靠窗', 'kào chuāng · cạnh cửa sổ', 'zh', 'HSK 2 · lưu từ bài "在火车上" · 3 lần ôn', 'Mai', 'know'], ['v1', 'å forvente', 'dự đoán, kỳ vọng', 'no', 'B1 · lưu từ "Nordlyset kommer…" · 1 lần ôn', 'Hôm nay', 'due'], ['v2', 'på grunn av', 'bởi vì', 'no', 'A2 · lưu từ Listening "Hverdagsliv" · 5 lần ôn', 'Sau 9 ngày', 'known'], ['v3', '安静', 'ānjìng · yên tĩnh', 'zh', 'HSK 2 · lưu từ bài đọc · 4 lần ôn', 'Sau 4 ngày', 'know'], ['v4', 'solstorm', 'bão mặt trời', 'no', 'B1 · lưu từ bài đọc · chưa ôn', 'Hôm nay', 'due']],
+      reading: [['r0', 'Nordlyset kommer tidligere i år', 'Cực quang đến sớm năm nay', 'no', 'B1 · forskning.no · đọc xong 21/09 · 6 từ đã lưu', 'Sau 3 ngày', 'know'], ['r1', '在火车上', 'Trên tàu hoả', 'zh', 'HSK 2 · đọc xong 19/09 · 9 từ đã lưu', 'Hôm nay', 'due'], ['r2', 'Kaffe i Norge', 'Cà phê ở Na Uy', 'no', 'A2 · đọc xong 12/09', 'Sau 12 ngày', 'known']],
+      listening: [['l0', 'Hverdagsliv i Oslo', 'Podcast · 14:20', 'no', 'A2 · nghe hết · dừng ở câu 42 lần trước', 'Hôm nay', 'due'], ['l1', '北京的胡同', 'Ngõ hẻm Bắc Kinh · 11:48', 'zh', 'HSK 4 · nghe 68%', 'Sau 2 ngày', 'know']],
+      grammar: [['g0', 'Đảo ngữ sau trạng từ (V2)', 'I dag går jeg…', 'no', 'B1 · sai 3 lần trong bài viết gần đây', 'Hôm nay', 'due'], ['g1', '把 + tân ngữ + động từ', '我把书放在桌子上', 'zh', 'HSK 3 · từ bài đọc "在火车上"', 'Sau 5 ngày', 'know'], ['g2', 'Modalverb + infinitiv', 'Jeg må gå nå', 'no', 'A2 · đúng 8 / 8 lần gần nhất', 'Sau 14 ngày', 'known']],
+      notes: [['n0', '"kj" và "skj" phát âm khác nhau', 'Ghi chú trong bài Speaking', 'no', 'Tạo 18/09 · gắn với 4 từ', '—', 'know'], ['n1', '了 chỉ hoàn thành, không phải quá khứ', 'Ghi chú ngữ pháp', 'zh', 'Tạo 15/09 · gắn với bài "在火车上"', '—', 'know']],
+      writing: [['w0', 'E-post til sjefen', 'Email xin nghỉ phép', 'no', 'B1 · nộp 20/09 · 2 lỗi V2 được chữa', 'Viết lại', 'due'], ['w1', '我的周末', 'Cuối tuần của tôi', 'zh', 'HSK 2 · nộp 14/09 · 0 lỗi lớn', '—', 'known']],
+      speaking: [['s0', 'Presentere deg selv', 'Giới thiệu bản thân · 1:12', 'no', 'A2 · ghi âm 17/09 · phát âm 78%', 'Ghi lại', 'due'], ['s1', '点菜', 'Gọi món · 0:48', 'zh', 'HSK 2 · ghi âm 10/09 · thanh điệu 84%', '—', 'know']],
+      books: [['b0', 'Sult', 'Knut Hamsun', 'no', 'C1 · chương 3 / 12 · 42 từ đã lưu', 'Đọc tiếp', 'know'], ['b1', '骆驼祥子', 'Lão Xá', 'zh', 'HSK 5 · chương 1 / 24', 'Đọc tiếp', 'know']]
+    };
+    const ST = {
+      due: ['CẦN ÔN', 'rgba(155,103,255,0.26)', '#EFE6FF'],
+      know: ['ĐANG HỌC', 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.78)'],
+      known: ['ĐÃ THUỘC', 'rgba(91,233,166,0.12)', '#7DEDB6']
+    };
+    const langOk = l => S.lang === 'all' || S.lang === l;
+    const typeDef = TYPES.find(t => t[0] === S.type);
+    const COLLS = [
+      { icon: 'ph ph-cards', t: 'Từ du lịch Trung', sub: 'Từ · 48 mục', due: '6 cần ôn', type: 'vocab', ids: ['v0', 'v3'] },
+      { icon: 'ph ph-cards', t: 'Na Uy · công sở', sub: 'Từ · 112 mục', due: '4 cần ôn', type: 'vocab', ids: ['v1', 'v2', 'v4'] },
+      { icon: 'ph ph-brackets-curly', t: 'Lỗi hay mắc (V2, en/et)', sub: 'Ngữ pháp · 9 mục', due: '2 cần ôn', type: 'grammar', ids: ['g0', 'g2'] },
+      { icon: 'ph ph-book-open', t: 'Bài khoa học B1', sub: 'Bài đọc · 14 bài', due: '', type: 'reading', ids: ['r0', 'r2'] },
+      { icon: 'ph ph-headphones', t: 'Podcast đời sống', sub: 'Nghe · 11 tập', due: '1 cần ôn', type: 'listening', ids: ['l0'] },
+      { icon: 'ph ph-note-pencil', t: 'Phát âm', sub: 'Ghi chú · 7 mục', due: '', type: 'notes', ids: ['n0'] }
+    ];
+    const coll = S.coll != null ? COLLS[S.coll] : null;
+    const inC = id => !coll || coll.ids.includes(id) || (S.added[id] || []).includes(S.coll);
+    const items = DATA[S.type].filter(r => langOk(r[3]) && inC(r[0])).map(r => {
+      const marked = S.marked.includes(r[0]);
+      const st = marked ? 'due' : (S.over[r[0]] || r[6]);
+      return {
+        t: r[1], gloss: r[2], meta: r[4], next: marked ? 'Bạn đánh dấu' : r[5], font: S.type === 'vocab' || S.type === 'books' || S.type === 'reading' || S.type === 'listening' ? serif : sans,
+        status: ST[st][0], stBg: ST[st][1], stColor: ST[st][2],
+        markIcon: marked ? 'ph-fill ph-bookmark-simple' : 'ph ph-bookmark-simple',
+        markBg: marked ? 'rgba(155,103,255,0.26)' : 'rgba(255,255,255,0.05)',
+        markRing: marked ? 'inset 0 0 0 1px rgba(172,144,255,0.4)' : 'inset 0 0 0 1px rgba(255,255,255,0.09)',
+        markColor: marked ? '#EFE6FF' : 'rgba(255,255,255,0.78)',
+        mark: this.stop(() => this.toggleMark(r[0], r[1])),
+        open: () => this.setState({ detail: r[0] }),
+        pick: this.stop(() => this.setState({ pick: r[0] })),
+        origin: this.stop(() => this.flash('Mở màn gốc tại đúng vị trí của "' + r[1] + '"'))
+      };
+    });
+    const tabStyle = on => ({
+      bg: on ? 'rgba(155,103,255,0.24)' : 'rgba(255,255,255,0.05)',
+      ring: on ? 'inset 0 0 0 1px rgba(172,144,255,0.36)' : 'inset 0 0 0 1px rgba(255,255,255,0.08)',
+      weight: on ? 700 : 500, color: on ? '#F1EAFF' : 'rgba(255,255,255,0.78)'
+    });
+    const typeTabs = TYPES.map(t => ({ t: t[1], short: t[2], icon: t[3], count: t[4].toLocaleString('vi-VN').replace(/\./g, ' '), go: () => this.setState({ type: t[0], coll: null }), ...tabStyle(t[0] === S.type), countColor: t[0] === S.type ? '#D5C0FF' : 'rgba(255,255,255,0.5)' }));
+
+    const QUEUE = [
+      { kind: 'Từ', icon: 'ph ph-cards', why: 'Bạn đánh dấu', prompt: 'å forvente', answer: 'dự đoán, kỳ vọng', ctx: 'Forskerne forventer høy aktivitet på sola.', origin: 'Từ bài đọc "Nordlyset kommer tidligere i år"', size: '44px' },
+      { kind: 'Ngữ pháp', icon: 'ph ph-brackets-curly', why: 'Bạn đánh dấu', prompt: 'I dag ___ jeg på jobb. (gå)', answer: 'går — động từ đứng thứ hai', ctx: 'I dag går jeg på jobb.', origin: 'Lỗi lặp lại trong bài viết "E-post til sjefen"', size: '30px' },
+      { kind: 'Từ', icon: 'ph ph-cards', why: 'Đến hạn SRS · quá 1 ngày', prompt: 'solstorm', answer: 'bão mặt trời', ctx: 'En kraftig solstorm i september…', origin: 'Từ bài đọc "Nordlyset kommer tidligere i år"', size: '44px' },
+      { kind: 'Nghe', icon: 'ph ph-headphones', why: 'Đến hạn SRS', prompt: '▶  "Det er ikke så lett å finne parkering her."', answer: 'Tìm chỗ đỗ xe ở đây không dễ.', ctx: 'Câu 42 · Hverdagsliv i Oslo', origin: 'Podcast "Hverdagsliv i Oslo"', size: '24px' }
+    ];
+    const total = 23, idx = S.rvIdx % QUEUE.length, rv = QUEUE[idx];
+    const next = () => this.setState(s => ({ rvIdx: s.rvIdx + 1, revealed: false }));
+    const grades = [['Quên', '1 phút', '#FF9AB4', 'rgba(244,84,124,0.12)', 'rgba(244,84,124,0.28)'], ['Khó', '1 ngày', '#FFC27A', 'rgba(247,162,59,0.12)', 'rgba(247,162,59,0.28)'], ['Nhớ', '4 ngày', '#EFE6FF', 'rgba(155,103,255,0.22)', 'rgba(172,144,255,0.36)'], ['Dễ', '9 ngày', '#7DEDB6', 'rgba(91,233,166,0.12)', 'rgba(91,233,166,0.28)']]
+      .map(g => ({ t: g[0], next: g[1], color: g[2], bg: g[3], ring: 'inset 0 0 0 1px ' + g[4], go: next }));
+
+    const nav = [['Home', 'ph ph-house'], ['Library', 'ph ph-books'], ['Vocabulary', 'ph ph-cards'], ['Thư viện của tôi', 'ph-fill ph-bookmarks-simple', '23'], ['Progress', 'ph ph-chart-line-up'], ['Profile', 'ph ph-user']].map(n => {
+      const on = n[0] === 'Thư viện của tôi';
+      return { t: n[0], icon: n[1], badge: n[2] || '', bg: on ? 'oklch(0.7 0.19 296 / 0.14)' : 'transparent', ring: on ? 'inset 0 0 0 1px rgba(172,144,255,0.18), 0 0 0 1.5px oklch(0.70 0.19 296 / 0.75), 0 22px 54px rgba(123,77,232,0.3)' : 'none', color: on ? '#D5C0FF' : 'rgba(255,255,255,0.72)', weight: on ? 700 : 400 };
+    });
+    const mNav = [['Home', 'ph ph-house'], ['Library', 'ph ph-books'], ['Từ', 'ph ph-cards'], ['Của tôi', 'ph-fill ph-bookmarks-simple'], ['Progress', 'ph ph-chart-line-up'], ['Profile', 'ph ph-user']].map(n => ({ t: n[0], icon: n[1], color: n[0] === 'Của tôi' ? '#D5C0FF' : 'rgba(255,255,255,0.62)', weight: n[0] === 'Của tôi' ? 700 : 500 }));
+
+    return {
+      nav, mNav, pw: 390, ph: 844,
+      langs: [['all', 'Tất cả'], ['no', 'Na Uy'], ['zh', 'Trung']].map(([id, t]) => ({ t, go: () => this.setState({ lang: id }), weight: id === S.lang ? 700 : 500, bg: id === S.lang ? 'rgba(155,103,255,0.3)' : 'transparent', color: id === S.lang ? '#F1EAFF' : 'rgba(255,255,255,0.7)' })),
+      dueCount: String(total),
+      dueMix: [['ph ph-cards', 'Từ 14'], ['ph ph-brackets-curly', 'Ngữ pháp 4'], ['ph ph-book-open', 'Đọc 2'], ['ph ph-headphones', 'Nghe 2'], ['ph ph-microphone', 'Nói 1']].map(d => ({ icon: d[0], t: d[1] })),
+      dueList: [
+        ['ph ph-cards', 'å forvente', 'Từ · B1 · Na Uy', serif, 'mark'],
+        ['ph ph-brackets-curly', 'Đảo ngữ sau trạng từ (V2)', 'Ngữ pháp · sai 3 lần gần đây', sans, 'mark'],
+        ['ph ph-cards', 'solstorm', 'Từ · B1 · chưa ôn lần nào', serif, 'srs', 'QUÁ 1 NGÀY'],
+        ['ph ph-headphones', 'Hverdagsliv i Oslo · câu 42', 'Nghe · A2', sans, 'srs', 'ĐẾN HẠN'],
+        ['ph ph-book-open', '在火车上', 'Đọc lại · HSK 2', serif, 'srs', 'ĐẾN HẠN']
+      ].map((d, i) => ({ go: () => this.setState({ reviewing: true, rvIdx: Math.min(i, 3), revealed: false }), icon: d[0], t: d[1], sub: d[2], font: d[3], tag: d[4] === 'mark' ? 'BẠN ĐÁNH DẤU' : d[5], tagIcon: d[4] === 'mark' ? 'ph-fill ph-bookmark-simple' : 'ph ph-clock', tagBg: d[4] === 'mark' ? 'rgba(155,103,255,0.3)' : 'rgba(255,255,255,0.07)', tagColor: d[4] === 'mark' ? '#EFE6FF' : 'rgba(255,255,255,0.74)' })),
+      typeTabs, items,
+      collections: COLLS.map((c, i) => ({ ...c, go: () => this.setState({ coll: i, type: c.type }), ring: S.coll === i ? 'inset 0 0 0 1px rgba(172,144,255,0.5), 0 0 0 1.5px rgba(155,103,255,0.55), 0 6px 22px rgba(0,0,0,0.20)' : 'inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)' })),
+      reviewing: S.reviewing, startReview: () => this.setState({ reviewing: true, rvIdx: 0, revealed: false }), endReview: () => this.setState({ reviewing: false }),
+      rvPos: (idx + 1) + ' / ' + total, rvPct: ((idx + 1) / total * 100).toFixed(1) + '%', rv,
+      revealed: S.revealed, hidden: !S.revealed, reveal: () => this.setState({ revealed: true }), grades,
+      ...this.extra(DATA, TYPES, COLLS, serif, sans)
+    };
+  }
+}
+</script>
+</body>
+</html>

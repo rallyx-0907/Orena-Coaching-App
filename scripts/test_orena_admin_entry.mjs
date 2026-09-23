@@ -39,7 +39,7 @@ assert.deepEqual(adminModules, [], 'the learner initial module graph contains no
 assert.ok(learnerGraph.size > 20, 'the graph walk actually followed the learner imports');
 assert.match(
   fs.readFileSync(path.join(orenaRoot, 'app.js'), 'utf8'),
-  /await import\('\.\/ui\/admin\.js'\)/,
+  /await import\(['"]\.\/ui\/admin\.js['"]\)/,
   'the admin route reaches its console through a dynamic import',
 );
 import { api } from '../static/orena/infrastructure/api.js';

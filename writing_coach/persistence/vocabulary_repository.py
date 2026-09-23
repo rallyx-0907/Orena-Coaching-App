@@ -903,8 +903,16 @@ class SQLAlchemyVocabularyRepository:
                     VocabularyEntry.normalized_term == _text(normalized_term),
                     VocabularyCollection.catalog_status == "published",
                 )
-                .distinct()
+                # A word in two published collections joins to two rows, and
+                # only the first is wanted. DISTINCT cannot do that here:
+                # PostgreSQL has no equality operator for `json`, so the whole
+                # query failed with "could not identify an equality operator
+                # for type json" - which is a 500 on every saved word read
+                # through this path. Taking the first row by its identity key
+                # is the same answer without asking the database to compare
+                # documents.
                 .order_by(VocabularyEntry.identity_key)
+                .limit(1)
             )
             return _entry_dict(entry) if entry is not None else None
 

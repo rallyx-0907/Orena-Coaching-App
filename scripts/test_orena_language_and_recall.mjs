@@ -38,8 +38,16 @@ const recallRoom = expression.slice(
   expression.indexOf('export async function renderLanguage('),
 );
 assert.match(recallRoom, /api\.libraryVocabulary\(\{ status: 'due', order: 'due'/, 'and Recall asks for the due queue');
-assert.match(recallRoom, /api\.reviewLibraryVocabulary\(current\.word, button\.dataset\.grade\)/,
+assert.match(recallRoom, /const answer = button\.dataset\.grade;/,
+  'the grade is the one the learner pressed');
+assert.match(recallRoom, /api\.reviewLibraryVocabulary\(current\.word, answer\)/,
   'which grades through the scheduler that already exists');
+/* The end of a sitting only reports what the scheduler actually accepted: the
+   tally and the forgotten list are written after the grade is saved, inside
+   the refresh, never beside the button. */
+assert.match(recallRoom, /if \(answer in tally\) tally\[answer\] \+= 1;/,
+  'the summary counts a grade only once it is saved');
+assert.match(recallRoom, /class="review-done"/, 'and the sitting ends on the summary the design draws');
 assert.doesNotMatch(recallRoom, /localStorage|indexedDB|new Map\(\)/, 'Recall keeps no store of its own');
 /* No second algorithm: what to ask and whether an attempt counts are decided
    in `product/recall.js`, not re-derived in the room. */
@@ -151,8 +159,11 @@ assert.match(recallRoom, /data-recall-start/, 'with one way in');
 assert.match(recallRoom, /stage === 'landing' \? landing : current \? card : done/,
   'then one item at a time, then what happened');
 assert.match(recallRoom, /reviewed \+= 1/, 'what was reviewed is counted');
-assert.match(recallRoom, /class="empty recall-done"/, 'and said at the end');
-assert.match(recallRoom, /\$\{reviewed\} \$\{esc\(c\.vocabularyWordCount\)\}/, 'as a real count');
+assert.match(recallRoom, /class="review-done"/, 'and said at the end, as the design draws it');
+assert.match(recallRoom, /String\(r\.reviewFinished\)\.replace\('\{n\}', String\(reviewed\)\)/,
+  'as a real count');
+/* What comes back is the database's number, not one the room works out. */
+assert.match(recallRoom, /counts\.summary\?\.due_next_day/, 'and what returns tomorrow is counted by the server');
 /* Real numbers only. No score, no streak, no mastery invented for the end of
    a session. */
 for (const invention of ['XP', 'streak', 'accuracy', 'combo', 'confetti', 'mastery'])

@@ -178,8 +178,8 @@ const failure = appSource.slice(appSource.indexOf('const room = experienceFor(ct
 assert.match(failure, /class="room-failed"/, 'the failure state has its own compact composition');
 assert.match(failure, /ctx\.c\.cantOpen/, 'it says what happened in one localized line');
 assert.match(failure, /ctx\.c\.backTo/, 'and offers the way back to the room the learner was in');
-assert.match(failure, /room === 'listening'[\s\S]{0,160}intent: 'follow'/, 'Listening goes back to Listening');
-assert.match(failure, /room === 'reading'[\s\S]{0,160}intent: 'reading'/, 'Reading goes back to Reading');
+assert.match(failure, /room === ['"]listening['"][\s\S]{0,160}intent: ['"]follow['"]/, 'Listening goes back to Listening');
+assert.match(failure, /room === ['"]reading['"][\s\S]{0,160}intent: ['"]reading['"]/, 'Reading goes back to Reading');
 assert.doesNotMatch(failure, /esc\(error\.message\)/,
   'a thrown message is a diagnostic, not learner-facing copy');
 assert.doesNotMatch(failure, /ctx\.c\.unavailable/,
@@ -313,7 +313,7 @@ assert.match(shellCss, /html\[data-shell='off'\] #shell \{\s*display: none;/);
 assert.match(shellCss, /html\[data-shell='off'\] \.shell-tabs \{\s*display: none;/);
 const appJs = readFileSync(new URL('../static/orena/app.js', import.meta.url), 'utf8');
 assert.match(appJs, /document\.documentElement\.dataset\.shell = shellBelongsTo\(ctx\.location\)/);
-assert.match(appJs, /WORKING_PAGES = new Set\(\['encounter', 'book', 'expression', 'conversation'\]\)/);
+assert.match(appJs, /WORKING_PAGES = new Set\(\[\s*['"]encounter['"],\s*['"]book['"],\s*['"]expression['"],\s*['"]conversation['"],?\s*\]\)/);
 // A filter on the phone's shell would trap the fixed tab bar inside it.
 const phoneNav = shellCss.slice(shellCss.indexOf('@media (max-width: 900px)'));
 assert.match(phoneNav, /#shell \{[^}]*backdrop-filter: none;/, 'the phone shell carries no filter');

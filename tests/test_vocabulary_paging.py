@@ -120,6 +120,9 @@ def test_summary_counts_without_reading_the_words(library, count, mastered, due)
         "total": count,
         "saved": count,
         "due": due,
+        # Everything not already due is seeded a month out, so nothing is
+        # waiting for tomorrow here.
+        "due_next_day": 0,
         "learning": count - mastered,
         "mastered": mastered,
         "available": mastered,
@@ -128,6 +131,28 @@ def test_summary_counts_without_reading_the_words(library, count, mastered, due)
     assert answer["rank"] == tier_of(mastered)
     assert answer["rank_total"] == RANK_TOTAL
     assert len(answer["ladder"]) == RANK_TOTAL
+
+
+def test_the_summary_counts_what_comes_back_tomorrow(library):
+    """The end of a review session says what is waiting: due later today or
+    within a day, and never what is due right now."""
+
+    now = datetime.now().astimezone()
+    seed(library, 4, due=1)
+    with library._db() as connection:  # noqa: SLF001
+        for word, offset in (
+            ("word-00001", timedelta(hours=5)),
+            ("word-00002", timedelta(hours=23)),
+            ("word-00003", timedelta(days=2)),
+        ):
+            connection.execute(
+                "UPDATE vocabulary_learning SET next_review_at = ? WHERE word = ?",
+                (_iso(now + offset), word),
+            )
+        connection.commit()
+    summary = library_summary()["summary"]
+    assert summary["due"] == 1
+    assert summary["due_next_day"] == 2
 
 
 def test_summary_never_lists_the_library(library, monkeypatch):

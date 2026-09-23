@@ -1420,7 +1420,6 @@ ul.pronunciation-words small { color: var(--muted); }
 .recall-landing .primary { margin-top: var(--space-3); }
 /* Where the word was met, after the learner has committed to an answer. */
 .recall-where { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--text-xs); }
-.recall-done p { margin: var(--space-1) 0; }
 
 /* ---------------------------------------------------------------------------
    Progress (D-059, D-060) - the approved composition (Progress · learner-
@@ -2501,6 +2500,89 @@ ul.pronunciation-words small { color: var(--muted); }
   .review-prompt h2 { font-size: 34px; }
   .review-grades { inline-size: 100%; }
 }
+/* --- The end of a review session (D-067, "Review summary", measured) -----
+   A column of 1000 with 40 between its parts: what the sitting was and how
+   many cards, the three grades as one 14px bar and as three figures of 44,
+   what was forgotten with where it came from, and what comes back next. */
+.review-done {
+  display: grid;
+  gap: 40px;
+  align-content: start;
+  inline-size: min(1000px, 100%);
+  margin-inline: auto;
+  padding-block: 110px 40px;
+}
+.review-done__head { display: grid; gap: 12px; }
+.review-done__head .ds-label { color: var(--text-secondary); font-size: 15px; letter-spacing: 0.14em; }
+.review-done__head h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 60px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.review-done__scores { display: grid; gap: 18px; }
+.review-done__bar { display: flex; gap: 4px; block-size: 14px; border-radius: var(--radius-pill); overflow: hidden; }
+.review-done__bar > span { min-inline-size: 0; }
+.review-done__bar > span[data-tone='got'] { background: var(--status-success); }
+.review-done__bar > span[data-tone='unsure'] { background: var(--accent-ink); }
+.review-done__bar > span[data-tone='again'] { background: var(--status-error); }
+.review-done__figures { display: flex; gap: 56px; flex-wrap: wrap; }
+.review-done__figure { display: grid; gap: 4px; }
+.review-done__figure strong { font-family: var(--display-font); font-size: 44px; font-weight: var(--weight-heavy); }
+.review-done__figure span { color: var(--text-secondary); font-size: 19px; }
+.review-done__figure[data-tone='got'] strong { color: var(--status-success); }
+.review-done__figure[data-tone='unsure'] strong { color: var(--accent-ink); }
+.review-done__figure[data-tone='again'] strong { color: var(--status-error); }
+.review-done__block { display: grid; gap: 12px; }
+.review-done__block .ds-label { color: var(--text-secondary); font-size: 15px; letter-spacing: 0.14em; }
+.review-done__list {
+  display: grid;
+  border-radius: 22px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  overflow: hidden;
+}
+.review-done__row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 28px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07);
+}
+.review-done__row:last-child { box-shadow: none; }
+.review-done__word {
+  /* The frame's column is 120 wide around two Chinese characters; a Latin word
+     is longer, so 120 is where the column starts rather than where it ends. */
+  min-inline-size: 120px;
+  flex: none;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 32px;
+  font-weight: var(--weight-bold);
+}
+.review-done__gloss { flex: 1; min-inline-size: 0; font-size: 19px; }
+.review-done__from { flex: none; color: var(--text-secondary); font-size: 17px; }
+.review-done__foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.review-done__next { flex: 1; min-inline-size: 200px; color: var(--text-secondary); font-size: 18px; }
+.review-done__foot .primary,
+.review-done__foot .outline { min-block-size: 62px; padding-inline: 28px; border-radius: var(--radius-pill); font-size: 17px; }
+
+@media (max-width: 600px) {
+  .review-done { gap: 24px; padding-block: 8px 24px; }
+  .review-done__head h2 { font-size: 32px; }
+  .review-done__head .ds-label { font-size: 11px; }
+  .review-done__figures { gap: 24px; }
+  .review-done__figure strong { font-size: 30px; }
+  .review-done__figure span { font-size: 14px; }
+  .review-done__row { gap: 12px; padding: 14px 16px; flex-wrap: wrap; }
+  .review-done__word { inline-size: auto; font-size: 22px; }
+  .review-done__gloss { flex-basis: 100%; font-size: 14.5px; }
+  .review-done__from { font-size: 12.5px; }
+  .review-done__foot .primary,
+  .review-done__foot .outline { min-block-size: 48px; flex: 1; justify-content: center; }
+}
+
 /* --- Vocabulary library (D-067, "Vocabulary library", measured) ----------
    Chips of 10/18 at radius 999, then a grid of 290px covers with 26 between
    them: cover 186 tall at radius 16, its progress along the bottom inset 14,
