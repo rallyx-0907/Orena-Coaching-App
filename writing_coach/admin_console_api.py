@@ -555,6 +555,9 @@ def _media_receipt(admin: Mapping[str, Any], row: dict[str, Any], language: str,
         "language": language,
         "status": status if status in {"ok", "duplicate"} else "error",
         "detail": "" if status in {"ok", "duplicate"} else str(row.get("detail") or ""),
+        # The importer's stable code, so the history reads the same vocabulary
+        # as the live row instead of matching on a sentence.
+        "category": "" if status in {"ok", "duplicate"} else str(row.get("category") or ""),
         "title": entry.title if entry is not None else "",
         "has_transcript": bool(segments),
         "segment_count": len(segments),

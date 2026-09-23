@@ -72,7 +72,7 @@ recorded decision with the reason beside it, not an omission.
 | Capability routing: edit a route | working | `PUT /ai/config/{key}` |
 | Capability routing: test a route, test its standby | working | `POST /ai/test/{key}`; returns a structured refusal with telemetry when unconfigured |
 | Provider: test connection | working | `POST /ai/credentials/{id}/test`; verified live against Ollama (3 models, 51 ms) |
-| Provider: save a key, verify before saving | working | `PUT /ai/credentials/{id}`; the key is write-only and never echoed. **Not exercised end to end on this sandbox**: `AI_PROVIDER_SECRETS_KEY` is unset, so the console disables Save and says why |
+| Provider: save a key, verify before saving | working | `PUT /ai/credentials/{id}`. Verified end to end with a real Groq key on 2026-09-23: verify → save → test the *stored* key (4 live models) → remove. The key appears in no API response, nowhere in the container log, and not in plaintext under `/data` - it is encrypted with `AI_PROVIDER_SECRETS_KEY`, which compose now passes through |
 | Provider: remove, with consequences and type-to-confirm | working | `DELETE /ai/credentials/{id}` |
 | Accounts: list, filter, detail, retention | working | `/console/users*` |
 | Accounts: change role | **deferred** | no endpoint writes a role. The control is present and disabled with the gap named |
@@ -100,6 +100,7 @@ recorded decision with the reason beside it, not an omission.
 | P95 per capability | **deferred** | the control plane records a mean; the column shows the mean, labelled as the mean |
 | Global search | **deferred** | per-area search exists; nothing searches Reading articles or jobs |
 | Admin without the role | working | study 08's page |
+| The console's own frame: no learner rail, Back to Orena | working | decided by the human on 2026-09-23; `UI_BACKEND_GAPS.md` records it as DECIDED, not as a conflict |
 
 ## A contract this round did not resolve
 
@@ -116,16 +117,69 @@ made quietly. So it is surfaced here: **loosening it is a decision for the
 human**, and until then the vocabulary publish form states the refusal as the
 server's, not as the console's opinion.
 
-## The sandbox needs a writable media root
+## Production architecture blocker: media storage is single-instance
 
-`MEDIA_LIBRARY_ROOT` defaults to `<repo>/data/media_library`, and the lane
-sandbox mounts the worktree **read-only** on purpose - so every media import
-failed with `OSError: [Errno 30] Read-only file system` at the moment the index
-was written, after the provider call had already succeeded. The container is
-run with `MEDIA_LIBRARY_ROOT=/assets/media_library`, on the volume that already
-carries the Reading assets. Anyone rebuilding the sandbox needs that variable;
-without it the import reports the reason correctly and still cannot store
-anything.
+**`FileMediaLibraryStore` is not production-scalable and must not be treated as
+if it were.** It is one JSON file rewritten whole on every change, guarded by a
+`threading.Lock` that exists only inside one process. That is honest for a
+single container and wrong for anything else:
+
+- **two instances lose writes.** Each reads the index, adds its own row and
+  writes the file back; the second write erases the first. The existing lock
+  makes this safe between threads of one process and does nothing between
+  processes or hosts.
+- **every write is O(whole catalog).** The file is re-serialised and its
+  integrity hash recomputed for a single status change.
+- **assets are local paths.** `FilesystemBookAssetStore` under
+  `MEDIA_LIBRARY_ASSET_ROOT` assumes one filesystem that every instance can
+  see.
+
+**Do not paper over this with a cross-container file lock.** A lock on a shared
+mount trades a lost write for a stuck deployment, keeps the O(catalog) rewrite,
+and leaves the asset path assumption untouched - it would make the blocker
+harder to see without removing it.
+
+### Migration path (not started; needs approval)
+
+Two independent moves, in this order:
+
+1. **Metadata and lifecycle into the shared persistence.** The entry is already
+   a flat dataclass with a stable `media_id`, three lifecycle states and a JSON
+   `lesson` payload, so it maps onto one table with a JSON column and reads
+   through a repository exactly as the Reading engine's content does. The
+   store's Protocol (`list` / `get` / `upsert` / `delete`) is the seam: a
+   PostgreSQL implementation satisfies it without a caller changing. `list`
+   already defaults to `status="published"`, so the learner-visibility rule
+   survives the move by construction.
+2. **Assets into persistent or object storage.** `BookAssetStore` is already an
+   interface with a filesystem implementation; an object-store implementation
+   behind the same interface removes the single-filesystem assumption. Playback
+   URLs are built from the asset key, not from a path, so they do not change.
+
+Neither is opened in this Admin round. Both are schema/architecture decisions
+under `AGENTS.md` "Architecture holds" and need the human's authorization and
+an independent architecture review first.
+
+## The media storage deployment contract
+
+The application's defaults are repo-relative, which suits a checkout and is
+wrong for a container: an image with the code mounted read-only cannot write
+them, and one without a volume loses everything on the next recreate. That is
+not a sandbox quirk, so it is not fixed with a sandbox workaround -
+`compose.yaml` declares the contract for every deployment:
+
+| Variable | Value | What is lost without it |
+| --- | --- | --- |
+| `MEDIA_LIBRARY_ROOT` | `/data/media_library` | the index: every imported item, its transcript and its lifecycle state |
+| `MEDIA_LIBRARY_ASSET_ROOT` | `/data/media_library_assets` | the stored bytes of any directly imported file and its poster |
+| `READING_LIBRARY_ASSET_ROOT` | `/data/reading_library_assets` | uploads waiting between the request that accepted them and the worker |
+
+`/data` is the persistent volume the deployment already uses for its databases.
+`.env.example` names all three with no values.
+
+Verified on the lane sandbox: with the item left `unpublished`, a container
+restart *and* a full recreate both keep the index, the 60-segment transcript
+and the lifecycle state, and the learner's library gains it again on Restore.
 
 ## Known gaps in the design itself
 

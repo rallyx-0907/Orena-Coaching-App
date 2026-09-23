@@ -1307,29 +1307,23 @@ present, which costs 15px and drops it to four.
 
 ---
 
-## The learner rail on the Platform Admin console (2026-09-23, unresolved)
+## The learner rail on the Platform Admin console (2026-09-23, DECIDED)
 
-`DESIGN_CONTRACT.md` rule 47 gives the rail to four places - Home, Library,
-Vocabulary and Progress. Platform Admin is none of them, and the canonical
-Admin frame (`Orena Admin Control Center.dc.html`) draws no learner rail at
-all: its tables are laid out for about 1320px.
+**Resolved by the human on 2026-09-23: the rail is removed from `#/admin`.**
+Platform Admin is a full-width workspace inside Orena - not a learner room and
+not a separate site - and it carries one named way back, "Back to Orena", in
+its own header.
 
-The console renders inside the learner shell, so the rail takes 280px and the
-console has 885px on a 1280px window. That is the single largest remaining
-difference between the Admin design and the implementation - every table in
-the console is laid out against a width the design never assumed.
+This matches `DESIGN_CONTRACT.md` rule 47, which gives the rail to Home,
+Library, Vocabulary and Progress only, and the canonical Admin frame
+(`Orena Admin Control Center.dc.html`), which draws no learner rail at all and
+lays its tables out for the whole width.
 
-**Not resolved by choosing**, for two reasons the human should weigh:
+Implemented in `static/orena/admin/admin.css`
+(`body:has(#main[data-experience='admin'])` stands the shell down and sets
+`--rail-width: 0`) and `static/orena/admin/shell.js` (the back link). The
+console went from 885px of usable width to 1199px on a 1280px window.
 
-- `reader.css` is the existing precedent for a room quieting the shell, and it
-  is explicit that *nothing is hidden*: "every destination stays reachable, by
-  pointer and by keyboard - it simply stops competing." Hiding the rail on
-  Admin would be the opposite decision.
-- With the rail gone, the console has no way back into the learner app. The
-  reader keeps one; Admin's frame does not draw one.
-
-What was done instead: the console now lays out to its own width rather than
-the window's (`.ac-body` is a container, and the grid steps are container
-queries), so nothing overflows at 885px. If the rail goes, the container
-queries stop firing on their own and the console widens into the design's
-proportions with no further change.
+The reader's precedent - a room may quiet the shell but never removes a
+destination - is honoured by the back link rather than by keeping the rail:
+Admin is not a learner room, and the one destination it needs is the way out.

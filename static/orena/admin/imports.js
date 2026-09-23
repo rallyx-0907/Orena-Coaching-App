@@ -60,7 +60,15 @@ export function mediaOutcome(row) {
   if (row?.status === 'ok') {
     return { state: 'published', contentId: row.media_id, has_transcript: row.has_transcript ?? null, segment_count: row.segment_count ?? null };
   }
-  return { state: 'failed', code: 'source', stage: 'source', message: row?.detail || '' };
+  /* The importer's stable category, so the console says it in the operator's
+     language instead of quoting an English sentence back at them. The server's
+     `detail` stays as the fallback for a category this build does not know. */
+  return {
+    state: 'failed',
+    code: row?.category || 'source',
+    stage: 'source',
+    message: row?.detail || '',
+  };
 }
 
 /* A known failure has words in both languages; otherwise the server's own

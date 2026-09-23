@@ -23,6 +23,19 @@ services:
       USER_DATA_ROOT: /data/users
       PLATFORM_DB: /data/platform.db
       PRODUCT_DB: /data/product.db
+      # Content an operator imported lives on the same persistent volume as
+      # everything else the deployment owns. The application's defaults are
+      # repo-relative, which is right for a checkout and wrong for a container:
+      # an image with the code mounted read-only cannot write them, and one
+      # without a volume loses the index, the transcripts and the lifecycle
+      # state on the next recreate. Naming them here is the contract.
+      MEDIA_LIBRARY_ROOT: /data/media_library
+      MEDIA_LIBRARY_ASSET_ROOT: /data/media_library_assets
+      READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets
+      # The key that encrypts saved provider credentials. Passed through from
+      # the environment and never written here: without it the console refuses
+      # to save a key and says so, which is the correct closed state.
+      AI_PROVIDER_SECRETS_KEY: ${AI_PROVIDER_SECRETS_KEY:-}
       PERSISTENCE_BACKEND: ${PERSISTENCE_BACKEND:-postgresql}
       POSTGRES_RUNTIME_URL: ${POSTGRES_RUNTIME_URL:-postgresql+psycopg://becoming:becoming-local-dev@postgres:5432/becoming}
       POSTGRES_SHADOW_URL: ${POSTGRES_SHADOW_URL:-}

@@ -62,6 +62,10 @@ class MediaSourceImportItem:
     detail: str
     media_id: str = ""
     lesson_id: str = ""
+    # A stable code the console maps to its own words in its own language.
+    # `detail` is the English fallback for anything that reads this API
+    # directly; neither is ever the text of a raw exception.
+    category: str = ""
 
 
 @dataclass(frozen=True)
@@ -179,7 +183,67 @@ def _lesson_projection(lesson_id: str, acquisition: MediaAcquisition, language: 
 _logger = logging.getLogger(__name__)
 
 
-def _failure_reason(exc: BaseException) -> str:
+class MediaLibraryWriteFailed(Exception):
+    """This deployment could not store what was imported.
+
+    Raised only where storage is actually written - the library index and the
+    asset store. Everything upstream of that (a provider, a download, a probe,
+    a file read) raises its own error for its own reason, and several of them
+    are `OSError` too. Keeping the boundary explicit is what stops "the disk is
+    read-only" and "the source hung up" from arriving as the same sentence.
+    """
+
+
+def _safe_url_for_log(url: str) -> str:
+    """The source, identifiable, without what it was carrying.
+
+    A media URL is operator input and routinely signed: `?token=...`, `?sig=...`,
+    sometimes `user:password@`. The log needs to say *which* source failed, and
+    the host and path do that. Everything else is dropped rather than
+    pattern-matched, because a list of secret-looking parameter names is a list
+    that is always one provider out of date.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return "<unparseable url>"
+    if not parts.hostname:
+        return "<relative url>"
+    port = f":{parts.port}" if parts.port else ""
+    return f"{parts.scheme}://{parts.hostname}{port}{parts.path}"
+
+
+def _failure_reason(exc: BaseException) -> tuple[str, str]:
+    """(category, sentence) for a failed import.
+
+    Nothing here interpolates `str(exc)` for an exception this code did not
+    author. A provider failure already carries a learner-safe sentence; a
+    storage failure quotes the operating system's own short description of the
+    errno, which is vocabulary rather than detail; everything else gets one
+    sentence and leaves its specifics in the log.
+    """
+    from writing_coach.media_ingestion import MediaImportError
+
+    if isinstance(exc, MediaImportError):
+        return exc.category.value, exc.learner_message
+    if isinstance(exc, MediaLibraryWriteFailed):
+        said = getattr(exc, "reason", "") or "the storage refused the write"
+        return (
+            "media_library_write_failed",
+            f"The media library could not be written: {said}. "
+            "This is a deployment problem, not a problem with the source.",
+        )
+    if isinstance(exc, UnsafeMediaFetch):
+        # Authored constants from `media_safe_fetch`, written to be shown.
+        return "unsafe_source", str(exc)
+    return "import_failed", "This source could not be imported. The server log has the details."
+
+
+def _write_failure(exc: OSError) -> MediaLibraryWriteFailed:
+    failure = MediaLibraryWriteFailed()
+    failure.reason = exc.strerror or "the storage refused the write"
+    failure.__cause__ = exc
+    return failure
     """Why this source did not import, in words an operator can act on.
 
     `This source failed (OSError).` was true and useless: it named a class,
@@ -229,18 +293,31 @@ class MediaSourceImporter:
                     url, language=language, imported_by=imported_by, persist_media=True
                 )
                 entry = self._apply_overrides(entry, item)
-                self._store.upsert(entry)
-            except UnsafeMediaFetch as exc:
-                results.append(MediaSourceImportItem(url, "error", str(exc)))
-            except ValueError as exc:
-                results.append(MediaSourceImportItem(url, "error", str(exc)))
             except Exception as exc:  # one bad source must not end the batch
-                _logger.exception("media import failed for %s", url)
-                results.append(MediaSourceImportItem(url, "error", _failure_reason(exc)))
-            else:
-                lesson_id = str((entry.lesson or {}).get("lesson_id") or "")
-                results.append(MediaSourceImportItem(url, "ok", "Imported.", entry.media_id, lesson_id))
+                results.append(self._failed(url, exc))
+                continue
+            # Persist is its own step so its failures are its own: an OSError
+            # here is the library, and an OSError above was something else.
+            try:
+                self._store.upsert(entry)
+            except OSError as exc:
+                results.append(self._failed(url, _write_failure(exc)))
+                continue
+            except Exception as exc:
+                results.append(self._failed(url, exc))
+                continue
+            lesson_id = str((entry.lesson or {}).get("lesson_id") or "")
+            results.append(MediaSourceImportItem(url, "ok", "Imported.", entry.media_id, lesson_id, "ok"))
         return MediaSourceImportReport(tuple(results))
+
+    def _failed(self, url: str, exc: BaseException) -> MediaSourceImportItem:
+        """Log everything, answer with the category and its sentence."""
+        category, detail = _failure_reason(exc)
+        _logger.error(
+            "media import failed (%s) for %s", category, _safe_url_for_log(url),
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
+        return MediaSourceImportItem(url, "error", detail, category=category)
 
     def _apply_overrides(self, entry: MediaLibraryEntry, item: Mapping[str, Any]) -> MediaLibraryEntry:
         """Only the fields a human may overrule, and only when they said so.
@@ -368,7 +445,11 @@ class MediaSourceImporter:
             download_bounded(url, temp.path)
             probe = probe_media(temp.path)
             if persist_media:
-                self._asset_store.put(asset_key, temp.path.read_bytes())
+                # Storage, so a refusal here is the library's and says so.
+                try:
+                    self._asset_store.put(asset_key, temp.path.read_bytes())
+                except OSError as exc:
+                    raise _write_failure(exc) from exc
                 thumbnail_key = self._persist_thumbnail(
                     temp.path, probe.duration_ms, probe.media_type, f"direct-{token}"
                 )
