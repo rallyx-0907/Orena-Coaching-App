@@ -376,6 +376,19 @@ def _reading_texts(entry: Mapping[str, Any]) -> list[str]:
     return texts
 
 
+def catalog_readings(term: str) -> list[str]:
+    """The readings the catalogue has for this word, as plain strings.
+
+    A surface asks this to know whether a word has one pronunciation or a
+    choice of them - and, when it is a choice, which ones to offer. It is the
+    same list `entry_identity_for` decides on, read from the same entry, so the
+    two can never disagree about how ambiguous a word is.
+    """
+
+    entry = _catalog_entry_for(term)
+    return [] if entry is None else _reading_texts(entry)
+
+
 def entry_identity_for(term: str, reading: str = "") -> dict[str, str]:
     """Which catalogue entry a word being saved is, and which reading of it.
 

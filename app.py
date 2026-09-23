@@ -87,6 +87,8 @@ from writing_coach.speech_api import (
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
 from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
 from writing_coach.library_api import configure_library, router as library_router
+from writing_coach.word_audio import WordAudioLibrary, default_voices
+from writing_coach.word_audio_api import configure_word_audio, router as word_audio_router
 from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
     configure_listening_media_library,
@@ -608,6 +610,14 @@ configure_library(
     else None
 )
 app.include_router(library_router)
+# How a saved word sounds, bound to the reading it was kept at (2026-09-23).
+# No schema: the clips and the licence they may be played under live in the
+# existing asset store, keyed by a digest of (entry identity, reading).
+_word_audio_root = Path(os.getenv("WORD_AUDIO_ASSET_ROOT", str(ROOT / "data" / "word_audio")))
+configure_word_audio(
+    lambda: WordAudioLibrary(FilesystemBookAssetStore(_word_audio_root), default_voices())
+)
+app.include_router(word_audio_router)
 # Learner summary (I6 read step): each domain's own evidence, side by side,
 # through the reads the app already serves. No surface calls it yet.
 configure_learner_summary(runtime_sources(

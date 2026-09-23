@@ -1512,3 +1512,53 @@ without moving the page.
 - notes on an item (`library_items.note` exists and nothing writes it);
 - the kinds with no owner, unchanged: a note is stored nowhere, a book is
   catalogue only.
+
+## Per-word audio, bound to the reading (2026-09-23)
+
+`writing_coach/word_audio.py`, on the identity the entry work put in the
+runtime: the cache key is `(identity_key, reading)`, so xíng and háng are two
+recordings of 行 and neither can be served for the other.
+
+**The rule that outranks coverage:** a word whose reading is still ambiguous
+gets no audio, and no source is even asked. A recording of the wrong reading
+keeps teaching the wrong word every time it is played, and nothing in the row
+says so; silence is recoverable.
+
+**No schema, and no contract moved.** The clips and their licence live in the
+existing `BookAssetStore` seam (`data/word_audio`), not in a table. Nothing
+here writes to `saved_words`, `library_items` or `vocabulary_entries`, and
+neither Vocabulary nor My Library answers anything differently.
+
+**Coverage, measured against Wikimedia Commons** with
+`scripts/measure_word_audio_coverage.py` (crosses the network, so it is an
+operator tool, not CI):
+
+| | |
+| --- | --- |
+| English, 30 ordinary words | **30/30** |
+| Chinese, 15 readings of 8 multi-reading characters | **12/15** |
+
+Missing and recorded rather than worked around: 行 háng, 重 chóng, 差 chāi.
+Commons has no clip named for those readings, and a clip named only 行 could
+be either, so they are refused. A local voice would answer them once one is
+configured.
+
+**Two things that measurement caught**, both of which had made coverage look
+like zero: a free-text search for an ordinary word returns harbours and folk
+songs rather than pronunciation, so files are now asked for **by name** (the
+conventions Commons actually uses) with a narrow Lingua Libre search behind
+it; and Commons appends campaign parameters to the url it hands back, so the
+file type has to be read from the path - `rsplit(".")` over the whole url read
+`…&utm_content=original` as the extension and rejected every real recording.
+
+**The fallback is a seam, not a running voice.** `KokoroVoice` speaks through
+`KOKORO_TTS_URL`; unconfigured - which is every environment here - it reports
+itself unavailable and the library answers "no audio" rather than substituting
+another voice. **Nothing is generated locally today**, and the coverage above
+is Commons alone.
+
+**No surface plays it yet.** `GET /api/library/vocabulary/{word}/audio` says
+whether there is a clip, under what licence and with what attribution, and
+`GET /api/library/audio/{key}` serves the bytes. Putting a play control in
+Vocabulary or My Library is UI scope nobody has opened, and the attribution the
+licence obliges has to be shown wherever it lands.
