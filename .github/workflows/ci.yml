@@ -88,6 +88,7 @@ jobs:
           node scripts/test_orena_writing_workspace.mjs
           node scripts/test_orena_language_and_recall.mjs
           node scripts/test_orena_admin_entry.mjs
+          node scripts/test_orena_admin_console.mjs
           node scripts/test_orena_vocabulary_card.mjs
           node scripts/test_orena_vocabulary_experience.mjs
           node scripts/test_orena_vocabulary_library.mjs

@@ -7,7 +7,9 @@ import { copy } from '../static/orena/ui/copy.js';
 import { patternsFor } from '../static/orena/content/patterns.js';
 import { JUDGEMENT_KEYS, judgementLabel } from '../static/orena/ui/understanding.js';
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+// Source is compared as text, so a checkout with CRLF endings (Git for
+// Windows' default) reads the same as the LF tree CI checks out.
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const LANGUAGES = ['en', 'zh'];
 
 // Both languages carry the same authored depth. A pattern taught with a

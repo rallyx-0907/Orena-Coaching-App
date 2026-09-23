@@ -3,7 +3,7 @@ import { navigationSignal } from './navigation.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
-async function request(url, options={}){
+export async function request(url, options={}){
   const response = await fetch(url,{
     credentials:'same-origin',
     cache:'no-store',

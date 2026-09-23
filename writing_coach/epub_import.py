@@ -21,12 +21,16 @@ never only against a declared header a crafted archive could lie about.
     `MAX_TOTAL_UNCOMPRESSED_BYTES` bound the archive itself (zip-bomb guard).
   - Every zip entry name is checked for absolute paths and `..` segments
     (zip-slip guard) before it is ever joined into an internal lookup.
-  - Every XML/XHTML fragment is scanned for a `<!ENTITY` declaration before
-    parsing and rejected if present (entity-expansion / XXE guard). An
+  - Every XML/XHTML fragment's prolog is read with expat before parsing and
+    the fragment is rejected if its DOCTYPE declares any entity (entity-
+    expansion / XXE guard) - however long the prolog, and without mistaking
+    body text or CDATA that merely mentions "<!ENTITY" for a declaration. An
     ordinary `<!DOCTYPE html PUBLIC "..." "...">` reference, which many real
     EPUB chapter files carry for XHTML validation, is left untouched -
     `xml.etree.ElementTree` does not fetch external subsets during ordinary
     parsing, so it needs no special handling here.
+  - A size limit reached while reading a chapter fails the whole archive as
+    `archive_too_large`; other chapter-level failures skip only that chapter.
   - Chapter text is projected into headings, paragraphs and meaningful breaks;
     raw child-element markup, and therefore any embedded `<script>`, is never
     copied into a content block. Paragraphs are always returned as plain
@@ -44,6 +48,7 @@ import re
 import zipfile
 from dataclasses import dataclass, field
 from xml.etree import ElementTree
+from xml.parsers import expat
 
 MAX_EPUB_BYTES = 80 * 1024 * 1024
 MAX_ENTRIES = 4000
@@ -115,10 +120,39 @@ class ParsedBook:
         return sum(chapter.word_count for chapter in self.chapters)
 
 
+class _EntityDeclared(Exception):
+    """The prolog declares an entity."""
+
+
+class _RootReached(Exception):
+    """The prolog ended without declaring one."""
+
+
 def _reject_unsafe_xml(raw: bytes) -> None:
-    head = raw[:8192].lower()
-    if b"<!entity" in head:
-        raise EpubImportError("unsafe_xml_content", "custom XML entity declaration")
+    """Refuse a document whose DOCTYPE declares an entity.
+
+    Declarations live only in the DOCTYPE's internal subset, which a parser
+    reads before the root element. Reading the prolog with expat itself means
+    a long comment or processing instruction cannot push a declaration out of
+    view, and text or CDATA in the body that only mentions one is left alone.
+    Parsing stops at the root element's start tag.
+    """
+    parser = expat.ParserCreate()
+
+    def declared(*_args: object) -> None:
+        raise _EntityDeclared
+
+    def root(*_args: object) -> None:
+        raise _RootReached
+
+    parser.EntityDeclHandler = declared
+    parser.StartElementHandler = root
+    try:
+        parser.Parse(raw, True)
+    except _EntityDeclared:
+        raise EpubImportError("unsafe_xml_content", "custom XML entity declaration") from None
+    except (_RootReached, expat.ExpatError):
+        return  # the full parse reports anything malformed
 
 
 def _parse_xml(raw: bytes) -> ElementTree.Element:
@@ -579,7 +613,9 @@ def parse_epub(data: bytes) -> ParsedBook:
             continue
         try:
             document = _parse_xml(_read_entry(zf, zf.getinfo(href), budget=budget))
-        except EpubImportError:
+        except EpubImportError as exc:
+            if exc.category == "archive_too_large":
+                raise  # a size limit is the archive's failure, not one chapter's
             continue  # one unreadable chapter is skipped, not a whole-book failure
         blocks = _blocks_of(document)
         spine_documents.append({

@@ -2,17 +2,20 @@
 
 Media import accepts URLs supplied by people.  Resolving and checking every
 redirect here keeps provider and direct-media code from accidentally gaining an
-SSRF path when a new source type is added later.
+SSRF path when a new source type is added later.  The address a connection
+actually reaches is checked too, because a name can resolve to a public address
+when it is validated and a private one when it is connected (DNS rebinding).
 """
 from __future__ import annotations
 
+import http.client
 import ipaddress
 import socket
 from pathlib import Path
 from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPHandler, HTTPRedirectHandler, HTTPSHandler, Request, build_opener
 
 MAX_MEDIA_BYTES: Final[int] = 64 * 1024 * 1024
 DEFAULT_TIMEOUT_SECONDS: Final[float] = 12.0
@@ -105,9 +108,51 @@ class _CheckedRedirects(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+def _connect_public(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None, *args, **kwargs):
+    """Connect, then keep the connection only if it reached a public address.
+
+    Runs where http.client opens its socket, after the TCP handshake and
+    before a single request byte is written, so whatever DNS answered the
+    second time, nothing is sent to a private or local service.
+    """
+    sock = socket.create_connection(address, timeout, source_address)
+    try:
+        public = _is_public_address(sock.getpeername()[0])
+    except (OSError, ValueError, IndexError, TypeError):
+        public = False
+    if not public:
+        sock.close()
+        raise _unsafe("This media address is not allowed.")
+    return sock
+
+
+class _PublicHTTPConnection(http.client.HTTPConnection):
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+        self._create_connection = _connect_public
+
+
+class _PublicHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+        self._create_connection = _connect_public
+
+
+class _PublicHTTPHandler(HTTPHandler):
+    def http_open(self, req):  # type: ignore[no-untyped-def]
+        return self.do_open(_PublicHTTPConnection, req)
+
+
+class _PublicHTTPSHandler(HTTPSHandler):
+    def https_open(self, req):  # type: ignore[no-untyped-def]
+        return self.do_open(_PublicHTTPSConnection, req, context=self._context)
+
+
 def _open(url: str, *, timeout: float, max_redirects: int):
     validate_public_http_url(url)
-    opener = build_opener(_CheckedRedirects(max_redirects=max_redirects))
+    opener = build_opener(
+        _PublicHTTPHandler(), _PublicHTTPSHandler(), _CheckedRedirects(max_redirects=max_redirects)
+    )
     request = Request(url, headers={"User-Agent": "OrenaMediaImport/1.0"})
     try:
         return opener.open(request, timeout=timeout)

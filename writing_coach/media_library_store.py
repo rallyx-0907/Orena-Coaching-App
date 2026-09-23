@@ -1,8 +1,11 @@
 """Durable, single-process shared Listening Library index.
 
-The sandbox runs one uvicorn process, so an atomic replace gives this store the
-needed lock-free single-process guarantee. A future multi-writer deployment
-must replace this implementation rather than pretending a JSON file has locks.
+The sandbox runs one uvicorn process. An atomic replace keeps the file whole,
+and one lock per index file keeps two threads of that process from each
+reading the index, adding an entry and writing back over the other's entry -
+FastAPI runs plain `def` routes in a thread pool, so imports and uploads do
+overlap. A future multi-process deployment must replace this implementation
+rather than pretending a JSON file has cross-process locks.
 """
 from __future__ import annotations
 
@@ -11,6 +14,7 @@ import json
 import os
 import re
 import tempfile
+import threading
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +27,15 @@ MEDIA_LIBRARY_ROOT = Path(
     os.getenv("MEDIA_LIBRARY_ROOT", str(Path(__file__).resolve().parents[1] / "data" / "media_library"))
 )
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$")
+_WRITERS: dict[str, threading.Lock] = {}
+_WRITERS_GUARD = threading.Lock()
+
+
+def _writer_for(index: Path) -> threading.Lock:
+    """One lock per index file, shared by every store object that opens it."""
+    key = os.path.normcase(os.path.abspath(index))
+    with _WRITERS_GUARD:
+        return _WRITERS.setdefault(key, threading.Lock())
 
 
 @dataclass(frozen=True)
@@ -122,6 +135,7 @@ class FileMediaLibraryStore:
     def __init__(self, root: Path = MEDIA_LIBRARY_ROOT) -> None:
         self._root = Path(root)
         self._index = self._root / "index.json"
+        self._writer = _writer_for(self._index)
         self.last_read_issue = ""
 
     def _read(self) -> dict[str, MediaLibraryEntry]:
@@ -175,15 +189,17 @@ class FileMediaLibraryStore:
 
     def upsert(self, entry: MediaLibraryEntry) -> MediaLibraryEntry:
         validate_entry(entry)
-        entries = self._read()
-        entries[entry.media_id] = entry
-        self._write(entries)
+        with self._writer:
+            entries = self._read()
+            entries[entry.media_id] = entry
+            self._write(entries)
         return entry
 
     def delete(self, media_id: str) -> bool:
-        entries = self._read()
-        if media_id not in entries:
-            return False
-        del entries[media_id]
-        self._write(entries)
+        with self._writer:
+            entries = self._read()
+            if media_id not in entries:
+                return False
+            del entries[media_id]
+            self._write(entries)
         return True

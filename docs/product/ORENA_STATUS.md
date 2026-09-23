@@ -282,9 +282,11 @@ the draft, target and task, distinguishes a retryable interruption, and the
 retry resubmits. With no provider configured, review, explanation, registers
 and spoken coaching degrade honestly rather than inventing an answer.
 
-Operator note: the Platform Admin web surface has no host template since the
-reset removed `templates/index.html`; its API and script remain. Whether Orena
-keeps that page, and where, is an open human decision recorded in
-`docs/project/CURRENT_HANDOFF.md`.
+Operator note: Platform Admin is an admin-only control center at `#/admin`
+(D-058): Overview, AI & Models, Users, Content, Imports and Operations, over
+`/api/admin/console` and the existing admin APIs. Figures are real aggregates
+or say "not available"; account reads are masked and audited; import attempts,
+failures included, are receipts in `audit_logs`; learner AI activation stays
+human-gated; there is no billing view. REVIEWABLE in lane `admin/control-center`.
 
 NEXT_REVIEWABLE_SLICE: Human browser review of the learning capabilities and the shared understanding that connects all of them, Grammar and Vocabulary included. After that review, the open product decisions in `docs/project/CURRENT_HANDOFF.md` - Speaking's cross-turn conversation architecture, Reading library sourcing and rights, Grammar breadth, and the Platform Admin host - need judgement before more capability breadth is added. Native remains frozen.
