@@ -1784,3 +1784,33 @@ the difference between restoring and saving again.
 
 Verified in the browser against the sandbox: choose one, Shift-click a range,
 "Đã chọn 3"; delete two; both gone; Hoàn tác; both back.
+
+## The saved-words view leaves Vocabulary (2026-09-23)
+
+Vocabulary is the shared catalogue; a learner's own words are Thư viện của tôi's
+(D-074). The room's `saved` view is deleted rather than restyled (rule 44),
+together with the three handlers only it used, its paging function, its search
+debounce and the `vocabularyManage` copy key.
+
+**Nothing was lost.** Checked capability by capability before deleting: listing
+saved words, searching them (server side, cursor-paged), opening one, marking it,
+filing it into a set, deleting with ten seconds of undo — all are in Thư viện của
+tôi. The route in is the tab bar, which the design gives it.
+
+Three controls the old view carried are **not drawn by any canonical frame** and
+were not rebuilt anywhere:
+
+| Control | Where it was | Decision |
+| --- | --- | --- |
+| Status filter chips over saved words (all/new/learning/due/mastered/saved) | Vocabulary → saved | Not drawn. Thư viện của tôi draws "cần ôn hôm nay" instead. |
+| Sort (recommended / alpha / level / due) over saved words | Vocabulary → saved | Not drawn. |
+| Choosing words to start a study session from the list | Vocabulary → saved | Not drawn. Recall decides its own queue. |
+
+They survive on the **collection** views, where `management()` still serves the
+catalogue, and whether the canonical collection frames draw them is measured in
+the frame work, not assumed here.
+
+Two gates moved with the behaviour rather than being weakened:
+`test_orena_vocabulary_paging.mjs` now pins the cursor on `ui/collection.js` and
+pins that `ui/expression.js` holds no `saved` view at all;
+`test_orena_vocabulary_experience.mjs` pins the same absence.

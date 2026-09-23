@@ -538,7 +538,6 @@ export const vi = {
   vocabularySortRecommended: 'Gợi ý',
   vocabularyNoMatches: 'Không có từ nào khớp với bộ lọc này.',
   vocabularyLoadMore: 'Tải thêm từ',
-  vocabularyManage: 'Quản lý từ đã lưu',
   vocabularyBackOverview: 'Quay lại Từ vựng',
   vocabularyContinueReview: 'Tiếp tục ôn',
   vocabularyOpen: 'Mở',

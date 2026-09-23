@@ -86,7 +86,10 @@ const vocabularyExperienceSource = readFileSync(new URL('../static/orena/ui/voca
 const worldSource = readFileSync(new URL('../static/orena/ui/world.js', import.meta.url), 'utf8');
 const discoverySource = readFileSync(new URL('../static/orena/ui/discovery.js', import.meta.url), 'utf8');
 assert.match(expressionSource, /const management = \(title, note = '', withBack = false\)/, 'management views expose an in-content return affordance');
-assert.match(expressionSource, /view === 'saved' \? management\(c\.vocabularyManage, c\.vocabularyOverviewNote, true\)/, 'Saved management can return to Vocabulary Overview');
+/* There is no saved view here any more. Managing a learner's own words -
+   listing, searching, opening, marking, filing, deleting with a way back - is
+   Thu vien cua toi's (D-074), and this room kept no copy of it. */
+assert.doesNotMatch(expressionSource, /view === 'saved'/, "Vocabulary holds no view of the learner's own words");
 assert.match(expressionSource, /view === 'library' \? libraryView\(\)/, 'Library is an expanded view rather than an in-page scroll target');
 /* Vocabulary is the shared catalogue, as "Vocabulary library" draws it
    (D-067): the filter chips, then the collections themselves - covers, names

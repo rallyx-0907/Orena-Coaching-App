@@ -77,7 +77,7 @@ assert.doesNotMatch(
 );
 assert.match(rooms['ui/search.js'], /libraryVocabulary\(\{ query: wanted/, 'search is a query');
 assert.match(rooms['ui/collection.js'], /query: state\.query\.trim\(\)/, 'so is the saved panel\'s search');
-assert.match(rooms['ui/expression.js'], /cursor: append \? savedData\.next_cursor/, 'and the room pages with the cursor');
+assert.match(rooms['ui/collection.js'], /cursor: append \? state\.cursor/, 'and the library pages with the cursor');
 
 /* --- The server does not read the listing to answer membership --------- */
 
@@ -108,9 +108,17 @@ for (const helper of ['saved_vocabulary_words', 'saved_vocabulary_state'])
 
 /* --- Level is sorted only where the whole set is present ---------------- */
 
+/* Vocabulary sorts a catalogue collection, which arrives paged, so the sort
+   is offered only once the page holds the whole of it. A learner's own words
+   are not sorted here at all - they are Thu vien cua toi's. */
+assert.doesNotMatch(
+  rooms['ui/expression.js'],
+  /view === 'saved'/,
+  'the catalogue room holds no view of a learner\'s own words',
+);
 assert.match(
   rooms['ui/expression.js'],
-  /const complete = view === 'saved'/,
+  /const complete = !activeCollection\?\.pagination\?\.has_more;/,
   'the room knows whether it holds everything it claims to sort',
 );
 assert.match(

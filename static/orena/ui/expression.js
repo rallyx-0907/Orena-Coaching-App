@@ -49,20 +49,12 @@ import { patternsFor } from '../content/patterns.js';
    the room asks again when it has worked through the page. */
 const RECALL_QUEUE = 60;
 
-/* The room opens on a page of saved words and asks for the next one when
-   the learner wants it. Searching, filtering and ordering that page are the
-   server's work: the browser must not hold a learner's whole vocabulary to
-   answer a question about part of it. */
+/* What the room reads of the learner's own words: a first page, which is
+   state and not a screen. The study view, the word sheet and "ask about this
+   word" read it to know what the learner already has. Browsing, searching and
+   paging a learner's whole vocabulary is Thu vien cua toi's (D-074), and it
+   asks for its own. */
 const SAVED_PAGE = 50;
-const SAVED_SEARCH_DEBOUNCE_MS = 220;
-/* Which server filter each of the room's chips means. `new` and `saved` have
-   no stored state of their own, so they stay the whole list and the chip
-   narrows what is drawn from the page. */
-const SAVED_STATUS = { learning: 'learning', due: 'due', mastered: 'mastered' };
-/* And which server order each sort option means. `level` is not a stored
-   field - it comes from the curated catalogue - so it orders the page the
-   room is holding rather than the library. */
-const SAVED_ORDER = { recommended: 'due', due: 'due', alpha: 'word' };
 import {
   grammarShelf,
   filterGrammar,
@@ -1089,7 +1081,7 @@ function vocabularyLevelOrder(level) {
 
 export function vocabularyInteractionItems(view, { visibleItems = [], savedCards = [], studyItems = [] } = {}) {
   if (view === 'collection' || view === 'collection-list') return visibleItems;
-  if (view === 'saved' || view === 'overview') return savedCards;
+  if (view === 'overview') return savedCards;
   if (view === 'study') return studyItems;
   return [];
 }
@@ -1127,9 +1119,6 @@ export async function renderLanguage(root, ctx) {
   /* Which chip the library is filtered by: 'all', 'published', or a
      language code the catalogue actually holds. */
   let packFilter = 'all';
-  let savedSearchTimer = null;
-  let savedRequest = 0;
-  let savedLoading = false;
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -1137,34 +1126,6 @@ export async function renderLanguage(root, ctx) {
     );
   };
   refreshSavedCards();
-
-  /* One page of saved words, asked for the way the toolbar is set. `append`
-     continues the page the learner is looking at; without it the page is
-     replaced, which is what a new search or filter means. */
-  async function loadSavedPage({ append = false } = {}) {
-    const token = (savedRequest += 1);
-    savedLoading = true;
-    try {
-      const page = await api.libraryVocabulary({
-        limit: SAVED_PAGE,
-        cursor: append ? savedData.next_cursor || '' : '',
-        query,
-        status: SAVED_STATUS[filter] || '',
-        order: SAVED_ORDER[sort] || 'recent',
-      });
-      if (!alive() || token !== savedRequest) return;
-      savedData = append
-        ? { ...page, items: [...(savedData.items || []), ...(page.items || [])] }
-        : page;
-      refreshSavedCards();
-      if (view === 'saved') activeItems = savedCards;
-    } catch {
-      if (!alive() || token !== savedRequest) return;
-    } finally {
-      if (token === savedRequest) savedLoading = false;
-    }
-    if (alive() && token === savedRequest) paint();
-  }
 
   const summary = () => savedData.summary || {
     saved: savedCards.length,
@@ -1286,9 +1247,7 @@ export async function renderLanguage(root, ctx) {
        when only part of it was. The option is therefore offered only when
        everything the list claims to cover is actually here, and the sort falls
        back to the one the server did apply until then. */
-    const complete = view === 'saved'
-      ? !savedData.has_more
-      : !activeCollection?.pagination?.has_more;
+    const complete = !activeCollection?.pagination?.has_more;
     const applied = sort === 'level' && !complete ? 'recommended' : sort;
     visibleItems = [...filtered].sort((left, right) => {
       if (applied === 'alpha') return String(left.headword).localeCompare(String(right.headword));
@@ -1312,13 +1271,11 @@ export async function renderLanguage(root, ctx) {
       : `<section class="empty vocabulary-empty"><h2>${esc(c.vocabularyNoMatches)}</h2></section>`;
     const pagination = view === 'collection' && activeCollection?.pagination?.has_more
       ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-load-more>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
-      : view === 'saved' && savedData.has_more
-        ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-saved-more${savedLoading ? ' disabled' : ''}>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
-        : '';
+      : '';
     const collectionProgress = view === 'collection' && activeCollection
       ? (() => { const progress = activeCollection.progress || {}; const learned = Number(progress.learned_count) || 0; const total = Number(activeCollection.item_count) || 0; const percent = total ? Math.round((learned / total) * 100) : 0; return `<section class="vocabulary-collection-detail-progress" aria-label="${esc(c.vocabularyProgress || 'Progress')}"><div><span>${esc(c.vocabularyProgress || 'Progress')}</span><strong>${esc(learned)} / ${esc(total)} ${esc(c.vocabularyWordCount)}</strong></div><div class="vocabulary-progress" aria-hidden="true"><span style="width:${percent}%"></span></div></section>`; })()
       : '';
-    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(view === 'saved' ? Number(savedData.total || visibleItems.length) : visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
+    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
   };
 
   const studyView = () => {
@@ -1365,7 +1322,9 @@ export async function renderLanguage(root, ctx) {
 
   const paint = () => {
     if (!alive()) return;
-    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
+       which lists, searches, marks, files and deletes them. */
+    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     bind();
   };
 
@@ -1477,18 +1436,10 @@ export async function renderLanguage(root, ctx) {
         }, 250);
         return;
       }
-      if (view === 'saved') {
-        if (savedSearchTimer) clearTimeout(savedSearchTimer);
-        savedSearchTimer = setTimeout(() => loadSavedPage(), SAVED_SEARCH_DEBOUNCE_MS);
-      }
       paint();
       const input = root.querySelector('[data-vocabulary-search]');
       input?.focus();
       input?.setSelectionRange(query.length, query.length);
-    });
-    root.querySelector('[data-vocabulary-saved-more]')?.addEventListener('click', (event) => {
-      event.currentTarget.disabled = true;
-      loadSavedPage({ append: true });
     });
     root.querySelector('[data-vocabulary-load-more]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
@@ -1506,7 +1457,6 @@ export async function renderLanguage(root, ctx) {
     });
     root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => {
       filter = button.dataset.vocabularyFilter;
-      if (view === 'saved') { loadSavedPage(); return; }
       paint();
     }));
     root.querySelectorAll('[data-vocabulary-level-filter]').forEach((button) => (button.onclick = () => {
@@ -1522,7 +1472,6 @@ export async function renderLanguage(root, ctx) {
     }));
     root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => {
       sort = event.target.value;
-      if (view === 'saved' && SAVED_ORDER[sort]) { loadSavedPage(); return; }
       paint();
     });
     const interactionPool = () => vocabularyInteractionItems(view, { visibleItems, savedCards, studyItems });
