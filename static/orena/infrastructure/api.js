@@ -162,6 +162,22 @@ export const api={
       isTransientRequestError,
     );
   },
+  /* Thư viện của tôi: one typed read over every owner the learner already has,
+     a page at a time. The room asks for a kind and a page; it never holds a
+     copy of what an owner owns. */
+  collection:(params={})=>{
+    const query=new URLSearchParams();
+    if(params.limit!=null)query.set('limit',String(params.limit));
+    if(params.cursor)query.set('cursor',String(params.cursor));
+    if(params.query)query.set('query',String(params.query));
+    if(params.kinds&&params.kinds.length)query.set('kinds',params.kinds.join(','));
+    if(params.domains&&params.domains.length)query.set('domains',params.domains.join(','));
+    const suffix=query.toString()?`?${query.toString()}`:'';
+    return retryOnce(
+      ()=>request(`/api/collection${suffix}`),
+      isTransientRequestError,
+    );
+  },
   /* The counts and the rank alone - what Hồ sơ, Tiến độ and Home need, with no
      saved word crossing the wire. */
   libraryVocabularySummary:()=>retryOnce(

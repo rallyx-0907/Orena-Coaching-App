@@ -1386,3 +1386,55 @@ real disagreements and the order they are closed in:
 This settles the "DESIGN DECISION NEEDED" left above about where a learner's
 own words live: in Thư viện của tôi, not in the Vocabulary room. The Vocabulary
 room's own-word rows are deleted only once My Library can reach them.
+
+## Thư viện của tôi, first slice: the library itself (2026-09-23)
+
+The room exists and is reachable: `#/collection`, a destination in the rail and
+a tab on the phone, as the frame draws it between Vocabulary and Progress. It
+reads `GET /api/collection` - the typed query over the owners that already
+exist - and owns nothing. The old "Saved" room (four device-memory tabs) is
+deleted with it (rule 44).
+
+**Built, measured against "Thư viện của tôi · desktop" and "· mobile":** the
+bar (title 26/800, the count in mono 13, one search 380x44 at radius 12), the
+kind chips (40 tall, radius 12, 14.5, the count in mono 12) and the item rows
+(18/22 at radius 18, title 20/600 - serif for a word, a passage or a take -
+gloss 14.5, meta 13.5, the date in mono 12 in a 130 column). Each row opens
+where it came from, through that owner's own route. Verified at 1920, 1440,
+1024 and 390, in English, Vietnamese and Chinese: no clipping, no horizontal
+scroll, six tabs fit the phone.
+
+**Two kinds have no owner, so they are not chips:** a note is stored nowhere in
+this repository, and a book is catalogue only (`reading_books` records who
+imported it, not whose library it is). Neither is faked with an empty tab.
+
+**What the frame draws that this slice does not, and why.** Every one of these
+needs the kept-item relation described in
+`docs/project/MY_LIBRARY_DATA_CONTRACT_AUDIT.md` §3, which is a schema decision
+reserved for the gate:
+
+- the "CẦN ÔN HÔM NAY" card and the merged review session across kinds - only
+  saved words have a review schedule today;
+- the row's next-due column and its state pill (đến hạn / cần ôn / đang học /
+  đã thuộc) - three of the four states exist for no kind;
+- the mark button ("đánh dấu cần ôn", which the frame's own spec calls
+  `PATCH item {pinned}`) and the add-to-collection button;
+- collections themselves (the frame's right-hand column, "mỗi bộ một loại"),
+  create-collection, multi-select and delete;
+- the item detail overlay with its original context, its history and its
+  collections. The one thing that panel does which this slice can do - open the
+  source - is what a row does when tapped.
+
+**One measured deviation, recorded rather than resolved.** The frame's kind
+chip is 40 tall; every control in Orena has a 44px touch floor
+(`foundation.css`). The chip declares `min-block-size: 40px` and the floor
+raises it where it applies. Accessibility is not redesigned to match a frame.
+
+**One limit the learner can see.** The collection query reads each owner in
+full up to a bound (200 for saved language) and merges in memory, so a library
+larger than that is `partial` and the bar says "ít nhất N" rather than a total.
+Search is not limited by it: an owner that holds more than the read is handed
+the query and searches all of what it holds - without that, searching a
+3 000-word library would have searched 200 words and answered "nothing found".
+Paging the merge itself is the Collection Architecture §3 work (owner cursors
+plus a stable merge boundary) and has not been done.

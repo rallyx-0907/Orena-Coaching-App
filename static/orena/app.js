@@ -256,7 +256,6 @@ const TOP_BAR_PAGES = new Set([
   "language",
   "progress",
   "continue",
-  "collection",
   "profile",
 ]);
 function paintTopBar() {

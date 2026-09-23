@@ -233,16 +233,18 @@ const shellCtx = (ui, location, extra = {}) => ({
 
 for (const ui of ['en', 'zh', 'vi']) {
   const c = referenceCopy[ui];
-  for (const key of ['home', 'library', 'vocabulary', 'progress', 'profile', 'reading', 'listening', 'speaking', 'writing', 'navSkills', 'tabVocabulary'])
+  for (const key of ['home', 'library', 'vocabulary', 'myLibrary', 'progress', 'profile', 'reading', 'listening', 'speaking', 'writing', 'navSkills', 'tabVocabulary'])
     assert.ok(c[key], `${ui}: the shell needs "${key}"`);
   const nav = referenceNavigation(shellCtx(ui, route('#/')));
   assert.match(nav, /id="shellNav"/, 'the nav has an id to point at');
   const railHrefs = [...nav.matchAll(/<a class="nav-link[^"]*" href="([^"]+)"/g)].map((m) => m[1]);
-  /* Profile is the fifth destination, not a sheet: the source draws it as a
-     screen - avatar, rank, settings and the plan's limits - in "Orena Hạn mức
-     sử dụng", and the app now has that screen. */
+  /* Profile is a destination, not a sheet: the source draws it as a screen -
+     avatar, rank, settings and the plan's limits - in "Orena Hạn mức sử
+     dụng", and the app now has that screen. Thư viện của tôi is one too, and
+     the source draws it between Vocabulary and Progress: Vocabulary is the
+     shared catalogue, this is the learner's own library (2026-09-23). */
   assert.deepEqual(railHrefs, [
-    link(), link('content'), link('language'), link('progress'), link('profile'),
+    link(), link('content'), link('language'), link('collection'), link('progress'), link('profile'),
     link('practice', { intent: 'reading' }), link('practice', { intent: 'follow' }),
     link('practice', { intent: 'speaking' }), link('writing'),
   ], `${ui}: the baseline's rail`);
@@ -269,15 +271,18 @@ for (const ui of ['en', 'zh', 'vi']) {
   for (const entry of entryPoints(ui).filter((x) => x.id !== 'practice'))
     assert.ok(reachable.includes(`href="${entry.href}"`), `${ui}: ${entry.id} is no longer reachable`);
 
-  // The tab bar: five tabs, the last the learner's own, the way back lit.
+  // The tab bar: six tabs, the last the learner's own, the way back lit. The
+  // phone frame of Thư viện của tôi draws six too.
   const tabs = navigationTabs(shellCtx(ui, route('#/')));
-  assert.equal((tabs.match(/class="shell-tab"/g) || []).length, 5, `${ui}: five tabs`);
+  assert.equal((tabs.match(/class="shell-tab"/g) || []).length, 6, `${ui}: six tabs`);
+  assert.match(tabs, /<a class="shell-tab" href="#\/collection"/, "the learner's own library is a tab");
   assert.match(tabs, /<a class="shell-tab" href="#\/profile"/, 'Profile is a destination, as the source draws it');
   for (const [hash, tab] of [
     ['#/', '#/'],
     ['#/practice?intent=reading', '#/content'],
     ['#/encounter?id=media:test', '#/content'],
     ['#/practice?intent=recall', '#/language'],
+    ['#/collection', '#/collection'],
     ['#/progress', '#/progress'],
     ['#/expression', '#/content'],
   ]) {

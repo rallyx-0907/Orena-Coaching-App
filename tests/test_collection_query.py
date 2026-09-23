@@ -114,6 +114,38 @@ def test_a_completed_pattern_reaches_its_lesson_and_claims_no_mastery():
     assert 'score' not in entry['detail'] and entry['snippet'] == ''
 
 
+def test_each_kind_is_counted_in_the_same_result():
+    """A surface labels its kinds from one read, not one read per kind - and
+    the counts are as partial as the result is."""
+    result = query_collection(EN, everything(), secret=SECRET, limit=1)
+    assert result['kindTotals'] == {'work': 3, 'media': 3, 'text': 1, 'language': 2, 'pattern': 1}
+    assert sum(result['kindTotals'].values()) == result['total']
+    outage = query_collection(EN, everything(fail=('language',)), secret=SECRET, limit=1)
+    assert 'language' not in outage['kindTotals'] and outage['totalKind'] == 'unknown'
+
+
+def test_two_owners_of_one_kind_can_still_be_asked_for_apart():
+    """Writing and speaking are both work. A screen that lists them as two
+    kinds asks by owner, and the counts come back per owner too."""
+    result = query_collection(EN, everything(), secret=SECRET, domains=['speaking'])
+    assert {entry['ref']['domain'] for entry in result['entries']} == {'speaking'}
+    assert result['domainTotals'] == {'speaking': 2}
+    both = query_collection(EN, everything(), secret=SECRET, limit=1)
+    assert both['domainTotals'] == {
+        'language': 2, 'reading': 1, 'media': 3, 'writing': 1, 'speaking': 2, 'grammar': 1,
+    }
+    with pytest.raises(CollectionQueryError) as refused:
+        query_collection(EN, everything(), secret=SECRET, domains=['notes'])
+    assert refused.value.reason == 'domain_unknown'
+
+
+def test_a_cursor_does_not_survive_a_change_of_owner_filter():
+    first = query_collection(EN, everything(), secret=SECRET, limit=1, domains=['speaking'])
+    with pytest.raises(CollectionQueryError) as refused:
+        query_collection(EN, everything(), secret=SECRET, limit=1, cursor=first['nextCursor'])
+    assert refused.value.reason == 'cursor_query_mismatch'
+
+
 def test_the_same_numeric_id_in_two_domains_stays_two_objects():
     result = query_collection(EN, everything(), secret=SECRET)
     ids = refs(result)
@@ -170,6 +202,23 @@ def test_entries_of_another_learning_language_never_reach_the_result():
     result = query_collection(EN, owners(library=foreign), secret=SECRET, query='harbour')
     assert refs(result) == [('language', 'harbour')]
     assert result['total'] == 1
+
+
+def test_an_owner_that_holds_more_than_the_read_is_asked_to_search_itself():
+    """Searching after the read would search the page, not the library. An
+    owner that says it searches is handed the query - and the result is still
+    filtered here, so it cannot answer with more than was asked for."""
+    asked = []
+
+    def wide(query=''):
+        asked.append(query)
+        return LIBRARY + [{'word': 'harbourmaster', 'definition': 'keeps the harbour', 'added_at': '2026-09-01T08:00:00Z'},
+                          {'word': 'unrelated', 'definition': 'nothing to do with it', 'added_at': '2026-09-02T08:00:00Z'}]
+
+    owners_with = [Owner('language', wide, language_entries, 200, True)]
+    result = query_collection(EN, owners_with, secret=SECRET, query='harbour')
+    assert asked == ['harbour']
+    assert [entry['title'] for entry in result['entries']] == ['Harbour', 'harbourmaster']
 
 
 def test_search_is_case_and_width_insensitive_on_the_declared_fields():

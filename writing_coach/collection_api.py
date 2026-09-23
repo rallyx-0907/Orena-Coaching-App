@@ -83,7 +83,7 @@ def catalog_lesson_resolver() -> Callable[[str, str], LessonRef | None]:
     return resolve
 
 
-def runtime_owners(*, library: Callable[[int], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
+def runtime_owners(*, library: Callable[[int, str], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
                    essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any,
                    grammar: Callable[[], Sequence[dict[str, Any]]]) -> Callable[[], list[Owner]]:
     """The six owners, wired to the reads the app already serves.
@@ -99,7 +99,8 @@ def runtime_owners(*, library: Callable[[int], dict[str, Any]], reading: Callabl
 
     def build() -> list[Owner]:
         return [
-            Owner('language', lambda: library(LANGUAGE_BOUND).get('items', []), language_entries, LANGUAGE_BOUND),
+            Owner('language', lambda query='': library(LANGUAGE_BOUND, query).get('items', []),
+                  language_entries, LANGUAGE_BOUND, searches=True),
             Owner('reading', lambda: reading(READING_BOUND).get('items', []), reading_entries, READING_BOUND),
             Owner('media', lambda: specialized.list_recent_listening_progress_records(LISTENING_BOUND),
                   media_entries_with(resolve), LISTENING_BOUND),
@@ -116,6 +117,7 @@ def runtime_owners(*, library: Callable[[int], dict[str, Any]], reading: Callabl
 def collection(
     query: str = Query('', max_length=240),
     kinds: str = Query('', max_length=120),
+    domains: str = Query('', max_length=120),
     cursor: str = Query('', max_length=2048),
     limit: int = Query(20),
 ) -> dict[str, Any]:
@@ -129,6 +131,7 @@ def collection(
             secret=_secret,
             query=query,
             kinds=[kind for kind in kinds.split(',') if kind],
+            domains=[domain for domain in domains.split(',') if domain],
             cursor=cursor or None,
             limit=limit,
         )

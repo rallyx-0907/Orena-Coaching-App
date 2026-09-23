@@ -218,6 +218,13 @@ export const referenceCopy = {
     bookNext: 'Next', bookRead: 'Read', bookBookmark: 'Save this book', bookDownload: 'Download for offline',
     bookMore: 'More', bookSoon: 'Not available yet', bookChapterWords: '{n} words',
     searchChip_all: 'All', searchChip_words: 'Words', searchChip_books: 'Books', searchChip_audio: 'Audio', searchChip_collections: 'Collections',
+    myLibrary: 'My library', tabMyLibrary: 'Mine', myLibraryCount: '{n} items', myLibraryAtLeast: 'at least {n} items',
+    myLibrarySearch: 'Search words, readings, writing…', myLibraryEmpty: 'Nothing kept here yet',
+    myLibraryKind_language: 'Words & phrases', myLibraryKind_grammar: 'Grammar',
+    myLibraryKind_reading: 'Readings', myLibraryKind_media: 'Listening',
+    myLibraryKind_writing: 'Writing', myLibraryKind_speaking: 'Speaking',
+    myLibraryRel_saved: 'kept', myLibraryRel_started: 'started', myLibraryRel_submitted: 'submitted',
+    myLibraryRel_practised: 'practised', myLibraryRel_spoken: 'recorded', myLibraryRel_completed: 'completed',
     savedTitle: 'Saved', saved_words: 'Words', saved_highlights: 'Highlights', saved_notes: 'Notes', saved_content: 'Content',
     savedNoWords: 'No saved words yet', savedNoWordsNote: 'Tap any word while reading or listening and it lands here for review.',
     savedOpenBook: 'Open a book', savedSearchWords: 'Search saved words', savedOneStar: '1 star', savedRecent: 'Recent',
@@ -464,6 +471,13 @@ export const referenceCopy = {
     bookNext: '接下来', bookRead: '已读', bookBookmark: '收藏这本书', bookDownload: '离线下载',
     bookMore: '更多', bookSoon: '暂不可用', bookChapterWords: '{n} 词',
     searchChip_all: '全部', searchChip_words: '词语', searchChip_books: '书', searchChip_audio: '音频', searchChip_collections: '词集',
+    myLibrary: '我的收藏', tabMyLibrary: '收藏', myLibraryCount: '{n} 项', myLibraryAtLeast: '至少 {n} 项',
+    myLibrarySearch: '搜索词语、阅读、写作…', myLibraryEmpty: '这里还没有保存的内容',
+    myLibraryKind_language: '词语', myLibraryKind_grammar: '语法',
+    myLibraryKind_reading: '阅读', myLibraryKind_media: '听力',
+    myLibraryKind_writing: '写作', myLibraryKind_speaking: '口语',
+    myLibraryRel_saved: '已保存', myLibraryRel_started: '已开始', myLibraryRel_submitted: '已提交',
+    myLibraryRel_practised: '已练习', myLibraryRel_spoken: '已录音', myLibraryRel_completed: '已完成',
     savedTitle: '收藏', saved_words: '词语', saved_highlights: '划线', saved_notes: '笔记', saved_content: '内容',
     savedNoWords: '还没有收藏词语', savedNoWordsNote: '阅读或聆听时点任意一个词，它会出现在这里等你复习。',
     savedOpenBook: '打开一本书', savedSearchWords: '搜索收藏的词语', savedOneStar: '一星', savedRecent: '最近',
@@ -858,6 +872,24 @@ referenceCopy.vi = {
   searchChip_books: 'Sách',
   searchChip_audio: 'Bài nghe',
   searchChip_collections: 'Bộ từ vựng',
+  myLibrary: 'Thư viện của tôi',
+  tabMyLibrary: 'Của tôi',
+  myLibraryCount: '{n} mục',
+  myLibraryAtLeast: 'ít nhất {n} mục',
+  myLibrarySearch: 'Tìm từ, bài đọc, bài viết…',
+  myLibraryEmpty: 'Chưa có mục nào ở đây',
+  myLibraryKind_language: 'Từ & cụm từ',
+  myLibraryKind_grammar: 'Ngữ pháp',
+  myLibraryKind_reading: 'Bài đọc',
+  myLibraryKind_media: 'Bài nghe',
+  myLibraryKind_writing: 'Bài viết',
+  myLibraryKind_speaking: 'Bài nói',
+  myLibraryRel_saved: 'đã lưu',
+  myLibraryRel_started: 'đã bắt đầu',
+  myLibraryRel_submitted: 'đã nộp',
+  myLibraryRel_practised: 'đã luyện',
+  myLibraryRel_spoken: 'đã ghi âm',
+  myLibraryRel_completed: 'đã xong',
   savedTitle: 'Đã lưu',
   saved_words: 'Từ',
   saved_highlights: 'Đánh dấu',
@@ -981,6 +1013,7 @@ export function entryPoints(ui) {
 }
 export function experienceFor(location) {
   const { page, intent, id = '' } = location;
+  if (page === 'collection') return 'collection';
   if (intent === 'recall') return 'recall';
   if (page === 'conversation' || (page === 'practice' && intent === 'speaking')) return 'speaking';
   if (page === 'expression') return 'writing';
@@ -1017,7 +1050,13 @@ export function experienceFor(location) {
 const DESTINATIONS = [
   { id: 'discover', page: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue'] },
   { id: 'content', page: 'content', icon: 'books', label: 'library', owns: ['content', 'search', 'reading', 'listening', 'speaking', 'writing', 'practice', 'understanding'] },
-  { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall', 'collection'] },
+  { id: 'language', page: 'language', icon: 'cards', label: 'vocabulary', owns: ['language', 'recall'] },
+  /* Thư viện của tôi is a destination now: the human settled on 2026-09-23
+     that Vocabulary is the shared catalogue and this is the learner's own
+     library, and the source draws it in the rail between them and Progress.
+     Promoting it is the product decision the Collection Architecture §4 said
+     it would take, and this is that decision. */
+  { id: 'collection', page: 'collection', icon: 'bookmarks-simple', label: 'myLibrary', owns: ['collection'] },
   { id: 'progress', page: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress', 'history'] },
   /* Profile is a destination now: the source draws it as a screen - avatar,
      rank, settings and the plan's limits - in "Orena Hạn mức sử dụng". */
@@ -1034,7 +1073,8 @@ const SKILLS = [
 const TABS = [
   { id: 'discover', icon: 'house', label: 'home', owns: ['discover', 'continue'] },
   { id: 'content', icon: 'books', label: 'library', owns: ['content', 'reading', 'listening', 'speaking', 'writing', 'practice', 'understanding', 'book', 'search'] },
-  { id: 'language', icon: 'cards', label: 'tabVocabulary', owns: ['language', 'recall', 'collection'] },
+  { id: 'language', icon: 'cards', label: 'tabVocabulary', owns: ['language', 'recall'] },
+  { id: 'collection', icon: 'bookmarks-simple', label: 'tabMyLibrary', owns: ['collection'] },
   { id: 'progress', icon: 'chart-line-up', label: 'progress', owns: ['progress', 'history'] },
 ];
 

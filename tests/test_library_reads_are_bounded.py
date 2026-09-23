@@ -28,7 +28,7 @@ class _Specialized:
 
 
 def _library_spy(asked: list[int]):
-    def read(limit: int) -> dict[str, Any]:
+    def read(limit: int, search: str = "") -> dict[str, Any]:
         asked.append(int(limit))
         # More rows than any bound, so a truncating caller would be believed.
         return {"items": [{"word": f"w{index}", "successful_recalls": 1} for index in range(limit)]}
@@ -46,7 +46,10 @@ def test_the_collection_asks_for_a_page_and_declares_it() -> None:
         grammar=lambda: [],
     )()
     language = next(owner for owner in owners if owner.domain == "language")
-    rows = language.read()
+    rows = language.read("")
+    # The library holds more than this read takes, so the search goes to it
+    # rather than happening after the page comes back.
+    assert language.searches is True
     assert asked == [COLLECTION_BOUND]
     assert len(rows) == COLLECTION_BOUND
     assert language.bound == COLLECTION_BOUND

@@ -135,12 +135,22 @@ class Owner:
 
     `read` is the owner's own bounded read; `bound` is that bound when the read
     has one, so a full read can be recognised as possibly incomplete.
+
+    `searches` says the owner can answer a search itself. It matters where an
+    owner holds more than its bound: the learner's saved language is thousands
+    of words and this query reads two hundred, so searching after the read
+    would search two hundred words and report "nothing found" for the rest.
+    Such an owner is handed the query and searches all of what it holds; the
+    bound then limits the matches, which is a page, not a blind spot. The
+    result is still filtered here afterwards, so an owner that searches more
+    loosely than this query declares cannot widen it.
     """
 
     domain: str
-    read: Callable[[], Sequence[Mapping[str, Any]]]
+    read: Callable[..., Sequence[Mapping[str, Any]]]
     to_entries: Callable[[Sequence[Mapping[str, Any]], str], list[CollectionEntry]]
     bound: int | None = None
+    searches: bool = False
 
 
 # --- Routes: the same strings `intent.js` link() builds -----------------------
@@ -450,6 +460,7 @@ def query_collection(
     secret: bytes,
     query: str = '',
     kinds: Iterable[str] = (),
+    domains: Iterable[str] = (),
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> dict[str, Any]:
@@ -465,6 +476,11 @@ def query_collection(
     unknown = [kind for kind in wanted if kind not in set(KIND_OF.values())]
     if unknown:
         raise CollectionQueryError('kind_unknown')
+    # A kind can hold two owners - writing and speaking are both work - and a
+    # surface that names them separately asks by owner instead.
+    owned = tuple(sorted({str(domain).strip() for domain in domains if str(domain).strip()}))
+    if [domain for domain in owned if domain not in DOMAINS]:
+        raise CollectionQueryError('domain_unknown')
     try:
         limit = int(limit)
     except (TypeError, ValueError):
@@ -480,8 +496,10 @@ def query_collection(
             raise CollectionQueryError('owner_unknown')
         if wanted and KIND_OF[owner.domain] not in wanted:
             continue
+        if owned and owner.domain not in owned:
+            continue
         try:
-            rows = list(owner.read())
+            rows = list(owner.read(query) if owner.searches else owner.read())
             entries = owner.to_entries(rows, scope.language.strip().casefold())
         except Exception as error:
             # Named in the result, never swallowed into an empty one - and in
@@ -499,7 +517,8 @@ def query_collection(
     scoped = [entry for entry in collected if entry.learning_language == language]
     found = sorted((entry for entry in scoped if matches(entry, query)), key=_order_key)
 
-    filters = {'query': normalise(query), 'kinds': list(wanted), 'sort': 'updated_desc', 'limit': limit}
+    filters = {'query': normalise(query), 'kinds': list(wanted), 'domains': list(owned),
+               'sort': 'updated_desc', 'limit': limit}
     binding = {'account': scope.account, 'incarnation': scope.incarnation, 'language': scope.language}
     snapshot = _digest({
         'binding': binding,
@@ -528,8 +547,19 @@ def query_collection(
         else None
     )
     complete = not unavailable and not truncated
+    # How many of each kind the same result holds, so a surface can label its
+    # kinds without asking once per kind. It counts what was read: a request
+    # that named kinds counted only those, and an owner that was unavailable or
+    # filled its bound makes these counts as partial as the total is.
+    kind_totals: dict[str, int] = {}
+    domain_totals: dict[str, int] = {}
+    for entry in found:
+        kind_totals[entry.kind] = kind_totals.get(entry.kind, 0) + 1
+        domain_totals[entry.domain] = domain_totals.get(entry.domain, 0) + 1
     return {
         'entries': [entry.as_dict() for entry in page],
+        'kindTotals': kind_totals,
+        'domainTotals': domain_totals,
         'nextCursor': next_cursor,
         'completeness': 'complete' if complete else 'partial',
         'unavailableOwners': unavailable,

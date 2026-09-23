@@ -2500,6 +2500,115 @@ ul.pronunciation-words small { color: var(--muted); }
   .review-prompt h2 { font-size: 34px; }
   .review-grades { inline-size: 100%; }
 }
+/* --- Thư viện của tôi (D-067, "Thư viện của tôi", measured) ---------------
+   The learner's own library: a bar of its own with the title, how many items
+   there are and the one search; the kinds as chips of 40 with their counts in
+   mono; then the items, each a glass row of 18/22 at radius 18 that opens
+   where it came from. The frame's SRS column, state pill and row buttons need
+   the kept-item relation that does not exist yet, so the row carries what the
+   owners actually record and nothing else. */
+.my-library {
+  display: grid;
+  gap: 22px;
+  align-content: start;
+  padding-block-end: 30px;
+}
+.my-library__bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-block-size: 84px;
+  flex-wrap: wrap;
+}
+.my-library__bar h1 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 26px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.022em;
+}
+.my-library__count { color: var(--text-secondary); font-size: 13px; }
+.my-library__search { flex: none; margin-inline-start: auto; inline-size: 380px; max-inline-size: 100%; block-size: 44px; border-radius: 12px; }
+.my-library__kinds { display: flex; gap: 8px; flex-wrap: wrap; }
+.my-library-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  /* The frame draws 40. Every control in Orena has a 44px touch floor
+     (`foundation.css`, `:where(button, input, select, summary)`), and
+     accessibility is not redesigned to match a frame, so this chip is 44 -
+     the smallest deviation that keeps the frame's shape. Recorded in
+     UI_BACKEND_GAPS.md. */
+  min-block-size: 40px;
+  padding-block: 0;
+  padding-inline: 15px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.my-library-chip[aria-pressed='true'] {
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring), var(--glass-ring-focus);
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+}
+.my-library-chip__count { font-size: 12px; color: var(--text-secondary); }
+.my-library-chip[aria-pressed='true'] .my-library-chip__count { color: inherit; }
+.my-library__list { display: grid; gap: 10px; }
+.my-library-item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: inherit;
+  text-decoration: none;
+}
+a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus); }
+.my-library-item__body { flex: 1; min-inline-size: 0; display: grid; gap: 6px; }
+.my-library-item__head { display: flex; align-items: baseline; gap: 12px; min-inline-size: 0; }
+.my-library-item__title {
+  font-size: 20px;
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.my-library-item__title[lang] { font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif; }
+.my-library-item__gloss {
+  flex: 1;
+  min-inline-size: 0;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.my-library-item__meta { color: var(--text-secondary); font-size: 13.5px; }
+.my-library-item__when { flex: none; inline-size: 130px; text-align: end; color: var(--text-secondary); font-size: 12px; }
+
+@media (max-width: 600px) {
+  .my-library { gap: 14px; }
+  .my-library__bar { min-block-size: 0; gap: 10px; }
+  .my-library__bar h1 { font-size: 22px; }
+  .my-library__search { flex: 1 1 100%; margin-inline-start: 0; inline-size: auto; }
+  .my-library-chip { padding-inline: 12px; font-size: 13.5px; }
+  .my-library-item { gap: 12px; padding: 14px 16px; border-radius: 16px; }
+  .my-library-item__head { flex-wrap: wrap; gap: 4px; }
+  .my-library-item__title { font-size: 18px; }
+  .my-library-item__gloss { flex-basis: 100%; font-size: 13px; }
+  .my-library-item__meta { font-size: 12.5px; }
+  .my-library-item__when { inline-size: auto; }
+}
+
 /* --- The end of a review session (D-067, "Review summary", measured) -----
    A column of 1000 with 40 between its parts: what the sitting was and how
    many cards, the three grades as one 14px bar and as three figures of 44,
