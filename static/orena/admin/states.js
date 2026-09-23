@@ -26,12 +26,13 @@ import { esc } from './format.js';
    rows, a panel draws lines, a grid draws cards. The design's loading frame is
    the list's own geometry greyed out, not a spinner. */
 export function loadingBlock(t, { shape = 'rows', rows = 4, label = '' } = {}) {
+  /* The shared skeleton primitive, not a console-local one: the learner shell
+     already ships `.skeleton` with the breathing animation and the
+     reduced-motion rule, and a second implementation would drift from it. */
   const piece =
     shape === 'cards'
-      ? '<span class="ac-skeleton ac-skeleton--card"></span>'
-      : shape === 'lines'
-        ? '<span class="ac-skeleton ac-skeleton--line"></span>'
-        : '<span class="ac-skeleton ac-skeleton--row"></span>';
+      ? '<span class="skeleton skeleton--card"></span>'
+      : '<span class="skeleton skeleton--line"></span>';
   return `<div class="ac-loading" role="status" aria-busy="true" data-shape="${esc(shape)}"><span class="sr-only">${esc(label || t.loading)}</span>${piece.repeat(Math.max(1, rows))}</div>`;
 }
 

@@ -1292,3 +1292,59 @@
   margin: 0 0 var(--space-2);
   line-height: 1.6;
 }
+
+/* The five shared states (canonical Admin design, study 01). The skeleton
+   itself is the shell's `.skeleton`; what belongs here is only the geometry it
+   is arranged in, and the blocks that carry a state's words. */
+.ac-loading {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+}
+.ac-loading[data-shape='cards'] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+.ac-state {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  padding: var(--space-4) var(--space-3);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.ac-state[data-state='error'] {
+  border-style: solid;
+}
+.ac-state__title {
+  margin: 0;
+  font-weight: 600;
+}
+.ac-state__note,
+.ac-state__ref {
+  margin: 0;
+  color: var(--muted);
+}
+.ac-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+/* A control the design keeps in the frame but the runtime cannot honour yet:
+   visibly present, visibly not available. */
+.ac-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  min-block-size: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ac-note[data-kind='gap'] {
+  color: var(--muted);
+  font-style: italic;
+}
