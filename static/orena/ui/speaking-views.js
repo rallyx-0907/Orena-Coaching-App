@@ -59,7 +59,7 @@ export function attemptsHtml({ s, attempts, selectedId, bestId, ui, keepRecent }
       return `<button type="button" class="sp-attempt${best ? ' sp-attempt--best' : ''}${attempt.id === selectedId ? ' is-selected' : ''}" data-sp-attempt="${esc(attempt.id)}">${icon('play-circle', { size: 30, filled: true })}<span class="sp-attempt__text"><b>${esc(name)}</b><small>${esc(`${s.today} ${time(attempt.at, ui)} · ${clock(attempt.ms)}`)}</small></span><span class="sp-attempt__score${attempt.flagged ? ' is-flagged' : ' is-clear'}">${score}</span></button>`;
     })
     .join('');
-  return `<span class="sp-label">${esc(s.attemptsLabel)}</span>${rows}<label class="sp-keep"><input type="checkbox" data-sp-keep${keepRecent ? ' checked' : ''}><span><b>${esc(s.keepRecent)}</b><small>${esc(keepRecent ? s.keepRecentOn : s.keepRecentOff)}</small></span></label>`;
+  return `<span class="sp-label">${esc(s.attemptsLabel)}</span>${rows ? `<div class="sp-attempts__list">${rows}</div>` : ''}<label class="sp-keep"><input type="checkbox" data-sp-keep${keepRecent ? ' checked' : ''}><span><b>${esc(s.keepRecent)}</b><small>${esc(keepRecent ? s.keepRecentOn : s.keepRecentOff)}</small></span></label>`;
 }
 
 /* 06 · compare with the model (both frames; CSS shows the one that belongs). */

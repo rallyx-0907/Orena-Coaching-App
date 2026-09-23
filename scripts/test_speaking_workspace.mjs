@@ -62,8 +62,12 @@ assert.equal(panel.includes(s.metricPace), false, 'no pace without word timing')
 const empty = resultHtml({ s, view: pronunciationView(null), language: 'zh' });
 assert.match(empty, /--score:0%/);
 assert.match(empty, new RegExp(s.noResult));
-assert.match(empty, /data-sp-hear-take disabled/);
-assert.match(empty, /data-sp-compare disabled/);
+assert.match(empty, /data-sp-hear-take[^>]* disabled/);
+assert.match(empty, /data-sp-compare[^>]* disabled/);
+// One row of actions (D-078): recording again lives with the microphone, next is the primary.
+assert.equal(empty.includes('data-sp-again'), false, 'no second "record again" in the result panel');
+assert.match(empty, /class="sp-btn sp-btn--accent sp-btn--next" data-sp-next/);
+assert.equal((empty.match(/class="sp-btn[ "]/g) || []).length, 3, 'three actions: hear yours, compare, next');
 
 // A synthetic demo result draws nothing measured.
 const demo = resultHtml({ s, view: pronunciationView({ score_kind: 'synthetic_demo', pron_score: 76, words: [{ word: 'x', accuracy_score: 84 }] }), language: 'en' });

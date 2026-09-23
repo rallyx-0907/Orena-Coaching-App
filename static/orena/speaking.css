@@ -13,10 +13,15 @@
 }
 .sp-room {
   --serif: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  /* The two panels close on one base line: the controls and the actions share this height. */
+  --sp-foot: 136px;
   position: relative;
   display: flex;
   flex-direction: column;
-  min-block-size: 100dvh;
+  /* A learning workspace is the viewport, never a long page (D-078): only regions whose content
+     is long by nature (the word list, the attempts, the lesson's lines) scroll, inside. */
+  block-size: 100dvh;
+  overflow: hidden;
   box-sizing: border-box;
   color: var(--text-primary);
 }
@@ -94,22 +99,24 @@
 /* --- Two panes: 20 36 36, gap 22; the result pane is 640 wide -------------------------------- */
 .sp-cols {
   display: flex;
-  gap: 22px;
+  gap: 20px;
   flex: 1;
   min-block-size: 0;
   box-sizing: border-box;
-  padding: 20px 36px 36px;
+  padding: 12px 32px 28px;
 }
+/* The task: fixed bands (where you are, the mode, the line, the controls) around one flexible
+   stage, the model clip, which takes what is left and gives it back first. */
 .sp-task {
   flex: 1;
   min-width: 0;
+  min-block-size: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: safe center;
-  gap: 26px;
-  padding: 40px;
+  gap: 16px;
+  padding: 24px 32px 0;
   border-radius: 20px;
   background: var(--glass-base);
   backdrop-filter: var(--glass-filter);
@@ -117,7 +124,8 @@
   overflow: hidden;
 }
 .sp-result {
-  inline-size: 640px;
+  container: sp-result / inline-size;
+  inline-size: clamp(420px, 34vw, 640px);
   flex: none;
   display: flex;
   flex-direction: column;
@@ -155,13 +163,28 @@
   color: var(--ink-60);
 }
 
-/* The model clip: 560x315, radius 18, a 86px play over a 140px glow. */
+/* The stage holds the model clip and takes the height the fixed bands leave; the clip keeps its
+   16:9 inside it (560x315 in the frame, up to 720 wide on a tall desk) and leaves when the stage
+   is too short to show it - the model is still one tap away on the controls. */
+.sp-stage {
+  flex: 1 1 0;
+  min-block-size: 0;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+@container (max-height: 96px) {
+  .sp-stage .sp-clip {
+    display: none;
+  }
+}
+/* The model clip: radius 18, a 86px play over a 140px glow. */
 .sp-clip {
   position: relative;
   flex: none;
-  inline-size: 560px;
-  max-inline-size: 100%;
-  block-size: 315px;
+  inline-size: min(100cqi, 100cqb * 16 / 9, 720px);
+  aspect-ratio: 16 / 9;
   border-radius: 18px;
   overflow: hidden;
   background: var(--artwork-wash);
@@ -265,7 +288,7 @@
   margin: 0;
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 36px;
+  font-size: clamp(26px, 3.4vh, 36px);
   letter-spacing: -0.01em;
   line-height: 1.4;
   text-align: center;
@@ -283,10 +306,14 @@
   border-radius: 5px;
   padding: 1px 5px;
 }
+.sp-task:not(:has(.sp-stage)) .sp-line,
+.sp-room[data-mode='shadow'] .sp-line {
+  margin-top: auto;
+}
 .sp-reading {
   margin: 0;
   font-family: var(--mono-font);
-  font-size: 18px;
+  font-size: clamp(15px, 1.7vh, 18px);
   letter-spacing: 0.04em;
   color: var(--ink-72);
   text-align: center;
@@ -298,12 +325,13 @@
   text-align: center;
 }
 
-/* The level: 42 bars of 6px, gap 6, 96px tall - moved only by the live microphone. */
+/* The level: 42 bars of 6px, gap 6 - moved only by the live microphone. */
 .sp-wave {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 6px;
-  block-size: 96px;
+  block-size: 64px;
 }
 .sp-wave i {
   inline-size: 6px;
@@ -321,13 +349,18 @@
   }
 }
 
-/* The controls: 56 · 104 · 56, gap 22. */
+/* The controls: 56 · 104 · 56, gap 22, in a foot band the result's actions share. */
 .sp-controls {
+  flex: none;
+  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 22px;
-  margin-top: 4px;
+  block-size: var(--sp-foot);
+  box-sizing: border-box;
+  margin: auto -32px 0;
+  box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.16);
 }
 .sp-round {
   inline-size: 56px;
@@ -384,8 +417,9 @@
   display: block;
 }
 .sp-hint {
+  flex: none;
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--ink-60);
   text-align: center;
 }
@@ -428,10 +462,11 @@
 
 /* --- The result pane ------------------------------------------------------------------------- */
 .sp-head {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 24px 28px;
+  padding: 22px 28px;
   background: var(--speak-head-wash);
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07);
 }
@@ -492,6 +527,30 @@
   font-size: 14px;
   line-height: 1.55;
   color: var(--ink-68);
+  /* The flagged words are all in the list below: the head names them in two lines at most. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+/* A narrow result panel (a smaller desk) keeps its head compact so the list keeps the room. */
+@container sp-result (max-width: 560px) {
+  .sp-head {
+    gap: 16px;
+    padding: 20px 24px;
+  }
+  .sp-ring--lg {
+    inline-size: 80px;
+    block-size: 80px;
+  }
+  .sp-headline {
+    font-size: 20px;
+  }
+  .sp-metrics {
+    gap: 6px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
 }
 .sp-metrics {
   display: flex;
@@ -511,8 +570,8 @@
   min-block-size: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 22px 28px;
+  gap: 12px;
+  padding: 18px 28px 0;
   overflow: hidden;
 }
 .sp-body[aria-busy='true'] .sp-rows {
@@ -525,19 +584,22 @@
   color: var(--ink-60);
 }
 .sp-rows {
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
   min-block-size: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .sp-row {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 14px;
   min-height: 0;
-  padding: 13px 15px;
+  padding: 9px 14px;
   border: 0;
   border-radius: 14px;
   background: var(--glass-well);
@@ -548,7 +610,7 @@
 }
 .sp-row__word {
   flex: none;
-  min-width: 88px;
+  min-width: 76px;
   white-space: nowrap;
   display: flex;
   flex-direction: column;
@@ -558,7 +620,7 @@
 .sp-row__word b {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.1;
 }
 .sp-row__word small {
@@ -571,7 +633,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
 }
 .sp-bar {
   display: block;
@@ -590,7 +652,7 @@
   background: var(--speak-flag-bar);
 }
 .sp-row__note {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--ink-60);
 }
 .sp-row--flag .sp-row__note {
@@ -605,12 +667,42 @@
   color: var(--speak-flag-ink);
 }
 .sp-actions {
-  margin-top: auto;
+  flex: none;
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
-  padding-top: 14px;
+  block-size: var(--sp-foot);
+  box-sizing: border-box;
+  margin: auto -28px 0;
+  padding: 0 28px;
   box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.16);
+}
+.sp-btn--next {
+  margin-inline-start: auto;
+}
+/* A short desk (768-820 high): the bands tighten; the microphone keeps its size. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .sp-room {
+    --sp-foot: 120px;
+  }
+  .sp-task {
+    gap: 12px;
+    padding-top: 20px;
+  }
+}
+/* A narrow result panel keeps the two secondary actions as icons, named for assistive tech. */
+@container sp-result (max-width: 560px) {
+  .sp-actions .sp-btn:not(.sp-btn--next) {
+    padding: 13px;
+  }
+  .sp-actions .sp-btn__text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 .sp-btn {
   display: inline-flex;
@@ -818,47 +910,15 @@
   cursor: default;
 }
 
-/* --- A desk: the whole room is one screen ----------------------------------------------------- */
-@media (min-width: 901px) {
-  .sp-room {
-    block-size: 100dvh;
-  }
-  .sp-cols {
-    block-size: calc(100dvh - 84px);
-  }
-  .sp-task {
-    min-block-size: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  .sp-clip {
-    block-size: clamp(120px, 29dvh, 315px);
-    inline-size: auto;
-    aspect-ratio: 16 / 9;
-  }
-}
-@media (min-width: 901px) and (max-height: 900px) {
-  .sp-task {
-    gap: 16px;
-    padding: 24px 32px;
-  }
-  .sp-line {
-    font-size: 30px;
-  }
-  .sp-wave {
-    block-size: 64px;
-  }
-}
-
 /* --- The phone: one column, the card under the line, the controls at the thumb ---------------- */
 @media (max-width: 900px) {
-  .sp-room {
-    min-block-size: 100dvh;
-  }
   .sp-top {
     block-size: auto;
     gap: 10px;
     padding: 14px 20px 0;
+  }
+  .qs--speak {
+    width: auto;
   }
   .sp-back {
     flex: 1;
@@ -898,14 +958,15 @@
   }
   .sp-task {
     flex: 1;
+    min-block-size: 0;
     justify-content: flex-start;
-    gap: 16px;
+    gap: 14px;
     padding: 22px 20px 0;
     border-radius: 0;
     background: none;
     backdrop-filter: none;
     box-shadow: none;
-    overflow: visible;
+    overflow: hidden;
   }
   .sp-steps {
     order: -1;
@@ -914,10 +975,13 @@
   .sp-steps__count {
     display: none;
   }
+  /* The frame's 350x162 clip; it yields its height before the result card does. */
+  .sp-stage {
+    flex: 0 4 162px;
+  }
   .sp-clip {
-    align-self: stretch;
-    inline-size: auto;
-    block-size: 162px;
+    inline-size: min(100cqi, 100cqb * 350 / 162);
+    aspect-ratio: 350 / 162;
     border-radius: 15px;
   }
   .sp-glow {
@@ -982,6 +1046,8 @@
     font-size: 14px;
   }
   .sp-card {
+    flex: 0 1 auto;
+    min-block-size: 0;
     align-self: stretch;
     display: flex;
     flex-direction: column;
@@ -993,6 +1059,7 @@
     box-shadow: var(--glass-ring);
   }
   .sp-card__head {
+    flex: none;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1023,15 +1090,27 @@
     font-size: 16px;
   }
   .sp-card__copy small {
-    display: block;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
     margin-top: 3px;
     font-size: 12.5px;
     color: var(--ink-68);
   }
+  /* The flagged words are the card's only long part: they scroll inside it. */
   .sp-mrows {
+    flex: 0 1 auto;
+    min-block-size: 0;
     display: flex;
     flex-direction: column;
     gap: 7px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .sp-mrow,
+  .sp-card__next {
+    flex: none;
   }
   .sp-mrow {
     display: flex;
@@ -1062,13 +1141,13 @@
     color: var(--speak-flag-ink);
   }
   .sp-controls {
-    position: sticky;
-    inset-block-end: 0;
     flex: none;
     align-self: stretch;
     gap: 20px;
+    block-size: auto;
     margin: auto -20px 0;
     padding: 10px 20px 30px;
+    box-shadow: none;
   }
   .sp-round {
     inline-size: 50px;
@@ -1096,7 +1175,7 @@
   .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-back,
   .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-count:not(.sp-count--rec),
   .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-steps,
-  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-clip,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-stage,
   .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-meaning,
   .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-card,
   .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-round {
@@ -1433,7 +1512,8 @@
   color: var(--ink-70);
   text-align: center;
 }
-.sp-room[data-mode='shadow'] .sp-wave {
+.sp-room[data-mode='shadow'] .sp-wave,
+.sp-room[data-mode='shadow'] .sp-stage {
   display: none;
 }
 .sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic {
@@ -2544,5 +2624,158 @@
     font-weight: 700;
     font-size: 14.5px;
     color: var(--text-primary);
+  }
+}
+
+/* --- D-078 · every Speaking workspace is the viewport ------------------------------------------------
+   The room is bounded (.sp-room). Each screen names the one region whose content is long by nature,
+   and only that region scrolls; everything finite sits in the layout directly, and the primary
+   actions are never below it. */
+
+/* Free talk: the topic and the controls are fixed; what you said scrolls. */
+.sp-free__body {
+  min-block-size: 0;
+  overflow: hidden;
+}
+.sp-free__body > * {
+  flex: none;
+}
+.sp-free__body > .sp-said {
+  flex: 0 1 auto;
+  min-block-size: 0;
+}
+.sp-said__words {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sp-free__controls {
+  position: static;
+  flex: none;
+}
+
+/* Free talk result (04): the transcript scrolls; the score, the line to say and the actions stay. */
+.sp-ftr__grid {
+  min-block-size: 0;
+  grid-template-rows: minmax(0, 1fr);
+  padding-block-end: 32px;
+}
+.sp-ftr__main,
+.sp-ftr__side {
+  min-block-size: 0;
+}
+.sp-ftr__main > * {
+  flex: none;
+}
+.sp-ftr__main > .sp-ftr__said {
+  flex: 0 1 auto;
+  min-block-size: 0;
+}
+.sp-ftr__said > * {
+  flex: none;
+}
+.sp-ftr__said > .sp-ftr__words {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Compare (06): the attempts list scrolls inside its panel; the take button stays. */
+.sp-cmp__grid {
+  grid-template-rows: minmax(0, 1fr);
+  padding-block-end: 32px;
+}
+.sp-cmp__main {
+  min-block-size: 0;
+}
+.sp-cmp__attempts {
+  max-block-size: 100%;
+  min-block-size: 0;
+  box-sizing: border-box;
+}
+.sp-cmp__attempts > * {
+  flex: none;
+}
+.sp-attempts__list > * {
+  flex: none;
+}
+.sp-attempts__list {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Lesson summary (05): the lesson's lines scroll; the title and the way back stay. */
+.sp-sum__body {
+  flex: 1;
+  min-block-size: 0;
+  padding-block: 40px 32px;
+}
+.sp-sum__head {
+  flex: none;
+}
+.sp-sum__cols {
+  flex: 1;
+  min-block-size: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.sp-sum__list {
+  max-block-size: 100%;
+  min-block-size: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sp-sum__row {
+  flex: none;
+}
+
+@media (max-width: 900px) {
+  .sp-ftr__grid {
+    flex: 1;
+    min-block-size: 0;
+    padding-block-end: 0;
+  }
+  .sp-ftr__grid > *,
+  .sp-ftr__main > *,
+  .sp-ftr__side > * {
+    flex: none;
+  }
+  .sp-ftr__said {
+    flex: 0 1 auto;
+    min-block-size: 0;
+  }
+  .sp-ftr__buttons {
+    position: static;
+  }
+  .sp-cmp__grid {
+    min-block-size: 0;
+    padding-block-end: 0;
+  }
+  .sp-cmp__grid > *,
+  .sp-cmp__main > * {
+    flex: none;
+  }
+  .sp-cmp__attempts {
+    flex: 0 1 auto;
+    max-block-size: none;
+  }
+  .sp-sum__body {
+    padding-block: 24px 30px;
+  }
+  .sp-sum__cols {
+    display: flex;
+  }
+  .sp-sum__list {
+    flex: 0 1 auto;
+    max-block-size: none;
+  }
+  .sp-sum__side {
+    flex: none;
   }
 }
