@@ -1358,3 +1358,31 @@ hold.** Nothing in the design changes the hold; only the human does.
 Profile, My Content, Admin and Loading/Empty/Error INCOMPLETE while canonical
 screens for them now exist in the project. The matrix belongs to the design
 project; this lane does not edit it.
+
+## The human decided what Vocabulary and My Library each own (2026-09-23)
+
+Instruction of 2026-09-23, which closes three of the questions this file was
+holding open:
+
+- **Vocabulary is the shared content library** - the catalogue a learner takes
+  words from. The new frames draw it that way: packs, filters, progress per
+  pack, and no learner rows.
+- **Thư viện của tôi is the learner's own library** - everything they kept and
+  everything their learning produced, across kinds. The data contract prefers a
+  **reference to the source content plus the learner's own state and metadata**
+  over copying content.
+- **Admin Control Center: not this lane.** Another lane has it.
+- **Speaking: not this lane.** Another lane is doing its backend and its UI.
+- **Per-word audio for Vocabulary** is wanted: real pronunciation from
+  Wiktionary / Wikimedia Commons first, local TTS (Kokoro preferred) as
+  fallback, cached so nothing is generated twice, with source, licence and
+  attribution stored; for Chinese and any word with several readings the audio
+  binds to the reading, not to the raw text.
+
+The backend audit against that instruction, what already matches it, the three
+real disagreements and the order they are closed in:
+**`docs/project/MY_LIBRARY_DATA_CONTRACT_AUDIT.md`**.
+
+This settles the "DESIGN DECISION NEEDED" left above about where a learner's
+own words live: in Thư viện của tôi, not in the Vocabulary room. The Vocabulary
+room's own-word rows are deleted only once My Library can reach them.
