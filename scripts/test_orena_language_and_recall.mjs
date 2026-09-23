@@ -40,8 +40,16 @@ const recallRoom = expression.slice(
 assert.match(recallRoom, /api\.libraryVocabulary\(\{ status: 'due', order: 'due'/, 'and Recall asks for the due queue');
 assert.match(recallRoom, /const answer = button\.dataset\.grade;/,
   'the grade is the one the learner pressed');
-assert.match(recallRoom, /api\.reviewLibraryVocabulary\(current\.word, answer\)/,
-  'which grades through the scheduler that already exists');
+/* Every grade goes through one place, whether the learner pressed it on a
+   flashcard or answered one of the four task cards - and that place is the
+   scheduler that already exists. With no network the answer waits on the
+   device; it is never invented and never lost. */
+assert.match(recallRoom, /const grade = \(\) => record\(current\.word, answer\);/,
+  'which grades through the one place every grade goes');
+assert.match(recallRoom, /await ctx\.mutate\(\(\) => api\.reviewLibraryVocabulary\(word, grade\)\);/,
+  'and that place is the scheduler that already exists');
+assert.match(recallRoom, /waiting = withWaiting\(waiting, word, grade, new Date\(\)\.toISOString\(\)\);/,
+  'an answer with no network waits rather than being lost');
 /* The end of a sitting only reports what the scheduler actually accepted: the
    tally and the forgotten list are written after the grade is saved, inside
    the refresh, never beside the button. */

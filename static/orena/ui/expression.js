@@ -73,6 +73,7 @@ import {
   taskFor,
 } from '../product/recall-modes.js';
 import { reviewSettingsSheet, taskCard, taskFoot } from './recall-tasks.js';
+import { flushQueue, withWaiting, worthKeeping } from '../product/review-queue.js';
 import { collectionSearch, bindCollectionSearch } from './collection-search.js';
 import { contentFor } from '../content/texts.js';
 import { scene } from './brand.js';
@@ -728,6 +729,48 @@ async function renderRecallLanguage(root, ctx) {
   let taskWord = '';
   let taskState = null;
   let recorded = null;
+  /* Answers given with no network. The frame says they are kept on the device
+     and sync when there is a connection, and draws how many are waiting. */
+  let waiting = [...(memory.value.reviewQueue || [])];
+  let offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+
+  /* One place every grade goes, whether the learner gave it to a flashcard or
+     to one of the four task cards. When it cannot reach the server it waits
+     rather than being lost, and the next connection sends it. */
+  const record = async (word, grade) => {
+    try {
+      await ctx.mutate(() => api.reviewLibraryVocabulary(word, grade));
+      return true;
+    } catch (error) {
+      if (!worthKeeping(error)) throw error;
+      waiting = withWaiting(waiting, word, grade, new Date().toISOString());
+      memory.setReviewQueue(waiting);
+      offline = true;
+      return false;
+    }
+  };
+
+  const drain = async () => {
+    if (!waiting.length) return;
+    const left = await flushQueue(waiting, (item) =>
+      ctx.mutate(() => api.reviewLibraryVocabulary(item.word, item.grade)),
+    );
+    if (!alive()) return;
+    waiting = left;
+    memory.setReviewQueue(waiting);
+    paint(false);
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      offline = false;
+      if (alive()) drain();
+    });
+    window.addEventListener('offline', () => {
+      offline = true;
+      if (alive()) paint(false);
+    });
+  }
 
   const freshTask = (item) => {
     const hasAudio = Boolean(heard.get(item.word));
@@ -771,6 +814,8 @@ async function renderRecallLanguage(root, ctx) {
   const tally = { got_it: 0, unsure: 0, again: 0 };
   const forgotten = [];
   let counts = null;
+  drain();
+
   function paint(moveFocus = false) {
     if (!alive()) return;
     const due = items.filter((x) => x.due),
@@ -871,6 +916,14 @@ async function renderRecallLanguage(root, ctx) {
         + ` aria-label="${esc(`${label} — ${found.attribution}`)}" title="${esc(found.attribution)}">`
         + `${icon('speaker-high', { filled: true, size: 12 })}<span>${esc(label)}</span></span>`;
     };
+    /* The sitting's own notice, not the card's: frame 31 draws it above
+       whatever card is up, and a flashcard sitting can be offline too. */
+    const offlineNotice = offline
+      ? `<div class="recall-offline" role="status">${icon('wifi-slash', { size: 18 })}<span>${esc(c.recallOffline)}</span></div>`
+      : '';
+    const waitingLine = waiting.length
+      ? `<p class="recall-waiting ds-data">${esc(String(c.recallWaiting).replace('{n}', String(waiting.length)))}</p>`
+      : '';
     const card = current
       ? `<section class="vocab-review">`
         + `<header class="vocab-review__bar">`
@@ -878,6 +931,7 @@ async function renderRecallLanguage(root, ctx) {
         + rail
         + `<span class="vocab-review__count ds-data">${esc(passed)} / ${esc(total)}</span>`
         + `</header>`
+        + offlineNotice
         + `<div class="vocab-review__stage">`
         + `<button type="button" class="vocab-card" data-flip aria-pressed="${revealed}" data-state="${revealed ? 'open' : 'closed'}" data-shape="${shape}">`
         + mastery(current)
@@ -886,6 +940,7 @@ async function renderRecallLanguage(root, ctx) {
         + `<span class="vocab-card__flip">${esc(revealed ? r.vocabFlipBack : r.vocabFlipOpen)}</span>`
         + `</button>`
         + (revealed ? grades : `<p class="vocab-review__hint">${esc(r.vocabGradesAfterOpen)}</p>`)
+        + waitingLine
         + `<p role="status" data-recall-status></p>`
         + `</div>`
         + `</section>`
@@ -959,8 +1014,10 @@ async function renderRecallLanguage(root, ctx) {
         + `<span class="recall-run__count ds-data">${esc(passed)} / ${esc(total)}</span>`
         + `<button type="button" class="icon-button recall-run__settings" data-recall-settings aria-label="${esc(c.recallSettings)}">${icon('sliders-horizontal', { size: 20 })}</button>`
         + `</header>`
+        + offlineNotice
         + `<div class="recall-run__stage">${taskCard(c, asked, { ...current, language }, taskState)}</div>`
         + taskFoot(c, asked, taskState, recorded)
+        + waitingLine
         + `<p role="status" data-recall-status></p>`
         + `</section>`
       : '';
@@ -1032,10 +1089,9 @@ async function renderRecallLanguage(root, ctx) {
           );
           report.saving();
           const answer = button.dataset.grade;
-          const grade = () =>
-            ctx.mutate(() =>
-              api.reviewLibraryVocabulary(current.word, answer),
-            );
+          /* The same one place every grade goes: with no network it waits on
+             the device rather than being lost. */
+          const grade = () => record(current.word, answer);
           try {
             await grade();
           } catch {
@@ -1121,7 +1177,7 @@ async function renderRecallLanguage(root, ctx) {
       };
       paint(false);
       try {
-        await ctx.mutate(() => api.reviewLibraryVocabulary(current.word, answer));
+        await record(current.word, answer);
         if (!alive()) return;
         if (answer in tally) tally[answer] += 1;
         if (answer === 'again' && !forgotten.some((item) => item.word === current.word))
@@ -1325,7 +1381,7 @@ export function vocabularyInteractionItems(view, { visibleItems = [], savedCards
 
 export async function renderLanguage(root, ctx) {
   if (ctx.location.intent === 'recall') return renderRecallLanguage(root, ctx);
-  const { api, c, language, support, alive } = ctx;
+  const { api, c, language, support, alive, memory } = ctx;
   const copy = vocabularyCopy(c, support);
   const pinyinAllowed = language !== 'zh' || ctx.profile.pinyin !== 'off';
   const results = await Promise.allSettled([
@@ -1356,6 +1412,17 @@ export async function renderLanguage(root, ctx) {
   /* Which chip the library is filtered by: 'all', 'published', or a
      language code the catalogue actually holds. */
   let packFilter = 'all';
+  /* Why a set would not open, so its own screen can say so and offer the way
+     back in - frame 32 draws the code, because a learner reporting a problem
+     can quote it. */
+  let collectionFailed = null;
+  let deckSettingsOpen = false;
+  /* The learner's own review settings, read where the review session reads
+     them: how many new cards a day is what "learn some new ones" means. */
+  let settings = readReviewSettings(memory.value.reviewSettings);
+  /* A pass over a set that is not counted - "không tính lịch". The cards are
+     the set's; nothing is written to the schedule. */
+  let practiceOnly = false;
   /* One word, opened all the way: which word, what came back, and which of the
      two pages the phone is on. `deepReturn` is the view to go back to, so a
      word opened from a review card returns to that card rather than to the
@@ -1584,6 +1651,42 @@ export async function renderLanguage(root, ctx) {
       .map((step) => `<span${step < earned ? ' class="is-earned"' : ''}>${icon('star', { size: 11, filled: step < earned })}</span>`)
       .join('')}</span>`;
   };
+  /* The set's own head: the way back, its name, and - when there is something
+     to adjust - the way to the review settings. Frames 30 and 32 draw it. */
+  const deckHead = (title, adjust) =>
+    `<header class="deck-state__head"><button type="button" class="icon-button" data-vocabulary-back aria-label="${esc(c.vocabularyBackOverview)}">${icon('caret-right', { size: 22, className: 'is-flipped' })}</button><strong>${esc(title)}</strong>${
+      adjust
+        ? `<button type="button" class="icon-button" data-deck-settings aria-label="${esc(c.recallSettings)}">${icon('sliders-horizontal', { size: 20 })}</button>`
+        : ''
+    }</header>`;
+
+  /* Frame 32: the set would not load. What it says is the true thing - the
+     learner's progress is in the library, not in this screen - and the code is
+     there to be quoted. */
+  const deckLoadError = () =>
+    `<section class="deck-state">${deckHead(activeCollection?.title || c.vocabularyLibraryTitle, false)}<div class="deck-state__body"><span class="deck-state__mark" data-tone="bad">${icon('cloud-x', { size: 30 })}</span><h2>${esc(c.deckLoadFailed)}</h2><p>${esc(c.deckLoadFailedNote)}</p><span class="deck-state__code ds-data">${esc(collectionFailed)}</span></div><div class="deck-state__foot"><button type="button" class="primary" data-vocabulary-retry-collection>${icon('arrow-clockwise', { size: 18 })}<span>${esc(c.retry)}</span></button></div></section>`;
+
+  /* Frame 30: everything in this set that was due today has been reviewed.
+     Both numbers are counted, not estimated: what comes back tomorrow is the
+     library's own count, and what is left to learn is this set's. */
+  const deckNothingDue = () => {
+    const collection = activeCollection || {};
+    const total = Number(collection.item_count) || 0;
+    const learned = Number(collection.progress?.learned_count) || 0;
+    const tomorrow = Number(summary().due_next_day || 0);
+    const unlearned = Math.max(0, total - learned);
+    const fresh = Math.min(settings.newPerDay, unlearned);
+    return `<section class="deck-state">${deckHead(collection.title || c.vocabularyLibraryTitle, true)}<div class="deck-state__body"><span class="deck-state__mark" data-tone="good">${icon('check', { size: 32 })}</span><h2>${esc(c.deckAllDoneToday)}</h2><p>${esc(
+      String(c.deckNextUp).replace('{n}', String(tomorrow)).replace('{m}', String(unlearned)),
+    )}</p></div><div class="deck-state__foot">${
+      fresh
+        ? `<button type="button" class="primary" data-deck-learn-new="${esc(fresh)}">${esc(String(c.deckLearnNew).replace('{n}', String(fresh)))}</button>`
+        : ''
+    }<button type="button" class="outline" data-deck-free-practice>${esc(c.deckFreePractice)}</button></div></section>${
+      deckSettingsOpen ? reviewSettingsSheet(c, settings, { newPerDay: NEW_PER_DAY, limitPerDay: REVIEW_LIMIT }) : ''
+    }`;
+  };
+
   const collectionDetail = () => {
     const collection = activeCollection || {};
     const progress = collection.progress || {};
@@ -1612,11 +1715,12 @@ export async function renderLanguage(root, ctx) {
     if (!alive()) return;
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
-    root.innerHTML = view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    root.innerHTML = view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     bind();
   };
 
   const setStudy = (items, index = 0) => {
+    deckSettingsOpen = false;
     studyItems = items;
     studyIndex = Math.max(0, Math.min(index, items.length - 1));
     returnView = view === 'study' ? returnView : view;
@@ -1626,6 +1730,7 @@ export async function renderLanguage(root, ctx) {
 
   const openCollection = async (id, params = {}) => {
     const requestId = ++collectionRequest;
+    collectionFailed = null;
     try {
       const detail = await api.vocabularyLibraryCollection(id, params);
       if (!alive() || requestId !== collectionRequest) return;
@@ -1641,9 +1746,12 @@ export async function renderLanguage(root, ctx) {
       view = 'collection';
       paint();
     } catch (error) {
-      if (!alive()) return;
-      root.innerHTML = `<p class="notice" role="alert">${esc(error.message || c.unavailable)} <button data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button></p>`;
-      bind();
+      if (!alive() || requestId !== collectionRequest) return;
+      /* Frame 32 rather than a notice bar: the set has its own screen for not
+         loading, and it carries the code a learner can quote. */
+      collectionFailed = `VOC-${Number(error?.status || 0) || 'OFF'}`;
+      view = 'deck-error';
+      paint();
     }
   };
 
@@ -1766,7 +1874,56 @@ export async function renderLanguage(root, ctx) {
     root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : view === 'collection-list' ? 'collection' : 'overview'; paint(); }));
     root.querySelector('[data-vocabulary-not-mastered]')?.addEventListener('click', () => { notMastered = !notMastered; paint(); });
     root.querySelector('[data-vocabulary-show-all]')?.addEventListener('click', () => { view = 'collection-list'; paint(); });
-    root.querySelector('[data-vocabulary-collection-study]')?.addEventListener('click', () => { if (visibleItems.length) setStudy(visibleItems); });
+    root.querySelector('[data-vocabulary-collection-study]')?.addEventListener('click', () => {
+      /* Nothing in this set is due: frame 30 rather than a session of cards
+         that were answered this morning. */
+      const due = visibleItems.filter((card) => card.due);
+      if (!due.length && visibleItems.some((card) => card.saved)) {
+        returnView = view;
+        view = 'deck-done';
+        paint();
+        return;
+      }
+      if (visibleItems.length) setStudy(due.length ? due : visibleItems);
+    });
+    root.querySelector('[data-deck-settings]')?.addEventListener('click', () => {
+      deckSettingsOpen = true;
+      paint();
+    });
+    root.querySelector('[data-recall-settings-close]')?.addEventListener('click', () => {
+      deckSettingsOpen = false;
+      paint();
+    });
+    root.querySelectorAll('[data-recall-setting]').forEach((input) => {
+      input.oninput = () => {
+        settings = readReviewSettings({ ...settings, [input.dataset.recallSetting]: input.value });
+        memory.setReview(settings);
+        paint();
+      };
+    });
+    root.querySelectorAll('[data-recall-mode]').forEach((button) => {
+      button.onclick = () => {
+        const name = button.dataset.recallMode;
+        settings = readReviewSettings({ ...settings, modes: { ...settings.modes, [name]: !settings.modes[name] } });
+        memory.setReview(settings);
+        paint();
+      };
+    });
+    root.querySelector('[data-vocabulary-retry-collection]')?.addEventListener('click', () => {
+      if (activeCollection?.id) openCollection(activeCollection.id);
+    });
+    root.querySelector('[data-deck-learn-new]')?.addEventListener('click', () => {
+      const fresh = activeItems.filter((card) => !card.saved).slice(0, Number(root.querySelector('[data-deck-learn-new]').dataset.deckLearnNew) || 0);
+      if (fresh.length) {
+        practiceOnly = false;
+        setStudy(fresh);
+      }
+    });
+    root.querySelector('[data-deck-free-practice]')?.addEventListener('click', () => {
+      if (!activeItems.length) return;
+      practiceOnly = true;
+      setStudy(activeItems);
+    });
     root.querySelector('[data-vocabulary-shuffle]')?.addEventListener('click', () => {
       if (!visibleItems.length) return;
       /* A shuffled pass is a different order of the same words, nothing more. */
@@ -1862,7 +2019,7 @@ export async function renderLanguage(root, ctx) {
     root.querySelector('[data-study-prev]')?.addEventListener('click', () => { if (studyIndex > 0) { studyIndex -= 1; paint(); } });
     root.querySelector('[data-study-next]')?.addEventListener('click', () => { if (studyIndex < studyItems.length - 1) { studyIndex += 1; paint(); } });
     root.querySelector('[data-study-audio]')?.addEventListener('click', () => { const word = studyItems[studyIndex]?.headword; if (word && 'speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(word)); });
-    root.querySelectorAll('[data-study-grade]').forEach((button) => (button.onclick = async () => { const card = studyItems[studyIndex]; button.disabled = true; try { const result = await ctx.mutate(() => api.reviewLibraryVocabulary(card.headword, button.dataset.studyGrade)); if (result.item) { const updated = vocabularyCardFromSavedItem(result.item, language, support, pinyinAllowed); studyItems[studyIndex] = updated; const savedIndex = savedCards.findIndex((item) => item.headword.toLowerCase() === card.headword.toLowerCase()); if (savedIndex >= 0) savedCards[savedIndex] = updated; savedData.items = savedData.items.map((item) => item.word.toLowerCase() === card.headword.toLowerCase() ? result.item : item); savedData.summary = { ...summary(), due: savedCards.filter((item) => item.due).length, learning: savedCards.filter((item) => (Number(item.review_stage) || 0) < 3).length, mastered: savedCards.filter((item) => (Number(item.review_stage) || 0) >= 3).length }; } paint(); } catch { button.disabled = false; } }));
+    root.querySelectorAll('[data-study-grade]').forEach((button) => (button.onclick = async () => { const card = studyItems[studyIndex]; button.disabled = true; if (practiceOnly) { /* "Luyện tự do · không tính lịch": the cards are the set's and the schedule is untouched. */ studyIndex = Math.min(studyIndex + 1, studyItems.length - 1); paint(); return; } try { const result = await ctx.mutate(() => api.reviewLibraryVocabulary(card.headword, button.dataset.studyGrade)); if (result.item) { const updated = vocabularyCardFromSavedItem(result.item, language, support, pinyinAllowed); studyItems[studyIndex] = updated; const savedIndex = savedCards.findIndex((item) => item.headword.toLowerCase() === card.headword.toLowerCase()); if (savedIndex >= 0) savedCards[savedIndex] = updated; savedData.items = savedData.items.map((item) => item.word.toLowerCase() === card.headword.toLowerCase() ? result.item : item); savedData.summary = { ...summary(), due: savedCards.filter((item) => item.due).length, learning: savedCards.filter((item) => (Number(item.review_stage) || 0) < 3).length, mastered: savedCards.filter((item) => (Number(item.review_stage) || 0) >= 3).length }; } paint(); } catch { button.disabled = false; } }));
     root.querySelectorAll('[data-vocabulary-retry]').forEach((button) => (button.onclick = () => location.reload()));
   };
 

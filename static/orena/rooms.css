@@ -4795,3 +4795,85 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   transition: inset-inline-start 120ms ease;
 }
 .recall-switch[aria-checked='true'] > span { inset-inline-start: 21px; }
+
+
+/* --- Three states a set or a sitting can be in ---------------------------
+   Frames 30 "Deck nothing due mobile", 31 "Review offline mobile" and 32
+   "Deck load error mobile", all drawn 1:1. */
+.deck-state { display: flex; flex-direction: column; min-block-size: 100%; }
+.deck-state__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block-end: 14px;
+}
+.deck-state__head .icon-button {
+  inline-size: 32px;
+  block-size: 32px;
+  min-block-size: 32px;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+}
+.deck-state__head strong {
+  flex: 1;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 17px;
+}
+.deck-state__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-inline: 32px;
+  text-align: center;
+}
+.deck-state__mark {
+  inline-size: 72px;
+  block-size: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.deck-state__mark[data-tone='good'] {
+  background: color-mix(in srgb, var(--status-success) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-success) 40%, transparent);
+  color: var(--status-success);
+}
+.deck-state__mark[data-tone='bad'] {
+  background: color-mix(in srgb, var(--status-error) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-error) 45%, transparent);
+  color: var(--status-error);
+}
+.deck-state__body h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 22px;
+}
+.deck-state__body p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text-secondary); }
+.deck-state__code { font-size: 11px; color: var(--text-secondary); }
+.deck-state__foot { flex: none; display: flex; flex-direction: column; gap: 10px; padding-block-start: 14px; }
+.deck-state__foot .primary { block-size: 54px; min-block-size: 54px; border-radius: 17px; font-size: 16px; }
+.deck-state__foot .outline { block-size: 50px; min-block-size: 50px; border-radius: 15px; font-size: 15px; }
+
+/* No network: said once, above the card, and counted at the foot. */
+.recall-offline {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--status-warning) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-warning) 40%, transparent);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.recall-offline svg { flex: none; color: var(--status-warning); }
+.recall-waiting { align-self: center; margin: 0; font-size: 11px; color: var(--text-secondary); }

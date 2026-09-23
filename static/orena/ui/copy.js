@@ -312,6 +312,15 @@ const en = {
   vocabularyTitle: 'Vocabulary',
   vocabularyOverviewNote: 'Browse what you are learning, meet a few new words, and return to what needs review.',
   vocabularySavedCount: 'Saved',
+  /* A set with nothing due, a set that would not load, no network. */
+  deckAllDoneToday: 'Done for today',
+  deckNextUp: 'Next: {n} cards, tomorrow. {m} words in this set still to learn.',
+  deckLearnNew: 'Learn {n} new cards',
+  deckFreePractice: 'Free practice · not counted',
+  deckLoadFailed: 'That set would not load',
+  deckLoadFailedNote: 'Your progress is safe. Try again in a few seconds.',
+  recallOffline: 'Offline. Answers are kept on this device and sync when there is a connection. Saying words aloud is off for now.',
+  recallWaiting: '{n} answers waiting to sync',
   /* The four review modes beside the flashcard, and their settings sheet. */
   recallModeFlashcard: 'Flashcard',
   recallModeTyping: 'Type the meaning',
@@ -777,6 +786,15 @@ const zh = {
   vocabularyTitle: '词汇',
   vocabularyOverviewNote: '看看正在学习的词，认识今天的新词，也回到值得复习的内容。',
   vocabularySavedCount: '已保存',
+  /* A set with nothing due, a set that would not load, no network. */
+  deckAllDoneToday: '今天已复习完',
+  deckNextUp: '下次：{n} 张卡，明天。这个集里还有 {m} 个词没学。',
+  deckLearnNew: '再学 {n} 张新卡',
+  deckFreePractice: '自由练习 · 不计入安排',
+  deckLoadFailed: '词集没能加载',
+  deckLoadFailedNote: '你的进度没有丢。过几秒再试。',
+  recallOffline: '当前离线。答案先存在本机，联网后同步。大声说暂时关闭。',
+  recallWaiting: '{n} 条结果等待同步',
   /* The four review modes beside the flashcard, and their settings sheet. */
   recallModeFlashcard: '闪卡',
   recallModeTyping: '输入词义',

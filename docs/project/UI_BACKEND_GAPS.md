@@ -1892,3 +1892,29 @@ Two things recorded rather than decided:
    the frames draw is the sliders control on **frame 30 Deck nothing due
    mobile**; until that frame is built, a learner who turns every mode off
    reaches the sheet again from the next session that sets a task.
+
+## Nothing due, no network, and a set that would not load (2026-09-23)
+
+Frames **30 Deck nothing due mobile**, **31 Review offline mobile** and **32
+Deck load error mobile** — built and measured.
+
+- **Frame 30** is what pressing "review" on a set gives when none of its words
+  are due. Both numbers are counted, never estimated: what comes back tomorrow
+  is the library's own `due_next_day`, and what is left to learn is this set's
+  own arithmetic. It carries the **second door to the review settings** the
+  frames draw (the sliders control), which the flashcard shell does not have.
+- **Frame 31** is the sitting with no network. An answer that cannot reach the
+  server **waits on the device**, in the order it was given, and goes up on the
+  next connection — `product/review-queue.js`, with the rules a queue needs to
+  be trustworthy: order is kept, a failure holds the ones behind it (they are
+  later events in the same schedule), and a *refusal* is dropped rather than
+  retried forever. Every grade in the room now goes through that one place,
+  flashcard and task card alike.
+- **Frame 32** is the set that would not load, with the code a learner can
+  quote. The old inline notice bar it replaces is deleted (rule 44).
+
+One thing recorded rather than decided: **"Luyện tự do · không tính lịch"**.
+The frame draws the button and names what it does; no frame draws the free
+pass itself. It opens the set's own cards and writes nothing to the schedule,
+which is what the label says. If the human wants a distinct screen for it, that
+is a design decision, not an implementation one.

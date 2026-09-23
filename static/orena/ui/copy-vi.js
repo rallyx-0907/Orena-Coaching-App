@@ -513,6 +513,15 @@ export const vi = {
   vocabularySave: 'Lưu từ',
   vocabularySaved: 'Đã lưu',
   vocabularySavedCount: 'Đã lưu',
+  /* A set with nothing due, a set that would not load, no network. */
+  deckAllDoneToday: 'Hôm nay đã ôn xong',
+  deckNextUp: 'Lần tới: {n} thẻ · ngày mai. Còn {m} từ chưa học trong bộ.',
+  deckLearnNew: 'Học thêm {n} thẻ mới',
+  deckFreePractice: 'Luyện tự do · không tính lịch',
+  deckLoadFailed: 'Không tải được bộ từ',
+  deckLoadFailedNote: 'Tiến độ của bạn không bị mất. Thử lại sau vài giây.',
+  recallOffline: 'Đang offline. Kết quả lưu trên máy và đồng bộ khi có mạng. Nói to tạm tắt.',
+  recallWaiting: '{n} kết quả chờ đồng bộ',
   /* The four review modes beside the flashcard, and their settings sheet. */
   recallModeFlashcard: 'Flashcard',
   recallModeTyping: 'Gõ nghĩa',

@@ -4,6 +4,7 @@ const volatile = new Map();
 import { restoreConversation } from './conversation.js';
 import { practiceIntentions } from './intent.js';
 import { readReviewSettings } from './recall-modes.js';
+import { readQueue } from './review-queue.js';
 
 /* Why a learner kept something. A small, stable vocabulary rather than free
    text, so the collection can say it in either interface language and group by
@@ -60,6 +61,10 @@ export function learnerMemory(storage, owner, language) {
          made for learner-owned data by keeping it here (AGENTS "Architecture
          holds"). */
       reviewSettings: null,
+      /* Answers given with no network, waiting their turn. Device memory for
+         the same reason: they are this device's unsent work, and they leave
+         it as soon as there is a connection. */
+      reviewQueue: [],
     };
   try {
     const parsed =
@@ -153,6 +158,7 @@ export function learnerMemory(storage, owner, language) {
             .map(([k, v]) => [k, v.slice(0, 12000)]),
         );
       value.reviewSettings = readReviewSettings(parsed.reviewSettings);
+      value.reviewQueue = readQueue(parsed.reviewQueue);
       value.keptLanguage = Object.fromEntries(
         Object.entries(parsed.keptLanguage || {})
           .filter(
@@ -218,6 +224,12 @@ export function learnerMemory(storage, owner, language) {
        two settings disagreeing. Clamped on the way in and on the way out. */
     setReview(next) {
       value.reviewSettings = readReviewSettings(next);
+      return save();
+    },
+    /* The whole queue, written at once: it is a list in an order, and a caller
+       that could push one and drop another could reorder a schedule. */
+    setReviewQueue(next) {
+      value.reviewQueue = readQueue(next);
       return save();
     },
     forgetLanguage(term) {
