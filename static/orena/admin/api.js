@@ -48,6 +48,9 @@ export const adminApi = {
   contentDetail: (kind, id) => request(`/api/admin/console/content/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`),
   archiveBook: (id) => request(`/api/admin/console/content/book/${encodeURIComponent(id)}/archive`, { method: 'POST' }),
   publishCollection: (id, body) => request(`/api/admin/console/content/vocabulary/${encodeURIComponent(id)}/publish`, json('POST', body)),
+  restoreBook: (id) => request(`/api/admin/console/content/book/${encodeURIComponent(id)}/restore`, { method: 'POST' }),
+  setCollectionStatus: (id, status) =>
+    request(`/api/admin/console/content/vocabulary/${encodeURIComponent(id)}/status`, json('POST', { status })),
   reprocessMedia: (id) => request(`/api/admin/console/content/media/${encodeURIComponent(id)}/reprocess`, { method: 'POST' }),
   importBook: (file, language) => {
     const form = files('files', [file]);

@@ -1037,6 +1037,70 @@ class MediaStatusIn(BaseModel):
     status: str = Field(default="", max_length=20)
 
 
+class CollectionStatusIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(default="", max_length=20)
+
+
+@router.post("/content/vocabulary/{collection_id}/status")
+def set_collection_status(
+    collection_id: str, payload: CollectionStatusIn, request: Request, response: Response
+) -> dict[str, Any]:
+    """Move a collection through the editorial flow, reversibly.
+
+    `archived -> unpublished` is the only way back out of archived: restoring
+    returns a collection to the shelf, never straight in front of a learner.
+    Publishing again is a separate act by someone who has looked at it.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    wanted = payload.status.strip().casefold()
+    if not _vocabulary_available():
+        raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+    try:
+        collection = _state.vocabulary_repository.set_collection_status(
+            collection_id, wanted, actor=_actor(admin)
+        )
+    except ValueError as exc:
+        raise orena_http_error(422, "vocabulary_status_refused", str(exc)) from exc
+    _audit(admin, "admin.content.status", entity_type="vocabulary_collection", entity_id=collection_id,
+           payload={"to": wanted, "outcome": "ok"})
+    return {"collection": collection}
+
+
+@router.post("/content/book/{book_id}/restore")
+def restore_book(book_id: str, request: Request, response: Response) -> dict[str, Any]:
+    """The way back from archive. Nothing was deleted, so nothing is rebuilt."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    import uuid as _uuid
+
+    try:
+        _uuid.UUID(book_id)
+    except ValueError as exc:
+        raise orena_http_error(404, "content_not_found", "This book is not in the catalog.") from exc
+    reading = _state.reading_repository
+    if reading is None:
+        raise orena_http_error(503, "reading_library_unavailable", "The Reading Library is not configured for this deployment.")
+    try:
+        restored = reading.restore_book(book_id)
+    except Exception as exc:  # noqa: BLE001 - schema not ready or database down
+        _logger.warning("admin console: restore failed for %s", book_id, exc_info=True)
+        raise orena_http_error(503, "reading_library_unavailable", "The Reading Library is not available.") from exc
+    if not restored:
+        current = _state.repository.get_book(book_id) if _state.repository is not None else None
+        if current is not None and current.get("status") == "ready":
+            _audit(admin, "admin.content.restore", entity_type="book", entity_id=book_id,
+                   payload={"outcome": "unchanged"})
+            return {"restored": True, "id": book_id, "unchanged": True}
+        raise orena_http_error(404, "content_not_found", "No archived book has this identifier.")
+    _audit(admin, "admin.content.restore", entity_type="book", entity_id=book_id, payload={"outcome": "ok"})
+    return {"restored": True, "id": book_id}
+
+
 @router.post("/content/media/{media_id}/status")
 def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, response: Response) -> dict[str, Any]:
     """Take a media item off the shelf, retire it, or put it back.

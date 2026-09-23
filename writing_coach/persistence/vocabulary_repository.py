@@ -74,7 +74,16 @@ _VOCABULARY_PUBLISHABLE_RIGHTS = {
     "creator_authorized",
     "internal_curated",
 }
-_VOCABULARY_CATALOG_STATUSES = {"pending_review", "published"}
+_VOCABULARY_CATALOG_STATUSES = {"pending_review", "published", "unpublished", "archived"}
+# The editorial flow, as the human settled it. Restoring an archived collection
+# returns it to the shelf, never straight in front of a learner: publishing
+# again is a separate act by someone who has looked at it.
+_VOCABULARY_TRANSITIONS = {
+    "pending_review": {"published", "archived"},
+    "published": {"unpublished", "archived"},
+    "unpublished": {"published", "archived"},
+    "archived": {"unpublished"},
+}
 _VOCABULARY_CONTENT_SNAPSHOT_FIELDS = (
     "term",
     "language_code",
@@ -157,7 +166,12 @@ class VocabularyRepository(Protocol):
     def finalize_collection_publication(
         self, collection_id: str, *, admission: Mapping[str, Any]
     ) -> dict[str, Any]: ...
-    def list_collections(self, language_code: str) -> list[dict[str, Any]]: ...
+    def set_collection_status(
+        self, collection_id: str, status: str, *, actor: str
+    ) -> dict[str, Any]: ...
+    def list_collections(
+        self, language_code: str, *, status: str | None = "published"
+    ) -> list[dict[str, Any]]: ...
     def get_collection(
         self,
         collection_id: str,
@@ -703,6 +717,51 @@ class SQLAlchemyVocabularyRepository:
             "failure_reason": "",
         }
 
+    def set_collection_status(
+        self, collection_id: str, status: str, *, actor: str
+    ) -> dict[str, Any]:
+        """Move a collection through the editorial flow, reversibly.
+
+        A state and never a deletion: the words, the membership, the source
+        receipts and the admission record all stay exactly where they were, so
+        every one of these can be undone. The learner rule needs no change -
+        `vocabulary_library` shows a collection only when its status is
+        `published`, so a new state is invisible to a learner by construction
+        rather than by remembering to filter it.
+        """
+        self._require_available()
+        clean_id = _text(collection_id)
+        wanted = _text(status).casefold()
+        if wanted not in _VOCABULARY_CATALOG_STATUSES:
+            raise ValueError(f"'{status}' is not a collection state.")
+        now = _now()
+        with Session(self.engine) as session, session.begin():
+            collection = session.get(VocabularyCollection, clean_id)
+            if collection is None:
+                raise ValueError(f"Vocabulary collection '{clean_id}' was not imported.")
+            current = _text(collection.catalog_status).casefold() or "pending_review"
+            if current != wanted and wanted not in _VOCABULARY_TRANSITIONS.get(current, set()):
+                raise ValueError(
+                    f"A collection that is {current} cannot become {wanted}."
+                )
+            if current != wanted:
+                provenance = _copy_json(collection.provenance, {}) or {}
+                if not isinstance(provenance, Mapping):
+                    provenance = {}
+                history = list(provenance.get("status_history") or [])
+                history.append({"from": current, "to": wanted, "actor": actor, "at": now.isoformat()})
+                collection.catalog_status = wanted
+                collection.provenance = {
+                    **dict(provenance),
+                    "catalog_status": wanted,
+                    # Why it moved and who moved it, kept beside the admission
+                    # rather than replacing it.
+                    "status_history": history[-50:],
+                }
+                collection.updated_at = now
+            levels, item_count = self._collection_stats(session, clean_id)
+            return _collection_summary(collection, levels, item_count)
+
     def finalize_collection_publication(
         self, collection_id: str, *, admission: Mapping[str, Any]
     ) -> dict[str, Any]:
@@ -787,17 +846,27 @@ class SQLAlchemyVocabularyRepository:
             "failure_reason": error["reason"],
         }
 
-    def list_collections(self, language_code: str) -> list[dict[str, Any]]:
+    def list_collections(
+        self, language_code: str, *, status: str | None = "published"
+    ) -> list[dict[str, Any]]:
+        """Published only, unless the caller says otherwise.
+
+        The default is what a learner may see, because every learner-facing
+        path reaches this method: a new editorial state must never become
+        visible by someone forgetting to filter. `status=None` is the
+        operator's listing, and it is the one an operator needs - the
+        collection they came looking for is usually the one that is no longer
+        in front of learners.
+        """
         self._require_available()
         language = _text(language_code).casefold()
         with Session(self.engine) as session:
+            where = [VocabularyCollection.language_code == language]
+            if status is not None:
+                where.append(VocabularyCollection.catalog_status == status)
             collections = list(
                 session.scalars(
-                    select(VocabularyCollection)
-                    .where(
-                        VocabularyCollection.language_code == language,
-                        VocabularyCollection.catalog_status == "published",
-                    )
+                    select(VocabularyCollection).where(*where)
                     .order_by(VocabularyCollection.title)
                 )
             )
@@ -815,15 +884,14 @@ class SQLAlchemyVocabularyRepository:
         level: str = "",
         limit: int = 100,
         offset: int = 0,
+        status: str | None = "published",
     ) -> dict[str, Any] | None:
         self._require_available()
         with Session(self.engine) as session:
-            collection = session.scalar(
-                select(VocabularyCollection).where(
-                    VocabularyCollection.id == _text(collection_id),
-                    VocabularyCollection.catalog_status == "published",
-                )
-            )
+            where = [VocabularyCollection.id == _text(collection_id)]
+            if status is not None:
+                where.append(VocabularyCollection.catalog_status == status)
+            collection = session.scalar(select(VocabularyCollection).where(*where))
             if collection is None:
                 return None
             entries, total = self._list_entries_in_session(

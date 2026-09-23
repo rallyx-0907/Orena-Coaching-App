@@ -292,3 +292,29 @@ def test_reimporting_the_same_hash_after_archiving_succeeds(engine):
     # The hash now points at the fresh 'ready' book, not the archived one.
     found = repository.get_book_by_hash(shared_hash)
     assert found is not None and found['id'] == str(second_id)
+
+
+def test_archiving_a_book_is_a_door_that_opens_both_ways(engine):
+    """`archive_book` was the only recovery path an operator had for a wrong
+    import, and it was irreversible - which makes it a path nobody presses.
+    Restoring returns the book and everything under it; nothing was removed."""
+    repository = PostgresReadingLibraryRepository(engine)
+    book_id = uuid.uuid4()
+    repository.create_book(
+        book_id=book_id, title='Reversible', author='Tester', description='',
+        learning_language='en', source_kind='epub', source_hash=_hash_for('reversible'),
+        cover_asset_key=None, original_asset_key=f'books/{book_id}/original.epub',
+        imported_by='admin@test', chapters=_sample_chapters(),
+    )
+    assert repository.get_book(str(book_id)) is not None
+
+    assert repository.archive_book(str(book_id)) is True
+    assert repository.get_book(str(book_id)) is None, 'a learner cannot reach an archived book'
+
+    assert repository.restore_book(str(book_id)) is True
+    restored = repository.get_book(str(book_id))
+    assert restored is not None and restored['title'] == 'Reversible'
+    assert [c['title'] for c in restored['chapters']] == ['Chapter One', 'Chapter Two']
+
+    # Restoring something that is not archived changes nothing and says so.
+    assert repository.restore_book(str(book_id)) is False

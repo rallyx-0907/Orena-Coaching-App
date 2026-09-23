@@ -127,6 +127,16 @@ const MEDIA_STATES = {
   restore: 'published',
 };
 
+/* A collection's flow, as the human settled it. Restore goes to `unpublished`
+   and never to `published`: coming back from archived returns it to the shelf,
+   and putting it in front of learners again is a separate decision. */
+const COLLECTION_STATES = {
+  publish: 'published',
+  unpublish: 'unpublished',
+  archive: 'archived',
+  restore: 'unpublished',
+};
+
 /* What each lifecycle decision means, in the words of the thing it does. The
    two that take an item back say what survives, because "unpublish" and
    "delete" are easy to hear as the same word. */
@@ -136,6 +146,7 @@ function lifecycleConfirm(intent, t) {
     archive: [t.archiveConfirm, t.actionArchive],
     republish: [t.restoreConfirm, t.actionRepublish],
     restore: [t.restoreConfirm, t.actionRestore],
+    publish: [t.publishAgainConfirm, t.actionPublish],
   }[intent];
   return said ? confirmBlock({ intent, text: said[0], action: said[1], t }) : '';
 }
@@ -171,12 +182,16 @@ const LIFECYCLE = [
   ['republish', 'actionRepublish', true],
   ['publish', 'actionPublish', true],
 ];
+/* Vocabulary publishes through its own form - rights and completeness are read
+   there - so the footer offers every state except that one. */
+const FORM_DRIVEN = { vocabulary: new Set(['publish']) };
 
 export function contentDetailFooter(detail, t) {
   const record = detail.record || {};
   const offered = new Set(record.actions || []);
+  const elsewhere = FORM_DRIVEN[record.kind] || new Set();
   return LIFECYCLE
-    .filter(([name]) => offered.has(name))
+    .filter(([name]) => offered.has(name) && !elsewhere.has(name))
     .map(([name, key, primary]) => `<button type="button" class="ac-button${primary ? ' ac-button--primary' : ''}" data-ac-intent-open="${esc(name)}">${esc(t[key])}</button>`)
     .join('');
 }
@@ -399,6 +414,12 @@ export async function renderContent(container, env) {
         if (action.dataset.acDo === 'archive' && kind === 'book') {
           await api.archiveBook(id);
           env.notify?.(t.archived);
+        } else if (action.dataset.acDo === 'restore' && kind === 'book') {
+          await api.restoreBook(id);
+          env.notify?.(t.mediaDone_restore);
+        } else if (kind === 'vocabulary' && COLLECTION_STATES[action.dataset.acDo]) {
+          await api.setCollectionStatus(id, COLLECTION_STATES[action.dataset.acDo]);
+          env.notify?.(t[`mediaDone_${action.dataset.acDo}`] || t.saved);
         } else if (kind === 'media' && MEDIA_STATES[action.dataset.acDo]) {
           /* A state, not a deletion: the transcript, the provenance and the
              audit trail all survive it, which is why the confirmation says

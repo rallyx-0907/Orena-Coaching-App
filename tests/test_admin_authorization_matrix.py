@@ -68,6 +68,10 @@ MATRIX = {
         {"json": {"rights_status": "licensed", "completeness": "complete", "attested": True}}, {422, 503}),
     ("POST", "/api/admin/console/content/media/{media_id}/reprocess"): (
         "/api/admin/console/content/media/youtube-abcdefghijk/reprocess", {}, {404}),
+    ("POST", "/api/admin/console/content/vocabulary/{collection_id}/status"): (
+        "/api/admin/console/content/vocabulary/hsk1/status", {"json": {"status": "archived"}}, {422, 503}),
+    ("POST", "/api/admin/console/content/book/{book_id}/restore"): (
+        f"/api/admin/console/content/book/{BOOK}/restore", {}, {404, 503}),
     ("POST", "/api/admin/console/content/media/{media_id}/status"): (
         "/api/admin/console/content/media/youtube-abcdefghijk/status",
         {"json": {"status": "archived"}}, {404}),
@@ -175,7 +179,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 52
+    assert len(routes) == 54
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

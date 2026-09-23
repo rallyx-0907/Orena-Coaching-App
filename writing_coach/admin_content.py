@@ -81,7 +81,9 @@ def book_record(book: Mapping[str, Any]) -> dict[str, Any]:
             "source_kind": _text(book.get("source_kind")),
         },
         "issues": [],
-        "actions": ["preview", "archive"] if ready else ["preview"],
+        # Archiving was the only recovery path and it was one-way. Both
+        # directions are offered now, and neither destroys anything.
+        "actions": ["preview", "archive"] if ready else ["preview", "restore"],
     }
 
 
@@ -190,7 +192,7 @@ def vocabulary_record(collection: Mapping[str, Any]) -> dict[str, Any]:
         "title": _text(collection.get("title")),
         "subtitle": " · ".join(part for part in (_text(collection.get("framework")), level, _text(collection.get("topic"))) if part),
         "language": _text(collection.get("language")),
-        "status": "draft" if pending else "published",
+        "status": _collection_status(collection),
         "origin": _text(collection.get("origin")) or "imported",
         "created_at": collection.get("created_at"),
         "updated_at": collection.get("updated_at"),
@@ -204,8 +206,37 @@ def vocabulary_record(collection: Mapping[str, Any]) -> dict[str, Any]:
             "completeness": _text(collection.get("completeness")),
         },
         "issues": ["pending_review"] if pending else [],
-        "actions": ["preview", "publish"] if pending else ["preview"],
+        "actions": _collection_actions(_collection_status(collection)),
     }
+
+
+def _collection_status(collection: Mapping[str, Any]) -> str:
+    """The editorial state, in the console's own vocabulary.
+
+    `pending_review` reads as a draft to an operator scanning a mixed list;
+    the other three are already the words the console uses everywhere else.
+    """
+    # The admin repository projects `catalog_status` under `status`; a caller
+    # that hands the raw row keeps its own name. Both are read so neither
+    # caller has to know which one it is.
+    status = _text(collection.get("status")) or _text(collection.get("catalog_status")) or "pending_review"
+    return "draft" if status == "pending_review" else status
+
+
+def _collection_actions(status: str) -> list[str]:
+    """What can be done from where this collection is.
+
+    Restore from archived returns it to the shelf as `unpublished`, never
+    straight to learners - so an archived collection offers restore and not
+    publish, and the operator publishes again deliberately afterwards.
+    """
+    if status == "draft":
+        return ["preview", "publish"]
+    if status == "published":
+        return ["preview", "unpublish", "archive"]
+    if status == "unpublished":
+        return ["preview", "publish", "archive"]
+    return ["preview", "restore"]
 
 
 def transcript_attention_count(records: Iterable[Mapping[str, Any]]) -> int:
