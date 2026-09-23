@@ -1353,8 +1353,17 @@ S1-S13 in the register above.
   the lesson. **No pronunciation provider was configured on :8013**, so the pronunciation route was
   answered in the browser test by a provider-shaped stand-in: this verifies the rendering and the
   lifecycle, not Azure. Azure itself is covered by mocked-response tests only.
-- **Not browser-checked yet:** the Speaking library and free talk rooms (built after the shared Docker
-  engine stopped during this batch).
+- **Library and free talk, browser-checked** after the Docker engine came back (sandbox :8013 rebuilt),
+  desk and phone with touch, VI/EN/ZH interface over zh and en: library chips only for real types
+  ("Nhại theo clip", "Nói tự do"), 7 zh / 5 en cards, meta "nhại theo clip · HSK2 · 3 câu", rail on;
+  free talk record → result with duration and comment, rail off, "Xem gợi ý sâu" sheet with the
+  three kept actions. Recognition and coaching were browser stand-ins (no ASR/AI provider on :8013);
+  evidence and the attempt record were the real routes. One fix from the phone check: the two side
+  buttons no longer overflow 390px.
+- **Deviation shared with the other libraries, not changed here:** the frame's desktop grid is four
+  362px columns; the shared library (`media-library.css`, `#main > *` capped at 1480px) shows three at
+  1920. The phone library is the shared two-column grid, where the frame draws one large card then
+  pairs. Both belong to the library template, not to Speaking.
 - `scripts/test_m3_pronunciation_contract.mjs` is rewritten to `PronunciationResult` and passes (it
   held the D-065 "no score" report). Six `.mjs` gates fail locally on a clean `3bf2c3f` tree as well,
   with the same first assertion: `test_orena_admin_console`, `test_orena_admin_entry`,

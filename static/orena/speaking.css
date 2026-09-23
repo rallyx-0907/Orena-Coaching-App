@@ -1258,13 +1258,14 @@
 }
 .sp-fbtn {
   flex: 1;
+  min-width: 0;
   block-size: 50px;
   min-height: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 0 8px;
+  gap: 7px;
+  padding: 0 6px;
   border: 0;
   border-radius: 15px;
   background: var(--accent-chip);
@@ -1275,6 +1276,14 @@
   color: var(--text-on-action);
   white-space: nowrap;
   cursor: pointer;
+}
+.sp-fbtn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sp-fbtn svg {
+  flex: none;
 }
 .sp-fbtn:disabled {
   opacity: 0.45;
