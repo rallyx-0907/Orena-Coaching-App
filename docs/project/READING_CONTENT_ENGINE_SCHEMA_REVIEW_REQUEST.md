@@ -389,6 +389,18 @@ away and were left out to keep the first review surface small:
 | Adding a learning target from the UI | `POST …/targets` exists and is tested; nothing in the section calls it |
 | Editing a source's rights or languages after creation | only `state` and `polling_enabled` are exposed; the rest is a create-time answer |
 
+**Correcting a mis-parsed byline or publication date.** The immutability
+trigger deliberately leaves `original_title`, `original_author`,
+`original_published_at`, `original_language` and `metadata_json` writable, so
+an admin *could* be given a form for a mis-parse — and no repository method
+writes them today, which is why there is no such form yet. One rule comes with
+it when it ships, recorded here so it is not rediscovered through a stale
+byline on a learner's screen: `attribution.author` and
+`attribution.published_at` are in the learner's detail read, so correcting
+either must bump the owning article's `content_revision`
+(`article_for_source_item()` reaches it). `LEARNER_VISIBLE_FIELDS` covers only
+`reading_articles` columns and cannot see this on its own.
+
 **Not built, and waiting on a later phase.**
 
 - *Target meanings and reordering.* `meaning` and `rank` are columns the

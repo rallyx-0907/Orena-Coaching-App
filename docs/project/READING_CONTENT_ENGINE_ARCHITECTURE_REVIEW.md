@@ -10,13 +10,16 @@ of substance — the verdict, every finding, every required change and the
 authorization boundary are the reviewer's own. What each round changed is under
 "Resolution" at the end of this file.
 
-**Note added 2026-09-23, after the reviews below.** `codex/work` was merged
-into this lane, so the proposed migration was rebased from `20260916_0009`
-onto the new head `20260922_0012` and renumbered `20260923_0013`. Rounds 1–4
-reviewed the same file under its former name,
-`20260922_0010_reading_content_engine.py`, and the text below is left exactly
-as each reviewer wrote it — the file identifier in their words is historical,
-not stale. The rebase changed `revision`, `down_revision`, the chain paragraph
+**Note added 2026-09-23, after rounds 1–4 below.** `codex/work` was merged
+into this lane at `61e9668`, so the proposed migration was rebased in commit
+`fbe6fec`: revision `20260922_0010` (parent `20260916_0009`) became revision
+`20260923_0013` (parent `20260922_0012`), and the file was renamed from
+`migrations/proposed/20260922_0010_reading_content_engine.py` to
+`migrations/proposed/20260923_0013_reading_content_engine.py`. Rounds 1–4
+reviewed that same file under its former name, and the text below is left
+exactly as each reviewer wrote it — the identifier in their words is
+historical, not stale. Round 5 reviewed the rebase itself and confirmed the
+schema is byte-identical apart from those identifiers and two audit strings. The rebase changed `revision`, `down_revision`, the chain paragraph
 and the seed `created_by` string, and nothing else; the delta is being
 re-reviewed separately.
 
