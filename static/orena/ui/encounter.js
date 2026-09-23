@@ -285,6 +285,34 @@ export async function renderEncounter(root, ctx) {
       },
     );
   }
+  if (id.startsWith('article:')) {
+    /* A published Reading article, read in the room every other text is read
+       in. The server answers with the text, the targets an admin approved and
+       the attribution its rights require; nothing about review or ingestion
+       crosses this boundary, so there is nothing here to hide. */
+    const article = await api.readingArticle(id.slice('article:'.length));
+    const item = readable({
+      id,
+      title: article.title,
+      language: article.language,
+      level: article.level,
+      subtitle: article.topic,
+      paragraphs: String(article.body || '').split(/\n\s*\n/),
+      phrases: (article.targets || []).map((target) => ({
+        word: target.text,
+        meaning: target.meaning || '',
+        note: target.context || '',
+      })),
+      source: article.attribution?.author || article.attribution?.source_url
+        ? {
+            creator: article.attribution.author || '',
+            provenance_url: article.attribution.source_url || '',
+          }
+        : undefined,
+    });
+    if (!item) throw Error(c.unavailable);
+    return textEncounter(root, ctx, item);
+  }
   if (id.startsWith('story:') || id.startsWith('text:')) {
     const found = id.startsWith('story:')
       ? contentFor(language).find((x) => `story:${x.id}` === id)

@@ -95,6 +95,10 @@ export async function renderWorld(root, ctx) {
     location.page === 'discover'
       ? api.vocabularyLibraryCollections(language)
       : Promise.resolve({ items: [] }),
+    // Published Reading articles. A runtime without the Reading engine answers
+    // 503 and the shelf is simply shorter - a room is not a place to explain a
+    // migration, and `allSettled` already treats that as "nothing to add".
+    api.readingArticles(language),
   ]);
   if (!alive()) return;
   const listeningPayload = result[0].status === 'fulfilled' ? result[0].value : {};
@@ -132,10 +136,30 @@ export async function renderWorld(root, ctx) {
         reading.push(readingEntry(item.value.session, language));
     }
   }
+  /* Articles an administrator admitted through the Reading content engine.
+     They are read exactly like everything else here, so they join the same
+     list rather than getting a shelf of their own: what the learner gains is
+     more to read, not a new place to look. */
+  const articles = (result[4]?.status === 'fulfilled' ? result[4].value.items || [] : []).map(
+    (article) => ({
+      id: `article:${article.id}`,
+      kind: 'article',
+      material: 'article',
+      title: article.title,
+      subtitle: article.excerpt || '',
+      topic: article.topic || '',
+      level: article.level || '',
+      time: article.reading_time_seconds
+        ? `${Math.max(1, Math.round(article.reading_time_seconds / 60))} min`
+        : '',
+      language: article.language || language,
+    }),
+  );
   // Everything that is read rather than listened to, in one list.
   const published = publishedReadings(language);
-  const readable = [...published, ...reading, ...text, ...memory.value.imports];
+  const readable = [...articles, ...published, ...reading, ...text, ...memory.value.imports];
   const all = [
+    ...articles,
     ...published,
     ...media,
     ...reading,

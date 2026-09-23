@@ -196,6 +196,12 @@ export const api={
   // Shared Reading Library: admin-imported books, open to every learner.
   // libraryBookChapter backs the `book:<id>/<chapterId>` encounter locator
   // in ui/encounter.js; adminImportLibraryBooks is admin-gated server-side.
+  /* Published Reading articles - what the Admin Reading engine admitted. The
+     list is a page of lightweight cards and the detail is one article; neither
+     says anything about review, ingestion or a candidate, because a learner
+     has no business with any of that. */
+  readingArticles:(languageCode,cursor)=>request(`/api/reading/articles?language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
+  readingArticle:(articleId)=>request(`/api/reading/articles/${encodeURIComponent(articleId)}`),
   libraryBooks:(languageCode,cursor)=>request(`/api/reading/library/books?learning_language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
   libraryBook:(bookId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}`),
   libraryBookChapter:(bookId,chapterId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}/chapters/${encodeURIComponent(chapterId)}`),
