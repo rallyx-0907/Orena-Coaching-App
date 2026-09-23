@@ -513,6 +513,10 @@ export const vi = {
   vocabularySave: 'Lưu từ',
   vocabularySaved: 'Đã lưu',
   vocabularySavedCount: 'Đã lưu',
+  /* The room's own search (frames 20 and 21). */
+  vocabularySearchSaved: 'Đã lưu',
+  vocabularySearchDictionary: 'Từ điển',
+  vocabularySearchClear: 'Xóa',
   /* Adding a word by hand, and the set it lands in. */
   addWord: 'Thêm từ',
   addWordSelf: 'Tự thêm từ',

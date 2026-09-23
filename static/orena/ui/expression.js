@@ -28,6 +28,7 @@ import {
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import { wordDeepHtml } from './word-deep.js';
 import { addWordScreen, createDeckScreen, saveToDeckSheet } from './word-add.js';
+import { vocabularySearchHtml } from './vocabulary-search.js';
 import {
   bindWritingFeedback,
   revisionHtml,
@@ -1428,6 +1429,13 @@ export async function renderLanguage(root, ctx) {
      own word sets in Thư viện của tôi, read once and kept current by the two
      writes below - there is no second store. */
   let decks = [];
+  /* The room's own search: what was typed, which chip is on, and the two
+     lists. Both halves are read from the server - the learner's words by the
+     read that already pages them, the catalogue by its own bounded search -
+     so the browser never holds either of them whole. */
+  let searching = null;
+  let searchTimer = null;
+  let searchRequest = 0;
   let decksRead = false;
   let adding = null;
   let deckSheet = null;
@@ -1446,6 +1454,34 @@ export async function renderLanguage(root, ctx) {
     } catch {
       return false;
     }
+  };
+
+  const SEARCH_DEBOUNCE_MS = 220;
+  const SEARCH_LIMIT = 20;
+
+  const runSearch = async () => {
+    const wanted = (searching?.query || '').trim();
+    const token = (searchRequest += 1);
+    if (!wanted) {
+      searching = { ...searching, saved: [], catalogue: [], savedTotal: 0, busy: false };
+      paint();
+      return;
+    }
+    searching.busy = true;
+    paint();
+    const [mine, catalogue] = await Promise.all([
+      api.libraryVocabulary({ query: wanted, limit: SEARCH_LIMIT }).catch(() => null),
+      api.vocabularyCatalogueSearch(wanted, language, SEARCH_LIMIT).catch(() => null),
+    ]);
+    if (!alive() || token !== searchRequest) return;
+    searching = {
+      ...searching,
+      saved: mine?.items || [],
+      savedTotal: Number(mine?.total || (mine?.items || []).length),
+      catalogue: catalogue?.items || [],
+      busy: false,
+    };
+    paint();
   };
 
   const readDecks = async () => {
@@ -1617,7 +1653,10 @@ export async function renderLanguage(root, ctx) {
        the shared catalogue a learner takes words from. Their own words are
        Thư viện của tôi's (D-074), which is where the rows that used to sit
        here went - not restyled, removed. */
-    return `<section class="vocab-library"><h1 class="sr-only">${esc(c.vocabularyTitle)}</h1>${chips}${packs}</section>`;
+    /* The head frames 01 and 02 draw and the room did not have: its name, and
+       the way into its own search. */
+    const head = `<header class="vocab-library__head"><h1>${esc(c.vocabularyTitle)}</h1><button type="button" class="icon-button vocab-library__search" data-search-open aria-label="${esc(c.vocabularySearch)}">${icon('magnifying-glass', { size: 19 })}</button></header>`;
+    return `<section class="vocab-library">${head}${chips}${packs}</section>`;
   };
 
   const libraryView = () => {
@@ -1773,7 +1812,7 @@ export async function renderLanguage(root, ctx) {
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
     const bare = view === 'overview' && !savedCards.length && !savedError;
-    root.innerHTML = bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    root.innerHTML = view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     if (deckSheet)
       root.insertAdjacentHTML(
         'beforeend',
@@ -1949,6 +1988,59 @@ export async function renderLanguage(root, ctx) {
       }
       if (visibleItems.length) setStudy(due.length ? due : visibleItems);
     });
+    /* The room's own search. */
+    root.querySelectorAll('[data-search-open]').forEach((node) => {
+      if (node.dataset.searchOpen) return;
+      node.onclick = () => {
+        returnView = view;
+        searching = { query: '', filter: 'all', saved: [], catalogue: [], savedTotal: 0, busy: false };
+        view = 'search';
+        paint();
+        root.querySelector('[data-search-input]')?.focus();
+      };
+    });
+    root.querySelector('[data-search-input]')?.addEventListener('input', (event) => {
+      searching.query = event.target.value;
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => { if (alive()) runSearch(); }, SEARCH_DEBOUNCE_MS);
+    });
+    root.querySelector('[data-search-clear]')?.addEventListener('click', () => {
+      searching.query = '';
+      runSearch();
+    });
+    root.querySelector('[data-search-cancel]')?.addEventListener('click', () => {
+      window.clearTimeout(searchTimer);
+      searchRequest += 1;
+      searching = null;
+      view = returnView || 'overview';
+      paint();
+    });
+    root.querySelectorAll('[data-search-filter]').forEach((button) => {
+      button.onclick = () => {
+        searching.filter = button.dataset.searchFilter;
+        paint();
+      };
+    });
+    /* A result opens the word all the way - which is where the deep frames say
+       they are opened from. */
+    root.querySelectorAll('[data-search-open]').forEach((button) => {
+      if (!button.dataset.searchOpen) return;
+      button.onclick = () => openWordDeep(button.dataset.searchOpen);
+    });
+    root.querySelectorAll('[data-search-keep]').forEach((button) => {
+      button.onclick = async () => {
+        button.disabled = true;
+        try {
+          await ctx.mutate(() => api.saveLibraryVocabulary({ word: button.dataset.searchKeep }));
+          if (!alive()) return;
+          await runSearch();
+          status(c.persisted);
+        } catch {
+          if (alive()) button.disabled = false;
+        }
+      };
+    });
+
     /* Adding a word by hand, and where it lands. */
     root.querySelectorAll('[data-add-open]').forEach((button) => {
       button.onclick = async () => {

@@ -3310,6 +3310,47 @@ def _vocabulary_feed_pool(language_code: str) -> list[dict[str, Any]]:
     return list(merged.values())
 
 
+@app.get("/api/vocabulary/catalogue/search", name="becoming_vocabulary_catalogue_search")
+def becoming_vocabulary_catalogue_search(
+    q: str = Query(default="", max_length=80),
+    language_code: str = Query(default=""),
+    limit: int = Query(default=20, ge=1, le=50),
+) -> dict[str, Any]:
+    """Words in the shared catalogue that match what the learner typed.
+
+    The other half of the search screen - the learner's own words are searched
+    by `/api/library/vocabulary`, which already does it in the database. This
+    half can only ever return words an admitted collection carries, and it
+    returns at most `limit` of them, so a one-letter query is as cheap as a
+    long one. It says nothing about what the learner has kept; the screen asks
+    that separately, about the words it is drawing.
+    """
+
+    code = _require_vocabulary_language_code(language_code)
+    wanted = str(q or "").strip()
+    repository = _persistence_runtime.vocabulary_repository
+    if not wanted or repository is None:
+        return {"items": [], "query": wanted, "language_code": code}
+    try:
+        found = repository.search_entries(code, wanted, limit=limit)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        found = []
+    items = [
+        {
+            "word": str(entry.get("term") or ""),
+            "normalized_word": str(entry.get("normalized_term") or ""),
+            "identity_key": str(entry.get("identity_key") or ""),
+            "part_of_speech": str(entry.get("part_of_speech") or ""),
+            "readings": entry.get("readings") or [],
+            "short_meanings": entry.get("short_meanings") or [],
+            "level": str(entry.get("level") or ""),
+        }
+        for entry in found
+        if str(entry.get("term") or "")
+    ]
+    return {"items": items, "query": wanted, "language_code": code}
+
+
 @app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
 def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
     code = _require_vocabulary_language_code(language_code)

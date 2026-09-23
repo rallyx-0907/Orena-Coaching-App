@@ -5115,3 +5115,120 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   .word-add__input { block-size: 56px; font-size: 19px; }
   .word-add__input--word { block-size: 60px; font-size: 24px; }
 }
+
+
+/* --- The room's own search -----------------------------------------------
+   Frames 20 "Vocabulary search" and 21 "Vocabulary search mobile", and the
+   head frames 01 and 02 draw. This is the room searching words; the shared
+   top bar searches the whole app and is left alone. */
+.vocab-library__head { display: flex; align-items: center; gap: 12px; }
+.vocab-library__head h1 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+.vocab-library__search {
+  inline-size: 42px;
+  block-size: 42px;
+  min-block-size: 42px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--accent-chip);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  color: var(--text-secondary);
+}
+.vocab-search { display: flex; flex-direction: column; gap: 12px; min-block-size: 100%; }
+.vocab-search__head { display: flex; align-items: center; gap: 12px; }
+.vocab-search__field {
+  flex: 1;
+  block-size: 46px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-chip) 115%, transparent);
+  box-shadow: var(--glass-ring-focus);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 13px;
+  font-size: 16px;
+}
+.vocab-search__field > svg { flex: none; color: var(--text-secondary); }
+.vocab-search__field input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+.vocab-search__field input:focus-visible { outline: none; }
+.vocab-search__clear { border: 0; background: none; color: var(--text-secondary); padding: 0; }
+.vocab-search__cancel { font-size: 15px; font-weight: var(--weight-bold); color: var(--accent-ink); }
+.vocab-search__chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.vocab-search__chip {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-chip);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  color: inherit;
+  font-size: 13px;
+}
+.vocab-search__chip[aria-pressed='true'] {
+  background: var(--accent-gradient);
+  box-shadow: none;
+  color: var(--accent-solid-light);
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+}
+.vocab-search__results { display: flex; flex-direction: column; gap: 8px; }
+.vocab-search__label { padding-block-start: 4px; letter-spacing: 0.13em; font-size: 10.5px; }
+.vocab-search__label + .vocab-search__row { margin-block-start: -4px; }
+.vocab-search__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: start;
+  box-shadow: inset 0 -1px 0 var(--glass-hairline);
+}
+.vocab-search__text {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 0;
+  background: none;
+  color: inherit;
+  padding: 0;
+  text-align: start;
+}
+.vocab-search__word {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: var(--weight-semibold);
+  font-size: 18px;
+}
+.vocab-search__word b { color: var(--accent-ink); font-weight: inherit; }
+.vocab-search__note { font-size: 12.5px; color: var(--text-secondary); }
+.vocab-search__when { font-size: 11px; color: var(--text-secondary); }
+.vocab-search__when[data-tone='due'] { color: var(--status-warning); }
+.vocab-search__keep {
+  flex: none;
+  inline-size: 44px;
+  block-size: 44px;
+  min-block-size: 44px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: inherit;
+}
+.vocab-search__kept { flex: none; display: flex; color: var(--status-success); }
+.vocab-search__none { margin: 0; padding-block-start: 12px; font-size: 14px; color: var(--text-secondary); }

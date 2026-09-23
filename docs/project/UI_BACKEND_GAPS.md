@@ -1950,3 +1950,26 @@ Two things recorded rather than decided:
    identity exactly as every other cover in the room is drawn, and the chooser
    is not faked. **Proposed:** `library_collections.cover` (a short token, not
    a hex value, so the palette stays the theme's) — for the next review round.
+
+## The room's own search (2026-09-23)
+
+Frames **20 Vocabulary search** and **21 Vocabulary search mobile** — built and
+measured, together with the **head frames 01 and 02 draw** and the room did not
+have: its name, and the way into this search.
+
+It is the room's search, not the shared top bar's. The top bar searches the
+whole app; this searches words, so it is a view of this room and the top bar is
+untouched, exactly as the human asked.
+
+**Both halves are searched where they live.** The learner's own words go
+through the read that already pages and searches them in the database. The
+catalogue half is **new**: `VocabularyRepository.search_entries` and
+`GET /api/vocabulary/catalogue/search`, which names its own bound (default 20,
+never more than 50) and orders shorter matches first, because the shorter match
+is the likelier word. The browser searches nothing and holds neither list
+whole; the only thing the screen does with the query is pick it out inside a
+word it has already been handed.
+
+A catalogue word that the learner has already kept says so rather than offering
+to keep it twice. A result opens the word all the way — which is one of the
+three doors the deep desktop frame names.

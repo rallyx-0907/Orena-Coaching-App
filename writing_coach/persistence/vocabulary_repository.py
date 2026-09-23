@@ -171,6 +171,9 @@ class VocabularyRepository(Protocol):
     def find_neighbours(
         self, language_code: str, normalized_term: str, *, limit: int = 12
     ) -> list[dict[str, Any]]: ...
+    def search_entries(
+        self, language_code: str, query: str, *, limit: int = 20
+    ) -> list[dict[str, Any]]: ...
     def list_entries_for_language(
         self, language_code: str, *, limit: int = 1000
     ) -> list[dict[str, Any]]: ...
@@ -918,6 +921,58 @@ class SQLAlchemyVocabularyRepository:
                 .limit(1)
             )
             return _entry_dict(entry) if entry is not None else None
+
+    def search_entries(
+        self, language_code: str, query: str, *, limit: int = 20
+    ) -> list[dict[str, Any]]:
+        """Published entries in this language that match what was typed.
+
+        Shorter first, so a search for "gle" offers `glede` before
+        `gledelig` - the shorter match is the likelier word. The comparison is
+        case-insensitive on both the written term and its normalised form, so a
+        learner typing without capitals still finds what they mean.
+        """
+
+        self._require_available()
+        needle = _text(query)
+        if not needle:
+            return []
+        pattern = f"%{needle.casefold()}%"
+        with Session(self.engine) as session:
+            rows = list(
+                session.execute(
+                    select(VocabularyEntry)
+                    .join(
+                        VocabularyCollectionMembership,
+                        VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                    )
+                    .join(
+                        VocabularyCollection,
+                        VocabularyCollection.id == VocabularyCollectionMembership.collection_id,
+                    )
+                    .where(
+                        VocabularyEntry.language_code == _text(language_code).casefold(),
+                        VocabularyCollection.catalog_status == "published",
+                        or_(
+                            VocabularyEntry.term.ilike(pattern),
+                            VocabularyEntry.normalized_term.ilike(pattern),
+                        ),
+                    )
+                    .order_by(
+                        func.length(VocabularyEntry.normalized_term),
+                        VocabularyEntry.identity_key,
+                    )
+                    .limit(max(0, min(limit, 50)))
+                ).scalars()
+            )
+            seen: set[uuid.UUID] = set()
+            result: list[dict[str, Any]] = []
+            for entry in rows:
+                if entry.id in seen:
+                    continue
+                seen.add(entry.id)
+                result.append(_entry_dict(entry))
+            return result
 
     def find_neighbours(
         self, language_code: str, normalized_term: str, *, limit: int = 12

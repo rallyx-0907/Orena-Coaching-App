@@ -312,6 +312,10 @@ const en = {
   vocabularyTitle: 'Vocabulary',
   vocabularyOverviewNote: 'Browse what you are learning, meet a few new words, and return to what needs review.',
   vocabularySavedCount: 'Saved',
+  /* The room's own search (frames 20 and 21). */
+  vocabularySearchSaved: 'Saved',
+  vocabularySearchDictionary: 'Dictionary',
+  vocabularySearchClear: 'Clear',
   /* Adding a word by hand, and the set it lands in. */
   addWord: 'Add a word',
   addWordSelf: 'Add one yourself',
@@ -811,6 +815,10 @@ const zh = {
   vocabularyTitle: '词汇',
   vocabularyOverviewNote: '看看正在学习的词，认识今天的新词，也回到值得复习的内容。',
   vocabularySavedCount: '已保存',
+  /* The room's own search (frames 20 and 21). */
+  vocabularySearchSaved: '已保存',
+  vocabularySearchDictionary: '词典',
+  vocabularySearchClear: '清除',
   /* Adding a word by hand, and the set it lands in. */
   addWord: '添加词',
   addWordSelf: '自己添加',

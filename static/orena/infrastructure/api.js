@@ -241,6 +241,12 @@ export const api={
   // The curated Vocabulary Library catalog and Daily Feed (Discover surface):
   // read-only, distinct from the saved/review state above. "Keep" from either
   // reuses saveLibraryVocabulary with source_kind 'collection' or 'feed'.
+  /* The catalogue's half of the room's search. Bounded by the server, which
+     names its own limit, so a one-letter query costs what a long one does. */
+  vocabularyCatalogueSearch:(query,languageCode,limit=20)=>retryOnce(
+    ()=>request(`/api/vocabulary/catalogue/search?q=${encodeURIComponent(query)}&language_code=${encodeURIComponent(languageCode)}&limit=${Number(limit)||20}`),
+    isTransientRequestError,
+  ),
   vocabularyLibraryCollections:(languageCode)=>request(`/api/vocabulary/library/collections?language_code=${encodeURIComponent(languageCode)}`),
   vocabularyLibraryCollection:(collectionId,params={})=>{
     const query=new URLSearchParams();
