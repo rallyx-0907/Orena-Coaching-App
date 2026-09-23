@@ -422,7 +422,7 @@
   border-radius: 50%;
   background: var(--record-dot);
 }
-.sp-room[data-phase='recording'] .sp-pill {
+.sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-pill {
   display: inline-flex;
 }
 
@@ -1088,20 +1088,21 @@
     block-size: 36px;
   }
 
-  /* Recording, on a phone, is its own frame: a cross to cancel, the line, the level, the stop. */
-  .sp-room[data-phase='recording'] {
+  /* Recording, on a phone, is its own frame: a cross to cancel, the line, the level, the stop.
+     Shadowing records inside its own frame ("Shadowing mobile") and keeps the room as it is. */
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] {
     background: var(--record-ground);
   }
-  .sp-room[data-phase='recording'] .sp-back,
-  .sp-room[data-phase='recording'] .sp-count:not(.sp-count--rec),
-  .sp-room[data-phase='recording'] .sp-steps,
-  .sp-room[data-phase='recording'] .sp-clip,
-  .sp-room[data-phase='recording'] .sp-meaning,
-  .sp-room[data-phase='recording'] .sp-card,
-  .sp-room[data-phase='recording'] .sp-round {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-back,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-count:not(.sp-count--rec),
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-steps,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-clip,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-meaning,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-card,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-round {
     display: none;
   }
-  .sp-room[data-phase='recording'] .sp-cancel {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-cancel {
     display: inline-flex;
     min-height: 0;
     padding: 0;
@@ -1110,22 +1111,22 @@
     color: var(--ink-80);
     cursor: pointer;
   }
-  .sp-room[data-phase='recording'] .sp-count--rec {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-count--rec {
     display: inline;
     margin-inline-start: auto;
   }
-  .sp-room[data-phase='recording'] .sp-task {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-task {
     justify-content: center;
     gap: 22px;
     padding: 30px 22px 0;
   }
-  .sp-room[data-phase='recording'] .sp-line {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-line {
     font-size: 26px;
   }
-  .sp-room[data-phase='recording'] .sp-reading {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-reading {
     color: var(--ink-70);
   }
-  .sp-room[data-phase='recording'] .sp-wave {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-wave {
     display: flex;
     gap: 5px;
     block-size: 104px;
@@ -1134,19 +1135,25 @@
   .sp-wave i:nth-child(n + 35) {
     display: none;
   }
-  .sp-room[data-phase='recording'] .sp-hint {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-hint {
     display: block;
     font-size: 14px;
     color: var(--ink-65);
   }
-  .sp-room[data-phase='recording'] .sp-controls {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-controls {
     margin-top: auto;
     padding-bottom: 34px;
   }
-  .sp-room[data-phase='recording'] .sp-mic {
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-mic {
     inline-size: 92px;
     block-size: 92px;
   }
+  /* The 3-2-1 before a shadow take is written in the hint (the design names it, draws no place). */
+  .sp-room[data-counting] .sp-hint {
+    display: block;
+    font-size: 14px;
+  }
+
 }
 
 /* --- Free talk (Orena Speaking, "Speaking · free talk", 390x844). The design draws no desktop
@@ -1414,6 +1421,10 @@
   font-size: 12.5px;
   color: var(--ink-74);
 }
+/* The card and the note are siblings in the task column (frame "Shadowing mobile": 22px apart). */
+[data-sp-shadow-host] {
+  display: contents;
+}
 .sp-shadow__hint {
   margin: 0;
   max-inline-size: 30ch;
@@ -1428,6 +1439,17 @@
 .sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic {
   background: var(--speak-shadow-stop);
   box-shadow: var(--speak-shadow-stop-ring);
+}
+/* Shadowing's stop is the stop glyph in white on the red (frame "Shadowing mobile"). */
+.sp-mic__shadow-stop {
+  display: none;
+  color: var(--text-on-action);
+}
+.sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic__stop {
+  display: none;
+}
+.sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic__shadow-stop {
+  display: inline-flex;
 }
 
 /* --- 09 · states: the microphone blocked, not heard, offline while grading -------------------- */
@@ -1985,6 +2007,7 @@
     stroke-width: 7;
   }
   .sp-cmp__attempts {
+    align-self: stretch;
     gap: 8px;
     padding: 0;
     border-radius: 0;

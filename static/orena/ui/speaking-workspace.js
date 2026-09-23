@@ -101,8 +101,10 @@ export function resultHtml({ s, view, language, busy = false, hasModel = true })
 
 /* The phone's card under the line: the ring, the sentence about it, and only the flagged words. */
 export function cardHtml({ s, view, language }) {
-  const { title, sub } = headline(s, view, language);
   const flagged = view.words.filter((word) => word.flagged);
+  const { title, sub: headSub } = headline(s, view, language);
+  // The phone card lists only flagged words, so "tap a row" is said only when there is one.
+  const sub = flagged.length ? headSub : '';
   const rows = flagged
     .map(
       (word) =>
@@ -170,7 +172,7 @@ ${source.playback ? `<div class="sp-clip" data-sp-player data-kind="${esc(kind |
 <p class="sp-line" lang="${esc(language)}" data-sp-line>${sentenceHtml(line.text, language, null)}</p>${line.reading ? `<p class="sp-reading">${esc(line.reading)}</p>` : ''}${line.meaning ? `<p class="sp-meaning">${esc(line.meaning)}</p>` : ''}
 <div data-sp-shadow-host></div><div class="sp-wave" data-sp-wave aria-hidden="true">${bars}</div>
 <aside class="sp-card" data-sp-card aria-live="polite"></aside>
-<div class="sp-controls"><button type="button" class="sp-round" data-sp-model aria-label="${esc(s.hearModel)}"${source.playback ? '' : ' disabled'}>${icon('speaker-high', { size: 24 })}</button><button type="button" class="sp-mic" data-sp-mic aria-label="${esc(s.record)}"><span class="sp-mic__icon">${icon('microphone', { size: 44, filled: true })}</span><span class="sp-mic__stop"></span></button><button type="button" class="sp-round" data-sp-again aria-label="${esc(s.recordAgain)}">${icon('arrow-counter-clockwise', { size: 24 })}</button></div>
+<div class="sp-controls"><button type="button" class="sp-round" data-sp-model aria-label="${esc(s.hearModel)}"${source.playback ? '' : ' disabled'}>${icon('speaker-high', { size: 24 })}</button><button type="button" class="sp-mic" data-sp-mic aria-label="${esc(s.record)}"><span class="sp-mic__icon">${icon('microphone', { size: 44, filled: true })}</span><span class="sp-mic__stop"></span><span class="sp-mic__shadow-stop">${icon('stop', { size: 32, filled: true })}</span></button><button type="button" class="sp-round" data-sp-again aria-label="${esc(s.recordAgain)}">${icon('arrow-counter-clockwise', { size: 24 })}</button></div>
 <p class="sp-hint" data-sp-hint role="status">${esc(s[`tapWord_${language === 'zh' ? 'zh' : 'en'}`])}</p></section>
 <section class="sp-result" data-sp-result aria-live="polite" aria-label="${esc(s.pronunciation)}"></section></div>
 <audio data-sp-take-audio preload="auto" hidden></audio></section>`;
@@ -378,8 +380,10 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
       row.onclick = () => openDetail(Number(row.dataset.spWord), row);
     });
     root.querySelectorAll('[data-sp-again]').forEach((button) => {
-      button.onclick = () => (notHeardState() && button.classList.contains('sp-round') ? next() : begin());
-      button.disabled = state.phase === TAKE.RECORDING || state.phase === TAKE.PROCESSING;
+      const round = button.classList.contains('sp-round');
+      button.onclick = () => (notHeardState() && round ? next() : round && shadowing() ? restartShadow() : begin());
+      // Shadowing keeps its controls live while it records (frame "Shadowing mobile"): again restarts.
+      button.disabled = state.phase === TAKE.PROCESSING || (state.phase === TAKE.RECORDING && !(round && shadowing()));
     });
     // Not heard (Orena Speaking 09 B): the round control on the right skips the line instead.
     const right = q('.sp-controls [data-sp-again]');
@@ -643,11 +647,14 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
   async function beginShadow() {
     const model = q('[data-sp-shadow-audio]');
     const hint = q('[data-sp-hint]');
+    const room = q('.sp-room');
+    room?.setAttribute('data-counting', '');
     for (const n of [3, 2, 1]) {
-      if (!alive() || mode !== 'shadow') return;
+      if (!alive() || mode !== 'shadow') return room?.removeAttribute('data-counting');
       if (hint) hint.textContent = String(n);
       await new Promise((resolve) => (countdownTimer = setTimeout(resolve, 700)));
     }
+    room?.removeAttribute('data-counting');
     if (!alive()) return;
     const started = await take.start();
     if (!started || !model) return;
@@ -659,6 +666,18 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
       shadowTimer = setTimeout(() => state.phase === TAKE.RECORDING && take.stop(reference()), SHADOW_TAIL_MS);
     };
     model.play().catch(() => {});
+  }
+
+  function shadowing() {
+    return mode === 'shadow' && state.phase === TAKE.RECORDING;
+  }
+
+  /* A shadow take started over: the model and the microphone from the top, at the current speed. */
+  function restartShadow() {
+    clearTimeout(shadowTimer);
+    q('[data-sp-shadow-audio]')?.pause();
+    take?.cancel();
+    return begin();
   }
 
   async function micPressed() {
@@ -875,6 +894,11 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
           try {
             localStorage.setItem(`orena.speaking.rate.${source.id}`, String(shadowRate));
           } catch {}
+          if (state.phase === TAKE.RECORDING) {
+            // Mid-take, a new speed means the same line again at that speed.
+            void paintMode();
+            return void restartShadow();
+          }
           void paintMode();
           return;
         }

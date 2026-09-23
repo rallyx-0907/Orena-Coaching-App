@@ -72,6 +72,8 @@ assert.equal(/\b(76|84)\b/.test(demo.replace(/<svg[\s\S]*?<\/svg>/g, '')), false
 // The phone card keeps only the flagged words.
 const card = cardHtml({ s, view: zh, language: 'zh' });
 assert.equal((card.match(/sp-mrow"/g) || []).length, 1);
+const clean = cardHtml({ s, view: pronunciationView({ ...zhResult, words: zhResult.words.map((word) => ({ ...word, error_type: 'None' })) }, { language: 'zh', readings }), language: 'zh' });
+assert.equal(clean.includes(s.subTap), false, 'no "tap a row" on a card with no rows');
 
 // Word detail, Chinese: the model's tones from the reading; "yours" is not measured and has no curve.
 const detail = detailHtml({ s, c: {}, word: zh.words[3], language: 'zh' });
