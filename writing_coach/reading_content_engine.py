@@ -163,6 +163,16 @@ class ReadingContentEngine:
         self.assets.put(key, submitted.payload)
         return key
 
+    def _release_upload(self, job: dict[str, Any], finished: bool) -> None:
+        """Drop a finished job's upload; keep it if the completion did not land.
+
+        A completed job's text lives in the snapshot, so the file has no second
+        reader. A completion that did not land means the job is somebody
+        else's now, and their copy of these bytes is the only one.
+        """
+        if finished:
+            self._forget_upload(job.get("input_asset_key", ""))
+
     def _forget_upload(self, key: str) -> None:
         """Best effort: a stray object with no job pointing at it is inert."""
         if not key or self.assets is None:
@@ -258,8 +268,7 @@ class ReadingContentEngine:
                 # Idempotent by construction: these bytes already produced a
                 # candidate - including one an admin rejected, which is how a
                 # rejection keeps rejecting.
-                self._forget_upload(job.get("input_asset_key", ""))
-                self.jobs.complete(
+                finished = self.jobs.complete(
                     job_id,
                     worker_id=worker_id,
                     result_kind="duplicate",
@@ -267,6 +276,7 @@ class ReadingContentEngine:
                     source_item_id=snapshot["id"],
                     now=now,
                 )
+                self._release_upload(job, finished)
                 return {
                     "job_id": job_id,
                     "result_kind": "duplicate",
@@ -276,8 +286,7 @@ class ReadingContentEngine:
             if not self.jobs.advance_stage(job_id, "analyzing", worker_id=worker_id, now=now):
                 return lost
             article = self._build_candidate(item, snapshot, now=now)
-            self._forget_upload(job.get("input_asset_key", ""))
-            self.jobs.complete(
+            finished = self.jobs.complete(
                 job_id,
                 worker_id=worker_id,
                 result_kind="article_created",
@@ -285,6 +294,12 @@ class ReadingContentEngine:
                 source_item_id=snapshot["id"],
                 now=now,
             )
+            # Release the upload only once *this* worker's completion actually
+            # landed. Deleting first would let a worker that lost the job in
+            # the last moment take the file away from the worker that now owns
+            # it - a narrow window, and a permanent `upload_missing` for the
+            # learner-facing candidate that would otherwise have been made.
+            self._release_upload(job, finished)
             return {
                 "job_id": job_id,
                 "result_kind": "article_created",

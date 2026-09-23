@@ -169,6 +169,41 @@ def test_the_upload_is_released_once_its_text_is_safely_stored(world):
     assert not world["assets"].exists(key)
 
 
+def test_a_worker_that_lost_its_job_does_not_take_the_upload_with_it(world):
+    """A stalled worker whose job was reaped and re-claimed still finishes its
+    own pass. It must not delete the file the new owner is about to read: the
+    release belongs to whoever actually completed the job, not to whoever got
+    there first."""
+    from datetime import UTC, datetime, timedelta
+
+    job_id = _post_file(world).json()["id"]
+    key = world["jobs"].get_job(job_id)["input_asset_key"]
+    stalled = world["jobs"].claim("worker-a")
+    moment = datetime.now(UTC) + timedelta(minutes=10)
+    world["jobs"].reap_stale(timedelta(minutes=5), now=moment)
+    world["jobs"].claim("worker-b", now=moment)
+
+    # worker-a wakes up and runs its pass to the end against a job it no longer owns.
+    outcome = world["engine"].process(stalled, payload=world["assets"].get(key))
+    assert outcome["result_kind"] == "job_lost"
+    assert world["assets"].exists(key), "the new owner still needs these bytes"
+
+
+def test_the_upload_survives_a_completion_that_did_not_land(world):
+    """The narrow window the stage checks cannot cover: the job is lost between
+    the last stage boundary and the completion. The completion no-ops, so the
+    file must stay - it belongs to whoever owns the job now."""
+    job_id = _post_file(world).json()["id"]
+    key = world["jobs"].get_job(job_id)["input_asset_key"]
+    real_complete = world["jobs"].complete
+    world["jobs"].complete = lambda *args, **kwargs: False
+    try:
+        world["worker"].run_once()
+    finally:
+        world["jobs"].complete = real_complete
+    assert world["assets"].exists(key)
+
+
 def test_a_failed_file_job_keeps_its_upload_so_retry_has_something_to_read(world):
     # An allowed extension whose bytes are not text: refused by the adapter,
     # which is a failure the admin can act on by uploading the right file.
