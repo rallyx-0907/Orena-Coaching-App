@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -41,6 +42,10 @@ class LibraryVocabularyIn(BaseModel):
         pattern=r"^(manual|dictionary|feedback|strength|reading|feed|collection)$",
     )
     focus_note: str = Field(default="", max_length=2400)
+    # Which reading of the word this is, when the caller knows - a dictionary
+    # or a catalogue card does, a tap on a passage does not. It is only ever
+    # accepted if the catalogue entry actually has it.
+    reading: str = Field(default="", max_length=240)
 
 
 class VocabularyReviewIn(BaseModel):
@@ -357,15 +362,73 @@ def saved_vocabulary_state(candidates: tuple[str, ...]) -> dict[str, dict[str, A
     }
 
 
+def _reading_texts(entry: Mapping[str, Any]) -> list[str]:
+    """The readings a catalogue entry actually has, as plain strings."""
+
+    readings = entry.get("readings")
+    if not isinstance(readings, list):
+        return []
+    texts = []
+    for reading in readings:
+        text = str(reading.get("text") if isinstance(reading, Mapping) else reading or "").strip()
+        if text and text not in texts:
+            texts.append(text)
+    return texts
+
+
+def entry_identity_for(term: str, reading: str = "") -> dict[str, str]:
+    """Which catalogue entry a word being saved is, and which reading of it.
+
+    The invariant the schema cannot hold (20260923_0013; architecture review
+    round 1): an entry whose `readings` has more than one reading must be
+    linked with a non-empty `reading_key`, because 行 is xíng or háng and a row
+    that says only "行" has not recorded which one the learner kept.
+
+    So when the entry is ambiguous and the caller did not say which reading -
+    a tap on a passage does not know - **this records no link at all** rather
+    than picking one. An unlinked word is exactly as useful as it was before
+    this column existed; a wrongly linked one would be worse than that, and
+    would key the wrong audio to it later.
+    """
+
+    entry = _catalog_entry_for(term)
+    if entry is None:
+        return {"entry_id": "", "entry_identity_key": "", "reading_key": ""}
+    identity = str(entry.get("identity_key") or "")
+    if not identity:
+        # Without the durable identity there is nothing to hold on to, and the
+        # database refuses a link that has no identity behind it.
+        return {"entry_id": "", "entry_identity_key": "", "reading_key": ""}
+    readings = _reading_texts(entry)
+    wanted = str(reading or "").strip()
+    if wanted:
+        if wanted not in readings:
+            # The caller named a reading this entry does not have: the word is
+            # saved, and says nothing about an entry it may not even be.
+            return {"entry_id": "", "entry_identity_key": "", "reading_key": ""}
+        chosen = wanted
+    elif len(readings) > 1:
+        return {"entry_id": "", "entry_identity_key": "", "reading_key": ""}
+    else:
+        chosen = readings[0] if readings else ""
+    return {
+        "entry_id": str(entry.get("id") or ""),
+        "entry_identity_key": identity,
+        "reading_key": chosen,
+    }
+
+
 def save_library_vocabulary(payload: LibraryVocabularyIn) -> dict[str, Any]:
     term = _clean_term(payload.word)
     if not term:
         raise ValueError("Vocabulary item cannot be empty.")
+    identity = entry_identity_for(term, payload.reading)
     row = _repo().save_library_record({
         "word": term, "phonetic": payload.phonetic, "part_of_speech": payload.part_of_speech,
         "definition": payload.definition, "translation_vi": payload.translation_vi,
         "source_essay_id": payload.source_essay_id, "source_fragment": payload.source_fragment,
         "source_kind": payload.source_kind, "focus_note": payload.focus_note, "now": _iso(_now()),
+        **identity,
     })
     return {"saved": True, "item": _row_to_item(row)}
 

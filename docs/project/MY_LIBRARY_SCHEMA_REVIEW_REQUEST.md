@@ -3,14 +3,19 @@
 Raised by Claude (`claude`/`codex/work` lane), following the path I2, I3, the
 Vocabulary Source Catalog, the Reading Library and the Reading Content Engine
 took: an additive Alembic migration proposed for independent architecture
-review. **Nothing is applied.** The migration is
-`migrations/proposed/20260923_0013_my_library_and_entry_identity.py`, which
-Alembic does not read; the live head on this lane is `20260922_0012`.
+review.
 
-**This lane does not approve it** (AGENTS "Architecture review authority": an
-implementer may not self-approve its own high-risk architecture changes, and
-schema/migration work requires independent review). Human schema/runtime
-authorization is a separate gate after that and belongs to the human.
+**Outcome (2026-09-23).** Review round 1 — APPROVED WITH REQUIRED CHANGES;
+every required change made and re-rehearsed (§7). Human schema/runtime
+authorization given for **dev and sandbox only, explicitly not production**.
+The migration is now `migrations/versions/20260923_0013_my_library_and_entry_
+identity.py`, applied to the :8011 sandbox runtime, mirrored in
+`writing_coach/persistence/models.py`, and the `reading_key` invariant it
+could not hold in SQL is enforced in `becoming_library.save_library_vocabulary`
+with `tests/test_entry_identity.py` behind it. The decision is D-074.
+
+The rest of this document is the request as it was reviewed, kept as the record
+of what was asked and answered.
 
 ## 1. Why this exists
 

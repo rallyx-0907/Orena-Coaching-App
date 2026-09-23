@@ -1,9 +1,10 @@
 """The learner's own library, and the identity a saved word points at.
 
-PROPOSED. Not reviewed, not authorized, not applied. This file sits in
-`migrations/proposed/`, which Alembic does not read; the live head on this lane
-is `20260922_0012`. The review request is
-`docs/project/MY_LIBRARY_SCHEMA_REVIEW_REQUEST.md`; the design it serves is
+Independent architecture review round 1 (2026-09-23): APPROVED WITH REQUIRED
+CHANGES, every required change made and re-rehearsed; the record, and what each
+finding changed, is in `docs/project/MY_LIBRARY_SCHEMA_REVIEW_REQUEST.md` §7.
+Human schema/runtime authorization given 2026-09-23 for **dev and sandbox
+only** - explicitly not production. The design it serves is
 `docs/product/ORENA_COLLECTION_ARCHITECTURE.md` §2 and the audit
 `docs/project/MY_LIBRARY_DATA_CONTRACT_AUDIT.md`.
 
@@ -28,12 +29,12 @@ Three columns, all nullable-by-default and additive:
   paragraph used to claim: the only import path there is
   (`vocabulary_repository.py`, around 511-624) looks an entry up **by identity
   key** and merges in place, so `entry_id` already survives a re-import and
-  there is no UUID churn to defend against. The column stays for the reason
-  that does hold - it is the content-addressable identity a later per-word
-  audio record is keyed by, so audio is not tied to a surrogate id - and as the
-  hedge if a replace-rather-than-merge import is ever built. Whether one is
-  planned is a question for whoever owns vocabulary import; the review request
-  records it as open;
+  there is no UUID churn to defend against. The human settled it on 2026-09-23
+  (D-073): **merge by identity key is the catalogue import contract**, and a
+  replacing import would be a separate, declared import mode, never a silent
+  change of this one. The column therefore stays for the reason that does hold
+  - it is the content-addressable identity a per-word audio record is keyed by,
+  so audio is not tied to a surrogate id;
 - `reading_key` is which reading of that entry the learner kept - the one thing
   the text join can never recover.
 

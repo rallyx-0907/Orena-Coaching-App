@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -146,6 +147,28 @@ class SavedWord(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "normalized_word", name="uq_saved_word_scope"),
         Index("ix_saved_words_due", "user_id", "language_code", "next_review_at"),
+        # 20260923_0013. A linked word always carries the durable identity, so
+        # nothing can be linked but unidentifiable.
+        CheckConstraint(
+            "entry_id IS NULL OR entry_identity_key <> ''", name="ck_saved_words_entry_identity"
+        ),
+        # Declared for both dialects: a `postgresql_where` alone silently
+        # becomes a full index on SQLite, which would let a test pass against a
+        # constraint the runtime does not have.
+        Index(
+            "ix_saved_words_entry",
+            "entry_id",
+            postgresql_where=text("entry_id IS NOT NULL"),
+            sqlite_where=text("entry_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_saved_words_entry_identity",
+            "user_id",
+            "language_code",
+            "entry_identity_key",
+            postgresql_where=text("entry_identity_key <> ''"),
+            sqlite_where=text("entry_identity_key <> ''"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -172,6 +195,18 @@ class SavedWord(Base):
     last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     next_review_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # Which catalogue entry this word is, and which reading of it (20260923_0013).
+    # The live link, `SET NULL` so retiring an entry never deletes a learner's
+    # word; the durable identity that a per-word audio record is keyed by; and
+    # the reading, which a join on normalised text can never recover - 行 is
+    # xíng or háng. `reading_key` is required when the entry has more than one
+    # reading; no portable constraint can read a JSON list, so that half is
+    # held by `becoming_library.save_library_vocabulary`, with a test.
+    entry_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vocabulary_entries.id", ondelete="SET NULL"), nullable=True
+    )
+    entry_identity_key: Mapped[str] = mapped_column(String(900), default="", nullable=False)
+    reading_key: Mapped[str] = mapped_column(String(240), default="", nullable=False)
 
 
 class GrammarProgress(Base):
@@ -507,6 +542,170 @@ class VocabularyCollectionMembership(Base):
     membership_metadata: Mapped[dict] = mapped_column(
         "metadata", JSON, default=dict, nullable=False
     )
+
+
+# ---------------------------------------------------------------------------
+# Thu vien cua toi - what a learner kept, across every kind (20260923_0013).
+#
+# These three mirror `migrations/versions/20260923_0013_my_library_and_entry_
+# identity.py` so the hermetic suite creates the same tables from metadata. The
+# migration is the authority for the runtime; every partial index is declared
+# for both dialects, for the reason the Reading Content Engine block below
+# gives.
+#
+# `LibraryItem` is the Collection Architecture's `ContentMembership`: a
+# relationship, never a copy. No body, no title, no snippet - those stay with
+# the owner, reached through `source_id`, or through `saved_word_id` for a
+# word. It holds no review schedule: words are scheduled in `saved_words` and
+# stay there, and `pinned_at` is what the merged queue orders by.
+# ---------------------------------------------------------------------------
+
+LIBRARY_KINDS = ("word", "grammar", "reading", "listening", "note", "writing", "speaking", "book")
+_LIBRARY_KIND_LIST = ", ".join(f"'{kind}'" for kind in LIBRARY_KINDS)
+LIBRARY_RELATIONSHIPS = ("kept", "started", "imported")
+_LIBRARY_RELATIONSHIP_LIST = ", ".join(f"'{value}'" for value in LIBRARY_RELATIONSHIPS)
+LIBRARY_STATES = ("learning", "mastered")
+_LIBRARY_STATE_LIST = ", ".join(f"'{value}'" for value in LIBRARY_STATES)
+
+
+class LibraryItem(Base):
+    """One thing a learner kept, started or imported, of any kind."""
+
+    __tablename__ = "library_items"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_LIBRARY_KIND_LIST})", name="ck_library_items_kind"),
+        CheckConstraint(
+            f"relationship IN ({_LIBRARY_RELATIONSHIP_LIST})", name="ck_library_items_relationship"
+        ),
+        CheckConstraint(
+            f"state IS NULL OR state IN ({_LIBRARY_STATE_LIST})", name="ck_library_items_state"
+        ),
+        # A word is named by its row, everything else by its routing identity,
+        # and neither can be filled in for the other.
+        CheckConstraint(
+            "(kind = 'word' AND saved_word_id IS NOT NULL)"
+            " OR (kind <> 'word' AND saved_word_id IS NULL)",
+            name="ck_library_items_word_link",
+        ),
+        CheckConstraint(
+            "(kind = 'word' AND source_id = '') OR (kind <> 'word' AND source_id <> '')",
+            name="ck_library_items_source",
+        ),
+        CheckConstraint("version >= 1", name="ck_library_items_version"),
+        # What `library_collection_members` references, so a membership cannot
+        # put an item of one kind in a collection of another.
+        UniqueConstraint("id", "kind", name="uq_library_items_id_kind"),
+        Index(
+            "ux_library_items_word",
+            "user_id",
+            "saved_word_id",
+            "relationship",
+            unique=True,
+            postgresql_where=text("saved_word_id IS NOT NULL"),
+            sqlite_where=text("saved_word_id IS NOT NULL"),
+        ),
+        Index(
+            "ux_library_items_source",
+            "user_id",
+            "language_code",
+            "kind",
+            "source_id",
+            "relationship",
+            unique=True,
+            postgresql_where=text("saved_word_id IS NULL"),
+            sqlite_where=text("saved_word_id IS NULL"),
+        ),
+        Index("ix_library_items_shelf", "user_id", "language_code", "kind", "updated_at"),
+        Index(
+            "ix_library_items_pinned",
+            "user_id",
+            "language_code",
+            "pinned_at",
+            postgresql_where=text("pinned_at IS NOT NULL"),
+            sqlite_where=text("pinned_at IS NOT NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    saved_word_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("saved_words.id", ondelete="CASCADE"), nullable=True
+    )
+    source_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    relationship_kind: Mapped[str] = mapped_column(
+        "relationship", String(32), default="kept", nullable=False
+    )
+    # NULL means "whatever the owner says", which for a word is its review
+    # stage. Only a learner's own override is stored.
+    state: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    pinned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+
+class LibraryCollection(Base):
+    """A learner's own set, of one kind - the frame's "one set, one kind"."""
+
+    __tablename__ = "library_collections"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_LIBRARY_KIND_LIST})", name="ck_library_collections_kind"),
+        CheckConstraint("title <> ''", name="ck_library_collections_title"),
+        UniqueConstraint(
+            "user_id", "language_code", "kind", "title", name="uq_library_collection_title"
+        ),
+        UniqueConstraint("id", "kind", name="uq_library_collections_id_kind"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LibraryCollectionMember(Base):
+    """An item in a set.
+
+    `kind` is carried so both references are by (id, kind), which is what makes
+    "one collection, one kind" a database guarantee rather than a rule every
+    write path has to remember.
+    """
+
+    __tablename__ = "library_collection_members"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["collection_id", "kind"],
+            ["library_collections.id", "library_collections.kind"],
+            ondelete="CASCADE",
+            name="fk_library_member_collection",
+        ),
+        ForeignKeyConstraint(
+            ["item_id", "kind"],
+            ["library_items.id", "library_items.kind"],
+            ondelete="CASCADE",
+            name="fk_library_member_item",
+        ),
+        # `position` has no unique constraint - a reorder would have to
+        # renumber every member to keep one - so the ordered read breaks ties
+        # on `created_at`, and the index carries both.
+        Index("ix_library_collection_members_order", "collection_id", "position", "created_at"),
+    )
+
+    collection_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    item_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 # ---------------------------------------------------------------------------

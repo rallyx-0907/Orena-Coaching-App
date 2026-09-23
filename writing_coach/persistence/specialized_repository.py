@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import sqlite3
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Protocol
 
@@ -59,6 +60,23 @@ LIBRARY_MASTERED_STAGE = 3
 
 
 CURSOR_SEPARATOR = chr(31)
+
+
+def _as_uuid(value: Any) -> uuid.UUID | None:
+    """A catalogue entry id as a UUID, or nothing if it is not one.
+
+    The service passes the id it read from the catalogue; a row that carries no
+    id, or one that is not a UUID, links to nothing rather than raising - the
+    word is still saved, which is the part the learner cares about.
+    """
+
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return uuid.UUID(text)
+    except (ValueError, AttributeError, TypeError):
+        return None
 
 
 def _library_fingerprint(*, search: str, status: str, focus: tuple[str, ...]) -> str:
@@ -329,6 +347,13 @@ class SQLiteSpecializedLearningRepository:
                 "ON reading_attempts(session_id, id DESC)"
             )
             conn.commit()
+
+    @staticmethod
+    def _has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+        return any(
+            str(row["name"]) == column
+            for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+        )
 
     @staticmethod
     def _has_table(conn: sqlite3.Connection, table: str) -> bool:
@@ -664,6 +689,9 @@ class SQLiteSpecializedLearningRepository:
 
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
         term=values["word"]; now=values["now"]
+        identity=str(values.get("entry_identity_key") or "")
+        entry_id=str(values.get("entry_id") or "")
+        reading=str(values.get("reading_key") or "")
         with self._db() as conn:
             existing=conn.execute("SELECT word FROM saved_words WHERE lower(word)=lower(?) LIMIT 1",(term,)).fetchone()
             canonical=str(existing["word"]) if existing else term
@@ -681,6 +709,14 @@ class SQLiteSpecializedLearningRepository:
             else:
                 conn.execute("INSERT INTO saved_words(word,phonetic,part_of_speech,definition,added_at,translation_vi) VALUES(?,?,?,?,?,?)",
                              (canonical,values["phonetic"],values["part_of_speech"],values["definition"],now,values["translation_vi"]))
+            # The entry a word points at is filled in once and not re-pointed
+            # by a later save that knows less, the same rule PostgreSQL keeps.
+            if identity and self._has_column(conn,"saved_words","entry_identity_key"):
+                conn.execute(
+                    "UPDATE saved_words SET entry_id=?, entry_identity_key=?, reading_key=?"
+                    " WHERE lower(word)=lower(?) AND COALESCE(entry_identity_key,'')=''",
+                    (entry_id,identity,reading,canonical),
+                )
             learning=conn.execute("SELECT word FROM vocabulary_learning WHERE lower(word)=lower(?) LIMIT 1",(canonical,)).fetchone()
             if learning and existing:
                 conn.execute(
@@ -1071,11 +1107,21 @@ class PostgresSpecializedLearningRepository:
             if values.get("source_essay_id"):
                 e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==int(values["source_essay_id"])))
                 source_uuid=e.id if e else None
+            # Which catalogue entry, and which reading of it, the caller
+            # resolved (20260923_0013). The service decides whether there is a
+            # link at all - an ambiguous entry with no reading is left
+            # unlinked rather than guessed - so this only records what it was
+            # given, and only ever fills a blank in: a word already linked is
+            # not re-pointed by a later save that knows less.
+            entry_uuid=_as_uuid(values.get("entry_id"))
+            identity=str(values.get("entry_identity_key") or "")
+            reading=str(values.get("reading_key") or "")
             if r is None:
                 r=SavedWord(id=sid,user_id=uid,language_code=lang,word=values["word"],normalized_word=normalized,phonetic=values["phonetic"],
                             part_of_speech=values["part_of_speech"],definition=values["definition"],translation_vi=values["translation_vi"],added_at=now,
                             source_essay_id=source_uuid,source_fragment=values["source_fragment"],source_kind=values["source_kind"],focus_note=values["focus_note"],
-                            review_stage=0,successful_recalls=0,lapse_count=0,last_reviewed_at=None,next_review_at=now,updated_at=now); s.add(r)
+                            review_stage=0,successful_recalls=0,lapse_count=0,last_reviewed_at=None,next_review_at=now,updated_at=now,
+                            entry_id=entry_uuid if identity else None,entry_identity_key=identity,reading_key=reading); s.add(r)
             else:
                 if values["phonetic"]: r.phonetic=values["phonetic"]
                 if values["part_of_speech"]: r.part_of_speech=values["part_of_speech"]
@@ -1085,6 +1131,10 @@ class PostgresSpecializedLearningRepository:
                 if values["source_fragment"]: r.source_fragment=values["source_fragment"]
                 if values["source_kind"]: r.source_kind=values["source_kind"]
                 if values["focus_note"]: r.focus_note=values["focus_note"]
+                if identity and not r.entry_identity_key:
+                    r.entry_identity_key=identity
+                    r.entry_id=entry_uuid
+                    r.reading_key=reading
                 r.updated_at=now
             s.flush(); payload=self._saved_payload_from_session(s,r)
         return payload
@@ -1096,7 +1146,8 @@ class PostgresSpecializedLearningRepository:
         return {"word":r.word,"phonetic":r.phonetic,"part_of_speech":r.part_of_speech,"definition":r.definition,"translation_vi":r.translation_vi,
                 "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":r.source_fragment,"source_kind":r.source_kind,"focus_note":r.focus_note,
                 "review_stage":r.review_stage,"successful_recalls":r.successful_recalls,"lapse_count":r.lapse_count,"last_reviewed_at":self._iso(r.last_reviewed_at),
-                "next_review_at":self._iso(r.next_review_at)}
+                "next_review_at":self._iso(r.next_review_at),
+                "entry_identity_key":r.entry_identity_key,"reading_key":r.reading_key}
 
     def get_library_progress(self, word: str) -> dict[str, Any] | None:
         with Session(self.engine) as s:

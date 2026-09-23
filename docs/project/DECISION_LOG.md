@@ -2466,3 +2466,52 @@ measuring a surface, check the pin against the source.
 **Supersedes / Superseded by:** Supersedes D-071's ground (`#0A0722` under
 seventeen layers), which was true of the master preview on 2026-09-21. D-070 was
 already superseded by D-071 and stays so.
+
+## D-074 — Two libraries, one kept-item relation, and how a saved word knows which entry it is
+
+**Date:** 2026-09-23. **Decided by:** the human, on three separate answers
+(2026-09-23), with the schema shaped by this lane and approved by independent
+architecture review round 1 before any of it was applied.
+
+**1. What the two libraries are.** **Vocabulary is the shared content library** —
+the catalogue a learner takes words from. **Thư viện của tôi is the learner's
+personal library** — what they kept and what their learning produced. The data
+contract prefers a reference to the source content plus the learner's own state
+and metadata over copying content. This settles the question
+`UI_BACKEND_GAPS.md` had been holding open about where a learner's own words
+live: in My Library, not in the Vocabulary room, and the Vocabulary frames no
+longer draw them.
+
+**2. The kept-item relation.** `library_items` is the Collection Architecture's
+`ContentMembership`: a relationship, never a copy — no body, no title, no
+snippet. It holds no review schedule; words stay scheduled in `saved_words`,
+and `pinned_at` is what the merged queue orders by. Collections are per kind,
+enforced by composite `(id, kind)` references rather than by application
+discipline. Schema `20260923_0013`, applied to **dev and sandbox only** on the
+human's authorization of 2026-09-23; production is not authorized.
+
+**3. A saved word records which entry, and which reading.** `saved_words` gains
+`entry_id`, `entry_identity_key` and `reading_key`, because a join on
+normalised text cannot say whether a saved 行 is xíng or háng, and per-word
+pronunciation audio has to be keyed to a reading. Where the entry is ambiguous
+and the caller does not know the reading, **nothing is linked** — an unlinked
+word is as useful as it was before, a wrongly linked one would key the wrong
+audio to it for as long as the row exists. No portable constraint can read a
+JSON list of readings, so that half is held by
+`becoming_library.save_library_vocabulary` with `tests/test_entry_identity.py`
+behind it.
+
+**4. Catalogue import merges; it does not replace.** Looking an entry up by
+`identity_key` and merging in place is the import contract. A replacing import,
+if it is ever wanted, is a separate declared import mode and its own decision —
+never a silent change to this one. This answers the question architecture
+review round 1 raised and could not resolve, and it is why
+`entry_identity_key` is kept for the reason that holds (it is the identity
+audio will be keyed by) rather than as protection against UUID churn that does
+not happen.
+
+**Out of this lane:** Admin Control Center and Speaking, both assigned
+elsewhere by the human on 2026-09-23.
+
+**Supersedes / Superseded by:** nothing. Extends D-066/D-067's design authority
+into the data contract behind it.

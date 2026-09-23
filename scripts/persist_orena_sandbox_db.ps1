@@ -67,11 +67,35 @@ Step "1. Dump what is in there"
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $dump  = Join-Path (Split-Path -Parent $PSScriptRoot) "..\orena-sandbox-dump-$stamp.sql"
 $dump  = [System.IO.Path]::GetFullPath($dump)
-& docker exec $Postgres pg_dumpall -U postgres > $dump
+# NOT `> $dump`: Windows PowerShell 5.1 writes UTF-16LE there, and psql reads
+# the BOM as an invalid byte and refuses the whole file. The first run of this
+# script lost its restore exactly that way. UTF-8, no BOM, written explicitly.
+$text = (& docker exec $Postgres pg_dumpall -U postgres | Out-String)
 if ($LASTEXITCODE -ne 0) { Die "pg_dumpall failed; nothing has been changed." }
+[System.IO.File]::WriteAllText($dump, $text, (New-Object System.Text.UTF8Encoding($false)))
 $size = (Get-Item $dump).Length
 if ($size -lt 1024) { Die "The dump is only $size bytes, which is not a database. Nothing has been changed. See $dump" }
+# What the restore has to reproduce. Counted from the dump rather than the
+# database, so the check is against the file that will actually be replayed.
+$expected = @{}
+$lines = $text -split "`r?`n"
+foreach ($table in @('users', 'saved_words', 'vocabulary_entries')) {
+    # pg_dumpall writes one row per line between `COPY ... FROM stdin;` and
+    # a lone backslash-dot, so the rows are counted by walking those lines
+    # rather than by a multiline regex, which is easier to get subtly wrong.
+    $count = 0
+    $inside = $false
+    foreach ($line in $lines) {
+        if ($inside) {
+            if ($line -eq '\.') { break }
+            $count++
+        }
+        elseif ($line -like "COPY public.$table (*FROM stdin;") { $inside = $true }
+    }
+    $expected[$table] = $count
+}
 Ok "$([math]::Round($size / 1KB)) KB -> $dump"
+Ok ("rows to restore: " + (($expected.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '))
 
 Step "2. Recreate the database container on the volume"
 & docker stop $Web      | Out-Null
@@ -95,12 +119,25 @@ foreach ($i in 1..60) {
 if (-not $ready) { Die "'$Postgres' did not accept connections within 60s. The dump is at $dump. Check: docker logs $Postgres" }
 
 Step "3. Restore"
-Get-Content -Raw $dump | & docker exec -i $Postgres psql -U postgres -q -v ON_ERROR_STOP=1 -d postgres | Out-Null
-if ($LASTEXITCODE -ne 0) { Die "Restore failed. The dump is at $dump and can be replayed by hand: docker exec -i $Postgres psql -U postgres < <dump>" }
+# NOT under ON_ERROR_STOP: pg_dumpall's first statement recreates the
+# `postgres` role, which the fresh image already has, and that one harmless
+# error would abort the entire restore. The outcome is checked against the row
+# counts taken from the dump instead, which is the honest check anyway.
+$errors = (Get-Content -Raw -Encoding UTF8 $dump | & docker exec -i $Postgres psql -U postgres -q -d postgres 2>&1 |
+    Where-Object { $_ -match 'ERROR' -and $_ -notmatch 'already exists' })
 $revision = (& docker exec $Postgres psql -U postgres -qAt -c 'SELECT version_num FROM alembic_version;' | Out-String).Trim()
-$words = (& docker exec $Postgres psql -U postgres -qAt -c 'SELECT COUNT(*) FROM saved_words;' | Out-String).Trim()
 if (-not $revision) { Die "Restored, but the schema revision is missing. The dump is at $dump." }
-Ok "schema revision $revision, $words saved words"
+$mismatch = @()
+foreach ($table in $expected.Keys) {
+    $got = [int]((& docker exec $Postgres psql -U postgres -qAt -c "SELECT COUNT(*) FROM $table;" | Out-String).Trim())
+    if ($got -ne $expected[$table]) { $mismatch += "$table expected $($expected[$table]), got $got" }
+}
+if ($mismatch.Count) {
+    Note ($errors -join "`n")
+    Die ("The restore did not reproduce the dump: " + ($mismatch -join '; ') + ". The dump is at $dump and can be replayed by hand: Get-Content -Raw -Encoding UTF8 <dump> | docker exec -i $Postgres psql -U postgres")
+}
+if ($errors) { Note "psql reported errors that were not 'already exists'; the row counts match, so they are recorded rather than fatal:"; $errors | ForEach-Object { Note "  $_" } }
+Ok ("schema revision $revision, " + (($expected.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '))
 
 Step "4. Application"
 & docker start $Web | Out-Null
