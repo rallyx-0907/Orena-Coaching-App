@@ -2,11 +2,18 @@
 Bring the Orena review sandbox back up after a reboot.
 
 Docker Desktop's Start button cannot do this on its own, and the reason is not
-a fault: the sandbox PostgreSQL keeps PGDATA on tmpfs, so every machine restart
-gives it an empty database, and the application refuses to start against a
-schema it does not recognise. Two things therefore have to happen between the
-two containers - wait for the database, then create the schema - and a button
-that only flips container state has nowhere to put them.
+a fault: the application refuses to start against a schema it does not
+recognise, so two things have to happen between the two containers - wait for
+the database, then create the schema if it is empty - and a button that only
+flips container state has nowhere to put them.
+
+Whether the database comes back empty depends on where PGDATA lives. On tmpfs
+it is empty after every restart, which is what this script's step 2 exists for.
+`scripts\persist_orena_sandbox_db.ps1` moves it onto the named volume
+`orena-foundation-sandbox-data`, after which it comes back as it was and step 2
+finds it ready - which is what you want, because Docker Desktop recreates that
+container on its own after a crash or an update, and an emptied test learner
+looks exactly like an application fault until somebody inspects the container.
 
 So the order matters and is not optional:
 
@@ -130,4 +137,10 @@ foreach ($route in @('/', '/api/learner-profile', '/api/dashboard')) {
 $revision = & docker exec $Postgres psql -U postgres -qAt -c 'SELECT version_num FROM alembic_version;'
 Write-Host ("  {0,-24} {1}" -f 'schema revision', ($revision | Out-String).Trim())
 Write-Host "`n  Open $Url" -ForegroundColor Green
-Write-Host "  The database is temporary by design; learner rows do not survive a reboot." -ForegroundColor DarkGray
+$onVolume = (& docker inspect $Postgres --format '{{range .Mounts}}{{.Name}} {{end}}') -match 'orena-foundation-sandbox-data'
+if ($onVolume) {
+    Write-Host "  The database is on orena-foundation-sandbox-data; learner rows survive a restart." -ForegroundColor DarkGray
+} else {
+    Write-Host "  The database is on tmpfs; learner rows do not survive a restart." -ForegroundColor DarkGray
+    Write-Host "  Run scripts\persist_orena_sandbox_db.ps1 to move it onto a named volume." -ForegroundColor DarkGray
+}

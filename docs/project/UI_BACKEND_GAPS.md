@@ -1438,3 +1438,31 @@ the query and searches all of what it holds - without that, searching a
 3 000-word library would have searched 200 words and answered "nothing found".
 Paging the merge itself is the Collection Architecture §3 work (owner cursors
 plus a stable merge boundary) and has not been done.
+
+## The sandbox database was temporary by design, and that cost a test learner (2026-09-23)
+
+`orena-foundation-postgres` keeps PGDATA on **tmpfs**. That was a deliberate
+choice once - `scripts/start_orena_sandbox.ps1` said "the database is temporary
+by design" - and it has a real cost: Docker Desktop recreates that container on
+its own after a crash or an update, and everything in it goes. On 2026-09-23 it
+emptied a seeded learner of 1 619 words mid-session, and the emptiness looked
+exactly like an application fault (the app answered 200 with zero rows) until
+the container was inspected.
+
+`scripts/persist_orena_sandbox_db.ps1` fixes it: dump, recreate that one
+container on the new named volume `orena-foundation-sandbox-data`, restore,
+restart the web container. It is idempotent, it keeps the dump, it creates no
+volume but that one and removes none, and it goes nowhere near
+`ai-writing-coach-data` or `ai-writing-coach-postgres-data`, which belong to
+production and preview.
+
+**It needs a person to run it.** Recreating a container is a shared-runtime
+change this lane's harness is not permitted to make, so the script is written,
+syntax-checked and committed, and the run is the human's:
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\persist_orena_sandbox_db.ps1
+```
+
+Until then the sandbox behaves as before, and `start_orena_sandbox.ps1` now
+says which of the two states the container is in rather than assuming tmpfs.
