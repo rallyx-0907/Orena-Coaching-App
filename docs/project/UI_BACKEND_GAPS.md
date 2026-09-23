@@ -1681,3 +1681,81 @@ one is its own piece of work, not something to assume.
 with an OpenAI-compatible body and a per-language voice) rather than the shape
 the first draft invented, and a generated clip is recorded as `generated`, with
 no author, so a surface can say it was made rather than imply a recording.
+
+## Vocabulary, checked frame by frame against the source (2026-09-23)
+
+Asked for by the human: compare the Vocabulary room with the design and sync
+it, inventing nothing, and say which frames have no screen. The design project
+was read at its source (`DesignSync`, read-only) and the frames were rendered
+from the pin taken this morning; all 32 frames are listed below.
+
+### Synced in this pass
+
+| What the frame says | What the app had | Now |
+| --- | --- | --- |
+| "Vocabulary library" body is **the chips and the pack grid, and nothing else** | a third block under them: the learner's due row and "Từ đã lưu" | **removed** - Vocabulary is the shared catalogue, and a learner's own words are Thư viện của tôi's (D-074). Rule 44: deleted, not restyled |
+| chip 40 tall, 10/18, 15px, radius 999 | 46 tall (the page's 1.7 line-height inflating it) | **40**, with the line-height set after `font: inherit`, which was putting it back |
+| review card word 54, weight **600**, serif | 54 at weight 700 | **600** |
+| the "Nghe phát âm" pill is as wide as its words | stretched the card's width | centred at its own width |
+
+The saved-word management view inside the Vocabulary room is now unreachable:
+its only entry was the row that went. Its code is still there and still pinned
+by the paging gates (`test_orena_vocabulary_paging.mjs`), so removing it is a
+second, larger change - **recorded, not done**.
+
+### Verified as already matching
+
+pack grid 290 columns at gap 26; cover 186 at radius 16; phone two columns of
+158.5 with covers of 150 and chips of 13.5; review card 420x560 at radius 26;
+the flip pill 44 at 15; the three grades 64 tall with their own interval under
+each - "Quên · Chưa chắc · Nhớ rồi", which is the frame's own set; Review
+summary as measured this morning.
+
+### One difference left, for the human
+
+The frame draws a **490x44 search inside the Vocabulary bar**; the app uses the
+shared top bar's search, which is 362x44 at 13.5px. The top bar is one
+component across every destination and is pinned from its own baseline, so
+widening it for this screen alone would change every room. **DESIGN DECISION
+NEEDED:** is the Vocabulary bar's search a screen-specific control, or is the
+shared bar's search simply narrower than the baseline says?
+
+### The 32 frames, and what exists
+
+| # | Frame | App |
+| ---: | --- | --- |
+| 1 | Vocabulary library | **yes** - `#/language`, synced above |
+| 2 | Vocabulary library mobile | **yes** - the same room at 390 |
+| 3 | Vocabulary card deep | **no screen** |
+| 4 | Vocabulary card deep scrolled | **no screen** |
+| 5 | Vocabulary strokes | **no screen** - needs stroke data Orena does not hold |
+| 6 | Vocabulary context clips | **no screen** - needs per-word clips |
+| 7 | Vocabulary context clips mobile | **no screen** |
+| 8 | Vocabulary review | **yes** - `#/language?intent=recall` |
+| 9 | Vocabulary review mobile | **yes** |
+| 10 | Vocabulary review mobile hidden | **yes** - including the listen pill |
+| 11 | Review typing retry | **no screen** - a review mode the app does not have |
+| 12 | Review typing mobile | **no screen** |
+| 13 | Review listen choose mobile | **no screen** - needs per-word audio for the choices |
+| 14 | Review dictation mobile | **no screen** |
+| 15 | Review cloze mobile | **no screen** |
+| 16 | Review speaking mobile | **no screen** - speech grading is another lane |
+| 17 | Review speaking mic blocked | **no screen** |
+| 18 | Review summary | **yes** |
+| 19 | Review summary mobile | **yes** |
+| 20 | Vocabulary search | **no screen** - the app has a global search, not this one |
+| 21 | Vocabulary search mobile | **no screen** |
+| 22 | Save to deck sheet mobile | **no screen** - decks are Thư viện của tôi's sets today |
+| 23 | Add word modal | **no screen** |
+| 24 | Add word mobile | **no screen** |
+| 25 | Create deck mobile | **no screen** - the app creates a set in Thư viện của tôi instead |
+| 26 | Vocabulary deep desktop | **no screen** |
+| 27 | Review settings desktop | **no screen** - needs a stored per-learner setting |
+| 28 | Review settings mobile | **no screen** |
+| 29 | Vocabulary empty mobile | **partly** - the room has an empty state, not measured against this frame |
+| 30 | Deck nothing due mobile | **partly** - the Recall landing says nothing is due |
+| 31 | Review offline mobile | **no screen** |
+| 32 | Deck load error mobile | **partly** - the room has an error panel, not measured against this frame |
+
+**Eleven of the thirty-two have a screen today.** Nothing in the list above was
+built or guessed at in this pass: what has no screen is named, not approximated.

@@ -1234,14 +1234,6 @@ export async function renderLanguage(root, ctx) {
   };
 
   const overview = () => {
-    const dueItems = savedCards.filter((item) => item.due);
-    const saved = stateCount('saved');
-    const mastered = stateCount('mastered');
-    const preview = dueItems
-      .slice(0, 3)
-      .map((item) => item.headword)
-      .join(' · ');
-
     /* The chips the frame draws: everything, the published packs, then one per
        language the catalogue actually holds. A chip for a language with no
        collection would be a filter onto nothing. */
@@ -1265,19 +1257,11 @@ export async function renderLanguage(root, ctx) {
         ? `<div class="vocab-packs">${shown.map(collectionCard).join('')}</div>`
         : `<div class="state-panel state-panel--empty">${icon('cards', { size: 22 })}<div><strong>${esc(c.vocabularyLibraryEmpty)}</strong></div></div>`;
 
-    /* The learner's own, under the catalogue: what is waiting, and the way to
-       everything they have kept. */
-    const due = dueItems.length
-      ? `<button type="button" class="vocab-own vocab-own--due" data-vocabulary-continue>${icon('cards', { size: 18, filled: true })}<span class="vocab-own__text"><span class="vocab-own__name">${esc(c.vocabularyContinueReview)}</span><span class="vocab-own__line ds-data">${esc(dueItems.length)} ${esc(c.vocabularyDueState)}${preview ? ` · ${esc(preview)}` : ''}${dueItems.length > 3 ? ' …' : ''}</span></span>${icon('caret-right', { size: 17 })}</button>`
-      : '';
-    const own = `<div class="vocab-own-rows">${due}`
-      + `<button type="button" class="vocab-own" data-vocabulary-manage>${icon('bookmark-simple', { size: 18 })}<span class="vocab-own__text"><span class="vocab-own__name">${esc(r.vocabSavedWords)}</span><span class="vocab-own__line ds-data">${esc(saved)} ${esc(c.vocabularySavedCount)} · ${esc(mastered)} ${esc(c.vocabularyMasteredCount)}</span></span>${icon('caret-right', { size: 17 })}</button>`
-      + (savedError
-        ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="saved">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
-        : '')
-      + `</div>`;
-
-    return `<section class="vocab-library"><h1 class="sr-only">${esc(c.vocabularyTitle)}</h1>${chips}${packs}${own}</section>`;
+    /* The frame's body is the chips and the packs, and nothing else: this is
+       the shared catalogue a learner takes words from. Their own words are
+       Thư viện của tôi's (D-074), which is where the rows that used to sit
+       here went - not restyled, removed. */
+    return `<section class="vocab-library"><h1 class="sr-only">${esc(c.vocabularyTitle)}</h1>${chips}${packs}</section>`;
   };
 
   const libraryView = () => {
@@ -1460,11 +1444,6 @@ export async function renderLanguage(root, ctx) {
         });
       };
     });
-    root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => {
-      activeItems = savedCards; query = ''; filter = 'all'; levelFilter = 'all'; sort = 'recommended'; view = 'saved';
-      paint();
-      loadSavedPage();
-    }));
     root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => { view = 'library'; paint(); }));
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
     root.querySelectorAll('[data-vocabulary-filter-pack]').forEach((button) => (button.onclick = () => {
@@ -1484,16 +1463,6 @@ export async function renderLanguage(root, ctx) {
         [order[index], order[swap]] = [order[swap], order[index]];
       }
       setStudy(order);
-    });
-    root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', async () => {
-      try {
-        const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: SAVED_PAGE });
-        if (!alive()) return;
-        setStudy((page.items || []).map((item) => vocabularyCardFromSavedItem(item, language, support, pinyinAllowed)));
-      } catch {
-        /* The card said what is due; if the queue cannot be read the room
-           stays where it is rather than opening an empty study. */
-      }
     });
     root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => {
       query = event.target.value;

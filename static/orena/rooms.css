@@ -2615,6 +2615,10 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
 .vocab-listen {
   display: inline-flex;
   align-items: center;
+  /* The frame's pill is as wide as its words, centred under the card's own
+     column - not stretched across it. */
+  justify-self: center;
+  align-self: center;
   gap: 6px;
   block-size: 32px;
   padding-inline: 13px;
@@ -2994,7 +2998,13 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
 }
 .vocab-chips { display: flex; gap: 10px; flex-wrap: wrap; }
 .vocab-chip {
-  min-block-size: 42px;
+  box-sizing: border-box;
+  /* The frame's chip is 40 tall at 15px with 10/18 padding. Ours drew 46
+     because the page's 1.7 line-height made the content 25.5 - the chip
+     centres one line instead, the way the frame's flex row does. */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 40px;
   padding: 10px 18px;
   border: 0;
   border-radius: var(--radius-pill);
@@ -3003,6 +3013,9 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   color: var(--text-primary);
   font: inherit;
   font-size: 15px;
+  /* After `font: inherit`, which would otherwise put the page's 1.7 back and
+     make the chip 46 again. */
+  line-height: 1;
   cursor: pointer;
 }
 .vocab-chip[aria-pressed='true'] {
@@ -3193,7 +3206,8 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   /* The same serif the Quick Sheet and the transcript already read in. */
   font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
   font-size: 54px;
-  font-weight: var(--weight-bold);
+  /* 600 in the frame, not the 700 this used to inherit from the bold token. */
+  font-weight: var(--weight-semibold);
   line-height: 1;
 }
 .vocab-card__reading { color: var(--text-secondary); font-size: 16px; }

@@ -62,12 +62,13 @@ assert.match(recallRoom, /recallShape\(current, keptNow\)/, 'the question comes 
 assert.equal(gradable(false), false, 'seeing a card is not recall');
 assert.equal(gradable(true), true, 'committing to an answer is');
 
-/* --- The room opens on its library (D-067, "Vocabulary library") --------
+/* --- The room is the shared catalogue (D-067, "Vocabulary library") -----
    The filter chips, then a grid of collections - a cover with its progress,
-   the name and one line saying what the pack is. The learner's own two rows
-   follow, because the design has no screen for a learner's own set yet (its
-   matrix marks "My Content" INCOMPLETE) and their words must stay reachable;
-   that difference is recorded in UI_BACKEND_GAPS.md. */
+   the name and one line saying what the pack is. Nothing else: Vocabulary is
+   the catalogue a learner takes words from, and their own words live in Thư
+   viện của tôi (D-074). The two rows that used to sit under the grid were
+   kept only while the design had no screen for a learner's own set; it has
+   one now, so they are deleted rather than restyled (rule 44). */
 assert.doesNotMatch(expression, /vocabulary-summary-metrics/, 'the four metric tiles are gone');
 /* The library and the two helpers that draw its covers are read together:
    they are one composition. */
@@ -79,13 +80,12 @@ assert.match(overview, /class="vocab-library"/, 'the room is the library');
 assert.doesNotMatch(overview, /class="vocab-home"/, 'the old home panel is gone, not restyled');
 assert.match(overview, /class="vocab-chips"/, 'with the chips the frame draws');
 assert.match(overview, /class="vocab-packs"/, 'and the grid of collections');
-assert.ok(
-  overview.indexOf('vocab-packs') < overview.indexOf('vocab-own-rows'),
-  'the catalogue first, the learner\'s own under it',
-);
-/* Due is shown only when something is actually due, and an empty catalogue
-   says so rather than drawing covers for packs that do not exist. */
-assert.match(overview, /const due = dueItems[.]length\s*\n?\s*\?/, 'a review row appears only when there is one');
+/* The learner's own rows are gone, and so are the ways into them: the room
+   draws the catalogue, and Thư viện của tôi holds what they kept. */
+for (const removed of ['vocab-own-rows', 'vocab-own', 'data-vocabulary-manage', 'data-vocabulary-continue'])
+  assert.doesNotMatch(expression, new RegExp(removed), `${removed} belongs to Thư viện của tôi now`);
+/* An empty catalogue says so rather than drawing covers for packs that do not
+   exist. */
 assert.match(overview, /vocabularyLibraryEmpty/, 'an empty catalogue says it is empty');
 assert.match(recallRoom, /const landing = due[.]length/, 'and so does the Recall landing');
 /* A cover is generated from the collection itself - no artwork to keep in
