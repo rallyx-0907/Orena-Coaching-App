@@ -87,6 +87,11 @@ assert.equal((panels[0].match(/<polyline/g) || []).length, 3, 'three syllables, 
 assert.equal((panels[1].match(/<polyline/g) || []).length, 0, 'no curve is drawn for an unmeasured tone');
 assert.match(detail, /mei3/, 'the provider’s units are listed as sounds, not as tones');
 assert.equal(toneSvg([]), '<svg viewBox="0 0 120 60" aria-hidden="true"></svg>');
+// The sheet's sentence is punctuated in the interface language, not with a hard-coded ". ".
+const zhDetail = detailHtml({ s: speakCopy('zh'), c: {}, word: zh.words[3], language: 'zh' });
+assert.match(zhDetail, /读错了。得分 58。|。得分 58。/);
+assert.equal(/[^.]\. 得分/.test(zhDetail), false, 'no Latin full stop inside Chinese');
+assert.equal(/。 /.test(zhDetail), false, 'no Latin space between Chinese sentences');
 
 // Word detail, English: no tone panels; the phoneme that lost is shown with its own score.
 const en = pronunciationView({ score_kind: 'measured', reference_text: 'Two cats.', pron_score: 70, accuracy_score: 72, words: [{ word: 'cats', accuracy_score: 61, error_type: 'None', phonemes: [{ phoneme: 'k', accuracy_score: 95 }, { phoneme: 's', accuracy_score: 4 }] }] }, { language: 'en' });

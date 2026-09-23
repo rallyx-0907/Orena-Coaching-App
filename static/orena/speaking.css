@@ -744,13 +744,22 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
+  /* The corner is the close control's: the speak button sits with the word, never beside the X. */
+  padding-inline-end: 44px;
 }
 .sp-detail__word {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* The word and its model sound on one line: the speak button belongs to the word it says. */
+.sp-detail__glyph {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 .sp-detail__word b {
   font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
@@ -876,8 +885,22 @@
   color: var(--text-on-glass);
 }
 .sp-detail__actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
   gap: 10px;
+}
+/* A long label (English "Practise this character alone") wraps inside its button, never out of the sheet. */
+.sp-detail__actions .sp-dbtn {
+  min-width: 0;
+  block-size: auto;
+  min-block-size: 50px;
+  padding: 8px 12px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+}
+.sp-detail__actions .sp-dbtn svg {
+  flex: none;
 }
 .sp-dbtn {
   flex: 1;
