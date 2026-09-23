@@ -2466,3 +2466,37 @@ measuring a surface, check the pin against the source.
 **Supersedes / Superseded by:** Supersedes D-071's ground (`#0A0722` under
 seventeen layers), which was true of the master preview on 2026-09-21. D-070 was
 already superseded by D-071 and stays so.
+
+## D-074 — codex/work was merged into admin/control-center as a one-way synchronization
+
+**Date:** 2026-09-23
+**Status:** Accepted
+
+**Context.** `AGENTS.md` §3 keeps the two lanes intentionally independent and
+forbids taking learner-facing implementation from the other lane "unless the
+human explicitly instructs it". On 2026-09-23 the human merged `codex/work`
+into `admin/control-center` themselves (merge commit `61e9668`, preceded by
+their own `52c7246` "checkpoint learner UI before admin integration"), and the
+Reading Content Engine work continued on top of it. The delta reviewer raised
+that the instruction behind the merge was not recorded anywhere, and that the
+rebase of the engine's migration onto the merged chain is downstream of it.
+
+**Decision.** The merge is recorded here as a deliberate, human-performed
+**synchronization in one direction only**: the admin lane takes the learner
+lane's current state so that admin work is built against what learners
+actually have. The lane's migration chain was rebased onto the merged head
+(`20260922_0012`) rather than joined with an Alembic merge revision, so
+`migrations/versions/` keeps one linear chain.
+
+**What this decision does not authorize.** It is not authorization for the
+reverse merge. `admin/control-center` is still not merged into `codex/work` or
+`main`, and nothing here changes `AGENTS.md` §3's rule that the two
+implementations stay independent: a future sync in either direction is its own
+human instruction, recorded on its own.
+
+**Consequence.** Work in this lane may now assume the learner UI that arrived
+with the merge. Two node gates that came with it — `test_orena_vocabulary_theme_tokens`
+and `test_orena_writing_workspace` — fail identically at the merge commit and
+were not introduced by admin work; they belong to whoever owns that UI.
+
+**Supersedes / Superseded by:** None.
