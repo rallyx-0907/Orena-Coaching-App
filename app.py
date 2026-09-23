@@ -593,6 +593,7 @@ configure_collection(runtime_owners(
     reading=list_reading_sessions,
     essays=_learning_repository.list_latest_series,
     specialized=_specialized_learning_repository,
+    grammar=lambda: _completed_grammar_rows(),
 ))
 app.include_router(collection_router)
 # Learner summary (I6 read step): each domain's own evidence, side by side,
@@ -1898,6 +1899,27 @@ def _grammar_storage_key(lesson: dict[str, Any]) -> str:
     version = int(lesson.get("content_version") or 1)
     language = active_grammar_language_code()
     return f"{language}:grammar:v{version}:{lesson['id']}"
+
+
+def _completed_grammar_rows() -> list[dict[str, Any]]:
+    """The patterns this learner marked complete, as rows with their titles.
+
+    The progress owner stores storage keys, not titles, and the course stores
+    titles, not progress; one read joins them so a collection entry can say
+    which pattern it is without either side learning about the other.
+    """
+    completed = _learning_repository.completed_grammar_ids()
+    language = active_grammar_language_code()
+    return [
+        {
+            "id": str(lesson["id"]),
+            "title": str(lesson.get("title") or ""),
+            "level": str(lesson.get("level") or ""),
+            "language_code": language,
+        }
+        for lesson in active_grammar_course()
+        if _grammar_storage_key(lesson) in completed
+    ]
 
 
 @app.get("/api/library/grammar")

@@ -20,6 +20,7 @@ from writing_coach.collection_query import (
     LessonRef,
     Owner,
     QueryScope,
+    grammar_entries,
     language_entries,
     media_entries_with,
     query_collection,
@@ -83,8 +84,17 @@ def catalog_lesson_resolver() -> Callable[[str, str], LessonRef | None]:
 
 
 def runtime_owners(*, library: Callable[[int], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
-                   essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any) -> Callable[[], list[Owner]]:
-    """The five owners, wired to the reads the app already serves."""
+                   essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any,
+                   grammar: Callable[[], Sequence[dict[str, Any]]]) -> Callable[[], list[Owner]]:
+    """The six owners, wired to the reads the app already serves.
+
+    Six of the eight kinds Thư viện của tôi draws. A note has no owner in this
+    repository at all, and a book is catalogue only - `reading_books` records
+    who imported it, not whose library it is - so neither is registered here:
+    an owner that does not exist is not the same as one that failed, and
+    `docs/project/MY_LIBRARY_DATA_CONTRACT_AUDIT.md` carries both as work for
+    the schema gate rather than something to invent a row for.
+    """
     resolve = catalog_lesson_resolver()
 
     def build() -> list[Owner]:
@@ -96,6 +106,7 @@ def runtime_owners(*, library: Callable[[int], dict[str, Any]], reading: Callabl
             Owner('writing', essays, writing_entries),
             Owner('speaking', lambda: specialized.list_speaking_attempt_records(SPEAKING_BOUND),
                   speaking_entries_with(resolve), SPEAKING_BOUND),
+            Owner('grammar', grammar, grammar_entries),
         ]
 
     return build

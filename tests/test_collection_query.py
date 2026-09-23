@@ -15,6 +15,7 @@ from writing_coach.collection_query import (
     LessonRef,
     Owner,
     QueryScope,
+    grammar_entries,
     language_entries,
     media_entries_with,
     query_collection,
@@ -37,7 +38,7 @@ def lessons(asset: str, segment: str) -> LessonRef | None:
     return None
 
 
-def owners(*, library=None, reading=None, essays=None, listening=None, speaking=None, fail=(), bounds=None):
+def owners(*, library=None, reading=None, essays=None, listening=None, speaking=None, grammar=None, fail=(), bounds=None):
     bounds = bounds or {}
 
     def reader(domain, rows):
@@ -53,6 +54,7 @@ def owners(*, library=None, reading=None, essays=None, listening=None, speaking=
         Owner('media', reader('media', listening), media_entries_with(lessons), bounds.get('media')),
         Owner('writing', reader('writing', essays), writing_entries, bounds.get('writing')),
         Owner('speaking', reader('speaking', speaking), speaking_entries_with(lessons), bounds.get('speaking')),
+        Owner('grammar', reader('grammar', grammar), grammar_entries, bounds.get('grammar')),
     ]
 
 
@@ -68,6 +70,9 @@ LISTENING = [
     {'asset_id': 'shared-source', 'segment_id': 'shared-source:005', 'updated_at': '2026-09-12T11:30:00+00:00'},
     {'asset_id': 'gone-source', 'segment_id': 'gone-source:001', 'updated_at': '2026-09-01T10:00:00+00:00'},
 ]
+GRAMMAR = [
+    {'id': 'a2-past-simple', 'title': 'Past simple', 'level': 'A2', 'completed_at': '2026-09-07T09:00:00+00:00'},
+]
 SPEAKING = [
     {'take_id': 'take-lesson', 'asset_id': 'known-source', 'segment_id': 'known-source:001', 'reference_text': 'Anna, do you have a pen?', 'transcript_text': 'Anna do you have a pen', 'created_at': '2026-09-12T12:00:00+00:00'},
     {'take_id': 'take-free', 'asset_id': '', 'segment_id': '', 'reference_text': '', 'transcript_text': 'I would like a coffee', 'created_at': '2026-09-08T12:00:00+00:00'},
@@ -75,7 +80,8 @@ SPEAKING = [
 
 
 def everything(**extra):
-    return owners(library=LIBRARY, reading=READING, essays=ESSAYS, listening=LISTENING, speaking=SPEAKING, **extra)
+    return owners(library=LIBRARY, reading=READING, essays=ESSAYS, listening=LISTENING, speaking=SPEAKING,
+                  grammar=GRAMMAR, **extra)
 
 
 def refs(result):
@@ -85,12 +91,27 @@ def refs(result):
 def test_mixed_owners_come_back_as_one_typed_newest_first_result():
     result = query_collection(EN, everything(), secret=SECRET)
     assert result['completeness'] == 'complete'
-    assert result['totalKind'] == 'exact' and result['total'] == len(result['entries']) == 9
+    assert result['totalKind'] == 'exact' and result['total'] == len(result['entries']) == 10
     stamps = [entry['updatedAt'] for entry in result['entries']]
     assert refs(result)[0] == ('speaking', 'take-lesson')
     assert stamps.index('2026-09-11T08:00:00Z') < stamps.index('2026-09-10T08:00:00+00:00'), 'mixed ISO shapes compare as instants'
     kinds = {entry['ref']['domain']: entry['kind'] for entry in result['entries']}
-    assert kinds == {'language': 'language', 'reading': 'text', 'media': 'media', 'writing': 'work', 'speaking': 'work'}
+    assert kinds == {'language': 'language', 'reading': 'text', 'media': 'media', 'writing': 'work',
+                     'speaking': 'work', 'grammar': 'pattern'}
+
+
+def test_a_completed_pattern_reaches_its_lesson_and_claims_no_mastery():
+    """Grammar records that the learner worked through a pattern. The entry
+    carries the pattern, its level and the way back into it - never a score,
+    because the curriculum policy is explicit that completion is not mastery."""
+    result = query_collection(EN, everything(), secret=SECRET, kinds=['pattern'])
+    entry = next(item for item in result['entries'] if item['ref']['domain'] == 'grammar')
+    assert entry['ref']['id'] == 'a2-past-simple'
+    assert entry['title'] == 'Past simple'
+    assert entry['relationship'] == 'completed'
+    assert entry['action'] == {'kind': 'open_source', 'route': route('practice', id='a2-past-simple', intent='grammar')}
+    assert entry['detail'] == {'level': 'A2'}
+    assert 'score' not in entry['detail'] and entry['snippet'] == ''
 
 
 def test_the_same_numeric_id_in_two_domains_stays_two_objects():
@@ -176,7 +197,7 @@ def test_paging_covers_every_entry_exactly_once():
         cursor = page['nextCursor']
         if not cursor:
             break
-    assert len(seen) == len(set(seen)) == 9
+    assert len(seen) == len(set(seen)) == 10
 
 
 def test_a_concurrent_addition_asks_for_a_refresh_instead_of_skipping_or_repeating():

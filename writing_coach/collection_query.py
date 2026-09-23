@@ -55,13 +55,14 @@ from datetime import datetime, UTC
 from typing import Any
 from urllib.parse import urlencode
 
-DOMAINS = ('language', 'reading', 'media', 'writing', 'speaking')
+DOMAINS = ('language', 'reading', 'media', 'writing', 'speaking', 'grammar')
 KIND_OF = {
     'language': 'language',
     'reading': 'text',
     'media': 'media',
     'writing': 'work',
     'speaking': 'work',
+    'grammar': 'pattern',
 }
 MAX_LIMIT = 50
 DEFAULT_LIMIT = 20
@@ -190,6 +191,33 @@ def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[C
             updated_at=str(row.get('added_at') or ''),
             action=_action('review_language', route('language')),
             detail={'sourceKind': str(row.get('source_kind') or '')},
+        ))
+    return entries
+
+
+def grammar_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
+    """Patterns the learner marked complete, from the grammar owner.
+
+    The owner records completion, not a time and not a measure: marking a
+    pattern complete is the learner saying they have worked through it, which
+    `ORENA_STATUS` and the curriculum policy are explicit is not mastery. So an
+    entry carries what is recorded - the pattern and its level - and nothing
+    that would read as a score.
+    """
+    entries = []
+    for row in rows:
+        lesson = str(row.get('id') or row.get('lesson_id') or '').strip()
+        if not lesson:
+            continue
+        entries.append(CollectionEntry(
+            domain='grammar',
+            id=lesson,
+            title=str(row.get('title') or ''),
+            learning_language=_language_of(row, language),
+            relationship='completed',
+            updated_at=str(row.get('completed_at') or ''),
+            action=_action('open_source', route('practice', id=lesson, intent='grammar')),
+            detail={'level': str(row.get('level') or '')},
         ))
     return entries
 

@@ -43,6 +43,7 @@ def test_the_collection_asks_for_a_page_and_declares_it() -> None:
         reading=lambda limit: {"items": []},
         essays=lambda: [],
         specialized=_Specialized(),
+        grammar=lambda: [],
     )()
     language = next(owner for owner in owners if owner.domain == "language")
     rows = language.read()
