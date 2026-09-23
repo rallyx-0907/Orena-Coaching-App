@@ -14,7 +14,7 @@ The approval is an architecture-review verdict on the design and its
 implementation. It does not authorize schema activation, deployment or product
 approval — §11 below is what remains, and step 3 belongs to the human.
 
-Proposed migration: `migrations/proposed/20260922_0010_reading_content_engine.py`
+Proposed migration: `migrations/proposed/20260923_0013_reading_content_engine.py`
 (additive; six new tables; no existing table altered). Alembic does not read
 that directory, so committing it applies nothing.
 
@@ -262,15 +262,19 @@ turned on, no replacement of the Book Library, no Media rewrite, no video
 extractor, no new AI provider or credential path, no change to any learner
 route or learner UI file.
 
-## 9. Migration / branch dependency (recorded, not resolved here)
+## 9. Migration / branch position (resolved)
 
-`admin/control-center`'s migration head is `20260916_0009` (`reading_library`).
-`codex/work` has since added `20260916_0010`, `0011` and `0012`. This proposal
-is therefore numbered by date — `20260922_0010`, revising `20260916_0009` —
-and integrating the two lanes will need either one Alembic merge revision or a
-mechanical rebase of this revision onto that lane's head. Nothing from
-`codex/work` is merged into this lane to "clean it up", and this engine
-depends on no code that exists only there.
+`codex/work` was merged into `admin/control-center` on 2026-09-23 (merge
+commit `61e9668`), which brought `20260921_0010` (listening hint state),
+`20260922_0011` (essay review kept) and `20260922_0012` (text discussions).
+This proposal was **rebased onto that head rather than merged into it**: it is
+now `20260923_0013`, revising `20260922_0012`, so `migrations/versions/` keeps
+one linear chain and no Alembic merge revision is needed. One `git mv` still
+applies it.
+
+The rebase is chain linearity only. The engine has no foreign key into, and no
+dependency on, anything those three migrations added; the rehearsal in §11.1
+was re-run against this chain to prove it, not assumed.
 
 **Until the `git mv`, `alembic revision --autogenerate` on this lane will
 propose creating all six tables again.** `migrations/env.py` compares the

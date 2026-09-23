@@ -1,6 +1,6 @@
 """The Reading engine's durable queue - `reading_ingestion_jobs`.
 
-Schema: `migrations/proposed/20260922_0010_reading_content_engine.py` -
+Schema: `migrations/proposed/20260923_0013_reading_content_engine.py` -
 reviewed (round 1 `CHANGES REQUIRED`, revised, re-review pending), not yet
 applied to any runtime. See
 `docs/project/READING_CONTENT_ENGINE_SCHEMA_REVIEW_REQUEST.md`.

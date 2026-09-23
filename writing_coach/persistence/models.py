@@ -512,7 +512,7 @@ class VocabularyCollectionMembership(Base):
 # ---------------------------------------------------------------------------
 # Reading Content Engine - shared, admin-curated article content.
 #
-# These six mirror `migrations/proposed/20260922_0010_reading_content_engine.py`
+# These six mirror `migrations/proposed/20260923_0013_reading_content_engine.py`
 # and exist so the hermetic suite can create the same tables from metadata, the
 # way the vocabulary catalog already does. Two rules when either side changes:
 # the migration is the authority for the runtime, and every partial index is

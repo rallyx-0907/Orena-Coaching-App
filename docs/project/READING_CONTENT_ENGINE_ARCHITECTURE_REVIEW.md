@@ -10,6 +10,16 @@ of substance — the verdict, every finding, every required change and the
 authorization boundary are the reviewer's own. What each round changed is under
 "Resolution" at the end of this file.
 
+**Note added 2026-09-23, after the reviews below.** `codex/work` was merged
+into this lane, so the proposed migration was rebased from `20260916_0009`
+onto the new head `20260922_0012` and renumbered `20260923_0013`. Rounds 1–4
+reviewed the same file under its former name,
+`20260922_0010_reading_content_engine.py`, and the text below is left exactly
+as each reviewer wrote it — the file identifier in their words is historical,
+not stale. The rebase changed `revision`, `down_revision`, the chain paragraph
+and the seed `created_by` string, and nothing else; the delta is being
+re-reviewed separately.
+
 ## Review record
 
 - Reviewer role: Delegated Architecture Reviewer (`AGENTS.md`, "Architecture

@@ -7,16 +7,17 @@ read this directory (see its `README.md`), so nothing here is applied by being
 committed: it becomes real by one `git mv` into `versions/`, after the
 re-review and the authorization this docstring names.
 
-Chain position: revises `20260916_0009` (`reading_library`), the head of
-`migrations/versions/` on `admin/control-center`. `codex/work` has since
-added `0010`, `0011` and `0012` of its own; this file is deliberately
-numbered `20260922_0010` by date rather than by sequence, and integrating the
-two lanes will need one Alembic merge or a rebase of this revision onto that
-lane's head. That is a recorded integration dependency
-(`docs/project/READING_CONTENT_ENGINE_SCHEMA_REVIEW_REQUEST.md` SS8), not a
-reason to merge the other lane into this one.
+Chain position: revises `20260922_0012` (`text_discussions`), the head of
+`migrations/versions/` on `admin/control-center` after `codex/work` was merged
+into this lane on 2026-09-23. The proposal was first written against
+`20260916_0009`, when that was this lane's head and the other lane's `0010`,
+`0011` and `0012` were an unmerged dependency; it was rebased rather than
+merged with an Alembic merge revision, so the chain stays linear and one
+`git mv` still applies it. Nothing in this migration depends on what those
+three added - the rebase is chain linearity only, the same reasoning
+`20260912_0007` recorded for its own position.
 
-Revision ID: 20260922_0010
+Revision ID: 20260923_0013
 Revises: 20260916_0009
 
 ## What this is, and what it is not
@@ -237,8 +238,8 @@ import uuid
 from alembic import op
 import sqlalchemy as sa
 
-revision = "20260922_0010"
-down_revision = "20260916_0009"
+revision = "20260923_0013"
+down_revision = "20260922_0012"
 branch_labels = None
 depends_on = None
 
@@ -761,7 +762,7 @@ def upgrade() -> None:
     #
     # * `CURRENT_TIMESTAMP`, not `now()`: standard SQL, valid on every dialect
     #   this repository might rehearse on, still the server's clock.
-    # * `created_by` reads `migration 20260922_0010` with a space, not a colon.
+    # * `created_by` reads `migration 20260923_0013` with a space, not a colon.
     #   Alembic wraps `op.execute` strings in `text()`, and SQLAlchemy reads
     #   `:` followed by word characters - digits included - as a bind parameter.
     # * The ids render in their dashed form, which is what PostgreSQL's `uuid`
@@ -787,7 +788,7 @@ def upgrade() -> None:
             "(id, slug, name, source_type, state, languages, topic_hints, polling_policy, "
             " created_by, created_at, updated_at) VALUES "
             f"('{source_id}', '{slug}', '{name}', '{source_type}', 'active', "
-            """'["en", "zh"]', '[]', '{}', 'migration 20260922_0010',
+            """'["en", "zh"]', '[]', '{}', 'migration 20260923_0013',
              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"""
         )
 
