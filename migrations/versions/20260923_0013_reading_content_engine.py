@@ -1,11 +1,12 @@
 """Reading Content Engine - six tables behind Admin -> Content -> Reading.
 
-PROPOSED - reviewed once (`CHANGES REQUIRED`, commit `5eeaac7`), revised, and
-awaiting re-review then human schema/runtime authorization. Additive only; no
-existing table is altered and no existing row is rewritten. Alembic does not
-read this directory (see its `README.md`), so nothing here is applied by being
-committed: it becomes real by one `git mv` into `versions/`, after the
-re-review and the authorization this docstring names.
+APPLIED - independent architecture review `APPROVE` after four rounds plus a
+delta review of the rebase (`docs/project/READING_CONTENT_ENGINE_ARCHITECTURE_REVIEW.md`),
+human schema/runtime authorization given 2026-09-23 **for the lane sandbox on
+port 8012 only**. Additive: no existing table is altered and no existing row is
+rewritten. Production (8000) and preview (8010) keep every gate in
+`ARCHITECTURE_INVARIANTS.md` § Human gates; this file being in `versions/`
+authorizes nothing beyond the sandbox the authorization named.
 
 Chain position: revises `20260922_0012` (`text_discussions`), the head of
 `migrations/versions/` on `admin/control-center` after `codex/work` was merged
