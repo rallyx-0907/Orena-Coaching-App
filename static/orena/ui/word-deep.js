@@ -123,7 +123,11 @@ export function yoursPage(c, data) {
 }
 
 function head(c, data) {
-  return `<header class="word-deep__head"><button type="button" class="icon-button word-deep__back" data-word-deep-back aria-label="${esc(c.back)}">${icon('caret-right', { size: 22, className: 'is-flipped' })}</button><strong class="word-deep__word" lang="${esc(data.language || '')}">${esc(data.headword)}</strong>${data.reading ? `<span class="word-deep__reading ds-data">${esc(data.reading)}</span>` : ''}<button type="button" class="icon-button word-deep__speak" data-word-deep-speak aria-label="${esc(c.vocabularyListen || c.wordDeepListen)}">${icon('speaker-high', { size: 20, filled: true })}</button></header>`;
+  return `<header class="word-deep__head"><button type="button" class="icon-button word-deep__back" data-word-deep-back aria-label="${esc(c.back)}">${icon('caret-right', { size: 22, className: 'is-flipped' })}</button>${
+    data.script === 'hanzi'
+      ? `<strong class="word-deep__word" lang="${esc(data.language || '')}" data-word-deep-strokes role="button" tabindex="0" aria-label="${esc(c.strokesTitle)}">${esc(data.headword)}</strong>`
+      : `<strong class="word-deep__word" lang="${esc(data.language || '')}">${esc(data.headword)}</strong>`
+  }${data.reading ? `<span class="word-deep__reading ds-data">${esc(data.reading)}</span>` : ''}<button type="button" class="icon-button word-deep__speak" data-word-deep-speak aria-label="${esc(c.vocabularyListen || c.wordDeepListen)}">${icon('speaker-high', { size: 20, filled: true })}</button></header>`;
 }
 
 function foot(c, data, page) {

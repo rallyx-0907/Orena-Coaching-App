@@ -5442,3 +5442,206 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   .word-deep__clips { font-size: 18px; }
   .word-deep__clips strong { font-size: 17px; }
 }
+
+
+/* --- Nét chữ -------------------------------------------------------------
+   Frame 05 "Vocabulary strokes", which is also the right-hand column of frame
+   26 - that frame's note keeps them two screens on a phone and one on a
+   desktop, so this is one panel used in both places. Everything drawn comes
+   from the stroke capability Orena has had since 2026-08-26. */
+.word-strokes { display: flex; flex-direction: column; min-block-size: 100%; }
+.word-strokes__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block-end: 14px;
+  box-shadow: inset 0 -1px 0 var(--glass-hairline);
+}
+.word-strokes__head .icon-button {
+  inline-size: 32px;
+  block-size: 32px;
+  min-block-size: 32px;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+}
+.word-strokes__head strong {
+  flex: 1;
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+  font-size: 15px;
+}
+.word-strokes__count { font-size: 11.5px; color: var(--text-secondary); }
+.word-strokes__body {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-block-start: 16px;
+}
+.stroke-section { display: flex; flex-direction: column; gap: 8px; }
+.stroke-label { font-size: 10.5px; letter-spacing: 0.13em; }
+
+/* What the character is made of, when the catalogue says so. */
+.stroke-parts { display: flex; gap: 10px; }
+.stroke-part {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  text-align: center;
+}
+.stroke-part__glyph {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 30px;
+  line-height: 1;
+}
+.stroke-part__role { font-size: 10.5px; color: var(--accent-ink); }
+.stroke-part__gloss { font-size: 11.5px; color: var(--text-secondary); }
+
+/* The order, as a strip of the character being built. */
+.stroke-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.stroke-step {
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 10px;
+  background: var(--glass-well-sunk);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stroke-glyph { inline-size: 76%; block-size: 76%; }
+.stroke-glyph__on { fill: currentColor; }
+.stroke-glyph__off { fill: currentColor; opacity: 0.16; }
+
+/* Watching it written. */
+.stroke-watch {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 15px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring-card);
+  color: inherit;
+  text-align: start;
+}
+.stroke-watch > svg {
+  flex: none;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--accent-chip);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+.stroke-watch__text { flex: 1; min-inline-size: 0; display: flex; flex-direction: column; gap: 2px; }
+.stroke-watch__text strong { font-family: var(--display-font); font-weight: var(--weight-bold); font-size: 15.5px; }
+.stroke-watch__text small { font-size: 12.5px; color: var(--text-secondary); }
+
+/* The square to trace in: the frame's box, its inner frame and its cross. */
+.stroke-square {
+  position: relative;
+  block-size: 190px;
+  border-radius: 15px;
+  background: var(--glass-well-sunk);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+.stroke-square__frame {
+  position: absolute;
+  inset: 14px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-subtle) 60%, transparent);
+}
+.stroke-square__cross {
+  position: absolute;
+  inset: 14px;
+  background:
+    linear-gradient(color-mix(in srgb, var(--border-subtle) 70%, transparent), color-mix(in srgb, var(--border-subtle) 70%, transparent)) center / 1px 100% no-repeat,
+    linear-gradient(color-mix(in srgb, var(--border-subtle) 70%, transparent), color-mix(in srgb, var(--border-subtle) 70%, transparent)) center / 100% 1px no-repeat;
+}
+.stroke-square .stroke-glyph--trace { position: relative; inline-size: 62%; block-size: 62%; }
+.stroke-square__ink {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: 62%;
+  block-size: 62%;
+  pointer-events: none;
+}
+.stroke-square__ink polyline {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 34;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.stroke-square__step {
+  position: absolute;
+  inset-inline-start: 18px;
+  inset-block-end: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+/* Wrong direction or wrong order: the frame shakes it and leaves the right
+   stroke showing faintly, which the glyph under the ink already is. */
+.stroke-square[data-wrong='true'] { animation: stroke-shake 220ms ease-in-out 2; }
+@keyframes stroke-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stroke-square[data-wrong='true'] { animation: none; box-shadow: inset 0 0 0 1.5px var(--status-warning); }
+}
+
+.word-strokes__foot {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  padding-block-start: 12px;
+  margin-block-start: 16px;
+  box-shadow: inset 0 1px 0 var(--glass-hairline);
+}
+.stroke-action {
+  flex: 1;
+  block-size: 50px;
+  min-block-size: 50px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: inherit;
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+  font-size: 14.5px;
+}
+.stroke-action.primary { background: var(--accent-gradient); box-shadow: var(--accent-shadow); font-weight: var(--weight-heavy); }
+.word-strokes__none { margin: 0; padding-block-start: 24px; font-size: 14px; color: var(--text-secondary); }
+
+/* On a desktop this panel is frame 26's right-hand column, which that frame
+   draws at 640px, so it stops there rather than stretching the square across
+   the whole screen. */
+@media (min-width: 1000px) {
+  .word-strokes__body, .word-strokes__foot { max-inline-size: 640px; }
+  .word-strokes__head strong { font-size: 22px; }
+}

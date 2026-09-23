@@ -513,6 +513,17 @@ export const vi = {
   vocabularySave: 'Lưu từ',
   vocabularySaved: 'Đã lưu',
   vocabularySavedCount: 'Đã lưu',
+  /* Nét chữ - how a character is written (frame 05). */
+  strokesTitle: 'Nét chữ',
+  strokesCount: '{n} nét',
+  strokesParts: 'Bộ thủ · thành phần',
+  strokesOrder: 'Thứ tự nét',
+  strokesWatch: 'Xem animation {n} nét',
+  strokesWatchNote: 'chạy chậm, tạm dừng từng nét',
+  strokesTrace: 'Tô theo',
+  strokesTraceStep: 'Tô theo · nét {n} / {total}',
+  strokesFree: 'Viết tự do',
+  strokesUnavailable: 'Chữ này chưa có dữ liệu nét.',
   /* The word heard where it is said (frames 06 and 07). */
   vocabularyClipCount: '{n} clip',
   vocabularyOtherContexts: 'Ngữ cảnh khác',

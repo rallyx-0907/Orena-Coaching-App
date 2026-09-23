@@ -1731,7 +1731,7 @@ built, what it is fed by, and what was recorded rather than decided.
 | 2 | Vocabulary library mobile | **yes** - the same room at 390 |
 | 3 | Vocabulary card deep | **yes** - the dictionary's half of the word (2026-09-23) |
 | 4 | Vocabulary card deep scrolled | **yes** - the learner's half |
-| 5 | Vocabulary strokes | **no screen** - needs Make Me a Hanzi; admitting it is a rights decision (below) |
+| 5 | Vocabulary strokes | **yes** - on the stroke capability vendored 2026-08-26 (2026-09-23) |
 | 6 | Vocabulary context clips | **yes** - real timestamped moments in the listening catalogue (2026-09-23) |
 | 7 | Vocabulary context clips mobile | **yes** |
 | 8 | Vocabulary review | **yes** - `#/practice?intent=recall` |
@@ -1752,7 +1752,7 @@ built, what it is fed by, and what was recorded rather than decided.
 | 23 | Add word modal | **yes** - the same fields as 24, widened |
 | 24 | Add word mobile | **yes** |
 | 25 | Create deck mobile | **yes** - name and language; the colour chooser needs a column (below) |
-| 26 | Vocabulary deep desktop | **yes** - both halves at once; the strokes column waits on frame 05 |
+| 26 | Vocabulary deep desktop | **yes** - both halves at once, with the strokes column (2026-09-23) |
 | 27 | Review settings desktop | **yes** - device memory, no schema (2026-09-23) |
 | 28 | Review settings mobile | **yes** |
 | 29 | Vocabulary empty mobile | **yes** - measured against this frame (2026-09-23) |
@@ -1760,10 +1760,8 @@ built, what it is fed by, and what was recorded rather than decided.
 | 31 | Review offline mobile | **yes** - answers wait on the device and sync (2026-09-23) |
 | 32 | Deck load error mobile | **yes** - with the code a learner can quote |
 
-**Thirty-one of the thirty-two have a screen.** Two of the thirty-two are not
-this lane's and are not counted against it: frames 16 and 17 are Speaking's.
-The one that remains, frame 05, is blocked on a rights decision, not on
-implementation - and nothing was faked in its place.
+**Thirty of the thirty-two have a screen, and the other two are not this
+lane's**: frames 16 and 17 are Speaking's. Every Vocabulary frame is built.
 
 ## Choosing several, and deleting with a way back (2026-09-23)
 
@@ -2000,22 +1998,51 @@ playback reference. No store, no column. Playing one starts where the segment
 starts and stops where it ends; an embed is not seeked inside, because the
 rights review that admitted it did not admit that.
 
-## Frame 05 "Vocabulary strokes" — not built, and why (2026-09-23)
+## Nét chữ, on the capability that was already here (2026-09-23)
 
-This is the one frame of the thirty-two that is **not** built, and it is not a
-UI gap: it needs stroke-order data the app does not have and cannot derive.
+Frame **05 Vocabulary strokes** — built, and the right-hand column of frame 26
+with it.
 
-- **The source that fits**: Make Me a Hanzi (`graphics.txt` / `dictionary.txt`),
-  which carries per-character stroke paths and medians for ~9,500 characters.
-- **The pipeline it needs**: fetch once, index by character, store under the
-  existing `BookAssetStore` seam (no schema, exactly as per-word audio and the
-  deep-explanation cache do), and serve one character's strokes by digest.
-- **Why it stops here**: the data is derived from the Arphic fonts and carries
-  the **Arphic Public License** alongside the project's own. Admitting a body
-  of third-party content into the product is a **rights decision per source**,
-  which `AGENTS.md` "Architecture holds" reserves for the human — the same rule
-  that governs adding a text to the reading library.
+**Correction.** An earlier note in this file said this frame needed stroke data
+Orena does not hold, and proposed importing Make Me a Hanzi behind a rights
+decision. That was wrong, and it was wrong because it was written without
+auditing the code. The audit:
 
-Nothing was faked in its place: the deep desktop screen is one column-pair
-until the strokes column has real strokes to draw, and no stroke animation,
-tracing grid or "13 nét" figure is drawn from a guess.
+| What exists | Where |
+| --- | --- |
+| The Make Me a Hanzi pack, vendored with `ARPHICPL.TXT` beside it | `writing_coach/languages/chinese/stroke_data/` (2026-08-26) |
+| Deterministic lookup: stroke count, paths in writing order, medians, glyph box | `writing_coach/languages/chinese/stroke_order.py` |
+| A route with an ETag and immutable caching | `GET /api/chinese/stroke-order` |
+| A client for it | `api.chineseStrokeOrder` |
+| The shared orthography contract, with `radical` and `components` facts | `writing_coach/orthography.py` |
+
+So the rights decision was taken long ago and nothing needed importing. What
+was actually missing was a **surface**: the only thing any screen had ever
+drawn from this capability was the stroke *count* (`orthographyMarkup` in
+`ui/vocabulary-card.js`). The paths and medians reached the browser and were
+thrown away.
+
+Frame 05 now draws them:
+
+- **13 nét** — `stroke_count`.
+- **Thứ tự nét** — five cells, each the character after the first *n* strokes,
+  built from the real paths; the strip always ends on the finished character.
+- **Xem animation** — one stroke a time from the same paths.
+- **Tô theo** — judged against the **medians**, which are the one piece of the
+  data that says which way a stroke runs. Direction and order are what the
+  frame's own note penalises ("sai hướng hoặc sai thứ tự thì nét rung nhẹ"), so
+  a wobbly line still counts and a backwards one does not; drawing a later
+  stroke is told apart from a scribble. Reduced motion gets the warning without
+  the shake.
+
+**One thing is still genuinely absent, and it is not stroke data.** The frame's
+"BỘ THỦ · THÀNH PHẦN" cards want each part of the character and what it
+contributes — 心 bộ thủ "tim, ý nghĩ", 相 âm "gợi cách đọc". The Chinese
+adapter refuses to infer this by design, in its own words: it "does not infer
+readings, radicals, components, or etymology; callers must supply those facts
+with their own provenance". The shared contract already has `radical` and
+`components` facts for exactly this, so the section is drawn from the catalogue
+entry's orthography when a curator has supplied them, and is **absent** when
+they have not — never guessed from the glyph. Filling them is a content task
+against a contract that exists, not a schema or a rights question.
+

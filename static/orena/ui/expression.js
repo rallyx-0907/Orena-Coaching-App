@@ -30,6 +30,8 @@ import { wordDeepHtml } from './word-deep.js';
 import { addWordScreen, createDeckScreen, saveToDeckSheet } from './word-add.js';
 import { vocabularySearchHtml } from './vocabulary-search.js';
 import { wordClipsHtml } from './word-clips.js';
+import { wordStrokesHtml } from './word-strokes.js';
+import { strokeTraced, tracedStroke } from '../product/stroke-trace.js';
 import {
   bindWritingFeedback,
   revisionHtml,
@@ -1514,6 +1516,11 @@ export async function renderLanguage(root, ctx) {
      second clip cannot start over the first. */
   let clipState = null;
   let sound = null;
+  /* Nét chữ. `strokeState.at` is which stroke is being traced, and `points`
+     is the one the learner is drawing now, in the glyph's own coordinates. */
+  let strokeState = null;
+  let strokeTimer = null;
+  let points = [];
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -1601,6 +1608,74 @@ export async function renderLanguage(root, ctx) {
     }
     paint();
   }
+
+  const stopStrokes = () => {
+    window.clearInterval(strokeTimer);
+    strokeTimer = null;
+  };
+
+  /* Watching it written: one stroke appears at a time, slowly, which is what
+     the frame says under the button. */
+  const watchStrokes = () => {
+    const total = Number(strokeState?.character?.stroke_count) || 0;
+    if (!total) return;
+    stopStrokes();
+    strokeState.tracing = false;
+    strokeState.at = 0;
+    strokeState.playing = true;
+    paint();
+    strokeTimer = window.setInterval(() => {
+      if (!alive() || !strokeState) return stopStrokes();
+      strokeState.at += 1;
+      if (strokeState.at >= total) {
+        stopStrokes();
+        strokeState.playing = false;
+        strokeState.at = total;
+      }
+      paint();
+    }, 700);
+  };
+
+  async function openWordStrokes(word) {
+    const wanted = String(word || '').trim();
+    if (!wanted) return;
+    returnView = view;
+    strokeState = { word: wanted, character: null, at: 0, playing: false, tracing: false, wrong: false, busy: true };
+    view = 'strokes';
+    paint();
+    try {
+      const answer = await api.chineseStrokeOrder(wanted);
+      if (!alive()) return;
+      /* One character at a time: the frame is a character's strokes, and a
+         two-character word opens on its first. */
+      const first = (answer.characters || [])[0];
+      strokeState = {
+        ...strokeState,
+        character: first ? { ...first, glyph_size: answer.glyph_size } : null,
+        parts: strokeParts(wanted),
+        busy: false,
+      };
+    } catch {
+      if (!alive()) return;
+      strokeState = { ...strokeState, busy: false };
+    }
+    paint();
+  }
+
+  /* What a character is made of. The stroke capability does not answer this by
+     design, so it comes from the catalogue entry's own orthography facts when
+     a curator has supplied them - and the section is simply absent otherwise
+     (UI_BACKEND_GAPS.md). */
+  const strokeParts = (word) => {
+    const units = deepData?.orthography?.units || [];
+    const unit = units.find((item) => String(item.surface || '') === String(word).slice(0, 1));
+    const facts = unit?.facts || {};
+    const listed = [
+      ...(facts.radical ? [{ ...facts.radical.value, role: facts.radical.value?.role || 'radical' }] : []),
+      ...((facts.components?.value || []).map((item) => ({ ...item }))),
+    ];
+    return listed.filter((item) => item && item.surface);
+  };
 
   const closeWordDeep = () => {
     deepRequest += 1;
@@ -1873,7 +1948,7 @@ export async function renderLanguage(root, ctx) {
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
     const bare = view === 'overview' && !savedCards.length && !savedError;
-    root.innerHTML = view === 'clips' ? wordClipsHtml(c, { ...clipState, language }) : view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    root.innerHTML = view === 'strokes' ? wordStrokesHtml(c, { ...strokeState, language }) : view === 'clips' ? wordClipsHtml(c, { ...clipState, language }) : view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     if (deckSheet)
       root.insertAdjacentHTML(
         'beforeend',
@@ -1939,6 +2014,71 @@ export async function renderLanguage(root, ctx) {
     }
   };
 
+  /* Tracing: the learner's finger, converted once into the glyph's own
+     coordinates, and judged against the stroke's median - which is the one
+     piece of the vendored data that says which way a stroke runs. */
+  const bindTracing = (square) => {
+    if (!square || !strokeState?.tracing || !strokeState.character) return;
+    const size = Number(strokeState.character.glyph_size) || 1024;
+    const ink = square.querySelector('[data-strokes-ink]');
+    const at = (event) => {
+      const box = square.getBoundingClientRect();
+      const x = ((event.clientX - box.left) / box.width) * size;
+      /* The glyph box runs upward; the screen runs downward. One conversion,
+         here, so nothing downstream has to know. */
+      const y = 900 - ((event.clientY - box.top) / box.height) * size;
+      return [x, y];
+    };
+    const draw = () => {
+      if (!ink) return;
+      ink.innerHTML = points.length
+        ? `<polyline points="${points.map(([x, y]) => `${x},${900 - y}`).join(' ')}" />`
+        : '';
+    };
+    square.onpointerdown = (event) => {
+      event.preventDefault();
+      square.setPointerCapture(event.pointerId);
+      points = [at(event)];
+      strokeState.wrong = false;
+      draw();
+    };
+    square.onpointermove = (event) => {
+      if (!points.length) return;
+      points.push(at(event));
+      draw();
+    };
+    square.onpointerup = () => {
+      const medians = strokeState.character.medians || [];
+      const meant = medians[strokeState.at];
+      const judged = tracedStroke(points, meant, { size });
+      points = [];
+      draw();
+      if (judged.ok) {
+        strokeState.at += 1;
+        strokeState.wrong = false;
+        if (strokeState.at >= (Number(strokeState.character.stroke_count) || 0)) {
+          strokeState.tracing = false;
+          strokeState.at = Number(strokeState.character.stroke_count) || 0;
+        }
+        paint();
+        return;
+      }
+      /* Wrong: the frame shakes it and shows the right stroke faintly, which
+         is what `data-wrong` turns on. Which stroke they actually drew is
+         worth knowing - out of order is a different mistake from a scribble -
+         so it is read, and said in the status line. */
+      const other = strokeTraced(points, medians, { size });
+      strokeState.wrong = true;
+      strokeState.wrongReason = other >= 0 ? 'order' : judged.reason;
+      paint();
+      window.setTimeout(() => {
+        if (!alive() || !strokeState) return;
+        strokeState.wrong = false;
+        paint();
+      }, 600);
+    };
+  };
+
   const bind = () => {
     /* One word, opened all the way. The word on the back of a review card
        opens itself; the screen's own foot moves between the two pages the
@@ -1955,6 +2095,52 @@ export async function renderLanguage(root, ctx) {
     });
     root.querySelectorAll('[data-word-deep-back]').forEach((button) => (button.onclick = closeWordDeep));
     root.querySelector('[data-word-deep-clips]')?.addEventListener('click', () => openWordClips(deepWord));
+    /* Nét chữ opens from the character itself on the deep screen's head - an
+       attribute and a keyboard role, no pixel added, as the way into the deep
+       screen itself is opened. */
+    const openStrokes = root.querySelector('[data-word-deep-strokes]');
+    if (openStrokes) {
+      openStrokes.onclick = () => openWordStrokes(deepWord);
+      openStrokes.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openWordStrokes(deepWord);
+        }
+      };
+    }
+    root.querySelector('[data-strokes-back]')?.addEventListener('click', () => {
+      stopStrokes();
+      strokeState = null;
+      view = returnView || 'overview';
+      paint();
+    });
+    root.querySelector('[data-strokes-play]')?.addEventListener('click', () => {
+      if (strokeState.playing) {
+        stopStrokes();
+        strokeState.playing = false;
+        paint();
+        return;
+      }
+      watchStrokes();
+    });
+    root.querySelector('[data-strokes-trace]')?.addEventListener('click', () => {
+      stopStrokes();
+      strokeState.playing = false;
+      strokeState.tracing = !strokeState.tracing;
+      strokeState.at = 0;
+      strokeState.wrong = false;
+      paint();
+    });
+    root.querySelector('[data-strokes-free]')?.addEventListener('click', () => {
+      stopStrokes();
+      strokeState.playing = false;
+      strokeState.tracing = true;
+      strokeState.at = 0;
+      strokeState.free = true;
+      strokeState.wrong = false;
+      paint();
+    });
+    bindTracing(root.querySelector('[data-strokes-square]'));
     /* The clips screen. */
     root.querySelector('[data-clips-back]')?.addEventListener('click', () => {
       stopClip();
