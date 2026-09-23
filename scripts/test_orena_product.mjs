@@ -130,7 +130,13 @@ const encounterSource=readFileSync(new URL('../static/orena/ui/encounter.js',imp
 assert.match(encounterSource,/recoverListeningEvidence\(readPrior\)/,'Dictation that began without the stored record must merge against one recovered baseline');
 assert.match(encounterSource,/playing \? 'gap' : lastClockSegment/,'A resting player is not "between spoken lines"; Follow must keep showing the current line');
 assert.doesNotMatch(encounterSource,/memory\.write\(id, heard\)\s*;/,'A speech transcript must not overwrite writing the learner already has');
-assert.match(encounterSource,/bindPronunciation\(\);[\s\S]{0,200}if \(intent === 'shadowing'\)/,'Take actions must be wired before the progress save is awaited');
+// Shadowing moved from the encounter to the Speaking workspace (ui/speaking-workspace.js): a take's
+// result is drawn and its actions live before anything is saved, and saving is never awaited by them.
+const speakingTake=readFileSync(new URL('../static/orena/capabilities/speaking-take.js',import.meta.url),'utf8');
+const speakingRoom=readFileSync(new URL('../static/orena/ui/speaking-workspace.js',import.meta.url),'utf8');
+assert.match(speakingTake,/set\(\{ phase: TAKE\.RESULT, result \}\);\s*if \(keep\) void remember\(result, mine\);/,'Take actions must be wired before the progress save is awaited');
+assert.match(speakingRoom,/void keepShadowingRound\(\)/,'The shadowing round is saved without holding up the result');
+assert.doesNotMatch(encounterSource,/bindPronunciation|data-pronunciation/,'the old Shadowing panel is gone from the encounter');
 
 const app=readFileSync(new URL('../static/orena/app.js',import.meta.url),'utf8');
 assert.doesNotMatch(app,/applySkillNavigation|sharedMediaSession|ShadowingStudio/);

@@ -5,7 +5,7 @@ import { route, link } from "./product/intent.js";
 import { learnerMemory } from "./product/memory.js";
 import { renderWorld } from "./ui/world.js";
 import { renderEncounter } from "./ui/encounter.js";
-import { renderSpeaking } from "./ui/speaking.js";
+import { renderSpeaking, renderSpeakingWorkspace } from "./ui/speaking.js";
 import { renderConversation } from "./ui/conversation.js";
 import {
   referenceNavigation,
@@ -524,6 +524,10 @@ async function render() {
                               : page === "practice" &&
                                   ctx.location.intent === "speaking"
                                 ? renderSpeaking(root, scope)
+                                : page === "practice" &&
+                                    ctx.location.intent === "shadowing" &&
+                                    ctx.location.id
+                                  ? await renderSpeakingWorkspace(root, scope)
                                 : page === "practice" &&
                                     ctx.location.intent === "grammar"
                                   ? await renderGrammar(root, scope)

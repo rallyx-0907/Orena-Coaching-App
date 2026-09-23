@@ -60,11 +60,15 @@ export function route(hash = '') {
       ? q.get('intent')
       : null,
     q: q.get('q') || '',
+    /* The line a practice opens on (a Speaking line, from Listening's line sheet), so a reload
+       lands on the same line. */
+    line: q.get('line') || '',
   };
 }
-export function link(page = 'discover', { id = '', intent = null, q = '', tab = '' } = {}) {
+export function link(page = 'discover', { id = '', intent = null, q = '', tab = '', line = '' } = {}) {
   const query = new URLSearchParams();
   if (id) query.set('id', id);
+  if (line) query.set('line', line);
   if (tab) query.set('tab', tab);
   if (q) query.set('q', q);
   if (practiceIntentions.includes(intent)) query.set('intent', intent);

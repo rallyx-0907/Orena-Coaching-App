@@ -14,6 +14,31 @@ import { art } from './content.js';
 import { mountVoiceResponse } from './voice-response.js';
 import { mountLexicalLayer } from './lexical.js';
 import { startConversation } from './conversation.js';
+import { mountSpeakingWorkspace, sourceFromLesson } from './speaking-workspace.js';
+import { encounter } from '../product/encounter.js';
+
+/* The Speaking workspace: one line at a time, said and assessed. Its lines come from a Listening
+   lesson (`media:<lesson>`) - the clip is the model - and, once one has content, from the Speaking
+   catalogue (docs/project/UI_BACKEND_GAPS.md, SP-1). It opens on `line`, else where the learner
+   last was, else the first line. */
+export async function renderSpeakingWorkspace(root, ctx) {
+  const { api, language, location, memory } = ctx;
+  const id = String(location.id || '');
+  if (!id.startsWith('media:')) throw Error(ctx.c.unavailable);
+  const payload = await api.listeningLibraryLesson(id.slice(6), ctx.support);
+  if (!ctx.alive()) return () => {};
+  if (!payload?.transcript?.segments?.length || payload.asset?.source_language !== language)
+    throw Error(ctx.c.unavailable);
+  const source = sourceFromLesson(id, payload, encounter(payload, ctx.support));
+  const prior = memory.value.continuation.find((item) => item.id === id)?.segment;
+  const wanted = location.line || prior || '';
+  const startIndex = Math.max(0, source.lines.findIndex((line) => line.id === wanted));
+  return mountSpeakingWorkspace(root, ctx, source, {
+    startIndex,
+    // Back to where the learner came from; with no history in this tab, to the Speaking library.
+    onLeave: () => (history.length > 1 ? history.back() : ctx.go('practice', { intent: 'speaking' })),
+  });
+}
 
 /* Speaking is a module, not a branch of Listening.
 

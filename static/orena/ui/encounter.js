@@ -13,10 +13,7 @@ import { discussionSection, discussionSource, mountDiscussion } from './discussi
 import { mountLexicalLayer } from './lexical.js';
 import { icon } from './phosphor.js';
 import { referenceCopy } from './reference.js';
-import { pronunciationReportHtml } from './pronunciation-report.js';
-import { voiceEvidence } from './voice-evidence.js';
 import { publishedReading } from '../content/reading-library.js';
-import { mountVoiceResponse } from './voice-response.js';
 import { link, deeperPractice } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
 import {
@@ -46,7 +43,6 @@ import {
   activeWordIndex,
   wordSpans,
 } from '../capabilities/word-timeline.js';
-import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import {
   acquireMedia,
   translationRequest,
@@ -389,7 +385,6 @@ export async function renderEncounter(root, ctx) {
     recording = false,
     recorder = createLocalAudioRecorder(),
     take = null,
-    takeId = '',
     practiceTarget = null,
     lastClockSegment = null;
   let disposed = false,
@@ -934,6 +929,9 @@ export async function renderEncounter(root, ctx) {
       onPick: (way) => {
         if (way === 'keep') return saveCurrentSentence();
         if (way === 'inspect') return inspectCurrentLine();
+        /* Saying the line - shadowing it or reading it aloud - is Speaking's own workspace,
+           opened on this line; the lesson is where the learner comes back to. */
+        if (way === 'shadowing' || way === 'speaking') return openSpeaking(line.segment_id);
         if (deeperPractice.includes(way)) openPractice(way);
       },
     });
@@ -1451,167 +1449,26 @@ export async function renderEncounter(root, ctx) {
         }
       };
       playLine();
-    } else if (intent === 'speaking') {
-      voiceCleanup = mountVoiceResponse(
-        body,
-        { ...ctx, alive: () => isAlive() && version === practiceVersion },
-        {
-          id,
-          title: item.title,
-          prompt: target.original_text,
-          assetId: payload.asset.asset_id,
-          segmentId: target.segment_id,
-          onRecording: (active) => {
-            recording = active;
-            setRecordingLock(active);
-          },
-        },
-      );
-    } else {
-      // Where the recording lives sits beside the control as a hint, as it
-      // does in the voice response; the guide is the instruction and stays.
-      body.innerHTML = `<blockquote class="practice-line" data-practice-line data-practice-segment="${esc(target.segment_id)}" lang="${language}">${esc(target.original_text)}</blockquote><p class="practice-meaning">${esc(model.meaning(target.segment_id) || '')}</p><p class="practice-guide">${intent === 'shadowing' ? c.shadowGuide : c.speakingGuide}</p><div class="button-row"><button class="outline" data-listen>${c.replay} ↺</button><button class="primary" data-record>● ${c.record}</button>${hint({ text: c.localAudio })}</div><p role="status" data-record-status></p><div data-take></div><div data-feedback></div>`;
-      body.querySelector('[data-listen]').onclick = playLine;
-      body.querySelector('[data-record]').onclick = async (event) => {
-        const button = event.currentTarget,
-          output = body.querySelector('[data-record-status]');
-        button.disabled = true;
-        if (recording) {
-          take = await recorder.stop();
-          recording = false;
-          setRecordingLock(false);
-          button.textContent = `● ${c.record}`;
-          if (!isAlive() || version !== practiceVersion) return;
-          if (take) {
-            takeId = crypto.randomUUID();
-            body.querySelector('[data-take]').innerHTML =
-              `<h3>${c.take}</h3><audio controls src="${esc(take.url)}"></audio><div class="button-row"><button class="primary" data-feedback-action>${c.feedback}</button>${intent === 'shadowing' ? `<button class="outline" data-pronunciation>${c.pronunciation}</button>` : ''}</div>`;
-            output.textContent = c.selfReport;
-            // Wire the take's own actions before anything is awaited: these
-            // buttons are already on screen, and a slow save must not leave
-            // them looking live while nothing answers a click.
-            body.querySelector('[data-feedback-action]').onclick = () =>
-              voiceFeedback();
-            bindPronunciation();
-            if (intent === 'shadowing') {
-              try {
-                await ctx.settledWrites();
-                if (!isAlive() || version !== practiceVersion) return;
-                const records = await api.shadowingProgress(
-                  payload.asset.asset_id,
-                );
-                const prior = (records.items || []).find(
-                  (x) => x.segment_id === target.segment_id,
-                );
-                await ctx.mutate(() =>
-                  api.saveShadowingProgress({
-                    asset_id: payload.asset.asset_id,
-                    segment_id: target.segment_id,
-                    completed_rounds: Math.min(
-                      1000,
-                      (prior?.completed_rounds || 0) + 1,
-                    ),
-                  }),
-                );
-                if (isAlive())
-                  output.textContent = c.persisted + ' · ' + c.selfReport;
-              } catch {
-                if (isAlive()) output.textContent = c.failedSave;
-              }
-            }
-          } else output.textContent = c.microphone;
-        } else {
-          stopSegmentPlayback(playerRoot, payload.playback);
-          // The previous take and any feedback about it stop being true the
-          // moment a new recording starts.
-          take = null;
-          takeId = '';
-          body.querySelector('[data-take]').innerHTML = '';
-          body.querySelector('[data-feedback]').textContent = '';
-          const activeRecorder = recorder;
-          const started = await activeRecorder.start();
-          if (!isAlive() || version !== practiceVersion) {
-            activeRecorder.cleanup();
-            return;
-          }
-          recording = started;
-          setRecordingLock(started);
-          button.textContent = started ? `■ ${c.stop}` : `● ${c.record}`;
-          output.textContent = started ? c.recording : c.microphone;
-        }
-        button.disabled = false;
-      };
-      function bindPronunciation() {
-        const pronunciationButton = body.querySelector('[data-pronunciation]');
-        if (!pronunciationButton) return;
-        pronunciationButton.onclick = async () => {
-          // A recording made while this request is in flight replaces the take,
-          // so the answer that comes back is about audio the learner has
-          // already moved on from.
-          const assessedTake = takeId,
-            assessedBlob = take?.blob;
-          pronunciationButton.disabled = true;
-          const area = body.querySelector('[data-feedback]');
-          area.textContent = c.loading;
-          try {
-            const result = await api.assessPronunciation(
-              assessedBlob,
-              language,
-              target.spoken_text || target.original_text,
-            );
-            if (
-              isAlive() &&
-              version === practiceVersion &&
-              assessedTake === takeId
-            )
-              area.innerHTML = pronunciationReportHtml(c, result, language);
-          } catch {
-            if (isAlive() && assessedTake === takeId) {
-              area.textContent = c.feedbackUnavailable;
-              pronunciationButton.disabled = false;
-            }
-          }
-        };
-      }
-      async function voiceFeedback() {
-        const currentTake = take,
-          currentTakeId = takeId;
-        const area = body.querySelector('[data-feedback]');
-        area.textContent = c.loading;
-        body.querySelector('[data-feedback-action]').disabled = true;
-        try {
-          const result = await ctx.mutate(() =>
-            evaluateVoice({
-              api,
-              blob: currentTake.blob,
-              language,
-              reference: target.spoken_text || target.original_text,
-              assetId: payload.asset.asset_id,
-              segmentId: target.segment_id,
-              takeId: currentTakeId,
-            }),
-          );
-          if (
-            !isAlive() ||
-            version !== practiceVersion ||
-            currentTakeId !== takeId
-          )
-            return;
-          // The envelope already separates measurement from derivation; show
-          // that separation rather than collapsing it into one percentage.
-          area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p>${voiceEvidence(c, result.evaluation, language)}<p>${result.saved ? c.persisted : c.failedSave}</p>`;
-        } catch {
-          if (isAlive() && version === practiceVersion) {
-            area.textContent = c.feedbackUnavailable;
-            body.querySelector('[data-feedback-action]').disabled = false;
-          }
-        }
-      }
     }
+  }
+  function openSpeaking(segmentId) {
+    ctx.go('practice', { intent: 'shadowing', id, line: segmentId });
   }
   bindImages(root, c);
   // Follow arrives here as an intention too, and its whole point is that
-  // nothing opens over the moment.
+  // nothing opens over the moment. An older link that asked the encounter for
+  // Shadowing or reading aloud now lands in the Speaking workspace.
+  if (practice === 'shadowing' || practice === 'speaking') {
+    window.location.replace(link('practice', { intent: 'shadowing', id, line: model.current?.segment_id || '' }));
+    return () => {
+      disposed = true;
+      bar.dispose();
+      lexical.destroy();
+      playerRoot.removeEventListener('orena:media-time', onClock);
+      playerRoot.removeEventListener('orena:media-state', onMediaState);
+      disconnectMediaPlayer(playerRoot);
+    };
+  }
   if (deeperPractice.includes(practice)) openPractice(practice);
   return () => {
     disposed = true;
