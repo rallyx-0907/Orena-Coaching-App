@@ -369,3 +369,54 @@ Until then the engine ships with its schema inactive: every Reading engine
 route answers an explicit `503 reading_engine_schema_unavailable`, exactly as
 Vocabulary import does today. Nothing is silently written to platform
 settings, static files or an in-memory registry instead.
+
+## 12. Review-edit features deliberately deferred
+
+What an administrator can do to a candidate today: correct its level, its
+topic, its title, its excerpt and its body; approve or reject each suggested
+learning target; add a target of their own; publish, unpublish, reject with a
+reason, or archive it; and read the whole decision history. Everything below
+is deliberately not built yet, with the reason, because "not there" and "not
+wanted" are different states and an operator should not have to guess which.
+
+**Server contract exists, console does not expose it.** These are one form
+away and were left out to keep the first review surface small:
+
+| Deferred | Where it already works |
+| --- | --- |
+| Editing the article body in the console | `POST /api/admin/reading/articles/{id}` accepts `body`; the review form offers level, topic and reason only |
+| Editing the excerpt and subtopic | same route accepts both |
+| Adding a learning target from the UI | `POST …/targets` exists and is tested; nothing in the section calls it |
+| Editing a source's rights or languages after creation | only `state` and `polling_enabled` are exposed; the rest is a create-time answer |
+
+**Not built, and waiting on a later phase.**
+
+- *Target meanings and reordering.* `meaning` and `rank` are columns the
+  processor fills with a rank and an empty gloss. Writing a good gloss is an
+  AI task (Phase H), and reordering only matters once there is something worth
+  reordering.
+- *Adaptation.* `is_adapted` and `adaptation_json` exist and nothing writes
+  them: adapting a text to a level is the optional, source-grounded AI step in
+  Phase H, and an adapted text must carry its provenance, which is why the
+  columns are there and the feature is not.
+- *Comprehension questions.* Out of scope for this round by the
+  specification's own ordering; no column claims otherwise.
+- *Re-running the processor on an existing article.* A snapshot is immutable
+  and an article already carries its analysis, so a re-run is only useful once
+  the AI stage exists to produce something different.
+- *Recurring source polling.* The registry, the rights gate and the CHECK
+  constraint that stops an unapproved source from polling are all in place;
+  the poller itself is Phase I.
+
+**Not built, and deliberately not planned.**
+
+- *Bulk publish.* Publishing is one admin's decision about one text, recorded
+  with their name on it. A "publish all" button is how a review queue becomes
+  a formality.
+- *Hard delete.* Rejection and archiving keep the row, the reason and the
+  hash — which is what stops a rejected text being re-proposed as new. A purge
+  remains an explicit, audited admin action with no button.
+- *Search across the corpus.* The lists filter by status, language, level and
+  topic in the database. Free-text search has to be server-side, paginated and
+  indexed (§46.11); adding an application-layer scan now would be the
+  performance mistake this engine's design exists to avoid.
