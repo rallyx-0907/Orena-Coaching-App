@@ -48,12 +48,11 @@ in this sentence" may use AI; vocabulary review has three grades and keeps
 learner history; loading/empty/error follow the baseline or the existing
 pattern, invented visuals are out of scope; accessibility never redesigns.
 
-Speaking lane (`feature/speaking`, worktree `D:\Orena-Speaking`, sandbox :8013 with its own throwaway
-database; not merged into `codex/work`): the Speaking library, workspace, recording, word detail and free
-talk are built on their frames (D-074; tracker SP-1..SP-11 and register S1-S13). Pronunciation goes
-through the provider seam (`speech_pronunciation.py`, Azure first) and reaches the browser only as
-`PronunciationResult`. Azure needs its key and region in that worktree's `.env` (human); until then
-the workspace says scoring is not switched on. `test_m3_pronunciation_contract.mjs` is fixed there.
+Speaking lane (`feature/speaking`, `D:\Orena-Speaking`, sandbox :8013; not merged, not pushed):
+REVIEWABLE. The source design (D-075) is the Speaking UI: library, workspace, word detail, compare,
+summary, shadowing, states, free talk and its result, measured at 1920/390 in EN/VI/ZH (SP-1..15,
+S1-S23, D-076). Azure (scripted + unscripted), Groq ASR and Gemini ran for real
+(`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`). Human: S3, S14, S15, rotate the Azure key.
 
 Backbone lane (Opus), D-054 delegation: sandbox only, chain `20260912_0007`,
 flag on, backbone `active` (runbook section 7). Writing drafts kept with the

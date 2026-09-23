@@ -69,6 +69,25 @@ the human's decision; nothing was added.
 adapter now treats "every reference word omitted" as no speech (`pronunciation_no_speech`), so the
 learner is asked to say it again instead of being shown a score of 0.
 
+## Unscripted (free talk)
+
+The same REST endpoint with no `ReferenceText` and `EnableMiscue` off assesses free speech: a
+Mandarin take returned pronunciation 83.8, accuracy 91, fluency 79, and no completeness (there is
+nothing to be complete against; the adapter returns it as absent). Through the browser, free talk
+ran six times (desk and phone; zh/en, zh/vi, en/zh): Groq transcription, Azure unscripted
+(fluency 77-89, pronunciation 81-92) and Gemini coaching, every call 200. Grammar and vocabulary are
+0 and there is no overall (D-076).
+
+## Through the browser
+
+The Speaking workspace was driven in Chrome with the fake microphone fed with native speech cut from
+the published Listening clips, nothing intercepted: six scripted runs (desk 1920 and phone 390 with
+touch, three language pairs) scored 96-99 with 6/6 passed, reached the word detail, the comparison
+with the model (measured waveforms and contours), shadowing (lag 0.5-0.6 s) and the lesson summary.
+A shadow take restarted twice mid-way sent one assessment, not three. The results and the frame
+measurements are in `docs/project/UI_BACKEND_GAPS.md`, "Speaking, the re-pinned frames measured and
+run against Azure".
+
 ## Not measured here
 
 Prosody (off), long takes near the 60 s limit, noisy rooms, and real learners' non-native speech:

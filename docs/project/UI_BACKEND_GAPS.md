@@ -133,26 +133,38 @@ component**, đang render 0 / "—" đúng rule 4, và sẽ tự có số khi ba
 
 ## S. Speaking — nhánh `feature/speaking` (2026-09-23)
 
-Đã dựng theo `Orena-Speaking.dc.html` (cache; DesignSync chưa được cấp quyền trong phiên nên **chưa đối
-chiếu được với nguồn** - D-073 yêu cầu kiểm tra pin trước khi đo). Ba quyết định của anh ngày 2026-09-23
-(D-074): "Đạt" theo cờ lỗi của provider; thư viện Speaking riêng **và** luồng từ Listening; free talk làm
-lại theo frame. Những chỗ dưới đây frame vẽ nhưng chưa có dữ liệu/quyết định, nên **không bịa**:
+Dựng theo `Orena-Speaking.dc.html` **đọc tại nguồn** (DesignSync, re-pin 7 → 18 frame,
+`docs/design/canonical-ui/SYNC_2026-09-23.md`). Quyết định của anh: D-074 ("Đạt" = cờ của provider;
+thư viện Speaking riêng + luồng từ Listening), D-075, D-076 (câu cần luyện lại = câu có cờ; audio chỉ
+trong phiên, tuỳ chọn giữ 5 bản/câu trên máy; free talk chỉ chấm số đo thật; làm đường thanh điệu đo
+thật và nghe nhại; hoãn cài đặt Speaking và SRS). Những chỗ dưới đây frame vẽ nhưng chưa có dữ liệu
+hoặc quyết định, nên **không bịa**; mục đã được anh trả lời ghi rõ.
 
 | # | Ở đâu | Đang làm gì | Cần anh quyết |
 | --- | --- | --- | --- |
-| S1 | Thư viện · chip loại luyện | Chỉ hiện chip cho loại có nội dung thật: "Nhại theo clip" (6 bài Listening có shadowing) và "Nói tự do" (3 tình huống). Catalogue Speaking riêng (`writing_coach/content/speaking_catalog.v1.json`) **rỗng**. | Nội dung cho Đọc theo câu / Luyện âm / Kể lại / Phỏng vấn mô phỏng (việc nội dung, không phải code). |
-| S2 | Workspace · sóng âm lúc chưa ghi | Frame vẽ sóng trắng cố định. App chỉ vẽ mức thật của micro khi đang ghi; lúc nghỉ là các cột phẳng. Sóng của clip mẫu không đo được (audio bên thứ ba, không giải mã). | Chấp nhận cột phẳng, hay làm dịch vụ tính waveform của clip? |
-| S3 | Workspace · câu nhận xét kiểu "Thanh 3 bị đọc thành thanh 2" | Không provider nào đang dùng đo cao độ, nên app chỉ nói điều provider khẳng định: loại lỗi + âm yếu nhất. Nhãn âm tiết zh-CN của Azure (`xiang3`) là nhãn **của câu mẫu**, không phải thanh học viên đọc. | Thêm provider chấm thanh điệu tiếng Trung (SpeechSuper) - provider trả phí là cổng của anh. |
-| S4 | Chi tiết một chữ · "BẠN ĐỌC" | Đường cong "MẪU" lấy từ pinyin của bài; ô "BẠN ĐỌC" để trống + "chưa đo". | Như S3. |
-| S5 | Workspace · giá trị LƯU LOÁT màu hổ phách | Frame tô hổ phách (ngầm một ngưỡng). App để trắng vì D-074 chỉ duyệt cờ theo từ, không có ngưỡng cho lưu loát. | Có ngưỡng cho lưu loát không? |
-| S6 | Từ không bị cờ nhưng một âm rất thấp (vd bỏ -s: từ 61, /s/ 4) | Hàng ghi "Đạt" (đúng D-074), thanh điểm hiện 61, âm /s/ 4 hiện trong chi tiết một chữ. | Muốn hàng "Đạt" cũng in âm yếu nhất không? |
-| S7 | "Luyện riêng chữ này" | Chữ được tô tím trong câu (như frame char detail), lượt thu sau chấm riêng chữ đó; chạm lại chữ tô tím để quay về cả câu. Frame không vẽ đường quay lại. | Cách quay về cả câu. |
-| S8 | Workspace · chỉ có "Câu tiếp" | Frame không vẽ "câu trước"; không có cách lùi một câu ngoài quay lại bài. | Có cần "câu trước" không (đặt ở đâu)? |
-| S9 | "Chạm vào một chữ để nghe riêng" | Dùng giọng đọc của thiết bị (speechSynthesis) như lớp tra từ; clip mẫu không có mốc thời gian theo từ. | Chấp nhận TTS thiết bị? |
-| S10 | Free talk · "CỤM CÓ THỂ DÙNG", dịch câu bạn vừa nói, cấp độ (HSK 2) | Không có nội dung/dữ liệu → không vẽ. Nhận xét một dòng lấy từ coaching (`next_attempt`). "Xem gợi ý sâu" mở sheet: coaching đầy đủ, bằng chứng đo, và ba việc cũ (xem kỹ, viết tiếp, hội thoại). Desktop frame **không có** → cột giữa 560px. | Nội dung cụm từ; có dịch câu học viên nói không; desktop cho free talk. |
-| S11 | Thư viện · "Chủ đề của bạn" | Khả năng nói theo đề của mình giữ nguyên, đặt ở nút hành động của thanh thư viện (chỗ template dành cho hành động của phòng). Frame Speaking không vẽ nút này. | Giữ ở đó, hay chuyển vào "⋯"? |
-| S12 | "Ghi âm của tôi · ĐÃ LƯU" | Không dựng: audio thô không được lưu lâu dài (chưa có quyết định/privacy review). | Như SP-2. |
+| S1 | Thư viện · chip loại luyện | Chỉ hiện chip cho loại có nội dung thật: "Nhại theo clip" (bài Listening có shadowing) và "Nói tự do". Catalogue Speaking riêng (`writing_coach/content/speaking_catalog.v1.json`) **rỗng** - không seed nội dung giả (quyết định 10). | Nội dung cho Đọc theo câu / Luyện âm / Kể lại / Phỏng vấn mô phỏng (việc nội dung). |
+| S2 | Sóng âm của mẫu | **Đã làm:** sóng và cao độ của câu mẫu đo từ audio thật, lấy cùng origin qua `/api/speaking/model-audio/...` (host catalogue không có CORS). Lúc chưa ghi, cột phẳng. | - |
+| S3 | Câu nhận xét kiểu "Thanh 3 bị đọc thành thanh 2" | Không viết: Azure không chấm thanh; đường cao độ đo thật được vẽ, **không kèm lời phán** (D-076). Đo khoảng hở tiếng Trung: lệch thanh làm điểm âm tiết giảm 6/7 lần thử nhưng Azure chỉ cờ 2/7; 3↔2 không bị cờ (`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`). | Provider chấm thanh (SpeechSuper) - cổng trả phí của anh. |
+| S4 | Chi tiết một chữ · "BẠN ĐỌC" | **Đã làm:** đường cao độ của lượt thu, đo từ audio (YIN), cắt theo mốc thời gian của từ. Ô "MẪU" vẫn vẽ hình thanh từ pinyin của bài (hình chuẩn), còn so sánh với mẫu đo thật ở màn "So với mẫu". | - |
+| S5 | Giá trị LƯU LOÁT màu hổ phách | Để trắng: không có ngưỡng lưu loát (quyết định 6: không đặt ngưỡng). | - |
+| S6 | Từ "Đạt" nhưng một âm rất thấp | Hàng ghi "Đạt" theo cờ provider; âm yếu hiện trong chi tiết, không đè verdict (quyết định 7). | - |
+| S7 | "Luyện riêng chữ này" | **Đã làm** (quyết định 8): có nút gợi ý quay về cả câu (`data-sp-back-line`). | - |
+| S8 | "Câu trước" | Không thêm (quyết định 9). | - |
+| S9 | "Chạm vào một chữ để nghe riêng" | Giọng đọc của thiết bị (speechSynthesis) như lớp tra từ; clip mẫu không có mốc theo từ. | Chấp nhận TTS thiết bị? |
+| S10 | Free talk · "CỤM CÓ THỂ DÙNG", dịch câu bạn vừa nói, cấp độ, nhãn loại lỗi ("NGỮ PHÁP · V2") | Không có dữ liệu → không vẽ. Thẻ sửa lấy từ coaching (`landed_differently`), nhãn là nhận định của coaching. | Nội dung cụm từ; có dịch câu học viên nói không. |
+| S11 | Thư viện · "Chủ đề của bạn" | Giữ ở nút hành động của thanh thư viện. Frame Speaking không vẽ nút này. | Giữ ở đó, hay chuyển vào "⋯"? |
+| S12 | "Ghi âm của tôi · ĐÃ LƯU", "Lưu vào Thư viện" (04, 05) | Không dựng (D-076: không lưu server/thư viện). Tóm tắt bài ghi "Đã lưu kết quả vào lịch sử luyện" (điểm, không audio). | Sau review schema + privacy. |
 | S13 | Chuỗi ngày trên thanh workspace | Hiện **0** (chưa đo), như Dictation. | Như C4. |
+| S14 | Free talk result (04) · hàng "Xem kỹ hơn · Phát triển câu trả lời · Bắt đầu trò chuyện" | Frame không vẽ; giữ vì free talk phải giữ khả năng cũ (quyết định 11). Frame 04 không có "⋯" hay sheet để đặt chúng. | Giữ hàng chữ này, chuyển vào "⋯" mới, hay bỏ? |
+| S15 | Free talk · "NÓI LẠI CÂU NÀY" | Câu lấy từ trường mới `say_again` của coaching (**thêm vào hợp đồng** `spoken-response`, bắt buộc, kiểm tra đúng chữ viết của ngôn ngữ học; sai thì bỏ trống). Frame tô tím chữ đã sửa; app chưa tô (cần so khớp câu nói với câu sửa). | Duyệt thay đổi hợp đồng; có cần tô chữ đã sửa không. |
+| S16 | Nghe nhại · câu tô dần theo mẫu ("请给我们" tím, phần sau mờ) | Chưa làm: câu mẫu không có mốc thời gian theo từ. | Có cần không (cần mốc theo từ của clip). |
+| S17 | Nghe nhại · "không tai nghe" | Ghi chú cố định của frame "Đeo tai nghe…" luôn hiện. Frame ghi "nếu phát hiện loa ngoài thì gợi ý, ghi chú dưới điểm" - trình duyệt không phân biệt loa/tai nghe đáng tin cậy, nên không phát hiện và không ghi chú dưới điểm. | Chấp nhận? |
+| S18 | Nghe nhại · 3-2-1 | Frame ghi "đếm 3-2-1" nhưng không vẽ chỗ đặt; app viết số vào dòng gợi ý dưới nút. Trong lúc ghi, tốc độ và thu lại **bắt đầu lại lượt** (tốc độ mới / cùng tốc độ). | - |
+| S19 | Micro bị chặn (09 A) · "Mở Cài đặt" | Trang web không mở được cài đặt hệ thống; nút là "Thử lại" (xin quyền lại), chữ hướng dẫn chỉ biểu tượng ổ khoá. | - |
+| S20 | Tóm tắt bài (05) · "Luyện lại 2 câu dưới 80" | Theo D-076: "Luyện lại N câu có chữ bị đánh dấu". Chip "CHỮ HAY SAI" ghi pinyin + số lần, **không** ghi "thanh 3" (không đo thanh). Không đưa vào SRS (hoãn). | - |
+| S21 | So với mẫu (06) · dòng "想: mẫu xuống rồi lên, bạn đi ngang" và "Giữ 5 lần gần nhất… lưu vào Thư viện" | Không có lời phán (D-076); dòng giữ bản thu thay bằng ô chọn "Giữ bản thu gần đây trên máy này" (D-076). "Nghe xen kẽ" phát mẫu rồi lượt thu, theo câu. | - |
+| S22 | Cài đặt Speaking, trạng thái rỗng (09 D) | Cài đặt hoãn (D-076). Trạng thái rỗng không tới được: thư viện luôn có bài Listening có shadowing. | - |
+| S23 | Nhận dạng tiếng Trung trong free talk | ASR (Groq Whisper) đôi khi trả chữ phồn thể ("英國人"); hiện đúng như nhận được. | Có ép giản thể không? |
 
 ## E. Cổng kích hoạt (không phải việc của lane này)
 
@@ -291,15 +303,19 @@ change. Group headers name the contract, data source and tests once.
 | --- | --- | --- | --- | --- |
 | SP-1 | Six practice types, "2/5 câu" | `/api/speaking/library`: Speaking catalogue (empty, `[CONTENT]`) + Listening lessons with `shadowing`; chips only for types with items (S1) | L | IN_PROGRESS (built 2026-09-23, `feature/speaking`; catalogue content `[CONTENT]`) |
 | SP-2 | "Ghi âm của tôi" library | no durable audio by policy → not drawn (S12); durable audio needs its own review | L | BLOCKED `[REVIEW]` |
-| SP-3 | Clip, sentence, waveform, mic controls | built: model clip (line-bounded), line + reading + meaning, live mic level, 3 round controls; idle waveform flat (S2) | L | IN_PROGRESS (built) |
-| SP-4 | Transcribe | `/api/speech/transcribe` (free talk only) → credentials | L | BLOCKED `[PROVIDER]` |
-| SP-5 | Score panel: overall, accuracy, fluency, passed | provider seam + Azure adapter (words, phonemes, syllables, offsets) → `PronunciationResult` via `capabilities/pronunciation-result.js`; passed = provider flag (D-074); 0 with no attempt; plain line when unconfigured | L | IN_PROGRESS (built; E2E with Azure `[PROVIDER]`) |
+| SP-3 | Clip, sentence, waveform, mic controls | built: model clip (line-bounded), line + reading + meaning, live mic level, 3 round controls; the model's waveform is measured from its audio (same-origin `/api/speaking/model-audio`), idle bars flat (S2) | L | IN_PROGRESS (built) |
+| SP-4 | Transcribe | `/api/speech/transcribe` (free talk); Groq ASR on the sandbox, real E2E 2026-09-23 | L | IN_PROGRESS (built; production credentials `[PROVIDER]`) |
+| SP-5 | Score panel: overall, accuracy, fluency, passed | provider seam + Azure adapter (words, phonemes, syllables, offsets) → `PronunciationResult`; passed = provider flag (D-074); 0 with no attempt; silence is 'not heard', never a score | L | IN_PROGRESS (built; Azure E2E real 2026-09-23) |
 | SP-6 | Timing note | learner speech span (provider word offsets) vs the model line's span | L | IN_PROGRESS (built) |
 | SP-7 | Per-word note in words | provider's error type + weakest phoneme/syllable; no tone sentence without a tone measurement (S3) | L | IN_PROGRESS (built) |
-| SP-8 | Tone curve, target and actual | target from the lesson reading; actual unmeasured, drawn empty "chưa đo" (S4) → a tone provider | L | BLOCKED `[PROVIDER]` |
+| SP-8 | Tone curve, target and actual | target from the lesson reading; actual = the take's pitch measured from its audio (YIN), no written verdict (D-076); a tone *score* needs a tone provider (S3) | L | IN_PROGRESS (contour built; tone score `[PROVIDER]`) |
 | SP-9 | Compare, hear your take | built: model line, then the take (this tab's copy only); hear one word from the take by its offsets | L | IN_PROGRESS (built) |
-| SP-10 | Free talk: topic, phrases, what you said, comment | built on the frame with the existing ASR/evidence/coaching; phrases, translation, level absent (S10) | L | IN_PROGRESS (built; phrases `[CONTENT]`; ASR `[PROVIDER]`) |
+| SP-10 | Free talk: topic, what you said, result (04) | built: ASR + unscripted Azure (pronunciation, fluency) + coaching fixes and `say_again` (S15); grammar/vocabulary 0, no overall, no 'last time' (D-076); phrases, translation, level absent (S10) | L | IN_PROGRESS (built; real E2E) |
 | SP-11 | Recording state | built: pill + timer, live level, stop, cancel (✕ / Esc), auto-stop at 60 s | L | IN_PROGRESS (built) |
+| SP-12 | Compare with the model (06) | built: measured waveforms and (zh) pitch contours of model and take, flagged-word bands, attempts list (session; optional 5 per line on device, D-076), interleave | L | IN_PROGRESS (built) |
+| SP-13 | Lesson summary (05) | built: lines with best measured take, 'practise again' = lines with flags (D-076), missed characters with reading and count; no SRS (deferred) | L | IN_PROGRESS (built) |
+| SP-14 | Shadowing (07) | built: 3-2-1, model and microphone together, auto stop at model end + 0.8 s, speed 0.75/0.85/1 kept per lesson, lag from the first word's offset; speed and again restart a take | L | IN_PROGRESS (built) |
+| SP-15 | States (09 A-C) | built: microphone blocked (listen-only), not heard (twice → skip), offline (take kept in the tab, graded when back online) | L | IN_PROGRESS (built) |
 
 ### Writing — `WritingReview`, `RevisionCompare`, draft · `essays`, `essay_revisions`, account drafts · `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_writing_revision_contract`, `test_writing_evaluator_contract`, `test_work_api`, `test_orena_writing_review.mjs`, `test_orena_writing_workspace.mjs`
 
@@ -1370,3 +1386,56 @@ S1-S13 in the register above.
   `test_orena_continuation`, `test_orena_product`, `test_orena_reference`,
   `test_orena_writing_workspace` - inherited, not this slice.
 
+
+## Speaking, the re-pinned frames measured and run against Azure (2026-09-23, later)
+
+Read at the source (DesignSync, 18 frames; `docs/design/canonical-ui/SYNC_2026-09-23.md`) and served
+from the re-pinned cache to measure: frames "Compare with model" (+ mobile), "Lesson summary mobile",
+"Shadowing mobile", "Free talk result" (+ mobile), "Speaking mic blocked / not heard / offline
+grading mobile". The paragraph above ("no pronunciation provider was configured on :8013") is
+superseded: the sandbox now runs the real providers (Azure Speech, Groq ASR, Gemini coaching), loaded
+from the main checkout's `.env` by name, values never printed.
+
+- **Differences found by measuring and fixed** (computed style / box, app vs frame):
+  - Shadowing (07), phone: recording borrowed the plain recording frame (✕, "ĐANG GHI" pill, hint,
+    no side buttons). It now keeps its own frame: back + title, mode switch, card, 22px to the
+    headphones note, speed and again (50) either side of an 84 stop with the white `stop` glyph
+    (Phosphor fill).
+  - Compare (06), phone: the attempts list shrank to its content (`align-self: start` in a flex
+    column); now the full 350.
+  - Summary (05), phone: the body shrank to 384 (auto margins with `inline-size: auto`) and the side
+    column to 79; now x 20 / 350 as drawn; the secondary action is primary ink, not white.
+  - Free talk result (04): criteria rows 22 → 19 high (27 apart as drawn), labels .85 → .84
+    (`--ink-84`); phone primary/secondary label sizes were swapped (now 15/800 and 14.5/700 primary
+    ink); the top row 24 → 22; the phone-only fix card leaked onto the desktop.
+  - States (09), phone: mic blocked and offline centred everything and put a 286 button inside the
+    message; now the message is centred in the space above with 60 clear, the actions a foot bar with
+    the full 350 button, no line count, the title on a 28 line, the text link a 24 target (WCAG 2.2
+    minimum; the frame's line is 19). Not heard was a box inside the result card with a stray hint
+    under it; now its own box.
+  - Lesson name ink: primary in shadowing and the states, .9 in the workspace - as each frame draws.
+  - A phone result card with no flagged word no longer says "tap a row".
+- **Kept deviations, each recorded:** S14-S23 above (old free-talk actions, `say_again`, no
+  progressive highlight, no loudspeaker detection, the countdown's place, "Thử lại" for "Mở Cài đặt",
+  "under 80" → flagged lines, no written tone verdict, settings deferred, Traditional characters from
+  ASR). The Vietnamese interface sets mono labels in Roboto Mono (DM Mono has no Vietnamese glyphs;
+  `foundation.css`, D-061) - a documented fallback, not a difference.
+- **Real end-to-end runs on :8013 (Chrome, fake microphone fed with real native speech):**
+  - Scripted, 6 runs (desk 1920 and phone 390 with touch × zh-lesson/en-UI, zh-lesson/vi-UI,
+    en-lesson/zh-UI): Azure 200 on every take; listen take 96-99, 6/6 passed; word detail with the
+    measured "yours" curve (zh); compare with 40 model bars and 40 take bars and both contours (zh);
+    shadowing lag 0.5-0.6 s; every run, desk and phone, reaches the lesson summary; no horizontal
+    overflow, no page errors.
+  - Shadow restart (phone, zh/vi): countdown visible; again mid-take → idle → recording; speed
+    mid-take → 1× and recording again; only the final take is sent (one Azure call), graded 99.
+  - States A/B/C in vi, en, zh, desk and phone: blocked → listen-only; not heard → skip on the right;
+    offline → kept, graded when back online, the offline screen lifted.
+  - Free talk, 6 runs: Groq ASR + Azure unscripted (fluency 77-89, pronunciation 81-92) + Gemini
+    coaching; grammar and vocabulary 0, ring 0 (no overall); `say_again` pure target language
+    ("其实我是英国人。你呢？"); "Nói lại câu sửa" opens the workspace on that line with no clip.
+- **Gates (local execution):** every `.mjs` gate in `ci.yml` except the six inherited ones (same first
+  assertion on a clean `3bf2c3f`); ESM graph OK (107 modules); memory and architecture validators and
+  the Python contract scripts OK; `pytest -q test_app.py tests` in the application image, SQLite
+  backend: 1775 passed, 118 skipped. `test_orena_learning_stage.mjs` asserted the deleted four-ways-in
+  landing; its Speaking section is retargeted to the library that replaced it, and the landing's
+  styles and copy are deleted.
