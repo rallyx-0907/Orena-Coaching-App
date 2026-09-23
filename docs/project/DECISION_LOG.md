@@ -2526,3 +2526,27 @@ unset `PRONUNCIATION_PROVIDER` no longer serves synthetic scores.
 
 **Supersedes:** the open questions S5 (fluency threshold: none), S6 (weak phoneme: detail only), S8
 (previous line: not added) and the "no Azure yet" state of D-074.
+
+## D-076 — The new Speaking frames: what their notes decide and what they do not
+
+**Date:** 2026-09-23. **Source:** the human, answering four questions after the Speaking design was
+read at its source (`docs/design/canonical-ui/SYNC_2026-09-23.md`).
+
+**Decision.**
+
+1. **A line to practise again** is a line with at least one word the provider flagged. The frames'
+   "under 80" (lesson summary, attempts) is not adopted; "practise again" lists lines with flags.
+2. **Audio.** By default a recording lives only for the session and is gone after it. An optional
+   local retention, "Keep recent recordings", keeps at most five recordings per line on the learner's
+   device. Nothing is saved to the server or the library in this phase; a server library comes only
+   after a schema and a privacy/retention review, and is opt-in, never on by default.
+3. **Free talk is scored only on real measurements.** Pronunciation and fluency come from the
+   provider if its free-talk mode supports them. Grammar and vocabulary get no new AI scoring now;
+   they follow the metric rule until an evaluator is approved. No overall score (the frames' 30/70)
+   while a component it needs is missing. "Last time" is shown only against an earlier attempt
+   scored under the same contract. The correction cards and the line to say again may come from the
+   existing coaching: that is feedback, not a score.
+4. **In this slice:** the measured tone contour (pitch from the audio itself, drawn, with no written
+   verdict) and the shadowing mode. **Deferred:** Speaking settings (some options have no real
+   capability yet) and sending often-missed characters to the SRS queue (a persistence and
+   Vocabulary change for its own slice).
