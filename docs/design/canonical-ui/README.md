@@ -10,7 +10,7 @@ source. This copy was pinned on 2026-09-21 and is incomplete: it has no
 source differ, the source wins (`docs/project/DESIGN_CONTRACT.md`, "The
 authority").
 
-Last synced with the source: 2026-09-22 - see `SYNC_2026-09-22.md` (what was compared, what the cache did not
+Last synced with the source: 2026-09-23 for Speaking (`SYNC_2026-09-23.md`), 2026-09-22 for the rest - see `SYNC_2026-09-22.md` (what was compared, what the cache did not
 carry, the rules read from the source's `UI_BASELINE.md`, `ui-baseline/*.md` and `CLAUDE.md`).
 
 Purpose: a repository copy of the frozen learner-facing UI baseline, so the
