@@ -1722,43 +1722,48 @@ shared bar's search simply narrower than the baseline says?
 
 ### The 32 frames, and what exists
 
+Read this table with the dated sections below it: each one says how a frame was
+built, what it is fed by, and what was recorded rather than decided.
+
 | # | Frame | App |
 | ---: | --- | --- |
-| 1 | Vocabulary library | **yes** - `#/language`, synced above |
+| 1 | Vocabulary library | **yes** - `#/language`, with the head frames 01-02 draw (2026-09-23) |
 | 2 | Vocabulary library mobile | **yes** - the same room at 390 |
-| 3 | Vocabulary card deep | **no screen** |
-| 4 | Vocabulary card deep scrolled | **no screen** |
-| 5 | Vocabulary strokes | **no screen** - needs stroke data Orena does not hold |
-| 6 | Vocabulary context clips | **no screen** - needs per-word clips |
-| 7 | Vocabulary context clips mobile | **no screen** |
-| 8 | Vocabulary review | **yes** - `#/language?intent=recall` |
+| 3 | Vocabulary card deep | **yes** - the dictionary's half of the word (2026-09-23) |
+| 4 | Vocabulary card deep scrolled | **yes** - the learner's half |
+| 5 | Vocabulary strokes | **no screen** - needs Make Me a Hanzi; admitting it is a rights decision (below) |
+| 6 | Vocabulary context clips | **yes** - real timestamped moments in the listening catalogue (2026-09-23) |
+| 7 | Vocabulary context clips mobile | **yes** |
+| 8 | Vocabulary review | **yes** - `#/practice?intent=recall` |
 | 9 | Vocabulary review mobile | **yes** |
 | 10 | Vocabulary review mobile hidden | **yes** - including the listen pill |
-| 11 | Review typing retry | **no screen** - a review mode the app does not have |
-| 12 | Review typing mobile | **no screen** |
-| 13 | Review listen choose mobile | **no screen** - needs per-word audio for the choices |
-| 14 | Review dictation mobile | **no screen** |
-| 15 | Review cloze mobile | **no screen** |
-| 16 | Review speaking mobile | **no screen** - speech grading is another lane |
-| 17 | Review speaking mic blocked | **no screen** |
+| 11 | Review typing retry | **yes** - two tries, the hint, marks not required (2026-09-23) |
+| 12 | Review typing mobile | **yes** |
+| 13 | Review listen choose mobile | **yes** - offered only where there is a recording and neighbours |
+| 14 | Review dictation mobile | **yes** |
+| 15 | Review cloze mobile | **yes** - offered only where the sentence really holds the word |
+| 16 | Review speaking mobile | **no screen** - speech grading is the Speaking lane's |
+| 17 | Review speaking mic blocked | **no screen** - same lane |
 | 18 | Review summary | **yes** |
 | 19 | Review summary mobile | **yes** |
-| 20 | Vocabulary search | **no screen** - the app has a global search, not this one |
-| 21 | Vocabulary search mobile | **no screen** |
-| 22 | Save to deck sheet mobile | **no screen** - decks are Thư viện của tôi's sets today |
-| 23 | Add word modal | **no screen** |
-| 24 | Add word mobile | **no screen** |
-| 25 | Create deck mobile | **no screen** - the app creates a set in Thư viện của tôi instead |
-| 26 | Vocabulary deep desktop | **no screen** |
-| 27 | Review settings desktop | **no screen** - needs a stored per-learner setting |
-| 28 | Review settings mobile | **no screen** |
-| 29 | Vocabulary empty mobile | **partly** - the room has an empty state, not measured against this frame |
-| 30 | Deck nothing due mobile | **partly** - the Recall landing says nothing is due |
-| 31 | Review offline mobile | **no screen** |
-| 32 | Deck load error mobile | **partly** - the room has an error panel, not measured against this frame |
+| 20 | Vocabulary search | **yes** - the room's own search, both halves server-side (2026-09-23) |
+| 21 | Vocabulary search mobile | **yes** |
+| 22 | Save to deck sheet mobile | **yes** - over Thư viện của tôi's own sets (2026-09-23) |
+| 23 | Add word modal | **yes** - the same fields as 24, widened |
+| 24 | Add word mobile | **yes** |
+| 25 | Create deck mobile | **yes** - name and language; the colour chooser needs a column (below) |
+| 26 | Vocabulary deep desktop | **yes** - both halves at once; the strokes column waits on frame 05 |
+| 27 | Review settings desktop | **yes** - device memory, no schema (2026-09-23) |
+| 28 | Review settings mobile | **yes** |
+| 29 | Vocabulary empty mobile | **yes** - measured against this frame (2026-09-23) |
+| 30 | Deck nothing due mobile | **yes** - both numbers counted, and the second door to the settings |
+| 31 | Review offline mobile | **yes** - answers wait on the device and sync (2026-09-23) |
+| 32 | Deck load error mobile | **yes** - with the code a learner can quote |
 
-**Eleven of the thirty-two have a screen today.** Nothing in the list above was
-built or guessed at in this pass: what has no screen is named, not approximated.
+**Thirty-one of the thirty-two have a screen.** Two of the thirty-two are not
+this lane's and are not counted against it: frames 16 and 17 are Speaking's.
+The one that remains, frame 05, is blocked on a rights decision, not on
+implementation - and nothing was faked in its place.
 
 ## Choosing several, and deleting with a way back (2026-09-23)
 
