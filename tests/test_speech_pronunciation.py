@@ -301,3 +301,40 @@ def test_a_rejected_key_never_appears_in_the_error():
     assert caught.value.status_code == 401
     assert "secret-key-value" not in str(caught.value)
     assert "secret-key-value" not in repr(caught.value)
+
+
+def test_a_take_where_every_reference_word_is_omitted_is_no_speech():
+    # Measured on real Azure (2026-09-23): 0.8 s of silence comes back as Success with every word
+    # Omission and completeness 0. That is "nothing was heard", not a score of 0.
+    payload = {
+        "RecognitionStatus": "Success",
+        "DisplayText": ".",
+        "NBest": [{
+            "Display": ".",
+            "AccuracyScore": 0, "FluencyScore": 0, "CompletenessScore": 0, "PronScore": 0,
+            "Words": [
+                {"Word": "anna", "AccuracyScore": 0, "ErrorType": "Omission"},
+                {"Word": "pen", "AccuracyScore": 0, "ErrorType": "Omission"},
+            ],
+        }],
+    }
+    provider, _ = make_provider(payload)
+    with pytest.raises(SpeechPronunciationNoSpeech):
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="Anna, pen.")
+
+
+def test_a_take_with_one_word_said_is_still_a_measurement():
+    payload = {
+        "NBest": [{
+            "PronScore": 20, "AccuracyScore": 30, "FluencyScore": 10, "CompletenessScore": 50,
+            "Words": [
+                {"Word": "anna", "AccuracyScore": 90, "ErrorType": "None"},
+                {"Word": "pen", "AccuracyScore": 0, "ErrorType": "Omission"},
+            ],
+        }],
+    }
+    provider, _ = make_provider(payload)
+    result = provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                                   language="en", reference_text="Anna, pen.")
+    assert result.words[1].error_type == "Omission"

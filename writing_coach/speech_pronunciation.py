@@ -441,6 +441,12 @@ class AzureSpeechPronunciationProvider:
                     )
                 )
 
+        # Azure answers a silent take with Success and every reference word omitted (measured
+        # 2026-09-23). Nothing was heard: that is the learner's outcome, not a score of 0.
+        reference_words = [word for word in words if word.error_type.casefold() != "insertion"]
+        if reference_words and all(word.error_type.casefold() == "omission" for word in reference_words):
+            raise SpeechPronunciationNoSpeech()
+
         recognized_text = str(
             best.get("Display")
             or payload.get("DisplayText")
