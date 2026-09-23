@@ -28,6 +28,7 @@ claude.ai design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`, pinned on
 | Path | What it is |
 | --- | --- |
 | `screens/Orena-*.dc.html` | The frozen canonical screens: the master preview and the Home Discover, Reading, Listening, Speaking, Writing, Vocabulary and Progress files. Desktop 1920x1080 and mobile 390x844 frames, one file per capability. |
+| `screens/Orena-Admin-Control-Center.dc.html` | The Platform Admin canonical design, pinned 2026-09-23 from `Orena Admin Control Center.dc.html`. Desktop 1920x1080, mobile panels, the six areas, the shared state set, the drawers and the two access screens. |
 | `data-contracts/*.json` | The 17 canonical data contracts. A screen's API contract is derived from these, not from the backend's older shapes. |
 | `tokens.json` | The Glass System foundations, extracted verbatim. |
 
@@ -52,6 +53,12 @@ Extract a screen with `data-screen-label`, do not open the file as a web page.
 
 ## Known incompleteness in the baseline itself
 
-Profile, My Content, Admin, Onboarding, Loading / Empty / Error, Modal / Drawer
-and the tablet breakpoint have no canonical design. D-066 keeps the existing
-implementation for those until the human supplies one.
+Profile, My Content, Onboarding and the tablet breakpoint have no canonical
+design. D-066 keeps the existing implementation for those until the human
+supplies one.
+
+**Admin now has one** (pinned 2026-09-23), and it carries what the baseline
+otherwise lacks for that surface: the shared Loading / Empty / Error /
+Unavailable / Success / Pending states with their exact copy, and the drawer
+and confirm patterns. Those states are canonical for Admin; they are not a
+licence to invent the learner-facing equivalents, which still have none.
