@@ -1,7 +1,7 @@
 import { esc, dialog } from './html.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { renderLibraryBrowse } from './library-browse.js';
-import { mountSpeakingWorkspace, sourceFromLesson } from './speaking-workspace.js';
+import { mountSpeakingWorkspace, sourceFromLesson, sourceFromItem } from './speaking-workspace.js';
 import { mountFreeTalk } from './speaking-free.js';
 import { referenceCopy } from './reference.js';
 import { encounter } from '../product/encounter.js';
@@ -13,12 +13,19 @@ import { encounter } from '../product/encounter.js';
 export async function renderSpeakingWorkspace(root, ctx) {
   const { api, language, location, memory } = ctx;
   const id = String(location.id || '');
-  if (!id.startsWith('media:')) throw Error(ctx.c.unavailable);
-  const payload = await api.listeningLibraryLesson(id.slice(6), ctx.support);
-  if (!ctx.alive()) return () => {};
-  if (!payload?.transcript?.segments?.length || payload.asset?.source_language !== language)
-    throw Error(ctx.c.unavailable);
-  const source = sourceFromLesson(id, payload, encounter(payload, ctx.support));
+  let source = null;
+  if (id.startsWith('speak:')) {
+    const item = await api.speakingItem(id.slice(6));
+    if (!ctx.alive()) return () => {};
+    if (item?.language !== language || !item.lines?.length) throw Error(ctx.c.unavailable);
+    source = sourceFromItem(item, ctx.support);
+  } else if (id.startsWith('media:')) {
+    const payload = await api.listeningLibraryLesson(id.slice(6), ctx.support);
+    if (!ctx.alive()) return () => {};
+    if (!payload?.transcript?.segments?.length || payload.asset?.source_language !== language)
+      throw Error(ctx.c.unavailable);
+    source = sourceFromLesson(id, payload, encounter(payload, ctx.support));
+  } else throw Error(ctx.c.unavailable);
   const prior = memory.value.continuation.find((item) => item.id === id)?.segment;
   const wanted = location.line || prior || '';
   const startIndex = Math.max(0, source.lines.findIndex((line) => line.id === wanted));

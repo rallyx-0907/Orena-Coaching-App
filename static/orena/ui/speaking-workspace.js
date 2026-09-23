@@ -155,7 +155,7 @@ function barHtml(word) {
   return `<span class="sp-bar${word.flagged ? ' sp-bar--flag' : ''}"><i style="width:${Math.max(0, Math.min(100, word.score))}%"></i></span>`;
 }
 
-export function resultHtml({ s, view, language, busy = false }) {
+export function resultHtml({ s, view, language, busy = false, hasModel = true }) {
   const { title, sub } = headline(s, view, language);
   const pace = paceText(s, view.timing);
   const unit = language === 'zh' ? 'zh' : 'en';
@@ -167,7 +167,7 @@ export function resultHtml({ s, view, language, busy = false }) {
     .join('');
   return `<div class="sp-head">${ring(view.overall, 'lg', `<span class="sp-ring__text"><b>${view.overall}</b><small>${esc(fill(s.passedOf, { p: view.passedCount, n: view.totalCount }))}</small></span>`)}<div class="sp-head__copy"><strong class="sp-headline">${esc(title)}</strong>${sub ? `<p class="sp-sub">${esc(sub)}</p>` : ''}<div class="sp-metrics"><span>${esc(s.metricPronunciation)} <b>${view.overall}</b></span><span>${esc(s.metricFluency)} <b>${view.fluency}</b></span>${pace ? `<span>${esc(s.metricPace)} <b>${esc(pace)}</b></span>` : ''}</div></div></div>
 <div class="sp-body"${busy ? ' aria-busy="true"' : ''}><span class="sp-label">${esc(s[`eachWord_${unit}`])}</span><div class="sp-rows">${rows}</div>
-<div class="sp-actions"><button type="button" class="sp-btn sp-btn--accent" data-sp-again>${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(s.recordAgain)}</span></button><button type="button" class="sp-btn" data-sp-hear-take${view.measured ? '' : ' disabled'}>${icon('speaker-high', { size: 18 })}<span>${esc(s.hearYours)}</span></button><button type="button" class="sp-btn" data-sp-compare${view.measured ? '' : ' disabled'}>${icon('columns', { size: 18 })}<span>${esc(s.compare)}</span></button><button type="button" class="sp-btn" data-sp-next>${icon('arrow-right', { size: 18 })}<span>${esc(s.nextLine)}</span></button></div></div>`;
+<div class="sp-actions"><button type="button" class="sp-btn sp-btn--accent" data-sp-again>${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(s.recordAgain)}</span></button><button type="button" class="sp-btn" data-sp-hear-take${view.measured ? '' : ' disabled'}>${icon('speaker-high', { size: 18 })}<span>${esc(s.hearYours)}</span></button><button type="button" class="sp-btn" data-sp-compare${view.measured && hasModel ? '' : ' disabled'}>${icon('columns', { size: 18 })}<span>${esc(s.compare)}</span></button><button type="button" class="sp-btn" data-sp-next>${icon('arrow-right', { size: 18 })}<span>${esc(s.nextLine)}</span></button></div></div>`;
 }
 
 /* The phone's card under the line: the ring, the sentence about it, and only the flagged words. */
@@ -234,12 +234,12 @@ export function roomHtml({ s, c, source, index, language, rate, level }) {
   return `<section class="sp-room" data-phase="idle">
 <header class="sp-top"><button type="button" class="sp-back" data-sp-back aria-label="${esc(source.title)}">${icon('arrow-left', { size: 20 })}<span class="sp-back__caret">${icon('caret-left', { size: 22 })}</span><span class="sp-lesson" lang="${esc(language)}">${esc(source.title)}</span></button><button type="button" class="sp-cancel" data-sp-cancel aria-label="${esc(s.cancelRecording)}">${icon('x', { size: 22 })}</button><h1 class="sp-name">${esc(`${s.room} · ${s.pronunciation}`)}</h1><small class="sp-where">${esc(where)}</small><small class="sp-count">${esc(`${index + 1} / ${total}`)}</small><small class="sp-count sp-count--rec">${esc(fill(s.lineOf, { i: index + 1, n: total }))}</small><span class="sp-streak" title="${esc((referenceCopy[c.ui] || referenceCopy.en).streakUnmeasured)}">${icon('flame', { size: 16, filled: true })}<b>0</b></span></header>
 <div class="sp-cols"><section class="sp-task"><div class="sp-steps" role="progressbar" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${index + 1}"><span class="sp-steps__segments">${segments}</span><span class="sp-steps__count">${index + 1}/${total}</span></div>
-<div class="sp-clip" data-sp-player data-kind="${esc(kind || '')}"><span class="sp-clip__art">${source.poster || ''}</span>${source.playback ? mediaPlayer(source.playback, source.title, { startMs: line.startMs, endMs: line.endMs, controls: false }) : ''}<span class="sp-glow" aria-hidden="true"></span><button type="button" class="sp-play" data-sp-model aria-label="${esc(s.hearModel)}">${icon('play', { size: 34, filled: true })}</button><span class="sp-badge">${icon('video-camera', { size: 14, filled: true })}<span>${esc(fill(s.clipModel, { t: clock(span) }))}</span></span><button type="button" class="sp-rate" data-sp-rate>${rate}×</button><span class="sp-clipbar"><i data-sp-clipbar></i></span></div>
+${source.playback ? `<div class="sp-clip" data-sp-player data-kind="${esc(kind || '')}"><span class="sp-clip__art">${source.poster || ''}</span>${source.playback ? mediaPlayer(source.playback, source.title, { startMs: line.startMs, endMs: line.endMs, controls: false }) : ''}<span class="sp-glow" aria-hidden="true"></span><button type="button" class="sp-play" data-sp-model aria-label="${esc(s.hearModel)}">${icon('play', { size: 34, filled: true })}</button><span class="sp-badge">${icon('video-camera', { size: 14, filled: true })}<span>${esc(fill(s.clipModel, { t: clock(span) }))}</span></span><button type="button" class="sp-rate" data-sp-rate>${rate}×</button><span class="sp-clipbar"><i data-sp-clipbar></i></span></div>` : ''}
 <span class="sp-pill" data-sp-pill aria-live="off"><i></i><span data-sp-pill-text>${esc(fill(s.recordingPill, { t: '00:00' }))}</span></span>
 <p class="sp-line" lang="${esc(language)}" data-sp-line>${sentenceHtml(line.text, language, null)}</p>${line.reading ? `<p class="sp-reading">${esc(line.reading)}</p>` : ''}${line.meaning ? `<p class="sp-meaning">${esc(line.meaning)}</p>` : ''}
 <div class="sp-wave" data-sp-wave aria-hidden="true">${bars}</div>
 <aside class="sp-card" data-sp-card aria-live="polite"></aside>
-<div class="sp-controls"><button type="button" class="sp-round" data-sp-model aria-label="${esc(s.hearModel)}">${icon('speaker-high', { size: 24 })}</button><button type="button" class="sp-mic" data-sp-mic aria-label="${esc(s.record)}"><span class="sp-mic__icon">${icon('microphone', { size: 44, filled: true })}</span><span class="sp-mic__stop"></span></button><button type="button" class="sp-round" data-sp-again aria-label="${esc(s.recordAgain)}">${icon('arrow-counter-clockwise', { size: 24 })}</button></div>
+<div class="sp-controls"><button type="button" class="sp-round" data-sp-model aria-label="${esc(s.hearModel)}"${source.playback ? '' : ' disabled'}>${icon('speaker-high', { size: 24 })}</button><button type="button" class="sp-mic" data-sp-mic aria-label="${esc(s.record)}"><span class="sp-mic__icon">${icon('microphone', { size: 44, filled: true })}</span><span class="sp-mic__stop"></span></button><button type="button" class="sp-round" data-sp-again aria-label="${esc(s.recordAgain)}">${icon('arrow-counter-clockwise', { size: 24 })}</button></div>
 <p class="sp-hint" data-sp-hint role="status">${esc(s[`tapWord_${language === 'zh' ? 'zh' : 'en'}`])}</p></section>
 <section class="sp-result" data-sp-result aria-live="polite" aria-label="${esc(s.pronunciation)}"></section></div>
 <audio data-sp-take-audio preload="auto" hidden></audio></section>`;
@@ -346,7 +346,7 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
     const busy = state.phase === TAKE.PROCESSING;
     const result = q('[data-sp-result]');
     const card = q('[data-sp-card]');
-    if (result) result.innerHTML = resultHtml({ s, view, language, busy });
+    if (result) result.innerHTML = resultHtml({ s, view, language, busy, hasModel: Boolean(source.playback) });
     if (card) card.innerHTML = cardHtml({ s, view, language });
     const lineEl = q('[data-sp-line]');
     if (lineEl) lineEl.innerHTML = sentenceHtml(line().text, language, focus ? null : view, focus);
@@ -594,7 +594,8 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
     q('[data-sp-mic]').onclick = micPressed;
     q('[data-sp-cancel]').onclick = () => take?.cancel();
     q('[data-sp-back]').onclick = () => (onLeave ? onLeave() : history.back());
-    q('[data-sp-rate]').onclick = (event) => {
+    const rateButton = q('[data-sp-rate]');
+    if (rateButton) rateButton.onclick = (event) => {
       rate = RATES[(RATES.indexOf(rate) + 1) % RATES.length];
       event.currentTarget.textContent = `${rate}×`;
       setPlaybackRate(playerRoot(), source.playback, rate);
@@ -669,6 +670,30 @@ export function sourceFromLesson(id, payload, model, support) {
       meaning: model.meaning(segment.segment_id) || '',
       startMs: segment.start_ms,
       endMs: segment.end_ms,
+    })),
+    support,
+  };
+}
+
+/* An item from the Speaking catalogue: lines to say, with their reading and meaning, and no model
+   clip (the clip card is not drawn for it, and "hear the model" is off). */
+export function sourceFromItem(item, support) {
+  return {
+    id: item.id,
+    title: item.title,
+    level: item.level || '',
+    assetId: '',
+    playback: null,
+    poster: '',
+    lines: (item.lines || []).map((line) => ({
+      id: `${item.id}:${line.line_id}`,
+      text: line.text,
+      original: line.text,
+      reading: line.reading || '',
+      readings: [],
+      meaning: line.translations?.[support] || '',
+      startMs: 0,
+      endMs: 0,
     })),
     support,
   };
