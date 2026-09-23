@@ -64,12 +64,6 @@ const CHAPTER_PREVIEW = 5;
 const fill = (template, values) =>
   String(template || '').replace(/\{(\w+)\}/g, (match, key) => (key in values ? String(values[key]) : match));
 
-/* A stat tile: the label, then the figure - or the honest dash when nothing
-   measures it yet. */
-function bookStat(label, value, { note = '', tone = '' } = {}) {
-  return `<div class="book-stat"${tone ? ` data-tone="${tone}"` : ''}><span class="ds-label">${esc(label)}</span><strong>${esc(value)}</strong>${note ? `<small>${esc(note)}</small>` : ''}</div>`;
-}
-
 function bookDetail(c, r, open, reading, view = {}) {
   /* A link, not history.back(): the reader reaches this page by navigating to
      it, so a history step here lands back in the reader and the two bounce off
@@ -89,15 +83,22 @@ function bookDetail(c, r, open, reading, view = {}) {
   const resume = currentIndex >= 0 ? chapters[currentIndex] : chapters[0];
   const total = chapters.length;
   const chapterLink = (chapter) => esc(link('encounter', { id: `book:${book.id}/${chapter.id}`, intent: 'reading' }));
+  /* The chapters behind the current one are read; the current one is next. */
+  const done = (index) => currentIndex >= 0 && index < currentIndex;
 
-  const chips = [
-    `<span class="chip chip--domain" data-domain="reading">${esc(r.reading)}</span>`,
-    language ? `<span class="chip">${esc(c[`language_${language}`] || language.toUpperCase())}</span>` : '',
-    total ? `<span class="chip">${esc(`${total} ${c.libraryChapterCount}`)}</span>` : '',
-    Number(book.word_count) > 0
-      ? `<span class="chip">${esc(`${Number(book.word_count).toLocaleString()} ${c.libraryWords}`)}</span>`
-      : '',
-  ].filter(Boolean).join('');
+  /* One meta line, as the frame draws it: how many chapters, and how much of
+     the book is left. The frame also carries a level and a form ("B1 ·
+     tiểu thuyết"); `reading_books` stores neither, and both are decisions the
+     ingestion and publishing side makes, so they are absent here rather than
+     guessed (UI_BACKEND_GAPS.md). */
+  const minutes = (seconds) => Math.max(1, Math.round(Number(seconds || 0) / 60));
+  const leftSeconds = chapters
+    .filter((chapter, index) => !done(index))
+    .reduce((sum, chapter) => sum + Number(chapter.reading_time_seconds || 0), 0);
+  const meta = [
+    total ? `${total} ${c.libraryChapterCount}` : '',
+    leftSeconds ? fill(r.bookTimeLeft, { n: minutes(leftSeconds) }) : '',
+  ].filter(Boolean).join(' · ');
 
   const percent = progress?.percent || 0;
   const place = percent
@@ -114,18 +115,7 @@ function bookDetail(c, r, open, reading, view = {}) {
     : '';
 
   const savedWords = Array.isArray(open.words) ? open.words : null;
-  const stats = `<div class="book-hero__stats">${bookStat(
-    r.bookStatWordsSaved,
-    savedWords ? String(savedWords.length) : '—',
-    savedWords ? {} : { note: r.bookNotMeasured },
-  )}${bookStat(r.bookStatTime, '—', { note: r.bookNotMeasured })}${bookStat(
-    r.bookStatQuiz,
-    '—',
-    { note: r.bookNotMeasured },
-  )}${bookStat(r.bookStatAudio, '—', { note: r.bookAudioGap })}</div>`;
 
-  /* The chapters behind the current one are read; the current one is next. */
-  const done = (index) => currentIndex >= 0 && index < currentIndex;
   const rows = chapters.map((chapter, index) => ({ chapter, index }));
   const listed = view.unreadOnly ? rows.filter(({ index }) => !done(index)) : rows;
   const windowStart = view.expanded
@@ -134,9 +124,12 @@ function bookDetail(c, r, open, reading, view = {}) {
   const shown = view.expanded ? listed : listed.slice(windowStart, windowStart + CHAPTER_PREVIEW);
   const chapterRow = ({ chapter, index }) => {
     const isCurrent = chapter.id === currentId;
-    const words = Number(chapter.word_count) > 0
-      ? fill(r.bookChapterWords, { n: Number(chapter.word_count).toLocaleString() })
-      : '';
+    /* The frame puts a duration on every row - the time the chapter takes at
+       the pace the product uses for a learner, which the server derives from
+       the word count it already had. A chapter with no count says nothing
+       rather than "0 phút". */
+    const seconds = Number(chapter.reading_time_seconds || 0);
+    const words = seconds ? fill(r.bookChapterMinutes, { n: minutes(seconds) }) : '';
     return `<li${isCurrent ? ' data-current' : ''}><a class="book-chapter" href="${chapterLink(chapter)}"${isCurrent ? ' aria-current="true"' : ''}${done(index) ? ' data-done' : ''}><span class="book-chapter__n ds-data">${String(index + 1).padStart(2, '0')}</span><span class="book-chapter__text"><span class="book-chapter__title" lang="${esc(language)}">${esc(chapter.title)}</span>${words ? `<small class="ds-data">${esc(words)}</small>` : ''}</span>${
       isCurrent
         ? `<span class="chip book-chapter__next">${esc(r.bookNext)}</span>`
@@ -145,7 +138,9 @@ function bookDetail(c, r, open, reading, view = {}) {
           : ''
     }</a></li>`;
   };
-  const contents = `<section class="book-chapters" aria-label="${esc(c.libraryChapters)}"><div class="book-section-head"><h3 class="book-section-title">${esc(c.libraryChapters)}</h3><button type="button" class="book-filter ds-label" data-unread-only aria-pressed="${Boolean(view.unreadOnly)}">${icon('funnel', { size: 14 })}<span>${esc(r.bookUnreadOnly)}</span></button></div><ol class="book-chapter-list">${shown.map(chapterRow).join('')}</ol>${
+  const contents = `<section class="book-chapters" aria-label="${esc(c.libraryChapters)}"><div class="book-section-head"><h3 class="book-section-title">${esc(c.libraryChapters)}</h3>${
+    total ? `<span class="book-section-count ds-data">${esc(fill(r.bookChaptersRead, { n: Math.max(0, currentIndex >= 0 ? currentIndex : 0), t: total }))}</span>` : ''
+  }<button type="button" class="book-filter ds-label" data-unread-only aria-pressed="${Boolean(view.unreadOnly)}">${icon('funnel', { size: 14 })}<span>${esc(r.bookUnreadOnly)}</span></button></div><ol class="book-chapter-list">${shown.map(chapterRow).join('')}</ol>${
     listed.length > shown.length
       ? `<button type="button" class="book-show-all" data-show-all-chapters>${esc(fill(r.bookShowAll, { n: listed.length }))}${icon('caret-down', { size: 16 })}</button>`
       : ''
@@ -155,6 +150,9 @@ function bookDetail(c, r, open, reading, view = {}) {
     ? savedWords.slice(0, 12).map((word) => `<span class="chip" lang="${esc(language)}">${esc(word)}</span>`).join('') +
       (savedWords.length > 12 ? `<span class="chip book-words__more ds-data">+${savedWords.length - 12}</span>` : '')
     : '';
+  /* The frame draws the book's own description and the words the learner kept
+     from it. It draws no "similar books" shelf, so the note that used to
+     apologise for not having one is gone (rule 44). */
   const side = `<aside class="book-side">${
     book.description
       ? `<section><span class="ds-label">${esc(r.bookAbout)}</span><p class="book-about">${esc(book.description)}</p></section>`
@@ -165,11 +163,11 @@ function bookDetail(c, r, open, reading, view = {}) {
         ? `<div class="book-words">${wordChips}</div>`
         : `<p class="book-side__note">${esc(r.bookNoWordsSaved)}</p>`
       : `<div class="book-words" aria-hidden="true">${'<span class="skeleton skeleton--chip"></span>'.repeat(3)}</div>`
-  }</section><section><span class="ds-label">${esc(r.bookSimilar)}</span><p class="book-side__note">${esc(r.bookSimilarGap)}</p></section></aside>`;
+  }</section></aside>`;
 
-  return `<article class="book-page">${back}<header class="book-hero"><div class="book-hero__cover">${coverArt(book, c, { large: true })}</div><div class="book-hero__copy"><div class="book-hero__chips">${chips}</div><div><h2 class="book-hero__title" lang="${esc(language)}">${esc(book.title)}</h2>${
+  return `<article class="book-page">${back}<header class="book-hero"><div class="book-hero__cover">${coverArt(book, c, { large: true })}</div><div class="book-hero__copy"><div><h2 class="book-hero__title" lang="${esc(language)}">${esc(book.title)}</h2>${
     book.author ? `<p class="book-hero__byline">${esc(book.author)}</p>` : ''
-  }</div>${progressRow}${actions}${stats}</div></header><div class="book-body">${contents}${side}</div></article>`;
+  }${meta ? `<p class="book-hero__meta ds-data">${esc(meta)}</p>` : ''}</div>${progressRow}${actions}</div></header><div class="book-body">${contents}${side}</div></article>`;
 }
 
 /* Inner content only - see the module doc: the caller owns the wrapper. */

@@ -83,16 +83,22 @@ assert.match(detail, /2 chapters/, 'essential facts are stated once, quietly');
 assert.match(detail, /class="book-chapter-list"/, 'the chapters follow as a list');
 assert.match(detail, new RegExp(r.bookAbout), 'the side column carries the description');
 
-/* A backend gap keeps its component and shows the honest unavailable state -
-   it is never removed from the approved composition and never invented (D-060,
-   docs/project/UI_BACKEND_GAPS.md). */
+/* A measurement the app does not have still says so rather than inventing a
+   number: an unread book draws the unmeasured track (D-066 rule 4). */
 assert.match(detail, /class="progress-bar" data-unavailable/, 'an unread book shows the unmeasured track');
 assert.match(detail, new RegExp(r.bookNotStarted));
-assert.match(detail, new RegExp(r.bookStatTime), 'time read keeps its tile');
-assert.match(detail, new RegExp(r.bookStatQuiz), 'quiz average keeps its tile');
-assert.match(detail, new RegExp(r.bookSimilarGap), 'similar level states why it is empty');
-assert.equal((detail.match(/<strong>—<\/strong>/g) || []).length, 4,
-  'every unmeasured figure reads as a dash, never as a number nobody measured');
+
+/* What changed on 2026-09-23, and why this file no longer pins four dashes.
+   D-060 kept a component for every backend gap, showing an honest blank. The
+   canonical Book detail frames (03 and 04) draw no statistic tiles and no
+   "similar level" shelf at all, and D-067 makes the design the authority for
+   what a surface draws - a rule written before 2026-09-21 is void where it
+   disagrees with it. So the tiles and the shelf were deleted rather than left
+   apologising for themselves, and this asserts they stay deleted. */
+assert.ok(!detail.includes('book-stat'), 'no statistic tile the frames do not draw');
+assert.doesNotMatch(detail, /<strong>—<\/strong>/, 'and no tile left showing a dash');
+/* The one thing in that column the frames do draw stays. */
+assert.match(detail, new RegExp(r.bookWordsFrom), 'the words the learner saved from this book');
 assert.doesNotMatch(detail, /HSK|CEFR|B1/, 'a level nobody stored is never printed (GAP-004)');
 
 const resumed = librarySection(c, {
@@ -105,7 +111,10 @@ assert.match(resumed, /aria-current="true"/, 'the chapter the learner is in is m
 assert.match(resumed, /data-current/, 'and is distinguishable in the contents');
 assert.match(resumed, /class="progress-bar"><span style="width:100%"/, 'a started book shows how far through it is');
 assert.match(resumed, /data-done/, 'the chapters behind the current one read as read');
-assert.match(resumed, /<strong>2<\/strong>/, 'words saved is a real count of what this book taught');
+/* The words this book taught are drawn as the words themselves, which is what
+   frame 03 draws ("BẠN ĐÃ LƯU TỪ ĐÂY" and the words), rather than as a tally
+   in a tile the frames do not draw. */
+assert.match(resumed, /class="book-words"/, 'the words this book taught are listed');
 
 /* Unread only and "show all" are view state - what the learner asked to see,
    never a second copy of what they have read. */

@@ -2198,3 +2198,66 @@ the frame draws. Asking for a generated passage keeps its own door
 The phone search that expands on focus, and the library's "load more", are
 **already on the human's open-decision list** in this file and in
 `CURRENT_HANDOFF.md`. They were left alone.
+
+## Reading, slice B — Book detail (frames 03–04), 2026-09-23
+
+The screen existed and was **richer than its frames**, which is the opposite of
+the usual gap. Measured against both pinned frames, then brought to them.
+
+**Deleted, because the source draws neither** (rule 44, and D-067 over D-060):
+the four statistic tiles that all read "—" with a "not measured" note, and the
+"similar level" shelf whose entire content was a sentence explaining it had
+none. A panel whose only content is an apology for having no content is not a
+panel. Eight copy keys went with them, in all three languages. D-060's rule —
+keep the component, show the honest blank — predates 2026-09-21 and is void
+where the design disagrees; `test_orena_shared_reading_library.mjs` was pinning
+it and now pins the deletion instead.
+
+**Kept, because frame 03 does draw it**: the words the learner saved from this
+book ("BẠN ĐÃ LƯU TỪ ĐÂY"), and the book's own description.
+
+**New, from data that already existed**: one meta line (chapters, and time
+left), "n / t đã đọc" beside the chapter heading, and a duration on every
+chapter row.
+
+### The duration: a learner projection, not a column
+
+The frames draw a time per chapter. `word_count` was already stored on the book
+and on every chapter, and the product already had a reading pace for a learner
+— `reading_processing.EN_WORDS_PER_MINUTE` (180) and `ZH_CHARS_PER_MINUTE`
+(260), chosen deliberately slower than a native skimmer's. Only the learner
+response was missing the derived field.
+
+So `reading_library_api` gained `reading_seconds()` and `_with_reading_time()`
+in its **learner half**: the pace constants are read, never redefined, so a
+book and an article tell a learner the same thing about the same length of
+text; nothing is stored; the repository is untouched; and a gate plus a test
+both refuse the projection any reach into `asset_store`, `create_book`,
+`UploadFile` or `_admin_guard`. **The admin EPUB import path and its failure
+semantics are exactly what they were.**
+
+### Cross-lane dependencies, recorded not worked around
+
+1. **Level and form.** The frames draw "B1 · tiểu thuyết · 12 chương". The
+   chapters and the time are there; `reading_books` stores **no level and no
+   form**, and both are decisions ingestion and publishing make. The meta line
+   therefore reads "12 chương · còn 22 phút" and says nothing it cannot.
+   **Needed from Admin lane:** a level, and a form, on an imported book.
+2. **Progress inside a chapter.** Frame 04 draws a bar and "còn 9 phút" on the
+   chapter in progress. Device memory records which chapter the learner is in,
+   not where in it, so the row shows the chapter's full duration and the
+   "continue" affordance the desktop frame draws. Position within a chapter is
+   learner state this lane could add later; it is not an Admin dependency.
+
+### Verified
+
+12 tests for the projection (pace not forked, Chinese counted in characters,
+nothing to count is no duration, the repository's dict never mutated, the
+import path never referenced). The screen rendered against a book shaped by the
+contract: meta "6 chương · còn 56 phút", "2 / 6 đã đọc", rows "01 · … · 18
+phút", tiles and shelf gone. Measured at 390: cover 106x144 at radius 13, title
+21/800/1.2, byline 14.5, meta 11.5, chapter row 13x15 at radius 14, its number
+mono 13 in a 20px column — all the frame's numbers.
+
+The sandbox holds no books (import is EPUB behind the admin guard, which is not
+this lane's), so this could not be exercised against stored data.

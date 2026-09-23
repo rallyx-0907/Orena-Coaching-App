@@ -16,6 +16,12 @@ synchronously.
 Every EPUB parse failure and every storage failure is reported per-file in
 one batch response (`status: 'ok' | 'error'`) - one bad file in a batch never
 aborts the files after it.
+
+The learner reads carry one derived field the repository does not store:
+`reading_time_seconds`, on the book and on each chapter, computed from the
+`word_count` that is already there at the pace `reading_processing` already
+defines for a learner. It is a projection, not a column: nothing is written,
+and the import path above is untouched by it.
 """
 from __future__ import annotations
 
@@ -31,6 +37,7 @@ from sqlalchemy.exc import ProgrammingError
 
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.core.errors import orena_http_error
+from writing_coach import reading_processing
 from writing_coach.epub_import import COVER_CONTENT_TYPES, MAX_EPUB_BYTES, EpubImportError, parse_epub
 from writing_coach.persistence.reading_library_repository import (
     ChapterInput,
@@ -263,6 +270,49 @@ async def import_books(
     return {"results": results}
 
 
+def reading_seconds(word_count: object, learning_language: str) -> int:
+    """How long `word_count` takes a learner, at the pace the product uses.
+
+    Chinese is counted in characters and English in words, which is why the
+    pace differs; anything else is read at the English pace rather than being
+    refused, because a rough duration is more use to a learner than none and
+    the alternative is a blank where the frame draws a number.
+    """
+
+    try:
+        count = int(word_count or 0)
+    except (TypeError, ValueError):
+        return 0
+    if count <= 0:
+        return 0
+    per_minute = (
+        reading_processing.ZH_CHARS_PER_MINUTE
+        if str(learning_language or "").strip().casefold().startswith("zh")
+        else reading_processing.EN_WORDS_PER_MINUTE
+    )
+    return int(round(count / per_minute * 60))
+
+
+def _with_reading_time(book: dict[str, Any]) -> dict[str, Any]:
+    """The same book, with the duration the frames draw.
+
+    A learner projection: the repository stores none of this, and the admin
+    import path never sees it.
+    """
+
+    language = str(book.get("learning_language") or "")
+    projected = dict(book)
+    projected["reading_time_seconds"] = reading_seconds(book.get("word_count"), language)
+    chapters = book.get("chapters")
+    if isinstance(chapters, list):
+        projected["chapters"] = [
+            {**chapter, "reading_time_seconds": reading_seconds(chapter.get("word_count"), language)}
+            for chapter in chapters
+            if isinstance(chapter, dict)
+        ]
+    return projected
+
+
 @router.get("/books")
 def list_books(learning_language: str, cursor: str | None = None, limit: int = 24) -> dict[str, Any]:
     repository, _asset = _require_backend()
@@ -281,7 +331,7 @@ def get_book(book_id: str) -> dict[str, Any]:
     book = _call_repository(lambda: repository.get_book(book_id))
     if book is None:
         raise HTTPException(404, "Book not found.")
-    response = dict(book)
+    response = _with_reading_time(book)
     response["provenance"] = None
     try:
         manifest = json.loads(asset_store.get(f"books/{book_id}/manifest.json"))

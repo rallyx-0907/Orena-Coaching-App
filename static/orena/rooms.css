@@ -5688,3 +5688,73 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
 .deck-new__cover-pick[aria-pressed='true'] {
   box-shadow: 0 0 0 2px var(--surface-canvas), 0 0 0 4px var(--accent-ink);
 }
+
+
+/* --- Book detail, frames 03 and 04 ---------------------------------------
+   The phone frame is drawn 1:1, so its numbers are the base; the desktop
+   frame lifts the type at width. */
+.book-hero__cover {
+  inline-size: 106px;
+  block-size: 144px;
+  flex: none;
+  border-radius: 13px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border-subtle), 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+.book-hero__cover .content-cover,
+.book-hero__cover img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.book-hero__copy { display: flex; flex-direction: column; gap: 7px; min-inline-size: 0; }
+.book-hero__title {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.book-hero__byline { margin: 0; font-size: 14.5px; color: var(--text-secondary); }
+.book-hero__meta { margin: 0; font-size: 11.5px; color: var(--text-secondary); }
+.book-section-title {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 18px;
+  letter-spacing: -0.018em;
+}
+.book-section-count { font-size: 11.5px; color: var(--text-secondary); }
+.book-chapter {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.book-chapter__n { flex: none; inline-size: 20px; font-size: 13px; color: var(--text-secondary); }
+.book-chapter__title { font-size: 15px; }
+/* The one in progress is lit, as the frame draws it, and its number takes the
+   accent ink. */
+.book-chapter[aria-current='true'] {
+  background: radial-gradient(90% 200% at 88% 50%, var(--accent-highlight), transparent 66%), var(--glass-focus);
+  box-shadow: var(--glass-ring-focus);
+}
+.book-chapter[aria-current='true'] .book-chapter__n { color: var(--accent-ink); }
+.book-chapter[aria-current='true'] .book-chapter__title {
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+  font-size: 15.5px;
+  color: var(--text-primary);
+}
+.book-chapter[data-done] .book-chapter__title { color: var(--text-secondary); }
+.book-chapter__done svg { color: var(--status-success); }
+
+@media (min-width: 1000px) {
+  .book-hero__title { font-size: 38px; line-height: 1.1; letter-spacing: -0.026em; }
+  .book-hero__byline { font-size: 18px; }
+  .book-hero__meta { font-size: 14px; }
+  .book-section-title { font-size: 24px; letter-spacing: -0.02em; }
+  .book-section-count { font-size: 14px; }
+  .book-chapter__title { font-size: 18px; }
+}

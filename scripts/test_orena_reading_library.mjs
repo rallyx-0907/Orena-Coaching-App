@@ -50,4 +50,54 @@ assert.match(browse, /class="lib-meta"/, 'the mono meta line');
 assert.match(browse, /entry\.percent != null \? ' data-progress' : ''/, 'and progress only when it is known');
 assert.match(browse, /sub: book\.author \|\| '',/, "a book's author comes from the library read");
 
-console.log('test_orena_reading_library.mjs: the import button brings the learner’s own text in');
+
+/* --- Book detail (frames 03-04) ----------------------------------------- */
+
+const library = at('static/orena/ui/library.js');
+const css = at('static/orena/rooms.css');
+const readingApi = at('writing_coach/reading_library_api.py');
+
+/* The duration is derived in the learner's answer, from a count that was
+   already stored, at the pace the product already chose. It is not a column
+   and it is not a second convention. */
+assert.match(readingApi, /def reading_seconds\(word_count: object, learning_language: str\) -> int:/,
+  'the learner answer derives a duration');
+assert.match(readingApi, /reading_processing\.(EN_WORDS_PER_MINUTE|ZH_CHARS_PER_MINUTE)/,
+  "at the product's own pace, read rather than redefined");
+assert.doesNotMatch(readingApi, /reading_time_seconds.*=.*\b(180|260)\b/, 'the pace is never inlined here');
+assert.match(readingApi, /response = _with_reading_time\(book\)/, 'and the learner read carries it');
+
+/* The admin import path is untouched by the projection. */
+const projection = readingApi.slice(
+  readingApi.indexOf('def reading_seconds'),
+  readingApi.indexOf('@router.get("/books")'),
+);
+for (const owned of ['asset_store', 'create_book', 'UploadFile', '_admin_guard'])
+  assert.ok(!projection.includes(owned), `the projection must not reach into ${owned}`);
+
+/* What the frames draw, and only that. */
+assert.match(library, /class="book-hero__meta ds-data"/, 'one meta line');
+assert.match(library, /class="book-section-count ds-data"/, 'how many chapters are read');
+assert.match(library, /r\.bookChapterMinutes/, 'a duration on every chapter row');
+assert.match(library, /const seconds = Number\(chapter\.reading_time_seconds \|\| 0\);/,
+  'taken from the server, not computed twice in the browser');
+assert.match(library, /seconds \? fill\(r\.bookChapterMinutes/, 'and absent when nothing was counted');
+
+/* Deleted, because the source draws neither (rule 44). */
+assert.ok(!library.includes('bookStat('), 'the statistic tiles are gone');
+for (const retired of ['bookStatWordsSaved', 'bookStatTime', 'bookStatQuiz', 'bookStatAudio', 'bookNotMeasured', 'bookAudioGap', 'bookSimilar', 'bookSimilarGap'])
+  assert.ok(!at('static/orena/ui/reference.js').includes(`${retired}:`), `${retired} went with them`);
+/* Kept, because frame 03 does draw it. */
+assert.match(library, /r\.bookWordsFrom/, 'the words the learner saved from this book stay');
+
+for (const [what, rule] of [
+  ['the cover', /\.book-hero__cover \{\n  inline-size: 106px;\n  block-size: 144px;/],
+  ['the title', /\.book-hero__title \{[^}]*font-size: 21px;\n  line-height: 1\.2;/s],
+  ['the byline', /\.book-hero__byline \{ margin: 0; font-size: 14\.5px;/],
+  ['a chapter row', /\.book-chapter \{[^}]*padding: 13px 15px;\n  border-radius: 14px;/s],
+  ['its number', /\.book-chapter__n \{ flex: none; inline-size: 20px; font-size: 13px;/],
+  ['the desktop lift', /@media \(min-width: 1000px\) \{\n  \.book-hero__title \{ font-size: 38px;/],
+])
+  assert.match(css, rule, `${what} is the frame\u2019s size`);
+
+console.log('test_orena_reading_library.mjs: book detail is its frames, and the duration is derived');
