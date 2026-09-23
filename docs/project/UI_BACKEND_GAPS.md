@@ -1304,3 +1304,32 @@ scroll, nothing clipped, chips and rows at the phone frame's sizes. At 1920 the
 grid fits five covers across exactly as the frame does, unless a scrollbar is
 present, which costs 15px and drops it to four.
 
+
+---
+
+## The learner rail on the Platform Admin console (2026-09-23, unresolved)
+
+`DESIGN_CONTRACT.md` rule 47 gives the rail to four places - Home, Library,
+Vocabulary and Progress. Platform Admin is none of them, and the canonical
+Admin frame (`Orena Admin Control Center.dc.html`) draws no learner rail at
+all: its tables are laid out for about 1320px.
+
+The console renders inside the learner shell, so the rail takes 280px and the
+console has 885px on a 1280px window. That is the single largest remaining
+difference between the Admin design and the implementation - every table in
+the console is laid out against a width the design never assumed.
+
+**Not resolved by choosing**, for two reasons the human should weigh:
+
+- `reader.css` is the existing precedent for a room quieting the shell, and it
+  is explicit that *nothing is hidden*: "every destination stays reachable, by
+  pointer and by keyboard - it simply stops competing." Hiding the rail on
+  Admin would be the opposite decision.
+- With the rail gone, the console has no way back into the learner app. The
+  reader keeps one; Admin's frame does not draw one.
+
+What was done instead: the console now lays out to its own width rather than
+the window's (`.ac-body` is a container, and the grid steps are container
+queries), so nothing overflows at 885px. If the rail goes, the container
+queries stop firing on their own and the console widens into the design's
+proportions with no further change.
