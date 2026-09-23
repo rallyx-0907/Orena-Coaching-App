@@ -97,8 +97,16 @@ assert.match(recall, /title="\$\{esc\(found\.attribution\)\}"/,
 /* No pill without a clip: the room draws it from an answer, never hopefully. */
 assert.match(recall, /const found = item \? heard\.get\(item\.word\) : null;[\s\S]{0,40}if \(!found\) return '';/,
   'a pill is drawn only for a word that has one');
-/* My Library's frames draw no speaker, so it has none. */
-assert.doesNotMatch(room, /speaker|wordAudio|vocab-listen/i,
-  'My Library draws no speaker, because its frames do not');
+/* My Library's frames draw no speaker, so it plays nothing - and it is where
+   the human decided (2026-09-23) a Commons recording is credited: author,
+   licence and a reachable source, in the word's own detail panel. */
+assert.doesNotMatch(room, /icon\('speaker|vocab-listen|new Audio\(/,
+  'My Library plays nothing, because its frames draw no speaker');
+assert.match(room, /api\.wordAudio\(entry\.title, entry\.detail\?\.readingKey \|\| ''\)/,
+  'it asks what the recording may be played under');
+assert.match(room, /class="my-library-detail__credit"/, 'and credits it in the word panel');
+assert.match(room, /\$\{esc\(found\.attribution\)\}/, 'with the author and the licence');
+assert.match(room, /href="\$\{esc\(found\.source\)\}"/, 'and a source that can be opened');
+assert.match(room, /entry\.ref\.domain !== 'language'/, 'only a word has one');
 
 console.log('Thư viện của tôi: one read per page, versioned writes, one scheduler, nothing invented: PASS');

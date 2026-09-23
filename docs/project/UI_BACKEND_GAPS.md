@@ -1637,3 +1637,18 @@ are covered on the next request.
 Until then `KokoroVoice` reports itself unavailable and the library answers "no
 audio", which is the correct behaviour and the reason the Chinese coverage
 figure is 12/15 rather than 15/15.
+
+## Where a Commons recording is credited: the human decided (2026-09-23)
+
+The design draws the pill and no place for the credit it obliges, so this is a
+human decision, recorded as one rather than read out of a frame:
+
+- **Author, licence and source go in the word's detail panel** - My Library's,
+  which is the app's word detail panel today. The source is a link, because
+  "where it came from" is the part a licence asks to be reachable.
+- **The recall card gets no attribution line.** It keeps `title` and
+  `aria-label` as an accessibility layer, which is now a supplement rather than
+  the whole of the obligation.
+
+My Library still plays nothing - its frames draw no speaker - so the split is:
+the review card plays, the word panel credits. The gate holds both halves.

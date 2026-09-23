@@ -80,6 +80,10 @@ export function renderCollection(root, ctx) {
        not there: the room still lists, and says what it cannot do. */
     own: new Map(), collections: [], queue: null, unavailable: false,
     detail: null, picking: null, busy: '', naming: null,
+    /* What a word's recording may be played under, by word. Asked for only
+       when a word's panel is open - this room draws no speaker, because its
+       frames draw none; it credits what the review card plays. */
+    credit: new Map(),
   };
 
   const kindOf = (id) => KINDS.find((kind) => kind.id === id);
@@ -215,10 +219,26 @@ export function renderCollection(root, ctx) {
           + `</div><p>${esc(r.myLibraryStateNote)}</p></section>`)
       + history
       + (inSets ? `<section class="my-library-detail__sets"><span class="ds-label">${esc(r.myLibraryInSets)}</span><div>${inSets}</div></section>` : '')
+      + credit(entry)
       + `<div class="my-library-detail__foot">`
       + (state.unavailable ? '' : `<button type="button" class="outline" data-library-file="${esc(refOf(entry))}">${icon('folder-plus', { size: 16 })}<span>${esc(r.myLibraryAddToSet)}</span></button>`)
       + (entry.action ? `<a class="primary" href="${esc(entry.action.route)}">${icon('arrow-square-out', { size: 16 })}<span>${esc(r.myLibraryOpenSource)}</span></a>` : '')
       + `</div></aside>`;
+  }
+
+  /* The credit a Commons recording obliges: who recorded it, under what, and
+     where it came from (human decision, 2026-09-23). The design draws no place
+     for this, so it is here rather than on the review card that plays it, and
+     the source is a link because "where it came from" is the part a licence
+     asks to be reachable. */
+  function credit(entry) {
+    if (entry.ref.domain !== 'language') return '';
+    const found = state.credit.get(entry.title);
+    if (!found) return '';
+    return `<section class="my-library-detail__credit"><span class="ds-label">${esc(r.myLibraryAudioCredit)}</span>`
+      + `<p>${esc(found.attribution)}</p>`
+      + (found.source ? `<a href="${esc(found.source)}" target="_blank" rel="noreferrer noopener">${esc(r.myLibraryAudioSource)}</a>` : '')
+      + `</section>`;
   }
 
   /* --- Choosing a set: only sets of this thing's own kind ---------------- */
@@ -279,7 +299,10 @@ export function renderCollection(root, ctx) {
     root.querySelector('[data-library-retry]')?.addEventListener('click', () => load());
     root.querySelectorAll('[data-library-open]').forEach((button) => (button.onclick = () => {
       const entry = entryFor(button.dataset.libraryOpen);
-      if (entry) { state.detail = { entry, own: ownOf(entry) }; paint(); }
+      if (!entry) return;
+      state.detail = { entry, own: ownOf(entry) };
+      paint();
+      askCredit(entry);
     }));
     root.querySelectorAll('[data-library-close]').forEach((button) => (button.onclick = () => {
       state.detail = null; state.picking = null; paint();
@@ -301,6 +324,24 @@ export function renderCollection(root, ctx) {
     if (naming) naming.onsubmit = (event) => { event.preventDefault(); newSet(); };
     const named = root.querySelector('[data-library-name]');
     if (named) named.oninput = () => { if (state.naming) state.naming.title = named.value; };
+  }
+
+  /* One word, once: the answer is cached on the server by (entry identity,
+     reading), so an open panel costs one request the first time and none
+     afterwards. A word with no recording credits nothing. */
+  async function askCredit(entry) {
+    if (entry.ref.domain !== 'language' || state.credit.has(entry.title)) return;
+    state.credit.set(entry.title, null);
+    try {
+      const answer = await api.wordAudio(entry.title, entry.detail?.readingKey || '');
+      if (!alive()) return;
+      if (answer?.available) {
+        state.credit.set(entry.title, answer);
+        paint();
+      }
+    } catch {
+      /* No credit to show, and nothing to say about it. */
+    }
   }
 
   /* --- Writing ---------------------------------------------------------- */

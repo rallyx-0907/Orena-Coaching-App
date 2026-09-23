@@ -2824,6 +2824,12 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   box-shadow: var(--accent-chip-ring);
   font-size: 14px;
 }
+/* The credit, in the panel's own idiom: the label in mono like the others,
+   the attribution as text, and the source as a link - it is the part of a
+   licence that asks to be reachable, not just printed. */
+.my-library-detail__credit { display: grid; gap: 6px; }
+.my-library-detail__credit p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
+.my-library-detail__credit a { justify-self: start; color: var(--accent-ink); font-size: 14px; font-weight: var(--weight-bold); }
 .my-library-detail__foot { display: flex; gap: 12px; flex-wrap: wrap; }
 .my-library-detail__foot .primary,
 .my-library-detail__foot .outline { min-block-size: 46px; padding-inline: 20px; border-radius: var(--radius-pill); }
