@@ -53,4 +53,16 @@ const empty = analyse({ samples: new Float32Array(rate * 0.2), sampleRate: rate,
 assert.ok(empty.contour.every((p) => p.st === null));
 assert.deepEqual(contourPolylines(empty.contour), []);
 
+// A lone glitch frame and an octave jump are not drawn as pitch movement.
+{
+  const points = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => ({ t: i / 100, hz: 200 }));
+  points[5].hz = 400; // one octave error inside a steady tone
+  const smoothed = contour(points);
+  assert.ok(smoothed.every((p) => p.st === null || Math.abs(p.st) < 1), 'a one-frame octave error is smoothed away');
+  const short = contour([{ t: 0, hz: null }, { t: 0.01, hz: 220 }, { t: 0.02, hz: 221 }, { t: 0.03, hz: null }]);
+  assert.ok(short.every((p) => p.st === null), 'a voiced run shorter than 60 ms is not drawn');
+  const jump = [...Array(8)].map((_, i) => ({ t: i / 100, st: 0 })).concat([...Array(8)].map((_, i) => ({ t: (8 + i) / 100, st: 6 })));
+  assert.equal(contourPolylines(jump).length, 2, 'a jump of more than 3 semitones breaks the line');
+}
+
 console.log('Speaking audio analysis (waveform, YIN pitch, contour): PASS');

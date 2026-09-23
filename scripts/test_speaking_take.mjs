@@ -136,4 +136,22 @@ assert.deepEqual(failureOf(Object.assign(new Error('x'), { name: 'AbortError' })
   assert.ok(h.last().result, 'the earlier result is still there');
 }
 
+// Losing the network while grading is neither the learner's nor the provider's: the take is kept
+// for this session and graded again when asked (Orena Speaking 09 C).
+assert.deepEqual(failureOf(Object.assign(new TypeError('Failed to fetch'))), { kind: 'offline', retry: true });
+{
+  let online = false;
+  const api = { assessPronunciation: async (b, l, line) => { if (!online) throw new TypeError('Failed to fetch'); return measured(line); } };
+  const h = harness({ api });
+  await h.take.start();
+  h.advance(1500);
+  await h.take.stop('Hello again.');
+  assert.deepEqual(h.last().error, { kind: 'offline', retry: true });
+  assert.ok(h.take.takeBlob, 'the recording is still here to grade later');
+  online = true;
+  await h.take.retry();
+  assert.equal(h.last().phase, TAKE.RESULT);
+  assert.equal(h.take.takeMs, 1500);
+}
+
 console.log('Speaking take lifecycle: PASS');

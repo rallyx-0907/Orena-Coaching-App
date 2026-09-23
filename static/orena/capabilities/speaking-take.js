@@ -28,6 +28,8 @@ export const MAX_TAKE_MS = 60_000;
 /* What went wrong, from the route's canonical error envelope. */
 export function failureOf(error) {
   if (error?.name === 'AbortError') return { kind: 'aborted', retry: false };
+  // A request that never reached the server: the network, not the learner and not the provider.
+  if ((error?.name === 'TypeError' && !error?.status) || globalThis.navigator?.onLine === false) return { kind: 'offline', retry: true };
   const category = String(error?.category || '');
   if (category === 'pronunciation_no_speech') return { kind: 'no_speech', retry: false };
   if (category === 'pronunciation_audio_empty') return { kind: 'too_short', retry: false };
@@ -173,6 +175,13 @@ export function createSpeakingTake({
     },
     get takeUrl() {
       return take?.url || '';
+    },
+    /* This tab's own copy of the current take (never uploaded anywhere but the assessment). */
+    get takeBlob() {
+      return take?.blob || null;
+    },
+    get takeMs() {
+      return take?.ms || 0;
     },
     dispose() {
       disposed = true;

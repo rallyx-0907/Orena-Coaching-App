@@ -81,17 +81,31 @@ export function pitchTrack(samples, sampleRate, { hopMs = 10, windowMs = 40, min
 }
 
 /* Semitones relative to the recording's own median voiced pitch, so a low and a high voice
-   draw comparable shapes. Isolated voiced frames (octave errors, clicks) are dropped. */
-export function contour(track) {
-  const voiced = track.filter((point) => point.hz);
-  if (!voiced.length) return track.map((point) => ({ t: point.t, st: null }));
-  const sorted = voiced.map((point) => point.hz).sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)];
-  return track.map((point, at) => {
-    const neighbours = [track[at - 1], track[at + 1]].filter((item) => item?.hz).length;
-    if (!point.hz || neighbours === 0) return { t: point.t, st: null };
-    return { t: point.t, st: 12 * Math.log2(point.hz / median) };
+   draw comparable shapes. A 5-frame median removes single-frame octave errors, and a voiced run
+   shorter than `minRunMs` (a click, a breath) is not drawn at all. */
+export function contour(track, { minRunMs = 60 } = {}) {
+  const hz = track.map((point, at) => {
+    if (!point.hz) return null;
+    const window = track.slice(Math.max(0, at - 2), at + 3).map((item) => item.hz).filter(Boolean).sort((a, b) => a - b);
+    return window[Math.floor(window.length / 2)];
   });
+  const voiced = hz.filter(Boolean).sort((a, b) => a - b);
+  if (!voiced.length) return track.map((point) => ({ t: point.t, st: null }));
+  const median = voiced[Math.floor(voiced.length / 2)];
+  const hop = track.length > 1 ? track[1].t - track[0].t : 0.01;
+  const minRun = Math.max(2, Math.round(minRunMs / 1000 / hop));
+  const keep = new Array(track.length).fill(false);
+  for (let at = 0; at < track.length; ) {
+    if (!hz[at]) {
+      at++;
+      continue;
+    }
+    let end = at;
+    while (end < track.length && hz[end]) end++;
+    if (end - at >= minRun) for (let i = at; i < end; i++) keep[i] = true;
+    at = end;
+  }
+  return track.map((point, at) => ({ t: point.t, st: keep[at] ? 12 * Math.log2(hz[at] / median) : null }));
 }
 
 /* A contour as SVG polyline point strings in a `width` x `height` box: one string per voiced
@@ -101,13 +115,17 @@ export function contourPolylines(points, { width = 1000, height = 200, span = nu
   const duration = Math.max(1e-6, (span ?? end) - from);
   const runs = [];
   let run = [];
+  let previous = null;
   for (const point of points) {
     if (point.t < from || point.t > end) continue;
-    if (point.st == null) {
+    // Silence breaks the line, and so does a jump no voice makes between two 10 ms frames.
+    if (point.st == null || (previous != null && Math.abs(point.st - previous) > 3)) {
       if (run.length > 1) runs.push(run);
       run = [];
-      continue;
+      previous = point.st;
+      if (point.st == null) continue;
     }
+    previous = point.st;
     const x = ((point.t - from) / duration) * width;
     const y = height / 2 - (Math.max(-range, Math.min(range, point.st)) / range) * (height / 2 - 10);
     run.push(`${x.toFixed(1)},${y.toFixed(1)}`);
