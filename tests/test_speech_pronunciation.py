@@ -338,3 +338,43 @@ def test_a_take_with_one_word_said_is_still_a_measurement():
     result = provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
                                    language="en", reference_text="Anna, pen.")
     assert result.words[1].error_type == "Omission"
+
+
+def test_unscripted_mode_sends_no_reference_and_keeps_only_meaningful_scores():
+    # Measured 2026-09-23: Azure's short-audio REST scores free speech when no reference is sent.
+    # Completeness has no meaning without a reference, so it is not reported.
+    payload = {
+        "RecognitionStatus": "Success",
+        "DisplayText": "你也是美国人吗？",
+        "NBest": [{
+            "Display": "你也是美国人吗？",
+            "PronunciationAssessment": {"AccuracyScore": 91, "FluencyScore": 79, "CompletenessScore": 100, "PronScore": 83.8},
+            "Words": [{"Word": "你", "Offset": 400000, "Duration": 2000000,
+                       "PronunciationAssessment": {"AccuracyScore": 95, "ErrorType": "None"},
+                       "Phonemes": [{"Phoneme": "ni 3", "PronunciationAssessment": {"AccuracyScore": 95}}]}],
+        }],
+    }
+    provider, session = make_provider(payload)
+    result = provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                                   language="zh", reference_text="", unscripted=True)
+    assert result.mode == "unscripted"
+    assert result.pron_score == 83.8 and result.fluency_score == 79.0
+    assert result.completeness_score is None
+    _, call = session.calls[0]
+    config = json.loads(base64.b64decode(call["headers"]["Pronunciation-Assessment"]))
+    assert "ReferenceText" not in config
+    assert config["EnableMiscue"] is False
+
+
+def test_unscripted_with_nothing_heard_is_no_speech():
+    provider, _ = make_provider({"RecognitionStatus": "Success", "DisplayText": "", "NBest": [{"PronScore": 0, "AccuracyScore": 0, "FluencyScore": 0, "Words": []}]})
+    with pytest.raises(SpeechPronunciationNoSpeech):
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="", unscripted=True)
+
+
+def test_scripted_mode_still_requires_a_reference():
+    provider, _ = make_provider({"NBest": [{"PronScore": 50}]})
+    with pytest.raises(SpeechPronunciationMalformed):
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="")

@@ -92,6 +92,9 @@ class SpeechPronunciationResult:
     completeness_score: float | None
     prosody_score: float | None
     words: tuple[PronunciationWord, ...]
+    # "scripted": assessed against a reference line. "unscripted": free speech, no reference
+    # (free talk); miscues and completeness have no meaning there and are not reported.
+    mode: str = "scripted"
 
 
 class SpeechPronunciationProvider(Protocol):
@@ -111,6 +114,7 @@ class SpeechPronunciationProvider(Protocol):
         content_type: str,
         language: str,
         reference_text: str,
+        unscripted: bool = False,
     ) -> SpeechPronunciationResult: ...
 
 
@@ -273,6 +277,7 @@ class AzureSpeechPronunciationProvider:
         content_type: str,
         language: str,
         reference_text: str,
+        unscripted: bool = False,
     ) -> SpeechPronunciationResult:
         del filename, content_type
         if not audio_bytes:
@@ -280,8 +285,8 @@ class AzureSpeechPronunciationProvider:
         if len(audio_bytes) > self._max_bytes:
             raise SpeechPronunciationPayloadTooLarge()
 
-        reference = str(reference_text or "").strip()
-        if not reference or len(reference) > self._max_reference_chars:
+        reference = "" if unscripted else str(reference_text or "").strip()
+        if not unscripted and (not reference or len(reference) > self._max_reference_chars):
             raise SpeechPronunciationMalformed()
 
         locale = self._locale(language)
@@ -291,12 +296,14 @@ class AzureSpeechPronunciationProvider:
         )
 
         config: dict[str, Any] = {
-            "ReferenceText": reference,
             "GradingSystem": "HundredMark",
             "Granularity": "Phoneme",
             "Dimension": "Comprehensive",
-            "EnableMiscue": True,
+            # Miscues need a reference to be measured against.
+            "EnableMiscue": not unscripted,
         }
+        if not unscripted:
+            config["ReferenceText"] = reference
         if locale.casefold() == "en-us" and self._enable_prosody:
             config["EnableProsodyAssessment"] = True
 
@@ -446,6 +453,8 @@ class AzureSpeechPronunciationProvider:
         reference_words = [word for word in words if word.error_type.casefold() != "insertion"]
         if reference_words and all(word.error_type.casefold() == "omission" for word in reference_words):
             raise SpeechPronunciationNoSpeech()
+        if unscripted and not words:
+            raise SpeechPronunciationNoSpeech()
 
         recognized_text = str(
             best.get("Display")
@@ -462,9 +471,10 @@ class AzureSpeechPronunciationProvider:
             pron_score=pron_score,
             accuracy_score=accuracy_score,
             fluency_score=fluency_score,
-            completeness_score=completeness_score,
+            completeness_score=None if unscripted else completeness_score,
             prosody_score=prosody_score,
             words=tuple(words),
+            mode="unscripted" if unscripted else "scripted",
         )
 
 class DemoPronunciationProvider:
@@ -495,8 +505,12 @@ class DemoPronunciationProvider:
         content_type: str,
         language: str,
         reference_text: str,
+        unscripted: bool = False,
     ) -> SpeechPronunciationResult:
         del filename, content_type
+        if unscripted:
+            # The stand-in has nothing honest to say about free speech.
+            raise SpeechPronunciationMalformed()
         if not audio_bytes:
             raise SpeechPronunciationMalformed()
         if len(audio_bytes) > self._max_bytes:

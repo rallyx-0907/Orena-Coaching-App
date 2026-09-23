@@ -491,6 +491,7 @@ async def assess_pronunciation(
     file: UploadFile = File(...),
     language: str = Form(default=""),
     reference_text: str = Form(default=""),
+    mode: str = Form(default="scripted"),
 ) -> dict[str, Any]:
     normalized_language = language.strip().casefold()
     if normalized_language not in {"en", "zh"}:
@@ -499,11 +500,16 @@ async def assess_pronunciation(
             "pronunciation_invalid_language",
             "Unsupported pronunciation language.",
         )
+    normalized_mode = mode.strip().casefold() or "scripted"
+    if normalized_mode not in {"scripted", "unscripted"}:
+        raise orena_http_error(422, "pronunciation_invalid_mode", "Unsupported pronunciation mode.")
+    unscripted = normalized_mode == "unscripted"
 
     provider = _pronunciation_provider()
-    reference = reference_text.strip()
+    # Free speech (free talk) is assessed with no reference line.
+    reference = "" if unscripted else reference_text.strip()
     max_reference_chars = int(getattr(provider, "max_reference_chars", 1200))
-    if not reference or len(reference) > max_reference_chars:
+    if not unscripted and (not reference or len(reference) > max_reference_chars):
         raise orena_http_error(
             422,
             "pronunciation_reference_invalid",
@@ -532,7 +538,7 @@ async def assess_pronunciation(
                 "pronunciation_audio_empty",
                 "The recording is empty.",
             )
-        result = _assess(provider, data, file, normalized_language, reference)
+        result = _assess(provider, data, file, normalized_language, reference, unscripted)
         outcome = result.score_kind
     except HTTPException as exc:
         detail = exc.detail if isinstance(exc.detail, dict) else {}
@@ -553,6 +559,7 @@ async def assess_pronunciation(
     return {
         "provider": result.provider,
         "score_kind": result.score_kind,
+        "mode": getattr(result, "mode", "scripted"),
         "language": normalized_language,
         "locale": result.locale,
         "reference_text": reference,
@@ -593,6 +600,7 @@ def _assess(
     file: UploadFile,
     language: str,
     reference: str,
+    unscripted: bool = False,
 ) -> Any:
     """Call the provider and turn each way it can fail into a learner-safe error.
 
@@ -605,6 +613,7 @@ def _assess(
             content_type=file.content_type or "application/octet-stream",
             language=language,
             reference_text=reference,
+            unscripted=unscripted,
         )
     except SpeechPronunciationPayloadTooLarge as exc:
         raise orena_http_error(

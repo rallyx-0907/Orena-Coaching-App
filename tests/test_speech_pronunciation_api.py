@@ -163,3 +163,31 @@ def test_the_log_line_carries_operations_not_content(client, caplog):
     assert "pronunciation" in line and "stub-provider" in line
     assert "Two cats slept" not in line
     assert "audio-bytes" not in line
+
+
+def test_unscripted_mode_needs_no_reference_and_says_its_mode(client):
+    provider = StubProvider(SpeechPronunciationResult(
+        provider="stub-provider", score_kind="measured", locale="zh-CN", recognized_text="你好",
+        pron_score=84.0, accuracy_score=91.0, fluency_score=79.0, completeness_score=None,
+        prosody_score=None, words=(), mode="unscripted",
+    ))
+    speech_api.configure_speech_pronunciation(provider)
+    response = client.post(
+        "/api/speech/pronunciation",
+        files={"file": ("take.webm", b"audio", "audio/webm")},
+        data={"language": "zh", "reference_text": "", "mode": "unscripted"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "unscripted" and body["reference_text"] == ""
+    assert provider.calls[0][1]["unscripted"] is True
+
+
+def test_an_unknown_mode_is_refused(client):
+    speech_api.configure_speech_pronunciation(StubProvider(measured_result()))
+    response = client.post(
+        "/api/speech/pronunciation",
+        files={"file": ("take.webm", b"audio", "audio/webm")},
+        data={"language": "en", "reference_text": "x", "mode": "karaoke"},
+    )
+    assert response.status_code == 422
