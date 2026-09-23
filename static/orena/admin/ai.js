@@ -68,10 +68,29 @@ function testLine(test, standby, t, ui) {
 function healthCell(row, test, standbyTest, t, ui) {
   const recorded = row
     ? `${chip(row.health_state || 'no_data', t)}<small>${esc(row.evidence_count
-        ? fill(t.healthEvidence, { count: num(row.evidence_count, ui), failures: num(row.failure_rate_percent, ui), latency: latency(row.avg_latency_ms, ui) })
+        ? fill(t.healthEvidenceCount, { count: num(row.evidence_count, ui) })
         : t.healthNoEvidence)}</small>`
     : `${chip('no_data', t)}<small>${esc(t.healthNoEvidence)}</small>`;
   return `<div class="ac-cell-stack">${recorded}${testLine(test, false, t, ui)}${testLine(standbyTest, true, t, ui)}</div>`;
+}
+
+/* Latency and errors are their own columns in the canonical design, because an
+   operator scans them, and a number folded into a sentence inside the health
+   cell cannot be scanned down a table.
+   The design asks for P95; the control plane records a mean over its sample
+   window and nothing else, so the mean is what is shown, labelled as the mean.
+   A number under a heading it does not answer would be worse than a gap. */
+function latencyCell(row, t, ui) {
+  if (!row || !row.evidence_count || row.avg_latency_ms === null || row.avg_latency_ms === undefined) {
+    return `<span class="ac-muted">—</span>`;
+  }
+  return `<div class="ac-cell-stack"><span>${esc(latency(row.avg_latency_ms, ui))}</span><small class="ac-muted">${esc(t.latencyMeanNote)}</small></div>`;
+}
+
+function errorsCell(row, t, ui) {
+  if (!row || !row.evidence_count) return `<span class="ac-muted">—</span>`;
+  const rate = Number(row.failure_rate_percent || 0);
+  return `<div class="ac-cell-stack"><span${rate ? ' data-tone="bad"' : ''}>${esc(fill(t.errorRateValue, { percent: num(rate, ui) }))}</span><small class="ac-muted">${esc(fill(t.errorCountValue, { count: num(row.failure_count || 0, ui) }))}</small></div>`;
 }
 
 function route(provider, model, providers, t) {
@@ -132,6 +151,8 @@ export function routingView(state, t, ui) {
         enabled,
         kind === 'configurable' ? route(saved ? config.provider : '', saved ? config.model : '', providers, t) : '<span class="ac-muted">—</span>',
         kind === 'configurable' ? route(saved ? config.backup_provider : '', saved ? config.backup_model : '', providers, t) : '<span class="ac-muted">—</span>',
+        kind === 'configurable' ? latencyCell(operations.get(capability.key), t, ui) : '<span class="ac-muted">—</span>',
+        kind === 'configurable' ? errorsCell(operations.get(capability.key), t, ui) : '<span class="ac-muted">—</span>',
         kind === 'configurable' ? healthCell(operations.get(capability.key), test, standbyTest, t, ui) : '<span class="ac-muted">—</span>',
         actions,
       ],
@@ -141,12 +162,16 @@ export function routingView(state, t, ui) {
     }
   }
   const body = table({
-    head: [t.colCapability, t.colEnabled, t.colPrimary, t.colStandby, t.colHealth, { label: t.colActions, hidden: true }],
+    head: [t.colCapability, t.colEnabled, t.colPrimary, t.colStandby, { label: t.colLatency, numeric: true }, { label: t.colErrors, numeric: true }, t.colHealth, { label: t.colActions, hidden: true }],
     rows,
     empty: t.notAvailable,
     className: 'ac-table--routing',
   });
-  return panel({ title: t.routingTitle, note: t.routesNote, body });
+  /* The rule the design writes out on this panel: a provider that is
+     configured but has served no traffic is NO DATA, and no data is not
+     health. Said here, where the column is, rather than left to be inferred
+     from a grey chip. */
+  return panel({ title: t.routingTitle, note: `${t.routesNote} ${t.routesNoDataRule}`, body });
 }
 
 export function runtimeView(runtime, t, names = {}) {

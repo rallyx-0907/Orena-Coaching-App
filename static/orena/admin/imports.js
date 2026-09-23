@@ -10,6 +10,8 @@
    collection as a whole. Book and media attempts are recorded server-side, so
    history lists failures too, with the stage where each one stopped. */
 import { adminApi } from './api.js';
+import { jobRows } from './reading.js';
+import { emptyBlock, errorBlock, failureDetail, gapNote, loadingBlock } from './states.js';
 import { bytes, chip, dateTime, duration, esc, fill, languageName, notice, num, pager, panel, relative, select, table } from './format.js';
 import { safeExternal } from '../ui/html.js';
 
@@ -247,6 +249,26 @@ export function historyResult(row, t, ui) {
   return esc([result.title, fill(t.vocabResult, { imported: num(result.imported, ui), duplicates: num(result.duplicates, ui), skipped: num(result.skipped, ui) })].filter(Boolean).join(t.pairSep));
 }
 
+
+/* The Reading engine's queue, in the area an operator already looks for an
+   import. Its own feed and its own cursor: the catalogue history counts rows
+   it owns, and merging two paginations into one table would mean a page that
+   silently skips work. */
+export function readingJobsView(page, filters, t, ui) {
+  const items = (page?.items || []).filter((job) => filters.status !== 'failed' || job.status === 'failed');
+  return panel({
+    title: t.readingJobsTitle,
+    note: t.importsReadingNote,
+    body: `${table({
+      head: [t.readingColJob, t.colStatus, t.readingColStage, t.readingColAttempt, t.colError, t.colDate,
+             { label: t.colActions, hidden: true }],
+      rows: jobRows(items, t, ui),
+      empty: t.readingNoJobs,
+      className: 'ac-table--history',
+    })}${page?.next_cursor ? `<div class="ac-pager"><span class="ac-pager__buttons"><button type="button" class="ac-button" data-ac-jobs-more>${esc(t.next)}</button></span></div>` : ''}`,
+  });
+}
+
 export function historyView(data, filters, t, ui) {
   if (!data?.available) return notice(t.historyUnavailable, 'neutral');
   const rows = (data.items || []).map((row) => [
@@ -258,6 +280,7 @@ export function historyView(data, filters, t, ui) {
     row.error ? `<span class="ac-error">${esc(failureText({ code: row.error.code, stage: row.error.stage, message: row.error.message }, t))}</span>` : '',
   ]);
   const summary = data.summary ? `<p class="ac-muted">${esc(fill(t.historySummary, { total: num(data.summary.total, ui), failed: num(data.summary.failed, ui) }))}</p>` : '';
+  const errorsOnly = filters.status === 'failed';
   return `<form class="ac-toolbar" data-ac-history-filters>${select({
     name: 'kind', label: t.colTypeContent, value: filters.kind,
     options: [['', t.all], ['book', t.kind_book], ['media', t.kind_media], ['vocabulary', t.kind_vocabulary]],
@@ -269,7 +292,9 @@ export function historyView(data, filters, t, ui) {
     rows,
     empty: t.historyEmpty,
     className: 'ac-table--history',
-  })}${pager({ offset: data.offset || 0, limit: data.limit || HISTORY_PAGE, total: data.total || 0 }, t, ui)}`;
+  })}${pager({ offset: data.offset || 0, limit: data.limit || HISTORY_PAGE, total: data.total || 0 }, t, ui)}${
+    errorsOnly ? '' : gapNote(t, t.importsFeedGap)
+  }`;
 }
 
 export async function renderImports(container, env) {
@@ -289,6 +314,7 @@ export async function renderImports(container, env) {
       },
     },
     history: { filters: { kind: '', status: ['failed'].includes(params.status) ? params.status : '' }, offset: 0, data: null },
+    jobs: { page: null, cursor: null },
   };
 
   container.innerHTML = `<div class="ac-stack">${panel({ title: t.newImport, body: '<div data-ac-chooser></div><div data-ac-flow-host></div>' })}${panel({ title: t.historyTitle, body: '<div class="ac-stack ac-stack--tight" data-ac-history></div>' })}</div>`;
@@ -308,14 +334,27 @@ export async function renderImports(container, env) {
           ? vocabularyView(state.vocabulary, t, ui)
           : '';
   };
+  /* Two feeds, one filter: the catalogue history the server paginates, and the
+     Reading engine's own job queue. A runtime without the engine answers 503,
+     which is a missing table rather than a broken page. */
   const loadHistory = async () => {
-    try {
-      state.history.data = await api.history({ ...state.history.filters, limit: HISTORY_PAGE, offset: state.history.offset });
-    } catch {
-      state.history.data = null;
-    }
+    if (historyHost && !state.history.data) historyHost.innerHTML = loadingBlock(t, { rows: 5 });
+    const [history, jobs] = await Promise.allSettled([
+      api.history({ ...state.history.filters, limit: HISTORY_PAGE, offset: state.history.offset }),
+      api.readingJobs?.({ limit: 10, cursor: state.jobs.cursor || '' }) ?? Promise.resolve(null),
+    ]);
+    state.history.data = history.status === 'fulfilled' ? history.value : null;
+    state.jobs.page = jobs.status === 'fulfilled' ? jobs.value : null;
     if (!alive() || !historyHost) return;
-    historyHost.innerHTML = state.history.data ? historyView(state.history.data, state.history.filters, t, ui) : notice(t.loadFailed, 'bad');
+    if (!state.history.data) {
+      const failure = failureDetail(history.reason, t);
+      historyHost.innerHTML = errorBlock(t, { detail: failure.detail, reference: failure.reference });
+      historyHost.querySelector('[data-ac-retry]')?.addEventListener('click', loadHistory, { once: true });
+      return;
+    }
+    historyHost.innerHTML = `${historyView(state.history.data, state.history.filters, t, ui)}${
+      state.jobs.page ? readingJobsView(state.jobs.page, state.history.filters, t, ui) : ''
+    }`;
   };
 
   paintFlow();
@@ -437,6 +476,19 @@ export async function renderImports(container, env) {
   };
 
   const onClick = (event) => {
+    const jobsMore = event.target.closest?.('[data-ac-jobs-more]');
+    if (jobsMore) {
+      state.jobs.cursor = state.jobs.page?.next_cursor || null;
+      loadHistory();
+      return;
+    }
+    const retryJob = event.target.closest?.('[data-ac-retry]')?.dataset?.acRetry
+      ? event.target.closest('[data-ac-retry]')
+      : null;
+    if (retryJob) {
+      (api.readingRetryJob?.(retryJob.dataset.acRetry) ?? Promise.resolve()).then(loadHistory).catch(() => loadHistory());
+      return;
+    }
     const choice = event.target.closest('button[data-ac-flow]');
     if (choice) {
       state.flow = choice.dataset.acFlow;
@@ -522,6 +574,8 @@ export async function renderImports(container, env) {
     if (target.closest('[data-ac-history-filters]')) {
       state.history.filters[target.name] = target.value;
       state.history.offset = 0;
+      // The filter applies to both feeds, so the job page restarts with it.
+      state.jobs.cursor = null;
       loadHistory();
     }
   };
