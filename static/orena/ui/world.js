@@ -218,7 +218,13 @@ export async function renderWorld(root, ctx) {
         intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
         {
           only: intent === 'reading' ? ['books'] : ['audio', 'video'],
-          onImport: intent === 'reading' ? () => openReadingRequest(ctx) : ctx.import,
+          /* "Nhập văn bản" means what it says: the learner brings their own
+             text in. It used to open the generator instead - the button was
+             labelled `libraryImportReading` and asked which topic and level to
+             *invent* a passage about, which is a different thing and not what
+             the canonical frame draws. Asking for a generated passage keeps
+             its own door (`[data-read]`). */
+          onImport: ctx.import,
           titleTag: intent ? 'h1' : 'h2',
         },
       ) || (() => {});

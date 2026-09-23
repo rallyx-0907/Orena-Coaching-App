@@ -2147,3 +2147,54 @@ data; frames 16 and 17 are the Speaking lane's.
 One door is still the human's to draw, unchanged from the earlier note: no
 populated Vocabulary frame draws a way to add a word by hand, so frames 23–24
 are reached from frame 29 (the empty room) and through frame 22's set picker.
+
+## Reading, slice A — the library (frames 01–02), 2026-09-23
+
+Measured at 390x844 against the pinned frame (hash verified against `PINS.tsv`).
+**Most of this surface already matched**, which the measurement is how we know:
+title 24/800/-0.02em, chips 9x15 at radius 999 and 13.5px, cover 222 at radius
+14, card title 15/700, meta 11px mono, grid gap 18, and — at phone width — the
+two 42x42 radius-13 controls the mobile frame draws. The card template already
+carries the author and the progress bar the frame draws; they are absent only
+when the data is.
+
+**One real defect, and it was a behaviour, not a pixel.** The library's control
+is labelled "Nhập văn bản" / "Import text" and opened the *passage generator*:
+a sheet asking which form, level and topic to **invent** a passage about, with
+no field to paste anything into. A learner could not bring their own text in
+from Reading at all. It now opens the learner's own import (`ctx.import` — a
+title and a body, into device memory), which is what the label says and what
+the frame draws. Asking for a generated passage keeps its own door
+(`[data-read]`), so nothing was removed. A gate refuses the old wiring.
+
+### Ownership audit, done before touching anything
+
+| Owner | Modules |
+| --- | --- |
+| **Admin lane** | `reading_admin_api`, `reading_content_engine`, `reading_source_import`, `reading_worker`, `reading_processing`, and `reading_content_repository` |
+| **This lane** | `reading_articles_api` (published only), `becoming_reading`, `/api/reading/session*`, and the learner half of `reading_library_api` |
+| **Shared file** | `reading_library_api` holds admin EPUB import *and* the learner catalog/chapter reads. Nothing in it was changed. |
+
+### Dependencies on the Admin lane — recorded, not worked around
+
+1. **The frame's chips are `Tất cả · Sách · Bài báo · Tin tức`.** Books have a
+   type. Published articles do not: `reading_articles` carries `topic` and
+   `subtopic` but **no field that separates an article from a news item**, and
+   the nearest column (`reading_sources.source_type`) is an ingestion concept
+   two joins away that means something else. Adding one is a change to what
+   ingestion records and publish approves, which this lane does not own.
+   **Needed from Admin lane:** a learner-facing kind on a published article.
+   Until then the room derives its chips from the data it really has, so the
+   missing chips are simply absent rather than drawn over nothing.
+2. **`/api/reading/articles` exists, is learner-facing, and the app never calls
+   it.** Only the admin console reads the `/api/admin/reading/*` side. In the
+   sandbox the route answers `503 reading_articles_unavailable` — the engine is
+   not configured there — so wiring it in could not be verified end-to-end and
+   was not done blind. It is the obvious next step once either the sandbox has
+   the engine or the kind field lands.
+
+### Not done, and why
+
+The phone search that expands on focus, and the library's "load more", are
+**already on the human's open-decision list** in this file and in
+`CURRENT_HANDOFF.md`. They were left alone.
