@@ -1,8 +1,5 @@
-import {
-  bindContentRails,
-  discoverySpread,
-  practiceOverview,
-} from './discovery.js';
+import { bindTodayWords, practiceOverview } from './discovery.js';
+import { homeHtml, bindHome } from './home.js';
 import { referenceCopy, editorialIntro } from './reference.js';
 import { duration, origin, art, bindImages } from './content.js';
 import { companionArt, scene } from './brand.js';
@@ -17,21 +14,12 @@ import {
 import { contentFor } from '../content/texts.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
 import { readingEntry, readingSessionId } from '../content/reading.js';
-import { openReadingRequest, readingRow } from './reading.js';
-import {
-  publishedReadings,
-  filterReadings,
-} from '../content/reading-library.js';
-import { collectionSearch, bindCollectionSearch } from './collection-search.js';
-import {
-  renderVocabularyCollectionCard,
-  renderVocabularyBrowseCard,
-  renderVocabularyFeedCarousel,
-  bindVocabularyFeedCarousel,
-  vocabularyKeepPayload as sharedVocabularyKeepPayload,
-} from './vocabulary-experience.js';
-import { paintLibraryGrid } from './library.js';
-import { listeningItem, paintMediaLibrary } from './media-library.js';
+import { openReadingRequest } from './reading.js';
+import { publishedReadings } from '../content/reading-library.js';
+import { vocabularyKeepPayload as sharedVocabularyKeepPayload } from './vocabulary-experience.js';
+import { renderLibraryBrowse } from './library-browse.js';
+import { renderSearch } from './search.js';
+import { listeningItem } from './media-library.js';
 
 // Imported media carries no catalog level, and its length is unknown until the
 // asset reports one. Join only what is actually true of this item, so an import
@@ -79,13 +67,6 @@ export function mapVocabularySupportTranslation(card, supportLanguage) {
   return bySupport[supportLanguage] || bySupport.vi || '';
 }
 
-function vocabularyCardDefinition(card) {
-  const meanings = Array.isArray(card?.meanings) ? card.meanings : [];
-  const targetLanguage = String(card?.identity?.language || '');
-  const own = meanings.find((m) => String(m?.language || '') === targetLanguage);
-  return String((own || meanings[0])?.text || '');
-}
-
 /* The one payload shape both "keep" actions send to the existing
    POST /api/library/vocabulary - only `source_kind` tells them apart. No new
    save endpoint, no second card shape. */
@@ -93,258 +74,12 @@ export function vocabularyKeepPayload(card, sourceKind, supportLanguage) {
   return sharedVocabularyKeepPayload(card, sourceKind, supportLanguage);
 }
 
-function vocabularyDiscoverCopy(c, supportLanguage) {
-  return {
-    ...c,
-    supportLanguage,
-    save: c.vocabularySave || c.keep,
-    saved: c.vocabularySaved || c.saved,
-    study: c.vocabularyStudy || c.lookCloser,
-    open: c.vocabularyOpen || c.lookCloser,
-    vocabularyFeedSoundOn: c.vocabularyFeedSoundOn,
-    vocabularyFeedSoundOff: c.vocabularyFeedSoundOff,
-    words: c.vocabularyWordCount,
-    learning: c.vocabularyLearningState,
-    due: c.vocabularyDueState,
-    mastered: c.vocabularyMasteredState,
-    newWord: c.vocabularyNew,
-  };
-}
-
-// Grouped in the order frameworks first appear, preserving the API's
-// framework/level/title sort within each group.
-export function groupVocabularyCollectionsByFramework(collections) {
-  const order = [];
-  const groups = new Map();
-  for (const collection of Array.isArray(collections) ? collections : []) {
-    const framework = String(collection?.framework || '');
-    if (!groups.has(framework)) {
-      groups.set(framework, []);
-      order.push(framework);
-    }
-    groups.get(framework).push(collection);
-  }
-  return order.map((framework) => ({ framework, collections: groups.get(framework) }));
-}
-
-// `framework` is open-ended content, not a fixed UI enum (see the plan's
-// Level/framework/topic metadata section) - a framework with no authored
-// label still shows its own name, truthfully, rather than disappearing.
-function vocabularyFrameworkLabel(c, framework) {
-  const key = `vocabularyFramework_${String(framework || '').replace(/[^a-z0-9]/gi, '').toLowerCase()}`;
-  return c[key] || framework;
-}
-
-function vocabularyLibraryCollectionRow(c, collection, index, supportLanguage = 'en') {
-  return renderVocabularyCollectionCard(vocabularyDiscoverCopy(c, supportLanguage), collection, { index });
-}
-
-// A saved catalog card never offers a second save affordance - it says,
-// plainly, that it is already in My Language.
-export function vocabularyLibraryCardAfterSlot(c, card, index) {
-  if (card?.saved) {
-    return `<span class="meta" data-vocabulary-kept>${esc(c.vocabularyAlreadyKept)}</span>`;
-  }
-  return `<button class="quiet" data-library-keep="${index}">${esc(c.vocabularySave || c.keep)} ＋</button>`;
-}
-
-export function vocabularyFeedCardAfterSlot(c, index) {
-  return `<button class="quiet" data-feed-keep="${index}">${esc(c.vocabularySave || c.keep)} ＋</button>`;
-}
-
-// Discovery is an invitation into the language world, not the Vocabulary
-// Library destination. Keep only the small Feed widget here; the complete
-// collection catalog belongs to #/language.
-export function discoveryVocabularySection(c) {
-  return `<section class="voices discovery-vocabulary-feed" data-vocabulary-feed aria-label="${esc(c.vocabularyFeedTitle)}"></section>`;
-}
-
-/* Inner content only - the caller owns the permanent
-   <section data-vocabulary-library> wrapper so a state repaint never
-   double-nests it. */
-export function vocabularyLibrarySection(c, state = {}) {
-  const { collections, error, open, supportLanguage = 'en' } = state;
-  const heading = `<div class="section-head"><h2>${esc(c.vocabularyLibraryTitle)}</h2></div><p class="meta">${esc(c.vocabularyLibraryNote)}</p>`;
-  let body;
-  if (open) {
-    if (open.error) {
-      body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-library-retry>${esc(c.retry)}</button></p>`;
-    } else if (!open.items) {
-      body = `<p class="loading" role="status">${esc(c.vocabularyLibraryLoading)}</p>`;
-    } else {
-      body = `<button class="quiet" data-close-collection>${esc(c.vocabularyLibraryBack)}</button><h3>${esc(open.title || '')}</h3><section class="vocabulary-browse-grid vocabulary-card">${open.items
-        .map((card, index) => renderVocabularyBrowseCard(vocabularyDiscoverCopy(c, supportLanguage), card, { index, saveAttribute: 'data-library-keep', source: 'collection' }))
-        .join('')}</section>`;
-    }
-  } else if (error) {
-    body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-library-retry>${esc(c.retry)}</button></p>`;
-  } else if (!collections) {
-    body = `<p class="loading" role="status">${esc(c.vocabularyLibraryLoading)}</p>`;
-  } else if (!collections.length) {
-    body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyLibraryEmpty)}</p></div>`;
-  } else {
-    body = groupVocabularyCollectionsByFramework(collections)
-      .map(
-        (group) =>
-          `<h3>${esc(vocabularyFrameworkLabel(c, group.framework))}</h3><div class="vocabulary-collection-grid vocabulary-collection-grid--full">${group.collections
-            .map((collection, index) => vocabularyLibraryCollectionRow(c, collection, index, supportLanguage))
-            .join('')}</div>`,
-      )
-      .join('');
-  }
-  return `${heading}${body}`;
-}
-
-export function vocabularyFeedSection(c, state = {}) {
-  const { items, error, supportLanguage = 'en' } = state;
-  const heading = `<div class="section-head"><h2>${esc(c.vocabularyFeedTitle)}</h2></div>`;
-  let body;
-  if (error) {
-    body = `<p class="notice" role="alert">${esc(c.unavailable)} <button data-feed-retry>${esc(c.retry)}</button></p>`;
-  } else if (!items) {
-    body = `<p class="loading" role="status">${esc(c.vocabularyFeedLoading)}</p>`;
-  } else if (!items.length) {
-    body = `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.vocabularyFeedEmpty)}</p></div>`;
-  } else {
-    body = renderVocabularyFeedCarousel(vocabularyDiscoverCopy(c, supportLanguage), items, { limit: 5, saveAttribute: 'data-feed-keep', full: false, variant: 'discovery' });
-  }
-  return `${heading}${body}`;
-}
-
-/* The dedicated Vocabulary controller repaints only its own Library container.
-   Discovery has no Library mount, but retaining this controller keeps the
-   existing collection-detail contract available to the Vocabulary route and
-   its regression tests. */
-async function paintVocabularyLibrary(container, ctx) {
-  if (!container) return;
-  const { api, c, language, alive, support } = ctx;
-  let collections = null;
-  let error = false;
-  let open = null;
-  function paint() {
-    if (!alive()) return;
-    container.innerHTML = vocabularyLibrarySection(c, { collections, error, open, supportLanguage: support });
-    container.querySelectorAll('[data-open-collection]').forEach((button) => {
-      button.onclick = () => loadCollection(button.dataset.openCollection);
-    });
-    container.querySelector('[data-close-collection]')?.addEventListener('click', () => {
-      open = null;
-      paint();
-    });
-    container.querySelector('[data-library-retry]')?.addEventListener('click', () => {
-      if (open) loadCollection(open.id);
-      else loadList();
-    });
-    container.querySelectorAll('[data-library-keep]').forEach((button) => {
-      button.onclick = () => keep(button, Number(button.dataset.libraryKeep));
-    });
-    container.querySelectorAll('[data-vocabulary-study]').forEach((button) => {
-      button.onclick = () => { location.hash = '#/language'; };
-    });
-    bindVocabularyFeedCarousel(container);
-  }
-  async function loadList() {
-    collections = null;
-    error = false;
-    open = null;
-    paint();
-    try {
-      const data = await api.vocabularyLibraryCollections(language);
-      if (!alive()) return;
-      collections = data.items || [];
-    } catch {
-      if (!alive()) return;
-      error = true;
-    }
-    paint();
-  }
-  async function loadCollection(id) {
-    open = { id, items: null, error: false };
-    paint();
-    try {
-      const detail = await api.vocabularyLibraryCollection(id);
-      if (!alive()) return;
-      open = { id, title: detail.title, items: detail.items || [], error: false };
-    } catch {
-      if (!alive()) return;
-      open = { id, items: null, error: true };
-    }
-    paint();
-  }
-  async function keep(button, index) {
-    const card = open?.items?.[index];
-    if (!card) return;
-    button.disabled = true;
-    try {
-      await api.saveLibraryVocabulary(vocabularyKeepPayload(card, 'collection', support));
-      if (!alive()) return;
-      open.items[index] = { ...card, saved: true };
-      paint();
-    } catch {
-      if (!alive()) return;
-      button.disabled = false;
-    }
-  }
-  await loadList();
-}
-
-/* The Discovery controller repaints only its Feed container. The complete
-   collection catalog is owned by the dedicated Vocabulary route. */
-async function paintVocabularyFeed(container, ctx) {
-  if (!container) return;
-  const { api, c, language, alive, support } = ctx;
-  let items = null;
-  let error = false;
-  function paint() {
-    if (!alive()) return;
-    container.innerHTML = vocabularyFeedSection(c, { items, error, supportLanguage: support });
-    container.querySelector('[data-feed-retry]')?.addEventListener('click', load);
-    container.querySelectorAll('[data-feed-keep]').forEach((button) => {
-      button.onclick = () => keep(button, Number(button.dataset.feedKeep));
-    });
-    container.querySelectorAll('[data-vocabulary-study]').forEach((button) => {
-      button.onclick = () => { location.hash = '#/language'; };
-    });
-    bindVocabularyFeedCarousel(container);
-  }
-  async function load() {
-    items = null;
-    error = false;
-    paint();
-    try {
-      const data = await api.dailyVocabularyFeed(language);
-      if (!alive()) return;
-      items = data.items || [];
-    } catch {
-      if (!alive()) return;
-      error = true;
-    }
-    paint();
-  }
-  // Feed Keep removes the kept word from the local list optimistically - no
-  // full reload, and no second save endpoint: the same POST
-  // /api/library/vocabulary Library browsing uses, tagged source_kind 'feed'.
-  async function keep(button, index) {
-    const card = items?.[index];
-    if (!card) return;
-    button.disabled = true;
-    try {
-      await api.saveLibraryVocabulary(vocabularyKeepPayload(card, 'feed', support));
-      if (!alive()) return;
-      items = items.filter((_, i) => i !== index);
-      paint();
-    } catch {
-      if (!alive()) return;
-      button.disabled = false;
-    }
-  }
-  await load();
-}
 export async function renderWorld(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
   // The library paints itself asynchronously into its own container and binds
   // its own shelves there; this is how that binding is released with the room.
   let releaseLibrary = () => {};
+  let unbindHome = () => {};
   const text = contentFor(language).map((x) => ({
     ...x,
     id: `story:${x.id}`,
@@ -355,6 +90,10 @@ export async function renderWorld(root, ctx) {
     api.readingSessions(12),
     location.page === 'discover'
       ? api.dailyVocabularyFeed(language)
+      : Promise.resolve({ items: [] }),
+    // The vocabulary collections the Home rail shows.
+    location.page === 'discover'
+      ? api.vocabularyLibraryCollections(language)
       : Promise.resolve({ items: [] }),
   ]);
   if (!alive()) return;
@@ -438,56 +177,32 @@ export async function renderWorld(root, ctx) {
     /* Listening opens on the voices, for the same reason Reading opens on the
        books: the headline and its paragraph told a learner nothing and cost
        the first viewport (D-057 rule 13). */
-    const intro = intent === 'reading'
-      ? pageIntro({ title: r.reading, compact: true })
-      : intent === 'follow'
-      ? pageIntro({ title: r.listening, compact: true })
+    const libraryRoom = intent === 'reading' || intent === 'follow';
+    const intro = libraryRoom
+      ? ''
       : !intent
       ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
       : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
     /* The way back sits above the heading, and the heading's eyebrow names
        the room - the way back already says "Practice". */
-    const practiceContinuation = intent === 'follow'
-      ? ''
-      : intent === 'reading'
-        ? continuationShelf(ctx, 12, {
-            title: r.continueLearning,
-            compact: true,
-            experience: 'reading',
-            rail: true,
-          })
-        : continuation;
-    root.innerHTML = `${intent ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
+    const practiceContinuation = libraryRoom ? '' : continuation;
+    root.innerHTML = `${intent && !libraryRoom ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
       intent === 'reading'
-        /* The library is the room. Search, facets and the whole flat list of
-           everything readable are how a learner finds one specific thing they
-           already have in mind - a utility, folded away until it is wanted,
-           rather than the first thing the page shows (D-057 rule 17). */
-        ? `<section class="voices" data-library-grid aria-label="${esc(c.libraryTitle)}"></section><details class="library-utility"><summary><span>${esc(c.libraryFind)}</span><button class="quiet" type="button" data-read>＋ ${esc(c.readingBring)}</button></summary>${readingError}${collectionSearch(
-            c,
-            {
-              facet: c.collectionOrigin,
-              options: [
-                { value: 'provided', label: c.provided },
-                { value: 'generated', label: c.generated },
-                { value: 'imported', label: c.imported },
-              ],
-            },
-          )}<div data-reading-results>${
-            readable.map((x) => readingRow(x, c)).join('') ||
-            `<p>${c.empty}</p>`
-          }</div></details>`
+        /* Reading opens on the library the design draws (D-059 Phase 5), with
+           books and the learner's own texts in it: the same search, facets,
+           sections and cards as #/content, scoped to what can be read. It is
+           one library, not a second one - a book card leads to the book page
+           (#/book), which is where a chapter is chosen. Bringing a passage in
+           stays the room's own action. */
+        ? `${readingError}<div class="reading-library" data-library-browse></div>`
         : (() => {
-            /* Listening is a media library, not a list of documents. The shared
-               catalogue, what an administrator imported and what the learner
-               brought in are one shelf read by thumbnail, so the surface a
-               learner browses is the content itself rather than its
-               description. Dictation, shadowing and speaking keep the filtered
-               list: those are practice modes over a source, not browsing. */
+            /* Listening opens on the same approved library as Reading, scoped
+               to what can be listened to (D-059 Phase 7): one library, one set
+               of cards, one search. Dictation, shadowing and speaking keep the
+               filtered list: those are practice modes over a source, not
+               browsing. */
             if (!intent || intent === 'follow')
-              // The library owns its own section headings; this row only carries
-              // the one action that is not browsing.
-              return `<section class="media-shelf">${catalogError}<div class="button-row"><button class="quiet" data-bring>＋ ${esc(c.bring)}</button></div><div data-media-library></div></section>`;
+              return `${catalogError}<div class="listening-library" data-library-browse></div>`;
             return `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
               practiceMedia
                 .filter((x) => supports(x, intent))
@@ -496,28 +211,51 @@ export async function renderWorld(root, ctx) {
             }</section>`;
           })()
     }${practiceContinuation}`;
-    if (intent === 'reading')
-      releaseLibrary = paintLibraryGrid(root.querySelector('[data-library-grid]'), {
-        ...ctx,
-        bindShelves: bindContentRails,
-      }) || (() => {});
-    if (!intent || intent === 'follow') paintMediaLibrary(root.querySelector('[data-media-library]'), ctx);
+    if (intent === 'reading' || !intent || intent === 'follow')
+      releaseLibrary = renderLibraryBrowse(
+        root.querySelector('[data-library-browse]'),
+        ctx,
+        intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
+        {
+          only: intent === 'reading' ? ['books'] : ['audio', 'video'],
+          onImport: intent === 'reading' ? () => openReadingRequest(ctx) : ctx.import,
+          titleTag: intent ? 'h1' : 'h2',
+        },
+      ) || (() => {});
+  } else if (location.page === 'search') {
+    releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});
   } else if (location.page === 'content') {
-    const kept = all.filter(
-      (x) => memory.value.kept.includes(x.id) || x.origin === 'imported',
-    );
-    root.innerHTML = `${editorialIntro(ctx,{title:referenceCopy[ctx.ui].collectionTitle,note:referenceCopy[ctx.ui].collectionNote,state:'together',eyebrow:referenceCopy[ctx.ui].content})}${!memory.available ? `<p class="notice">${c.memoryUnavailable}</p>` : ''}${catalogError}${readingError}<section>${kept.length ? kept.map((x) => contentRow(x, null, c)).join('') : `<div class="empty">${scene('empty', { size: 'medium' })}<h2>${c.empty}</h2><p>${c.emptyNote}</p><button class="primary" data-bring>${c.bring} ↗</button></div>`}</section>${continuation}<button class="outline" data-bring>＋ ${c.bring}</button>`;
+    /* Library (D-059 Phase 4): everything browsable, with facets. What the
+       learner kept lives in Saved (#/collection); bringing something in is a
+       Library action. */
+    releaseLibrary = renderLibraryBrowse(root, ctx, {
+      readable,
+      media: practiceMedia,
+    }) || (() => {});
   } else {
-    root.innerHTML = discoverySpread(ctx, {
+    /* The card offers a review, so it asks how much is due - one counted
+       number, not the learner's whole vocabulary (D-065). A failed read leaves
+       the card saying nothing is due rather than inventing a number. */
+    let due = 0;
+    try {
+      const counts = await api.libraryVocabularySummary();
+      due = Number(counts?.summary?.due || 0);
+    } catch {
+      due = 0;
+    }
+    if (!alive()) return;
+    root.innerHTML = homeHtml(ctx, {
       media,
       reading: readable,
-      speaking: voiceInvitations(language),
-      writing: text.filter((item) => item.prompt),
       vocabulary,
+      saved: [...(memory.value.imports || []), ...(memory.value.mediaImports || [])],
+      due,
+      collections: result[3].status === 'fulfilled' ? result[3].value.items || result[3].value.collections || [] : [],
       catalogError,
     });
+    unbindHome = bindHome(root, ctx);
   }
-  const unbindContentRails = bindContentRails(root);
+  bindTodayWords(root);
   root.querySelectorAll('[data-discover-vocabulary-save]').forEach((button) => {
     button.addEventListener('click', async () => {
       const index = Number(button.dataset.discoverVocabularySave);
@@ -571,15 +309,9 @@ export async function renderWorld(root, ctx) {
         };
       }),
   );
-  bindCollectionSearch(root, c, ({ query, facet }) => {
-    const found = filterReadings(readable, { query, origin: facet });
-    root.querySelector('[data-reading-results]').innerHTML =
-      found.map((x) => readingRow(x, c)).join('') || `<p>${c.empty}</p>`;
-    return found.length;
-  });
   bindImages(root, c);
   return () => {
-    unbindContentRails();
+    unbindHome();
     releaseLibrary();
   };
 }

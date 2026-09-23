@@ -1618,7 +1618,7 @@ general rule. It does **not** touch, weaken or supersede:
 - D-039's rights-gated publication model for the Listening domain;
 - the general principle in `AGENTS.md` §"Architecture holds" ("Reading
   library breadth ... is a rights decision per text, not an implementation
-  task") for any *other* Reading content path.
+  task") for any _other_ Reading content path.
 
 **Reason:** The human's own stated goal for this round was to prove a working
 admin-import → shared-library → learner-read vertical slice end to end;
@@ -1776,3 +1776,693 @@ and the Platform Admin line in `AGENTS.md` "Architecture holds" predate both
 closing them is left to the human review of this lane.
 
 **Supersedes / Superseded by:** None.
+
+## D-059 — The Orena Design System becomes the interface's visual source of truth
+
+**Status:** Accepted, explicit current human instruction (2026-09-19). The
+human approved the Orena Design System prototype (claude.ai design project
+`7a5604ca-1e11-4d8e-8305-7d0cb32d552d`: Design Overview, Screens parts 1-6,
+Visual Grammar, Checklist Status) and chose, when asked, each of the four
+points below. Numbered D-059 because D-058 is held by the Admin lane's
+unmerged control-centre decision.
+
+**Decision:** The existing Orena frontend migrates onto the approved design
+system. It is a UI migration over the existing backend, API, authentication,
+routes, data model and learner state - not a rewrite, and not a second app.
+
+1. **Interface palette.** Violet is the interface's action colour - action,
+   navigation, selection - and lamp amber is its progress colour - progress,
+   completion, anything earned. Grounds are cool ink greys on hue 300. Six
+   domain hues (Reading 295, Listening 235, Speaking 170, Dictation 110,
+   Writing 55, Vocabulary 350) sit at equal weight and appear in small doses
+   only. Orena Orange `#FF7A3D` remains the mascot's and the artwork's colour
+   and no longer carries an interface role.
+2. **Themes.** One identity in two appearances: **Ink** (dark, default
+   identity) and **Paper** (light), built from one mapping rather than two
+   designs. The registry mechanism - identity separate from appearance, one
+   block in `theme.css`, one entry in `theme.js` - is unchanged. Night Ink,
+   Deep Forest and Sage Field are retired; a stored choice of any of them is
+   read as the theme with the same appearance, so no learner wakes up to a
+   different brightness. The reader keeps its sepia option as a reader-only
+   block beside the two themes.
+3. **Navigation.** Five destinations - Home, Library, Vocabulary, Progress,
+   Profile - plus a Practice group. Nothing that exists is removed to fit the
+   mockup: Continue lives on Home, Recall and collections in Vocabulary,
+   bringing your own content in Library, Grammar/Understanding as a Practice
+   entry (it stays horizontal, D-050), Shadowing and Conversation inside
+   Listening and Speaking, Admin for admins only. Hash routes keep their
+   meaning. The design's later additions (search, saved content, history,
+   quizzes, details, practice indexes) join the migration backlog.
+4. **Mark and mascot.** The approved mark and mascot in `assets/brand/orena/`
+   stay. The design's violet square and the owl logo exploration are not
+   adopted; a new logo would be its own decision.
+
+Typography follows the human's instruction over the prototype's: Manrope for
+the interface (700 headings, 600 labels, 400-500 body; no capitals or wide
+tracking in learner UI, no monospace), Noto Sans SC for Han characters, the
+serif for stories (Design Contract rule 18).
+
+**Reason:** The approved system gives Orena one coherent visual language -
+content-first, artwork as the brightest object, hierarchy readable at a glance -
+where the shipped UI had accumulated four themes, a hero template and uneven
+components. The token layer already routes almost every colour through
+`theme.css`, so the change can land in the foundation first and reach every
+room without per-page CSS.
+
+**Consequences:** `static/orena/theme.css` holds the new foundation and a
+semantic layer (surface, text, border, action, progress, status, domain,
+elevation) with the earlier names kept as aliases; `static/orena/theme.js`
+registers Ink and Paper and maps retired ids; `foundation.css` holds the
+non-colour tokens (type, radius, motion, layers) and the restyled primitives.
+`scripts/test_orena_foundation.mjs` now asserts violet and amber as canonical,
+Orena Orange as the artwork colour, violet-never-progress, and AA for the new
+semantic pairs in every theme block. `AGENTS.md` (Theme) and
+`docs/project/DESIGN_CONTRACT.md` (Orena Design System section) carry the
+rules. No backend, API, schema, route or learner-state contract changes.
+
+**Supersedes / Superseded by:** Supersedes the interface-palette clauses of the
+Theme invariant in `AGENTS.md` (Orena Orange as canonical interface brand
+colour, themes derived only from `assets/brand/` palettes, the four named
+themes) and the registry that implemented them. Does not supersede D-057: its
+Art Bible authority, artwork licence, one colour owner, acceptance gates and
+"no placeholder artwork in a reviewed build" all stand - the prototype's
+dot-field placeholders are not adopted; covers use the Art Bible's designed
+cover system until real artwork exists.
+
+## D-060 — The approved mockup is the visual source of truth; backend gaps are tracked, not hidden
+
+**Status:** Accepted, explicit current human instruction (2026-09-19), given
+after the Phase 1-3 checkpoint of D-059.
+
+**Decision:** The production frontend reproduces the approved Orena Design
+System mockup as exactly as it can - layout, dimensions, spacing, alignment,
+typography, proportions, radius, borders, shadow and glow, colour, hierarchy,
+navigation, icons and responsive behaviour. Integration does not redesign or
+"improve" the mockup; where the implementation differs, the implementation
+changes.
+
+1. **Backend gaps do not become UI gaps.** When the mockup draws a component
+   whose data or behaviour the backend does not provide, the component keeps
+   its approved place and shape and shows the design system's honest
+   unavailable state. It is never removed, hidden or replaced, and it never
+   shows invented data. Each such gap is recorded in
+   `docs/project/UI_BACKEND_GAPS.md` (status `NOT_STARTED` until work starts).
+2. **Artwork.** Where no real image exists, content uses the design system's
+   artwork slot - dark ground, domain-hued bloom, dot field, at the card's own
+   ratio - and real artwork replaces it with no layout change. The earlier Art
+   Bible motif covers are retired as a fallback; missing artwork is a tracked
+   gap (GAP-012), not a reason to return to the old style.
+3. **Navigation.** The rail is exactly the approved one (four destinations,
+   Practice, five rooms, the learner's card) and each destination carries the
+   approved top bar. Capabilities the mockup does not draw keep a named home
+   one step away rather than a place in the rail: Continue on Home, Recall
+   behind the due chip and in Vocabulary, Grammar in the Practice map,
+   bringing content in Library, Admin for admins only.
+4. **Legacy.** Compatibility aliases in `theme.css` exist only so rooms not yet
+   migrated keep rendering; a migrated surface reads only the semantic tokens,
+   and no legacy composition survives under new colours on a migrated screen.
+
+Two earlier explicit choices stand and are recorded as deliberate differences
+from the mockup, not drift: the interface typeface is Manrope, with no
+monospace, capitals or wide tracking in learner UI (the human's D-059 brief),
+and the mark is the approved Orena mark, not the mockup's violet square (the
+human's D-059 answer). Either can be reopened by the human.
+
+**Reason:** A migration that trims the approved design to what today's
+backend happens to supply drifts the product toward the backend's shape, and
+the approved design stops being the thing that is built. Tracking the gaps
+keeps both honest: the interface stays the approved one and the missing data
+stays visible as work.
+
+**Consequences:** `docs/project/UI_BACKEND_GAPS.md` is created as the backlog.
+`docs/project/DESIGN_CONTRACT.md` rules 37 and 38 are amended and rule 40 is
+added. `ui/cover.js` draws the artwork slot. The Phase 1-3 surfaces were
+re-audited against the mockup; the parity result is recorded in
+`docs/project/DESIGN_SYSTEM_MIGRATION.md`.
+
+**Supersedes / Superseded by:** Amends D-059 §3 (the rail no longer carries
+Continue, Recall or Grammar) and D-057's placeholder clause for covers in
+favour of the design system's defined artwork slot. D-057's Art Bible
+authority for mascot, scenes and real artwork is unchanged.
+
+## D-061 — The mockup's typography replaces Manrope
+
+**Status:** Accepted, explicit current human instruction (2026-09-19), answering
+the question D-060 left open.
+
+**Decision:** The interface takes the approved mockup's three faces: Nunito 800
+for display and headline figures, Nunito Sans for interface and reading copy,
+DM Mono for data (level, timing, score, state) and for the small uppercase
+labels the mockup draws (section labels, domain labels, stat names), at the
+mockup's sizes and tracking. The D-059 brief's "Manrope, no monospace, no
+capitals" is superseded. DM Mono has no Vietnamese glyphs, so a Vietnamese
+interface sets the same mono role in Roboto Mono; Han characters keep Noto Sans
+SC. The mark stays the approved Orena mark for now - the human will revisit
+the logo separately.
+
+**Reason:** D-060 makes the mockup the visual source of truth; typography was
+the last recorded difference the human had authorised, and the human chose
+the mockup.
+
+**Consequences:** `foundation.css` type tokens (`--display-font`, `--font`,
+`--mono-font`, `--weight-heavy`, `.ds-label`, `.ds-data`); the migrated shell,
+Home and Progress components; Design Contract rule 34. The mockup's 9.5-10.5px
+labels sit below D-053's 12px phone floor; D-060 makes the mockup decide, so
+the labels follow it, and D-053's floor still governs reading content.
+
+**Supersedes / Superseded by:** Supersedes the typography clause of D-059 and
+the typography difference recorded in D-060.
+
+## D-062 — One library, one book page, and a reader whose word panel is the dictionary
+
+**Status:** Accepted, under D-059 Phase 5 and D-060 (2026-09-20).
+
+**Decision:** Reading is the approved library scoped to what can be read. The
+Reading room renders `ui/library-browse.js` with `only: ['books']` - the same
+search, facets, sections and cards as `#/content` - so there is one library
+implementation, not two. The retired cover grid, its shelves and its inline
+book-detail state are removed with the surface they served. A book card leads
+to `#/book`, rebuilt to Screens part 4 section 16: cover, chips, progress and
+one action above the fold; chapters below with a single highlighted next row,
+an unread-only filter and show-all; description, the words this book taught and
+recommendations in the side column. The reader follows part 1 section 04: a
+compact bar (back, place, progress rail, reading layers, type size) over a
+split pane, with the word panel docked beside the text on a desk and anchored
+as a sheet on a phone. A tapped word answers itself - reading, meaning, save -
+because that is the dictionary; the selection toolbar remains for a dragged
+phrase, where the learner may have meant any of its tools.
+
+**Reason:** D-060 makes the mockup decide, and the mockup draws one library and
+one book page. Keeping the legacy grid beside the approved one would have left
+two libraries with different cards, and a second book detail to maintain.
+
+**Consequences:** `ui/library.js` is the book page only (`librarySection`,
+`paintBookPage`, `wordsFromBook`); `ui/world.js` no longer paints a reading
+grid; `ui/library-browse.js` takes `only`; `ui/reader.js` and `ui/lexical.js`
+carry the split pane, the docked panel and tap-to-answer;
+`scripts/test_orena_shared_reading_library.mjs` follows. Two deviations are
+recorded in `DESIGN_SYSTEM_MIGRATION.md`: a chapter row shows its real word
+count where the mockup draws minutes (GAP-029), and the phone keeps the book's
+primary action inline because Orena's phone shell owns the bottom bar. Missing
+backend capability is GAP-028 to GAP-036, all `NOT_STARTED`.
+
+The check and the end of a chapter (Screens part 3 section 13) land in the same
+phase. The check is one question at a time and stays optional - it opens from an
+invitation after the text, never before it. Because the API scores a whole set,
+the answers are collected first and the same rail then walks back through them
+with the real results: no per-question verdict is invented on the client. The
+answer panel names the paragraph its evidence came from when the text contains
+it, and says "from the text" when it does not. The end of a chapter reports what
+was finished, the words kept since it opened, and the one way on; the quiz and
+time figures keep their tiles with a dash (GAP-031, GAP-030).
+
+**Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 5; retires
+the D-057 reading-room cover grid and its shelves, and the `<details>` form the
+comprehension check used to be.
+
+## D-063 — Reading's approved scope is wider than the Phase 5 migration, and is not books-only
+
+**Status:** Accepted, explicit current human instruction (2026-09-20), given at
+the Phase 5 checkpoint of D-059.
+
+**Decision:** Phase 5 is the **Reading UI and reader migration**, complete with
+its functional backend gaps tracked. It does not make Reading feature complete,
+and no document may say it does. The approved Reading capability remains wider
+than Book -> Reader -> dictionary -> multiple-choice check, and every capability
+in it stays recorded with an honest state: translation and contextual
+explanation, pronunciation and audio, Chinese Pinyin, durable highlight of a
+word, sentence or paragraph, saving vocabulary from the reader, grammar notes
+and pattern explanation, contextual learner notes, bookmarks, the exact resume
+position inside a chapter, open-answer comprehension, review of saved
+highlights and notes, and review/SRS linkage. What is unsupported is
+`NOT_STARTED` in `UI_BACKEND_GAPS.md` (GAP-028 to GAP-045), never absent.
+
+**Reading content is not books-only.** Reading covers books, articles, stories,
+news, essays, dialogues and the learner's own imported reading. The Reading
+room being the approved library scoped to what can be read (D-062) is an
+implementation of that scope, not a narrowing of it: every readable thing is
+already in it and reachable. What is missing is a content kind and metadata per
+type, so each can be named, filtered and counted as what it is (GAP-044).
+
+**Reason:** the migrated screens are the visible part of Reading, and an
+approved capability that no current screen happens to draw must not quietly
+leave the product definition. A tracker that reads "Reading: Integrated" would
+have done exactly that.
+
+**Consequences:** `DESIGN_SYSTEM_MIGRATION.md` carries the Reading scope table
+and its matrix row reads "UI migrated; Reading not feature complete";
+`UI_BACKEND_GAPS.md` gains GAP-037 to GAP-045; `CURRENT_HANDOFF.md` says the
+same in one line. The Phase 5 implementation itself is kept as it is.
+
+**Supersedes / Superseded by:** Qualifies D-062 and the Phase 5 entry of D-059;
+supersedes nothing.
+
+## D-064 — Vocabulary takes the approved home, collection, card and review session
+
+**Status:** Accepted, under D-059 Phase 6 and D-060 (2026-09-20).
+
+**Decision:** The Vocabulary surfaces follow the approved design. The room opens
+on the home panel of Screens part 4 section 18 - domain tile, what was kept and
+mastered, what is due, the learner's collections, and the way to everything
+saved - rather than the retired dashboard of metric tiles, recent rows, library
+and feed columns. A collection follows part 1 section 05: its artwork, chips,
+progress and one way in, then a compact two-column overview of its words with
+the design's single "not mastered" filter; the dense list with search, level,
+status and sort remains, one tap behind "show all". The flashcard is a card -
+260x340, the amber rim of an earned mark, the word and its reading, then the
+meaning, the sentence it came from and the two answers the scheduler accepts.
+The review session shows what is due, how far through it the learner is, the
+word, and the approved four-grade panel.
+
+**Reason:** D-060 makes the mockup decide. The previous Vocabulary room was a
+dashboard about the collection; the approved home is a place to decide from.
+
+**Consequences:** `ui/expression.js` (home, collection detail, review session),
+`ui/vocabulary-experience.js` (the card and `masteryStarRow`), `world.css`,
+`rooms.css`, `reference.js` copy, and the gates
+`test_orena_vocabulary_experience.mjs`, `test_orena_vocabulary_theme_tokens.mjs`,
+`test_orena_language_and_recall.mjs` and `test_orena_reference.mjs`, which
+pinned the retired composition. The legacy `.recall-moment` skin is removed.
+Honest states, all tracked: a tier reads as a dash (GAP-020); Hard and Easy keep
+their place and say they are not available yet (GAP-019); no interval is printed
+beside a grade; the review-time estimate is GAP-046 and a card's position in its
+collection GAP-047. The card is 260x340 rather than 232x306, at the same
+proportions, because the mockup's width is sized for two Han characters.
+
+**Supersedes / Superseded by:** Extends D-059 and D-060 into Phase 6; retires
+the Vocabulary dashboard composition and the recall card skin that preceded it.
+
+## D-065 — The 2026-09-20 design update: cards without borders, and learning surfaces recalibrated
+
+**Status:** Accepted, explicit current human instruction (2026-09-20), pointing
+at three updated documents in the approved design project: "Orena Card
+Component", "Orena Recalibration" and "Orena Device Overview" (with "Orena
+Design Overview" unchanged in its foundations).
+
+**Decision:** Three changes are adopted, and they supersede the earlier Screens
+parts wherever they disagree.
+
+1. **A card has no border.** It is four layers: a translucent ground, an inner
+   highlight that reads as a lit edge, a wide soft shadow, and - on ink - an
+   optional violet bloom. Contrast comes from ground and shadow, never from a
+   line. Hover lifts; selection is a ring of light. `theme.css` owns the
+   tokens (`--card-surface`, `--card-edge`, `--card-shadow`, `--card-glow`,
+   `--card-ring`), and one block in `rooms.css` names the surfaces that take
+   them.
+2. **A learning surface opens with a sentence, not a label**, at 29px over two
+   lines, and carries one colour rising from the floor of the screen. Skill
+   hues leave the learning surfaces entirely - they stay in the library and in
+   navigation, which is where a learner is choosing rather than working.
+3. **A score becomes a sentence.** Speaking drops the number, the four
+   dimension bars and the per-word score chips; what comes back names the words
+   that still wobble, from the assessment's own data, and says nothing when
+   there is no assessment (GAP-021). This is also what Orena's evidence rules
+   already required.
+
+**Reason:** the human updated the approved design and instructed that the
+update be applied to what is built and to Phase 8. D-060 makes the approved
+mockup the visual source of truth; a newer approved document outranks an older
+one.
+
+**Consequences:** `theme.css`, `rooms.css` (the card block, Speaking, the
+dictation field), `ui/voice-response.js`, `ui/speaking.js`,
+`ui/pronunciation-report.js`, `ui/encounter.js`, copy packs, and
+`test_orena_voice_interaction.mjs`. New gaps from the updated documents:
+GAP-048 (rank and XP), GAP-049 (activity heatmap), GAP-050 (plans and
+payment), GAP-051 (the per-character reading row in Dictation).
+
+**Not yet applied, and recorded so it is not lost:** the 280px rail with the
+five destinations plus Profile and per-domain level chips, Home's recalibrated
+hero and rails, the reader's 440px word panel and 300px chapter list, the
+listening transcript at 620px, Dictation's single play control and
+per-character reveal, and the Progress rank panel. These are the next phases,
+in the order `DESIGN_SYSTEM_MIGRATION.md` records.
+
+**Supersedes / Superseded by:** Supersedes the bordered-card treatment of
+D-059/D-060 across every surface, and the scorecard form of the speaking
+report. Extends D-060's authority to the updated documents.
+
+## D-066 — The Canonical UI Baseline (Dark Glass) is the learner-facing visual source of truth, and the backend adapts to it
+
+**Status:** Accepted, explicit current human instruction (2026-09-21), answering
+the question the Phase 1-3 audit left open (does the frozen baseline replace
+D-059/D-065?). The human's answer is yes.
+
+**Decision:** The Canonical UI Baseline in the approved design project
+`7a5604ca-1e11-4d8e-8305-7d0cb32d552d` - `Orena UI Baseline.dc.html`, the eight
+canonical screen files (Home Discover, Reading, Quick Sheet, Listening,
+Speaking, Writing, Vocabulary, Progress) and the `ui-baseline/` foundations,
+templates, components, states, responsive rules and 17 data contracts - is the
+highest source of truth for every learner-facing surface. A pinned copy lives
+in `docs/design/canonical-ui/` so the authority is in the repository and not
+in a design tool.
+
+1. **One visual system: Dark Glass.** Ground `#050310` with the cosmic field,
+   flat glass with a single ring, the violet accent gradient, semantic ink for
+   text and icons only, Nunito / Nunito Sans / DM Mono / Noto Serif, Phosphor
+   icons. There is no second approved colour or type system. D-059 and D-065 are
+   no longer the visual authority. Patterns the baseline lists as LEGACY (the
+   Device Overview, Design Overview, Screens parts 2-9, Card Component,
+   Recalibration, Visual Direction and Visual Grammar documents) are superseded.
+   There is no hybrid: a surface is either the baseline or awaiting migration,
+   and nothing new is built on the old look.
+2. **Paper is retired** from the active learner interface, and is not developed
+   in parallel. So is the reader's sepia block, because the baseline draws no
+   light reading surface. When migration finishes and nothing depends on them,
+   the obsolete theme registry entries, tokens, CSS and components are deleted;
+   Git keeps the history.
+3. **The canonical UI decides, the backend adapts.** Screen structure, layout,
+   hierarchy, interaction, states, responsive behaviour, the data a screen shows
+   and the user flow come from the baseline. Missing data is added to the
+   backend; a wrong shape is fixed in the API, serializer, service or contract;
+   an insufficient schema is extended under control; a legacy implementation
+   that no longer fits is migrated and then retired. No element is removed,
+   moved or replaced because the backend cannot supply it.
+4. **Metric rule.** A metric the baseline draws that has no measured value
+   renders **0** in its canonical place, in the canonical component, so the
+   layout is always complete: study time `0 h`, streak `0`, rank `0`, completed
+   `0`, attempts `0`, due `0`; charts and heatmaps keep their component in its
+   zero state and never generate activity. The 0 is a **presentation fallback,
+   not a measurement.** The data layer keeps the truth: a read model says
+   whether a metric is measured, `learner-summary/1`'s "unknown is not zero"
+   still governs what is stored, computed and sent as evidence, and nothing
+   writes a fallback 0 as data. When a metric is measured the real value
+   replaces the fallback with no UI change. Demo figures from the design (61 h,
+   128 days, rank 4, score 89) never appear in a production build.
+5. **Progress** keeps the canonical UI. Study time, streak, completion,
+   mastery, review due, the activity heatmap, per-domain progress and rank get
+   an official definition and a real measurement before they show a value; time
+   is never inferred from how long the app was open.
+6. **Pronunciation is real or absent.** The interface reads a normalized
+   pronunciation contract (overall, accuracy, fluency, completeness, words,
+   phonemes and, where the provider supports them, Chinese tones) behind a
+   provider abstraction; Azure Pronunciation Assessment and SpeechSuper are the
+   target providers, and the UI never depends on a raw provider response. With
+   no attempt the metrics read 0; with no configured provider the screen uses
+   the canonical unavailable / error / retry state and never a synthetic
+   assessment. This supersedes D-065's removal of the score, which was a
+   consequence of there being no real assessment.
+7. **Learner audio.** `speaking_attempts` keeps its policy of no durable raw
+   audio: record to a temporary buffer, assess, persist the normalized result
+   the product needs, discard the audio. Keeping recordings would need its own
+   privacy and storage review; pronunciation work does not wait for it.
+8. **Two different questions.** A basic lookup (headword, reading, part of
+   speech, dictionary meaning) stays deterministic. "Nghĩa ở câu này" is a
+   contextual semantic meaning and may use the AI/language capability through
+   the provider abstraction, as an explicit contextual request, with no model
+   named in the interface.
+9. **Vocabulary review has three grades** - Quên, Chưa chắc, Nhớ rồi. Before
+   the scheduler changes: map the two-grade state, update the SRS rule, add
+   tests, document the behaviour change, and preserve every learner's history;
+   nothing stored is silently reinterpreted.
+10. **Loading, empty and error** use the baseline's state where it draws one
+    and the existing pattern where it does not (the baseline marks them
+    incomplete); no new visual is invented in a backend-integration task.
+11. **Search** exists wherever the baseline draws it, over the content the
+    canonical screens use (books and readable content, listening, vocabulary,
+    collections) and nothing else.
+12. **Contracts come from the UI.** Each canonical screen's required and
+    optional fields, actions, persistence, states, permissions, filters,
+    pagination, search and processing state define the API contract. A schema
+    field must trace to a canonical requirement or a real business need.
+13. **Readiness.** A slice is READY only when it matches the baseline on desktop
+    and mobile, runs on real backend data with no production mock, keeps its
+    state across a reload, honours auth, has working loading / empty / error /
+    retry, returns the metric fallback correctly, passes existing and
+    integration tests, and leaves no duplicate active implementation. Rendering
+    is not READY.
+14. **Accessibility never redesigns the baseline.** A token that fails AA is
+    replaced by the smallest technical change that keeps the visual intent, and
+    the deviation is documented.
+15. **Migration ends in deletion.** After a canonical flow replaces an old one
+    and verification passes, the old component, duplicate, dead CSS, obsolete
+    token, obsolete service and unused API are removed. Old / New / V2 / Legacy
+    never coexist as active implementation.
+16. **Process.** This work proceeds directly on `codex/work` in the current
+    worktree, with no new branch or worktree, in logical commits, staging only
+    the files of each step. The lane rule in `AGENTS.md` section 3 is set aside
+    for this task by explicit instruction.
+
+**Not changed:** the Art Bible's authority for the mascot, scenes and real
+artwork (D-057); the artwork slot stands until real art exists. The multilingual
+invariants; PostgreSQL authority and the persistence rules; the native freeze;
+every human gate. Two are restated because the work now reaches them:
+a schema or migration for learner-owned data is authored against
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` and the backbone contracts and needs a
+recorded independent architecture review before it is applied to any shared or
+sandbox runtime, and production, provider credentials and billing remain human
+gates. An implementer does not approve its own high-risk schema change.
+
+**Reason:** D-060 already made the approved mockup the visual authority; the
+mockup changed. A frozen baseline that the design project itself marks as the
+official source, with data contracts, is a better basis for backend integration
+than the earlier prototype set, and keeping two visual systems would leave
+every surface half-migrated.
+
+**Consequences:** `docs/design/canonical-ui/` pins the baseline.
+`UI_BACKEND_GAPS.md` becomes the single tracker in the form canonical UI -
+contract - backend - data source - tests - status, and absorbs the Phase 1-3
+audit. `DESIGN_CONTRACT.md` replaces its D-059 section with the baseline;
+`AGENTS.md` (Theme) points at it; `LEGACY_TOMBSTONES.md` retires the Ink/Paper
+system; `DESIGN_SYSTEM_MIGRATION.md`, the tracker of the retired program, is
+removed. `CURRENT_HANDOFF.md` and `CURRENT_PRODUCT_STATE.yaml` record the new
+authority. The code still shows Ink and Paper until each surface migrates; that
+is the work, not a competing authority.
+
+**Supersedes / Superseded by:** Supersedes D-059 (palette, themes, navigation
+composition), D-060's unavailable-state clause for metrics (the metric rule
+above governs), D-062, D-063 and D-064 wherever their compositions disagree
+with the baseline (D-063's Reading capability scope stands), and D-065 in full.
+D-061's typefaces stand: the baseline uses the same set. D-057's artwork
+authority stands.
+
+## D-067 — The design is read at its source, the UI rules that pre-date the baseline are void, and "the same" is measured
+
+**Status:** Accepted, explicit current human instruction (2026-09-21), after the
+human reviewed the built screens and found that they were not identical to the
+design, that old UI and old interactions remained, and that things the design
+does not draw had been added.
+
+**Decision:**
+
+1. **The source is the Claude Design project itself.** The design project
+   `7a5604ca-1e11-4d8e-8305-7d0cb32d552d` is read live (with `DesignSync`,
+   reads only). The pinned copy in `docs/design/canonical-ui/` is a cache, and an
+   incomplete one (no `Orena Quick Sheet.dc.html`, no design `CLAUDE.md`, no
+   `UI_BASELINE.md`, no `ui-baseline/*.md` rules, no `ui-implementation/`).
+   Where the cache and the source differ, the source wins. Before a
+   learner-facing task the design project's own rules documents are read, not
+   only the screens.
+2. **UI rules older than D-066 that conflict with the design are void.** The
+   layout, composition and interaction rules of D-046, D-051 and D-057 (rules
+   1-8, 10-13, 15, 17-25 of the old Design Contract), the D-057 beginner and art
+   gates, D-060's approved-mockup measurements and D-065's compositions no
+   longer bind any surface. `DESIGN_CONTRACT.md` is rewritten to keep only what
+   is still true; numbers that survive keep their number.
+3. **"The same as the design" is measured** (rule 42): computed style against
+   the source frame at true scale, deviation by deviation, on desktop and on a
+   phone with real touch, and a surface is not `REVIEWABLE` with an unlisted
+   deviation.
+4. **Nothing is invented** (rule 43) and **old interaction is deleted, not
+   restyled** (rule 44). Loading, empty and error are not drawn in the design,
+   so no visual or copy is invented for them.
+5. **The design's product vocabulary is kept** (rule 45), in the Vietnamese
+   interface as the design has it (Home, Library, Vocabulary, Progress,
+   Profile, Reading, Listening, Speaking, Writing, Dictation); icons are
+   Phosphor 2.1.1 official paths only (rule 46); the rail and tab bar exist
+   only on Home, Library, Vocabulary and Progress (rule 47); two frames, no
+   invented breakpoint (rule 48).
+
+**Reason:** the earlier rule that "rules 1-29 stand where they do not name a
+colour, a theme or a component the baseline replaces" let the old layout rules
+outrank the design, and reading the design from a partial local copy hid the
+design's own rules. The human's instruction is that the design is the authority
+and old UI rules must not obstruct it.
+
+**Consequences:** `DESIGN_CONTRACT.md`, `AGENTS.md` and `CLAUDE.md` are
+rewritten accordingly; `LEGACY_TOMBSTONES.md` records the retired rules;
+`UI_BACKEND_GAPS.md` lists the measured deviations of every surface built so
+far. Code comments that cite retired rules are stale and are removed as the
+surface they sit in is migrated.
+
+**Supersedes / Superseded by:** Supersedes the visual and interaction rules of
+D-046 (Design Contract part), D-051, D-057 (gates), D-060 and D-065 wherever they
+disagree with the design, and the sentence of D-066's Design Contract section
+that kept old rules standing. D-066's authority, metric rule, backend-adapts
+rule and pronunciation rule stand. D-057's Art Bible authority and D-061's
+faces stand.
+
+## D-068 — The design is the standard for how things look, not the content to copy; the open points of the fidelity pass are closed
+
+**Status:** Accepted, explicit current human instruction (2026-09-21), closing
+the decisions the Listening fidelity pass left open.
+
+**Decision:**
+
+1. **The design's words and data are sample content.** The canonical design is
+   the standard for colour, layout, typography, component style and visual
+   pattern. Its literal copy, lessons, numbers and states in the mockups are not
+   copied. The interface speaks the learner's language setting (the support
+   language): destination, skill and label names are translated, and rule 45 of
+   the Design Contract no longer keeps English names in the Vietnamese
+   interface. This amends D-067 point 5.
+2. **The logo stays as it is** (the Orena tail mark and its wordmark) until the
+   human decides otherwise; the frames' violet square is not adopted.
+3. **DC-5:** a dictation attempt records `used_hint` (and the hint level reached)
+   with the attempt. No effect on the score is inferred until a scoring rule
+   exists. It is stored inside the existing evidence record and needs no new
+   learner-data schema.
+4. **The taxi lesson is removed** from the listening catalogue.
+5. **Phone search and library paging** may be implemented as function needs, as
+   long as they keep the visual system.
+6. **Vietnamese keeps Roboto Mono** (D-061) until a new typography decision.
+7. **"Kiểm tra hiểu" reflects real data:** with no questions it is disabled.
+8. **The rights block stays under the workspace**, styled with the current
+   design system.
+
+**Reason:** the human reviewed the Listening work: the design fixes how the
+product looks and behaves, not what its sample text says, and the product
+language must follow the learner.
+
+**Consequences:** `DESIGN_CONTRACT.md` rules 26 and 45 and the language section
+are rewritten; the learner-language gate no longer exempts any product name;
+the Vietnamese pack has Vietnamese names again.
+
+**Supersedes / Superseded by:** Amends D-067 point 5. D-067 otherwise stands.
+
+## D-069 — DC-5 is two additive columns on `listening_progress`; the human authorised the schema change and an independent review approved it
+
+**Status:** Accepted. Amends D-068 point 3.
+
+**Correction:** D-068 point 3 said the used-hint state "needs no new learner-data schema". That was wrong:
+storing it is a schema change to learner-owned data (two columns on `listening_progress`). The human's
+instruction of 2026-09-21 - "đồng ý lưu trạng thái đã dùng hint; thực hiện architect review và migration cần
+thiết cho learner data" - authorises the change with its review and migration.
+
+**Decision:** `last_used_hint` (boolean) and `last_hint_level` (0-3) are stored with the segment's progress row,
+describing the last checked attempt like `last_answer`. The flag is exactly "level above zero" (CHECK
+constraints, the API and the repository agree). It is a fact about the attempt; no scoring rule is inferred.
+Migration `20260921_0010` sits on `20260916_0009` (the sandbox database is at `20260916_0009`), needs no
+backfill, and is a metadata change on PostgreSQL 11+. An older client that omits the fields writes "no hint";
+that is the same replace-the-aggregate behaviour `last_answer` has. The downgrade drops the facts and is for a
+rehearsal, not a live account.
+
+**Review record (AGENTS.md, Architecture review authority):**
+
+- Reviewer role: Delegated Architecture Reviewer
+- Reviewer identity: an independent Claude subagent (general-purpose), not the implementer's context
+- Reviewed commit: `b881742699c427b8d9ed687fd89f29e406683441`
+- Date: 2026-09-21
+- First outcome: `CHANGES REQUIRED` - one P1 (the wrong D-068 premise, corrected here) and P2 findings
+  (the flag derived from the level, a CHECK on the bound, non-integer input answering 500, the merge
+  path overwriting a stored hint after a reveal-only session, a stale comment, the migration's notes).
+- Fixes: made in the commit that follows this entry; the reviewer is asked to re-check that commit, and its
+  outcome is recorded below before the migration is applied to the sandbox.
+
+**Supersedes / Superseded by:** Amends D-068 point 3.
+
+**Re-review outcome (2026-09-21):** `APPROVED` by the same independent reviewer for commit
+`670ec798d156fddf3d1e17a6d3f2084af0a08e62` - no P0 or P1; remaining P2 items were a sturdier test for "this
+session checked an attempt" (taken: the merge now keys on the checked-attempt count), a note that the CHECK
+constraints validate existing rows under a brief lock (acceptable: the table is small and every row holds the
+defaults), and commit scope (that commit also carried the Chinese Quick Sheet sizing). The migration is applied
+to the sandbox database only, after this record.
+
+## D-070 — A screen's ground is #060509 with the room's glows, not the cosmic field
+
+**Status:** Accepted, explicit current human instruction (2026-09-22: the background still did not follow the new design).
+
+**Decision:** Every frame of the design draws `#060509` with one violet glow at the top left and one glow per room
+at the bottom right (reading violet, listening blue, speaking teal, writing amber, vocabulary pink, progress and
+home blue). The twelve-layer cosmic field in `tokens.json` is the design's canvas around its frames, not a
+screen's ground. The app paints the screen's ground: `theme.css` (`--screen-canvas`, `--screen-glow`,
+`--room-glow-*`), `foundation.css` (body, `html[data-room]`), `app.js` (sets `data-room`). The cosmic field
+stays declared because the foundation gate pins `tokens.json`, and paints nothing.
+
+**Supersedes / Superseded by:** Corrects the reading of "one Dark Glass field under every screen" in D-066.
+
+## D-071 — A screen's ground is the UI Baseline's, a lit indigo, not #060509
+
+**Status:** Accepted, explicit current human instruction (2026-09-22: "the background is not the same because it
+is too dark; the one in the UI Baseline is much brighter").
+
+**Decision:** The app's ground is the body of `Orena UI Baseline.dc.html` at its source: `#0A0722` under seventeen
+layers - violet and blue nebulae, four fields of stars, and a 170-degree wash from `#120C33` to `#0A0722` - fixed to
+the viewport. It is one ground for every room; there are no per-room glows. `theme.css` owns it
+(`--ground-color`, `--ground`, `--ground-size`), `foundation.css` paints it on `body`, `theme-color` is `#0A0722`.
+The individual screen frames still draw `#060509` with a room glow: that is a conflict inside the design, and the
+human has chosen the baseline. `tokens.json` keeps its older cosmic field declared (the foundation gate pins it);
+it paints nothing.
+
+**Supersedes / Superseded by:** Supersedes D-070 (its `--screen-*` and `--room-glow-*` tokens and `data-room` are
+removed).
+
+## D-072 — Three answers from the human: saved reviews, discussion over a text, the rail's learner card
+
+**Status:** Accepted, explicit current human instruction (2026-09-22), answering the five points reported
+after the Writing, Home and Reading slices.
+
+**Decision:**
+
+1. **"Lưu nhận xét" means keeping the review with the learner's graded work.** A review saved in the Writing
+   room belongs to the skill-assessment record of that piece - the evaluation the server already stores -
+   so the learner can read it again where their graded work lives, not as a second copy somewhere else.
+   Building it must not make a new persistence decision for learner data (AGENTS.md, architecture holds):
+   if it needs schema, it needs independent architecture review first, as DC-5 did (D-069).
+2. **A discussion over a whole text is wanted** ("Thảo luận" in the Reading frame's bar). Today only the
+   per-selection understanding surface exists. The thread is learner-owned data, so the same hold applies.
+3. **The rail carries the learner's card and per-skill levels**, as the AppShell frames draw. The card is
+   built (2026-09-22); the level beside each skill renders only from a profile field nothing serves yet, and
+   is never the one declared level repeated four times.
+
+**Supersedes / Superseded by:** Answers the open points left by D-067's fidelity work; does not change D-068.
+
+---
+
+## D-073 — The ground is the master preview's, and the cache had gone stale
+
+**Date:** 2026-09-22
+**Status:** Accepted
+
+**Context.** The human reported that the interface was being built against an
+out-of-date design, and they were right. `docs/design/canonical-ui/` was pinned
+on 2026-09-21; since then three files had moved at the source. Two of them are
+the ones this lane had been reading all day:
+
+| File                        | Pinned |                       Source |
+| --------------------------- | -----: | ---------------------------: |
+| `Orena-Progress.dc.html`    | 78 947 | 101 462 (+22 515 - reworked) |
+| `Orena-UI-Baseline.dc.html` | 91 651 |          90 759 (the ground) |
+| `Orena-Listening.dc.html`   | 95 578 |                       95 302 |
+
+Measuring Progress against the pinned copy is why its composition kept coming
+out wrong, and reading the ground from the pinned master preview is why the
+interface lost the light the human kept asking for.
+
+**Decision.** The app's ground is the body of `Orena UI Baseline.dc.html` at its
+source, which is now `#0B0A0F` under two magenta radials - `rgba(168,84,190,0.32)`
+at 62% -6% and `rgba(196,104,196,0.20)` at 92% 2% - over
+`linear-gradient(180deg, #17101F 0%, #0D0A12 44%, #0A090D 100%)`, fixed.
+`theme.css` owns it as `--ground-color`, `--ground` and `--ground-size`;
+`foundation.css` paints it on `html` so the canvas carries it across the whole
+viewport rather than the body's clipped box. There is no separate page halo:
+this ground carries its own light from the top.
+
+Star dust is left out at the human's instruction - the dots read as crude. That
+is their call, recorded here, not a reading of the design.
+
+**Three sources in the design disagree about the ground, and only one is
+current.** The eight screen files' own `body` is the design document's page, the
+canvas their frames sit on, and was never the app's ground. `Orena Glass
+System.dc.html` §02 states the earlier system (`#050408`, a three-direction
+field, a 280-420px halo). The master preview is the product. Read the master
+preview and nothing else for this one value.
+
+**Consequence.** `PINS.tsv` is recomputed from disk on every re-pin so the record
+cannot drift from the files beside it, and `SYNC_2026-09-22b.md` holds the
+detail. A pinned cache is evidence of a moment, not of the present: before
+measuring a surface, check the pin against the source.
+
+**Supersedes / Superseded by:** Supersedes D-071's ground (`#0A0722` under
+seventeen layers), which was true of the master preview on 2026-09-21. D-070 was
+already superseded by D-071 and stays so.

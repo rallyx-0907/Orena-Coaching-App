@@ -49,10 +49,16 @@
   margin: 0;
 }
 
-/* The writing workspace: the sheet on one side, the review on the other, both
-   inside one frame. The sheet fills its region and the review scrolls in its
-   own, so feedback never lengthens the page. */
-[data-experience='writing'] .writing-workspace { --workspace-inset: 11rem; }
+/* The writing workspace: the learner's page on one side, what is said about it
+   on the other, both inside one frame. The page fills its region and the
+   review scrolls in its own, so feedback never lengthens the page.
+
+   Two bordered rectangles of equal weight is what this looked like before, and
+   the right one stood empty until a review arrived. The page is the learner's
+   surface and reads as paper; the margin beside it is a margin - no box of its
+   own until it has something to hold - and until then the page takes the width
+   (DESIGN_CONTRACT rules 19, 21, 27). */
+[data-experience='writing'] .writing-workspace { --workspace-inset: 13rem; }
 [data-experience='writing'] .writing-sheet {
   display: flex;
   flex-direction: column;
@@ -65,6 +71,53 @@
   padding: var(--space-4) var(--space-5);
   box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
 }
+/* What this piece is for, in the heading, before and during the writing -
+   where it used to be a form field under the box the learner had already
+   filled. It is quiet until it is being used: a line of the heading, not a
+   labelled input in a settings row. */
+[data-experience='writing'] .writing-head { padding: var(--space-1) 0 var(--space-4); }
+[data-experience='writing'] .writing-head > small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+[data-experience='writing'] .writing-head h1 {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  margin: var(--space-1) 0 var(--space-2);
+}
+[data-experience='writing'] .writing-intention {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-inline-size: 48ch;
+}
+[data-experience='writing'] .writing-intention input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-height: 32px;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px dashed var(--line);
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+[data-experience='writing'] .writing-intention input::placeholder { color: var(--muted); }
+[data-experience='writing'] .writing-intention input:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+[data-experience='writing'] .writing-head__prompt {
+  margin: var(--space-2) 0 0;
+  max-inline-size: 60ch;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+[data-experience='writing'] .back-row [data-draft-status] { margin-inline-start: auto; }
 /* Another device moved this draft on: shown above the box, the learner's
    words untouched beneath it until they choose. */
 [data-experience='writing'] .draft-elsewhere {
@@ -95,15 +148,47 @@
   font-size: var(--text-reading);
   line-height: 1.7;
 }
-[data-experience='writing'] .expression-tools {
+/* One row under the page: how much room is left when that starts to matter,
+   the level the review aims at as a quiet select, the secondary actions in the
+   shared bar, and one primary action named in one word. The row it replaced
+   put a labelled "feedback target" selector and a sentence-long button at the
+   bottom of a form (DESIGN_CONTRACT rule 24). */
+[data-experience='writing'] .writing-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   border-top: 1px solid var(--line);
-  padding-top: var(--space-3);
-  gap: var(--space-3);
+  padding-top: var(--space-2);
 }
-[data-experience='writing'] .writing-task { margin-top: var(--space-3); }
-[data-experience='writing'] .writing-result {
+[data-experience='writing'] .writing-bar .meta { margin: 0; font-size: var(--text-xs); }
+[data-experience='writing'] .writing-bar .review-target { margin-inline-start: auto; }
+[data-experience='writing'] .writing-bar select {
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+[data-experience='writing'] .writing-bar .primary { min-height: 38px; }
+/* A review that did not arrive is one line here, never a pane. */
+[data-experience='writing'] .writing-trouble,
+.review-trouble {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+.review-trouble button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
+/* The margin. It is a margin while it holds context, and becomes a surface of
+   its own only once there is a review in it - so nothing draws a second empty
+   card beside the page. */
+[data-experience='writing'] .writing-result { color: var(--ink); }
+[data-experience='writing'] .writing-workspace[data-review='ready'] .writing-result {
   background: var(--surface);
-  color: var(--ink);
   border: 1px solid var(--line);
   border-top: 4px solid var(--accent);
   box-shadow: 0 7px 0 -3px var(--paper), 0 8px 0 -3px var(--line);
@@ -241,19 +326,6 @@
   border-left: 0;
   padding-left: 0;
   font-size: var(--text-lead);
-}
-:is([data-experience='language'], [data-experience='recall']) .recall-moment {
-  border-radius: 0;
-  border: 1px solid var(--line);
-  border-top: 5px solid var(--accent);
-  margin: var(--space-12) auto;
-  padding: clamp(1.5rem, 5vw, 4rem);
-  box-shadow: 0 8px 0 -3px var(--paper), 0 9px 0 -3px var(--line);
-}
-:is([data-experience='language'], [data-experience='recall']) .recall-moment > small {
-  display: block;
-  padding-bottom: var(--space-6);
-  border-bottom: 1px solid var(--line);
 }
 
 @media (max-width: 1000px) {
@@ -433,8 +505,9 @@
    never applied and one recalled sentence ran the full width of a desk built
    for side-by-side work. Restating it at the shell's own specificity is how a
    room says it is narrower than the default. */
-#main > .recall-moment {
-  max-width: 760px;
+/* The review session is a card-width composition, not a page of text. */
+#main > .review-session {
+  max-width: 730px;
 }
 /* The rights and source line under a passage is fine print, and fine print set
    across 1080px is unreadable. Same shell default, same correction. */
@@ -595,78 +668,47 @@
 .word-legend [data-role='noun'] { color: var(--word-thing); }
 .word-legend [data-role='verb'] { color: var(--word-action); }
 .word-legend [data-role='detail'] { color: var(--word-detail); }
-.follow-moment .spoken .token {
+/* A word in the line is pointable, and saying so must cost the line nothing.
+   The rule under a token is drawn, not laid out - a border adds to the line
+   box, and with colours on that was four pixels of movement on every change of
+   line, in a batch whose whole point is that the list holds still. */
+.transcript-panel .line-original .token {
+  display: inline;
   background: none;
   border: 0;
   padding: 0;
   font: inherit;
   color: inherit;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  min-width: 24px;
-  min-height: 44px;
+  min-width: 0;
+  min-height: 0;
   vertical-align: baseline;
 }
-.follow-moment .spoken[data-close-look-state='on'] .token {
-  border-bottom-color: var(--line);
+.transcript-panel .line-original[data-close-look-state='on'] .token {
+  box-shadow: inset 0 -2px 0 var(--line);
 }
-.follow-moment .spoken .token:hover,
-.follow-moment .spoken .token:focus-visible {
-  border-bottom-color: var(--accent);
+.transcript-panel .line-original .token:hover,
+.transcript-panel .line-original .token:focus-visible {
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
-.follow-moment .spoken .token[data-pos='noun'],
-.follow-moment .spoken .token[data-pos='proper_noun'] {
+/* What a word is reads as colour, with a little more ink behind the classes
+   that carry the sentence. The extra ink is painted, not set: a heavier weight
+   is a wider word, and on the longest line of a lesson that was one whole row
+   more the moment the voice arrived. A shadow of the word's own colour
+   thickens the glyph and leaves every advance width exactly where it was. */
+.transcript-panel .line-original .token[data-pos='noun'],
+.transcript-panel .line-original .token[data-pos='proper_noun'] {
   color: var(--word-thing);
-  font-weight: 600;
+  text-shadow: 0 0 0.4px currentColor;
 }
-.follow-moment .spoken .token[data-pos='verb'] {
+.transcript-panel .line-original .token[data-pos='verb'] {
   color: var(--word-action);
-  font-weight: 600;
+  text-shadow: 0 0 0.4px currentColor;
 }
-.follow-moment .spoken .token[data-pos='adjective'],
-.follow-moment .spoken .token[data-pos='adverb'] {
+.transcript-panel .line-original .token[data-pos='adjective'],
+.transcript-panel .line-original .token[data-pos='adverb'] {
   color: var(--word-detail);
 }
-/* Chinese reads with its sound above the character it belongs to, which is
-   where a learner expects it - not on a separate line to reconcile. */
-.follow-moment .spoken[data-close-look-state='on'] .token[data-reading] {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.35;
-}
-.follow-moment .spoken[data-close-look-state='on'] .token[data-reading]::before {
-  content: attr(data-reading);
-  font-size: 0.62em;
-  color: var(--muted);
-  font-weight: 400;
-}
-
-
-/* ---------------------------------------------------------------------------
-   The follow panel: the whole conversation, with the line being spoken opened
-   up inside it.
-
-   The current line used to be a block of its own above the list, and its
-   height changed with every sentence, pushing the list up and down. Now the
-   list is the panel - a card in the follow moment's colours, one fixed height
-   inside the first screen - and the line being spoken is its own entry,
-   opened where it sits: when it was said, the line at reading size, its
-   meaning and the word guide. The list scrolls on its own, so the
-   learner can read ahead without the page moving.
-   --------------------------------------------------------------------------- */
-.transcript-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: var(--space-4) var(--space-4) 0;
-  background: var(--surface);
-  border-top: 0;
-  border-bottom: 2px solid var(--coral);
-  border-radius: var(--radius);
-}
-.transcript-panel .section-head { flex: none; margin: 0 0 var(--space-2); align-items: center; flex-wrap: nowrap; gap: var(--space-2); }
-.transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
 /* How to read the list - the words of the line being spoken, the meaning of
    every line - as two small switches on the title row: a symbol each, filled
    when on. Each is a real checkbox named by its words for assistive
@@ -749,102 +791,11 @@
   0%, 70% { opacity: 1; }
   100% { opacity: 0; visibility: hidden; }
 }
-/* Practising, no line is opened, so there are no words to look at. */
-.transcript-panel:not(:has(.follow-moment:not([hidden]))) .close-look { display: none; }
-.transcript-panel ol { flex: 1 1 auto; min-height: 0; padding-bottom: var(--space-3); }
 .transcript-panel [data-meaning-note] { display: inline-flex; margin-inline-end: var(--space-1); }
-/* The entry being spoken: the follow moment, opened inside the list. */
-.transcript-panel li[data-current] { margin-block: var(--space-1) var(--space-2); }
-.transcript-panel .follow-moment {
-  min-height: 0;
-  margin: 0;
-  padding: var(--space-3) var(--space-4) var(--space-4);
-  background: var(--surface);
-  border: 0;
-  border-radius: var(--radius);
-  box-shadow: inset 3px 0 var(--coral), 0 1px 0 var(--line);
-}
-/* A transcript row is a full-width button; the words and quiet controls inside
-   the opened entry are not rows and keep their own shape. */
-.transcript-panel .follow-moment button {
-  display: inline-block;
-  width: auto;
-  padding: var(--space-1) 0;
-  line-height: inherit;
-  border-radius: 0;
-  text-align: start;
-}
-.transcript-panel .follow-moment > small { font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
-.transcript-panel .follow-moment .spoken { margin: var(--space-2) 0 var(--space-1); }
-.transcript-panel .follow-moment .meaning { margin-top: var(--space-1); }
+/* The retired per-line colour explainer, in case a theme still names it. */
 .transcript-panel .close-look-guide { margin-top: var(--space-2); padding-top: var(--space-2); }
 .transcript-panel .close-look-guide .meta { margin: var(--space-1) 0 0; line-height: 1.45; }
 .transcript-panel .word-legend { gap: var(--space-1) var(--space-3); }
-/* Between two spoken lines the entry stays, quieter, and says so. */
-.follow-moment[data-gap='true'] > small { color: var(--muted); }
-.follow-moment[data-gap='true'] .spoken { opacity: 0.55; }
-
-@media (min-width: 801px) {
-  /* Following, the panel gets the measure a spoken line needs; the video
-     keeps 16:9 in the rest. The panel runs from the top of the encounter to
-     the bottom of the first screen and never grows past it. */
-  .media-encounter:not(:has(.practice-space:not([hidden]))) {
-    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 1fr);
-  }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
-    position: sticky;
-    top: calc(var(--shell-offset, 0px) + var(--space-4));
-    align-self: start;
-    block-size: calc(100svh - var(--encounter-top, 10rem) - var(--space-4));
-    min-block-size: 22rem;
-  }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
-    max-height: none;
-  }
-}
-/* A short laptop window: the opened line a step smaller, so the longest line,
-   its meaning and the word guide still fit the list's height. */
-@media (min-width: 801px) and (max-height: 760px) {
-  .transcript-panel .follow-moment .spoken { font-size: 1.15rem; line-height: 1.4; }
-  .transcript-panel .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.5; }
-}
-/* A small laptop keeps the rail, so the panel takes an equal share of what is
-   left rather than its minimum, and a long line wraps less. */
-@media (min-width: 801px) and (max-width: 1100px) {
-  .media-encounter:not(:has(.practice-space:not([hidden]))) {
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
-  }
-  .transcript-panel .follow-moment .spoken { font-size: 1.1rem; line-height: 1.4; }
-}
-@media (max-width: 800px) {
-  /* One column. Following, the voice - video or voice card, play and the
-     timeline - rides at the top under the header, and the panel fills exactly
-     the rest of the screen with its list scrolling inside it, so the line being
-     spoken never leaves the screen while the voice moves on. The deeper paths
-     come after the panel. At the end of the list a swipe carries on down the
-     page. The stage keeps its element - events and players are wired to it -
-     and only stops drawing a box of its own. */
-  .media-encounter:not(:has(.practice-space:not([hidden]))) {
-    row-gap: var(--space-2);
-    scroll-margin-top: var(--shell-offset, 0px);
-  }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-stage { display: contents; }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) :is(.moment-actions, .reached-the-end) { order: 2; }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .media-source {
-    position: sticky;
-    top: var(--shell-offset, 0px);
-    z-index: 6;
-    background: var(--paper);
-  }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel {
-    block-size: calc(100svh - var(--shell-offset, 0px) - var(--source-block, 0px) - var(--space-3));
-    min-block-size: 16rem;
-  }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .transcript-panel ol {
-    max-height: none;
-    overscroll-behavior: auto;
-  }
-}
 
 /* ---------------------------------------------------------------------------
    Dictation: one frame, nothing scrolled.
@@ -860,30 +811,8 @@
 .practice-nav { align-items: center; }
 .practice-nav > button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
 @media (max-width: 1079px) {
-  /* Narrow, the source strip above already carries "hear this line again",
-     so the question keeps its line to itself; the two ways out share a row. */
-  .dictation-ask [data-listen] { display: none; }
   .practice-nav { flex-basis: 100%; justify-content: space-between; margin-inline-start: 0; }
 }
-.dictation-ask {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin: var(--space-1) 0;
-}
-.practice-space .dictation-ask label { margin: 0; }
-.dictation-ask [data-listen] { min-height: 32px; font-size: var(--text-sm); white-space: nowrap; }
-#dictationForm textarea { min-block-size: 3.5rem; padding: var(--space-2) var(--space-3); line-height: 1.5; }
-#dictationForm .button-row { margin: var(--space-2) 0 0; gap: var(--space-1) var(--space-4); align-items: center; }
-#dictationForm .button-row button:not(.primary) { font-size: var(--text-sm); }
-.practice-space .hint-line { padding: var(--space-2) var(--space-4) var(--space-3); margin: 0 0 var(--space-2); }
-.hint-line__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
-.hint-line__head small { letter-spacing: 0.06em; }
-.hint-line__head .meta { margin: 0; font-size: var(--text-xs); }
-.hint-line .hint__trigger { color: var(--on-sage-muted); }
-.practice-space .hint-slots { font-size: 1.05rem; line-height: 1.75; margin: var(--space-1) 0 0; }
-.dictation-result .comparison:not(:empty) { padding-top: var(--space-2); margin-top: var(--space-2); }
 /* The result says how close the attempt was and offers what to do next in one
    row; the words themselves follow. */
 .comparison-head {
@@ -894,45 +823,8 @@
   gap: var(--space-1) var(--space-3);
   margin: 0 0 var(--space-2);
 }
-.dictation-result .comparison h3 { font-size: 1rem; margin: 0; white-space: nowrap; }
-.dictation-result .comparison-head .button-row { margin: 0; gap: var(--space-1) var(--space-3); flex-wrap: nowrap; }
-.dictation-result .comparison-head .button-row button { white-space: nowrap; padding-inline: 0; }
-.dictation-result .comparison-head .button-row button { font-size: var(--text-sm); }
-/* Once there is a result, the instruction for before the attempt has done its
-   work and yields its row. */
-.practice-space:has(.dictation-result .comparison:not(:empty)) > h2 { display: none; }
-.dictation-aids { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
-.dictation-result .diff { font-size: var(--text-base); gap: 4px; margin: 0 0 var(--space-2); }
-.dictation-result .diff > span { padding: 1px 6px; }
-.dictation-result .diff > span { line-height: 1.5; }
-/* The original line, then what it means - quieter, because it supports it. */
-.dictation-result .comparison > p { font-size: var(--text-base); line-height: 1.5; margin: var(--space-1) 0; }
-.dictation-result .comparison > p + p { font-size: var(--text-sm); color: var(--muted); }
-.dictation-result [data-evidence-status] { font-size: var(--text-xs); color: var(--muted); margin: var(--space-1) 0 0; }
-.dictation-result [data-evidence-status]:empty { display: none; }
 
 @media (min-width: 1080px) {
-  /* The work gets more of the width than the source, so a long line's
-     comparison wraps into fewer rows. */
-  .media-encounter:has(.practice-space:not([hidden])) {
-    grid-template-columns: minmax(0, 0.8fr) minmax(420px, 1fr);
-  }
-  /* A pointer does not need 44px under a quiet action; the attempt's own
-     button keeps its full size. */
-  #dictationForm .button-row button:not(.primary),
-  .dictation-result .comparison .button-row button { min-height: 24px; padding-block: 0; }
-  /* The two quiet aids stack beside the attempt's own button rather than
-     wrapping onto a row of their own. */
-  .dictation-actions { flex-wrap: nowrap; }
-  .dictation-aids { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
-  .media-encounter:has(.practice-space:not([hidden])) .practice-space {
-    display: flex;
-    flex-direction: column;
-    padding: var(--space-3) var(--space-5);
-    max-block-size: calc(100svh - var(--encounter-top, 10rem) - var(--space-3));
-    scrollbar-gutter: auto;
-  }
-  .media-encounter:has(.practice-space:not([hidden])) .practice-space > * { flex: none; }
   .practice-space h2 { font-size: 1.15rem; line-height: 1.35; margin: 0 0 var(--space-2); }
   .practice-top { margin-bottom: var(--space-1); }
   /* Practising, the heading orients in one short line. */
@@ -941,21 +833,6 @@
   /* The lesson's topic and length are for choosing it; while practising,
      the title is enough. */
   main:has(.practice-space:not([hidden])) .encounter-heading .heading-with-hint { display: none; }
-  .practice-space:has(#dictationForm) > [data-practice-body] {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-  .practice-space:has(#dictationForm) [data-practice-body] > * { flex: none; }
-  /* Only an unusually long line can outgrow the region; it then scrolls
-     there, never the page and never the attempt above it. */
-  .practice-space:has(#dictationForm) .dictation-result {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -971,38 +848,16 @@
   .back-row { padding: var(--space-4) 0 var(--space-1); }
   .encounter-heading { padding: var(--space-1) 0 var(--space-4); }
   .encounter-heading h1 { font-size: clamp(1.75rem, 2.4vw, 2.5rem); margin-top: var(--space-1); }
-  .media-encounter:not(:has(.practice-space:not([hidden]))) .player-wrap :is(video, iframe) {
-    inline-size: min(100%, calc((100svh - 16rem) * 16 / 9));
-    margin-inline: auto;
-  }
   .transport { padding-block: var(--space-2); }
   .seek-line { padding-block: var(--space-1); }
-  .follow-moment {
-    min-height: 0;
-    padding: var(--space-4) var(--space-5);
-  }
-  .follow-moment .spoken {
-    font-size: clamp(1.25rem, 1.55vw, 1.65rem);
-    line-height: 1.45;
-    margin: var(--space-2) 0 var(--space-1);
-  }
-  .follow-moment .meaning { margin-top: var(--space-1); line-height: 1.6; font-size: var(--text-base); }
-  .follow-moment .close-look { margin-top: var(--space-2); }
   /* A pointer does not need a thumb's 44px per word; the line keeps its own
      height and every word stays a comfortable 24px target. */
-  .follow-moment .spoken .token { min-height: 24px; }
-  .transcript-panel { padding-top: var(--space-3); }
-  .transcript-panel .section-head { margin: 0 0 var(--space-2); }
-  .transcript-panel h2 { font-size: var(--text-lead); margin: 0; }
+  .transcript-panel .line-original .token { min-height: 24px; }
 }
 
 /* A small laptop or a tablet held sideways: the rail stays, so the caption
    column is narrow and the line wraps more. It is set a step smaller there. */
-@media (min-width: 901px) and (max-width: 1100px) {
-  .follow-moment { padding: var(--space-3) var(--space-4); }
-  .follow-moment .spoken { font-size: 1.1rem; line-height: 1.4; }
-  .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.5; }
-}
+
 /* A short window - a small laptop with its browser chrome - gives the heading
    less room, so the line being spoken keeps it. */
 @media (min-width: 901px) and (max-height: 700px) {
@@ -1011,9 +866,9 @@
   .encounter-heading h1 { font-size: 1.6rem; margin-top: 0; }
 }
 
-/* A comprehension result is brought into view when it arrives; below 900px it
-   must land under the sticky header, not behind it. */
-[data-comprehension-results],
+/* A check step is brought into view when it arrives; below 900px it must land
+   under the sticky header, not behind it. */
+.quiz-step,
 .conversation-turn { scroll-margin-top: calc(var(--shell-offset, 0px) + var(--space-3)); }
 
 /* What can be done with a turn sits on one line under it. */
@@ -1038,7 +893,6 @@
    generous.
    --------------------------------------------------------------------------- */
 @media (max-width: 600px) {
-  #main { padding-inline: var(--space-4); }
   /* Actions: found at a glance, touched without aiming, not billboard-sized. */
   .primary,
   .outline {
@@ -1064,76 +918,24 @@
   .encounter-heading { padding-block: var(--space-1) var(--space-2); }
   .encounter-heading h1 { font-size: 1.2rem; margin: 0; }
   .encounter-heading small { font-size: var(--text-xs); }
-  .audio-identity {
-    min-height: 0;
-    padding: var(--space-2) var(--space-3);
-    gap: var(--space-3);
-  }
-  .audio-identity .voice-orbit { width: 32px; height: 32px; box-shadow: none; }
-  .audio-identity .voice-orbit > span { width: 20px; height: 20px; border-width: 5px; box-shadow: none; }
-  .audio-identity small { font-size: var(--text-xs); }
-  .audio-identity p { font-size: var(--text-sm); margin: 0; }
-  .audio-identity > div > span { display: none; }
   .transport { padding-block: var(--space-1); gap: var(--space-2); }
   .transport > button:first-child { width: 40px; height: var(--tap); }
   .transport > button:nth-child(2) { min-height: var(--tap); font-size: var(--text-sm); }
   .transport select { min-height: var(--tap); padding: 0 var(--space-2); }
   .seek-line { padding-block: 0; gap: var(--space-2); }
   .seek-line input { min-height: 24px; }
-  .follow-moment { min-height: 0; padding: var(--space-2) var(--space-3); }
-  .follow-moment > small { font-size: var(--text-xs); }
   /* The line is the largest text in its frame, and wraps like text: a word is
      a comfortable target by its height and the gap around it, not by being
      widened to a thumb. */
-  .follow-moment .spoken {
-    font-size: 1rem;
-    line-height: 1.55;
-    font-weight: 650;
-    margin: var(--space-1) 0;
-  }
-  .follow-moment .spoken .token { min-width: 0; min-height: 28px; padding: 0 1px; }
-  .follow-moment .meaning { font-size: var(--text-sm); line-height: 1.55; margin: var(--space-1) 0 0; }
+  .transcript-panel .line-original .token { min-width: 0; min-height: 28px; padding: 0 1px; }
   .transcript-panel .close-look-guide { margin-top: var(--space-1); padding-top: var(--space-1); }
   .transcript-panel .word-legend { font-size: var(--text-xs); }
-  .moment-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding-block: var(--space-2);
-    gap: var(--space-2);
-  }
-  .moment-actions > span { grid-column: 1 / -1; margin-bottom: 0; font-size: var(--text-xs); }
-  .moment-actions > button { padding: 0 var(--space-2); min-height: var(--tap); font-size: var(--text-sm); }
-  .transcript-panel { padding: var(--space-3) var(--space-3) 0; }
-  .transcript-panel .section-head { margin: 0; align-items: center; }
-  .transcript-panel h2 { font-size: var(--text-base); margin: 0; }
-  .transcript-panel ol { max-height: min(420px, 62svh); }
-  .transcript-panel li { margin-bottom: 0; }
-  .transcript-panel button { padding: var(--space-1) var(--space-2); line-height: 1.45; gap: 0; }
-  .transcript-panel time { font-size: var(--text-xs); }
-  .transcript-panel .line-original { font-size: 0.875rem; }
-  .transcript-panel .line-meaning { font-size: var(--text-xs); }
-
-  /* Practice inside an encounter. */
-  .media-encounter:has(.practice-space:not([hidden])) .player-wrap :is(video, iframe) { block-size: 15vh; }
   .practice-space { padding: var(--space-3); }
   .practice-space h2 { font-size: var(--text-base); margin-bottom: var(--space-1); }
   .practice-top { margin-bottom: 0; }
   .practice-top small { font-size: var(--text-xs); }
   .practice-nav > button { min-height: var(--tap-quiet); font-size: var(--text-xs); }
   .practice-space label { margin: var(--space-1) 0; }
-  /* Dictation: the shape of the line, the attempt and the answer, one screen. */
-  .practice-space .hint-line { padding: var(--space-2) var(--space-3); margin: 0 0 var(--space-1); }
-  .practice-space .hint-slots { font-size: 0.9375rem; line-height: 1.55; }
-  .hint-line__head small { font-size: var(--text-xs); }
-  #dictationForm textarea { min-block-size: 3.25rem; font-size: var(--text-base); }
-  #dictationForm .button-row { margin-top: var(--space-2); }
-  #dictationForm .button-row button:not(.primary),
-  .dictation-result .comparison .button-row button { min-height: var(--tap-quiet); font-size: var(--text-xs); padding-block: 0; }
-  .dictation-result .comparison h3 { font-size: var(--text-base); }
-  .dictation-result .diff { font-size: var(--text-sm); gap: 3px; }
-  .dictation-result .diff > span { padding: 0 4px; }
-  .dictation-result .comparison > p { font-size: var(--text-sm); }
-  .dictation-result .comparison > p + p { font-size: var(--text-xs); }
   /* Shadowing and Speaking inside an encounter: the line to say, what it
      means, what to do, and the two controls - one screen, not three. */
   .practice-space blockquote {
@@ -1147,31 +949,6 @@
   .practice-space .button-row { margin-block: var(--space-2) var(--space-1); align-items: center; }
   .practice-space [data-take] h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-base); }
   .practice-space .voice-history { margin-top: var(--space-2); padding-top: var(--space-1); }
-
-  /* Reading comprehension: the questions close together, every choice a
-     label-sized target, the result one compact block per question. */
-  .comprehension { margin-block: var(--space-4) var(--space-5); padding-top: var(--space-3); }
-  .comprehension > summary { min-height: var(--tap); display: flex; align-items: center; }
-  .comprehension form { margin-top: var(--space-1); }
-  .comprehension-question { margin-bottom: var(--space-3); gap: 0; }
-  .comprehension-question legend { margin-bottom: 2px; line-height: 1.45; font-size: var(--text-sm); }
-  .comprehension-question label {
-    min-height: var(--tap);
-    align-items: center;
-    gap: var(--space-2);
-    padding: 0 var(--space-2);
-    line-height: 1.45;
-    font-size: var(--text-sm);
-  }
-  .comprehension-score { font-size: 1.1rem; }
-  .comprehension-result { margin-block: var(--space-3); padding-left: var(--space-3); }
-  .comprehension-result > p { margin: var(--space-1) 0; font-size: var(--text-sm); }
-  .comprehension-result blockquote {
-    margin: var(--space-1) 0;
-    padding-block: 2px;
-    font-size: var(--text-sm);
-    line-height: 1.55;
-  }
 
   /* Conversation: the exchange is the page. The simulated-partner line stays
      on screen but as a line, not a panel; a turn is its words and one row of
@@ -1271,20 +1048,2651 @@
   [data-experience='speaking'] .voice-situation { padding: var(--space-3) var(--space-4); }
   [data-experience='speaking'] .voice-situation h2 { font-size: 1.1rem; }
   [data-experience='speaking'] .voice-prompt { font-size: var(--text-base); line-height: 1.55; padding: var(--space-3); }
-  :is([data-experience='language'], [data-experience='recall']) .recall-moment {
-    margin: var(--space-3) auto;
-    padding: var(--space-3);
-  }
-
-  /* Feedback: the same hierarchy, closer together. A dimension is one line -
-     its name, its bar, its number - rather than a stack of three. */
-  .review-headline b { font-size: 1.4rem; }
-  .review-dimension { grid-template-columns: minmax(6rem, 7.5rem) 1fr auto; gap: var(--space-2); font-size: var(--text-sm); }
   .review-bar { grid-column: auto; order: 0; }
-  .review-strengths blockquote {
-    margin: 2px 0;
-    padding-block: 2px;
-    line-height: 1.55;
-  }
-  .review-issues .correction { padding: var(--space-2) var(--space-3); }
 }
+
+/* The line being practised is the phrase the learner is repeating, and it is
+   askable in place: the same lexical layer the transcript uses answers a word
+   tapped here (ui/lexical.js). It reads as the source it is, not as a quote
+   ornament. */
+.practice-line {
+  margin: 0 0 var(--space-3);
+  font-size: clamp(18px, 1.7vw, 23px);
+  line-height: 1.45;
+  cursor: text;
+}
+.practice-line::selection,
+.practice-line ::selection {
+  background: color-mix(in srgb, var(--brand) 32%, transparent);
+}
+@media (max-width: 600px) {
+  .practice-line { font-size: 18px; }
+}
+
+/* The active row is the learning object: it opens, the rest stay light. */
+
+/* Replay in the open; the deeper intentions inside two menus. One compact row,
+   on the active line only - never repeated on every row. */
+
+/* Display preferences, not primary actions: small, quiet, beside the heading. */
+.transcript-panel .word-legend {
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) 0;
+  border-block: 1px solid var(--line);
+  color: var(--muted);
+}
+
+/* --- Speaking as its own module ------------------------------------------
+
+   Four ways in, each composed for what it actually is rather than as another
+   equal rectangle: the one thing to carry on with leads with the artwork of
+   where it came from, lines worth repeating sit on a rail, situations are text
+   and read as text, and the prompt is a single action. A wall of bordered
+   cards is not a layout (DESIGN_CONTRACT: the card-wall anti-pattern). */
+.speak-section { margin-bottom: var(--space-6); }
+.speak-section > h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.speak-resume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: 16px;
+  background: var(--night-surface);
+  color: var(--on-night);
+  text-decoration: none;
+}
+.speak-resume__visual {
+  flex: 0 0 auto;
+  overflow: hidden;
+  width: 76px;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px 9px 9px 4px;
+}
+.speak-resume__visual > img, .speak-resume__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.speak-resume__body { display: grid; gap: 4px; min-width: 0; }
+.speak-resume__body > strong { font-size: var(--text-lead); line-height: 1.25; }
+.speak-resume__body > span { color: var(--on-night-muted); font-size: var(--text-sm); }
+.speak-resume__place { font-variant-numeric: tabular-nums; }
+.speak-resume__go { margin-left: auto; white-space: nowrap; font-weight: 600; }
+
+.speak-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, calc((100% - 3 * var(--space-3) - 24px) / 4));
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  touch-action: pan-x pan-y;
+}
+.speak-rail__item {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+  scroll-snap-align: start;
+}
+.speak-rail__visual {
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: 9px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.speak-rail__visual > img, .speak-rail__visual > svg { width: 100%; height: 100%; object-fit: cover; }
+.speak-rail__item > span {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.speak-rail__item:hover .speak-rail__visual, .speak-rail__item:focus-visible .speak-rail__visual {
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.speak-situations { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; max-width: 62ch; }
+.speak-situations li { padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.speak-situations li:first-child { border-top: 1px solid var(--line); }
+.speak-situations a { color: var(--ink); font-size: var(--text-lead); text-decoration: none; }
+.speak-situations a:hover, .speak-situations a:focus-visible { color: var(--accent); }
+.speak-situations li > span { display: block; margin-top: 3px; color: var(--muted); font-size: var(--text-sm); }
+.speak-section--prompt > button { min-height: 40px; }
+
+@media (max-width: 900px) {
+  .speak-rail { grid-auto-columns: minmax(0, calc((100% - var(--space-3) - 24px) / 2)); }
+}
+@media (max-width: 600px) {
+  .speak-rail { grid-auto-columns: minmax(0, calc(100% - 28px)); }
+  .speak-resume { gap: var(--space-3); padding: var(--space-3); }
+  .speak-resume__visual { width: 58px; }
+  .speak-resume__go { margin-left: 0; }
+  .speak-resume { flex-wrap: wrap; }
+}
+
+/* A measurement reads as dimensions and the words worth working on - not as one
+   big number. Nothing is drawn unless the provider actually measured it. */
+.pronunciation-scores { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: var(--space-2) 0; font-size: var(--text-sm); color: var(--muted); }
+.pronunciation-scores b { color: var(--ink); font-variant-numeric: tabular-nums; }
+ul.pronunciation-words { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+ul.pronunciation-words li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--coral-surface) 34%, transparent);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+ul.pronunciation-words small { color: var(--muted); }
+
+/* Is the microphone there, which one, and is it hearing anything. Words plus a
+   level - never colour alone (D-057 accessibility). */
+.mic-readiness {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.mic-readiness__state::before { content: '○ '; }
+.mic-readiness[data-state='ready'] .mic-readiness__state::before { content: '● '; }
+.mic-readiness[data-state='denied'] .mic-readiness__state,
+.mic-readiness[data-state='no_device'] .mic-readiness__state { color: var(--accent); font-weight: 600; }
+.mic-readiness__device { overflow: hidden; max-width: 22ch; text-overflow: ellipsis; white-space: nowrap; }
+.mic-readiness__level {
+  flex: 0 0 auto;
+  overflow: hidden;
+  width: 60px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 70%, transparent);
+}
+.mic-readiness__level > span { display: block; inline-size: 0; height: 100%; background: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .mic-readiness__level > span { transition: inline-size .08s linear; }
+}
+/* A failure is worth a note; the note belongs to the workspace, not to the
+   sentence, so no row grows one. */
+.transcript-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.transcript-note button { min-height: 28px; padding-block: 0; font-size: var(--text-xs); }
+/* A pointer does not need a thumb's 44px per word; the line keeps its own
+   height and every word stays a comfortable target. */
+.transcript-panel .line-original .token { min-height: 0; vertical-align: baseline; }
+
+/* ---------------------------------------------------------------------------
+   Practice navigation: leaving is not going back a line.
+
+   Leaving the task is chrome - a cross beside the task's name. Moving through
+   the task is its own row, with the line's place between its two directions.
+   Dictation hides the transcript, so its lines are offered behind one control
+   in the same row - by what they say, not by a number.
+   --------------------------------------------------------------------------- */
+.practice-top { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.practice-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+  min-height: 32px;
+  padding-inline: var(--space-2);
+  font-size: var(--text-sm);
+}
+.practice-steps {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+.practice-steps button {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.practice-steps button[disabled] { opacity: .35; cursor: default; }
+.practice-place { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  .practice-steps { gap: var(--space-1); }
+}
+.section-head__tools { display: inline-flex; align-items: center; gap: var(--space-1); margin-inline-start: auto; }
+
+/* ---------------------------------------------------------------------------
+   Writing: the page keeps the width until there is something to say.
+
+   Before a review the margin holds the source, or one quiet line naming what
+   will appear there - so the workspace gives the page the room, instead of
+   standing a blank half-screen beside it. When the review arrives the two
+   settle into a working balance. The change is a column width, so the page the
+   learner is reading does not jump: their text stays where it was on screen.
+   --------------------------------------------------------------------------- */
+/* The width changes the moment the learner asks for a review, and it changes
+   at once. It was briefly a transition, which was worse than either end of it:
+   Chrome does not interpolate `minmax(0, <n>fr)` tracks, so the animation held
+   the starting width and the rebalance never arrived at all. A learner-asked
+   change does not need easing to be understood. */
+@media (min-width: 1001px) {
+  [data-experience='writing'] .writing-workspace[data-review='waiting'],
+  [data-experience='writing'] .writing-workspace[data-review='working'] {
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  }
+  [data-experience='writing'] .writing-workspace[data-review='ready'] {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+/* The learner's page keeps a measure: a line of prose stays readable however
+   wide the window is. */
+[data-experience='writing'] .writing-sheet textarea { max-inline-size: 62ch; }
+[data-experience='writing'] .writing-workspace[data-review='waiting'] .writing-result,
+[data-experience='writing'] .writing-workspace[data-review='working'] .writing-result {
+  justify-content: start;
+}
+[data-experience='writing'] .writing-workspace[data-review='waiting'] .workspace-result__scroll,
+[data-experience='writing'] .writing-workspace[data-review='working'] .workspace-result__scroll {
+  padding: 0;
+}
+.review-working { color: var(--muted); font-size: var(--text-sm); }
+
+/* A review that belongs to words the learner has since changed.
+
+   It is not removed - a learner mid-revision is looking at it precisely
+   because they are acting on it - but it stops being current, visibly, and
+   says how to make it current again. */
+.review-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-block-end: 1px solid var(--line);
+  font-size: var(--text-sm);
+}
+.review-stale button { min-height: 28px; padding-block: 0; font-size: var(--text-sm); }
+
+/* ---------------------------------------------------------------------------
+   My Language: the language leads, the count follows.
+
+   The room opened on four metric tiles and a two-column dashboard, with the
+   learner's own saved language third - a screen about the collection rather
+   than about the language in it. What is due comes first when something
+   actually is, then what was kept with the sentence it came from, then the
+   collections, then the numbers, once, quietly.
+   --------------------------------------------------------------------------- */
+.language-due {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--sage-surface);
+  color: var(--on-sage);
+  border-radius: var(--radius);
+}
+.language-due small { color: var(--on-sage-muted); font-size: var(--text-xs); letter-spacing: 0.06em; text-transform: uppercase; }
+.language-due h2 { margin: var(--space-1) 0 0; font-size: var(--text-lead); }
+.language-due .meta { margin: var(--space-1) 0 0; color: var(--on-sage-muted); }
+.vocabulary-tally {
+  margin: var(--space-8) 0 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.language-empty h2 { font-size: var(--text-lead); margin: 0 0 var(--space-2); }
+.language-empty .button-row { margin-top: var(--space-3); }
+/* Where a saved word was met: the piece, then the sentence. Content, so it
+   reads as content - a quoted line, not a metadata chip. */
+.vocabulary-row__source {
+  /* It is a control now - the way to ask about the word - but it reads as
+     the line it always was. */
+  appearance: none;
+  border: 0;
+  inline-size: 100%;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  grid-column: 1 / -1;
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+.vocabulary-row__where { font-weight: 600; margin-inline-end: var(--space-2); }
+.vocabulary-row__source q {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Recall: what is waiting, one item, what happened.
+
+   The session used to open on item one, so a learner had no idea whether this
+   was three words or thirty, and it ended on a generic empty state that said
+   nothing about the sitting they had just done. Both are real counts from the
+   scheduler - nothing here is a score, a streak or a mastery figure.
+   --------------------------------------------------------------------------- */
+.recall-landing {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  max-inline-size: 34rem;
+  padding: var(--space-6) 0 0;
+}
+.recall-landing > small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.recall-landing h2 { margin: 0; font-size: clamp(1.5rem, 2.4vw, 2rem); }
+.recall-landing > p { margin: 0; color: var(--muted); }
+.recall-landing .primary { margin-top: var(--space-3); }
+/* Where the word was met, after the learner has committed to an answer. */
+.recall-where { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--text-xs); }
+.recall-done p { margin: var(--space-1) 0; }
+
+/* ---------------------------------------------------------------------------
+   Progress (D-059, D-060) - the approved composition (Progress · learner-
+   facing, Progress dashboard · mobile, Progress · paper): a week panel with a
+   headline figure and two stat chips, a seven-day chart, and six domain cards.
+   A measure Orena does not record keeps its component and says "not measured"
+   (components.css `data-unavailable`, `.metric-unavailable`).
+   --------------------------------------------------------------------------- */
+.progress-title { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.progress-label {
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.progress-week { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
+.progress-week__time { display: grid; gap: 8px; }
+.progress-week__value {
+  font-family: var(--display-font);
+  font-size: 40px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.progress-week__note { color: var(--text-muted); font-size: 12px; }
+.progress-stats { display: flex; gap: 10px; margin-left: auto; }
+.progress-stat {
+  display: grid;
+  gap: 5px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.progress-stat .progress-label { font-size: 9.5px; letter-spacing: 0.12em; }
+.progress-stat strong {
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+/* The streak is an earned mark: lamp amber, its own small light. */
+.progress-stat--streak {
+  border-color: color-mix(in srgb, var(--progress) 30%, transparent);
+  background:
+    radial-gradient(120% 120% at 85% -20%, color-mix(in srgb, var(--progress) 26%, transparent), transparent 62%),
+    var(--surface-secondary);
+}
+.progress-stat--streak .progress-label { color: var(--progress-text); }
+.progress-stat--words { display: none; }
+.progress-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  block-size: 120px;
+  padding: 0 2px;
+}
+.progress-day { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; block-size: 100%; }
+.progress-day__bar {
+  inline-size: 100%;
+  block-size: 12%;
+  border-radius: 8px 8px 3px 3px;
+  background: repeating-linear-gradient(135deg, var(--progress-track) 0 4px, transparent 4px 8px);
+}
+.progress-day__label { color: var(--text-muted); font-family: var(--mono-font); font-size: 10px; }
+.progress-by-domain { display: none; }
+.progress-domains {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.progress-domain {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.progress-domain:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.progress-domain__head { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: var(--weight-bold); }
+.progress-domain__head > svg { flex: none; color: var(--tile-ink); }
+.progress-domain__line { color: var(--text-secondary); font-family: var(--mono-font); font-size: 11px; font-variant-numeric: tabular-nums; }
+.progress-domain__line .hint { display: none; }
+.progress-domain .progress-bar { block-size: 5px; }
+.progress-domain .progress-bar > span { background: var(--progress); }
+
+@media (max-width: 900px) {
+  .progress-domains { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  /* Progress dashboard · mobile: the title, the week figure, three stat tiles,
+     the chart, then one row per domain. */
+  .progress-title {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    overflow: visible;
+    clip-path: none;
+    margin: 0 0 18px;
+    font-size: 28px;
+    font-weight: var(--weight-heavy);
+  }
+  .progress-panel { padding: 0; border: 0; background: none; gap: 20px; }
+  .progress-week { display: grid; gap: 16px; }
+  .progress-week__value { font-size: 30px; }
+  .progress-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-left: 0; }
+  .progress-stat { padding: 12px 14px; }
+  .progress-stat strong { font-size: 22px; }
+  .progress-stat--words { display: grid; }
+  .progress-chart { block-size: 90px; }
+  .progress-by-domain { display: block; margin-bottom: -10px; }
+  .progress-domains { grid-template-columns: 1fr; gap: 10px; }
+  .progress-domain {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 56px;
+    grid-template-areas: 'icon name bar' 'icon line bar';
+    align-items: center;
+    gap: 2px 12px;
+    padding: 12px 14px;
+  }
+  .progress-domain__head { display: contents; }
+  .progress-domain__head > svg { grid-area: icon; }
+  .progress-domain__head > span { grid-area: name; }
+  .progress-domain__line { grid-area: line; font-size: 11px; }
+  .progress-domain .progress-bar { grid-area: bar; }
+}
+.facet-chip {
+  min-height: 30px;
+  padding: 6px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+}
+.library-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 18rem;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text-primary) 5%, var(--surface-primary));
+  color: var(--text-secondary);
+}
+.library-search:focus-within { border-color: var(--action-text); }
+.library-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+}
+.library-view { border-radius: 12px; }
+.library-view > button { display: grid; place-items: center; inline-size: 36px; min-block-size: 36px; padding: 0; border-radius: 9px; }
+.library-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.library-more:hover { color: var(--text-primary); }
+@media (max-width: 600px) {
+  .library-search { flex-basis: 100%; }
+}
+
+/* ---------------------------------------------------------------------------
+   Global search (D-059 Phase 4) - "Global search, grouped results": the box
+   with its count, kind chips, then Word, In your texts, Library.
+   --------------------------------------------------------------------------- */
+#main > .search-page { max-width: 860px; margin-left: 0; }
+.search-panel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--action-text) 55%, transparent);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--action-primary) 14%, transparent);
+  color: var(--text-secondary);
+}
+.search-box input {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  outline: none;
+}
+.search-box input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.search-box__count { color: var(--text-muted); }
+.search-box__clear { display: grid; place-items: center; inline-size: 32px; block-size: 32px; min-height: 32px; padding: 0; border-radius: 50%; color: var(--text-secondary); }
+.search-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle); }
+.search-chip { font-family: var(--font); font-size: 13px; font-weight: var(--weight-semibold); padding: 7px 13px; min-height: 34px; }
+.search-chip[aria-checked='true'] { border-color: transparent; background: var(--text-primary); color: var(--surface-canvas); }
+.search-results { display: grid; gap: 22px; }
+.search-group { display: grid; gap: 10px; }
+.search-group__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--text-muted);
+}
+.search-group__label::after { content: ''; flex: 1; block-size: 1px; background: var(--border-subtle); }
+.search-word {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.search-word--lead { background: var(--bloom), var(--surface-secondary); border-color: var(--border-strong); }
+.search-word__text { display: grid; gap: 6px; flex: 1; min-width: 0; }
+.search-word__head { display: flex; align-items: baseline; gap: 10px; }
+.search-word__head strong { font-family: var(--display-font); font-size: 22px; font-weight: var(--weight-heavy); line-height: 1.1; }
+.search-word__reading { color: var(--action-text); font-family: var(--mono-font); font-size: 12px; }
+.search-word__meaning { color: var(--text-secondary); font-size: 13.5px; }
+.search-word .vocabulary-stars { display: inline-flex; gap: 3px; color: color-mix(in srgb, var(--text-primary) 22%, transparent); }
+.search-word .vocabulary-stars .is-earned { color: var(--domain-vocabulary); }
+.search-hit {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.search-hit > svg { flex: none; color: var(--text-muted); }
+.search-hit__visual { flex: none; overflow: hidden; inline-size: 36px; block-size: 50px; border-radius: 8px; border: 1px solid var(--border-subtle); }
+.search-hit__visual > img { width: 100%; height: 100%; object-fit: cover; }
+.search-hit__text { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.search-hit__text strong { font-size: 14px; font-weight: var(--weight-bold); }
+.search-hit__line { overflow: hidden; color: var(--text-secondary); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.search-hit mark { padding: 0 3px; border-radius: 4px; background: color-mix(in srgb, var(--action-primary) 26%, transparent); color: var(--text-primary); }
+.search-gap { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text-muted); font-size: 12px; }
+.search-library { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.search-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.search-tile__visual { flex: none; overflow: hidden; inline-size: 40px; block-size: 40px; border-radius: 10px; border: 1px solid var(--border-subtle); }
+.search-tile__visual > img { width: 100%; height: 100%; object-fit: cover; }
+.search-tile__text { display: grid; gap: 2px; min-width: 0; }
+.search-tile__text strong { overflow: hidden; font-size: 13.5px; font-weight: var(--weight-bold); text-overflow: ellipsis; white-space: nowrap; }
+.search-tile__text small { color: var(--text-muted); font-family: var(--mono-font); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+.search-word:hover,
+.search-hit:hover,
+.search-tile:hover { border-color: var(--border-strong); color: var(--text-primary); }
+@media (max-width: 600px) {
+  .search-panel { padding: 0; border: 0; background: none; }
+  .search-library { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------------------
+   Saved (D-059 Phase 4) - "Saved content · four kinds, kept apart", and
+   History - "secondary by design". Both from Part 3 / Part 5.
+   --------------------------------------------------------------------------- */
+#main > .saved-page,
+#main > .history-page { max-width: 760px; margin-left: 0; }
+.saved-title { margin: 0 0 16px; font-size: 28px; font-weight: var(--weight-heavy); }
+.saved-panel { border: 1px solid var(--border-subtle); border-radius: 20px; background: var(--surface-panel); overflow: hidden; }
+.saved-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 20px; border-bottom: 1px solid var(--border-subtle); }
+.saved-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+}
+.saved-tab[aria-selected='true'] { border-color: transparent; background: var(--text-primary); color: var(--surface-canvas); }
+.saved-tab__count { font-family: var(--mono-font); font-size: 11px; font-weight: var(--weight-regular); }
+.saved-body { display: grid; gap: 12px; padding: 18px 20px 20px; }
+.saved-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  text-transform: uppercase;
+}
+.saved-filter[aria-pressed='true'] { background: var(--action-selected); border-color: color-mix(in srgb, var(--action-primary) 55%, transparent); }
+.saved-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.saved-word {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.saved-word:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.saved-word__text { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.saved-word__text strong { font-family: var(--display-font); font-size: 17px; font-weight: var(--weight-heavy); line-height: 1.15; }
+.saved-word__text small { overflow: hidden; color: var(--text-muted); font-family: var(--mono-font); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.saved-word__from { text-transform: uppercase; letter-spacing: 0.04em; }
+.saved-word .vocabulary-stars { display: inline-flex; gap: 2px; color: color-mix(in srgb, var(--text-primary) 22%, transparent); }
+.saved-word .vocabulary-stars .is-earned { color: var(--domain-vocabulary); }
+.saved-due {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--bloom), var(--surface-secondary);
+}
+.saved-due__icon { color: var(--tile-ink); }
+.saved-due > div { flex: 1; }
+.saved-due strong { font-size: 14px; }
+.saved-due .primary { min-height: 40px; padding-inline: 18px; }
+.saved-list { display: grid; gap: 8px; }
+.saved-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.saved-row > svg { flex: none; color: var(--text-muted); }
+.saved-row__visual { flex: none; overflow: hidden; inline-size: 36px; block-size: 50px; border-radius: 8px; border: 1px solid var(--border-subtle); }
+.saved-row__visual > img { width: 100%; height: 100%; object-fit: cover; }
+.saved-row__text { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.saved-row__text strong { font-size: 14px; font-weight: var(--weight-bold); }
+.saved-row__text small { color: var(--text-muted); font-family: var(--mono-font); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.history-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.history-head h1 { margin: 0; font-size: 28px; font-weight: var(--weight-heavy); }
+.history-back { border-radius: 999px; inline-size: 36px; block-size: 36px; min-block-size: 36px; }
+.history-window { margin-left: auto; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); color: var(--text-secondary); }
+.history-list {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.history-day { margin: 10px 0 2px; color: var(--text-muted); }
+.history-day:first-child { margin-top: 0; }
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.history-row:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.history-row__icon { display: grid; place-items: center; flex: none; color: var(--tile-ink); }
+.history-row__text { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.history-row__text strong { overflow: hidden; font-size: 14px; font-weight: var(--weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
+.history-row__text small { color: var(--text-muted); font-family: var(--mono-font); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+.history-row__score { font-family: var(--mono-font); font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.history-skeleton { block-size: 58px; border-radius: 14px; }
+@media (max-width: 600px) {
+  .saved-panel,
+  .history-list { border: 0; border-radius: 0; background: none; padding: 0; }
+  .saved-tabs { padding: 0 0 14px; overflow-x: auto; flex-wrap: nowrap; }
+  .saved-body { padding: 14px 0 0; }
+  .saved-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------------------
+   Book detail (D-059 Phase 5, Screens part 4 section 16) - "overview first,
+   chapters below". One card: the hero decides, the chapters follow, the side
+   column carries what must not crowd the decision.
+   --------------------------------------------------------------------------- */
+.book-page {
+  display: grid;
+  gap: 14px;
+  max-inline-size: 980px;
+  margin-inline: 0;
+}
+.book-back {
+  justify-self: start;
+  inline-size: 36px;
+  block-size: 36px;
+  min-block-size: 36px;
+  border-radius: 50%;
+}
+.book-hero {
+  display: flex;
+  gap: 26px;
+  padding: 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px 20px 0 0;
+  background: radial-gradient(70% 90% at 12% 0%, var(--bloom-hero, transparent), transparent 62%),
+    var(--surface-panel);
+}
+.book-hero { --bloom-hero: rgba(144, 101, 240, 0.22); }
+.book-hero__cover { inline-size: 220px; flex: none; }
+.book-hero__cover .library-cover--large,
+.book-page .library-cover--large {
+  display: block;
+  max-inline-size: none;
+  margin: 0;
+  border-radius: 18px;
+  box-shadow: var(--shadow-overlay);
+}
+.book-hero__copy {
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+.book-hero__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.book-hero__chips .chip { min-block-size: 28px; padding: 4px 9px; font-size: 11px; }
+.book-hero__title {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 38px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.02;
+  letter-spacing: -0.022em;
+}
+.book-hero__byline { margin: 8px 0 0; color: var(--text-secondary); font-size: 15px; }
+.book-hero__progress { display: flex; align-items: center; gap: 12px; max-inline-size: 440px; }
+.book-hero__progress .progress-bar { flex: 1; block-size: 6px; }
+.book-hero__progress .ds-data { color: var(--progress-text); white-space: nowrap; }
+.book-hero__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.book-hero__actions .primary { min-block-size: 48px; padding-inline: 22px; border-radius: var(--radius-pill); }
+.book-hero__actions .icon-button {
+  inline-size: 48px;
+  block-size: 48px;
+  min-block-size: 48px;
+  border-radius: 50%;
+}
+.book-hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-block-start: auto;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--border-subtle);
+}
+.book-stat { display: grid; gap: 4px; }
+.book-stat .ds-label { color: var(--text-muted); }
+.book-stat strong { font-family: var(--display-font); font-size: 20px; font-weight: var(--weight-heavy); }
+.book-stat small { color: var(--text-muted); font-size: 11px; }
+
+.book-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  padding: 22px 28px 26px;
+  border: 1px solid var(--border-subtle);
+  border-block-start: 0;
+  border-radius: 0 0 20px 20px;
+  background: var(--surface-canvas);
+}
+.book-chapters { display: flex; flex: 1; min-inline-size: 320px; flex-direction: column; gap: 12px; }
+.book-section-head { display: flex; align-items: center; gap: 10px; }
+/* The source draws "Chương" as a section heading, not a mono label. */
+.book-section-title {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.book-section-head .ds-label { color: var(--text-muted); }
+.book-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  min-block-size: 32px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+}
+.book-filter[aria-pressed='true'] {
+  background: var(--action-selected);
+  color: var(--action-text);
+}
+.book-chapter-list { display: grid; gap: 9px; padding: 0; margin: 0; list-style: none; }
+.book-chapter {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 15px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+}
+.book-chapter:hover,
+.book-chapter:focus-visible { border-color: var(--border-strong); color: var(--text-primary); }
+.book-chapter__n { flex: none; inline-size: 26px; font-size: 15px; color: var(--text-muted); }
+.book-chapter__text { display: grid; gap: 3px; flex: 1; min-inline-size: 0; }
+.book-chapter__title { overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.book-chapter__text small { font-size: 13.5px; color: var(--text-muted); }
+.book-chapter__done { display: inline-flex; color: var(--status-success); }
+.book-chapter[data-current],
+.book-chapter[aria-current='true'] {
+  border-color: color-mix(in srgb, var(--action-primary) 45%, transparent);
+  background: var(--bloom), var(--surface-elevated);
+  color: var(--text-primary);
+}
+.book-chapter[aria-current='true'] .book-chapter__n { color: var(--action-text); }
+.book-chapter[aria-current='true'] .book-chapter__title { font-weight: var(--weight-bold); font-size: 18px; }
+.book-chapter__next {
+  min-block-size: 26px;
+  padding: 3px 9px;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.book-show-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-block-size: 44px;
+  padding: 11px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 13px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.book-show-all:hover { color: var(--text-primary); }
+
+.book-side { display: flex; flex-direction: column; gap: 16px; inline-size: 300px; flex: none; }
+.book-side > section { display: flex; flex-direction: column; gap: 9px; }
+.book-side .ds-label { color: var(--text-muted); }
+.book-about { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; }
+.book-side__note { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.5; }
+.book-words { display: flex; flex-wrap: wrap; gap: 7px; }
+.book-words .chip { min-block-size: 30px; padding: 6px 11px; font-size: 13px; font-weight: var(--weight-regular); }
+.book-words__more { border-style: dashed; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .book-side { inline-size: 100%; }
+}
+@media (max-width: 700px) {
+  .book-hero {
+    gap: 16px;
+    padding: 18px;
+    border-radius: 18px 18px 0 0;
+  }
+  .book-hero__cover { inline-size: 112px; }
+  .book-hero__copy { gap: 9px; }
+  .book-hero__title { font-size: 26px; line-height: 1.05; }
+  .book-hero__byline { margin-top: 4px; font-size: 12.5px; }
+  /* The stats become tiles on a phone, as the design draws them - two by two,
+     because Orena's fourth figure (audio) has to fit beside the three. */
+  .book-hero__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-block-start: 14px;
+  }
+  .book-stat {
+    align-content: start;
+    min-inline-size: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    background: var(--surface-elevated);
+  }
+  .book-stat .ds-label { font-size: 9px; letter-spacing: 0.1em; }
+  .book-stat small { font-size: 10px; line-height: 1.35; }
+  .book-stat strong { font-size: 18px; }
+  .book-stat strong { font-size: 18px; }
+  .book-body { padding: 18px; }
+  .book-chapters { min-inline-size: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   The reading check (D-059 Phase 5, Screens part 3 section 13) - one question
+   at a time: the rail, the question, lettered options, then the words in the
+   text that settle it. Optional, so it opens from an invitation.
+   --------------------------------------------------------------------------- */
+.quiz {
+  max-inline-size: 640px;
+  margin-block: var(--space-8) var(--space-6);
+  padding-block-start: var(--space-6);
+  border-block-start: 1px solid var(--border-subtle);
+}
+.quiz-invite { display: grid; justify-items: start; gap: 8px; }
+.quiz-invite .ds-label { color: var(--text-muted); }
+.quiz-invite strong { font-family: var(--display-font); font-size: 21px; font-weight: var(--weight-heavy); }
+.quiz-before { margin: 0; color: var(--text-secondary); font-size: 12px; }
+.quiz-invite .button-row { margin-top: 4px; }
+.quiz-step {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.quiz-bar { display: flex; align-items: center; gap: 12px; }
+.quiz-close { inline-size: 32px; block-size: 32px; min-block-size: 32px; border: 0; border-radius: 50%; }
+.quiz-rail { display: flex; flex: 1; gap: 4px; }
+.quiz-rail__step {
+  flex: 1;
+  block-size: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--progress-track);
+}
+.quiz-rail__step[data-tone='done'] { background: var(--progress); }
+.quiz-rail__step[data-tone='right'] { background: var(--status-success); }
+.quiz-rail__step[data-tone='wrong'] { background: var(--status-error); }
+.quiz-place { color: var(--text-secondary); font-size: 11px; }
+.quiz-head { display: flex; align-items: center; gap: 8px; }
+.quiz-kind { color: var(--action-text); }
+.quiz-type {
+  margin-inline-start: auto;
+  min-block-size: 26px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.quiz-question {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+}
+.quiz-options { display: grid; gap: 10px; }
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  padding: 15px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  text-align: start;
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--border-strong); }
+.quiz-option__letter {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 26px;
+  block-size: 26px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  font-size: 12px;
+}
+.quiz-option__text { flex: 1; font-size: 15.5px; line-height: 1.45; }
+.quiz-option__mine { flex: none; color: var(--text-muted); }
+.quiz-option[data-tone='picked'] {
+  border-color: color-mix(in srgb, var(--action-primary) 55%, transparent);
+  background: var(--action-selected);
+}
+.quiz-option[data-tone='right'] {
+  border-color: color-mix(in srgb, var(--status-success) 50%, transparent);
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+}
+.quiz-option[data-tone='right'] .quiz-option__text { font-weight: var(--weight-bold); }
+.quiz-option[data-tone='right'] .quiz-option__letter {
+  border-color: transparent;
+  background: var(--status-success);
+  color: var(--surface-canvas);
+}
+.quiz-option[data-tone='wrong'] {
+  border-color: color-mix(in srgb, var(--status-error) 45%, transparent);
+  background: color-mix(in srgb, var(--status-error) 10%, transparent);
+}
+.quiz-option[data-tone='wrong'] .quiz-option__letter {
+  border-color: transparent;
+  background: var(--status-error);
+  color: var(--surface-canvas);
+}
+.quiz-option:disabled { cursor: default; opacity: 1; }
+.quiz-option:disabled:not([data-tone]) { opacity: 0.55; }
+.quiz-answer {
+  display: flex;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.quiz-answer > svg { flex: none; color: var(--status-success); }
+.quiz-answer p { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; }
+.quiz-answer blockquote {
+  margin: 8px 0 0;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--border-strong);
+  font-size: 14px;
+}
+.quiz-answer__where { margin-top: 8px; color: var(--text-muted); }
+.quiz-score { margin: 0; font-family: var(--display-font); font-size: 20px; font-weight: var(--weight-heavy); }
+.quiz-actions { display: flex; gap: 10px; }
+.quiz-actions .primary { flex: 1; justify-content: center; min-block-size: 52px; border-radius: var(--radius-pill); }
+
+@media (max-width: 700px) {
+  .quiz { margin-block: var(--space-5) var(--space-4); }
+  .quiz-step { padding: 16px; border-radius: 18px; }
+  .quiz-question { font-size: 21px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Vocabulary home (D-059 Phase 6, Screens part 4 section 18): the domain tile,
+   what was kept and mastered, what is due, the collections, and the way to
+   everything saved. One panel, in the vocabulary hue.
+   --------------------------------------------------------------------------- */
+#main > .vocab-home { max-width: 640px; margin-left: 0; }
+.vocab-home {
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--surface-panel);
+}
+.vocab-home__head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: radial-gradient(75% 70% at 12% 0%, var(--bloom-vocab, transparent), transparent 62%);
+}
+.vocab-home__head { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 18%, transparent); }
+.vocab-home__title { flex: 1; min-inline-size: 0; }
+.vocab-home__title h1 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.vocab-home__title .ds-label { margin: 3px 0 0; color: var(--text-muted); }
+.vocab-home__due {
+  flex: none;
+  min-block-size: 30px;
+  padding: 6px 11px;
+  border-color: color-mix(in srgb, var(--tile-ink) 38%, transparent);
+  background: color-mix(in srgb, var(--tile-hue) 14%, transparent);
+  color: var(--tile-ink);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  font-weight: var(--weight-regular);
+  text-transform: uppercase;
+}
+.vocab-home__body { display: grid; gap: 13px; padding: 16px 20px 20px; }
+.vocab-due {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 15px;
+  background: var(--bloom), var(--surface-elevated);
+}
+.vocab-due > div { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.vocab-due strong { font-size: 14.5px; font-weight: var(--weight-bold); }
+.vocab-due small { overflow: hidden; color: var(--text-secondary); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+.vocab-due .primary { min-block-size: 40px; padding-inline: 16px; border-radius: var(--radius-pill); }
+.vocab-block { display: grid; gap: 9px; }
+.vocab-block__head { display: flex; align-items: center; gap: 8px; }
+.vocab-block .ds-label { color: var(--text-muted); }
+/* On a desk the way into the whole catalogue is the dashed card the design
+   draws; on a phone it is the link in this header, as the mobile design
+   draws it instead. */
+.vocab-block__browse { display: none; color: var(--action-text); font-size: 12.5px; font-weight: var(--weight-semibold); }
+.vocab-collections { display: flex; gap: 10px; }
+.vocab-collection {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  flex: 1;
+  min-inline-size: 0;
+  padding: 13px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 15px;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  text-align: start;
+}
+.vocab-collection:hover { border-color: color-mix(in srgb, var(--domain-vocabulary) 40%, transparent); }
+.vocab-collection__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vocab-collection__head strong { overflow: hidden; font-size: 13.5px; font-weight: var(--weight-bold); text-overflow: ellipsis; white-space: nowrap; }
+.vocab-collection__tier { flex: none; color: var(--text-muted); }
+.vocab-collection .progress-bar { --progress-gradient: var(--domain-vocabulary); block-size: 5px; }
+.vocab-collection .progress-bar > span { background: var(--domain-vocabulary); }
+.vocab-collection__count { color: var(--text-muted); font-size: 10px; }
+.vocab-collection--browse {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+.vocab-collection--browse:hover { color: var(--text-primary); }
+.vocab-note { margin: 0; color: var(--text-muted); font-size: 12.5px; }
+.vocab-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  inline-size: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  text-align: start;
+}
+.vocab-row:hover { border-color: var(--border-strong); }
+.vocab-row > svg:first-child { flex: none; color: var(--text-secondary); }
+.vocab-row > span:not(.ds-data) { flex: 1; min-inline-size: 0; font-size: 13.5px; font-weight: var(--weight-semibold); }
+.vocab-row .ds-data { color: var(--text-secondary); font-size: 11px; }
+.vocab-row > svg:last-child { flex: none; color: var(--text-muted); }
+
+@media (max-width: 700px) {
+  #main > .vocab-home { max-width: none; }
+  .vocab-home { border-radius: 18px; }
+  .vocab-home__head { padding: 16px; }
+  .vocab-home__body { padding: 14px 16px 18px; }
+  .vocab-block__head .vocab-block__browse { display: inline-flex; margin-inline-start: auto; }
+  .vocab-collections { flex-direction: column; }
+  .vocab-collection--browse { display: none; }
+}
+
+/* --- A collection (D-059 Phase 6, Screens part 1 section 05) --------------
+   Its own artwork, what it is, how far through it the learner is, one way in,
+   then a compact overview of its words. The full list, with search, level,
+   status and sort, is one tap behind "show all". */
+#main > .vocab-collection-page { max-width: 640px; margin-left: 0; }
+.vocab-collection-page { display: grid; gap: 14px; }
+.vocab-back { justify-self: start; inline-size: 36px; block-size: 36px; min-block-size: 36px; border-radius: 50%; }
+.vocab-collection__hero {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+  background: radial-gradient(85% 65% at 16% 0%, var(--bloom-vocab, transparent), transparent 62%), var(--surface-panel);
+}
+.vocab-collection__hero { --bloom-vocab: color-mix(in srgb, var(--domain-vocabulary) 22%, transparent); }
+.vocab-collection__art {
+  flex: none;
+  inline-size: 120px;
+  block-size: 120px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--progress) 38%, transparent);
+}
+.vocab-collection__art .content-cover { inline-size: 100%; block-size: 100%; }
+.vocab-collection__copy { display: grid; align-content: start; gap: 10px; flex: 1; min-inline-size: 0; }
+.vocab-collection__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.vocab-collection__chips .chip { min-block-size: 26px; padding: 4px 8px; font-family: var(--mono-font); font-size: 9.5px; font-weight: var(--weight-regular); letter-spacing: 0.12em; text-transform: uppercase; }
+.vocab-tier { border-color: color-mix(in srgb, var(--progress) 42%, transparent); background: color-mix(in srgb, var(--progress) 16%, transparent); color: var(--progress-text); }
+.vocab-collection__copy h1 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 26px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.vocab-collection__progress { display: flex; align-items: center; gap: 10px; }
+.vocab-collection__progress .progress-bar { flex: 1; block-size: 6px; }
+.vocab-collection__progress .ds-data { color: var(--text-secondary); font-size: 11px; }
+.vocab-collection__actions { display: flex; gap: 10px; }
+.vocab-collection__actions .primary { flex: 1; justify-content: center; min-block-size: 44px; border-radius: var(--radius-pill); }
+.vocab-collection__actions .icon-button { inline-size: 44px; block-size: 44px; min-block-size: 44px; border-radius: 50%; }
+.vocab-collection__body {
+  display: grid;
+  gap: 14px;
+  padding: 18px 24px 24px;
+  border: 1px solid var(--border-subtle);
+  border-top: 0;
+  border-radius: 0 0 20px 20px;
+  background: var(--surface-canvas);
+}
+.vocab-words__head { display: flex; align-items: center; gap: 8px; }
+.vocab-words__head .ds-label { color: var(--text-muted); }
+.vocab-words__filter {
+  margin-inline-start: auto;
+  min-block-size: 30px;
+  padding: 5px 9px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  font-weight: var(--weight-regular);
+  text-transform: uppercase;
+}
+.vocab-words { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.vocab-word {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  text-align: start;
+}
+.vocab-word:hover { border-color: var(--border-strong); }
+.vocab-word__text { display: grid; gap: 2px; flex: 1; min-inline-size: 0; }
+.vocab-word__text strong { overflow: hidden; font-size: 15px; font-weight: var(--weight-bold); text-overflow: ellipsis; white-space: nowrap; }
+.vocab-word__text small { color: var(--text-muted); font-size: 10.5px; }
+.vocab-word .vocabulary-stars { display: inline-flex; gap: 2px; flex: none; color: color-mix(in srgb, var(--text-primary) 22%, transparent); }
+.vocab-word .vocabulary-stars .is-earned { color: var(--progress); }
+.vocab-show-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-block-size: 40px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+.vocab-show-all:hover { color: var(--text-primary); }
+
+@media (max-width: 700px) {
+  #main > .vocab-collection-page { max-width: none; }
+  .vocab-collection__hero { gap: 16px; padding: 18px; border-radius: 18px 18px 0 0; }
+  .vocab-collection__art { inline-size: 96px; block-size: 96px; }
+  .vocab-collection__copy h1 { font-size: 22px; }
+  .vocab-collection__body { padding: 16px 18px 20px; border-radius: 0 0 18px 18px; }
+  .vocab-words { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* --- The review session (D-059 Phase 6, Screens part 1 section 05) --------
+   What is due and how far through it the learner is, the word itself, and -
+   once they have committed - how well they knew it. */
+.review-session {
+  display: grid;
+  gap: 16px;
+  max-inline-size: 730px;
+  margin-inline: 0;
+  padding: 20px 22px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-panel);
+}
+.review-bar { display: flex; align-items: center; gap: 12px; }
+.review-bar .ds-data { color: var(--text-secondary); font-size: 11px; text-transform: uppercase; }
+.review-rail { display: flex; flex: 1; gap: 4px; }
+.review-rail__step { flex: 1; block-size: 4px; border-radius: var(--radius-pill); background: var(--progress-track); }
+.review-rail__step[data-tone='done'] { background: var(--progress); }
+.review-body { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.review-prompt { display: grid; gap: 12px; flex: 1; min-inline-size: 260px; }
+.review-prompt > small { color: var(--text-muted); font-family: var(--mono-font); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; }
+.review-prompt h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 40px;
+  font-weight: var(--weight-heavy);
+  line-height: 1;
+  letter-spacing: -0.018em;
+}
+.review-prompt .pinyin { margin: 0; color: var(--domain-vocabulary); font-family: var(--mono-font); font-size: 13px; }
+.review-meaning {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.review-prompt .primary { justify-self: start; min-block-size: 44px; border-radius: var(--radius-pill); }
+.review-grades { display: grid; gap: 9px; inline-size: 250px; flex: none; }
+.review-grades > .ds-label { color: var(--text-muted); }
+.review-grade {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-block-size: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-weight: var(--weight-bold);
+}
+.review-grade:hover:not(:disabled) { border-color: var(--action-primary); }
+.review-grade:disabled { opacity: 0.45; cursor: default; }
+.review-grade__when { margin-inline-start: auto; color: var(--text-muted); font-size: 10.5px; }
+.review-grade--good {
+  border-color: color-mix(in srgb, var(--status-success) 50%, transparent);
+  background: color-mix(in srgb, var(--status-success) 16%, transparent);
+  color: var(--status-success);
+}
+.review-grade--good .review-grade__when { color: inherit; }
+
+@media (max-width: 700px) {
+  .review-session { padding: 16px; border-radius: 18px; }
+  .review-body { gap: 14px; }
+  .review-prompt { min-inline-size: 0; }
+  .review-prompt h2 { font-size: 34px; }
+  .review-grades { inline-size: 100%; }
+}
+/* --- Vocabulary library (D-067, "Vocabulary library", measured) ----------
+   Chips of 10/18 at radius 999, then a grid of 290px covers with 26 between
+   them: cover 186 tall at radius 16, its progress along the bottom inset 14,
+   the name at 18/700 and one mono line under it. The phone frame is the same
+   thing at two columns of 166, covers of 150 and 18 between. */
+.vocab-library {
+  display: grid;
+  gap: 24px;
+  align-content: start;
+  padding-block-end: var(--space-6);
+}
+.vocab-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.vocab-chip {
+  min-block-size: 42px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip, rgba(196, 178, 255, 0.13));
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.vocab-chip[aria-pressed='true'] {
+  background: var(--action-gradient);
+  box-shadow: 0 8px 24px rgba(123, 77, 232, 0.35);
+  color: #fff;
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+}
+.vocab-packs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 290px));
+  gap: 26px;
+}
+.vocab-pack {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.vocab-cover {
+  position: relative;
+  display: block;
+  block-size: 186px;
+  border-radius: 16px;
+  box-shadow: var(--glass-ring);
+  /* The frame's own recipe: a dotted field, a lit corner, a diagonal fall. */
+  background:
+    radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.15) 1.2px, transparent 1.3px) 0 0 / 10px 10px,
+    radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 var(--cover-hue, 296) / 0.55), transparent),
+    linear-gradient(150deg, oklch(0.30 0.05 var(--cover-hue, 296)), oklch(0.17 0.02 300));
+}
+.vocab-cover__progress {
+  position: absolute;
+  inset-inline: 14px;
+  inset-block-end: 14px;
+  block-size: 5px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+/* The frame fills this bar with the accent, not with the amber the rest of
+   Orena marks progress in - it is a cover, read at a glance, not a measure.
+   Both are the theme's own tokens; no colour is invented here. */
+.vocab-cover__progress > span { display: block; block-size: 100%; border-radius: var(--radius-pill); background: var(--accent-gradient); }
+.vocab-pack__text { display: grid; gap: 5px; }
+.vocab-pack__name { font-family: var(--display-font); font-size: 18px; font-weight: var(--weight-bold); line-height: 1.3; }
+.vocab-pack__line { color: var(--text-secondary); font-size: 12.5px; }
+
+/* The learner's own, under the catalogue. The design has no screen for a
+   learner's own set yet, so these two rows are Orena's and are recorded as a
+   difference from the frame rather than drawn as if the frame asked for them. */
+/* An empty catalogue says so once: the panel keeps its own height rather than
+   filling the room the covers would have taken. */
+.vocab-library > .state-panel { align-self: start; max-inline-size: 920px; }
+.vocab-own-rows { display: grid; gap: 12px; max-inline-size: 920px; }
+.vocab-own {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 64px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.vocab-own--due { background: var(--glass-focus); box-shadow: var(--glass-ring-focus); }
+.vocab-own__text { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.vocab-own__name { font-family: var(--display-font); font-size: 16px; font-weight: var(--weight-bold); }
+.vocab-own__line { color: var(--text-secondary); font-size: 12.5px; }
+.vocab-own > svg:last-child { color: var(--text-secondary); }
+
+@media (max-width: 600px) {
+  .vocab-library { gap: 14px; }
+  .vocab-chips { gap: 8px; }
+  .vocab-chip { min-block-size: 36px; padding: 9px 15px; font-size: 13.5px; }
+  .vocab-packs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+  .vocab-cover { block-size: 150px; border-radius: 14px; }
+  .vocab-cover__progress { inset-inline: 11px; inset-block-end: 11px; block-size: 4px; }
+  .vocab-pack__text { gap: 3px; }
+  .vocab-pack__name { font-size: 15px; }
+  .vocab-own { min-block-size: 58px; padding: 0 14px; }
+}
+
+/* --- The review, measured from "Vocabulary review" (D-067) ---------------
+   The card is the screen and there is nothing around it: the way back, one
+   segment per card, the count, then a card of 420x560 and three grades under
+   it. Opened, the card carries a violet ring and a bloom; closed, it is the
+   plain glass and the word alone. */
+.vocab-review {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 26px;
+  min-block-size: min(760px, calc(100dvh - 190px));
+  padding: 34px 44px 44px;
+}
+.vocab-review__bar { display: flex; align-items: center; gap: 20px; }
+.vocab-review__back { display: inline-flex; color: var(--text-secondary); }
+.vocab-review__rail { display: flex; flex: 1; gap: 6px; }
+.vocab-review__step {
+  flex: 1;
+  block-size: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--progress-track);
+}
+.vocab-review__step[data-tone='done'] { background: var(--progress); }
+.vocab-review__count { color: var(--text-secondary); font-size: 14px; }
+.vocab-review__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  min-block-size: 0;
+}
+.vocab-card {
+  position: relative;
+  inline-size: 420px;
+  max-inline-size: 100%;
+  block-size: 560px;
+  max-block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  border: 0;
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.vocab-card[data-state='open'] {
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring-focus), 0 22px 54px rgba(123, 77, 232, 0.26);
+}
+/* The bloom the frame puts behind an opened card, off its top right corner. */
+.vocab-card[data-state='open']::before {
+  content: '';
+  position: absolute;
+  inset-block-start: -40px;
+  inset-inline-end: -30px;
+  inline-size: 300px;
+  block-size: 250px;
+  background: radial-gradient(closest-side, rgba(176, 122, 255, 0.34), transparent 78%);
+  pointer-events: none;
+}
+.vocab-card__mastery { position: relative; display: flex; gap: 5px; }
+.vocab-card__gem {
+  inline-size: 10px;
+  block-size: 10px;
+  border: 1.5px solid color-mix(in srgb, var(--accent-ink) 55%, transparent);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.vocab-card__gem[data-earned='true'] { border-color: transparent; background: var(--accent-ink); }
+.vocab-card__body {
+  position: relative;
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+}
+.vocab-card__ask {
+  color: var(--text-muted);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.vocab-card__word {
+  /* The same serif the Quick Sheet and the transcript already read in. */
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 54px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+.vocab-card__reading { color: var(--text-secondary); font-size: 16px; }
+.vocab-card__rule { inline-size: 96px; block-size: 1px; background: var(--border-subtle); }
+.vocab-card__meaning {
+  font-family: var(--display-font);
+  font-size: 21px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.016em;
+}
+.vocab-card__example,
+.vocab-card__context {
+  margin: 0;
+  max-inline-size: 24ch;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.6;
+}
+.vocab-card .recall-where {
+  color: var(--text-muted);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.vocab-card__flip {
+  position: relative;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip, rgba(196, 178, 255, 0.14));
+  box-shadow: var(--glass-ring);
+  font-family: var(--display-font);
+  font-size: 15px;
+  font-weight: var(--weight-bold);
+}
+.vocab-grades { display: flex; gap: 11px; inline-size: 420px; max-inline-size: 100%; }
+.vocab-grade {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-block-size: 64px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.vocab-grade[data-tone='unsure'] {
+  background: color-mix(in srgb, var(--accent-ink) 12%, transparent);
+  color: var(--accent-ink);
+}
+.vocab-grade[data-tone='got'] {
+  background: var(--text-primary);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  color: var(--ground-color, #0B0A0F);
+}
+.vocab-grade:disabled { opacity: 0.5; cursor: default; }
+.vocab-grade__label { font-family: var(--display-font); font-size: 17px; font-weight: var(--weight-heavy); }
+.vocab-grade__when { font-size: 11px; opacity: 0.72; }
+.vocab-review__hint { margin: 0; color: var(--text-muted); font-size: 13.5px; }
+
+/* The phone frame: the same card, filling the screen it is on. */
+@media (max-width: 600px) {
+  /* The phone frame gives the card the screen: it stretches from under the
+     rail down to the grades, which sit just above the tab bar. */
+  .vocab-review { gap: 18px; padding: 0 0 12px; min-block-size: calc(100dvh - 110px); }
+  .vocab-review__bar { gap: 14px; }
+  .vocab-review__count { font-size: 11.5px; }
+  .vocab-review__stage { gap: 14px; justify-content: stretch; }
+  .vocab-card { inline-size: 100%; block-size: auto; flex: 1 1 auto; max-block-size: none; border-radius: 19px; padding: 16px; }
+  .vocab-card__word { font-size: 39px; }
+  .vocab-card__meaning { font-size: 18px; }
+  .vocab-card__flip { min-block-size: 32px; padding: 0 14px; font-size: 12px; }
+  .vocab-grades { inline-size: 100%; gap: 9px; }
+  .vocab-grade { min-block-size: 58px; border-radius: 16px; }
+  .vocab-grade__label { font-size: 15px; }
+}
+
+/* The reading and the support language are named chips, as the design draws
+   them; the rest of the bar stays icon-first. */
+.learning-chip {
+  min-block-size: 28px;
+  padding: 5px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.learning-chip[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--domain-listening) 40%, transparent);
+  background: color-mix(in srgb, var(--domain-listening) 16%, transparent);
+  color: var(--domain-listening);
+}
+
+.ds-card,
+.book-hero,
+.book-body,
+.chapter-complete,
+.vocab-home,
+.vocab-collection__hero,
+.vocab-collection__body,
+.review-session,
+.quiz-step,
+.saved-panel,
+.history-list {
+  border: 0;
+  background: var(--card-surface);
+  backdrop-filter: var(--card-blur);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+.chapter-tile,
+.chapter-next,
+.chapter-word,
+.vocab-due,
+.vocab-collection,
+.vocab-row,
+.vocab-word,
+.book-chapter,
+.quiz-option,
+.quiz-answer,
+.review-grade,
+.review-meaning,
+.saved-word,
+.saved-row,
+.history-row,
+.state-panel {
+  border: 0;
+  background: var(--card-surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+/* Hover lifts; selection is a ring of light, not a border. */
+.vocab-collection:hover,
+.vocab-row:hover,
+.vocab-word:hover,
+.book-chapter:hover,
+.quiz-option:hover:not(:disabled),
+.saved-word:hover,
+.saved-row:hover,
+.history-row:hover {
+  background: var(--card-surface-strong);
+  box-shadow: var(--card-edge-lit), var(--card-shadow-lifted);
+}
+.book-chapter[aria-current='true'],
+.quiz-option[data-tone='picked'] {
+  box-shadow: var(--card-edge-lit), var(--card-ring), var(--card-shadow-lifted);
+}
+
+/* ---------------------------------------------------------------------------
+   Speaking, recalibrated (design update 2026-09-20, "Recalibration" + device
+   overview 07): the line to say leads at display size, the microphone sits on
+   the centre line, and what comes back is a sentence about two words - never a
+   score. No skill colour on a learning surface: one violet, rising from the
+   floor of the screen.
+   --------------------------------------------------------------------------- */
+.speak-stage {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  text-align: center;
+  padding-block: var(--space-4) var(--space-6);
+}
+.speak-ask {
+  margin: 0;
+  max-inline-size: 22ch;
+  font-family: var(--display-font);
+  font-size: 29px;
+  font-weight: var(--weight-heavy);
+  line-height: 1.12;
+  letter-spacing: -0.032em;
+}
+.speak-stage .speak-line {
+  margin: 0;
+  max-inline-size: 26ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--display-font);
+  font-size: 31px;
+  font-weight: var(--weight-bold);
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+}
+.speak-hint { margin: 0; color: var(--text-muted); font-size: 14px; }
+.speak-wave {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  inline-size: min(100%, 420px);
+}
+.speak-wave__state { font-size: 13.5px; color: var(--text-secondary); }
+.speak-wave__device { font-size: 12px; color: var(--text-muted); }
+.speak-wave__bars {
+  display: block;
+  inline-size: 100%;
+  block-size: 64px;
+  border-radius: 14px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--text-primary) 14%, transparent) 0 3px,
+    transparent 3px 9px
+  );
+  overflow: hidden;
+}
+.speak-wave__bars > span {
+  display: block;
+  block-size: 100%;
+  inline-size: 0;
+  background: repeating-linear-gradient(90deg, var(--text-primary) 0 3px, transparent 3px 9px);
+  transition: inline-size 0.12s linear;
+}
+.speak-controls { display: flex; align-items: center; justify-content: center; gap: 26px; }
+.speak-mic {
+  display: grid;
+  place-items: center;
+  inline-size: 104px;
+  block-size: 104px;
+  min-block-size: 104px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--action-gradient, var(--action-primary));
+  color: var(--text-on-action);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--action-primary) 50%, transparent);
+}
+.speak-mic[aria-pressed='true'],
+.speak-mic[data-recording='true'] { background: var(--status-error); }
+.speak-side { inline-size: 50px; block-size: 50px; min-block-size: 50px; border-radius: 50%; }
+.speak-meta { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); }
+.speak-feedback { color: var(--action-text); font-size: 14px; font-weight: var(--weight-semibold); }
+.speak-verdict {
+  margin: 0 0 8px;
+  max-inline-size: 46ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  text-align: start;
+}
+.pronunciation-words { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.pronunciation-words > li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--card-surface);
+  box-shadow: var(--card-edge);
+  font-size: 15px;
+}
+.pronunciation-words small { color: var(--text-muted); font-family: var(--mono-font); font-size: 11px; }
+.speak-attempts { display: grid; gap: 9px; inline-size: min(100%, 520px); text-align: start; }
+.speak-attempts .ds-label { color: var(--text-muted); }
+.voice-history-take {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card-surface);
+  box-shadow: var(--card-edge);
+}
+.voice-history-take small { color: var(--text-muted); font-family: var(--mono-font); font-size: 10.5px; }
+.voice-history-take p { margin: 0; font-size: 14px; }
+
+/* A learning surface is one colour rising from the floor of the screen. */
+#main[data-experience='speaking']::before,
+#main[data-experience='dictation']::before {
+  content: '';
+  position: fixed;
+  left: 50%;
+  bottom: -170px;
+  z-index: -1;
+  inline-size: 560px;
+  block-size: 440px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--bloom-floor, none);
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .speak-ask { font-size: 26px; }
+  .speak-stage .speak-line { font-size: 27px; }
+  .speak-mic { inline-size: 84px; block-size: 84px; min-block-size: 84px; }
+  .speak-controls { gap: 22px; }
+}
+
+/* --- Home, as the updated design draws it (D-065) ------------------------
+   A greeting, then the two cards a learner decides from, then the rails. */.home-greeting .ds-label { color: var(--text-muted); }.continue-card--empty .primary { min-block-size: 40px; padding-inline: 16px; border-radius: var(--radius-pill); }
+
+@media (max-width: 900px) {}
+
+/* --- The Listening workspace, drawn to the baseline (D-066, Orena Listening frames 02-03) ---
+   The transcript header is three named chips (auto-scroll, the reading, the support language) and
+   one button for everything deeper; a tapped line offers "jump here" and "replay line"; the
+   scrubber is violet with a white knob; an audio lesson has a poster like a video does. */
+.learning-chip {
+  border: 0;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: var(--text-on-glass-dim);
+}
+.learning-chip[aria-pressed='true'] {
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: #fff;
+}
+.learning-chip[aria-pressed='false'] {
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+
+/* --- Most recent evidence (D-067, measured against Orena Progress.dc.html,
+   "Progress overview"): a mono section label, then rows of what was last
+   judged - the piece, a mono line about it, the figure and which measure it
+   is. Row 17 radius, 16 padding on the base glass with its ring, list gap 12. */
+.evidence { display: grid; gap: 14px; margin-block-start: var(--space-6); }
+/* 11px with the frame's 0.14em tracking, not the shorter ds-label default. */
+.evidence__label { color: var(--text-muted); font-size: 11px; letter-spacing: 0.14em; }
+.evidence-list { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.evidence-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 17px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.evidence-row__text { display: grid; gap: 5px; flex: 1; min-inline-size: 0; }
+.evidence-row__title {
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: var(--weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.evidence-row__meta { color: var(--text-muted); font-size: 12px; }
+.evidence-row__score { display: grid; justify-items: end; gap: 3px; flex: none; }
+.evidence-row__score strong { font-family: var(--display-font); font-size: 23px; font-weight: var(--weight-heavy); }
+.evidence-row__score .ds-label { color: var(--text-muted); font-size: 10.5px; }
+
+/* --- Profile (D-067, measured from "Orena Hạn mức sử dụng") --------------
+   A hero, a settings column and the plan's usage. The frame's figures for XP
+   and the streak are sample content; Orena counts neither, so those slots
+   render empty and say so rather than carrying a number nobody measured. */
+.profile-page { display: grid; gap: 22px; padding-block-end: var(--space-6); }
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  padding: 30px;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+/* The frame draws the ring at 168 on the desktop and 126 on the phone. */
+.profile-hero__avatar { flex: none; inline-size: 168px; block-size: 168px; }
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  color: var(--text-muted);
+}
+.profile-avatar__face { display: inline-flex; }
+/* The hero is already allowed to wrap; without a floor the copy simply gets
+   thinner instead, and at 1024 the name, the pills and the XP line were
+   sharing 94px while the two actions kept their 267. A floor makes the wrap
+   happen where it should. Nothing changes at the source's own width, where the
+   copy has a thousand pixels. */
+.profile-hero__copy { flex: 1; min-inline-size: 320px; display: grid; gap: 12px; }
+.profile-hero__identity { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.profile-hero__name {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 34px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.024em;
+}
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--glass-ring);
+  font-size: 14px;
+  font-weight: var(--weight-bold);
+}
+.profile-pill--rank { background: var(--action-selected); color: var(--accent-ink); }
+.profile-pill--plan { background: var(--surface-secondary); color: var(--accent-ink); font-size: 12.5px; font-weight: var(--weight-regular); }
+.profile-hero__meta { margin: 0; color: var(--text-secondary); font-size: 15px; }
+.profile-xp { display: grid; gap: 9px; max-inline-size: 620px; }
+.profile-xp__head { display: flex; align-items: baseline; gap: 10px; font-size: 12px; }
+.profile-xp__to { margin-inline-start: auto; color: var(--text-muted); }
+/* The dot the frame sets between two facts on the hero's meta line. */
+.profile-hero__dot {
+  display: inline-block;
+  inline-size: 4px;
+  block-size: 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  vertical-align: middle;
+}
+/* The rank card's crystal sits where its plain well used to, and the face
+   inside it keeps the well's colour. */
+.rank-card__face { display: inline-flex; color: rgba(255, 255, 255, 0.32); }
+.profile-xp__bar {
+  display: block;
+  block-size: 9px;
+  border-radius: var(--radius-pill);
+  background: var(--progress-track);
+}
+.profile-columns { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+.profile-panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 26px;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.profile-panel--settings { flex: 1; min-inline-size: 320px; }
+.profile-panel--quota { inline-size: 560px; flex: none; gap: 18px; }
+.profile-panel__head { display: flex; align-items: baseline; gap: 12px; }
+.profile-panel__meta { margin-inline-start: auto; color: var(--text-secondary); font-size: 11px; }
+.profile-panel__title {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.018em;
+}
+.profile-panel__note { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.5; }
+.profile-panel__note--foot { padding-block-start: 18px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+.profile-setting {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  inline-size: 100%;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.profile-setting__icon { display: inline-flex; flex: none; color: var(--text-secondary); }
+.profile-setting__label { flex: 1; min-inline-size: 0; font-size: 16px; }
+.profile-setting__value { flex: none; color: var(--text-muted); font-size: 14.5px; }
+.profile-setting__go { display: inline-flex; flex: none; color: var(--text-secondary); }
+
+.quota-list { display: grid; gap: 16px; }
+.quota-row { display: grid; gap: 8px; }
+.quota-row__head { display: flex; align-items: baseline; gap: 10px; }
+.quota-row__name { font-size: 15.5px; font-weight: var(--weight-bold); }
+.quota-row__value { margin-inline-start: auto; font-size: 13px; color: var(--text-secondary); }
+.quota-row[data-tone='warn'] .quota-row__value { color: var(--status-warn, var(--accent-ink)); }
+.quota-row[data-tone='free'] .quota-row__value { color: var(--text-muted); }
+.quota-bar {
+  display: block;
+  block-size: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--progress-track);
+}
+.quota-bar > span { display: block; block-size: 100%; border-radius: 99px; background: var(--progress-gradient); }
+.quota-row[data-tone='warn'] .quota-bar > span { background: var(--status-warn, var(--progress-gradient)); }
+.quota-bar[data-unlimited] > span { background: var(--surface-secondary); }
+
+@media (max-width: 900px) {
+  .profile-hero { flex-direction: column; align-items: center; gap: 12px; padding: 18px; text-align: center; }
+  .profile-hero__avatar, .profile-avatar { inline-size: 96px; block-size: 96px; }
+  .profile-hero__copy { justify-items: center; text-align: center; }
+  .profile-hero__identity { justify-content: center; }
+  .profile-hero__name { font-size: 24px; }
+  .profile-hero__meta { font-size: 13px; }
+  .profile-columns { flex-direction: column; gap: 14px; }
+  .profile-panel--quota, .profile-panel--settings { inline-size: 100%; min-inline-size: 0; }
+  .profile-panel { padding: 18px; gap: 15px; }
+  .profile-panel__title { font-size: 17px; }
+  .profile-setting { padding: 13px 15px; }
+  .profile-setting__label { font-size: 14.5px; }
+  .profile-setting__value { font-size: 12.5px; }
+  .quota-row__name { font-size: 14px; }
+  .quota-row__value { font-size: 12px; }
+  .quota-bar { block-size: 6px; }
+}
+
+/* --- Progress, to the source's composition (D-067, measured) -------------
+   Three figures across the top, then the evidence beside a column that holds
+   eighteen weeks of days, the skills, and the one thing to do next. The week
+   panel and the seven-bar chart the app used to draw are gone: the source
+   draws neither. */
+/* The page's own rows. The source's content column is `padding: 26px 40px 34px`
+   with `gap: 20px`, and the page had no layout rule at all - so the figures and
+   the columns below them were touching, with no gap between them. */
+.progress-page {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  padding-block-end: 14px;
+}
+/* The frame's content column is one screen: `flex:1; min-height:0; overflow:
+   hidden`, with nothing below the fold. Above the phone breakpoint the page
+   takes exactly the room the bar leaves - 84 of bar and the 26/30 the shell
+   pads with - and the rows share it, so the ladder scrolls inside its panel
+   instead of pushing the screen past the viewport. */
+/* The source draws this screen at 1920 and at 390, and nothing between. At
+   1920 it is one screen with nothing below the fold, which is what the clamp
+   below holds. Narrower than the composition's own width the four panels of
+   row two no longer fit across, the rows above grow, and holding the page to
+   one screen would crush what is under them - at 1440 the ladder came out
+   40px tall, at 1024 it had no height at all. So the clamp applies where the
+   composition it belongs to fits, and below that the page scrolls like any
+   page. What a 1440 or 1024 Progress should actually look like is a design
+   decision, recorded in docs/project/UI_BACKEND_GAPS.md, not one to invent
+   here. */
+@media (min-width: 1600px) {
+  #main > .progress-page {
+    block-size: calc(100dvh - 140px);
+    align-content: stretch;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  #main > .progress-page:has(.state-panel) { grid-template-rows: auto auto auto minmax(0, 1fr); }
+  /* Whichever column runs longer scrolls inside itself; the screen never
+     does. Nothing is clipped away - it is reachable where it stands. */
+  .progress-page .progress-columns { overflow: hidden; }
+  .progress-page .progress-column--side { overflow-y: auto; scrollbar-width: thin; overscroll-behavior: contain; }
+}
+.progress-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.progress-figure {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-block-size: 123px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.progress-figure__label { color: var(--text-secondary); font-size: 10.5px; letter-spacing: 0.12em; }
+.progress-figure__value {
+  font-family: var(--display-font);
+  font-size: 34px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.progress-figure__note { color: var(--text-secondary); font-size: 13px; }
+
+/* The source's content column is one screen with nothing below the fold, so
+   the two columns share what is left of the viewport rather than growing past
+   it: the ladder is the one thing here that can be longer than the room, and
+   it is the ladder that scrolls, inside its own panel. */
+.progress-columns { display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap; min-block-size: 0; }
+.progress-column { display: grid; gap: 22px; align-content: start; min-block-size: 0; block-size: 100%; }
+.progress-column--main { flex: 1; min-inline-size: 320px; grid-template-rows: minmax(0, 1fr) auto; }
+.progress-column--side {
+  inline-size: 600px;
+  flex: none;
+  gap: 20px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+
+.heat { display: grid; gap: 12px; }
+.heat__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.heat__title {
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.018em;
+}
+.heat__legend { margin-inline-start: auto; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; }
+.heat__grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 18px);
+  grid-auto-columns: 18px;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.heat__grid::-webkit-scrollbar { display: none; }
+.heat-cell {
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 5px;
+  background: rgba(34, 25, 56, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.07);
+}
+.heat-cell[data-level='1'] { background: color-mix(in srgb, var(--action-primary) 30%, transparent); }
+.heat-cell[data-level='2'] { background: color-mix(in srgb, var(--action-primary) 60%, transparent); }
+.heat-cell[data-level='3'] { background: var(--action-primary); }
+
+.skill-time { display: grid; gap: 10px; }
+.skill-time__label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
+.skill-time__rows { display: grid; gap: 12px; }
+.skill-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.skill-row:hover, .skill-row:focus-visible { color: var(--text-primary); }
+.skill-row__name { font-size: 13.5px; }
+.skill-row__value { font-size: 13px; }
+
+.next-action { display: grid; gap: 5px; padding-block-start: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07); }
+.next-action__title {
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: var(--weight-heavy);
+}
+.next-action__detail { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .progress-figures { grid-template-columns: 1fr; gap: 12px; }
+  .progress-figure { min-block-size: 0; padding: 14px 16px; }
+  .progress-figure__value { font-size: 28px; }
+  .progress-columns { flex-direction: column; gap: 14px; }
+  .progress-column--side, .progress-column--main { inline-size: 100%; min-inline-size: 0; }
+  .progress-column--side { padding: 18px; }
+  .heat__grid { grid-template-rows: repeat(7, 13px); grid-auto-columns: 13px; gap: 4px; }
+  .heat-cell { inline-size: 13px; block-size: 13px; border-radius: 4px; }
+  .heat__title { font-size: 17px; }
+}
+
+/* --- The rank ladder (D-067, the reworked Progress frame, measured) ------
+   Four columns of 226.5 with a 10px gap; a tile is 227x56 with 11/12 padding
+   and radius 14. Three states, each the source's own material: open is the
+   base glass with the ring at 0.16, the current tier is the focus glass with
+   the ring at 0.30, and a locked tier is a well - rgba(34,25,56,0.3) with the
+   ring down at 0.10 - rather than the same tile dimmed. */
+.ladder { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-block-size: 0; }
+.ladder__head { display: flex; align-items: baseline; gap: 12px; }
+.ladder__head .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
+.ladder__open { margin-inline-start: auto; color: var(--text-secondary); font-size: 11px; }
+.ladder__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
+  grid-auto-rows: min-content;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  min-block-size: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+.tier {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-block-size: 56px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.tier[data-state='current'] { background: var(--glass-focus); box-shadow: var(--glass-ring-focus); }
+.tier[data-state='locked'] { background: var(--surface-well, rgba(34, 25, 56, 0.3)); box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.1); }
+.tier__no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  font-size: 11px;
+}
+.tier[data-state='locked'] .tier__no { color: var(--text-muted); }
+.tier__text { display: grid; gap: 2px; min-inline-size: 0; line-height: 1.25; }
+.tier__name {
+  overflow: hidden;
+  font-family: var(--display-font);
+  font-size: 13.5px;
+  font-weight: var(--weight-heavy);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tier[data-state='locked'] .tier__name { color: var(--text-secondary); }
+.tier__note { color: var(--text-muted); font-size: 10.5px; line-height: 1.2; }
+.tier[data-state='current'] .tier__note { color: var(--accent-ink); }
+
+/* The card under the ladder: 102 tall, 16/18 padding, radius 18. */
+.rank-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  min-block-size: 102px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.rank-card__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 58px;
+  block-size: 58px;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  color: var(--text-muted);
+}
+.rank-card__text { display: grid; gap: 4px; }
+.rank-card__text .ds-label { color: var(--text-secondary); font-size: 10.5px; }
+.rank-card__name {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.rank-card__track { flex: 1; min-inline-size: 180px; block-size: 8px; }
+.rank-card__to { flex: none; color: var(--text-secondary); font-size: 12px; }
+
+/* The skill rows carry the frame's bar; the value sits after it. */
+/* One geometry for every row - name 104, track 356x10, value 60, gap 16 -
+   because bars only compare if they are the same length. */
+.skill-row { display: flex; align-items: center; gap: 16px; }
+.skill-row__name { flex: none; inline-size: 104px; }
+.skill-row__bar { flex: 1; min-inline-size: 0; block-size: 10px; }
+.skill-row__value { flex: none; inline-size: 60px; text-align: end; }
+
+/* "Việc nên làm tiếp" is a card with a way in, not a paragraph. */
+.next-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 78px;
+  padding: 16px 20px;
+  border-radius: 17px;
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.next-action:hover, .next-action:focus-visible { box-shadow: var(--glass-ring-focus); }
+.next-action__go { display: inline-flex; flex: none; color: var(--accent-ink); }
+.next-action__text { display: grid; gap: 3px; min-inline-size: 0; }
+
+@media (max-width: 900px) {
+  .ladder__grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .tier { min-block-size: 50px; padding: 9px 10px; gap: 9px; }
+  .tier__name { font-size: 12.5px; }
+  .rank-card { min-block-size: 0; padding: 14px 16px; gap: 12px; }
+  .rank-card__avatar { inline-size: 46px; block-size: 46px; }
+  .rank-card__name { font-size: 17px; }
+  .next-action { min-block-size: 0; padding: 14px 16px; }
+}
+
+/* --- Progress: row two, the tabs and Xu hướng (D-067, measured) ---------
+   Row two is four panels of 375x147 with 16/18 padding, radius 18, gap 20.
+   The tabs are pills of 38 with 9/16 padding: the one you are on is the solid
+   light, the other is the accent chip. */
+.ptabs { display: flex; gap: 8px; }
+.ptab {
+  display: inline-flex;
+  align-items: center;
+  block-size: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip, rgba(196, 178, 255, 0.12));
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass-soft, rgba(255, 255, 255, 0.78));
+  font-size: 14.5px;
+  text-decoration: none;
+}
+.ptab[aria-current='page'] {
+  background: var(--text-primary);
+  box-shadow: none;
+  color: var(--ground-color, #0B0A0F);
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+}
+
+/* The head and the tab row belong to the phone: on the desktop the bar draws
+   both, so the page's copies are not drawn at all. */
+.progress-head,
+.ptabs--page { display: none; }
+@media (max-width: 600px) {
+  .progress-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+  }
+  .progress-head .progress-title { flex: 1; margin: 0; font-size: 24px; }
+  .progress-head__meta { color: var(--text-secondary); font-size: 10.5px; }
+  .ptabs--page { display: flex; gap: 7px; }
+  .ptabs--page .ptab {
+    flex: 1;
+    justify-content: center;
+    min-block-size: 38px;
+    padding: 0;
+    border-radius: 13px;
+    font-size: 13.5px;
+  }
+}
+
+.progress-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+.pstat {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-block-size: 147px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.pstat__label { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 10.5px; letter-spacing: 0.12em; }
+.pstat__figure {
+  font-family: var(--display-font);
+  font-size: 26px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.pstat__note { color: var(--text-secondary); font-size: 13.5px; }
+.pstat__extra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-block-start: auto; }
+.pstat__chip {
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  font-family: var(--reading-font, Georgia, serif);
+  font-size: 13.5px;
+}
+.pstat__bar { flex: 1; min-inline-size: 80px; block-size: 6px; }
+.pstat__ratio { flex: none; color: var(--text-muted); font-size: 11.5px; }
+.pstat__split { display: flex; gap: 12px; color: var(--text-muted); font-size: 11px; }
+
+.trend-block {
+  display: grid;
+  gap: 12px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.trend-block .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.14em; }
+.trend-rows { display: grid; gap: 12px; }
+.trend-row { display: flex; align-items: center; gap: 16px; }
+.trend-row__name { flex: 1; min-inline-size: 0; font-size: 13px; }
+.trend-row__value { flex: none; inline-size: 60px; text-align: end; font-size: 14.5px; font-weight: var(--weight-bold); }
+.trend-note { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; }
+.trend-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.trend-chip {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-secondary);
+  box-shadow: var(--glass-ring);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+/* The phone frame keeps both rows as rows: three tiles across, then four,
+   at gap 8 - 11/10 padding, radius 14, label 9, figure 20/1, note 10. At that
+   width a panel has no room for a bar, chips or a three-way split, and the
+   frame draws none, so the extra line is not drawn either. */
+@media (max-width: 600px) {
+  .progress-figures,
+  .progress-panels { display: flex; gap: 8px; }
+  .progress-figure,
+  .pstat {
+    flex: 1;
+    min-inline-size: 0;
+    gap: 4px;
+    padding: 11px 10px;
+    border-radius: 14px;
+  }
+  .progress-figure__label,
+  .pstat__label { font-size: 9px; letter-spacing: 0.1em; }
+  .pstat__label > svg { display: none; }
+  .progress-figure__value,
+  .pstat__figure { font-size: 20px; line-height: 1; }
+  .progress-figure__note,
+  .pstat__note { font-size: 10px; }
+  .pstat__extra { display: none; }
+}
+
+@media (max-width: 900px) {
+  .progress-panels { grid-template-columns: 1fr; gap: 12px; }
+  .pstat { min-block-size: 0; padding: 14px 16px; }
+  .pstat__figure { font-size: 22px; }
+  .trend-block { padding: 16px 18px; }
+  .trend-row__name { font-size: 12.5px; }
+}
+
+/* The hero's two actions, as the source draws them: pills of 46 with 0/20
+   padding at 15.5/700. "Chỉnh sửa" opens the settings the app already has;
+   "Chia sẻ" has no behaviour yet and says so rather than pretending. */
+/* The hero's third column: the frame keeps Chia sẻ and Chỉnh sửa at its far
+   right, not under the name. */
+.profile-actions { flex: none; display: flex; gap: 12px; flex-wrap: wrap; }
+.profile-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-block-size: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15.5px;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.profile-action[disabled] { opacity: 0.55; cursor: default; }
+@media (max-width: 900px) {
+  .profile-actions { inline-size: 100%; }
+  .profile-hero__avatar { inline-size: 126px; block-size: 126px; }
+  /* The phone frame draws the hero as the top of the screen, centred and with
+     no panel behind it, and puts the plan's limits above the settings. */
+  .profile-hero {
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    text-align: center;
+  }
+  .profile-hero__copy { inline-size: 100%; justify-items: center; }
+  .profile-hero__identity { justify-content: center; }
+  .profile-columns { flex-direction: column; }
+  .profile-panel--quota { order: -1; inline-size: 100%; }
+  .profile-panel--settings { inline-size: 100%; }
+  .profile-action { flex: 1; justify-content: center; min-block-size: 42px; padding: 0 14px; font-size: 14px; }
+}
+
+/* Progress names the window its numbers cover, next to the tabs, where the
+   source puts it. */
+.topbar-window { margin-inline-start: auto; color: var(--text-secondary); font-size: 13px; }
+/* On the overview the bar ends with the streak, so the window keeps its place
+   beside the tabs and the chip takes the right edge. */
+.topbar-window:not(:last-child) { margin-inline-start: 0; }

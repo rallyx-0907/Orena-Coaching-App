@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"><link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"><style>
+html{background:#050310}
+body{margin:0;background-color:#050310;background-attachment:fixed;background-image:radial-gradient(circle at 12% 22%, rgba(255,255,255,0.55) 1px, transparent 1.8px), radial-gradient(circle at 68% 64%, rgba(222,206,255,0.42) 0.8px, transparent 1.5px), radial-gradient(circle at 84% 12%, rgba(255,255,255,0.34) 0.7px, transparent 1.3px), radial-gradient(circle at 36% 78%, rgba(190,214,255,0.30) 0.7px, transparent 1.3px), radial-gradient(circle at 22% 54%, rgba(255,255,255,0.20) 0.5px, transparent 1.1px), radial-gradient(54% 64% at 76% 30%, transparent 58%, rgba(238,206,255,0.50) 63.5%, rgba(176,120,255,0.30) 68%, transparent 78%), radial-gradient(34% 30% at 74% 16%, rgba(220,170,255,0.44), transparent 72%), radial-gradient(96% 66% at 14% -14%, rgba(146,88,255,0.40), transparent 64%), radial-gradient(84% 58% at 96% 2%, rgba(96,112,255,0.26), transparent 62%), radial-gradient(104% 72% at 62% 112%, rgba(132,70,236,0.30), transparent 68%), radial-gradient(92% 62% at 2% 76%, rgba(80,104,244,0.18), transparent 64%), radial-gradient(76% 56% at 44% 46%, rgba(190,136,255,0.09), transparent 72%);background-size:190px 190px, 240px 240px, 300px 300px, 420px 420px, 150px 150px, cover, cover, cover, cover, cover, cover, cover;color:#f3f1f6;font-family:'Nunito Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:oklch(0.7 0.19 296);text-decoration:none}
+a:hover{color:oklch(0.84 0.15 296)}
+i[class^="ph"]{line-height:1;display:inline-block}
+</style></helmet>
+
+<div style="padding:48px 44px 110px;display:flex;flex-direction:column;gap:34px">
+
+<div style="display:flex;flex-direction:column;gap:14px;max-width:84ch">
+<span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.68)">Orena · vocabulary</span>
+<h1 style="margin:0;font-family:'Nunito',sans-serif;font-weight:800;font-size:44px;line-height:1;letter-spacing:-0.03em">Một thư viện từ, không phải danh sách đã lưu.</h1>
+<p style="margin:0;font-size:15.5px;line-height:1.6;color:rgba(255,255,255,0.65)">Các bộ từ theo trình độ và theo chủ đề nằm cùng một chỗ. Một thiết kế thẻ duy nhất dùng chung cho mọi bộ từ: mặt trước chỉ chữ và nút nghe, mở ra mới thấy nghĩa và ví dụ. Nghĩa khác, kết hợp, đối chiếu và nét chữ chỉ hiện khi người học chủ động mở sâu. Chạm vào một bộ là vào ngay phiên ôn của bộ đó: mỗi lần một thẻ, mặt trước chỉ có chữ và nút nghe, mở ra mới thấy nghĩa, chấm xong là sang thẻ sau.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+<span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.60)">01</span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Vocabulary Library</span>
+<span style="font-size:14.5px;color:rgba(255,255,255,0.6)">Artwork · tên bộ · ngôn ngữ · trình độ · tiến độ</span>
+</div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">DESKTOP · 1920 × 1080 · 62%</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));backdrop-filter:blur(24px) saturate(1.35);padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.64)">orena.app/vocabulary</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="Vocabulary library" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.24), transparent 62%), radial-gradient(100% 70% at 82% 108%, rgba(192,88,148,0.14), transparent 64%), #060509;color:#f3f1f6;display:flex;overflow:hidden">
+<div style="width:280px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(74,60,130,0.30), rgba(48,38,86,0.26));backdrop-filter:blur(24px) saturate(1.3);box-shadow:inset -1px 0 0 rgba(255,255,255,0.06);padding:26px 18px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px"><div style="width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg, #9B6BFF, #6E7BFF)"></div><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.02em">Orena</span></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;color:rgba(255,255,255,0.72);font-size:17px"><span style="font-size:23px"><i class="ph ph-house"></i></span>Home</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;color:rgba(255,255,255,0.72);font-size:17px"><span style="font-size:23px"><i class="ph ph-books"></i></span>Library</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:oklch(0.7 0.19 296 / 0.14);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18), 0 0 0 1.5px oklch(0.70 0.19 296 / 0.75), 0 22px 54px rgba(123,77,232,0.3);color:#D5C0FF;font-weight:700;font-size:17px"><span style="font-size:23px"><i class="ph-fill ph-cards"></i></span>Vocabulary</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;color:rgba(255,255,255,0.72);font-size:17px"><span style="font-size:23px"><i class="ph ph-chart-line-up"></i></span>Progress</div>
+<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;color:rgba(255,255,255,0.72);font-size:17px"><span style="font-size:23px"><i class="ph ph-user"></i></span>Profile</div>
+</div>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:84px;flex:none;box-sizing:border-box;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.3);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.06);padding:0 40px;display:flex;align-items:center;gap:24px">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Vocabulary</span>
+<div style="flex:1;max-width:460px;height:44px;border-radius:14px;background:rgba(196,178,255,0.12);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;align-items:center;gap:11px;padding:0 15px;color:rgba(255,255,255,0.6);font-size:15px"><i class="ph ph-magnifying-glass" style="font-size:18px"></i>Tìm từ hoặc bộ từ</div>
+</div>
+<div style="flex:1;min-height:0;padding:28px 40px 0;display:flex;flex-direction:column;gap:24px;overflow:hidden">
+<div style="display:flex;gap:10px;flex-wrap:wrap"><span style="padding:10px 18px;border-radius:999px;background:linear-gradient(180deg, #9B67FF, #6A32E0);font-family:'Nunito',sans-serif;font-weight:700;color:#fff;box-shadow:0 8px 24px rgba(123,77,232,0.35);font-size:15px">Tất cả</span><span style="padding:10px 18px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);color:rgba(255,255,255,0.86);font-size:15px">Bộ có sẵn</span><span style="padding:10px 18px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);color:rgba(255,255,255,0.86);font-size:15px">Tiếng Trung</span><span style="padding:10px 18px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);color:rgba(255,255,255,0.86);font-size:15px">Tiếng Na Uy</span></div>
+<div style="display:grid;grid-template-columns:repeat(5, 290px);gap:26px">
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 235 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 235), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:14px;right:14px;bottom:14px;height:5px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:34%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">600 TOEIC Essential</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 600 từ · 34%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 296 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 296), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Common English</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 1 200 từ</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 25 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 25), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:14px;right:14px;bottom:14px;height:5px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:62%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">HSK 2</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">ZH · 300 chữ · 62%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 320 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 320), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:14px;right:14px;bottom:14px;height:5px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:18%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Daily Life</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">ZH · 240 từ · 18%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 170 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 170), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Workplace</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 180 từ</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 275 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 275), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Technology</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 260 từ</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 355 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 355), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:14px;right:14px;bottom:14px;height:5px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:45%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Emotions</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">ZH · 96 từ · 45%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 68 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 68), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Phrasal Verbs</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 320 cụm</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 200 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 200), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Industrial Automation</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 410 từ</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="position:relative;height:186px;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 296 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 296), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:14px;right:14px;bottom:14px;height:5px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:54%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:5px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;line-height:1.3">Common Phrases</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.62)">EN · 180 cụm · 54%</span></div></div>
+</div>
+</div>
+</div>
+</div>
+</div></div></div></div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">MOBILE · 390 × 844 · 100%</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary library mobile" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:radial-gradient(100% 55% at 20% -6%, rgba(116,74,214,0.26), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="padding:60px 20px 12px;display:flex;align-items:center;gap:12px">
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;letter-spacing:-0.02em;flex:1">Vocabulary</span>
+<span style="width:42px;height:42px;border-radius:13px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;align-items:center;justify-content:center;font-size:19px;color:rgba(255,255,255,0.78)"><i class="ph ph-magnifying-glass"></i></span>
+</div>
+<div style="display:flex;gap:8px;padding:0 20px 14px;overflow:hidden">
+<span style="flex:none;padding:9px 15px;border-radius:999px;background:linear-gradient(180deg, #9B67FF, #6A32E0);font-family:'Nunito',sans-serif;font-weight:700;font-size:13.5px;color:#fff">Tất cả</span>
+<span style="flex:none;padding:9px 15px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);font-size:13.5px;color:rgba(255,255,255,0.86)">Bộ có sẵn</span>
+</div>
+<div style="flex:1;min-height:0;padding:0 20px;display:grid;grid-template-columns:repeat(2, 166px);gap:18px;align-content:start;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:9px"><div style="position:relative;height:150px;border-radius:14px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 25 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 25), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:11px;right:11px;bottom:11px;height:4px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:62%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;line-height:1.3">HSK 2</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.62)">ZH · 300 chữ · 62%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:9px"><div style="position:relative;height:150px;border-radius:14px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 235 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 235), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:11px;right:11px;bottom:11px;height:4px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:34%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;line-height:1.3">600 TOEIC</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.62)">EN · 600 từ · 34%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:9px"><div style="position:relative;height:150px;border-radius:14px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 320 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 320), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:11px;right:11px;bottom:11px;height:4px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:18%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;line-height:1.3">Daily Life</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.62)">ZH · 240 từ · 18%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:9px"><div style="position:relative;height:150px;border-radius:14px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 296 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 296), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:11px;right:11px;bottom:11px;height:4px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:54%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;line-height:1.3">Common Phrases</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.62)">EN · 180 cụm · 54%</span></div></div>
+<div style="display:flex;flex-direction:column;gap:9px"><div style="position:relative;height:150px;border-radius:14px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 296 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 296), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:11px;right:11px;bottom:11px;height:4px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:0%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;line-height:1.3">Common English</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.62)">EN · 1 200 từ</span></div></div>
+<div style="display:flex;flex-direction:column;gap:9px"><div style="position:relative;height:150px;border-radius:14px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 355 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 355), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"><div style="position:absolute;left:11px;right:11px;bottom:11px;height:4px;border-radius:999px;background:rgba(0,0,0,0.5);overflow:hidden"><div style="width:45%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div></div><div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;line-height:1.3">Emotions</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.62)">ZH · 96 từ · 45%</span></div></div>
+</div>
+</div>
+</x-import>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+<span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.60)">02</span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Mở sâu khi cần</span>
+<span style="font-size:14.5px;color:rgba(255,255,255,0.6)">Mở từ chính thẻ flashcard: nghĩa khác, từ loại, kết hợp, đối chiếu, lỗi thường gặp · và riêng chữ Hán: bộ thủ, thành phần, thứ tự nét, tô theo</span>
+</div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">A · MỞ SÂU</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary card deep" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08)">
+<i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i>
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:26px;line-height:1">想</span>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:#D5C0FF">xiǎng</span>
+<i class="ph-fill ph-speaker-high" style="margin-left:auto;font-size:20px;color:#fff"></i>
+</div>
+<div style="flex:1;min-height:0;padding:16px 20px 0;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">NHIỀU NGHĨA · TỪ LOẠI</span><div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;gap:12px;padding:13px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'DM Mono',monospace;font-size:11.5px;width:58px;flex:none;color:#D5C0FF">đ.từ</span><span style="flex:1;font-size:14.5px;line-height:1.5;color:#fff">muốn, dự định — 我想去北京。</span></div>
+<div style="display:flex;gap:12px;padding:13px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'DM Mono',monospace;font-size:11.5px;width:58px;flex:none;color:#D5C0FF">đ.từ</span><span style="flex:1;font-size:14.5px;line-height:1.5;color:#fff">nghĩ, suy nghĩ — 让我想一想。</span></div>
+<div style="display:flex;gap:12px;padding:13px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'DM Mono',monospace;font-size:11.5px;width:58px;flex:none;color:#D5C0FF">đ.từ</span><span style="flex:1;font-size:14.5px;line-height:1.5;color:#fff">nhớ (ai) — 我很想家。</span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">KẾT HỢP THƯỜNG GẶP</span><div style="display:flex;flex-wrap:wrap;gap:8px"><span style="padding:8px 13px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);font-size:13.5px;color:#fff">想要</span><span style="padding:8px 13px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);font-size:13.5px;color:#fff">想到</span><span style="padding:8px 13px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);font-size:13.5px;color:#fff">想起</span><span style="padding:8px 13px;border-radius:999px;background:rgba(196,178,255,0.13);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);font-size:13.5px;color:#fff">不想</span></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">ĐỐI CHIẾU</span><div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:17px;width:44px;flex:none;color:#D5C0FF">要</span><span style="flex:1;font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85)">dứt khoát hơn, gần với “cần / sẽ lấy”</span></div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:17px;width:44px;flex:none;color:#D5C0FF">希望</span><span style="flex:1;font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85)">mong, cho điều chưa chắc xảy ra</span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">LỖI THƯỜNG GẶP</span><span style="font-size:14.5px;line-height:1.6;color:rgba(255,255,255,0.85)">Không dùng 想 với danh từ trực tiếp khi muốn một vật: nói <span style="font-family:'Noto Serif',Georgia,serif;color:#D5C0FF">想要一杯水</span>, không nói <span style="font-family:'Noto Serif',Georgia,serif;color:rgba(255,255,255,0.55)">想一杯水</span>.</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">MÔ HÌNH TƯ DUY</span><span style="font-size:14.5px;line-height:1.6;color:rgba(255,255,255,0.85)">想 là ý nghĩ trong đầu. Khi ý nghĩ đó hướng tới một vật, thêm 要; hướng tới một người, thành “nhớ”.</span></div>
+</div>
+<div style="flex:none;padding:12px 20px 30px;display:flex;gap:10px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(26px) saturate(1.45) brightness(1.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1)">
+<span style="flex:1;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14.5px;color:#fff"><i class="ph-fill ph-bookmark-simple" style="font-size:17px;color:#9EE6B4"></i>Bỏ lưu</span>
+<span style="flex:1;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14.5px;color:#fff"><i class="ph ph-caret-down" style="font-size:17px"></i>Cuộn tiếp</span>
+</div>
+</div>
+</x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">A2 · MỞ SÂU · CUỘN TIẾP</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary card deep scrolled" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08)">
+<i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i>
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:26px;line-height:1">想</span>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:#D5C0FF">xiǎng</span>
+<i class="ph-fill ph-speaker-high" style="margin-left:auto;font-size:20px;color:#fff"></i>
+</div>
+<div style="flex:1;min-height:0;padding:16px 20px 0;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">CỤM LIÊN QUAN</span><div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:17px;width:72px;flex:none;color:#D5C0FF">想念</span><span style="flex:1;font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85)">nhớ da diết — dùng cho người, nơi đã xa</span></div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:17px;width:72px;flex:none;color:#D5C0FF">想一想</span><span style="flex:1;font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85)">nghĩ thử một chút — lặp động từ để làm nhẹ lời</span></div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:17px;width:72px;flex:none;color:#D5C0FF">想不到</span><span style="flex:1;font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85)">không ngờ — thành ngữ nói về điều bất ngờ</span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">LẤY TỪ ĐÂU</span><div style="display:flex;flex-direction:column;gap:8px">
+<div style="padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14);display:flex;align-items:center;gap:11px"><i class="ph ph-headphones" style="font-size:17px;color:#D5C0FF"></i><span style="flex:1;font-size:13.5px;color:rgba(255,255,255,0.85)">在餐厅点菜 · 01:12</span><i class="ph ph-caret-right" style="font-size:15px;color:rgba(255,255,255,0.6)"></i></div>
+<div style="padding:12px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14);display:flex;align-items:center;gap:11px"><i class="ph ph-book-open" style="font-size:17px;color:#D5C0FF"></i><span style="flex:1;font-size:13.5px;color:rgba(255,255,255,0.85)">小王子 · chương 7</span><i class="ph ph-caret-right" style="font-size:15px;color:rgba(255,255,255,0.6)"></i></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">CÂU CỦA BẠN</span><div style="display:flex;flex-direction:column;gap:9px">
+<div style="padding:13px 14px;border-radius:13px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:15.5px;line-height:1.6;color:#fff">我<span style="color:#D5C0FF">想</span>学中文。</span><div style="font-size:12.5px;color:rgba(255,255,255,0.65);margin-top:5px">viết 12/3 · đã được kiểm</div></div>
+<div style="padding:13px 14px;border-radius:13px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;align-items:center;gap:10px"><i class="ph ph-pencil-simple" style="font-size:16px;color:#D5C0FF"></i><span style="flex:1;font-size:13.5px;color:rgba(255,255,255,0.55)">Viết một câu có 想…</span></div>
+</div></div>
+</div>
+<div style="flex:none;padding:12px 20px 30px;display:flex;gap:10px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(26px) saturate(1.45) brightness(1.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1)">
+<span style="flex:1;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14.5px;color:#fff"><i class="ph ph-chat-teardrop-text" style="font-size:17px"></i>Hỏi thêm</span>
+<span style="flex:1;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14.5px;color:#fff"><i class="ph ph-caret-up" style="font-size:17px"></i>Thu lại</span>
+</div>
+</div>
+</x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">B · NÉT CHỮ HÁN</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary strokes" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08)">
+<i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i>
+<span style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;flex:1;color:rgba(255,255,255,0.9)">Nét chữ · 想</span>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.6)">13 nét</span>
+</div>
+<div style="flex:1;min-height:0;padding:16px 20px 0;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">BỘ THỦ · THÀNH PHẦN</span><div style="display:flex;gap:10px">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;align-items:center;padding:14px 8px;border-radius:14px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:30px;line-height:1">心</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#D5C0FF">xīn · bộ thủ</span><span style="font-size:11.5px;color:rgba(255,255,255,0.65)">tim, ý nghĩ</span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;align-items:center;padding:14px 8px;border-radius:14px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:30px;line-height:1">相</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#D5C0FF">xiāng · âm</span><span style="font-size:11.5px;color:rgba(255,255,255,0.65)">gợi cách đọc</span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;align-items:center;padding:14px 8px;border-radius:14px;background:rgba(10,7,20,0.35);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.14)"><span style="font-family:'Noto Serif',Georgia,serif;font-size:30px;line-height:1">木目</span><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#D5C0FF">trong 相</span><span style="font-size:11.5px;color:rgba(255,255,255,0.65)">cây · mắt</span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">THỨ TỰ NÉT</span><div style="display:flex;flex-wrap:wrap;gap:8px"><div style="width:56px;height:56px;border-radius:10px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif',Georgia,serif;font-size:26px;color:rgba(255,255,255,0.9)">一</div><div style="width:56px;height:56px;border-radius:10px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif',Georgia,serif;font-size:26px;color:rgba(255,255,255,0.9)">十</div><div style="width:56px;height:56px;border-radius:10px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif',Georgia,serif;font-size:26px;color:rgba(255,255,255,0.9)">木</div><div style="width:56px;height:56px;border-radius:10px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif',Georgia,serif;font-size:26px;color:rgba(255,255,255,0.28)">相</div><div style="width:56px;height:56px;border-radius:10px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif',Georgia,serif;font-size:26px;color:rgba(255,255,255,0.28)">想</div></div></div>
+<div style="display:flex;align-items:center;gap:11px;padding:14px 15px;border-radius:15px;background:linear-gradient(180deg, rgba(120,92,200,0.38), rgba(72,56,126,0.32));backdrop-filter:blur(24px) saturate(1.4) brightness(1.05);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.28)">
+<span style="width:44px;height:44px;flex:none;border-radius:50%;background:rgba(255,255,255,0.16);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.28);display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff"><i class="ph-fill ph-play"></i></span>
+<div style="flex:1;min-width:0"><div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:15.5px">Xem animation 13 nét</div><div style="font-size:12.5px;color:rgba(255,255,255,0.78);margin-top:2px">chạy chậm 0.5×, tạm dừng từng nét</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">TÔ THEO</span><div style="position:relative;height:190px;border-radius:15px;background:rgba(10,7,20,0.4);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;inset:14px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.1)"></div>
+<div style="position:absolute;left:50%;top:14px;bottom:14px;width:1px;background:rgba(172,144,255,0.12)"></div>
+<div style="position:absolute;top:50%;left:14px;right:14px;height:1px;background:rgba(172,144,255,0.12)"></div>
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:104px;line-height:1;color:rgba(255,255,255,0.14)">想</span>
+</div></div>
+</div>
+<div style="flex:none;padding:12px 20px 30px;display:flex;gap:10px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(26px) saturate(1.45) brightness(1.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1)">
+<span style="flex:1;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14.5px;color:#fff"><i class="ph ph-scribble-loop" style="font-size:17px"></i>Tô theo</span>
+<span style="flex:1;height:50px;border-radius:15px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14.5px;color:#fff;box-shadow:0 8px 24px rgba(123,77,232,0.4)"><i class="ph ph-pen-nib" style="font-size:17px"></i>Viết tự do</span>
+</div>
+</div>
+</x-import>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+<span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.60)">03</span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Ngữ cảnh · clip ngắn</span>
+<span style="font-size:14.5px;color:rgba(255,255,255,0.6)">Chữ này xuất hiện ở đâu, ai nói, nói thế nào — mỗi ngữ cảnh là một clip vài giây</span>
+</div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">DESKTOP · 1920 × 1080 · 62%</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.30));backdrop-filter:blur(24px) saturate(1.35);padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.64)">orena.app/vocabulary/hsk2/xiang/context</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="Vocabulary context clips" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:76px;flex:none;box-sizing:border-box;padding:0 40px;display:flex;align-items:center;gap:20px">
+<span style="display:flex;align-items:center;gap:10px;font-size:16px;color:rgba(255,255,255,0.7)"><i class="ph ph-arrow-left" style="font-size:20px"></i>HSK 2</span>
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:26px;line-height:1;margin-left:12px">想</span>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:#D5C0FF">xiǎng</span>
+<span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.55)">6 clip có chữ này</span>
+<span style="margin-left:auto;height:44px;padding:0 20px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#fff"><i class="ph ph-shuffle" style="font-size:17px"></i>Phát lần lượt</span>
+</div>
+<div style="flex:1;min-height:0;display:flex;gap:26px;padding:20px 40px 36px;overflow:hidden">
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+<div style="position:relative;flex:1;min-height:0;border-radius:20px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 235 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 235), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18), 0 16px 44px rgba(0,0,0,0.5)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;width:160px;height:160px;border-radius:50%;background:radial-gradient(closest-side, rgba(198,150,255,0.4), transparent)"></div>
+<div style="position:relative;width:92px;height:92px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff"><i class="ph-fill ph-pause"></i></div>
+</div>
+<span style="position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:rgba(6,5,9,0.62);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:0.08em;color:#fff"><i class="ph-fill ph-video-camera" style="font-size:14px;color:#D5C0FF"></i>在餐厅点菜 · 01:12</span>
+<span style="position:absolute;top:16px;right:16px;padding:6px 12px;border-radius:999px;background:rgba(6,5,9,0.62);backdrop-filter:blur(8px);font-family:'DM Mono',monospace;font-size:12px;color:#fff">0.75×</span>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:26px 28px 22px;background:linear-gradient(180deg, transparent, rgba(6,5,9,0.88));display:flex;flex-direction:column;gap:10px">
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:30px;line-height:1.5;color:#fff">我们<span style="background:rgba(155,103,255,0.38);border-radius:6px;padding:1px 7px">想</span>要一张靠窗的桌子。</span>
+<span style="font-family:'DM Mono',monospace;font-size:15px;color:rgba(255,255,255,0.8)">Wǒmen <span style="color:#D5C0FF">xiǎng</span> yào yì zhāng kào chuāng de zhuōzi.</span>
+<span style="font-size:16px;color:rgba(255,255,255,0.72)">Chúng tôi muốn một bàn cạnh cửa sổ.</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px;padding:18px 22px;border-radius:18px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<span style="width:50px;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff"><i class="ph ph-repeat"></i></span>
+<span style="width:50px;height:50px;border-radius:15px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff"><i class="ph ph-speaker-high"></i></span>
+<span style="flex:1;min-width:0;font-size:16px;color:rgba(255,255,255,0.72)">Nghe lại đúng câu này, hoặc mở cả clip trong Listening.</span>
+<span style="height:50px;padding:0 22px;border-radius:15px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:800;font-size:15.5px;color:#fff;box-shadow:0 10px 28px rgba(123,77,232,0.4)"><i class="ph ph-arrow-square-out" style="font-size:17px"></i>Mở clip đầy đủ</span>
+</div>
+</div>
+
+<div style="width:700px;flex:none;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:rgba(255,255,255,0.6)">CÁC NGỮ CẢNH KHÁC</span>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+<div style="display:flex;gap:18px;padding:16px;border-radius:17px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:232px;height:130px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 170 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 170), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">00:24</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:0.08em;color:#D5C0FF">问路 · 00:24</span>
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:21px;line-height:1.55;color:#fff">我<span style="background:rgba(155,103,255,0.32);border-radius:5px;padding:1px 5px">想</span>去火车站，怎么走？</span>
+<span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.7)">Wǒ xiǎng qù huǒchēzhàn, zěnme zǒu?</span>
+<span style="font-size:15px;color:rgba(255,255,255,0.7)">Tôi muốn đến ga tàu, đi thế nào?</span>
+</div>
+<div style="flex:none;display:flex;flex-direction:column;justify-content:center;gap:9px">
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-repeat"></i></span>
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-bookmark-simple"></i></span>
+</div>
+</div>
+<div style="display:flex;gap:18px;padding:16px;border-radius:17px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:232px;height:130px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 25 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 25), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">01:48</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:0.08em;color:#D5C0FF">看病 · 01:48</span>
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:21px;line-height:1.55;color:#fff">我<span style="background:rgba(155,103,255,0.32);border-radius:5px;padding:1px 5px">想</span>看一下医生。</span>
+<span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.7)">Wǒ xiǎng kàn yíxià yīshēng.</span>
+<span style="font-size:15px;color:rgba(255,255,255,0.7)">Tôi muốn gặp bác sĩ một chút.</span>
+</div>
+<div style="flex:none;display:flex;flex-direction:column;justify-content:center;gap:9px">
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-repeat"></i></span>
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-bookmark-simple"></i></span>
+</div>
+</div>
+<div style="display:flex;gap:18px;padding:16px;border-radius:17px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:232px;height:130px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 296 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 296), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">00:39</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:0.08em;color:#D5C0FF">小王子 · chương 7</span>
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:21px;line-height:1.55;color:#fff">让我<span style="background:rgba(155,103,255,0.32);border-radius:5px;padding:1px 5px">想</span>一想。</span>
+<span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.7)">Ràng wǒ xiǎng yi xiǎng.</span>
+<span style="font-size:15px;color:rgba(255,255,255,0.7)">Để tôi nghĩ một chút.</span>
+</div>
+<div style="flex:none;display:flex;flex-direction:column;justify-content:center;gap:9px">
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-repeat"></i></span>
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-bookmark-simple"></i></span>
+</div>
+</div>
+<div style="display:flex;gap:18px;padding:16px;border-radius:17px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:232px;height:130px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 320 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 320), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">00:12</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:0.08em;color:#D5C0FF">自我介绍 · 00:12</span>
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:21px;line-height:1.55;color:#fff">我<span style="background:rgba(155,103,255,0.32);border-radius:5px;padding:1px 5px">想</span>介绍一下我自己。</span>
+<span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.7)">Wǒ xiǎng jièshào yíxià wǒ zìjǐ.</span>
+<span style="font-size:15px;color:rgba(255,255,255,0.7)">Tôi muốn giới thiệu một chút về bản thân.</span>
+</div>
+<div style="flex:none;display:flex;flex-direction:column;justify-content:center;gap:9px">
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-repeat"></i></span>
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-bookmark-simple"></i></span>
+</div>
+</div>
+<div style="display:flex;gap:18px;padding:16px;border-radius:17px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:232px;height:130px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 68 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 68), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">02:05</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:0.08em;color:#D5C0FF">讲一个周末 · 02:05</span>
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:21px;line-height:1.55;color:#fff">周末我<span style="background:rgba(155,103,255,0.32);border-radius:5px;padding:1px 5px">想</span>去爬山。</span>
+<span style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(255,255,255,0.7)">Zhōumò wǒ xiǎng qù pá shān.</span>
+<span style="font-size:15px;color:rgba(255,255,255,0.7)">Cuối tuần tôi muốn đi leo núi.</span>
+</div>
+<div style="flex:none;display:flex;flex-direction:column;justify-content:center;gap:9px">
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-repeat"></i></span>
+<span style="width:46px;height:46px;border-radius:14px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff"><i class="ph ph-bookmark-simple"></i></span>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div></div></div></div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">MOBILE · NGỮ CẢNH</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary context clips mobile" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:#060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 14px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08)">
+<i class="ph ph-caret-left" style="font-size:22px;color:rgba(255,255,255,0.8)"></i>
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:26px;line-height:1">想</span>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:#D5C0FF">xiǎng</span>
+<span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.6)">6 clip</span>
+</div>
+<div style="flex:1;min-height:0;padding:16px 20px 0;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+<div style="position:relative;height:196px;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 235 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 235), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:62px;height:62px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff"><i class="ph-fill ph-pause"></i></div></div>
+<span style="position:absolute;top:11px;left:11px;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(6,5,9,0.62);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:0.07em;color:#fff"><i class="ph-fill ph-video-camera" style="font-size:12px;color:#D5C0FF"></i>在餐厅点菜 · 01:12</span>
+<span style="position:absolute;right:11px;bottom:11px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">0.75×</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-family:'Noto Serif',Georgia,serif;font-size:19px;line-height:1.55;color:#fff">我们<span style="background:rgba(155,103,255,0.38);border-radius:5px;padding:1px 5px">想</span>要一张靠窗的桌子。</span>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.75)">Wǒmen <span style="color:#D5C0FF">xiǎng</span> yào yì zhāng kào chuāng de zhuōzi.</span>
+<span style="font-size:13.5px;color:rgba(255,255,255,0.7)">Chúng tôi muốn một bàn cạnh cửa sổ.</span>
+</div>
+<div style="display:flex;gap:9px">
+<span style="flex:1;height:44px;border-radius:13px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:700;color:#fff"><i class="ph ph-repeat" style="font-size:16px"></i>Nghe lại</span>
+<span style="flex:1;height:44px;border-radius:13px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:700;color:#fff"><i class="ph ph-arrow-square-out" style="font-size:16px"></i>Mở clip</span>
+</div>
+<div style="height:1px;background:rgba(255,255,255,0.1)"></div>
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.13em;color:rgba(255,255,255,0.66)">NGỮ CẢNH KHÁC</span>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:12px;padding:11px;border-radius:14px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:108px;height:62px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 170 / 0.55), transparent), linear-gradient(158deg, oklch(0.30 0.05 170), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">0:06</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center"><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#D5C0FF">问路 · 00:24</span><span style="font-family:'Noto Serif',Georgia,serif;font-size:14.5px;line-height:1.5;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">我想去火车站，怎么走？</span></div>
+</div>
+<div style="display:flex;gap:12px;padding:11px;border-radius:14px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:relative;width:108px;height:62px;flex:none;border-radius:15px;overflow:hidden;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 25 / 0.55), transparent), linear-gradient(150deg, oklch(0.30 0.05 25), oklch(0.17 0.02 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18)">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:50%;background:rgba(6,5,9,0.5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.24);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="ph-fill ph-play"></i></div></div>
+
+<span style="position:absolute;right:10px;bottom:10px;padding:4px 9px;border-radius:999px;background:rgba(6,5,9,0.7);font-family:'DM Mono',monospace;font-size:10.5px;color:#fff">0:06</span>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center"><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#D5C0FF">看病 · 01:48</span><span style="font-family:'Noto Serif',Georgia,serif;font-size:14.5px;line-height:1.5;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">我想看一下医生。</span></div>
+</div>
+</div>
+</div>
+</div>
+</x-import>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px;padding:30px;border-radius:26px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 6px 22px rgba(0,0,0,0.20)">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+<span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:rgba(255,255,255,0.60)">04</span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.022em">Mở một bộ từ</span>
+<span style="font-size:14.5px;color:rgba(255,255,255,0.6)">Chạm vào bất kỳ bộ nào: chi tiết bộ ở bên phải, thẻ ôn ở giữa — một thiết kế thẻ dùng chung</span>
+</div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">DESKTOP · 1920 × 1080 · 62%</span>
+<div style="width:1214px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.3));backdrop-filter:blur(24px) saturate(1.35);padding:12px;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16), 0 10px 32px rgba(0,0,0,0.40)">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></span><span style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></span><span style="width:10px;height:10px;border-radius:50%;background:#28C840"></span><span style="margin-left:12px;flex:1;height:24px;border-radius:7px;background:rgba(196,178,255,0.20);display:flex;align-items:center;padding:0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.64)">orena.app/vocabulary/hsk1/review</span></div>
+<div style="position:relative;width:1190px;height:670px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="position:absolute;top:0;left:0;width:1920px;height:1080px;transform:scale(0.62);transform-origin:top left">
+<div data-screen-label="Vocabulary review" style="position:relative;width:1920px;height:1080px;background:radial-gradient(90% 70% at 16% -10%, rgba(116,74,214,0.22), transparent 62%), radial-gradient(80% 60% at 88% 102%, rgba(70,92,210,0.16), transparent 62%), #060509;color:#f3f1f6;display:flex;overflow:hidden">
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:34px 44px 44px;gap:26px;overflow:hidden">
+<div style="flex:none;display:flex;align-items:center;gap:20px">
+<span style="font-size:22px;color:rgba(255,255,255,0.75)"><i class="ph ph-caret-left"></i></span>
+<div style="flex:1;display:flex;gap:6px"><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div></div>
+<span style="font-family:'DM Mono',monospace;font-size:14px;color:rgba(255,255,255,0.7)">3 / 24</span>
+</div>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px">
+<div style="position:relative;width:420px;height:560px;flex:none;border-radius:26px;overflow:hidden;background:linear-gradient(180deg, rgba(74,60,130,0.30), rgba(48,38,86,0.26));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2), 0 0 0 1.5px oklch(0.70 0.19 296 / 0.6), 0 22px 54px rgba(123,77,232,0.26);padding:22px;box-sizing:border-box;display:flex;flex-direction:column">
+<div style="position:absolute;top:-40px;right:-30px;width:300px;height:250px;background:radial-gradient(closest-side, rgba(176,122,255,0.34), transparent 78%);pointer-events:none"></div>
+<div style="position:relative"><span style="display:flex;gap:5px"><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:oklch(0.80 0.14 68)"></span><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:oklch(0.80 0.14 68)"></span><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;border:1.5px solid oklch(0.80 0.14 68 / 0.55);box-sizing:border-box"></span></span></div>
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;text-align:center">
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:54px;line-height:1">高兴</span>
+<span style="font-family:'DM Mono',monospace;font-size:16px;color:rgba(255,255,255,0.7)">/gāo xìng/</span>
+<span style="width:96px;height:1px;background:rgba(255,255,255,0.14)"></span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:21px;letter-spacing:-0.016em">vui · happy, glad</span>
+<span style="font-size:15px;line-height:1.6;font-style:italic;color:rgba(255,255,255,0.7);max-width:24ch">…他今天看起来很高兴，像是听到了好消息。</span>
+</div>
+<div style="position:relative;display:flex;justify-content:center">
+<span style="height:44px;padding:0 20px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;color:#fff">Chạm để úp lại</span>
+</div>
+</div>
+<div style="width:420px"><div style="display:flex;gap:11px">
+<span style="flex:1;height:64px;border-radius:20px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.3));backdrop-filter:blur(18px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18), 0 2px 10px rgba(0,0,0,0.14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:#fff">Quên</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.6)">&lt;1m</span></span>
+<span style="flex:1;height:64px;border-radius:20px;background:oklch(0.80 0.14 68 / 0.12);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:oklch(0.90 0.11 68)">Chưa chắc</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.86 0.10 68)">1d</span></span>
+<span style="flex:1;height:64px;border-radius:20px;background:#f3f1f6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 12px 30px rgba(0,0,0,0.35)"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:#141317">Nhớ rồi</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(20,15,30,0.55)">4d</span></span>
+</div></div>
+</div>
+<span style="flex:none;text-align:center;font-family:'DM Mono',monospace;font-size:12.5px;letter-spacing:0.14em;color:rgba(255,255,255,0.45)">THẺ LÀ MÀN HÌNH · KHÔNG CÓ GÌ QUANH NÓ</span>
+</div>
+
+<div style="width:560px;flex:none;box-sizing:border-box;box-shadow:inset 1px 0 0 rgba(255,255,255,0.08);background:linear-gradient(180deg, rgba(74,60,130,0.30), rgba(48,38,86,0.26));backdrop-filter:blur(24px) saturate(1.3);padding:34px 32px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+<div style="display:flex;gap:20px;align-items:flex-start">
+<div style="width:130px;height:130px;flex:none;border-radius:16px;background:radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.15) 1.2px, transparent 1.3px) 0 0/10px 10px, linear-gradient(150deg, oklch(0.32 0.06 350), oklch(0.18 0.03 300));box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="padding:5px 11px;border-radius:7px;background:oklch(0.80 0.14 68 / 0.16);box-shadow:inset 0 0 0 1px oklch(0.84 0.13 72 / 0.4);font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.1em;color:oklch(0.90 0.11 70)">TIER II</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.65)">中文 · HSK 1</span></div>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:27px;letter-spacing:-0.022em">HSK 1 · 150 từ</span>
+<div style="display:flex;align-items:center;gap:12px"><div style="flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,0.14);overflow:hidden"><div style="width:58%;height:100%;border-radius:999px;background:linear-gradient(90deg, #7B4DE8, #C7B2FF)"></div></div><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,0.7)">87/150</span></div>
+</div>
+</div>
+<div style="display:flex;gap:12px">
+<span style="flex:1;height:56px;border-radius:16px;background:linear-gradient(180deg, #9B67FF, #6A32E0);display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:#fff;box-shadow:0 12px 32px rgba(123,77,232,0.42)"><i class="ph-fill ph-play" style="font-size:18px"></i>Tiếp tục</span>
+<span style="width:56px;height:56px;flex:none;border-radius:16px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff"><i class="ph ph-shuffle"></i></span>
+</div>
+<div style="height:1px;background:rgba(255,255,255,0.1)"></div>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:rgba(255,255,255,0.6)">TỪ TRONG BỘ</span>
+<span style="margin-left:auto;display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:999px;background:rgba(196,178,255,0.12);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;color:rgba(255,255,255,0.8)"><i class="ph ph-funnel" style="font-size:13px"></i>CHƯA THUỘC</span>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;overflow:hidden">
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">图书馆</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">túshūguǎn</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">医生</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">yīshēng</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">高兴</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">gāoxìng</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">工作</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">gōngzuò</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">朋友</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">péngyou</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">学校</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">xuéxiào</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">老师</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">lǎoshī</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">同学</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">tóngxué</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">吃饭</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">chīfàn</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">喝水</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">hēshuǐ</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">时间</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">shíjiān</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">今天</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">jīntiān</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">明天</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">míngtiān</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">商店</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">shāngdiàn</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">东西</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">dōngxi</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:rgba(255,255,255,0.22)"></i></span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:15px;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16)">
+<div style="flex:1;min-width:0"><div style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:19px;line-height:1.2">谢谢</div><div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.82 0.15 350);margin-top:5px">xièxie</div></div>
+<span style="display:flex;gap:3px;font-size:13px"><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i><i class="ph-fill ph-star" style="color:oklch(0.84 0.13 72)"></i></span>
+</div>
+</div>
+<span style="flex:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;color:#D5C0FF">Xem cả 150 từ<i class="ph ph-caret-down" style="font-size:15px"></i></span>
+</div>
+
+</div>
+</div></div></div></div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">A · ĐÃ MỞ THẺ</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary review mobile" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:radial-gradient(100% 50% at 50% 0%, rgba(116,74,214,0.2), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 0;display:flex;align-items:center;gap:14px">
+<span style="font-size:21px;color:rgba(255,255,255,0.75)"><i class="ph ph-caret-left"></i></span>
+<div style="flex:1;display:flex;gap:6px"><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div></div>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.7)">3 / 24</span>
+</div>
+<div style="flex:1;min-height:0;padding:18px 20px 0;display:flex">
+<div style="position:relative;width:100%;min-height:0;align-self:stretch;flex:1 1 auto;border-radius:19px;overflow:hidden;background:linear-gradient(180deg, rgba(74,60,130,0.30), rgba(48,38,86,0.26));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.2), 0 0 0 1.5px oklch(0.70 0.19 296 / 0.6), 0 22px 54px rgba(123,77,232,0.26);padding:16px;box-sizing:border-box;display:flex;flex-direction:column">
+<div style="position:absolute;top:-40px;right:-30px;width:300px;height:250px;background:radial-gradient(closest-side, rgba(176,122,255,0.34), transparent 78%);pointer-events:none"></div>
+<div style="position:relative"><span style="display:flex;gap:5px"><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:oklch(0.80 0.14 68)"></span><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:oklch(0.80 0.14 68)"></span><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;border:1.5px solid oklch(0.80 0.14 68 / 0.55);box-sizing:border-box"></span></span></div>
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center">
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:39px;line-height:1">高兴</span>
+<span style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,0.7)">/gāo xìng/</span>
+<span style="width:69px;height:1px;background:rgba(255,255,255,0.14)"></span>
+<span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;letter-spacing:-0.016em">vui · happy, glad</span>
+<span style="font-size:11px;line-height:1.6;font-style:italic;color:rgba(255,255,255,0.7);max-width:24ch">…他今天看起来很高兴，像是听到了好消息。</span>
+</div>
+<div style="position:relative;display:flex;justify-content:center">
+<span style="height:32px;padding:0 14px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;font-family:'Nunito',sans-serif;font-weight:700;font-size:10px;color:#fff">Chạm để úp lại</span>
+</div>
+</div>
+</div>
+<div style="flex:none;padding:14px 20px 30px"><div style="display:flex;gap:9px">
+<span style="flex:1;height:54px;border-radius:17px;background:linear-gradient(180deg, rgba(78,62,136,0.34), rgba(50,40,90,0.3));backdrop-filter:blur(18px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18), 0 2px 10px rgba(0,0,0,0.14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:#fff">Quên</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.6)">&lt;1m</span></span>
+<span style="flex:1;height:54px;border-radius:17px;background:oklch(0.80 0.14 68 / 0.12);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:oklch(0.90 0.11 68)">Chưa chắc</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:oklch(0.86 0.10 68)">1d</span></span>
+<span style="flex:1;height:54px;border-radius:17px;background:#f3f1f6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 12px 30px rgba(0,0,0,0.35)"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:#141317">Nhớ rồi</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(20,15,30,0.55)">4d</span></span>
+</div></div>
+</div>
+</x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:390px">
+<span style="font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:rgba(255,255,255,0.64)">B · CHƯA MỞ · NÚT CHẤM CHƯA HIỆN</span>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" width="{{ frameW }}" height="{{ frameH }}" hint-size="390px,844px">
+<div data-screen-label="Vocabulary review mobile hidden" style="width:100%;height:100%;box-sizing:border-box;position:relative;background:radial-gradient(100% 50% at 50% 0%, rgba(116,74,214,0.2), transparent 62%), #060509;color:#f3f1f6;display:flex;flex-direction:column;overflow:hidden">
+<div style="flex:none;padding:58px 20px 0;display:flex;align-items:center;gap:14px">
+<span style="font-size:21px;color:rgba(255,255,255,0.75)"><i class="ph ph-caret-left"></i></span>
+<div style="flex:1;display:flex;gap:6px"><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:#8B5CF6"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div><div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,0.16)"></div></div>
+<span style="font-family:'DM Mono',monospace;font-size:11.5px;color:rgba(255,255,255,0.7)">3 / 24</span>
+</div>
+<div style="flex:1;min-height:0;padding:18px 20px 0;display:flex">
+<div style="position:relative;width:100%;min-height:0;align-self:stretch;flex:1 1 auto;border-radius:19px;overflow:hidden;background:linear-gradient(180deg, rgba(84,68,146,0.32), rgba(54,44,96,0.28));backdrop-filter:blur(24px) saturate(1.35) brightness(1.04);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.16);padding:16px;box-sizing:border-box;display:flex;flex-direction:column">
+<div style="position:relative"><span style="display:flex;gap:5px"><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:oklch(0.80 0.14 68)"></span><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:oklch(0.80 0.14 68)"></span><span style="width:10px;height:10px;transform:rotate(45deg);border-radius:2px;border:1.5px solid oklch(0.80 0.14 68 / 0.55);box-sizing:border-box"></span></span></div>
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;text-align:center">
+<span style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:39px;line-height:1">高兴</span>
+<span style="height:32px;padding:0 13px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;gap:6px;font-size:10px;color:#fff"><i class="ph-fill ph-speaker-high" style="font-size:12px"></i>Nghe phát âm</span>
+</div>
+<div style="position:relative;display:flex;justify-content:center">
+<span style="height:32px;padding:0 14px;border-radius:999px;background:rgba(196,178,255,0.14);box-shadow:inset 0 0 0 1px rgba(172,144,255,0.22);display:flex;align-items:center;font-family:'Nunito',sans-serif;font-weight:700;font-size:10px;color:#fff">Chạm để mở</span>
+</div>
+</div>
+</div>
+<div style="flex:none;padding:14px 20px 30px;display:flex;align-items:center;justify-content:center;height:54px;box-sizing:content-box"><span style="font-size:13.5px;color:rgba(255,255,255,0.5);text-align:center">Nút chấm chỉ hiện sau khi mở thẻ</span></div>
+</div>
+</x-import>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1600}}">
+class Component extends DCLogic {
+  renderVals() { return { isDark: true, frameW: 390, frameH: 844 }; }
+}
+</script>
+</body>
+</html>

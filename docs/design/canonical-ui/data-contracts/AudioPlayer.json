@@ -1,0 +1,13 @@
+{
+  "_usedBy": [
+    "ListeningWorkspaceTemplate",
+    "DictationWorkspaceTemplate"
+  ],
+  "mediaUrl": "string",
+  "kind": "audio | video",
+  "posterHue": "number",
+  "durationSec": "number",
+  "positionSec": "number",
+  "speed": "0.75 | 1 | 1.25",
+  "loopLine": "boolean"
+}

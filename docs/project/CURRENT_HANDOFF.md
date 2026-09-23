@@ -4,128 +4,79 @@
 
 Purpose: compact recovery context. Change when the active stage or verified
 facts change. Do not store secrets or unverified claims. Authority: current
-human instruction, Orena Constitution, Content Architecture, approved brand,
-D-046. No human approval or production readiness is implied.
+human instruction, the Canonical UI Baseline (D-066) for how a learner surface
+looks, behaves and what data it shows, then Orena Constitution, Content
+Architecture, approved brand, D-046. No human approval or production readiness
+is implied.
 
 ## Current branch / lane
 
-`codex/work`, Orena WEB Golden Star plus real learning capabilities. Do not
-restore the deleted learner product. Native mobile / Expo / React Native is
-frozen. Human instruction authorizes full-stack WEB work on the capabilities
-themselves, not only on the foundation.
+`codex/work`, in the `-codex` worktree, Orena WEB: integrate the Canonical UI
+Baseline. By explicit instruction (D-066) work goes directly on this branch:
+no new branch or worktree, logical commits, stage only each step's files. Do
+not restore the deleted learner product. Native mobile stays frozen.
 
 ## DONE
 
-D-046 and the product reset are committed; the shared media, transcript,
-dictation, recording, provider and evidence primitives survive, and the learner
-surfaces converge on static/orena. PostgreSQL APIs remain.
-
-Golden Star foundation: page intro, response composer, draft status,
-progressReporter(), theme-safe panels; ORENA_WEB_EXTENSION_GUIDE.md records it.
-
-Platform Admin has a host via `#/admin` (`04a56c4`), human-reviewed.
-
-## Learning capabilities
-
-Preserved Opus implementation; ORENA_STATUS and GOLDEN_STAR_COMPLETION hold
-behavior and evidence. Current invariants/owners:
-
-- Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
-- Reading: content/reading.js readable contract; reading-library.js rights
-  gate; ui/reader.js adds paragraph meaning and never-AI word lookup.
-- Writing: ui/writing-review.js; exact snapshot and grounded revision; T12 evaluator in `c71c644`.
-- Speaking: product/conversation.js; own turns, no absent-reference alignment.
-- Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
-- Kept language: product/memory.js; provenance device sidecar after account save.
-- Recall: product/recall.js; hidden answer, explicit reveal/self-assessment.
-- Continue: ui/patterns.js and product/intent.js; actual work type and intention.
-- Understanding: ui/understanding.js; exact context and stale-answer rejection.
-- Presentation/brand: ORENA_WEB_EXTENSION_GUIDE; Opus owns theme/brand execution.
+D-046 and the product reset. D-066 accepted 2026-09-21: the frozen Dark Glass
+baseline, pinned in `docs/design/canonical-ui/`, replaces D-059 and D-065 as
+visual authority. Paper, sepia and the theme picker are already gone from the
+code (`d0820ba`); the D-065 compositions remain until each surface migrates, then
+they are deleted. Governance is
+updated: Decision Log, tombstone, Design Contract, AGENTS Theme, product state,
+and `UI_BACKEND_GAPS.md` (the one tracker, absorbing the Phase 1-3 audit).
 
 ## Last verified batch
 
-D-057, then the surfaces under it. `ART_BIBLE.md` joins `assets/brand/orena/`;
-`ui/cover.js` draws one deterministic cover per item, retiring the letter and
-waveform placeholders product-wide. Discover opens on one action, shelved by
-content. Continue reads as continuity: a chapter shown as a chapter of its
-book, place and percent carried on the memory entry. Reading opens on the
-library, cover-first, with a Continue reading shelf and search folded into a
-utility; book detail leads with cover, one action and the current chapter.
-Reader: `reader.css` exists at last (the room had none), so text keeps a
-measure and the shell recedes. Its interaction layer is now `ui/lexical.js`,
-shared: Listening's transcript mounts the same one, so a tapped word answers
-identically in both rooms. Listening opens on the covers, grows shelves from
-real data, and writes its place into the shared continuation field.
-Fixed: the library rendered raw catalogue rows, so every card linked to an
-encounter with no id and the room fell back to Reading. `listeningItem()` is the
-one identity boundary now, an unclassifiable encounter keeps the learner's
-domain, and the failure state is compact and domain-aware.
-
-Verified: pytest `1109 passed, 118 skipped`, all 45 CI `.mjs` gates, ESM graph,
-both validators, EN/ZH browser pass on `orena-foundation-web`:8011 at desktop
-and 390px. No CI claim.
-
-## Runtime / safety
-
-Operate only isolated `orena-foundation-web`:8011 with its PG/network,
-published on `0.0.0.0:8011` for private-LAN review via Ethernet IPv4.
-PGDATA is tmpfs; the start script restores it. Restart after Python
-changes; uvicorn does not reload. Do not operate production 8000/preview
-8010/Cloudflare/volumes. Loopback/LAN checks pass; if a peer cannot reach it,
-open TCP 8011 to `LocalSubnet` from an elevated shell. AI eval uses selected
-local/provider credentials; ASR unconfigured.
-
-Dependency-heavy tests use the read-only `ai-writing-coach:local` recipe in
-AGENTS.md; SQLite is test-only. Switch language in-page.
-
-## NEXT EXACT TASK
-
-Core: R3/T15 Card human PASS. Vocabulary foundation/catalog/feed/save and
-Chinese orthography are schema-free. Vocabulary Source Import is E2E through
-Admin preview/mapping/import and learner collection/card projections.
-Architecture review is approved; the remaining Vocabulary gate is human
-schema/runtime authorization for `20260916_0008`, then PostgreSQL rehearsal.
-Browser review at `:8011/#/language` (or the LAN address); check EN/ZH and
-Chinese orthography across Discover/My Language.
-
-Backbone lane (Opus), D-054 delegation: D-054, 0006 (+`6c4131a`), 0007
-approved by delegated review (`I3_SCHEMA_REVIEW_REQUEST.md`). Sandbox only:
-chain `20260912_0007`, flag on, backbone `active` (runbook §7). Writing
-drafts kept with the account there, human-approved by browser review
-(`4e1f0a5`); billing/quota off. "Your growth" read glance in preferences
-(I6, REVIEWABLE, not yet human-reviewed). Deletion gated (D-055). I4
-`/api/collection`. Keep A-D, 11 destinations, Opus WIP; no I1-I7 claim
-implies human approval.
+Local, after slices 1-3 and the bug passes: pytest `1173 passed, 118 skipped`; every CI
+`.mjs` gate passes except `test_m3_pronunciation_contract.mjs`, failing since
+D-065 removed the score (Speaking slice); ESM graph, memory and architecture
+validators pass. No CI claim. Browser-checked on :8011 (vi, EN text; zh word via API;
+touch swipe, phone sheet and library in a touch-enabled context), not READY.
 
 ## IN PROGRESS
 
-Golden Star capability findings are closed; Packages A-D of
-`ORENA_REFERENCE_ARCHITECTURE.md` are done. Backbone runtime integration I1-I7
-remains Opus implementation work; F is human review, not architecture completion.
+Migration slices, in order, each through UI, contract, API, service,
+persistence, reload, errors and tests: (1) Word and Sentence Sheet and (2) Writing
+review and revision - built and browser-checked, remaining checks in the tracker's
+log; the Dark Glass foundation landed with (1); (3) Listening and Dictation - 3a the Library and 3b the workspace details and the Dictation screen built (per-character pinyin from the backend), open: DC-5 and the taxi lesson need a human decision, (4) Reading
+comprehension per question, (5) catalogue Search. Then learner persistence, progress measurement,
+pronunciation providers. Rules that bind every slice (D-066): a metric with no
+measurement renders 0 in its canonical component and is never stored as data;
+no fake pronunciation result; basic lookup stays deterministic while "meaning
+in this sentence" may use AI; vocabulary review has three grades and keeps
+learner history; loading/empty/error follow the baseline or the existing
+pattern, invented visuals are out of scope; accessibility never redesigns.
 
-Multi-theme system awaiting visual review: Paper, Night Ink, Deep Forest,
-Sage Field; colour owned by `theme.css`. Ember deferred.
+Backbone lane (Opus), D-054 delegation: sandbox only, chain `20260912_0007`,
+flag on, backbone `active` (runbook section 7). Writing drafts kept with the
+account there (`4e1f0a5`). I4 `/api/collection`. Deletion gated (D-055). No
+I1-I7 claim implies human approval.
 
-Backbone runs against locked GPT-6 architecture at `27edeb0`, in
-`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2 schema approved,
-sandbox only at `20260908_0005`, flag `off` (`I2_ACTIVATION_RUNBOOK.md` §6).
-
-Source Import uses UTF-8 mapping, normalization, identity, provenance, batch
-results, shared repository, Admin UI and learner cards; review APPROVED
-(`a1a90b7b`). Schema auth pending; import fail-closed.
+Fidelity pass (D-067, measured against the design at its source): built to their frames at 1920x1080 and
+390x844, in EN, VI and ZH - the shell, Library, Listening workspace, Dictation (steps, one screen on a desk and a
+phone, DC-5 stored: migration `20260921_0010` in the sandbox, D-069), the Quick Sheet, the Writing workspace,
+review (two panes; Draft / Review tabs on a phone), revision (three columns) and entry (`#/writing`). A screen's
+ground is the UI Baseline's lit indigo (D-071). Bugs 7-15 are fixed. Writing review and revision are the frames too (findings marked in the draft, one primary action, three-column
+comparison). Not the frame yet: "Lưu nhận xét" (no meaning for it yet), the Writing-feedback context sheet.
+Home is its frames too (top bar, Continue strip, six rails; the old Discover composition deleted).
+The Reading workspace is one screen with the frame's bar. Not migrated (legacy): Progress, Speaking, Vocabulary, the Reading library's own frame; the old top bar and the Practice hub go
+with them.
 
 ## PENDING
 
-R3 Gemini live gate passed 4/4 EN/ZH/support cases with native structured
-output, grounded evidence and script separation. The Ollama fallback stays a
-lower-quality local option: `qwen3:8b` leaks target script in nested support
-explanations.
+Source Import and Vocabulary catalog: human schema/runtime authorization for
+`20260916_0008`, then PostgreSQL rehearsal. R3 Gemini live gate passed 4/4;
+Ollama `qwen3:8b` leaks target script in nested support answers. Pronunciation
+needs a configured Azure or SpeechSuper provider (credentials are a human gate).
 
 ## BLOCKED
 
-I2 §6 step 9 (`ORENA_ACCOUNT_BACKBONE=on`) is done, sandbox only (chain
-`20260912_0007`, runbook §7). Production/preview deploy and activation past
-sandbox stay blocked: separate human gate, not authorized, not asked for.
+Production/preview deploy and activation past the sandbox: separate human gate,
+not authorized. A learner-owned schema or migration is authored against
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` and needs a recorded independent
+architecture review before it is applied to a shared runtime; the implementer
+does not approve it. Durable raw learner audio needs its own privacy review.
 
 ## OPEN P0
 
@@ -133,31 +84,35 @@ None identified.
 
 ## OPEN P1
 
-- `#/language` renders "temporarily unavailable" only in long multi-room
-  sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated (0/130).
-  Self-recovers.
-- Grammar breadth: patterns joined by stable Concept ID, extended by
-  `grammar-shelf.js`, not a second syllabus.
-- Cross-device continuity: device memory current; I2 schema/sync activation
-  remains gated.
-- Reading breadth: rights gate. Vocabulary Library content is gated until a
-  complete pack is authored/published; Feed and Chinese orthography remain
-  technically reviewable. Human UX acceptance is still pending.
-- Non-CI r8/r10/r11 pre-public matrices were retired per product decision;
-  r20 remains frozen native.
-- Language coherence: interface is en/zh; evaluator/grammar explanations follow
-  the support language (12; sandbox profile vi) - EN/ZH labels over VI text is a
-  product decision (more interface locales, or explain in UI language).
-
-## Baseline test evidence
-
-Baseline suite now passes locally with `1109 passed, 118 skipped, 4 warnings`;
-this is not a CI claim. Inherited governance/media failures were reconciled
-against the current architecture; retired legacy matrix tests are not regressions.
+- D-065 compositions (rail, Home, Progress, cards) remain until each surface migrates.
+- The baseline has no design for Profile, My Content, Admin, Onboarding,
+  Loading/Empty/Error, Modal/Drawer or tablet: existing implementation stays.
+- `#/language` renders "temporarily unavailable" only in long multi-room sweeps
+  at short dwell; never isolated (0/130). Self-recovers.
+- Cross-device continuity: device memory current; account sync gated.
+- Content: Reading breadth is a rights decision per text; Vocabulary packs stay
+  gated until published; the listening catalogue holds 6 lessons.
+- Non-CI r8/r10/r11 matrices retired; r20 frozen native.
 
 ## HUMAN GATES
 
-Final browser review; production, data, migration, provider, credential,
+Final browser review; production, data, migration apply, provider, credential,
 OAuth/DNS/Cloudflare, billing and release operations; destructive history.
-Local web iteration and checkpoint commits are authorized. Only the human
-approves product direction.
+Local web iteration and checkpoint commits on `codex/work` are authorized. Only
+the human approves product direction.
+
+## NEXT EXACT TASK
+
+Human decisions (`UI_BACKEND_GAPS.md`, S3b log): DC-5 (store hint use?), the taxi lesson, the logo (the
+frame's violet square, or the orange mascot), the Vietnamese pack keeping the design's English product
+names, the phone search that expands on focus and the library's "load more", the DM Mono to Roboto
+Mono fallback for Vietnamese, the disabled "Kiểm tra hiểu" action (no listening items yet), the
+rights block kept under the workspace (the frame draws none). Then continue the fidelity pass surface
+by surface with the D-067 method (read the frame from the design project, measure it, compare the
+running app, fix, gate): Writing (workspace first: rebuild the frame's composition around the existing draft, review and revision plumbing; the intention field, level select and starters need a place from the source or a recorded decision), then migrate Home, Reading (slice
+4, comprehension per question), Speaking, Vocabulary, Progress, and delete the legacy pieces each
+leaves behind. Also the stale `verify_writing_*_browser.mjs` scripts and unused copy keys.
+Operate only sandbox `orena-foundation-web`:8011; restart
+after Python changes. For AI-backed checks select Gemini there (`PUT /api/admin/ai/config`,
+`gemini-3.5-flash-lite`; the key is already in the sandbox env, never print it): the
+Ollama default takes 17-54 s per call; never production 8000, preview 8010, Cloudflare or volumes.

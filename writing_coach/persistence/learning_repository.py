@@ -19,7 +19,10 @@ from writing_coach.persistence.models import (
 class LearningRepository(Protocol):
     def get_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def classify_essay_scope(self, essay_id: int) -> str: ...
-    def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]: ...
+    def list_essays(
+        self, limit: int = 200, *, ascending: bool = False, kept_only: bool = False
+    ) -> list[dict[str, Any]]: ...
+    def set_essay_review_kept(self, essay_id: int, kept: bool) -> dict[str, Any] | None: ...
     def list_latest_series(self) -> list[dict[str, Any]]: ...
     def list_series_revisions(self, series_id: int) -> list[dict[str, Any]]: ...
     def previous_revision(self, series_id: int, revision_no: int) -> dict[str, Any] | None: ...
@@ -33,6 +36,26 @@ class LearningRepository(Protocol):
     def list_saved_words(self) -> list[dict[str, Any]]: ...
     def upsert_saved_word(self, values: dict[str, Any]) -> None: ...
     def delete_saved_word(self, word: str) -> bool: ...
+
+
+def _essay_module_data(values: dict[str, Any]) -> dict[str, Any]:
+    """What travels in an essay's metadata bag, decided once for both backends.
+
+    The practice it came from, the grammar it touched, and - since reviews
+    became reusable - the identity of the review this row *is*: which words,
+    which two languages, which level, which evaluator contract. Kept here so
+    SQLite and PostgreSQL cannot drift into storing different things.
+    """
+    module_data: dict[str, Any] = {}
+    practice_context = values.get("practice_context")
+    grammar_links = values.get("grammar_links") or []
+    review_identity = values.get("review_identity") or None
+    if practice_context is not None or grammar_links:
+        module_data["practice"] = practice_context
+        module_data["grammar_links"] = grammar_links
+    if review_identity:
+        module_data["review"] = review_identity
+    return module_data
 
 
 class LearningCacheRepository(Protocol):
@@ -110,6 +133,10 @@ class SQLiteLearningRepository:
                 conn.execute("ALTER TABLE essays ADD COLUMN module_data_json TEXT NOT NULL DEFAULT '{}'")
             if "strength_evidence_json" not in cols:
                 conn.execute("ALTER TABLE essays ADD COLUMN strength_evidence_json TEXT NOT NULL DEFAULT '[]'")
+            if "review_kept_at" not in cols:
+                # D-072.1, the same nullable column migration 20260922_0011 adds
+                # to PostgreSQL. NULL is "not kept".
+                conn.execute("ALTER TABLE essays ADD COLUMN review_kept_at TEXT")
             conn.execute("UPDATE essays SET language_code = 'en' WHERE language_code IS NULL OR language_code = ''")
             conn.execute("UPDATE essays SET target_level = target_cefr WHERE target_level IS NULL OR target_level = ''")
             conn.execute("UPDATE essays SET level_estimate = cefr_estimate WHERE level_estimate IS NULL OR level_estimate = ''")
@@ -172,15 +199,32 @@ class SQLiteLearningRepository:
             return "language_scope_mismatch"
         return "parent_essay_not_found"
 
-    def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]:
+    def list_essays(
+        self, limit: int = 200, *, ascending: bool = False, kept_only: bool = False
+    ) -> list[dict[str, Any]]:
         order = "ASC" if ascending else "DESC"
-        sql = f"SELECT * FROM essays ORDER BY id {order}"
+        where = " WHERE review_kept_at IS NOT NULL" if kept_only else ""
+        sql = f"SELECT * FROM essays{where} ORDER BY id {order}"
         params: tuple[Any, ...] = ()
         if limit > 0:
             sql += " LIMIT ?"
             params = (limit,)
         with self.connect() as conn:
             return [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+    def set_essay_review_kept(self, essay_id: int, kept: bool) -> dict[str, Any] | None:
+        """Idempotent: keeping a kept review does not move its timestamp."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            row = conn.execute("SELECT review_kept_at FROM essays WHERE id = ?", (essay_id,)).fetchone()
+            if row is None:
+                return None
+            if kept and not row["review_kept_at"]:
+                conn.execute("UPDATE essays SET review_kept_at = ? WHERE id = ?", (now, essay_id))
+            elif not kept:
+                conn.execute("UPDATE essays SET review_kept_at = NULL WHERE id = ?", (essay_id,))
+            conn.commit()
+            return self._dict(conn.execute("SELECT * FROM essays WHERE id = ?", (essay_id,)).fetchone())
 
     def list_latest_series(self) -> list[dict[str, Any]]:
         with self.connect() as conn:
@@ -227,8 +271,6 @@ class SQLiteLearningRepository:
         return int(row[0])
 
     def create_essay(self, values: dict[str, Any]) -> dict[str, Any]:
-        practice_context = values.get("practice_context")
-        grammar_links = values.get("grammar_links") or []
         with self.connect() as conn:
             cur = conn.execute(
                 """
@@ -249,10 +291,11 @@ class SQLiteLearningRepository:
                 ),
             )
             essay_id = int(cur.lastrowid)
-            if practice_context is not None or grammar_links:
+            module_data = _essay_module_data(values)
+            if module_data:
                 conn.execute(
                     "UPDATE essays SET module_data_json = ? WHERE id = ?",
-                    (json.dumps({"practice": practice_context, "grammar_links": grammar_links}, ensure_ascii=False), essay_id),
+                    (json.dumps(module_data, ensure_ascii=False), essay_id),
                 )
             series_id = int(values.get("series_id") or essay_id)
             if values.get("series_id") is None:
@@ -492,6 +535,7 @@ class PostgresLearningRepository:
             "level_estimate": essay.level_estimate,
             "module_data_json": json.dumps(essay.module_data, ensure_ascii=False),
             "strength_evidence_json": json.dumps(essay.strength_evidence, ensure_ascii=False),
+            "review_kept_at": essay.review_kept_at.isoformat() if essay.review_kept_at else None,
         }
 
     def _essay_rows(self, session: Session, *, ascending: bool = True) -> list[dict[str, Any]]:
@@ -525,10 +569,38 @@ class PostgresLearningRepository:
                 return "language_scope_mismatch"
             return "parent_essay_not_found"
 
-    def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]:
+    def list_essays(
+        self, limit: int = 200, *, ascending: bool = False, kept_only: bool = False
+    ) -> list[dict[str, Any]]:
         with Session(self.engine) as session:
             rows = self._essay_rows(session, ascending=ascending)
+        if kept_only:
+            rows = [row for row in rows if row.get("review_kept_at")]
         return rows if limit <= 0 else rows[:limit]
+
+    def set_essay_review_kept(self, essay_id: int, kept: bool) -> dict[str, Any] | None:
+        """Owner-scoped through the existing `(user_id, language_code, legacy_id)`
+        lookup, so the endpoint cannot reach another learner's essay.
+
+        Idempotent: keeping a kept review does not move its timestamp.
+        """
+        uid, lang = self._scope()
+        with Session(self.engine) as session, session.begin():
+            essay = session.scalar(
+                select(Essay).where(
+                    Essay.user_id == uid, Essay.language_code == lang, Essay.legacy_id == essay_id
+                )
+            )
+            if essay is None:
+                return None
+            if kept:
+                if essay.review_kept_at is None:
+                    essay.review_kept_at = datetime.now(timezone.utc)
+            else:
+                essay.review_kept_at = None
+            revision = session.scalar(select(EssayRevision).where(EssayRevision.essay_id == essay.id))
+            session.flush()
+            return self._essay_payload(essay, revision)
 
     def list_latest_series(self) -> list[dict[str, Any]]:
         rows = self.list_essays(0, ascending=True)
@@ -581,7 +653,7 @@ class PostgresLearningRepository:
                 task_achievement=float(values["task_achievement"]), naturalness=float(values["naturalness"]), overall=float(values["overall"]),
                 level_estimate=values["cefr_estimate"], evaluator=values["evaluator"], summary_vi=values["summary_vi"],
                 strengths=json.loads(values["strengths_json"]), priorities=json.loads(values["priorities_json"]),
-                errors=json.loads(values["errors_json"]), module_data={"practice": values["practice_context"], "grammar_links": values.get("grammar_links") or []} if (values.get("practice_context") or values.get("grammar_links")) else {},
+                errors=json.loads(values["errors_json"]), module_data=_essay_module_data(values),
                 strength_evidence=json.loads(values["strength_evidence_json"]),
             )
             session.add(essay)

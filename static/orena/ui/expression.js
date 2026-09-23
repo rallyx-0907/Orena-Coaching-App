@@ -12,12 +12,10 @@ import {
   refreshDraftStatus,
 } from './patterns.js';
 import { esc, status, focusRegion } from './html.js';
-import { renderVocabularyCard } from './vocabulary-card.js';
+import { markedHtml, issueMarks } from './draft-marks.js';
 import {
   renderVocabularyCollectionCard,
   renderVocabularyBrowseCard,
-  renderVocabularyFeedCarousel,
-  bindVocabularyFeedCarousel,
   renderVocabularyRow,
   renderVocabularyStudyCard,
   compactSupportMeaning,
@@ -25,18 +23,46 @@ import {
   vocabularyLevel,
   vocabularyKeepPayload,
   vocabularyStatus,
+  masteryStars,
 } from './vocabulary-experience.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import {
-  writingReview,
+  bindWritingFeedback,
+  revisionHtml,
   writingReviewFailure,
   writingReviewWaiting,
-  shownIssues,
-} from './writing-review.js';
-import {bindRevisionWorkbench} from './revision-workbench.js';
+} from './writing-feedback.js';
+import {
+  MAX_CHARACTERS,
+  editWouldFit,
+  measureWriting,
+} from '../capabilities/writing-limits.js';
+import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
+import { icon } from './phosphor.js';
+import { contentCover } from './cover.js';
+import { referenceCopy } from './reference.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
+
+/* One review sitting, not a library: what is due comes a page at a time, and
+   the room asks again when it has worked through the page. */
+const RECALL_QUEUE = 60;
+
+/* The room opens on a page of saved words and asks for the next one when
+   the learner wants it. Searching, filtering and ordering that page are the
+   server's work: the browser must not hold a learner's whole vocabulary to
+   answer a question about part of it. */
+const SAVED_PAGE = 50;
+const SAVED_SEARCH_DEBOUNCE_MS = 220;
+/* Which server filter each of the room's chips means. `new` and `saved` have
+   no stored state of their own, so they stay the whole list and the chip
+   narrows what is drawn from the page. */
+const SAVED_STATUS = { learning: 'learning', due: 'due', mastered: 'mastered' };
+/* And which server order each sort option means. `level` is not a stored
+   field - it comes from the curated catalogue - so it orders the page the
+   room is holding rather than the library. */
+const SAVED_ORDER = { recommended: 'due', due: 'due', alpha: 'word' };
 import {
   grammarShelf,
   filterGrammar,
@@ -102,6 +128,16 @@ export async function renderExpression(root, ctx) {
   // every time the learner comes back to the same piece.
   let parentId =
     [...revisionsOf()].reverse().find((x) => x.essay_id)?.essay_id ?? null;
+  /* The room opened from the sidebar is `expression:free`, not `essay:<n>`, so
+     it has no server series to load - and reopening it therefore came back
+     with the draft restored and the review it had already paid for missing.
+
+     The device knows which server version this piece last became: that is the
+     same number the next review continues from. Reading it back is one GET,
+     never an evaluation, and it is what makes a reload cost nothing at all. */
+  const lastReview =
+    series?.latest ||
+    (parentId ? await api.essay(parentId).catch(() => null) : null);
   const seriesTitle = series
     ? String(series.latest.prompt || '').split('\n')[0].trim()
     : '';
@@ -115,14 +151,53 @@ export async function renderExpression(root, ctx) {
     '';
   const prompt = original?.prompt || c.responsePrompt;
   const invitations = contentFor(language).slice(0, 2);
-  const levels =
-    ctx.languageProfiles?.find((x) => x.code === language)?.levels || [];
-  root.innerHTML = `<div class="back-row"><a href="${hasSource ? sourceLink(id) : link('practice')}">← ${hasSource ? c.returnLabel : c.practice}</a></div>${pageIntro({ title, note: hasSource ? prompt : c.writingNote, eyebrow: c.writingName })}<section class="learning-workspace writing-workspace" data-workspace="activity"><div class="workspace-activity"><form id="expressionForm" class="writing-sheet"><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea><div class="expression-tools">${draftStatus(ctx)}<span class="meta" data-character-count aria-live="polite"></span><label class="review-target">${c.reviewTarget}<select name="target"><option value="">${c.chooseTarget}</option>${levels.map((level) => `<option value="${esc(level)}">${esc(level)}</option>`).join('')}</select></label><button class="primary">${c.review} ↗</button></div><div class="writing-task"><span class="writing-task__label"><label for="writingTask">${esc(c.writingTask)}</label>${hint({ text: c.writingTaskNote })}</span><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingTaskPlaceholder)}" value="${esc(memory.value.expressions[`${id}::task`] || '')}"></div></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.reviewBack)}</button></div><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary"><aside class="expression-context">${excerpt ? `<small>${c.expressionContext}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a>` : `<div class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</div>`}</aside><section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
+  /* Writing, composed as a workspace.
+
+     What it replaced: a page-wide heading, one very tall box, then - under the
+     box, where a learner only arrives after writing - the draft status, a
+     character count, a "feedback target" selector naming a model setting, the
+     Review button, and finally a field asking what the piece was for. The
+     thing the learner most needed before starting was the last thing they
+     could reach, the primary action sat at the bottom of a form, and the
+     result pane stood empty beside it taking half the room.
+
+     Now: what this piece is for sits in the heading, before and during the
+     writing. The page is the learner's own surface. The actions under it are
+     one bar - a shared icon-first toolbar for the secondary ones, the level
+     setting among them, and one primary Review. The margin beside it holds the
+     source while there is nothing to say and the feedback once there is, and
+     the workspace gives the page more width until the review arrives
+     (DESIGN_CONTRACT rules 19, 24, 27). */
+  const intention = memory.value.expressions[`${id}::task`] || '';
+  /* The level the review aims at comes from what the app already knows: the level the learner declared in
+     their profile, else the level of the text they are answering. With neither there is nothing to aim at
+     and the evaluator reads the level the writing shows, as it always did. */
+  const isLevel = (value) => (/^(A1|A2|B1|B2|C1|C2)$/.test(String(value || '')) ? String(value) : '');
+  const targetLevel = isLevel(ctx.profile?.declared_level) || isLevel(original?.level) || isLevel(source?.level) || null;
+  /* What the frame gives no button of its own stays reachable behind the menu: exploring how a
+     sentence sounds in other registers, and the versions of this piece (D-068, rule 4 of the design's
+     patterns: everything deeper sits behind one button). */
+  const writingActions = [
+    {
+      name: 'more',
+      icon: 'menu',
+      kind: 'menu',
+      label: c.stageMore,
+      items: [
+        { name: 'seeReview', label: c.writingSeeReview },
+        { name: 'seeCompare', label: c.writingSeeCompare },
+        { name: 'registers', label: c.registerExplore },
+        { name: 'history', label: c.revisionHistory },
+      ],
+    },
+  ];
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('writing')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button><button type="button" class="wr-second" data-revise-more>${icon('pencil-simple', { size: 17 })}<span>${esc(c.revision)}</span></button><span class="wr-menu">${learningToolbar(writingActions, { label: c.writingName })}</span></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting" data-compare="off"><div class="wr-tabs" role="group" aria-label="${esc(c.review)}"><button type="button" class="wr-tab" data-wr-tab="activity">${esc(r.writingTabDraft)}</button><button type="button" class="wr-tab" data-wr-tab="result">${esc(r.writingTabReview)}</button></div><div class="workspace-activity"><span class="wr-pane-label">${esc(r.writingTabDraft)}</span><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><div class="wr-draft"><div class="wr-mirror" data-draft-marks aria-hidden="true" lang="${language}"></div><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea></div><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><span class="wr-pane-label">${esc(r.writingTabReview)}</span><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
      screens take them one frame at a time, and the learner is placed at the
      start of the result frame instead of halfway down the page. */
-  const { showResult } = workspaceFrames(
+  const { showResult, showActivity } = workspaceFrames(
     root.querySelector('.learning-workspace'),
     {
       back: root.querySelector('[data-back-to-writing]'),
@@ -130,6 +205,120 @@ export async function renderExpression(root, ctx) {
       result: root.querySelector('#writingFeedback'),
     },
   );
+  const workspace = root.querySelector('.writing-workspace');
+  /* The revision compare takes the whole room (three columns, as the frame draws it); going back to the
+     draft gives the room back to the two panes. */
+  /* Whether a version has one before it to be read against, and which of the two views is up. */
+  const topBar = root.querySelector('.wr-top');
+  let hasCompare = false;
+  const setCompare = (on) => {
+    workspace.dataset.compare = on ? 'on' : 'off';
+    topBar.dataset.compare = hasCompare ? workspace.dataset.compare : 'none';
+    paintGo();
+  };
+  topBar.dataset.compare = 'none';
+  const toActivity = () => {
+    setCompare(false);
+    showActivity();
+    fitDraft();
+  };
+  workspace.querySelector('[data-wr-tab="activity"]').onclick = toActivity;
+  workspace.querySelector('[data-wr-tab="result"]').onclick = showResult;
+  /* Which words the review on screen was written about.
+
+     A learner who edits after a review still wants to see it - it is the last
+     thing anybody said about their writing - but it stops being *current* the
+     moment the words change. So the text it answered is remembered, and the
+     room says plainly whose version it belongs to rather than deleting it or
+     letting it pass for an answer about what is now in the box. */
+  let reviewedText = null;
+  const writingMenu = bindLearningToolbar(root.querySelector('.wr-menu .learning-toolbar'), {
+    onAction: (name) => {
+      if (name === 'seeReview') {
+        setCompare(false);
+        return showResult();
+      }
+      if (name === 'seeCompare') {
+        setCompare(true);
+        return showResult();
+      }
+      if (name === 'registers')
+        return openRegisters(ctx, { text: root.querySelector('textarea').value, title });
+      if (name === 'history')
+        root
+          .querySelector('[data-revisions]')
+          ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    },
+  });
+  /* One compact line beside the action, never a pane. A provider that is not
+     configured changes nothing about the writing, so it takes one row to say
+     so and the workspace stays the workspace. */
+  const trouble = root.querySelector('[data-writing-trouble]');
+  /* Say whether the review on screen is still about what is in the box.
+
+     Called whenever the words change and whenever a review arrives. It never
+     removes the feedback: a learner mid-revision is looking at it precisely
+     because they are acting on it, and taking it away the moment they type
+     would be taking away the reason they were typing. It stops being current,
+     visibly, and says how to make it current again. */
+  function markReviewFreshness() {
+    const stale = reviewedText !== null && reviewedText !== box.value;
+    workspace.dataset.reviewStale = String(stale);
+    paintGo();
+    paintMarks();
+    // A distinct name from the workspace's own flag above: one selector that
+    // matched both would have hidden the whole workspace, and only the grid's
+    // own `display` kept that from showing.
+    const note = root.querySelector('[data-review-stale-note]');
+    if (note) note.hidden = !stale;
+  }
+  /* The top bar's one primary action follows the room, as the frame draws it: Review while there is
+     nothing current to read, "Revise" once there is (it takes the learner back to the draft). */
+  const go = root.querySelector('[data-review-action]');
+  function paintGo() {
+    const fresh = workspace.dataset.review === 'ready' && workspace.dataset.reviewStale !== 'true';
+    const mode = fresh && workspace.dataset.compare === 'on' ? 'done' : fresh ? 'revise' : 'review';
+    go.dataset.mode = mode;
+    topBar.dataset.mode = mode;
+    const shown = { done: ['check', c.writingDone], revise: ['pencil-simple', c.revision] }[mode] || ['sparkle', workspace.dataset.review === 'ready' ? c.reviewAgain : c.reviewAction];
+    go.innerHTML = `${icon(shown[0], { size: 18 })}<span>${esc(shown[1])}</span>`;
+  }
+  root.querySelector('[data-revise-more]').onclick = () => {
+    toActivity();
+    root.querySelector('textarea').focus();
+  };
+  go.onclick = (event) => {
+    if (go.dataset.mode === 'done') {
+      event.preventDefault();
+      location.hash = link('writing');
+      return;
+    }
+    if (go.dataset.mode !== 'revise') return;
+    event.preventDefault();
+    toActivity();
+    root.querySelector('textarea').focus();
+  };
+  /* The review's findings, marked in the draft, and the box fitted to its words so the pane - not the box -
+     is what scrolls. */
+  const marks = root.querySelector('[data-draft-marks]');
+  let appliedNow = () => new Set();
+  function paintMarks() {
+    const on = workspace.dataset.review === 'ready' && reviewIssues.length > 0;
+    marks.innerHTML = on ? markedHtml(box.value, issueMarks(reviewIssues.filter((issue) => !appliedNow().has(issue.id)))) : '';
+    fitDraft();
+  }
+  // A pane that is not on screen (a phone shows one at a time) has no height to measure: it is fitted when it appears.
+  function fitDraft() {
+    box.style.blockSize = '';
+    if (workspace.dataset.review === 'waiting' || !box.offsetParent) return;
+    box.style.blockSize = 'auto';
+    box.style.blockSize = `${box.scrollHeight}px`;
+  }
+  let reviewIssues = [];
+  const sayTrouble = (html) => {
+    trouble.innerHTML = html || '';
+    trouble.hidden = !html;
+  };
   const paintRevisions = () => {
     const list = revisionsOf();
     const host = root.querySelector('[data-revisions]');
@@ -166,54 +355,98 @@ export async function renderExpression(root, ctx) {
      sentences long. It appears only as the draft nears the limit the box
      enforces, which is when the number starts to decide something. */
   const LIMIT = 12000;
+  const words = new Intl.Segmenter(language, { granularity: 'word' });
   const updateCount = () => {
-    const length = [...root.querySelector('textarea').value].length;
+    const value = root.querySelector('textarea').value;
+    const length = [...value].length;
+    const n = [...words.segment(value)].filter((part) => part.isWordLike).length;
+    root.querySelector('[data-word-count]').textContent = `${n} ${r.writingWords}`;
     root.querySelector('[data-character-count]').textContent =
       length >= LIMIT * 0.9 ? `${length} / ${LIMIT} ${c.draftCount}` : '';
   };
   updateCount();
   paintRevisions();
-  const presentReview = (result, text) => {
+  /* The review in the baseline's shape: the version beside the one before it when
+     there is one, then the findings, each of which opens as a sheet and can be
+     applied to the draft. Both come from the contract endpoints, so what is
+     shown is what the evaluator said and nothing else. */
+  let feedbackBinding = null;
+  const presentReview = async (result, text) => {
     const feedback = root.querySelector('#writingFeedback');
-    // Only show a finding whose wording is genuinely in what the learner
-    // wrote, so a struck-through phrase is always one of their own.
-    const corrections = shownIssues(result, text);
-    feedback.innerHTML = writingReview(c, result, { language, text });
-    bindRevisionWorkbench(feedback,ctx,{issues:corrections,reviewedText:text,draft:root.querySelector('#expressionText'),id,title});
-    feedback.querySelector('[data-revise]').onclick = () =>
-      root.querySelector('textarea').focus();
-    feedback.querySelector('[data-registers]').onclick = () =>
-      openRegisters(ctx, { text, title });
-    // "Why?" opens the same explanation surface reading and listening use,
-    // with the learner's own sentence as the context it reasons about.
-    feedback.querySelectorAll('[data-why]').forEach((button) => {
-      button.onclick = () => {
-        const issue = corrections[Number(button.dataset.why)];
-        if (!issue) return;
-        const sentence =
-          text
-            .split(/(?<=[.!?。！？])\s+/)
-            .find((part) => part.includes(issue.quote)) || text;
-        openUnderstanding(ctx, {
-          selection: issue.quote,
-          context: sentence.slice(0, 2400),
-          title,
-          question: c.askWhy,
-          origin: { id, where: title, why: 'from_writing' },
-        });
-      };
+    feedbackBinding?.destroy();
+    feedbackBinding = null;
+    feedback.innerHTML = `<div class="wf" role="status" aria-label="${esc(c.quickThinking)}"><p class="qs-skeleton"><span></span></p></div>`;
+    workspace.dataset.review = 'ready';
+    let review;
+    let compare = null;
+    try {
+      review = await api.essayReview(result.id);
+      if ((result.revision_no || 1) > 1) compare = await api.essayRevision(result.id).catch(() => null);
+    } catch (error) {
+      if (!alive()) return;
+      feedback.innerHTML = writingReviewWaiting(c);
+      sayTrouble(writingReviewFailure(c, error));
+      const retry = trouble.querySelector('[data-retry-review]');
+      if (retry) retry.onclick = () => presentReview(result, text);
+      return;
+    }
+    if (!alive()) return;
+    hasCompare = Boolean(compare);
+    setCompare(hasCompare);
+    feedback.innerHTML = `${compare ? revisionHtml(c, compare, { language }) : ''}<div data-wf-review></div>`;
+    reviewIssues = review.issues || [];
+    feedbackBinding = bindWritingFeedback({
+      ctx,
+      host: feedback.querySelector('[data-wf-review]'),
+      review,
+      draft: root.querySelector('#expressionText'),
+      language,
+      alive,
+      onApplied: () => paintMarks(),
     });
+    appliedNow = feedbackBinding.applied;
+    reviewedText = text;
+    markReviewFreshness();
+    sayTrouble('');
   };
-  // Reopened, the latest review is already there: the piece comes back with
-  // what was said about it, not as a blank result frame.
-  if (series?.latest && Array.isArray(series.latest.issues))
-    presentReview(series.latest, String(series.latest.text || ''));
+  /* Reopened, the latest review is already there: the piece comes back with
+     what was said about it, not as a blank result frame - and without asking a
+     provider for anything, because it was already paid for once.
+
+     Whether it is *this* learner's review is the server's answer, not a guess:
+     every stored evaluation now carries the identity it was produced under
+     (`writing_coach/writing_review_identity.py`), including the support
+     language. A device-side record could only vouch for reviews this device
+     made; the identity travels with the evaluation, so a review earned on
+     another device is recognised here too - and a Vietnamese one is never
+     replayed to a learner now reading Chinese. */
+  const reviewSpeaksTo = (essay) => {
+    const identity = essay?.module_data?.review;
+    if (!identity) return false;
+    return (
+      String(identity.support_language || '') === String(ctx.support || '') &&
+      String(identity.learning_language || '').split('-')[0] === String(language).split('-')[0]
+    );
+  };
   /* Kept with the account when this deployment keeps work there; on this
      device always. The status says which is true, and a version changed on
      another device is shown for the learner to choose, never merged. */
   const box = root.querySelector('#expressionText');
+  // It goes with the page: a width that changes (the window, or the pane appearing) fits the box again.
+  let fittedWidth = 0;
+  new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width === fittedWidth) return;
+    fittedWidth = entry.contentRect.width;
+    fitDraft();
+  }).observe(box.parentElement);
   const taskInput = root.querySelector('[name=task]');
   const elsewhereNode = root.querySelector('[data-draft-elsewhere]');
+  // The piece comes back with what was said about it. Nothing is asked of a
+  // provider to do this: the evaluation was stored with the essay.
+  if (lastReview && Array.isArray(lastReview.issues) && reviewSpeaksTo(lastReview))
+    presentReview(lastReview, String(lastReview.text || ''));
+  root.querySelector('[data-review-again]').onclick = () =>
+    root.querySelector('form').requestSubmit();
   // The draft is the words and the task they answer, always together.
   function draftNow() {
     return { text: box.value, task: taskInput.value };
@@ -224,6 +457,8 @@ export async function renderExpression(root, ctx) {
     memory.write(id, draft.text);
     memory.write(`${id}::task`, draft.task);
     updateCount();
+    // The account's copy may be a version the review on screen predates.
+    markReviewFreshness();
   };
   const sync = draftSync({
     api,
@@ -271,22 +506,54 @@ export async function renderExpression(root, ctx) {
     memory.write(`${id}::task`, taskInput.value);
     sync.edit(draftNow());
   });
+  /* A paste that does not fit is refused before it is inserted.
+
+     The order matters: a learner who drops a whole document into the box
+     should be told so, not watched while the page lays out a megabyte and the
+     network carries it to a server that was always going to refuse it. The
+     edit is measured as it would leave the box, so what is judged is the
+     result - and when it does not fit, nothing is inserted and nothing the
+     learner already wrote is touched. Never truncated: keeping the first
+     twelve thousand characters of somebody's document is a worse answer than
+     saying it will not fit. */
+  box.addEventListener('paste', (event) => {
+    const incoming = event.clipboardData?.getData('text') ?? '';
+    if (!incoming) return;
+    const measured = editWouldFit(box.value, incoming, box.selectionStart, box.selectionEnd);
+    if (measured.withinLimits) return;
+    event.preventDefault();
+    sayTrouble(`<span>${esc(c.writingTooLongPaste)}</span>`);
+  });
   box.oninput = (event) => {
+    /* The box's own maxlength stops typing past the bound, and a paste is
+       stopped above. This is the last line: any other way text arrives - a
+       drop, an extension, a script - is measured here, and an over-long value
+       is rolled back rather than saved or sent. */
+    const measured = measureWriting(event.target.value);
+    if (!measured.withinLimits) {
+      event.target.value = memory.value.expressions[id] || '';
+      updateCount();
+      sayTrouble(`<span>${esc(c.writingTooLong)}</span>`);
+      return;
+    }
     memory.write(id, event.target.value);
     memory.enter({ id, title, intent: 'writing', excerpt });
     refreshDraftStatus(root.querySelector('[data-draft-status]'), ctx);
     sync.edit(draftNow());
     updateCount();
+    markReviewFreshness();
   };
   root.querySelector('form').onsubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     // The primary action by role: a hint beside the draft status is also a
     // button inside this form and must never be the one that gets disabled.
-    const button = form.querySelector('button.primary'),
+    const button = root.querySelector('[data-review-action]'),
       feedback = root.querySelector('#writingFeedback');
     button.disabled = true;
-    feedback.textContent = c.loading;
+    sayTrouble('');
+    workspace.dataset.review = 'working';
+    feedback.innerHTML = `<p class="review-working" role="status">${esc(c.reviewWorking)}</p>`;
     /* The result is the point of pressing Review, so its frame opens at once -
        loading, feedback or an honest failure - instead of leaving the learner
        to discover it below the writing area. */
@@ -299,20 +566,41 @@ export async function renderExpression(root, ctx) {
          has always accepted a task; nothing asked the learner for one. */
       const task = root.querySelector('[name=task]').value.trim();
       if (task) memory.write(`${id}::task`, task);
-      const result = await ctx.mutate(() =>
-        api.evaluate({
-          prompt: [
-            source ? `${title}\n${c.responsePrompt}` : c.freeTitle,
-            task && `${c.writingTask} ${task}`,
-          ]
-            .filter(Boolean)
-            .join('\n'),
-          text,
-          target_cefr: root.querySelector('[name=target]').value || null,
-          learning_language: language,
-          parent_essay_id: parentId,
-        }),
-      );
+      const ask = (parent) =>
+        ctx.mutate(() =>
+          api.evaluate({
+            prompt: [
+              source ? `${title}\n${c.responsePrompt}` : c.freeTitle,
+              task && `${c.writingTask} ${task}`,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            text,
+            target_cefr: targetLevel,
+            learning_language: language,
+            parent_essay_id: parent,
+          }),
+        );
+      /* This device remembers which server version this piece continues, and
+         the server is the one that knows whether that version still exists in
+         this learning scope. When it does not - a reset sandbox, a piece begun
+         under another learning language - the request came back refused and
+         explicitly not retryable, and the learner was told their writing could
+         not be reviewed. Permanently: nothing on the page could clear a number
+         they cannot see.
+
+         A parent the server does not recognise is a stale device record, not a
+         reason to refuse a learner their review. It is dropped and the piece
+         starts a series again, which costs the comparison with the previous
+         version and nothing else. */
+      let result;
+      try {
+        result = await ask(parentId);
+      } catch (error) {
+        if (!parentId || error?.category !== 'parent_essay_not_found') throw error;
+        parentId = null;
+        result = await ask(null);
+      }
       if (!alive()) return;
       parentId = result.id;
       memory.recordRevision(id, {
@@ -323,17 +611,30 @@ export async function renderExpression(root, ctx) {
           : null,
         overall: Number.isFinite(result.overall) ? result.overall : null,
         level: typeof result.app_cefr === 'string' ? result.app_cefr : '',
+        support: ctx.support,
       });
       paintRevisions();
       presentReview(result, text);
     } catch (error) {
       if (alive()) {
-        feedback.innerHTML = writingReviewFailure(c, error);
-        const retry = feedback.querySelector('[data-retry-review]');
+        /* A review that did not arrive is news about the review, not about the
+           writing. It is said in one line beside the action that asked for it,
+           and the learner is put back on their page with their draft intact -
+           rather than left in a result frame holding a single sentence. */
+        workspace.dataset.review = 'waiting';
+        feedback.innerHTML = excerpt
+          ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote></aside>`
+          : writingReviewWaiting(c);
+        sayTrouble(writingReviewFailure(c, error));
+        showActivity();
+        const retry = trouble.querySelector('[data-retry-review]');
         if (retry) retry.onclick = () => form.requestSubmit();
       }
     } finally {
-      if (alive()) button.disabled = false;
+      if (alive()) {
+        button.disabled = false;
+        paintGo();
+      }
     }
   };
 }
@@ -361,11 +662,14 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   (Array.isArray(item.detailed_definitions) ? item.detailed_definitions : []).forEach(appendMeaning);
   const kind = String(item.source_kind || '').trim();
   const fragment = String(item.source_fragment || '').trim();
+  // Where this came from, as the learner would name it: the piece's own title,
+  // which the saved record already carries.
+  const where = String(item.focus_note || '').trim();
   const card = {
     identity: { language, normalized: String(item.normalized_term || item.normalized_word || item.word || '').toLowerCase() },
     headword: item.word,
     meanings,
-    source_encounters: kind && fragment ? [{ kind, fragment }] : [],
+    source_encounters: kind && fragment ? [{ kind, fragment, where }] : [],
   };
   const pronunciation = String(item.phonetic || item.pronunciation || item.pronunciations?.[0]?.text || item.readings?.[0]?.text || '').trim();
   if (pronunciation && pinyinAllowed) card.pronunciation = pronunciation;
@@ -379,13 +683,28 @@ function vocabularyCardFromLibraryItem(item, language, { pinyinAllowed }) {
   if (item.orthography) card.orthography = item.orthography;
   return card;
 }
+/* Recall: one item at a time, over the language the learner kept.
+
+   It reads the same saved-language contract My Language does and grades
+   through the same scheduler - there is no second store and no second
+   algorithm here, only the review loop over what is already due.
+
+   Three stages, because a review session has three questions. What is waiting
+   (the landing, which says how much rather than dropping the learner into item
+   one with no idea of the size of it). Then one item, until the queue empties.
+   Then what actually happened - reviewed, still due - with no score, no
+   streak and no mastery invented for the occasion. */
 async function renderRecallLanguage(root, ctx) {
   const { api, c, language, alive, memory } = ctx;
-  const data = await api.libraryVocabulary();
+  /* The queue is what is due, asked for as what is due and in that order. A
+     learner with ten thousand saved words reviews the same handful today as a
+     learner with fifty, so the room reads a page of them, not a library. */
+  const data = await api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE });
   if (!alive()) return;
   let items = data.items || [],
-    recalling = ctx.location.intent === 'recall',
-    revealed = false;
+    revealed = false,
+    reviewed = 0,
+    stage = 'landing';
   function paint(moveFocus = false) {
     if (!alive()) return;
     const due = items.filter((x) => x.due),
@@ -403,52 +722,111 @@ async function renderRecallLanguage(root, ctx) {
       gap.segments
         .map((part) => esc(part))
         .join(`<b>${marker}</b>`);
-    root.innerHTML = `${recalling ? practiceReturn(c, 'recall') : ''}${pageIntro({ title: recalling ? c.recallTitle : c.wordsTitle, note: recalling ? c.recallTruth : c.wordsIntro, eyebrow: recalling ? c.recallName : c.language, scene: recalling ? undefined : 'remembering', compact: recalling })}${items.length ? `<div class="language-summary"><span>${due.length} ${c.due}</span>${due.length && !recalling ? `<button class="primary" data-recall>${c.recallName} →</button>` : ''}</div>` : ''}${recalling ? (current ? `<section class="recall-moment" data-shape="${shape}"><small>${esc(c[`recallAsk_${shape}`])}</small>${
-                shape === 'in_context' && gap
-                  ? `<blockquote class="recall-gap" lang="${language}">${withheld(revealed ? esc(current.word) : '&nbsp;'.repeat(3))}</blockquote>`
-                  : `<h2 lang="${language}">${revealed || shape !== 'say' ? esc(current.word) : '···'}</h2>${current.phonetic && revealed && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<p class="pinyin">${esc(current.phonetic)}</p>` : ''}${shape === 'say' && !revealed ? `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>` : ''}${shape !== 'in_context' && current.source_fragment ? `<blockquote class="${gap && !revealed ? 'recall-gap' : ''}" lang="${language}">${gap && !revealed ? withheld('&nbsp;'.repeat(3)) : esc(current.source_fragment)}</blockquote>` : ''}`
-              }${
-                revealed
-                  ? `${shape === 'say' ? '' : `<p lang="${esc(ctx.support)}">${esc(current.definition || current.translation_vi || '')}</p>`}${keptProvenance(c, keptNow)}${shape === 'reuse' ? `<a class="outline" href="${link('expression')}">${esc(c.recallUseInWriting)} ↗</a>` : ''}<div class="button-row"><button class="outline" data-grade="again">${c.again}</button><button class="primary" data-grade="got_it">${c.gotIt}</button></div><p class="meta">${c.recallTruth}</p>`
-                  : `<button class="primary" data-reveal>${esc(c[`recallReveal_${shape}`])} →</button>`
-              }<p role="status" data-recall-status></p></section>` : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`) : items.length ? `<section class="word-collection language-cabinet">${items
-              .map((x) => {
-                const pinyinAllowed = language !== 'zh' || ctx.profile.pinyin !== 'off';
-                const card = vocabularyCardFromLibraryItem(x, language, { pinyinAllowed });
-                return renderVocabularyCard(c, card, {
-                  before: keptProvenance(c, memory.value.keptLanguage?.[x.word]) || `<small>${esc(x.focus_note || c.sourceContext)}</small>`,
-                  after: x.source_fragment ? `<button class="quiet" data-word-explain="${esc(x.word)}">${esc(c.lookCloser)} ↗</button>` : '',
-                });
-              })
-              .join('')}</section>` : `<section class="empty">${scene('empty', { size: 'medium' })}<h2>${c.noWords}</h2><p>${c.noWordsNote}</p><a class="primary" href="#/">${c.discover} ↗</a></section>`}`;
-    /* A kept word already carries the sentence it came from, which is exactly
-       the context the shared explanation needs. Without this, the collection
-       is a list to reread rather than something a learner can question - the
-       same gap Grammar had. */
-    root.querySelectorAll('[data-word-explain]').forEach((button) => {
-      button.onclick = () => {
-        const entry = items.find((x) => x.word === button.dataset.wordExplain);
-        if (!entry?.source_fragment) return;
-        const kept = memory.value.keptLanguage?.[entry.word];
-        openUnderstanding(ctx, {
-          selection: entry.word,
-          context: entry.source_fragment.slice(0, 2400),
-          title: entry.focus_note || c.sourceContext,
-          question: c.askWhy,
-          // Asking again about a word already kept must not lose where it came
-          // from, so its own provenance rides along unchanged.
-          origin: kept
-            ? { id: kept.origin, where: kept.where, why: kept.why }
-            : null,
-        });
-      };
-    });
-    root.querySelector('[data-recall]')?.addEventListener('click', () => {
-      recalling = true;
-      paint(true);
-    });
-    root.querySelector('[data-reveal]')?.addEventListener('click', () => {
-      revealed = true;
+    /* The approved review session: what is due and how far through it the
+       learner is, the word itself, and - once they have committed - how well
+       they knew it. The scheduler accepts two answers, so Hard and Easy keep
+       their place in the approved panel and say they are not available yet
+       (GAP-019); no interval is printed, because nothing previews one. */
+    const r = referenceCopy[ctx.ui] || referenceCopy.en;
+    const passed = Math.min(reviewed, reviewed + due.length);
+    const total = reviewed + due.length;
+
+    /* The bar the source draws over the card: the way back, one segment per
+       card in this sitting, and how far through it the learner is. */
+    const rail = `<div class="vocab-review__rail" aria-hidden="true">${Array.from(
+      { length: Math.min(total, 12) },
+      (_, position) => `<span class="vocab-review__step"${position < passed ? ' data-tone="done"' : ''}></span>`,
+    ).join('')}</div>`;
+
+    /* Three diamonds for how well this word is held, from the same review
+       stage every other surface counts. */
+    const mastery = (item) => {
+      const held = Math.max(0, Math.min(3, Math.round((Number(item.review_stage) || 0) * 3 / 4)));
+      return `<span class="vocab-card__mastery" aria-hidden="true">${
+        [0, 1, 2].map((index) => `<span class="vocab-card__gem"${index < held ? ' data-earned="true"' : ''}></span>`).join('')
+      }</span>`;
+    };
+
+    /* What each grade will do, taken from the scheduler that will do it - the
+       card carries its own intervals, so nothing here is a written-in number
+       (D-066 rule 4). */
+    const when = (plan) => {
+      if (!plan) return '';
+      if (plan.minutes) return `${plan.minutes}m`;
+      if (plan.days) return `${plan.days}d`;
+      return '';
+    };
+    const grade = (key, label, tone) => {
+      const plan = current?.schedule?.[key];
+      return `<button type="button" class="vocab-grade" data-tone="${tone}" data-grade="${key}">`
+        + `<span class="vocab-grade__label">${esc(label)}</span>`
+        + `<span class="vocab-grade__when ds-data">${esc(when(plan))}</span>`
+        + `</button>`;
+    };
+    const grades = `<div class="vocab-grades">`
+      + grade('again', r.vocabGradeAgain, 'again')
+      + grade('unsure', r.vocabGradeUnsure, 'unsure')
+      + grade('got_it', r.vocabGradeGotIt, 'got')
+      + `</div>`;
+
+    /* The card itself. Opened, it carries the word, its reading, the meaning
+       and the sentence it was met in; closed, the word alone and the way in.
+       The question the learner is asked still depends on how the word entered
+       their life - the product's rule, which this composition keeps. */
+    const front = shape === 'in_context' && gap
+      ? `<blockquote class="vocab-card__context" lang="${language}">${withheld('&nbsp;'.repeat(3))}</blockquote>`
+      : `<span class="vocab-card__word" lang="${language}">${esc(shape === 'say' ? '···' : current?.word || '')}</span>`
+        + (shape === 'say' ? `<span class="vocab-card__meaning" lang="${esc(ctx.support)}">${esc(current?.definition || current?.translation_vi || '')}</span>` : '');
+    const back = `<span class="vocab-card__word" lang="${language}">${esc(current?.word || '')}</span>`
+      + (current?.phonetic && (language !== 'zh' || ctx.profile.pinyin !== 'off')
+        ? `<span class="vocab-card__reading ds-data">${esc(current.phonetic)}</span>`
+        : '')
+      + `<span class="vocab-card__rule" aria-hidden="true"></span>`
+      + `<span class="vocab-card__meaning" lang="${esc(ctx.support)}">${esc(current?.definition || current?.translation_vi || '')}</span>`
+      + (current?.source_fragment
+        ? `<span class="vocab-card__example" lang="${language}">${esc(current.source_fragment)}</span>`
+        : '')
+      /* Where the word was met, said after the learner has committed and not
+         before - the product's rule about a kept word keeping its source. The
+         frame draws the sentence but not its title; this line is the
+         difference, recorded in UI_BACKEND_GAPS.md. */
+      + (current?.focus_note ? `<span class="recall-where">${esc(current.focus_note)}</span>` : '');
+    const card = current
+      ? `<section class="vocab-review">`
+        + `<header class="vocab-review__bar">`
+        + `<a class="vocab-review__back" href="${esc(link('language'))}" aria-label="${esc(c.back)}">${icon('caret-left', { size: 22 })}</a>`
+        + rail
+        + `<span class="vocab-review__count ds-data">${esc(passed)} / ${esc(total)}</span>`
+        + `</header>`
+        + `<div class="vocab-review__stage">`
+        + `<button type="button" class="vocab-card" data-flip aria-pressed="${revealed}" data-state="${revealed ? 'open' : 'closed'}" data-shape="${shape}">`
+        + mastery(current)
+        + `<span class="vocab-card__body"><small class="vocab-card__ask">${esc(c[`recallAsk_${shape}`])}</small>${revealed ? back : front}</span>`
+        + `<span class="vocab-card__flip">${esc(revealed ? r.vocabFlipBack : r.vocabFlipOpen)}</span>`
+        + `</button>`
+        + (revealed ? grades : `<p class="vocab-review__hint">${esc(r.vocabGradesAfterOpen)}</p>`)
+        + `<p role="status" data-recall-status></p>`
+        + `</div>`
+        + `</section>`
+      : '';
+    /* What is waiting, before the first card. The source opens straight on the
+       card; this step is the product's, and it is kept because a learner
+       dropped into card one has no idea whether this is three words or thirty
+       (pinned by test_orena_language_and_recall.mjs). Recorded for the human
+       in UI_BACKEND_GAPS.md as a difference from the frame. */
+    const landing = due.length
+      ? `<section class="recall-landing"><small>${esc(c.vocabularyDueState)}</small><h2>${due.length} ${esc(c.vocabularyWordCount)}</h2><p>${esc(due.slice(0, 3).map((x) => x.word).join(' · '))}${due.length > 3 ? ' …' : ''}</p><button class="primary" data-recall-start>${esc(c.recallName)} →</button></section>`
+      : `<section class="empty">${scene('completion', { size: 'medium' })}<h2>${c.allDone}</h2><p>${esc(c.allDoneNote)}</p><a class="outline" href="${link('language')}">${c.language} →</a></section>${continuationShelf(ctx, 3)}`;
+    const done = `<section class="empty recall-done">${scene('completion', { size: 'medium' })}<h2>${esc(c.allDone)}</h2><p>${reviewed} ${esc(c.vocabularyWordCount)}${due.length ? ` · ${due.length} ${esc(c.vocabularyDueState)}` : ''}</p><p class="meta">${esc(c.allDoneNote)}</p><div class="button-row">${due.length ? `<button class="primary" data-recall-start>${esc(c.vocabularyContinueReview)} →</button>` : ''}<a class="outline" href="${link('language')}">${c.language} →</a></div></section>`;
+    const reviewing = stage !== 'landing' && current;
+    /* While a card is up the screen is the card: its own caret is the way
+       back, so the room's return link and the page intro stay out of it. */
+    root.innerHTML = `${reviewing ? '' : practiceReturn(c, 'recall')}${
+      reviewing ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
+    }${stage === 'landing' ? landing : current ? card : done}`;
+    root.querySelector('[data-recall-start]')?.addEventListener('click', () => {
+      stage = 'card';
+      revealed = false;
       paint(true);
     });
     root.querySelectorAll('[data-grade]').forEach(
@@ -482,10 +860,11 @@ async function renderRecallLanguage(root, ctx) {
           // retry fetch the list again instead of re-submitting the grade.
           const refresh = async () => {
             try {
-              const updated = await api.libraryVocabulary();
+              const updated = await api.libraryVocabulary({ status: 'due', order: 'due', limit: RECALL_QUEUE });
               if (!alive()) return;
               items = updated.items || [];
               revealed = false;
+              reviewed += 1;
               paint(true);
               status(c.persisted);
             } catch {
@@ -495,8 +874,12 @@ async function renderRecallLanguage(root, ctx) {
           await refresh();
         }),
     );
+    root.querySelector('[data-flip]')?.addEventListener('click', () => {
+      revealed = !revealed;
+      paint(true);
+    });
     if (moveFocus)
-      focusRegion(root.querySelector('.recall-moment h2, .empty h2'));
+      focusRegion(root.querySelector('.vocab-card, .empty h2'));
   }
   paint();
 }
@@ -509,6 +892,7 @@ function vocabularyCopy(c, supportLanguage) {
     study: c.vocabularyStudy,
     open: c.vocabularyOpen,
     flip: c.vocabularyFlip,
+    know: (referenceCopy[supportLanguage] || referenceCopy.en).vocabKnow,
     front: c.vocabularyRecall,
     back: c.vocabularyLearn,
     vocabularyFeedSoundOn: c.vocabularyFeedSoundOn,
@@ -552,9 +936,8 @@ function vocabularyLevelOrder(level) {
   return { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 }[normalized] || 0;
 }
 
-export function vocabularyInteractionItems(view, { feedCards = [], visibleItems = [], savedCards = [], studyItems = [] } = {}) {
-  if (view === 'feed') return feedCards;
-  if (view === 'collection') return visibleItems;
+export function vocabularyInteractionItems(view, { visibleItems = [], savedCards = [], studyItems = [] } = {}) {
+  if (view === 'collection' || view === 'collection-list') return visibleItems;
   if (view === 'saved' || view === 'overview') return savedCards;
   if (view === 'study') return studyItems;
   return [];
@@ -566,18 +949,15 @@ export async function renderLanguage(root, ctx) {
   const copy = vocabularyCopy(c, support);
   const pinyinAllowed = language !== 'zh' || ctx.profile.pinyin !== 'off';
   const results = await Promise.allSettled([
-    api.libraryVocabulary(),
+    api.libraryVocabulary({ limit: SAVED_PAGE, order: 'recent' }),
     api.vocabularyLibraryCollections(language),
-    api.dailyVocabularyFeed(language),
   ]);
   if (!alive()) return;
 
   let savedData = results[0].status === 'fulfilled' ? results[0].value : { items: [], summary: {} };
   let collections = results[1].status === 'fulfilled' ? results[1].value.items || [] : [];
-  let feedCards = results[2].status === 'fulfilled' ? results[2].value.items || [] : [];
   const savedError = results[0].status === 'rejected';
   const collectionError = results[1].status === 'rejected';
-  const feedError = results[2].status === 'rejected';
   let savedCards = [];
   let view = 'overview';
   let returnView = 'overview';
@@ -590,8 +970,15 @@ export async function renderLanguage(root, ctx) {
   let filter = 'all';
   let levelFilter = 'all';
   let sort = 'recommended';
+  let notMastered = false;
   let collectionSearchTimer = null;
   let collectionRequest = 0;
+  /* Which chip the library is filtered by: 'all', 'published', or a
+     language code the catalogue actually holds. */
+  let packFilter = 'all';
+  let savedSearchTimer = null;
+  let savedRequest = 0;
+  let savedLoading = false;
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -599,6 +986,34 @@ export async function renderLanguage(root, ctx) {
     );
   };
   refreshSavedCards();
+
+  /* One page of saved words, asked for the way the toolbar is set. `append`
+     continues the page the learner is looking at; without it the page is
+     replaced, which is what a new search or filter means. */
+  async function loadSavedPage({ append = false } = {}) {
+    const token = (savedRequest += 1);
+    savedLoading = true;
+    try {
+      const page = await api.libraryVocabulary({
+        limit: SAVED_PAGE,
+        cursor: append ? savedData.next_cursor || '' : '',
+        query,
+        status: SAVED_STATUS[filter] || '',
+        order: SAVED_ORDER[sort] || 'recent',
+      });
+      if (!alive() || token !== savedRequest) return;
+      savedData = append
+        ? { ...page, items: [...(savedData.items || []), ...(page.items || [])] }
+        : page;
+      refreshSavedCards();
+      if (view === 'saved') activeItems = savedCards;
+    } catch {
+      if (!alive() || token !== savedRequest) return;
+    } finally {
+      if (token === savedRequest) savedLoading = false;
+    }
+    if (alive() && token === savedRequest) paint();
+  }
 
   const summary = () => savedData.summary || {
     saved: savedCards.length,
@@ -608,27 +1023,110 @@ export async function renderLanguage(root, ctx) {
   };
   const stateCount = (key) => Number(summary()[key] || 0);
   const cardByWord = (word) => savedCards.find((item) => item.headword.toLowerCase() === String(word).toLowerCase());
-  const statusSummary = `<div class="vocabulary-summary-metrics"><div><strong>${stateCount('saved')}</strong><span>${esc(c.vocabularySavedCount)}</span></div><div><strong>${stateCount('learning')}</strong><span>${esc(c.vocabularyLearningCount)}</span></div><div class="is-due"><strong>${stateCount('due')}</strong><span>${esc(c.vocabularyDueCount)}</span></div><div><strong>${stateCount('mastered')}</strong><span>${esc(c.vocabularyMasteredCount)}</span></div></div>`;
+  /* How much a learner has kept, said once and quietly.
+
+     This was four large tiles - saved, learning, due, mastered - and it opened
+     the room, so the first thing My Language said about somebody's language
+     was a count of it. The numbers are real and worth having; they are not
+     what the room is about. They sit as one line under the heading, and the
+     language itself takes the space. */
+  const statusSummary = `<p class="vocabulary-tally">${[
+    `${stateCount('saved')} ${esc(c.vocabularySavedCount)}`,
+    `${stateCount('learning')} ${esc(c.vocabularyLearningCount)}`,
+    `${stateCount('mastered')} ${esc(c.vocabularyMasteredCount)}`,
+  ].join(' · ')}</p>`;
 
   const updateCollectionCards = (items) => items.map((card) => {
     const saved = cardByWord(card.headword);
     return saved ? { ...card, saved: true, review_stage: saved.review_stage, due: saved.due, successful_recalls: saved.successful_recalls, lapse_count: saved.lapse_count } : card;
   });
 
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  /* --- Vocabulary, on its own frame (D-067, "Vocabulary library") --------
+     The room is the library: the filter chips, then a grid of collections -
+     a cover of 290x186 with its progress along the bottom, the name at 18/700
+     and one mono line saying what it is. Two rows of the learner's own follow
+     it, because the design has no screen for a learner's own set yet (its
+     matrix marks "My Content" INCOMPLETE) and their words must stay reachable;
+     that difference is recorded in UI_BACKEND_GAPS.md.
+
+     Nothing is manufactured: what is due appears only when something is, and
+     an empty catalogue says it is empty rather than drawing placeholder
+     covers. */
+  const collectionCover = (collection) => {
+    /* The frame's own cover material: a dotted field, a lit corner and a
+       diagonal fall, hue by collection so two packs never look alike. */
+    const hue = [...String(collection.id || collection.title || '')]
+      .reduce((total, letter) => (total * 31 + letter.charCodeAt(0)) % 360, 7);
+    const progress = Number(collection.progress?.learned_count || 0);
+    const total = Number(collection.item_count || 0);
+    const percent = total ? Math.max(0, Math.min(100, Math.round((progress / total) * 100))) : 0;
+    return `<span class="vocab-cover" style="--cover-hue:${hue}">${
+      percent ? `<span class="vocab-cover__progress"><span style="inline-size:${percent}%"></span></span>` : ''
+    }</span>`;
+  };
+
+  const collectionCard = (collection) => {
+    const total = Number(collection.item_count || 0);
+    const learned = Number(collection.progress?.learned_count || 0);
+    const percent = total ? Math.round((learned / total) * 100) : 0;
+    const line = [
+      String(collection.language_code || '').toUpperCase(),
+      total ? `${total.toLocaleString()} ${c.vocabularyWordCount}` : '',
+      percent ? `${percent}%` : '',
+    ].filter(Boolean).join(' · ');
+    return `<button type="button" class="vocab-pack" data-vocabulary-collection="${esc(collection.id)}">`
+      + collectionCover(collection)
+      + `<span class="vocab-pack__text"><span class="vocab-pack__name">${esc(collection.title)}</span>`
+      + `<span class="vocab-pack__line ds-data">${esc(line)}</span></span>`
+      + `</button>`;
+  };
+
   const overview = () => {
     const dueItems = savedCards.filter((item) => item.due);
-    const recent = [...savedCards].sort((a, b) => String(b.added_at || '').localeCompare(String(a.added_at || ''))).slice(0, 3);
-    const libraryBody = collectionError
-      ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="collections">${esc(c.retry)}</button></p>`
-      : collections.length
-        ? `<div class="vocabulary-collection-grid vocabulary-collection-grid--preview">${collections.slice(0, 3).map((collection, index) => renderVocabularyCollectionCard(copy, collection, { index })).join('')}</div>`
-        : `<div class="vocabulary-library-empty"><p class="meta">${esc(c.vocabularyLibraryEmpty)}</p></div>`;
-    const feedBody = feedError
-      ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>`
-      : feedCards.length
-        ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5 })
-        : `<div class="vocabulary-feed-empty"><p class="meta">${esc(c.vocabularyFeedEmpty)}</p></div>`;
-    return `${pageIntro({ title: c.vocabularyTitle, note: c.vocabularyOverviewNote, eyebrow: c.language, compact: true })}<section class="vocabulary-overview-hero"><div>${statusSummary}<div class="button-row">${dueItems.length ? `<button class="primary" data-vocabulary-continue>${esc(c.vocabularyContinueReview)} →</button>` : ''}<button class="outline" data-vocabulary-manage>${esc(c.vocabularyManage)}</button></div></div><div class="vocabulary-overview-callout"><small>${esc(c.vocabularyDueCount)}</small><strong>${dueItems.length ? esc(dueItems[0].headword) : esc(c.allDone)}</strong><p>${dueItems.length ? esc(compactSupportMeaning(dueItems[0], support)) : esc(c.allDoneNote)}</p></div></section><section class="vocabulary-dashboard"><section class="vocabulary-overview-section vocabulary-dashboard__library"><div class="section-head"><div><small>${esc(c.vocabularyLibraryTitle)}</small><h2>${esc(c.vocabularyAllWords)}</h2><p>${esc(c.vocabularyLibraryNote)}</p></div><button class="quiet" data-vocabulary-library>${esc(c.vocabularyOpenLibrary)} →</button></div>${libraryBody}</section><aside class="vocabulary-overview-section vocabulary-dashboard__feed"><div class="section-head"><div><small>${esc(c.vocabularyFeedTitle)}</small><h2>${esc(c.vocabularyOpenFeed)}</h2></div><button class="quiet" data-vocabulary-feed>${esc(c.vocabularyOpenFeed)} →</button></div>${feedBody}</aside></section>${recent.length ? `<section class="vocabulary-overview-section vocabulary-recent"><div class="section-head"><h2>${esc(c.vocabularyRecent)}</h2><button class="quiet" data-vocabulary-manage>${esc(c.vocabularyManage)} →</button></div><div class="vocabulary-row-list">${recent.map((card) => renderVocabularyRow(copy, card, { index: savedCards.indexOf(card) })).join('')}</div></section>` : ''}${savedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="saved">${esc(c.retry)}</button></p>` : ''}`;
+    const saved = stateCount('saved');
+    const mastered = stateCount('mastered');
+    const preview = dueItems
+      .slice(0, 3)
+      .map((item) => item.headword)
+      .join(' · ');
+
+    /* The chips the frame draws: everything, the published packs, then one per
+       language the catalogue actually holds. A chip for a language with no
+       collection would be a filter onto nothing. */
+    const languages = [...new Set(collections.map((item) => String(item.language_code || '').toLowerCase()).filter(Boolean))];
+    const chip = (id, label) =>
+      `<button type="button" class="vocab-chip" data-vocabulary-filter-pack="${esc(id)}" aria-pressed="${packFilter === id}">${esc(label)}</button>`;
+    const chips = `<div class="vocab-chips" role="group" aria-label="${esc(c.vocabularyLibraryTitle)}">`
+      + chip('all', c.vocabularyFilterAll)
+      + chip('published', r.vocabPacksReady)
+      + languages.map((code) => chip(code, code === 'zh' ? '中文' : code.toUpperCase())).join('')
+      + `</div>`;
+
+    const shown = collections.filter((item) => {
+      if (packFilter === 'all' || packFilter === 'published') return true;
+      return String(item.language_code || '').toLowerCase() === packFilter;
+    });
+
+    const packs = collectionError
+      ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="collections">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
+      : shown.length
+        ? `<div class="vocab-packs">${shown.map(collectionCard).join('')}</div>`
+        : `<div class="state-panel state-panel--empty">${icon('cards', { size: 22 })}<div><strong>${esc(c.vocabularyLibraryEmpty)}</strong></div></div>`;
+
+    /* The learner's own, under the catalogue: what is waiting, and the way to
+       everything they have kept. */
+    const due = dueItems.length
+      ? `<button type="button" class="vocab-own vocab-own--due" data-vocabulary-continue>${icon('cards', { size: 18, filled: true })}<span class="vocab-own__text"><span class="vocab-own__name">${esc(c.vocabularyContinueReview)}</span><span class="vocab-own__line ds-data">${esc(dueItems.length)} ${esc(c.vocabularyDueState)}${preview ? ` · ${esc(preview)}` : ''}${dueItems.length > 3 ? ' …' : ''}</span></span>${icon('caret-right', { size: 17 })}</button>`
+      : '';
+    const own = `<div class="vocab-own-rows">${due}`
+      + `<button type="button" class="vocab-own" data-vocabulary-manage>${icon('bookmark-simple', { size: 18 })}<span class="vocab-own__text"><span class="vocab-own__name">${esc(r.vocabSavedWords)}</span><span class="vocab-own__line ds-data">${esc(saved)} ${esc(c.vocabularySavedCount)} · ${esc(mastered)} ${esc(c.vocabularyMasteredCount)}</span></span>${icon('caret-right', { size: 17 })}</button>`
+      + (savedError
+        ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-vocabulary-retry="saved">${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
+        : '')
+      + `</div>`;
+
+    return `<section class="vocab-library"><h1 class="sr-only">${esc(c.vocabularyTitle)}</h1>${chips}${packs}${own}</section>`;
   };
 
   const libraryView = () => {
@@ -646,10 +1144,21 @@ export async function renderLanguage(root, ctx) {
       ? [...new Set((activeCollection?.levels || source.map((card) => vocabularyLevel(card))).filter(Boolean))].sort((left, right) => vocabularyLevelOrder(left) - vocabularyLevelOrder(right) || left.localeCompare(right))
       : [];
     const filtered = source.filter((card) => (levelFilter === 'all' || vocabularyLevel(card) === levelFilter) && vocabularyStatusMatches(card, filter) && `${card.headword} ${supportMeaning(card, support)} ${card.level || ''} ${card.framework || ''}`.toLowerCase().includes(query.toLowerCase()));
+    /* A level is not something the learner's database holds: it comes from the
+       curated catalogue and is attached when a word is read. So level cannot
+       be an order the server applies, and ordering the page that happens to be
+       loaded by it would tell the learner their whole vocabulary was sorted
+       when only part of it was. The option is therefore offered only when
+       everything the list claims to cover is actually here, and the sort falls
+       back to the one the server did apply until then. */
+    const complete = view === 'saved'
+      ? !savedData.has_more
+      : !activeCollection?.pagination?.has_more;
+    const applied = sort === 'level' && !complete ? 'recommended' : sort;
     visibleItems = [...filtered].sort((left, right) => {
-      if (sort === 'alpha') return String(left.headword).localeCompare(String(right.headword));
-      if (sort === 'level') return vocabularyLevelOrder(left.level) - vocabularyLevelOrder(right.level) || String(left.headword).localeCompare(String(right.headword));
-      if (sort === 'due') return Number(Boolean(right.due)) - Number(Boolean(left.due)) || String(left.headword).localeCompare(String(right.headword));
+      if (applied === 'alpha') return String(left.headword).localeCompare(String(right.headword));
+      if (applied === 'level') return vocabularyLevelOrder(left.level) - vocabularyLevelOrder(right.level) || String(left.headword).localeCompare(String(right.headword));
+      if (applied === 'due') return Number(Boolean(right.due)) - Number(Boolean(left.due)) || String(left.headword).localeCompare(String(right.headword));
       return 0;
     });
     const filterNames = ['all', 'new', 'learning', 'due', 'mastered', 'saved'];
@@ -658,7 +1167,9 @@ export async function renderLanguage(root, ctx) {
     const levelFilters = collectionLevels.length
       ? `<div class="vocabulary-level-filter" role="group" aria-label="${esc(c.vocabularyLevelFilter || c.vocabularyFilter)}"><span class="vocabulary-level-filter__label">${esc(c.vocabularyLevelFilter || c.vocabularyFilter)}</span><div class="vocabulary-filter-row">${[['all', c.vocabularyFilterAll], ...collectionLevels.map((level) => [level, level])].map(([name, label]) => `<button class="vocabulary-filter ${levelFilter === name ? 'is-active' : ''}" data-vocabulary-level-filter="${esc(name)}" aria-pressed="${levelFilter === name}">${esc(label)}</button>`).join('')}</div></div>`
       : '';
-    const sortOptions = [['recommended', c.vocabularySortRecommended], ['alpha', c.vocabularySortAlpha], ['level', c.vocabularySortLevel], ['due', c.vocabularySortDue]].map(([value, label]) => `<option value="${value}" ${sort === value ? 'selected' : ''}>${esc(label)}</option>`).join('');
+    const sortOptions = [['recommended', c.vocabularySortRecommended], ['alpha', c.vocabularySortAlpha], ['level', c.vocabularySortLevel], ['due', c.vocabularySortDue]]
+      .map(([value, label]) => `<option value="${value}"${value === 'level' && !complete ? ' disabled' : ''} ${applied === value ? 'selected' : ''}>${esc(label)}</option>`)
+      .join('');
     const results = visibleItems.length
       ? view === 'collection'
         ? `<section class="vocabulary-browse-grid">${visibleItems.map((card, index) => renderVocabularyBrowseCard(copy, card, { index, source: 'collection' })).join('')}</section>`
@@ -666,14 +1177,14 @@ export async function renderLanguage(root, ctx) {
       : `<section class="empty vocabulary-empty"><h2>${esc(c.vocabularyNoMatches)}</h2></section>`;
     const pagination = view === 'collection' && activeCollection?.pagination?.has_more
       ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-load-more>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
-      : '';
+      : view === 'saved' && savedData.has_more
+        ? `<div class="button-row vocabulary-load-more"><button class="outline" data-vocabulary-saved-more${savedLoading ? ' disabled' : ''}>${esc(c.vocabularyLoadMore || 'Load more words')}</button></div>`
+        : '';
     const collectionProgress = view === 'collection' && activeCollection
       ? (() => { const progress = activeCollection.progress || {}; const learned = Number(progress.learned_count) || 0; const total = Number(activeCollection.item_count) || 0; const percent = total ? Math.round((learned / total) * 100) : 0; return `<section class="vocabulary-collection-detail-progress" aria-label="${esc(c.vocabularyProgress || 'Progress')}"><div><span>${esc(c.vocabularyProgress || 'Progress')}</span><strong>${esc(learned)} / ${esc(total)} ${esc(c.vocabularyWordCount)}</strong></div><div class="vocabulary-progress" aria-hidden="true"><span style="width:${percent}%"></span></div></section>`; })()
       : '';
-    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
+    return `${pageIntro({ title, note, eyebrow: c.vocabularyTitle, compact: true })}${withBack ? `<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>` : ''}${collectionProgress}<div class="vocabulary-management-toolbar"><label><span class="sr-only">${esc(c.vocabularySearch)}</span><input type="search" data-vocabulary-search value="${esc(query)}" placeholder="${esc(c.vocabularySearch)}"></label><div class="vocabulary-management-options">${levelFilters}<label class="vocabulary-sort-control"><span>${esc(c.vocabularySort)}</span><select data-vocabulary-sort aria-label="${esc(c.vocabularySort)}">${sortOptions}</select></label><div class="vocabulary-filter-row" role="group" aria-label="${esc(c.vocabularyFilter)}">${filters}</div></div></div><p class="meta" role="status">${esc(view === 'saved' ? Number(savedData.total || visibleItems.length) : visibleItems.length)} ${esc(c.vocabularyWordCount)}</p>${results}${pagination}`;
   };
-
-  const feedView = () => `${pageIntro({ title: c.vocabularyFeedTitle, note: c.vocabularyFeedNote, eyebrow: c.vocabularyTitle, compact: true })}<button class="quiet vocabulary-back" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>${feedError ? `<p class="notice" role="alert">${esc(c.unavailable)} <button data-vocabulary-retry="feed">${esc(c.retry)}</button></p>` : feedCards.length ? renderVocabularyFeedCarousel(copy, feedCards, { limit: 5, full: true }) : `<section class="empty"><h2>${esc(c.vocabularyFeedEmpty)}</h2></section>`}`;
 
   const studyView = () => {
     const card = studyItems[studyIndex];
@@ -681,11 +1192,45 @@ export async function renderLanguage(root, ctx) {
     return `${pageIntro({ title: c.vocabularyStudy, note: c.vocabularyOverviewNote, eyebrow: c.vocabularyTitle, compact: true })}<div class="vocabulary-study-toolbar"><button class="quiet" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button><span>${studyIndex + 1} / ${studyItems.length}</span></div><section class="vocabulary-study-layout">${renderVocabularyStudyCard(copy, card, { index: studyIndex })}<nav class="vocabulary-study-nav"><button class="outline" data-study-prev ${studyIndex === 0 ? 'disabled' : ''}>←</button><button class="primary" data-study-next ${studyIndex >= studyItems.length - 1 ? 'disabled' : ''}>${studyIndex >= studyItems.length - 1 ? c.allDone : c.nextLine} →</button></nav></section>`;
   };
 
+  /* A collection, as the design draws it (Screens part 1 section 05): the
+     collection's own artwork, what it is, how far through it the learner is,
+     and one way in - then a compact overview of its words, never 150 rows.
+     "Show all" opens the full list, where search, level, status and sort live.
+     A tier has no source yet and reads as a dash (GAP-020). */
+  const WORD_PREVIEW = 8;
+  const collectionStars = (card) => {
+    const earned = (masteryStars(card).match(/★/g) || []).length;
+    return `<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${[0, 1, 2]
+      .map((step) => `<span${step < earned ? ' class="is-earned"' : ''}>${icon('star', { size: 11, filled: step < earned })}</span>`)
+      .join('')}</span>`;
+  };
+  const collectionDetail = () => {
+    const collection = activeCollection || {};
+    const progress = collection.progress || {};
+    const learned = Number(progress.learned_count) || 0;
+    const total = Number(collection.item_count) || 0;
+    const percent = total ? Math.round((learned / total) * 100) : 0;
+    const words = activeItems.filter((card) => !notMastered || vocabularyStatus(card) !== 'mastered');
+    visibleItems = words;
+    const shown = words.slice(0, WORD_PREVIEW);
+    const level = collection.levels?.[0] || collection.level || '';
+    const wordTile = (card, index) =>
+      `<button type="button" class="vocab-word" data-vocabulary-study="${esc(index)}"><span class="vocab-word__text"><strong lang="${esc(card.identity?.language || language)}">${esc(card.headword)}</strong>${card.pronunciation ? `<small class="ds-data">${esc(card.pronunciation)}</small>` : ''}</span>${collectionStars(card)}</button>`;
+    return `<section class="vocab-collection-page"><button type="button" class="icon-button vocab-back" data-vocabulary-back aria-label="${esc(c.vocabularyBackOverview)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</button><header class="vocab-collection__hero"><span class="vocab-collection__art">${contentCover({ id: String(collection.id || collection.title || ''), title: collection.title || '', material: 'collection' })}</span><div class="vocab-collection__copy"><div class="vocab-collection__chips"><span class="chip vocab-tier">${esc(r.vocabTier)} —</span><span class="chip">${esc([language.toUpperCase(), level].filter(Boolean).join(' · '))}</span></div><h1 lang="${esc(language)}">${esc(collection.title || c.vocabularyLibraryTitle)}${total ? ` · ${total} ${esc(c.vocabularyWordCount)}` : ''}</h1><div class="vocab-collection__progress"><span class="progress-bar"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span><span class="ds-data">${esc(learned)} / ${esc(total)}</span></div><div class="vocab-collection__actions"><button type="button" class="primary" data-vocabulary-collection-study>${icon('play', { size: 16, filled: true })}<span>${esc(c.vocabularyContinueReview)}</span></button><button type="button" class="icon-button" data-vocabulary-shuffle aria-label="${esc(r.vocabShuffle)}">${icon('shuffle', { size: 19 })}</button></div></div></header><div class="vocab-collection__body"><div class="vocab-words__head"><span class="ds-label">${esc(r.vocabWordsLabel)}</span><button type="button" class="chip vocab-words__filter" data-vocabulary-not-mastered aria-pressed="${notMastered}">${icon('funnel', { size: 13 })}<span>${esc(r.vocabNotMastered)}</span></button></div>${
+      shown.length
+        ? `<div class="vocab-words">${shown.map(wordTile).join('')}</div>`
+        : `<div class="state-panel state-panel--empty">${icon('cards', { size: 20 })}<div><strong>${esc(c.vocabularyNoMatches)}</strong></div></div>`
+    }${
+      words.length > shown.length
+        ? `<button type="button" class="vocab-show-all" data-vocabulary-show-all>${esc(String(r.vocabShowAll).replace('{n}', String(total || words.length)))}${icon('caret-down', { size: 16 })}</button>`
+        : ''
+    }</div></section>`;
+  };
   const collectionView = () => management(activeCollection?.title || c.vocabularyLibraryTitle, `${activeCollection?.progress?.learned_count || 0} / ${activeCollection?.item_count || 0} ${c.vocabularyWordCount}`, true);
 
   const paint = () => {
     if (!alive()) return;
-    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionView() : view === 'feed' ? feedView() : studyView();
+    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'saved' ? management(c.vocabularyManage, c.vocabularyOverviewNote, true) : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     bind();
   };
 
@@ -742,12 +1287,63 @@ export async function renderLanguage(root, ctx) {
   };
 
   const bind = () => {
-    root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => { activeItems = savedCards; query = ''; filter = 'all'; levelFilter = 'all'; sort = 'recommended'; view = 'saved'; paint(); }));
+    /* A kept word already carries the sentence it came from, which is exactly
+       the context the shared explanation needs. Without this the list is
+       something to reread rather than something a learner can question - the
+       same gap Grammar had. */
+    root.querySelectorAll('[data-word-explain]').forEach((button) => {
+      button.onclick = () => {
+        const entry = (savedData.items || []).find((x) => x.word === button.dataset.wordExplain);
+        if (!entry?.source_fragment) return;
+        const kept = ctx.memory.value.keptLanguage?.[entry.word];
+        openUnderstanding(ctx, {
+          selection: entry.word,
+          context: entry.source_fragment.slice(0, 2400),
+          title: entry.focus_note || c.sourceContext,
+          question: c.askWhy,
+          // Asking again about a word already kept must not lose where it came
+          // from, so its own provenance rides along unchanged.
+          origin: kept
+            ? { id: kept.origin, where: kept.where, why: kept.why }
+            : null,
+        });
+      };
+    });
+    root.querySelectorAll('[data-vocabulary-manage]').forEach((button) => (button.onclick = () => {
+      activeItems = savedCards; query = ''; filter = 'all'; levelFilter = 'all'; sort = 'recommended'; view = 'saved';
+      paint();
+      loadSavedPage();
+    }));
     root.querySelectorAll('[data-vocabulary-library]').forEach((button) => (button.onclick = () => { view = 'library'; paint(); }));
-    root.querySelectorAll('[data-vocabulary-feed]').forEach((button) => (button.onclick = () => { view = 'feed'; paint(); }));
     root.querySelectorAll('[data-vocabulary-collection]').forEach((button) => (button.onclick = () => openCollection(button.dataset.vocabularyCollection)));
-    root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : 'overview'; paint(); }));
-    root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', () => setStudy(savedCards.filter((card) => card.due)));
+    root.querySelectorAll('[data-vocabulary-filter-pack]').forEach((button) => (button.onclick = () => {
+      packFilter = button.dataset.vocabularyFilterPack;
+      paint();
+    }));
+    root.querySelectorAll('[data-vocabulary-back]').forEach((button) => (button.onclick = () => { view = view === 'study' ? returnView : view === 'collection-list' ? 'collection' : 'overview'; paint(); }));
+    root.querySelector('[data-vocabulary-not-mastered]')?.addEventListener('click', () => { notMastered = !notMastered; paint(); });
+    root.querySelector('[data-vocabulary-show-all]')?.addEventListener('click', () => { view = 'collection-list'; paint(); });
+    root.querySelector('[data-vocabulary-collection-study]')?.addEventListener('click', () => { if (visibleItems.length) setStudy(visibleItems); });
+    root.querySelector('[data-vocabulary-shuffle]')?.addEventListener('click', () => {
+      if (!visibleItems.length) return;
+      /* A shuffled pass is a different order of the same words, nothing more. */
+      const order = [...visibleItems];
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const swap = Math.floor(Math.random() * (index + 1));
+        [order[index], order[swap]] = [order[swap], order[index]];
+      }
+      setStudy(order);
+    });
+    root.querySelector('[data-vocabulary-continue]')?.addEventListener('click', async () => {
+      try {
+        const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: SAVED_PAGE });
+        if (!alive()) return;
+        setStudy((page.items || []).map((item) => vocabularyCardFromSavedItem(item, language, support, pinyinAllowed)));
+      } catch {
+        /* The card said what is due; if the queue cannot be read the room
+           stays where it is rather than opening an empty study. */
+      }
+    });
     root.querySelector('[data-vocabulary-search]')?.addEventListener('input', (event) => {
       query = event.target.value;
       if (view === 'collection' && activeCollection) {
@@ -761,10 +1357,18 @@ export async function renderLanguage(root, ctx) {
         }, 250);
         return;
       }
+      if (view === 'saved') {
+        if (savedSearchTimer) clearTimeout(savedSearchTimer);
+        savedSearchTimer = setTimeout(() => loadSavedPage(), SAVED_SEARCH_DEBOUNCE_MS);
+      }
       paint();
       const input = root.querySelector('[data-vocabulary-search]');
       input?.focus();
       input?.setSelectionRange(query.length, query.length);
+    });
+    root.querySelector('[data-vocabulary-saved-more]')?.addEventListener('click', (event) => {
+      event.currentTarget.disabled = true;
+      loadSavedPage({ append: true });
     });
     root.querySelector('[data-vocabulary-load-more]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
@@ -780,7 +1384,11 @@ export async function renderLanguage(root, ctx) {
         paint();
       } catch { button.disabled = false; }
     });
-    root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => { filter = button.dataset.vocabularyFilter; paint(); }));
+    root.querySelectorAll('[data-vocabulary-filter]').forEach((button) => (button.onclick = () => {
+      filter = button.dataset.vocabularyFilter;
+      if (view === 'saved') { loadSavedPage(); return; }
+      paint();
+    }));
     root.querySelectorAll('[data-vocabulary-level-filter]').forEach((button) => (button.onclick = () => {
       levelFilter = button.dataset.vocabularyLevelFilter;
       if (view === 'collection' && activeCollection) {
@@ -792,10 +1400,14 @@ export async function renderLanguage(root, ctx) {
         paint();
       }
     }));
-    root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => { sort = event.target.value; paint(); });
-    const interactionPool = () => vocabularyInteractionItems(view, { feedCards, visibleItems, savedCards, studyItems });
-    root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularyStudy); const pool = button.dataset.vocabularyStudySource === 'feed' ? feedCards.slice(0, 5) : interactionPool(); setStudy(pool, index); }));
-    root.querySelectorAll('[data-vocabulary-save]').forEach((button) => (button.onclick = () => { const index = Number(button.dataset.vocabularySave); const source = button.closest('[data-vocabulary-source]')?.dataset.vocabularySource; const pool = source === 'feed' ? feedCards.slice(0, 5) : interactionPool(); saveCard(pool[index], source === 'feed' ? 'feed' : view === 'collection' ? 'collection' : 'manual'); }));
+    root.querySelector('[data-vocabulary-sort]')?.addEventListener('change', (event) => {
+      sort = event.target.value;
+      if (view === 'saved' && SAVED_ORDER[sort]) { loadSavedPage(); return; }
+      paint();
+    });
+    const interactionPool = () => vocabularyInteractionItems(view, { visibleItems, savedCards, studyItems });
+    root.querySelectorAll('[data-vocabulary-study]').forEach((button) => (button.onclick = () => setStudy(interactionPool(), Number(button.dataset.vocabularyStudy))));
+    root.querySelectorAll('[data-vocabulary-save]').forEach((button) => (button.onclick = () => saveCard(interactionPool()[Number(button.dataset.vocabularySave)], view === 'collection' ? 'collection' : 'manual')));
     const studyCard = root.querySelector('.vocabulary-study-card');
     const setStudyState = (nextState) => {
       if (!studyCard) return;
@@ -829,7 +1441,6 @@ export async function renderLanguage(root, ctx) {
     root.querySelector('[data-study-audio]')?.addEventListener('click', () => { const word = studyItems[studyIndex]?.headword; if (word && 'speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(word)); });
     root.querySelectorAll('[data-study-grade]').forEach((button) => (button.onclick = async () => { const card = studyItems[studyIndex]; button.disabled = true; try { const result = await ctx.mutate(() => api.reviewLibraryVocabulary(card.headword, button.dataset.studyGrade)); if (result.item) { const updated = vocabularyCardFromSavedItem(result.item, language, support, pinyinAllowed); studyItems[studyIndex] = updated; const savedIndex = savedCards.findIndex((item) => item.headword.toLowerCase() === card.headword.toLowerCase()); if (savedIndex >= 0) savedCards[savedIndex] = updated; savedData.items = savedData.items.map((item) => item.word.toLowerCase() === card.headword.toLowerCase() ? result.item : item); savedData.summary = { ...summary(), due: savedCards.filter((item) => item.due).length, learning: savedCards.filter((item) => (Number(item.review_stage) || 0) < 3).length, mastered: savedCards.filter((item) => (Number(item.review_stage) || 0) >= 3).length }; } paint(); } catch { button.disabled = false; } }));
     root.querySelectorAll('[data-vocabulary-retry]').forEach((button) => (button.onclick = () => location.reload()));
-    bindVocabularyFeedCarousel(root);
   };
 
   paint();

@@ -70,6 +70,7 @@ for (const ui of LANGUAGES)
 /* Grammar was the one capability that could not ask its own question. Every
    example now reaches the shared explanation carrying the pattern as context. */
 const expression = read('static/orena/ui/expression.js');
+const experience = read('static/orena/ui/vocabulary-experience.js');
 assert.ok(
   expression.includes("root.querySelectorAll('[data-explain]')"),
   'grammar examples must be able to ask for an explanation',
@@ -104,9 +105,16 @@ assert.ok(
   expression.includes('context: entry.source_fragment.slice(0, 2400)'),
   'the sentence the word came from is the context it is explained in',
 );
+/* The way in is the line that says where the word was met, so a word with no
+   recorded sentence has no way in and no context-free lookup: the line is not
+   drawn, and the handler refuses anything without a fragment. */
 assert.ok(
-  expression.includes("x.source_fragment ? `<button"),
-  'a word with no recorded sentence offers no context-free lookup',
+  experience.includes("if (!encounter) return '';"),
+  'a word with no recorded sentence has no source line to ask from',
+);
+assert.ok(
+  expression.includes('if (!entry?.source_fragment) return;'),
+  'and the handler refuses a lookup with no sentence behind it',
 );
 
 /* --- A syllabus to walk into, and a catalogue to search ---

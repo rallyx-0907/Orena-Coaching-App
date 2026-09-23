@@ -1,24 +1,21 @@
 import { esc } from './html.js';
-import { scene } from './brand.js';
+import { icon } from './phosphor.js';
+import { referenceCopy } from './reference.js';
 import { bindImages } from './content.js';
 import { contentCover } from './cover.js';
-import { contentRail } from './content-rail.js';
 import { link } from '../product/intent.js';
 
-/* The Shared Reading Library: a cover-first library of admin-imported books,
-   open to every learner. Mirrors the Vocabulary Library's own pattern in
-   world.js - the caller owns a permanent <section data-library-grid> wrapper
-   so this repaints only its own container, never the rest of Discover/
-   Reading, and "open a book" is an inline detail state inside this same
-   container rather than a route, exactly like vocabularyLibrarySection's
-   `open` collection state. Chapters are real links: opening one hands off to
-   the existing encounter/readable() reader via a `book:<id>/<chapterId>`
-   locator (static/orena/ui/encounter.js), not a second reader.
+/* The book page: one shared library book, on its own route (#/book?id=).
+
+   The library that leads here is the approved browse surface in
+   library-browse.js - Library (#/content) and the Reading room are the same
+   library, scoped. This module owns what a single book looks like once it is
+   chosen, and hands off to the reader through the `book:<id>/<chapterId>`
+   locator encounter.js parses (never a second reader).
 
    Under D-057 the cover is the object and everything else is metadata beneath
    it. A book with no edition cover of its own gets a designed one from the one
-   deterministic system in `ui/cover.js` - never a single letter on a tinted
-   square, which made a shelf read as an alphabet rather than as books. */
+   deterministic system in `ui/cover.js`. */
 
 export function libraryCoverUrl(bookId) {
   return `/api/reading/library/books/${encodeURIComponent(bookId)}/cover`;
@@ -48,102 +45,165 @@ function readingProgress(reading, book) {
   return { ...state, index, total, percent: Math.max(1, Math.round((index / total) * 100)) };
 }
 
-function progressBar(progress) {
-  if (!progress?.percent) return '';
-  return `<span class="library-progress"><span class="library-progress__bar"><span style="width:${progress.percent}%"></span></span><small>${progress.percent}%</small></span>`;
+/* The approved book detail (D-059 Phase 5, Screens part 4 section 16).
+
+   Overview first, chapters below: the cover, what the book is, how far in the
+   learner is and the one action they came for sit above the fold; the chapters
+   follow as a compact list with a single highlighted next row; description,
+   the words this book has already taught and recommendations sit in the side
+   column where they cannot crowd the decision.
+
+   Everything shown is read from something real. Chapters behind the current
+   one are read - the same derivation the shelf percentage already uses, never
+   a second progress store. Per-chapter reading time, time read, quiz average,
+   audio and "similar level" have no source yet: each keeps its place in the
+   composition with the design system's unavailable state and is tracked in
+   docs/project/UI_BACKEND_GAPS.md (D-060), never removed and never invented. */
+const CHAPTER_PREVIEW = 5;
+
+const fill = (template, values) =>
+  String(template || '').replace(/\{(\w+)\}/g, (match, key) => (key in values ? String(values[key]) : match));
+
+/* A stat tile: the label, then the figure - or the honest dash when nothing
+   measures it yet. */
+function bookStat(label, value, { note = '', tone = '' } = {}) {
+  return `<div class="book-stat"${tone ? ` data-tone="${tone}"` : ''}><span class="ds-label">${esc(label)}</span><strong>${esc(value)}</strong>${note ? `<small>${esc(note)}</small>` : ''}</div>`;
 }
 
-function bookCard(book, c, reading) {
-  const progress = readingProgress(reading, book);
-  return `<button type="button" class="library-card" data-open-book="${esc(book.id)}">${coverArt(book, c)}<strong class="library-card-title" lang="${esc(book.learning_language || '')}">${esc(book.title)}</strong>${book.author ? `<span class="library-card-author">${esc(book.author)}</span>` : ''}${progressBar(progress)}</button>`;
-}
-
-/* Shelves appear when a library is big enough to need them. With a handful of
-   books, a shelf per theme would be the same books printed three times; with a
-   real catalogue, one flat wall of covers is what a learner has to scroll
-   past. So Continue reading appears whenever there is real progress, and the
-   themed shelf appears only once the library is larger than the shelf. */
-const SHELF_SIZE = 8;
-const SHORT_BOOK_WORDS = 2000;
-
-function shelf(c, { id, title, items, reading }) {
-  return contentRail({
-    id: `library-${id}`,
-    title,
-    icon: 'book',
-    items: items.map((book) => bookCard(book, c, reading)),
-    previousLabel: `${c.previous || 'Previous'}: ${title}`,
-    nextLabel: `${c.next || 'Next'}: ${title}`,
-    className: 'library-shelf',
-  });
-}
-
-function gridBody(c, state) {
-  const { items, error, nextCursor, loadingMore, reading } = state;
-  if (error)
-    return `<p class="notice" role="alert">${esc(c.unavailable)} <button type="button" data-library-grid-retry>${esc(c.retry)}</button></p>`;
-  if (!items) return `<p class="loading" role="status">${esc(c.libraryLoading)}</p>`;
-  if (!items.length)
-    return `<div class="empty">${scene('empty', { size: 'medium' })}<p>${esc(c.libraryEmpty)}</p></div>`;
-
-  const shelves = [];
-  const started = items.filter((book) => reading?.[book.id]);
-  if (started.length)
-    shelves.push(shelf(c, { id: 'continue', title: c.libraryContinue, items: started, reading }));
-  const short = items.filter(
-    (book) => Number(book.word_count) > 0 && Number(book.word_count) <= SHORT_BOOK_WORDS,
-  );
-  if (items.length > SHELF_SIZE && short.length >= 3)
-    shelves.push(shelf(c, { id: 'short', title: c.libraryShort, items: short, reading }));
-
-  return `${shelves.join('')}<section class="library-wall" aria-label="${esc(c.libraryBooks)}">${
-    shelves.length ? `<div class="section-head"><h3>${esc(c.libraryBooks)}</h3></div>` : ''
-  }<div class="library-grid">${items.map((book) => bookCard(book, c, reading)).join('')}</div>${
-    nextCursor
-      ? `<button type="button" class="outline" data-library-more ${loadingMore ? 'disabled' : ''}>${esc(c.libraryLoadMore)}</button>`
-      : ''
-  }</section>`;
-}
-
-/* A book, not a folder of chapters.
-
-   The cover leads, the title and author sit beside it, and the one thing a
-   learner came to do - start, or carry on from where they stopped - is a
-   primary action next to them rather than an entry somewhere in a numbered
-   list. The contents stay complete and usable underneath, with the chapter
-   the learner is actually in marked as current. */
-function bookDetail(c, open, reading) {
-  const back = `<button type="button" class="quiet" data-close-book>← ${esc(c.libraryBack)}</button>`;
+function bookDetail(c, r, open, reading, view = {}) {
+  /* A link, not history.back(): the reader reaches this page by navigating to
+     it, so a history step here lands back in the reader and the two bounce off
+     each other with no way out of the book. */
+  const back = `<a class="icon-button book-back" href="${esc(link('practice', { intent: 'reading' }))}" aria-label="${esc(c.libraryBack)}">${icon('caret-right', { size: 20, className: 'is-flipped' })}</a>`;
   if (open.error)
-    return `${back}<p class="notice" role="alert">${esc(c.unavailable)} <button type="button" data-book-retry>${esc(c.retry)}</button></p>`;
+    return `${back}<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-book-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`;
   if (!open.book)
-    return `${back}<p class="loading" role="status">${esc(c.libraryLoading)}</p>`;
+    return `${back}<div class="book-page" role="status" aria-label="${esc(c.libraryLoading)}"><div class="book-hero"><span class="skeleton book-hero__cover"></span><div class="book-hero__copy"><span class="skeleton skeleton--line"></span><span class="skeleton skeleton--title"></span><span class="skeleton skeleton--line"></span></div></div></div>`;
+
   const book = open.book;
+  const language = book.learning_language || '';
   const chapters = book.chapters || [];
   const progress = readingProgress(reading, { ...book, chapter_count: chapters.length });
   const currentId = progress?.chapterId;
   const currentIndex = currentId ? chapters.findIndex((chapter) => chapter.id === currentId) : -1;
   const resume = currentIndex >= 0 ? chapters[currentIndex] : chapters[0];
-  const facts = [
-    chapters.length ? `${chapters.length} ${c.libraryChapterCount}` : '',
-    Number(book.word_count) > 0 ? `${Number(book.word_count).toLocaleString()} ${c.libraryWords}` : '',
-  ].filter(Boolean).join(' · ');
+  const total = chapters.length;
   const chapterLink = (chapter) => esc(link('encounter', { id: `book:${book.id}/${chapter.id}`, intent: 'reading' }));
-  return `${back}<article class="library-detail">${coverArt(book, c, { large: true })}<div class="library-detail-copy"><h2 lang="${esc(book.learning_language || '')}">${esc(book.title)}</h2>${book.author ? `<p class="byline">${esc(book.author)}</p>` : ''}${facts ? `<p class="library-detail-facts">${esc(facts)}</p>` : ''}${progressBar(progress)}${resume ? `<a class="primary" href="${chapterLink(resume)}">${esc(currentIndex >= 0 ? c.resume : c.libraryStartReading)} <span aria-hidden="true">→</span></a>${currentIndex >= 0 ? `<p class="library-detail-where"><small>${esc(c.libraryCurrentChapter)}</small> <span lang="${esc(book.learning_language || '')}">${esc(resume.title)}</span></p>` : ''}` : ''}${book.description ? `<p class="library-detail-note">${esc(book.description)}</p>` : ''}</div></article><section class="library-contents" aria-label="${esc(c.libraryChapters)}"><div class="section-head"><h3>${esc(c.libraryChapters)}</h3></div><ol class="library-chapter-list">${chapters
-    .map(
-      (chapter, index) =>
-        `<li${chapter.id === currentId ? ' data-current' : ''}><a href="${chapterLink(chapter)}"${chapter.id === currentId ? ' aria-current="true"' : ''}><span class="library-chapter-number" aria-hidden="true">${index + 1}</span><span lang="${esc(book.learning_language || '')}">${esc(chapter.title)}</span></a></li>`,
-    )
-    .join('')}</ol></section>`;
+
+  const chips = [
+    `<span class="chip chip--domain" data-domain="reading">${esc(r.reading)}</span>`,
+    language ? `<span class="chip">${esc(c[`language_${language}`] || language.toUpperCase())}</span>` : '',
+    total ? `<span class="chip">${esc(`${total} ${c.libraryChapterCount}`)}</span>` : '',
+    Number(book.word_count) > 0
+      ? `<span class="chip">${esc(`${Number(book.word_count).toLocaleString()} ${c.libraryWords}`)}</span>`
+      : '',
+  ].filter(Boolean).join('');
+
+  const percent = progress?.percent || 0;
+  const place = percent
+    ? `${percent}% · ${fill(r.bookChapterOf, { n: progress.index, t: progress.total })}`
+    : r.bookNotStarted;
+  const progressRow = `<div class="book-hero__progress"><span class="progress-bar"${percent ? '' : ' data-unavailable'}><span style="width:${percent}%"></span></span><span class="ds-data">${esc(place)}</span></div>`;
+
+  const quiet = (name, label) =>
+    `<button type="button" class="icon-button" disabled aria-label="${esc(`${label} — ${r.bookSoon}`)}" title="${esc(r.bookSoon)}">${icon(name, { size: 20 })}</button>`;
+  const actions = resume
+    ? `<div class="book-hero__actions"><a class="primary" href="${chapterLink(resume)}">${icon('book-open', { size: 18, filled: true })}<span>${esc(
+        currentIndex >= 0 ? fill(r.bookContinueChapter, { n: currentIndex + 1 }) : c.libraryStartReading,
+      )}</span></a>${quiet('bookmark-simple', r.bookBookmark)}${quiet('download-simple', r.bookDownload)}${quiet('dots-three', r.bookMore)}</div>`
+    : '';
+
+  const savedWords = Array.isArray(open.words) ? open.words : null;
+  const stats = `<div class="book-hero__stats">${bookStat(
+    r.bookStatWordsSaved,
+    savedWords ? String(savedWords.length) : '—',
+    savedWords ? {} : { note: r.bookNotMeasured },
+  )}${bookStat(r.bookStatTime, '—', { note: r.bookNotMeasured })}${bookStat(
+    r.bookStatQuiz,
+    '—',
+    { note: r.bookNotMeasured },
+  )}${bookStat(r.bookStatAudio, '—', { note: r.bookAudioGap })}</div>`;
+
+  /* The chapters behind the current one are read; the current one is next. */
+  const done = (index) => currentIndex >= 0 && index < currentIndex;
+  const rows = chapters.map((chapter, index) => ({ chapter, index }));
+  const listed = view.unreadOnly ? rows.filter(({ index }) => !done(index)) : rows;
+  const windowStart = view.expanded
+    ? 0
+    : Math.max(0, Math.min(Math.max(currentIndex, 0) - 3, Math.max(0, listed.length - CHAPTER_PREVIEW)));
+  const shown = view.expanded ? listed : listed.slice(windowStart, windowStart + CHAPTER_PREVIEW);
+  const chapterRow = ({ chapter, index }) => {
+    const isCurrent = chapter.id === currentId;
+    const words = Number(chapter.word_count) > 0
+      ? fill(r.bookChapterWords, { n: Number(chapter.word_count).toLocaleString() })
+      : '';
+    return `<li${isCurrent ? ' data-current' : ''}><a class="book-chapter" href="${chapterLink(chapter)}"${isCurrent ? ' aria-current="true"' : ''}${done(index) ? ' data-done' : ''}><span class="book-chapter__n ds-data">${String(index + 1).padStart(2, '0')}</span><span class="book-chapter__text"><span class="book-chapter__title" lang="${esc(language)}">${esc(chapter.title)}</span>${words ? `<small class="ds-data">${esc(words)}</small>` : ''}</span>${
+      isCurrent
+        ? `<span class="chip book-chapter__next">${esc(r.bookNext)}</span>`
+        : done(index)
+          ? `<span class="book-chapter__done" title="${esc(r.bookRead)}">${icon('check-circle', { size: 18, filled: true })}<span class="sr-only">${esc(r.bookRead)}</span></span>`
+          : ''
+    }</a></li>`;
+  };
+  const contents = `<section class="book-chapters" aria-label="${esc(c.libraryChapters)}"><div class="book-section-head"><h3 class="book-section-title">${esc(c.libraryChapters)}</h3><button type="button" class="book-filter ds-label" data-unread-only aria-pressed="${Boolean(view.unreadOnly)}">${icon('funnel', { size: 14 })}<span>${esc(r.bookUnreadOnly)}</span></button></div><ol class="book-chapter-list">${shown.map(chapterRow).join('')}</ol>${
+    listed.length > shown.length
+      ? `<button type="button" class="book-show-all" data-show-all-chapters>${esc(fill(r.bookShowAll, { n: listed.length }))}${icon('caret-down', { size: 16 })}</button>`
+      : ''
+  }</section>`;
+
+  const wordChips = savedWords
+    ? savedWords.slice(0, 12).map((word) => `<span class="chip" lang="${esc(language)}">${esc(word)}</span>`).join('') +
+      (savedWords.length > 12 ? `<span class="chip book-words__more ds-data">+${savedWords.length - 12}</span>` : '')
+    : '';
+  const side = `<aside class="book-side">${
+    book.description
+      ? `<section><span class="ds-label">${esc(r.bookAbout)}</span><p class="book-about">${esc(book.description)}</p></section>`
+      : ''
+  }<section><span class="ds-label">${esc(r.bookWordsFrom)}</span>${
+    savedWords
+      ? savedWords.length
+        ? `<div class="book-words">${wordChips}</div>`
+        : `<p class="book-side__note">${esc(r.bookNoWordsSaved)}</p>`
+      : `<div class="book-words" aria-hidden="true">${'<span class="skeleton skeleton--chip"></span>'.repeat(3)}</div>`
+  }</section><section><span class="ds-label">${esc(r.bookSimilar)}</span><p class="book-side__note">${esc(r.bookSimilarGap)}</p></section></aside>`;
+
+  return `<article class="book-page">${back}<header class="book-hero"><div class="book-hero__cover">${coverArt(book, c, { large: true })}</div><div class="book-hero__copy"><div class="book-hero__chips">${chips}</div><div><h2 class="book-hero__title" lang="${esc(language)}">${esc(book.title)}</h2>${
+    book.author ? `<p class="book-hero__byline">${esc(book.author)}</p>` : ''
+  }</div>${progressRow}${actions}${stats}</div></header><div class="book-body">${contents}${side}</div></article>`;
 }
 
 /* Inner content only - see the module doc: the caller owns the wrapper. */
+/* The page's markup, pure: the caller owns the container and the state. */
 export function librarySection(c, state = {}) {
-  /* The room is already named Reading and the first shelf names itself, so a
-     second visible "Library" heading above them is a word the learner does not
-     need (D-057 rule 13). The region keeps its accessible name. */
   const heading = `<h2 class="sr-only">${esc(c.libraryTitle)}</h2>`;
-  return `${heading}${state.open ? bookDetail(c, state.open, state.reading) : gridBody(c, state)}`;
+  const r = referenceCopy[state.ui] || referenceCopy.en;
+  return `${heading}${bookDetail(c, r, state.open || {}, state.reading, state.view)}`;
+}
+
+/* The words this book has already taught, out of the learner's own saved
+   vocabulary: a word is from this book when it was kept while reading one of
+   its chapters (`focus_note` is the chapter title the reader passed). This is
+   a read of existing saved data, never a second store and never an estimate. */
+/* How many kept words a book page shows before it stops counting: a page,
+   because the panel lists them rather than tallying a library. */
+const BOOK_WORDS_LIMIT = 200;
+
+export function wordsFromBook(items, book) {
+  const titles = new Set(
+    [book?.title, ...(book?.chapters || []).map((chapter) => chapter.title)]
+      .map((title) => String(title || '').trim())
+      .filter(Boolean),
+  );
+  const seen = new Set();
+  const words = [];
+  for (const item of items || []) {
+    const where = String(item?.focus_note || '').trim();
+    const word = String(item?.word || '').trim();
+    if (!word || !titles.has(where) || seen.has(word)) continue;
+    seen.add(word);
+    words.push(word);
+  }
+  return words;
 }
 
 /* What the learner has actually started, read out of device memory. A book
@@ -167,92 +227,80 @@ export function readingFromMemory(memory) {
   return reading;
 }
 
-export function paintLibraryGrid(container, ctx) {
-  if (!container) return;
-  const { api, c, language, alive } = ctx;
-  let items = null;
-  let error = false;
-  let nextCursor = null;
-  let loadingMore = false;
-  let open = null;
-  /* Each repaint replaces this container's markup, so the shelves inside it
-     get bound again and the previous binding's observers are released first -
-     otherwise every "load more" leaves a ResizeObserver behind. */
-  let releaseShelves = () => {};
+/* The two controls the chapter list owns. Both are view state: what the
+   learner asked to see, never a second copy of what they have read. */
+function bindBookControls(container, view, paint) {
+  const filter = container.querySelector('[data-unread-only]');
+  if (filter)
+    filter.onclick = () => {
+      view.unreadOnly = !view.unreadOnly;
+      paint();
+    };
+  const showAll = container.querySelector('[data-show-all-chapters]');
+  if (showAll)
+    showAll.onclick = () => {
+      view.expanded = true;
+      paint();
+    };
+}
 
-  function paint() {
+/* The words kept from this book, from the learner's own saved vocabulary. A
+   failed read leaves the tile and the side panel on their honest dash rather
+   than removing them. */
+async function loadBookWords(open, paint, ctx) {
+  const { api, alive } = ctx;
+  const book = open.book;
+  /* A word kept from this book carries the book's or the chapter's title as
+     its note, so the titles are the query: the server returns the words saved
+     under them instead of the learner's whole vocabulary being read here. */
+  const titles = [book?.title, ...(book?.chapters || []).map((chapter) => chapter.title)]
+    .map((title) => String(title || '').trim())
+    .filter(Boolean);
+  if (!titles.length) {
+    open.words = [];
+    paint();
+    return;
+  }
+  try {
+    const data = await api.libraryVocabulary({ focus: titles, limit: BOOK_WORDS_LIMIT });
+    if (!alive() || open.book !== book) return;
+    open.words = wordsFromBook(data?.items || data || [], book);
+  } catch {
+    if (!alive() || open.book !== book) return;
+    open.words = null;
+  }
+  paint();
+}
+
+/* The route: #/book?id=<book id>, which every library card links to. */
+export function paintBookPage(container, ctx, id) {
+  if (!container) return () => {};
+  const { api, c, alive } = ctx;
+  let open = { id, book: null, error: false, words: null };
+  const view = { unreadOnly: false, expanded: false };
+  const paint = () => {
     if (!alive()) return;
-    releaseShelves();
-    const reading = readingFromMemory(ctx.memory);
-    container.innerHTML = librarySection(c, { items, error, nextCursor, loadingMore, open, reading });
-    bindImages(container, c);
-    container.querySelectorAll('[data-open-book]').forEach((button) => {
-      button.onclick = () => openBook(button.dataset.openBook);
+    container.innerHTML = librarySection(c, {
+      open, reading: readingFromMemory(ctx.memory), view, ui: ctx.ui,
     });
-    container
-      .querySelector('[data-close-book]')
-      ?.addEventListener('click', () => {
-        open = null;
-        paint();
-      });
-    container.querySelector('[data-library-grid-retry]')?.addEventListener('click', loadList);
-    container
-      .querySelector('[data-book-retry]')
-      ?.addEventListener('click', () => open && openBook(open.id));
-    container.querySelector('[data-library-more]')?.addEventListener('click', loadMore);
-    releaseShelves = ctx.bindShelves?.(container) || (() => {});
-  }
-
-  async function loadList() {
-    items = null;
-    error = false;
-    nextCursor = null;
-    open = null;
-    paint();
-    try {
-      const data = await api.libraryBooks(language);
-      if (!alive()) return;
-      items = data.items || [];
-      nextCursor = data.next_cursor || null;
-    } catch {
-      if (!alive()) return;
-      error = true;
-    }
-    paint();
-  }
-
-  async function loadMore() {
-    if (!nextCursor || loadingMore) return;
-    loadingMore = true;
-    paint();
-    try {
-      const data = await api.libraryBooks(language, nextCursor);
-      if (!alive()) return;
-      items = [...(items || []), ...(data.items || [])];
-      nextCursor = data.next_cursor || null;
-    } catch {
-      // Load-more failure leaves the current page on screen; the button
-      // itself is the retry affordance, same as elsewhere in this file.
-    } finally {
-      loadingMore = false;
-      if (alive()) paint();
-    }
-  }
-
-  async function openBook(id) {
-    open = { id, book: null, error: false };
+    bindImages(container, c);
+    bindBookControls(container, view, paint);
+    container.querySelector('[data-book-retry]')?.addEventListener('click', load);
+  };
+  async function load() {
+    open = { id, book: null, error: false, words: null };
     paint();
     try {
       const book = await api.libraryBook(id);
       if (!alive()) return;
-      open = { id, book, error: false };
+      open = { id, book, error: false, words: null };
     } catch {
       if (!alive()) return;
       open = { id, book: null, error: true };
     }
     paint();
+    if (open.book) loadBookWords(open, paint, ctx);
   }
-
-  loadList();
-  return () => releaseShelves();
+  load();
+  return () => {};
 }

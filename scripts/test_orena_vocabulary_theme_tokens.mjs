@@ -23,7 +23,7 @@ const libraryStart = css.indexOf('/* Shared Reading Library:');
 assert.ok(vocabularyStart >= 0 && libraryStart > vocabularyStart, 'vocabulary CSS scope is present');
 const vocabularyCss = css.slice(vocabularyStart, libraryStart);
 
-for (const selector of ['.vocabulary-collection-card', '.vocabulary-browse-card', '.vocabulary-study-card']) {
+for (const selector of ['.vocabulary-collection-card', '.vocabulary-browse-card']) {
   const block = rule(vocabularyCss, selector);
   assert.match(block, /background:\s*var\(--surface\);/, `${selector} uses the Orena surface token`);
   assert.doesNotMatch(
@@ -32,6 +32,16 @@ for (const selector of ['.vocabulary-collection-card', '.vocabulary-browse-card'
     `${selector} does not turn the rank accent into a separate background palette`,
   );
 }
+/* The approved flashcard (D-059 Phase 6) is a card: the elevated surface, the
+   amber rim earned marks wear and the vocabulary hue behind the word - every
+   one of them a semantic token, never a literal colour. */
+const faces = vocabularyCss.slice(
+  vocabularyCss.indexOf('.vocabulary-study-card__front,'),
+  vocabularyCss.indexOf('.vocabulary-study-card__top'),
+);
+assert.match(faces, /background:\s*var\(--surface-elevated\)/, 'the card wears the elevated surface token');
+assert.match(faces, /var\(--progress\)/, 'and the amber rim of an earned mark');
+assert.doesNotMatch(faces, /#[0-9a-fA-F]{3,8}|rgba?\(/, 'the card invents no colour of its own');
 
 const browse = rule(vocabularyCss, '.vocabulary-browse-card');
 assert.doesNotMatch(browse, /--vocabulary-level-wash/, 'browse cards do not carry a rank wash palette');
@@ -39,7 +49,7 @@ const stars = rule(vocabularyCss, '.vocabulary-browse-card__status .vocabulary-s
 assert.match(stars, /color:\s*var\(--accent\);/, 'mastery stars use the semantic accent');
 assert.doesNotMatch(vocabularyCss, /outline:\s*\d+px solid var\(--sun\)/, 'focus rings do not use a decorative sun token');
 
-for (const themeName of ['paper', 'night-ink', 'deep-forest', 'sage-field']) {
+for (const themeName of ['glass']) {
   const start = themeCss.indexOf(`[data-theme='${themeName}']`);
   assert.notEqual(start, -1, `${themeName} is registered in the theme token owner`);
   const end = themeCss.indexOf('}', start);
@@ -55,4 +65,4 @@ for (const ui of ['en', 'zh']) {
   }
 }
 
-console.log('Orena Vocabulary visual tokens: semantic surfaces, light rank accents, four themes, EN/ZH parity PASS');
+console.log('Orena Vocabulary visual tokens: semantic surfaces, light rank accents, Dark Glass, EN/ZH parity PASS');

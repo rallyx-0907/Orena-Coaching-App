@@ -38,7 +38,7 @@
   ],
   "active_branch_or_lane": {
     "expected_development_branch": "codex/work",
-    "lane": "orena_golden_star_reference_architecture"
+    "lane": "canonical_ui_baseline_integration"
   },
   "last_verified_application_commit": "8d5f3cdb707cabd2ee4dabca2558301bc2e78f70",
   "last_verified_batch": "reading_room_word_lookup_and_discover_content_rails",
@@ -48,14 +48,18 @@
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "orena_web_golden_star",
+    "id": "orena_web_canonical_ui_baseline",
     "status": "in_progress",
-    "next_task": "Complete Orena Golden Star under principal architecture ownership. A-D and Encounter WIP are completed by Opus. Read ORENA_REFERENCE_ARCHITECTURE.md, docs/project/ORENA_BACKBONE_EXECUTION.md and ORENA_BACKBONE_INTEGRATION_GATES.md. Backbone contracts cover account/profile, commerce/entitlements/quotas, Collection/My Content/My Language, execution, Growth/achievements and migration. Codex owns architecture and integration; Opus implements I1-I7 under these contracts. No deployed sync, billing activation or human product approval is implied. Preserve eleven destinations and all Opus WIP, especially theme/brand."
+    "next_task": "Integrate the Canonical UI Baseline (D-066), one vertical slice at a time, on codex/work. The baseline in docs/design/canonical-ui/ is the visual, interaction and data authority; the backend adapts to it. Tracker: docs/project/UI_BACKEND_GAPS.md (canonical UI, contract, backend, data source, tests, status). Order: Word and Sentence Sheet, Writing review and revision, Listening and Dictation, Reading comprehension per question, catalogue Search; then learner persistence, progress measurement, pronunciation providers. A metric with no measurement renders 0 in its canonical component and is never stored as data. Ink/Paper and D-065 are retired and are deleted once a surface is migrated. Schema and migration for learner-owned data need a recorded independent architecture review; production, credentials and billing stay human gates. No human product approval is implied."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
     "native_strategy": "full_native_port",
-    "native_may_redesign_product": false
+    "native_may_redesign_product": false,
+    "visual_authority": "canonical_ui_baseline_d066",
+    "themes": [
+      "dark_glass"
+    ]
   },
   "languages": {
     "first_class": [
@@ -197,8 +201,9 @@
     "zh_word_meanings_need_catalog_coverage_or_a_zh_translation_engine_shared_by_reader_and_listening",
     "shared_reading_library_epub_pipeline_ships_without_rights_gate_per_d056_sandbox_only",
     "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native",
-    "d057_conformance_done_for_discover_continue_library_reader_and_listening",
-    "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent"
+    "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent",
+    "canonical_ui_migration_in_progress_d065_compositions_remain_in_code_until_each_surface_migrates_dark_glass_foundation_landed",
+    "canonical_ui_baseline_incomplete_for_profile_my_content_admin_onboarding_loading_empty_error_modal_and_tablet"
   ],
   "last_verified_at": "2026-09-17"
 }

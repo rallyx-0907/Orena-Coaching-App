@@ -7,19 +7,23 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import {
-  RUBRIC,
-  shownIssues,
-  shownStrengths,
+  DIMENSIONS,
+  KINDS,
+  applyFix,
+  dimensionsHtml,
+  feedbackHtml,
+  issueSheetHtml,
+  revisionHtml,
   writingReviewFailure,
-  writingReview,
-} from '../static/orena/ui/writing-review.js';
+} from '../static/orena/ui/writing-feedback.js';
 import { REGISTERS, registerLabel } from '../static/orena/ui/registers.js';
+import { issueMarks, marksIn, markedHtml } from '../static/orena/ui/draft-marks.js';
 
 const c = copy.en;
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-// The rubric the UI renders must be the rubric the evaluator scores, or a
-// dimension the learner is judged on stops being visible to them.
+// The dimensions the UI draws are a subset of the rubric the evaluator scores,
+// in the baseline's order; the fifth (task achievement) is scored and kept.
 const benchmark = read('writing_coach/writing_evaluation_benchmark.py');
 const declared = [
   ...benchmark
@@ -27,7 +31,8 @@ const declared = [
     .split(')')[0]
     .matchAll(/"([a-z_]+)"/g),
 ].map((m) => m[1]);
-assert.deepEqual([...RUBRIC], declared, 'the rubric must match on both sides of the API');
+for (const key of DIMENSIONS) assert.ok(declared.includes(key), `${key} is a scored dimension`);
+const RUBRIC = declared;
 
 // Every dimension and register a learner can be shown has to be readable in
 // both languages. A missing label degrades to a raw key like task_achievement.
@@ -57,197 +62,106 @@ for (const ui of ['en', 'zh']) {
 }
 assert.equal(registerLabel(c, 'not_a_register'), '', 'unknown stays silent');
 
-const text = 'I go to the shop yesterday and buyed some bread for my family.';
-const full = {
-  overall: 68,
-  app_cefr: 'B1',
-  delta: { overall: 6 },
-  summary: { interpretation: 'Your meaning comes through clearly.' },
-  corrected_text: 'I went to the shop yesterday and bought some bread for my family.',
-  dimensions: {
-    grammar: 58,
-    vocabulary: 72,
-    coherence: 80,
-    task_achievement: 74,
-    naturalness: 66,
-  },
-  strengths: [
-    {
-      quote: 'for my family',
-      why: 'A natural way to say who it was for.',
-      category: 'vocabulary',
-    },
-    {
-      quote: 'not in the learner text',
-      why: 'This evidence was invented.',
-      category: 'grammar',
-    },
-  ],
+/* --- The review, the finding and the revision, from the two contracts (D-066) --- */
+const review = {
+  draftId: '1', version: 1, wordCount: 142, summary: 'Thư đủ ý <và> dễ đọc.', strengths: 'Mở thư đúng kiểu.',
   issues: [
-    {
-      quote: 'go to the shop yesterday',
-      suggestion: 'went to the shop yesterday',
-      why: 'Yesterday puts this in the past.',
-      how: 'Past simple',
-      priority: 'high',
-      category: 'grammar',
-    },
-    { quote: 'not in the learner text', suggestion: 'x', why: 'y', category: 'grammar' },
+    { id: 'a', fragment: 'ønsker å informere deg om', correction: 'må bare fortelle deg', why: 'Giọng công văn.', rule: 'Chọn động từ thường.',
+      grammarRef: null, examples: ['Jeg må bare fortelle deg at jeg har ny jobb.'], kind: 'register', anchored: true },
+    { id: 'b', fragment: 'et kafé', correction: 'en kafé', why: 'kafé là en-ord.', rule: 'Từ mượn -é là en-ord.',
+      grammarRef: 'no-gender', examples: [], kind: 'grammar', anchored: true },
+    { id: 'c', fragment: ', han hjelper meg', correction: ', og han hjelper meg', why: 'Cần liên từ.', rule: '', grammarRef: null, examples: [], kind: 'punctuation', anchored: false },
   ],
-  next_actions: ['Past tense of irregular verbs'],
+  dimensions: [
+    { name: 'naturalness', value: 72 }, { name: 'grammar', value: 84 }, { name: 'vocabulary', value: 80 }, { name: 'coherence', value: 88 },
+  ],
 };
-
-// A struck-through phrase must always be one the learner actually wrote. An
-// evaluator that quotes text back inaccurately is a source of confusion the
-// learner cannot resolve, so the fragment is dropped rather than shown.
-const shown = shownIssues(full, text);
-assert.equal(shown.length, 1, 'an issue quoting words the learner never wrote is not shown');
-assert.equal(shown[0].quote, 'go to the shop yesterday');
-assert.deepEqual(shownIssues({}, text), [], 'no issues is not an error');
-const visibleStrengths = shownStrengths(full, text);
-assert.equal(visibleStrengths.length, 1, 'a strength must quote words the learner actually wrote');
-assert.equal(visibleStrengths[0].quote, 'for my family');
-assert.deepEqual(shownStrengths({}, text), [], 'no strengths is not an error');
-
-const html = writingReview(c, full, { language: 'en', text });
-for (const fragment of [
-  '68',
-  'B1',
-  'Your meaning comes through clearly.',
-  'Yesterday puts this in the past.',
-  'for my family',
-  'Past tense of irregular verbs',
-  c.rubric_task_achievement,
-  c.reviewNotOneAnswer,
-]) {
-  assert.ok(html.includes(fragment), `the review dropped "${fragment}"`);
+for (const ui of ['en', 'zh']) {
+  for (const key of ['writingKindRegister', 'writingKindGrammar', 'writingKindPunctuation', 'writingKindVocabulary', 'writingKindNaturalness', 'writingDimensions',
+    'writingOverview', 'writingStrengths', 'writingIssuesCount', 'writingRuleChip', 'writingGrammarChip', 'writingSaveConcept', 'writingApply', 'writingRuleLabel',
+    'writingAllApplied', 'writingVsPrevious', 'writingFixedCount', 'writingRemainingCount', 'writingNewCount', 'writingVersion', 'writingWords', 'writingChanges',
+    'writingFixedOf', 'writingNoChanges'])
+    assert.ok(copy[ui][key], `${ui}: missing copy for "${key}"`);
 }
-assert.ok(!html.includes('not in the learner text'), 'a filtered issue must not reach the page');
-assert.ok(!html.includes('This evidence was invented.'), 'invented strength evidence must not reach the page');
-assert.equal(
-  (html.match(/data-why=/g) || []).length,
-  shown.length,
-  'every shown issue, and only a shown issue, can be taken further',
-);
-assert.ok(html.includes('data-registers'), 'register exploration is reachable from the review');
-assert.match(html, /inline-size:58%/, 'a dimension is drawn at the value it was given');
+assert.deepEqual([...KINDS], ['register', 'grammar', 'punctuation', 'vocabulary', 'naturalness'], "the kinds are the baseline's");
 
-// Nothing is inferred. No score means no headline; an unchanged score is not
-// movement; a demo evaluator says so.
-const bare = writingReview(c, { issues: [] }, { language: 'en', text });
-assert.ok(!bare.includes('review-headline'), 'no score is shown when none was returned');
-assert.ok(bare.includes(c.noCorrections), 'a review that found nothing has to say so');
-assert.ok(
-  !writingReview(c, { overall: 68, delta: { overall: 0 }, issues: [] }, {
-    language: 'en',
-    text,
-  }).includes('review-delta'),
-  'an unchanged score is not progress',
-);
-assert.ok(
-  !writingReview(c, { overall: 68, delta: {}, issues: [] }, {
-    language: 'en',
-    text,
-  }).includes('review-delta'),
-  'a first draft has nothing to be better than',
-);
-assert.ok(
-  writingReview(c, { evaluator: 'fallback-demo', issues: [] }, {
-    language: 'en',
-    text,
-  }).includes(c.demoMeasurement),
-  'a demo review is labelled as one',
-);
-assert.ok(
-  !writingReview(c, { dimensions: { grammar: null }, issues: [] }, {
-    language: 'en',
-    text,
-  }).includes('review-bar'),
-  'unmeasured stays unmeasured rather than becoming zero',
-);
-const injected = writingReview(
-  c,
-  { corrected_text: '<img src=x onerror=alert(1)>', issues: [] },
-  { language: 'en', text },
-);
-assert.ok(!injected.includes('<img'), 'evaluator text is escaped');
+const html = feedbackHtml(c, review, { language: 'no' });
+assert.match(html, /Thư đủ ý &lt;và&gt; dễ đọc\./, 'the evaluator\'s words are escaped');
+assert.equal((html.match(/class="wf-issue"/g) || []).length, 3, 'every finding is kept, anchored or not');
+assert.match(html, new RegExp(c.writingIssuesCount.replace('{n}', '3')));
+assert.match(html, /wf-was wf-was--warm[^>]*>ønsker å informere deg om</, 'a register finding is struck in the warm colour');
+assert.match(html, /wf-was wf-was--info[^>]*>, han hjelper meg</, 'a punctuation one in blue');
+assert.match(html, /href="#\/grammar\?id=no-gender"/, 'related grammar links to its lesson');
+assert.equal((html.match(/data-wf="rule"/g) || []).length, 2, 'a finding without a rule offers no rule chip');
+assert.equal((html.match(/data-wf="ask"/g) || []).length, 3);
+assert.equal((html.match(/class="wf-dimension"/g) || []).length, 4, 'four dimensions, no fifth');
+assert.match(html, /inline-size:72%/, 'a dimension is drawn at the value it was given');
+assert.doesNotMatch(html, /review-headline|task_achievement/, 'no invented headline score');
+
+// A finding applied leaves the list; when none is left the review says so.
+const oneApplied = feedbackHtml(c, review, { language: 'no', applied: new Set(['a']) });
+assert.equal((oneApplied.match(/class="wf-issue"/g) || []).length, 2);
+assert.match(oneApplied, new RegExp(c.writingIssuesCount.replace('{n}', '2')));
+const allApplied = feedbackHtml(c, review, { language: 'no', applied: new Set(['a', 'b', 'c']) });
+assert.match(allApplied, new RegExp(c.writingAllApplied));
+assert.doesNotMatch(allApplied, /class="wf-issue"/);
+
+// Nothing to fix says so; nothing to score draws no dimensions.
+const clean = feedbackHtml(c, { ...review, issues: [], dimensions: [], strengths: '' }, { language: 'en' });
+assert.match(clean, new RegExp(c.noCorrections));
+assert.equal(dimensionsHtml(c, []), '');
+assert.doesNotMatch(dimensionsHtml(c, [{ name: 'grammar', value: null }]), /wf-dimension"/, 'a missing score is not drawn as 0');
+
+// The finding, opened.
+const sheet = issueSheetHtml(c, review.issues[0], { language: 'no', support: 'vi', thread: [{ id: 1, question: 'Why?', state: 'ready', answer: 'Because.' }] });
+assert.match(sheet, /wf-sheet-fragment[^>]*>ønsker å informere deg om</);
+assert.match(sheet, new RegExp(c.writingKindRegister));
+assert.match(sheet, /Chọn động từ thường\./);
+assert.match(sheet, /Jeg må bare fortelle deg at jeg har ny jobb\./, 'the evaluator\'s example is shown');
+assert.match(sheet, /data-wf="apply"/);
+assert.match(sheet, /data-wf="save-concept"[^>]*aria-disabled="true"/, 'saving a concept keeps its place and says it is not available yet');
+assert.doesNotMatch(issueSheetHtml(c, review.issues[1], { language: 'no', support: 'vi' }), /wf-example/, 'no example is invented');
+assert.doesNotMatch(issueSheetHtml(c, review.issues[2], { language: 'no', support: 'vi', canApply: false }), /data-wf="apply"/, 'an unanchored finding cannot be applied');
+
+// Applying replaces the first occurrence of the learner\'s own words, or nothing.
+const draft = 'Jeg ønsker å informere deg om noe. På et kafé.';
+const fixed = applyFix(draft, review.issues[0]);
+assert.equal(fixed.text, 'Jeg må bare fortelle deg noe. På et kafé.');
+assert.equal(fixed.text.slice(fixed.start, fixed.end), 'må bare fortelle deg');
+assert.equal(applyFix('nothing to see', review.issues[0]), null, 'words that are not in the draft are not replaced');
+assert.equal(applyFix('et kafé og et kafé', review.issues[1]), null, 'a repeated quotation leaves the learner to choose');
+assert.equal(applyFix('et kafé', { ...review.issues[1], correction: 'x'.repeat(12001) }), null, 'the writing limit still holds');
+
+const compare = {
+  previous: { version: 1, wordCount: 142, text: 'Jeg ønsker å informere deg om at jeg bor her.' },
+  current: { version: 2, wordCount: 151, text: 'Jeg må bare fortelle deg at jeg bor her.' },
+  fixed: [{ title: 'ønsker å informere', kind: 'register', detail: 'ønsker å informere → må bare fortelle' }],
+  remaining: [{ title: ', han hjelper meg', kind: 'punctuation', detail: ', og han hjelper meg - Cần liên từ.' }],
+  added: [{ title: 'veldig masse', kind: 'vocabulary', detail: 'veldig mye - masse không đi với veldig' }],
+  dimensionDeltas: [{ name: 'naturalness', from: 72, to: 88 }, { name: 'vocabulary', from: 80, to: 78 }],
+};
+const revised = revisionHtml(c, compare, { language: 'no' });
+assert.match(revised, new RegExp(c.writingFixedOf.replace('{a}', '1').replace('{b}', '2')), 'fixed one of the two that were there');
+assert.match(revised, new RegExp(c.writingFixedCount.replace('{n}', '1')));
+assert.match(revised, new RegExp(c.writingRemainingCount.replace('{n}', '1')));
+assert.match(revised, new RegExp(c.writingNewCount.replace('{n}', '1')));
+assert.match(revised, new RegExp(c.writingVersion.replace('{n}', '1')));
+assert.match(revised, new RegExp(c.writingVersion.replace('{n}', '2')));
+assert.match(revised, /72 → 88/, 'a dimension shows where it was and where it is');
+assert.match(revised, /80 → 78[\s\S]*?data-move="down"|data-move="down"[\s\S]*?80 → 78/, 'a drop is a drop');
+assert.match(revised, /veldig masse/);
+assert.match(revised, /data-state="added"/);
+// The comparison has nothing to say about a first version, and says nothing.
+assert.match(revisionHtml(c, { ...compare, fixed: [], remaining: [], added: [], dimensionDeltas: [] }, { language: 'no' }), new RegExp(c.writingNoChanges));
 
 // A transient provider failure is actionable; a permanent/unconfigured state
 // must not invite a retry that cannot help. Both keep the learner's draft.
-const retryableFailure = writingReviewFailure(c, { retryable: true });
+const retryableFailure = writingReviewFailure(c, new Error('x'));
 assert.ok(retryableFailure.includes(c.reviewFailed));
 assert.ok(retryableFailure.includes('data-retry-review'));
-const unavailableFailure = writingReviewFailure(c, { retryable: false });
+const unavailableFailure = writingReviewFailure(c, Object.assign(new Error('x'), { retryable: false }));
 assert.ok(unavailableFailure.includes(c.reviewUnavailable));
 assert.ok(!unavailableFailure.includes('data-retry-review'));
-for (const ui of ['en', 'zh']) {
-  assert.ok(copy[ui].reviewFailed, `${ui}: missing retryable review failure copy`);
-  assert.ok(copy[ui].reviewUnavailable, `${ui}: missing unavailable review copy`);
-}
-
-/* Revising is where writing is actually learned. `revision_delta()` has always
-   worked out which problems went, which stayed, which arrived and which were
-   reworked; the surface showed one number. These hold the rendering of it. */
-const revised = {
-  ...full,
-  delta: {
-    overall: 6,
-    grammar: 8,
-    naturalness: -2,
-    coherence: 0,
-    issues: {
-      removed: [{ fragment: 'buyed', mini_rule_vi: 'Irregular past' }],
-      persistent: [{ fragment: 'go to the shop yesterday', mini_rule_vi: 'Past simple' }],
-      new: [{ fragment: 'for my family' }],
-      changed: [{ before: { fragment: 'some bread' }, after: { fragment: 'a loaf of bread' } }],
-    },
-  },
-};
-const revisedHtml = writingReview(c, revised, { language: 'en', text });
-for (const fragment of [
-  c.reviewSinceLast,
-  c.reviewFixed,
-  c.reviewStill,
-  c.reviewArrived,
-  c.reviewReworked,
-  'buyed',
-  'a loaf of bread',
-]) {
-  assert.ok(revisedHtml.includes(fragment), `the comparison dropped "${fragment}"`);
-}
-// A score that rose while the same problem persists is a different result from
-// one where the problem is gone, so both must be visible, not just the total.
-assert.ok(
-  revisedHtml.includes("data-tone=\"good\"") && revisedHtml.includes("data-tone=\"watch\""),
-  'fixed and persisting problems must be told apart',
-);
-// Movement is shown where it happened. A dimension that did not move says
-// nothing rather than "0".
-assert.ok(revisedHtml.includes('+8'), 'a dimension that improved says so');
-assert.ok(revisedHtml.includes('-2'), 'a dimension that slipped says so');
-assert.equal(
-  (revisedHtml.match(/dimension-move/g) || []).length,
-  2,
-  'only dimensions that actually moved carry a movement',
-);
-// A first draft has nothing to compare against, and must not imply it does.
-assert.ok(
-  !html.includes('review-comparison'),
-  'a first version shows no comparison',
-);
-assert.ok(
-  !writingReview(c, { ...full, delta: { overall: 6 } }, { language: 'en', text }).includes(
-    'review-comparison',
-  ),
-  'a delta carrying no issue movement renders no comparison shell',
-);
-assert.ok(
-  !writingReview(c, { ...revised, delta: { ...revised.delta, issues: { removed: [], persistent: [], new: [], changed: [] } } }, {
-    language: 'en',
-    text,
-  }).includes('review-comparison'),
-  'an empty comparison is not shown as an empty section',
-);
 
 /* What the learner is writing reaches the evaluator. A lab report and a
    friendly email are not the same task, and the evaluator has always accepted
@@ -261,21 +175,13 @@ assert.ok(
   /task && `\$\{c\.writingTask\} \$\{task\}`/.test(expressionSource),
   'the stated task must travel with the text as the writing task',
 );
-/* Proficiency is optional guidance, not a prerequisite. `c778005` made the
-   request target optional, so the surface must let a learner write and press
-   Review with nothing chosen and let the evaluator infer the demonstrated
-   band; an unchosen target has to travel as null, never as an empty string. */
-assert.ok(
-  !/name="target"\s+required/.test(expressionSource),
-  'the feedback target must not be a required field',
-);
-assert.match(
-  expressionSource,
-  /\[name=target\]'\)\.value\s*\|\|\s*null/,
-  'an unchosen target must travel as null so the evaluator infers the level',
-);
+/* The level is not a control in the frame (D-067, D-068): it comes from the learner's declared level or the
+   text's own, and with neither the target is null - never an empty string - so the evaluator infers it. */
+assert.ok(!/name="target"/.test(expressionSource), 'no level selector is drawn');
+assert.match(expressionSource, /target_cefr:\s*targetLevel/, 'the target is the level the app knows');
+assert.match(expressionSource, /\|\| null;/, 'and is null when it knows none');
 for (const ui of ['en', 'zh']) {
-  for (const key of ['writingTask', 'writingTaskNote', 'chooseTarget', 'reviewSinceLast', 'reviewFixed', 'reviewStill', 'reviewArrived', 'reviewReworked'])
+  for (const key of ['writingTask', 'writingTaskNote', 'chooseTarget', 'reviewReworked'])
     assert.ok(copy[ui][key], `${ui}: missing copy for "${key}"`);
 }
 
@@ -310,22 +216,18 @@ assert.match(
   'no version is the correct one',
 );
 
-// Going deeper from an issue reaches the one shared explanation surface, with
-// the learner's own wording and the sentence it sat in.
+// Going deeper from a finding asks about the learner's own wording, with the
+// sentence it sat in, through the same sentence contract the Quick Sheet uses.
 const expression = read('static/orena/ui/expression.js');
+const feedbackSource = read('static/orena/ui/writing-feedback.js');
+assert.match(feedbackSource, /api\.sentenceSheet\(\{\s*text: issue\.fragment/, 'the question is about the quoted words');
+assert.match(feedbackSource, /find\(\(part\) => part\.includes\(issue\.fragment\)\)/, 'the sentence travels with it');
+assert.match(expression, /api\.essayReview\(/, 'the review is read from its contract');
+assert.match(expression, /api\.essayRevision\(/, 'and so is the revision');
+/* Register exploration is kept (D-068): the frame has no button for it, so it sits behind the top bar's menu. */
 assert.match(
   expression,
-  /openUnderstanding\(ctx, \{\s*selection: issue\.quote/,
-  'why? asks about the quoted words',
-);
-assert.match(
-  expression,
-  /find\(\(part\) => part\.includes\(issue\.quote\)\)/,
-  'the sentence travels with it',
-);
-assert.match(
-  expression,
-  /openRegisters\(ctx, \{ text, title \}\)/,
+  /openRegisters\(ctx, \{ text: root\.querySelector\('textarea'\)\.value, title \}\)/,
   'registers are asked about what the learner wrote',
 );
 assert.match(
@@ -343,5 +245,18 @@ assert.match(
   /form\.requestSubmit\(\)/,
   'retry submits the captured form after the original submit event has finished',
 );
+
+/* --- The findings marked in the draft are earned ---------------------------------------------------- */
+const draftText = 'Jeg jobber på et kafé nå. Sjefen min er hyggelig, han hjelper meg. Jeg jobber på et kafé.';
+const finding = (id, fragment, kind = 'grammar') => ({ id, fragment, correction: 'x', kind });
+{
+  const found = marksIn(draftText, issueMarks([finding('a', 'hyggelig, han', 'punctuation'), finding('b', 'ikke der'), finding('c', 'på et kafé')]));
+  assert.deepEqual(found.map((mark) => mark.id), ['a'], 'a finding whose words are absent, or occur twice, marks nothing');
+  assert.equal(found[0].tone, 'info', 'punctuation is marked in blue, everything else in amber');
+  const overlapping = marksIn('one two three', issueMarks([finding('a', 'one two'), finding('b', 'two three')]));
+  assert.deepEqual(overlapping.map((mark) => mark.id), ['a'], 'marks never overlap: the earlier finding keeps its words');
+  const html = markedHtml('a <b> & c', issueMarks([finding('a', '<b>')]));
+  assert.equal(html, 'a <mark data-tone="warm">&lt;b&gt;</mark> &amp; c', "the learner's words are escaped, never taken for markup");
+}
 
 console.log('Orena writing review, rubric parity and register comparison: PASS');

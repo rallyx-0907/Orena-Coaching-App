@@ -1,0 +1,50 @@
+{
+  "_usedBy": [
+    "ReadingWorkspaceTemplate",
+    "ListeningWorkspaceTemplate",
+    "WritingReviewTemplate",
+    "VocabularyReviewTemplate"
+  ],
+  "headword": "string",
+  "script": "latin | hanzi",
+  "pinyin": "string | null",
+  "ipa": "string | null",
+  "partOfSpeech": "string | null",
+  "contextMeaning": "string",
+  "contextSentence": "string",
+  "audioUrl": "string",
+  "saved": "boolean",
+  "deeper": {
+    "coreIdea": "string",
+    "mentalModel": "string",
+    "whyHere": "string",
+    "contrast": [
+      {
+        "term": "string",
+        "note": "string"
+      }
+    ],
+    "examples": [
+      "string"
+    ],
+    "commonMistake": "string",
+    "grammarNote": "string",
+    "relatedExpressions": [
+      {
+        "term": "string",
+        "note": "string"
+      }
+    ],
+    "sources": [
+      {
+        "skill": "string",
+        "title": "string",
+        "timestamp": "string | null"
+      }
+    ],
+    "learnerSentences": [
+      "string"
+    ]
+  },
+  "usageVerdict": "natural | possible-unnatural | context-inappropriate | wrong-meaning | register-mismatch | uncommon-legit | grammatically-impossible | null"
+}

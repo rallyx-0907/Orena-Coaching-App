@@ -106,9 +106,11 @@ assert.ok(
 /* The hint is present from the moment the learner arrives. Asking for the
    shape of the line before you can begin is a step that helps nobody, and a
    hint that appears only on request is a hint most learners never see. */
+/* On the baseline's Dictation screen (D-066) the shape is always there - masks and whatever
+   the learner has earned by typing - and a hint level adds to it; level 0 is "no hint yet". */
 assert.ok(
-  /let hintLevel = 1;/.test(encounter),
-  'the shape of the line is there to begin with',
+  /let hintLevel = 0;/.test(encounter),
+  'the shape of the line is there to begin with, before any hint is asked for',
 );
 assert.ok(
   encounter.indexOf('paintHint();') <
@@ -117,18 +119,20 @@ assert.ok(
 );
 
 const world = read('static/orena/world.css');
+const dictationCss = read('static/orena/dictation.css');
 assert.ok(
-  world.includes('.media-encounter:has(.practice-space:not([hidden]))'),
-  'the encounter re-composes when a practice opens',
+  dictationCss.includes('.listen-workspace[data-dictation]'),
+  'the room re-composes when Dictation opens: the screen takes the whole room',
 );
 assert.ok(world.includes('@media (min-width: 1600px)'), 'wide screens get their own composition');
 assert.ok(
   /@media \(min-width: 1600px\)[\s\S]{0,900}\.text-encounter/.test(world),
   'reading keeps a comfortable measure instead of stretching with the window',
 );
-assert.ok(
-  /max-width: 800px\)[\s\S]{0,2000}\.seek-line,[\s\S]{0,200}display: none/.test(world),
-  'narrow practice hides scrubbing it does not need',
+assert.match(
+  dictationCss,
+  /\.listen-workspace\[data-dictation\] > :not\(\.practice-space\) \{\s*display: none;/,
+  'Dictation hides the scrubbing and the transport it does not need: the player plays the line but is not on screen',
 );
 
 /* Motion says something or it is noise, and it is off for anyone who asked. */

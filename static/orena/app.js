@@ -1,5 +1,5 @@
 import { api } from './infrastructure/api.js';
-import { copy } from './ui/copy.js';
+import { copy, untranslated } from './ui/copy.js';
 import { esc, dialog, status } from './ui/html.js';
 import { route, link } from './product/intent.js';
 import { learnerMemory } from './product/memory.js';
@@ -7,13 +7,27 @@ import { renderWorld } from './ui/world.js';
 import { renderEncounter } from './ui/encounter.js';
 import { renderSpeaking } from './ui/speaking.js';
 import { renderConversation } from './ui/conversation.js';
-import { referenceNavigation, navigationToggle, referenceCopy, experienceFor, renderContinue } from './ui/reference.js';
+import {
+  referenceNavigation,
+  navigationTabs,
+  operatorEntry,
+  topBar,
+  referenceCopy,
+  experienceFor,
+  renderContinue,
+} from './ui/reference.js';
+import { icon } from './ui/phosphor.js';
+import { renderProgress } from './ui/progress.js';
+import { renderProfile } from './ui/profile.js';
+import { paintBookPage } from './ui/library.js';
+import { renderHistory } from './ui/history.js';
 import { renderCollection } from './ui/collection.js';
 import {
   renderExpression,
   renderLanguage,
   renderGrammar,
 } from './ui/expression.js';
+import { renderWritingEntry } from './ui/writing-entry.js';
 import { installHints } from './ui/patterns.js';
 import { bindContentRails } from './ui/content-rail.js';
 import { growthSummarySection } from './ui/growth-summary.js';
@@ -118,7 +132,29 @@ const storage = (() => {
     };
   }
 })();
-const ui = storage.getItem('orena.interface') === 'zh' ? 'zh' : 'en';
+/* The learner's support language owns everything Orena says.
+
+   Orena has two learner language roles and only two: the learning language,
+   which owns the material, and the support language, which owns every word the
+   product itself speaks - navigation, controls, instructions, feedback,
+   errors. A third, independently chosen "interface language" produced exactly
+   what it sounds like: a learner studying English with Vietnamese support
+   reading an English product. The stored preference is kept so nothing breaks,
+   but it no longer decides this on its own.
+
+   A locale with no copy pack at all falls back to English rather than showing
+   keys. A supported locale is expected to be complete, and a shortfall in one
+   is said out loud here - on the developer's console, where it can be fixed -
+   rather than reaching a learner as untold English (`ui/copy.js`). */
+const uiLocale = (support) => (copy[String(support || '')] ? String(support) : 'en');
+const ui = uiLocale(storage.getItem('orena.support') || storage.getItem('orena.interface'));
+{
+  const gap = untranslated(ui);
+  if (gap.length)
+    console.warn(
+      `[Orena copy] ${gap.length} interface strings have no ${ui} translation and are showing in English: ${gap.slice(0, 12).join(', ')}${gap.length > 12 ? '…' : ''}`,
+    );
+}
 const ctx = {
   api,
   ui,
@@ -159,7 +195,7 @@ const ctx = {
 };
 function shell() {
   const c = ctx.c;
-  document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : 'en';
+  document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : ctx.ui;
   document.documentElement.dataset.learning = ctx.language;
   // Shared plumbing such as a dialog's close control reads its label from the
   // interface language rather than carrying every language at once.
@@ -168,46 +204,62 @@ function shell() {
   // before any language is known; once one is, it speaks only that one.
   const skip = document.querySelector('a.skip');
   if (skip) skip.textContent = c.skipToContent;
+  /* The shell (D-059): a rail on a desk - the approved mark, the destinations,
+     bringing something in and the learner's own card at its foot - and on a
+     phone a slim top bar plus a tab bar at the thumb, with the whole map one
+     control away as a sheet. Controls that exist in both compositions are
+     written once per composition; CSS shows the one that belongs. */
+  /* The approved composition (D-060): on a desk the rail - mark, four
+     destinations, Practice, the learner's card - and a top bar over each
+     destination; on a phone a slim bar (mark, language pair, the learner) and
+     the tab bar. Bringing your own content lives in Library. */
   document.getElementById('shell').innerHTML =
-    `<div class="shell-identity"><a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span>orena</a><span class="shell-motto">${esc(referenceCopy[ctx.ui].fieldNote)}</span></div>${referenceNavigation(ctx)}${navigationToggle(ctx)}<div class="shell-actions"><button class="bring-button" aria-label="${c.bring}" data-bring>＋ <span>${c.bring}</span></button><button class="account-button" data-preference aria-label="${c.preferences}"><span class="language-seal">${ctx.language.toUpperCase()}</span> ${c.preferences}</button></div>`;
-  document.querySelector('[data-bring]').onclick = importContent;
-  document.querySelector('[data-preference]').onclick = () => preferences();
-  /* The narrow-screen destination sheet. The shell is rebuilt on every route,
-     so choosing a destination closes it without anything having to remember
-     that it was open - and Escape closes it from the keyboard. */
-  const shellEl = document.getElementById('shell');
-  const toggle = shellEl.querySelector('[data-nav-toggle]');
-  /* The curtain behind the sheet. A button rather than a div, so closing by
-     tapping away is one thing to a pointer and to a keyboard both, and so it
-     is announced as something that does something. */
-  let backdrop = document.querySelector('.nav-backdrop');
-  if (!backdrop) {
-    backdrop = document.createElement('button');
-    backdrop.className = 'nav-backdrop';
-    backdrop.type = 'button';
-    backdrop.tabIndex = -1;
-    backdrop.setAttribute('aria-hidden', 'true');
-    shellEl.insertAdjacentElement('afterend', backdrop);
+    `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
+  document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  /* The rail and the tab bar belong to Home, Library, Vocabulary and Progress. A room where the
+     learner works - the reader, the player, Dictation, the editor, a review - has none: the
+     baseline's templates for them begin at a bar of their own. */
+  document.documentElement.dataset.shell = shellBelongsTo(ctx.location) ? 'on' : 'off';
+  paintTopBar();
+  // The approved design has no page footer; settings live in the learner's
+  // card and the You tab.
+  document.getElementById('footer').innerHTML = '';
+}
+const WORKING_PAGES = new Set(['encounter', 'book', 'expression', 'conversation']);
+function shellBelongsTo(location) {
+  if (WORKING_PAGES.has(location.page)) return false;
+  if (location.page === 'practice' && ['recall', 'dictation', 'shadowing'].includes(location.intent)) return false;
+  return true;
+}
+/* The destinations that carry the top bar. Rooms where the learner works do
+   not: the content comes forward (Design Contract rule 11). */
+// Library carries its own search above the grid, so it does not repeat the
+// global one (rule 20).
+const TOP_BAR_PAGES = new Set(['language', 'progress', 'continue', 'collection', 'profile']);
+function paintTopBar() {
+  const bar = document.getElementById('topbar');
+  if (!bar) return;
+  const page = ctx.location.page;
+  const show = TOP_BAR_PAGES.has(page) && ctx.location.intent !== 'recall';
+  bar.hidden = !show;
+  document.documentElement.dataset.topbar = show ? 'on' : 'off';
+  if (!show) {
+    bar.innerHTML = '';
+    return;
   }
-  const setMenu = (open) => {
-    // Looking for somewhere else to go is navigating, not working.
-    if (open) header.set(false);
-    shellEl.dataset.menu = open ? 'open' : 'closed';
-    toggle.setAttribute('aria-expanded', String(open));
-  };
-  setMenu(false);
-  toggle.onclick = () => setMenu(shellEl.dataset.menu !== 'open');
-  backdrop.onclick = () => setMenu(false);
-  shellEl.onkeydown = (event) => {
-    if (event.key !== 'Escape' || shellEl.dataset.menu !== 'open') return;
-    setMenu(false);
-    toggle.focus();
-  };
-  document.getElementById('footer').innerHTML =
-    `<a href="#/" class="brand-small">orena</a><button class="quiet" data-account>${c.preferences} ↗</button>`;
-  document
-    .querySelector('[data-account]')
-    ?.addEventListener('click', () => preferences());
+  bar.innerHTML = topBar(ctx);
+  bar.querySelectorAll('[data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  /* Not every destination's bar carries the search: Progress draws tabs and
+     the window its numbers cover instead, as the source does. */
+  const form = bar.querySelector('[data-global-search]');
+  if (form) {
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      const query = String(new FormData(form).get('q') || '').trim();
+      if (!query) return;
+      ctx.go('search', { q: query });
+    };
+  }
 }
 /* Read-only account fact, never an access decision - accountCommerce() in
    writing_coach/product/commerce.py is the one server resolver this renders.
@@ -242,39 +294,8 @@ function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.interface}<select name="interface"><option value="en" ${ctx.ui === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.ui === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}<button class="quiet" id="themeButton">◐ ${c.theme}</button>`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : secondarySurfaces(ctx)}${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}`,
   });
-  /* The theme chooser is built from the registry, so registering a theme is
-     the whole of adding one - there is no list of themes written out a second
-     time here. Each card carries `data-theme` itself, which means the sample
-     inside it is painted by that theme's own tokens rather than by swatches
-     copied into this file: a preview cannot drift from the theme it previews.
-
-     Named themes rather than a light/dark switch, so the labels are read from
-     copy like every other learner-facing string, in both interface languages. */
-  const themeControl = document.createElement('fieldset');
-  themeControl.className = 'theme-control';
-  const choices = [
-    { id: 'system', appearance: '' },
-    ...window.orenaTheme.themes,
-  ];
-  themeControl.innerHTML = `<legend>${esc(c.theme)}</legend><div class="theme-choices">${choices
-    .map(({ id }) => {
-      const name = id === 'system' ? c.themesystem : c['theme_' + id];
-      const note = id === 'system' ? c.themesystemNote : c['theme_' + id + 'Note'];
-      // The sample is the theme's own canvas, surface, text and accent. A
-      // theme that cannot paint this cannot paint a room either.
-      const sample =
-        id === 'system'
-          ? ''
-          : `<span class="theme-sample" data-theme="${esc(id)}" aria-hidden="true"><span class="theme-sample-card"><b></b><i></i></span><span class="theme-sample-accent"></span></span>`;
-      return `<label class="theme-choice"><input type="radio" name="orenaTheme" value="${esc(id)}" ${window.orenaTheme.preference === id ? 'checked' : ''}>${sample}<span class="theme-choice-text"><strong>${esc(name)}</strong><span>${esc(note)}</span></span></label>`;
-    })
-    .join('')}</div>`;
-  sheet.querySelector('#themeButton').replaceWith(themeControl);
-  themeControl.onchange = (event) => {
-    if (event.target.name === 'orenaTheme') window.orenaTheme.set(event.target.value);
-  };
   sheet.querySelector('#preferencesForm').onsubmit = async (event) => {
     event.preventDefault();
     if (pendingWrites) return;
@@ -298,10 +319,10 @@ function preferences(onboarding = false) {
         support_language: data.get('support'),
       });
       ctx.support = ctx.profile.support_language || ctx.profile.native_language;
-      ctx.ui = String(data.get('interface'));
+      ctx.ui = uiLocale(data.get('support'));
       ctx.c = copy[ctx.ui];
       try {
-        storage.setItem('orena.interface', ctx.ui);
+        storage.setItem('orena.support', String(data.get('support') || ''));
       } catch {}
       ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
       sheet.close();
@@ -327,6 +348,14 @@ function preferences(onboarding = false) {
       form.inert = false;
     }
   };
+}
+/* The two surfaces the approved IA calls "secondary, reached from anywhere":
+   saved content and history. They live beside Settings until the surfaces that
+   draw them arrive - Vocabulary's "Saved words" row (Phase 6) and the profile
+   sheet (Phase 10). No new chrome anywhere else. */
+function secondarySurfaces(scope) {
+  const r = referenceCopy[scope.ui] || referenceCopy.en;
+  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
 }
 function validVideo(value) {
   try {
@@ -423,15 +452,25 @@ async function render() {
      microtask, so it is always cleared before it can fire; a slow one leaves
      the previous room on screen for a moment and then says it is working,
      which is the honest order. */
+  /* Loading is a skeleton at the real geometry, never a line of text in the
+     middle of the page (Design Contract rule 39). */
   const announceLoading = setTimeout(() => {
     if (scope.alive())
-      root.innerHTML = `<p class="loading" role="status">${ctx.c.loading}</p>`;
+      root.innerHTML = `<div class="room-loading" role="status" aria-busy="true"><span class="sr-only">${esc(ctx.c.loading)}</span><span class="skeleton skeleton--line room-loading__title"></span><div class="room-loading__row"><span class="skeleton skeleton--card"></span><span class="skeleton skeleton--card"></span></div><div class="room-loading__rail"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div></div>`;
   }, 150);
   try {
     const page = ctx.location.page;
     const result =
       page === 'collection'
         ? renderCollection(root, scope)
+        : page === 'progress'
+          ? await renderProgress(root, scope)
+        : page === 'profile'
+          ? await renderProfile(root, scope)
+        : page === 'book'
+          ? paintBookPage(root, scope, ctx.location.id)
+        : page === 'history'
+          ? await renderHistory(root, scope)
         : page === 'admin'
           ? await renderAdminRoom(root, scope)
         : page === 'continue'
@@ -440,6 +479,8 @@ async function render() {
         ? await renderEncounter(root, scope)
         : page === 'conversation'
           ? renderConversation(root, scope)
+          : page === 'writing'
+            ? renderWritingEntry(root, scope)
           : page === 'expression'
             ? await renderExpression(root, scope)
             : page === 'language' || ctx.location.intent === 'recall'
@@ -515,7 +556,7 @@ async function render() {
          under a Chinese heading is how untranslated text reaches a learner.
          The failure itself is already recorded in `renderFailures` and the
          console, which is where a diagnostic belongs. */
-      root.innerHTML = `<section class="room-failed"><h1>${esc(ctx.c.cantOpen)}</h1><div class="button-row"><button class="primary" id="retry">${esc(ctx.c.retry)}</button><a class="outline" href="${esc(back.href)}">${esc(String(ctx.c.backTo).replace('{room}', back.label))}</a></div></section>`;
+      root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" id="retry">${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(ctx.c.retry)}</span></button><a class="outline" href="${esc(back.href)}">${icon('arrow-right', { size: 18 })}<span>${esc(String(ctx.c.backTo).replace('{room}', back.label))}</span></a></div></section>`;
       root.querySelector('#retry').onclick = render;
       root.querySelector('h1').setAttribute('tabindex', '-1');
       root.querySelector('h1').focus({ preventScroll: true });
@@ -544,6 +585,13 @@ async function boot() {
     ctx.commerce = commerce;
     ctx.growth = growth;
     ctx.support = profile.support_language || profile.native_language || 'en';
+    ctx.ui = uiLocale(ctx.support);
+    ctx.c = copy[ctx.ui];
+    try {
+      storage.setItem('orena.support', ctx.support);
+    } catch {
+      // A device that cannot keep it still honours it for this visit.
+    }
     ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
     // New product direction remains internal until the human release gate.
     if (!user.is_admin) {
@@ -562,7 +610,7 @@ async function boot() {
     await render();
     if (!profile.exists) preferences(true);
   } catch (error) {
-    root.innerHTML = `<section class="room-failed"><h1>${esc(ctx.c.cantOpen)}</h1><button class="primary" onclick="location.reload()">${esc(ctx.c.retry)}</button></section>`;
+    root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" onclick="location.reload()">${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(ctx.c.retry)}</span></button></div></section>`;
   }
 }
 boot();

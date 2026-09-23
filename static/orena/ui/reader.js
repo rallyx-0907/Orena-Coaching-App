@@ -15,6 +15,9 @@
 import { esc, dialog } from './html.js';
 import { mountLexicalLayer } from './lexical.js';
 import { symbol } from './symbols.js';
+import { icon } from './phosphor.js';
+import { referenceCopy } from './reference.js';
+import { contentCover } from './cover.js';
 import { link } from '../product/intent.js';
 import {
   EXPLAIN_LIMITS,
@@ -51,11 +54,13 @@ function saveSettings(settings) {
 
 /* `book` is set for a library chapter: { id, title, chapterId, chapters,
    provenance }. `progressive` reveals a dialogue a line at a time. `title` is
-   what an explanation or a kept word is filed under; `origin` is the way back. */
+   what an explanation or a kept word is filed under; `origin` is where it was met (the
+   provenance a kept word carries), which is not a link. The way back is the book's page
+   for a chapter and the reading practice otherwise. */
 export function mountReader(
   host,
   ctx,
-  { item, blocks: sourceBlocks, book = null, progressive = false, title, origin },
+  { item, blocks: sourceBlocks, book = null, progressive = false, title, origin, actions = [], onAction = null },
 ) {
   const { api, c, language, memory } = ctx;
   const alive = ctx.alive || (() => host.isConnected);
@@ -86,6 +91,14 @@ export function mountReader(
       ? `<a class="reader-step" href="${esc(href)}" rel="${direction === 'back' ? 'prev' : 'next'}" aria-label="${esc(label)}">${symbol(direction, 20)}</a>`
       : `<span class="reader-step" aria-hidden="true">${symbol(direction, 20)}</span>`;
 
+  /* The support-language layer's state, declared with the other reading state
+     because the first paint already asks whether it is on. */
+  const translations = new Map();
+  let showSupport = false;
+  const supportLine = (index) => {
+    const text = translations.get(index);
+    return showSupport && text ? `<p class="reader-support" lang="${esc(support || '')}">${esc(text)}</p>` : '';
+  };
   const bodyHtml = () => {
     const visible = blocks.slice(0, shown);
     const next =
@@ -94,21 +107,120 @@ export function mountReader(
         : item.question
           ? `<p class="reader-question">${esc(item.question)}</p>`
           : '';
-    return `${readerArticleHtml(c, { title: item.title, language, blocks: visible, marks })}${next}`;
+    const article = readerArticleHtml(c, { title: item.title, language, blocks: visible, marks });
+    /* The support-language line sits under the paragraph it translates, as the
+       design draws it - a layer over the same text, never a second column. */
+    const withSupport = showSupport
+      ? article.replace(/<\/p>/g, (match, offset, whole) => {
+          const before = whole.slice(0, offset);
+          const opened = [...before.matchAll(/data-block="(\d+)"/g)].pop();
+          return `</p>${opened ? supportLine(Number(opened[1])) : ''}`;
+        })
+      : article;
+    return `${withSupport}${next}`;
   };
 
-  const chapterNav = place
-    ? `<nav class="reader-chapter-nav" aria-label="${esc(c.readerContents)}">${prevHref ? `<a href="${esc(prevHref)}" rel="prev">${symbol('back', 18)}<span>${esc(c.readerPrevious)}</span></a>` : '<span></span>'}<span class="reader-chapter-nav__where">${esc(where)}</span>${nextHref ? `<a href="${esc(nextHref)}" rel="next"><span>${esc(c.readerNext)}</span>${symbol('forward', 18)}</a>` : `<span class="reader-chapter-nav__end">${esc(c.readerEnd)}</span>`}</nav>`
-    : '';
+  /* The end of a chapter, as the design draws it (Screens part 3): what was
+     just finished, what it left behind, and the one way on. What nothing
+     measures keeps its tile and says so - the quiz a library chapter does not
+     carry (GAP-031) and the time nobody records (GAP-030). New words are the
+  /* The source draws no end-of-chapter sheet. The D-059 composition that
+     covered half the screen the moment a chapter opened is deleted (rule 44),
+     not restyled: what it reported - the words kept here, the way on - is
+     already the side panel's and the foot row's work.  */
 
-  host.innerHTML = `<div class="reader" data-reader><header class="reader-bar"><a class="reader-bar__back" href="${esc(link('practice', { intent: 'reading' }))}">${symbol('back', 18)}<span>${esc(c.readerBackToReading)}</span></a><div class="reader-bar__where"><span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span><span class="reader-bar__place">${where ? `<span>${esc(where)}</span><span aria-hidden="true"> · </span>` : ''}<span data-reader-percent>${esc(progressLabel(c, 0))}</span></span></div><div class="reader-bar__tools">${place ? `<span class="reader-bar__steps">${stepLink(prevHref, c.readerPrevious, 'back')}${stepLink(nextHref, c.readerNext, 'forward')}</span><button type="button" class="reader-tool" data-reader-toc aria-label="${esc(c.readerContents)}" aria-haspopup="dialog">${symbol('contents', 20)}</button>` : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button><button type="button" class="reader-tool" data-keep aria-pressed="${kept()}" aria-label="${esc(c.readerKeep)}">${symbol('bookmark', 20)}</button></div><div class="reader-progress" aria-hidden="true"><span data-reader-progress></span></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-body" data-reader-body>${bodyHtml()}${chapterNav}</div>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
+  /* The approved reader (D-059 Phase 5): a compact bar - the way back, where
+     the learner is, the progress rail, the reading layers and the type size -
+     over a split pane. The text takes the page; the side panel holds the word
+     just looked up, notes and the contents. A phone drops the panel: the word
+     arrives as the anchored sheet the design draws. */
+  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  /* The source draws this as a pill with the translate glyph and a word, not a
+     bare language code: "Song ngữ" - the bilingual layer over the same text. */
+  const layerChip = (key, label, on, available, glyph = null) =>
+    `<button type="button" class="reader-layer${glyph ? ' reader-layer--pill' : ''}" data-reader-layer="${key}" aria-pressed="${on}"${available ? '' : ` aria-disabled="true" title="${esc(r.readerLayerUnavailable)}"`}>${glyph ? icon(glyph, { size: 19, filled: on }) : ''}<span>${esc(label)}</span></button>`;
+  const tabs = ['word', 'grammar', 'notes'];
+  /* The reader of the updated design (D-065, device overview 03): the contents
+     on the left at 300px, the text in the middle at its own measure, and the
+     word panel on the right at 440px. The bar carries what this is and the
+     three controls that change how it reads; how far through it the learner
+     is sits under the text, with the way to the next chapter. A phone drops
+     the two side columns: the contents live behind the title, and a word
+     arrives as the anchored sheet. */
+  const readerWords = blocks.reduce((total, block) => total + String(block.text || '').split(/\s+/).filter(Boolean).length, 0);
+  const metaLine = [where, readerWords ? String(r.readerWords).replace('{n}', readerWords.toLocaleString()) : '']
+    .filter(Boolean)
+    .join(' · ');
+  /* The frame's floating bar under the text: what the learner can do with this whole text, once, in
+     one place. The reader owns the two it can answer itself - keeping the text and hearing it - and the
+     room that mounted it supplies the rest, because only that room knows whether they exist here. */
+  const barAction = ({ name, glyph, label, primary = false, available = true, title = '', pressed = null }) =>
+    `<button type="button" class="reader-action${primary ? ' reader-action--primary' : ''}" data-reader-action="${esc(name)}"${pressed === null ? '' : ` aria-pressed="${pressed}"`}${available ? '' : ` aria-disabled="true"`}${title ? ` title="${esc(title)}"` : ''}>${icon(glyph, { size: 19, filled: primary })}<span>${esc(label)}</span></button>`;
+  /* The six the source draws, in its order, with its icons (measured
+     2026-09-22): Lưu bài · Nghe · Kiểm tra hiểu · Thảo luận · Viết phản hồi ·
+     Đọc tiếp sau, the last one the primary. The caller says which of the
+     middle ones this text can actually offer; nothing else joins the bar -
+     prepared notes are the side panel's third tab, where the frame puts them. */
+  const actionBar = () => {
+    const supplied = new Map(actions.map((action) => [action.name, action]));
+    const all = [
+      { name: 'keep', glyph: 'bookmark-simple', label: r.readerSave, pressed: kept() },
+      { name: 'listen', glyph: 'speaker-high', label: r.readerListen, available: false, title: r.bookSoon },
+      supplied.get('check'),
+      supplied.get('discuss'),
+      supplied.get('respond'),
+      { name: 'later', glyph: 'bookmark-simple', label: c.readerKeep, primary: true },
+    ].filter(Boolean);
+    return `<div class="reader-actions" role="group" aria-label="${esc(r.readerActions)}">${all.map(barAction).join('')}</div>`;
+  };
+  const contentsColumn = place
+    ? `<nav class="reader-contents-column" aria-label="${esc(r.readerContents)}"><span class="ds-label">${esc(r.readerContents)}</span>${tocHtml(c, { bookId: book.id, chapters: book.chapters, currentId: book.chapterId, provenance: book.provenance })}</nav>`
+    : '';
+  host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('arrow-left', { size: 20 })}<span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span></a>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}<div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', r.readerBilingual, false, true, 'translate') : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
+    .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
+    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><div class="reader-foot__row"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</div></footer>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
 
   const reader = host.querySelector('[data-reader]');
   const body = host.querySelector('[data-reader-body]');
+  const asidePanel = host.querySelector('[data-reader-panel]');
+  let tab = 'word';
+  const wide = () => window.matchMedia('(min-width: 901px)').matches;
+  /* The words kept while reading this text, as the design's "saved in this
+     chapter" list - read from device memory, never a second store. */
+  const savedHere = () =>
+    Object.entries(memory.value.keptLanguage || {})
+      .filter(([, kept]) => !kept?.where || kept.where === barTitle || kept.where === item.title)
+      .slice(0, 8);
+  const panelPlaceholder = () => {
+    if (tab === 'grammar')
+      return `<div class="state-panel state-panel--empty">${icon('info', { size: 20 })}<div><strong>${esc(r.readerGrammarUnavailable)}</strong></div></div>`;
+    if (tab === 'notes')
+      return `<div class="state-panel state-panel--empty">${icon('pencil-simple', { size: 20 })}<div><strong>${esc(r.savedNotesUnavailable)}</strong></div></div>`;
+    const saved = savedHere();
+    return `<p class="reader-aside__hint">${icon('hand-tap', { size: 16 })}<span>${esc(r.readerTapWord)}</span></p>${
+      saved.length
+        ? `<div class="reader-aside__saved"><span class="ds-label">${esc(r.readerSavedHere)}</span>${saved
+            .map(([term, kept]) => `<span class="reader-saved-row"><span lang="${esc(language)}">${esc(term)}</span><small class="ds-data">${esc(kept?.reading || kept?.pronunciation || '')}</small></span>`)
+            .join('')}</div>`
+        : ''
+    }`;
+  };
+  const paintPanel = () => {
+    asidePanel.innerHTML = panelPlaceholder();
+    asidePanel.querySelectorAll('.reader-toc a').forEach((a) => a.setAttribute('data-reader-chapter', ''));
+  };
+  host.querySelectorAll('[data-reader-tab]').forEach((button) => {
+    button.onclick = () => {
+      tab = button.dataset.readerTab;
+      host.querySelectorAll('[data-reader-tab]').forEach((x) => x.setAttribute('aria-selected', String(x === button)));
+      paintPanel();
+    };
+  });
   const settingsPop = host.querySelector('[data-reader-settings]');
   const settingsToggle = host.querySelector('[data-reader-settings-toggle]');
   const percentLabel = host.querySelector('[data-reader-percent]');
   const progressBar = host.querySelector('[data-reader-progress]');
+  const rail = host.querySelector('[data-reader-rail]');
   const page = () => body.querySelector('[data-reader-page]');
 
   /* --- Settings --- */
@@ -116,13 +228,6 @@ export function mountReader(
     const presentation = readerPresentation(settings);
     reader.setAttribute('style', presentation.style);
     reader.dataset.readerFont = presentation.font;
-    if (presentation.theme) {
-      reader.dataset.theme = presentation.theme.theme;
-      reader.dataset.appearance = presentation.theme.appearance;
-    } else {
-      delete reader.dataset.theme;
-      delete reader.dataset.appearance;
-    }
   };
   const paintSettings = (focusSelector) => {
     settingsPop.innerHTML = settingsHtml(c, settings);
@@ -150,7 +255,7 @@ export function mountReader(
       settings = readerSettings({ ...settings, size: settings.size + step });
       focus = `[data-reader-size="${button.dataset.readerSize}"]`;
     }
-    for (const key of ['font', 'spacing', 'width', 'appearance']) {
+    for (const key of ['font', 'spacing', 'width']) {
       const value = button.dataset[`reader${key[0].toUpperCase()}${key.slice(1)}`];
       if (value) {
         settings = readerSettings({ ...settings, [key]: value });
@@ -164,13 +269,59 @@ export function mountReader(
   });
   applySettings();
 
-  /* --- Keep, contents, dialogue --- */
-  const keepButton = host.querySelector('[data-keep]');
-  keepButton.onclick = () => {
-    memory.keep(item.id);
-    keepButton.setAttribute('aria-pressed', String(kept()));
-  };
-  host.querySelectorAll('[data-reader-toc]').forEach(
+  /* --- Reading layers --- */
+  async function toggleSupport(button) {
+    showSupport = !showSupport;
+    button.setAttribute('aria-pressed', String(showSupport));
+    reader.dataset.readerSupport = showSupport ? 'on' : 'off';
+    if (!showSupport) return repaintBody();
+    const missing = blocks
+      .map((block, index) => ({ block, index }))
+      .filter(({ block, index }) => block.type === 'paragraph' && !translations.has(index))
+      .slice(0, 12);
+    if (missing.length) {
+      button.disabled = true;
+      const answered = await lexical.translateBlocks(
+        missing.map(({ block, index }) => ({ index, text: block.text })),
+      );
+      for (const [index, line] of answered) translations.set(index, line);
+      button.disabled = false;
+    }
+    repaintBody();
+  }
+  host.querySelectorAll('[data-reader-layer]').forEach((button) => {
+    button.onclick = () => {
+      if (button.getAttribute('aria-disabled') === 'true') return;
+      if (button.dataset.readerLayer === 'support') toggleSupport(button);
+    };
+  });
+
+  /* --- The bar under the text: keeping and hearing are the reader's own; the rest belong to the room
+     that mounted it, which is told by name which one was pressed. --- */
+  host.querySelectorAll('[data-reader-action]').forEach((button) => {
+    button.onclick = (event) => {
+      event.preventDefault();
+      if (button.getAttribute('aria-disabled') === 'true') return;
+      const name = button.dataset.readerAction;
+      if (name === 'keep') {
+        memory.keep(item.id);
+        button.setAttribute('aria-pressed', String(kept()));
+        return;
+      }
+      if (name === 'listen') return;
+      /* "Đọc tiếp sau" is the frame's primary: keep the place - which the room
+         already records - and leave the text, so the learner comes back to it
+         from the library rather than staying on the page they stopped reading. */
+      if (name === 'later') {
+        if (!kept()) memory.keep(item.id);
+        location.hash = book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' });
+        return;
+      }
+      onAction?.(name, button);
+    };
+  });
+  function bindContents() {
+    host.querySelectorAll('[data-reader-toc]').forEach(
     (button) =>
       (button.onclick = () => {
         const sheet = dialog({
@@ -189,7 +340,9 @@ export function mountReader(
         current?.scrollIntoView({ block: 'center' });
         current?.focus({ preventScroll: true });
       }),
-  );
+    );
+  }
+  bindContents();
   body.addEventListener('click', (event) => {
     if (!event.target.closest('[data-next]')) return;
     shown = Math.min(blocks.length, shown + 1);
@@ -199,11 +352,10 @@ export function mountReader(
     });
   });
   const repaintBody = () => {
-    const nav = body.querySelector('.reader-chapter-nav');
     body.innerHTML = bodyHtml();
-    if (nav) body.append(nav);
     lexical.forget();
   };
+
 
   /* --- Progress through this text --- */
   let progressFrame = 0;
@@ -215,7 +367,12 @@ export function mountReader(
     const read = box.height ? (window.innerHeight - box.top) / box.height : 1;
     const percent = Math.max(0, Math.min(100, Math.round(read * 100)));
     percentLabel.textContent = progressLabel(c, percent);
-    progressBar.style.inlineSize = `${percent}%`;
+    if (progressBar) progressBar.style.inlineSize = `${percent}%`;
+    // The frame draws the figure twice, but only one of them is a bar: the
+    // hairline across the top of the screen, and the same percentage as text at
+    // the foot of the reading column. A second bar under the text is not drawn.
+    // under the text. One measurement, both.
+    if (rail) rail.style.inlineSize = `${percent}%`;
   }
   const onScroll = () => {
     if (!progressFrame) progressFrame = requestAnimationFrame(updateProgress);
@@ -235,6 +392,11 @@ export function mountReader(
     title,
     origin,
     alive,
+    dock: () => (wide() ? (tab === 'word' ? asidePanel : null) : null),
+    onPanel: (open) => {
+      if (open) return;
+      paintPanel();
+    },
     units: {
       root: () => page(),
       unitOf: (node) => node?.closest?.('[data-block]') || null,
@@ -247,6 +409,8 @@ export function mountReader(
     if (event.target.closest('[data-next]')) return;
     lexical.tapWord(event);
   });
+
+  paintPanel();
 
   const closeSettingsIfOutside = (event) => {
     if (!settingsPop.hidden && !settingsPop.contains(event.target) && !settingsToggle.contains(event.target))

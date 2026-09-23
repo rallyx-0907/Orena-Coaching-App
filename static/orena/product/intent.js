@@ -29,23 +29,44 @@ export function route(hash = '') {
       'content',
       'language',
       'expression',
+      // The Writing skill's own library: the way in to a piece.
+      'writing',
       'preferences',
       'conversation',
       'continue',
       'collection',
       'admin',
+      // D-059: Progress is a destination of its own, over the learner's
+      // recorded evidence (LearnerSummary). Additive; no route changed.
+      'progress',
+      // D-059 Phase 4: a book has its own address, so Library cards are links.
+      'book',
+      // Global search, with its query in the address so it survives a reload.
+      'search',
+      // The learner's last thirty days of work, read from the owners that hold it.
+      'history',
+      // The learner's own page: who they are, what they have set, and what
+      // their plan still allows (D-067, "Orena Hạn mức sử dụng").
+      'profile',
     ].includes(path)
       ? path
       : 'discover',
     id: q.get('id') || '',
+    /* Progress draws two screens behind one destination - Tổng quan and Xu
+       hướng - so which one is open belongs in the address and survives a
+       reload. */
+    tab: q.get('tab') || '',
     intent: practiceIntentions.includes(q.get('intent'))
       ? q.get('intent')
       : null,
+    q: q.get('q') || '',
   };
 }
-export function link(page = 'discover', { id = '', intent = null } = {}) {
+export function link(page = 'discover', { id = '', intent = null, q = '', tab = '' } = {}) {
   const query = new URLSearchParams();
   if (id) query.set('id', id);
+  if (tab) query.set('tab', tab);
+  if (q) query.set('q', q);
   if (practiceIntentions.includes(intent)) query.set('intent', intent);
   return `#/${page === 'discover' ? '' : page}${query.size ? '?' + query : ''}`;
 }

@@ -43,10 +43,11 @@ Domain owners:
 
 | Domain | Authority |
 | --- | --- |
-| Learner-facing product, UX, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
+| How a learner surface looks, behaves and what data it shows | the Claude Design project at its source (D-067) |
+| Learner-facing product intent, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
 | Content, discovery, import, learner content | `docs/product/ORENA_CONTENT_ARCHITECTURE.md` |
-| Durable learner-facing design rules, web and native | `docs/project/DESIGN_CONTRACT.md` |
-| What a web surface inherits and owes | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
+| Durable rules for building and judging a learner surface | `docs/project/DESIGN_CONTRACT.md` |
+| Where code lives in `static/orena` (descriptive only, sets no UI rule) | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
 | Brand, mascot, illustration, generated art | `assets/brand/orena/` |
 | Current capability behaviour and review state | `docs/product/ORENA_STATUS.md` |
 | Invariants that must not drift | `docs/project/ARCHITECTURE_INVARIANTS.md` |
@@ -69,19 +70,29 @@ Before any learner-facing product, UX, UI, visual, content-discovery, Library,
 Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
 navigation task, read and obey:
 
-- `docs/product/ORENA_PRODUCT_CONSTITUTION.md`;
-- `docs/product/ORENA_CONTENT_ARCHITECTURE.md`;
-- `docs/project/DESIGN_CONTRACT.md`, including its acceptance gates;
-- `assets/brand/orena/` for anything visual — it is the Art Bible and the only
+- **The Claude Design project, at its source** (D-066, D-067):
+  `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`. It is the visual, interaction and data
+  authority for every learner-facing surface. `docs/project/DESIGN_CONTRACT.md`
+  ("The authority") lists exactly what to read from it. The copy in
+  `docs/design/canonical-ui/` is an incomplete cache pinned on 2026-09-21; where
+  it and the source differ, the source wins, and a lane that cannot read the
+  source says so instead of deciding from the cache;
+- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-48 (measured, not
+  invented, old interaction deleted) and the fidelity gate;
+- `docs/product/ORENA_PRODUCT_CONSTITUTION.md` and
+  `docs/product/ORENA_CONTENT_ARCHITECTURE.md`: what Orena is for and how content
+  is organised (not how a surface looks);
+- `assets/brand/orena/` for artwork - it is the Art Bible and the only
   art-direction authority;
 - the current verified state the cold start in §2 already requires.
 
-Precedence for these tasks: explicit current human instruction → the Product
-Constitution → the Content Architecture → the Design Contract → current
-verified product state → the task brief → existing implementation. Legacy UI
-and screenshots are evidence of what was built, never design authority. If a
-requested change would violate a contract, stop and surface the conflict before
-implementing it.
+Precedence for these tasks: explicit current human instruction → the design at
+its source → the Design Contract → the Product Constitution → the Content
+Architecture → current verified product state → the task brief → existing
+implementation. Old UI, screenshots, code comments and any UI rule that
+pre-dates D-066 are evidence of what was built, never design authority, and a
+rule that conflicts with the design is void (D-067). If a requested change would
+violate the design, stop and surface the conflict before implementing it.
 
 The rules themselves live in those files and are not repeated here.
 
@@ -241,30 +252,22 @@ IDs, environment-specific paths, migration records, API responses or temporary
 UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
-**Theme.** Orena has a canonical multi-theme visual system, not a light/dark
-switch. A theme has an identity (`paper`, `night-ink`, `deep-forest`,
-`sage-field`) and, separately, an appearance (`light` or `dark`); never treat
-the two as the same thing, and never assume there are two of anything.
+**Theme.** The learner interface is the Canonical UI Baseline (D-066): one Dark
+Glass system, read at its source in the Claude Design project (D-067; the copy in
+`docs/design/canonical-ui/` is a cache). D-059's Ink and Paper
+themes are retired and D-065 is superseded; there is no hybrid and no second
+visual system. Legacy compositions still in the code are work to migrate, not
+authority to preserve.
 
-- Colour has one owner: `static/orena/theme.css`. A foundation layer names the
-  approved palette, grouped by family; a semantic block per theme says what
-  each colour is *for*. Components read only semantic tokens. Do not add a
-  second `:root` colour block anywhere - that is the defect this replaced.
-- Themes derive from approved palettes under `assets/brand/`. Do not invent a
-  colour skin, and do not recolour canonical mascot or brand artwork.
-  `pattern/color-pallate.png` is exploratory theme reference only: it is not
-  the canonical palette, and its gradients are not approved UI colours.
-- Orena Orange `#FF7A3D` is the brand colour and stays canonical. It measures
-  2.34 on Paper Ivory, so on light grounds it is fill and illustration only;
-  `--accent` carries the contrast-safe text and action role. Never change a
-  brand value to make one component pass contrast - assign it a decorative
-  role instead.
-- Every theme must pass AA for body text, secondary text, controls, links and
-  tinted panels. `scripts/test_orena_foundation.mjs` enforces this for every
-  registered theme.
-- A new approved theme is registered - a block in `theme.css`, an entry in
-  `theme.js`, a name and note in `ui/copy.js` for EN and ZH. It is never a new
-  component, a component fork, or a rewrite of the settings UI.
+- Colour has one owner: `static/orena/theme.css`, with the values of
+  `docs/design/canonical-ui/tokens.json`. Components read only its semantic
+  tokens. Do not add a second `:root` colour block anywhere. Semantic colour
+  (good, warn, bad, info) is ink for text and icons, never a fill on glass.
+- Do not invent a colour skin, and do not recolour canonical mascot or brand
+  artwork. Orena Orange `#FF7A3D` stays the mascot's and the artwork's colour.
+- Accessibility never redesigns the baseline. A token that fails AA is replaced
+  by the smallest technical change that keeps the visual intent, and the
+  deviation is documented. `scripts/test_orena_foundation.mjs` enforces AA.
 - Content artwork - covers, thumbnails, scenes, illustration - may be more
   vivid than the interface, under the Art Bible. That licence is artwork's
   alone and changes nothing above: it creates no second colour owner, exempts

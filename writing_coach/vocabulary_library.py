@@ -290,10 +290,29 @@ def _build_word_index(
     return index
 
 
+def _build_entry_index(
+    catalog: Mapping[str, Mapping[str, Any]]
+) -> dict[tuple[str, str], dict[str, Any]]:
+    """One entry per (language, word), built once at load.
+
+    The same denormalized entry `all_vocabulary_entries` would hand back - this
+    only removes the search. Looking a word up used to mean rebuilding every
+    entry for the language and scanning it, which a caller with a list of words
+    pays for once per word."""
+
+    index: dict[tuple[str, str], dict[str, Any]] = {}
+    for collection in catalog.values():
+        language_code = collection["language_code"]
+        for entry in collection["entries"]:
+            index.setdefault((language_code, entry["normalized_word"]), dict(entry))
+    return index
+
+
 _RAW_COLLECTIONS: list[Mapping[str, Any]] = [*_ENGLISH_COLLECTIONS, *_CHINESE_COLLECTIONS]
 _CATALOG_BY_ID = _build_catalog(_RAW_COLLECTIONS)
 _LEARNER_CATALOG_BY_ID = _build_learner_catalog(_CATALOG_BY_ID)
 _WORD_INDEX = _build_word_index(_CATALOG_BY_ID)
+_ENTRY_INDEX = _build_entry_index(_CATALOG_BY_ID)
 
 
 def _summary(collection: Mapping[str, Any]) -> dict[str, Any]:
@@ -384,6 +403,20 @@ def all_vocabulary_entries(language_code: str) -> list[dict[str, Any]]:
         if collection["language_code"] == language:
             entries.extend(dict(entry) for entry in collection["entries"])
     return entries
+
+
+def vocabulary_entry_for(language_code: str, normalized_word: str) -> dict[str, Any] | None:
+    """The curated entry for one word, from the load-time index.
+
+    Equivalent to searching `all_vocabulary_entries(language)` for the word,
+    without the scan - which is what made listing a learner's saved words cost
+    O(words x catalogue).
+    """
+
+    language = str(language_code or "").strip().casefold()
+    word = normalize_vocabulary_word(normalized_word)
+    entry = _ENTRY_INDEX.get((language, word))
+    return dict(entry) if entry is not None else None
 
 
 def collection_ids_for_word(language_code: str, normalized_word: str) -> list[str]:

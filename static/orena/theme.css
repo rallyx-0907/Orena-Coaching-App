@@ -1,214 +1,311 @@
 /* The one place an Orena colour is decided.
 
+   D-066 (2026-09-21): the Canonical UI Baseline is the visual authority, and it
+   is one system - Dark Glass. Its values are the ones in
+   docs/design/canonical-ui/tokens.json, copied here without invention. Paper,
+   sepia, the light appearance and the D-059/D-065 palette are retired.
+
    Two layers, and the separation is the point. The FOUNDATION layer names the
-   approved palette - the six colours the master reference prints, and the
-   families sampled from the approved artwork around them. It is grouped the
-   way the artwork groups it, because "the teals from the leaf and mountain
-   motifs" is a real thing and a flat list of thirty hexes is not.
+   baseline's values. The SEMANTIC layer says what a colour is for: canvas,
+   surface, text, border, action, progress, status, domain, glass. Components only
+   ever read the semantic layer.
 
-   The SEMANTIC layer says what a colour is for in a given theme: canvas,
-   surface, text, secondary text, hairline, action. Components only ever read
-   the semantic layer, which is why one component set survives every theme
-   without a fork, and why the same brand colour can be a decorative fill on
-   ivory and a text colour on a dark ground.
+   The baseline's rules, as they bind here:
 
-   Adding a theme is one block here plus one entry in theme.js. It is not a
-   change to any component.
+   - Ground is #050310 under a fixed cosmic field. Surfaces are flat glass with
+     one ring and a shallow shadow; there is no bevel and no bright top edge.
+   - Semantic colour (good, warn, bad, info) is the colour of text and icons on
+     glass. It is never the fill of a surface.
+   - The accent is one violet gradient, and its ink is #D5C0FF.
+   - The semantic surface tokens below are opaque approximations of the glass
+     over the ground, so contrast can be measured; the translucent glass values
+     are the --glass-* tokens, and are what a surface is painted with.
 
-   Colour tokens used to be declared in two competing :root blocks, in
-   foundation.css and again in reference.css, and which one won was decided by
-   the order of the <link> tags. That is why --paper was on-brand while --sage
-   was still a pre-brand mint. Those blocks now hold only what they own -
-   spacing, type, the rail, the story face - and every colour is here. */
+   The older names (--paper, --surface, --ink, --muted, --line, --accent, the
+   tinted-panel pairs) remain as aliases so a room that has not migrated yet still
+   reads the baseline's colours; they are deleted as each room moves. */
 
 /* ==========================================================================
-   FOUNDATION - approved palette, grouped by family. Never read by a component.
+   FOUNDATION - the baseline's values. Never read by a component.
    ========================================================================== */
 :root {
-  /* Brand. The six from references/01_ACTIONS_AND_SYSTEM_REFERENCE.png and
-     tokens/brand-tokens.json, with the roles that sheet prints for them.
-     Orena Orange measures 2.34 against Paper Ivory, so on a light ground it
-     is a fill and an illustration colour and never text; --action-warm below
-     is the contrast-safe partner that carries the text and button roles. */
-  --o-orange: #ff7a3d; /* energy, curiosity, warmth */
-  --o-sunset-red: #e24a2d; /* passion, progress */
-  --o-forest-ink: #0e2a47; /* focus, depth, trust */
-  --o-paper-ivory: #f8f3e9; /* calm, clarity, space */
-  --o-sage: #8ca8a1; /* balance, growth */
-  --o-warm-ochre: #f2c572; /* inspiration, possibility */
-
-  /* Paper - warm neutrals, from the book prop and the icon ground. */
-  --o-ivory-warm: #fdf6e7;
-  --o-ivory-lifted: #fffdf8;
-
-  /* Ink - the navy family, from the caption motif and the book prop. */
-  --o-slate-navy: #2d3e4c;
-  --o-ink-deep: #11324e;
-  --o-ink-night: #1d2a3a;
-
-  /* Forest - teal-greens from the leaf, mountain, bag and camera artwork.
-     The only family deep enough to carry a dark ground that is not navy. */
-  --o-deep-teal: #2b5357;
-  --o-teal: #3d6667;
-  --o-teal-slate: #31656e;
-  --o-teal-mid: #75a79e;
-  --o-leaf-sage: #81a18d;
-  --o-mist: #d4dcd1;
-
-  /* Sky - cool lights from the laptop prop and the outdoor scenes. Surfaces
-     and wash only; none of these carries text. */
-  --o-sky-pale: #daf0fc;
-  --o-sky: #b3defc;
-  --o-sky-mid: #9fcef6;
-
-  /* Ember - warmer neighbours of orange, from the line and star motifs and
-     the sunrise scene. */
-  --o-marigold: #f6984e;
-  --o-amber: #fdce7f;
-
-  /* Contrast-safe partners. Derived from the brand colours rather than
-     replacing them: the brand value stays canonical and these carry the roles
-     it cannot reach. */
-  --o-action-warm: #b84629; /* darkened Orena Orange - 4.81 on Paper Ivory */
-  --o-action-warm-light: #ffa980; /* lifted, for dark grounds */
+  --o-canvas: #050310;
+  --o-screen: #060509;
+  --o-ink: #f3f1f6;
+  --o-accent-top: #9b67ff;
+  --o-accent-base: #6a32e0;
+  --o-accent-ink: #d5c0ff;
+  --o-good: #9ee6b4;
+  --o-warn: #f3c969;
+  --o-caution: #f0a35e;
+  --o-bad: #f58a8a;
+  --o-info: #8fc0f5;
+  /* The streak and progress amber, oklch(0.80 0.14 68). */
+  --o-amber: #f5b34f;
+  /* Brand artwork. Orena Orange stays the mascot's and the artwork's colour
+     (assets/brand/orena); it has no interface role. */
+  --o-orange: #ff7a3d;
 }
 
 /* ==========================================================================
-   SEMANTIC - one block per theme. Components read only these.
-   Written on [data-theme] rather than :root[data-theme] so that a preview
-   element can wear a whole theme by carrying the attribute itself.
+   SEMANTIC - one theme. Components read only these.
    ========================================================================== */
-
-/* Paper - ivory ground, ink text, orange as fill. The default reading room. */
 :root,
-[data-theme='paper'] {
-  --paper: var(--o-paper-ivory);
-  --surface: var(--o-ivory-lifted);
-  --ink: var(--o-forest-ink);
-  --muted: #586575;
-  --line: #d8d8d0;
-  --accent: var(--o-action-warm);
-  --brand: var(--o-orange);
-  --sage: #dce5d5;
-  --sun: #ebba68;
-  --coral: #e4a085;
-  --sage-surface: #dce5d5;
-  --on-sage: #14332b;
-  --on-sage-muted: #4e6157;
-  --coral-surface: #e4a085;
-  --on-coral: #23140e;
-  --on-coral-muted: #4a3227;
-  --night-surface: var(--o-forest-ink);
-  --on-night: #fff7e9;
-  --on-night-muted: #c7d4dc;
-  --on-night-line: #718499;
-  --sun-surface: #ebba68;
-  --on-sun: #23180a;
-}
-
-/* Night Ink - Forest Ink deepened into a ground. Ochre and a lifted orange
-   take the accent, where the brand orange loses contrast. */
-[data-theme='night-ink'] {
-  --paper: #102538;
-  --surface: #193247;
-  --ink: var(--o-paper-ivory);
-  --muted: #c0ccd4;
-  --line: #3b5061;
-  --accent: var(--o-action-warm-light);
-  --brand: var(--o-orange);
-  --sage: #304b3a;
-  --sun: #dca658;
-  --coral: #a36850;
-  --sage-surface: #2c4537;
-  --on-sage: #eef3e9;
-  --on-sage-muted: #bccdbe;
-  --coral-surface: #7d4a39;
-  --on-coral: #fdeee6;
-  --on-coral-muted: #eed2c4;
-  --night-surface: #0a1b2b;
-  --on-night: #fff7e9;
-  --on-night-muted: #c7d4dc;
-  --on-night-line: #718499;
-  --sun-surface: #7a5717;
-  --on-sun: #fdf3df;
-}
-
-/* Deep Forest - the leaf and mountain teals as a ground. A second dark that
-   reads as evening in the field rather than night indoors. */
-[data-theme='deep-forest'] {
-  --paper: #1e3a3c;
-  --surface: var(--o-deep-teal);
-  --ink: var(--o-ivory-warm);
-  --muted: #b4ccc5;
-  --line: #41696b;
-  --accent: #f3c078;
-  --brand: var(--o-orange);
-  --sage: var(--o-teal);
-  --sun: #c79a55;
-  --coral: #a8705c;
-  --sage-surface: #37605f;
-  --on-sage: #eff5ef;
-  --on-sage-muted: #c3d6ce;
-  --coral-surface: #7c4b3e;
-  --on-coral: #fdeee6;
-  --on-coral-muted: #eed2c4;
-  --night-surface: #152c2e;
-  --on-night: var(--o-ivory-warm);
-  --on-night-muted: #bcd2cb;
-  --on-night-line: #5c8482;
-  --sun-surface: #6e5320;
-  --on-sun: #fdf3df;
-}
-
-/* Sage Field - ink swapped for teal, ivory cooled toward mist. The same room
-   in morning light. */
-[data-theme='sage-field'] {
-  --paper: #eff2ec;
-  --surface: #fdfefb;
-  --ink: #22484b;
-  --muted: #4e6b67;
-  --line: #cdd8cd;
-  --accent: var(--o-action-warm);
-  --brand: var(--o-orange);
-  --sage: var(--o-mist);
-  --sun: #ebba68;
-  --coral: #e4a085;
-  --sage-surface: #d9e3d8;
-  --on-sage: #1b3b33;
-  --on-sage-muted: #48605a;
-  --coral-surface: #e4a085;
-  --on-coral: #23140e;
-  --on-coral-muted: #4a3227;
-  --night-surface: #22484b;
-  --on-night: var(--o-ivory-warm);
-  --on-night-muted: #c4d7d2;
-  --on-night-line: #6e9490;
-  --sun-surface: #ebba68;
-  --on-sun: #23180a;
-}
-
-/* ==========================================================================
-   APPEARANCE - the one thing that depends on luminance rather than identity.
-   A theme's identity is "deep-forest"; its appearance is "dark". Form controls,
-   scrollbars and the browser's own chrome need the second, not the first.
-   ========================================================================== */
-[data-appearance='light'] {
-  color-scheme: light;
-
-  /* Part-of-speech ink for the close-look layer. Three hues a learner can
-     tell apart at a glance, and the one thing here that genuinely tracks how
-     bright the ground is rather than which theme it is: the same three inks
-     serve Paper and Sage Field, and their lifted counterparts serve both dark
-     themes. They were keyed to data-theme='dark' when a theme was only ever
-     'light' or 'dark', which stopped matching the moment themes got names. */
-  --word-thing: #234f6b;
-  --word-action: #a23b24;
-  --word-detail: #396044;
-}
-[data-appearance='dark'] {
+[data-theme='glass'] {
   color-scheme: dark;
 
-  --word-thing: #a9d5f5;
+  /* A screen's ground: the UI Baseline's own (Orena UI Baseline.dc.html, read 2026-09-22) - a deep indigo
+     brighter than the old field, stars, soft nebulae and a slow 170-degree wash. It is the page behind every
+     room. */
+  --ground-color: #0B0A0F;
+  --ground:
+    radial-gradient(76% 52% at 62% -6%, rgba(168,84,190,0.32), transparent 72%),
+    radial-gradient(46% 32% at 92% 2%, rgba(196,104,196,0.20), transparent 74%),
+    linear-gradient(180deg, #17101F 0%, #0D0A12 44%, #0A090D 100%);
+  --ground-size: cover, cover, cover;
+
+  /* The older twelve-layer cosmic field of tokens.json: superseded by the ground above, kept declared
+     because the foundation gate pins tokens.json, and it paints nothing in the app. */
+  --cosmic-field:
+    radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.55) 1px, transparent 1.8px),
+    radial-gradient(circle at 68% 64%, rgba(222, 206, 255, 0.42) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 84% 12%, rgba(255, 255, 255, 0.34) 0.7px, transparent 1.3px),
+    radial-gradient(circle at 36% 78%, rgba(190, 214, 255, 0.3) 0.7px, transparent 1.3px),
+    radial-gradient(circle at 22% 54%, rgba(255, 255, 255, 0.2) 0.5px, transparent 1.1px),
+    radial-gradient(54% 64% at 76% 30%, transparent 58%, rgba(238, 206, 255, 0.5) 63.5%, rgba(176, 120, 255, 0.3) 68%, transparent 78%),
+    radial-gradient(34% 30% at 74% 16%, rgba(220, 170, 255, 0.44), transparent 72%),
+    radial-gradient(96% 66% at 14% -14%, rgba(146, 88, 255, 0.4), transparent 64%),
+    radial-gradient(84% 58% at 96% 2%, rgba(96, 112, 255, 0.26), transparent 62%),
+    radial-gradient(104% 72% at 62% 112%, rgba(132, 70, 236, 0.3), transparent 68%),
+    radial-gradient(92% 62% at 2% 76%, rgba(80, 104, 244, 0.18), transparent 64%),
+    radial-gradient(76% 56% at 44% 46%, rgba(190, 136, 255, 0.09), transparent 72%);
+  --cosmic-size: 190px 190px, 240px 240px, 300px 300px, 420px 420px, 150px 150px, cover, cover, cover, cover, cover, cover, cover;
+
+  /* Glass - what a surface is painted with. */
+  --glass-base: linear-gradient(180deg, rgba(84, 68, 146, 0.32), rgba(54, 44, 96, 0.28));
+  --glass-raised: linear-gradient(180deg, rgba(78, 62, 136, 0.34), rgba(50, 40, 90, 0.3));
+  --glass-focus: linear-gradient(180deg, rgba(120, 92, 200, 0.38), rgba(72, 56, 126, 0.32));
+  --glass-soft: linear-gradient(180deg, rgba(74, 60, 130, 0.3), rgba(48, 38, 86, 0.26));
+  --glass-well: rgba(10, 7, 20, 0.35);
+  --glass-filter: blur(24px) saturate(1.35) brightness(1.04);
+  --glass-sheet-filter: blur(30px) saturate(1.5) brightness(1.05);
+  --glass-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.16);
+  --glass-ring-focus: inset 0 0 0 1px rgba(172, 144, 255, 0.3);
+  --glass-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  --glass-shadow-lifted: 0 10px 32px rgba(0, 0, 0, 0.4);
+  --glass-glow-focus: 0 0 0 1.5px oklch(0.7 0.19 296 / 0.75), 0 22px 54px rgba(123, 77, 232, 0.3);
+  --glass-hairline: rgba(255, 255, 255, 0.12);
+  --glass-scrim: rgba(4, 3, 10, 0.55);
+
+  /* Accent - one violet, and the ink that sits on glass. */
+  --accent-gradient: linear-gradient(180deg, var(--o-accent-top), var(--o-accent-base));
+  --accent-shadow: 0 10px 30px rgba(123, 77, 232, 0.4);
+  --accent-ink: var(--o-accent-ink);
+  --accent-solid-light: #f3f1f6;
+  --accent-chip: rgba(196, 178, 255, 0.14);
+  --accent-chip-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.22);
+  --accent-highlight: rgba(155, 103, 255, 0.32);
+  --accent-highlight-ring: inset 0 0 0 1.5px rgba(197, 164, 255, 0.7);
+
+  /* AppShell (Orena Listening / Reading, "Navigation"): the mark, where the learner is, and the
+     hairlines between the rail's groups. */
+  --nav-active: oklch(0.7 0.19 296 / 0.14);
+  --nav-active-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+  --nav-skill-active: rgba(196, 178, 255, 0.12);
+  --nav-hairline: rgba(255, 255, 255, 0.07);
+  --nav-ink: rgba(255, 255, 255, 0.72);
+  --nav-ink-skill: rgba(255, 255, 255, 0.7);
+  --rail-edge: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  --bar-edge-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --rule-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --scrim-track: rgba(0, 0, 0, 0.45);
+
+  /* Dictation (Orena Listening, "Dictation · Nghe chép"): the streak pill, the amber progress, the
+     diff marks, the right line, and the skill's own lime. */
+  --streak: oklch(0.8 0.14 68);
+  --streak-wash: oklch(0.8 0.14 68 / 0.12);
+  --streak-ink: oklch(0.9 0.1 68);
+  --progress-violet: linear-gradient(90deg, #7b4de8, #c7b2ff);
+  --diff-wrong-wash: oklch(0.7 0.15 25 / 0.22);
+  --diff-extra-wash: oklch(0.7 0.15 25 / 0.18);
+  --diff-mark: oklch(0.72 0.16 25);
+  --diff-missing-wash: rgba(42, 30, 68, 0.38);
+  --diff-missing-edge: rgba(143, 192, 245, 0.7);
+  --diff-missing-ink: #cfe4fa;
+  --right-label: oklch(0.85 0.1 170);
+  --right-wash: oklch(0.74 0.13 170 / 0.08);
+  --right-ink: oklch(0.86 0.12 170);
+  --dictation-ink: oklch(0.88 0.11 110);
+  --dictation-glow: oklch(0.62 0.16 110 / 0.35);
+  --dictation-head-wash: oklch(0.58 0.15 110 / 0.2);
+  --dictation-hint-wash: oklch(0.74 0.13 110 / 0.16);
+  --dictation-hint-ink: oklch(0.9 0.1 110);
+  --hint-hidden: oklch(0.62 0.02 300);
+  --ink-55: rgba(255, 255, 255, 0.55);
+  --ink-60: rgba(255, 255, 255, 0.6);
+  --ink-62: rgba(255, 255, 255, 0.62);
+  --ink-68: rgba(255, 255, 255, 0.68);
+  --ink-50: rgba(255, 255, 255, 0.5);
+  --ink-70: rgba(255, 255, 255, 0.7);
+  --ink-72: rgba(255, 255, 255, 0.72);
+  --ink-78: rgba(255, 255, 255, 0.78);
+  --ink-80: rgba(255, 255, 255, 0.8);
+  --ink-85: rgba(255, 255, 255, 0.85);
+  --ink-90: rgba(255, 255, 255, 0.9);
+  --ink-on-light: #171423;
+  --chip-soft: rgba(196, 178, 255, 0.13);
+  --chip-tag: rgba(196, 178, 255, 0.16);
+  --chip-tag-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.2);
+  /* The Listening workspace (Orena Listening, "Listening workspace"): a quiet chip, a chosen chip,
+     the lit line, the play button's glow, the panel's left edge, a round action on a line. */
+  --chip-quiet: rgba(196, 178, 255, 0.12);
+  --chip-quiet-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+  --chip-on: rgba(155, 103, 255, 0.26);
+  --chip-on-ring: inset 0 0 0 1px rgba(197, 164, 255, 0.45);
+  --row-glow: 0 10px 34px rgba(123, 77, 232, 0.2);
+  --play-glow: 0 12px 34px rgba(123, 77, 232, 0.45);
+  --panel-edge: inset 1px 0 0 rgba(255, 255, 255, 0.08);
+  --word-mark: rgba(255, 255, 255, 0.24);
+  --quote-edge: rgba(213, 192, 255, 0.7);
+  /* The Writing review's marks in the draft: a wash and the line under it (amber; blue for punctuation). */
+  --mark-warm: oklch(0.72 0.16 60 / 0.22);
+  --mark-warm-line: oklch(0.8 0.15 65);
+  --mark-good: rgba(158, 230, 180, 0.2);
+  --mark-good-line: rgba(158, 230, 180, 0.85);
+  --mark-info: rgba(143, 192, 245, 0.2);
+  --mark-info-line: rgba(143, 192, 245, 0.85);
+  --round-action: rgba(255, 255, 255, 0.14);
+  --round-action-ring: inset 0 0 0 1px rgba(172, 144, 255, 0.28);
+  --track: rgba(255, 255, 255, 0.12);
+  --knob-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --scrim-play: rgba(6, 5, 9, 0.5);
+  --scrim-badge: rgba(6, 5, 9, 0.62);
+
+  /* Surfaces - opaque, so contrast can be measured. */
+  --surface-canvas: var(--o-canvas);
+  --surface-primary: #1a1530;
+  --surface-secondary: #1d1837;
+  --surface-elevated: #2b2250;
+  --surface-sunken: #0a0714;
+  --surface-rail: #0b0819;
+  --surface-panel: #171229;
+  --surface-overlay: var(--glass-scrim);
+
+  /* Text */
+  --text-primary: var(--o-ink);
+  --text-secondary: #b6b4bd;
+  --text-muted: #8d8a97;
+  --text-on-action: #ffffff;
+
+  /* Border */
+  --border-subtle: rgba(172, 144, 255, 0.16);
+  --border-strong: rgba(172, 144, 255, 0.3);
+
+  /* Action */
+  --action-primary: var(--o-accent-top);
+  --action-hover: var(--o-accent-ink);
+  --action-selected: rgba(155, 103, 255, 0.32);
+  --action-text: var(--o-accent-ink);
+  --action-gradient: var(--accent-gradient);
+  --focus-ring: var(--o-accent-ink);
+
+  /* Progress - the streak amber, and the track the baseline draws. */
+  --progress: var(--o-amber);
+  --progress-gradient: linear-gradient(90deg, #e6913f, #f8c058);
+  --progress-track: rgba(196, 178, 255, 0.2);
+  --progress-text: var(--o-amber);
+
+  /* Status - ink and icons, never a fill. */
+  --status-success: var(--o-good);
+  --status-warning: var(--o-warn);
+  --status-error: var(--o-bad);
+  --status-info: var(--o-info);
+
+  /* Ink on glass - the alphas the baseline sets text at. */
+  --text-on-glass: rgba(255, 255, 255, 0.88);
+  --text-on-glass-soft: rgba(255, 255, 255, 0.74);
+  --text-on-glass-dim: rgba(255, 255, 255, 0.68);
+  --glass-sheet: linear-gradient(180deg, rgba(120, 92, 200, 0.4), rgba(72, 56, 126, 0.34));
+
+  /* Usage verdicts that have no status colour of their own: still ink. */
+  --status-caution: #f0a35e;
+  --status-rare: #c9a8ff;
+  --status-impossible: #f26d6d;
+
+  /* Sentence roles: a fill, a ring and the ink that sits on it. */
+  --role-adverbial-fill: rgba(143, 192, 245, 0.18);
+  --role-adverbial-ring: inset 0 0 0 1px rgba(143, 192, 245, 0.4);
+  --role-adverbial-ink: #cfe4fa;
+  --role-verb-fill: rgba(155, 103, 255, 0.22);
+  --role-verb-ring: inset 0 0 0 1px rgba(197, 164, 255, 0.45);
+  --role-verb-ink: #e2d3ff;
+  --role-subject-fill: rgba(158, 230, 180, 0.16);
+  --role-subject-ring: inset 0 0 0 1px rgba(158, 230, 180, 0.38);
+  --role-subject-ink: #cff0dc;
+  --role-complement-fill: rgba(243, 201, 105, 0.18);
+  --role-complement-ring: inset 0 0 0 1px rgba(243, 201, 105, 0.4);
+  --role-complement-ink: #f7e3b0;
+
+  /* Domain - the baseline's skill hues, one weight each. */
+  --domain-reading: oklch(0.78 0.12 295);
+  --domain-listening: oklch(0.78 0.12 235);
+  --domain-speaking: oklch(0.78 0.12 170);
+  --domain-dictation: oklch(0.78 0.12 110);
+  --domain-writing: oklch(0.78 0.12 68);
+  --domain-vocabulary: oklch(0.78 0.12 350);
+  --domain-neutral: var(--text-secondary);
+
+  /* Elevation - the names earlier rooms read, now glass. */
+  --card-surface: var(--glass-base);
+  --card-surface-strong: var(--glass-raised);
+  --card-edge: var(--glass-ring);
+  --card-edge-lit: var(--glass-ring-focus);
+  --card-shadow: var(--glass-shadow);
+  --card-shadow-lifted: var(--glass-shadow-lifted);
+  --card-blur: var(--glass-filter);
+  --card-glow: none;
+  --card-ring: var(--glass-glow-focus);
+  --bloom-floor: radial-gradient(closest-side, rgba(155, 103, 255, 0.3), transparent);
+  --bloom: radial-gradient(130% 130% at 88% -25%, rgba(155, 103, 255, 0.28), transparent 62%);
+  --bloom-page: radial-gradient(closest-side, rgba(200,152,255,0.66), rgba(152,98,255,0.23) 58%, transparent 78%);
+  --shadow-raised: var(--glass-shadow-lifted);
+  --shadow-overlay: 0 30px 80px rgba(0, 0, 0, 0.6);
+  --glow-action: var(--accent-shadow);
+  --artwork-wash: linear-gradient(160deg, #3a2e57, #151318);
+  --avatar-wash: radial-gradient(circle at 30% 25%, #5f4a86, #2a2531);
+  --word-card-rim: rgba(249, 190, 120, 0.38);
+  --word-card-surface: var(--surface-elevated);
+  /* Controls and text placed on artwork keep their own light. */
+  --on-artwork: #ffffff;
+  --artwork-control: rgba(255, 255, 255, 0.16);
+  --artwork-control-edge: rgba(255, 255, 255, 0.28);
+
+  /* Part-of-speech ink for the close-look layer. */
+  --word-thing: #8fc0f5;
   --word-action: #ffb397;
   --word-detail: #bad49b;
+
+  /* Compatibility aliases - read by every room written before D-066. */
+  --paper: var(--surface-canvas);
+  --surface: var(--surface-primary);
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --line: rgba(172, 144, 255, 0.16);
+  --accent: var(--o-accent-ink);
+  --brand: var(--o-accent-top);
+  --sage: var(--surface-elevated);
+  --sun: var(--o-amber);
+  --coral: var(--domain-writing);
+  --sage-surface: var(--surface-elevated);
+  --on-sage: var(--text-primary);
+  --on-sage-muted: #b9b5bf;
+  --coral-surface: #3a2419;
+  --on-coral: #ffe6d8;
+  --on-coral-muted: #ecc4ae;
+  --night-surface: var(--surface-secondary);
+  --on-night: var(--text-primary);
+  --on-night-muted: #b9b5bf;
+  --on-night-line: #3a3641;
+  --sun-surface: #3b2a16;
+  --on-sun: #fde7c8;
 }

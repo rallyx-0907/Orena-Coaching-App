@@ -297,6 +297,15 @@ export function learnerMemory(storage, owner, language) {
           overall: Number.isFinite(entry.overall) ? entry.overall : null,
           level:
             typeof entry.level === 'string' ? entry.level.slice(0, 24) : '',
+          /* Which language the review that came back was written in. The
+             evaluator answers in the learner's support language, and the
+             stored evaluation does not record which one that was - so a piece
+             reviewed in Vietnamese and reopened after switching to Chinese
+             replayed Vietnamese sentences inside a Chinese room. The device
+             remembers what it asked for, which is enough to know whether a
+             stored review still speaks the learner's language. */
+          support:
+            typeof entry.support === 'string' ? entry.support.slice(0, 12) : '',
         },
       ].slice(-20);
       return save();

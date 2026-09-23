@@ -160,25 +160,15 @@ export const READER_DEFAULTS = Object.freeze({
   font: 'serif',
   spacing: 'normal',
   width: 'medium',
-  appearance: 'auto',
 });
 const CHOICES = {
   font: ['serif', 'sans'],
   spacing: ['compact', 'normal', 'relaxed'],
   width: ['narrow', 'medium', 'wide'],
-  appearance: ['auto', 'light', 'sepia', 'dark'],
 };
 export const READER_SIZE = Object.freeze({ min: 0.85, max: 1.4, step: 0.05 });
 const LEADING = { compact: 1.55, normal: 1.75, relaxed: 2 };
 const MEASURE = { narrow: '36rem', medium: '44rem', wide: '50rem' };
-/* Light, sepia and dark are registered Orena themes worn by the reader alone:
-   no new colours, and each already passes AA. "Auto" follows the app. */
-const APPEARANCE = {
-  light: { theme: 'sage-field', appearance: 'light' },
-  sepia: { theme: 'paper', appearance: 'light' },
-  dark: { theme: 'night-ink', appearance: 'dark' },
-};
-
 export function readerSettings(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   const settings = { ...READER_DEFAULTS };
@@ -196,7 +186,6 @@ export function readerPresentation(settings) {
   return {
     style: `--reader-scale: ${s.size}; --reader-leading: ${LEADING[s.spacing]}; --reader-measure: ${MEASURE[s.width]};`,
     font: s.font,
-    theme: APPEARANCE[s.appearance] || null,
   };
 }
 
@@ -204,13 +193,13 @@ const choiceRow = (c, label, key, current, labels) =>
   `<div class="reader-setting"><span class="reader-setting__label">${esc(label)}</span><div class="reader-segmented">${CHOICES[key]
     .map(
       (value) =>
-        `<button type="button" data-reader-${key}="${value}" aria-pressed="${value === current ? 'true' : 'false'}">${key === 'appearance' ? `<span class="reader-swatch" data-swatch="${value}" aria-hidden="true"></span>` : ''}<span>${esc(labels[value])}</span></button>`,
+        `<button type="button" data-reader-${key}="${value}" aria-pressed="${value === current ? 'true' : 'false'}"><span>${esc(labels[value])}</span></button>`,
     )
     .join('')}</div></div>`;
 
 export function settingsHtml(c, settings) {
   const s = readerSettings(settings);
-  return `<div class="reader-settings" role="group" aria-label="${esc(c.readerSettings)}"><div class="reader-setting"><span class="reader-setting__label">${esc(c.readerTextSize)}</span><div class="reader-stepper"><button type="button" data-reader-size="-1" aria-label="${esc(c.readerSmaller)}"${s.size <= READER_SIZE.min ? ' disabled' : ''}>A−</button><output aria-live="polite">${Math.round(s.size * 100)}%</output><button type="button" data-reader-size="1" aria-label="${esc(c.readerLarger)}"${s.size >= READER_SIZE.max ? ' disabled' : ''}>A+</button></div></div>${choiceRow(c, c.readerTypeface, 'font', s.font, { serif: c.readerSerif, sans: c.readerSans })}${choiceRow(c, c.readerSpacing, 'spacing', s.spacing, { compact: c.readerSpacingCompact, normal: c.readerSpacingNormal, relaxed: c.readerSpacingRelaxed })}${choiceRow(c, c.readerWidth, 'width', s.width, { narrow: c.readerWidthNarrow, medium: c.readerWidthMedium, wide: c.readerWidthWide })}${choiceRow(c, c.readerAppearance, 'appearance', s.appearance, { auto: c.readerAppearanceAuto, light: c.readerAppearanceLight, sepia: c.readerAppearanceSepia, dark: c.readerAppearanceDark })}</div>`;
+  return `<div class="reader-settings" role="group" aria-label="${esc(c.readerSettings)}"><div class="reader-setting"><span class="reader-setting__label">${esc(c.readerTextSize)}</span><div class="reader-stepper"><button type="button" data-reader-size="-1" aria-label="${esc(c.readerSmaller)}"${s.size <= READER_SIZE.min ? ' disabled' : ''}>A−</button><output aria-live="polite">${Math.round(s.size * 100)}%</output><button type="button" data-reader-size="1" aria-label="${esc(c.readerLarger)}"${s.size >= READER_SIZE.max ? ' disabled' : ''}>A+</button></div></div>${choiceRow(c, c.readerTypeface, 'font', s.font, { serif: c.readerSerif, sans: c.readerSans })}${choiceRow(c, c.readerSpacing, 'spacing', s.spacing, { compact: c.readerSpacingCompact, normal: c.readerSpacingNormal, relaxed: c.readerSpacingRelaxed })}${choiceRow(c, c.readerWidth, 'width', s.width, { narrow: c.readerWidthNarrow, medium: c.readerWidthMedium, wide: c.readerWidthWide })}</div>`;
 }
 
 /* --- Selection ----------------------------------------------------------- */
@@ -232,113 +221,6 @@ export function selectionKind(text, language) {
   if (words.length <= 6 && value.length <= LOOKUP_LIMITS.selection && !/[.!?;:]/.test(value))
     return 'phrase';
   return 'passage';
-}
-
-/* Which tools fit what was selected. A word is looked up, kept and spoken; a
-   phrase or a sentence can also be asked how it works, which is the pattern
-   question put to the one explanation surface rather than a grammar module of
-   its own. A passage is too much to keep or to speak. */
-export function selectionActions(kind, { canSpeak = false } = {}) {
-  if (!kind) return [];
-  if (kind === 'passage') return ['translate', 'explain', 'pattern'];
-  if (kind === 'phrase')
-    return ['translate', 'explain', 'pattern', 'save', ...(canSpeak ? ['pronounce'] : [])];
-  return ['translate', 'explain', 'save', ...(canSpeak ? ['pronounce'] : [])];
-}
-
-const ACTION_LABELS = {
-  translate: 'selectionTranslate',
-  explain: 'selectionExplain',
-  pattern: 'selectionPattern',
-  save: 'selectionSave',
-  pronounce: 'selectionPronounce',
-};
-
-export function selectionToolbarHtml(c, actions) {
-  return `<div class="reader-selection-bar" role="toolbar" aria-label="${esc(c.selectionActions)}">${actions
-    .map(
-      (action) =>
-        `<button type="button" data-selection-action="${action}">${esc(c[ACTION_LABELS[action]])}</button>`,
-    )
-    .join('')}</div>`;
-}
-
-const posName = (c, pos) => (pos && pos !== 'other' ? c[`pos_${pos}`] || '' : '');
-const SOURCE_LABELS = {
-  collection: 'lookupSourceCollection',
-  dictionary: 'lookupSourceDictionary',
-  machine_translation: 'lookupSourceMachine',
-};
-
-/* The answer to Translate: for a word, what is known about it and where each
-   meaning came from; for a phrase or passage, its translation, labelled as
-   machine translation. What did not arrive says so - the original is never
-   shown in place of a meaning. */
-export function lookupPanelHtml(
-  c,
-  { selection, language, support, kind, state, result = {}, canSpeak = false, kept = false },
-) {
-  const found = result || {};
-  /* The reading and the way to hear it belong together: pinyin for Chinese,
-     whatever transcription the system holds for English, and one compact
-     control that speaks the selection. Pronunciation is a learner action, not
-     a line of transcription (D-057, reader pronunciation). */
-  const speak = canSpeak
-    ? `<button type="button" class="reader-panel__speak" data-panel-action="pronounce" aria-label="${esc(c.selectionPronounce)}">${symbol('sound', 16)}</button>`
-    : '';
-  const reading =
-    found.pronunciation || speak
-      ? `<span class="reader-panel__reading">${found.pronunciation ? `<span${language === 'zh' ? ' data-reading="pinyin"' : ''}>${esc(found.pronunciation)}</span>` : ''}${speak}</span>`
-      : '';
-  const head = `<div class="reader-panel__head"><strong class="reader-panel__selection" lang="${esc(language)}">${esc(selection)}</strong>${reading}</div>`;
-  const canKeep = kind !== 'passage';
-  const keepControl = !canKeep
-    ? ''
-    : kept
-      ? `<span class="reader-panel__kept" data-panel-kept>${esc(c.selectionSaved)}</span>`
-      : `<button type="button" class="quiet" data-panel-action="save">${esc(c.selectionSave)}</button>`;
-  const actions = `<div class="reader-panel__actions"><button type="button" class="outline" data-panel-action="explain">${esc(c.selectionExplain)}</button>${kind === 'word' ? '' : `<button type="button" class="quiet" data-panel-action="pattern">${esc(c.selectionPattern)}</button>`}${keepControl}</div><p class="meta reader-panel__status" role="status" data-panel-status></p>`;
-
-  if (state === 'loading')
-    return `${head}<p class="reader-panel__note" role="status">${esc(kind === 'word' ? c.lookupLoading : c.translationLoading)}</p>`;
-  if (state === 'failed')
-    return `${head}<p class="reader-panel__note">${esc(c.lookupFailed)} <button type="button" class="quiet" data-panel-action="retry">${esc(c.retry)}</button></p>${actions}`;
-
-  let body = '';
-  if (found.translation) {
-    body = `<p class="reader-panel__translation" lang="${esc(support)}">${esc(found.translation)}</p><p class="reader-panel__source-label">${esc(c.lookupSourceMachine)}</p>`;
-  } else {
-    const facts = [
-      posName(c, found.part_of_speech) ? `<span>${esc(posName(c, found.part_of_speech))}</span>` : '',
-      found.base_form && String(found.base_form).toLowerCase() !== String(selection).toLowerCase()
-        ? `<span>${esc(c.lookupBaseForm)}: <span lang="${esc(language)}">${esc(found.base_form)}</span></span>`
-        : '',
-    ].filter(Boolean);
-    const meanings = (found.meanings || []).filter((meaning) => meaning?.text);
-    const definitions = (found.definitions || []).filter((definition) => definition?.definition);
-    body = `${facts.length ? `<p class="reader-panel__facts">${facts.join('<span aria-hidden="true"> · </span>')}</p>` : ''}${
-      meanings.length
-        ? `<ul class="reader-panel__meanings">${meanings
-            .map(
-              (meaning) =>
-                `<li><span lang="${esc(support)}">${esc(meaning.text)}</span><small>${esc(c[SOURCE_LABELS[meaning.source]] || '')}</small></li>`,
-            )
-            .join('')}</ul>`
-        : ''
-    }${
-      definitions.length
-        ? `<section class="reader-panel__definitions"><h4>${esc(c.lookupDefinitions)}</h4><ol>${definitions
-            .map(
-              (definition) =>
-                `<li>${posName(c, definition.part_of_speech) || definition.part_of_speech ? `<small>${esc(posName(c, definition.part_of_speech) || definition.part_of_speech)}</small> ` : ''}<span lang="${esc(language === 'zh' ? 'en' : language)}">${esc(definition.definition)}</span></li>`,
-            )
-            .join('')}</ol><p class="reader-panel__source-label">${esc(c.lookupSourceDictionary)}</p></section>`
-        : ''
-    }`;
-    if (!meanings.length && !definitions.length)
-      body = `${facts.length ? `<p class="reader-panel__facts">${facts.join('<span aria-hidden="true"> · </span>')}</p>` : ''}<p class="reader-panel__note">${esc(c.lookupUnavailable)}</p>`;
-  }
-  return `${head}${body}${actions}`;
 }
 
 // A kept word carries its meaning and the sentence it was met in.
@@ -416,13 +298,3 @@ export function sentenceAround(text, start, end, limit = LOOKUP_LIMITS.context) 
   return value.slice(from, to).trim();
 }
 
-// A stretch of text to explain, within what the explanation accepts.
-export function explainBounds(text) {
-  const value = String(text ?? '').trim();
-  if (value.length <= EXPLAIN_LIMITS.selection) return { selection: value, context: value };
-  const [first] = chunkSpans(value, EXPLAIN_LIMITS.selection);
-  return {
-    selection: value.slice(first.start, first.end).trim(),
-    context: value.slice(0, EXPLAIN_LIMITS.context).trim(),
-  };
-}

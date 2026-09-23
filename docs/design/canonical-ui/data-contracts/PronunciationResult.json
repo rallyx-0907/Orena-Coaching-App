@@ -1,0 +1,25 @@
+{
+  "_usedBy": [
+    "SpeakingWorkspaceTemplate"
+  ],
+  "overall": "number 0-100",
+  "accuracy": "number 0-100",
+  "fluency": "number 0-100",
+  "timingNote": "string",
+  "passedCount": "number",
+  "totalCount": "number",
+  "words": [
+    {
+      "text": "string",
+      "pinyin": "string",
+      "score": "number 0-100",
+      "note": "string",
+      "toneTarget": [
+        "number"
+      ],
+      "toneActual": [
+        "number"
+      ]
+    }
+  ]
+}

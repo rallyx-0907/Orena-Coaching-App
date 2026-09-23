@@ -113,7 +113,7 @@ assert.ok(
 
 const sites = {
   'static/orena/ui/encounter.js': ['from_reading', 'from_listening'],
-  'static/orena/ui/expression.js': ['from_writing', 'from_grammar'],
+  'static/orena/ui/expression.js': ['from_grammar'], // the review no longer keeps language: its finding sheet asks and applies (D-066)
   'static/orena/ui/conversation.js': ['from_speaking'],
   'static/orena/ui/voice-response.js': ['from_speaking'],
 };
@@ -209,9 +209,17 @@ assert.ok(
   recallUi.includes('recallShape(current, keptNow)'),
   'the moment asks the question its provenance calls for',
 );
+/* The card the source draws says where the phrase was met on its back, under
+   the sentence - the `recall-where` line - rather than in a provenance strip
+   of its own. What matters is that it is still said, and only once the learner
+   has committed. */
 assert.ok(
-  recallUi.includes('keptProvenance(c, keptNow)'),
+  recallUi.includes('class="recall-where"'),
   'a recalled phrase still says where it came from',
+);
+assert.ok(
+  recallUi.indexOf('const back =') < recallUi.indexOf('class="recall-where"'),
+  'on the back of the card, not before the learner answers',
 );
 
 /* Repeated attempts must not erase what came before. The library only ever

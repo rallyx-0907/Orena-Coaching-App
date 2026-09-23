@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from fastapi import HTTPException
 
 from writing_coach.listening_api import (
@@ -54,6 +55,38 @@ def test_save_route_forwards_only_bounded_audio_free_progress() -> None:
         assert repository.values["presentation"] == "revealed"
         assert "audio" not in repository.values
         assert "proficiency" not in repository.values
+    finally:
+        configure_listening_progress(None)
+
+
+def test_the_last_attempts_hint_is_a_fact_about_the_attempt_and_nothing_more() -> None:
+    """D-068, DC-5: whether a hint was used, and how far, is stored with the attempt; no score is inferred."""
+
+    class FakeRepository:
+        def __init__(self) -> None:
+            self.values = None
+
+        def save_listening_progress_record(self, values: dict) -> dict:
+            self.values = values
+            return dict(values)
+
+    repository = FakeRepository()
+    configure_listening_progress(repository)
+    try:
+        save_listening_progress(ListeningProgressIn(
+            asset_id="asset-en", segment_id="segment-1", presentation="checked",
+            checked_attempt_count=1, best_accuracy_percent=80, last_answer="x", last_hint_level=2,
+        ))
+        assert repository.values["last_hint_level"] == 2
+        assert repository.values["last_used_hint"] is True, "a hint level above zero is a hint used"
+        assert repository.values["best_accuracy_percent"] == 80, "the score is what the evaluator said"
+        save_listening_progress(ListeningProgressIn(asset_id="asset-en", segment_id="segment-1"))
+        assert repository.values["last_used_hint"] is False and repository.values["last_hint_level"] == 0
+        # A client cannot say a hint was used at level zero: the flag is the level.
+        save_listening_progress(ListeningProgressIn(asset_id="asset-en", segment_id="segment-1", last_used_hint=True))
+        assert repository.values["last_used_hint"] is False
+        with pytest.raises(ValueError):
+            ListeningProgressIn(asset_id="a", segment_id="s", last_hint_level=4)
     finally:
         configure_listening_progress(None)
 

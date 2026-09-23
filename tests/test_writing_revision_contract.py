@@ -102,3 +102,60 @@ def test_chinese_issues_follow_the_same_rule() -> None:
     assert [
         (pair["before"]["fragment"], pair["after"]["fragment"]) for pair in issues["changed"]
     ] == [("他去了没有", "他没有去")]
+
+
+def _with_text(review: dict[str, object], text: str) -> dict[str, object]:
+    return {**review, "text": text}
+
+
+def test_a_finding_is_fixed_when_its_words_are_gone_and_not_when_they_are_still_there() -> None:
+    """The evaluator words a finding differently each time; the words decide.
+
+    Reviewed again, the same untouched sentence came back with its fragment cut
+    differently. Matching on identical wording called that a new problem and the
+    original a fixed one - and told a learner who had changed one thing that they
+    had fixed everything.
+    """
+    before = _with_text(
+        _draft([_issue("tense", "I go to the shop"), _issue("word_form", "I buyed some bread")]),
+        "Yesterday I go to the shop and I buyed some bread.",
+    )
+    after = _with_text(
+        # The learner fixed the first sentence and left the second alone; this time
+        # the evaluator names the untouched one by a shorter stretch of it.
+        _draft([_issue("word_form", "buyed")]),
+        "Yesterday I went to the shop and I buyed some bread.",
+    )
+
+    issues = revision_delta(after, before)["issues"]
+
+    assert [item["fragment"] for item in issues["removed"]] == ["I go to the shop"]
+    assert [item["fragment"] for item in issues["persistent"]] == ["buyed"]
+    assert issues["new"] == [] and issues["changed"] == []
+
+
+def test_words_left_untouched_and_not_flagged_again_are_not_called_fixed() -> None:
+    before = _with_text(_draft([_issue("tense", "I go to the shop")]), "Yesterday I go to the shop.")
+    after = _with_text(_draft([]), "Yesterday I go to the shop.")
+
+    issues = revision_delta(after, before)["issues"]
+
+    assert issues["removed"] == [], "the learner changed nothing, so nothing was fixed"
+    assert issues["persistent"] == [] and issues["new"] == []
+
+
+def test_a_finding_on_words_that_were_already_there_is_not_a_new_problem() -> None:
+    before = _with_text(_draft([]), "I dont finished my homework.")
+    after = _with_text(_draft([_issue("tense", "dont finished")]), "I dont finished my homework.")
+
+    issues = revision_delta(after, before)["issues"]
+
+    assert [item["fragment"] for item in issues["persistent"]] == ["dont finished"]
+    assert issues["new"] == []
+
+
+def test_words_the_revision_introduced_are_new() -> None:
+    before = _with_text(_draft([]), "I have a dog.")
+    after = _with_text(_draft([_issue("word_order", "dog a")]), "I have dog a.")
+
+    assert [item["fragment"] for item in revision_delta(after, before)["issues"]["new"]] == ["dog a"]

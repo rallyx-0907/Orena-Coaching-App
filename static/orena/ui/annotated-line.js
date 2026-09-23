@@ -34,7 +34,17 @@ export function annotatedLine(segment, result, { pinyin = false, labels = {} } =
       ? ` data-reading="${esc(token.pronunciation)}"` : '';
     const role = ['noun','proper_noun'].includes(token.pos) ? 'noun' : token.pos === 'verb' ? 'verb' : ['adjective','adverb'].includes(token.pos) ? 'detail' : '';
     const hint = labels[role] ? ` title="${esc(labels[role])}" aria-description="${esc(labels[role])}"` : '';
-    html += `<button type="button" class="token" data-token="${esc(text.slice(start,end))}" data-pos="${esc(token.pos || 'other')}"${reading}${hint}><span class="token-text">${timed(start,end)}</span></button>`;
+    /* A token is marked-up text, not a control.
+
+       It used to be a <button>, from when the line being looked at sat in a
+       panel of its own. The line is now the transcript row, and the row is the
+       control that takes the learner to it - so a button here would be a
+       button inside a button, which is not valid, and an inline-block box in
+       the middle of a sentence, which wrapped the line differently and cost it
+       a whole extra row the moment the voice arrived. Pointing at a word is
+       answered by the shared lexical layer from where the pointer landed
+       (`ui/lexical.js`), which needs text, not a control. */
+    html += `<span class="token" data-token="${esc(text.slice(start,end))}" data-pos="${esc(token.pos || 'other')}"${reading}${hint}><span class="token-text">${timed(start,end)}</span></span>`;
     cursor = end;
     count++;
   }

@@ -1,9 +1,11 @@
 import json
 import hashlib
+import logging
 import random
 import os
 import re
 import statistics
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -41,6 +43,7 @@ from writing_coach.writing_evaluator_contract import (
     build_writing_evaluator_request,
     build_writing_evaluator_schema,
 )
+from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
 from auth_support import APP_ENV, AUTH_ENABLED, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
@@ -65,6 +68,7 @@ from writing_coach.media_translation import (
     resolve_translation_provider_id,
 )
 from writing_coach.reading_lookup import ReadingLookupService
+from writing_coach.word_detail import configure_word_detail, router as word_detail_router
 from writing_coach.reading_translation import (
     ReadingTranslationService,
     resolve_reading_translation_provider_id,
@@ -101,7 +105,20 @@ from writing_coach.media_source_import import MediaSourceImporter
 from writing_coach.book_asset_store import FilesystemBookAssetStore
 from writing_coach.speech_asr import GroqSpeechAsrProvider
 from writing_coach.speech_pronunciation import build_speech_pronunciation_provider
-from writing_coach.core.errors import orena_http_error
+from writing_coach.core.errors import error_detail, orena_http_error
+from writing_coach.writing_limits import (
+    MAX_BYTES,
+    MAX_CHARACTERS,
+    MAX_PROMPT_CHARACTERS,
+    MAX_REVIEW_BYTES,
+    MAX_REVIEW_ITEMS,
+    measure_writing,
+)
+from writing_coach.writing_review_identity import (
+    identity_of_stored,
+    review_identity,
+    same_review,
+)
 from writing_coach.core.platform_api import router as platform_router
 from writing_coach.core.language_registry import is_enabled
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX
@@ -132,6 +149,7 @@ from writing_coach.vocabulary_library import (
 )
 from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProviderUnavailable
 from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
+from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.product.service import configure_product_repository
 from writing_coach.persistence.runtime import build_runtime
@@ -143,7 +161,8 @@ from writing_coach.persistence.learning_repository import (
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
-from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
+from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
+from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
 from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
 from writing_coach.cross_skill_transfer import select_cross_skill_cue
@@ -152,7 +171,7 @@ from writing_coach.readiness_summary import build_readiness_summary
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.exception_handlers import request_validation_exception_handler as fastapi_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -175,9 +194,67 @@ SCHEMA_VERSION = 11
 app = FastAPI(title="Orena", version=APP_VERSION)
 
 
+# The Writing endpoints that carry learner prose, and the largest body any of
+# them can legitimately need. Bounded here rather than globally, because an
+# EPUB or a media file is a legitimately large upload and must stay possible.
+#
+# The allowance is generous against the writing contract - JSON escaping, the
+# prompt, the intention and the envelope all ride along - and still refuses a
+# body that is not writing at all, before a parser has looked at it.
+_WRITING_BODY_PATHS = ("/api/evaluate", "/api/improve", "/api/work/drafts")
+_MAX_WRITING_BODY_BYTES = 4 * MAX_BYTES
+
+
+@app.middleware("http")
+async def bound_writing_request_bodies(request: Request, call_next):
+    """Refuse an oversized Writing body before anything reads it.
+
+    `Content-Length` is a claim, not a fact, so this is the cheap first gate
+    and not the only one: the route measures the actual text afterwards. What
+    this buys is that a client announcing ten megabytes is turned away without
+    a parse, an allocation or a line in a log containing any of it.
+    """
+    path = request.url.path.rstrip("/")
+    if any(path.startswith(prefix) for prefix in _WRITING_BODY_PATHS):
+        declared = request.headers.get("content-length")
+        try:
+            size = int(declared) if declared is not None else 0
+        except ValueError:
+            size = 0
+        if size > _MAX_WRITING_BODY_BYTES:
+            logging.getLogger(__name__).warning(
+                "writing body refused: endpoint=%s declared_bytes=%d max_bytes=%d",
+                path,
+                size,
+                _MAX_WRITING_BODY_BYTES,
+            )
+            return JSONResponse(
+                status_code=413,
+                content={
+                    "detail": error_detail(
+                        "writing_too_large",
+                        "This request is larger than Orena accepts.",
+                        retryable=False,
+                        context={"bytes": size, "max_bytes": _MAX_WRITING_BODY_BYTES},
+                    )
+                },
+            )
+    return await call_next(request)
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_response(request: Request, exc: RequestValidationError) -> Response:
-    """Preserve FastAPI validation bodies while marking mutable dictionary errors."""
+    """Preserve FastAPI validation bodies while marking mutable dictionary errors.
+
+    Without the rejected value. FastAPI echoes the input that failed, which for
+    a length rule means echoing the whole over-long field back to the client
+    and into anything that records the response - a learner's essay, in full,
+    because it was one character too long. The type, the location and the
+    message say what is wrong; the value adds nothing and travels badly.
+    """
+    for error in exc.errors():
+        if isinstance(error, dict):
+            error.pop("input", None)
     response = await fastapi_validation_exception_handler(request, exc)
     if request.url.path.rstrip("/") == "/api/dictionary":
         response.headers["Cache-Control"] = "no-store"
@@ -259,8 +336,11 @@ class WritingContextIn(BaseModel):
 
 
 class EssayIn(BaseModel):
-    prompt: str = Field(default="", max_length=5000)
-    text: str = Field(min_length=10, max_length=20000)
+    # The shared Writing contract (`writing_coach/writing_limits.py`), not what
+    # a TEXT column happens to hold. The route measures bytes and lines too,
+    # which a character bound cannot see.
+    prompt: str = Field(default="", max_length=MAX_PROMPT_CHARACTERS)
+    text: str = Field(min_length=10, max_length=MAX_CHARACTERS)
     target_cefr: str | None = Field(default=None, min_length=2, max_length=12)
     writing_mode: str = Field(default="guided", pattern=r"^(guided|journal)$")
     writing_context: WritingContextIn = Field(default_factory=WritingContextIn)
@@ -422,12 +502,15 @@ def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
         return None
 
 
-configure_reading_lookup(
-    ReadingLookupService(
-        _persistence_runtime.vocabulary_repository,
-        _reading_english_dictionary,
-        _reading_translation_service,
-    )
+_reading_lookup_service = ReadingLookupService(
+    _persistence_runtime.vocabulary_repository,
+    _reading_english_dictionary,
+    _reading_translation_service,
+)
+configure_reading_lookup(_reading_lookup_service)
+configure_word_detail(
+    lookup=_reading_lookup_service.lookup,
+    saved_terms=saved_vocabulary_words,
 )
 configure_media_timing(
     MediaTimingService(
@@ -444,6 +527,7 @@ configure_media_fallback(
 )
 app.include_router(media_learning_router)
 app.include_router(contextual_dictionary_router)
+app.include_router(word_detail_router)
 app.include_router(reading_translation_router)
 configure_speech_asr(_speech_asr_provider)
 configure_speech_pronunciation(build_speech_pronunciation_provider())
@@ -462,6 +546,18 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
+
+# The learner's discussion about a whole text (D-072.2). The turn handler meters
+# and never denies: whether this becomes the product's first entitlement-gated
+# route is an activation decision the human has not taken.
+app.include_router(
+    install_text_discussion(
+        repository=_persistence_runtime.text_discussion_repository,
+        generate_structured=generate_structured,
+        product_repository=_persistence_runtime.product_repository,
+        learner_profile=get_learner_profile,
+    )
+)
 
 # Shared Listening Library (media). The store is Orena's own index of imported
 # sources, the asset store is where a generated thumbnail or an uploaded file
@@ -907,7 +1003,7 @@ def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
                 "why": item.get("why", item.get("explanation_vi", "")),
                 "how": item.get("how", item.get("mini_rule_vi", "")),
                 "suggestion": item.get("suggestion", ""),
-                "examples": item.get("examples", []),
+                "examples": [item["example"]] if item.get("example") else item.get("examples", []),
             }
             for index, item in enumerate(d["errors"])
             if isinstance(item, dict)
@@ -962,6 +1058,44 @@ def revision_delta(current: dict[str, Any], previous: dict[str, Any] | None) -> 
     persistent_keys = sorted(set(current_items) & set(previous_items))
     unmatched_previous = sorted(set(previous_items) - set(current_items))
     unmatched_current = sorted(set(current_items) - set(previous_items))
+
+    # The evaluator words a finding differently from one review to the next - a
+    # longer or shorter stretch of the same sentence - so identical wording is too
+    # strict a test of "the same problem". When both texts are known the question
+    # is put to the words themselves: a finding whose words are gone from the new
+    # text is fixed; one whose words are still there, and are flagged again, is
+    # still there; and a finding on words that were already in the old text is not
+    # a problem the revision introduced.
+    current_text, previous_text = current.get("text"), previous.get("text")
+    if isinstance(current_text, str) and current_text and isinstance(previous_text, str) and previous_text:
+        def words(item: dict[str, Any]) -> str:
+            return str(item.get("fragment", item.get("quote", "")) or "")
+
+        def overlap(a: dict[str, Any], b: dict[str, Any]) -> bool:
+            first, second = words(a), words(b)
+            return bool(first and second and (first in second or second in first))
+
+        persistent_current = set(persistent_keys)
+        unmatched_previous = []
+        for key, item in sorted(previous_items.items()):
+            if key in current_items:
+                continue
+            flagged_again = next((k for k, cur in current_items.items() if k not in persistent_current and overlap(cur, item)), None)
+            if flagged_again is not None:
+                persistent_current.add(flagged_again)
+            elif words(item) not in current_text:
+                unmatched_previous.append(key)
+            # Otherwise the words are unchanged and not flagged again: neither fixed nor
+            # still a finding, so it is not claimed either way.
+        unmatched_current = []
+        for key, item in sorted(current_items.items()):
+            if key in persistent_current:
+                continue
+            if words(item) and words(item) in previous_text:
+                persistent_current.add(key)
+            else:
+                unmatched_current.append(key)
+        persistent_keys = sorted(persistent_current)
 
     # What remains may hold a genuine revision: the same problem, reworded. That
     # can only be claimed where the correspondence is unambiguous - exactly one
@@ -2009,8 +2143,103 @@ def api_delete_vocabulary(word: str) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     return {"deleted": _learning_repository.delete_saved_word(clean)}
 
+def _guard_writing_size(text: str, *, endpoint: str) -> None:
+    """Refuse writing that is not writing, before anything is spent on it.
+
+    First, and deterministically. Everything after this point costs something -
+    a tokenizer pass, a prompt, a row, a provider call - and none of it should
+    be reachable by sending a megabyte. The refusal carries the measurement so
+    a learner is told by how much, and carries no part of the text, so an
+    oversized request cannot put somebody's writing into a log.
+    """
+    measured = measure_writing(text)
+    if measured.within_limits:
+        return
+    # Operational metadata only: the size, the limit and where it happened.
+    # Never the writing itself, however small the breach.
+    logging.getLogger(__name__).warning(
+        "writing size refused: endpoint=%s limit=%s characters=%d bytes=%d lines=%d",
+        endpoint,
+        measured.limit_exceeded,
+        measured.characters,
+        measured.bytes,
+        measured.lines,
+    )
+    raise orena_http_error(
+        413,
+        "writing_too_large",
+        "This piece of writing is longer than Orena accepts.",
+        retryable=False,
+        context=measured.as_context(),
+    )
+
+
+def _bounded_review(result: dict[str, Any]) -> dict[str, Any]:
+    """Refuse a provider answer that is not an answer.
+
+    The schema already says what shape a review has; this says how much of it
+    there may be. A model that returns ten thousand issues would otherwise
+    become a multi-megabyte row and a page nobody can render - so the
+    collections are bounded and an answer that is still enormous after that is
+    rejected rather than stored.
+    """
+    bounded = dict(result)
+    for key in ("errors", "strengths_vi", "priorities_vi", "strength_evidence"):
+        value = bounded.get(key)
+        if isinstance(value, list) and len(value) > MAX_REVIEW_ITEMS:
+            bounded[key] = value[:MAX_REVIEW_ITEMS]
+    size = len(json.dumps(bounded, ensure_ascii=False, default=str).encode("utf-8"))
+    if size > MAX_REVIEW_BYTES:
+        raise orena_http_error(
+            502,
+            "writing_review_unusable",
+            "The review that came back could not be used.",
+            retryable=True,
+            context={"bytes": size, "max_bytes": MAX_REVIEW_BYTES},
+        )
+    return bounded
+
+
+# One evaluation per identity, even when several requests ask at once.
+#
+# The browser disables its button, which stops one learner double-clicking and
+# nothing else: a reload mid-flight, two tabs, a retry, or a direct client can
+# all ask for the same review concurrently, and each one would have been a
+# separate paid call. The first request through holds the identity; the others
+# wait for it and then read the answer it stored. Keyed by identity, so
+# different writing never waits on unrelated work.
+_review_in_flight: dict[str, threading.Lock] = {}
+_review_in_flight_guard = threading.Lock()
+
+
+def _review_gate(fingerprint: str) -> threading.Lock:
+    with _review_in_flight_guard:
+        lock = _review_in_flight.get(fingerprint)
+        if lock is None:
+            lock = threading.Lock()
+            _review_in_flight[fingerprint] = lock
+        return lock
+
+
+def _stored_review_for(identity: dict[str, str]) -> dict[str, Any] | None:
+    """A review already earned for exactly this request, if there is one.
+
+    Scoped by the repository to this account and learning language, so another
+    learner's essay can never answer this one.
+    """
+    # `detail=True` is what parses the metadata bag the identity lives in - and
+    # is also the shape a review is returned in, so a reused answer needs no
+    # second read.
+    for row in _learning_repository.list_essays(60):
+        stored = row_to_dict(row, detail=True)
+        if same_review(identity, identity_of_stored(stored.get("module_data"))):
+            return stored
+    return None
+
+
 @app.post("/api/evaluate")
 def api_evaluate(payload: EssayIn) -> dict[str, Any]:
+    _guard_writing_size(payload.text, endpoint="/api/evaluate")
     active_language = active_grammar_language_code()
     if payload.learning_language:
         requested_language = payload.learning_language.casefold().replace("_", "-")
@@ -2038,8 +2267,50 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
             )
         series_id = int(previous["series_id"] or previous["id"])
         revision_no = _learning_repository.next_revision_no(series_id)
+        # The repository hands back the stored row, whose findings are still a
+        # JSON string. The comparison reads parsed findings, so it is given the
+        # row in the same shape a review is returned in; without it every earlier
+        # issue was invisible and every current one looked new.
+        previous = row_to_dict(previous, detail=True)
 
+    # Has this exact review already been earned?
+    #
+    # The same words, task, level and pair of languages, judged by the same
+    # evaluator contract, are the same review. Asking a provider for it again
+    # buys nothing and is charged every time - so the identity is computed
+    # first and a stored answer is returned as it stands. A learner pressing
+    # Review twice, a reload, a second tab and a retry all land here.
+    #
+    # The gate below makes that true under concurrency too: the first request
+    # holds the identity, the rest wait and then find the answer it stored.
+    # Twenty identical requests are one provider call.
+    support_code, _support_name = _resolved_writing_support_language()
+    identity = review_identity(
+        text=payload.text,
+        learning_language=active_language,
+        support_language=support_code,
+        target_level=payload.target_cefr or "",
+        prompt=payload.prompt,
+    )
+    existing = _stored_review_for(identity)
+    if existing is not None:
+        return _review_payload(existing, previous)
+    with _review_gate(identity["fingerprint"]):
+        existing = _stored_review_for(identity)
+        if existing is not None:
+            return _review_payload(existing, previous)
+        return _run_review(payload, identity, previous, series_id, revision_no)
+
+
+def _run_review(
+    payload: EssayIn,
+    identity: dict[str, str],
+    previous: dict[str, Any] | None,
+    series_id: int | None,
+    revision_no: int,
+) -> dict[str, Any]:
     result, evaluator = evaluate(payload)
+    result = _bounded_review(result)
     result["grammar_links"] = grammar_links_for_issues(
         result.get("errors", []),
         active_grammar_knowledge_by_id(),
@@ -2062,7 +2333,9 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "prompt": payload.prompt,
         "text": payload.text,
         "word_count": word_count,
-        "target_cefr": payload.target_cefr,
+        # "no level asked for" is an empty level, not a missing one: the column
+        # is NOT NULL and the PostgreSQL side already defaults it to "".
+        "target_cefr": payload.target_cefr or "",
         "grammar": result["grammar"],
         "vocabulary": result["vocabulary"],
         "coherence": result["coherence"],
@@ -2081,6 +2354,10 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "parent_id": payload.parent_essay_id,
         "practice_context": practice_context,
         "grammar_links": result["grammar_links"],
+        # The identity of the review travels with the review, in the per-essay
+        # metadata both backends already persist - so no column and no
+        # migration, and it reaches the client through the same payload.
+        "review_identity": identity,
     })
     essay_id = int(created["id"])
     series_id = int(created["series_id"])
@@ -2101,10 +2378,29 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
     }
 
 
+def _review_payload(stored: dict[str, Any], previous: dict[str, Any] | None) -> dict[str, Any]:
+    """A stored evaluation, shaped exactly as a fresh one.
+
+    A reused review must be indistinguishable from an earned one, or the room
+    would have to know which it got and would drift into two renderings of the
+    same thing. It is the stored row, read through the same serializer, with
+    the same delta computed against the same previous revision.
+    """
+    overall = float(stored.get("overall") or 0.0)
+    delta = revision_delta({**stored, "overall": overall}, previous)
+    return {
+        **stored,
+        "overall": overall,
+        "app_cefr": app_cefr(overall),
+        "delta": delta,
+        "reused": True,
+    }
+
+
 @app.get("/api/essays")
-def essays(limit: int = 200) -> list[dict[str, Any]]:
+def essays(limit: int = 200, kept: bool = False) -> list[dict[str, Any]]:
     limit = min(max(1, limit), 500)
-    rows = _learning_repository.list_essays(limit)
+    rows = _learning_repository.list_essays(limit, kept_only=kept)
     return [row_to_dict(r) for r in rows]
 
 
@@ -2116,6 +2412,7 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     series_id = int(row["series_id"] or row["id"])
     series_rows = _learning_repository.list_series_revisions(series_id)
     previous = _learning_repository.previous_revision(series_id, int(row["revision_no"] or 1))
+    previous = row_to_dict(previous, detail=True) if previous else None
     d = row_to_dict(row, detail=True)
     d["revisions"] = series_rows
     d["delta"] = revision_delta(d, previous)
@@ -2123,6 +2420,42 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     # does not come back without it.
     d["app_cefr"] = app_cefr(float(d.get("overall") or 0))
     return d
+
+@app.get("/api/essays/{essay_id}/review")
+def essay_review(essay_id: int) -> dict[str, Any]:
+    """The review in the Writing room's canonical shape (WritingReview)."""
+    detail = essay_detail(essay_id)
+    return {**project_writing_review(detail), "id": detail["id"], "parentId": detail.get("parent_id")}
+
+
+@app.get("/api/essays/{essay_id}/revision")
+def essay_revision(essay_id: int) -> dict[str, Any]:
+    """This version beside the one before it (RevisionCompare)."""
+    detail = essay_detail(essay_id)
+    row = _learning_repository.previous_revision(int(detail["series_id"] or detail["id"]), int(detail["revision_no"] or 1))
+    if not row:
+        raise HTTPException(404, "This is the first version; there is nothing to compare it with.")
+    return project_revision_compare(detail, row_to_dict(row, detail=True))
+
+
+def _set_review_kept(essay_id: int, kept: bool) -> dict[str, Any]:
+    """D-072.1. The learner keeps a review to read again; the flag rides on the
+    essay row, so no review data is duplicated."""
+    row = _learning_repository.set_essay_review_kept(essay_id, kept)
+    if row is None:
+        raise HTTPException(404, "Essay not found")
+    return {"id": essay_id, "kept": bool(row.get("review_kept_at")), "kept_at": row.get("review_kept_at")}
+
+
+@app.post("/api/essays/{essay_id}/keep")
+def keep_essay_review(essay_id: int) -> dict[str, Any]:
+    return _set_review_kept(essay_id, True)
+
+
+@app.delete("/api/essays/{essay_id}/keep")
+def unkeep_essay_review(essay_id: int) -> dict[str, Any]:
+    return _set_review_kept(essay_id, False)
+
 
 @app.delete("/api/essays/{essay_id}")
 def delete_essay(essay_id: int) -> dict[str, bool]:
@@ -2781,9 +3114,40 @@ def becoming_practice_outcomes(limit: int = 20) -> dict[str, Any]:
 # === BECOMING PRACTICE OUTCOME ROUTES END ===
 
 # === BECOMING VOCABULARY LIBRARY ROUTES START ===
+# The learner's saved vocabulary, one page at a time. Ordering, searching and
+# filtering are the database's work: a screen that needs twelve due words must
+# not cost what ten thousand saved words cost. `summary` is counted with
+# aggregates and travels with every page, so a caller never has to add the
+# items up to know how many there are.
+#
+# `query` matches the word, its definition and the translation kept with it -
+# what the learner's own database holds. `cursor` belongs to the question it
+# came from: change `query`, `status`, `order` or `focus` and the old cursor is
+# ignored rather than read against a different ordering, so the caller gets the
+# first page of what they actually asked.
 @app.get("/api/library/vocabulary", name="becoming_library_vocabulary_list")
-def becoming_library_vocabulary_list() -> dict[str, Any]:
-    return list_library_vocabulary()
+def becoming_library_vocabulary_list(
+    limit: int = Query(default=LIBRARY_PAGE_DEFAULT, ge=1, le=LIBRARY_PAGE_MAX),
+    cursor: str = Query(default="", max_length=512),
+    query: str = Query(default="", max_length=180),
+    status: str = Query(default="", pattern=r"^(|all|learning|mastered|due)$"),
+    order: str = Query(default="recent", pattern=r"^(recent|due|word)$"),
+    focus: list[str] = Query(default=[]),
+) -> dict[str, Any]:
+    return list_library_vocabulary(
+        limit=limit,
+        cursor=cursor,
+        search=query,
+        status="" if status == "all" else status,
+        order=order,
+        focus=tuple(item for item in focus if str(item or "").strip())[:40],
+    )
+
+# What Hồ sơ, Tiến độ and Home actually need: the counts and the rank, without
+# a single saved word crossing the wire.
+@app.get("/api/library/vocabulary/summary", name="becoming_library_vocabulary_summary")
+def becoming_library_vocabulary_summary() -> dict[str, Any]:
+    return library_summary()
 
 @app.post("/api/library/vocabulary", name="becoming_library_vocabulary_save")
 def becoming_library_vocabulary_save(payload: LibraryVocabularyIn) -> dict[str, Any]:
@@ -2885,27 +3249,35 @@ def _vocabulary_feed_pool(language_code: str) -> list[dict[str, Any]]:
 @app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
 def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
     code = _require_vocabulary_language_code(language_code)
-    language_token = LANGUAGE_CODE_CTX.set(code)
-    try:
-        saved_items = list_library_vocabulary()["items"]
-    finally:
-        LANGUAGE_CODE_CTX.reset(language_token)
-    saved_by_word = {
-        normalize_vocabulary_word(item.get("word")): item for item in saved_items
-    }
     by_id = {summary["id"]: dict(summary) for summary in list_vocabulary_collections(code)}
     for summary in _persisted_vocabulary_collections(code):
         by_id[summary["id"]] = dict(summary)
-    summaries = []
-    for summary in by_id.values():
-        catalog = (
+    catalogs = {
+        summary["id"]: (
             _persisted_vocabulary_collection(summary["id"], limit=5000)
             if summary.get("origin") == "imported"
             else get_vocabulary_collection(summary["id"])
         ) or {"entries": []}
+        for summary in by_id.values()
+    }
+    # The learner's state for the words these collections contain - asked about
+    # those words, rather than by reading everything the learner has ever saved.
+    candidates = {
+        str(entry.get("word") or "")
+        for catalog in catalogs.values()
+        for entry in catalog.get("entries", [])
+        if entry.get("word")
+    }
+    language_token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        saved_by_word = saved_vocabulary_state(tuple(candidates))
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    summaries = []
+    for summary in by_id.values():
         summary = dict(summary)
         summary["progress"] = _vocabulary_collection_progress(
-            catalog.get("entries", []), saved_by_word
+            catalogs[summary["id"]].get("entries", []), saved_by_word
         )
         summaries.append(summary)
     summaries.sort(key=lambda item: (str(item.get("framework") or ""), str(item.get("title") or "")))
@@ -2962,12 +3334,12 @@ def becoming_vocabulary_library_collection_detail(
         ]
     language_token = LANGUAGE_CODE_CTX.set(collection["language_code"])
     try:
-        saved_items = list_library_vocabulary()["items"]
+        # Only the words on this page of the collection.
+        saved_by_word = saved_vocabulary_state(
+            tuple(str(entry.get("word") or "") for entry in entries if entry.get("word"))
+        )
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
-    saved_by_word = {
-        normalize_vocabulary_word(item.get("word")): item for item in saved_items
-    }
     items = []
     for entry in entries:
         card = vocabulary_card_from_catalog_entry(entry)
@@ -3009,10 +3381,9 @@ def becoming_vocabulary_feed(
     declared_level = target_level.strip() or None
     language_token = LANGUAGE_CODE_CTX.set(code)
     try:
-        exclude_normalized = {
-            normalize_vocabulary_word(item.get("word"))
-            for item in list_library_vocabulary()["items"]
-        }
+        # What the learner already keeps, as words: the feed only needs to know
+        # what to leave out, not what each one looks like.
+        exclude_normalized = saved_vocabulary_words()
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
     learner_context = LearnerFeedContext(

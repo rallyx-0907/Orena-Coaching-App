@@ -1,0 +1,775 @@
+/* The Dictation screen (D-066, D-067), every number taken from Orena Listening, "Dictation · Nghe chép"
+   (desktop frame "Dictation · result inline" at 1920x1080, phone frame "Dictation mobile · entry" at
+   390x844). Colour comes only from theme.css. While it is open the listening workspace gives the room
+   over to it: the player is still there and still plays the line, it is just not on screen. */
+
+#main:has([data-dictation]) {
+  padding: 0;
+}
+#main > .listen-workspace[data-dictation] {
+  max-width: none;
+  margin-left: 0;
+}
+[data-dictation] > .listen-back,
+.listen-workspace[data-dictation] > :not(.practice-space) {
+  display: none;
+}
+.listen-workspace[data-dictation],
+.listen-workspace[data-dictation] .practice-space {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: visible;
+  max-height: none;
+}
+
+/* --- The top bar: 84px, padded 0 36 ------------------------------------------------- */
+.dz-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  block-size: 84px;
+  box-sizing: border-box;
+  padding: 0 36px;
+  min-width: 0;
+}
+.dz-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-on-glass-dim);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.dz-lesson {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dz-top .dz-name {
+  margin: 0 0 0 8px;
+  outline: none;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.dz-where {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-60);
+}
+.dz-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+  block-size: 42px;
+  box-sizing: border-box;
+  padding: 0 15px;
+  border-radius: 999px;
+  background: var(--streak-wash);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--nav-active-ring);
+  color: var(--streak-ink);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+/* --- The two panels ------------------------------------------------------------------- */
+.dz-cols {
+  display: flex;
+  gap: 22px;
+  padding: 20px 36px 36px;
+  align-items: stretch;
+}
+.dz-task {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 34px 40px;
+  border-radius: 20px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18), 0 8px 28px rgba(0, 0, 0, 0.42);
+}
+.dz-result {
+  flex: none;
+  inline-size: 640px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.dz-result[hidden] {
+  display: none;
+}
+
+/* Which line of how many: 4px segments, amber, with a way to the line before and the line after. */
+.dz-steps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+}
+.dz-step {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 34px;
+  block-size: 34px;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glass-base);
+  box-shadow: var(--glass-ring);
+  color: var(--ink-78);
+  cursor: pointer;
+}
+.dz-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.dz-progress {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.dz-progress__segments {
+  display: flex;
+  flex: 1;
+  gap: 5px;
+}
+.dz-progress__segments i {
+  flex: 1;
+  block-size: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.dz-progress__segments i[data-done] {
+  background: var(--streak);
+}
+.dz-progress__count {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  color: var(--ink-60);
+}
+.dz-ask {
+  margin: 0;
+  text-align: center;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.026em;
+  color: var(--text-primary);
+}
+
+/* The clip (VideoFrame): 620x349, radius 18. */
+.dz-media {
+  position: relative;
+  flex: none;
+  inline-size: min(620px, 100%);
+  aspect-ratio: 620 / 349;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--artwork-wash);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18), 0 16px 44px rgba(0, 0, 0, 0.5);
+}
+.dz-media__art,
+.dz-media__art > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dz-glow {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  inline-size: 150px;
+  block-size: 150px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--dictation-glow), transparent);
+  pointer-events: none;
+}
+.dz-play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  inline-size: 94px;
+  block-size: 94px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--scrim-play);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.24);
+  color: var(--dictation-ink);
+  cursor: pointer;
+}
+.dz-badge,
+.dz-range {
+  position: absolute;
+  top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--scrim-badge);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-family: var(--mono-font);
+}
+.dz-badge {
+  left: 14px;
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.22);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dz-badge > svg {
+  color: var(--accent-ink);
+}
+.dz-range {
+  right: 14px;
+  font-size: 12px;
+}
+.dz-clip {
+  position: absolute;
+  inset: auto 16px 16px 16px;
+  block-size: 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.dz-clip > i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--progress-violet);
+}
+
+/* The pills: mono 11.5px, 8/12, raised glass; the hint pill is the skill's lime. */
+.dz-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.dz-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.dz-pill--raised {
+  background: var(--glass-raised);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: var(--nav-active-ring);
+}
+.dz-pill--hint {
+  background: var(--dictation-hint-wash);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: var(--nav-active-ring);
+  color: var(--dictation-hint-ink);
+  cursor: default;
+}
+.dz-pill--hint[hidden] {
+  display: none;
+}
+
+/* The shape of the line (HintRow): radius 18, padded 20/22, a hairline above its count. */
+.dz-shape {
+  align-self: stretch;
+  max-width: 760px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+}
+.dz-cells {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+.dz-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dz-cell b {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.dz-cell small {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--ink-55);
+}
+.dz-cell--hidden b,
+.dz-cell--partial b {
+  color: var(--hint-hidden);
+}
+.dz-cell--hidden small {
+  color: rgba(255, 255, 255, 0.25);
+}
+.dz-shape__foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.14);
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--ink-60);
+  text-transform: uppercase;
+}
+.dz-shape__note {
+  margin-inline-start: auto;
+  font-family: var(--font);
+  font-size: 13.5px;
+  text-transform: none;
+}
+
+/* The field and its two actions (the phone frame): a focus-glass box, then 50px buttons at radius 15. */
+.dz-form {
+  align-self: stretch;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dz-form textarea {
+  min-height: 76px;
+  box-sizing: border-box;
+  padding: 15px 16px;
+  resize: none;
+  border: 0;
+  border-radius: 15px;
+  background: var(--glass-focus);
+  backdrop-filter: blur(24px) saturate(1.4) brightness(1.05);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.3);
+  color: #fff;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1.7;
+  caret-color: var(--accent-ink);
+}
+.dz-actions {
+  display: flex;
+  gap: 10px;
+}
+.dz-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  block-size: 50px;
+  border: 0;
+  border-radius: 15px;
+  color: #fff;
+  font-family: var(--display-font);
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.dz-btn--glass {
+  flex: 1;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.22);
+  font-weight: 700;
+}
+.dz-btn--glass:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dz-btn--accent {
+  flex: 1.2;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 24px rgba(123, 77, 232, 0.4);
+  font-weight: 800;
+}
+/* A save that fails is the one status the learner must be told; a save that works is not drawn. */
+.dz-status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--status-warning);
+}
+.dz-status:empty {
+  display: none;
+}
+
+/* --- The result (640px, radius 20) --------------------------------------------------- */
+.dz-result__head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07);
+  background: radial-gradient(85% 70% at 12% 0%, var(--dictation-head-wash), transparent 62%);
+}
+.dz-ring {
+  --score: 0%;
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 92px;
+  block-size: 92px;
+  border-radius: 50%;
+  background: conic-gradient(var(--streak) 0 var(--score), rgba(255, 255, 255, 0.1) var(--score) 100%);
+}
+.dz-ring::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--glass-soft);
+  backdrop-filter: blur(24px) saturate(1.3);
+  box-shadow: var(--nav-active-ring);
+}
+.dz-ring__text {
+  position: relative;
+  text-align: center;
+}
+.dz-ring b {
+  display: block;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 27px;
+  line-height: 1;
+}
+.dz-ring small {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ink-60);
+}
+.dz-result__copy {
+  flex: 1;
+  min-width: 0;
+}
+.dz-result__copy strong {
+  display: block;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+}
+.dz-result__copy p {
+  margin: 7px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-68);
+}
+.dz-result__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 28px;
+}
+.dz-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dz-label {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.dz-label--good {
+  color: var(--right-label);
+}
+.dz-line {
+  padding: 15px 17px;
+  border-radius: 14px;
+  background: var(--glass-well);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glass-ring);
+  font-size: 20px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.dz-line--right {
+  background: var(--right-wash);
+  box-shadow: var(--nav-active-ring);
+}
+.dz-mark {
+  display: inline;
+  padding: 1px 3px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--diff-wrong-wash);
+  box-shadow: inset 0 -2px 0 var(--diff-mark);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.dz-mark--extra {
+  background: var(--diff-extra-wash);
+  text-decoration: line-through;
+  text-decoration-color: var(--diff-mark);
+}
+.dz-mark--missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--diff-missing-wash);
+  box-shadow: none;
+  border: 1px dashed var(--diff-missing-edge);
+  color: var(--diff-missing-ink);
+  font-family: var(--mono-font);
+  font-size: 12.5px;
+  line-height: normal;
+}
+.dz-fix {
+  background: none;
+  color: var(--right-ink);
+  font-weight: 700;
+}
+.dz-reading {
+  font-family: var(--mono-font);
+  font-size: 12.5px;
+  color: var(--ink-62);
+}
+.dz-meaning {
+  font-size: 14px;
+  color: var(--ink-68);
+}
+.dz-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 14px;
+  box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.16);
+}
+.dz-go,
+.dz-next .dz-pill {
+  padding: 13px 18px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: none;
+  gap: 8px;
+}
+.dz-go {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  color: #fff;
+  cursor: pointer;
+}
+.dz-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dz-next .dz-pill--raised {
+  background: var(--glass-focus);
+}
+
+/* --- The phone: one column, the task, then the result below it -------------------------- */
+/* A desk keeps the whole task on one screen, whatever the length of the line: the picture takes what the
+   height allows, the line wraps in a pane that scrolls on its own, and the field and the check stay under
+   it (Orena's patterns: the height budget is worked out in advance - the bar, then the room that is left). */
+@media (min-width: 901px) {
+  .dz-cols {
+    box-sizing: border-box;
+    block-size: calc(100dvh - 84px);
+    min-block-size: 0;
+    padding: 16px 36px 24px;
+  }
+  .dz-task {
+    min-block-size: 0;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 24px 40px;
+    overflow: hidden;
+  }
+  .dz-media {
+    aspect-ratio: auto;
+    block-size: clamp(110px, 28dvh, 349px);
+  }
+  .dz-shape {
+    flex: 0 1 auto;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+  .dz-cells {
+    min-block-size: 0;
+    max-block-size: clamp(64px, 24dvh, 240px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .dz-form textarea {
+    min-height: 0;
+    block-size: clamp(56px, 9dvh, 76px);
+  }
+  .dz-result {
+    max-block-size: 100%;
+    overflow-y: auto;
+  }
+}
+/* A short desk (a laptop) gives the picture less and the line more. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .dz-task {
+    gap: 12px;
+    padding: 18px 32px;
+  }
+  .dz-ask {
+    font-size: 22px;
+  }
+  .dz-media {
+    block-size: 19dvh;
+  }
+  .dz-cells {
+    max-block-size: 30dvh;
+  }
+}
+/* The rights block under the room is not part of the task: it waits under the fold of the room, and
+   while Dictation has the screen the page is exactly one screen. */
+#main:has(.listen-workspace[data-dictation]) > .source {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .dz-top {
+    gap: 12px;
+    padding: 0 20px;
+  }
+  .dz-lesson,
+  .dz-where {
+    display: none;
+  }
+  .dz-name {
+    margin: 0;
+    font-size: 17px;
+    white-space: nowrap;
+  }
+  .dz-cols {
+    flex-direction: column;
+    padding: 0 20px 24px;
+  }
+  /* Hearing, the line, the field and the check all fit one screen: the picture is a strip, the
+     line wraps in a pane that scrolls on its own when a line is long, the field is two lines. */
+  .dz-top {
+    block-size: 56px;
+  }
+  .dz-task {
+    padding: 14px 16px 16px;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .dz-ask {
+    font-size: 18px;
+  }
+  .dz-media {
+    inline-size: 100%;
+    aspect-ratio: auto;
+    block-size: 96px;
+    border-radius: 14px;
+  }
+  .dz-play {
+    inline-size: 52px;
+    block-size: 52px;
+  }
+  .dz-glow {
+    inline-size: 96px;
+    block-size: 96px;
+  }
+  .dz-shape {
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .dz-cells {
+    gap: 6px 7px;
+    max-block-size: 118px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .dz-cell b {
+    font-size: 22px;
+  }
+  .dz-cell small {
+    font-size: 10.5px;
+  }
+  .dz-shape__foot {
+    padding-top: 8px;
+  }
+  .dz-form {
+    gap: 10px;
+  }
+  .dz-form textarea {
+    min-height: 0;
+    block-size: 68px;
+    padding: 10px 14px;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .dz-result {
+    inline-size: auto;
+  }
+  .dz-result__head,
+  .dz-result__body {
+    padding: 20px 16px;
+  }
+}

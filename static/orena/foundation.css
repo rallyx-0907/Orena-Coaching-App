@@ -14,29 +14,87 @@
   --space-8: 2rem;
   --space-12: 3rem;
   --space-16: 4rem;
+  /* Type (D-061): the approved mockup's three faces, three jobs. Nunito 800
+     for display and any number read as a headline; Nunito Sans for interface
+     and reading copy; DM Mono for every datum - level, timing, score, state -
+     and for the small uppercase labels. Noto Sans SC carries Han characters
+     the Latin faces lack; stories keep the serif (rule 18). */
   --display-font:
-    'Nunito Sans', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
-  --radius: 0.625rem;
-  --measure: 68ch;
-  --font:
-    'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
+    'Nunito', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
     sans-serif;
+  --font:
+    'Nunito Sans', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui,
+    sans-serif;
+  --mono-font: 'DM Mono', 'Noto Sans SC', ui-monospace, monospace;
+  --weight-heavy: 800;
+  --text-2xs: 0.75rem;
+  --text-title: 1.375rem;
+  --text-display: clamp(1.75rem, 2.6vw, 2.25rem);
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --measure: 68ch;
+
+  /* Radius by size, not by taste: 10 for inline chips and covers, 14 for rows
+     and icon buttons, 20 for cards and sheets, a pill for anything pressable
+     that holds a label, 24 on a sheet's top corners. */
+  --radius: 0.625rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-sheet: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Motion. Movement says something arrived or followed; nothing drifts. */
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  /* Layers, lowest first. */
+  --z-raised: 1;
+  --z-sticky: 20;
+  --z-popover: 30;
+  --z-shell: 40;
+  --z-overlay: 60;
+  --z-sheet: 70;
+  --z-toast: 80;
+  --z-skip: 100;
+
+  /* Breakpoints, for reference - a custom property cannot sit in a media
+     query, so each query writes the number: 600 phone, 900 the shell becomes
+     a header, 1024 tablet, 1280 wide desktop. */
 }
 * {
   box-sizing: border-box;
 }
+/* The cosmic field belongs to the canvas, not to the body box.
+   `html, body { overflow-x: clip }` keeps a stray wide child from scrolling the
+   page - and it also clipped this background to the document's 1905px, leaving
+   the scrollbar's gutter unlit and making the light look cut off at the edge.
+   Declared on `html` it paints the whole viewport, under the rail and under the
+   gutter, which is how the source draws it: one field the glass sits on. */
+html {
+  background-color: var(--ground-color);
+  background-image: var(--ground);
+  background-size: var(--ground-size);
+  background-attachment: fixed;
+}
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font: var(--text-base) / 1.7 var(--font);
+  background: transparent;
+  color: var(--text-primary);
+  font: var(--weight-regular) var(--text-base) / 1.7 var(--font);
+  -webkit-font-smoothing: antialiased;
 }
 html {
   scrollbar-gutter: stable;
 }
 ::selection {
-  background: var(--sun-surface);
-  color: var(--on-sun);
+  background: var(--action-selected);
+  color: var(--text-primary);
 }
 :where(button, input, select, summary) {
   min-height: var(--tap, 44px);
@@ -54,10 +112,10 @@ html {
 }
 button:hover:not(:disabled),
 summary:hover {
-  color: var(--accent);
+  color: var(--action-text);
 }
 .primary:hover:not(:disabled) {
-  color: var(--paper);
+  color: var(--text-on-action);
 }
 button:active:not(:disabled),
 .primary:active:not(:disabled),
@@ -71,19 +129,19 @@ details > summary {
 textarea:focus,
 input:focus,
 select:focus {
-  border-color: var(--accent);
+  border-color: var(--action-primary);
 }
 /* Read-only plan/usage fact inside the preferences sheet - no price, no
    upgrade action, so it is styled as plain information, not a form or a
    call-to-action. */
 .plan-usage {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border-subtle);
   padding-top: var(--space-3);
   margin-top: var(--space-3);
 }
 .plan-usage h2 {
   font-size: var(--text-sm);
-  color: var(--muted);
+  color: var(--text-secondary);
   margin: 0 0 var(--space-2);
 }
 .plan-usage ul {
@@ -100,25 +158,25 @@ select:focus {
   font-size: var(--text-sm);
 }
 .plan-usage li > span:last-child {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 /* Read-only growth glance, same treatment as plan/usage above it: plain
    information inside the preferences sheet, not a form or a call-to-action.
    The domain label may carry a hint icon explaining why it has no trend yet -
    see growthSummarySection() in app.js. */
 .growth-summary {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border-subtle);
   padding-top: var(--space-3);
   margin-top: var(--space-3);
 }
 .growth-summary h2 {
   font-size: var(--text-sm);
-  color: var(--muted);
+  color: var(--text-secondary);
   margin: 0 0 var(--space-2);
 }
 .growth-summary > p.meta {
   font-size: var(--text-xs);
-  color: var(--muted);
+  color: var(--text-secondary);
   margin: 0 0 var(--space-2);
 }
 .growth-summary ul {
@@ -140,107 +198,13 @@ select:focus {
   gap: var(--space-1);
 }
 .growth-summary li > span:last-child {
-  color: var(--muted);
+  color: var(--text-secondary);
   text-align: right;
 }
 .growth-achievements {
   margin: var(--space-2) 0 0;
   font-size: var(--text-xs);
-  color: var(--muted);
-}
-/* Choosing a theme.
-
-   Each row shows the theme rather than naming a colour: the sample carries
-   `data-theme` itself, so it is painted by the same tokens the whole product
-   would be painted by. Nothing here knows a hex value, and a theme added to
-   the registry arrives with its own preview already correct. */
-.theme-control {
-  border: 0;
-  border-top: 1px solid var(--line);
-  padding: var(--space-6) 0 0;
-  margin: var(--space-6) 0 0;
-  min-inline-size: 0;
-}
-.theme-control > legend {
-  padding: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-.theme-choices {
-  display: grid;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-.theme-choice {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-.theme-choice:has(input:checked) {
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-.theme-choice:has(input:focus-visible) {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.theme-choice-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-/* A sentence, not an eyebrow: <small> is this product's uppercase label, so
-   the description is a plain span and reads as prose. */
-.theme-choice-text > span {
-  color: var(--muted);
-  font-size: var(--text-xs);
-}
-/* The sample is a canvas, a card on it, two lines of text and an accent -
-   the smallest composition that still shows what a room would feel like. */
-.theme-sample {
-  flex: none;
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  inline-size: 52px;
-  block-size: 36px;
-  padding: 5px;
-  border-radius: 6px;
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.theme-sample-card {
-  flex: 1;
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-  padding: 4px;
-  border-radius: 3px;
-  background: var(--surface);
-}
-.theme-sample-card b {
-  block-size: 3px;
-  border-radius: 2px;
-  background: var(--ink);
-}
-.theme-sample-card i {
-  block-size: 2px;
-  inline-size: 70%;
-  border-radius: 2px;
-  background: var(--muted);
-}
-.theme-sample-accent {
-  flex: none;
-  inline-size: 8px;
-  block-size: 8px;
-  border-radius: 50%;
-  background: var(--accent);
+  color: var(--text-secondary);
 }
 .meta {
   text-wrap: pretty;
@@ -291,8 +255,8 @@ summary:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 4px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 /* A region moved to for a screen reader is not a control the learner tabbed
    to. Anything with tabindex="-1" is a programmatic focus target by
@@ -309,24 +273,27 @@ h3,
 p {
   margin: 0;
 }
+/* Few large headers: a page title orients, it does not announce. */
 h1,
 h2,
 h3 {
   line-height: 1.2;
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-family: var(--display-font);
 }
 h1 {
-  font-size: clamp(34px, 4.5vw, 64px);
-  letter-spacing: -0.045em;
+  font-size: var(--text-display);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 h2 {
-  font-size: clamp(24px, 2.5vw, 34px);
-  letter-spacing: -0.025em;
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  letter-spacing: -0.015em;
 }
 h3 {
-  font-size: 22px;
+  font-size: 1.125rem;
+  font-weight: var(--weight-semibold);
 }
 p {
   margin: 14px 0;
@@ -334,21 +301,20 @@ p {
 }
 small {
   font-size: var(--text-xs);
-  letter-spacing: 0.075em;
-  text-transform: uppercase;
-  font-weight: 700;
+  letter-spacing: 0;
+  font-weight: var(--weight-semibold);
   line-height: 1.8;
 }
 blockquote {
   margin: 22px 0;
   padding: 10px 0 10px 22px;
-  border-left: 3px solid var(--coral);
+  border-left: 3px solid var(--border-strong);
   font-size: var(--text-lead);
   line-height: 1.85;
 }
 blockquote small {
   display: block;
-  color: var(--muted);
+  color: var(--text-secondary);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -356,16 +322,20 @@ label {
   display: grid;
   gap: 7px;
   font-size: var(--text-sm);
-  font-weight: 650;
+  font-weight: var(--weight-semibold);
 }
 input,
 select,
 textarea {
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   padding: 12px 14px;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+::placeholder {
+  color: var(--text-muted);
 }
 /* A chevron drawn like the rest of the icons rather than the one the operating
    system supplies. The native control's arrow is heavier than everything
@@ -382,10 +352,10 @@ select {
   background-repeat: no-repeat;
   background-position: right 14px center;
   background-size: 16px 16px;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23586575' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2356545a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 [data-appearance='dark'] select {
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c0ccd4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aca8b2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 select::-ms-expand {
   display: none;
@@ -402,7 +372,7 @@ input[type='checkbox'],
 input[type='radio'] {
   width: 24px;
   height: 24px;
-  accent-color: var(--accent);
+  accent-color: var(--action-primary);
 }
 
 /* ---------------------------------------------------------------------------
@@ -440,7 +410,7 @@ input[type='radio'] {
   }
   h1 {
     font-size: 1.5rem;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.015em;
   }
   h2 {
     font-size: 1.2rem;
@@ -494,8 +464,9 @@ input[type='radio'] {
   position: fixed;
   top: -100px;
   left: 10px;
-  z-index: 100;
-  background: var(--surface);
+  z-index: var(--z-skip);
+  background: var(--surface-elevated);
+  border-radius: var(--radius-md);
   padding: 12px;
 }
 .skip:focus {
@@ -503,36 +474,48 @@ input[type='radio'] {
 }
 .meta,
 .byline {
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: var(--text-xs);
   line-height: 1.8;
 }
+/* Buttons. One filled pill per screen: the violet gradient is the primary
+   action and nothing else wears it. Everything else is a hairline surface. */
 .primary,
 .outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  min-height: 46px;
-  padding: 12px 22px;
-  border-radius: 7px;
+  gap: 10px;
+  min-height: var(--tap, 44px);
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
-  font-weight: 750;
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
   transition:
-    background 0.15s,
-    transform 0.15s;
+    background var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 .primary {
-  background: var(--ink);
-  color: var(--paper);
-  border: 1px solid var(--ink);
+  background: var(--action-gradient);
+  color: var(--text-on-action);
+  border: 1px solid transparent;
+  box-shadow: var(--glow-action);
 }
 .outline {
-  border: 1px solid var(--muted);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+}
+.outline:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--text-primary) 32%, transparent);
+  color: var(--text-primary);
 }
 .primary:hover:not(:disabled),
 .outline:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 /* A disabled control answers nothing: no lift, no pointer, no underline. */
 :where(.primary, .outline, .quiet):disabled {
@@ -555,10 +538,11 @@ input[type='radio'] {
   text-underline-offset: 5px;
 }
 .notice {
-  padding: 18px;
-  background: var(--sage-surface);
-  color: var(--on-sage);
-  border-radius: 7px;
+  padding: 16px 18px;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
 }
 .notice button {
   text-decoration: underline;
@@ -573,7 +557,7 @@ input[type='radio'] {
   padding: 35px;
 }
 .empty p {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 /* ---------------------------------------------------------------------------
@@ -665,10 +649,10 @@ input[type='radio'] {
   display: grid;
   gap: var(--space-1);
   padding-block: var(--space-4);
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 .result-waiting > small {
-  color: var(--accent);
+  color: var(--action-text);
 }
 .result-waiting > p {
   margin: 0;
@@ -732,15 +716,15 @@ input[type='radio'] {
   margin: 0;
   padding: 0;
   border-radius: 50%;
-  color: var(--muted);
+  color: var(--text-secondary);
   cursor: help;
 }
 .hint__trigger:hover,
 .hint[data-open] .hint__trigger {
-  color: var(--ink);
+  color: var(--text-primary);
 }
 .hint[data-tone='warning'] .hint__trigger {
-  color: var(--accent);
+  color: var(--action-text);
 }
 .hint__bubble {
   display: none;
@@ -754,12 +738,12 @@ input[type='radio'] {
   inline-size: max-content;
   max-inline-size: min(18rem, calc(100vw - 2rem));
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius);
-  background: var(--night-surface);
-  color: var(--on-night);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
   /* On a dark theme the night panel sits close to the page; its own line
      keeps the edge legible without inventing a colour. */
-  border: 1px solid var(--on-night-line);
+  border: 1px solid var(--border-strong);
   font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.45;
@@ -767,7 +751,7 @@ input[type='radio'] {
   text-transform: none;
   text-align: start;
   white-space: normal;
-  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+  box-shadow: var(--shadow-overlay);
 }
 .hint:hover .hint__bubble,
 .hint:focus-within .hint__bubble,
@@ -821,10 +805,8 @@ input[type='radio'] {
      panel that was not there a moment ago. It settles rather than appears. */
   .practice-space:not([hidden]),
   .conversation-turn,
-  .comprehension-result,
+  .quiz-answer,
   .spoken-coaching,
-  .review-comparison,
-  .hint-line,
   .sheet .understanding {
     animation: orena-settle 0.28s ease-out both;
   }
@@ -832,16 +814,6 @@ input[type='radio'] {
      an exchange read as an exchange. */
   .conversation-turn:nth-last-child(1) {
     animation-delay: 0.04s;
-  }
-  /* The line being spoken. A change of line is a real event in the media, so
-     it is worth marking - once, briefly. */
-  .follow-moment .spoken {
-    transition: opacity 0.2s ease-out;
-  }
-  .transcript-panel button {
-    transition:
-      background 0.18s ease-out,
-      color 0.18s ease-out;
   }
   /* A word that has just become an anchor: the learner earned it. */
   .hint-word[data-kind='anchor'],
@@ -861,4 +833,158 @@ input[type='radio'] {
     opacity: 1;
     transform: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The learning toolbar: reusable learner actions, once, in one place.
+
+   A shared primitive (`ui/learning-toolbar.js`), not a Listening component.
+   Icon-first, because these actions repeat across rooms and a stable symbol
+   reads faster than a row of text buttons; the support language supplies the
+   tooltip and the accessible name, so nothing depends on the symbol alone.
+
+   Nothing here is a size a learner has to hit exactly: every control is a
+   44px square on touch, and the menus are placed by measurement in the script
+   rather than by a coordinate written into this file.
+   --------------------------------------------------------------------------- */
+.learning-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.learning-action {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.learning-action:hover { background: color-mix(in srgb, var(--text-primary) 7%, transparent); color: var(--text-primary); }
+.learning-action:focus-visible { outline: 3px solid var(--action-text); outline-offset: 2px; }
+.learning-action[aria-pressed='true'],
+.learning-action[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--action-text) 14%, transparent);
+  color: var(--accent-ink, var(--text-primary));
+}
+.learning-action[disabled] { opacity: .4; cursor: default; }
+/* The words the symbol stands for, on hover and on keyboard focus - and
+   briefly after a tap, where there is no hover to give them. */
+.learning-action { position: relative; }
+.learning-action::after {
+  content: attr(data-tip);
+  display: none;
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-end: 0;
+  inline-size: max-content;
+  max-inline-size: 13rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.learning-action:focus-visible::after { display: block; }
+@media (hover: hover) {
+  .learning-action:hover::after { display: block; }
+}
+.learning-action-menu { position: relative; display: inline-flex; }
+/* Where a menu opens is measured, never assumed: the script flips it inward
+   when the bar sits near an edge, and these are the two places it may land. */
+.learning-menu {
+  position: absolute;
+  z-index: 40;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 0;
+  display: grid;
+  min-inline-size: 11rem;
+  max-inline-size: min(17rem, calc(100vw - 2rem));
+  padding: 5px;
+  border-radius: 12px;
+  background: var(--surface-primary);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--border-subtle) 80%, transparent),
+    0 16px 34px color-mix(in srgb, var(--text-primary) 20%, transparent);
+}
+.learning-menu[data-align='end'] { inset-inline-start: auto; inset-inline-end: 0; }
+.learning-menu[data-align='clamp'] {
+  position: fixed;
+  inset-inline: var(--space-4);
+  inset-block-start: auto;
+  max-inline-size: none;
+}
+.learning-menu[data-drop='up'] { inset-block-start: auto; inset-block-end: calc(100% + 6px); }
+.learning-menu button {
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: start;
+}
+.learning-menu button:hover,
+.learning-menu button:focus-visible {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+@media (max-width: 600px) {
+  /* A phone has no room beside a bar for a menu, and a menu that opens
+     upward off a short screen is worse than one that does not open. It
+     becomes a sheet at the bottom of the screen, which can never overflow
+     the viewport in either direction. */
+  .learning-menu {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 60;
+    max-inline-size: none;
+    max-block-size: 60svh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-2) var(--space-3) calc(var(--space-4) + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px color-mix(in srgb, var(--text-primary) 28%, transparent);
+  }
+  .learning-menu button { font-size: var(--text-base); }
+}
+
+/* ---------------------------------------------------------------------------
+   Data and label type (D-061). The approved face for this role is DM Mono.
+   DM Mono ships no Vietnamese glyphs, so a Vietnamese interface would render
+   a label in two faces mid-word; Roboto Mono stands in for it there. This is a
+   technical glyph fallback for one locale, not a design override: the role,
+   the sizes and the tracking are the approved ones, and every locale DM Mono
+   can set uses DM Mono.
+   --------------------------------------------------------------------------- */
+:root:lang(vi) {
+  --mono-font: 'Roboto Mono', 'Noto Sans SC', ui-monospace, monospace;
+}
+/* The mockup's small uppercase label: section labels, domain labels, stat
+   names. One definition; components opt in with the class or the tokens. */
+.ds-label {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.ds-data {
+  font-family: var(--mono-font);
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }

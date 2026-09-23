@@ -1,0 +1,12 @@
+{
+  "_usedBy": [
+    "BookDetailTemplate"
+  ],
+  "id": "string",
+  "index": "number",
+  "title": "string",
+  "durationLabel": "string",
+  "state": "read | reading | unread",
+  "progress": "number 0-100 | null",
+  "remainingLabel": "string | null"
+}

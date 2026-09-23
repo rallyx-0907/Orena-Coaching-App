@@ -227,6 +227,46 @@ USAGE_JUDGEMENTS = (
 )
 
 
+# The roles a sentence's parts can play in the Quick Sheet (SentenceSheet.json).
+# Deliberately few and language-neutral: an object or a modifier that is not one
+# of the first three is a complement.
+STRUCTURE_ROLES = ("adverbial", "verb", "subject", "complement")
+
+
+def _contrast(raw: Any) -> list[dict[str, str]]:
+    items: list[dict[str, str]] = []
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        term = str(item.get("term") or "").strip()[:120]
+        note = str(item.get("note") or "").strip()[:400]
+        if term and note:
+            items.append({"term": term, "note": note})
+    return items[:4]
+
+
+def _structure(raw: Any, source: str) -> list[dict[str, str]]:
+    """Sentence parts, in order, each a literal piece of the selection.
+
+    A chunk the model paraphrased, or one out of order, is dropped rather than
+    shown: a structure that does not match the sentence the learner is looking at
+    teaches the wrong thing.
+    """
+    items: list[dict[str, str]] = []
+    cursor = 0
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        chunk = str(item.get("chunk") or "").strip()
+        role = str(item.get("role") or "").strip().casefold()
+        at = source.find(chunk, cursor) if chunk else -1
+        if at < 0 or role not in STRUCTURE_ROLES:
+            continue
+        items.append({"chunk": chunk, "role": role})
+        cursor = at + len(chunk)
+    return items[:12]
+
+
 def _judgement(value: Any) -> str:
     candidate = str(value or "").strip().casefold()
     return candidate if candidate in USAGE_JUDGEMENTS else "natural"
@@ -309,6 +349,31 @@ def _explanation_schema() -> dict[str, Any]:
                 "maxItems": 4,
                 "items": {"type": "string"},
             },
+            "context_meaning": {"type": "string"},
+            "core_idea": {"type": "string"},
+            "mental_model": {"type": "string"},
+            "common_mistake": {"type": "string"},
+            "contrast": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {"term": {"type": "string"}, "note": {"type": "string"}},
+                    "required": ["term", "note"],
+                },
+            },
+            "structure": {
+                "type": "array",
+                "maxItems": 12,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "chunk": {"type": "string"},
+                        "role": {"type": "string", "enum": list(STRUCTURE_ROLES)},
+                    },
+                    "required": ["chunk", "role"],
+                },
+            },
         },
         "required": [
             "summary",
@@ -322,7 +387,141 @@ def _explanation_schema() -> dict[str, Any]:
             "examples",
             "counter_examples",
             "follow_ups",
+            "context_meaning",
+            "core_idea",
+            "mental_model",
+            "common_mistake",
+            "contrast",
+            "structure",
         ],
+    }
+
+
+def _gloss_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {"context_meaning": {"type": "string"}},
+        "required": ["context_meaning"],
+    }
+
+
+def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
+    """Only what the first layer of the Quick Sheet needs: a short gloss.
+
+    The full explanation is a large structured answer and takes seconds; the
+    first layer of the sheet is meant to answer at once, so it asks for one
+    clause and the rest is asked for only when the learner opens it.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    source = payload.text.strip()
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    f"You are a dictionary for a learner of {source_name}. Answer in {target_name}. "
+                    "Give context_meaning: what the selected text means in this sentence, as one short "
+                    "clause a dictionary would give for this use. No explanation, no examples."
+                ),
+            },
+            {"role": "user", "content": f"SELECTED TEXT:\n{source}\n\nCONTEXT:\n{payload.context.strip() or source}"},
+        ],
+        schema=_gloss_schema(),
+        max_output_tokens=120,
+    )
+    return {
+        "source_language": language,
+        "target_language": target,
+        "selected_text": source,
+        "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
+    }
+
+
+class TutorTurn(BaseModel):
+    """One earlier exchange of the learner's conversation, so a follow-up can build on it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: str = Field(max_length=400)
+    answer: str = Field(max_length=1500)
+
+
+def _tutor_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "follow_ups": {"type": "array", "maxItems": 3, "items": {"type": "string"}},
+        },
+        "required": ["answer", "follow_ups"],
+    }
+
+
+def answer_learner_question(
+    *,
+    text: str,
+    context: str,
+    source_language: str,
+    target_language: str,
+    question: str,
+    history: list[TutorTurn] | tuple[TutorTurn, ...] = (),
+) -> dict[str, Any]:
+    """Answer the learner's own question, as a contextual tutor and not as a fixed explanation.
+
+    The selection and its context are supporting data: they make the answer exact, or give it an
+    example. They never decide the shape of the answer - the question does. So there is no template
+    here: no verdict, no summary of the selection, nothing restated. A question about the forms of a
+    verb is answered with the forms.
+    """
+    language = _validated_source_language(source_language)
+    target = _support_language(target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    system = (
+        f"You are a contextual language tutor. A learner of {source_name} asks you one question and you "
+        f"answer it in {target_name}. Speak to them directly in the second person (in Vietnamese, say bạn); "
+        "never call them 'the learner' or 'the student'. "
+        "Begin with the answer itself. Never restate, paraphrase or announce the question "
+        "(no 'You are asking about...', no 'Great question', no preamble). "
+        "The selected text and its sentence are supporting data only: use them when they make the answer "
+        "more exact or give you an example, but the question alone decides what the answer looks like. "
+        "If the question is general - the forms of a verb, a grammar point, a comparison - answer it in "
+        "general first and tie it to the sentence only if that helps. "
+        "You can be asked about the meaning of a word or phrase, grammar, tense, word forms, collocation, "
+        "pronunciation (give the IPA, or pinyin with tone marks, and say what is hard), naturalness, why A "
+        "is right and B is wrong, how two words or structures differ, a rewrite, a translation, or "
+        "examples: do what was asked, in the form it needs (a list of forms is a short list, a rewrite is "
+        "the rewrite, a translation is the translation). "
+        "For the forms of a verb, give every form in one compact line (base, third person singular, past, "
+        "past participle, -ing), then one short line on when each is used. "
+        "Default to short and direct: one to four sentences, or a compact list of lines. Go deeper only when "
+        "the learner asks for depth (explain fully, in detail, why). "
+        f"Quote {source_name} forms exactly as they are written; write everything else in {target_name}. "
+        "Plain text, no headings, no markdown. Do not invent rules, sources or cultural claims; if you are "
+        "not sure, say so in one clause. "
+        f"Also give up to three follow_ups: short, natural next questions the learner might ask, in {target_name}."
+    )
+    earlier = "".join(
+        f"Q: {turn.question.strip()}\nA: {turn.answer.strip()}\n\n" for turn in list(history)[-4:]
+    )
+    user = (
+        f"SELECTED TEXT:\n{text.strip()}\n\nSENTENCE IT IS IN:\n{context.strip() or text.strip()}\n\n"
+        + (f"EARLIER IN THIS CONVERSATION:\n{earlier}" if earlier else "")
+        + f"THE LEARNER'S QUESTION:\n{question.strip()}"
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        schema=_tutor_schema(),
+        max_output_tokens=900,
+    )
+    return {
+        "answer": str(raw.get("answer") or "").strip()[:2400],
+        "follow_ups": [str(item).strip()[:200] for item in raw.get("follow_ups", []) if str(item).strip()][:3],
     }
 
 
@@ -351,6 +550,8 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     )
     system = (
         "You are an interactive language tutor inside a transcript. "
+        "Speak to the learner directly, in the second person, as a teacher talks to the person in "
+        "front of them; never call them 'the learner' or 'the student' (in Vietnamese, say bạn). "
         f"The learner is studying {source_name}. Explain in {target_name}. "
         "Be concise, concrete, and tied to the supplied context. "
         "Do not invent cultural claims or grammar rules. "
@@ -363,6 +564,17 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         "would plausibly produce or misread, each labelled with its own "
         "judgement. Counter-examples must be realistic mistakes, not absurd ones. "
         "Offer follow_ups the learner might ask next, phrased as their question. "
+        "Also give: context_meaning, a short gloss - one clause, no more - of what the "
+        "selection means in this sentence, as a dictionary would give it for this use; "
+        "core_idea, one plain sentence on what the selection means in "
+        "general; mental_model, a short image or analogy that makes the meaning "
+        "stick; common_mistake, the misunderstanding learners most often have, "
+        "or an empty string if there is no real one; contrast, near-equivalents a "
+        "learner might confuse it with, each with the one-line difference, or an "
+        "empty list if there is none; structure, only when the selection is a whole "
+        "sentence: its consecutive parts, each copied exactly from the selection and "
+        "in order, with the role subject, verb, adverbial or complement (an object "
+        "or any other part is a complement), otherwise an empty list. "
         "Never cite a source, rule number, dictionary or corpus you were not "
         "given; explain from the language itself instead. "
         + language_specific
@@ -381,6 +593,15 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             "Answer their question about the selected text, staying inside this "
             "context and this selection."
         )
+    # The last thing the model reads names the language to answer in. A system line saying it
+    # once is outweighed by an English selection and English context, and the explanation came
+    # back in English for a Vietnamese learner.
+    user += (
+        f"\n\nWrite every explanation in {target_name}, whatever language the text above is in: "
+        "summary, meanings, notes, judgement_reason, the answer, and follow_ups (the learner's own "
+        f"next questions, so they are in {target_name} too). Only quoted fragments and examples "
+        "stay in the language they belong to."
+    )
     raw = _run_structured(
         "learner_dictionary",
         messages=[
@@ -422,6 +643,12 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             for item in raw.get("follow_ups", [])
             if str(item).strip()
         ][:4],
+        "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
+        "core_idea": str(raw.get("core_idea") or "").strip()[:600],
+        "mental_model": str(raw.get("mental_model") or "").strip()[:800],
+        "common_mistake": str(raw.get("common_mistake") or "").strip()[:800],
+        "contrast": _contrast(raw.get("contrast")),
+        "structure": _structure(raw.get("structure"), source),
         "question": question,
         "claim": "contextual_ai_explanation",
     }
@@ -485,6 +712,8 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         raise HTTPException(422, "A transcript is required.")
 
     system = (
+        "Speak to the learner directly, in the second person; never call them 'the learner' or "
+        "'the student' (in Vietnamese, say bạn). "
         f"You are a speaking tutor. The learner speaks {source_name}; explain in "
         f"{target_name}. You are reading a speech-recognition transcript of what "
         "they said. You did NOT hear the audio: never comment on pronunciation, "

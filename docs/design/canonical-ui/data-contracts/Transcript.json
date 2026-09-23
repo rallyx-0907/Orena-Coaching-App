@@ -1,0 +1,18 @@
+{
+  "_usedBy": [
+    "ListeningWorkspaceTemplate"
+  ],
+  "lines": [
+    {
+      "id": "string",
+      "startSec": "number",
+      "text": "string",
+      "pinyin": "string | null",
+      "translation": "string | null",
+      "activeWordIndex": "number | null"
+    }
+  ],
+  "autoScroll": "boolean",
+  "showPinyin": "boolean",
+  "showTranslation": "boolean"
+}

@@ -1,0 +1,830 @@
+/* The Quick Sheet (D-066), drawn from Orena Quick Sheet and Orena Reading in the
+   canonical baseline (docs/design/canonical-ui/). A popover on a desk, a bottom
+   sheet on a phone; the same sheet grows as the learner asks. Colour comes from
+   the semantic tokens in theme.css only. */
+
+.qs {
+  position: fixed;
+  z-index: 70;
+  box-sizing: border-box;
+  width: 560px;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px;
+  border-radius: 22px;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-sheet-filter);
+  box-shadow: var(--glass-ring-focus), 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(146, 88, 255, 0.25);
+  color: var(--text-primary);
+  line-height: normal;
+}
+/* Focus lands on the sheet so a screen reader announces it; it is not a control. */
+.qs:focus {
+  outline: none;
+}
+/* The arrow that ties a popover to its word. */
+.qs::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 60px;
+  width: 18px;
+  height: 18px;
+  transform: rotate(45deg);
+  background: rgba(120, 92, 200, 0.5);
+  box-shadow: inset 1px 1px 0 rgba(172, 144, 255, 0.3);
+}
+.qs--deeper,
+.qs--parts {
+  height: min(640px, calc(100vh - 20px));
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.qs[data-placement='above']::before {
+  top: auto;
+  bottom: -9px;
+  box-shadow: inset -1px -1px 0 rgba(172, 144, 255, 0.3);
+}
+.qs--deeper::before,
+.qs--parts::before,
+.qs--docked::before {
+  display: none;
+}
+/* Docked in the reader's side panel: the same content, no floating chrome. */
+.qs--docked {
+  position: static;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  padding: 22px;
+  box-shadow: var(--glass-ring);
+  background: var(--glass-base);
+  backdrop-filter: none;
+}
+.qs--docked.qs--deeper,
+.qs--docked.qs--parts {
+  height: auto;
+  max-height: 70vh;
+}
+
+.qs-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: var(--glass-scrim);
+  backdrop-filter: blur(3px);
+}
+
+.qs-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-height: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-on-glass-soft);
+  cursor: pointer;
+  /* The baseline draws no close control: the scrim, Escape and a tap elsewhere
+     close the sheet. It stays for keyboard and screen-reader users and shows
+     when focused. */
+  opacity: 0;
+}
+.qs-x:hover,
+.qs-x:focus-visible {
+  opacity: 1;
+  background: var(--accent-chip);
+  color: var(--text-primary);
+}
+
+/* --- Layer one ------------------------------------------------------------ */
+.qs-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.qs-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.qs-word {
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+.qs-word--hanzi {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: 600;
+  font-size: 44px;
+}
+.qs-word--small {
+  font-size: 21px;
+  letter-spacing: -0.02em;
+}
+.qs-reading-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.qs-reading {
+  font-family: var(--mono-font);
+  font-size: 16px;
+  color: var(--text-on-glass-soft);
+}
+.qs-reading--pinyin {
+  color: var(--accent-ink);
+}
+.qs-chip {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--chip-tag);
+  box-shadow: var(--chip-tag-ring);
+  font-size: 13px;
+  color: var(--accent-ink);
+}
+.qs-speak {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  color: #fff;
+  cursor: pointer;
+}
+.qs-speak--rest {
+  width: 38px;
+  height: 38px;
+  background: rgba(196, 178, 255, 0.16);
+  box-shadow: var(--accent-chip-ring);
+}
+.qs-rule {
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--glass-hairline);
+}
+.qs-label {
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-on-glass-dim);
+}
+.qs-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.qs-meaning {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.5;
+  color: #fff;
+}
+.qs-meaning--sentence {
+  font-size: 17px;
+  line-height: 1.55;
+}
+.qs-source {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.qs-muted {
+  color: var(--text-muted);
+}
+.qs-skeleton span {
+  display: block;
+  height: 1.2em;
+  width: 70%;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--accent-chip), rgba(196, 178, 255, 0.28), var(--accent-chip));
+  background-size: 200% 100%;
+  animation: qs-shimmer 1.4s linear infinite;
+}
+@keyframes qs-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qs-skeleton span {
+    animation: none;
+  }
+}
+.qs-well {
+  margin: 0;
+  border: 0;
+  padding: 15px 17px;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-80);
+}
+.qs-well--serif {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--text-on-glass);
+}
+.qs-mark {
+  background: none;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.qs-actions {
+  display: flex;
+  gap: 12px;
+}
+.qs-btn {
+  flex: 1;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+}
+.qs-btn--primary {
+  flex: 1.3;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  font-weight: 800;
+}
+.qs-btn[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+.qs-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.qs-status:empty {
+  display: none;
+}
+.qs-status {
+  margin: 0;
+}
+
+/* --- Ask more --------------------------------------------------------------- */
+.qs-head--small {
+  align-items: center;
+  gap: 12px;
+}
+.qs-head--small .qs-word {
+  font-size: 23px;
+  letter-spacing: -0.02em;
+}
+.qs-head--small .qs-reading {
+  font-size: 13px;
+}
+.qs-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 15px 16px;
+  border-radius: 16px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.qs-verdict p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-90);
+}
+.qs-verdict__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+}
+.qs-tone--good {
+  color: var(--status-success);
+}
+.qs-tone--warn {
+  color: var(--status-warning);
+}
+.qs-tone--caution {
+  color: var(--status-caution);
+}
+.qs-tone--bad {
+  color: var(--status-error);
+}
+.qs-tone--info {
+  color: var(--status-info);
+}
+.qs-tone--rare {
+  color: var(--status-rare);
+}
+.qs-tone--impossible {
+  color: var(--status-impossible);
+}
+.qs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.qs-chip--ask {
+  min-height: 0;
+  padding: 11px 15px;
+  border: 0;
+  background: rgba(196, 178, 255, 0.15);
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+}
+.qs-chip--plain {
+  padding: 9px 13px;
+  background: var(--chip-soft);
+  font-size: 13.5px;
+  color: #fff;
+}
+.qs-foot--bar .qs-chip--ask {
+  align-self: flex-start;
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
+.qs-top__row .qs-reading {
+  font-size: 12.5px;
+  color: var(--ink-72);
+}
+.qs-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.qs-composer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.qs-composer__field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(10, 7, 20, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.2);
+  color: var(--text-muted);
+}
+.qs-composer input {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14.5px;
+  color: #fff;
+  outline: none;
+}
+.qs-composer__field:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+}
+.qs-send {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+  color: #fff;
+  cursor: pointer;
+}
+.qs-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qs-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.qs-turn__q {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--accent-ink);
+}
+.qs-turn__a {
+  margin: 0;
+  white-space: pre-line;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text-on-glass);
+}
+
+/* --- Deeper, and the sentence's parts ----------------------------------------- */
+.qs-top {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 20px 14px;
+  box-shadow: inset 0 -1px 0 var(--glass-hairline);
+}
+.qs-grab {
+  display: none;
+  align-self: center;
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.qs-top__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.qs-top__title {
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.018em;
+}
+.qs-top__close {
+  margin-left: auto;
+}
+.qs-scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+.qs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.qs-section:has(.qs-rows, .qs-examples, .qs-note, .qs-chips) {
+  gap: 9px;
+}
+.qs-section--core .qs-text {
+  font-size: 16.5px;
+  color: #fff;
+}
+.qs-section--why .qs-text {
+  color: var(--ink-90);
+}
+.qs-section--mistake .qs-text {
+  font-size: 15.5px;
+}
+.qs-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-on-glass);
+}
+.qs-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.qs-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.qs-row__term {
+  flex: none;
+  width: 92px;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--accent-ink);
+}
+.qs-row--word .qs-row__term {
+  width: 96px;
+  color: #fff;
+}
+.qs-row__note {
+  flex: 1;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-85);
+}
+.qs-icon {
+  flex: none;
+  min-height: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.qs-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-85);
+}
+.qs-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px 15px;
+  border-radius: 13px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-78);
+}
+.qs-note__head {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 15.5px;
+  line-height: normal;
+  color: #fff;
+}
+.qs-note__body {
+  color: var(--ink-78);
+}
+.qs-parts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 15.5px;
+}
+.qs-part {
+  padding: 7px 11px;
+  border-radius: 9px;
+}
+.qs-part--adverbial {
+  background: var(--role-adverbial-fill);
+  box-shadow: var(--role-adverbial-ring);
+  color: var(--role-adverbial-ink);
+}
+.qs-part--verb {
+  background: var(--role-verb-fill);
+  box-shadow: var(--role-verb-ring);
+  color: var(--role-verb-ink);
+}
+.qs-part--subject {
+  background: var(--role-subject-fill);
+  box-shadow: var(--role-subject-ring);
+  color: var(--role-subject-ink);
+}
+.qs-part--complement {
+  background: var(--role-complement-fill);
+  box-shadow: var(--role-complement-ring);
+  color: var(--role-complement-ink);
+}
+.qs-gap {
+  font-size: 14px;
+  color: var(--text-on-glass-dim);
+}
+.qs-foot--bar {
+  flex: none;
+  padding: 14px 20px 30px;
+  box-shadow: inset 0 1px 0 var(--glass-hairline);
+}
+
+/* --- Phone: the sheet is the last flex child of the screen ------------------------ */
+@media (max-width: 700px) {
+  .qs {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 56px);
+    gap: 16px;
+    padding: 32px 20px 30px;
+    border-radius: 26px 26px 0 0;
+    background: var(--glass-sheet);
+    box-shadow: var(--glass-ring-focus), 0 -20px 60px rgba(0, 0, 0, 0.6), 0 -4px 50px rgba(146, 88, 255, 0.22);
+    overflow-y: auto;
+  }
+  /* The arrow becomes the handle. */
+  .qs::before {
+    top: 12px;
+    left: 50%;
+    width: 42px;
+    height: 4px;
+    margin-left: -21px;
+    transform: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
+  }
+  .qs--deeper,
+  .qs--parts {
+    top: 56px;
+    height: auto;
+    padding: 0;
+    overflow: hidden;
+  }
+  .qs--docked {
+    position: static;
+    padding: 20px;
+  }
+  .qs-grab {
+    display: block;
+  }
+  .qs-word {
+    font-size: 30px;
+  }
+  .qs-word--hanzi {
+    font-size: 44px;
+  }
+  .qs-word--small {
+    font-size: 21px;
+  }
+  .qs-speak {
+    width: 48px;
+    height: 48px;
+  }
+  .qs-speak--rest {
+    width: 38px;
+    height: 38px;
+  }
+  .qs-meaning {
+    font-size: 17.5px;
+  }
+  .qs-group {
+    gap: 7px;
+  }
+  .qs-reading-row {
+    gap: 9px;
+  }
+  .qs-reading-row .qs-chip {
+    padding: 3px 10px;
+    font-size: 11.5px;
+  }
+  .qs-speak svg {
+    width: 21px;
+    height: 21px;
+  }
+  .qs-well {
+    padding: 13px 14px;
+    border-radius: 13px;
+    font-size: 14.5px;
+  }
+  /* Chinese: the pinyin is drawn at 16px and the sentence at 17px on a 1.7 line, as the frame draws it. */
+  .qs-reading--pinyin {
+    font-size: 16px;
+  }
+  .qs-well:lang(zh) {
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  .qs-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  .qs-label {
+    font-size: 10.5px;
+  }
+  .qs-reading {
+    font-size: 14px;
+  }
+  .qs-btn {
+    min-height: 50px;
+    font-size: 15px;
+  }
+  .qs-actions {
+    gap: 10px;
+  }
+}
+
+/* --- "Practise this line" (ui/line-sheet.js): five ways to work on one line ------------------ */
+.qs--deep {
+  top: auto;
+  left: auto;
+  right: 28px;
+  bottom: 28px;
+  width: 420px;
+  gap: 14px;
+}
+.qs--deep::before {
+  display: none;
+}
+.ls-title {
+  padding-right: 32px;
+  color: var(--text-on-glass-dim);
+}
+.ls-line {
+  margin: 0;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.5;
+  color: #fff;
+}
+.ls-ways {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ls-way {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+.ls-way:hover,
+.ls-way:focus-visible {
+  box-shadow: var(--glass-ring-focus);
+}
+.ls-way__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ls-way__text strong {
+  font-size: 15px;
+  color: #fff;
+}
+.ls-way__text small {
+  font-size: 12.5px;
+  color: var(--text-on-glass-dim);
+}
+@media (max-width: 700px) {
+  .qs--deep {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+  }
+}

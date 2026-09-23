@@ -1,0 +1,422 @@
+/* The shell (D-066): the rail on a desk and the tab bar on a phone, drawn from the Canonical
+   UI Baseline (AppShell and MobileBottomNav) and nothing else. Colour comes only from theme.css.
+
+   Measurements are the baseline's: a 280px rail padded 26/18, rows of 13/16 at radius 14 with a
+   23px icon and 17px type, the skills under a mono heading at 16px, a 32px violet mark; on a
+   phone an 88px bar of five tabs. There is one composition per size and no tablet
+   composition: the baseline draws none (a recorded gap, not a design of ours). */
+
+:root {
+  --rail-width: 280px;
+  --tabbar-height: 88px;
+  --page-gutter: 40px;
+}
+html,
+body {
+  overflow-x: clip;
+}
+
+/* ---- The mark -------------------------------------------------------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  font-family: var(--display-font);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.brand-tail {
+  display: block;
+  flex: none;
+  inline-size: 32px;
+  block-size: 32px;
+  background: url('/orena-assets/assets/mark.svg') center / contain no-repeat;
+}
+
+/* ---- The rail -------------------------------------------------------- */
+#shell {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: var(--z-shell);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  inline-size: var(--rail-width);
+  padding: 26px 18px;
+  background: var(--glass-soft);
+  backdrop-filter: blur(24px) saturate(1.3);
+  box-shadow: var(--rail-edge);
+  overflow: hidden;
+}
+#shellNav {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* The selected row's ring is drawn outside its box - the source's own
+     `0 0 0 1.5px` glow - and a scroll container clips horizontally as well as
+     vertically, so it was being sliced off at both edges. The scroll box is
+     widened by the same amount it is pulled back, which leaves every row
+     exactly where it was and gives the ring somewhere to land. */
+  margin-inline: -5px;
+  padding-inline: 5px;
+  /* The same on the block axis: the first row sat exactly on the scroll box's
+     top edge, so its ring was cut along the top. Pulled back and padded by the
+     same 5px, so every row stays where it was. */
+  margin-block: -5px;
+  padding-block: 5px;
+}
+#shellNav::-webkit-scrollbar {
+  display: none;
+}
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  min-block-size: 57px;
+  color: var(--nav-ink);
+  font: inherit;
+  font-size: 17px;
+  line-height: normal;
+  text-align: start;
+  cursor: pointer;
+}
+.nav-link > svg {
+  flex: none;
+}
+.nav-link:hover {
+  color: #fff;
+}
+/* Where the learner is: the violet wash, its ring and glow, the label in accent ink. */
+.nav-link[aria-current='page'] {
+  background: var(--nav-active);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--nav-active-ring), var(--glass-glow-focus);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.nav-group--skills {
+  gap: 6px;
+  padding-block-start: 6px;
+  box-shadow: inset 0 1px 0 var(--nav-hairline);
+}
+.nav-heading {
+  padding: 14px 16px 6px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-on-glass-soft);
+}
+.nav-link--skill {
+  gap: 12px;
+  min-block-size: 44px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--nav-ink-skill);
+}
+.nav-link--skill[aria-current='page'] {
+  background: var(--nav-skill-active);
+  backdrop-filter: none;
+  box-shadow: var(--nav-active-ring);
+  color: #fff;
+  font-weight: 400;
+}
+.nav-link--skill[aria-current='page'] > svg {
+  color: var(--accent-ink);
+}
+
+/* ---- The top bar over a destination not yet migrated to the baseline ------ */
+/* The bar of a destination, measured from the source (Progress overview,
+   Reading library, Profile all draw the same one): 84 tall, glass, the page
+   gutter either side, and a hairline where it meets the page. */
+#topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-block-size: 84px;
+  margin-inline-start: var(--rail-width);
+  padding: 0 var(--page-gutter);
+  background: var(--glass-soft);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+#topbar[hidden] {
+  display: none;
+}
+/* No separate halo: the current baseline carries the light in the ground
+   itself - two magenta radials off the top and a vertical fall - so a second
+   blob would be the "quầng 620px" mistake again, just smaller. */
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-inline-size: 420px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text-primary) 5%, var(--surface-primary));
+  color: var(--text-secondary);
+}
+.topbar-search:focus-within {
+  border-color: var(--action-text);
+}
+.topbar-search input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+}
+.topbar-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+.topbar-chips {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-inline-start: auto;
+}
+.language-chip,
+.due-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 30px;
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.due-chip {
+  text-transform: uppercase;
+}
+.language-chip {
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-primary);
+}
+.due-chip {
+  border: 1px solid color-mix(in srgb, var(--domain-vocabulary) 35%, transparent);
+  background: color-mix(in srgb, var(--domain-vocabulary) 14%, transparent);
+  color: var(--text-primary);
+}
+.due-chip > svg {
+  color: var(--domain-vocabulary);
+}
+
+
+/* ---- Where the room sits -------------------------------------------- */
+#main {
+  min-block-size: 85vh;
+  margin-inline-start: var(--rail-width);
+  padding: 22px var(--page-gutter) 30px;
+}
+html[data-topbar='on'] #main {
+  padding-block-start: 26px;
+}
+/* A destination's page fills the width the rail leaves, as the source draws it;
+   the 1480px column is the legacy pages' measure. */
+#main > :is(.progress-page, .profile-page) {
+  max-width: none;
+  margin-inline: 0;
+}
+#footer {
+  display: none;
+}
+
+/* The rooms where the learner works have no rail in the baseline (their templates start at a top
+   bar of their own): the reader, the player, Dictation, the editor. The room comes forward. */
+html[data-shell='off'] {
+  --rail-width: 0px;
+}
+html[data-shell='off'] #shell {
+  display: none;
+}
+html[data-shell='off'] #main {
+  margin-inline-start: 0;
+}
+
+/* ---- The phone: five tabs, 88px (MobileBottomNav) --------------------- */
+.shell-tabs {
+  display: none;
+}
+@media (max-width: 900px) {
+  :root {
+    --rail-width: 0px;
+    --page-gutter: 20px;
+  }
+  body {
+    padding-block-end: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  }
+  /* A filter here would become the containing block of the fixed tab bar inside it. */
+  #shell {
+    position: static;
+    inline-size: auto;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+  #shell > .brand,
+  #shellNav,
+  #topbar {
+    display: none;
+  }
+  #main,
+  html[data-topbar='on'] #main {
+    margin-inline-start: 0;
+    padding: 20px var(--page-gutter) 40px;
+  }
+  html[data-shell='off'] body {
+    padding-block-end: 0;
+  }
+  html[data-shell='off'] .shell-tabs {
+    display: none;
+  }
+  .shell-tabs {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: var(--z-shell);
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    block-size: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+    padding: 12px 16px calc(26px + env(safe-area-inset-bottom));
+    background: var(--glass-base);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--bar-edge-top);
+  }
+  .shell-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-block-size: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-on-glass-soft);
+    font: inherit;
+    font-size: 10.5px;
+    cursor: pointer;
+  }
+  .shell-tab[aria-current='page'] {
+    color: var(--accent-ink);
+    font-weight: 700;
+  }
+}
+
+.topbar-title {
+  margin: 0;
+  flex: none;
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.streak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--card-surface);
+  box-shadow: var(--card-edge);
+  color: var(--progress-text);
+  font-size: 11px;
+}
+.streak-chip > svg { color: var(--progress); }
+
+/* ---- The learner's card at the foot of the rail (AppShell) ---------------- */
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  inline-size: 100%;
+  box-sizing: border-box;
+  margin-block-start: auto;
+  padding: 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--glass-base);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: var(--glass-ring);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.account-card__mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 50%;
+  background: var(--avatar-wash, linear-gradient(150deg, #5a4a96, #2a2148));
+  color: var(--ink-50);
+}
+.account-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-inline-size: 0;
+}
+.account-card__body strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-card__body small {
+  font-size: 11px;
+  color: var(--accent-ink);
+}
+@media (max-width: 900px) {
+  .account-card {
+    display: none;
+  }
+}
+/* A skill's own level, when the profile carries one. */
+.nav-level {
+  margin-inline-start: auto;
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--ink-68);
+}

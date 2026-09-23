@@ -1,0 +1,29 @@
+{
+  "_usedBy": [
+    "DictationWorkspaceTemplate"
+  ],
+  "lineIndex": "number",
+  "lineTotal": "number",
+  "original": "string",
+  "originalPinyin": "string",
+  "attempt": "string",
+  "score": "number 0-100",
+  "correctCount": "number",
+  "totalCount": "number",
+  "hint": {
+    "level": "1 | 2 | 3",
+    "revealed": [
+      "string"
+    ],
+    "charTotal": "number",
+    "charRevealed": "number"
+  },
+  "diffs": [
+    {
+      "kind": "wrong | missing | extra",
+      "from": "string | null",
+      "to": "string | null",
+      "note": "string"
+    }
+  ]
+}

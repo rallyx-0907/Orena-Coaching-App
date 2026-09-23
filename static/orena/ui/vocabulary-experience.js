@@ -1,4 +1,5 @@
 import { esc } from './html.js';
+import { icon } from './phosphor.js';
 
 const LEVEL_SKINS = {
   A1: 'bronze',
@@ -64,6 +65,15 @@ export function vocabularyRankToken(copy, input = {}) {
   if (!rank) return '';
   const label = value(copy?.vocabularyRank) || 'Rank';
   return `<span class="vocabulary-rank" aria-label="${esc(`${label} ${rank}`)}">${esc(rank)}</span>`;
+}
+
+/* Mastery, as the design draws it: three stars, amber for what was earned.
+   The text form stays the accessible name, so nothing depends on the glyphs. */
+export function masteryStarRow(card = {}) {
+  const earned = (masteryStars(card).match(/★/g) || []).length;
+  return `<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${[0, 1, 2]
+    .map((step) => `<span${step < earned ? ' class="is-earned"' : ''}>${icon('star', { size: 12, filled: step < earned })}</span>`)
+    .join('')}</span>`;
 }
 
 export function masteryStars(card = {}) {
@@ -389,6 +399,26 @@ export function bindVocabularyFeedCarousel(root) {
   });
 }
 
+/* Where a saved word was met.
+
+   A word kept while reading is not the same thing as a word from a list: the
+   sentence it was met in, and the piece it came from, are most of why a
+   learner recognises it again. Both already travel on the saved record, and
+   showing them is the difference between My Language and a dictionary export.
+   One line, quoted, in the learning language - it is content, not chrome. */
+function sourceLine(card, language) {
+  const encounter = (card.source_encounters || []).find((entry) => value(entry?.fragment));
+  if (!encounter) return '';
+  const fragment = value(encounter.fragment).replace(/\s+/g, ' ');
+  const where = value(encounter.where);
+  /* The sentence a word was met in is also the way to ask about it: the line
+     is the control, so the row gains no button it did not have. */
+  return `<button type="button" class="vocabulary-row__source" data-word-explain="${esc(value(card.headword))}">`
+    + `${where ? `<span class="vocabulary-row__where">${esc(where)}</span>` : ''}`
+    + `<q lang="${esc(language)}">${esc(fragment)}</q>`
+    + `</button>`;
+}
+
 export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'data-vocabulary-save' } = {}) {
   const headword = value(card.headword);
   const language = value(card.identity?.language) || 'en';
@@ -398,7 +428,7 @@ export function renderVocabularyRow(copy, card, { index = 0, saveAttribute = 'da
   const saveLabel = saved ? `${copy.saved} ✓` : copy.save;
   const level = vocabularyLevel(card);
   const skin = vocabularyLevelSkin(card);
-  return `<article class="vocabulary-row" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-row="${esc(index)}"><div class="vocabulary-row__word"><strong lang="${esc(language)}">${esc(headword)}</strong>${pronunciation ? `<span class="vocabulary-row__pronunciation">${esc(pronunciation)}</span>` : ''}</div><div class="vocabulary-row__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(translation || targetMeaning(card))}</div>${metadata(copy, card)}<div class="vocabulary-row__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div></article>`;
+  return `<article class="vocabulary-row" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-row="${esc(index)}"><div class="vocabulary-row__word"><strong lang="${esc(language)}">${esc(headword)}</strong>${pronunciation ? `<span class="vocabulary-row__pronunciation">${esc(pronunciation)}</span>` : ''}</div><div class="vocabulary-row__meaning" lang="${esc(copy.supportLanguage || 'en')}">${esc(translation || targetMeaning(card))}</div>${sourceLine(card, language)}${metadata(copy, card)}<div class="vocabulary-row__actions"><button class="quiet" data-vocabulary-study="${esc(index)}">${esc(copy.study || copy.open)}</button><button class="quiet" ${saveAttribute}="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div></article>`;
 }
 
 function orthography(card, copy) {
@@ -428,7 +458,11 @@ export function renderVocabularyStudyCard(copy, card, { index = 0 } = {}) {
   const skin = vocabularyLevelSkin(card);
   const saveLabel = saved ? `${copy.saved} ✓` : copy.save;
   const proficiencyLabel = level || '—';
-  const front = `<div class="vocabulary-study-card__front" data-study-front aria-hidden="false"><div class="vocabulary-study-card__top"><span>${esc(proficiencyLabel)}</span>${vocabularyRankToken(copy, card)}<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span></div><div class="vocabulary-study-card__target"><h2 lang="${esc(language)}">${esc(headword)}</h2>${pronunciation ? `<p lang="${esc(language)}" data-study-no-flip>${esc(pronunciation)} <button class="icon-button" data-study-audio aria-label="${esc(copy.audio || 'Play audio')}">◖</button></p>` : ''}</div><button class="quiet vocabulary-study-card__flip" data-study-flip>${esc(copy.flip)}</button></div>`;
-  const back = `<div class="vocabulary-study-card__back" data-study-back aria-hidden="true" inert><div class="vocabulary-study-card__top"><span>${esc(proficiencyLabel)}</span>${vocabularyRankToken(copy, card)}<span class="vocabulary-stars" aria-label="${esc(masteryStars(card))}">${esc(masteryStars(card))}</span></div><div class="vocabulary-study-card__back-body"><h2 lang="${esc(language)}">${esc(headword)}</h2>${card.part_of_speech || pronunciation ? `<p class="vocabulary-study__pronunciation" lang="${esc(language)}" data-study-no-flip>${esc(value(card.part_of_speech))}${card.part_of_speech && pronunciation ? ' · ' : ''}${esc(pronunciation)}</p>` : ''}<p class="vocabulary-study__support" lang="${esc(copy.supportLanguage || 'en')}" data-study-no-flip>${esc(support)}</p>${definition && definition !== support ? `<p class="vocabulary-study__definition" lang="${esc(language)}" data-study-no-flip>${esc(definition)}</p>` : ''}${example ? `<section class="vocabulary-study-card__example"><h3>${esc(copy.example)}</h3><p lang="${esc(exampleLang)}">${esc(example)}</p></section>` : ''}${card.usage ? `<section class="vocabulary-study__usage"><h3>${esc(copy.usage)}</h3><p lang="${esc(language)}">${esc(card.usage)}</p></section>` : ''}${orthography(card, copy)}</div><div class="vocabulary-study-card__footer"><div class="vocabulary-study-card__actions"><button class="quiet vocabulary-study-card__flip" data-study-flip>${esc(copy.front || copy.flip)}</button><button class="quiet" data-vocabulary-save="${esc(index)}" aria-label="${esc(saveLabel)}" ${saved ? 'disabled aria-pressed="true"' : ''}>${esc(saveLabel)}</button></div>${saved ? `<div class="vocabulary-study-card__grades" aria-label="${esc(copy.review)}"><button class="outline" data-study-grade="again">${esc(copy.again)}</button><button class="primary" data-study-grade="got_it">${esc(copy.gotIt)}</button></div>` : ''}<div class="vocabulary-study-card__status"><span class="vocabulary-state vocabulary-state--${esc(status)}">${esc(statusLabel(copy, status))}</span></div></div></div>`;
+  /* The approved card: level and audio above, the word and its reading in the
+     middle, the way to turn it and what has been earned below. The back keeps
+     the meaning, the sentence it came from, and the two answers the scheduler
+     accepts (four grades are GAP-019). */
+  const front = `<div class="vocabulary-study-card__front" data-study-front aria-hidden="false"><div class="vocabulary-study-card__top"><span class="ds-label">${esc(proficiencyLabel)}</span>${vocabularyRankToken(copy, card)}<button class="icon-button vocabulary-study-card__audio" data-study-audio data-study-no-flip aria-label="${esc(copy.audio || 'Play audio')}">${icon('speaker-high', { size: 17 })}</button></div><div class="vocabulary-study-card__target"><h2 lang="${esc(language)}">${esc(headword)}</h2>${pronunciation ? `<p class="vocabulary-study-card__reading ds-data" lang="${esc(language)}" data-study-no-flip>${esc(pronunciation)}</p>` : ''}</div><div class="vocabulary-study-card__bottom"><button class="vocabulary-study-card__flip ds-label" data-study-flip>${icon('hand-tap', { size: 13 })}<span>${esc(copy.flip)}</span></button>${masteryStarRow(card)}</div></div>`;
+  const back = `<div class="vocabulary-study-card__back" data-study-back aria-hidden="true" inert><div class="vocabulary-study-card__back-body"><div class="vocabulary-study-card__headline"><h2 lang="${esc(language)}">${esc(headword)}</h2>${vocabularyRankToken(copy, card)}${pronunciation ? `<span class="vocabulary-study-card__reading ds-data" lang="${esc(language)}" data-study-no-flip>${esc(pronunciation)}</span>` : ''}</div><p class="vocabulary-study__support" lang="${esc(copy.supportLanguage || 'en')}" data-study-no-flip>${esc(support)}</p>${definition && definition !== support ? `<p class="vocabulary-study__definition" lang="${esc(language)}" data-study-no-flip>${esc(definition)}</p>` : ''}${example ? `<section class="vocabulary-study-card__example"><p lang="${esc(exampleLang)}">${esc(example)}</p></section>` : ''}${card.usage ? `<section class="vocabulary-study__usage"><h3>${esc(copy.usage)}</h3><p lang="${esc(language)}">${esc(card.usage)}</p></section>` : ''}${orthography(card, copy)}</div><div class="vocabulary-study-card__footer">${saved ? `<div class="vocabulary-study-card__grades" aria-label="${esc(copy.review)}"><button class="outline" data-study-grade="again">${icon('x', { size: 14 })}<span>${esc(copy.again)}</span></button><button class="primary" data-study-grade="got_it">${icon('check', { size: 14 })}<span>${esc(copy.know || copy.gotIt)}</span></button></div>` : `<button class="outline vocabulary-study-card__save" data-vocabulary-save="${esc(index)}" aria-label="${esc(saveLabel)}">${icon('plus', { size: 14 })}<span>${esc(copy.save)}</span></button>`}</div></div>`;
   return `<article class="vocabulary-study-card" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-index="${esc(index)}" data-study-state="front" data-study-surface tabindex="0" aria-label="${esc(headword)}"><div class="vocabulary-study-card__inner" data-study-inner>${front}${back}</div></article>`;
 }

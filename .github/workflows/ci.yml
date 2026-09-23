@@ -64,6 +64,10 @@ jobs:
           node scripts/test_orena_workspace.mjs
           node scripts/test_orena_reading_library.mjs
           node scripts/test_orena_shared_reading_library.mjs
+          node scripts/test_orena_library.mjs
+          node scripts/test_orena_dictation_screen.mjs
+          node scripts/test_orena_listening_workspace.mjs
+          node scripts/test_orena_lookup_race.mjs
           node scripts/test_orena_reading_room.mjs
           node scripts/test_orena_media_library.mjs
           node scripts/test_orena_extension_patterns.mjs
@@ -77,12 +81,19 @@ jobs:
           node scripts/test_media_status_compact_accessor.mjs
           node scripts/test_orena_reference.mjs
           node scripts/test_orena_discover_layout.mjs
+          node scripts/test_orena_learning_stage.mjs
+          node scripts/test_orena_dictation_workspace.mjs
+          node scripts/test_orena_learner_language.mjs
+          node scripts/test_orena_writing_workspace.mjs
+          node scripts/test_orena_language_and_recall.mjs
           node scripts/test_orena_admin_entry.mjs
           node scripts/test_orena_admin_console.mjs
           node scripts/test_orena_vocabulary_card.mjs
           node scripts/test_orena_vocabulary_experience.mjs
           node scripts/test_orena_vocabulary_library.mjs
           node scripts/test_orena_vocabulary_feed.mjs
+          node scripts/test_orena_vocabulary_paging.mjs
+          node scripts/test_orena_rank_frame.mjs
           node scripts/test_orena_vocabulary_saved_card.mjs
       - run: python -m pytest -q test_app.py tests
         env:
