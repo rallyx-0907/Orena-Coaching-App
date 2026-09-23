@@ -20,6 +20,10 @@ assert.equal(to('#/practice?intent=dictation'), link('practice', { intent: 'foll
 assert.equal(to('#/practice?intent=dictation&id=media:x'), link('encounter', { id: 'media:x', intent: 'dictation' }));
 // Writing's way in is its own library.
 assert.equal(to('#/practice?intent=writing'), link('writing'));
+// Shadowing or speaking a Listening lesson is the Speaking workspace, before the encounter draws.
+assert.equal(to('#/encounter?id=media:x&intent=shadowing'), link('practice', { intent: 'shadowing', id: 'media:x' }));
+assert.equal(to('#/encounter?id=media:x&intent=speaking'), link('practice', { intent: 'shadowing', id: 'media:x' }));
+assert.equal(to('#/encounter?id=story:x&intent=speaking'), null, 'only a Listening lesson is a Speaking source');
 // Current addresses are left alone.
 for (const hash of [
   '#/',
