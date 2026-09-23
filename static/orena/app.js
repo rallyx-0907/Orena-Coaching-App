@@ -1,12 +1,12 @@
-import { api } from './infrastructure/api.js';
-import { copy, untranslated } from './ui/copy.js';
-import { esc, dialog, status } from './ui/html.js';
-import { route, link } from './product/intent.js';
-import { learnerMemory } from './product/memory.js';
-import { renderWorld } from './ui/world.js';
-import { renderEncounter } from './ui/encounter.js';
-import { renderSpeaking } from './ui/speaking.js';
-import { renderConversation } from './ui/conversation.js';
+import { api } from "./infrastructure/api.js";
+import { copy, untranslated } from "./ui/copy.js";
+import { esc, dialog, status } from "./ui/html.js";
+import { route, link } from "./product/intent.js";
+import { learnerMemory } from "./product/memory.js";
+import { renderWorld } from "./ui/world.js";
+import { renderEncounter } from "./ui/encounter.js";
+import { renderSpeaking } from "./ui/speaking.js";
+import { renderConversation } from "./ui/conversation.js";
 import {
   referenceNavigation,
   navigationTabs,
@@ -15,23 +15,24 @@ import {
   referenceCopy,
   experienceFor,
   renderContinue,
-} from './ui/reference.js';
-import { icon } from './ui/phosphor.js';
-import { renderProgress } from './ui/progress.js';
-import { renderProfile } from './ui/profile.js';
-import { paintBookPage } from './ui/library.js';
-import { renderHistory } from './ui/history.js';
-import { renderCollection } from './ui/collection.js';
+} from "./ui/reference.js";
+import { icon } from "./ui/phosphor.js";
+import { renderProgress } from "./ui/progress.js";
+import { renderProfile } from "./ui/profile.js";
+import { paintBookPage } from "./ui/library.js";
+import { renderHistory } from "./ui/history.js";
+import { renderCollection } from "./ui/collection.js";
 import {
   renderExpression,
   renderLanguage,
   renderGrammar,
-} from './ui/expression.js';
-import { renderWritingEntry } from './ui/writing-entry.js';
-import { installHints } from './ui/patterns.js';
-import { bindContentRails } from './ui/content-rail.js';
-import { growthSummarySection } from './ui/growth-summary.js';
-import { renderAdmin } from './ui/admin.js';
+} from "./ui/expression.js";
+import { renderWritingEntry } from "./ui/writing-entry.js";
+import { installHints } from "./ui/patterns.js";
+import { bindContentRails } from "./ui/content-rail.js";
+import { beginNavigation } from "./infrastructure/navigation.js";
+import { growthSummarySection } from "./ui/growth-summary.js";
+import { renderAdmin } from "./ui/admin.js";
 
 // Every hint in every room is one delegated behaviour, installed once.
 installHints(document);
@@ -51,18 +52,18 @@ installHints(document);
    difference; the scroll that follows is the browser keeping the learner's
    place, not the learner scrolling, so it is ignored. */
 const header = (() => {
-  const narrow = window.matchMedia('(max-width: 900px)');
+  const narrow = window.matchMedia("(max-width: 900px)");
   let compact = false,
     lastY = window.scrollY,
     travel = 0,
     quietUntil = 0;
-  const shellEl = () => document.getElementById('shell');
+  const shellEl = () => document.getElementById("shell");
   const measure = () => {
     const el = shellEl();
     if (!el) return;
     document.documentElement.style.setProperty(
-      '--shell-offset',
-      narrow.matches ? `${el.offsetHeight}px` : '0px',
+      "--shell-offset",
+      narrow.matches ? `${el.offsetHeight}px` : "0px",
     );
   };
   const set = (next) => {
@@ -71,7 +72,7 @@ const header = (() => {
     next = Boolean(next) && narrow.matches;
     if (next === compact) return measure();
     compact = next;
-    if (next) el.dataset.compact = '';
+    if (next) el.dataset.compact = "";
     else delete el.dataset.compact;
     measure();
     quietUntil = performance.now() + 350;
@@ -79,13 +80,13 @@ const header = (() => {
     lastY = window.scrollY;
   };
   window.addEventListener(
-    'scroll',
+    "scroll",
     () => {
       const y = window.scrollY;
       const dy = y - lastY;
       lastY = y;
       if (!narrow.matches || performance.now() < quietUntil) return;
-      if (shellEl()?.dataset.menu === 'open') return;
+      if (shellEl()?.dataset.menu === "open") return;
       if (y < 48) return set(false);
       travel = Math.sign(dy) === Math.sign(travel) ? travel + dy : dy;
       if (travel > 24 && y > 96) set(true);
@@ -93,12 +94,12 @@ const header = (() => {
     },
     { passive: true },
   );
-  narrow.addEventListener('change', () => set(false));
-  window.addEventListener('resize', measure, { passive: true });
+  narrow.addEventListener("change", () => set(false));
+  window.addEventListener("resize", measure, { passive: true });
   /* A room that moves the learner to their work - a result frame, a practice
      opened below the source - asks for the working header first, so the place
      it scrolls to is computed against the height the header will have. */
-  document.addEventListener('orena:work', () => set(true));
+  document.addEventListener("orena:work", () => set(true));
   return { set, measure };
 })();
 
@@ -106,7 +107,7 @@ let generation = 0,
   cleanup = () => {},
   pendingWrites = 0,
   writeTail = Promise.resolve();
-const root = document.getElementById('main');
+const root = document.getElementById("main");
 const storage = (() => {
   try {
     return localStorage;
@@ -116,7 +117,7 @@ const storage = (() => {
         return null;
       },
       setItem() {
-        throw Error('Storage unavailable');
+        throw Error("Storage unavailable");
       },
     };
   }
@@ -135,20 +136,23 @@ const storage = (() => {
    keys. A supported locale is expected to be complete, and a shortfall in one
    is said out loud here - on the developer's console, where it can be fixed -
    rather than reaching a learner as untold English (`ui/copy.js`). */
-const uiLocale = (support) => (copy[String(support || '')] ? String(support) : 'en');
-const ui = uiLocale(storage.getItem('orena.support') || storage.getItem('orena.interface'));
+const uiLocale = (support) =>
+  copy[String(support || "")] ? String(support) : "en";
+const ui = uiLocale(
+  storage.getItem("orena.support") || storage.getItem("orena.interface"),
+);
 {
   const gap = untranslated(ui);
   if (gap.length)
     console.warn(
-      `[Orena copy] ${gap.length} interface strings have no ${ui} translation and are showing in English: ${gap.slice(0, 12).join(', ')}${gap.length > 12 ? '…' : ''}`,
+      `[Orena copy] ${gap.length} interface strings have no ${ui} translation and are showing in English: ${gap.slice(0, 12).join(", ")}${gap.length > 12 ? "…" : ""}`,
     );
 }
 const ctx = {
   api,
   ui,
   c: copy[ui],
-  language: 'en',
+  language: "en",
   profile: {},
   commerce: null,
   memory: null,
@@ -165,7 +169,7 @@ const ctx = {
   async mutate(action) {
     pendingWrites++;
     document
-      .querySelectorAll('[data-preference]')
+      .querySelectorAll("[data-preference]")
       .forEach((x) => (x.disabled = true));
     const write = writeTail.then(action);
     writeTail = write.catch(() => {});
@@ -175,7 +179,7 @@ const ctx = {
       pendingWrites--;
       if (!pendingWrites)
         document
-          .querySelectorAll('[data-preference]')
+          .querySelectorAll("[data-preference]")
           .forEach((x) => (x.disabled = false));
     }
   },
@@ -184,14 +188,14 @@ const ctx = {
 };
 function shell() {
   const c = ctx.c;
-  document.documentElement.lang = ctx.ui === 'zh' ? 'zh-Hans' : ctx.ui;
+  document.documentElement.lang = ctx.ui === "zh" ? "zh-Hans" : ctx.ui;
   document.documentElement.dataset.learning = ctx.language;
   // Shared plumbing such as a dialog's close control reads its label from the
   // interface language rather than carrying every language at once.
   document.documentElement.dataset.close = c.close;
   // The template names the skip link in both languages because it paints
   // before any language is known; once one is, it speaks only that one.
-  const skip = document.querySelector('a.skip');
+  const skip = document.querySelector("a.skip");
   if (skip) skip.textContent = c.skipToContent;
   /* The shell (D-059): a rail on a desk - the approved mark, the destinations,
      bringing something in and the learner's own card at its foot - and on a
@@ -202,51 +206,72 @@ function shell() {
      destinations, Practice, the learner's card - and a top bar over each
      destination; on a phone a slim bar (mark, language pair, the learner) and
      the tab bar. Bringing your own content lives in Library. */
-  document.getElementById('shell').innerHTML =
+  document.getElementById("shell").innerHTML =
     `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
-  document.querySelectorAll('#shell [data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  document
+    .querySelectorAll("#shell [data-preference]")
+    .forEach((x) => (x.onclick = () => preferences()));
   /* The rail and the tab bar belong to Home, Library, Vocabulary and Progress. A room where the
      learner works - the reader, the player, Dictation, the editor, a review - has none: the
      baseline's templates for them begin at a bar of their own. */
-  document.documentElement.dataset.shell = shellBelongsTo(ctx.location) ? 'on' : 'off';
+  document.documentElement.dataset.shell = shellBelongsTo(ctx.location)
+    ? "on"
+    : "off";
   paintTopBar();
   // The approved design has no page footer; settings live in the learner's
   // card and the You tab.
-  document.getElementById('footer').innerHTML = '';
+  document.getElementById("footer").innerHTML = "";
 }
-const WORKING_PAGES = new Set(['encounter', 'book', 'expression', 'conversation']);
+const WORKING_PAGES = new Set([
+  "encounter",
+  "book",
+  "expression",
+  "conversation",
+]);
 function shellBelongsTo(location) {
   if (WORKING_PAGES.has(location.page)) return false;
-  if (location.page === 'practice' && ['recall', 'dictation', 'shadowing'].includes(location.intent)) return false;
+  if (
+    location.page === "practice" &&
+    ["recall", "dictation", "shadowing"].includes(location.intent)
+  )
+    return false;
   return true;
 }
 /* The destinations that carry the top bar. Rooms where the learner works do
    not: the content comes forward (Design Contract rule 11). */
 // Library carries its own search above the grid, so it does not repeat the
 // global one (rule 20).
-const TOP_BAR_PAGES = new Set(['language', 'progress', 'continue', 'collection', 'profile']);
+const TOP_BAR_PAGES = new Set([
+  "language",
+  "progress",
+  "continue",
+  "collection",
+  "profile",
+]);
 function paintTopBar() {
-  const bar = document.getElementById('topbar');
+  const bar = document.getElementById("topbar");
   if (!bar) return;
   const page = ctx.location.page;
-  const show = TOP_BAR_PAGES.has(page) && ctx.location.intent !== 'recall';
+  const show = TOP_BAR_PAGES.has(page) && ctx.location.intent !== "recall";
   bar.hidden = !show;
-  document.documentElement.dataset.topbar = show ? 'on' : 'off';
+  document.documentElement.dataset.topbar = show ? "on" : "off";
   if (!show) {
-    bar.innerHTML = '';
+    bar.innerHTML = "";
     return;
   }
   bar.innerHTML = topBar(ctx);
-  bar.querySelectorAll('[data-preference]').forEach((x) => (x.onclick = () => preferences()));
+  bar
+    .querySelectorAll("[data-preference]")
+    .forEach((x) => (x.onclick = () => preferences()));
   /* Not every destination's bar carries the search: Progress draws tabs and
      the window its numbers cover instead, as the source does. */
-  const form = bar.querySelector('[data-global-search]');
+  const form = bar.querySelector("[data-global-search]");
   if (form) {
     form.onsubmit = (event) => {
       event.preventDefault();
-      const query = String(new FormData(form).get('q') || '').trim();
+      const query = String(new FormData(form).get("q") || "").trim();
       if (!query) return;
-      ctx.go('search', { q: query });
+      ctx.go("search", { q: query });
     };
   }
 }
@@ -259,65 +284,69 @@ function paintTopBar() {
 function planUsageSection(scope) {
   const c = scope.c;
   const commerce = scope.commerce;
-  if (!commerce || commerce.available === false || commerce.readiness === 'unavailable') {
+  if (
+    !commerce ||
+    commerce.available === false ||
+    commerce.readiness === "unavailable"
+  ) {
     return `<section class="plan-usage"><h2>${c.planUsage}</h2><p>${c.planUsageUnavailable}</p></section>`;
   }
   const rows = Object.entries(commerce.features || {})
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, item]) => {
-      const label = c['feature_' + key.replace(/\./g, '_')] || key;
+      const label = c["feature_" + key.replace(/\./g, "_")] || key;
       const value =
-        item.entitlement_state === 'disabled'
+        item.entitlement_state === "disabled"
           ? c.planNotIncluded
-          : item.usage_state === 'unavailable'
-            ? '—'
+          : item.usage_state === "unavailable"
+            ? "—"
             : item.monthly_limit === null
               ? c.planUnlimited
               : `${item.used}/${item.monthly_limit} ${c.planUsed}`;
       return `<li><span>${esc(label)}</span><span>${esc(value)}</span></li>`;
     })
-    .join('');
-  return `<section class="plan-usage"><h2>${c.planUsage} — ${esc(commerce.plan?.name || '')}</h2><p>${c.planUsageNote}</p><ul>${rows}</ul></section>`;
+    .join("");
+  return `<section class="plan-usage"><h2>${c.planUsage} — ${esc(commerce.plan?.name || "")}</h2><p>${c.planUsageNote}</p><ul>${rows}</ul></section>`;
 }
 function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === 'en' ? 'selected' : ''}>English</option><option value="zh" ${ctx.language === 'zh' ? 'selected' : ''}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? 'selected' : ''}>${title}</option>`).join('')}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== 'off' ? 'checked' : ''}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? '' : secondarySurfaces(ctx)}${onboarding ? '' : planUsageSection(ctx)}${onboarding ? '' : growthSummarySection(ctx)}`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === "en" ? "selected" : ""}>English</option><option value="zh" ${ctx.language === "zh" ? "selected" : ""}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? "selected" : ""}>${title}</option>`).join("")}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== "off" ? "checked" : ""}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? "" : secondarySurfaces(ctx)}${onboarding ? "" : planUsageSection(ctx)}${onboarding ? "" : growthSummarySection(ctx)}`,
   });
-  sheet.querySelector('#preferencesForm').onsubmit = async (event) => {
+  sheet.querySelector("#preferencesForm").onsubmit = async (event) => {
     event.preventDefault();
     if (pendingWrites) return;
     const form = event.currentTarget,
       data = new FormData(form);
-    const learningChanged = data.get('learning') !== ctx.language;
+    const learningChanged = data.get("learning") !== ctx.language;
     form.inert = true;
     try {
       // Save full profile, preserving protected account settings. Language
       // changes wait for current evidence writes to finish.
-      if (learningChanged) await api.setLanguage(data.get('learning'));
-      ctx.language = String(data.get('learning'));
+      if (learningChanged) await api.setLanguage(data.get("learning"));
+      ctx.language = String(data.get("learning"));
       /* Send the two settings this form owns, against the version that was
          read when it opened. Read-modify-writing the whole profile meant a
          second device saving a different preference lost whichever change
          landed first, silently; now the server refuses the stale write and the
          learner is told to reopen rather than being quietly overruled. */
       ctx.profile = await api.patchLearnerProfile({
-        expected_version: ctx.profile.version ?? '',
-        pinyin: data.has('pinyin') ? 'auto' : 'off',
-        support_language: data.get('support'),
+        expected_version: ctx.profile.version ?? "",
+        pinyin: data.has("pinyin") ? "auto" : "off",
+        support_language: data.get("support"),
       });
       ctx.support = ctx.profile.support_language || ctx.profile.native_language;
-      ctx.ui = uiLocale(data.get('support'));
+      ctx.ui = uiLocale(data.get("support"));
       ctx.c = copy[ctx.ui];
       try {
-        storage.setItem('orena.support', String(data.get('support') || ''));
+        storage.setItem("orena.support", String(data.get("support") || ""));
       } catch {}
       ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
       sheet.close();
       // Content identities are language-scoped. A language switch returns to
       // a valid entry, never reopens an encounter from the previous language.
-      if (learningChanged) history.replaceState(null, '', link());
+      if (learningChanged) history.replaceState(null, "", link());
       await render();
     } catch (error) {
       /* Somewhere else changed these first. Retrying automatically would
@@ -327,12 +356,13 @@ function preferences(onboarding = false) {
       if (error?.status === 409) {
         try {
           ctx.profile = await api.learnerProfile();
-          ctx.support = ctx.profile.support_language || ctx.profile.native_language;
-          form.elements.pinyin.checked = ctx.profile.pinyin !== 'off';
+          ctx.support =
+            ctx.profile.support_language || ctx.profile.native_language;
+          form.elements.pinyin.checked = ctx.profile.pinyin !== "off";
           form.elements.support.value = ctx.support;
         } catch {}
       }
-      sheet.querySelector('#preferenceError').textContent =
+      sheet.querySelector("#preferenceError").textContent =
         error?.status === 409 ? c.preferencesMoved : error.message;
       form.inert = false;
     }
@@ -344,20 +374,20 @@ function preferences(onboarding = false) {
    sheet (Phase 10). No new chrome anywhere else. */
 function secondarySurfaces(scope) {
   const r = referenceCopy[scope.ui] || referenceCopy.en;
-  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link('collection'))}">${esc(r.savedTitle)}</a><a href="${esc(link('history'))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
+  return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link("collection"))}">${esc(r.savedTitle)}</a><a href="${esc(link("history"))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
 }
 function validVideo(value) {
   try {
     const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password || url.port)
+    if (url.protocol !== "https:" || url.username || url.password || url.port)
       return false;
-    if (url.hostname === 'youtu.be') return /^\/[\w-]{11}$/.test(url.pathname);
+    if (url.hostname === "youtu.be") return /^\/[\w-]{11}$/.test(url.pathname);
     return (
-      ['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(
+      ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(
         url.hostname,
       ) &&
-      ((url.pathname === '/watch' &&
-        /^[\w-]{11}$/.test(url.searchParams.get('v') || '')) ||
+      ((url.pathname === "/watch" &&
+        /^[\w-]{11}$/.test(url.searchParams.get("v") || "")) ||
         /^\/(shorts|embed)\/[\w-]{11}$/.test(url.pathname))
     );
   } catch {
@@ -370,58 +400,63 @@ function importContent() {
     title: c.bring,
     body: `<div class="import-choice"><button data-kind="text" aria-pressed="true">${c.textTab}</button><button data-kind="media" aria-pressed="false">${c.mediaTab}</button></div><form id="textImport"><label>${c.title}<input name="title" maxlength="120" required></label><label>${c.text}<textarea name="text" rows="7" maxlength="12000" required lang="${ctx.language}"></textarea></label><p>${c.textHelp}</p><p role="alert"></p><button class="primary">${c.importAction} ↗</button></form><form id="mediaImport" hidden><label>${c.url}<input name="url" type="url" inputmode="url" required></label><p>${c.mediaHelp}</p><p role="alert"></p><button class="primary">${c.importAction} ↗</button></form>`,
   });
-  sheet.querySelectorAll('[data-kind]').forEach(
+  sheet.querySelectorAll("[data-kind]").forEach(
     (button) =>
       (button.onclick = () => {
         sheet
-          .querySelectorAll('[data-kind]')
-          .forEach((x) => x.setAttribute('aria-pressed', String(x === button)));
-        sheet.querySelector('#textImport').hidden =
-          button.dataset.kind !== 'text';
-        sheet.querySelector('#mediaImport').hidden =
-          button.dataset.kind !== 'media';
+          .querySelectorAll("[data-kind]")
+          .forEach((x) => x.setAttribute("aria-pressed", String(x === button)));
+        sheet.querySelector("#textImport").hidden =
+          button.dataset.kind !== "text";
+        sheet.querySelector("#mediaImport").hidden =
+          button.dataset.kind !== "media";
       }),
   );
-  sheet.querySelector('#textImport').onsubmit = (event) => {
+  sheet.querySelector("#textImport").onsubmit = (event) => {
     event.preventDefault();
     try {
       const data = new FormData(event.currentTarget);
       const item = ctx.memory.add({
-        title: data.get('title'),
-        text: data.get('text'),
+        title: data.get("title"),
+        text: data.get("text"),
       });
       sheet.close();
-      ctx.go('encounter', { id: item.id });
+      ctx.go("encounter", { id: item.id });
       if (!ctx.memory.available) status(c.memoryUnavailable);
     } catch {
-      event.currentTarget.querySelector('[role=alert]').textContent =
+      event.currentTarget.querySelector("[role=alert]").textContent =
         c.invalidText;
     }
   };
-  sheet.querySelector('#mediaImport').onsubmit = (event) => {
+  sheet.querySelector("#mediaImport").onsubmit = (event) => {
     event.preventDefault();
-    const url = String(new FormData(event.currentTarget).get('url')).trim();
+    const url = String(new FormData(event.currentTarget).get("url")).trim();
     if (!validVideo(url)) {
-      event.currentTarget.querySelector('[role=alert]').textContent =
+      event.currentTarget.querySelector("[role=alert]").textContent =
         c.invalidUrl;
       return;
     }
     sheet.close();
-    ctx.go('encounter', { id: `url:${url}` });
+    ctx.go("encounter", { id: `url:${url}` });
   };
 }
-/* The last twenty room failures, for the intermittent `#/language` report that
-   has never reproduced under observation. `window.orenaRenderFailures()` reads
-   them back. Nothing is sent anywhere. */
+/* The last twenty genuine room failures - a superseded room's cancelled fetch
+   is not one of them, see the render() catch block below.
+   `window.orenaRenderFailures()` reads them back. Nothing is sent anywhere. */
 const renderFailures = [];
 window.orenaRenderFailures = () => renderFailures.slice();
 
 async function render() {
   const version = ++generation;
+  // Abort whatever the room being left is still waiting on. Without this a
+  // rapid multi-room sweep piles up requests no one reads any more, which
+  // contends with the current room's own fetches for the same origin's
+  // connection budget - see infrastructure/navigation.js.
+  beginNavigation();
   const startedAt = performance.now();
   cleanup();
   cleanup = () => {};
-  document.querySelectorAll('dialog').forEach((x) => x.close());
+  document.querySelectorAll("dialog").forEach((x) => x.close());
   ctx.location = route(location.hash);
   root.dataset.experience = experienceFor(ctx.location);
   ctx.alive = () => generation === version;
@@ -450,76 +485,84 @@ async function render() {
   try {
     const page = ctx.location.page;
     const result =
-      page === 'collection'
+      page === "collection"
         ? renderCollection(root, scope)
-        : page === 'progress'
+        : page === "progress"
           ? await renderProgress(root, scope)
-        : page === 'profile'
-          ? await renderProfile(root, scope)
-        : page === 'book'
-          ? paintBookPage(root, scope, ctx.location.id)
-        : page === 'history'
-          ? await renderHistory(root, scope)
-        : page === 'admin'
-          ? await renderAdmin(root, scope)
-        : page === 'continue'
-        ? (renderContinue(root, scope), bindContentRails(root))
-        : page === 'encounter'
-        ? await renderEncounter(root, scope)
-        : page === 'conversation'
-          ? renderConversation(root, scope)
-          : page === 'writing'
-            ? renderWritingEntry(root, scope)
-          : page === 'expression'
-            ? await renderExpression(root, scope)
-            : page === 'language' || ctx.location.intent === 'recall'
-              ? await renderLanguage(root, scope)
-              : page === 'practice' && ctx.location.intent === 'speaking'
-                ? renderSpeaking(root, scope)
-                : page === 'practice' && ctx.location.intent === 'grammar'
-                  ? await renderGrammar(root, scope)
-                  : await renderWorld(root, scope);
+          : page === "profile"
+            ? await renderProfile(root, scope)
+            : page === "book"
+              ? paintBookPage(root, scope, ctx.location.id)
+              : page === "history"
+                ? await renderHistory(root, scope)
+                : page === "admin"
+                  ? await renderAdmin(root, scope)
+                  : page === "continue"
+                    ? (renderContinue(root, scope), bindContentRails(root))
+                    : page === "encounter"
+                      ? await renderEncounter(root, scope)
+                      : page === "conversation"
+                        ? renderConversation(root, scope)
+                        : page === "writing"
+                          ? renderWritingEntry(root, scope)
+                          : page === "expression"
+                            ? await renderExpression(root, scope)
+                            : page === "language" ||
+                                ctx.location.intent === "recall"
+                              ? await renderLanguage(root, scope)
+                              : page === "practice" &&
+                                  ctx.location.intent === "speaking"
+                                ? renderSpeaking(root, scope)
+                                : page === "practice" &&
+                                    ctx.location.intent === "grammar"
+                                  ? await renderGrammar(root, scope)
+                                  : await renderWorld(root, scope);
     clearTimeout(announceLoading);
     if (!scope.alive()) {
       result?.();
       return;
     }
     cleanup = result || (() => {});
-    root.querySelector('h1')?.setAttribute('tabindex', '-1');
-    root.querySelector('h1')?.focus({ preventScroll: true });
+    root.querySelector("h1")?.setAttribute("tabindex", "-1");
+    root.querySelector("h1")?.focus({ preventScroll: true });
   } catch (error) {
     clearTimeout(announceLoading);
-    /* Keep what a room was doing when it failed.
-
-       `#/language` has reported "temporarily unavailable" inside long
-       multi-room sweeps and never once in isolation, so the next occurrence is
-       the only chance to learn anything from it - and until now the screen said
-       "unavailable" and the console said nothing at all. This records the route,
-       the language, how long the render had been running, which render
-       generation it was and whether that generation was still current, plus the
-       error itself. It changes no behaviour and fixes nothing: there is no
-       evidence yet for what to fix, and a guess would only make the next
-       occurrence harder to read.
+    /* `#/language` reported "temporarily unavailable" inside long multi-room
+       sweeps at short dwell and never once in isolation. The cause was a
+       missing cancellation: leaving a room never stopped its fetches, so a
+       fast sweep piled up requests no one was reading any more, contending
+       with the current room's own for the same origin's connection budget -
+       `beginNavigation()` in infrastructure/navigation.js now cancels a room's
+       requests the moment its render is superseded. A superseded room's
+       fetches therefore reject with an expected `AbortError`, which is not a
+       failure worth keeping - recording it would make the next genuine
+       occurrence harder to spot in this same diagnostic. Everything else is
+       kept exactly as before: the route, the language, how long the render had
+       been running, the render generation and whether it was still current,
+       and the error itself.
 
        Kept in memory and on the object, not sent anywhere: this is a device
        diagnostic, not telemetry. */
-    const failure = {
-      at: new Date().toISOString(),
-      hash: location.hash,
-      page: ctx.location.page,
-      intent: ctx.location.intent,
-      language: ctx.language,
-      generation: version,
-      stillCurrent: scope.alive(),
-      elapsedMs: Math.round(performance.now() - startedAt),
-      name: error?.name,
-      status: error?.status,
-      message: error?.message,
-      stack: String(error?.stack || '').slice(0, 320),
-    };
-    renderFailures.push(failure);
-    if (renderFailures.length > 20) renderFailures.shift();
-    console.error('[orena] room failed to render', failure);
+    const superseded = error?.name === "AbortError" && !scope.alive();
+    if (!superseded) {
+      const failure = {
+        at: new Date().toISOString(),
+        hash: location.hash,
+        page: ctx.location.page,
+        intent: ctx.location.intent,
+        language: ctx.language,
+        generation: version,
+        stillCurrent: scope.alive(),
+        elapsedMs: Math.round(performance.now() - startedAt),
+        name: error?.name,
+        status: error?.status,
+        message: error?.message,
+        stack: String(error?.stack || "").slice(0, 320),
+      };
+      renderFailures.push(failure);
+      if (renderFailures.length > 20) renderFailures.shift();
+      console.error("[orena] room failed to render", failure);
+    }
     if (scope.alive()) {
       // Retrying a route that is gone - the wrong language, a removed import,
       // an id that never existed - only fails again, so always offer the way
@@ -535,20 +578,23 @@ async function render() {
       const r = referenceCopy[ctx.ui];
       const room = experienceFor(ctx.location);
       const back =
-        room === 'listening'
-          ? { href: link('practice', { intent: 'follow' }), label: r.listening }
-          : room === 'reading'
-            ? { href: link('practice', { intent: 'reading' }), label: r.reading }
+        room === "listening"
+          ? { href: link("practice", { intent: "follow" }), label: r.listening }
+          : room === "reading"
+            ? {
+                href: link("practice", { intent: "reading" }),
+                label: r.reading,
+              }
             : { href: link(), label: r.discover };
       /* No technical detail on the page. Whatever was thrown is a developer's
          sentence - an English server message, an HTTP status - and printing it
          under a Chinese heading is how untranslated text reaches a learner.
          The failure itself is already recorded in `renderFailures` and the
          console, which is where a diagnostic belongs. */
-      root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" id="retry">${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(ctx.c.retry)}</span></button><a class="outline" href="${esc(back.href)}">${icon('arrow-right', { size: 18 })}<span>${esc(String(ctx.c.backTo).replace('{room}', back.label))}</span></a></div></section>`;
-      root.querySelector('#retry').onclick = render;
-      root.querySelector('h1').setAttribute('tabindex', '-1');
-      root.querySelector('h1').focus({ preventScroll: true });
+      root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon("warning-circle", { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" id="retry">${icon("arrow-counter-clockwise", { size: 18 })}<span>${esc(ctx.c.retry)}</span></button><a class="outline" href="${esc(back.href)}">${icon("arrow-right", { size: 18 })}<span>${esc(String(ctx.c.backTo).replace("{room}", back.label))}</span></a></div></section>`;
+      root.querySelector("#retry").onclick = render;
+      root.querySelector("h1").setAttribute("tabindex", "-1");
+      root.querySelector("h1").focus({ preventScroll: true });
     }
   }
 }
@@ -563,21 +609,21 @@ async function boot() {
       api.productCommerce().catch(() => null),
       // Same reasoning for the growth glance: `all` so an undated record
       // (grammar has no completion timestamp) is never silently excluded.
-      api.learnerSummary('all').catch(() => null),
+      api.learnerSummary("all").catch(() => null),
     ]);
     ctx.supportLanguages = languages.support_languages || [];
     ctx.languageProfiles = languages.languages || [];
     ctx.user = user;
-    ctx.owner = user.email || user.mode || 'local';
+    ctx.owner = user.email || user.mode || "local";
     ctx.language = languages.active;
     ctx.profile = profile;
     ctx.commerce = commerce;
     ctx.growth = growth;
-    ctx.support = profile.support_language || profile.native_language || 'en';
+    ctx.support = profile.support_language || profile.native_language || "en";
     ctx.ui = uiLocale(ctx.support);
     ctx.c = copy[ctx.ui];
     try {
-      storage.setItem('orena.support', ctx.support);
+      storage.setItem("orena.support", ctx.support);
     } catch {
       // A device that cannot keep it still honours it for this visit.
     }
@@ -590,16 +636,16 @@ async function boot() {
     // "Skip to content" is a fragment link, and letting it write #main into the
     // hash reads as a route change - the keyboard entry point would throw the
     // learner back to Discover. Move focus ourselves and leave the route alone.
-    document.querySelector('a.skip')?.addEventListener('click', (event) => {
+    document.querySelector("a.skip")?.addEventListener("click", (event) => {
       event.preventDefault();
       root.focus({ preventScroll: true });
-      root.scrollIntoView({ block: 'start' });
+      root.scrollIntoView({ block: "start" });
     });
-    window.addEventListener('hashchange', render);
+    window.addEventListener("hashchange", render);
     await render();
     if (!profile.exists) preferences(true);
   } catch (error) {
-    root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" onclick="location.reload()">${icon('arrow-counter-clockwise', { size: 18 })}<span>${esc(ctx.c.retry)}</span></button></div></section>`;
+    root.innerHTML = `<section class="room-failed"><div class="state-panel" data-tone="error" role="alert">${icon("warning-circle", { size: 22 })}<div><h1>${esc(ctx.c.cantOpen)}</h1></div></div><div class="room-failed__actions"><button class="outline" onclick="location.reload()">${icon("arrow-counter-clockwise", { size: 18 })}<span>${esc(ctx.c.retry)}</span></button></div></section>`;
   }
 }
 boot();

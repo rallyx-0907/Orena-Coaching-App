@@ -17,10 +17,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
       - run: pip install -r requirements.txt pytest
       - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
       - run: python scripts/validate_project_memory.py
@@ -29,6 +29,7 @@ jobs:
       - run: python scripts/test_orena_account_profile.py
       - run: python scripts/test_orena_runtime_schema.py
       - run: python scripts/test_orena_work_contract.py
+      - run: python scripts/test_orena_job_contract.py
       - run: python scripts/test_orena_account_backbone.py
       - run: python scripts/test_runtime_backup.py
       - run: python scripts/build_listening_dev_catalog.py --check
@@ -94,6 +95,7 @@ jobs:
           node scripts/test_orena_vocabulary_paging.mjs
           node scripts/test_orena_rank_frame.mjs
           node scripts/test_orena_vocabulary_saved_card.mjs
+          node scripts/test_orena_room_navigation_cancellation.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite
