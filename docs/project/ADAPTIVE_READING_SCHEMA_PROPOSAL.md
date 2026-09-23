@@ -1,6 +1,9 @@
 # Adaptive Reading Practice — schema proposal
 
-    STATUS: PROPOSED — needs independent architecture review before it is applied
+    STATUS: REQUEST CHANGES — reviewed 2026-09-24, see
+            docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md
+            5 blockers, 21 required changes, 6 factual errors.
+            No migration may be written or applied until a later round passes.
     LANE:   admin/control-center
     DATE:   2026-09-23
 
@@ -8,8 +11,11 @@ This proposes the persistence Adaptive Reading Practice needs, and nothing
 else. It is written to be reviewed and refused in parts: each table stands on
 its own reason.
 
-Nothing here is applied. The migration lands in `migrations/proposed/`, which
-Alembic does not read, exactly as the Reading Content Engine's did.
+Nothing here is applied, and after the 2026-09-24 review nothing may be
+written as DDL either until the blockers are answered. The Reading Content
+Engine's migration was staged in `migrations/proposed/` and has since moved to
+`migrations/versions/` under the human's authorization of 2026-09-23; this one
+has not reached that staging area.
 
 ---
 
@@ -92,9 +98,14 @@ Constraints:
 
 - `CHECK (question_type IN (...))`.
 - `CHECK (correct_index >= 0)`.
-- `CHECK (evidence_text <> '')` — **the grounding rule, in the database.** A
-  question whose answer is not in the passage cannot be stored, so it cannot be
-  approved by accident.
+- `CHECK (evidence_text <> '')` — forbids an empty evidence string, and only
+  that. **Corrected after review:** an earlier draft of this document claimed
+  this constraint enforced grounding. It cannot: a CHECK cannot read
+  `reading_articles.body`, so it cannot know whether the evidence is in the
+  passage. Grounding is enforced in the repository (as
+  `becoming_reading.py` already does with `evidence not in passage`) and at
+  review. The next round must say which question types may omit evidence at
+  all — `main_idea` and `authors_purpose` may not have a literal span.
 - `UNIQUE (set_id, rank)`.
 
 ## 3. `reading_practice_attempts`
