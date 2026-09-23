@@ -105,10 +105,6 @@ export const vi = {
   missing: 'Thiếu',
 
   // --- Speaking ----------------------------------------------------------
-  speakRepeat: 'Lặp lại một câu',
-  speakRespond: 'Phản hồi tình huống',
-  speakPrompt: 'Nói theo một đề bài',
-  speakContinue: 'Tiếp tục luyện nói',
   speakYourVoice: 'Bản thu của bạn',
   speakHeard: 'Hệ thống nhận diện được',
   speakHeardNote: 'Đây là kết quả nhận dạng giọng nói, không phải điểm phát âm.',
