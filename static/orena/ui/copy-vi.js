@@ -20,6 +20,7 @@ export const vi = {
   vocabulary: 'Từ vựng',
   understanding: 'Cấu trúc & ý nghĩa',
   language: 'Ngôn ngữ của tôi',
+  backHome: 'Trang chủ',
   recall: 'Ôn lại',
   continue: 'Tiếp tục',
   content: 'Nội dung của tôi',

@@ -59,7 +59,10 @@ assert.equal(learnerMemory(storage,'owner-a','zh').value.mediaImports.length,0);
 a.remove('url:https://example.org/a');
 assert.equal(learnerMemory(storage,'owner-a','en').value.mediaImports.length,0);
 const world=readFileSync(new URL('../static/orena/ui/world.js',import.meta.url),'utf8');
-assert.match(world,/practiceMedia[\s\S]{0,40}\.filter\(\(x\) => supports\(/,'Practice intents must offer imported media, not the catalog alone');
+// Imported media is practised where the catalog is: the Listening library is given both (the list of
+// moments that used to filter them is retired with the Practice hub, D-078).
+assert.match(world,/const practiceMedia = \[\.\.\.media, \.\.\.memory\.value\.mediaImports\]/,'imported media joins the catalog');
+assert.match(world,/\{ readable: \[\], media: practiceMedia \}/,'Listening offers imported media, not the catalog alone');
 
 for (const language of ['en','zh']) {
   const text=language==='en'?'The train is here.':'火车来了。';

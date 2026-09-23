@@ -2,6 +2,7 @@ import { api } from "./infrastructure/api.js";
 import { copy, untranslated } from "./ui/copy.js";
 import { esc, dialog, status } from "./ui/html.js";
 import { route, link } from "./product/intent.js";
+import { legacyRedirect } from "./product/legacy-routes.js";
 import { learnerMemory } from "./product/memory.js";
 import { renderWorld } from "./ui/world.js";
 import { renderEncounter } from "./ui/encounter.js";
@@ -472,6 +473,12 @@ async function render() {
   cleanup = () => {};
   document.querySelectorAll("dialog").forEach((x) => x.close());
   ctx.location = route(location.hash);
+  // An address of a replaced screen goes to its new flow; the old screen is never drawn (D-078).
+  const replaced = legacyRedirect(ctx.location);
+  if (replaced) {
+    window.location.replace(link(...replaced));
+    return;
+  }
   root.dataset.experience = experienceFor(ctx.location);
   ctx.alive = () => generation === version;
   const scope = { ...ctx, alive: ctx.alive };

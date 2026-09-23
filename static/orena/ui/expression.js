@@ -1,6 +1,6 @@
 import {
   pageIntro,
-  practiceReturn,
+  roomReturn,
   continuationShelf,
   draftStatus,
   responseComposer,
@@ -821,7 +821,7 @@ async function renderRecallLanguage(root, ctx) {
     const reviewing = stage !== 'landing' && current;
     /* While a card is up the screen is the card: its own caret is the way
        back, so the room's return link and the page intro stay out of it. */
-    root.innerHTML = `${reviewing ? '' : practiceReturn(c, 'recall')}${
+    root.innerHTML = `${reviewing ? '' : roomReturn(c.language, link('language'))}${
       reviewing ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
     }${stage === 'landing' ? landing : current ? card : done}`;
     root.querySelector('[data-recall-start]')?.addEventListener('click', () => {
@@ -1460,7 +1460,7 @@ export async function renderGrammar(root, ctx) {
     const syllabus = grammarFamilies(lessons);
     const patternCount = (n) =>
       `${n} ${esc(n === 1 ? c.grammarPatternOne : c.grammarPatterns)}`;
-    root.innerHTML = `${practiceReturn(c, 'grammar')}${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}<section class="grammar-syllabus" aria-label="${esc(c.grammarSyllabus)}">${syllabus
+    root.innerHTML = `${roomReturn(c.backHome)}${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}<section class="grammar-syllabus" aria-label="${esc(c.grammarSyllabus)}">${syllabus
       .map(
         (level) =>
           `<section class="syllabus-level"><header><h2>${esc(level.level)}</h2><small>${patternCount(level.total)}</small></header><div class="family-row">${level.families

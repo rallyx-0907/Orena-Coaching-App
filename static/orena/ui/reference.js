@@ -960,7 +960,7 @@ referenceCopy.vi = {
 const paths = [
   ['discover', 'discover', null, 'compass'], ['continue', 'continue', null, 'return'],
   ['reading', 'practice', 'reading', 'book'], ['listening', 'practice', 'follow', 'sound'],
-  ['practice', 'practice', null, 'focus'], ['writing', 'expression', null, 'pen'],
+  ['practice', 'practice', null, 'focus'], ['writing', 'writing', null, 'pen'],
   ['speaking', 'practice', 'speaking', 'voice'], ['understanding', 'practice', 'grammar', 'spark'],
   ['content', 'content', null, 'folder'], ['language', 'language', null, 'leaf'],
   ['recall', 'practice', 'recall', 'return'],

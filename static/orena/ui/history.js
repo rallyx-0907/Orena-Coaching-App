@@ -71,7 +71,7 @@ function rows(ctx, results) {
         title: `${r[kind] || kind} · ${clip(o.title || o.source_title || '')}`,
         meta: '',
         score: Number.isFinite(score) ? String(Math.round(score)) : '',
-        href: o.source_id ? link('encounter', { id: o.source_id, intent: o.intent || null }) : link('practice'),
+        href: o.source_id ? link('encounter', { id: o.source_id, intent: o.intent || null }) : link(),
       });
     }
   const since = Date.now() - WINDOW_DAYS * 86400000;

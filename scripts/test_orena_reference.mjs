@@ -199,7 +199,14 @@ assert.notEqual(copy.en.cantOpen, copy.zh.cantOpen);
 for (const path of ['static/orena/ui/expression.js', 'static/orena/ui/speaking.js', 'static/orena/ui/world.js']) {
   const src = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
   assert.ok(!/intentNavigation\(/.test(src), `${path} must not repeat the whole practice map`);
-  assert.ok(/practiceReturn\(/.test(src), `${path} must offer the way back to Practice`);
+  // The Practice hub is retired (D-078): no room leads back to it.
+  assert.ok(!/link\('practice'\)/.test(src), `${path} must not lead to the retired Practice hub`);
+}
+// A room still has its way back, to the place in the shell that owns it.
+{
+  const expression = readFileSync(new URL('../static/orena/ui/expression.js', import.meta.url), 'utf8');
+  assert.match(expression, /roomReturn\(c\.language, link\('language'\)\)/, 'the review returns to Vocabulary');
+  assert.match(expression, /roomReturn\(c\.backHome\)/, 'grammar returns Home');
 }
 // The primitive itself stays available for a surface that genuinely needs the
 // whole map - Practice is one - so this is removal from rooms, not deletion.
@@ -222,7 +229,6 @@ const {
   navigationCurrent,
   topBar,
 } = await import('../static/orena/ui/reference.js');
-const { practiceOverview } = await import('../static/orena/ui/discovery.js');
 const { homeHtml } = await import('../static/orena/ui/home.js');
 const shellCtx = (ui, location, extra = {}) => ({
   ui,
@@ -261,12 +267,12 @@ for (const ui of ['en', 'zh', 'vi']) {
   const reachable = [
     nav,
     topBar({ ui, language: 'en', support: 'vi', location: route('#/') }),
-    practiceOverview({ c: copy[ui === 'vi' ? 'vi' : ui] || copy.en, ui }),
-    homeHtml({ c: copy[ui] || copy.en, ui, language: 'en', support: 'vi', memory: threeThreads }, {}),
+    // Home offers the review when words are due, the case where there is one to offer.
+    homeHtml({ c: copy[ui] || copy.en, ui, language: 'en', support: 'vi', memory: threeThreads }, { due: 3 }),
   ].join('');
-  // The Practice map (#/practice) is the one entry the design does not draw: it left the chrome with the
-  // Practice group and is a legacy page awaiting deletion (UI_BACKEND_GAPS.md), so it is not required here.
-  for (const entry of entryPoints(ui).filter((x) => x.id !== 'practice'))
+  // The Practice map (#/practice) is retired (D-078: it goes Home). Grammar's own page had no way in
+  // but that map; the design draws none, and where it goes is the human's (UI_BACKEND_GAPS, S24).
+  for (const entry of entryPoints(ui).filter((x) => x.id !== 'practice' && x.id !== 'understanding'))
     assert.ok(reachable.includes(`href="${entry.href}"`), `${ui}: ${entry.id} is no longer reachable`);
 
   // The tab bar: five tabs, the last the learner's own, the way back lit.

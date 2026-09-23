@@ -1,15 +1,12 @@
-import { bindTodayWords, practiceOverview } from './discovery.js';
+import { bindTodayWords } from './discovery.js';
 import { homeHtml, bindHome } from './home.js';
-import { referenceCopy, editorialIntro } from './reference.js';
-import { duration, origin, art, bindImages } from './content.js';
-import { companionArt, scene } from './brand.js';
-import { pageIntro, practiceReturn, continuationShelf } from './patterns.js';
+import { origin, art, bindImages } from './content.js';
+import { companionArt } from './brand.js';
 import { esc, dialog } from './html.js';
 import {
   link,
   continuationLink,
   practiceIntentions,
-  supports,
 } from '../product/intent.js';
 import { contentFor } from '../content/texts.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
@@ -21,21 +18,6 @@ import { renderLibraryBrowse } from './library-browse.js';
 import { renderSearch } from './search.js';
 import { listeningItem } from './media-library.js';
 
-// Imported media carries no catalog level, and its length is unknown until the
-// asset reports one. Join only what is actually true of this item, so an import
-// never shows a stray separator or a fabricated 0:00.
-function mediaLine(item) {
-  return [
-    item.level,
-    Number(item.duration_ms) > 0 ? duration(item.duration_ms) : '',
-  ]
-    .filter(Boolean)
-    .map((part) => esc(part))
-    .join(' · ');
-}
-function mediaItem(item, intent, c) {
-  return `<a class="voice-row" href="${link('encounter', { id: item.id, intent })}"><span class="voice-cover">${art(item)}<span class="voice-play" aria-hidden="true">▶</span></span><span><small>${mediaLine(item)}${mediaLine(item) ? ' · ' : ''}${item.kind === 'video' || item.kind === 'embed' ? c.video : c.audio}</small><strong lang="${item.language}">${esc(item.title)}</strong>${item.description ? `<span class="voice-description">${esc(item.description)}</span>` : ''}<span class="byline">${esc(item.source?.creator || origin(item, c))}</span></span><span aria-hidden="true">↗</span></a>`;
-}
 function contentRow(item, intent, c) {
   return `<article class="collection-row"><a class="collection-art" aria-label="${esc(item.title)}" href="${link('encounter', { id: item.id, intent })}">${art(item)}</a><div><small>${esc(origin(item, c))}</small><h2><a lang="${item.language || ''}" href="${link('encounter', { id: item.id, intent })}">${esc(item.title)} ↗</a></h2></div><button class="quiet" data-remove="${esc(item.id)}" aria-label="${esc(c.remove + ': ' + item.title)}">×</button></article>`;
 }
@@ -147,81 +129,31 @@ export async function renderWorld(root, ctx) {
   // is practisable everywhere the catalog is.
   const practiceMedia = [...media, ...memory.value.mediaImports];
   const intent = location.intent;
-  const destination = (id) => link('encounter', { id, intent });
-  const headline = (title, note, eyebrow = '', state = '') =>
-    pageIntro({ title, note, eyebrow, scene: state });
-  const continuation = continuationShelf(ctx);
   const catalogError = failed
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
     : '';
   const readingError = readingFailed
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
     : '';
-  /* An intention arrives somewhere, and each somewhere looks like itself. This
-     is the difference between a menu of forms and a set of places - one scene,
-     at the head of the page, doing orientation rather than decoration. */
-  const INTENT_SCENE = {
-    follow: 'listening',
-    reading: 'reading',
-    dictation: 'focus',
-    shadowing: 'speaking',
-    speaking: 'conversation',
-    grammar: 'thinking',
-    recall: 'remembering',
-  };
   if (location.page === 'practice') {
-    const r = referenceCopy[ctx.ui];
-    /* Reading opens on the books, not on a headline about reading. The room is
-       named, once and quietly, and the covers take the first viewport
-       (D-057 rule 13 and 15). */
-    /* Listening opens on the voices, for the same reason Reading opens on the
-       books: the headline and its paragraph told a learner nothing and cost
-       the first viewport (D-057 rule 13). */
-    const libraryRoom = intent === 'reading' || intent === 'follow';
-    const intro = libraryRoom
-      ? ''
-      : !intent
-      ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
-      : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
-    /* The way back sits above the heading, and the heading's eyebrow names
-       the room - the way back already says "Practice". */
-    const practiceContinuation = libraryRoom ? '' : continuation;
-    root.innerHTML = `${intent && !libraryRoom ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
+    /* Reading and Listening open on their libraries (D-059 Phases 5 and 7): the same search,
+       facets, sections and cards as #/content, scoped to what can be read or listened to. Every
+       other practice address is sent to its own flow before it gets here (D-078,
+       product/legacy-routes.js): the Practice hub and its list of moments are retired. */
+    root.innerHTML =
       intent === 'reading'
-        /* Reading opens on the library the design draws (D-059 Phase 5), with
-           books and the learner's own texts in it: the same search, facets,
-           sections and cards as #/content, scoped to what can be read. It is
-           one library, not a second one - a book card leads to the book page
-           (#/book), which is where a chapter is chosen. Bringing a passage in
-           stays the room's own action. */
         ? `${readingError}<div class="reading-library" data-library-browse></div>`
-        : (() => {
-            /* Listening opens on the same approved library as Reading, scoped
-               to what can be listened to (D-059 Phase 7): one library, one set
-               of cards, one search. Dictation, shadowing and speaking keep the
-               filtered list: those are practice modes over a source, not
-               browsing. */
-            if (!intent || intent === 'follow')
-              return `${catalogError}<div class="listening-library" data-library-browse></div>`;
-            return `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
-              practiceMedia
-                .filter((x) => supports(x, intent))
-                .map((x) => mediaItem(x, intent, c))
-                .join('') || `<p>${c.noCatalog}</p>`
-            }</section>`;
-          })()
-    }${practiceContinuation}`;
-    if (intent === 'reading' || !intent || intent === 'follow')
-      releaseLibrary = renderLibraryBrowse(
-        root.querySelector('[data-library-browse]'),
-        ctx,
-        intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
-        {
-          only: intent === 'reading' ? ['books'] : ['audio', 'video'],
-          onImport: intent === 'reading' ? () => openReadingRequest(ctx) : ctx.import,
-          titleTag: intent ? 'h1' : 'h2',
-        },
-      ) || (() => {});
+        : `${catalogError}<div class="listening-library" data-library-browse></div>`;
+    releaseLibrary = renderLibraryBrowse(
+      root.querySelector('[data-library-browse]'),
+      ctx,
+      intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
+      {
+        only: intent === 'reading' ? ['books'] : ['audio', 'video'],
+        onImport: intent === 'reading' ? () => openReadingRequest(ctx) : ctx.import,
+        titleTag: 'h1',
+      },
+    ) || (() => {});
   } else if (location.page === 'search') {
     releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});
   } else if (location.page === 'content') {

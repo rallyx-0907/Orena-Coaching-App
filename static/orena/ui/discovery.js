@@ -1,14 +1,12 @@
-/* Two surfaces that are not a room of their own: the Practice map (a legacy page awaiting deletion,
-   UI_BACKEND_GAPS.md) and Today's words, which Home carries under its rails.
+/* A surface that is not a room of its own: Today's words, which Home carries under its rails. The
+   Practice map that also lived here is retired (D-078): `#/practice` goes Home.
 
    Home itself is `ui/home.js` now, built to the design's own frames (D-067); the composition that used
    to live here - the greeting, the hero pair, the "for you" and "saved" shelves - is deleted with it. */
 import { esc } from './html.js';
-import { scene } from './brand.js';
 import { link } from '../product/intent.js';
 import { icon } from './phosphor.js';
 import { referenceCopy } from './reference.js';
-import { entryIcon } from './icons.js';
 import {
   compactSupportMeaning,
   masteryStars,
@@ -19,14 +17,6 @@ import {
   vocabularyStatus,
 } from './vocabulary-experience.js';
 
-export function practiceOverview(ctx) {
-  const { c } = ctx, r = referenceCopy[ctx.ui];
-  const intentions = [
-    ['dictation','focus'], ['shadowing','sound'], ['speaking','voice'],
-    ['writing','pen'], ['grammar','spark'], ['recall','return'],
-  ];
-  return `<section class="practice-workbench" aria-label="${esc(r.direct)}"><div class="workbench-note">${scene('focus',{size:'medium'})}<small>${esc(r.direct)}</small><p>${esc(c.practiceContext)}</p></div><div class="practice-options">${intentions.map(([intent,icon],i)=>`<a href="${intent==='writing'?link('expression'):link('practice',{intent})}"><span class="option-number" aria-hidden="true">0${i+1}</span>${entryIcon(icon)}<div><h2>${esc(c[intent+'Name'])}</h2><p>${esc(c[intent+'Note'])}</p></div><span aria-hidden="true">↗</span></a>`).join('')}</div></section>`;
-}
 
 /* Today's words: the approved compact stack - one flashcard on top of the
    next few, a counter, tap to flip. The front is the word and its reading;
