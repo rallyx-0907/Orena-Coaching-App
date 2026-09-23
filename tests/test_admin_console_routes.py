@@ -246,6 +246,16 @@ def test_media_can_be_taken_back_and_put_out_again(setup):
     assert back.status_code == 200 and back.json()["record"]["status"] == "published"
     assert [item.media_id for item in store.list(language="zh")] == ["youtube-abcdefghijk"]
 
+    # Archiving media is a state on the media route, never the book route -
+    # they share the word "archive" and nothing else.
+    gone = call(setup["app"], "POST", path, json={"status": "archived"})
+    assert gone.status_code == 200 and gone.json()["record"]["status"] == "archived"
+    assert "restore" in gone.json()["record"]["actions"]
+    assert store.list(language="zh") == []
+    assert store.get("youtube-abcdefghijk").lesson == store.get("youtube-abcdefghijk").lesson
+    restored = call(setup["app"], "POST", path, json={"status": "published"})
+    assert restored.status_code == 200 and restored.json()["record"]["status"] == "published"
+
     assert call(setup["app"], "POST", path, json={"status": "deleted"}).status_code == 422
     assert call(setup["app"], "POST",
                 "/api/admin/console/content/media/nope/status", json={"status": "archived"}).status_code == 404

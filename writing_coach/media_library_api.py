@@ -171,7 +171,9 @@ def admin_library(request: Request, language: str = "") -> dict[str, Any]:
     _require_admin(request)
     store, _, _ = _installed()
     selected = language.strip().casefold() or None
-    entries = [item for item in store.list(language=selected) if item.library == "shared"]
+    # An operator's listing, so every state: the one they came to look for is
+    # usually the one that is no longer in front of learners.
+    entries = [item for item in store.list(language=selected, status=None) if item.library == "shared"]
     return {
         "items": [_admin_entry(item) for item in entries],
         "counts": {"shared": len(entries)},

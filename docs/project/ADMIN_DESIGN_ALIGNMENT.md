@@ -80,7 +80,7 @@ recorded decision with the reason beside it, not an omission.
 | Content: list, filter, preview | working | `/console/content*` |
 | Content: book archive | working | `POST /content/book/{id}/archive` |
 | Content: vocabulary publish | working | `POST /content/vocabulary/{id}/publish`. Its admission gate still refuses on rights - see the conflict below |
-| Content: media unpublish / archive / republish / restore | working | `POST /content/media/{id}/status`, audited, no deletion in the flow |
+| Content: media unpublish / archive / republish / restore | working | `POST /content/media/{id}/status`, audited, no deletion in the flow. Verified end to end on a real YouTube import: every transition keeps the 60-segment transcript, and the learner's Listening library gains and loses the item as the state changes |
 | Content: media reprocess | working | `POST /content/media/{id}/reprocess`; the "what to keep" options are shown disabled and named as a gap |
 | Reading: queue, published, rejected, archived, sources | working | `/admin/reading/*` |
 | Reading: submit text / URL / file | working | `POST /admin/reading/jobs`, multipart |
@@ -115,6 +115,17 @@ attested. That gate is a recorded admission contract, not a UI habit, and
 made quietly. So it is surfaced here: **loosening it is a decision for the
 human**, and until then the vocabulary publish form states the refusal as the
 server's, not as the console's opinion.
+
+## The sandbox needs a writable media root
+
+`MEDIA_LIBRARY_ROOT` defaults to `<repo>/data/media_library`, and the lane
+sandbox mounts the worktree **read-only** on purpose - so every media import
+failed with `OSError: [Errno 30] Read-only file system` at the moment the index
+was written, after the provider call had already succeeded. The container is
+run with `MEDIA_LIBRARY_ROOT=/assets/media_library`, on the volume that already
+carries the Reading assets. Anyone rebuilding the sandbox needs that variable;
+without it the import reports the reason correctly and still cannot store
+anything.
 
 ## Known gaps in the design itself
 

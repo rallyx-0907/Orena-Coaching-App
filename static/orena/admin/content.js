@@ -391,10 +391,15 @@ export async function renderContent(container, env) {
       const result = drawer.element.querySelector('[data-ac-result]');
       action.disabled = true;
       try {
-        if (action.dataset.acDo === 'archive') {
+        /* `archive` means two different things to two catalogs, so the kind
+           decides, not the word: a book has its own archive route, and media
+           moves between states. Reading the intent alone sent every media
+           archive to the book endpoint, which answered 404 and left the item
+           published. */
+        if (action.dataset.acDo === 'archive' && kind === 'book') {
           await api.archiveBook(id);
           env.notify?.(t.archived);
-        } else if (MEDIA_STATES[action.dataset.acDo]) {
+        } else if (kind === 'media' && MEDIA_STATES[action.dataset.acDo]) {
           /* A state, not a deletion: the transcript, the provenance and the
              audit trail all survive it, which is why the confirmation says
              "off the shelf" rather than "remove". */

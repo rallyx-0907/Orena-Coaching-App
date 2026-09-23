@@ -17,6 +17,7 @@ identity minted for it.
 from __future__ import annotations
 
 import hashlib
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -175,6 +176,32 @@ def _lesson_projection(lesson_id: str, acquisition: MediaAcquisition, language: 
     }
 
 
+_logger = logging.getLogger(__name__)
+
+
+def _failure_reason(exc: BaseException) -> str:
+    """Why this source did not import, in words an operator can act on.
+
+    `This source failed (OSError).` was true and useless: it named a class,
+    logged nothing, and could equally have meant a private video, a missing
+    tool or - as it actually did - a library index on a read-only mount. The
+    three are fixed by three different people.
+
+    Nothing here leaks a path or a payload beyond what the operator already
+    typed: an errno and its description are the operating system's own words
+    about the deployment, not about the content.
+    """
+    from writing_coach.media_ingestion import MediaImportError
+
+    if isinstance(exc, MediaImportError):
+        return exc.learner_message
+    if isinstance(exc, OSError):
+        said = exc.strerror or str(exc) or type(exc).__name__
+        return f"The media library could not be written: {said}. This is a deployment problem, not a problem with the source."
+    detail = str(exc).strip()
+    return f"This source could not be imported: {detail}" if detail else "This source could not be imported."
+
+
 class MediaSourceImporter:
     """Detect, acquire, normalise, persist — reusing M1 acquisition throughout."""
 
@@ -208,7 +235,8 @@ class MediaSourceImporter:
             except ValueError as exc:
                 results.append(MediaSourceImportItem(url, "error", str(exc)))
             except Exception as exc:  # one bad source must not end the batch
-                results.append(MediaSourceImportItem(url, "error", f"This source failed ({type(exc).__name__})."))
+                _logger.exception("media import failed for %s", url)
+                results.append(MediaSourceImportItem(url, "error", _failure_reason(exc)))
             else:
                 lesson_id = str((entry.lesson or {}).get("lesson_id") or "")
                 results.append(MediaSourceImportItem(url, "ok", "Imported.", entry.media_id, lesson_id))
