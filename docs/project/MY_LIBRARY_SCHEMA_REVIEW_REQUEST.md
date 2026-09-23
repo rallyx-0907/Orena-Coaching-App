@@ -54,11 +54,27 @@ normalised text** at read time (`writing_coach/becoming_library.py`,
   it, and the reason the audio work waits on this review rather than going
   first.
 
-`entry_id` is the live link; `entry_identity_key` is what survives a catalogue
-re-import that replaces a row with an equal one under a new UUID, and is what a
-later audio record is keyed by. `ck_saved_words_entry_identity` holds that a
-linked row always carries the durable key. A hand-saved word, or one from no
-catalogue, carries neither and stays exactly as valid as it is today.
+`entry_id` is the live link. `entry_identity_key` was justified here by a claim
+round 1 checked and falsified: the only import path there is
+(`vocabulary_repository.py` ~511-624) looks an entry up **by identity key** and
+merges in place, so `entry_id` already survives a re-import. The column stays
+for the reason that does hold — it is the content-addressable identity a later
+per-word audio record is keyed by, so audio is not tied to a surrogate id — and
+as the hedge if a replace-rather-than-merge import is ever built. **Open
+question for whoever owns vocabulary import: is such a path planned?** If it
+never is, the column is a natural key the audio work wants anyway; if it is,
+the column is required. Round 1 could not resolve this and neither can this
+lane.
+
+`ck_saved_words_entry_identity` holds that a linked row always carries the
+durable key. A hand-saved word, or one from no catalogue, carries neither and
+stays exactly as valid as it is today.
+
+**A boundary this does not cross** (round 1, P3-1): `uq_saved_word_scope` is
+unchanged, so one written form is still one saved row per learner and language.
+This lets a learner's saved 行 say *which* sense it is; it does not let them
+keep xíng and háng as two rows. That needs the unique constraint recomposed — a
+later migration with its own review, not a gap in this one.
 
 ### B. `library_items`, `library_collections`, `library_collection_members`
 
@@ -181,28 +197,109 @@ by name:
 The rehearsal database was removed afterwards. Nothing was run against the
 sandbox, preview or production runtimes.
 
-**Not rehearsed, and named as such:** concurrency. The `version` counter and
-the behaviour of a pin/unpin racing an add-to-collection were not exercised;
-question 7 asks the reviewer whether they need to be before this lands, as the
-commerce quota proposal's deadlock matrix was.
+After round 1 the rehearsal is **24 probes**: the twenty above plus the four
+round 1 asked for or found —
+
+| | |
+| --- | --- |
+| ACCEPTED | a link to an ambiguous entry with no reading (recording the gap the write path must close, P2-2) |
+| REFUSED | a word row that also carries a source string (`ck_library_items_source`, now a biconditional, P3-3) |
+| RACED | two writers keeping the same word: one row, the other refused on `ux_library_items_word` |
+| RACED | two writers pinning it: one update, one no-op, `version` 2 — no lost write |
+
+The two races are real threads on real connections, not a simulation. Round 1
+ran them ad hoc and resolved question 7 in the proposal's favour; they are in
+the repository's rehearsal script now so the next change to this schema has to
+keep them passing.
 
 ## 6. Where the application-side invariants live
 
 Named here so the reviewer can see that what SQL cannot hold is held
 somewhere, and so that a later implementer knows where to put it:
 
-- `reading_key` must be one of the entry's own `readings` at write time. The
-  write path is `writing_coach/becoming_library.py::save_library_vocabulary`,
-  which already resolves the catalogue entry; the check belongs there, with the
-  entry in hand.
+- `reading_key` must be one of the entry's own `readings` at write time, **and
+  must be non-empty whenever that list holds more than one reading**. Round 1
+  showed why the second half matters: a saved 重 can be linked to a
+  two-reading entry with `reading_key = ''` and the database accepts it — the
+  exact ambiguity the column exists to close, left open, because no portable
+  constraint can read a JSON list. The write path is
+  `writing_coach/becoming_library.py::save_library_vocabulary`, which already
+  resolves the catalogue entry, so the check belongs there with the entry in
+  hand, and it lands **with a regression test**: a link to an ambiguous entry
+  and no reading must be refused. The rehearsal now carries a probe recording
+  that the database itself accepts it, so nobody mistakes the schema for the
+  guarantee.
 - `state` is written only when the learner sets it; the read path treats NULL
   as "ask the owner" (for a word, `review_stage >= 3` is mastered, as
   `LIBRARY_MASTERED_STAGE` already defines).
 - `version` is checked by the writer: an update carries the version it read and
   fails the write if it has moved, as `patch_learner_profile` already does for
-  the profile.
+  the profile. Round 1 verified this holds under a real race, and the rehearsal
+  now carries that probe.
+- The ordered read of a collection sorts by `(position, created_at)`. `position`
+  has no unique constraint — keeping one would mean renumbering every member on
+  every reorder — so ties are possible and the order is only deterministic if
+  the reader breaks them (round 1, P3-4). The index carries both columns.
 
 ## 7. Review rounds
 
-_Nothing yet. This section records reviewer identity, reviewed commit, verdict
-and what each round changed, as the earlier requests do._
+### Round 1 — APPROVED WITH REQUIRED CHANGES, addressed
+
+| | |
+| --- | --- |
+| Reviewer | Delegated Independent Architecture Reviewer — fresh Claude subagent, no implementation context (AGENTS "Architecture review authority"; GPT-6/Codex unavailable) |
+| Reviewed commit | `dc8b340` on `codex/work` |
+| Verdict | **APPROVED WITH REQUIRED CHANGES** — two P2, four P3 |
+| Method | Read the contracts, the audit, this request, the migration and the rehearsal; then **ran** the rehearsal independently on its own throwaway PostgreSQL 16 (`orena-review-pg-0013`, port 55434, removed afterwards), reproducing all 20 probes, and wrote three further probes of its own. Wrote nothing to the repository. |
+
+**The DDL was found correct**: constraints, cascades and indexes do what the
+docstring claims. The required changes were to the rationale and to the
+application invariants riding on the schema — with one free tightening.
+
+**P2-1 — the `entry_identity_key` rationale was false.** The proposal justified
+the column by catalogue re-import replacing rows under new UUIDs. There is no
+such path: `vocabulary_repository.py` looks an entry up by `identity_key` and
+merges in place. *Fixed*: the migration docstring and §2.A now say so, keep the
+column for the reason that does hold (the audio key), and record the open
+question — is a replace-import path planned? — for whoever owns import. The
+reviewer could not resolve it and neither can this lane.
+
+**P2-2 — `reading_key` was not required where it matters.** The reviewer linked
+a saved 重 to a real two-reading entry with `reading_key = ''` and the database
+accepted it: the ambiguity the column exists to close, left open. *Fixed*: §6's
+invariant is now "required when the entry is ambiguous", enforced at
+`save_library_vocabulary` and landing **with a regression test**; the rehearsal
+carries a probe that records what the database alone permits, so the schema is
+never mistaken for the guarantee.
+
+**P3-1 — `uq_saved_word_scope` still means one written form, one saved row.**
+D1 says which sense a saved word is; it does not let a learner keep xíng and
+háng apart. *Recorded* as a named boundary in §2.A and the docstring rather
+than left implied by the 行/重/长 examples.
+
+**P3-2 — no `CONCURRENTLY` / `NOT VALID` discipline.** Sub-second at today's
+few thousand rows and confirmed so by the reviewer's own run; a real concern
+only at the size AGENTS §7 reserves. *Recorded* in the docstring as the
+discipline the migration that gets there will need.
+
+**P3-3 — `ck_library_items_source` was one-directional.** A word row could
+carry a stray `source_id`. *Fixed*: it is a biconditional now, with its own
+probe.
+
+**P3-4 — `position` has no tie-break.** *Fixed*: the index carries
+`(collection_id, position, created_at)` and §6 states that the ordered read
+sorts by both.
+
+**Question 7 (concurrency) was resolved in the proposal's favour** by the
+reviewer running the races rather than reasoning about them: the partial unique
+index decides an insert race cleanly, and the `version` CAS decides an update
+race with no lost write. Both probes are now in
+`scripts/rehearse_my_library_schema.py`.
+
+**Unverifiable, and left open:** whether a replace-rather-than-merge catalogue
+import is planned (P2-1), and production-scale lock behaviour, which no
+throwaway database can falsify (P3-2).
+
+Re-rehearsed after these changes at `upgrade → downgrade → upgrade` with all
+24 probes passing. **Still not approved for application**: human schema/runtime
+authorization is a separate gate.

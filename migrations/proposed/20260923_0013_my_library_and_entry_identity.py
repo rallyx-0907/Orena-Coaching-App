@@ -24,11 +24,16 @@ Three columns, all nullable-by-default and additive:
 
 - `entry_id` is the live link, `SET NULL` so re-importing or retiring a
   catalogue entry never deletes a learner's word;
-- `entry_identity_key` is the durable one. The catalogue is re-importable, so
-  the row that `entry_id` points at can be replaced by an equal one with a new
-  UUID; the identity key is what survives that, and what a later audio record
-  is keyed by. It is kept denormalised on purpose: it is a learner-facing
-  identity, not a foreign key;
+- `entry_identity_key` is the durable one. Review round 1 corrected what this
+  paragraph used to claim: the only import path there is
+  (`vocabulary_repository.py`, around 511-624) looks an entry up **by identity
+  key** and merges in place, so `entry_id` already survives a re-import and
+  there is no UUID churn to defend against. The column stays for the reason
+  that does hold - it is the content-addressable identity a later per-word
+  audio record is keyed by, so audio is not tied to a surrogate id - and as the
+  hedge if a replace-rather-than-merge import is ever built. Whether one is
+  planned is a question for whoever owns vocabulary import; the review request
+  records it as open;
 - `reading_key` is which reading of that entry the learner kept - the one thing
   the text join can never recover.
 
@@ -40,8 +45,22 @@ carries neither. Nothing is backfilled here (see the review request, "What this
 migration does not do").
 
 `reading_key` is not constrained against `vocabulary_entries.readings`: that
-column is JSON and no portable constraint can read it. It is an application
-invariant, and the review request says where it is enforced.
+column is JSON and no portable constraint can read it. Review round 1 put a
+number on what that costs: a saved 重 can be linked to a two-reading entry with
+`reading_key = ''` and the database accepts it - the exact ambiguity this
+column exists to close, left open. So the invariant is not "valid if set" but
+**required when the entry is ambiguous**: a link to an entry whose `readings`
+holds more than one reading must carry a non-empty `reading_key`. It is
+enforced in the one write path that has the entry in hand
+(`becoming_library.py::save_library_vocabulary`) and lands with a regression
+test; §6 of the review request states it, §7 records it as a condition of the
+implementation rather than of this DDL.
+
+What this does *not* fix, also from round 1: `uq_saved_word_scope` is unchanged
+and still means one written form is one saved row per learner and language. A
+learner can say which sense their saved 行 is; they cannot yet keep xíng and
+háng as two entries. That needs the constraint recomposed, which is a later
+migration and its own review.
 
 --- B. Nothing records that a learner kept something ------------------------
 
@@ -73,7 +92,8 @@ Two shapes are load-bearing:
   the relationship with it, and no word row can drift to a `source_id` string
   that means nothing. Every other kind carries `source_id`, the same routing
   identity the app already opens things with, and `ck_library_items_source`
-  holds that it is non-empty.
+  holds that it is non-empty - and, since round 1, that a word carries none, so
+  the two ways of naming a thing cannot both be filled in on one row.
 - **One collection, one kind, in the database.** The frame says "mỗi bộ một
   loại". `library_collections` and `library_items` each carry a redundant
   `UNIQUE (id, kind)`, and `library_collection_members` carries `kind` and
@@ -84,6 +104,15 @@ Two shapes are load-bearing:
 Uniqueness is split because words are keyed differently from everything else:
 one partial unique index per case, rather than one constraint over a column
 that is empty for a whole kind.
+
+A note on locks, also from round 1: `ADD CONSTRAINT ... CHECK` and a plain
+`CREATE INDEX` each hold a lock for as long as their scan or build takes. On
+the few thousand rows `saved_words` holds today that is sub-second, and this
+migration is written plainly on purpose. A future migration touching
+`saved_words` at the hundred-thousand-learner size AGENTS §7 reserves needs
+`NOT VALID` + `VALIDATE CONSTRAINT` and `CREATE INDEX CONCURRENTLY` in an
+autocommit block instead. That discipline belongs to that migration; it is
+written down here so it is not rediscovered late.
 
 Downgrade drops the three tables and the three columns. It exists for a
 rehearsal, not for a live account: it destroys every kept relationship and
@@ -203,7 +232,8 @@ def upgrade() -> None:
             name="ck_library_items_word_link",
         ),
         sa.CheckConstraint(
-            "kind = 'word' OR source_id <> ''", name="ck_library_items_source"
+            "(kind = 'word' AND source_id = '') OR (kind <> 'word' AND source_id <> '')",
+            name="ck_library_items_source",
         ),
         sa.CheckConstraint("version >= 1", name="ck_library_items_version"),
         # What `library_collection_members` references, so a membership cannot
@@ -290,10 +320,14 @@ def upgrade() -> None:
             name="fk_library_member_item",
         ),
     )
+    # `position` has no unique constraint - reordering a collection would have
+    # to renumber every row to keep one - so ties are possible, and the read
+    # path orders by (position, created_at). The index carries both, so that
+    # ordering is an index scan rather than a sort.
     op.create_index(
         "ix_library_collection_members_order",
         "library_collection_members",
-        ["collection_id", "position"],
+        ["collection_id", "position", "created_at"],
     )
 
 

@@ -99,10 +99,17 @@ with engine.begin() as conn:
             " identity_key, sense_key, pronunciations, readings, short_meanings,"
             " detailed_definitions, part_of_speech, examples, usage_notes, orthography, level,"
             " framework, topic, content_origins, provenance, created_at, updated_at)"
-            " VALUES (:id, 'zh', :t, :t, :k, '', '[]', '[]', '[]', '[]', '', '[]', '[]', '{}',"
-            " '', '', '', '{}', '{}', :now, :now)"
+            " VALUES (:id, 'zh', :t, :t, :k, '', '[]', :readings, '[]', '[]', '', '[]', '[]',"
+            " '{}', '', '', '', '{}', '{}', :now, :now)"
         ),
-        {"id": ENTRY, "t": "行", "k": f"zh:行:xing2:{ENTRY}", "now": now},
+        {
+            "id": ENTRY,
+            "t": "行",
+            "k": f"zh:行:xing2:{ENTRY}",
+            # Two readings, so the ambiguity the probes below are about is real.
+            "readings": '[{"text": "xíng"}, {"text": "háng"}]',
+            "now": now,
+        },
     )
 refuses(
     "an entry link with an empty identity key",
@@ -113,6 +120,18 @@ accepts(
     "an entry link that carries its identity and its reading",
     [(
         "UPDATE saved_words SET entry_id = :entry, entry_identity_key = :k, reading_key = 'xíng'"
+        " WHERE id = :id",
+        {"entry": ENTRY, "k": f"zh:行:xing2:{ENTRY}", "id": SAVED},
+    )],
+)
+accepts(
+    # Round 1, P2-2: the database accepts a link to a two-reading entry with no
+    # reading. That is why the invariant is enforced at the write path and has
+    # a regression test of its own - this probe records the gap, it does not
+    # pretend the schema closes it.
+    "a link to an ambiguous entry with no reading (the write path must refuse this)",
+    [(
+        "UPDATE saved_words SET entry_id = :entry, entry_identity_key = :k, reading_key = ''"
         " WHERE id = :id",
         {"entry": ENTRY, "k": f"zh:行:xing2:{ENTRY}", "id": SAVED},
     )],
@@ -142,6 +161,13 @@ refuses(
 refuses(
     "a non-word row with no source",
     [(ITEM, {**base, "id": uuid.uuid4(), "kind": "reading", "saved": None, "source": "", "rel": "kept"})],
+    "ck_library_items_source",
+)
+refuses(
+    # Round 1, P3-3: a word is named by its row, so it must not also carry a
+    # routing string that means nothing.
+    "a word row that also carries a source string",
+    [(ITEM, {**base, "id": uuid.uuid4(), "kind": "word", "saved": SAVED, "source": "reading:9", "rel": "kept"})],
     "ck_library_items_source",
 )
 refuses(
@@ -232,6 +258,103 @@ with engine.connect() as conn:
 assert rest == 0, "deleting the account removes everything it kept"
 assert entry == 1, "and leaves the shared catalogue alone"
 results.append("CASCADED deleting the account removes what it kept and leaves the catalogue")
+
+# E. what two writers do at once -------------------------------------------
+# Round 1 ran these ad hoc and asked for them to be kept. Both are races the
+# application relies on: the partial unique index decides an insert race, and
+# the version counter decides an update race.
+import threading  # noqa: E402 - the races are the last thing the rehearsal does
+
+RACE_USER = uuid.uuid4()
+RACE_WORD = uuid.uuid4()
+with engine.begin() as conn:
+    conn.execute(
+        text(
+            "INSERT INTO users (id, user_key, email, name, picture, role, created_at)"
+            " VALUES (:id, :key, :email, '', '', 'user', :now)"
+        ),
+        {"id": RACE_USER, "key": f"race-{RACE_USER}", "email": f"race-{RACE_USER}@example.test", "now": now},
+    )
+    conn.execute(
+        text(
+            "INSERT INTO saved_words (id, user_id, language_code, word, normalized_word, phonetic,"
+            " part_of_speech, definition, translation_vi, source_fragment, source_kind, focus_note,"
+            " review_stage, successful_recalls, lapse_count, added_at, updated_at)"
+            " VALUES (:id, :user, 'zh', :w, :w, '', '', '', '', '', 'manual', '', 0, 0, 0, :now, :now)"
+        ),
+        {"id": RACE_WORD, "user": RACE_USER, "w": "海", "now": now},
+    )
+
+start = threading.Barrier(2)
+outcomes: list[str] = []
+lock = threading.Lock()
+
+
+def keep_it() -> None:
+    start.wait()
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(ITEM),
+                {
+                    "id": uuid.uuid4(), "user": RACE_USER, "lang": "zh", "kind": "word",
+                    "saved": RACE_WORD, "source": "", "rel": "kept", "now": now,
+                },
+            )
+        result = "kept"
+    except (IntegrityError, DBAPIError) as error:
+        result = "refused" if "ux_library_items_word" in str(error.orig) else f"other: {error}"
+    with lock:
+        outcomes.append(result)
+
+
+threads = [threading.Thread(target=keep_it) for _ in range(2)]
+for thread in threads:
+    thread.start()
+for thread in threads:
+    thread.join()
+assert sorted(outcomes) == ["kept", "refused"], outcomes
+with engine.connect() as conn:
+    kept = conn.execute(
+        text("SELECT COUNT(*) FROM library_items WHERE saved_word_id = :id"), {"id": RACE_WORD}
+    ).scalar()
+assert kept == 1, kept
+results.append("RACED two writers keeping the same word: one row, the other refused")
+
+# The version counter: both readers see version 1, only one write lands.
+pinned: list[int] = []
+start = threading.Barrier(2)
+
+
+def pin_it() -> None:
+    start.wait()
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                "UPDATE library_items SET pinned_at = :now, version = version + 1"
+                " WHERE saved_word_id = :id AND version = 1"
+            ),
+            {"now": now, "id": RACE_WORD},
+        ).rowcount
+    with lock:
+        pinned.append(rows)
+
+
+threads = [threading.Thread(target=pin_it) for _ in range(2)]
+for thread in threads:
+    thread.start()
+for thread in threads:
+    thread.join()
+assert sorted(pinned) == [0, 1], pinned
+with engine.connect() as conn:
+    version = conn.execute(
+        text("SELECT version FROM library_items WHERE saved_word_id = :id"), {"id": RACE_WORD}
+    ).scalar()
+assert version == 2, version
+results.append("RACED two writers pinning it: one update, one no-op, version 2 - no lost write")
+
+with engine.begin() as conn:
+    conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": RACE_USER})
 
 for line in results:
     print(" ", line)
