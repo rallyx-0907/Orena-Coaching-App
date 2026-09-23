@@ -213,9 +213,7 @@ export function contentDetailView(detail, t, ui, intent = '') {
       [t.wordCount, esc(num(facts.word_count, ui))],
       [t.colCreated, esc(dateTime(record.created_at, ui))],
       [t.importedBy, esc(book.imported_by || '—')],
-    ])}${book.description ? `<p class="ac-note">${esc(book.description)}</p>` : ''}<section><h3>${esc(t.chapters)}</h3><ol class="ac-chapters">${shown.map((chapter) => `<li lang="${esc(record.language)}">${esc(chapter.title)}</li>`).join('')}</ol>${chapters.length > shown.length ? `<p class="ac-muted">${esc(fill(t.moreChapters, { count: num(chapters.length - shown.length, ui) }))}</p>` : ''}</section>${learnerLink(detail, t)}${gapNote(t, t.previewReadersGap)}${intent === 'archive'
-      ? confirmBlock({ intent: 'archive', text: t.archiveConfirm, action: t.actionArchive, t })
-      : ''}</div>`;
+    ])}${book.description ? `<p class="ac-note">${esc(book.description)}</p>` : ''}<section><h3>${esc(t.chapters)}</h3><ol class="ac-chapters">${shown.map((chapter) => `<li lang="${esc(record.language)}">${esc(chapter.title)}</li>`).join('')}</ol>${chapters.length > shown.length ? `<p class="ac-muted">${esc(fill(t.moreChapters, { count: num(chapters.length - shown.length, ui) }))}</p>` : ''}</section>${learnerLink(detail, t)}${gapNote(t, t.previewReadersGap)}${lifecycleConfirm(intent, t)}</div>`;
   }
   if (record.kind === 'media') {
     const transcript = detail.transcript || { segments: [], segment_count: 0 };
@@ -274,7 +272,9 @@ export function contentDetailView(detail, t, ui, intent = '') {
     [t.topic, esc(facts.topic || '—')],
     [t.rightsStatus, esc(facts.rights_status ? t[`rights_${facts.rights_status}`] || facts.rights_status : t.rights_)],
     [t.completeness, esc(facts.completeness ? t[`completeness_${facts.completeness}`] || facts.completeness : '—')],
-  ])}<section><h3>${esc(t.entries)}</h3>${entries}${detail.entry_total > (detail.entries || []).length ? `<p class="ac-muted">${esc(fill(t.entriesShown, { shown: num((detail.entries || []).length, ui), total: num(detail.entry_total, ui) }))}</p>` : ''}</section><section><h3>${esc(t.importSources)}</h3>${sources}</section>${record.actions.includes('publish') ? publishForm(detail, t) : ''}</div>`;
+  ])}<section><h3>${esc(t.entries)}</h3>${entries}${detail.entry_total > (detail.entries || []).length ? `<p class="ac-muted">${esc(fill(t.entriesShown, { shown: num((detail.entries || []).length, ui), total: num(detail.entry_total, ui) }))}</p>` : ''}</section><section><h3>${esc(t.importSources)}</h3>${sources}</section>${
+    lifecycleConfirm(intent, t)
+  }${record.actions.includes('publish') && intent !== 'archive' && intent !== 'unpublish' ? publishForm(detail, t) : ''}</div>`;
 }
 
 /* A kind is part of the address, not hidden state: switching tab changes the
