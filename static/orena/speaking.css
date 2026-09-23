@@ -1493,6 +1493,7 @@
   font-family: var(--display-font);
   font-weight: 800;
   font-size: 21px;
+  line-height: 1.33;
 }
 .sp-state__text {
   margin: 0;
@@ -1948,7 +1949,58 @@
     inline-size: 100%;
     margin-top: -8px;
   }
-  .sp-room[data-blocked] .sp-controls {
+  .sp-room[data-blocked] .sp-controls,
+  .sp-room[data-blocked] .sp-count {
+    display: none;
+  }
+  /* Frames "Speaking mic blocked mobile" / "offline grading mobile": the message centred in the
+     space above (60px clear of it), the actions a bar at the foot, the button the full 350. */
+  .sp-room[data-blocked] .sp-task {
+    padding-bottom: 0;
+  }
+  .sp-room[data-blocked] .sp-state-host {
+    align-self: stretch;
+    align-items: stretch;
+  }
+  .sp-room[data-blocked] .sp-state {
+    flex: 1;
+    max-inline-size: none;
+    padding: 0;
+  }
+  .sp-room[data-blocked] .sp-state__icon {
+    margin-top: auto;
+  }
+  .sp-room[data-blocked] .sp-state__title,
+  .sp-room[data-blocked] .sp-state__text {
+    padding-inline: 12px;
+  }
+  .sp-room[data-blocked] .sp-state__text {
+    margin-bottom: 60px;
+  }
+  .sp-room[data-blocked] .sp-state__actions {
+    margin-top: auto;
+    padding: 12px 0 30px;
+  }
+  /* The frame's link is a 19px line; a 24px box is the smallest target WCAG 2.2 allows. */
+  .sp-room[data-blocked] .sp-state__actions .sp-textbtn {
+    padding: 2px 4px;
+    line-height: 20px;
+  }
+  /* Shadowing and the three states draw the lesson name in primary ink; the workspace in 0.9. */
+  .sp-room[data-mode='shadow'] .sp-top .sp-back,
+  .sp-room[data-blocked] .sp-top .sp-back,
+  .sp-room:has(.sp-notheard) .sp-top .sp-back {
+    color: var(--text-primary);
+  }
+  /* Not heard (09 B) is its own warm box in place of the result card, with no hint under it. */
+  .sp-card:has(> .sp-notheard) {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .sp-room:has(.sp-notheard) .sp-hint {
     display: none;
   }
   .sp-cmp__top {
