@@ -127,7 +127,11 @@ export function table({ head = [], rows = [], empty = '', caption = '', classNam
     const cells = Array.isArray(row) ? row : row.cells;
     const attributes = Array.isArray(row) ? '' : row.attributes || '';
     return `<tr${attributes}>${cells.map((cell, index) => {
-      const spec = typeof head[index] === 'string' || !head[index] ? {} : head[index];
+      const column = head[index];
+      const spec = typeof column === 'string' || !column ? { label: typeof column === 'string' ? column : '' } : column;
+      /* Every cell carries its column's name, so a narrow screen can stack the
+         row into a card and still say what each value is (canonical study 02:
+         the mobile panels are the same data, read vertically). */
       return `<td${spec.numeric ? ' data-numeric' : ''}${spec.label ? ` data-label="${esc(spec.label)}"` : ''}>${cell}</td>`;
     }).join('')}</tr>`;
   }).join('');

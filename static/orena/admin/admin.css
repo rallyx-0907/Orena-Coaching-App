@@ -1487,3 +1487,59 @@
   font-family: var(--font);
   color: var(--ink);
 }
+
+/* Canonical study 02: on a phone a table is read as stacked panels, one card
+   per row, each value labelled by its column. The table markup does not change
+   - a single source of truth for the data, two ways of reading it. */
+@media (max-width: 600px) {
+  .ac-table-wrap {
+    overflow-x: visible;
+    border: 0;
+  }
+  .ac-table,
+  .ac-table tbody,
+  .ac-table tr,
+  .ac-table td {
+    display: block;
+    width: 100%;
+  }
+  .ac-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .ac-table tr {
+    margin-bottom: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .ac-table td {
+    display: grid;
+    grid-template-columns: minmax(6rem, 40%) minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: baseline;
+    /* A chip or a button keeps its own width in a stacked cell; only text
+       fills the column. Stretched controls read as a different component. */
+    justify-items: start;
+    padding: 4px 0;
+    border: 0;
+  }
+  .ac-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+  .ac-table td:not([data-label]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ac-table td[data-numeric] {
+    text-align: left;
+  }
+  /* A row that spans the table - an inline editor - stays one column. */
+  .ac-table td[colspan] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
