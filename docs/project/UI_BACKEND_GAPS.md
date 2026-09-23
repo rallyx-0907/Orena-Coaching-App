@@ -162,8 +162,8 @@ component**, đang render 0 / "—" đúng rule 4, và sẽ tự có số khi ba
 | Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; `content_type` derived; library `ui/library-browse.js`; workspace details open (see log) | catalogue JSON, `listening_progress`, device memory | `test_listening_*`, `test_orena_library.mjs`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3a built, S3b open) |
 | Dictation | `DictationResult` | `capabilities/dictation-result.js`, `ui/dictation-screen.js`; `pinyin_alignment.py`; the evaluator and evidence save unchanged | outcomes, catalogue JSON | `test_orena_dictation_screen.mjs`, `test_pinyin_alignment.py`, `test_dictation_evaluator.mjs` | IN_PROGRESS (S3b built; DC-5 needs a decision) |
 | Reading library, book detail | `ContentCard`, `Chapter` | `reading_library_api`; add kind, level, duration | `reading_books`, `reading_book_chapters` | `test_reading_library_api`, `test_orena_reading_library.mjs` | BLOCKED (`[REVIEW]` catalogue schema) |
-| Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache | `test_reading_translation`, `test_orena_reading_room.mjs` | IN_PROGRESS (S4) |
-| Reading comprehension | comprehension | per-question check endpoint; per-chapter generation | `reading_sessions`, `reading_attempts` | none for the routes yet: add before changing | IN_PROGRESS (S4) |
+| Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache, device `place.within` | `test_reading_translation`, `test_orena_reading_room.mjs`, `test_orena_reader_place.mjs` | IN_PROGRESS (S4: whole-chapter translation) |
+| Reading comprehension | comprehension | per-question check endpoint (landed: `POST /api/reading/session/{id}/answer/{index}`); per-chapter generation | `reading_sessions`, `reading_attempts` | `test_reading_answer_per_question`, `test_orena_comprehension.mjs` | READY for the check; per-chapter generation still S4 |
 | Search (all libraries) | `ContentCard[]` | catalogue search API, read-only | books, listening, vocabulary, collections | add | IN_PROGRESS (S5) |
 | Speaking library | `ContentCard` | Speaking catalogue | catalogue | add | BLOCKED (`[CONTENT]`) |
 | Speaking workspace | `PronunciationResult` | provider abstraction, normalized contract, Azure and SpeechSuper adapters, tone contour | `speaking_attempts` (no raw audio) | `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs` | IN_PROGRESS (L); E2E `[PROVIDER]` |
@@ -2261,3 +2261,92 @@ mono 13 in a 20px column — all the frame's numbers.
 
 The sandbox holds no books (import is EPUB behind the admin guard, which is not
 this lane's), so this could not be exercised against stored data.
+
+## Reading, slice C — the reader keeps its place (frames 05–06), 2026-09-23
+
+Measured both pinned frames against the running reader. Most of the workspace
+already matched: the hairline of the learner's place, the six-action bar on the
+wide frame, the Từ / Ngữ pháp / Ghi chú panel, the word and sentence sheets
+(frames 07–10, checked against the Quick Sheet and left alone — they were built
+to it and nothing has drifted). What did not match was small and one thing was
+missing entirely.
+
+**The missing fact.** The reader measured how far into the chapter the learner
+had read every time they scrolled — that is what the hairline is — and threw it
+away on unload. So slice B's cross-lane note #2 ("position within a chapter is
+learner state this lane could add later") is closed: `place` now carries an
+optional whole `within`, clamped where every other kept figure is clamped. The
+reader reports it only when the whole number moves **forward**, so rereading a
+paragraph does not un-read the chapter, and only for a chapter of a book.
+
+Book detail spends it: the row in progress says what is left of that chapter
+("còn 9 phút") instead of its whole length, and the book's remaining time
+subtracts the part already read. A chapter opened and not yet scrolled has no
+`within` — that is "not measured", not 0%, and it is drawn as the chapter's own
+length, the same as every chapter the learner has not reached.
+
+**Brought to the frames:** the hairline is 3px, not 4px. The bar's meta line
+says "chương 3 · còn 9 phút" — where this is, and what is left of it — where it
+used to say how many words the text has; the phone frame has room for only the
+time, so the chapter is put away there. `chapterLabel` is now the chapter
+alone; `readerChapterOf` ("Chapter 2 of 3") went with the old line, in all
+three languages.
+
+**The phone bar is now the phone frame's** (it was the wide frame's, scrolling
+sideways): five tiles of equal width, an icon over a 10px label, radius 14 at
+48px, with the way on to the next chapter last and in the accent. Discussion
+and "đọc tiếp sau" are drawn only in the wide frame, so they appear only there,
+and each label the phone frame shortens has its shorter form in all three
+languages. The phone's chapter dock was **deleted, not restyled** — neither
+frame draws one; the bar's primary turns the chapter and the back arrow returns
+to the book, where the whole list is.
+
+**Verified** at 390×844 and 1920×1080, in all three interface languages:
+rail 3px; five tiles Lưu · Nghe · Hiểu bài · Viết · Chương sau (Save · Listen ·
+Check · Write · Next chapter; 收藏 · 朗读 · 理解 · 写 · 下一章), each 48px at
+radius 14 with a 19px icon and a 10px label; six on the desktop with their long
+labels; the foot row reads "34% · còn 9 phút". Book detail drawn twice against
+a three-chapter book: with no measurement "02 Hai 30 phút" and "3 chương · còn
+45 phút"; at 70% of chapter two, "02 Hai còn 9 phút" and "3 chương · còn 24
+phút" — the frame's own figure. `test_orena_reader_place.mjs` pins all of it.
+
+## Reading, slice D — the check answers back (frames 11–12), 2026-09-23
+
+The two frames are one flow: a question with plain option cards, a line saying
+it can be skipped and one button ("Trả lời"), and then the answer to **that**
+question — the verdict, the lines in the passage that settle it, why — before
+the next question is offered. The implementation was the D-059 quiz: an
+invitation card, a rail, lettered options, every answer collected and sent as a
+set, and only then a walk back through the verdicts with a running score.
+
+**The backend need was real, and it is learner-side.** A verdict per question
+means the server must score one answer as it is given: `grade_reading_answer`
+and `POST /api/reading/session/{id}/answer/{index}`, returning the same result
+shape one element of the set always had (both now build it through
+`_question_result`, so the two cannot drift). It **records nothing** — the
+attempt is still the whole set, written once through the route that always
+wrote it, when the learner has been through every question. What is stored
+about a learner's reading means exactly what it meant before. Four tests hold
+that line, including "scoring one question writes no attempt".
+
+**Deleted (rule 44):** the invitation card and its "n câu hỏi · không bắt
+buộc", the progress rail, the lettered option marks, the question-type chip,
+the running score and the claim under it, the "your answer" tag and the
+paragraph number under the evidence. Fourteen copy keys went with them, in all
+three languages. The check opens from the bar under the text, at question one.
+
+**Built to the frames:** option cards at 17/18 in radius 15 with the chosen one
+brighter and ringed; the verdict as a filled mark in semantic **ink** (never a
+fill on the glass) beside "Đúng rồi" / "Chưa đúng"; the evidence quoted in the
+paragraph it stands in, in the serif at 16.5/1.8, with the words themselves
+marked in the success tint; the reason at 15.5/1.65; "Xem lại trong bài" (which
+shows the words in the text and closes the check) and "Thảo luận" (which opens
+the discussion the reader already has) at 50px; the primary at 54px.
+
+**Verified against real data** in the sandbox — a generated session, four
+questions, answered right and wrong: the verdict in #9EE6B4 / #F58A8A ink, the
+evidence paragraph with its fragment marked, the Vietnamese reason, "Câu tiếp
+theo" walking to question 2, and "Xem lại trong bài" closing the sheet onto the
+marked words in the text. Sizes measured in place: 25/800/-0.02em question,
+17/18 radius-15 options, 16.5/1.8 evidence, 15.5 reason, 13.5 skip line, 50px
+quiet actions, 54px primary.

@@ -89,15 +89,19 @@ function textEncounter(root, ctx, item, book = null) {
   const chapterIndex = book?.chapterId
     ? (book.chapters || []).findIndex((chapter) => chapter.id === book.chapterId)
     : -1;
-  memory.enter({
-    id: item.id,
-    title: item.title,
-    excerpt: paragraphs[0],
-    context: book?.title || '',
-    place: chapterIndex >= 0
-      ? { index: chapterIndex + 1, total: book.chapters.length }
-      : null,
-  });
+  const placeOf = (within) =>
+    chapterIndex >= 0
+      ? { index: chapterIndex + 1, total: book.chapters.length, ...(within == null ? {} : { within }) }
+      : null;
+  const remember = (within) =>
+    memory.enter({
+      id: item.id,
+      title: item.title,
+      excerpt: paragraphs[0],
+      context: book?.title || '',
+      place: placeOf(within),
+    });
+  remember();
   const title = `${origin(item, c)} · ${item.title}`;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const from = { id: item.id, where: item.title, why: 'from_reading' };
@@ -108,7 +112,7 @@ function textEncounter(root, ctx, item, book = null) {
      optional check, the response, where the text came from - is reached from the bar under the text and
      opens as a sheet (the design's pattern for anything deeper), so the room is one screen (D-067). */
   const rights = `${item.rights ? `<details class="source"><summary>${esc(c.readingRights)}</summary><p>${esc(item.rights.edition)}</p><p>${esc(item.rights.changes)}</p></details>` : ''}${item.source ? `<details class="source"><summary>${c.rights}</summary>${item.source.creator ? `<p>${esc(item.source.creator)}</p>` : ''}${item.source.license ? `<p>${esc(item.source.license)}</p>` : ''}${safeExternal(item.source.provenance_url) ? `<a href="${esc(safeExternal(item.source.provenance_url))}" target="_blank" rel="noopener noreferrer">${c.original} ↗</a>` : ''}</details>` : ''}<p class="provenance">${item.origin === 'imported' ? c.ownText : item.rights ? c.publishedText : item.generation_mode ? c.readingProvenance : c.prepared}</p>`;
-  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions, item.latest_attempt)}</div><div data-after="respond">${responseComposer(ctx, item)}</div><div data-after="discuss">${discussionSection(c, r)}</div></div><div class="reader-rights">${rights}</div>`;
+  root.innerHTML = `<div data-reader-host></div><div class="reader-after" data-reader-after hidden><div data-after="notes">${notes}</div><div data-after="check">${comprehensionSection(c, item.questions)}</div><div data-after="respond">${responseComposer(ctx, item)}</div><div data-after="discuss">${discussionSection(c, r)}</div></div><div class="reader-rights">${rights}</div>`;
 
   const after = root.querySelector('[data-reader-after]');
   const openAfter = (name, heading) => {
@@ -121,6 +125,11 @@ function textEncounter(root, ctx, item, book = null) {
     sheet.append(section);
     sheet.addEventListener('close', () => home.replaceWith(section), { once: true });
   };
+  const openDiscussion = () => {
+    openAfter('discuss', r.readerDiscuss);
+    const panel = document.querySelector('.reader-after-sheet [data-discussion]');
+    if (panel) mountDiscussion(panel, { c, r, source: discussionSource(item, book), language, support: ctx.support, alive: ctx.alive });
+  };
   const reader = mountReader(root.querySelector('[data-reader-host]'), ctx, {
     item,
     blocks: item.blocks,
@@ -128,6 +137,10 @@ function textEncounter(root, ctx, item, book = null) {
     progressive: item.kind === 'conversation',
     title,
     origin: from,
+    /* How far into the chapter the learner has read, kept where the chapter
+       index is kept, so Book detail can say what is left of the one in
+       progress. */
+    onPlace: chapterIndex >= 0 ? (within) => remember(within) : null,
     /* Only what this text actually has. A check with no questions is drawn as the frame draws it and
        says so rather than opening an empty sheet (D-068). */
     actions: [
@@ -141,11 +154,8 @@ function textEncounter(root, ctx, item, book = null) {
          where UI_BACKEND_GAPS.md already records it as the human's open call. */
     ].filter(Boolean),
     onAction: (name) => {
-      openAfter(name, { check: r.readerCheck, respond: r.readerRespond, notes: c.readerNotes, discuss: r.readerDiscuss }[name] || '');
-      if (name === 'discuss') {
-        const panel = document.querySelector('.reader-after-sheet [data-discussion]');
-        if (panel) mountDiscussion(panel, { c, r, source: discussionSource(item, book), language, support: ctx.support, alive: ctx.alive });
-      }
+      if (name === 'discuss') return openDiscussion();
+      openAfter(name, { check: r.readerCheck, respond: r.readerRespond, notes: c.readerNotes }[name] || '');
     },
   });
 
@@ -182,10 +192,10 @@ function textEncounter(root, ctx, item, book = null) {
     sessionId: readingSessionId(item.id),
     questions: item.questions,
     onEvidence: (fragment) => reader.showEvidence(fragment),
-    /* Which paragraph settles the question, counted in the text the learner
-       just read - the approved answer panel names it. Unfound evidence says
-       "from the text" rather than a number nobody can check. */
-    placeOfEvidence: (fragment) => {
+    /* The paragraph the words stand in, from the text the learner just read:
+       the result quotes it whole and marks the words inside it, as the frame
+       draws it. A fragment nobody can find is quoted on its own. */
+    passageOfEvidence: (fragment) => {
       const needle = String(fragment || '').trim();
       if (!needle) return null;
       const paragraphs = (item.blocks || []).length
@@ -193,12 +203,11 @@ function textEncounter(root, ctx, item, book = null) {
             .filter((block) => block.type === 'paragraph')
             .map((block) => String(block.text || ''))
         : (item.paragraphs || []).map((part) => String(part || ''));
-      const found = paragraphs.findIndex((text) => text.includes(needle));
-      return found >= 0 ? found : null;
+      return paragraphs.find((text) => text.includes(needle)) || null;
     },
-    // Evidence from a check belongs to the passage it was found in, not to
-    // the check: a phrase kept here must lead back to the text.
-    origin: from,
+    /* The result's way into the discussion is the discussion the reader
+       already has, opened the way the bar opens it. */
+    onDiscuss: () => openDiscussion(),
   });
   bindComposer(root, ctx, item);
   bindImages(root, c);

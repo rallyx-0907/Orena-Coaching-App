@@ -37,6 +37,19 @@ class ReadingAnswerIn(BaseModel):
     answers: list[int] = Field(min_length=1, max_length=8)
 
 
+class ReadingChoiceIn(BaseModel):
+    """One answer to one question.
+
+    The canonical check answers a question as soon as the learner does, with
+    the words in the passage that settle it - it does not hold three verdicts
+    back until the end. Scoring one question is therefore its own thing, and
+    records nothing: the attempt is still the whole set, written once when the
+    learner has been through it, so what is stored about a learner's reading
+    means exactly what it meant before."""
+
+    choice: int = Field(ge=0, le=3)
+
+
 def configure_becoming_reading(repository: SpecializedLearningRepository, ai_generate: Callable[..., Any]) -> None:
     global _repository, _ai_generate
     _repository = repository
@@ -591,6 +604,41 @@ def list_reading_sessions(limit: int = 8) -> dict[str, Any]:
     return {"items":items}
 
 
+def _question_result(question: dict[str, Any], selected: int) -> dict[str, Any]:
+    correct_index = int(question["correct_index"])
+    return {
+        "id": int(question["id"]),
+        "question": str(question["question"]),
+        "options": list(question["options"]),
+        "selected_index": selected,
+        "correct_index": correct_index,
+        "correct": selected == correct_index,
+        "explanation_vi": str(question["explanation_vi"]),
+        "evidence_fragment": str(question["evidence_fragment"]),
+    }
+
+
+def grade_reading_answer(session_id: int, index: int, payload: ReadingChoiceIn) -> dict[str, Any]:
+    """One question, answered now. No attempt is recorded - see ReadingChoiceIn."""
+    row = _repo().get_reading_session_record(session_id)
+    if not row:
+        return {"found": False}
+    questions = _safe_json(row["questions_json"], [])
+    if index < 0 or index >= len(questions):
+        return {"found": True, "valid": False, "message": f"Expected a question from 0 to {len(questions) - 1}."}
+    question = questions[index]
+    if int(payload.choice) >= len(question["options"]):
+        return {"found": True, "valid": False, "message": "Each reading answer must be an option the question offers."}
+    return {
+        "found": True,
+        "valid": True,
+        "session_id": session_id,
+        "index": index,
+        "result": _question_result(question, int(payload.choice)),
+        "claim": "comprehension_check_only",
+    }
+
+
 def submit_reading_answers(session_id: int, payload: ReadingAnswerIn) -> dict[str, Any]:
     row=_repo().get_reading_session_record(session_id)
     if not row: return {"found":False}
@@ -599,9 +647,8 @@ def submit_reading_answers(session_id: int, payload: ReadingAnswerIn) -> dict[st
     if any(int(value) not in range(4) for value in payload.answers): return {"found":True,"valid":False,"message":"Each reading answer must be an option index from 0 to 3."}
     results=[]; correct_count=0
     for index,question in enumerate(questions):
-        selected=int(payload.answers[index]); correct_index=int(question["correct_index"]); correct=selected==correct_index; correct_count+=1 if correct else 0
-        results.append({"id":int(question["id"]),"question":str(question["question"]),"options":list(question["options"]),"selected_index":selected,
-                        "correct_index":correct_index,"correct":correct,"explanation_vi":str(question["explanation_vi"]),"evidence_fragment":str(question["evidence_fragment"])})
+        selected=int(payload.answers[index]); result=_question_result(question, selected); correct_count+=1 if result["correct"] else 0
+        results.append(result)
     _repo().create_reading_attempt_record(session_id,{"created_at":_now(),"answers":list(payload.answers),"correct_count":correct_count,"total":len(questions)})
     return {"found":True,"valid":True,"session_id":session_id,"correct_count":correct_count,"total":len(questions),
             "accuracy":round(correct_count/len(questions),3) if questions else 0.0,"results":results,"claim":"comprehension_check_only"}

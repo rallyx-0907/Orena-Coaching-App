@@ -38,7 +38,12 @@ function readPlace(place) {
   const total = Number(place?.total);
   if (!Number.isInteger(index) || !Number.isInteger(total)) return null;
   if (index < 1 || total < 1 || index > total) return null;
-  return { index, total };
+  /* How far into this one piece the learner has read, as a whole percentage.
+     Optional: a place with none is one they have opened and not yet moved
+     through, which is a different thing from 0% and is drawn differently. */
+  const within = Number(place?.within);
+  if (!Number.isFinite(within)) return { index, total };
+  return { index, total, within: Math.max(0, Math.min(100, Math.round(within))) };
 }
 
 export function learnerMemory(storage, owner, language) {

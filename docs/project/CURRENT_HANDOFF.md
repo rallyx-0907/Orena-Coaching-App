@@ -44,14 +44,15 @@ project at its source, measure it, compare the running app, fix, gate.
 **Migrated to their frames** at 1920x1080 and 390x844, in EN, VI and ZH: the
 shell, Library, the Listening workspace and Dictation (DC-5 stored, migration
 `20260921_0010`, D-069), the Quick Sheet, Writing (workspace, review, revision,
-entry), Home (top bar, Continue strip, six rails), the Reading workspace, and
+entry), Home (top bar, Continue strip, six rails), **Reading** (library, book
+detail, the workspace on both frames, the word and sentence sheets, and the
+check answering one question at a time), and
 **Vocabulary, closed 2026-09-23 at `ea5373f`** - 30 of its 32 frames running on
 real reads, frames 16-17 being the Speaking lane's. A screen's ground is the UI
 Baseline's lit indigo (D-071). Each surface's detail, and what it could not
 resolve, is logged in `UI_BACKEND_GAPS.md`.
 
-**Not migrated (legacy)**: Progress, the Reading library's own frame, and
-Speaking (its own lane). The old top bar and the Practice hub go with them.
+**Not migrated (legacy)**: Progress, and Speaking (its own lane). The old top bar and the Practice hub go with them.
 Not the frame yet within Writing: "Lưu nhận xét" (no meaning for it yet) and
 the Writing-feedback context sheet.
 
@@ -122,11 +123,14 @@ the human approves product direction.
 is left of the D-067 surface-by-surface migration, in the order this file has
 always carried it:
 
-1. **Reading** - slice 4 (comprehension per question) and the Reading
-   library's own frame, which is still the legacy composition.
-2. **Progress** - not migrated at all; `Orena Progress.dc.html` is pinned in
+1. **Progress** - not migrated at all; `Orena Progress.dc.html` is pinned in
    the cache.
-3. **Speaking** - another lane's, including Vocabulary frames 16-17.
+2. **Speaking** - another lane's, including Vocabulary frames 16-17.
+
+Reading's 12 frames run end-to-end (2026-09-23). Two things it could not settle
+itself, both recorded in `UI_BACKEND_GAPS.md`: a book has no level and no form
+(an Admin-lane field on import), and `/api/reading/articles` is unwired and
+answers 503 in the sandbox.
 
 Then delete the legacy pieces each migration leaves behind, along with the
 stale `verify_writing_*_browser.mjs` scripts and unused copy keys.

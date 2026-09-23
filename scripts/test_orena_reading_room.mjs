@@ -120,8 +120,9 @@ const c = copy.en;
   assert.equal(chapterNeighbours(chapters, 'a').previous, null);
   assert.equal(chapterNeighbours(chapters, 'c').next, null);
   assert.equal(chapterNeighbours(chapters, 'missing'), null);
-  assert.equal(chapterLabel(c, 1, 3), 'Chapter 2 of 3');
-  assert.equal(chapterLabel(copy.zh, 1, 3), '第 2 章，共 3 章');
+  /* The frame writes the chapter alone beside the time left. */
+  assert.equal(chapterLabel(c, 1), 'chapter 2');
+  assert.equal(chapterLabel(copy.zh, 1), '第 2 章');
 
   const toc = tocHtml(c, { bookId: 'book-1', chapters, currentId: 'b' });
   assert.equal((toc.match(/<a /g) || []).length, 3);
@@ -297,7 +298,7 @@ assert.deepEqual(
 
 /* --- EN and ZH carry every word the reader says --------------------------- */
 const keys = [
-  'readerBackToReading', 'readerContents', 'readerSettings', 'readerChapterOf', 'readerProgress',
+  'readerBackToReading', 'readerContents', 'readerSettings', 'readerChapter', 'readerProgress',
   'readerPrevious', 'readerNext', 'readerEnd', 'readerAbout', 'readerSource', 'readerPublisher',
   'readerTextSize', 'readerSmaller', 'readerLarger', 'readerTypeface', 'readerSerif', 'readerSans',
   'readerSpacing', 'readerSpacingCompact', 'readerSpacingNormal', 'readerSpacingRelaxed',

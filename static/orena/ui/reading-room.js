@@ -124,10 +124,11 @@ export function chapterNeighbours(chapters, chapterId) {
   };
 }
 
-export const chapterLabel = (c, index, total) =>
-  String(c.readerChapterOf || '')
-    .replace('{current}', String(index + 1))
-    .replace('{total}', String(total));
+/* The bar names the chapter and nothing more - "chương 3" - because that
+   is what the frame writes there, beside what is left to read. How many
+   chapters there are in all is the book's page, where the list is. */
+export const chapterLabel = (c, index) =>
+  String(c.readerChapter || '').replace('{n}', String(index + 1));
 
 export const progressLabel = (c, percent) =>
   String(c.readerProgress || '').replace('{percent}', String(percent));

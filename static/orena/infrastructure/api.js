@@ -305,6 +305,13 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
+  // One question, answered as the learner answers it; the attempt is still the
+  // whole set, sent once at the end.
+  gradeReadingAnswer:(id,index,choice)=>request(`/api/reading/session/${encodeURIComponent(id)}/answer/${encodeURIComponent(index)}`,{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify({choice}),
+  }),
   submitReadingAnswers:(id,answers)=>request(`/api/reading/session/${encodeURIComponent(id)}/answer`,{
     method:'POST',
     headers:JSON_HEADERS,

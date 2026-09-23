@@ -87,6 +87,9 @@ const SAME_IN_EVERY_LANGUAGE = new Set([
   'vocabularyFramework_hsk',
   'vocabularySortAlpha',
   'readerProgress',
+  // The check's counter is two figures and a slash, which the frame writes
+  // the same way in every language: "1 / 3".
+  'quizPlace',
   // Vietnamese borrows this one whole; translating it would be inventing a word.
   'mediaVideo',
   'adminVocabularyCollectionTitlePlaceholder',

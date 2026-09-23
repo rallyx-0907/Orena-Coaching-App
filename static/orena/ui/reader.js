@@ -14,7 +14,6 @@
    - Pronounce: the device's own speech, when it has any. */
 import { esc, dialog } from './html.js';
 import { mountLexicalLayer } from './lexical.js';
-import { symbol } from './symbols.js';
 import { icon } from './phosphor.js';
 import { referenceCopy } from './reference.js';
 import { contentCover } from './cover.js';
@@ -60,7 +59,7 @@ function saveSettings(settings) {
 export function mountReader(
   host,
   ctx,
-  { item, blocks: sourceBlocks, book = null, progressive = false, title, origin, actions = [], onAction = null },
+  { item, blocks: sourceBlocks, book = null, progressive = false, title, origin, actions = [], onAction = null, onPlace = null },
 ) {
   const { api, c, language, memory } = ctx;
   const alive = ctx.alive || (() => host.isConnected);
@@ -81,15 +80,13 @@ export function mountReader(
   let settings = loadSettings();
   const kept = () => memory.value.kept.includes(item.id);
 
-  const where = place ? chapterLabel(c, place.index, place.total) : '';
+  const where = place ? chapterLabel(c, place.index) : '';
   const barTitle = book ? book.title : item.title;
-  const prevHref = place?.previous ? chapterHref(book.id, place.previous.id) : '';
   const nextHref = place?.next ? chapterHref(book.id, place.next.id) : '';
 
-  const stepLink = (href, label, direction) =>
-    href
-      ? `<a class="reader-step" href="${esc(href)}" rel="${direction === 'back' ? 'prev' : 'next'}" aria-label="${esc(label)}">${symbol(direction, 20)}</a>`
-      : `<span class="reader-step" aria-hidden="true">${symbol(direction, 20)}</span>`;
+  /* The phone's old chapter dock is deleted rather than restyled: neither
+     frame draws one. The phone turns a chapter from the bar's primary tile,
+     and reaches the whole list through the book the back arrow returns to. */
 
   /* The support-language layer's state, declared with the other reading state
      because the first paint already asks whether it is on. */
@@ -148,37 +145,61 @@ export function mountReader(
      the two side columns: the contents live behind the title, and a word
      arrives as the anchored sheet. */
   const readerWords = blocks.reduce((total, block) => total + String(block.text || '').split(/\s+/).filter(Boolean).length, 0);
-  const metaLine = [where, readerWords ? String(r.readerWords).replace('{n}', readerWords.toLocaleString()) : '']
-    .filter(Boolean)
-    .join(' · ');
+  /* The frame writes "chương 3 · còn 9 phút": where this sits, and how long is
+     left of it. A chapter carries the duration the server derived; a text that
+     carries none says how many words it is, which is what the app can measure
+     for itself. */
+  const readerSeconds = Number(item?.reading_time_seconds || 0);
+  const howLong = readerSeconds
+    ? String(r.readerMinutesLeft).replace('{n}', String(Math.max(1, Math.round(readerSeconds / 60))))
+    : readerWords
+      ? String(r.readerWords).replace('{n}', readerWords.toLocaleString())
+      : '';
+  /* The wide frame writes both ("chương 3 · còn 9 phút"); the phone frame,
+     with a third of the room, writes only what is left. Same line, one part
+     of it put away where it does not fit. */
+  const metaLine = [where, howLong].filter(Boolean).join(' · ');
+  const metaHtml = [
+    where ? `<span class="reader-bar__where">${esc(where)}</span>` : '',
+    where && howLong ? '<span class="reader-bar__dot" aria-hidden="true"> · </span>' : '',
+    howLong ? `<span>${esc(howLong)}</span>` : '',
+  ].join('');
   /* The frame's floating bar under the text: what the learner can do with this whole text, once, in
      one place. The reader owns the two it can answer itself - keeping the text and hearing it - and the
      room that mounted it supplies the rest, because only that room knows whether they exist here. */
-  const barAction = ({ name, glyph, label, primary = false, available = true, title = '', pressed = null }) =>
-    `<button type="button" class="reader-action${primary ? ' reader-action--primary' : ''}" data-reader-action="${esc(name)}"${pressed === null ? '' : ` aria-pressed="${pressed}"`}${available ? '' : ` aria-disabled="true"`}${title ? ` title="${esc(title)}"` : ''}>${icon(glyph, { size: 19, filled: primary })}<span>${esc(label)}</span></button>`;
-  /* The six the source draws, in its order, with its icons (measured
+  const barAction = ({ name, glyph, label, short = '', wide = false, primary = false, available = true, title = '', pressed = null }) =>
+    `<button type="button" class="reader-action${primary ? ' reader-action--primary' : ''}${wide ? ' reader-action--wide' : ''}" data-reader-action="${esc(name)}"${pressed === null ? '' : ` aria-pressed="${pressed}"`}${available ? '' : ` aria-disabled="true"`}${title ? ` title="${esc(title)}"` : ''}>${icon(glyph, { size: 19, filled: primary })}<span class="reader-action__label">${esc(label)}</span>${short && short !== label ? `<span class="reader-action__short">${esc(short)}</span>` : ''}</button>`;
+  /* The six the desktop source draws, in its order, with its icons (measured
      2026-09-22): Lưu bài · Nghe · Kiểm tra hiểu · Thảo luận · Viết phản hồi ·
      Đọc tiếp sau, the last one the primary. The caller says which of the
      middle ones this text can actually offer; nothing else joins the bar -
-     prepared notes are the side panel's third tab, where the frame puts them. */
+     prepared notes are the side panel's third tab, where the frame puts them.
+
+     The phone frame draws five of the same tiles in a docked bar, with the
+     shorter labels it writes (Lưu · Nghe · Hiểu bài · Viết) and the way on to
+     the next chapter as its primary, because it draws no foot row to hold it.
+     Same bar, same actions, the two the narrow frame leaves out marked. */
   const actionBar = () => {
     const supplied = new Map(actions.map((action) => [action.name, action]));
     const all = [
-      { name: 'keep', glyph: 'bookmark-simple', label: r.readerSave, pressed: kept() },
+      { name: 'keep', glyph: 'bookmark-simple', label: r.readerSave, short: r.readerSaveShort, pressed: kept() },
       { name: 'listen', glyph: 'speaker-high', label: r.readerListen, available: false, title: r.bookSoon },
-      supplied.get('check'),
-      supplied.get('discuss'),
-      supplied.get('respond'),
-      { name: 'later', glyph: 'bookmark-simple', label: c.readerKeep, primary: true },
+      supplied.get('check') && { short: r.readerCheckShort, ...supplied.get('check') },
+      supplied.get('discuss') && { ...supplied.get('discuss'), wide: true },
+      supplied.get('respond') && { short: r.readerRespondShort, ...supplied.get('respond') },
+      { name: 'later', glyph: 'bookmark-simple', label: c.readerKeep, primary: true, wide: true },
     ].filter(Boolean);
-    return `<div class="reader-actions" role="group" aria-label="${esc(r.readerActions)}">${all.map(barAction).join('')}</div>`;
+    const onward = nextHref
+      ? `<a class="reader-action reader-action--primary reader-action--phone" href="${esc(nextHref)}">${icon('arrow-right', { size: 19 })}<span class="reader-action__label">${esc(r.readerNextChapter)}</span></a>`
+      : '';
+    return `<div class="reader-actions" role="group" aria-label="${esc(r.readerActions)}">${all.map(barAction).join('')}${onward}</div>`;
   };
   const contentsColumn = place
     ? `<nav class="reader-contents-column" aria-label="${esc(r.readerContents)}"><span class="ds-label">${esc(r.readerContents)}</span>${tocHtml(c, { bookId: book.id, chapters: book.chapters, currentId: book.chapterId, provenance: book.provenance })}</nav>`
     : '';
-  host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('arrow-left', { size: 20 })}<span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span></a>${metaLine ? `<span class="reader-bar__meta ds-data">${esc(metaLine)}</span>` : ''}<div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', r.readerBilingual, false, true, 'translate') : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
+  host.innerHTML = `<div class="reader" data-reader><span class="reader-rail" aria-hidden="true"><i data-reader-rail></i></span><header class="reader-bar"><a class="reader-bar__back" href="${esc(book?.id ? link('book', { id: book.id }) : link('practice', { intent: 'reading' }))}" aria-label="${esc(c.readerBackToReading)}">${icon('arrow-left', { size: 20 })}<span class="reader-bar__title"${book ? ` lang="${esc(language)}"` : ''}>${esc(barTitle)}</span></a>${metaLine ? `<span class="reader-bar__meta ds-data">${metaHtml}</span>` : ''}<div class="reader-bar__tools">${language === 'zh' ? layerChip('pinyin', r.readerPinyin, false, false) : ''}${translatable ? layerChip('support', r.readerBilingual, false, true, 'translate') : ''}<button type="button" class="reader-tool reader-tool--text" data-reader-settings-toggle aria-label="${esc(c.readerSettings)}" aria-expanded="false">Aa</button></div></header><div class="reader-settings-pop" data-reader-settings hidden></div><div class="reader-layout">${contentsColumn}<div class="reader-body" data-reader-body>${bodyHtml()}</div><aside class="reader-aside" aria-label="${esc(r.readerPanel)}"><div class="reader-aside__tabs" role="tablist">${tabs
     .map((tab) => `<button type="button" role="tab" class="reader-aside__tab" aria-selected="${tab === 'word'}" data-reader-tab="${tab}">${esc(r[`readerTab_${tab}`])}</button>`)
-    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><div class="reader-foot__row"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</div></footer>${place ? `<nav class="reader-dock" aria-label="${esc(c.readerContents)}">${stepLink(prevHref, c.readerPrevious, 'back')}<button type="button" class="reader-dock__where" data-reader-toc>${esc(`${place.index + 1} / ${place.total}`)}<span class="sr-only"> ${esc(where)}</span></button>${stepLink(nextHref, c.readerNext, 'forward')}</nav>` : ''}</div>`;
+    .join('')}</div><div class="reader-aside__body" role="tabpanel" data-reader-panel></div></aside>${actionBar()}</div><footer class="reader-foot"><div class="reader-foot__row"><span class="reader-foot__place ds-data" data-reader-percent>${esc(progressLabel(c, 0))}</span>${nextHref ? `<a class="primary reader-foot__next" href="${esc(nextHref)}">${esc(r.readerNextChapter)}${icon('arrow-right', { size: 16 })}</a>` : ''}</div></footer></div>`;
 
   const reader = host.querySelector('[data-reader]');
   const body = host.querySelector('[data-reader-body]');
@@ -366,14 +387,27 @@ export function mountReader(
     const box = article.getBoundingClientRect();
     const read = box.height ? (window.innerHeight - box.top) / box.height : 1;
     const percent = Math.max(0, Math.min(100, Math.round(read * 100)));
-    percentLabel.textContent = progressLabel(c, percent);
+    /* "34% · còn 9 phút": how far in, and what is left of it at the pace the
+       server counted. A text with no count keeps the figure alone. */
+    const leftLabel = readerSeconds
+      ? String(r.readerMinutesLeft).replace('{n}', String(Math.max(1, Math.round((readerSeconds * (100 - percent)) / 6000))))
+      : '';
+    percentLabel.textContent = [progressLabel(c, percent), leftLabel].filter(Boolean).join(' · ');
     if (progressBar) progressBar.style.inlineSize = `${percent}%`;
     // The frame draws the figure twice, but only one of them is a bar: the
     // hairline across the top of the screen, and the same percentage as text at
     // the foot of the reading column. A second bar under the text is not drawn.
     // under the text. One measurement, both.
     if (rail) rail.style.inlineSize = `${percent}%`;
+    /* And it is worth keeping: Book detail draws how far into the current
+       chapter the learner is, which is this number. Only whole steps forward
+       are reported - rereading a paragraph is not un-reading the chapter. */
+    if (onPlace && percent > furthest) {
+      furthest = percent;
+      onPlace(percent);
+    }
   }
+  let furthest = 0;
   const onScroll = () => {
     if (!progressFrame) progressFrame = requestAnimationFrame(updateProgress);
   };

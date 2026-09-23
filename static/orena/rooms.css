@@ -2061,140 +2061,116 @@ ul.pronunciation-words small { color: var(--muted); }
 }
 
 /* ---------------------------------------------------------------------------
-   The reading check (D-059 Phase 5, Screens part 3 section 13) - one question
-   at a time: the rail, the question, lettered options, then the words in the
-   text that settle it. Optional, so it opens from an invitation.
+   The reading check (D-067, "Reading · comprehension question" and
+   "· comprehension result") - one question, answered, then answered back: the
+   verdict, the lines in the text that settle it, and why. Optional, and it
+   opens from the bar under the text.
    --------------------------------------------------------------------------- */
 .quiz {
   max-inline-size: 640px;
-  margin-block: var(--space-8) var(--space-6);
-  padding-block-start: var(--space-6);
-  border-block-start: 1px solid var(--border-subtle);
+  margin: 0;
 }
-.quiz-invite { display: grid; justify-items: start; gap: 8px; }
-.quiz-invite .ds-label { color: var(--text-muted); }
-.quiz-invite strong { font-family: var(--display-font); font-size: 21px; font-weight: var(--weight-heavy); }
-.quiz-before { margin: 0; color: var(--text-secondary); font-size: 12px; }
-.quiz-invite .button-row { margin-top: 4px; }
 .quiz-step {
   display: grid;
-  gap: 18px;
-  padding: 20px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  background: var(--surface-panel);
+  gap: 26px;
 }
-.quiz-bar { display: flex; align-items: center; gap: 12px; }
-.quiz-close { inline-size: 32px; block-size: 32px; min-block-size: 32px; border: 0; border-radius: 50%; }
-.quiz-rail { display: flex; flex: 1; gap: 4px; }
-.quiz-rail__step {
-  flex: 1;
-  block-size: 4px;
-  border-radius: var(--radius-pill);
-  background: var(--progress-track);
-}
-.quiz-rail__step[data-tone='done'] { background: var(--progress); }
-.quiz-rail__step[data-tone='right'] { background: var(--status-success); }
-.quiz-rail__step[data-tone='wrong'] { background: var(--status-error); }
-.quiz-place { color: var(--text-secondary); font-size: 11px; }
-.quiz-head { display: flex; align-items: center; gap: 8px; }
-.quiz-kind { color: var(--action-text); }
-.quiz-type {
-  margin-inline-start: auto;
-  min-block-size: 26px;
-  padding: 4px 8px;
-  color: var(--text-secondary);
-  font-family: var(--mono-font);
-  font-size: 10px;
-  font-weight: var(--weight-regular);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
+.quiz-bar { display: flex; align-items: center; justify-content: flex-end; }
+.quiz .quiz-place { color: var(--text-secondary); font-size: 11.5px; }
+.quiz-ask,
+.quiz-result { display: grid; gap: 20px; }
+.quiz-ask { gap: 26px; }
 .quiz-question {
   margin: 0;
   font-family: var(--display-font);
-  font-size: 24px;
+  font-size: 25px;
   font-weight: var(--weight-heavy);
-  line-height: 1.25;
-  letter-spacing: -0.018em;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
-.quiz-options { display: grid; gap: 10px; }
+.quiz-options { display: grid; gap: 11px; }
 .quiz-option {
   display: flex;
   align-items: center;
-  gap: 12px;
   inline-size: 100%;
-  padding: 15px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-secondary);
+  padding: 17px 18px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring-card);
   color: var(--text-primary);
   text-align: start;
 }
-.quiz-option:hover:not(:disabled) { border-color: var(--border-strong); }
-.quiz-option__letter {
-  display: grid;
-  place-items: center;
-  flex: none;
-  inline-size: 26px;
-  block-size: 26px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
-  font-size: 12px;
-}
-.quiz-option__text { flex: 1; font-size: 15.5px; line-height: 1.45; }
-.quiz-option__mine { flex: none; color: var(--text-muted); }
+.quiz .quiz-option__text { flex: 1; font-size: 16px; line-height: 1.5; }
 .quiz-option[data-tone='picked'] {
-  border-color: color-mix(in srgb, var(--action-primary) 55%, transparent);
-  background: var(--action-selected);
-}
-.quiz-option[data-tone='right'] {
-  border-color: color-mix(in srgb, var(--status-success) 50%, transparent);
-  background: color-mix(in srgb, var(--status-success) 12%, transparent);
-}
-.quiz-option[data-tone='right'] .quiz-option__text { font-weight: var(--weight-bold); }
-.quiz-option[data-tone='right'] .quiz-option__letter {
-  border-color: transparent;
-  background: var(--status-success);
-  color: var(--surface-canvas);
-}
-.quiz-option[data-tone='wrong'] {
-  border-color: color-mix(in srgb, var(--status-error) 45%, transparent);
-  background: color-mix(in srgb, var(--status-error) 10%, transparent);
-}
-.quiz-option[data-tone='wrong'] .quiz-option__letter {
-  border-color: transparent;
-  background: var(--status-error);
-  color: var(--surface-canvas);
+  background: var(--glass-focus);
+  box-shadow: var(--glass-ring-focus), var(--accent-shadow);
 }
 .quiz-option:disabled { cursor: default; opacity: 1; }
-.quiz-option:disabled:not([data-tone]) { opacity: 0.55; }
-.quiz-answer {
-  display: flex;
-  gap: 12px;
-  padding: 15px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-secondary);
-}
-.quiz-answer > svg { flex: none; color: var(--status-success); }
-.quiz-answer p { margin: 0; color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; }
-.quiz-answer blockquote {
-  margin: 8px 0 0;
-  padding-inline-start: 12px;
-  border-inline-start: 2px solid var(--border-strong);
-  font-size: 14px;
-}
-.quiz-answer__where { margin-top: 8px; color: var(--text-muted); }
-.quiz-score { margin: 0; font-family: var(--display-font); font-size: 20px; font-weight: var(--weight-heavy); }
-.quiz-actions { display: flex; gap: 10px; }
-.quiz-actions .primary { flex: 1; justify-content: center; min-block-size: 52px; border-radius: var(--radius-pill); }
 
-@media (max-width: 700px) {
-  .quiz { margin-block: var(--space-5) var(--space-4); }
-  .quiz-step { padding: 16px; border-radius: 18px; }
-  .quiz-question { font-size: 21px; }
+/* The result. The mark is ink, never a fill on the glass. */
+.quiz-verdict {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 17px;
+  border-radius: 15px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring-card);
+  font-family: var(--display-font);
+  font-size: 17px;
+  font-weight: var(--weight-heavy);
+}
+.quiz-verdict[data-tone='right'] > svg { color: var(--status-success); }
+.quiz-verdict[data-tone='wrong'] > svg { color: var(--status-error); }
+.quiz-evidence { display: grid; gap: 10px; }
+.quiz .quiz-evidence__text {
+  margin: 0;
+  padding: 16px 17px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--glass-well-sunk);
+  box-shadow: var(--glass-ring-card);
+  color: var(--text-secondary);
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 16.5px;
+  line-height: 1.8;
+}
+.quiz .quiz-evidence__text .qs-mark {
+  border-radius: 4px;
+  padding: 1px 4px;
+  background: color-mix(in srgb, var(--status-success) 22%, transparent);
+  border-block-end: 2px solid color-mix(in srgb, var(--status-success) 85%, transparent);
+  color: var(--text-primary);
+}
+/* The check is drawn inside a sheet, whose own paragraph rule is written
+   more specifically than a class; these two are the frame's sizes. */
+.sheet .quiz .quiz-result .quiz-why { margin: 0; font-size: 15.5px; line-height: 1.65; }
+.quiz-foot { display: grid; gap: 10px; }
+.sheet .quiz .quiz-foot .quiz-skip { margin: 0; color: var(--text-secondary); font-size: 13.5px; text-align: center; }
+.quiz-actions { display: flex; gap: 10px; }
+.quiz-quiet {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  block-size: 50px;
+  min-block-size: 0;
+  border: 0;
+  border-radius: 15px;
+  background: var(--chip-quiet);
+  box-shadow: var(--chip-quiet-ring);
+  color: var(--text-primary);
+  font-family: var(--display-font);
+  font-size: 15px;
+  font-weight: var(--weight-bold);
+}
+.quiz-primary.primary {
+  justify-content: center;
+  block-size: 54px;
+  min-block-size: 0;
+  border-radius: 15px;
+  font-size: 16px;
 }
 
 /* ---------------------------------------------------------------------------

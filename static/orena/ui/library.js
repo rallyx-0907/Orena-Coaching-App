@@ -94,7 +94,13 @@ function bookDetail(c, r, open, reading, view = {}) {
   const minutes = (seconds) => Math.max(1, Math.round(Number(seconds || 0) / 60));
   const leftSeconds = chapters
     .filter((chapter, index) => !done(index))
-    .reduce((sum, chapter) => sum + Number(chapter.reading_time_seconds || 0), 0);
+    .reduce((sum, chapter) => {
+      const seconds = Number(chapter.reading_time_seconds || 0);
+      /* The chapter in progress counts only what is left of it. */
+      if (chapter.id === currentId && Number.isFinite(progress?.within))
+        return sum + Math.round((seconds * (100 - Number(progress.within))) / 100);
+      return sum + seconds;
+    }, 0);
   const meta = [
     total ? `${total} ${c.libraryChapterCount}` : '',
     leftSeconds ? fill(r.bookTimeLeft, { n: minutes(leftSeconds) }) : '',
@@ -129,7 +135,15 @@ function bookDetail(c, r, open, reading, view = {}) {
        the word count it already had. A chapter with no count says nothing
        rather than "0 phút". */
     const seconds = Number(chapter.reading_time_seconds || 0);
-    const words = seconds ? fill(r.bookChapterMinutes, { n: minutes(seconds) }) : '';
+    /* The one in progress says what is *left* of it, which the reader
+       measured; every other row says how long it is. */
+    const within = isCurrent && Number.isFinite(progress?.within) ? Number(progress.within) : null;
+    const remaining = within != null ? Math.round((seconds * (100 - within)) / 100) : 0;
+    const words = !seconds
+      ? ''
+      : within != null
+        ? fill(r.bookTimeLeft, { n: minutes(remaining) })
+        : fill(r.bookChapterMinutes, { n: minutes(seconds) });
     return `<li${isCurrent ? ' data-current' : ''}><a class="book-chapter" href="${chapterLink(chapter)}"${isCurrent ? ' aria-current="true"' : ''}${done(index) ? ' data-done' : ''}><span class="book-chapter__n ds-data">${String(index + 1).padStart(2, '0')}</span><span class="book-chapter__text"><span class="book-chapter__title" lang="${esc(language)}">${esc(chapter.title)}</span>${words ? `<small class="ds-data">${esc(words)}</small>` : ''}</span>${
       isCurrent
         ? `<span class="chip book-chapter__next">${esc(r.bookNext)}</span>`
@@ -217,6 +231,9 @@ export function readingFromMemory(memory) {
     if (!bookId || !chapterId || reading[bookId]) continue;
     reading[bookId] = {
       chapterId,
+      /* How far into that chapter, when the reader measured it. Absent is
+         "not measured", which is a different thing from nought. */
+      within: Number.isFinite(Number(item?.place?.within)) ? Number(item.place.within) : null,
       index: Number(item?.place?.index) || 0,
       total: Number(item?.place?.total) || 0,
       title: item.title || '',

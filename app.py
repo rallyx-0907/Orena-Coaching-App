@@ -172,7 +172,7 @@ from writing_coach.persistence.deck_repository import DeckRepository
 from writing_coach.deck_api import configure_decks, router as deck_router
 from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
-from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
+from writing_coach.becoming_reading import ReadingAnswerIn, ReadingChoiceIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, grade_reading_answer, list_reading_sessions, submit_reading_answers
 from writing_coach.cross_skill_transfer import select_cross_skill_cue
 from writing_coach.product_activity_api import product_activity_response
 from writing_coach.readiness_summary import build_readiness_summary
@@ -3552,6 +3552,20 @@ def becoming_reading_answer(
     if not result.get("valid", True):
         raise HTTPException(422, result.get("message") or "Invalid reading answers.")
     return result
+@app.post("/api/reading/session/{session_id}/answer/{index}", name="becoming_reading_answer_one")
+def becoming_reading_answer_one(
+    session_id: int,
+    index: int,
+    payload: ReadingChoiceIn,
+) -> dict[str, Any]:
+    """One question of the check, answered as the learner answers it."""
+    result = grade_reading_answer(session_id, index, payload)
+    if not result.get("found", False):
+        raise HTTPException(404, "Reading session not found.")
+    if not result.get("valid", True):
+        raise HTTPException(422, result.get("message") or "Invalid reading answer.")
+    return result
+
 # === BECOMING READING STUDIO ROUTES END ===
 
 # === BECOMING LINGUISTIC LENS ROUTES START ===

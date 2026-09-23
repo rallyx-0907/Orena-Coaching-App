@@ -61,22 +61,19 @@ for (const language of ['en', 'zh']) {
     ).attempted,
     true,
   );
-  /* The approved check (D-059 Phase 5) is one question at a time, opened from
-     an invitation: the questions themselves are never on the page until the
-     learner asks for them, and a hostile option never renders as markup. */
+  /* The canonical check (D-067) opens at its first question - the frames draw
+     no invitation card - and the questions themselves are never in the page
+     markup, so a hostile option never renders as markup either. */
   const markup = comprehensionSection(copy[language], content.questions);
   assert.match(markup, /^<section class="quiz"/);
-  assert.match(markup, /data-quiz-start/, 'the check is offered, not started');
-  assert.ok(!markup.includes('<form'), 'the questions wait until the check is opened');
-  assert.ok(
-    markup.includes(copy[language].comprehensionOptional),
-    'the check says it is optional where it is offered',
-  );
+  assert.match(markup, /data-quiz-step/, 'the check is a step, painted when it opens');
+  assert.ok(!markup.includes('data-quiz-start'), 'the invitation card is gone (rule 44)');
+  assert.ok(!markup.includes('<form'), 'the questions are not in the page');
   /* A text with no questions used to render nothing at all, which is
      indistinguishable from a check that failed to load. Pure reading is valid,
      so the absence is now stated: still no form, but no silence either. */
   const none = comprehensionSection(copy[language], []);
-  assert.ok(!none.includes('data-quiz-start'), 'no questions means no check to open');
+  assert.ok(!none.includes('data-quiz-step'), 'no questions means no check to open');
   assert.ok(!none.includes('<form'), 'no questions means nothing to answer');
   assert.ok(
     none.includes(copy[language].readingOnlyNote),

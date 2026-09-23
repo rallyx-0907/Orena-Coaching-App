@@ -81,7 +81,8 @@ assert.match(library, /class="book-section-count ds-data"/, 'how many chapters a
 assert.match(library, /r\.bookChapterMinutes/, 'a duration on every chapter row');
 assert.match(library, /const seconds = Number\(chapter\.reading_time_seconds \|\| 0\);/,
   'taken from the server, not computed twice in the browser');
-assert.match(library, /seconds \? fill\(r\.bookChapterMinutes/, 'and absent when nothing was counted');
+assert.match(library, /const words = !seconds/, 'a row with no count says nothing');
+/* What is left of the chapter in progress is pinned by test_orena_reader_place.mjs. */
 
 /* Deleted, because the source draws neither (rule 44). */
 assert.ok(!library.includes('bookStat('), 'the statistic tiles are gone');

@@ -51,8 +51,9 @@ const label = (text) => `<span class="qs-label">${esc(text)}</span>`;
 const button = (action, body, { cls = '', attrs = '' } = {}) =>
   `<button type="button" class="${cls}" data-qs="${action}"${attrs ? ` ${attrs}` : ''}>${body}</button>`;
 
-/* The selection, marked wherever it stands in its sentence. */
-function highlighted(text, selection) {
+/* The selection, marked wherever it stands in its sentence. Shared with the
+   comprehension check, whose result marks the same way. */
+export function highlighted(text, selection) {
   const at = selection ? text.toLocaleLowerCase().indexOf(selection.toLocaleLowerCase()) : -1;
   if (at < 0) return esc(text);
   return `${esc(text.slice(0, at))}<mark class="qs-mark">${esc(text.slice(at, at + selection.length))}</mark>${esc(text.slice(at + selection.length))}`;
