@@ -47,7 +47,9 @@ export function detailsCell(record, t, ui) {
     const transcript = facts.transcript === 'available'
       ? `<span>${esc(fill(t.detailsTranscript, { count: num(facts.segment_count, ui) }))}</span>`
       : chip('transcript_missing', t);
-    return `<div class="ac-cell-stack">${length ? `<span>${length}</span>` : ''}${transcript}</div>`;
+    // Two short facts read together, so they sit on one line and wrap only
+    // when the column genuinely cannot hold them.
+    return `<span class="ac-subline">${length ? `<span>${length}</span>` : ''}${transcript}</span>`;
   }
   return esc(fill(t.detailsVocabulary, { count: num(facts.item_count, ui) }));
 }
@@ -83,7 +85,10 @@ export function contentTable(data, t, ui) {
   const rows = (data?.items || []).map((record) => ({
     attributes: ` data-content-row="${esc(record.kind)}:${esc(record.id)}"`,
     cells: [
-      `<div class="ac-title-cell">${thumb(record)}<div class="ac-cell-stack"><button type="button" class="ac-rowlink" data-ac-open="${esc(record.kind)}:${esc(record.id)}" lang="${esc(record.language)}">${esc(record.title)}</button>${record.subtitle ? `<span class="ac-muted">${esc(record.subtitle)}</span>` : ''}<span class="ac-tag">${esc(t[`origin_${record.origin}`] || record.origin)}</span></div></div>`,
+      /* Two lines, not four: the title, then where it came from with its
+         origin beside it. The subtitle was wrapping and the origin tag took a
+         line of its own, which is how a scan row reached 118px. */
+      `<div class="ac-title-cell">${thumb(record)}<div class="ac-cell-stack"><button type="button" class="ac-rowlink" data-ac-open="${esc(record.kind)}:${esc(record.id)}" lang="${esc(record.language)}">${esc(record.title)}</button><span class="ac-subline">${record.subtitle ? `<span class="ac-muted" title="${esc(record.subtitle)}">${esc(record.subtitle)}</span>` : ''}<span class="ac-tag">${esc(t[`origin_${record.origin}`] || record.origin)}</span></span></div></div>`,
       esc(t[`type_${record.kind}`] || record.kind),
       esc(languageName(record.language, t)),
       statusLabel(record, t),

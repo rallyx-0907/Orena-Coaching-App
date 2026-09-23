@@ -134,6 +134,12 @@
 }
 .ac-body {
   min-width: 0;
+  /* The console lays out to the room it has, not to the window. On a desktop
+     the learner rail takes 280px, so a 1280px window leaves the console ~885px
+     - and a viewport breakpoint at 1200px never fires, which is how three
+     tables ended up in 262px columns scrolling sideways. */
+  container-type: inline-size;
+  container-name: acbody;
 }
 
 /* ---- layout ------------------------------------------------------------------ */
@@ -645,12 +651,71 @@
 .ac-table--compact th {
   padding: 4px 8px;
 }
-.ac-table--routing td:nth-child(3),
-.ac-table--routing td:nth-child(4) {
-  min-width: 9.5rem;
+/* The canonical routing row (design 01): one scan line per capability, not a
+   paragraph. Every text column keeps its line and ellipses instead of wrapping
+   - a table an operator reads down the columns of is worth more than one that
+   shows every word of a cell they were not reading. */
+/* Fixed layout, in the design's own proportions. Auto layout let one long
+   cell - a health sentence, a "runs locally" note - decide the width of a
+   column every other row had to live inside, and the table grew past the
+   panel while the rows grew past 120px. Here the shares are declared and the
+   content ellipses. */
+.ac-table--routing {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 52rem;
 }
-.ac-table--routing td:first-child {
-  min-width: 13rem;
+.ac-table--routing td,
+.ac-table--routing th {
+  padding-block: 6px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-table--routing :is(td, th):nth-child(1) { width: 21%; }
+.ac-table--routing :is(td, th):nth-child(2) { width: 17%; }
+.ac-table--routing :is(td, th):nth-child(3) { width: 13%; }
+.ac-table--routing :is(td, th):nth-child(4) { width: 11%; }
+.ac-table--routing :is(td, th):nth-child(5) { width: 8%; }
+.ac-table--routing :is(td, th):nth-child(6) { width: 7%; }
+.ac-table--routing :is(td, th):nth-child(7) { width: 10%; }
+.ac-table--routing :is(td, th):nth-child(8) { width: 13%; }
+/* A state is one word wide or it is not a state: a chip that wraps turns a
+   44px row into a 77px one and reads as two values. */
+.ac-table--routing .ac-chip {
+  white-space: nowrap;
+}
+/* The editor opens across the whole table, so it keeps none of this. */
+.ac-table--routing td[colspan] {
+  width: auto;
+  overflow: visible;
+  white-space: normal;
+}
+.ac-table--routing :is(td:nth-child(5), td:nth-child(6)) {
+  white-space: nowrap;
+}
+.ac-table--routing :is(td:nth-child(3), td:nth-child(4)) .ac-cell-stack > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The state, where the eye lands first. */
+.ac-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  margin-inline-end: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  vertical-align: middle;
+}
+.ac-dot[data-tone='ok'] { background: var(--o-good); }
+.ac-dot[data-tone='warn'] { background: var(--o-warn); }
+.ac-dot[data-tone='bad'] { background: var(--o-bad); }
+.ac-cell-stack--tight {
+  gap: 0;
+  line-height: 1.35;
 }
 .ac-table [data-account-row] {
   cursor: pointer;
@@ -686,6 +751,26 @@
   align-items: flex-start;
   gap: var(--space-3);
   min-width: 15rem;
+}
+/* Where it came from and what kind of origin it has, on one line: two facts
+   that are read together should not cost two rows of height. */
+.ac-subline {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+}
+.ac-subline > .ac-muted {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ac-subline > .ac-tag {
+  flex: none;
 }
 .ac-title-cell > .ac-cell-stack {
   flex: 1;
@@ -1247,6 +1332,32 @@
   }
   .ac-chooser {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The same steps, measured against the console's own width. Declared after the
+   media queries so the narrower of the two answers wins. */
+@container acbody (max-width: 1200px) {
+  .ac-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ac-kpis:not(.ac-kpis--4) > .ac-kpi:nth-child(5):last-child {
+    grid-column: span 2;
+  }
+  .ac-kpis--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ac-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ac-grid--attention {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container acbody (max-width: 900px) {
+  .ac-grid--2,
+  .ac-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (max-width: 600px) {

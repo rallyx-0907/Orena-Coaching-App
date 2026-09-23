@@ -14,7 +14,15 @@
    someone presses Test. Keys are sent once, to the server, and never read
    back. */
 import { adminApi, failureReason } from './api.js';
-import { chip, esc, fill, info, kv, latency, mono, num, panel, table, notice } from './format.js';
+import { chip, esc, fill, info, kv, latency, mono, num, panel, table, tone, notice } from './format.js';
+
+/* The dot the canonical row opens with: the same state the health column
+   carries, said once more where the eye lands first. A capability the console
+   cannot route is neutral - it has no health to report. */
+function healthState(row, kind) {
+  if (kind !== 'configurable') return 'neutral';
+  return row?.health_state || 'no_data';
+}
 
 const HEALTH_ERRORS = new Set([
   'capability_disabled', 'capability_not_configured', 'provider_not_configured', 'model_catalog_empty',
@@ -66,12 +74,16 @@ function testLine(test, standby, t, ui) {
 /* Recorded health from telemetry first, then whatever was tested in this
    session: the two answer different questions and are never merged. */
 function healthCell(row, test, standbyTest, t, ui) {
-  const recorded = row
-    ? `${chip(row.health_state || 'no_data', t)}<small>${esc(row.evidence_count
-        ? fill(t.healthEvidenceCount, { count: num(row.evidence_count, ui) })
-        : t.healthNoEvidence)}</small>`
-    : `${chip('no_data', t)}<small>${esc(t.healthNoEvidence)}</small>`;
-  return `<div class="ac-cell-stack">${recorded}${testLine(test, false, t, ui)}${testLine(standbyTest, true, t, ui)}</div>`;
+  /* The canonical row is one line of health, not a paragraph: the evidence
+     behind the state rides on the chip's title, and the rule that no traffic
+     is not health is stated once on the panel rather than repeated in every
+     row - which is what turned a 44px row into a 126px one. */
+  const evidence = row?.evidence_count
+    ? fill(t.healthEvidenceCount, { count: num(row.evidence_count, ui) })
+    : t.healthNoEvidence;
+  const state = chip(row?.health_state || 'no_data', t, { title: evidence });
+  const results = `${testLine(test, false, t, ui)}${testLine(standbyTest, true, t, ui)}`;
+  return results ? `<div class="ac-cell-stack">${state}${results}</div>` : state;
 }
 
 /* Latency and errors are their own columns in the canonical design, because an
@@ -136,18 +148,25 @@ export function routingView(state, t, ui) {
     const saved = capability.explicit_config_exists && capability.config;
     const enabled = kind === 'configurable'
       ? saved ? chip(config.enabled === false ? 'disabled' : 'enabled', t) : chip('not_configured', t)
-      : chip(kind, t);
+      : chip(kind, t, {
+        title: kind === 'deterministic' ? t.notConfigurable_deterministic : t.notConfigurable_reserved,
+      });
     const test = state.tests.get(capability.key);
     const standbyTest = state.tests.get(`${capability.key}:standby`);
     const actions = kind === 'configurable'
       ? `<div class="ac-actions"><button type="button" class="ac-button" data-ac-action="edit" data-key="${esc(capability.key)}" data-focus-key="edit:${esc(capability.key)}" aria-expanded="${state.editing === capability.key}">${esc(t.editRoute)}</button>${saved && config.enabled !== false ? `<button type="button" class="ac-button" data-ac-action="test" data-key="${esc(capability.key)}" data-focus-key="test:${esc(capability.key)}"${test?.state === 'testing' ? ' disabled' : ''}>${esc(t.test)}</button>` : ''}${saved && config.enabled !== false && config.backup_provider && config.backup_model ? `<button type="button" class="ac-button" data-ac-action="test-standby" data-key="${esc(capability.key)}" data-focus-key="standby:${esc(capability.key)}"${standbyTest?.state === 'testing' ? ' disabled' : ''}>${esc(t.testStandby)}</button>` : ''}</div>`
-      : `<span class="ac-muted">${esc(kind === 'deterministic' ? t.notConfigurable_deterministic : t.notConfigurable_reserved)}</span>`;
+      // A capability with nothing to do here says so in its state chip, not as
+      // a sentence wrapped inside a 110px action column.
+      : '<span class="ac-muted">—</span>';
     const label = capabilityLabel(capability.key, t);
     const hintText = t[`capHint_${capability.key}`];
     rows.push({
       attributes: ` data-capability="${esc(capability.key)}"${state.editing === capability.key ? ' data-editing' : ''}`,
       cells: [
-        `<div class="ac-cell-stack"><strong>${esc(label)}${hintText ? info(hintText, label) : ''}</strong>${mono(capability.key)}<small>${esc(t[`operation_${capability.operation}`] || capability.operation)}</small></div>`,
+        /* The canonical row: a state dot, the name on one line, the key it is
+           addressed by underneath. The operation kind was a third line that no
+           decision is made from - it is what the ⓘ hint already explains. */
+        `<div class="ac-cell-stack ac-cell-stack--tight"><strong title="${esc(t[`operation_${capability.operation}`] || capability.operation)}"><span class="ac-dot" data-tone="${esc(tone(healthState(operations.get(capability.key), kind)))}" aria-hidden="true"></span>${esc(label)}${hintText ? info(hintText, label) : ''}</strong>${mono(capability.key)}</div>`,
         enabled,
         kind === 'configurable' ? route(saved ? config.provider : '', saved ? config.model : '', providers, t) : '<span class="ac-muted">—</span>',
         kind === 'configurable' ? route(saved ? config.backup_provider : '', saved ? config.backup_model : '', providers, t) : '<span class="ac-muted">—</span>',

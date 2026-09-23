@@ -188,8 +188,12 @@ assert.match(routing, /data-capability="future_capability"/, 'a capability added
 assert.match(routing, /future capability/, 'an unnamed capability falls back to its key');
 assert.equal((routing.match(/data-ac-action="edit"/g) || []).length, 2, 'only configurable capabilities can be edited');
 assert.equal((routing.match(/data-ac-action="test"/g) || []).length, 1, 'only a saved, enabled route can be tested');
-assert.match(routing, /Local \(deterministic\)/);
+/* The canonical row is one scan line: the state chip carries a word, and the
+   sentence explaining it rides on the chip's title rather than wrapping the
+   row to twice its height. */
+assert.match(routing, /title="Runs locally without a provider\.">.*?Local</, 'a local capability says so in one word, with the sentence on the chip');
 assert.match(routing, /Reserved/);
+assert.doesNotMatch(routing, /<small>[^<]*recorded requests/, 'health evidence rides on the chip, not as a third line in the cell');
 assert.match(routing, /Degraded/);
 const providerMarkup = providersView({ ...state, providerForm: 'groq', providerMessage: '', confirmRemove: null, expanded: null }, en, 'en');
 assert.doesNotMatch(providerMarkup, /sk-SHOULD-NEVER-RENDER/, 'a provider payload field is never echoed');
