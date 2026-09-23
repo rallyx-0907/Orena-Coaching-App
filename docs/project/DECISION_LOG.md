@@ -2466,3 +2466,37 @@ measuring a surface, check the pin against the source.
 **Supersedes / Superseded by:** Supersedes D-071's ground (`#0A0722` under
 seventeen layers), which was true of the master preview on 2026-09-21. D-070 was
 already superseded by D-071 and stays so.
+
+## D-074 — Speaking: "passed" is the provider's own flag; a Speaking library of its own plus a flow from Listening
+
+**Date:** 2026-09-23. **Source:** the human, answering four questions in the
+`feature/speaking` session before any code was written.
+
+**Context.** The Speaking workspace frame draws "5 / 7 ĐẠT", a "Đạt" under
+each word and an amber bar for a weak one, and no threshold for any of them
+had been approved. The Speaking library was blocked on content (SP-1), and the
+free-response room was a D-065 composition.
+
+**Decision.**
+
+1. A reference word is **not passed** when the pronunciation provider flags it
+   with its own miscue verdict (Azure `ErrorType` other than `None`:
+   Mispronunciation, Omission, ...). `passedCount` counts the reference words
+   it did not flag. Orena sets no numeric threshold; the provider's scores are
+   shown as numbers. The amber bar, the headline and the marks in the line
+   follow the same flag and nothing else.
+2. Speaking has **a library of its own** (an authored Speaking catalogue) **and
+   a flow from Listening** (published lessons offering the shadowing mode, the
+   clip as the model). Only real items are listed.
+3. The review sandbox for this lane is a separate container on **8013** with
+   its own throwaway database; 8000, 8010, 8011 and 8012 are other lanes'.
+4. Free talk is **rebuilt on its frame after** the pronunciation flow, keeping
+   the existing recognition and coaching.
+
+**Not decided here** (recorded as S1-S13 in `UI_BACKEND_GAPS.md`): a fluency
+threshold, tone assessment and its provider, durable recordings, the way back
+from practising one word, a "previous line" control, phrases for free talk.
+
+**Consequences.** `capabilities/pronunciation-result.js` is the only reader of
+the assessment; `toneActual` stays empty until a provider measures pitch; an
+unset `PRONUNCIATION_PROVIDER` no longer serves synthetic scores.

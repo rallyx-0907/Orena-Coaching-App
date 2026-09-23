@@ -131,6 +131,29 @@ component**, đang render 0 / "—" đúng rule 4, và sẽ tự có số khi ba
 | D4 | DM Mono → Roboto Mono cho tiếng Việt | Đã treo từ trước; mọi nhãn mono tiếng Việt đang rơi về Roboto Mono. |
 | D5 | Ink / Paper | Anh nhắc trong yêu cầu, nhưng D-066 đã khai tử và code đã gỡ theme picker. Đang làm **một** hệ Dark Glass. Muốn hai theme trở lại thì là quyết định sản phẩm mới. |
 
+## S. Speaking — nhánh `feature/speaking` (2026-09-23)
+
+Đã dựng theo `Orena-Speaking.dc.html` (cache; DesignSync chưa được cấp quyền trong phiên nên **chưa đối
+chiếu được với nguồn** - D-073 yêu cầu kiểm tra pin trước khi đo). Ba quyết định của anh ngày 2026-09-23
+(D-074): "Đạt" theo cờ lỗi của provider; thư viện Speaking riêng **và** luồng từ Listening; free talk làm
+lại theo frame. Những chỗ dưới đây frame vẽ nhưng chưa có dữ liệu/quyết định, nên **không bịa**:
+
+| # | Ở đâu | Đang làm gì | Cần anh quyết |
+| --- | --- | --- | --- |
+| S1 | Thư viện · chip loại luyện | Chỉ hiện chip cho loại có nội dung thật: "Nhại theo clip" (6 bài Listening có shadowing) và "Nói tự do" (3 tình huống). Catalogue Speaking riêng (`writing_coach/content/speaking_catalog.v1.json`) **rỗng**. | Nội dung cho Đọc theo câu / Luyện âm / Kể lại / Phỏng vấn mô phỏng (việc nội dung, không phải code). |
+| S2 | Workspace · sóng âm lúc chưa ghi | Frame vẽ sóng trắng cố định. App chỉ vẽ mức thật của micro khi đang ghi; lúc nghỉ là các cột phẳng. Sóng của clip mẫu không đo được (audio bên thứ ba, không giải mã). | Chấp nhận cột phẳng, hay làm dịch vụ tính waveform của clip? |
+| S3 | Workspace · câu nhận xét kiểu "Thanh 3 bị đọc thành thanh 2" | Không provider nào đang dùng đo cao độ, nên app chỉ nói điều provider khẳng định: loại lỗi + âm yếu nhất. Nhãn âm tiết zh-CN của Azure (`xiang3`) là nhãn **của câu mẫu**, không phải thanh học viên đọc. | Thêm provider chấm thanh điệu tiếng Trung (SpeechSuper) - provider trả phí là cổng của anh. |
+| S4 | Chi tiết một chữ · "BẠN ĐỌC" | Đường cong "MẪU" lấy từ pinyin của bài; ô "BẠN ĐỌC" để trống + "chưa đo". | Như S3. |
+| S5 | Workspace · giá trị LƯU LOÁT màu hổ phách | Frame tô hổ phách (ngầm một ngưỡng). App để trắng vì D-074 chỉ duyệt cờ theo từ, không có ngưỡng cho lưu loát. | Có ngưỡng cho lưu loát không? |
+| S6 | Từ không bị cờ nhưng một âm rất thấp (vd bỏ -s: từ 61, /s/ 4) | Hàng ghi "Đạt" (đúng D-074), thanh điểm hiện 61, âm /s/ 4 hiện trong chi tiết một chữ. | Muốn hàng "Đạt" cũng in âm yếu nhất không? |
+| S7 | "Luyện riêng chữ này" | Chữ được tô tím trong câu (như frame char detail), lượt thu sau chấm riêng chữ đó; chạm lại chữ tô tím để quay về cả câu. Frame không vẽ đường quay lại. | Cách quay về cả câu. |
+| S8 | Workspace · chỉ có "Câu tiếp" | Frame không vẽ "câu trước"; không có cách lùi một câu ngoài quay lại bài. | Có cần "câu trước" không (đặt ở đâu)? |
+| S9 | "Chạm vào một chữ để nghe riêng" | Dùng giọng đọc của thiết bị (speechSynthesis) như lớp tra từ; clip mẫu không có mốc thời gian theo từ. | Chấp nhận TTS thiết bị? |
+| S10 | Free talk · "CỤM CÓ THỂ DÙNG", dịch câu bạn vừa nói, cấp độ (HSK 2) | Không có nội dung/dữ liệu → không vẽ. Nhận xét một dòng lấy từ coaching (`next_attempt`). "Xem gợi ý sâu" mở sheet: coaching đầy đủ, bằng chứng đo, và ba việc cũ (xem kỹ, viết tiếp, hội thoại). Desktop frame **không có** → cột giữa 560px. | Nội dung cụm từ; có dịch câu học viên nói không; desktop cho free talk. |
+| S11 | Thư viện · "Chủ đề của bạn" | Khả năng nói theo đề của mình giữ nguyên, đặt ở nút hành động của thanh thư viện (chỗ template dành cho hành động của phòng). Frame Speaking không vẽ nút này. | Giữ ở đó, hay chuyển vào "⋯"? |
+| S12 | "Ghi âm của tôi · ĐÃ LƯU" | Không dựng: audio thô không được lưu lâu dài (chưa có quyết định/privacy review). | Như SP-2. |
+| S13 | Chuỗi ngày trên thanh workspace | Hiện **0** (chưa đo), như Dictation. | Như C4. |
+
 ## E. Cổng kích hoạt (không phải việc của lane này)
 
 | # | Việc |
@@ -165,8 +188,8 @@ component**, đang render 0 / "—" đúng rule 4, và sẽ tự có số khi ba
 | Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache | `test_reading_translation`, `test_orena_reading_room.mjs` | IN_PROGRESS (S4) |
 | Reading comprehension | comprehension | per-question check endpoint; per-chapter generation | `reading_sessions`, `reading_attempts` | none for the routes yet: add before changing | IN_PROGRESS (S4) |
 | Search (all libraries) | `ContentCard[]` | catalogue search API, read-only | books, listening, vocabulary, collections | add | IN_PROGRESS (S5) |
-| Speaking library | `ContentCard` | Speaking catalogue | catalogue | add | BLOCKED (`[CONTENT]`) |
-| Speaking workspace | `PronunciationResult` | provider abstraction, normalized contract, Azure and SpeechSuper adapters, tone contour | `speaking_attempts` (no raw audio) | `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs` | IN_PROGRESS (L); E2E `[PROVIDER]` |
+| Speaking library | `ContentCard` | `/api/speaking/library`: Speaking catalogue (empty) + shadowable Listening lessons | catalogue | `test_speaking_library` | IN_PROGRESS (built; catalogue `[CONTENT]`) |
+| Speaking workspace | `PronunciationResult` | provider seam + Azure adapter built; SpeechSuper / tone contour not built | `speaking_attempts` (no raw audio) | `test_speech_pronunciation`, `test_speech_pronunciation_api`, `test_m3_pronunciation_contract.mjs`, `test_speaking_take.mjs`, `test_speaking_workspace.mjs` | IN_PROGRESS (built); E2E `[PROVIDER]` |
 | Vocabulary library, card, strokes | `VocabularyCollection`, `WordDetail` | `vocabulary_library`, stroke order | `vocabulary_*` | `test_vocabulary_library*`, `test_chinese_stroke_order`, `test_orena_vocabulary_library.mjs` | IN_PROGRESS (L) |
 | Vocabulary context clips | `ContextClip` | word to clip index over listening transcripts | new index | add | BLOCKED (`[REVIEW]`/index design) |
 | Vocabulary review | `VocabularyCard` | three-grade scheduler and interval preview | `saved_words` | `test_vocabulary_cards`, `test_orena_vocabulary_card.mjs`; add SRS tests | BLOCKED (`[REVIEW]` rule change) |
@@ -266,17 +289,17 @@ change. Group headers name the contract, data source and tests once.
 
 | ID | Canonical UI | Have → Need | Slice | Status |
 | --- | --- | --- | --- | --- |
-| SP-1 | Six practice types, "2/5 câu" | no Speaking library → catalogue of clip, sentences, type, level | L | BLOCKED `[CONTENT]` |
-| SP-2 | "Ghi âm của tôi" library | no durable audio by policy → show `0` saved; durable audio needs its own review | L | BLOCKED `[REVIEW]` |
-| SP-3 | Clip, sentence, waveform, mic controls | clip, transcript, recorder, mic readiness → none | L | IN_PROGRESS |
-| SP-4 | Transcribe | `/api/speech/transcribe`, unconfigured → credentials | L | BLOCKED `[PROVIDER]` |
-| SP-5 | Score panel: overall, accuracy, fluency, passed | Azure adapter, unconfigured → normalized contract, provider abstraction, SpeechSuper adapter; metrics `0` with no attempt; canonical unavailable state without a provider | L | IN_PROGRESS (E2E `[PROVIDER]`) |
-| SP-6 | Timing note | offsets available → compare with the model clip | L | IN_PROGRESS |
-| SP-7 | Per-word note in words | phoneme accuracy only → tone and phoneme rules, or coaching | L | IN_PROGRESS |
-| SP-8 | Tone curve, target and actual | none → pitch contour service | L | IN_PROGRESS |
-| SP-9 | Compare, hear your take | client blob → none | L | IN_PROGRESS |
-| SP-10 | Free talk: topic, phrases, what you said, comment | `evaluateSpeaking` needs ASR → topic and phrase content | L | BLOCKED `[CONTENT]` `[PROVIDER]` |
-| SP-11 | Recording state | client → none | L | IN_PROGRESS |
+| SP-1 | Six practice types, "2/5 câu" | `/api/speaking/library`: Speaking catalogue (empty, `[CONTENT]`) + Listening lessons with `shadowing`; chips only for types with items (S1) | L | IN_PROGRESS (built 2026-09-23, `feature/speaking`; catalogue content `[CONTENT]`) |
+| SP-2 | "Ghi âm của tôi" library | no durable audio by policy → not drawn (S12); durable audio needs its own review | L | BLOCKED `[REVIEW]` |
+| SP-3 | Clip, sentence, waveform, mic controls | built: model clip (line-bounded), line + reading + meaning, live mic level, 3 round controls; idle waveform flat (S2) | L | IN_PROGRESS (built) |
+| SP-4 | Transcribe | `/api/speech/transcribe` (free talk only) → credentials | L | BLOCKED `[PROVIDER]` |
+| SP-5 | Score panel: overall, accuracy, fluency, passed | provider seam + Azure adapter (words, phonemes, syllables, offsets) → `PronunciationResult` via `capabilities/pronunciation-result.js`; passed = provider flag (D-074); 0 with no attempt; plain line when unconfigured | L | IN_PROGRESS (built; E2E with Azure `[PROVIDER]`) |
+| SP-6 | Timing note | learner speech span (provider word offsets) vs the model line's span | L | IN_PROGRESS (built) |
+| SP-7 | Per-word note in words | provider's error type + weakest phoneme/syllable; no tone sentence without a tone measurement (S3) | L | IN_PROGRESS (built) |
+| SP-8 | Tone curve, target and actual | target from the lesson reading; actual unmeasured, drawn empty "chưa đo" (S4) → a tone provider | L | BLOCKED `[PROVIDER]` |
+| SP-9 | Compare, hear your take | built: model line, then the take (this tab's copy only); hear one word from the take by its offsets | L | IN_PROGRESS (built) |
+| SP-10 | Free talk: topic, phrases, what you said, comment | built on the frame with the existing ASR/evidence/coaching; phrases, translation, level absent (S10) | L | IN_PROGRESS (built; phrases `[CONTENT]`; ASR `[PROVIDER]`) |
+| SP-11 | Recording state | built: pill + timer, live level, stop, cancel (✕ / Esc), auto-stop at 60 s | L | IN_PROGRESS (built) |
 
 ### Writing — `WritingReview`, `RevisionCompare`, draft · `essays`, `essay_revisions`, account drafts · `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_writing_revision_contract`, `test_writing_evaluator_contract`, `test_work_api`, `test_orena_writing_review.mjs`, `test_orena_writing_workspace.mjs`
 
@@ -1303,4 +1326,38 @@ name, so the bar now says what the navigation says.
 scroll, nothing clipped, chips and rows at the phone frame's sizes. At 1920 the
 grid fits five covers across exactly as the frame does, unless a scrollbar is
 present, which costs 15px and drops it to four.
+
+## Speaking slice, measured (2026-09-23, `feature/speaking`)
+
+Built on `Orena-Speaking.dc.html` frames "Speaking library", "Speaking workspace", "… mobile",
+"Speaking · recording", "Speaking · char detail", "Speaking · free talk", read from the cache (the
+design project could not be read in this session: `DesignSync` was not authorised). Open decisions are
+S1-S13 in the register above.
+
+- **Desktop 1920 (measured in the running app, computed style):** bar 84 / pad 0 36 / gap 18; name
+  Nunito 24/800 -0.02em; where DM Mono 13 .60; streak 42 high, 14.5; panes pad 20 36 36, gap 22; task
+  pad 40, gap 26, r20, ring .18 + 0 8 28 .42; result pane 640, r20; clip 560x315 r18 (clamped to 29dvh
+  on a shorter window), play 86; badge DM Mono 11.5 .08em; line Noto Serif 36/600 lh 1.4; reading DM
+  Mono 18 .04em .72; meaning 16.5 .60; mic 104, sides 56; hint 14.5 .60; head pad 24 28 gap 20; ring 92,
+  number 27/800, count DM Mono 10; headline 23/800; metrics DM Mono 13 .75; body pad 22 28 gap 16;
+  label 10.5 .14em; action pills 15/700 pad 13 18. Matches the frame after two fixes found by measuring:
+  action pills were 400 (a `.sp-room button {font: inherit}` rule outranked them) and the back link .68
+  instead of .70.
+- **Phone 390x844, touch (Playwright, `hasTouch`, `isMobile`):** workspace, recording and char detail
+  sheet as their frames; the recording level draws the frame's 34 bars; no horizontal overflow in EN,
+  VI, ZH.
+- **Flow checked in a browser** on the private sandbox :8013 (throwaway Postgres, migrations applied
+  there): record (Chromium fake microphone) → processing → result → word detail, desk and phone, EN/VI/ZH
+  interface over zh and en lessons; an old `#/encounter?…&intent=speaking|shadowing` link lands in the
+  workspace on the line; Listening's line sheet "Shadow" opens it on the chosen line and back returns to
+  the lesson. **No pronunciation provider was configured on :8013**, so the pronunciation route was
+  answered in the browser test by a provider-shaped stand-in: this verifies the rendering and the
+  lifecycle, not Azure. Azure itself is covered by mocked-response tests only.
+- **Not browser-checked yet:** the Speaking library and free talk rooms (built after the shared Docker
+  engine stopped during this batch).
+- `scripts/test_m3_pronunciation_contract.mjs` is rewritten to `PronunciationResult` and passes (it
+  held the D-065 "no score" report). Six `.mjs` gates fail locally on a clean `3bf2c3f` tree as well,
+  with the same first assertion: `test_orena_admin_console`, `test_orena_admin_entry`,
+  `test_orena_continuation`, `test_orena_product`, `test_orena_reference`,
+  `test_orena_writing_workspace` - inherited, not this slice.
 

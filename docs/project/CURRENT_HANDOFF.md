@@ -48,6 +48,13 @@ in this sentence" may use AI; vocabulary review has three grades and keeps
 learner history; loading/empty/error follow the baseline or the existing
 pattern, invented visuals are out of scope; accessibility never redesigns.
 
+Speaking lane (`feature/speaking`, worktree `D:\Orena-Speaking`, sandbox :8013 with its own throwaway
+database; not merged into `codex/work`): the Speaking library, workspace, recording, word detail and free
+talk are built on their frames (D-074; tracker SP-1..SP-11 and register S1-S13). Pronunciation goes
+through the provider seam (`speech_pronunciation.py`, Azure first) and reaches the browser only as
+`PronunciationResult`. Azure needs its key and region in that worktree's `.env` (human); until then
+the workspace says scoring is not switched on. `test_m3_pronunciation_contract.mjs` is fixed there.
+
 Backbone lane (Opus), D-054 delegation: sandbox only, chain `20260912_0007`,
 flag on, backbone `active` (runbook section 7). Writing drafts kept with the
 account there (`4e1f0a5`). I4 `/api/collection`. Deletion gated (D-055). No
