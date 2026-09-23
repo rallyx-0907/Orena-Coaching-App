@@ -589,7 +589,7 @@ app.include_router(media_library_upload_router)
 # Collection retrieval (I4 step 1): one read over the owners that exist, each
 # read through what it already serves. No surface calls it yet.
 configure_collection(runtime_owners(
-    library=list_library_vocabulary,
+    library=lambda limit: list_library_vocabulary(limit=limit),
     reading=list_reading_sessions,
     essays=_learning_repository.list_latest_series,
     specialized=_specialized_learning_repository,
@@ -601,7 +601,7 @@ configure_learner_summary(runtime_sources(
     essays=lambda: _learning_repository.list_essays(0, ascending=True),
     reading=list_reading_sessions,
     grammar=_learning_repository.completed_grammar_ids,
-    library=list_library_vocabulary,
+    library=lambda limit: list_library_vocabulary(limit=limit),
     specialized=_specialized_learning_repository,
 ))
 app.include_router(learner_summary_router)

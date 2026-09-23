@@ -89,6 +89,20 @@ assert.doesNotMatch(
   /list_library_vocabulary\(\)/,
   'no route reads the whole listing',
 );
+/* A reference is a call too. Two wirings passed the listing function itself
+   and the owner called it with no arguments, which after paging is the first
+   default page reported as the whole library. Every wiring hands over a
+   reader that is given a limit. */
+assert.doesNotMatch(
+  appPy,
+  /library=list_library_vocabulary/,
+  'and no wiring hands the listing over unbounded',
+);
+assert.match(
+  appPy,
+  /library=lambda limit: list_library_vocabulary\(limit=limit\)/,
+  'the wirings pass a reader that takes its bound',
+);
 for (const helper of ['saved_vocabulary_words', 'saved_vocabulary_state'])
   assert.ok(appPy.includes(helper), `the routes use ${helper}`);
 

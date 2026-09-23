@@ -20,6 +20,10 @@ router = APIRouter(prefix='/api', tags=['learner-summary'])
 READING_BOUND = 30
 LISTENING_BOUND = 100
 SPEAKING_BOUND = 50
+# Saved language is paged, so this is one bounded page. A page that fills its
+# bound makes this domain's counts a lower bound, which is true - an unbounded
+# call would quietly take the default page and report it as the whole library.
+LANGUAGE_BOUND = 200
 
 _sources: Callable[[], Sequence[Source]] | None = None
 
@@ -30,7 +34,7 @@ def configure_learner_summary(sources: Callable[[], Sequence[Source]] | None) ->
 
 
 def runtime_sources(*, essays: Callable[[], Sequence[dict[str, Any]]], reading: Callable[[int], dict[str, Any]],
-                    grammar: Callable[[], Any], library: Callable[[], dict[str, Any]],
+                    grammar: Callable[[], Any], library: Callable[[int], dict[str, Any]],
                     specialized: Any) -> Callable[[], list[Source]]:
     """The six domains, wired to the reads the app already serves."""
 
@@ -41,7 +45,7 @@ def runtime_sources(*, essays: Callable[[], Sequence[dict[str, Any]]], reading: 
             Source('listening', lambda: specialized.list_recent_listening_progress_records(LISTENING_BOUND), LISTENING_BOUND),
             Source('speaking', lambda: specialized.list_speaking_attempt_records(SPEAKING_BOUND), SPEAKING_BOUND),
             Source('grammar', grammar),
-            Source('language', lambda: library().get('items', [])),
+            Source('language', lambda: library(LANGUAGE_BOUND).get('items', []), LANGUAGE_BOUND),
         ]
 
     return build

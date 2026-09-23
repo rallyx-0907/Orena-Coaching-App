@@ -37,6 +37,12 @@ router = APIRouter(prefix='/api', tags=['collection'])
 READING_BOUND = 30
 LISTENING_BOUND = 100
 SPEAKING_BOUND = 50
+# The saved language arrives a page at a time, so this read takes one bounded
+# page rather than the whole library. Asking for all of it is what made every
+# screen that touched vocabulary cost what the whole vocabulary costs; asking
+# without a bound would now silently take the first default page instead and
+# call it everything.
+LANGUAGE_BOUND = 200
 
 _owners: Callable[[], Sequence[Owner]] | None = None
 # Cursors are signed with the session secret when there is one. Without it they
@@ -76,14 +82,14 @@ def catalog_lesson_resolver() -> Callable[[str, str], LessonRef | None]:
     return resolve
 
 
-def runtime_owners(*, library: Callable[[], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
+def runtime_owners(*, library: Callable[[int], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
                    essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any) -> Callable[[], list[Owner]]:
     """The five owners, wired to the reads the app already serves."""
     resolve = catalog_lesson_resolver()
 
     def build() -> list[Owner]:
         return [
-            Owner('language', lambda: library().get('items', []), language_entries),
+            Owner('language', lambda: library(LANGUAGE_BOUND).get('items', []), language_entries, LANGUAGE_BOUND),
             Owner('reading', lambda: reading(READING_BOUND).get('items', []), reading_entries, READING_BOUND),
             Owner('media', lambda: specialized.list_recent_listening_progress_records(LISTENING_BOUND),
                   media_entries_with(resolve), LISTENING_BOUND),
