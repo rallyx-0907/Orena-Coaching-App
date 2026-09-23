@@ -2500,3 +2500,29 @@ from practising one word, a "previous line" control, phrases for free talk.
 **Consequences.** `capabilities/pronunciation-result.js` is the only reader of
 the assessment; `toneActual` stays empty until a provider measures pitch; an
 unset `PRONUNCIATION_PROVIDER` no longer serves synthetic scores.
+
+## D-075 — Speaking: the new Claude Design Speaking UI is the learner flow; Azure proven before review
+
+**Date:** 2026-09-23. **Source:** the human, updating D-074 in the `feature/speaking` session.
+
+**Decision.**
+
+1. The Speaking design in the Claude Design project, read at its source (DesignSync), is the
+   Speaking learner flow and replaces the current one. The backend and provider already built are
+   wired into it; no second Speaking flow runs beside it.
+2. Azure Pronunciation Assessment is run end to end for real before review, using the repository's
+   existing credential convention (not a `.env` assumed inside a worktree).
+3. No SpeechSuper yet: Azure's real Mandarin gap is measured first
+   (`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`), then decided.
+4. No fluency threshold.
+5. The word verdict is the provider's; a weak phoneme is shown in the word's detail and never
+   overrides the word's verdict.
+6. Practising one word alone has a way back to the current line.
+7. No "previous line" unless the design or product asks for it.
+8. The Speaking catalogue is not seeded with invented content.
+9. Free talk keeps its capability; its presentation follows the new Speaking UI.
+10. Speaking is reported READY FOR HUMAN REVIEW only when the source was read, the main UI updated,
+    Azure run end to end, and desktop and phone checked in EN, VI and ZH. No merge, no push.
+
+**Supersedes:** the open questions S5 (fluency threshold: none), S6 (weak phoneme: detail only), S8
+(previous line: not added) and the "no Azure yet" state of D-074.
