@@ -5,8 +5,13 @@ import json
 
 import pytest
 
+import requests
+
 from writing_coach.speech_pronunciation import (
     DemoPronunciationProvider,
+    SpeechPronunciationNoSpeech,
+    SpeechPronunciationRequestFailed,
+    SpeechPronunciationTimedOut,
     build_speech_pronunciation_provider,
     AzureSpeechPronunciationProvider,
     SpeechPronunciationMalformed,
@@ -149,14 +154,27 @@ def test_demo_provider_returns_explicit_synthetic_provenance():
     assert all(word.error_type == "SyntheticDemo" for word in result.words)
 
 
-def test_demo_provider_is_development_only(monkeypatch):
+def test_demo_provider_is_development_only_and_only_when_asked(monkeypatch):
+    # D-066: no fake pronunciation result. The synthetic provider is no longer
+    # what an unconfigured development runtime gets; it must be asked for.
     monkeypatch.setenv("APP_ENV", "development")
-    monkeypatch.delenv("PRONUNCIATION_PROVIDER", raising=False)
+    monkeypatch.setenv("PRONUNCIATION_PROVIDER", "demo")
     assert isinstance(build_speech_pronunciation_provider(), DemoPronunciationProvider)
 
     monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("PRONUNCIATION_PROVIDER", "demo")
     assert build_speech_pronunciation_provider() is None
+
+
+def test_unset_mode_uses_azure_when_credentials_exist_else_none(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.delenv("PRONUNCIATION_PROVIDER", raising=False)
+    monkeypatch.delenv("AZURE_SPEECH_KEY", raising=False)
+    monkeypatch.delenv("AZURE_SPEECH_REGION", raising=False)
+    assert build_speech_pronunciation_provider() is None
+
+    monkeypatch.setenv("AZURE_SPEECH_KEY", "k")
+    monkeypatch.setenv("AZURE_SPEECH_REGION", "southeastasia")
+    assert isinstance(build_speech_pronunciation_provider(), AzureSpeechPronunciationProvider)
 
 
 def test_azure_prosody_is_off_by_default():
@@ -177,8 +195,109 @@ def test_azure_prosody_is_off_by_default():
         language="en",
         reference_text="Good morning.",
     )
-    assert result.score_kind == "provider"
+    assert result.score_kind == "measured"
     _, call = session.calls[0]
     assert "EnableProsodyAssessment" not in call["headers"]
     config = json.loads(base64.b64decode(call["headers"]["Pronunciation-Assessment"]))
     assert "EnableProsodyAssessment" not in config
+
+
+TICKS_PER_MS = 10_000
+
+
+def test_zh_words_keep_timing_syllables_and_phonemes_without_a_tone_field():
+    payload = {
+        "RecognitionStatus": "Success",
+        "NBest": [{
+            "Display": "我们想要。",
+            "PronunciationAssessment": {"AccuracyScore": 80, "FluencyScore": 70, "CompletenessScore": 100, "PronScore": 78},
+            "Words": [
+                {
+                    "Word": "我们", "Offset": 5_000_000, "Duration": 4_000_000,
+                    "PronunciationAssessment": {"AccuracyScore": 95, "ErrorType": "None"},
+                    "Syllables": [
+                        {"Syllable": "wo3", "PronunciationAssessment": {"AccuracyScore": 96}},
+                        {"Syllable": "men5", "PronunciationAssessment": {"AccuracyScore": 94}},
+                    ],
+                    "Phonemes": [{"Phoneme": "w", "PronunciationAssessment": {"AccuracyScore": 97}}],
+                },
+                {
+                    "Word": "想", "Offset": 9_500_000, "Duration": 3_000_000,
+                    "PronunciationAssessment": {"AccuracyScore": 52, "ErrorType": "Mispronunciation"},
+                    "Syllables": [{"Syllable": "xiang3", "PronunciationAssessment": {"AccuracyScore": 52}}],
+                },
+            ],
+        }],
+    }
+    provider, _ = make_provider(payload)
+    result = provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                                   language="zh", reference_text="我们想要。")
+    first, second = result.words
+    assert (first.offset_ms, first.duration_ms) == (500, 400)
+    assert (second.offset_ms, second.duration_ms) == (950, 300)
+    assert [s.syllable for s in first.syllables] == ["wo3", "men5"]
+    assert first.syllables[0].accuracy_score == 96.0
+    assert second.error_type == "Mispronunciation"
+    # A syllable label is the reference reading; nothing here is a tone measurement.
+    assert not any("tone" in field for field in type(first).__dataclass_fields__)
+
+
+def test_an_omitted_word_is_kept_with_the_providers_flag_and_its_phonemes():
+    payload = {
+        "NBest": [{
+            "PronScore": 70, "AccuracyScore": 72, "FluencyScore": 80, "CompletenessScore": 67,
+            "Words": [
+                {"Word": "two", "AccuracyScore": 98, "ErrorType": "None"},
+                {"Word": "cats", "AccuracyScore": 61, "ErrorType": "None",
+                 "Phonemes": [{"Phoneme": "k", "AccuracyScore": 95}, {"Phoneme": "ae", "AccuracyScore": 93},
+                              {"Phoneme": "t", "AccuracyScore": 90}, {"Phoneme": "s", "AccuracyScore": 4}]},
+                {"Word": "slept", "AccuracyScore": 0, "ErrorType": "Omission"},
+            ],
+        }],
+    }
+    provider, _ = make_provider(payload)
+    result = provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                                   language="en", reference_text="Two cats slept.")
+    cats = result.words[1]
+    # The word reads whole and is not flagged, but the final /s/ scored 4: the
+    # phoneme evidence survives normalization so nothing downstream can call
+    # the word "said right" from its text alone.
+    assert cats.error_type == "None"
+    assert cats.phonemes[-1].phoneme == "s" and cats.phonemes[-1].accuracy_score == 4.0
+    assert result.words[2].error_type == "Omission"
+    assert result.words[2].offset_ms is None
+
+
+@pytest.mark.parametrize("status", ["NoMatch", "InitialSilenceTimeout", "BabbleTimeout"])
+def test_no_speech_is_its_own_outcome_not_a_provider_failure(status):
+    provider, _ = make_provider({"RecognitionStatus": status})
+    with pytest.raises(SpeechPronunciationNoSpeech):
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="Hello.")
+
+
+def test_timeout_is_reported_as_timeout():
+    class Slow:
+        def post(self, *_, **__):
+            raise requests.Timeout()
+
+    provider = AzureSpeechPronunciationProvider("secret-key-value", "eastus", session=Slow(),
+                                                normalizer=lambda data, **_: data)
+    with pytest.raises(SpeechPronunciationTimedOut):
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="Hello.")
+
+
+def test_a_rejected_key_never_appears_in_the_error():
+    class Denied:
+        def post(self, *_, **__):
+            return FakeResponse({"error": {"message": "Access denied due to invalid subscription key."}}, 401)
+
+    provider = AzureSpeechPronunciationProvider("secret-key-value", "eastus", session=Denied(),
+                                                normalizer=lambda data, **_: data)
+    with pytest.raises(SpeechPronunciationRequestFailed) as caught:
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="Hello.")
+    assert caught.value.status_code == 401
+    assert "secret-key-value" not in str(caught.value)
+    assert "secret-key-value" not in repr(caught.value)
