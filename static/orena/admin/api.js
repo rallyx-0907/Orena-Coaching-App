@@ -82,6 +82,7 @@ export const adminApi = {
   // Reading Content Engine. Submitting is multipart because a file may ride
   // with it; everything else is JSON. Nothing here decides who may call it.
   readingSources: () => request('/api/admin/reading/sources'),
+  readingCreateSource: (body) => request('/api/admin/reading/sources', json('POST', body)),
   readingSetSourceState: (id, state) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state })),
   readingSetPolling: (id, state, enabled) =>

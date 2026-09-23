@@ -10,7 +10,8 @@
    collection as a whole. Book and media attempts are recorded server-side, so
    history lists failures too, with the stage where each one stopped. */
 import { adminApi } from './api.js';
-import { jobRows } from './reading.js';
+import { addForms, jobRows, submissionFrom } from './reading.js';
+import { watch as watchJob } from './tray.js';
 import { emptyBlock, errorBlock, failureDetail, gapNote, loadingBlock } from './states.js';
 import { bytes, chip, dateTime, duration, esc, fill, languageName, notice, num, pager, panel, relative, select, table } from './format.js';
 import { safeExternal } from '../ui/html.js';
@@ -122,10 +123,75 @@ function fileControl({ label, accept, count, disabled }, t, ui) {
   return `<label class="ac-field ac-field--file"><span>${esc(label)}</span><span class="ac-file"><input type="file" name="files" accept="${esc(accept)}" multiple${disabled ? ' disabled' : ''}><span class="ac-button">${esc(t.chooseFiles)}</span><span class="ac-file__chosen">${esc(count ? fill(t.filesChosen, { count: num(count, ui) }) : t.noFilesChosen)}</span></span></label>`;
 }
 
+/* Every kind of content Orena holds, in the order an operator meets them:
+   the three that are read, then the words, then where content comes from. */
+export const FLOWS = ['reading', 'books', 'media', 'vocabulary', 'sources'];
+
+/* The engine keys a source by slug, and an operator types a name. One is
+   derived from the other rather than asked for twice. */
+export function slugFor(name) {
+  const base = String(name || '')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120);
+  return base || `source-${Date.now().toString(36)}`;
+}
+
 export function chooserView(flow, t) {
-  return `<div class="ac-chooser" role="group" aria-label="${esc(t.newImport)}">${['books', 'media', 'vocabulary']
+  return `<div class="ac-chooser" role="group" aria-label="${esc(t.newImport)}">${FLOWS
     .map((kind) => `<button type="button" class="ac-choice" data-ac-flow="${kind}" aria-pressed="${flow === kind}"><strong>${esc(t[`choose_${kind}`])}</strong><span>${esc(t[`choose_${kind}Note`])}</span></button>`)
     .join('')}</div>`;
+}
+
+/* Reading submissions, in the area an operator looks for an import. The forms
+   are the Reading view's own - one definition, two places that show it - and
+   what happens after submitting is the console-wide progress tray, so this
+   view does not hold anyone while a fetch runs somewhere else. */
+export function readingView(state, t) {
+  return `<div class="ac-flow">${state.queued
+    ? `<div class="ac-state" data-state="success"><p class="ac-state__title">${esc(t.readingQueuedTitle)}</p><p class="ac-state__note">${esc(t.readingQueuedNote)}</p><div class="ac-state__actions"><button type="button" class="ac-button ac-button--primary" data-ac-add-another>${esc(t.readingAddAnother)}</button><a class="ac-link" href="#/admin?id=content&amp;kind=reading">${esc(t.viewInContent)}</a></div></div>`
+    : `<p class="ac-note">${esc(t.importReadingNote)}</p><div class="ac-forms">${addForms(t)}</div>`}</div>`;
+}
+
+/* A publisher, a newspaper, a site: the thing a hundred articles come from.
+   It is created in the state the engine insists on - waiting for review - and
+   an operator approves it in Content -> Reading -> Sources. Automation is
+   asked for here because the rights answer belongs with the source; whether
+   anything polls it is a separate question the console answers honestly
+   elsewhere. */
+export function sourcesView(state, t) {
+  if (state.created) {
+    return `<div class="ac-flow"><div class="ac-state" data-state="success"><p class="ac-state__title">${esc(fill(t.sourceCreatedTitle, { name: state.created.name }))}</p><p class="ac-state__note">${esc(t.sourceCreatedNote)}</p><div class="ac-state__actions"><button type="button" class="ac-button ac-button--primary" data-ac-add-another>${esc(t.sourceAddAnother)}</button><a class="ac-link" href="#/admin?id=content&amp;kind=reading&amp;view=sources">${esc(t.sourceOpenRegistry)}</a></div></div></div>`;
+  }
+  /* The schema's `ck_reading_source_type` allows the six ways content arrives,
+     not the six kinds of publisher a source might be. A newspaper whose
+     articles an operator pastes in one at a time *is* a `direct_url` source,
+     truthfully. The editorial axis the brief asks for (publisher / news site /
+     website / curated) is a different question and a schema decision: it is
+     recorded in ADMIN_DESIGN_ALIGNMENT.md rather than faked here. */
+  const types = ['direct_url', 'rss', 'feed', 'api', 'manual', 'file'];
+  return `<form class="ac-flow ac-form" data-ac-source-form>
+    <p class="ac-note">${esc(t.sourceFormNote)}</p>
+    <div class="ac-flow__fields">
+      <label class="ac-field"><span>${esc(t.sourceName)}</span><input type="text" name="name" required maxlength="240" placeholder="${esc(t.sourceNameHint)}"></label>
+      <label class="ac-field"><span>${esc(t.sourceBaseUrl)}</span><input type="url" name="base_url" maxlength="600" placeholder="https://"></label>
+      ${select({ name: 'source_type', label: t.sourceType, options: types.map((kind) => [kind, t[`readingSourceType_${kind}`] || kind]) })}
+      ${select({ name: 'language', label: t.readingLanguage, options: [['en', t.lang_en], ['zh', t.lang_zh]] })}
+    </div>
+    <fieldset class="ac-field"><legend>${esc(t.sourceRights)}</legend>
+      <p class="ac-note">${esc(t.sourceRightsNote)}</p>
+      <label class="ac-check"><input type="checkbox" name="can_republish"> <span>${esc(t.readingRightsRepublish)}</span></label>
+      <label class="ac-check"><input type="checkbox" name="can_adapt"> <span>${esc(t.sourceCanAdapt)}</span></label>
+      <label class="ac-check"><input type="checkbox" name="attribution_required" checked> <span>${esc(t.sourceAttributionRequired)}</span></label>
+      <label class="ac-check"><input type="checkbox" name="automation_allowed"> <span>${esc(t.sourceAutomationAllowed)}</span></label>
+      <p class="ac-note" data-kind="gap">${esc(t.sourceAutomationGap)}</p>
+    </fieldset>
+    <label class="ac-field"><span>${esc(t.sourceLicense)}</span><input type="text" name="license_note" maxlength="2000" placeholder="${esc(t.sourceLicenseHint)}"></label>
+    <div class="ac-flow__actions"><button type="submit" class="ac-button ac-button--primary"${state.running ? ' disabled' : ''}>${esc(state.running ? t.importing : t.sourceCreate)}</button>${state.error ? `<span class="ac-error" role="alert">${esc(state.error)}</span>` : ''}</div>
+  </form>`;
 }
 
 export function booksView(state, t, ui) {
@@ -311,7 +377,7 @@ export async function renderImports(container, env) {
   const params = env.params || {};
   const learning = ctx?.language === 'zh' ? 'zh' : 'en';
   const state = {
-    flow: ['books', 'media', 'vocabulary'].includes(params.flow) ? params.flow : '',
+    flow: FLOWS.includes(params.flow) ? params.flow : '',
     books: { items: [], language: learning, running: false },
     media: { urls: '', items: [], language: learning, running: false, checking: false, advanced: false },
     vocabulary: {
@@ -323,6 +389,8 @@ export async function renderImports(container, env) {
     },
     history: { filters: { kind: '', status: ['failed'].includes(params.status) ? params.status : '' }, offset: 0, data: null },
     jobs: { page: null, cursor: null },
+    reading: { queued: false },
+    sources: { running: false, error: '', created: null },
   };
 
   container.innerHTML = `<div class="ac-stack">${panel({ title: t.newImport, body: '<div data-ac-chooser></div><div data-ac-flow-host></div>' })}${panel({ title: t.historyTitle, body: '<div class="ac-stack ac-stack--tight" data-ac-history></div>' })}</div>`;
@@ -334,13 +402,17 @@ export async function renderImports(container, env) {
     if (!alive()) return;
     if (chooser) chooser.innerHTML = chooserView(state.flow, t);
     if (!flowHost) return;
-    flowHost.innerHTML = state.flow === 'books'
-      ? booksView(state.books, t, ui)
-      : state.flow === 'media'
-        ? mediaView(state.media, t, ui)
-        : state.flow === 'vocabulary'
-          ? vocabularyView(state.vocabulary, t, ui)
-          : '';
+    flowHost.innerHTML = state.flow === 'reading'
+      ? readingView(state.reading, t)
+      : state.flow === 'sources'
+        ? sourcesView(state.sources, t)
+        : state.flow === 'books'
+          ? booksView(state.books, t, ui)
+          : state.flow === 'media'
+            ? mediaView(state.media, t, ui)
+            : state.flow === 'vocabulary'
+              ? vocabularyView(state.vocabulary, t, ui)
+              : '';
   };
   /* Two feeds, one filter: the catalogue history the server paginates, and the
      Reading engine's own job queue. A runtime without the engine answers 503,
@@ -504,6 +576,13 @@ export async function renderImports(container, env) {
       flowHost?.querySelector('input, textarea, select')?.focus();
       return;
     }
+    if (event.target.closest('[data-ac-add-another]')) {
+      state.reading.queued = false;
+      state.sources.created = null;
+      state.sources.error = '';
+      paintFlow();
+      return;
+    }
     if (event.target.closest('[data-ac-media-check]')) {
       checkMedia();
       return;
@@ -602,8 +681,67 @@ export async function renderImports(container, env) {
     }
   };
 
+  /* One submission through the Reading engine's own route. The form goes away
+     and the console-wide tray carries it from here - the same contract Content
+     -> Reading -> Add keeps, because it is the same engine. */
+  const submitReading = async (form) => {
+    const fields = form.elements;
+    const submitted = submissionFrom(fields, form.dataset.acAdd);
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const job = await api.readingSubmit(submitted, fields.upload?.files?.[0] || null);
+      watchJob({
+        id: job.id,
+        label: submitted.title || submitted.url || fields.upload?.files?.[0]?.name || '',
+      });
+      env.notify?.(job.duplicate ? t.readingSubmitDuplicate : t.readingSubmitted);
+      state.reading.queued = true;
+      paintFlow();
+      await loadHistory();
+    } catch (error) {
+      if (button) button.disabled = false;
+      env.notify?.(error?.message || t.readingSubmitFailed);
+    }
+  };
+
+  /* A source is created in the state the engine insists on - waiting for
+     review - so this form cannot activate anything. Approval happens in the
+     registry, deliberately, by someone who has read the rights. */
+  const createSource = async (form) => {
+    const fields = form.elements;
+    const name = fields.name.value.trim();
+    state.sources.running = true;
+    state.sources.error = '';
+    paintFlow();
+    try {
+      const created = await api.readingCreateSource({
+        slug: slugFor(name),
+        name,
+        source_type: fields.source_type.value,
+        base_url: fields.base_url.value.trim(),
+        languages: [fields.language.value],
+        automation_allowed: fields.automation_allowed.checked,
+        can_republish: fields.can_republish.checked,
+        can_adapt: fields.can_adapt.checked,
+        attribution_required: fields.attribution_required.checked,
+        license_note: fields.license_note.value.trim(),
+      });
+      state.sources.created = created;
+      env.notify?.(fill(t.sourceCreatedTitle, { name: created.name }));
+    } catch (error) {
+      state.sources.error = error?.message || t.loadFailed;
+    }
+    state.sources.running = false;
+    paintFlow();
+  };
+
   const onSubmit = (event) => {
     event.preventDefault();
+    const adding = event.target.closest('[data-ac-add]');
+    if (adding) { submitReading(adding); return; }
+    const source = event.target.closest('[data-ac-source-form]');
+    if (source) { createSource(source); return; }
     if (event.target.closest('[data-ac-books]')) importBooks();
     else if (event.target.closest('[data-ac-media]')) importMedia();
     else if (event.target.closest('[data-ac-vocabulary]')) importVocabulary();
