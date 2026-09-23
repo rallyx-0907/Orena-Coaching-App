@@ -1520,11 +1520,12 @@
   font-family: var(--display-font);
   font-weight: 700;
   font-size: 15px;
-  color: var(--text-on-action);
+  color: var(--text-primary);
   cursor: pointer;
 }
 .sp-bigbtn--accent {
   block-size: 54px;
+  color: var(--text-on-action);
   border-radius: 17px;
   background: var(--accent-gradient);
   box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
@@ -2054,11 +2055,13 @@
   }
   .sp-sum__body {
     inline-size: auto;
+    margin: 0;
     padding: 24px 20px 30px;
   }
   .sp-sum__cols {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: 18px;
   }
 }
@@ -2275,12 +2278,13 @@
   display: flex;
   align-items: center;
   gap: 11px;
+  line-height: 1.4;
 }
 .sp-crit__label {
   flex: none;
   inline-size: 96px;
   font-size: 13.5px;
-  color: var(--ink-85);
+  color: var(--ink-84);
 }
 .sp-crit .sp-bar {
   flex: 1;
@@ -2323,7 +2327,7 @@
   font-family: var(--display-font);
   font-weight: 700;
   font-size: 18px;
-  color: var(--text-on-action);
+  color: var(--text-primary);
   cursor: pointer;
 }
 .sp-ftbtn--accent {
@@ -2331,6 +2335,7 @@
   background: var(--accent-gradient);
   box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
   font-weight: 800;
+  color: var(--text-on-action);
 }
 .sp-ftr__more {
   display: flex;
@@ -2350,6 +2355,7 @@
     font-weight: 700;
     font-size: 15px;
     color: var(--text-primary);
+    line-height: 20px;
   }
   .sp-ftr__desk,
   .sp-ftr__arrow,
@@ -2462,11 +2468,15 @@
     background: var(--accent-gradient);
     box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
     font-weight: 800;
+    font-size: 15px;
+    color: var(--text-on-action);
   }
   .sp-ftr__buttons [data-sp-ftr-fixed] ~ .sp-ftbtn--accent {
     flex: 1;
     background: var(--accent-chip);
     box-shadow: var(--accent-chip-ring);
     font-weight: 700;
+    font-size: 14.5px;
+    color: var(--text-primary);
   }
 }
