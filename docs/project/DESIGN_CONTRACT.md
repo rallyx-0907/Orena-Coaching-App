@@ -90,6 +90,39 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
     budgets are the design's (936px of content on desktop, about 636px of
     scrolling area on a phone).
 
+49. **A learning workspace is the viewport, never a long page (D-078).** "Learning workspace
+    không được trở thành một page dài. Workspace shell phải nằm trong viewport. Chỉ những vùng nội
+    dung có bản chất dài mới được scroll nội bộ bên trong workspace. Primary learning controls và
+    primary actions phải luôn nằm trong vùng thao tác của viewport." This binds every learning
+    workspace - Reading, Listening, Speaking, Dictation, Writing, Vocabulary, Grammar and any added
+    later - on a desk and on a phone, and no agent may loosen it for an implementation reason
+    (a large legacy component, a backend that returns a lot, a screen that used to scroll).
+    - *The shell is bounded.* Once the learner is in a task, the page never scrolls: not to play,
+      record, stop, answer, submit, retry, go on, change step, read the main feedback or reach an
+      action the task needs.
+    - *Only long content scrolls, inside its own region.* A passage, an essay, a transcript, a word
+      or sentence or error list, detailed results, long feedback, history, an attempts list: each is
+      a bounded region with its own scroll. Things of a known size - player, recorder, prompt,
+      current sentence, score summary, current feedback, the action bar, navigation - sit in the
+      layout directly; they are not wrapped in scroll boxes, and scroll regions are not nested.
+    - *Primary controls stay in view.* Play, record, stop, submit, retry, next, a save the task
+      needs and the room's main action are never pushed below long content.
+    - *When it does not fit, recompose.* Re-lay rows and columns, rebalance panels, remove spare
+      space, move detail into a sheet, popover or panel, disclose progressively, change the layout
+      between desk and phone. Shrinking everything until it fits is not a fix.
+    - *What gives way first* when space is short: 1 the content being learned, 2 the primary
+      interaction, 3 the task's state, 4 the main feedback, 5 submit/retry/next, 6 support
+      information, 7 detail and advanced information - the later items yield first.
+    - *Browsing is exempt.* Home, the Library, catalogues, discovery and history may scroll as pages.
+    - *Verified sizes.* The two frames of rule 48, and also a short desk (1366x768) and a small phone
+      (360x740): no page scroll, no horizontal overflow, primary controls inside the viewport, long
+      regions scrolling inside. For a learning workspace this replaces rule 48's "scrolling area on
+      a phone".
+    - *One flow per capability.* Where a capability has its current flow, every way in - navigation,
+      Home, Continue, Library, deep links, cross-capability actions, old addresses - arrives in it;
+      an old address redirects (`static/orena/product/legacy-routes.js`) and the old screen is never
+      rendered.
+
 ## The baseline's visual rules
 
 30. **One system: Dark Glass.** Ground `#050310` with the cosmic field
@@ -219,7 +252,11 @@ in addition to `docs/project/REVIEW_POLICY.md`:
   a screenshot or the cache alone;
 - English, Chinese and Vietnamese are each verified, in the same batch;
 - every colour comes from the semantic tokens and contrast passes;
-- no legacy implementation of the same surface remains: it is deleted.
+- no legacy implementation of the same surface remains: it is deleted;
+- a learning workspace meets rule 49 at every verified size: the shell within the viewport, no page
+  scroll to finish the task, long content scrolling only in its own region, primary controls and
+  submit/retry/next always in view, no horizontal overflow, nothing overlapping or squeezed to fit,
+  no blind scaling, a clear hierarchy, and no legacy learner route left for the same capability.
 
 ## Native (frozen)
 

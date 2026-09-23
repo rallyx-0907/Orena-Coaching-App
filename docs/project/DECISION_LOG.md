@@ -2578,3 +2578,53 @@ read at its source (`docs/design/canonical-ui/SYNC_2026-09-23.md`).
    commits do not stand in for it. No merge, no push.
 
 **Supersedes:** the open questions S14 and S15 in `docs/project/UI_BACKEND_GAPS.md`.
+
+## D-078 — App-wide: a learning workspace is the viewport, never a long page; one flow per capability
+
+**Date:** 2026-09-23. **Source:** the human, "APP-WIDE LEARNING WORKSPACE RULES — NON-NEGOTIABLE",
+given in the `feature/speaking` session. It overrides the design where they differ (explicit current
+human instruction ranks first).
+
+**Decision.**
+
+1. **The rule** (verbatim): "Learning workspace không được trở thành một page dài. Workspace shell
+   phải nằm trong viewport. Chỉ những vùng nội dung có bản chất dài mới được scroll nội bộ bên trong
+   workspace. Primary learning controls và primary actions phải luôn nằm trong vùng thao tác của
+   viewport." It binds every learning workspace (Reading, Listening, Speaking, Dictation, Writing,
+   Vocabulary, Grammar and later ones), desk and phone. Browsing pages (Home, Library, catalogues,
+   discovery, history) are exempt. No agent may loosen it for an implementation reason. Written as
+   Design Contract rule 49 with its acceptance items in the fidelity gate; `AGENTS.md` and
+   `CLAUDE.md` point to it.
+2. **Internal scroll only for content long by nature**, in one bounded region per need; finite
+   components are laid out directly and scroll regions are not nested.
+3. **When it does not fit, recompose** by the stated priority (content being learned, primary
+   interaction, task state, main feedback, submit/retry/next, support, detail); blind scaling is not
+   a fix.
+4. **One learner flow per capability.** Every way in reaches the current flow; old addresses
+   redirect and old learner screens are never rendered.
+5. **Speaking is to be cleaned up now** under this rule.
+
+**Applied in this slice (`feature/speaking`).**
+
+- Speaking: the room is bounded to the viewport. On a desk the task is fixed bands (steps, mode,
+  line, controls) around a stage where the model clip takes the free height at 16:9 and yields first;
+  the result is a fixed head, the word list (the one scroll region) and the actions in a foot band the
+  same height as the controls, so the two panels close on one line. The result's actions are one row:
+  "hear yours" and "compare" (icon-only on a narrow panel, still named), "next" as the primary; the
+  second "record again" left the panel, recording again is the microphone and the retry beside it. On
+  a phone the clip yields before the result card, whose flagged words scroll inside it. Compare
+  (attempts), the summary (the lesson's lines) and free talk (the transcript) each have one scroll
+  region. Measured at 1920x1080, 1440x900, 1366x768, 390x844 and 360x740, with a 32-character line,
+  a 7-line lesson, five real takes and DOM-filled stress content (28 lines, 15 attempts, a long
+  transcript).
+- Routing: `static/orena/product/legacy-routes.js`, applied by the router before any render:
+  `#/practice` (the Practice hub) goes Home; `#/practice?intent=shadowing` without a lesson goes to
+  the Speaking library; `?intent=dictation` to the Listening library (or the lesson's dictation with
+  an id); `?intent=writing` to `#/writing`. The hub (`practiceOverview`) and the list of moments are
+  deleted; the back links that led to the hub now name their owner (Vocabulary for the review, Home
+  for grammar); Progress's Dictation card and History's fallback point at the current places. Gate:
+  `scripts/test_orena_legacy_routes.mjs`.
+
+**Open for the human.** Grammar's own page had no way in but the retired hub, and the design draws
+none (UI_BACKEND_GAPS, S24). The other workspaces (Reading, Listening, Dictation, Writing,
+Vocabulary) are not re-measured in this Speaking slice; each owner applies rule 49 and its gate.

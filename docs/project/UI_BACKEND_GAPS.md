@@ -165,6 +165,8 @@ hoặc quyết định, nên **không bịa**; mục đã được anh trả l�
 | S21 | So với mẫu (06) · dòng "想: mẫu xuống rồi lên, bạn đi ngang" và "Giữ 5 lần gần nhất… lưu vào Thư viện" | Không có lời phán (D-076); dòng giữ bản thu thay bằng ô chọn "Giữ bản thu gần đây trên máy này" (D-076). "Nghe xen kẽ" phát mẫu rồi lượt thu, theo câu. | - |
 | S22 | Cài đặt Speaking, trạng thái rỗng (09 D) | Cài đặt hoãn (D-076). Trạng thái rỗng không tới được: thư viện luôn có bài Listening có shadowing. | - |
 | S23 | Nhận dạng tiếng Trung trong free talk | ASR (Groq Whisper) đôi khi trả chữ phồn thể ("英國人"); hiện đúng như nhận được. | Có ép giản thể không? |
+| S24 | Grammar · trang của nó (`#/practice?intent=grammar`) | Lối vào duy nhất trước đây là trang Practice cũ, nay đã bỏ (D-078: `#/practice` về Home). Vẫn mở được từ một mục Continue và từ trong Grammar; thiết kế không vẽ chỗ nào cho Grammar. | Grammar vào từ đâu (Home, Library, một kỹ năng)? |
+| S25 | Speaking · bố cục theo D-078 (khác frame có chủ ý) | Hàng hành động của kết quả thành một hàng: "Nghe bản của bạn", "So với bản mẫu" (chỉ còn icon khi panel hẹp, vẫn có tên cho trình đọc màn hình), "Câu tiếp" là hành động chính; nút "Thu lại" thứ hai trong panel bỏ (thu lại là micro và nút quay lại bên cạnh). Hai panel khép cùng một đáy (dải điều khiển = dải hành động). Dòng từ gọn hơn (≈56px). Clip mẫu co theo chiều cao còn lại (16:9) và nhường chỗ trước. | - (quyết định của anh ở D-078) |
 
 ## E. Cổng kích hoạt (không phải việc của lane này)
 
