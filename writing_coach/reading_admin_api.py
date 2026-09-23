@@ -54,6 +54,10 @@ from writing_coach.reading_source_import import (
     ReadingSourceError,
     SubmittedInput,
 )
+# The reaper's window, from the worker that owns it. Operations reads liveness
+# against the same threshold the recovery path uses, so "stale" on the screen
+# and "stale" in the database are one number rather than two that can drift.
+from writing_coach.reading_worker import DEFAULT_STALE_AFTER
 
 router = APIRouter(prefix="/api/admin/reading", tags=["admin-reading"])
 _logger = logging.getLogger(__name__)
@@ -249,6 +253,14 @@ class TargetDecisionBody(BaseModel):
     approved: bool
 
 
+class TargetOrderBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The whole order, not a move. Bounded because the list is the article's
+    # own targets and an unbounded array is an unbounded write.
+    order: list[str] = Field(default_factory=list, max_length=200)
+
+
 class TargetBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -352,9 +364,13 @@ async def submit_content(
     language: str = Form(""),
     published_at: str = Form(""),
     source_name: str = Form(""),
-    can_republish: bool = Form(False),
-    can_adapt: bool = Form(False),
-    attribution_required: bool = Form(True),
+    # No default answer. A rights question the submitter did not answer stays
+    # unanswered in the snapshot: a `False` default would record a refusal
+    # nobody made, and a reviewer would then be deciding against evidence that
+    # was invented by a form.
+    can_republish: bool | None = Form(None),
+    can_adapt: bool | None = Form(None),
+    attribution_required: bool | None = Form(None),
     license_note: str = Form(""),
     upload: UploadFile | None = File(None),
 ) -> dict[str, Any]:
@@ -384,10 +400,14 @@ async def submit_content(
         published_at=published_at.strip(),
         source_name=source_name.strip(),
         rights={
-            "can_republish": can_republish,
-            "can_adapt": can_adapt,
-            "attribution_required": attribution_required,
-            "license_note": license_note.strip(),
+            key: value
+            for key, value in (
+                ("can_republish", can_republish),
+                ("can_adapt", can_adapt),
+                ("attribution_required", attribution_required),
+                ("license_note", license_note.strip() or None),
+            )
+            if value is not None
         },
     )
     try:
@@ -616,6 +636,35 @@ def add_target(
     return target
 
 
+@router.post("/articles/{article_id}/target-order")
+def reorder_targets(
+    request: Request, response: Response, article_id: str, payload: TargetOrderBody
+) -> dict[str, Any]:
+    """The order a learner meets the targets in, as the reviewer arranged it.
+
+    Its own path rather than `/targets/order`, which would sit in the same
+    shape as `/targets/{target_id}` and be one route-ordering accident away
+    from being read as a target whose id is the word "order".
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    if _guarded(lambda: _content().get_article(article_id)) is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    targets = _guarded(
+        lambda: _content().reorder_targets(article_id, order=payload.order, actor=_actor(admin))
+    )
+    if targets is None:
+        raise orena_http_error(
+            400,
+            "reading_target_order_mismatch",
+            "An order must list this article's learning targets exactly once each.",
+        )
+    _audit(admin, "admin.reading_targets_reordered", entity_type="reading_article",
+           entity_id=article_id, payload={"count": len(targets)})
+    return {"targets": targets}
+
+
 @router.post("/articles/{article_id}/targets/{target_id}")
 def decide_target(
     request: Request, response: Response, article_id: str, target_id: str, payload: TargetDecisionBody
@@ -641,6 +690,25 @@ def decide_target(
 # -- operations ----------------------------------------------------------------
 
 
+def _worker_health() -> dict[str, Any]:
+    """Who is processing, derived from the claims the queue already holds.
+
+    `derived_from_claims` is not decoration: the console renders a different
+    sentence for it. A worker that has never taken a job cannot appear here,
+    so "two workers" means "two workers were seen holding work", not "two
+    processes exist". Saying which of those two the number is keeps the panel
+    honest without a registry table, which is a schema decision this lane may
+    not make on its own.
+    """
+    items = _jobs().workers(stale_after=DEFAULT_STALE_AFTER)
+    return {
+        "items": items,
+        "running": sum(entry["running"] for entry in items),
+        "stale_after_seconds": int(DEFAULT_STALE_AFTER.total_seconds()),
+        "derived_from_claims": True,
+    }
+
+
 @router.get("/operations")
 def operations(request: Request, response: Response) -> dict[str, Any]:
     """Queue depth, article states and worker health, counted in the database."""
@@ -652,5 +720,6 @@ def operations(request: Request, response: Response) -> dict[str, Any]:
             "articles": _content().counts_by_status(),
             "published": _content().published_count(),
             "recent": _jobs().list_jobs(limit=5)["items"],
+            "workers": _worker_health(),
         }
     )

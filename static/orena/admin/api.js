@@ -97,6 +97,11 @@ export const adminApi = {
       `/api/admin/reading/articles/${encodeURIComponent(articleId)}/targets/${encodeURIComponent(targetId)}`,
       json('POST', { approved }),
     ),
+  readingReorderTargets: (articleId, order) =>
+    request(
+      `/api/admin/reading/articles/${encodeURIComponent(articleId)}/target-order`,
+      json('POST', { order }),
+    ),
   readingJobs: (params) => request(`/api/admin/reading/jobs${query(params)}`),
   readingJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}`),
   readingRetryJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' }),

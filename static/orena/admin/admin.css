@@ -313,6 +313,33 @@
   align-items: center;
   gap: 6px;
 }
+/* The order a learner meets the learning targets in. Two small controls rather
+   than drag alone: a keyboard, a screen reader and a phone all have to be able
+   to set it, and below 600px the rows are stacked cards with nothing to drag. */
+.ac-order {
+  display: flex;
+  gap: 2px;
+}
+.ac-button--icon {
+  min-width: 28px;
+  padding: 2px 6px;
+  line-height: 1.2;
+}
+/* A dropped target stays where it was, dimmed, with the way back beside it -
+   removing the row would hide the decision that was just made. */
+.ac-table tr[data-ac-dropped] {
+  opacity: 0.55;
+}
+
+/* The other sources the same text already sits under, named so the admin can
+   decide rather than counted so they can worry. */
+.ac-duplicates {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
 .ac-notice {
   padding: 10px 12px;
   border: 1px solid var(--line);

@@ -10,7 +10,13 @@ import { hint } from '../ui/patterns.js';
 export { esc };
 
 export function fill(template, values = {}) {
-  return String(template ?? '').replace(/\{(\w+)\}/g, (_, key) => (values[key] ?? values[key] === 0 ? String(values[key]) : `{${key}}`));
+  /* Zero is a value. `values[key] ?? values[key] === 0` reads as "or zero" but
+     binds as `(values[key] ?? (values[key] === 0))`, so a 0 short-circuits to
+     a falsy 0 and the placeholder survives into the sentence - "{dropped}
+     dropped" instead of "0 dropped". Only null and undefined mean unfilled. */
+  return String(template ?? '').replace(/\{(\w+)\}/g, (_, key) => (
+    values[key] === undefined || values[key] === null ? `{${key}}` : String(values[key])
+  ));
 }
 
 export function locale(ui) {

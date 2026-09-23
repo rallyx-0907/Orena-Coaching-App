@@ -503,6 +503,74 @@ class ReadingJobRepository:
             next_cursor = _encode_cursor(_aware(last.created_at), str(last.id))
         return {"items": [_job_summary(row) for row in page], "next_cursor": next_cursor}
 
+    def workers(
+        self, *, stale_after: timedelta, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
+        """Who is doing the work, from the claims themselves.
+
+        There is no worker registry table, and adding one is a schema decision
+        this lane may not make. What the queue already knows is enough for the
+        question Operations actually asks: `claimed_by` says whose a job is and
+        `heartbeat_at` says when that worker last reported, so grouping the
+        claims gives identity, liveness and how much each worker is holding.
+
+        Three states, because an operator does three different things about
+        them:
+
+        * **working** - holding a job and reporting in. Nothing to do.
+        * **stale** - holding a job and silent past the reaper's window. The
+          job will come back to the queue; the worker may be gone.
+        * **idle** - holding nothing, but heard from recently. Alive and free.
+
+        A worker that finished long ago is not listed: it is not evidence of
+        anything current. One that is idle and has never taken a job is
+        invisible here, which is the honest limit of counting claims rather
+        than keeping a registry - Operations says so rather than implying the
+        list is every process that exists.
+        """
+        from sqlalchemy import func
+
+        moment = _now(now)
+        running = func.sum(
+            case((ReadingIngestionJob.status == "running", 1), else_=0)
+        ).label("running")
+        last_seen = func.max(ReadingIngestionJob.heartbeat_at).label("last_seen")
+        query = (
+            select(ReadingIngestionJob.claimed_by, running, last_seen)
+            .where(
+                ReadingIngestionJob.claimed_by.is_not(None),
+                ReadingIngestionJob.claimed_by != "",
+            )
+            .group_by(ReadingIngestionJob.claimed_by)
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+
+        order = {"stale": 0, "working": 1, "idle": 2}
+        entries: list[dict[str, Any]] = []
+        for row in rows:
+            seen = _aware(row.last_seen)
+            age = int((moment - seen).total_seconds()) if seen else None
+            held = int(row.running or 0)
+            stale = age is None or age > stale_after.total_seconds()
+            if held:
+                state = "stale" if stale else "working"
+            elif stale:
+                continue  # gone, not idle: nothing current to report
+            else:
+                state = "idle"
+            entries.append(
+                {
+                    "worker_id": row.claimed_by,
+                    "running": held,
+                    "last_seen_at": _iso(seen),
+                    "heartbeat_age_seconds": age,
+                    "state": state,
+                }
+            )
+        entries.sort(key=lambda entry: (order[entry["state"]], entry["worker_id"]))
+        return entries
+
     def counts_by_status(self) -> dict[str, int]:
         """Queue depth for Admin -> Operations, computed in the database."""
         from sqlalchemy import func

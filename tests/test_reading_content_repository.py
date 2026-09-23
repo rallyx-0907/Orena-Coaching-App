@@ -477,3 +477,72 @@ def test_the_engine_never_writes_an_article_without_its_snapshot(repository):
         )
     with repository.engine.connect() as connection:
         assert connection.execute(select(ReadingArticle.id)).all() == []
+
+
+# ---- rights, in three states ------------------------------------------------
+
+def test_an_unanswered_rights_question_is_not_a_refusal(repository):
+    """`False` and "nobody said" are different answers and look different."""
+    snapshot = repository.record_source_item(
+        source_id=repository.built_in_source_id("manual"),
+        source_native_id="", canonical_url="", title="Unasserted", author="",
+        published_at=None, language="en", body=BODY + "x",
+        content_hash=f"{abs(hash(BODY + 'x')):064x}"[:64],
+        metadata={"input_kind": "text"}, rights={},
+    )
+    assert snapshot["rights_state"]["can_republish"] == "unknown"
+    assert snapshot["rights_state"]["attribution_required"] == "unknown"
+
+
+def test_a_right_that_was_answered_says_which_answer(repository):
+    snapshot = repository.record_source_item(
+        source_id=repository.built_in_source_id("manual"),
+        source_native_id="", canonical_url="", title="Answered", author="",
+        published_at=None, language="en", body=BODY + "y",
+        content_hash=f"{abs(hash(BODY + 'y')):064x}"[:64],
+        metadata={"input_kind": "text"},
+        rights={"can_republish": True, "can_adapt": False},
+    )
+    state = snapshot["rights_state"]
+    assert state["can_republish"] == "allowed"
+    assert state["can_adapt"] == "denied"
+    assert state["automation_allowed"] == "unknown"
+
+
+def test_the_duplicate_warning_names_the_other_source(repository):
+    """A count is not a decision. An admin needs to know *whose* copy it is."""
+    first = _snapshot(repository)
+    repository.record_source_item(
+        source_id=repository.built_in_source_id("file"),
+        source_native_id="", canonical_url="", title="Rain returns", author="",
+        published_at=None, language="en", body=BODY, content_hash=first["content_hash"],
+        metadata={}, rights={},
+    )
+    seen = repository.find_duplicate_content(
+        first["content_hash"], exclude_source_id=repository.built_in_source_id("file")
+    )
+    assert [item["source_name"] for item in seen] == ["Manual paste"]
+
+
+# ---- the order targets are taught in ----------------------------------------
+
+def test_reordering_targets_writes_the_new_rank_and_records_who_did_it(repository):
+    article = _article(repository, body=BODY + "order", native_id="ord")
+    detail = repository.get_article(article["id"])
+    first, second = [target["id"] for target in detail["targets"]]
+    reordered = repository.reorder_targets(article["id"], order=[second, first], actor="admin@example.com")
+    assert [target["id"] for target in reordered] == [second, first]
+    assert [target["rank"] for target in reordered] == [0, 1]
+    assert [target["id"] for target in repository.get_article(article["id"])["targets"]] == [second, first]
+    assert repository.list_review_events(article["id"])[-1]["action"] == "targets_reordered"
+
+
+def test_an_order_that_is_not_this_articles_targets_is_refused(repository):
+    article = _article(repository, body=BODY + "refuse", native_id="ref")
+    other = _article(repository, body=BODY + "other", native_id="oth")
+    mine = [target["id"] for target in repository.get_article(article["id"])["targets"]]
+    theirs = [target["id"] for target in repository.get_article(other["id"])["targets"]]
+    assert repository.reorder_targets(article["id"], order=[mine[0]], actor="a@b.c") is None
+    assert repository.reorder_targets(article["id"], order=[mine[0], theirs[0]], actor="a@b.c") is None
+    # Refused means nothing moved.
+    assert [target["id"] for target in repository.get_article(article["id"])["targets"]] == mine

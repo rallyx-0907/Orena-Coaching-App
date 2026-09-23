@@ -91,19 +91,33 @@ export function readingTime(seconds, t) {
   return fill(t.readingMinutes, { count: minutes });
 }
 
+/* The design's target list: kept and dropped are both visible - a dropped
+   target stays in place, dimmed, with the way back - and the reviewer sets the
+   order the learner meets them in. Order moves one step at a time rather than
+   by drag alone: a keyboard and a phone have to be able to do it too, and the
+   rows become stacked cards below 600px where nothing can be dragged. */
 export function targetRows(targets, t) {
-  return targets.map((target) => ({
+  const last = targets.length - 1;
+  return targets.map((target, index) => ({
+    attributes: target.admin_rejected ? ' data-ac-dropped="1"' : '',
     cells: [
+      `<div class="ac-order"><button type="button" class="ac-button ac-button--icon" data-ac-move="${esc(target.id)}" data-ac-direction="up"${index === 0 ? ' disabled' : ''} aria-label="${esc(fill(t.readingTargetMoveUp, { text: target.text }))}">↑</button><button type="button" class="ac-button ac-button--icon" data-ac-move="${esc(target.id)}" data-ac-direction="down"${index === last ? ' disabled' : ''} aria-label="${esc(fill(t.readingTargetMoveDown, { text: target.text }))}">↓</button></div>`,
       `<div class="ac-cell-stack"><strong>${esc(target.text)}</strong><span class="ac-muted">${esc(target.context || '')}</span></div>`,
       esc(t[`readingTargetType_${target.target_type}`] || target.target_type),
       target.admin_approved ? chip('ok', t, { label: t.readingTargetApproved })
         : target.admin_rejected ? chip('invalid', t, { label: t.readingTargetRejected })
         : chip('pending_review', t, { label: t.readingTargetSuggested }),
-      `<div class="ac-actions"><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="approve">${esc(t.readingApprove)}</button><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="reject">${esc(t.readingReject)}</button></div>`,
+      target.admin_rejected
+        ? `<div class="ac-actions"><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="approve">${esc(t.readingTargetRestore)}</button></div>`
+        : `<div class="ac-actions"><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="approve">${esc(t.readingApprove)}</button><button type="button" class="ac-button" data-ac-target="${esc(target.id)}" data-ac-decision="reject">${esc(t.readingReject)}</button></div>`,
     ],
   }));
 }
 
+export function targetSummary(targets, t) {
+  const dropped = targets.filter((target) => target.admin_rejected).length;
+  return fill(t.readingTargetSummary, { kept: targets.length - dropped, dropped });
+}
 
 /* One job, as study 02-C reads it: what failed, at which stage, how many
    attempts are left, and the technical detail collapsed underneath rather than
@@ -149,9 +163,31 @@ export function qualityNote(analysis, t) {
   return notice(`${t.readingQualityTitle} ${issues.map((issue) => t[`readingIssue_${issue}`] || issue).join(', ')}`, 'warn');
 }
 
+/* Three answers, shown as three: `false` is a refusal and an absent answer is
+   a question nobody asked, and an admin about to publish needs to know which
+   one they are looking at. The tone follows that reading - an unanswered
+   right is a review task, a refusal is a stop. */
+const RIGHTS_TONE = {
+  allowed: 'ok', denied: 'invalid', unknown: 'pending_review',
+  required: 'info', not_required: 'ok',
+};
+const RIGHTS_QUESTIONS = ['can_republish', 'can_adapt', 'automation_allowed', 'attribution_required'];
+
+export function rightsChips(state, t) {
+  if (!state) return chip('pending_review', t, { label: t.readingRightsUnknown });
+  return `<span class="ac-chips">${RIGHTS_QUESTIONS.map((question) => {
+    const answer = state[question] || 'unknown';
+    return chip(RIGHTS_TONE[answer] || 'pending_review', t, {
+      label: fill(t.rightsAnswer, {
+        question: t[`rightsQ_${question}`] || question,
+        answer: t[`rightsA_${answer}`] || answer,
+      }),
+    });
+  }).join('')}</span>`;
+}
+
 export function previewBody(article, t, ui) {
   const source = article.source || {};
-  const rights = source.rights || {};
   const facts = kv([
     [t.readingFactLevel, `${esc(article.effective_level || '—')}${article.reviewed_level ? ` <span class="ac-muted">${esc(fill(t.readingFactEstimated, { value: article.estimated_level || '—' }))}</span>` : ''}`],
     [t.readingFactWords, esc(num(article.word_count, ui))],
@@ -159,11 +195,18 @@ export function previewBody(article, t, ui) {
     [t.readingFactStatus, chip(article.status, t)],
     [t.readingFactSource, esc(source.canonical_url || source.metadata?.input_kind || t.readingSourcePasted)],
     [t.readingFactAuthor, esc(source.author || '—')],
-    [t.readingFactRights, rights.can_republish ? esc(t.readingRightsGiven) : chip('pending_review', t, { label: t.readingRightsUnknown })],
+    [t.readingFactRights, rightsChips(source.rights_state, t)],
     [t.readingFactHash, mono(String(source.content_hash || '').slice(0, 12))],
   ]);
+  /* The same bytes under another source is legitimate - rights are the
+     source's - so this names the source rather than counting copies. A count
+     tells an admin something is wrong; a name tells them what to decide. */
   const duplicates = (article.duplicates || []).length
-    ? notice(fill(t.readingDuplicateWarning, { count: article.duplicates.length }), 'warn')
+    ? `${notice(t.readingDuplicateWarning, 'warn')}<ul class="ac-duplicates">${
+        article.duplicates.map((copy) => `<li><strong>${esc(copy.source_name || copy.source_slug || copy.source_id)}</strong>${
+          copy.title ? ` <span class="ac-muted">${esc(copy.title)}</span>` : ''
+        }</li>`).join('')
+      }</ul>`
     : '';
   const events = table({
     head: [t.colDate, t.readingEventAction, t.readingEventActor],
@@ -178,8 +221,8 @@ export function previewBody(article, t, ui) {
     qualityNote(article.analysis, t),
     duplicates,
     facts,
-    panel({ title: t.readingTargetsTitle, body: table({
-      head: [t.readingTargetText, t.readingTargetKind, t.readingTargetState, { label: t.colActions, hidden: true }],
+    panel({ title: t.readingTargetsTitle, note: targetSummary(article.targets || [], t), body: table({
+      head: [{ label: t.readingTargetOrder, hidden: true }, t.readingTargetText, t.readingTargetKind, t.readingTargetState, { label: t.colActions, hidden: true }],
       rows: targetRows(article.targets || [], t),
       empty: t.readingNoTargets,
     }) }),
@@ -334,7 +377,27 @@ export async function renderReading(host, env) {
       drawer.set(previewBody(article, t, ui));
       drawer.body.addEventListener('click', async (event) => {
         const target = event.target.closest('[data-ac-target]');
+        const move = event.target.closest('[data-ac-move]');
         const action = event.target.closest('[data-ac-action]');
+        if (move) {
+          /* The whole order is sent, never a move: the server is told the
+             arrangement the reviewer meant, so a second reviewer's drag cannot
+             interleave with this one into an order neither of them chose. */
+          const current = (await api.readingArticle(id)).targets.map((entry) => entry.id);
+          const from = current.indexOf(move.dataset.acMove);
+          const to = move.dataset.acDirection === 'up' ? from - 1 : from + 1;
+          if (from < 0 || to < 0 || to >= current.length) return;
+          current.splice(to, 0, ...current.splice(from, 1));
+          await api.readingReorderTargets(id, current);
+          drawer.set(previewBody(await api.readingArticle(id), t, ui));
+          /* Keep the keyboard where it was. A target that reached an end has a
+             disabled button there, so focus lands on the one that still works
+             rather than falling back to the top of the drawer. */
+          const moved = [...drawer.body.querySelectorAll(`[data-ac-move="${CSS.escape(move.dataset.acMove)}"]`)];
+          (moved.find((button) => button.dataset.acDirection === move.dataset.acDirection && !button.disabled)
+            || moved.find((button) => !button.disabled))?.focus();
+          return;
+        }
         if (target) {
           await api.readingDecideTarget(id, target.dataset.acTarget, target.dataset.acDecision === 'approve');
           drawer.set(previewBody(await api.readingArticle(id), t, ui));

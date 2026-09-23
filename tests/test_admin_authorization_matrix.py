@@ -120,6 +120,8 @@ MATRIX = {
         f"/api/admin/reading/articles/{ARTICLE}/targets", {"json": {"text": "higher ground"}}, {404, 503}),
     ("POST", "/api/admin/reading/articles/{article_id}/targets/{target_id}"): (
         f"/api/admin/reading/articles/{ARTICLE}/targets/{TARGET}", {"json": {"approved": True}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/target-order"): (
+        f"/api/admin/reading/articles/{ARTICLE}/target-order", {"json": {"order": []}}, {404, 503}),
     ("GET", "/api/admin/reading/operations"): ("/api/admin/reading/operations", {}, {200, 503}),
 }
 ADMIN_ONLY_WITHOUT_ADMIN_IN_PATH = {
@@ -170,7 +172,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 50
+    assert len(routes) == 51
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

@@ -162,6 +162,35 @@ def _source(row: Any) -> dict[str, Any]:
     }
 
 
+PERMISSIONS = ("automation_allowed", "can_republish", "can_adapt")
+
+
+def rights_state(rights: Any) -> dict[str, str]:
+    """A rights question has three answers, and `False` is only one of them.
+
+    The snapshot stores exactly what the submitter asserted, so a key that is
+    absent means nobody answered - not that the answer was no. Flattening the
+    two together is how a manual paste with no rights information ends up
+    looking identical to content a publisher explicitly refused, and an admin
+    cannot tell which decision they are about to make.
+
+    Permissions read `allowed` / `denied` / `unknown`. Attribution is an
+    obligation rather than a permission, so it answers in its own words -
+    calling a required attribution "allowed" would be a sentence nobody means.
+    """
+    answered = rights if isinstance(rights, dict) else {}
+    state = {
+        key: ("allowed" if answered[key] else "denied") if key in answered else "unknown"
+        for key in PERMISSIONS
+    }
+    state["attribution_required"] = (
+        ("required" if answered["attribution_required"] else "not_required")
+        if "attribution_required" in answered
+        else "unknown"
+    )
+    return state
+
+
 def _item(row: Any) -> dict[str, Any]:
     return {
         "id": str(row.id),
@@ -176,6 +205,7 @@ def _item(row: Any) -> dict[str, Any]:
         "content_hash": row.content_hash,
         "metadata": dict(row.metadata_json or {}),
         "rights": dict(row.rights_snapshot_json or {}),
+        "rights_state": rights_state(row.rights_snapshot_json),
         "revision": row.revision,
         "supersedes_id": str(row.supersedes_id) if row.supersedes_id else None,
         "superseded_at": _iso(row.superseded_at),
@@ -549,6 +579,10 @@ class ReadingContentRepository:
         Legitimate - rights differ per source - but an admin about to publish
         a second copy should be told, which is why this exists and why the
         hash has a non-unique index of its own.
+
+        The source is named, not just identified. "Also under 2 other sources"
+        is not something anyone can decide with; "also under Manual paste" is,
+        because the rights that make a second copy legitimate are the source's.
         """
         with self.engine.connect() as connection:
             rows = connection.execute(
@@ -556,13 +590,23 @@ class ReadingContentRepository:
                     ReadingSourceItem.id,
                     ReadingSourceItem.source_id,
                     ReadingSourceItem.original_title,
-                ).where(
+                    ReadingSource.name.label("source_name"),
+                    ReadingSource.slug.label("source_slug"),
+                )
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                .where(
                     ReadingSourceItem.content_hash == content_hash,
                     ReadingSourceItem.source_id != _uuid(exclude_source_id),
                 )
             ).all()
         return [
-            {"id": str(row.id), "source_id": str(row.source_id), "title": row.original_title}
+            {
+                "id": str(row.id),
+                "source_id": str(row.source_id),
+                "source_name": row.source_name,
+                "source_slug": row.source_slug,
+                "title": row.original_title,
+            }
             for row in rows
         ]
 
@@ -971,6 +1015,59 @@ class ReadingContentRepository:
         return {status: int(total) for status, total in rows}
 
     # ---- targets ---------------------------------------------------------
+    def reorder_targets(
+        self, article_id: str, *, order: list[str], actor: str, now: datetime | None = None
+    ) -> list[dict[str, Any]] | None:
+        """The order a learner meets these targets in, set by the reviewer.
+
+        `rank` already decides the order everything reads them in, so this
+        writes that column rather than inventing a second notion of order.
+
+        The whole list is sent, not a move: an "up one" endpoint has to be
+        replayed in sequence to be correct, and two reviewers dragging at the
+        same time would interleave into an order neither of them chose. Sending
+        the order means the last write is a complete intention.
+
+        Refused as a whole - returning None and moving nothing - when the list
+        is not exactly this article's targets. A partial order would silently
+        renumber the rest, which is a worse outcome than a rejected request.
+        """
+        if _lookup_uuid(article_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            existing = connection.execute(
+                select(ReadingArticleTarget.id).where(
+                    ReadingArticleTarget.article_id == _uuid(article_id)
+                )
+            ).all()
+            mine = {str(row.id) for row in existing}
+            wanted = [str(target_id) for target_id in order]
+            if len(wanted) != len(set(wanted)) or set(wanted) != mine:
+                return None
+            for rank, target_id in enumerate(wanted):
+                connection.execute(
+                    update(ReadingArticleTarget)
+                    .where(ReadingArticleTarget.id == _uuid(target_id))
+                    .values(rank=rank, updated_at=moment)
+                )
+            self._bump_revision(connection, _uuid(article_id), moment)
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action="targets_reordered",
+                reason="",
+                changes={"count": len(wanted)},
+                now=moment,
+            )
+            rows = connection.execute(
+                select(ReadingArticleTarget)
+                .where(ReadingArticleTarget.article_id == _uuid(article_id))
+                .order_by(ReadingArticleTarget.rank, ReadingArticleTarget.id)
+            ).all()
+        return [_target(row) for row in rows]
+
     def decide_target(
         self, target_id: str, *, approved: bool, actor: str, now: datetime | None = None
     ) -> dict[str, Any] | None:
