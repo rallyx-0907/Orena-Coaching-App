@@ -275,6 +275,41 @@ def test_the_reviewer_can_set_the_order_targets_are_taught_in(setup):
     assert call(setup["admin"], "POST", path, json={"order": reversed_order[:1]}).status_code == 400
 
 
+def test_one_articles_url_cannot_decide_another_articles_target(setup):
+    """The path names both, so both have to agree - otherwise the decision
+    lands on one article and the audit trail records the other."""
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    first = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    call(setup["admin"], "POST", "/api/admin/reading/jobs",
+         data={"kind": "text", "text": ARTICLE + " A different second article entirely."})
+    second = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    victim = call(setup["admin"], "GET", f"/api/admin/reading/articles/{second['article_id']}").json()["targets"][0]
+    crossed = call(setup["admin"], "POST",
+                   f"/api/admin/reading/articles/{first['article_id']}/targets/{victim['id']}",
+                   json={"approved": True})
+    assert crossed.status_code == 404
+    after = call(setup["admin"], "GET", f"/api/admin/reading/articles/{second['article_id']}").json()
+    assert after["targets"][0]["admin_approved"] is False
+    assert "target_approved" not in [event["action"] for event in after["events"]]
+    # And nothing was recorded against the article whose URL was used, either.
+    first_events = call(setup["admin"], "GET", f"/api/admin/reading/articles/{first['article_id']}").json()["events"]
+    assert "target_approved" not in [event["action"] for event in first_events]
+
+
+def test_one_articles_url_cannot_reorder_another_articles_targets(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    first = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    call(setup["admin"], "POST", "/api/admin/reading/jobs",
+         data={"kind": "text", "text": ARTICLE + " Another article, again different."})
+    second = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    theirs = [t["id"] for t in
+              call(setup["admin"], "GET", f"/api/admin/reading/articles/{second['article_id']}").json()["targets"]]
+    crossed = call(setup["admin"], "POST",
+                   f"/api/admin/reading/articles/{first['article_id']}/target-order",
+                   json={"order": theirs})
+    assert crossed.status_code == 400
+
+
 def test_an_unknown_article_is_a_404_not_a_500(setup):
     missing = call(setup["admin"], "GET", f"/api/admin/reading/articles/{uuid.uuid4()}")
     assert missing.status_code == 404

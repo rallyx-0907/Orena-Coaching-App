@@ -254,7 +254,7 @@ def test_a_target_decision_moves_the_revision_because_a_learner_reads_targets(re
     repository.set_status(article["id"], "published", actor="admin@example.com")
     targets = repository.get_article(article["id"])["targets"]
     before = repository.get_article(article["id"])["content_revision"]
-    repository.decide_target(targets[0]["id"], approved=True, actor="admin@example.com")
+    repository.decide_target(targets[0]["id"], article_id=article["id"], approved=True, actor="admin@example.com")
     after = repository.get_article(article["id"])["content_revision"]
     assert after == before + 1
     assert repository.get_published_article(article["id"])["content_revision"] == after
@@ -291,7 +291,7 @@ def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repositor
 def test_the_learner_detail_carries_the_body_and_only_approved_targets(repository):
     article = _article(repository)
     targets = repository.get_article(article["id"])["targets"]
-    repository.decide_target(targets[0]["id"], approved=True, actor="admin@example.com")
+    repository.decide_target(targets[0]["id"], article_id=article["id"], approved=True, actor="admin@example.com")
     repository.set_status(article["id"], "published", actor="admin@example.com")
     detail = repository.get_published_article(article["id"])
     assert detail["body"] == BODY
@@ -385,9 +385,9 @@ def test_a_target_decision_is_recorded_as_the_admins_not_the_machines(repository
     article = _article(repository)
     target = repository.get_article(article["id"])["targets"][0]
     assert target["machine_suggested"] is True and target["admin_approved"] is False
-    decided = repository.decide_target(target["id"], approved=True, actor="admin@example.com")
+    decided = repository.decide_target(target["id"], article_id=article["id"], approved=True, actor="admin@example.com")
     assert decided["admin_approved"] is True and decided["machine_suggested"] is True
-    rejected = repository.decide_target(target["id"], approved=False, actor="admin@example.com")
+    rejected = repository.decide_target(target["id"], article_id=article["id"], approved=False, actor="admin@example.com")
     assert rejected["admin_approved"] is False and rejected["admin_rejected"] is True
 
 

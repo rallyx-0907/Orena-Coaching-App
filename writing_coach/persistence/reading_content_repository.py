@@ -1069,26 +1069,39 @@ class ReadingContentRepository:
         return [_target(row) for row in rows]
 
     def decide_target(
-        self, target_id: str, *, approved: bool, actor: str, now: datetime | None = None
+        self,
+        target_id: str,
+        *,
+        article_id: str,
+        approved: bool,
+        actor: str,
+        now: datetime | None = None,
     ) -> dict[str, Any] | None:
         """The admin's decision, kept separate from the machine's suggestion.
 
         `machine_suggested` is never cleared: "the machine proposed this and a
         human approved it" and "a human added this" are different facts, and a
         future processor re-run has to be able to tell them apart.
+
+        The article is part of the identity, not context. The route names both,
+        and a target id taken from one article and posted under another's URL
+        would otherwise decide the first article's target while the audit entry
+        and the revision bump landed on the second - a decision recorded
+        against content it was never made about.
         """
-        if _lookup_uuid(target_id) is None:
+        if _lookup_uuid(target_id) is None or _lookup_uuid(article_id) is None:
             return None
+        owned = (ReadingArticleTarget.id == _uuid(target_id)) & (
+            ReadingArticleTarget.article_id == _uuid(article_id)
+        )
         moment = _now(now)
         with self.engine.begin() as connection:
-            row = connection.execute(
-                select(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
-            ).first()
+            row = connection.execute(select(ReadingArticleTarget).where(owned)).first()
             if row is None:
                 return None
             connection.execute(
                 update(ReadingArticleTarget)
-                .where(ReadingArticleTarget.id == _uuid(target_id))
+                .where(owned)
                 .values(
                     admin_approved=bool(approved),
                     admin_rejected=not approved,
@@ -1105,9 +1118,7 @@ class ReadingContentRepository:
                 changes={"target": row.text},
                 now=moment,
             )
-            updated = connection.execute(
-                select(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
-            ).first()
+            updated = connection.execute(select(ReadingArticleTarget).where(owned)).first()
         return _target(updated)
 
     def add_target(

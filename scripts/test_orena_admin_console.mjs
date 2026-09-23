@@ -31,7 +31,8 @@ import {
 } from '../static/orena/admin/imports.js';
 import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
 import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, legacyParams, SECTIONS } from '../static/orena/admin/shell.js';
-import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows, cursorPager } from '../static/orena/admin/reading.js';
+import { watch as watchJob, items as trayItems, clear as clearTray, trayView, refresh as refreshTray, progress as trayProgress, inFlight } from '../static/orena/admin/tray.js';
+import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows, cursorPager, submissionFrom, targetRows, targetSummary } from '../static/orena/admin/reading.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = adminCopy.en;
@@ -622,5 +623,69 @@ for (const pair of [['--sage-surface', '--on-sage'], ['--coral-surface', '--on-c
   assert.ok(css.includes(pair[0]) && css.includes(pair[1]), `${pair[0]} is always worn with ${pair[1]}`);
 }
 assert.ok(table({ head: ['A'], rows: [] , empty: 'none' }).includes('none'));
+
+/* ---- the form's own answer, not a default ------------------------------ */
+/* The server stopped turning an unanswered rights question into `False`; the
+   form has to stop sending one. A select whose empty value means "not
+   answered" only carries the key when an operator chose an answer - the API
+   client then omits an absent key rather than posting an empty string, which
+   the server could not tell apart from an answer. */
+const emptyForm = { text: { value: 'A pasted paragraph.' }, language: { value: 'en' } };
+assert.ok(!('can_republish' in submissionFrom(emptyForm, 'text')),
+  'an unanswered rights question is not in the submission at all');
+assert.equal(submissionFrom({ ...emptyForm, can_republish: { value: 'allowed' } }, 'text').can_republish, true);
+assert.equal(submissionFrom({ ...emptyForm, can_republish: { value: 'denied' } }, 'text').can_republish, false);
+const addMarkup = read('static/orena/admin/reading.js');
+assert.doesNotMatch(addMarkup, /can_republish\?\.checked/,
+  'rights is a three-answer choice, never a checkbox whose unticked state means refusal');
+for (const key of ['readingRightsUnanswered', 'readingRightsAllowed', 'readingRightsDenied']) {
+  assert.ok(en[key] && zh[key], `the rights choice "${key}" has words in both languages`);
+}
+const apiSource = read('static/orena/admin/api.js');
+assert.match(apiSource, /value === undefined \|\| value === null/,
+  'the submit client omits an absent field instead of posting an empty string');
+
+/* A dropped target keeps its row and its way back, and the panel says how many
+   are kept against how many are dropped - including when that number is 0. */
+const someTargets = [
+  { id: 'a', text: 'higher ground', target_type: 'phrase', context: 'c', admin_approved: false, admin_rejected: false },
+  { id: 'b', text: 'flooded', target_type: 'word', context: 'c', admin_approved: false, admin_rejected: true },
+];
+const targetMarkup = targetRows(someTargets, en).map((row) => row.cells.join('')).join('');
+assert.ok(targetMarkup.includes(en.readingTargetRestore), 'a dropped target offers the way back');
+assert.ok(targetRows(someTargets, en)[1].attributes.includes('data-ac-dropped'), 'a dropped target stays, marked');
+assert.equal(targetSummary(someTargets, en), '1 kept, 1 dropped. Arrows set the order a learner meets them in.');
+assert.ok(!targetSummary([], en).includes('{'), 'a zero reaches the sentence');
+
+/* ---- the tray outlives the view that started it (study 04) -------------- */
+/* The design's rule is that nothing waits in a modal: the form goes away and
+   what is in flight follows the operator around the console. So the tray's
+   state is a module, not a variable inside the Reading view, and the frame
+   renders it outside the section host - which is replaced on every route
+   change. These assertions are what "persists across tabs" means in code. */
+clearTray();
+assert.equal(trayView(en, { href }), '', 'an empty tray draws nothing at all');
+watchJob({ id: 'job-1', label: 'The ferry timetable' });
+const trayMarkup = trayView(en, { href });
+assert.ok(trayMarkup.includes('The ferry timetable'), 'the tray names what was submitted');
+assert.ok(trayMarkup.includes(en.readingTrayOpenImports), 'the tray offers the full list');
+assert.equal(inFlight(), 1, 'a queued job counts as in flight');
+assert.ok(trayView(en, { href, collapsed: true }).includes('data-collapsed="1"'), 'the tray collapses');
+
+const trayFrame = frameView({ section: 'overview', t: en });
+const trayAt = trayFrame.indexOf('data-ac-tray-host');
+const sectionAt = trayFrame.indexOf('data-ac-section');
+assert.ok(trayAt > -1 && trayAt < sectionAt, 'the tray hangs outside the section host, above it');
+
+/* Progress is the engine's own stage, and a finished job settles rather than
+   vanishing mid-sentence. */
+assert.ok(trayProgress({ stage: 'analyzing', status: 'running' }) > trayProgress({ stage: 'fetching', status: 'running' }));
+assert.equal(trayProgress({ stage: 'done', status: 'completed' }), 100);
+await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done', result_kind: 'article_created' }) }, 1000);
+assert.equal(inFlight(), 0, 'a finished job leaves the in-flight count');
+assert.equal(trayItems().length, 1, 'and stays on screen long enough to be read');
+await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done' }) }, 1000 + 60001);
+assert.equal(trayItems().length, 0, 'then leaves - the tray is work in flight, not history');
+clearTray();
 
 console.log('Platform Admin control center: copy parity, server contracts, honest absence, no secrets, isolated imports, one colour owner PASS');

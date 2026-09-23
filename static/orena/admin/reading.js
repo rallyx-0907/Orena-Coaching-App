@@ -14,14 +14,17 @@
    * **A list is a list.** The table renders what the list endpoint returns; the
      body, the source snapshot and the processing evidence arrive only when an
      operator opens Preview.
-   * **Polling belongs to the view that needs it.** Add Content watches its own
-     jobs while it is open and stops the moment the section is left. A learner
-     never polls anything here - none of this code is in their module graph.
+   * **Polling belongs to the console, not to a modal.** Submitting hands the
+     work to `tray.js`, which the shell renders above every section and
+     refreshes on one timer; this view keeps its own jobs table current while
+     it is open. A learner never polls anything here - none of this code is in
+     their module graph.
    * **Nothing rendered here is trusted markup.** Every value from the server
      goes through `esc`; a title an admin pasted from a hostile page is text. */
 import { adminApi } from './api.js';
 import { openDrawer } from './drawer.js';
 import { errorBlock, failureDetail, loadingBlock, pending } from './states.js';
+import { watch as watchJob } from './tray.js';
 import { chip, dateTime, esc, fill, kv, mono, notice, num, panel, select, table } from './format.js';
 
 export const VIEWS = ['queue', 'published', 'rejected', 'archived', 'sources', 'add'];
@@ -270,13 +273,18 @@ export function sourceRows(sources, t, ui) {
 }
 
 
-/* Study 04: submitting queues the work and the form goes away. What replaces
-   it is a tray that says how much is in flight and where to watch it - not a
-   modal an operator has to sit in front of while a fetch happens somewhere
-   else. */
-export function progressTray(inFlight, t, href) {
-  if (!inFlight) return '';
-  return `<div class="ac-tray" role="status"><span>${esc(fill(t.readingTrayCount, { count: inFlight }))}</span><a class="ac-link" href="${esc(href('imports'))}">${esc(t.readingTrayOpenImports)}</a></div>`;
+export function submissionFrom(fields, kind) {
+  const answer = fields.can_republish?.value || '';
+  return {
+    kind,
+    text: fields.text?.value || '',
+    url: fields.url?.value || '',
+    title: fields.title?.value || '',
+    author: fields.author?.value || '',
+    language: fields.language?.value || '',
+    ...(answer ? { can_republish: answer === 'allowed' } : {}),
+    license_note: fields.license_note?.value || '',
+  };
 }
 
 export function addForms(t) {
@@ -289,7 +297,9 @@ export function addForms(t) {
       <label class="ac-field"><span>${esc(t.readingTitle)}</span><input type="text" name="title" maxlength="240"></label>
       <label class="ac-field"><span>${esc(t.readingAuthor)}</span><input type="text" name="author" maxlength="120"></label>
       ${select({ name: 'language', label: t.readingLanguage, options: LANGUAGES.map((code) => [code, t[`lang_${code}`]]) })}
-      <label class="ac-check"><input type="checkbox" name="can_republish"> <span>${esc(t.readingRightsRepublish)}</span></label>
+      ${select({ name: 'can_republish', label: t.readingRightsRepublish, options: [
+        ['', t.readingRightsUnanswered], ['allowed', t.readingRightsAllowed], ['denied', t.readingRightsDenied],
+      ] })}
       <label class="ac-field"><span>${esc(t.readingLicense)}</span><input type="text" name="license_note" maxlength="240" placeholder="${esc(t.readingLicenseHint)}"></label>
       <div class="ac-actions"><button type="submit" class="ac-button ac-button--primary">${esc(t.readingSubmit)}</button></div>
     </form>`).join('');
@@ -359,6 +369,9 @@ export async function renderReading(host, env) {
      no page numbers to jump to, and inventing some would mean counting the
      whole corpus to draw a list. */
   const page = { cursor: null, back: [] };
+  /* Whether the last thing that happened in this view was a submission. It is
+     what decides between the form and the confirmation that replaces it. */
+  let queued = false;
   let timer = null;
   const stop = () => {
     clearInterval(timer);
@@ -449,8 +462,13 @@ export async function renderReading(host, env) {
     }
     if (view === 'add') {
       const jobs = await api.readingJobs({ limit: 10, cursor: page.cursor || '' });
-      const inFlight = (jobs.items || []).filter((job) => job.status === 'queued' || job.status === 'running').length;
-      paint(`${progressTray(inFlight, t, href)}${panel({ title: t.readingAddTitle, note: t.readingAddNote, body: `<div class="ac-forms">${addForms(t)}</div>` })}
+      /* Study 04: the form is gone once the work is queued. What stands in its
+         place says where the work went and offers the next submission - the
+         tray in the console frame carries the progress from here, so nothing
+         waits in front of the operator. */
+      paint(`${queued
+        ? panel({ title: t.readingAddTitle, body: `<div class="ac-state" data-state="success"><p class="ac-state__title">${esc(t.readingQueuedTitle)}</p><p class="ac-state__note">${esc(t.readingQueuedNote)}</p><div class="ac-state__actions"><button type="button" class="ac-button ac-button--primary" data-ac-add-another>${esc(t.readingAddAnother)}</button><a class="ac-link" href="${esc(href('imports'))}">${esc(t.readingTrayOpenImports)}</a></div></div>` })
+        : panel({ title: t.readingAddTitle, note: t.readingAddNote, body: `<div class="ac-forms">${addForms(t)}</div>` })}
         ${panel({ title: t.readingJobsTitle, note: t.readingJobsNote, body: table({
           head: [t.readingColJob, t.colStatus, t.readingColStage, t.readingColAttempt, t.colError, t.colDate,
                  { label: t.colActions, hidden: true }],
@@ -514,6 +532,11 @@ export async function renderReading(host, env) {
       await loadOrExplain();
       return;
     }
+    if (event.target.closest('[data-ac-add-another]')) {
+      queued = false;
+      await loadOrExplain();
+      return;
+    }
     const source = event.target.closest('[data-ac-source]');
     if (source) {
       await api.readingSetSourceState(source.dataset.acSource, source.dataset.acState);
@@ -528,25 +551,23 @@ export async function renderReading(host, env) {
     event.preventDefault();
     const kind = form.dataset.acAdd;
     const fields = form.elements;
-    const submitted = {
-      kind,
-      text: fields.text?.value || '',
-      url: fields.url?.value || '',
-      title: fields.title?.value || '',
-      author: fields.author?.value || '',
-      language: fields.language?.value || '',
-      can_republish: Boolean(fields.can_republish?.checked),
-      license_note: fields.license_note?.value || '',
-    };
+    const submitted = submissionFrom(fields, kind);
     const submit = form.querySelector('button[type="submit"]');
     pending(submit, t, 'running');
     try {
       const job = await api.readingSubmit(submitted, fields.upload?.files?.[0] || null);
       pending(submit, t, 'idle');
       env.notify(job.duplicate ? t.readingSubmitDuplicate : t.readingSubmitted);
-      // The form is done the moment the work is queued: it empties, and the
-      // tray takes over from here.
+      /* The form is done the moment the work is queued. The tray takes it from
+         here and follows the operator out of this view, so what replaces the
+         form is a confirmation and the way to submit another - not the form
+         again, and not a modal to sit in front of. */
+      watchJob({
+        id: job.id,
+        label: submitted.title || submitted.url || fields.upload?.files?.[0]?.name || '',
+      });
       form.reset();
+      queued = true;
       await loadOrExplain();
     } catch (error) {
       pending(submit, t, 'failed');

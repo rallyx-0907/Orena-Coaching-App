@@ -1343,6 +1343,12 @@
 .ac-state[data-state='error'] {
   border-style: solid;
 }
+/* Study 01's fifth state: an action that finished, confirmed where it
+   happened, with the way on. Solid rather than dashed - this is a result, not
+   an absence. */
+.ac-state[data-state='success'] {
+  border-style: solid;
+}
 .ac-state__title {
   margin: 0;
   font-weight: 600;
@@ -1475,17 +1481,71 @@
 
 /* The progress tray: what is in flight, and where to watch it. It sits above
    the form it replaced rather than over the page - nothing here blocks. */
+/* Study 04: what is in flight, above the section and outside it, so it stays
+   while an operator moves around the console. Nothing waits in a modal. */
 .ac-tray {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   font-size: var(--text-sm);
+}
+.ac-tray__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ac-tray__head strong {
+  flex: 1;
+  min-width: 0;
+}
+.ac-tray__jobs {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ac-tray[data-collapsed="1"] .ac-tray__jobs {
+  display: none;
+}
+.ac-tray__job {
+  display: grid;
+  gap: 4px;
+}
+.ac-tray__line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ac-tray__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ac-tray__bar {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.ac-tray__fill {
+  display: block;
+  height: 100%;
+  width: var(--at);
+  background: var(--muted);
+}
+.ac-tray__fill[data-tone="ok"] { background: var(--o-good); }
+.ac-tray__fill[data-tone="bad"] { background: var(--o-bad); }
+.ac-tray__note {
+  color: var(--muted);
+  font-size: var(--text-xs);
 }
 
 /* A removal that states its cost: the block form of the inline confirm. */

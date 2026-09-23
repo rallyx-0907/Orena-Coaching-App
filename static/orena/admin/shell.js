@@ -18,6 +18,7 @@ import { renderUsers } from './users.js';
 import { renderContent } from './content.js';
 import { renderImports } from './imports.js';
 import { renderOperations } from './operations.js';
+import { inFlight, refresh as refreshTray, subscribe as subscribeTray, trayView } from './tray.js';
 
 export const SECTIONS = ['overview', 'ai', 'users', 'content', 'imports', 'operations'];
 /* Reading is a Content view, not a seventh area (canonical design). It briefly
@@ -36,7 +37,11 @@ const STYLESHEET = '/orena-assets/admin/admin.css';
 
 /* What the console remembers between sections within one visit: the last
    attention list (for the section badges) and the runtime facts. */
-const memory = { attention: null, runtime: null, runtimeAt: 0 };
+const memory = { attention: null, runtime: null, runtimeAt: 0, trayCollapsed: false };
+/* How often the tray asks. The same interval Add Content used, kept here now
+   that the tray outlives the view that started it: one timer for the console,
+   not one per section. */
+export const TRAY_POLL_MS = 5000;
 
 /* Study 08: the page someone without the role is shown. One sentence, one way
    back, and nothing that looks like a console failing to load. */
@@ -86,7 +91,7 @@ export function tabsView({ section, t, attention = null }) {
 }
 
 export function frameView({ section, t, attention = null }) {
-  return `<div class="ac-console" data-section="${esc(section)}"><header class="ac-head"><div class="ac-head__title"><h1>${esc(t.title)}</h1><div class="ac-head__env" data-ac-env></div></div>${tabsView({ section, t, attention })}<p class="ac-toast" role="status" aria-live="polite" data-ac-toast></p></header><div class="ac-body" data-ac-section><p class="ac-empty" role="status">${esc(t.loading)}</p></div></div>`;
+  return `<div class="ac-console" data-section="${esc(section)}"><header class="ac-head"><div class="ac-head__title"><h1>${esc(t.title)}</h1><div class="ac-head__env" data-ac-env></div></div>${tabsView({ section, t, attention })}<p class="ac-toast" role="status" aria-live="polite" data-ac-toast></p></header><div data-ac-tray-host></div><div class="ac-body" data-ac-section><p class="ac-empty" role="status">${esc(t.loading)}</p></div></div>`;
 }
 
 export function envView(runtime, t) {
@@ -167,6 +172,38 @@ export async function renderConsole(root, ctx) {
     },
   };
 
+  /* The tray, above the section and outside it. The section's host is replaced
+     on every route change; this is not, so what is in flight stays on screen
+     while an operator moves around the console - which is the whole point of
+     it (study 04). Its state lives in `tray.js`, so the frame being rebuilt
+     costs nothing. */
+  const trayHost = scope.querySelector?.('[data-ac-tray-host]');
+  let trayTimer = null;
+  const paintTray = () => {
+    if (!trayHost || !alive()) return;
+    trayHost.innerHTML = trayView(t, { href: sectionHref, collapsed: memory.trayCollapsed });
+  };
+  const tickTray = async () => {
+    if (!alive()) return;
+    await refreshTray(api);
+    if (!inFlight()) {
+      clearInterval(trayTimer);
+      trayTimer = null;
+    }
+  };
+  const startTray = () => {
+    paintTray();
+    if (trayTimer || !inFlight() || typeof setInterval !== 'function') return;
+    trayTimer = setInterval(tickTray, TRAY_POLL_MS);
+  };
+  const unsubscribeTray = subscribeTray(startTray);
+  trayHost?.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-ac-tray-toggle]')) return;
+    memory.trayCollapsed = !memory.trayCollapsed;
+    paintTray();
+  });
+  startTray();
+
   let cleanup = () => {};
   const run = async () => {
     try {
@@ -185,6 +222,8 @@ export async function renderConsole(root, ctx) {
   }
   return () => {
     clearTimeout(toastTimer);
+    clearInterval(trayTimer);
+    unsubscribeTray();
     cleanup();
   };
 }

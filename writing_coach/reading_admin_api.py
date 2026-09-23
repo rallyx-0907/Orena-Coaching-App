@@ -673,7 +673,9 @@ def decide_target(
     _same_origin(request)
     _no_store(response)
     target = _guarded(
-        lambda: _content().decide_target(target_id, approved=payload.approved, actor=_actor(admin))
+        lambda: _content().decide_target(
+            target_id, article_id=article_id, approved=payload.approved, actor=_actor(admin)
+        )
     )
     if target is None:
         raise orena_http_error(404, "reading_target_not_found", "That learning target is not on this article.")

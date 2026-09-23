@@ -108,7 +108,13 @@ export const adminApi = {
   readingOperations: () => request('/api/admin/reading/operations'),
   readingSubmit: (submitted, file = null) => {
     const form = new FormData();
-    for (const [key, value] of Object.entries(submitted)) form.append(key, value === true ? 'true' : value === false ? 'false' : String(value ?? ''));
+    for (const [key, value] of Object.entries(submitted)) {
+      /* An absent field is not sent at all. `String(undefined ?? '')` would
+         post an empty string, and the server cannot tell an empty string from
+         an answer - a question nobody answered has to arrive as no field. */
+      if (value === undefined || value === null) continue;
+      form.append(key, value === true ? 'true' : value === false ? 'false' : String(value));
+    }
     if (file) form.append('upload', file, file.name);
     return request('/api/admin/reading/jobs', { method: 'POST', body: form });
   },
