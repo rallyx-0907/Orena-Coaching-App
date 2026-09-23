@@ -58,10 +58,70 @@ drawers (03), the mobile panel layouts (02), the progress tray after Add
 content (04), the credential flow (05) and the no-access page (08) — are
 implemented.
 
-## Deferred
+## Parity: every control in the canonical design
 
-Design controls that are present and disabled, with the backend gap named
-beside them: source polling (07), P95 per capability, role change, the unified
-imports feed, global search, Reading coverage, and the error budget. None is
-deleted from the design; each waits on the backend capability its row above
-describes.
+The rule for this table is the human's: **a control is not done because it is
+visible, and not done because it is disabled.** Each one is either *working* -
+it calls a real endpoint and the result is real - or *deferred*, which is a
+recorded decision with the reason beside it, not an omission.
+
+| Control (canonical design) | State | Where it stands |
+| --- | --- | --- |
+| Six areas, one route | working | `#/admin?id=<area>`; Reading is a Content view, and the old `?id=reading` link still resolves |
+| Loading / empty / error / unavailable / pending | working | `states.js`; the baseline itself records these as INCOMPLETE, so the structure is ours and the words are in `copy.js` in both languages |
+| Capability routing: edit a route | working | `PUT /ai/config/{key}` |
+| Capability routing: test a route, test its standby | working | `POST /ai/test/{key}`; returns a structured refusal with telemetry when unconfigured |
+| Provider: test connection | working | `POST /ai/credentials/{id}/test`; verified live against Ollama (3 models, 51 ms) |
+| Provider: save a key, verify before saving | working | `PUT /ai/credentials/{id}`; the key is write-only and never echoed. **Not exercised end to end on this sandbox**: `AI_PROVIDER_SECRETS_KEY` is unset, so the console disables Save and says why |
+| Provider: remove, with consequences and type-to-confirm | working | `DELETE /ai/credentials/{id}` |
+| Accounts: list, filter, detail, retention | working | `/console/users*` |
+| Accounts: change role | **deferred** | no endpoint writes a role. The control is present and disabled with the gap named |
+| Accounts: 30-day activity per row | **deferred** | the measure exists in the detail; a per-row series would be one request per row |
+| Content: list, filter, preview | working | `/console/content*` |
+| Content: book archive | working | `POST /content/book/{id}/archive` |
+| Content: vocabulary publish | working | `POST /content/vocabulary/{id}/publish`. Its admission gate still refuses on rights - see the conflict below |
+| Content: media unpublish / archive / republish / restore | working | `POST /content/media/{id}/status`, audited, no deletion in the flow |
+| Content: media reprocess | working | `POST /content/media/{id}/reprocess`; the "what to keep" options are shown disabled and named as a gap |
+| Reading: queue, published, rejected, archived, sources | working | `/admin/reading/*` |
+| Reading: submit text / URL / file | working | `POST /admin/reading/jobs`, multipart |
+| Reading: review, edit level and topic, publish, reject, unpublish | working | `POST /admin/reading/articles/{id}`, `.../status` |
+| Reading: keep / drop a learning target | working | `POST .../targets/{id}`, scoped to the article |
+| Reading: order the learning targets | working | `POST .../target-order`, whole order per write |
+| Reading: rights as decision support | working | three answers, three weights, Publish never blocked |
+| Reading: cross-source duplicate warning | working | names the other source |
+| Reading: source polling | **deferred** | the registry, the rights gate and the CHECK exist; no poller. Shown, disabled, marked future |
+| Reading: coverage by level and topic | **deferred** | no aggregate exists |
+| Imports: history, Reading jobs, retry, job detail | working | two feeds under one filter |
+| Imports: one unified feed | **deferred** | merging two paginations client-side would skip rows |
+| Progress tray after Add content | working | floating, outside the section, one clock, leaves on its own |
+| Operations: readiness, activation, system, AI telemetry, impact | working | `/admin/readiness-summary`, `/admin/ai/operations`, `/admin/product-activity` |
+| Operations: worker identity, heartbeat, concurrency | working | derived from the claims, with the limit named |
+| Operations: error budget and incidents | **deferred** | no budget or incident record exists |
+| P95 per capability | **deferred** | the control plane records a mean; the column shows the mean, labelled as the mean |
+| Global search | **deferred** | per-area search exists; nothing searches Reading articles or jobs |
+| Admin without the role | working | study 08's page |
+
+## A contract this round did not resolve
+
+The human's decision is that rights are decision support and must not hard-block
+Publish. That is now true everywhere it was ours to decide: the Reading engine
+never gated publication on rights and the console now says which of the three
+answers it is looking at beside a Publish that stays enabled.
+
+**One place still refuses.** `POST /content/vocabulary/{id}/publish` returns 422
+unless `rights_status` is one of `PUBLISHABLE_RIGHTS` and the admission is
+attested. That gate is a recorded admission contract, not a UI habit, and
+`AGENTS.md` says a change that would violate a contract is surfaced rather than
+made quietly. So it is surfaced here: **loosening it is a decision for the
+human**, and until then the vocabulary publish form states the refusal as the
+server's, not as the console's opinion.
+
+## Known gaps in the design itself
+
+From `UI_BASELINE.md`, and not defects of ours: Admin is an INCOMPLETE template,
+Modal/Drawer, EmptyState and LoadingSkeleton do not exist as components, the
+loading / empty / error states have no canonical version, and there is **no
+tablet breakpoint** - the baseline draws exactly two frames, 1920x1080 and
+390x844. The console's intermediate steps are therefore ours, declared once
+against its own container width rather than the window's, and recorded here as
+an implementation decision rather than a reading of the design.

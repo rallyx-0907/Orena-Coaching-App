@@ -1828,3 +1828,80 @@ body:has(#main[data-experience='admin']) :is(#shell, #topbar) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* A table stacks when *its* columns run out, not when some shared number says
+   so: the routing table needs about 52rem and the import history about 50rem,
+   so between a phone and a desk there was a band where neither fitted nor
+   stacked and both scrolled sideways. Each wide table gets its own step. */
+@container (max-width: 860px) {
+  .ac-table-wrap:has(.ac-table--routing),
+  .ac-table-wrap:has(.ac-table--history) {
+    overflow-x: visible;
+    box-shadow: none;
+    background: none;
+  }
+  .ac-table--routing,
+  .ac-table--history {
+    min-width: 0;
+    table-layout: auto;
+  }
+  .ac-table--routing :is(td, th) {
+    width: auto;
+    overflow: visible;
+  }
+  .ac-table--routing td:first-child,
+  .ac-table--routing td:nth-child(3),
+  .ac-table--routing td:nth-child(4) {
+    min-width: 0;
+  }
+  .ac-table--routing :is(td:nth-child(3), td:nth-child(4)) .ac-cell-stack > * {
+    white-space: normal;
+  }
+  /* The content list still reads as a table at this width; only its title
+     column's floor - written for a desk - has to come down for it to fit. */
+  .ac-title-cell {
+    min-width: 10rem;
+  }
+  :is(.ac-table--routing, .ac-table--history),
+  :is(.ac-table--routing, .ac-table--history) tbody,
+  :is(.ac-table--routing, .ac-table--history) tr,
+  :is(.ac-table--routing, .ac-table--history) td {
+    display: block;
+    width: 100%;
+  }
+  :is(.ac-table--routing, .ac-table--history) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  :is(.ac-table--routing, .ac-table--history) tr {
+    margin-bottom: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+  :is(.ac-table--routing, .ac-table--history) td {
+    display: grid;
+    grid-template-columns: minmax(6rem, 40%) minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: baseline;
+    justify-items: start;
+    padding: 4px 0;
+    border: 0;
+    box-shadow: none;
+  }
+  :is(.ac-table--routing, .ac-table--history) td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: var(--text-2xs);
+  }
+  :is(.ac-table--routing, .ac-table--history) td:not([data-label]),
+  :is(.ac-table--routing, .ac-table--history) td[colspan] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :is(.ac-table--routing, .ac-table--history) td[data-numeric] {
+    text-align: left;
+  }
+}
