@@ -4,6 +4,7 @@ import { renderLibraryBrowse } from './library-browse.js';
 import { mountSpeakingWorkspace, sourceFromLesson, sourceFromItem } from './speaking-workspace.js';
 import { mountFreeTalk } from './speaking-free.js';
 import { referenceCopy } from './reference.js';
+import { speakCopy } from './speaking-copy.js';
 import { encounter } from '../product/encounter.js';
 
 /* The Speaking workspace: one line at a time, said and assessed. Its lines come from a Listening
@@ -25,6 +26,20 @@ export async function renderSpeakingWorkspace(root, ctx) {
     if (!payload?.transcript?.segments?.length || payload.asset?.source_language !== language)
       throw Error(ctx.c.unavailable);
     source = sourceFromLesson(id, payload, encounter(payload, ctx.support));
+  } else if (id.startsWith('say:')) {
+    // One line to say, handed over by free talk ("say the corrected line"): no model clip.
+    const text = id.slice(4).trim().slice(0, 400);
+    if (!text) throw Error(ctx.c.unavailable);
+    source = {
+      id,
+      title: speakCopy(ctx.ui).ftSayFixed,
+      level: '',
+      assetId: '',
+      playback: null,
+      modelAudio: null,
+      poster: '',
+      lines: [{ id: 'say', text, original: text, reading: '', readings: [], meaning: '', startMs: 0, endMs: 0 }],
+    };
   } else throw Error(ctx.c.unavailable);
   const prior = memory.value.continuation.find((item) => item.id === id)?.segment;
   const wanted = location.line || prior || '';
@@ -92,6 +107,8 @@ export async function renderSpeaking(root, ctx) {
     id: location.id,
     // The frame's bar names the practice ("Nói tự do"); the situation itself is the topic card.
     title: (referenceCopy[ctx.ui] || referenceCopy.en).libraryKind_speak_free,
+    // The situation's own short name for the result's bar ("Nói tự do · <name>").
+    name: picked.title,
     topic: picked.prompt,
     cue: picked.cue,
     next,

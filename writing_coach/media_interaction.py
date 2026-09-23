@@ -686,9 +686,28 @@ def _spoken_schema() -> dict[str, Any]:
             },
             "another_way": {"type": "string"},
             "next_attempt": {"type": "string"},
+            "say_again": {"type": "string"},
         },
-        "required": ["carried", "landed_differently", "another_way", "next_attempt"],
+        "required": ["carried", "landed_differently", "another_way", "next_attempt", "say_again"],
     }
+
+
+def _line_in_language(text: Any, language: str, *, limit: int = 300) -> str:
+    """A line the learner can say: only the learning language's script, or nothing.
+
+    The Speaking design's "say this again" is spoken back and assessed as a line, so advice in
+    the support language with a quotation inside it must never reach it.
+    """
+    line = str(text or "").strip().strip('"“”「」')
+    if not line or len(line) > limit:
+        return ""
+    letters = [ch for ch in line if ch.isalpha()]
+    han = [ch for ch in letters if "㐀" <= ch <= "鿿"]
+    latin = [ch for ch in letters if ch.isascii()]
+    other = [ch for ch in letters if ch not in han and not ch.isascii()]
+    if language == "zh":
+        return line if han and not other and len(latin) <= max(2, len(han) // 5) else ""
+    return line if latin and not han and not other else ""
 
 
 @contextual_router.post("/spoken-response")
@@ -725,7 +744,9 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         "in the transcript. Name at most three things that carried the meaning "
         "and at most three that would land differently, each with the reason. "
         "Give one alternative way to say part of it, not a rewrite of the whole "
-        "response, and one concrete thing to try in the next attempt. Do not "
+        "response, and one concrete thing to try in the next attempt. "
+        f"In say_again, give one sentence from what they said, corrected where needed, written "
+        f"only in {source_name}: no explanation, no quotation marks, no {target_name}. Do not "
         "score, grade or estimate a level. Never cite a source you were not given."
     )
     user = (
@@ -772,6 +793,8 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         "landed_differently": landed,
         "another_way": str(raw.get("another_way") or "").strip()[:600],
         "next_attempt": str(raw.get("next_attempt") or "").strip()[:400],
+        # One line to say again, in the learning language only (Orena Speaking 04).
+        "say_again": _line_in_language(raw.get("say_again"), language),
         "available": bool(carried or landed),
         # Said in the payload as well as in the copy: this is derived from a
         # transcript, and it is not a measurement of speech.

@@ -146,6 +146,8 @@ const en = {
   ftSayFixed: 'Say the corrected line',
   ftFixOf: 'FIX {i} / {n}',
   ftPlay: 'Play your recording',
+  ftHeadlineFixOne: '1 thing to fix',
+  ftFixesOne: '1 THING TO FIX',
 };
 
 const vi = {
@@ -290,6 +292,8 @@ const vi = {
   ftSayFixed: 'Nói lại câu sửa',
   ftFixOf: 'SỬA {i} / {n}',
   ftPlay: 'Nghe bản ghi của bạn',
+  ftHeadlineFixOne: 'Còn 1 chỗ nên sửa',
+  ftFixesOne: '1 CHỖ NÊN SỬA',
 };
 
 const zh = {
@@ -434,6 +438,8 @@ const zh = {
   ftSayFixed: '说改好的句子',
   ftFixOf: '修改 {i} / {n}',
   ftPlay: '播放你的录音',
+  ftHeadlineFixOne: '还有 1 处可以改',
+  ftFixesOne: '1 处可以改',
 };
 
 export const speakingCopy = { en, vi, zh };

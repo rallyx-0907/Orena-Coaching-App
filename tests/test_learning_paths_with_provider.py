@@ -452,3 +452,34 @@ def test_explanation_prompt_refuses_authority_it_was_not_given(monkeypatch) -> N
     _explain()
 
     assert "explain from the language itself instead" in seen[0]["system"]
+
+
+def _say_again_payload(say_again: str) -> dict[str, Any]:
+    return {"carried": [], "landed_differently": [{"quote": "very interesting for me", "why": "x", "instead": "really interesting to me", "judgement": "unnatural"}], "another_way": "Bạn có thể nói ...", "next_attempt": "y", "say_again": say_again}
+
+
+def test_spoken_coaching_offers_one_line_to_say_again_in_the_learning_language(monkeypatch) -> None:
+    # The Speaking design's "say this again" is a line the learner can say, in the language they
+    # are learning - not advice in the support language (measured on real Gemini, 2026-09-23).
+    seen = _provider(monkeypatch, _say_again_payload("I would take you to the old market by the river."))
+    result = _coach()
+    assert result["say_again"] == "I would take you to the old market by the river."
+    assert "say_again" in seen[0]["schema"]["properties"]
+    assert "say_again" in seen[0]["schema"]["required"]
+
+
+@pytest.mark.parametrize("bad", ["Bạn có thể nói: I would go.", "你可以说：I would go.", "", "x" * 400])
+def test_a_line_to_say_again_that_is_not_the_learning_language_is_dropped(monkeypatch, bad) -> None:
+    _provider(monkeypatch, _say_again_payload(bad))
+    assert _coach()["say_again"] == ""
+
+
+def test_a_chinese_line_to_say_again_must_be_chinese(monkeypatch) -> None:
+    monkeypatch.setattr(media_interaction, "current_language_code", lambda: "zh")
+    payload = {"carried": [], "landed_differently": [], "another_way": "", "next_attempt": "", "say_again": "其实我是英国人。"}
+    _provider(monkeypatch, payload)
+    zh = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(transcript="不是，我是英国人。", source_language="zh", target_language="vi", situation=""))
+    assert zh["say_again"] == "其实我是英国人。"
+    _provider(monkeypatch, {**payload, "say_again": "Instead of 不是, say 其实我是英国人."})
+    zh = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(transcript="不是，我是英国人。", source_language="zh", target_language="vi", situation=""))
+    assert zh["say_again"] == ""

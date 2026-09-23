@@ -115,6 +115,27 @@ assert.match(said, /sp-said__comment/);
 assert.equal(saidHtml({ s, heard: 'x', ms: 1000, comment: '', language: 'en' }).includes('sp-said__comment'), false, 'no comment line until the coaching gives one');
 const freeSource = readFileSync(new URL('../static/orena/ui/speaking-free.js', import.meta.url), 'utf8');
 assert.match(freeSource, /evaluateVoice\(/, 'free talk reuses the existing recognition and evidence plumbing');
-assert.equal(/assessPronunciation/.test(freeSource), false);
+// Free talk is scored only by the provider's free-speech (unscripted) measurement (D-076).
+assert.deepEqual([...freeSource.matchAll(/assessPronunciation\(([^)]*)\)/g)].map((m) => m[1]), ["take.blob, language, '', 'unscripted'"]);
+
+// 04 · the free talk result: only measured criteria carry a number; no overall; no "last time".
+const { freeResultHtml, fixesOf, markedTranscript } = await import('../static/orena/ui/speaking-free.js');
+const coaching = { available: true, landed_differently: [{ quote: '很好', instead: '不错', why: 'Tự nhiên hơn.', judgement: 'unnatural' }], another_way: 'Bạn có thể nói ...', say_again: '我觉得靠窗的位子不错。' };
+const result = freeResultHtml({ s, c: { coachingWorking: '…', lookCloser: 'x', develop: 'y', conversationStart: 'z' }, title: 'Nói tự do', topic: '带一个人认识你的城市', language: 'zh', ms: 26000, heard: '我觉得靠窗的位子很好。', coaching, scores: { pron: 83.8, fluency: 79 }, bars: [0.2, 0.9] });
+assert.match(result, /Lưu loát<\/span><span class="sp-bar"><i style="width:79%">/);
+assert.match(result, /Phát âm<\/span><span class="sp-bar"><i style="width:84%">/);
+assert.match(result, /Ngữ pháp<\/span><span class="sp-bar"><i style="width:0%">/, 'no approved evaluator: 0');
+assert.match(result, /Từ vựng<\/span><span class="sp-bar"><i style="width:0%">/);
+assert.match(result, /--score:0%/, 'no overall while a component is missing');
+assert.equal(/Lần trước|Last time/.test(result), false);
+assert.match(result, /<mark class="sp-fix-mark">很好<\/mark>/);
+assert.match(result, /data-sp-ftr-fixed/, 'the corrected line can be said, as pronunciation of a given line');
+assert.match(result, /<p lang="zh">我觉得靠窗的位子不错。<\/p>/, 'the line to say again is the learning-language line');
+assert.equal(result.includes('Bạn có thể nói'), false, 'advice in the support language is never offered as a line to say');
+assert.equal(/Lưu vào Thư viện|data-sp-ftr-save/.test(result), false, 'no saving to the library (D-076)');
+assert.equal(fixesOf({ landed_differently: [1, 2, 3, 4].map((n) => ({ quote: String(n) })) }).length, 3);
+assert.equal(markedTranscript('a <b>', [], 'en'), '<span lang="en">a &lt;b&gt;</span>');
+const unmeasured = freeResultHtml({ s, c: { coachingWorking: 'Đang xem…' }, title: 't', topic: 'x', language: 'en', ms: 1000, heard: 'hi', coaching: undefined, scores: null, bars: [] });
+assert.match(unmeasured, /Lưu loát<\/span><span class="sp-bar"><i style="width:0%">/, 'an unmeasured fluency is 0, never a guess');
 
 console.log('Speaking workspace and free talk markup (PronunciationResult, EN/VI/ZH): PASS');
