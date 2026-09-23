@@ -178,6 +178,25 @@ export const api={
       isTransientRequestError,
     );
   },
+  /* The learner's own state over what a listing is drawing: kept, marked,
+     filed. One call for a page of rows, never one per row. */
+  libraryItems:({kind='',words=[],sources=[]}={})=>{
+    const query=new URLSearchParams();
+    if(kind)query.set('kind',kind);
+    if(words.length)query.set('words',words.join(','));
+    if(sources.length)query.set('sources',sources.join(','));
+    const suffix=query.toString()?`?${query.toString()}`:'';
+    return retryOnce(()=>request(`/api/library/items${suffix}`),isTransientRequestError);
+  },
+  libraryKeep:(payload)=>request('/api/library/items',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  /* Every change carries the version it was made against, so two tabs cannot
+     overwrite each other without one of them being told. */
+  libraryItemPatch:(id,payload)=>request(`/api/library/items/${encodeURIComponent(id)}`,{method:'PATCH',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  libraryItem:(id)=>retryOnce(()=>request(`/api/library/items/${encodeURIComponent(id)}`),isTransientRequestError),
+  libraryReviewQueue:()=>retryOnce(()=>request('/api/library/review-queue'),isTransientRequestError),
+  libraryCollections:(kind='')=>retryOnce(()=>request(`/api/library/collections${kind?`?kind=${encodeURIComponent(kind)}`:''}`),isTransientRequestError),
+  libraryCollectionCreate:(payload)=>request('/api/library/collections',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  libraryCollectionAdd:(collectionId,itemId)=>request(`/api/library/collections/${encodeURIComponent(collectionId)}/items`,{method:'POST',headers:JSON_HEADERS,body:JSON.stringify({item_id:itemId})}),
   /* The counts and the rank alone - what Hồ sơ, Tiến độ and Home need, with no
      saved word crossing the wire. */
   libraryVocabularySummary:()=>retryOnce(

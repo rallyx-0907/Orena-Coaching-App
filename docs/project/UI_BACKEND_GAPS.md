@@ -1466,3 +1466,49 @@ powershell -ExecutionPolicy Bypass -File scripts\persist_orena_sandbox_db.ps1
 
 Until then the sandbox behaves as before, and `start_orena_sandbox.ps1` now
 says which of the two states the container is in rather than assuming tmpfs.
+
+## Thư viện của tôi, second slice: marking, sets, the queue and the panel (2026-09-23)
+
+On the reviewed contract (`20260923_0013`, D-074), so the four things the first
+slice had to leave out now exist:
+
+- **The mark** ("đánh dấu cần ôn"): the row's first button, `pinned_at` on the
+  item. Keeping is implicit in marking - the first mark records the
+  relationship, then marks it.
+- **Sets, one kind each**: the right-hand column at 420, the picker that offers
+  only sets of the item's own kind (which is also all the database will take),
+  and naming in a field in the room.
+- **"CẦN ÔN HÔM NAY"**: marked items first, oldest mark leading, then what the
+  words owner says is due. Nothing invents a schedule for a kind that has none:
+  a passage is in the queue because the learner marked it, or not at all.
+- **The detail panel**: 560 from the right, the word at 34/600, the context box,
+  the three-state control (marked / learning / known), the history, the sets it
+  is in, and the way back to where it came from.
+
+**Measured** against "Thư viện của tôi · desktop" at 1920 (panel 560, title 34,
+gloss 17, state segments 40, history in three), and checked at 1024 (the sets
+column falls under the list - see below) and 390 (the due card stacks, the
+panel fills the width, the buttons are the 44 touch floor). English, Vietnamese
+and Chinese: no clipping, no horizontal scroll, the panel opens and closes
+without moving the page.
+
+**Two deviations, recorded rather than resolved:**
+
+- **The sets column stacks under the list below 1100px.** The frame draws two
+  columns at 1920 and a single column on the phone; it draws nothing between.
+  At 1024 a 420 column would leave the rows too narrow to read, so they stack.
+  **DESIGN DECISION NEEDED** if the intermediate width is meant to look
+  otherwise.
+- **The history is drawn only for a word.** Recalls, last review and next
+  review are the saved-language owner's record; no other kind has one, and
+  three dashes would be three measures nobody took (rule 4). The frame draws
+  the block for every kind.
+
+**Still not built from this frame**, and still waiting on something:
+
+- multi-select and delete (the frame's "My library multi-select" and "delete
+  confirm"): the repository can forget an item, the room offers no way to;
+- reordering a set, and opening a set as a filtered list;
+- notes on an item (`library_items.note` exists and nothing writes it);
+- the kinds with no owner, unchanged: a note is stored nowhere, a book is
+  catalogue only.

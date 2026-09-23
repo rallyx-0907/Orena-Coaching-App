@@ -2609,6 +2609,271 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   .my-library-item__when { inline-size: auto; }
 }
 
+/* --- Thư viện của tôi: what is waiting, the sets, one thing in full -------
+   Measured from "Thư viện của tôi · desktop": the due card 26/28 at radius 22
+   over the lit glass, its label in mono 11 at 0.13em; the sets column 420 with
+   rows of 16/18 at radius 16 and a 44 mark; the row's own controls 40x40 at
+   radius 11; the detail panel 560 from the right, 30/32, its word 34/600, its
+   context box 16/18 at radius 14 with a serif 16.5, the state control 40 tall
+   in a 4px trough, and the history in three columns of 13/14. */
+.my-library__columns { display: flex; align-items: flex-start; gap: 24px; }
+.my-library__main { flex: 1; min-inline-size: 0; display: grid; gap: 22px; align-content: start; }
+
+.my-library-due {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 26px 28px;
+  border-radius: 22px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring), var(--glass-ring-focus);
+}
+.my-library-due__body { flex: 1; min-inline-size: 0; display: grid; gap: 12px; }
+.my-library-due__body .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.13em; }
+.my-library-due__count { display: flex; align-items: baseline; gap: 10px; }
+.my-library-due__count strong { font-family: var(--display-font); font-size: 46px; font-weight: var(--weight-heavy); line-height: 1; }
+.my-library-due__count span { color: var(--text-secondary); font-size: 16px; }
+.my-library-due p { margin: 0; color: var(--text-secondary); font-size: 14.5px; }
+.my-library-due .primary { flex: none; min-block-size: 44px; padding-inline: 20px; border-radius: var(--radius-pill); }
+
+.my-library__sets { inline-size: 420px; flex: none; display: grid; gap: 14px; align-content: start; }
+.my-library__sets header { display: flex; align-items: baseline; gap: 10px; }
+.my-library__sets h2 { margin: 0; font-family: var(--display-font); font-size: 20px; font-weight: var(--weight-heavy); letter-spacing: -0.02em; }
+.my-library__sets header > span { color: var(--text-secondary); font-size: 13.5px; }
+.my-library__new-set {
+  margin-inline-start: auto;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.my-library-set {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.my-library-set__mark {
+  inline-size: 44px;
+  block-size: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-chip);
+  color: var(--accent-ink);
+}
+.my-library-set__body { flex: 1; min-inline-size: 0; display: grid; gap: 4px; }
+.my-library-set__body strong { font-size: 16px; font-weight: var(--weight-bold); }
+.my-library-set__body small { color: var(--text-secondary); font-size: 13px; }
+
+/* The row's own controls, and the body that opens the panel behind them. */
+.my-library-item__body {
+  flex: 1;
+  min-inline-size: 0;
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.my-library-item__actions { display: flex; gap: 8px; flex: none; }
+.my-library-item__act {
+  inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.my-library-item__act[aria-pressed='true'] { background: var(--accent-chip); color: var(--accent-ink); }
+.my-library-item[data-marked] { box-shadow: var(--glass-ring), var(--accent-chip-ring); }
+
+.my-library-scrim { position: fixed; inset: 0; z-index: 15; background: rgba(5, 3, 16, 0.5); }
+.my-library-detail {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 16;
+  inline-size: min(560px, 100%);
+  box-sizing: border-box;
+  padding: 30px 32px;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  overflow-y: auto;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring-focus), -24px 0 60px rgba(0, 0, 0, 0.5);
+}
+.my-library-detail header { display: flex; align-items: center; gap: 12px; }
+.my-library-detail__kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  block-size: 32px;
+  padding-inline: 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip);
+  color: var(--accent-ink);
+  font-size: 13.5px;
+  font-weight: var(--weight-bold);
+}
+.my-library-detail header .my-library-item__act { margin-inline-start: auto; }
+.my-library-detail__head { display: grid; gap: 8px; }
+.my-library-detail__title { font-size: 34px; font-weight: var(--weight-bold); line-height: 1.25; }
+.my-library-detail__title[lang] { font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif; }
+.my-library-detail__gloss { color: var(--text-secondary); font-size: 17px; }
+.my-library-detail__context {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.my-library-detail__context p {
+  margin: 0;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 16.5px;
+  line-height: 1.6;
+}
+.my-library-detail .ds-label { color: var(--text-secondary); font-size: 11px; letter-spacing: 0.12em; }
+.my-library-detail__state { display: grid; gap: 10px; }
+.my-library-detail__state p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.my-library-detail__choice {
+  display: flex;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--glass-well);
+  box-shadow: var(--accent-chip-ring);
+}
+.my-library-detail__choice button {
+  flex: 1;
+  min-block-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.my-library-detail__choice button[aria-pressed='true'] { background: var(--accent-chip); color: var(--text-primary); }
+.my-library-detail__history { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.my-library-detail__history > div {
+  display: grid;
+  gap: 5px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+}
+.my-library-detail__history .ds-label { font-size: 10.5px; letter-spacing: 0.1em; }
+.my-library-detail__history strong { font-size: 16px; font-weight: var(--weight-bold); }
+.my-library-detail__sets { display: grid; gap: 10px; }
+.my-library-detail__sets > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.my-library-detail__set {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  block-size: 34px;
+  padding-inline: 13px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-size: 14px;
+}
+.my-library-detail__foot { display: flex; gap: 12px; flex-wrap: wrap; }
+.my-library-detail__foot .primary,
+.my-library-detail__foot .outline { min-block-size: 46px; padding-inline: 20px; border-radius: var(--radius-pill); }
+
+/* Choosing a set: the frame lists only sets of the item's own kind, which is
+   also what the database will accept. */
+.my-library-pick {
+  position: fixed;
+  z-index: 16;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  translate: -50% -50%;
+  inline-size: min(420px, calc(100% - 36px));
+  box-sizing: border-box;
+  padding: 24px;
+  display: grid;
+  gap: 10px;
+  border-radius: 22px;
+  background: var(--glass-focus);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring), 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.my-library-name { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.my-library-name .library-search { flex: 1; min-inline-size: 160px; block-size: 44px; border-radius: 12px; }
+.my-library-name__kind { color: var(--text-secondary); font-size: 13px; }
+.my-library-name .primary { min-block-size: 44px; padding-inline: 18px; border-radius: var(--radius-pill); }
+.my-library-pick header { display: flex; align-items: baseline; gap: 10px; }
+.my-library-pick header strong { font-family: var(--display-font); font-size: 19px; font-weight: var(--weight-heavy); }
+.my-library-pick header span { color: var(--text-secondary); font-size: 13.5px; }
+.my-library-pick__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 48px;
+  padding-inline: 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--glass-soft);
+  box-shadow: var(--glass-ring);
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  text-align: start;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  /* The sets fall under the list rather than beside it: at this width the
+     frame's two columns do not both fit, and a 420 column would leave the
+     rows too narrow to read. */
+  .my-library__columns { flex-direction: column; }
+  .my-library__sets { inline-size: 100%; }
+}
+
+@media (max-width: 600px) {
+  .my-library-due { flex-direction: column; align-items: stretch; gap: 16px; padding: 18px 20px; }
+  .my-library-due__count strong { font-size: 36px; }
+  .my-library-due .primary { justify-content: center; }
+  .my-library-item__act { inline-size: 44px; block-size: 44px; border-radius: 12px; }
+  .my-library-detail { padding: 22px 18px; gap: 16px; }
+  .my-library-detail__title { font-size: 26px; }
+  .my-library-detail__gloss { font-size: 15px; }
+  .my-library-detail__history { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .my-library-detail__history > div { padding: 10px; }
+  .my-library-detail__foot .primary,
+  .my-library-detail__foot .outline { flex: 1; justify-content: center; }
+}
+
 /* --- The end of a review session (D-067, "Review summary", measured) -----
    A column of 1000 with 40 between its parts: what the sitting was and how
    many cards, the three grades as one 14px bar and as three figures of 44,

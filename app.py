@@ -86,6 +86,7 @@ from writing_coach.speech_api import (
 )
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
 from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
+from writing_coach.library_api import configure_library, router as library_router
 from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
     configure_listening_media_library,
@@ -162,6 +163,7 @@ from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, con
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
 from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
+from writing_coach.persistence.library_repository import LibraryRepository
 from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
 from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
@@ -596,6 +598,16 @@ configure_collection(runtime_owners(
     grammar=lambda: _completed_grammar_rows(),
 ))
 app.include_router(collection_router)
+# The learner's own library: keeping, marking, filing, and the queue the design
+# orders "marked first, then whatever is due" (D-074). It lives in PostgreSQL,
+# so on any other backend every route says `library_unavailable` rather than
+# dropping a pin on the floor.
+configure_library(
+    lambda: LibraryRepository(_persistence_runtime.engine)
+    if getattr(_persistence_runtime, "engine", None) is not None
+    else None
+)
+app.include_router(library_router)
 # Learner summary (I6 read step): each domain's own evidence, side by side,
 # through the reads the app already serves. No surface calls it yet.
 configure_learner_summary(runtime_sources(

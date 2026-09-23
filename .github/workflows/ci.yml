@@ -94,6 +94,7 @@ jobs:
           node scripts/test_orena_vocabulary_library.mjs
           node scripts/test_orena_vocabulary_feed.mjs
           node scripts/test_orena_vocabulary_paging.mjs
+          node scripts/test_orena_my_library.mjs
           node scripts/test_orena_rank_frame.mjs
           node scripts/test_orena_vocabulary_saved_card.mjs
           node scripts/test_orena_room_navigation_cancellation.mjs

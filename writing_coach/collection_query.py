@@ -200,7 +200,16 @@ def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[C
             relationship='saved',
             updated_at=str(row.get('added_at') or ''),
             action=_action('review_language', route('language')),
-            detail={'sourceKind': str(row.get('source_kind') or '')},
+            # What the owner already recorded about reviewing this word. The
+            # library's detail panel shows it; nothing here computes a measure
+            # or invents one for a kind that has no schedule.
+            detail={
+                'sourceKind': str(row.get('source_kind') or ''),
+                'successfulRecalls': int(row.get('successful_recalls') or 0),
+                'lastReviewedAt': str(row.get('last_reviewed_at') or ''),
+                'nextReviewAt': str(row.get('next_review_at') or ''),
+                'sourceFragment': _clip(row.get('source_fragment'), 280),
+            },
         ))
     return entries
 
