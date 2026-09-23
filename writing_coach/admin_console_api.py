@@ -71,6 +71,27 @@ ACTIVITY_DOMAINS = ("writing", "reading", "listening", "speaking", "vocabulary",
 TREND_DAYS = 30
 RETENTION_COHORT_DAYS = 90
 PUBLISHABLE_RIGHTS = frozenset({"public_domain", "licensed", "creator_authorized", "internal_curated"})
+
+
+def publication_warnings(rights: str, completeness: str) -> list[dict[str, str]]:
+    """What an administrator should know before publishing, in three weights.
+
+    None of these stops anything. A rights answer nobody gave and a rights
+    answer that was refused are different sizes of the same warning, and a
+    collection that is still being worked on is a third - the administrator
+    weighs them and decides, and the decision is audited with the warnings
+    that were showing when they made it.
+    """
+    warnings: list[dict[str, str]] = []
+    if not rights or rights == "unknown":
+        warnings.append({"code": "rights_unknown", "level": "warning"})
+    elif rights not in PUBLISHABLE_RIGHTS:
+        warnings.append({"code": "rights_not_cleared", "level": "strong"})
+    if completeness and completeness != "complete":
+        warnings.append({"code": "collection_incomplete", "level": "warning"})
+    elif not completeness:
+        warnings.append({"code": "completeness_unknown", "level": "warning"})
+    return warnings
 TRANSCRIPT_PREVIEW_SEGMENTS = 12
 VOCABULARY_PREVIEW_ENTRIES = 25
 
@@ -1004,31 +1025,40 @@ def publish_collection(collection_id: str, payload: PublishIn, request: Request,
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
+    # Rights and completeness are decision support, not a permission gate: they
+    # tell an administrator what they are about to do, and the administrator
+    # decides. What the server still insists on is the decision itself - an
+    # unattested request is not an override, it is a request that nobody made.
     if not payload.attested:
         raise orena_http_error(422, "vocabulary_admission_required",
-                               "Confirm source rights and collection readiness before publishing.")
-    rights = payload.rights_status.strip().casefold()
-    if rights not in PUBLISHABLE_RIGHTS:
-        raise orena_http_error(422, "vocabulary_rights_required", "Choose a verified source-rights status before publishing.")
-    if payload.completeness.strip().casefold() != "complete":
-        raise orena_http_error(422, "vocabulary_completeness_required",
-                               "Only a complete, reviewed collection can be published to learners.")
+                               "Confirm you are publishing this collection before it reaches learners.")
     if not _vocabulary_available():
         raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+    rights = payload.rights_status.strip().casefold()
+    completeness = payload.completeness.strip().casefold()
+    warnings = publication_warnings(rights, completeness)
     admission = {
-        "rights_status": rights,
-        "completeness": "complete",
+        "rights_status": rights or "unknown",
+        "completeness": completeness or "unknown",
         "review_status": "approved",
         "publication_attested": True,
         "attested_by": _actor(admin),
+        # What the administrator was shown at the moment they decided. An
+        # override is only meaningful if the warning it overrode is recorded
+        # beside it.
+        "warnings_at_publication": warnings,
+        "published_over_warnings": bool(warnings),
     }
     try:
         collection = _state.vocabulary_repository.finalize_collection_publication(collection_id, admission=admission)
     except ValueError as exc:
+        # The repository refuses for technical invariants only - a collection
+        # that was never imported, content the runtime could not serve.
         raise orena_http_error(422, "vocabulary_publication_refused", str(exc)) from exc
     _audit(admin, "admin.content.publish", entity_type="vocabulary_collection", entity_id=collection_id,
-           payload={"rights_status": rights, "completeness": "complete", "outcome": "ok"})
-    return {"published": True, "collection": collection}
+           payload={"rights_status": admission["rights_status"], "completeness": admission["completeness"],
+                    "warnings": warnings, "override": bool(warnings), "outcome": "ok"})
+    return {"published": True, "collection": collection, "warnings": warnings}
 
 
 class MediaStatusIn(BaseModel):

@@ -674,6 +674,7 @@ from writing_coach.account_backbone import (  # noqa: E402
 from writing_coach.admin_console_api import (  # noqa: E402
     configure_admin_console,
     describe_runtime_services,
+    publication_warnings,
     router as admin_console_router,
     schema_facts,
 )
@@ -2701,25 +2702,15 @@ def _vocabulary_admission(
                 "message": "Confirm source rights and collection readiness before publishing.",
             },
         )
-    if rights_status not in _VOCABULARY_PUBLISHABLE_RIGHTS:
-        raise HTTPException(
-            422,
-            detail={
-                "category": "vocabulary_rights_required",
-                "retryable": False,
-                "message": "Choose a verified source-rights status before publishing.",
-            },
-        )
-    if completeness != "complete":
-        raise HTTPException(
-            422,
-            detail={
-                "category": "vocabulary_completeness_required",
-                "retryable": False,
-                "message": "Only a complete, reviewed collection can be published to learners.",
-            },
-        )
+    # Rights and completeness are decision support, not a permission gate (the
+    # same rule the console's publish route follows): they tell an
+    # administrator what they are about to do, and the administrator decides.
+    # The attestation above is that decision and is still required - an
+    # unattested request is not an override, it is a request nobody made.
+    warnings = publication_warnings(rights_status, completeness)
     admission["attested_by"] = imported_by
+    admission["warnings_at_publication"] = warnings
+    admission["published_over_warnings"] = bool(warnings)
     return "published", admission
 
 

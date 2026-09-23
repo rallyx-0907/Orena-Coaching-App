@@ -116,3 +116,33 @@ def test_the_admission_record_survives_being_taken_back(repository):
     provenance = repository.get_collection(collection_id, status=None)["provenance"]
     assert provenance["admission"]["attested_by"] == "admin@example.com"
     assert provenance["admission"]["rights_status"] == "licensed"
+
+
+# ---- rights advise, the administrator decides -------------------------------
+
+def test_a_rights_answer_nobody_gave_is_a_warning_not_a_refusal():
+    from writing_coach.admin_console_api import publication_warnings
+
+    assert [w["code"] for w in publication_warnings("", "complete")] == ["rights_unknown"]
+    assert publication_warnings("", "complete")[0]["level"] == "warning"
+
+
+def test_a_refused_right_is_a_stronger_warning_and_still_not_a_refusal():
+    from writing_coach.admin_console_api import publication_warnings
+
+    strong = publication_warnings("not_cleared", "complete")
+    assert [w["code"] for w in strong] == ["rights_not_cleared"]
+    assert strong[0]["level"] == "strong"
+
+
+def test_a_cleared_right_on_a_complete_collection_warns_about_nothing():
+    from writing_coach.admin_console_api import publication_warnings
+
+    assert publication_warnings("licensed", "complete") == []
+
+
+def test_an_incomplete_collection_warns_without_blocking():
+    from writing_coach.admin_console_api import publication_warnings
+
+    codes = [w["code"] for w in publication_warnings("licensed", "in_progress")]
+    assert codes == ["collection_incomplete"]
