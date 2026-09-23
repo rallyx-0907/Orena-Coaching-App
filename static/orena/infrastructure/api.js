@@ -178,6 +178,13 @@ export const api={
       isTransientRequestError,
     );
   },
+  /* How a word sounds, at the reading it was kept at. The answer says what
+     it may be played under - the licence and who recorded it - because that
+     is the condition a Commons clip is available on at all. */
+  wordAudio:(word,reading='')=>retryOnce(
+    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
+    isTransientRequestError,
+  ),
   /* The learner's own state over what a listing is drawing: kept, marked,
      filed. One call for a page of rows, never one per row. */
   libraryItems:({kind='',words=[],sources=[]}={})=>{

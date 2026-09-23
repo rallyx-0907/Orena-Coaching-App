@@ -83,4 +83,22 @@ assert.match(routes, /library_unavailable/, 'a runtime without the tables says s
 assert.match(room, /state\.unavailable = true/, 'and the room stops offering to mark');
 assert.match(room, /myLibraryUnavailable/, 'in words the learner can read');
 
+/* --- Hearing a word ------------------------------------------------------
+   The pill is the frame's own ("Vocabulary review mobile hidden"), it lives
+   in the review card, and it carries the attribution the licence obliges
+   until the human decides where that is shown. */
+const recall = read('static/orena/ui/expression.js');
+assert.match(recall, /class="vocab-listen"/, "the frame's pill is the control");
+assert.match(recall, /api\.wordAudio\(current\.word, current\.reading_key \|\| ''\)/,
+  'asked for by word and the reading it was kept at');
+assert.match(recall, /event\.stopPropagation\(\);/, 'hearing a word does not flip its card');
+assert.match(recall, /title="\$\{esc\(found\.attribution\)\}"/,
+  'and the clip says who recorded it and under what');
+/* No pill without a clip: the room draws it from an answer, never hopefully. */
+assert.match(recall, /const found = item \? heard\.get\(item\.word\) : null;[\s\S]{0,40}if \(!found\) return '';/,
+  'a pill is drawn only for a word that has one');
+/* My Library's frames draw no speaker, so it has none. */
+assert.doesNotMatch(room, /speaker|wordAudio|vocab-listen/i,
+  'My Library draws no speaker, because its frames do not');
+
 console.log('Thư viện của tôi: one read per page, versioned writes, one scheduler, nothing invented: PASS');

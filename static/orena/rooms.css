@@ -2609,6 +2609,24 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   .my-library-item__when { inline-size: auto; }
 }
 
+/* "Nghe phát âm" (D-067, "Vocabulary review mobile hidden", measured): a pill
+   of 32 under the word, 0/13, radius 999, on the accent chip with its ring,
+   the speaker at 12 and the words at 10. */
+.vocab-listen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 32px;
+  padding-inline: 13px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  color: var(--text-primary);
+  font-size: 10px;
+  cursor: pointer;
+}
+.vocab-listen:focus-visible { box-shadow: var(--accent-chip-ring), var(--glass-ring-focus); }
+
 /* --- Thư viện của tôi: what is waiting, the sets, one thing in full -------
    Measured from "Thư viện của tôi · desktop": the due card 26/28 at radius 22
    over the lit glass, its label in mono 11 at 0.13em; the sets column 420 with

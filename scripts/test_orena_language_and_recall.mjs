@@ -48,7 +48,14 @@ assert.match(recallRoom, /api\.reviewLibraryVocabulary\(current\.word, answer\)/
 assert.match(recallRoom, /if \(answer in tally\) tally\[answer\] \+= 1;/,
   'the summary counts a grade only once it is saved');
 assert.match(recallRoom, /class="review-done"/, 'and the sitting ends on the summary the design draws');
-assert.doesNotMatch(recallRoom, /localStorage|indexedDB|new Map\(\)/, 'Recall keeps no store of its own');
+/* Recall keeps no store of its own. Nothing is persisted anywhere, and the
+   one in-memory map it holds is `heard` - what the server answered about a
+   word's pronunciation, so the room asks once per word instead of once per
+   paint. It holds no word, no meaning and no review state, and it is named
+   here so a second map cannot arrive unnoticed. */
+assert.doesNotMatch(recallRoom, /localStorage|indexedDB|sessionStorage/, 'Recall persists nothing');
+const maps = recallRoom.match(/const (\w+) = new Map\(\)/g) || [];
+assert.deepEqual(maps, ['const heard = new Map()'], 'the only map is the audio answers');
 /* No second algorithm: what to ask and whether an attempt counts are decided
    in `product/recall.js`, not re-derived in the room. */
 assert.match(recallRoom, /recallShape\(current, keptNow\)/, 'the question comes from the shared rule');

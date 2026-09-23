@@ -708,6 +708,13 @@ async function renderRecallLanguage(root, ctx) {
   /* What the summary is made of, all of it measured here: when the sitting
      started, how each card was graded, and which ones were forgotten - with
      enough of each to say where it came from. */
+  /* What can be heard, by word: `null` while the answer is outstanding, the
+     record when there is a clip, `false` when there is none. The frame draws
+     the pill on a card whose word has a recording; a pill that played nothing
+     would be worse than no pill, so one is drawn only once the answer is in
+     (recorded in UI_BACKEND_GAPS.md). */
+  const heard = new Map();
+  let playing = null;
   let startedAt = 0;
   const tally = { got_it: 0, unsure: 0, again: 0 };
   const forgotten = [];
@@ -798,6 +805,20 @@ async function renderRecallLanguage(root, ctx) {
          frame draws the sentence but not its title; this line is the
          difference, recorded in UI_BACKEND_GAPS.md. */
       + (current?.focus_note ? `<span class="recall-where">${esc(current.focus_note)}</span>` : '');
+    /* "Nghe phát âm", as the frame draws it: a pill under the word, carrying
+       the speaker. It is inside the card's own button, so it stops the flip -
+       hearing a word is not answering it. The attribution the licence obliges
+       travels on the control itself; where it should be *shown* is a question
+       for the human, because the frame draws no place for it
+       (UI_BACKEND_GAPS.md). */
+    const listen = (item) => {
+      const found = item ? heard.get(item.word) : null;
+      if (!found) return '';
+      const label = playing === item.word ? r.vocabListening : r.vocabListen;
+      return `<span class="vocab-listen" role="button" tabindex="0" data-listen="${esc(item.word)}"`
+        + ` aria-label="${esc(`${label} — ${found.attribution}`)}" title="${esc(found.attribution)}">`
+        + `${icon('speaker-high', { filled: true, size: 12 })}<span>${esc(label)}</span></span>`;
+    };
     const card = current
       ? `<section class="vocab-review">`
         + `<header class="vocab-review__bar">`
@@ -809,6 +830,7 @@ async function renderRecallLanguage(root, ctx) {
         + `<button type="button" class="vocab-card" data-flip aria-pressed="${revealed}" data-state="${revealed ? 'open' : 'closed'}" data-shape="${shape}">`
         + mastery(current)
         + `<span class="vocab-card__body"><small class="vocab-card__ask">${esc(c[`recallAsk_${shape}`])}</small>${revealed ? back : front}</span>`
+        + listen(current)
         + `<span class="vocab-card__flip">${esc(revealed ? r.vocabFlipBack : r.vocabFlipOpen)}</span>`
         + `</button>`
         + (revealed ? grades : `<p class="vocab-review__hint">${esc(r.vocabGradesAfterOpen)}</p>`)
@@ -878,6 +900,21 @@ async function renderRecallLanguage(root, ctx) {
     root.innerHTML = `${sitting ? '' : practiceReturn(c, 'recall')}${
       sitting ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
     }${stage === 'landing' ? landing : current ? card : done}`;
+    /* Asked once per word, when its card is on screen: the answer is cached
+       on the server by (entry identity, reading), so a second sitting with the
+       same word costs nothing. A word with no catalogue identity, or one whose
+       reading is still ambiguous, answers "not available" and no pill is
+       drawn - which is the audio rule, seen from the room. */
+    if (current && !heard.has(current.word)) {
+      heard.set(current.word, null);
+      api.wordAudio(current.word, current.reading_key || '')
+        .then((answer) => {
+          if (!alive()) return;
+          heard.set(current.word, answer?.available ? answer : false);
+          if (answer?.available) paint(false);
+        })
+        .catch(() => { if (alive()) heard.set(current.word, false); });
+    }
     root.querySelector('[data-recall-start]')?.addEventListener('click', () => {
       stage = 'card';
       revealed = false;
@@ -964,6 +1001,30 @@ async function renderRecallLanguage(root, ctx) {
           await refresh();
         }),
     );
+    root.querySelectorAll('[data-listen]').forEach((control) => {
+      const play = async (event) => {
+        /* Inside the card's button: hearing a word must not flip it. */
+        event.preventDefault();
+        event.stopPropagation();
+        const word = control.dataset.listen;
+        const found = heard.get(word);
+        if (!found) return;
+        playing = word;
+        paint(false);
+        try {
+          const sound = new Audio(found.url);
+          await sound.play();
+          sound.addEventListener('ended', () => { playing = null; if (alive()) paint(false); }, { once: true });
+        } catch {
+          playing = null;
+          if (alive()) paint(false);
+        }
+      };
+      control.addEventListener('click', play);
+      control.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') play(event);
+      });
+    });
     root.querySelector('[data-flip]')?.addEventListener('click', () => {
       revealed = !revealed;
       paint(true);

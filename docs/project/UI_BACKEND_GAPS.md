@@ -1562,3 +1562,78 @@ whether there is a clip, under what licence and with what attribution, and
 `GET /api/library/audio/{key}` serves the bytes. Putting a play control in
 Vocabulary or My Library is UI scope nobody has opened, and the attribution the
 licence obliges has to be shown wherever it lands.
+
+## Playback, where the frame draws it - and where attribution has nowhere to go (2026-09-23)
+
+**Wired into the surface the design already has.** "Vocabulary review mobile
+hidden" draws a pill under the word - 32 tall, 0/13, radius 999, the filled
+speaker at 12 and the words at 10 - and that is the control, in the review card
+the app already has. Nothing new was invented: My Library's frames draw no
+speaker at all, so My Library got none.
+
+The pill is inside the card's own button, so hearing a word does not flip it:
+hearing is not answering.
+
+**Drawn only when there is a clip.** The room asks once per word, when its card
+comes up, and draws the pill when the answer is available. The frame draws the
+pill on a card whose word has a recording; a pill that played nothing would be
+worse than no pill. **Recorded rather than decided.**
+
+**The attribution has no place in the design, and the licence requires one.**
+Every Commons clip here is CC BY-SA or CC BY: playing it obliges naming the
+author and the licence. The frame draws the pill and nothing else. So for now
+the attribution travels on the control itself - `title` and `aria-label`, so it
+reaches both a pointer and a screen reader - and **this is not a decision, it
+is a placeholder.** *DESIGN DECISION NEEDED:* where a learner sees "Dvortygirl
+· CC BY-SA 3.0 · Wikimedia Commons" - a line under the card, the word's detail
+sheet, or a credits screen in Settings. Until then the obligation is met
+minimally rather than visibly, and that is a compromise the human should settle
+rather than the lane.
+
+**Why the sandbox catalogue was empty:** nothing had ever been imported into
+it. Catalogue content is admin-imported (`POST /api/admin/vocabulary/import`),
+not seeded, and the sandbox database has been recreated twice this week. It is
+not a defect and nothing was lost.
+
+**A small dataset now exists** for end-to-end audio, imported through that same
+admin route rather than written into the database:
+`scripts/sandbox_audio_dataset/` - six English words, and six Chinese entries
+of which five carry two readings each (行, 重, 长, 乐, 还). Both collections are
+published, which `find_entry` requires.
+
+**Verified end to end through the API, against the real Commons:**
+
+| | |
+| --- | --- |
+| `harbour` | available, CC BY-SA 4.0, "Speaker: Vealhurl" |
+| `winter` | available, CC BY-SA 3.0, "Dvortygirl" |
+| 行, no reading | refused, `reading_ambiguous`, and the two readings offered |
+| 行 `?reading=xíng` | available, CC BY 2.0 fr, "Wei Gao, Vion Nicolas" |
+| 行 `?reading=háng` | `not_found` - the gap the coverage measurement named |
+| cache | first 0.84s, second **0.05s**; the bytes route serves 10 138 bytes of `audio/ogg` |
+
+## The fallback works; the voice behind it is the human's to run (2026-09-23)
+
+Commons is complete end to end, so the fallback was the next thing to check.
+The **path** is verified, with a stand-in that speaks the protocol
+`KokoroVoice` uses (a local service returning a valid WAV - not a voice, and
+not in the repository):
+
+| | |
+| --- | --- |
+| 行 háng, 重 chóng, 差 chāi | Commons has none; the fallback answered each, and was told **the reading**, not just the character |
+| `harbour` | Commons answered; the fallback was asked **0 times** |
+| cache | every one of them: first ~1.6s, second 0.000s |
+
+**What is missing is a voice, not wiring.** The application image has no
+Kokoro, no ONNX runtime and no espeak, and putting one there is not this
+lane's call: it means either a model in the image or a new container on the
+shared runtime, and both are the human's gate (AGENTS §10). The seam is ready -
+set `KOKORO_TTS_URL` to a service that answers
+`POST {text, reading, language}` with audio bytes, for example a
+kokoro-fastapi container on the sandbox network, and the three readings above
+are covered on the next request.
+
+Until then `KokoroVoice` reports itself unavailable and the library answers "no
+audio", which is the correct behaviour and the reason the Chinese coverage
+figure is 12/15 rather than 15/15.
