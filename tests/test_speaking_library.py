@@ -91,3 +91,19 @@ def test_authored_items_lead_and_open_with_their_lines(client, monkeypatch):
 
 def test_an_unsupported_language_is_refused(client):
     assert client.get("/api/speaking/library?language=fr").status_code == 422
+
+
+def test_model_audio_serves_only_a_catalogue_lessons_own_line(client, monkeypatch):
+    calls = []
+    monkeypatch.setattr(speaking_library, "_source_file", lambda lesson: calls.append(lesson.lesson_id) or None)
+    assert client.get("/api/speaking/model-audio/not-a-lesson/x").status_code == 404
+    assert client.get("/api/speaking/model-audio/en-daily-pen-in-my-bag/some-other-segment").status_code == 404
+    assert calls == [], "nothing is fetched for a line that is not the lesson's own"
+
+
+def test_model_audio_returns_the_cut_line(client, monkeypatch):
+    monkeypatch.setattr(speaking_library, "model_line_audio", lambda lesson, segment: b"OggS-line")
+    response = client.get("/api/speaking/model-audio/en-daily-pen-in-my-bag/commons-voa-anna-pen:000")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("audio/webm")
+    assert response.content == b"OggS-line"

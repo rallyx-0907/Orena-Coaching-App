@@ -13,16 +13,21 @@ level, length, how many lines. Nothing is invented for an item that does not hav
 from __future__ import annotations
 
 import json
+import subprocess
+import tempfile
+import threading
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
 from fastapi import APIRouter, Query
+from fastapi.responses import Response
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
-from writing_coach.listening_catalog import catalog_lessons
+from writing_coach.listening_catalog import catalog_lesson, catalog_lessons
+from writing_coach.media_safe_fetch import UnsafeMediaFetch, download_bounded
 
 CATALOG_PATH = Path(__file__).resolve().parent / "content" / "speaking_catalog.v1.json"
 
@@ -210,3 +215,56 @@ def read_speaking_item(item_id: str) -> dict[str, Any]:
             for line in item.lines
         ],
     }
+
+
+# --- The model line's audio, same-origin ------------------------------------------------------
+# The browser draws the model's waveform and measures its pitch from the audio itself, which it
+# cannot fetch from the catalogue's host (no CORS). This serves one line of a published catalogue
+# lesson - public-domain / CC media the catalogue already reviewed - cut to that line. It is never
+# learner audio, and nothing but catalogue lessons and their own segments can be asked for.
+_MODEL_CACHE = Path(tempfile.gettempdir()) / "orena-speaking-model"
+_MODEL_LOCK = threading.Lock()
+_MAX_SOURCE_BYTES = 64 * 1024 * 1024
+_MAX_LINE_MS = 60_000
+
+
+def _source_file(lesson: Any) -> Path:
+    target = _MODEL_CACHE / f"{lesson.source.source_media_id}.src"
+    with _MODEL_LOCK:
+        if not target.exists():
+            partial = target.with_suffix(".part")
+            download_bounded(lesson.playback.url, partial, max_bytes=_MAX_SOURCE_BYTES, timeout=30)
+            partial.replace(target)
+    return target
+
+
+def model_line_audio(lesson_id: str, segment_id: str) -> bytes:
+    lesson = catalog_lesson(lesson_id)
+    transcript = lesson.media_object.transcript if lesson else None
+    segment = next((item for item in (transcript.segments if transcript else ()) if item.segment_id == segment_id), None)
+    if lesson is None or segment is None or lesson.playback.kind not in {"audio", "video"}:
+        raise LookupError(segment_id)
+    span = max(0, min(_MAX_LINE_MS, segment.end_ms - segment.start_ms))
+    cut = _MODEL_CACHE / f"{lesson.source.source_media_id}-{segment.start_ms}-{segment.end_ms}.webm"
+    if not cut.exists():
+        source = _source_file(lesson)
+        completed = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+             "-ss", f"{segment.start_ms / 1000:.3f}", "-t", f"{span / 1000:.3f}", "-i", str(source),
+             "-vn", "-ac", "1", "-ar", "24000", "-c:a", "libopus", "-b:a", "32k", str(cut)],
+            capture_output=True, check=False, timeout=30,
+        )
+        if completed.returncode != 0 or not cut.exists():
+            raise RuntimeError("model line could not be prepared")
+    return cut.read_bytes()
+
+
+@router.get("/model-audio/{lesson_id}/{segment_id}")
+def read_model_audio(lesson_id: str, segment_id: str) -> Response:
+    try:
+        data = model_line_audio(lesson_id, segment_id)
+    except LookupError as exc:
+        raise orena_http_error(404, "speaking_model_not_found", "This model line is unavailable.") from exc
+    except (UnsafeMediaFetch, RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
+        raise orena_http_error(502, "speaking_model_unavailable", "The model line could not be prepared.", retryable=True) from exc
+    return Response(content=data, media_type="audio/webm", headers={"Cache-Control": "private, max-age=86400"})
