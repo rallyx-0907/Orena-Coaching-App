@@ -304,6 +304,9 @@ export const api={
       body:form,
     });
   },
+  // The Speaking library: the Speaking catalogue plus Listening lessons that can be shadowed.
+  speakingLibrary:(language)=>request(`/api/speaking/library?language=${encodeURIComponent(language||'')}`),
+  speakingItem:(itemId)=>request(`/api/speaking/items/${encodeURIComponent(itemId)}`),
   assessPronunciation:(blob,language,referenceText,filename='recording.webm')=>{
     const form=new FormData();
     form.append('file',blob,filename);

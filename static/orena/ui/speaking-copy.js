@@ -76,6 +76,12 @@ const en = {
   err_line_invalid: 'This line cannot be scored.',
   demoOnly: 'Demonstration values only — not a real score.',
   keptFailed: 'This result was not saved to your history.',
+  topic: 'TOPIC',
+  youSaid: 'YOU SAID · {t}',
+  deeper: 'See deeper suggestions',
+  otherTopic: 'Another topic',
+  listening: 'Listening back to you…',
+  freeReady: 'Say it your own way, then tap to stop.',
 };
 
 const vi = {
@@ -150,6 +156,12 @@ const vi = {
   err_line_invalid: 'Câu này không chấm được.',
   demoOnly: 'Đây chỉ là giá trị minh hoạ, không phải điểm thật.',
   keptFailed: 'Kết quả này chưa được lưu vào lịch sử.',
+  topic: 'CHỦ ĐỀ',
+  youSaid: 'BẠN VỪA NÓI · {t}',
+  deeper: 'Xem gợi ý sâu',
+  otherTopic: 'Chủ đề khác',
+  listening: 'Đang nghe lại bạn…',
+  freeReady: 'Nói theo cách của bạn rồi chạm để dừng.',
 };
 
 const zh = {
@@ -224,6 +236,12 @@ const zh = {
   err_line_invalid: '这句话无法评分。',
   demoOnly: '这些只是演示数值，不是真实得分。',
   keptFailed: '这次结果没有保存到记录里。',
+  topic: '话题',
+  youSaid: '你刚才说 · {t}',
+  deeper: '查看深入建议',
+  otherTopic: '换个话题',
+  listening: '正在听你说的…',
+  freeReady: '用自己的话说，说完点一下停止。',
 };
 
 export const speakingCopy = { en, vi, zh };

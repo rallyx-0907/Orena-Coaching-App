@@ -16,11 +16,13 @@ import { libraryCoverUrl } from './library.js';
 import { referenceCopy } from './reference.js';
 import { link } from '../product/intent.js';
 
-const KINDS = ['books', 'audio', 'video', 'collections'];
+const KINDS = ['books', 'audio', 'video', 'collections', 'speaking'];
 
 /* The order the chips read in: what a room's items are made of, most concrete
    first, then where they came from. */
 const TYPE_ORDER = [
+  // Speaking's practice types, in the order the Speaking library frame names them.
+  'speak_sentences', 'speak_clip', 'speak_free', 'speak_sounds', 'speak_retell', 'speak_interview',
   'book', 'excerpt', 'article', 'news', 'essay', 'story', 'dialogue', 'quote',
   'interview', 'podcast', 'speech', 'video', 'situation', 'culture', 'collection',
   'generated', 'imported',
@@ -133,6 +135,30 @@ function fromCollection(collection) {
   };
 }
 
+/* A Speaking item: a line set from the Speaking catalogue, a Listening lesson to shadow, or a
+   situation to answer freely. Its progress is the line reached, from device memory. */
+function fromSpeaking(item, language, memory) {
+  const place = placeOf(memory, item.id);
+  const free = item.practice_type === 'free';
+  return {
+    kind: 'speaking',
+    skill: 'speaking',
+    id: item.id,
+    title: item.title,
+    sub: '',
+    level: item.level || '',
+    type: `speak_${item.practice_type}`,
+    badge: '',
+    practising: Boolean(place && place.index < place.total),
+    lines: Number(item.line_count) || 0,
+    length: Number(item.duration_ms) > 0 ? duration(item.duration_ms) : '',
+    percent: percentOf(place),
+    href: link('practice', { intent: free ? 'speaking' : 'shadowing', id: item.id }),
+    visual: art({ ...item, poster_url: item.thumbnail_url || '' }),
+    language: item.language || language,
+  };
+}
+
 function card(entry, r) {
   // A provenance the cover already says (a badge) is not said again in the line.
   // The baseline's meta line is lowercase for the type ("hội thoại · HSK 2 · còn 2 phút").
@@ -141,13 +167,15 @@ function card(entry, r) {
   const stated = /(\d+)/.exec(String(entry.time || ''));
   const time = stated ? r.libraryMinutes.replace('{n}', stated[1]) : '';
   const parts =
-    entry.skill === 'listening'
+    entry.skill === 'speaking'
+      ? [kindLabel, entry.level, entry.lines ? r.libraryLines.replace('{n}', String(entry.lines)) : '']
+      : entry.skill === 'listening'
       ? [kindLabel, entry.level, left]
       : entry.skill === 'vocabulary'
         ? [entry.level, entry.total ? `${entry.learned} / ${entry.total}` : '']
         : [entry.level, kindLabel, time];
   const meta = parts.filter(Boolean).join(' · ');
-  const badges = `${entry.video ? `<span class="lib-badge lib-badge--icon" title="${esc(r.libraryKind_video)}">${icon('video-camera', { size: 15 })}</span>` : ''}${entry.badge ? `<span class="lib-badge">${esc(r[`libraryKind_${entry.badge}`] || '')}</span>` : ''}`;
+  const badges = `${entry.practising ? `<span class="lib-badge">${esc(r.libraryPractising)}</span>` : ''}${entry.video ? `<span class="lib-badge lib-badge--icon" title="${esc(r.libraryKind_video)}">${icon('video-camera', { size: 15 })}</span>` : ''}${entry.badge ? `<span class="lib-badge">${esc(r[`libraryKind_${entry.badge}`] || '')}</span>` : ''}`;
   const bar = entry.percent != null ? `<span class="lib-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${entry.percent}"><span style="width:${entry.percent}%"></span></span>` : '';
   return `<a class="lib-card" href="${esc(entry.href)}" data-skill="${entry.skill}" data-kind="${entry.kind}"${entry.percent != null ? ' data-progress' : ''}><span class="lib-cover">${entry.visual}${badges ? `<span class="lib-badges">${badges}</span>` : ''}${entry.length ? `<span class="lib-length">${esc(entry.length)}</span>` : ''}${bar}</span><strong class="lib-title" lang="${esc(entry.language)}">${esc(entry.title)}</strong>${entry.sub ? `<span class="lib-sub">${esc(entry.sub)}</span>` : ''}${meta ? `<small class="lib-meta">${esc(meta)}</small>` : ''}</a>`;
 }
@@ -158,7 +186,7 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
   const { api, c, language, alive, memory } = ctx;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const scope = only ? KINDS.filter((kind) => only.includes(kind)) : KINDS;
-  const skill = scope.length === 1 && scope[0] === 'books' ? 'reading' : scope.every((kind) => kind === 'audio' || kind === 'video') ? 'listening' : 'library';
+  const skill = scope.length === 1 && scope[0] === 'books' ? 'reading' : scope.length === 1 && scope[0] === 'speaking' ? 'speaking' : scope.every((kind) => kind === 'audio' || kind === 'video') ? 'listening' : 'library';
   const state = {
     type: '',
     query: '',
@@ -171,6 +199,7 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
   const base = [
     ...(sources.readable || []).map((item) => fromReadable(item, language)),
     ...(sources.media || []).map((item) => fromMedia(item, language, memory)),
+    ...(sources.speaking || []).map((item) => fromSpeaking(item, language, memory)),
   ];
   const everything = () =>
     [
@@ -187,9 +216,9 @@ export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport 
   };
 
   const importButton = onImport
-    ? `<button type="button" class="lib-import" data-lib-import>${icon('upload-simple', { size: 16 })}<span>${esc(r[skill === 'reading' ? 'libraryImportReading' : 'libraryImportListening'])}</span></button>`
+    ? `<button type="button" class="lib-import" data-lib-import>${icon(skill === 'speaking' ? 'plus' : 'upload-simple', { size: 16 })}<span>${esc(r[skill === 'reading' ? 'libraryImportReading' : skill === 'speaking' ? 'speakOwnTopic' : 'libraryImportListening'])}</span></button>`
     : '';
-  root.innerHTML = `<div class="lib" data-skill="${skill}"><header class="lib-head"><${titleTag}>${esc(skill === 'reading' ? r.reading : skill === 'listening' ? r.listening : r.library)}</${titleTag}><label class="lib-search">${icon('magnifying-glass', { size: 16 })}<span class="sr-only">${esc(r.librarySearch)}</span><input type="search" autocomplete="off" placeholder="${esc(r.librarySearch)}" data-lib-query></label>${importButton}</header><div class="lib-chips" role="radiogroup" aria-label="${esc(r.libraryType)}" data-lib-chips></div><div class="lib-results" data-lib-results></div></div>`;
+  root.innerHTML = `<div class="lib" data-skill="${skill}"><header class="lib-head"><${titleTag}>${esc(skill === 'reading' ? r.reading : skill === 'listening' ? r.listening : skill === 'speaking' ? r.speaking : r.library)}</${titleTag}><label class="lib-search">${icon('magnifying-glass', { size: 16 })}<span class="sr-only">${esc(r.librarySearch)}</span><input type="search" autocomplete="off" placeholder="${esc(r.librarySearch)}" data-lib-query></label>${importButton}</header><div class="lib-chips" role="radiogroup" aria-label="${esc(r.libraryType)}" data-lib-chips></div><div class="lib-results" data-lib-results></div></div>`;
   const chipsRoot = root.querySelector('[data-lib-chips]');
   const results = root.querySelector('[data-lib-results]');
 

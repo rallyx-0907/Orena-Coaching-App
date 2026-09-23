@@ -1148,3 +1148,174 @@
     block-size: 92px;
   }
 }
+
+/* --- Free talk (Orena Speaking, "Speaking · free talk", 390x844). The design draws no desktop
+   frame: a desk shows the same column, centred (UI_BACKEND_GAPS, SP-10). ------------------------ */
+.sp-free {
+  inline-size: 100%;
+  max-inline-size: 560px;
+  margin: 0 auto;
+}
+#main > .sp-room.sp-free {
+  margin: 0 auto;
+  max-width: 560px;
+}
+.sp-free__top {
+  block-size: auto;
+  padding: 14px 20px 0;
+}
+.sp-free__back {
+  flex: 1;
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-90);
+}
+.sp-free .sp-back__caret {
+  display: inline-flex;
+  color: var(--ink-80);
+}
+.sp-free__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 20px 0;
+}
+.sp-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px 19px;
+  border-radius: 18px;
+  background: var(--glass-focus);
+  backdrop-filter: blur(24px) saturate(1.4) brightness(1.05);
+  box-shadow: var(--glass-ring-focus);
+}
+.sp-topic .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-75);
+}
+.sp-topic h1 {
+  margin: 0;
+  outline: none;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: -0.018em;
+}
+.sp-topic p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-78);
+}
+.sp-said {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 16px 17px;
+  border-radius: 16px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-said .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-68);
+}
+.sp-said__words {
+  margin: 0;
+  font-family: var(--serif, 'Noto Serif', 'Noto Sans SC', Georgia, serif);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.sp-said__comment {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 10px;
+  box-shadow: var(--rule-top);
+  font-size: 13px;
+  color: var(--ink-80);
+}
+.sp-said__comment svg {
+  flex: none;
+  color: var(--o-good);
+}
+.sp-free .sp-hint {
+  display: block;
+  font-size: 14px;
+}
+.sp-free__controls {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding: 10px 20px 32px;
+}
+.sp-fbtn {
+  flex: 1;
+  block-size: 50px;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--text-on-action);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sp-fbtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sp-mic--free {
+  flex: none;
+  inline-size: 72px;
+  block-size: 72px;
+  box-shadow: 0 12px 32px rgba(123, 77, 232, 0.45);
+}
+.sp-free[data-phase='recording'] .sp-mic--free {
+  background: var(--record-stop-wash);
+  box-shadow: var(--record-stop-ring), var(--record-stop-glow);
+}
+.sp-free[data-phase='recording'] .sp-mic__icon {
+  display: none;
+}
+.sp-free[data-phase='recording'] .sp-mic__stop {
+  display: block;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 8px;
+}
+.qs--free {
+  gap: 14px;
+}
+.sp-free__ways {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sp-free__ways .sp-dbtn {
+  flex: 1 1 140px;
+}
+.sp-free__evidence summary {
+  cursor: pointer;
+  color: var(--text-on-glass-soft);
+}
+@media (max-width: 900px) {
+  #main > .sp-room.sp-free {
+    max-width: none;
+  }
+}

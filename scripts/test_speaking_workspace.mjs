@@ -100,4 +100,21 @@ assert.match(workspace, /pronunciationView\(/);
 assert.equal(/fetch\(|XMLHttpRequest|azure/i.test(workspace), false);
 assert.equal(/NBest|PronScore|AccuracyScore/.test(workspace), false, 'no provider schema in the browser');
 
-console.log('Speaking workspace markup (PronunciationResult, EN/VI/ZH): PASS');
+// Free talk (frame "Speaking · free talk"): the topic, what was said and for how long, one comment,
+// and the three ways on. It is not pronunciation: no score is drawn there.
+const { freeTalkHtml, saidHtml } = await import('../static/orena/ui/speaking-free.js');
+const free = freeTalkHtml({ s, title: 'Nói tự do', topic: '带一个人认识你的城市', cue: '想象一个具体的人。', language: 'zh' });
+assert.match(free, /class="sp-label">CHỦ ĐỀ</);
+assert.match(free, /<h1 lang="zh">带一个人认识你的城市<\/h1>/);
+assert.match(free, /data-sp-deeper disabled/, 'deeper suggestions wait for something to be deeper about');
+assert.match(free, new RegExp(s.otherTopic));
+assert.equal(/sp-ring|ĐẠT|PHÁT ÂM/.test(free), false, 'free talk draws no pronunciation score');
+const said = saidHtml({ s, heard: '我觉得靠窗的位子很好。', ms: 26_400, comment: 'Có thể thêm 而且.', language: 'zh' });
+assert.match(said, /BẠN VỪA NÓI · 00:26/);
+assert.match(said, /sp-said__comment/);
+assert.equal(saidHtml({ s, heard: 'x', ms: 1000, comment: '', language: 'en' }).includes('sp-said__comment'), false, 'no comment line until the coaching gives one');
+const freeSource = readFileSync(new URL('../static/orena/ui/speaking-free.js', import.meta.url), 'utf8');
+assert.match(freeSource, /evaluateVoice\(/, 'free talk reuses the existing recognition and evidence plumbing');
+assert.equal(/assessPronunciation/.test(freeSource), false);
+
+console.log('Speaking workspace and free talk markup (PronunciationResult, EN/VI/ZH): PASS');

@@ -246,6 +246,9 @@ function shellBelongsTo(location) {
     ["recall", "dictation", "shadowing"].includes(location.intent)
   )
     return false;
+  // A free-talk room is a room where the learner works; the Speaking library is not.
+  if (location.page === "practice" && location.intent === "speaking" && location.id)
+    return false;
   return true;
 }
 /* The destinations that carry the top bar. Rooms where the learner works do
@@ -523,7 +526,7 @@ async function render() {
                               ? await renderLanguage(root, scope)
                               : page === "practice" &&
                                   ctx.location.intent === "speaking"
-                                ? renderSpeaking(root, scope)
+                                ? await renderSpeaking(root, scope)
                                 : page === "practice" &&
                                     ctx.location.intent === "shadowing" &&
                                     ctx.location.id
