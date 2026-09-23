@@ -84,6 +84,9 @@ export function renderCollection(root, ctx) {
        measures its range from, the confirmation, and the ten seconds an undo
        is on offer for. */
     picked: new Set(), anchor: '', confirming: false, toast: null, undo: null, undoTimer: null,
+    /* The set the room is filtered to, and which of the learner's items are in
+       it. `opened` is null when the room is showing everything. */
+    opened: null, openedRefs: null,
     /* What a word's recording may be played under, by word. Asked for only
        when a word's panel is open - this room draws no speaker, because its
        frames draw none; it credits what the review card plays. */
@@ -120,8 +123,10 @@ export function renderCollection(root, ctx) {
       const sub = String(r.myLibrarySetSize)
         .replace('{kind}', r[kind?.label] || set.kind)
         .replace('{n}', String(set.size));
-      return `<div class="my-library-set"><span class="my-library-set__mark">${icon(kind?.icon || 'folder-simple', { size: 20 })}</span>`
-        + `<span class="my-library-set__body"><strong>${esc(set.title)}</strong><small>${esc(sub)}</small></span></div>`;
+      const open = state.opened?.id === set.id;
+      return `<button type="button" class="my-library-set" data-library-open-set="${esc(set.id)}" aria-pressed="${open}"${open ? ' data-open="true"' : ''}>`
+        + `<span class="my-library-set__mark">${icon(kind?.icon || 'folder-simple', { size: 20 })}</span>`
+        + `<span class="my-library-set__body"><strong>${esc(set.title)}</strong><small>${esc(sub)}</small></span></button>`;
     }).join('');
     return `<aside class="my-library__sets"><header><h2>${esc(r.myLibrarySets)}</h2><span>${esc(r.myLibrarySetsNote)}</span>`
       + `<button type="button" class="my-library__new-set" data-library-new-set>${esc(r.myLibraryNewSet)}</button></header>`
@@ -201,6 +206,15 @@ export function renderCollection(root, ctx) {
   }
 
   /* --- The rows --------------------------------------------------------- */
+  /* Which set the room is filtered to. Its own row in the list column, so the
+     learner can always see what they are inside and step back out. */
+  function openedBar() {
+    if (!state.opened) return '';
+    return `<div class="my-library__opened"><span class="ds-label">${esc(r.myLibraryInSets)}</span>`
+      + `<strong>${esc(state.opened.title)}</strong>`
+      + `<button type="button" class="quiet" data-library-close-set>${esc(r.myLibraryShowAll)}</button></div>`;
+  }
+
   function rows() {
     if (state.failed)
       return `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.unavailable)}</strong></div><button type="button" class="outline" data-library-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`;
@@ -208,7 +222,15 @@ export function renderCollection(root, ctx) {
       return `<div class="my-library__list" aria-hidden="true">${Array.from({ length: 4 }, () => '<span class="skeleton skeleton--card"></span>').join('')}</div>`;
     if (!state.entries.length)
       return `<div class="state-panel state-panel--empty">${icon('bookmarks-simple', { size: 22 })}<div><strong>${esc(state.query ? r.libraryNoResults : r.myLibraryEmpty)}</strong></div></div>`;
-    const list = state.entries.map((entry) => {
+    /* An opened set shows its own items. The refs come from the set itself;
+       the rows are the ones the room already has, so opening a set costs one
+       small read and never a second listing. */
+    const shown = state.opened
+      ? state.entries.filter((entry) => (state.openedRefs || new Set()).has(refOf(entry)))
+      : state.entries;
+    if (state.opened && !shown.length)
+      return `${openedBar()}<div class="state-panel state-panel--empty">${icon('folder-simple', { size: 22 })}<div><strong>${esc(r.myLibrarySetEmpty)}</strong></div></div>`;
+    const list = shown.map((entry) => {
       const kind = kindOf(entry.ref.domain);
       const own = ownOf(entry);
       const relationship = r[RELATIONSHIP[entry.relationship]] || '';
@@ -240,7 +262,7 @@ export function renderCollection(root, ctx) {
     const more = state.cursor
       ? `<div class="button-row"><button type="button" class="outline" data-library-more${state.loading ? ' disabled' : ''}>${esc(String(r.libraryLoadMore).replace('{n}', String(state.entries.length)))}</button></div>`
       : '';
-    return `<div class="my-library__list">${list}</div>${more}`;
+    return `${openedBar()}<div class="my-library__list">${list}</div>${more}`;
   }
 
   /* --- One thing, in full (the frame's right-hand panel) ---------------- */
@@ -416,6 +438,51 @@ export function renderCollection(root, ctx) {
     root.querySelectorAll('[data-library-cancel]').forEach((button) => (button.onclick = () => { state.confirming = false; paint(); }));
     root.querySelector('[data-library-delete]')?.addEventListener('click', () => removeChosen());
     root.querySelector('[data-library-undo]')?.addEventListener('click', () => takeBack());
+    /* Opening a set: its items are asked for once, and the room filters to
+       them. Closing it is the same paint with nothing to filter by. */
+    root.querySelectorAll('[data-library-open-set]').forEach((button) => {
+      button.onclick = async () => {
+        const id = button.dataset.libraryOpenSet;
+        if (state.opened?.id === id) {
+          state.opened = null;
+          state.openedRefs = null;
+          paint();
+          return;
+        }
+        const set = state.collections.find((item) => String(item.id) === String(id));
+        if (!set) return;
+        state.opened = set;
+        state.openedRefs = new Set();
+        paint();
+        try {
+          const answer = await api.libraryCollectionItems(id);
+          if (!alive() || state.opened?.id !== id) return;
+          /* The library stores a kind; a row is drawn from a domain. They are
+             the same word everywhere but saved language, so the map that
+             already exists is read backwards rather than a second one being
+             written. */
+          const domainOf = (kind) =>
+            Object.keys(ITEM_KIND).find((name) => ITEM_KIND[name] === kind) || kind;
+          state.openedRefs = new Set(
+            (answer.items || [])
+              .map((item) =>
+                item.kind === 'word'
+                  ? (item.word ? `language:${item.word}` : '')
+                  : (item.source_id ? `${domainOf(item.kind)}:${item.source_id}` : ''),
+              )
+              .filter(Boolean),
+          );
+        } catch {
+          if (alive() && state.opened?.id === id) state.openedRefs = new Set();
+        }
+        paint();
+      };
+    });
+    root.querySelector('[data-library-close-set]')?.addEventListener('click', () => {
+      state.opened = null;
+      state.openedRefs = null;
+      paint();
+    });
     root.querySelectorAll('[data-library-new-set]').forEach((button) => (button.onclick = () => {
       const entry = state.picking?.entry || null;
       state.naming = { kind: entry ? ITEM_KIND[entry.ref.domain] : ITEM_KIND[state.kind || 'language'], title: '' };

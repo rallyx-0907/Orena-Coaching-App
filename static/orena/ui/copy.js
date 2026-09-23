@@ -313,6 +313,9 @@ const en = {
   vocabularyOverviewNote: 'Browse what you are learning, meet a few new words, and return to what needs review.',
   vocabularySavedCount: 'Saved',
   /* Nét chữ - how a character is written (frame 05). */
+  strokesRadical: 'radical',
+  strokesPhonetic: 'sound',
+  strokesSemantic: 'meaning',
   strokesTitle: 'Strokes',
   strokesCount: '{n} strokes',
   strokesParts: 'Radical · parts',
@@ -337,6 +340,8 @@ const en = {
   vocabularySearchDictionary: 'Dictionary',
   vocabularySearchClear: 'Clear',
   /* Adding a word by hand, and the set it lands in. */
+  deckCover: 'Cover',
+  decksUnavailable: 'Study sets are not available on this server yet.',
   addWord: 'Add a word',
   addWordSelf: 'Add one yourself',
   addWordWord: 'Word or phrase',
@@ -836,6 +841,9 @@ const zh = {
   vocabularyOverviewNote: '看看正在学习的词，认识今天的新词，也回到值得复习的内容。',
   vocabularySavedCount: '已保存',
   /* Nét chữ - how a character is written (frame 05). */
+  strokesRadical: '部首',
+  strokesPhonetic: '声旁',
+  strokesSemantic: '义旁',
   strokesTitle: '笔画',
   strokesCount: '{n} 画',
   strokesParts: '部首 · 部件',
@@ -860,6 +868,8 @@ const zh = {
   vocabularySearchDictionary: '词典',
   vocabularySearchClear: '清除',
   /* Adding a word by hand, and the set it lands in. */
+  deckCover: '封面',
+  decksUnavailable: '本服务器还不支持词集。',
   addWord: '添加词',
   addWordSelf: '自己添加',
   addWordWord: '词或短语',

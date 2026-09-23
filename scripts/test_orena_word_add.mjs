@@ -1,8 +1,7 @@
 /* Adding a word, choosing its set, and making a new one.
  *
- * Frames 22, 23, 24, 25 and 29. The one thing worth pinning hardest: the set
- * is a Thư viện của tôi collection, and nothing here keeps a second copy of a
- * word or a second list of sets.
+ * Frames 22, 23, 24, 25 and 29. The set is a Deck - Vocabulary's own - and
+ * nothing here keeps a second copy of a word or a second list of sets.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -16,25 +15,28 @@ const copyVi = read('ui/copy-vi.js');
 
 /* --- One store for the learner's sets ----------------------------------- */
 
-assert.match(room, /api\.libraryCollections\('word'\)/, "the sets are Thư viện của tôi's, of the word kind");
-assert.match(room, /api\.libraryCollectionCreate\(\{ kind: 'word', title: newDeck\.title\.trim\(\) \}\)/,
-  'a new set is made there, not in a deck store of its own');
-assert.match(room, /api\.libraryCollectionAdd\(collectionId, item\.id\)/,
-  'and a word joins one by its library item');
+/* The set is a **Deck**: Vocabulary's own learning/review set. A Deck and a
+   My Library Collection are two different things (the human, 2026-09-23);
+   test_orena_deck_domain.mjs holds that boundary, and this only checks the
+   screens reach for the right one. */
+assert.match(room, /api\.vocabularyDecks\(\)/, "the sets are Vocabulary's own decks");
+assert.match(room, /api\.vocabularyDeckCreate\(/, 'a new set is made there');
+assert.match(room, /cover: newDeck\.cover \|\| 'violet'/, 'with the cover the learner chose');
+assert.match(room, /api\.vocabularyDeckAdd\(deckId, word\)/, 'and a word joins one by reference');
 assert.doesNotMatch(room, /localStorage[^\n]*deck/i, 'no set is kept on the device');
 
-/* A word is kept once. What is filed into a set is the item that keeping
-   made - never a second record wearing the same spelling. */
-assert.match(room, /const mine = await api\.libraryItems\(\{ kind: 'word', words: \[word\] \}\);/,
-  'the item filed is the one the library already has');
+/* A word is kept once, and a set refers to it: the word is saved first, so a
+   failure to file never leaves one half-kept. */
+assert.match(room, /if \(adding\.chosen\) await fileWord\(adding\.word\.trim\(\), adding\.chosen\);/,
+  'the word is saved, then filed');
 
 /* --- The frames' fields, in the frames' order --------------------------- */
 
 const fields = [...screens.matchAll(/field\(\s*c\.(\w+)/g)].map((m) => m[1]);
 assert.deepEqual(
   fields,
-  ['addWordWord', 'addWordMeaning', 'addWordExample', 'deck', 'deckName', 'deckLanguage'],
-  'the add screen asks for the word, its meaning, a sentence and a set; the new set asks its name and language',
+  ['addWordWord', 'addWordMeaning', 'addWordExample', 'deck', 'deckName', 'deckLanguage', 'deckCover'],
+  'the add screen asks for the word, its meaning, a sentence and a set; the new set asks its name, language and cover',
 );
 
 /* The dictionary line is drawn only when the catalogue really has the word:
@@ -68,7 +70,7 @@ for (const key of [
   'addWord', 'addWordSelf', 'addWordWord', 'addWordMeaning', 'addWordExample',
   'addWordInDictionary', 'addAnother', 'optional', 'add', 'create', 'deck',
   'chooseDeck', 'createDeck', 'newDeck', 'deckName', 'deckLanguage',
-  'deckLanguageLocked', 'saveToDeck', 'saveWordTitle', 'saveIntoDeck',
+  'deckLanguageLocked', 'deckCover', 'decksUnavailable', 'saveToDeck', 'saveWordTitle', 'saveIntoDeck',
   'vocabularyNoWordsYet', 'vocabularyNoWordsNote',
 ]) {
   assert.equal((copy.match(new RegExp(`\\b${key}:`, 'g')) || []).length, 2, `${key} in English and Chinese`);

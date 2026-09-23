@@ -168,6 +168,8 @@ from writing_coach.becoming_practice import PracticeNextIn, build_practice_recom
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
 from writing_coach.becoming_library import LibraryVocabularyIn, RestoreVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, restore_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
 from writing_coach.persistence.library_repository import LibraryRepository
+from writing_coach.persistence.deck_repository import DeckRepository
+from writing_coach.deck_api import configure_decks, router as deck_router
 from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
 from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
@@ -612,6 +614,15 @@ configure_library(
     else None
 )
 app.include_router(library_router)
+# The learner's own study sets - Vocabulary's, not My Library's (2026-09-23).
+# The tables are proposed and unapplied, so `available()` is False and every
+# route answers 503 rather than falling back to another domain's tables.
+configure_decks(
+    lambda: DeckRepository(_persistence_runtime.engine)
+    if getattr(_persistence_runtime, "engine", None) is not None
+    else None
+)
+app.include_router(deck_router)
 # How a saved word sounds, bound to the reading it was kept at (2026-09-23).
 # No schema: the clips and the licence they may be played under live in the
 # existing asset store, keyed by a digest of (entry identity, reading).

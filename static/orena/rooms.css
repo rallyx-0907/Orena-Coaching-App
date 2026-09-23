@@ -5645,3 +5645,46 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
   .word-strokes__body, .word-strokes__foot { max-inline-size: 640px; }
   .word-strokes__head strong { font-size: 22px; }
 }
+
+/* A pass that is not counted says so, in the bar the session already has. */
+.study-free { margin-inline-start: auto; font-size: 11px; color: var(--status-warning); }
+
+/* A set that can be opened, and the bar saying which one is. */
+.my-library-set { inline-size: 100%; border: 0; background: none; color: inherit; text-align: start; }
+.my-library-set[data-open='true'] .my-library-set__mark { color: var(--accent-ink); }
+.my-library__opened {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-block-end: 10px;
+}
+.my-library__opened strong { flex: 1; font-family: var(--display-font); font-weight: var(--weight-bold); font-size: 15px; }
+
+/* A deck's cover. The learner picks a name; this is the only place that knows
+   what each name looks like, so a stored value can never be a colour outside
+   the theme. */
+[data-cover] {
+  --cover-hue: 296;
+  background:
+    radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.15) 1.2px, transparent 1.3px) 0 0 / 10px 10px,
+    radial-gradient(130% 90% at 76% 12%, oklch(0.52 0.13 var(--cover-hue) / 0.55), transparent),
+    linear-gradient(150deg, oklch(0.3 0.05 var(--cover-hue)), oklch(0.17 0.02 300));
+}
+[data-cover='sea'] { --cover-hue: 235; }
+[data-cover='violet'] { --cover-hue: 296; }
+[data-cover='ember'] { --cover-hue: 25; }
+[data-cover='moss'] { --cover-hue: 160; }
+[data-cover='amber'] { --cover-hue: 68; }
+[data-cover='rose'] { --cover-hue: 330; }
+.deck-new__covers { display: flex; gap: 12px; flex-wrap: wrap; }
+.deck-new__cover-pick {
+  inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 40px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0;
+}
+.deck-new__cover-pick[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--surface-canvas), 0 0 0 4px var(--accent-ink);
+}

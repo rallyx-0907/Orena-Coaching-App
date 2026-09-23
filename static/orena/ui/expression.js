@@ -1428,10 +1428,13 @@ export async function renderLanguage(root, ctx) {
   /* A pass over a set that is not counted - "không tính lịch". The cards are
      the set's; nothing is written to the schedule. */
   let practiceOnly = false;
-  /* Adding a word by hand, and the set it lands in. `decks` is the learner's
-     own word sets in Thư viện của tôi, read once and kept current by the two
-     writes below - there is no second store. */
+  /* The learner's study sets: Vocabulary's own, not My Library's collections
+     (the human's decision of 2026-09-23 - the two are different domains).
+     `decksUnavailable` is true while the Deck tables are still a proposal,
+     and the screens say so rather than quietly filing words elsewhere. */
   let decks = [];
+  let deckCovers = [];
+  let decksUnavailable = false;
   /* The room's own search: what was typed, which chip is on, and the two
      lists. Both halves are read from the server - the learner's words by the
      read that already pages them, the catalogue by its own bounded search -
@@ -1447,12 +1450,12 @@ export async function renderLanguage(root, ctx) {
   /* A kept word into one of the learner's sets. The word is kept first, so
      what is filed is the library item that keeping made - there is no second
      record of the word anywhere. */
-  const fileWord = async (word, collectionId) => {
+  /* A word the learner has, into one of their sets. The word is saved first,
+     so a failure to file never leaves it half-kept - and the set stores a
+     reference, never a copy. */
+  const fileWord = async (word, deckId) => {
     try {
-      const mine = await api.libraryItems({ kind: 'word', words: [word] });
-      const item = (mine.items || [])[0];
-      if (!item?.id) return false;
-      await ctx.mutate(() => api.libraryCollectionAdd(collectionId, item.id));
+      await ctx.mutate(() => api.vocabularyDeckAdd(deckId, word));
       return true;
     } catch {
       return false;
@@ -1490,10 +1493,15 @@ export async function renderLanguage(root, ctx) {
   const readDecks = async () => {
     if (decksRead) return decks;
     try {
-      const answer = await api.libraryCollections('word');
-      decks = answer.items || answer.collections || [];
-    } catch {
+      const answer = await api.vocabularyDecks();
+      decks = answer.items || [];
+      deckCovers = answer.covers || [];
+      decksUnavailable = false;
+    } catch (error) {
       decks = [];
+      /* 503 is "this server has no study sets yet", which is a different
+         thing from "you have none" and is said differently. */
+      decksUnavailable = Number(error?.status || 0) === 503;
     }
     decksRead = true;
     return decks;
@@ -1667,12 +1675,14 @@ export async function renderLanguage(root, ctx) {
      a curator has supplied them - and the section is simply absent otherwise
      (UI_BACKEND_GAPS.md). */
   const strokeParts = (word) => {
-    const units = deepData?.orthography?.units || [];
-    const unit = units.find((item) => String(item.surface || '') === String(word).slice(0, 1));
-    const facts = unit?.facts || {};
+    const character = String(word).slice(0, 1);
+    const facts = deepData?.orthography?.parts?.[character] || {};
     const listed = [
-      ...(facts.radical ? [{ ...facts.radical.value, role: facts.radical.value?.role || 'radical' }] : []),
-      ...((facts.components?.value || []).map((item) => ({ ...item }))),
+      ...(facts.radical ? [{ ...facts.radical.value, role: facts.radical.value?.role || c.strokesRadical }] : []),
+      ...((facts.components?.value || []).map((item) => ({
+        ...item,
+        role: item.role === 'phonetic' ? c.strokesPhonetic : item.role === 'semantic' ? c.strokesSemantic : item.role,
+      }))),
     ];
     return listed.filter((item) => item && item.surface);
   };
@@ -1851,7 +1861,7 @@ export async function renderLanguage(root, ctx) {
   const studyView = () => {
     const card = studyItems[studyIndex];
     if (!card) return `<section class="empty"><h2>${esc(c.noWords)}</h2></section>`;
-    return `${pageIntro({ title: c.vocabularyStudy, note: c.vocabularyOverviewNote, eyebrow: c.vocabularyTitle, compact: true })}<div class="vocabulary-study-toolbar"><button class="quiet" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button><span>${studyIndex + 1} / ${studyItems.length}</span></div><section class="vocabulary-study-layout">${renderVocabularyStudyCard(copy, card, { index: studyIndex })}<nav class="vocabulary-study-nav"><button class="outline" data-study-prev ${studyIndex === 0 ? 'disabled' : ''}>←</button><button class="primary" data-study-next ${studyIndex >= studyItems.length - 1 ? 'disabled' : ''}>${studyIndex >= studyItems.length - 1 ? c.allDone : c.nextLine} →</button></nav></section>`;
+    return `${pageIntro({ title: c.vocabularyStudy, note: c.vocabularyOverviewNote, eyebrow: c.vocabularyTitle, compact: true })}<div class="vocabulary-study-toolbar"><button class="quiet" data-vocabulary-back>${esc(c.vocabularyBackOverview)}</button>${practiceOnly ? `<span class="study-free ds-data">${esc(c.deckFreePractice)}</span>` : ''}<span>${studyIndex + 1} / ${studyItems.length}</span></div><section class="vocabulary-study-layout">${renderVocabularyStudyCard(copy, card, { index: studyIndex, practice: practiceOnly })}<nav class="vocabulary-study-nav"><button class="outline" data-study-prev ${studyIndex === 0 ? 'disabled' : ''}>←</button><button class="primary" data-study-next ${studyIndex >= studyItems.length - 1 ? 'disabled' : ''}>${studyIndex >= studyItems.length - 1 ? c.allDone : c.nextLine} →</button></nav></section>`;
   };
 
   /* A collection, as the design draws it (Screens part 1 section 05): the
@@ -1948,17 +1958,21 @@ export async function renderLanguage(root, ctx) {
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
     const bare = view === 'overview' && !savedCards.length && !savedError;
-    root.innerHTML = view === 'strokes' ? wordStrokesHtml(c, { ...strokeState, language }) : view === 'clips' ? wordClipsHtml(c, { ...clipState, language }) : view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    const deckState = { unavailable: decksUnavailable, covers: deckCovers };
+    root.innerHTML = view === 'strokes' ? wordStrokesHtml(c, { ...strokeState, language }) : view === 'clips' ? wordClipsHtml(c, { ...clipState, language }) : view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, ...deckState, decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, ...deckState, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     if (deckSheet)
       root.insertAdjacentHTML(
         'beforeend',
-        saveToDeckSheet(c, { ...deckSheet, collections: decks }),
+        saveToDeckSheet(c, { ...deckSheet, ...deckState, decks }),
       );
     bind();
   };
 
-  const setStudy = (items, index = 0) => {
+  const setStudy = (items, index = 0, { practice = false } = {}) => {
     deckSettingsOpen = false;
+    /* Cleared on every session, never carried: a free pass must not be able to
+       silence the one after it. */
+    practiceOnly = practice;
     studyItems = items;
     studyIndex = Math.max(0, Math.min(index, items.length - 1));
     returnView = view === 'study' ? returnView : view;
@@ -2426,7 +2440,7 @@ export async function renderLanguage(root, ctx) {
     });
     root.querySelector('[data-deck-new]')?.addEventListener('click', () => {
       deckSheet = null;
-      newDeck = { title: '', language, locked: false, busy: false };
+      newDeck = { title: '', language, cover: deckCovers[0] || 'violet', covers: deckCovers, locked: false, busy: false };
       returnView = view;
       view = 'new-deck';
       paint();
@@ -2442,6 +2456,14 @@ export async function renderLanguage(root, ctx) {
         paint();
       };
     });
+    /* The cover the frame draws a chooser for. It is a name, not a colour -
+       `theme.css` stays the only thing that knows what each one looks like. */
+    root.querySelectorAll('[data-deck-cover]').forEach((button) => {
+      button.onclick = () => {
+        newDeck.cover = button.dataset.deckCover;
+        paint();
+      };
+    });
     root.querySelector('[data-deck-cancel]')?.addEventListener('click', () => {
       newDeck = null;
       view = returnView || 'overview';
@@ -2452,10 +2474,11 @@ export async function renderLanguage(root, ctx) {
       newDeck.busy = true;
       paint();
       try {
-        const made = await ctx.mutate(() =>
-          api.libraryCollectionCreate({ kind: 'word', title: newDeck.title.trim() }),
+        const answer = await ctx.mutate(() =>
+          api.vocabularyDeckCreate({ title: newDeck.title.trim(), cover: newDeck.cover || 'violet' }),
         );
         if (!alive()) return;
+        const made = answer.deck || answer;
         decks = [...decks, made];
         if (adding) adding.chosen = made.id;
         newDeck = null;
@@ -2497,15 +2520,11 @@ export async function renderLanguage(root, ctx) {
     });
     root.querySelector('[data-deck-learn-new]')?.addEventListener('click', () => {
       const fresh = activeItems.filter((card) => !card.saved).slice(0, Number(root.querySelector('[data-deck-learn-new]').dataset.deckLearnNew) || 0);
-      if (fresh.length) {
-        practiceOnly = false;
-        setStudy(fresh);
-      }
+      if (fresh.length) setStudy(fresh);
     });
     root.querySelector('[data-deck-free-practice]')?.addEventListener('click', () => {
       if (!activeItems.length) return;
-      practiceOnly = true;
-      setStudy(activeItems);
+      setStudy(activeItems, 0, { practice: true });
     });
     root.querySelector('[data-vocabulary-shuffle]')?.addEventListener('click', () => {
       if (!visibleItems.length) return;
@@ -2602,7 +2621,7 @@ export async function renderLanguage(root, ctx) {
     root.querySelector('[data-study-prev]')?.addEventListener('click', () => { if (studyIndex > 0) { studyIndex -= 1; paint(); } });
     root.querySelector('[data-study-next]')?.addEventListener('click', () => { if (studyIndex < studyItems.length - 1) { studyIndex += 1; paint(); } });
     root.querySelector('[data-study-audio]')?.addEventListener('click', () => { const word = studyItems[studyIndex]?.headword; if (word && 'speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(word)); });
-    root.querySelectorAll('[data-study-grade]').forEach((button) => (button.onclick = async () => { const card = studyItems[studyIndex]; button.disabled = true; if (practiceOnly) { /* "Luyện tự do · không tính lịch": the cards are the set's and the schedule is untouched. */ studyIndex = Math.min(studyIndex + 1, studyItems.length - 1); paint(); return; } try { const result = await ctx.mutate(() => api.reviewLibraryVocabulary(card.headword, button.dataset.studyGrade)); if (result.item) { const updated = vocabularyCardFromSavedItem(result.item, language, support, pinyinAllowed); studyItems[studyIndex] = updated; const savedIndex = savedCards.findIndex((item) => item.headword.toLowerCase() === card.headword.toLowerCase()); if (savedIndex >= 0) savedCards[savedIndex] = updated; savedData.items = savedData.items.map((item) => item.word.toLowerCase() === card.headword.toLowerCase() ? result.item : item); savedData.summary = { ...summary(), due: savedCards.filter((item) => item.due).length, learning: savedCards.filter((item) => (Number(item.review_stage) || 0) < 3).length, mastered: savedCards.filter((item) => (Number(item.review_stage) || 0) >= 3).length }; } paint(); } catch { button.disabled = false; } }));
+    root.querySelectorAll('[data-study-grade]').forEach((button) => (button.onclick = async () => { const card = studyItems[studyIndex]; button.disabled = true; try { const result = await ctx.mutate(() => api.reviewLibraryVocabulary(card.headword, button.dataset.studyGrade)); if (result.item) { const updated = vocabularyCardFromSavedItem(result.item, language, support, pinyinAllowed); studyItems[studyIndex] = updated; const savedIndex = savedCards.findIndex((item) => item.headword.toLowerCase() === card.headword.toLowerCase()); if (savedIndex >= 0) savedCards[savedIndex] = updated; savedData.items = savedData.items.map((item) => item.word.toLowerCase() === card.headword.toLowerCase() ? result.item : item); savedData.summary = { ...summary(), due: savedCards.filter((item) => item.due).length, learning: savedCards.filter((item) => (Number(item.review_stage) || 0) < 3).length, mastered: savedCards.filter((item) => (Number(item.review_stage) || 0) >= 3).length }; } paint(); } catch { button.disabled = false; } }));
     root.querySelectorAll('[data-vocabulary-retry]').forEach((button) => (button.onclick = () => location.reload()));
   };
 

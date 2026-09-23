@@ -514,6 +514,9 @@ export const vi = {
   vocabularySaved: 'Đã lưu',
   vocabularySavedCount: 'Đã lưu',
   /* Nét chữ - how a character is written (frame 05). */
+  strokesRadical: 'bộ thủ',
+  strokesPhonetic: 'âm',
+  strokesSemantic: 'nghĩa',
   strokesTitle: 'Nét chữ',
   strokesCount: '{n} nét',
   strokesParts: 'Bộ thủ · thành phần',
@@ -538,6 +541,8 @@ export const vi = {
   vocabularySearchDictionary: 'Từ điển',
   vocabularySearchClear: 'Xóa',
   /* Adding a word by hand, and the set it lands in. */
+  deckCover: 'Màu bìa',
+  decksUnavailable: 'Máy chủ chưa hỗ trợ bộ từ.',
   addWord: 'Thêm từ',
   addWordSelf: 'Tự thêm từ',
   addWordWord: 'Từ hoặc cụm từ',

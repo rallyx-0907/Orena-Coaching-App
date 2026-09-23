@@ -68,7 +68,21 @@ assert.match(room, /strokeState\.wrongReason = other >= 0 \? 'order' : judged\.r
 assert.match(screen, /if \(!surface\) return '';/, 'a part with no character is not a card');
 assert.match(screen, /const partsBlock = parts\.length/, 'and no parts at all is no section');
 assert.match(room, /const strokeParts = \(word\) => \{/, 'the parts come from the entry, not from the glyph');
-assert.match(room, /deepData\?\.orthography\?\.units/, 'through the orthography contract that already exists');
+assert.match(room, /deepData\?\.orthography\?\.parts\?\.\[character\]/,
+  'through the orthography contract that already exists');
+
+/* And what it draws is decomposition, labelled as such. The architecture
+   requires verified etymology, modern structural decomposition and a learner
+   mnemonic to be told apart; this is the second, and says so. */
+const parts = readFileSync(
+  new URL('../writing_coach/languages/chinese/character_parts.py', import.meta.url),
+  'utf8',
+);
+assert.match(parts, /structural-decomposition/, 'the claim says what kind of claim it is');
+assert.doesNotMatch(parts, /"etymology"/, 'and never claims etymology');
+/* The safety net that makes curated content checkable: a declared radical is
+   measured against the verified pack, so a wrong one fails a test. */
+assert.match(parts, /tests\/test_character_parts\.py/, 'and names the test that checks it');
 
 for (const [what, rule] of [
   ['a part card', /\.stroke-part \{[^}]*padding: 14px 8px;[^}]*border-radius: 14px;/s],

@@ -649,6 +649,68 @@ class LibraryItem(Base):
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 
+# The covers a learner may choose for a study set. Names, not colours:
+# `theme.css` owns what each one looks like, and this column records only which
+# one was picked, so a stored value can never be a colour outside the theme.
+DECK_COVERS = ("sea", "violet", "ember", "moss", "amber", "rose")
+_DECK_COVER_LIST = ", ".join(f"'{name}'" for name in DECK_COVERS)
+
+
+class VocabularyDeck(Base):
+    """A learner's own study set - Vocabulary's, not My Library's.
+
+    The human's decision of 2026-09-23: a Deck and a My Library Collection are
+    two different things. A Deck is a learning/review set that belongs to
+    Vocabulary; a Collection only organises items inside My Library
+    (`ORENA_COLLECTION_ARCHITECTURE.md` §1 calls itself a projection layer).
+    `vocabulary_collections` is no home for one either - its own docstring says
+    collections there are content, read by many learners, and it has no owner.
+    """
+
+    __tablename__ = "vocabulary_decks"
+    __table_args__ = (
+        CheckConstraint("title <> ''", name="ck_vocabulary_decks_title"),
+        CheckConstraint(f"cover IN ({_DECK_COVER_LIST})", name="ck_vocabulary_decks_cover"),
+        UniqueConstraint("user_id", "language_code", "title", name="uq_vocabulary_deck_title"),
+        Index("ix_vocabulary_decks_scope", "user_id", "language_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    cover: Mapped[str] = mapped_column(String(24), default="violet", nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyDeckMember(Base):
+    """Which of the learner's words are in a set.
+
+    `saved_word_id` cascades: a set is a set *of the learner's words*, and
+    there is no membership without the word.
+    """
+
+    __tablename__ = "vocabulary_deck_members"
+    __table_args__ = (
+        UniqueConstraint("deck_id", "saved_word_id", name="uq_vocabulary_deck_member"),
+        Index("ix_vocabulary_deck_members_deck", "deck_id", "position"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    deck_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vocabulary_decks.id", ondelete="CASCADE"), nullable=False
+    )
+    saved_word_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("saved_words.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class LibraryCollection(Base):
     """A learner's own set, of one kind - the frame's "one set, one kind"."""
 

@@ -293,6 +293,7 @@ def project_word_deep(
     sentences: Sequence[Mapping[str, Any]],
     readings: Sequence[str],
     reading: str,
+    parts: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The whole screen, as a value. Pure, so the frames' contract is testable
     without a database, a provider or a store."""
@@ -300,6 +301,12 @@ def project_word_deep(
     entry = entry or {}
     saved = saved or {}
     senses = senses_of(entry)
+    orthography = entry.get("orthography") if isinstance(entry.get("orthography"), Mapping) else None
+    if parts:
+        # What a character is made of, from curated content with its own
+        # provenance. The stroke capability refuses to infer this, so it is
+        # carried beside what the entry already has rather than mixed into it.
+        orthography = {**(orthography or {}), "parts": dict(parts)}
     gloss = " · ".join(_meaning_texts(entry, "short_meanings")[:3]) or _first(
         [sense["meaning"] for sense in senses]
     )
@@ -327,7 +334,7 @@ def project_word_deep(
         "learnerSentences": list(sentences),
         "saved": bool(saved),
         "level": _text(entry.get("level")),
-        "orthography": entry.get("orthography") if isinstance(entry.get("orthography"), Mapping) else None,
+        "orthography": orthography,
     }
 
 
@@ -372,7 +379,23 @@ def word_deep(word: str, reading: str = Query("", max_length=240)) -> dict[str, 
         sentences=_learner_sentences(term, language),
         readings=readings,
         reading=identity["reading_key"] or _text(reading),
+        parts=_character_parts(term, support),
     )
+
+
+def _character_parts(word: str, support: str) -> dict[str, Any]:
+    """The radical and components of each character, when the content has them.
+
+    Chinese only, because only Han script has them; everything else answers
+    with nothing rather than an empty shape.
+    """
+
+    try:
+        from writing_coach.languages.chinese import character_parts
+
+        return character_parts.facts_for_word(word, support=(support or "en").split("-")[0])
+    except Exception:
+        return {}
 
 
 def _support() -> str:

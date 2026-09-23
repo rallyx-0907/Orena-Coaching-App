@@ -185,6 +185,14 @@ export const api={
     ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
     isTransientRequestError,
   ),
+  /* The learner's own study sets. A Deck is Vocabulary's - a set to review
+     from - and is not a My Library Collection, which organises what the
+     learner has. Two domains, two contracts. */
+  vocabularyDecks:()=>retryOnce(()=>request('/api/vocabulary/decks'),isTransientRequestError),
+  vocabularyDeckCreate:(payload)=>request('/api/vocabulary/decks',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  vocabularyDeckPatch:(id,payload)=>request(`/api/vocabulary/decks/${encodeURIComponent(id)}`,{method:'PATCH',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  vocabularyDeckWords:(id)=>retryOnce(()=>request(`/api/vocabulary/decks/${encodeURIComponent(id)}/words`),isTransientRequestError),
+  vocabularyDeckAdd:(id,word)=>request(`/api/vocabulary/decks/${encodeURIComponent(id)}/words`,{method:'POST',headers:JSON_HEADERS,body:JSON.stringify({word})}),
   /* One word, opened all the way: what the canonical deep frames draw, in
      one read. A section the app has nothing for is absent from the answer
      rather than empty in it. */
@@ -224,6 +232,12 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload),
   }),
+  /* What is in one of the learner's sets. The room filters itself to these
+     refs rather than fetching a second listing. */
+  libraryCollectionItems:(collectionId)=>retryOnce(
+    ()=>request(`/api/library/collections/${encodeURIComponent(collectionId)}/items`),
+    isTransientRequestError,
+  ),
   libraryCollectionAdd:(collectionId,itemId)=>request(`/api/library/collections/${encodeURIComponent(collectionId)}/items`,{method:'POST',headers:JSON_HEADERS,body:JSON.stringify({item_id:itemId})}),
   /* The counts and the rank alone - what Hồ sơ, Tiến độ and Home need, with no
      saved word crossing the wire. */

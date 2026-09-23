@@ -2046,3 +2046,63 @@ entry's orthography when a curator has supplied them, and is **absent** when
 they have not — never guessed from the glyph. Filling them is a content task
 against a contract that exists, not a schema or a rights question.
 
+
+## A Deck is not a Collection (2026-09-23)
+
+The human's decision, after `4f7b197` shipped frames 22–25 on the wrong domain:
+**a Deck is a learning/review set that belongs to Vocabulary; a My Library
+Collection only organises items inside My Library.**
+
+That earlier pass used `library_collections` with `kind='word'` as the deck
+store. Two contracts say independently that this is wrong:
+`ORENA_COLLECTION_ARCHITECTURE.md` §1 calls Collection "a query/projection …
+not a new authoritative copy", and `vocabulary_collections` says in its own
+docstring that collections there are content read by many learners, with no
+owner column.
+
+**The correction, and where it stands.**
+
+- `vocabulary_decks` + `vocabulary_deck_members` — proposed in
+  `migrations/proposed/20260923_0014_vocabulary_decks.py`, **not applied
+  anywhere**. Independent architecture review is required
+  (`docs/project/VOCABULARY_DECK_SCHEMA_REVIEW_REQUEST.md`), and an implementer
+  may not self-approve its own schema change.
+- `DeckRepository`, `/api/vocabulary/decks`, and frames 22–25 are wired to the
+  Deck contract. Until the tables exist the routes answer `503
+  decks_unavailable` and the screens say so. They are deliberately **not**
+  wired back to `library_collections`: shipping the wrong domain again to keep
+  a screen green would be the worse failure.
+- A set holds a **reference** to the learner's saved word and no copy, and
+  touches no review field — a gate and a test both refuse it.
+- **The cover a learner picks now persists**, as a token (`sea`, `violet`,
+  `ember`, `moss`, `amber`, `rose`) under a check constraint, never a hex
+  value: `theme.css` stays the one owner of what a colour is.
+
+**Open for the reviewer**, stated in the request: whether undo should restore a
+restored word's memberships (the proposal's author prefers carrying them in the
+undo payload, which is code, and did not build it because the choice is the
+reviewer's), and whether the word-kind collections `4f7b197` created in the
+sandbox should be carried over or left as My Library collections.
+
+## Three smaller things finished with it (2026-09-23)
+
+- **A set in My Library opens.** The rows have been drawn since the sets column
+  landed and were never clickable; the read already existed. Opening one filters
+  the room to its items, which is what a Collection is.
+- **Free practice is real and cannot touch the schedule.** Three things were
+  wrong: `practiceOnly` was set on the way in and never cleared, so a learner
+  who used it once was silently no longer recorded in the *next* real session;
+  the grade buttons were drawn and did nothing; and nothing said the pass was
+  not counted. Now the flag is a parameter of starting a session, the grades are
+  not drawn in a free pass because they belong to the scheduler, and the bar
+  says what the session is.
+- **Radical and components have content with provenance.**
+  `character_parts.json` (42 characters) fills the shared orthography
+  contract's `radical` and `components` facts. It is labelled
+  `structural-decomposition` — never etymology, which
+  `ORENA_VOCABULARY_ARCHITECTURE.md` §4 requires to be told apart — and every
+  declared radical is **checked against the verified stroke pack**: the
+  radical's own stroke count must equal how many strokes the pack marks as the
+  radical's. That check caught three wrong radicals in the first draft. 89
+  characters of the static Chinese catalogue still have no curated parts, and
+  their section is simply absent.
