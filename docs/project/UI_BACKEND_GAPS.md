@@ -1470,3 +1470,29 @@ commit is reused.
   backend: 1787 passed, 118 skipped; every `.mjs` gate in `ci.yml` passes except the six inherited
   ones (same first assertion on a clean `3bf2c3f`); ESM graph OK (107 modules); memory and
   architecture validators and the Python contract scripts OK.
+
+## Speaking under D-078 (rule 49), measured on `4d83552` (2026-09-23)
+
+- **Viewport law, real takes:** 12 Speaking screens (workspace idle, recording, result; compare;
+  shadowing; summary; a 32-character line idle and scored; its word sheet; free talk idle, spoken and
+  its result) at 1920x1080, 1440x900, 1366x768, 390x844 and 360x740, in VI, EN and ZH: 180 of 180
+  checks with no page scroll, no horizontal overflow, no clipped content, primary controls inside the
+  viewport. The long regions scroll inside (word list up to 572/1915px on a desk, the phone card's
+  flagged words 289/924).
+- **Long content:** a 7-line lesson's summary, five real takes on one line, a 25-second free-talk
+  take: 16 of 16. **Stress** (the DOM filled past anything a take produces today: 28 lines, 15
+  attempts, a long transcript): the page never grows, the region scrolls, the actions stay in view;
+  on a 1920x1080 desk the long transcript still fits without scrolling.
+- **Old routes, in a browser (desk, phone):** `#/practice`, `?intent=shadowing`, `?intent=dictation`,
+  `?intent=writing` and old encounter links to shadow or speak a lesson land in the current flows,
+  with a mutation observer seeing no old screen on the way; Home, Library, the Speaking and Listening
+  libraries, Progress and History link to no retired address: 24 of 24.
+- **Functional E2E again on this HEAD:** scripted 6 runs (Azure 200, 96-99, compare, shadowing with
+  live speed/again, summary), shadow restart (one assessment for three starts), states 18 of 18
+  (offline takes graded when back: 71-99), free talk 6 runs ("⋯" sheet with three ways; the
+  corrected line appears whenever the coaching gives one in the learning language).
+- **Gates (local):** pytest 1787 passed, 118 skipped; every CI `.mjs` gate passes but the six
+  inherited ones (same first assertion as a clean `3bf2c3f`); the new
+  `test_orena_legacy_routes.mjs` passes; memory and architecture validators OK.
+- **Not re-measured here:** Reading, Listening, Dictation, Writing and Vocabulary workspaces. Rule 49
+  binds them; each owner measures them against it (D-078).
