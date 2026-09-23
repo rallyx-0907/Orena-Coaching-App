@@ -27,6 +27,7 @@ import {
 } from './vocabulary-experience.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
 import { wordDeepHtml } from './word-deep.js';
+import { addWordScreen, createDeckScreen, saveToDeckSheet } from './word-add.js';
 import {
   bindWritingFeedback,
   revisionHtml,
@@ -1423,6 +1424,45 @@ export async function renderLanguage(root, ctx) {
   /* A pass over a set that is not counted - "không tính lịch". The cards are
      the set's; nothing is written to the schedule. */
   let practiceOnly = false;
+  /* Adding a word by hand, and the set it lands in. `decks` is the learner's
+     own word sets in Thư viện của tôi, read once and kept current by the two
+     writes below - there is no second store. */
+  let decks = [];
+  let decksRead = false;
+  let adding = null;
+  let deckSheet = null;
+  let newDeck = null;
+
+  /* A kept word into one of the learner's sets. The word is kept first, so
+     what is filed is the library item that keeping made - there is no second
+     record of the word anywhere. */
+  const fileWord = async (word, collectionId) => {
+    try {
+      const mine = await api.libraryItems({ kind: 'word', words: [word] });
+      const item = (mine.items || [])[0];
+      if (!item?.id) return false;
+      await ctx.mutate(() => api.libraryCollectionAdd(collectionId, item.id));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const readDecks = async () => {
+    if (decksRead) return decks;
+    try {
+      const answer = await api.libraryCollections('word');
+      decks = answer.items || answer.collections || [];
+    } catch {
+      decks = [];
+    }
+    decksRead = true;
+    return decks;
+  };
+
+  /* The languages a new set may be in: the ones this account actually learns,
+     named in the interface's own language. */
+  const deckLanguages = () => [{ code: language, label: c[`language_${language}`] || language.toUpperCase() }];
   /* One word, opened all the way: which word, what came back, and which of the
      two pages the phone is on. `deepReturn` is the view to go back to, so a
      word opened from a review card returns to that card rather than to the
@@ -1687,6 +1727,23 @@ export async function renderLanguage(root, ctx) {
     }`;
   };
 
+  /* Frame 29: the room when the learner has kept nothing yet. The starter
+     sets are the catalogue's own - the same ones the full room draws - so this
+     is the room with an explanation over it, not a different room. */
+  const emptyRoom = () => {
+    const starters = collections.slice(0, 4);
+    return `<section class="vocab-empty"><header class="vocab-empty__head"><h1>${esc(c.vocabularyTitle)}</h1><button type="button" class="icon-button vocab-empty__add" data-add-open aria-label="${esc(c.addWord)}">${icon('plus', { size: 19 })}</button></header><div class="vocab-empty__say"><h2>${esc(c.vocabularyNoWordsYet)}</h2><p>${esc(c.vocabularyNoWordsNote)}</p></div>${
+      starters.length
+        ? `<div class="vocab-empty__packs">${starters
+            .map(
+              (pack) =>
+                `<button type="button" class="vocab-pack" data-vocabulary-pack="${esc(pack.id)}"><span class="vocab-pack__art">${contentCover({ id: String(pack.id || pack.title || ''), title: pack.title || '', material: 'collection' })}</span><span class="vocab-pack__title">${esc(pack.title)}</span><span class="vocab-pack__meta ds-data">${esc([String(pack.language_code || language).toUpperCase(), `${Number(pack.item_count) || 0} ${c.vocabularyWordCount}`, pack.levels?.[0] || pack.level || ''].filter(Boolean).join(' · '))}</span></button>`,
+            )
+            .join('')}</div>`
+        : ''
+    }<div class="vocab-empty__foot"><button type="button" class="outline" data-add-open>${icon('plus', { size: 18 })}<span>${esc(c.addWordSelf)}</span></button></div></section>`;
+  };
+
   const collectionDetail = () => {
     const collection = activeCollection || {};
     const progress = collection.progress || {};
@@ -1715,7 +1772,13 @@ export async function renderLanguage(root, ctx) {
     if (!alive()) return;
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
-    root.innerHTML = view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    const bare = view === 'overview' && !savedCards.length && !savedError;
+    root.innerHTML = bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    if (deckSheet)
+      root.insertAdjacentHTML(
+        'beforeend',
+        saveToDeckSheet(c, { ...deckSheet, collections: decks }),
+      );
     bind();
   };
 
@@ -1885,6 +1948,151 @@ export async function renderLanguage(root, ctx) {
         return;
       }
       if (visibleItems.length) setStudy(due.length ? due : visibleItems);
+    });
+    /* Adding a word by hand, and where it lands. */
+    root.querySelectorAll('[data-add-open]').forEach((button) => {
+      button.onclick = async () => {
+        await readDecks();
+        if (!alive()) return;
+        adding = { word: '', meaning: '', example: '', chosen: decks[0]?.id || '', found: false, again: true, busy: false };
+        returnView = view;
+        view = 'add-word';
+        paint();
+      };
+    });
+    const takeField = (selector, key) =>
+      root.querySelector(selector)?.addEventListener('input', (event) => {
+        adding[key] = event.target.value;
+        const go = root.querySelector('[data-add-save]');
+        if (go) go.disabled = !(adding.word.trim() && adding.meaning.trim());
+      });
+    takeField('[data-add-word]', 'word');
+    takeField('[data-add-meaning]', 'meaning');
+    takeField('[data-add-example]', 'example');
+    /* The catalogue is asked about the word as it is typed, and what it knows
+       fills the rest in - the frame's "đã điền sẵn". It never overwrites what
+       the learner has already written. */
+    root.querySelector('[data-add-word]')?.addEventListener('change', async () => {
+      const wanted = adding.word.trim();
+      if (!wanted) return;
+      try {
+        const found = await api.wordDeep(wanted);
+        if (!alive() || adding.word.trim() !== wanted) return;
+        adding.found = Boolean(found?.senses?.length);
+        if (adding.found && !adding.meaning.trim()) adding.meaning = found.senses[0].meaning || '';
+        if (adding.found && !adding.example.trim()) adding.example = found.senses[0].example || '';
+        paint();
+      } catch {
+        /* A word the catalogue does not know is still a word worth keeping. */
+      }
+    });
+    root.querySelector('[data-add-again]')?.addEventListener('change', (event) => {
+      adding.again = event.target.checked;
+    });
+    root.querySelector('[data-add-cancel]')?.addEventListener('click', () => {
+      adding = null;
+      view = returnView || 'overview';
+      paint();
+    });
+    root.querySelector('[data-add-pick-deck]')?.addEventListener('click', () => {
+      deckSheet = { word: adding.word || c.addWord, note: adding.meaning || '', chosen: adding.chosen };
+      paint();
+    });
+    root.querySelector('[data-add-save]')?.addEventListener('click', async () => {
+      if (!adding || adding.busy) return;
+      adding.busy = true;
+      paint();
+      try {
+        await ctx.mutate(() =>
+          api.saveLibraryVocabulary({
+            word: adding.word.trim(),
+            definition: adding.meaning.trim(),
+            source_fragment: adding.example.trim(),
+            source_kind: 'manual',
+          }),
+        );
+        if (adding.chosen) await fileWord(adding.word.trim(), adding.chosen);
+        if (!alive()) return;
+        savedData = await api.libraryVocabulary({ limit: SAVED_PAGE, order: 'recent' });
+        refreshSavedCards();
+        if (adding.again) {
+          adding = { ...adding, word: '', meaning: '', example: '', found: false, busy: false };
+        } else {
+          adding = null;
+          view = returnView || 'overview';
+        }
+        paint();
+        status(c.persisted);
+      } catch {
+        if (!alive()) return;
+        adding.busy = false;
+        paint();
+        status(c.failedSave);
+      }
+    });
+    /* Which set: the sheet frame 22 draws, over whatever screen opened it. */
+    root.querySelectorAll('[data-deck-pick]').forEach((button) => {
+      button.onclick = () => {
+        deckSheet.chosen = button.dataset.deckPick;
+        paint();
+      };
+    });
+    root.querySelector('[data-deck-close]')?.addEventListener('click', () => {
+      deckSheet = null;
+      paint();
+    });
+    root.querySelector('[data-deck-save]')?.addEventListener('click', async () => {
+      const chosen = deckSheet?.chosen;
+      const word = deckSheet?.word;
+      deckSheet = null;
+      if (adding) adding.chosen = chosen;
+      else if (chosen && word) await fileWord(word, chosen);
+      paint();
+    });
+    root.querySelector('[data-deck-new]')?.addEventListener('click', () => {
+      deckSheet = null;
+      newDeck = { title: '', language, locked: false, busy: false };
+      returnView = view;
+      view = 'new-deck';
+      paint();
+    });
+    root.querySelector('[data-deck-title]')?.addEventListener('input', (event) => {
+      newDeck.title = event.target.value;
+      const go = root.querySelector('[data-deck-create]');
+      if (go) go.disabled = !newDeck.title.trim();
+    });
+    root.querySelectorAll('[data-deck-language]').forEach((button) => {
+      button.onclick = () => {
+        newDeck.language = button.dataset.deckLanguage;
+        paint();
+      };
+    });
+    root.querySelector('[data-deck-cancel]')?.addEventListener('click', () => {
+      newDeck = null;
+      view = returnView || 'overview';
+      paint();
+    });
+    root.querySelector('[data-deck-create]')?.addEventListener('click', async () => {
+      if (!newDeck || newDeck.busy) return;
+      newDeck.busy = true;
+      paint();
+      try {
+        const made = await ctx.mutate(() =>
+          api.libraryCollectionCreate({ kind: 'word', title: newDeck.title.trim() }),
+        );
+        if (!alive()) return;
+        decks = [...decks, made];
+        if (adding) adding.chosen = made.id;
+        newDeck = null;
+        view = returnView || 'overview';
+        paint();
+        status(c.persisted);
+      } catch {
+        if (!alive()) return;
+        newDeck.busy = false;
+        paint();
+        status(c.failedSave);
+      }
     });
     root.querySelector('[data-deck-settings]')?.addEventListener('click', () => {
       deckSettingsOpen = true;

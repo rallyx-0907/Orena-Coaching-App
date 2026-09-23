@@ -1918,3 +1918,35 @@ The frame draws the button and names what it does; no frame draws the free
 pass itself. It opens the set's own cards and writes nothing to the schedule,
 which is what the label says. If the human wants a distinct screen for it, that
 is a design decision, not an implementation one.
+
+## Adding a word, and the set it lands in (2026-09-23)
+
+Frames **22 Save to deck sheet mobile**, **23 Add word modal**, **24 Add word
+mobile**, **25 Create deck mobile** and **29 Vocabulary empty mobile** — built
+and measured.
+
+**The set is a Thư viện của tôi collection** (D-074), of the `word` kind. No
+deck model was rebuilt: a new set is `POST /api/library/collections`, a word
+joins one by the library item that keeping it already made, and nothing about
+a set is kept on the device. The gate refuses a second store.
+
+The add screen fills itself from the catalogue as the learner types — the
+frame's "đã điền sẵn" — and never overwrites what they have already written. A
+word the catalogue does not know says nothing rather than accusing them of
+inventing it.
+
+Two things recorded rather than decided:
+
+1. **No populated Vocabulary frame draws a way to add a word by hand.** The
+   `+` and "Tự thêm từ" are on frame 29, the empty room, and that is where they
+   are. Frame 23's own title — "Thêm từ vào Norsk hverdag" — says the other
+   door is on a *set*, which belongs to the Thư viện của tôi frames, not to
+   these. Until that door is drawn there, a learner with words reaches the add
+   screen through the set picker on frame 22.
+2. **Frame 25 draws a cover-colour chooser and nothing stores a chosen
+   colour.** `library_collections` has `title`, `kind` and `language_code`; a
+   colour is a column, and a column is a schema change under independent
+   review. The set's cover is therefore the app's own, drawn from the set's
+   identity exactly as every other cover in the room is drawn, and the chooser
+   is not faked. **Proposed:** `library_collections.cover` (a short token, not
+   a hex value, so the palette stays the theme's) — for the next review round.
