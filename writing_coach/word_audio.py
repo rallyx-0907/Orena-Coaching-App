@@ -368,22 +368,48 @@ class CommonsVoice:
 
 
 class KokoroVoice:
-    """A local voice, used only when no real recording binds to this reading.
+    """A local voice, used only where no real recording binds to this reading.
 
-    Configured by `KOKORO_TTS_URL`. Unconfigured, it says so, and the caller
-    answers "no audio" rather than reaching for some other voice: a synthetic
-    reading of the wrong sound is the same mistake as the wrong recording.
+    Configured by `KOKORO_TTS_URL`, which points at a Kokoro server's
+    OpenAI-compatible speech route (`.../v1/audio/speech`). Unconfigured - which
+    is the default - it reports itself unavailable, and the library answers "no
+    audio" rather than reaching for some other voice.
+
+    **It refuses a word whose reading is in question.** A Kokoro server is told
+    text and speaks it in its own voice: given 行 it produces that character's
+    default reading, and there is no field in that request that says "the háng
+    one". Answering anyway would attach a confident recording of the wrong
+    sound to a learner's word, which is the one thing this feature exists to
+    prevent. A deployment whose voice *can* be told the reading - a
+    grapheme-to-phoneme override in front of it - declares itself with
+    `KOKORO_READING_AWARE=1`, and then it is asked.
+
+    So today the fallback covers the words that have one reading and no
+    recording. The multi-reading gaps Commons leaves stay gaps, and
+    `docs/project/UI_BACKEND_GAPS.md` says so rather than this quietly
+    filling them.
     """
 
     name = "kokoro"
+    # Kokoro's own default voices, per learning language.
+    VOICES = {"en": "af_heart", "zh": "zf_xiaobei"}
 
-    def __init__(self, *, url: str | None = None, post: Callable[[str, bytes], bytes] | None = None) -> None:
+    def __init__(self, *, url: str | None = None, post: Callable[[str, bytes], bytes] | None = None,
+                 reading_aware: bool | None = None) -> None:
         self._url = url if url is not None else os.getenv("KOKORO_TTS_URL", "")
         self._post = post or self._request
+        self._reading_aware = (
+            reading_aware if reading_aware is not None
+            else os.getenv("KOKORO_READING_AWARE", "") == "1"
+        )
 
     @property
     def configured(self) -> bool:
         return bool(str(self._url or "").strip())
+
+    @property
+    def reading_aware(self) -> bool:
+        return bool(self._reading_aware)
 
     def _request(self, url: str, body: bytes) -> bytes:
         request = urllib.request.Request(
@@ -395,9 +421,21 @@ class KokoroVoice:
     def speak(self, *, term: str, language: str, reading: str, single_reading: bool) -> Spoken | None:
         if not self.configured:
             return None
-        # The voice is told the reading, not just the written word - which is
-        # the only way a synthesised 行 can be the right one.
-        body = json.dumps({"text": term, "reading": reading, "language": language}).encode("utf-8")
+        if not single_reading and not self.reading_aware:
+            # The word has more than one reading and this voice cannot be told
+            # which. Saying nothing is the only honest answer.
+            _log.info("kokoro declined an ambiguous reading: no reading-aware voice configured")
+            return None
+        body = json.dumps({
+            "model": "kokoro",
+            # What is spoken. The reading is sent too, for a deployment that
+            # knows what to do with it; a plain Kokoro ignores the field.
+            "input": term,
+            "reading": reading,
+            "language": language,
+            "voice": self.VOICES.get(language, "af_heart"),
+            "response_format": "wav",
+        }).encode("utf-8")
         try:
             audio = self._post(self._url, body)
         except (urllib.error.URLError, urllib.error.HTTPError, ValueError, OSError, TimeoutError) as error:
@@ -409,6 +447,8 @@ class KokoroVoice:
             audio=audio,
             media_type="audio/wav",
             source="kokoro",
+            # Generated, not licensed: there is no author to credit, and a
+            # surface should say it was generated rather than imply a recording.
             licence="generated",
             attribution="Kokoro (generated)",
             voice="kokoro",

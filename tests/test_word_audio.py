@@ -187,17 +187,51 @@ def test_an_unconfigured_kokoro_says_so_instead_of_speaking():
     assert voice.speak(term="harbour", language="en", reading="", single_reading=True) is None
 
 
-def test_a_configured_kokoro_is_told_the_reading():
+def test_a_configured_kokoro_speaks_a_word_with_one_reading():
     asked: list[dict] = []
 
     def post(url: str, body: bytes) -> bytes:
         asked.append(json.loads(body.decode("utf-8")))
         return b"RIFF-not-really-but-bytes"
 
-    voice = KokoroVoice(url="http://kokoro.test/speak", post=post)
-    spoken = voice.speak(term="行", language="zh", reading="háng", single_reading=False)
+    voice = KokoroVoice(url="http://kokoro.test/v1/audio/speech", post=post)
+    spoken = voice.speak(term="harbour", language="en", reading="", single_reading=True)
     assert spoken is not None and spoken.voice == "kokoro"
-    assert asked == [{"text": "行", "reading": "háng", "language": "zh"}]
+    assert spoken.licence == "generated", "a generated clip is not a licensed recording"
+    assert asked[0]["input"] == "harbour" and asked[0]["voice"] == "af_heart"
+
+
+def test_a_plain_kokoro_refuses_a_word_whose_reading_is_in_question():
+    """A Kokoro server is told text and speaks its default reading. Given 行 it
+    cannot be told "the háng one", so answering would attach a confident
+    recording of the wrong sound - the one thing this feature prevents."""
+
+    asked: list[dict] = []
+
+    def post(url: str, body: bytes) -> bytes:
+        asked.append(json.loads(body.decode("utf-8")))
+        return b"RIFF-not-really-but-bytes"
+
+    voice = KokoroVoice(url="http://kokoro.test/v1/audio/speech", post=post)
+    assert voice.speak(term="行", language="zh", reading="háng", single_reading=False) is None
+    assert asked == [], "it is not even asked"
+
+
+def test_a_reading_aware_deployment_is_asked_and_is_told_the_reading():
+    """A deployment with a grapheme-to-phoneme override in front of it says so,
+    and then it is trusted with the reading."""
+
+    asked: list[dict] = []
+
+    def post(url: str, body: bytes) -> bytes:
+        asked.append(json.loads(body.decode("utf-8")))
+        return b"RIFF-not-really-but-bytes"
+
+    voice = KokoroVoice(url="http://kokoro.test/v1/audio/speech", post=post, reading_aware=True)
+    spoken = voice.speak(term="行", language="zh", reading="háng", single_reading=False)
+    assert spoken is not None
+    assert asked[0]["reading"] == "háng" and asked[0]["input"] == "行"
+    assert asked[0]["voice"] == "zf_xiaobei"
 
 
 # --- What Commons is allowed to answer with -----------------------------

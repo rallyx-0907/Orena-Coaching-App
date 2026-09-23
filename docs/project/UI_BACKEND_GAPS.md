@@ -1652,3 +1652,32 @@ human decision, recorded as one rather than read out of a frame:
 
 My Library still plays nothing - its frames draw no speaker - so the split is:
 the review card plays, the word panel credits. The gate holds both halves.
+
+## The fallback may not guess a reading, and a plain Kokoro cannot be told one (2026-09-23)
+
+Standing the real service up made the limit plain, so the adapter now says it
+out loud instead of discovering it in production.
+
+A Kokoro server is told **text** and speaks it in its own voice. Given 行 it
+produces that character's default reading; its request has no field that says
+"the háng one". Answering anyway would attach a confident recording of the
+wrong sound to a learner's word - the one thing this whole feature exists to
+prevent - so `KokoroVoice` **refuses a word whose reading is in question** and
+is not even asked.
+
+What that means for the three gaps the coverage measurement named:
+
+| | |
+| --- | --- |
+| Words with one reading and no recording | the fallback covers them |
+| 行 háng, 重 chóng, 差 chāi | **still uncovered**, and honestly so |
+
+A deployment that *can* honour a reading - a grapheme-to-phoneme override in
+front of the voice - declares itself with `KOKORO_READING_AWARE=1`, and then it
+is asked and told the reading. That override does not exist here, and building
+one is its own piece of work, not something to assume.
+
+`KokoroVoice` also speaks the real protocol now (`POST .../v1/audio/speech`
+with an OpenAI-compatible body and a per-language voice) rather than the shape
+the first draft invented, and a generated clip is recorded as `generated`, with
+no author, so a surface can say it was made rather than imply a recording.
