@@ -90,6 +90,7 @@ from writing_coach.library_api import configure_library, router as library_route
 from writing_coach.word_audio import WordAudioLibrary, default_voices
 from writing_coach.word_audio_api import configure_word_audio, router as word_audio_router
 from writing_coach.word_deep import configure_word_deep, router as word_deep_router
+from writing_coach.word_clips import router as word_clips_router
 from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
     configure_listening_media_library,
@@ -631,6 +632,10 @@ configure_word_deep(
     ),
 )
 app.include_router(word_deep_router)
+# Where a word is actually said (2026-09-23). A read over the listening
+# catalogue's own timestamped segments: no store, no generated audio, and a
+# word never said in the catalogue simply has no clips.
+app.include_router(word_clips_router)
 # Learner summary (I6 read step): each domain's own evidence, side by side,
 # through the reads the app already serves. No surface calls it yet.
 configure_learner_summary(runtime_sources(

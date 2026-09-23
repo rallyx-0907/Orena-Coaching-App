@@ -312,6 +312,15 @@ const en = {
   vocabularyTitle: 'Vocabulary',
   vocabularyOverviewNote: 'Browse what you are learning, meet a few new words, and return to what needs review.',
   vocabularySavedCount: 'Saved',
+  /* The word heard where it is said (frames 06 and 07). */
+  vocabularyClipCount: '{n} clips',
+  vocabularyOtherContexts: 'Other contexts',
+  vocabularyOpenClip: 'Open the clip',
+  vocabularyNoClips: 'This word is not said anywhere in the catalogue yet.',
+  wordDeepClips: '{n} clips with this word in context',
+  wordDeepSeeClips: 'See in context',
+  play: 'Play',
+  pause: 'Pause',
   /* The room's own search (frames 20 and 21). */
   vocabularySearchSaved: 'Saved',
   vocabularySearchDictionary: 'Dictionary',
@@ -815,6 +824,15 @@ const zh = {
   vocabularyTitle: '词汇',
   vocabularyOverviewNote: '看看正在学习的词，认识今天的新词，也回到值得复习的内容。',
   vocabularySavedCount: '已保存',
+  /* The word heard where it is said (frames 06 and 07). */
+  vocabularyClipCount: '{n} 个片段',
+  vocabularyOtherContexts: '其他语境',
+  vocabularyOpenClip: '打开片段',
+  vocabularyNoClips: '目前目录里没有说到这个词。',
+  wordDeepClips: '{n} 个片段里有这个词',
+  wordDeepSeeClips: '看语境',
+  play: '播放',
+  pause: '暂停',
   /* The room's own search (frames 20 and 21). */
   vocabularySearchSaved: '已保存',
   vocabularySearchDictionary: '词典',

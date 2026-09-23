@@ -1973,3 +1973,44 @@ word it has already been handed.
 A catalogue word that the learner has already kept says so rather than offering
 to keep it twice. A result opens the word all the way — which is one of the
 three doors the deep desktop frame names.
+
+## The word, heard where it is said (2026-09-23)
+
+Frames **06 Vocabulary context clips** and **07 Vocabulary context clips
+mobile** — built and measured, with the way in the desktop deep frame draws
+("N clip có từ này trong ngữ cảnh · Xem ngữ cảnh"), which appears only when
+there are clips.
+
+**Every clip is a real moment in real media.** A clip is a timestamped segment
+of a listening-catalogue lesson whose *own transcript* contains the word — the
+lesson's vocabulary list is not evidence that the word is in any particular
+moment of it. Nothing is generated and nothing is stitched: the gate refuses a
+voice import in that module, and a word the catalogue has never said has no
+clips and says so.
+
+`GET /api/library/vocabulary/{word}/clips` is a read over what the catalogue
+already holds — the line, its pinyin, its translation in the learner's support
+language, when it starts and ends, and the lesson's own rights-reviewed
+playback reference. No store, no column. Playing one starts where the segment
+starts and stops where it ends; an embed is not seeked inside, because the
+rights review that admitted it did not admit that.
+
+## Frame 05 "Vocabulary strokes" — not built, and why (2026-09-23)
+
+This is the one frame of the thirty-two that is **not** built, and it is not a
+UI gap: it needs stroke-order data the app does not have and cannot derive.
+
+- **The source that fits**: Make Me a Hanzi (`graphics.txt` / `dictionary.txt`),
+  which carries per-character stroke paths and medians for ~9,500 characters.
+- **The pipeline it needs**: fetch once, index by character, store under the
+  existing `BookAssetStore` seam (no schema, exactly as per-word audio and the
+  deep-explanation cache do), and serve one character's strokes by digest.
+- **Why it stops here**: the data is derived from the Arphic fonts and carries
+  the **Arphic Public License** alongside the project's own. Admitting a body
+  of third-party content into the product is a **rights decision per source**,
+  which `AGENTS.md` "Architecture holds" reserves for the human — the same rule
+  that governs adding a text to the reading library.
+
+Nothing was faked in its place: the deep desktop screen is one column-pair
+until the strokes column has real strokes to draw, and no stroke animation,
+tracing grid or "13 nét" figure is drawn from a guess.

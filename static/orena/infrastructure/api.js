@@ -192,6 +192,12 @@ export const api={
     ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/deep${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
     isTransientRequestError,
   ),
+  /* Where a word is actually said: timestamped moments in the listening
+     catalogue whose own transcript contains it. Nothing generated. */
+  wordClips:(word,limit=6)=>retryOnce(
+    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/clips?limit=${Number(limit)||6}`),
+    isTransientRequestError,
+  ),
   /* The learner's own state over what a listing is drawing: kept, marked,
      filed. One call for a page of rows, never one per row. */
   libraryItems:({kind='',words=[],sources=[]}={})=>{

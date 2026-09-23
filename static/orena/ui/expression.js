@@ -29,6 +29,7 @@ import { openUnderstanding, judgementLabel } from './understanding.js';
 import { wordDeepHtml } from './word-deep.js';
 import { addWordScreen, createDeckScreen, saveToDeckSheet } from './word-add.js';
 import { vocabularySearchHtml } from './vocabulary-search.js';
+import { wordClipsHtml } from './word-clips.js';
 import {
   bindWritingFeedback,
   revisionHtml,
@@ -1509,6 +1510,10 @@ export async function renderLanguage(root, ctx) {
   let deepPage = 'meaning';
   let deepReturn = 'overview';
   let deepRequest = 0;
+  /* The word heard where it is said. `sound` is the one element playing, so a
+     second clip cannot start over the first. */
+  let clipState = null;
+  let sound = null;
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -1530,13 +1535,69 @@ export async function renderLanguage(root, ctx) {
     document.addEventListener('keydown', deepKeys);
     paint();
     try {
-      const data = await api.wordDeep(wanted);
+      const [data, clips] = await Promise.all([
+        api.wordDeep(wanted),
+        api.wordClips(wanted).catch(() => null),
+      ]);
       if (!alive() || token !== deepRequest) return;
-      deepData = { ...data, language };
+      deepData = { ...data, language, clipCount: Number(clips?.total || 0) };
       deepState = 'ready';
     } catch {
       if (!alive() || token !== deepRequest) return;
       deepState = 'failed';
+    }
+    paint();
+  }
+
+  const stopClip = () => {
+    if (!sound) return;
+    sound.pause();
+    sound = null;
+  };
+
+  /* Play exactly the moment the clip is, and stop at its end - the segment is
+     what the learner asked to hear, not the lesson it sits in. */
+  const playClip = () => {
+    const clip = clipState?.clips?.[clipState.at];
+    if (!clip?.url || clip.kind === 'embed') return;
+    stopClip();
+    sound = new Audio(clip.url);
+    sound.playbackRate = clipState.speed || 1;
+    sound.currentTime = (Number(clip.startMs) || 0) / 1000;
+    const stopAtEnd = () => {
+      if (sound && sound.currentTime * 1000 >= (Number(clip.endMs) || 0)) {
+        stopClip();
+        clipState.playing = false;
+        if (alive()) paint();
+      }
+    };
+    sound.addEventListener('timeupdate', stopAtEnd);
+    sound
+      .play()
+      .then(() => {
+        clipState.playing = true;
+        if (alive()) paint();
+      })
+      .catch(() => {
+        clipState.playing = false;
+        if (alive()) paint();
+      });
+  };
+
+  async function openWordClips(word) {
+    const wanted = String(word || '').trim();
+    if (!wanted) return;
+    returnView = view;
+    clipState = { word: wanted, reading: deepData?.reading || '', clips: [], at: 0, playing: false, speed: 1, busy: true };
+    view = 'clips';
+    paint();
+    try {
+      const answer = await api.wordClips(wanted);
+      if (!alive()) return;
+      clipState = { ...clipState, clips: answer.clips || [], busy: false };
+    } catch {
+      if (!alive()) return;
+      clipState = { ...clipState, busy: false };
     }
     paint();
   }
@@ -1812,7 +1873,7 @@ export async function renderLanguage(root, ctx) {
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
     const bare = view === 'overview' && !savedCards.length && !savedError;
-    root.innerHTML = view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    root.innerHTML = view === 'clips' ? wordClipsHtml(c, { ...clipState, language }) : view === 'search' ? vocabularySearchHtml(c, { ...searching, language }) : bare ? emptyRoom() : view === 'add-word' ? addWordScreen(c, { ...adding, collections: decks }) : view === 'new-deck' ? createDeckScreen(c, { ...newDeck, languages: deckLanguages() }) : view === 'deck-error' ? deckLoadError() : view === 'deck-done' ? deckNothingDue() : view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     if (deckSheet)
       root.insertAdjacentHTML(
         'beforeend',
@@ -1893,6 +1954,42 @@ export async function renderLanguage(root, ctx) {
       };
     });
     root.querySelectorAll('[data-word-deep-back]').forEach((button) => (button.onclick = closeWordDeep));
+    root.querySelector('[data-word-deep-clips]')?.addEventListener('click', () => openWordClips(deepWord));
+    /* The clips screen. */
+    root.querySelector('[data-clips-back]')?.addEventListener('click', () => {
+      stopClip();
+      clipState = null;
+      view = returnView || 'overview';
+      paint();
+    });
+    root.querySelector('[data-clip-toggle]')?.addEventListener('click', () => {
+      if (clipState.playing) {
+        stopClip();
+        clipState.playing = false;
+        paint();
+        return;
+      }
+      playClip();
+    });
+    root.querySelector('[data-clip-again]')?.addEventListener('click', playClip);
+    root.querySelector('[data-clip-speed]')?.addEventListener('click', () => {
+      clipState.speed = clipState.speed === 1 ? 0.75 : 1;
+      if (sound) sound.playbackRate = clipState.speed;
+      paint();
+    });
+    root.querySelectorAll('[data-clip-play]').forEach((button) => {
+      button.onclick = () => {
+        stopClip();
+        clipState.at = Number(button.dataset.clipPlay);
+        clipState.playing = false;
+        paint();
+        playClip();
+      };
+    });
+    root.querySelector('[data-clip-open]')?.addEventListener('click', (event) => {
+      stopClip();
+      location.hash = link('encounter', { id: `media:${event.currentTarget.dataset.clipOpen}`, intent: 'follow' });
+    });
     root.querySelectorAll('[data-word-deep-retry]').forEach((button) => (button.onclick = () => openWordDeep(deepWord)));
     root.querySelectorAll('[data-word-deep-page]').forEach((button) => {
       button.onclick = () => {

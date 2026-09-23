@@ -144,5 +144,12 @@ export function wordDeepHtml(c, data, { page = 'meaning', state = 'ready' } = {}
     return `<section class="word-deep"><p class="notice" role="alert">${esc(c.unavailable)} <button type="button" class="quiet" data-word-deep-retry>${esc(c.retry)}</button> <button type="button" class="quiet" data-word-deep-back>${esc(c.back)}</button></p></section>`;
   const meaning = meaningPage(c, data);
   const yours = yoursPage(c, data);
-  return `<section class="word-deep" data-word-deep-page-now="${esc(page)}">${head(c, data)}<div class="word-deep__body">${data.gloss ? `<p class="word-deep__gloss">${esc(data.gloss)}</p>` : ''}<div class="word-deep__half word-deep__half--meaning"${page === 'meaning' ? '' : ' hidden'}>${meaning}</div><div class="word-deep__half word-deep__half--yours"${page === 'yours' ? '' : ' hidden'}>${yours}</div></div>${foot(c, data, page)}</section>`;
+  /* The row the desktop frame draws under the cards: how many clips there are
+     and the way to them. Drawn only when there are some, because a row saying
+     "0 clips" is a row about nothing. */
+  const clips = Number(data.clipCount) || 0;
+  const toClips = clips
+    ? `<button type="button" class="word-deep__clips" data-word-deep-clips>${icon('film-strip', { size: 26 })}<span>${esc(String(c.wordDeepClips).replace('{n}', String(clips)))}</span><strong>${esc(c.wordDeepSeeClips)}</strong></button>`
+    : '';
+  return `<section class="word-deep" data-word-deep-page-now="${esc(page)}">${head(c, data)}<div class="word-deep__body">${data.gloss ? `<p class="word-deep__gloss">${esc(data.gloss)}</p>` : ''}<div class="word-deep__half word-deep__half--meaning"${page === 'meaning' ? '' : ' hidden'}>${meaning}</div><div class="word-deep__half word-deep__half--yours"${page === 'yours' ? '' : ' hidden'}>${yours}</div>${toClips}</div>${foot(c, data, page)}</section>`;
 }

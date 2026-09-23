@@ -5232,3 +5232,213 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
 }
 .vocab-search__kept { flex: none; display: flex; color: var(--status-success); }
 .vocab-search__none { margin: 0; padding-block-start: 12px; font-size: 14px; color: var(--text-secondary); }
+
+
+/* --- The word heard where it is said -------------------------------------
+   Frames 06 "Vocabulary context clips" and 07 "Vocabulary context clips
+   mobile". Every clip is a real moment in real media, so nothing here has a
+   placeholder state: a word with no clips does not reach this screen. */
+.word-clips { display: flex; flex-direction: column; min-block-size: 100%; }
+.word-clips__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block-end: 14px;
+  box-shadow: inset 0 -1px 0 var(--glass-hairline);
+}
+.word-clips__head .icon-button {
+  inline-size: 32px;
+  block-size: 32px;
+  min-block-size: 32px;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+}
+.word-clips__word {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: var(--weight-semibold);
+  font-size: 26px;
+  line-height: 1;
+}
+.word-clips__reading { font-size: 14px; color: var(--accent-ink); }
+.word-clips__count { margin-inline-start: auto; font-size: 11px; color: var(--text-secondary); }
+.word-clips__stage {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-block-start: 16px;
+}
+.word-clips__screen {
+  position: relative;
+  block-size: 196px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+.word-clips__screen .content-cover { position: absolute; inset: 0; }
+.word-clips__play {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: 62px;
+  block-size: 62px;
+  min-block-size: 62px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glass-scrim);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  color: var(--accent-solid-light);
+}
+.word-clips__where {
+  position: absolute;
+  inset-block-start: 11px;
+  inset-inline-start: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--glass-scrim);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+}
+.word-clips__where svg { color: var(--accent-ink); }
+.word-clips__speed {
+  position: absolute;
+  inset-block-end: 11px;
+  inset-inline-end: 11px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass-scrim);
+  color: var(--accent-solid-light);
+  font-size: 10.5px;
+}
+.word-clips__said { display: flex; flex-direction: column; gap: 8px; }
+.word-clips__line {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.55;
+}
+.word-clips__mark {
+  border-radius: 5px;
+  padding: 1px 5px;
+  background: var(--accent-highlight);
+}
+.word-clips__reading-line { font-size: 11.5px; color: var(--text-secondary); }
+.word-clips__meaning { font-size: 13.5px; color: var(--text-secondary); }
+.word-clips__actions { display: flex; gap: 9px; }
+.clip-action {
+  flex: 1;
+  block-size: 44px;
+  min-block-size: 44px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--accent-chip);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: inherit;
+  font-size: 13.5px;
+  font-weight: var(--weight-bold);
+}
+.word-clips__rule { block-size: 1px; background: var(--glass-hairline); }
+.word-clips__label { font-size: 10.5px; letter-spacing: 0.13em; }
+.word-clips__others { display: flex; flex-direction: column; gap: 10px; }
+.clip-row {
+  display: flex;
+  gap: 12px;
+  padding: 11px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+  color: inherit;
+  text-align: start;
+}
+.clip-row__art {
+  position: relative;
+  flex: none;
+  inline-size: 108px;
+  block-size: 62px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+.clip-row__art .content-cover { position: absolute; inset: 0; }
+.clip-row__go {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 50%;
+  background: var(--glass-scrim);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-solid-light);
+}
+.clip-row__len {
+  position: absolute;
+  inset-block-end: 10px;
+  inset-inline-end: 10px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--glass-scrim);
+  font-size: 10.5px;
+}
+.clip-row__text {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+.clip-row__where { font-size: 10.5px; color: var(--accent-ink); }
+.clip-row__line {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.word-clips__none { margin: 0; padding-block-start: 24px; font-size: 14px; color: var(--text-secondary); }
+
+/* The desktop deep screen's way in, as that frame draws it. */
+.word-deep__clips {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--glass-well-sunk);
+  box-shadow: var(--glass-ring);
+  color: inherit;
+  font-size: 15px;
+  text-align: start;
+}
+.word-deep__clips svg { flex: none; color: var(--accent-ink); }
+.word-deep__clips > span { flex: 1; }
+.word-deep__clips strong { color: var(--accent-ink); font-weight: var(--weight-bold); }
+@media (min-width: 1000px) {
+  .word-deep__clips { font-size: 18px; }
+  .word-deep__clips strong { font-size: 17px; }
+}

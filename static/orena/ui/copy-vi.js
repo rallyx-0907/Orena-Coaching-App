@@ -513,6 +513,15 @@ export const vi = {
   vocabularySave: 'Lưu từ',
   vocabularySaved: 'Đã lưu',
   vocabularySavedCount: 'Đã lưu',
+  /* The word heard where it is said (frames 06 and 07). */
+  vocabularyClipCount: '{n} clip',
+  vocabularyOtherContexts: 'Ngữ cảnh khác',
+  vocabularyOpenClip: 'Mở clip',
+  vocabularyNoClips: 'Chưa có clip nào trong thư viện nói từ này.',
+  wordDeepClips: '{n} clip có từ này trong ngữ cảnh',
+  wordDeepSeeClips: 'Xem ngữ cảnh',
+  play: 'Phát',
+  pause: 'Tạm dừng',
   /* The room's own search (frames 20 and 21). */
   vocabularySearchSaved: 'Đã lưu',
   vocabularySearchDictionary: 'Từ điển',
