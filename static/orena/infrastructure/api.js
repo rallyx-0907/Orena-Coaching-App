@@ -185,6 +185,13 @@ export const api={
     ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
     isTransientRequestError,
   ),
+  /* One word, opened all the way: what the canonical deep frames draw, in
+     one read. A section the app has nothing for is absent from the answer
+     rather than empty in it. */
+  wordDeep:(word,reading='')=>retryOnce(
+    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/deep${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
+    isTransientRequestError,
+  ),
   /* The learner's own state over what a listing is drawing: kept, marked,
      filed. One call for a page of rows, never one per row. */
   libraryItems:({kind='',words=[],sources=[]}={})=>{

@@ -4317,3 +4317,158 @@ a.my-library-item:hover { box-shadow: var(--glass-ring), var(--glass-ring-focus)
 /* On the overview the bar ends with the streak, so the window keeps its place
    beside the tabs and the chip takes the right edge. */
 .topbar-window:not(:last-child) { margin-inline-start: 0; }
+
+
+/* --- One word, opened all the way ----------------------------------------
+   The canonical frames "Vocabulary card deep" (the dictionary's half),
+   "Vocabulary card deep scrolled" (the learner's half) and "Vocabulary deep
+   desktop" (both halves at once). The phone frames are drawn 1:1, so their
+   numbers are these; the desktop frame is drawn at 62%, so its boxes are
+   divided by 0.62 and its type is taken as computed. */
+.word-deep {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100%;
+  gap: 0;
+}
+.word-deep__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 14px;
+  box-shadow: inset 0 -1px 0 var(--glass-hairline);
+}
+.word-deep__back, .word-deep__speak {
+  inline-size: 32px;
+  block-size: 32px;
+  min-block-size: 32px;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+}
+.word-deep__back { color: var(--text-secondary); }
+.word-deep__speak { margin-inline-start: auto; }
+.word-deep__word {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: var(--weight-semibold);
+  font-size: 26px;
+  line-height: 1;
+}
+.word-deep__reading { font-size: 14px; color: var(--accent-ink); }
+.word-deep__body {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-block-start: 16px;
+}
+.word-deep__gloss {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: var(--weight-heavy);
+  font-size: 17px;
+}
+.word-deep__half { display: flex; flex-direction: column; gap: 16px; }
+.word-deep__section { display: flex; flex-direction: column; gap: 8px; }
+.word-deep__label {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.word-deep__rows { display: flex; flex-direction: column; gap: 9px; }
+.word-deep__sense, .word-deep__pair, .word-deep__source, .word-deep__mine {
+  border-radius: 13px;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+}
+.word-deep__sense { display: flex; gap: 12px; padding: 13px 14px; }
+.word-deep__pos {
+  flex: none;
+  inline-size: 58px;
+  font-size: 11.5px;
+  color: var(--accent-ink);
+}
+.word-deep__meaning { flex: 1; font-size: 14.5px; line-height: 1.5; }
+.word-deep__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.word-deep__chip {
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-size: 13.5px;
+}
+.word-deep__pair { display: flex; gap: 12px; padding: 12px 14px; }
+.word-deep__term {
+  flex: none;
+  inline-size: 44px;
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 17px;
+  color: var(--accent-ink);
+}
+.word-deep__pair--wide .word-deep__term { inline-size: 72px; }
+.word-deep__note { flex: 1; font-size: 14px; line-height: 1.5; color: var(--text-secondary); }
+.word-deep__text { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); }
+.word-deep__source { display: flex; align-items: center; gap: 11px; padding: 12px 14px; }
+.word-deep__source svg { flex: none; color: var(--accent-ink); }
+.word-deep__source-title { flex: 1; font-size: 13.5px; color: var(--text-secondary); }
+.word-deep__mine { padding: 13px 14px; display: block; }
+.word-deep__mine-text {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.word-deep__mine-text mark { background: none; color: var(--accent-ink); }
+.word-deep__mine-note {
+  display: block;
+  margin-block-start: 5px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.word-deep__foot {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  padding-block-start: 12px;
+  margin-block-start: 16px;
+  box-shadow: inset 0 1px 0 var(--glass-hairline);
+}
+.word-deep__action {
+  flex: 1;
+  block-size: 50px;
+  min-block-size: 50px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: var(--display-font);
+  font-weight: var(--weight-bold);
+  font-size: 14.5px;
+  color: var(--text-primary);
+}
+.word-deep__action[aria-pressed='true'] svg { color: var(--status-success); }
+
+/* The desktop frame puts both halves on one screen: the dictionary's half at
+   the left, the learner's at the right. The markup does not fork for it - the
+   half the phone has put away is simply shown again, so the two layouts can
+   never drift apart - and the foot goes, because that frame draws none. */
+@media (min-width: 1000px) {
+  .word-deep__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 36px;
+    align-items: start;
+  }
+  .word-deep__gloss { grid-column: 1 / -1; font-size: 26px; }
+  .word-deep__half[hidden] { display: flex; }
+  .word-deep__word { font-size: 44px; }
+  .word-deep__reading { font-size: 18px; }
+  .word-deep__foot { display: none; }
+}

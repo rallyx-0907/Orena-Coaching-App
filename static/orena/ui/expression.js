@@ -26,6 +26,7 @@ import {
   masteryStars,
 } from './vocabulary-experience.js';
 import { openUnderstanding, judgementLabel } from './understanding.js';
+import { wordDeepHtml } from './word-deep.js';
 import {
   bindWritingFeedback,
   revisionHtml,
@@ -1119,6 +1120,16 @@ export async function renderLanguage(root, ctx) {
   /* Which chip the library is filtered by: 'all', 'published', or a
      language code the catalogue actually holds. */
   let packFilter = 'all';
+  /* One word, opened all the way: which word, what came back, and which of the
+     two pages the phone is on. `deepReturn` is the view to go back to, so a
+     word opened from a review card returns to that card rather than to the
+     room's front. */
+  let deepWord = '';
+  let deepData = null;
+  let deepState = 'ready';
+  let deepPage = 'meaning';
+  let deepReturn = 'overview';
+  let deepRequest = 0;
 
   const refreshSavedCards = () => {
     savedCards = (savedData.items || []).map((item) =>
@@ -1126,6 +1137,47 @@ export async function renderLanguage(root, ctx) {
     );
   };
   refreshSavedCards();
+
+  async function openWordDeep(word) {
+    const wanted = String(word || '').trim();
+    if (!wanted) return;
+    const token = (deepRequest += 1);
+    if (view !== 'deep') deepReturn = view;
+    deepWord = wanted;
+    deepData = null;
+    deepState = 'loading';
+    deepPage = 'meaning';
+    view = 'deep';
+    document.addEventListener('keydown', deepKeys);
+    paint();
+    try {
+      const data = await api.wordDeep(wanted);
+      if (!alive() || token !== deepRequest) return;
+      deepData = { ...data, language };
+      deepState = 'ready';
+    } catch {
+      if (!alive() || token !== deepRequest) return;
+      deepState = 'failed';
+    }
+    paint();
+  }
+
+  const closeWordDeep = () => {
+    deepRequest += 1;
+    view = deepReturn || 'overview';
+    deepWord = '';
+    deepData = null;
+    document.removeEventListener('keydown', deepKeys);
+    paint();
+  };
+
+  /* Escape leaves the way the back arrow does, which is what the desktop
+     frame's own note asks for. */
+  function deepKeys(event) {
+    if (event.key !== 'Escape' || view !== 'deep') return;
+    event.preventDefault();
+    closeWordDeep();
+  }
 
   const summary = () => savedData.summary || {
     saved: savedCards.length,
@@ -1324,7 +1376,7 @@ export async function renderLanguage(root, ctx) {
     if (!alive()) return;
     /* No `saved` view: a learner's own words are Thư viện của tôi's (D-074),
        which lists, searches, marks, files and deletes them. */
-    root.innerHTML = view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
+    root.innerHTML = view === 'deep' ? wordDeepHtml(c, deepData || { headword: deepWord, language }, { page: deepPage, state: deepState }) : view === 'overview' ? overview() : view === 'library' ? libraryView() : view === 'collection' ? collectionDetail() : view === 'collection-list' ? collectionView() : studyView();
     bind();
   };
 
@@ -1381,6 +1433,72 @@ export async function renderLanguage(root, ctx) {
   };
 
   const bind = () => {
+    /* One word, opened all the way. The word on the back of a review card
+       opens itself; the screen's own foot moves between the two pages the
+       phone frames draw, and Escape leaves the way the back arrow does. */
+    root.querySelectorAll('[data-vocabulary-deep]').forEach((node) => {
+      const open = (event) => {
+        event.stopPropagation();
+        openWordDeep(node.dataset.vocabularyDeep);
+      };
+      node.onclick = open;
+      node.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') open(event);
+      };
+    });
+    root.querySelectorAll('[data-word-deep-back]').forEach((button) => (button.onclick = closeWordDeep));
+    root.querySelectorAll('[data-word-deep-retry]').forEach((button) => (button.onclick = () => openWordDeep(deepWord)));
+    root.querySelectorAll('[data-word-deep-page]').forEach((button) => {
+      button.onclick = () => {
+        deepPage = button.dataset.wordDeepPage;
+        paint();
+      };
+    });
+    root.querySelectorAll('[data-word-deep-speak]').forEach((button) => {
+      button.onclick = async () => {
+        button.disabled = true;
+        try {
+          const found = await api.wordAudio(deepWord, deepData?.reading || '');
+          if (!alive()) return;
+          if (!found?.available || !found.url) return;
+          button.title = found.attribution || '';
+          await new Audio(found.url).play();
+        } catch {
+          /* A word with no recording is a word with no recording. */
+        } finally {
+          if (alive()) button.disabled = false;
+        }
+      };
+    });
+    root.querySelectorAll('[data-word-deep-keep]').forEach((button) => {
+      button.onclick = async () => {
+        if (!deepData) return;
+        button.disabled = true;
+        try {
+          if (deepData.saved) await ctx.mutate(() => api.deleteLibraryVocabulary(deepWord));
+          else await ctx.mutate(() => api.saveLibraryVocabulary({ word: deepWord }));
+          if (!alive()) return;
+          deepData = { ...deepData, saved: !deepData.saved };
+          paint();
+        } catch {
+          button.disabled = false;
+        }
+      };
+    });
+    /* "Ask more" is the shared explanation, over the sentence this word was
+       met in - the same one every other surface asks through. */
+    root.querySelectorAll('[data-word-deep-ask]').forEach((button) => {
+      button.onclick = () => {
+        const context = (deepData?.sources || [])[0]?.title || (deepData?.senses || [])[0]?.example || deepWord;
+        openUnderstanding(ctx, {
+          selection: deepWord,
+          context: String(context).slice(0, 2400),
+          title: c.wordDeepAsk,
+          question: c.askWhy,
+          origin: null,
+        });
+      };
+    });
     /* A kept word already carries the sentence it came from, which is exactly
        the context the shared explanation needs. Without this the list is
        something to reread rather than something a learner can question - the

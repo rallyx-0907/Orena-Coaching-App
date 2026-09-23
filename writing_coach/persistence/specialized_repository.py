@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -26,6 +27,46 @@ from writing_coach.persistence.models import (
     User,
     UserLanguageProfile,
 )
+
+
+# Sentences end at one of these, in either writing system: a Chinese full stop
+# is not a dot, and a learner writing Chinese never types one.
+_SENTENCE_END = re.compile(r"(?<=[.!?。！？；;])\s*")
+
+
+def _like(value: str) -> str:
+    """A LIKE pattern's literal text: the wildcards are ours, not the word's."""
+
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _sentences_from(rows: list[dict[str, Any]], word: str, limit: int) -> list[dict[str, Any]]:
+    """The sentences inside these pieces of writing that use the word.
+
+    A piece of writing is not a sentence: matching the essay is how the
+    database narrows the search, and this is what the learner is actually
+    shown - the sentence they wrote, not the paragraph it sits in.
+    """
+
+    wanted = word.casefold()
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        for sentence in _SENTENCE_END.split(str(row.get("text") or "")):
+            line = " ".join(sentence.split())
+            if not line or wanted not in line.casefold() or line.casefold() in seen:
+                continue
+            seen.add(line.casefold())
+            out.append(
+                {
+                    "text": line[:400],
+                    "written_on": str(row.get("created_at") or ""),
+                    "checked": bool(row.get("checked")),
+                }
+            )
+            if len(out) >= limit:
+                return out
+    return out
 
 
 def _hint_level(values: dict[str, Any]) -> int:
@@ -173,6 +214,7 @@ class SpecializedLearningRepository(Protocol):
     ) -> dict[str, Any]: ...
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
+    def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]: ...
     def get_library_progress(self, word: str) -> dict[str, Any] | None: ...
     def update_library_review(self, word: str, values: dict[str, Any]) -> dict[str, Any] | None: ...
     def delete_library_record(self, word: str) -> bool: ...
@@ -201,6 +243,34 @@ class SQLiteSpecializedLearningRepository:
     The DB resolver already scopes one user + one language. Specialized services
     consume this contract and no longer own SQLite queries themselves.
     """
+
+    def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]:
+        """The learner's own sentences that use this word, newest first."""
+
+        wanted = str(word or "").strip()
+        if not wanted:
+            return []
+        try:
+            with self._db() as conn:
+                rows = conn.execute(
+                    "SELECT id, text, created_at, overall FROM essays "
+                    "WHERE text LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT ?",
+                    (f"%{_like(wanted)}%", max(1, min(limit, 20)) * 3),
+                ).fetchall()
+        except sqlite3.Error:
+            return []
+        return _sentences_from(
+            [
+                {
+                    "text": str(row["text"] or ""),
+                    "created_at": str(row["created_at"] or ""),
+                    "checked": bool(row["overall"]),
+                }
+                for row in rows
+            ],
+            wanted,
+            limit,
+        )
 
     def __init__(self, db_factory: Callable[[], sqlite3.Connection]) -> None:
         self._db_factory = db_factory
@@ -909,6 +979,37 @@ class SQLiteSpecializedLearningRepository:
 
 class PostgresSpecializedLearningRepository:
     """SQLAlchemy implementation ready for a later explicit runtime cutover."""
+
+    def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]:
+        """The learner's own sentences that use this word, newest first."""
+
+        wanted = str(word or "").strip()
+        if not wanted:
+            return []
+        uid, lang = self._scope()
+        with Session(self.engine) as session:
+            rows = session.execute(
+                select(Essay.text, Essay.created_at, Essay.overall)
+                .where(
+                    Essay.user_id == uid,
+                    Essay.language_code == lang,
+                    Essay.text.contains(wanted),
+                )
+                .order_by(Essay.created_at.desc())
+                .limit(max(1, min(limit, 20)) * 3)
+            ).all()
+        return _sentences_from(
+            [
+                {
+                    "text": str(row[0] or ""),
+                    "created_at": self._iso(row[1]),
+                    "checked": bool(row[2]),
+                }
+                for row in rows
+            ],
+            wanted,
+            limit,
+        )
 
     def __init__(self, engine: Engine | None = None, *, url: str | None = None,
                  user_key_provider: Callable[[], str] = current_user_key,

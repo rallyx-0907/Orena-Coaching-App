@@ -376,6 +376,35 @@ def _reading_texts(entry: Mapping[str, Any]) -> list[str]:
     return texts
 
 
+def catalog_entry_for(term: str) -> dict[str, Any] | None:
+    """The catalogue's entry for a word, or None.
+
+    The same decision the saved list makes about which entry a word is, so a
+    screen that opens one word cannot disagree with the list it was opened
+    from.
+    """
+
+    return _catalog_entry_for(term)
+
+
+def catalog_neighbours(term: str, *, limit: int = 12) -> list[dict[str, Any]]:
+    """Published entries that contain this word and are longer than it.
+
+    What the word combines into, from the catalogue. Empty when the content
+    repository is unavailable: a combination the catalogue cannot confirm is
+    not offered.
+    """
+
+    normalized = normalize_vocabulary_word(term)
+    if not normalized or _content_repository is None:
+        return []
+    language = current_language_code().strip().casefold()
+    try:
+        return _content_repository.find_neighbours(language, normalized, limit=limit)
+    except (VocabularyContentUnavailable, RuntimeError, OSError, AttributeError):
+        return []
+
+
 def catalog_readings(term: str) -> list[str]:
     """The readings the catalogue has for this word, as plain strings.
 

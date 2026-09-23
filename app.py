@@ -89,6 +89,7 @@ from writing_coach.collection_api import configure_collection, runtime_owners, r
 from writing_coach.library_api import configure_library, router as library_router
 from writing_coach.word_audio import WordAudioLibrary, default_voices
 from writing_coach.word_audio_api import configure_word_audio, router as word_audio_router
+from writing_coach.word_deep import configure_word_deep, router as word_deep_router
 from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
     configure_listening_media_library,
@@ -618,6 +619,18 @@ configure_word_audio(
     lambda: WordAudioLibrary(FilesystemBookAssetStore(_word_audio_root), default_voices())
 )
 app.include_router(word_audio_router)
+# One word, opened all the way (2026-09-23), for the canonical deep frames.
+# Also no schema: the explained half is cached in the asset store beside the
+# audio, keyed by the same (entry identity, reading) the audio is keyed by, and
+# the learner's own sentences are read from the writing they already have.
+_word_deep_root = Path(os.getenv("WORD_DEEP_ASSET_ROOT", str(ROOT / "data" / "word_deep")))
+configure_word_deep(
+    store=lambda: FilesystemBookAssetStore(_word_deep_root),
+    learner_sentences=lambda word, _language, limit: _specialized_learning_repository.sentences_using(
+        word, limit=limit
+    ),
+)
+app.include_router(word_deep_router)
 # Learner summary (I6 read step): each domain's own evidence, side by side,
 # through the reads the app already serves. No surface calls it yet.
 configure_learner_summary(runtime_sources(

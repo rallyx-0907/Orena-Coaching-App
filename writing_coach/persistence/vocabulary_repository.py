@@ -168,6 +168,9 @@ class VocabularyRepository(Protocol):
         offset: int = 0,
     ) -> dict[str, Any] | None: ...
     def find_entry(self, language_code: str, normalized_term: str) -> dict[str, Any] | None: ...
+    def find_neighbours(
+        self, language_code: str, normalized_term: str, *, limit: int = 12
+    ) -> list[dict[str, Any]]: ...
     def list_entries_for_language(
         self, language_code: str, *, limit: int = 1000
     ) -> list[dict[str, Any]]: ...
@@ -915,6 +918,58 @@ class SQLAlchemyVocabularyRepository:
                 .limit(1)
             )
             return _entry_dict(entry) if entry is not None else None
+
+    def find_neighbours(
+        self, language_code: str, normalized_term: str, *, limit: int = 12
+    ) -> list[dict[str, Any]]:
+        """Published entries that contain this word and are longer than it.
+
+        What a word combines into, taken from the catalogue rather than from a
+        model: every row returned is an entry an admitted collection already
+        carries, with its own meaning and reading. Shorter first, so 想要 comes
+        before 想不到 — the shorter combination is the commoner one.
+
+        Bounded by `limit` and ordered inside the database, because this is
+        read while a learner is waiting for one word's screen.
+        """
+
+        self._require_available()
+        needle = _text(normalized_term)
+        if not needle:
+            return []
+        with Session(self.engine) as session:
+            rows = list(
+                session.execute(
+                    select(VocabularyEntry)
+                    .join(
+                        VocabularyCollectionMembership,
+                        VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                    )
+                    .join(
+                        VocabularyCollection,
+                        VocabularyCollection.id == VocabularyCollectionMembership.collection_id,
+                    )
+                    .where(
+                        VocabularyEntry.language_code == _text(language_code).casefold(),
+                        VocabularyEntry.normalized_term.contains(needle),
+                        VocabularyEntry.normalized_term != needle,
+                        VocabularyCollection.catalog_status == "published",
+                    )
+                    .order_by(
+                        func.length(VocabularyEntry.normalized_term),
+                        VocabularyEntry.identity_key,
+                    )
+                    .limit(max(0, min(limit, 40)))
+                ).scalars()
+            )
+            seen: set[uuid.UUID] = set()
+            result: list[dict[str, Any]] = []
+            for entry in rows:
+                if entry.id in seen:
+                    continue
+                seen.add(entry.id)
+                result.append(_entry_dict(entry))
+            return result
 
     def list_entries_for_language(
         self, language_code: str, *, limit: int = 1000

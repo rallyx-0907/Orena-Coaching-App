@@ -1814,3 +1814,40 @@ Two gates moved with the behaviour rather than being weakened:
 `test_orena_vocabulary_paging.mjs` now pins the cursor on `ui/collection.js` and
 pins that `ui/expression.js` holds no `saved` view at all;
 `test_orena_vocabulary_experience.mjs` pins the same absence.
+
+## One word, opened all the way (2026-09-23)
+
+Frames **03 Vocabulary card deep**, **04 Vocabulary card deep scrolled** and
+**26 Vocabulary deep desktop** — built, measured, and fed by real reads.
+
+Each section has one source, and a section with nothing in it is **absent**
+rather than filled:
+
+| Section | Where it comes from |
+| --- | --- |
+| Nhiều nghĩa · từ loại | the catalogue entry's `detailed_definitions` / `short_meanings`, its part of speech and its examples |
+| Kết hợp thường gặp | **new**: `VocabularyRepository.find_neighbours` — published entries that contain this word and are longer, shorter first |
+| Cụm liên quan | the same neighbours, kept only where one carries a meaning |
+| Đối chiếu · Mô hình tư duy | the explanation capability, **cached in the asset store** under `blake2s(identity, reading, support)`, so a word opened twice costs one call and says one thing |
+| Lỗi thường gặp | the catalogue's own `usage_notes` first; the explanation only where the catalogue is silent |
+| Lấy từ đâu | the provenance the saved word already carries (`source_kind`, `source_fragment`) — one row, because one place is what the app recorded |
+| Câu của bạn | **new**: `sentences_using` on both repositories — the learner's own writing, narrowed by the database and cut to sentences here |
+
+No schema: the explanation cache is a `BookAssetStore` key, as per-word audio
+is. `GET /api/library/vocabulary/{word}/deep` is the whole screen in one read.
+
+**Two things the frames do not settle**, recorded rather than decided:
+
+1. **No canonical frame draws a way in.** The desktop frame's own note says the
+   screen opens "từ mặt sau thẻ, từ kết quả tìm hoặc từ màn tổng kết", but
+   frames 08–10 and 18–19 draw no control for it. The word on the back of a
+   card opens itself — an attribute and a keyboard role, no pixel added. Search
+   and the summary will open it when those frames are built. A drawn
+   affordance is the human's decision.
+2. **The desktop frame draws no way to keep or unkeep** from this screen, and
+   no "ask more"; both are in the phone frames' foot. The foot is therefore
+   hidden at desktop width, so keeping is done where the desktop draws it — on
+   the card and in the list.
+
+The frame's strokes column (right, 640px) is frame 05's work and is not in this
+slice; the desktop screen is one column-pair until it lands.
