@@ -64,7 +64,9 @@ export function viewFrom(params) {
 
 export function viewTabs({ view, t, href }) {
   return `<nav class="ac-subtabs" aria-label="${esc(t.readingViewsLabel)}">${VIEWS.map((id) => {
-    const target = href('reading', id === 'queue' ? {} : { view: id });
+    // Reading lives inside Content (canonical design), so its own views are
+    // addresses within that section rather than a section of their own.
+    const target = href('content', id === 'queue' ? { kind: 'reading' } : { kind: 'reading', view: id });
     return `<a class="ac-tab" href="${esc(target)}"${id === view ? ' aria-current="page"' : ''}>${esc(t[`readingView_${id}`])}</a>`;
   }).join('')}</nav>`;
 }

@@ -30,7 +30,7 @@ import {
   renderImports,
 } from '../static/orena/admin/imports.js';
 import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
-import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, SECTIONS } from '../static/orena/admin/shell.js';
+import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, legacyParams, SECTIONS } from '../static/orena/admin/shell.js';
 import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows, cursorPager } from '../static/orena/admin/reading.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
@@ -422,7 +422,12 @@ assert.match(operationsTable, /50%/, 'and with its failure-rate rule');
 assert.doesNotMatch(operationsView({ available: true, has_data: true, recent: [], by_capability: [] }, en, 'en'), new RegExp(en.opsHealthRule.split('{')[0]), 'no rule is shown when the server did not state one');
 
 // ---- shell -------------------------------------------------------------------
-assert.deepEqual(SECTIONS, ['overview', 'ai', 'users', 'content', 'reading', 'imports', 'operations']);
+/* Six areas, and Reading is a Content view rather than a seventh (canonical
+   design). A link to the tab it briefly had still lands somewhere real. */
+assert.deepEqual(SECTIONS, ['overview', 'ai', 'users', 'content', 'imports', 'operations']);
+assert.equal(sectionFrom({ id: 'reading' }), 'content', 'the old Reading tab resolves into Content');
+assert.deepEqual(legacyParams({ id: 'reading' }), { kind: 'reading' }, 'and it carries the kind with it');
+assert.equal(legacyParams({ id: 'content' }), null, 'a current id carries nothing extra');
 assert.equal(sectionFrom({ id: 'ai' }), 'ai');
 assert.equal(sectionFrom({ id: 'nope' }), 'overview');
 assert.equal(sectionHref('overview'), '#/admin');
@@ -432,7 +437,7 @@ assert.deepEqual(badgeCounts(attention), { ai: 1, content: 1, operations: 1 });
 const frame = frameView({ section: 'users', t: zh, attention });
 assert.match(frame, /aria-current="page">用户/);
 assert.match(frame, /<h1>平台管理<\/h1>/);
-assert.equal((frame.match(/class="ac-tab"/g) || []).length, 7);
+assert.equal((frame.match(/class="ac-tab"/g) || []).length, 6);
 
 // ---- reading ------------------------------------------------------------------
 /* The engine's operator surface: six views of one catalog, a preview that is

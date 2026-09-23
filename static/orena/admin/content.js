@@ -9,13 +9,14 @@
    to change. There is no delete, unpublish or edit, because nothing
    implements them. */
 import { adminApi } from './api.js';
+import { renderReading } from './reading.js';
 import { openDrawer } from './drawer.js';
 import { chip, dateShort, dateTime, duration, esc, fill, kv, languageName, notice, num, pager, panel, select, table } from './format.js';
 import { safeExternal } from '../ui/html.js';
 import { entryIcon } from '../ui/icons.js';
 
 export const PAGE_SIZE = 25;
-const KINDS = ['all', 'book', 'media', 'vocabulary'];
+const KINDS = ['all', 'book', 'media', 'vocabulary', 'reading'];
 const KIND_ICON = { book: 'book', media: 'sound', vocabulary: 'leaf' };
 export const RIGHTS = ['public_domain', 'licensed', 'creator_authorized', 'internal_curated'];
 
@@ -195,6 +196,37 @@ export function contentDetailView(detail, t, ui, intent = '') {
   ])}<section><h3>${esc(t.entries)}</h3>${entries}${detail.entry_total > (detail.entries || []).length ? `<p class="ac-muted">${esc(fill(t.entriesShown, { shown: num((detail.entries || []).length, ui), total: num(detail.entry_total, ui) }))}</p>` : ''}</section><section><h3>${esc(t.importSources)}</h3>${sources}</section>${record.actions.includes('publish') ? publishForm(detail, t) : ''}</div>`;
 }
 
+/* A kind is part of the address, not hidden state: switching tab changes the
+   hash, so an operator can link to "Content, Reading" and land there - and so
+   Reading, whose body is a different shape entirely, is entered through the
+   router rather than swapped in underneath. */
+/* The tab counts, including Reading's own. The content endpoint counts the
+   three catalogues it owns; Reading keeps its own lifecycle and its own
+   endpoint, so the number comes from there rather than being left at zero -
+   an operator reading "Reading 0" beside a full review queue would be reading
+   a lie. */
+async function contentCounts(api) {
+  const [shared, reading] = await Promise.allSettled([
+    api.content({ limit: 1, offset: 0 }),
+    api.readingOperations(),
+  ]);
+  const counts = shared.status === 'fulfilled' ? { ...(shared.value.counts || {}) } : {};
+  if (reading.status === 'fulfilled') {
+    const articles = reading.value.articles || {};
+    counts.reading = Object.values(articles).reduce((total, value) => total + Number(value || 0), 0);
+  }
+  return counts;
+}
+
+function bindKindTabs(container, env) {
+  container.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-ac-kind]');
+    if (!button || typeof location === 'undefined') return;
+    const kind = button.dataset.acKind;
+    location.hash = env.href('content', kind === 'all' ? {} : { kind });
+  });
+}
+
 export async function renderContent(container, env) {
   const { t, ui, alive } = env;
   const api = env.api || adminApi;
@@ -220,14 +252,29 @@ export async function renderContent(container, env) {
     offset,
   });
 
+  /* Reading is a content catalogue with a review lifecycle of its own, so it
+     keeps its own views inside this section rather than being flattened into
+     the shared table: a candidate is not a published item, and the operator
+     acting on one needs the queue, not a row. */
+  if (filters.kind === 'reading') {
+    const counts = await contentCounts(api);
+    if (!alive()) return undefined;
+    container.innerHTML = `<div data-ac-tabs>${contentTabs('reading', counts, t, ui)}</div><div data-ac-reading></div>`;
+    bindKindTabs(container, env);
+    return renderReading(container.querySelector('[data-ac-reading]'), env);
+  }
+
   data = await request();
   if (!alive()) return;
+  const counts = await contentCounts(api);
+  if (!alive()) return undefined;
   container.innerHTML = panel({
     title: t.section_content,
-    body: `<div data-ac-tabs>${contentTabs(filters.kind, data.counts, t, ui)}</div>${contentToolbar(filters, t)}<div data-ac-results>${contentTable(data, t, ui)}</div>`,
+    body: `<div data-ac-tabs>${contentTabs(filters.kind, counts, t, ui)}</div>${contentToolbar(filters, t)}<div data-ac-results>${contentTable(data, t, ui)}</div>`,
   });
   const results = container.querySelector('[data-ac-results]');
   const tabs = container.querySelector('[data-ac-tabs]');
+  bindKindTabs(container, env);
 
   const reload = async () => {
     results?.setAttribute('aria-busy', 'true');
@@ -239,7 +286,7 @@ export async function renderContent(container, env) {
     if (!alive()) return;
     results?.removeAttribute('aria-busy');
     if (results) results.innerHTML = data ? contentTable(data, t, ui) : notice(t.loadFailed, 'bad');
-    if (tabs && data) tabs.innerHTML = contentTabs(filters.kind, data.counts, t, ui);
+    if (tabs && data) tabs.innerHTML = contentTabs(filters.kind, { ...counts, ...(data.counts || {}) }, t, ui);
   };
 
   const open = async (key, intent = '') => {
@@ -322,9 +369,7 @@ export async function renderContent(container, env) {
   container.addEventListener('click', (event) => {
     const kindButton = event.target.closest('[data-ac-kind]');
     if (kindButton) {
-      filters.kind = kindButton.dataset.acKind;
-      offset = 0;
-      reload();
+      // Handled by `bindKindTabs`: the kind lives in the address.
       return;
     }
     const page = event.target.closest('[data-page]');

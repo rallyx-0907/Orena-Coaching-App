@@ -1,6 +1,6 @@
 /* The Platform Admin console frame.
 
-   Seven sections behind one route: `#/admin` is the Overview and
+   Six sections behind one route: `#/admin` is the Overview and
    `#/admin?id=<section>` is every other section, so the router needs nothing
    new and every section can be linked to. The frame is operator tooling: a
    small heading, the runtime facts an operator checks first, the sections,
@@ -16,17 +16,19 @@ import { renderOverview } from './overview.js';
 import { renderAi } from './ai.js';
 import { renderUsers } from './users.js';
 import { renderContent } from './content.js';
-import { renderReading } from './reading.js';
 import { renderImports } from './imports.js';
 import { renderOperations } from './operations.js';
 
-export const SECTIONS = ['overview', 'ai', 'users', 'content', 'reading', 'imports', 'operations'];
+export const SECTIONS = ['overview', 'ai', 'users', 'content', 'imports', 'operations'];
+/* Reading is a Content view, not a seventh area (canonical design). It briefly
+   had its own tab; links to it stay valid rather than 404-ing an operator's
+   bookmark. */
+const LEGACY_SECTIONS = { reading: { section: 'content', params: { kind: 'reading' } } };
 const RENDERERS = {
   overview: renderOverview,
   ai: renderAi,
   users: renderUsers,
   content: renderContent,
-  reading: renderReading,
   imports: renderImports,
   operations: renderOperations,
 };
@@ -38,7 +40,14 @@ const memory = { attention: null, runtime: null, runtimeAt: 0 };
 
 export function sectionFrom(location) {
   const id = String(location?.id || '');
+  if (LEGACY_SECTIONS[id]) return LEGACY_SECTIONS[id].section;
   return SECTIONS.includes(id) ? id : 'overview';
+}
+
+/* What a legacy id carried with it - `?id=reading` means Content, scoped to
+   Reading, not Content's first tab. */
+export function legacyParams(location) {
+  return LEGACY_SECTIONS[String(location?.id || '')]?.params || null;
 }
 
 export function sectionHref(section, params = {}) {
@@ -133,7 +142,7 @@ export async function renderConsole(root, ctx) {
     api,
     ctx,
     alive,
-    params: typeof location === 'undefined' ? {} : hashParams(location.hash),
+    params: { ...(typeof location === 'undefined' ? {} : hashParams(location.hash)), ...(legacyParams(ctx.location) || {}) },
     href: sectionHref,
     remember: (facts) => {
       memory.attention = facts.attention;
