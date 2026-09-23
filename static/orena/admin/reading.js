@@ -24,7 +24,7 @@
 import { adminApi } from './api.js';
 import { openDrawer } from './drawer.js';
 import { errorBlock, failureDetail, loadingBlock, pending } from './states.js';
-import { watch as watchJob } from './tray.js';
+import { subscribe as onTrayChange, watch as watchJob } from './tray.js';
 import { chip, dateTime, esc, fill, kv, mono, notice, num, panel, select, table } from './format.js';
 
 export const VIEWS = ['queue', 'published', 'rejected', 'archived', 'sources', 'add'];
@@ -34,10 +34,6 @@ export const VIEW_STATUS = {
   rejected: 'rejected',
   archived: 'archived,unpublished',
 };
-/* Job state is worth watching while an operator is looking at it, and worth
-   nothing when they are not. Five seconds is slow enough to be polite and fast
-   enough that a paste feels answered. */
-export const JOB_POLL_MS = 5000;
 const INPUT_KINDS = ['text', 'url', 'file'];
 const LANGUAGES = ['en', 'zh'];
 
@@ -189,6 +185,17 @@ export function rightsChips(state, t) {
   }).join('')}</span>`;
 }
 
+/* Rights help an operator decide; they do not decide for them. The engine has
+   never gated publication on this and it still does not - what changes here is
+   that the console says which of the three answers it is looking at, in the
+   weight each deserves, next to the button that acts on it. */
+export function rightsAdvice(state, t) {
+  const answers = RIGHTS_QUESTIONS.map((question) => (state || {})[question] || 'unknown');
+  if (answers.includes('denied')) return notice(t.rightsAdviceDenied, 'bad');
+  if (answers.includes('unknown')) return notice(t.rightsAdviceUnknown, 'warn');
+  return notice(t.rightsAdviceAllowed, 'ok');
+}
+
 export function previewBody(article, t, ui) {
   const source = article.source || {};
   const facts = kv([
@@ -231,6 +238,7 @@ export function previewBody(article, t, ui) {
     }) }),
     panel({ title: t.readingBodyTitle, body: `<div class="ac-reading-body">${esc(article.body || '').split('\n\n').map((para) => `<p>${esc(para)}</p>`).join('')}</div>` }),
     panel({ title: t.readingHistoryTitle, body: events }),
+    rightsAdvice(article.source?.rights_state, t),
     `<form class="ac-form" data-ac-review>
       ${select({ name: 'reviewed_level', label: t.readingLevelOverride, options: [['', t.readingLevelKeep], ...levelOptions(article.language)], value: article.reviewed_level || '' })}
       <label class="ac-field"><span>${esc(t.readingTopic)}</span><input type="text" name="topic" value="${esc(article.topic || '')}" maxlength="120"></label>
@@ -373,6 +381,7 @@ export async function renderReading(host, env) {
      what decides between the form and the confirmation that replaces it. */
   let queued = false;
   let timer = null;
+  let stopWatching = () => {};
   const stop = () => {
     clearInterval(timer);
     timer = null;
@@ -577,20 +586,20 @@ export async function renderReading(host, env) {
 
   host.addEventListener('click', onClick);
   host.addEventListener('submit', onSubmit);
-  /* Polling exists only here, only while Add Content is open, and stops with
-     the section. Nothing else in Orena watches a job. */
-  if (view === 'add' && typeof setInterval === 'function') {
-    timer = setInterval(() => {
-      if (!alive()) {
-        stop();
-        return;
-      }
+  /* There is one clock in the console and it belongs to the tray. Add Content
+     used to run a second interval over the same jobs; now it redraws when the
+     tray learns something, so the server is asked once per round however many
+     things are watching. */
+  if (view === 'add') {
+    stopWatching = onTrayChange(() => {
+      if (!alive()) return;
       loadOrExplain().catch(() => {});
-    }, JOB_POLL_MS);
+    });
   }
 
   return () => {
     stop();
+    stopWatching();
     host.removeEventListener('click', onClick);
     host.removeEventListener('submit', onSubmit);
   };

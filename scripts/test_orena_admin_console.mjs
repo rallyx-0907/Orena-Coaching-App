@@ -31,7 +31,7 @@ import {
 } from '../static/orena/admin/imports.js';
 import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
 import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, legacyParams, SECTIONS } from '../static/orena/admin/shell.js';
-import { watch as watchJob, items as trayItems, clear as clearTray, trayView, refresh as refreshTray, progress as trayProgress, inFlight } from '../static/orena/admin/tray.js';
+import { watch as watchJob, items as trayItems, clear as clearTray, trayView, refresh as refreshTray, progress as trayProgress, inFlight, ticking, POLL_MS, SETTLED_MS } from '../static/orena/admin/tray.js';
 import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows, cursorPager, submissionFrom, targetRows, targetSummary } from '../static/orena/admin/reading.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
@@ -688,8 +688,17 @@ assert.equal(trayProgress({ stage: 'done', status: 'completed' }), 100);
 await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done', result_kind: 'article_created' }) }, 1000);
 assert.equal(inFlight(), 0, 'a finished job leaves the in-flight count');
 assert.equal(trayItems().length, 1, 'and stays on screen long enough to be read');
-await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done' }) }, 1000 + 60001);
+assert.ok(ticking(), 'the clock keeps running while a finished job is still shown');
+await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done' }) }, 1000 + SETTLED_MS + 1);
 assert.equal(trayItems().length, 0, 'then leaves - the tray is work in flight, not history');
+assert.equal(ticking(), false, 'and only then does the clock stop');
+/* One clock and one settle window for the whole console: a second constant
+   somewhere else is how "the tray hides itself" stops being true. */
+assert.ok(POLL_MS > 0 && SETTLED_MS > POLL_MS, 'the settle window outlasts a poll');
+assert.doesNotMatch(read('static/orena/admin/reading.js'), /setInterval/,
+  'the Add view follows the tray clock instead of running a second one');
+assert.doesNotMatch(read('static/orena/admin/shell.js'), /TRAY_POLL_MS|= 5000/,
+  'the shell takes the interval from tray.js rather than declaring its own');
 clearTray();
 
 console.log('Platform Admin control center: copy parity, server contracts, honest absence, no secrets, isolated imports, one colour owner PASS');

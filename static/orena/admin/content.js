@@ -2,12 +2,17 @@
    (curated lessons and shared imports) and vocabulary collections - read from
    /api/admin/console/content, which keeps each item's own identity.
 
-   Actions appear only where a backend contract exists: a published book can be
-   archived, a vocabulary collection waiting for review can be published after
-   its rights are confirmed, and media imported from a link can be read again.
-   Every action opens the item first, so the operator sees what they are about
-   to change. There is no delete, unpublish or edit, because nothing
-   implements them. */
+   Actions appear only where a backend contract exists, and only the ones that
+   apply from where the item is: a published media item can be taken off the
+   shelf or archived, an unpublished one can go back out, a published book can
+   be archived, a vocabulary collection waiting for review can be published,
+   and media imported from a link can be read again. Every action opens the
+   item first, so the operator sees what they are about to change.
+
+   Nothing here deletes. Taking an item back is a state - its bytes, its
+   transcript, its provenance and its audit trail all survive it - so a
+   decision can be undone, which is the whole reason these are states and not
+   a row that disappears. */
 import { adminApi } from './api.js';
 import { renderReading } from './reading.js';
 import { gapNote, loadingBlock } from './states.js';
@@ -114,6 +119,27 @@ function learnerLink(detail, t) {
     : '';
 }
 
+/* Which state each lifecycle button asks the server for. */
+const MEDIA_STATES = {
+  unpublish: 'unpublished',
+  archive: 'archived',
+  republish: 'published',
+  restore: 'published',
+};
+
+/* What each lifecycle decision means, in the words of the thing it does. The
+   two that take an item back say what survives, because "unpublish" and
+   "delete" are easy to hear as the same word. */
+function lifecycleConfirm(intent, t) {
+  const said = {
+    unpublish: [t.unpublishConfirm, t.actionUnpublish],
+    archive: [t.archiveConfirm, t.actionArchive],
+    republish: [t.restoreConfirm, t.actionRepublish],
+    restore: [t.restoreConfirm, t.actionRestore],
+  }[intent];
+  return said ? confirmBlock({ intent, text: said[0], action: said[1], t }) : '';
+}
+
 function confirmBlock({ intent, text, action, t }) {
   return `<div class="ac-confirm" data-ac-confirm="${esc(intent)}"><p>${esc(text)}</p><div class="ac-actions"><button type="button" class="ac-button ac-button--primary" data-ac-do="${esc(intent)}">${esc(action)}</button><button type="button" class="ac-button" data-ac-do="cancel">${esc(t.cancel)}</button></div><p class="ac-editor__status" role="status" data-ac-result></p></div>`;
 }
@@ -133,19 +159,26 @@ export function publishForm(detail, t) {
 /* The decision, in the pane's pinned footer. `confirmBlock` still renders in
    the body when an action is armed - the footer offers the action, the body
    carries what confirming it means. */
+/* The lifecycle, in the order an operator reads it: the quiet ways off the
+   shelf first, then the one that puts something in front of learners. Each
+   button is offered only where the record says it applies, so a drawer never
+   asks which of two buttons does anything. */
+const LIFECYCLE = [
+  ['unpublish', 'actionUnpublish', false],
+  ['archive', 'actionArchive', false],
+  ['reprocess', 'actionReprocess', false],
+  ['restore', 'actionRestore', true],
+  ['republish', 'actionRepublish', true],
+  ['publish', 'actionPublish', true],
+];
+
 export function contentDetailFooter(detail, t) {
   const record = detail.record || {};
-  const buttons = [];
-  if (record.actions?.includes('archive')) {
-    buttons.push(`<button type="button" class="ac-button" data-ac-intent-open="archive">${esc(t.actionArchive)}</button>`);
-  }
-  if (record.actions?.includes('reprocess')) {
-    buttons.push(`<button type="button" class="ac-button" data-ac-intent-open="reprocess">${esc(t.actionReprocess)}</button>`);
-  }
-  if (record.actions?.includes('publish')) {
-    buttons.push(`<button type="button" class="ac-button ac-button--primary" data-ac-intent-open="publish">${esc(t.actionPublish)}</button>`);
-  }
-  return buttons.join('');
+  const offered = new Set(record.actions || []);
+  return LIFECYCLE
+    .filter(([name]) => offered.has(name))
+    .map(([name, key, primary]) => `<button type="button" class="ac-button${primary ? ' ac-button--primary' : ''}" data-ac-intent-open="${esc(name)}">${esc(t[key])}</button>`)
+    .join('');
 }
 
 export function contentDetailView(detail, t, ui, intent = '') {
@@ -195,7 +228,7 @@ export function contentDetailView(detail, t, ui, intent = '') {
       source.imported_by ? [t.importedBy, esc(source.imported_by)] : null,
     ])}</section><section><h3>${esc(t.transcript)}</h3>${lines}</section>${learnerLink(detail, t)}${record.origin === 'curated' ? `<p class="ac-note">${esc(t.curatedNote)}</p>` : ''}${intent === 'reprocess'
       ? `${confirmBlock({ intent: 'reprocess', text: t.reprocessConfirm, action: t.actionReprocess, t })}<fieldset class="ac-field" disabled><legend>${esc(t.reprocessOptions)}</legend><label class="ac-check"><input type="checkbox" checked> <span>${esc(t.reprocessKeepTargets)}</span></label><label class="ac-check"><input type="checkbox" checked> <span>${esc(t.reprocessRerunLevel)}</span></label></fieldset>${gapNote(t, t.reprocessOptionsGap)}`
-      : ''}</div>`;
+      : lifecycleConfirm(intent, t)}</div>`;
   }
   const entries = table({
     head: [t.colTerm, t.colReading, t.colMeaning, t.level, t.colPos],
@@ -361,6 +394,12 @@ export async function renderContent(container, env) {
         if (action.dataset.acDo === 'archive') {
           await api.archiveBook(id);
           env.notify?.(t.archived);
+        } else if (MEDIA_STATES[action.dataset.acDo]) {
+          /* A state, not a deletion: the transcript, the provenance and the
+             audit trail all survive it, which is why the confirmation says
+             "off the shelf" rather than "remove". */
+          await api.setMediaStatus(id, MEDIA_STATES[action.dataset.acDo]);
+          env.notify?.(t[`mediaDone_${action.dataset.acDo}`] || t.saved);
         } else if (action.dataset.acDo === 'reprocess') {
           const outcome = await api.reprocessMedia(id);
           env.notify?.(fill(t.reprocessDone, { status: t[`status_${outcome.item?.status}`] || outcome.item?.status || '' }));

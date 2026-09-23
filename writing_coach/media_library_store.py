@@ -16,9 +16,10 @@ import re
 import tempfile
 import threading
 from dataclasses import asdict, dataclass
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 from urllib.parse import urlsplit
 
 from writing_coach.listening_catalog import EN_LEVELS, ZH_LEVELS
@@ -56,6 +57,10 @@ class MediaLibraryEntry:
     library: str
     created_at: str
     lesson: Mapping[str, Any] | None
+    # Where this item is in its life, not where it is stored. An index written
+    # before this field existed holds rows that were, by being in it, published
+    # - which is why the default is the only honest one.
+    status: str = "published"
 
 
 class MediaLibraryStore(Protocol):
@@ -93,6 +98,12 @@ def validate_entry(entry: MediaLibraryEntry) -> MediaLibraryEntry:
     # ownership, because learner-owned persistence is a reserved decision.
     if entry.library not in {"shared", "personal"}:
         raise ValueError("library is invalid")
+    # Three states and no fourth: `published` is served, `unpublished` is off
+    # the shelf for now, `archived` is retired. None of them is a deletion -
+    # the bytes, the provenance and the transcript survive all three, so a
+    # decision can be taken back.
+    if entry.status not in {"published", "unpublished", "archived"}:
+        raise ValueError("status is invalid")
     if entry.language not in {"en", "zh"}:
         raise ValueError("language is invalid")
     if entry.level and entry.level not in (EN_LEVELS if entry.language == "en" else ZH_LEVELS):
@@ -173,13 +184,27 @@ class FileMediaLibraryStore:
             temporary = Path(handle.name)
         temporary.replace(self._index)
 
-    def list(self, *, language: str | None = None, library: str = "shared") -> list[MediaLibraryEntry]:
+    def list(
+        self,
+        *,
+        language: str | None = None,
+        library: str = "shared",
+        status: str | None = "published",
+    ) -> list[MediaLibraryEntry]:
+        """Published only, unless the caller says otherwise.
+
+        The default is what a learner may see, because every learner-facing
+        path reaches this method and a new state must never become visible by
+        forgetting to filter. `status=None` is the operator's listing.
+        """
         entries = self._read().values()
         return sorted(
             (
                 item
                 for item in entries
-                if item.library == library and (language is None or item.language == language)
+                if item.library == library
+                and (language is None or item.language == language)
+                and (status is None or item.status == status)
             ),
             key=lambda item: (item.created_at, item.media_id), reverse=True,
         )

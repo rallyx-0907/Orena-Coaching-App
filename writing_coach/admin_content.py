@@ -106,8 +106,7 @@ def media_record(entry: Any) -> dict[str, Any]:
         "title": entry.title,
         "subtitle": " · ".join(part for part in (source_label(entry), _text(entry.creator)) if part),
         "language": entry.language,
-        # Imported shared media is served to learners the moment it is stored.
-        "status": "published",
+        "status": getattr(entry, "status", "published"),
         "origin": "imported",
         "created_at": entry.created_at,
         "updated_at": entry.created_at,
@@ -122,8 +121,29 @@ def media_record(entry: Any) -> dict[str, Any]:
             "transcript": "available" if segments else "missing",
         },
         "issues": [] if segments else ["transcript_missing"],
-        "actions": ["preview", "reprocess"] if reprocessable else ["preview"],
+        "actions": _media_actions(getattr(entry, "status", "published"), reprocessable),
     }
+
+
+def _media_actions(status: str, reprocessable: bool) -> list[str]:
+    """What can be done from where this item is.
+
+    A drawer that always offers the same pair asks an operator to work out
+    which of them does anything; the states are the vocabulary, so the actions
+    follow them. `delete` is deliberately absent: taking an item off the shelf
+    must not destroy its transcript, its provenance or its audit trail, and a
+    genuine mistake is a separate, deliberate path.
+    """
+    actions = ["preview"]
+    if reprocessable:
+        actions.append("reprocess")
+    if status == "published":
+        actions += ["unpublish", "archive"]
+    elif status == "unpublished":
+        actions += ["republish", "archive"]
+    else:
+        actions.append("restore")
+    return actions
 
 
 def curated_media_record(lesson: Any) -> dict[str, Any]:

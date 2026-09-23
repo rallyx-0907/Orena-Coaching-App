@@ -1287,12 +1287,23 @@ body:has(#main[data-experience='admin']) :is(#shell, #topbar) {
   margin: 0 0 0 auto;
   padding: 0;
   border: 0;
-  border-left: 1px solid var(--line);
-  background: var(--surface);
+  border-radius: var(--radius-sheet) 0 0 var(--radius-sheet);
+  background: var(--glass-sheet);
+  backdrop-filter: var(--glass-sheet-filter);
+  box-shadow: var(--glass-ring-focus), var(--shadow-overlay);
   overflow-y: auto;
 }
+/* At the phone frame the sheet is the screen, so it keeps no leading corner. */
+@media (max-width: 560px) {
+  .ac-drawer {
+    border-radius: 0;
+  }
+}
+/* The baseline's scrim (BottomSheet): the canvas darkened and softened, not a
+   wash of the ink colour. */
 .ac-drawer::backdrop {
-  background: color-mix(in srgb, var(--ink) 35%, transparent);
+  background: var(--glass-scrim);
+  backdrop-filter: blur(3px);
 }
 .ac-drawer__head {
   position: sticky;
@@ -1629,16 +1640,28 @@ body:has(#main[data-experience='admin']) :is(#shell, #topbar) {
 
 /* The progress tray: what is in flight, and where to watch it. It sits above
    the form it replaced rather than over the page - nothing here blocks. */
-/* Study 04: what is in flight, above the section and outside it, so it stays
-   while an operator moves around the console. Nothing waits in a modal. */
+/* Study 04: the tray floats. It is not a banner the page has to make room for
+   and it is not a modal the operator has to sit in front of - it is a 440px
+   sheet in the corner, above whatever section they moved to, and it leaves on
+   its own. The drawer is a `<dialog>` and lives in the top layer, so a sheet
+   an operator opened deliberately still covers a status that arrived on its
+   own, whatever this says. */
 .ac-tray {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-toast);
   display: grid;
   gap: var(--space-2);
-  margin-bottom: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  font-size: var(--text-sm);
+  width: min(440px, calc(100vw - 2 * var(--space-4)));
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--glass-sheet);
+  backdrop-filter: var(--glass-sheet-filter);
+  box-shadow: var(--glass-ring-focus), var(--shadow-overlay);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-xs);
 }
 .ac-tray__head {
   display: flex;
@@ -1726,7 +1749,11 @@ body:has(#main[data-experience='admin']) :is(#shell, #topbar) {
 /* Canonical study 02: on a phone a table is read as stacked panels, one card
    per row, each value labelled by its column. The table markup does not change
    - a single source of truth for the data, two ways of reading it. */
-@container (max-width: 640px) {
+/* 460px, not 640: a table stacks when its columns genuinely cannot hold a
+   value, not merely because its panel is half the width of a desk. At 640 a
+   two-up panel on a 1280px screen turned four rows into four cards and a
+   card into 613px of height. */
+@container (max-width: 460px) {
   .ac-table-wrap {
     overflow-x: visible;
     box-shadow: none;

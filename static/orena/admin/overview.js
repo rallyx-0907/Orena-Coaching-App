@@ -144,32 +144,43 @@ export function overviewView(data, t, ui, sectionHref) {
           ui,
         }),
       })}</div>`
-    : notice(t.accountsUnavailable, 'neutral');
+    : `<div class="ac-grid ac-grid--2">${panel({
+        title: t.chartRegistrations,
+        body: unavailableBlock(t, { title: t.chartRegistrations, note: t.accountsUnavailable }),
+      })}${panel({
+        title: t.chartActive14,
+        body: unavailableBlock(t, { title: t.chartActive14, note: t.accountsUnavailable }),
+      })}</div>`;
 
-  const domains = activity.available
-    ? panel({
-        title: t.chartDomains,
-        body: barList({
+  /* Every card the Overview promises stays on the board whether its number is
+     a number, a zero, or nothing at all. A card that vanishes when its source
+     is down changes the shape of the dashboard exactly when an operator is
+     trying to work out what is wrong with it - and a hole in a row is the one
+     thing they cannot read. The card stays and says which of the three it is. */
+  const domains = panel({
+    title: t.chartDomains,
+    body: activity.available
+      ? barList({
           ui,
           rows: (activity.domains || []).map((row) => ({
             label: t[`domain_${row.domain}`] || row.domain,
             value: row.events,
             note: fill(t.domainLearners, { count: num(row.learners, ui) }),
           })),
-        }),
-      })
-    : '';
+        })
+      : unavailableBlock(t, { title: t.chartDomains, note: t.activityUnavailable }),
+  });
 
-  const languages = data.languages?.available
-    ? panel({
-        title: t.chartLanguages,
-        body: table({
+  const languages = panel({
+    title: t.chartLanguages,
+    body: data.languages?.available
+      ? table({
           head: [t.colLanguage, { label: t.languagesProfiles, numeric: true }, { label: t.languagesActive, numeric: true }],
           rows: languageRows(data.languages, t, ui),
           empty: t.notAvailable,
-        }),
-      })
-    : '';
+        })
+      : unavailableBlock(t, { title: t.chartLanguages, note: t.languagesUnavailable }),
+  });
 
   const sources = content.sources || {};
   const unavailableSources = Object.entries(sources).filter(([, state]) => state !== 'ok');
@@ -227,7 +238,7 @@ export function overviewView(data, t, ui, sectionHref) {
       : unavailableBlock(t, { title: t.systemHealthTitle, note: t.readinessUnavailableNote }),
   });
 
-  return `${strip}<div class="ac-grid ac-grid--attention">${attentionPanel}${aiPanel}</div>${trends}<div class="ac-grid ac-grid--3">${contentPanel}${healthPanel}${domains}</div>${languages}<p class="ac-footnote">${esc(fill(t.generatedAt, { time: dateTime(data.generated_at, ui) }))}</p>`;
+  return `${strip}<div class="ac-grid ac-grid--attention">${attentionPanel}${aiPanel}</div>${trends}<div class="ac-grid ac-grid--2">${contentPanel}${healthPanel}</div><div class="ac-grid ac-grid--2">${domains}${languages}</div><p class="ac-footnote">${esc(fill(t.generatedAt, { time: dateTime(data.generated_at, ui) }))}</p>`;
 }
 
 function languageRows(languages, t, ui) {

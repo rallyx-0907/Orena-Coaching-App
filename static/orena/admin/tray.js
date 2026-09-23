@@ -15,6 +15,10 @@
    then leaves. The tray is about work in flight; Imports is the history. */
 import { esc, fill, mono } from './format.js';
 
+/* One clock for the whole console. The shell polls on `POLL_MS` and a finished
+   job leaves after `SETTLED_MS`; both live here so the tray's behaviour is one
+   number each rather than a constant per module that can drift apart. */
+export const POLL_MS = 5000;
 export const SETTLED_MS = 60000;
 /* Every stage the engine reports, in order, so progress is the engine's own
    position rather than a number this file invents. */
@@ -44,6 +48,15 @@ export function items() {
 
 export function inFlight() {
   return items().filter((job) => job.status !== 'completed' && job.status !== 'failed').length;
+}
+
+/* Whether the tray still has work to do - which is not the same as work in
+   flight. A finished job is still the tray's business until its settle window
+   closes, and the clock has to keep running for it to ever leave. Stopping at
+   `inFlight() === 0` is why the tray used to sit there forever showing a job
+   that had ended. */
+export function ticking() {
+  return items().length > 0;
 }
 
 export function forget(id) {

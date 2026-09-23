@@ -19,7 +19,7 @@ import { renderUsers } from './users.js';
 import { renderContent } from './content.js';
 import { renderImports } from './imports.js';
 import { renderOperations } from './operations.js';
-import { inFlight, refresh as refreshTray, subscribe as subscribeTray, trayView } from './tray.js';
+import { POLL_MS, refresh as refreshTray, subscribe as subscribeTray, ticking, trayView } from './tray.js';
 
 export const SECTIONS = ['overview', 'ai', 'users', 'content', 'imports', 'operations'];
 /* Reading is a Content view, not a seventh area (canonical design). It briefly
@@ -39,10 +39,6 @@ const STYLESHEET = '/orena-assets/admin/admin.css';
 /* What the console remembers between sections within one visit: the last
    attention list (for the section badges) and the runtime facts. */
 const memory = { attention: null, runtime: null, runtimeAt: 0, trayCollapsed: false };
-/* How often the tray asks. The same interval Add Content used, kept here now
-   that the tray outlives the view that started it: one timer for the console,
-   not one per section. */
-export const TRAY_POLL_MS = 5000;
 
 /* Study 08: the page someone without the role is shown. One sentence, one way
    back, and nothing that looks like a console failing to load. */
@@ -191,15 +187,19 @@ export async function renderConsole(root, ctx) {
   const tickTray = async () => {
     if (!alive()) return;
     await refreshTray(api);
-    if (!inFlight()) {
+    /* The clock runs while the tray holds anything at all, not only while
+       something is in flight: a finished job leaves on a later tick, and a
+       clock that stopped the moment the work ended is a job that never left. */
+    if (!ticking()) {
       clearInterval(trayTimer);
       trayTimer = null;
+      paintTray();
     }
   };
   const startTray = () => {
     paintTray();
-    if (trayTimer || !inFlight() || typeof setInterval !== 'function') return;
-    trayTimer = setInterval(tickTray, TRAY_POLL_MS);
+    if (trayTimer || !ticking() || typeof setInterval !== 'function') return;
+    trayTimer = setInterval(tickTray, POLL_MS);
   };
   const unsubscribeTray = subscribeTray(startTray);
   trayHost?.addEventListener('click', (event) => {

@@ -30,7 +30,7 @@ import logging
 import os
 from collections import defaultdict
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, time, timedelta
 from typing import Any
 from urllib.parse import urlencode, urlsplit
@@ -274,7 +274,9 @@ def _shared_media() -> tuple[list[Any], str]:
     if store is None:
         return [], "unavailable"
     try:
-        entries = store.list(language=None, library="shared")
+        # The operator's listing, so every state: an item taken off the shelf
+        # is exactly the one an operator has come here to find again.
+        entries = store.list(language=None, library="shared", status=None)
     except Exception:  # noqa: BLE001 - a broken index is reported, not raised
         return [], "index_unreadable"
     return list(entries), str(getattr(store, "last_read_issue", "") or "")
@@ -950,6 +952,9 @@ def runtime(request: Request, response: Response) -> dict[str, Any]:
 
 # -- content actions -------------------------------------------------------------------
 
+# Three states and no deletion among them (see `media_library_store`).
+MEDIA_STATES = ("published", "unpublished", "archived")
+
 
 class PublishIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -1021,6 +1026,41 @@ def publish_collection(collection_id: str, payload: PublishIn, request: Request,
     _audit(admin, "admin.content.publish", entity_type="vocabulary_collection", entity_id=collection_id,
            payload={"rights_status": rights, "completeness": "complete", "outcome": "ok"})
     return {"published": True, "collection": collection}
+
+
+class MediaStatusIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(default="", max_length=20)
+
+
+@router.post("/content/media/{media_id}/status")
+def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, response: Response) -> dict[str, Any]:
+    """Take a media item off the shelf, retire it, or put it back.
+
+    A state, never a deletion: the bytes, the transcript, the provenance and
+    the audit trail all survive every one of these, so an operator can change
+    their mind. Removing the row is a separate, deliberate path and is not
+    part of this flow.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    wanted = payload.status.strip().casefold()
+    if wanted not in MEDIA_STATES:
+        raise orena_http_error(422, "media_status_invalid",
+                               "A media item is published, unpublished or archived.")
+    store = _state.media_store
+    entry = store.get(media_id) if store is not None else None
+    if entry is None or entry.library != "shared":
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    previous = getattr(entry, "status", "published")
+    if previous != wanted:
+        store.upsert(replace(entry, status=wanted))
+    _audit(admin, "admin.content.status", entity_type="media", entity_id=media_id,
+           payload={"from": previous, "to": wanted, "outcome": "unchanged" if previous == wanted else "ok"})
+    refreshed = store.get(media_id)
+    return {"record": media_record(refreshed) if refreshed is not None else None}
 
 
 @router.post("/content/media/{media_id}/reprocess")

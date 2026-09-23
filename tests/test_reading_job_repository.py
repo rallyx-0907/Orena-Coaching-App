@@ -48,13 +48,14 @@ def repository(tmp_path):
     return repository
 
 
-def _enqueue(repository, *, request_hash="hash-1", text="The river rose overnight."):
+def _enqueue(repository, *, request_hash="hash-1", text="The river rose overnight.", now=None):
     return repository.enqueue(
         source_id=str(SOURCE),
         job_type="ingest_text",
         input_json={"kind": "text", "text": text},
         request_hash=request_hash,
         submitted_by="admin@example.com",
+        now=now,
     )
 
 
@@ -279,8 +280,11 @@ def test_the_registry_names_every_worker_holding_work(repository):
 
 
 def test_a_worker_that_stopped_reporting_is_stale_not_absent(repository):
-    _enqueue(repository)
-    started = datetime(2026, 9, 23, 8, 0, tzinfo=UTC)
+    # The clock is relative on purpose: a fixed hour makes the queue's
+    # `next_retry_at <= now` true only until the wall clock passes it, and the
+    # test then fails for the time of day rather than for the code.
+    started = datetime.now(UTC)
+    _enqueue(repository, now=started)
     repository.claim("worker-gone", now=started)
     workers = repository.workers(
         stale_after=timedelta(minutes=5), now=started + timedelta(minutes=9)
@@ -293,8 +297,8 @@ def test_a_worker_that_stopped_reporting_is_stale_not_absent(repository):
 
 
 def test_a_worker_that_finished_is_idle_rather_than_missing(repository):
-    job = _enqueue(repository)
-    moment = datetime(2026, 9, 23, 8, 0, tzinfo=UTC)
+    moment = datetime.now(UTC)
+    job = _enqueue(repository, now=moment)
     repository.claim("worker-a", now=moment)
     repository.complete(
         job["id"], worker_id="worker-a", result_kind="article",
@@ -309,8 +313,8 @@ def test_a_worker_that_finished_is_idle_rather_than_missing(repository):
 
 
 def test_a_worker_nobody_has_heard_from_leaves_the_registry(repository):
-    job = _enqueue(repository)
-    moment = datetime(2026, 9, 23, 8, 0, tzinfo=UTC)
+    moment = datetime.now(UTC)
+    job = _enqueue(repository, now=moment)
     repository.claim("worker-a", now=moment)
     repository.complete(
         job["id"], worker_id="worker-a", result_kind="article",
@@ -322,9 +326,9 @@ def test_a_worker_nobody_has_heard_from_leaves_the_registry(repository):
 
 
 def test_the_registry_puts_the_stale_worker_first(repository):
-    _enqueue(repository, request_hash="h-a", text="one")
-    _enqueue(repository, request_hash="h-b", text="two")
-    started = datetime(2026, 9, 23, 8, 0, tzinfo=UTC)
+    started = datetime.now(UTC)
+    _enqueue(repository, request_hash="h-a", text="one", now=started)
+    _enqueue(repository, request_hash="h-b", text="two", now=started)
     repository.claim("worker-stalled", now=started)
     repository.claim("worker-fine", now=started + timedelta(minutes=9))
     workers = repository.workers(

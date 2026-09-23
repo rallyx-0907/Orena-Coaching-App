@@ -97,6 +97,8 @@ export const adminApi = {
       `/api/admin/reading/articles/${encodeURIComponent(articleId)}/targets/${encodeURIComponent(targetId)}`,
       json('POST', { approved }),
     ),
+  setMediaStatus: (id, status) =>
+    request(`/api/admin/console/content/media/${encodeURIComponent(id)}/status`, json('POST', { status })),
   readingReorderTargets: (articleId, order) =>
     request(
       `/api/admin/reading/articles/${encodeURIComponent(articleId)}/target-order`,
