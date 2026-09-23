@@ -686,6 +686,7 @@ def _spoken_schema() -> dict[str, Any]:
             },
             "another_way": {"type": "string"},
             "next_attempt": {"type": "string"},
+            # One line the learner can say back and have assessed (Speaking 04); approved in D-077.
             "say_again": {"type": "string"},
         },
         "required": ["carried", "landed_differently", "another_way", "next_attempt", "say_again"],

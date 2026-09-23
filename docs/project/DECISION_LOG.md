@@ -2550,3 +2550,31 @@ read at its source (`docs/design/canonical-ui/SYNC_2026-09-23.md`).
    verdict) and the shadowing mode. **Deferred:** Speaking settings (some options have no real
    capability yet) and sending often-missed characters to the SRS queue (a persistence and
    Vocabulary change for its own slice).
+
+## D-077 — Speaking review answers: free talk's older ways kept one step in; `say_again` approved
+
+**Date:** 2026-09-23. **Source:** the human, answering the first Speaking review report
+(`feature/speaking`).
+
+**Decision.**
+
+1. **S14.** Free talk keeps its older capabilities (look closer, develop into writing, start a
+   conversation). They need not sit on the result screen; they follow progressive disclosure in the
+   new UI. Built: a "⋯" button in the result's top bar opens the deep-ways sheet Listening already
+   uses, holding the three.
+2. **S15.** The `say_again` field of the `spoken-response` contract is approved, because it serves
+   the current Speaking flow (the result's "say this again" line and "say the corrected line"). It is
+   required in the provider schema and returned only as a line in the learning language's script,
+   else empty (`writing_coach/media_interaction.py`, `tests/test_learning_paths_with_provider.py`).
+3. **S3 stays a known gap.** Azure is not reliable enough to judge Mandarin tones; no SpeechSuper.
+4. **Not in this slice:** a paid tone provider, loudspeaker detection, a "previous line" control, new
+   SRS persistence, invented content for the Speaking catalogue or phrase suggestions.
+5. **S9, S10, S11, S16, S17, S23** stay documented gaps; scope is not widened for them unless a
+   direct bug of the current flow needs it.
+6. **Credentials.** The Azure key was rotated. No credential value is ever printed in a report, log
+   or error; the cause of the one print (a transport error quoting a header) is fixed in the speech
+   adapters.
+7. A full end-to-end run on the current HEAD precedes the next review report; results from older
+   commits do not stand in for it. No merge, no push.
+
+**Supersedes:** the open questions S14 and S15 in `docs/project/UI_BACKEND_GAPS.md`.

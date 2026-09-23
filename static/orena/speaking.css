@@ -2389,11 +2389,24 @@
   font-weight: 800;
   color: var(--text-on-action);
 }
-.sp-ftr__more {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 16px;
+.sp-ftr__morebtn {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  min-height: 0;
+  margin-inline-start: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+  cursor: pointer;
+}
+.sp-ftr__morebtn:hover,
+.sp-ftr__morebtn:focus-visible {
+  box-shadow: var(--glass-ring-focus);
 }
 @media (max-width: 900px) {
   .sp-ftr__top {
@@ -2507,9 +2520,10 @@
     flex: 1.6;
     font-size: 15px;
   }
-  .sp-ftr__more {
-    order: 5;
-    padding-bottom: 24px;
+  .sp-ftr__morebtn {
+    inline-size: 36px;
+    block-size: 36px;
+    margin-inline-start: 10px;
   }
 }
 @media (max-width: 900px) {

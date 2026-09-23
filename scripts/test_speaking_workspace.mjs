@@ -135,6 +135,14 @@ assert.match(result, /data-sp-ftr-fixed/, 'the corrected line can be said, as pr
 assert.match(result, /<p lang="zh">我觉得靠窗的位子不错。<\/p>/, 'the line to say again is the learning-language line');
 assert.equal(result.includes('Bạn có thể nói'), false, 'advice in the support language is never offered as a line to say');
 assert.equal(/Lưu vào Thư viện|data-sp-ftr-save/.test(result), false, 'no saving to the library (D-076)');
+// Free talk's older ways on are kept one step in, behind "⋯" (S14): not a row on the result.
+assert.match(result, /data-sp-ftr-more aria-haspopup="dialog" aria-label="Làm thêm với câu vừa nói"/);
+assert.equal(/data-free-understand|data-free-develop|data-free-talk|sp-ftr__more"/.test(result), false, 'no row of old actions on the result');
+const { moreSheetHtml, MORE_WAYS } = await import('../static/orena/ui/speaking-free.js');
+assert.deepEqual(MORE_WAYS.map((way) => way.name), ['understand', 'develop', 'talk']);
+const more = moreSheetHtml({ s, c: { lookCloser: 'Xem kỹ hơn', develop: 'Phát triển', conversationStart: 'Trò chuyện', quickClose: 'Đóng' }, heard: '我觉得很好。', language: 'zh' });
+assert.equal((more.match(/class="ls-way"/g) || []).length, 3, 'the three ways, in the shared deep-sheet rows');
+assert.match(more, /<p class="ls-line" lang="zh">我觉得很好。<\/p>/, 'the sheet shows what it acts on');
 assert.equal(fixesOf({ landed_differently: [1, 2, 3, 4].map((n) => ({ quote: String(n) })) }).length, 3);
 assert.equal(markedTranscript('a <b>', [], 'en'), '<span lang="en">a &lt;b&gt;</span>');
 const unmeasured = freeResultHtml({ s, c: { coachingWorking: 'Đang xem…' }, title: 't', topic: 'x', language: 'en', ms: 1000, heard: 'hi', coaching: undefined, scores: null, bars: [] });

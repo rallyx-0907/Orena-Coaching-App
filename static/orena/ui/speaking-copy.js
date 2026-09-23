@@ -148,6 +148,7 @@ const en = {
   ftPlay: 'Play your recording',
   ftHeadlineFixOne: '1 thing to fix',
   ftFixesOne: '1 THING TO FIX',
+  ftMore: 'More with what you said',
 };
 
 const vi = {
@@ -294,6 +295,7 @@ const vi = {
   ftPlay: 'Nghe bản ghi của bạn',
   ftHeadlineFixOne: 'Còn 1 chỗ nên sửa',
   ftFixesOne: '1 CHỖ NÊN SỬA',
+  ftMore: 'Làm thêm với câu vừa nói',
 };
 
 const zh = {
@@ -440,6 +442,7 @@ const zh = {
   ftPlay: '播放你的录音',
   ftHeadlineFixOne: '还有 1 处可以改',
   ftFixesOne: '1 处可以改',
+  ftMore: '用这段话继续练',
 };
 
 export const speakingCopy = { en, vi, zh };

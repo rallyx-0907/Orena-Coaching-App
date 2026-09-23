@@ -88,15 +88,67 @@ export function freeResultHtml({ s, c, title, name = '', topic, language, ms, he
   const wave = (bars || []).map((value) => `<i class="${value > 0.6 ? 'is-strong' : ''}" style="block-size:${Math.max(6, Math.round(value * 100))}%"></i>`).join('');
   const ring = `<span class="sp-ring sp-ring--ft" style="--score:0%" role="img" aria-label="0"><b>0</b></span>`;
   return `<section class="sp-room sp-ftr" data-view="free-result">
-<header class="sp-top sp-ftr__top"><button type="button" class="sp-back" data-sp-ftr-back><span class="sp-ftr__arrow">${icon('arrow-left', { size: 20 })}</span><span class="sp-back__caret">${icon('caret-left', { size: 22 })}</span><span class="sp-lesson sp-ftr__desk">${esc(`${title} · `)}<span lang="${esc(language)}">${esc(name || topic)}</span></span><span class="sp-lesson sp-ftr__phone" lang="${esc(language)}">${esc(name || topic)}</span></button><span class="sp-ftr__meta"><span class="sp-ftr__desk">${esc(`${langName} · `)}</span>${esc(short(ms))}</span></header>
+<header class="sp-top sp-ftr__top"><button type="button" class="sp-back" data-sp-ftr-back><span class="sp-ftr__arrow">${icon('arrow-left', { size: 20 })}</span><span class="sp-back__caret">${icon('caret-left', { size: 22 })}</span><span class="sp-lesson sp-ftr__desk">${esc(`${title} · `)}<span lang="${esc(language)}">${esc(name || topic)}</span></span><span class="sp-lesson sp-ftr__phone" lang="${esc(language)}">${esc(name || topic)}</span></button><span class="sp-ftr__meta"><span class="sp-ftr__desk">${esc(`${langName} · `)}</span>${esc(short(ms))}</span><button type="button" class="sp-ftr__morebtn" data-sp-ftr-more aria-haspopup="dialog" aria-label="${esc(s.ftMore)}">${icon('dots-three', { size: 22 })}</button></header>
 <div class="sp-ftr__grid"><div class="sp-ftr__main"><div class="sp-ftr__said"><div class="sp-ftr__play"><button type="button" class="sp-ftr__playbtn" data-sp-ftr-play aria-label="${esc(s.ftPlay)}">${icon('play', { size: 22, filled: true })}</button><div class="sp-ftr__wave">${wave}</div></div><span class="sp-label">${esc(s.ftSaid)}</span><p class="sp-ftr__words">${markedTranscript(heard, fixes, language)}</p></div>
 ${cards ? `<div class="sp-ftr__fixes"><span class="sp-label">${esc(fixes.length === 1 ? s.ftFixesOne : fill(s.ftFixes, { n: fixes.length }))}</span><div class="sp-ftr__cards">${cards}</div></div>` : ''}</div>
 <div class="sp-ftr__side"><div class="sp-ftr__score"><div class="sp-ftr__head">${ring}<div><strong>${esc(headline)}</strong></div></div><div class="sp-crits">${criteria}</div></div>
 ${again ? `<div class="sp-ftr__again"><span class="sp-label">${esc(s.ftSayAgainLabel)}</span><p lang="${esc(language)}">${esc(again)}</p></div>` : ''}
 <div class="sp-ftr__buttons">${again ? `<button type="button" class="sp-ftbtn" data-sp-ftr-fixed>${icon('microphone', { size: 18 })}<span>${esc(s.ftSayFixed)}</span></button>` : ''}<button type="button" class="sp-ftbtn sp-ftbtn--accent" data-sp-ftr-again>${icon('microphone', { size: 18, filled: true })}<span>${esc(s.ftSpeakAgain)}</span></button></div>
-<div class="sp-ftr__more"><button type="button" class="sp-textbtn" data-free-understand>${esc(c.lookCloser)}</button><button type="button" class="sp-textbtn" data-free-develop>${esc(c.develop)}</button><button type="button" class="sp-textbtn" data-free-talk>${esc(c.conversationStart)}</button></div></div></div>
+</div></div>
 ${phoneCard ? `<template data-sp-ftr-phonecard>${phoneCard}</template>` : ''}
 <audio data-sp-ftr-audio preload="auto" hidden></audio></section>`;
+}
+
+/* The three older ways on from a free-talk take, one step in (S14). */
+export const MORE_WAYS = [
+  { name: 'understand', icon: 'magnifying-glass', label: 'lookCloser' },
+  { name: 'develop', icon: 'pen-nib', label: 'develop' },
+  { name: 'talk', icon: 'chats-circle', label: 'conversationStart' },
+];
+
+export function moreSheetHtml({ s, c, heard, language }) {
+  const ways = MORE_WAYS.map(
+    (way) => `<button type="button" class="ls-way" data-way="${way.name}">${icon(way.icon, { size: 20 })}<span class="ls-way__text"><strong>${esc(c[way.label])}</strong></span></button>`,
+  ).join('');
+  return `<button type="button" class="qs-x" data-way="close" aria-label="${esc(c.quickClose || '')}">${icon('x', { size: 18 })}</button><span class="ds-label ls-title">${esc(s.ftMore)}</span><p class="ls-line" lang="${esc(language)}">${esc(heard)}</p><div class="ls-ways">${ways}</div>`;
+}
+
+function openMoreSheet({ s, c, heard, language, onPick }) {
+  const scrim = document.createElement('div');
+  scrim.className = 'qs-scrim';
+  const sheet = document.createElement('div');
+  sheet.className = 'qs qs--deep';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', s.ftMore);
+  sheet.tabIndex = -1;
+  sheet.innerHTML = moreSheetHtml({ s, c, heard, language });
+  const opener = document.activeElement;
+  document.body.append(scrim, sheet);
+  sheet.focus({ preventScroll: true });
+  let open = true;
+  const close = () => {
+    if (!open) return;
+    open = false;
+    window.removeEventListener('hashchange', close);
+    document.removeEventListener('keydown', onKey);
+    scrim.remove();
+    sheet.remove();
+    if (opener?.isConnected) opener.focus();
+  };
+  const onKey = (event) => {
+    if (event.key === 'Escape') close();
+  };
+  scrim.addEventListener('click', close);
+  sheet.addEventListener('click', (event) => {
+    const way = event.target.closest('[data-way]')?.dataset.way;
+    if (!way) return;
+    close();
+    if (way !== 'close') onPick(way);
+  });
+  // A sheet must not outlive the screen it was opened from.
+  window.addEventListener('hashchange', close);
+  document.addEventListener('keydown', onKey);
 }
 
 export function mountFreeTalk(root, ctx, { id, title, name = '', topic, cue, next }) {
@@ -257,15 +309,20 @@ export function mountFreeTalk(root, ctx, { id, title, name = '', topic, cue, nex
         const text = String(last.coaching?.say_again || '').trim().slice(0, 400);
         ctx.go('practice', { intent: 'shadowing', id: `say:${text}` });
       };
-    q('[data-free-understand]').onclick = () => openUnderstanding(ctx, { origin: { id, where: title, why: 'from_speaking' }, selection: last.heard, context: `${topic}\n${last.heard}`.slice(0, 2400), title });
-    q('[data-free-develop]').onclick = () => {
-      // Each take has its own draft identity; an existing draft is never replaced.
-      const draftId = `expression:voice:${last.takeId}`;
-      if (!memory.value.expressions[draftId]) memory.write(draftId, last.heard);
-      memory.enter({ id: draftId, title, intent: 'writing', excerpt: topic });
-      window.location.hash = link('expression', { id: draftId });
+    // Free talk's older ways on (look closer, write it up, talk it through) are kept, one step in:
+    // behind "⋯", in the same sheet Listening uses for its deeper ways (Design Contract; S14).
+    const ways = {
+      understand: () => openUnderstanding(ctx, { origin: { id, where: title, why: 'from_speaking' }, selection: last.heard, context: `${topic}\n${last.heard}`.slice(0, 2400), title }),
+      develop: () => {
+        // Each take has its own draft identity; an existing draft is never replaced.
+        const draftId = `expression:voice:${last.takeId}`;
+        if (!memory.value.expressions[draftId]) memory.write(draftId, last.heard);
+        memory.enter({ id: draftId, title, intent: 'writing', excerpt: topic });
+        window.location.hash = link('expression', { id: draftId });
+      },
+      talk: () => startConversation(ctx, { title, situation: topic }),
     };
-    q('[data-free-talk]').onclick = () => startConversation(ctx, { title, situation: topic });
+    q('[data-sp-ftr-more]').onclick = () => openMoreSheet({ s, c, heard: last.heard, language, onPick: (way) => ways[way]?.() });
   }
 
   paintTalk();
