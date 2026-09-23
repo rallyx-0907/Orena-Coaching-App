@@ -202,6 +202,9 @@ def _assessment(mapping: dict[str, Any]) -> dict[str, Any]:
 class AzureSpeechPronunciationProvider:
     provider_id = "azure-speech"
     _REGION_RE = re.compile(r"^[a-z0-9-]+$")
+    # A key goes into an HTTP header: printable ASCII with no space. Anything else is refused here,
+    # by a message that never repeats it (a transport library would echo it in its own error).
+    _KEY_RE = re.compile(r"^[!-~]+$")
 
     def __init__(
         self,
@@ -219,6 +222,8 @@ class AzureSpeechPronunciationProvider:
     ) -> None:
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("Azure Speech key is required.")
+        if not self._KEY_RE.fullmatch(api_key.strip()):
+            raise ValueError("Azure Speech key has characters a request header cannot carry.")
         normalized_region = str(region or "").strip().lower()
         if not self._REGION_RE.fullmatch(normalized_region):
             raise ValueError("Azure Speech region is invalid.")
@@ -331,8 +336,12 @@ class AzureSpeechPronunciationProvider:
             )
         except requests.Timeout as exc:
             raise SpeechPronunciationTimedOut() from exc
-        except requests.RequestException as exc:
-            raise SpeechPronunciationRequestFailed() from exc
+        except requests.RequestException:
+            # Raised below, outside this block, so it carries no cause or context: some transport
+            # errors quote the request's headers, the key among them.
+            response = None
+        if response is None:
+            raise SpeechPronunciationRequestFailed()
 
         if response.status_code == 413:
             raise SpeechPronunciationPayloadTooLarge()

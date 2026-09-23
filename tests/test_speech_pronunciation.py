@@ -303,6 +303,51 @@ def test_a_rejected_key_never_appears_in_the_error():
     assert "secret-key-value" not in repr(caught.value)
 
 
+def test_a_key_read_with_a_line_ending_is_sent_without_it():
+    # A .env written on Windows can end the value in "\r": the header must carry the key alone.
+    sent = {}
+
+    class Capture:
+        def post(self, *_, headers=None, **__):
+            sent.update(headers)
+            raise requests.Timeout()
+
+    padded = AzureSpeechPronunciationProvider("secret\r\n", "eastus", session=Capture(),
+                                              normalizer=lambda data, **_: data)
+    with pytest.raises(SpeechPronunciationTimedOut):
+        padded.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                            language="en", reference_text="Hello.")
+    assert sent["Ocp-Apim-Subscription-Key"] == "secret"
+
+
+@pytest.mark.parametrize("bad", ["sec ret-key-value", "secret\nkey-value", "secret\tkey", "sécret"])
+def test_a_key_that_cannot_be_a_header_is_refused_without_echoing_it(bad):
+    with pytest.raises(ValueError) as caught:
+        AzureSpeechPronunciationProvider(bad, "eastus")
+    assert bad.strip() not in str(caught.value)
+    assert bad.strip() not in repr(caught.value)
+
+
+def test_a_transport_error_carrying_the_key_does_not_carry_it_further():
+    # requests puts the header value in InvalidHeader's message; a logged traceback would print it.
+    class Leaky:
+        def post(self, *_, headers=None, **__):
+            raise requests.exceptions.InvalidHeader(
+                f"Invalid leading whitespace in header value: {headers['Ocp-Apim-Subscription-Key']!r}"
+            )
+
+    provider = AzureSpeechPronunciationProvider("secret-key-value", "eastus", session=Leaky(),
+                                                normalizer=lambda data, **_: data)
+    with pytest.raises(SpeechPronunciationRequestFailed) as caught:
+        provider.assess_bytes(b"webm", filename="t.webm", content_type="audio/webm",
+                              language="en", reference_text="Hello.")
+    import traceback
+
+    printed = "".join(traceback.format_exception(caught.value))
+    assert "secret-key-value" not in printed
+    assert caught.value.__cause__ is None and caught.value.__context__ is None
+
+
 def test_a_take_where_every_reference_word_is_omitted_is_no_speech():
     # Measured on real Azure (2026-09-23): 0.8 s of silence comes back as Success with every word
     # Omission and completeness 0. That is "nothing was heard", not a score of 0.
