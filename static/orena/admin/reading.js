@@ -37,6 +37,18 @@ export const JOB_POLL_MS = 5000;
 const INPUT_KINDS = ['text', 'url', 'file'];
 const LANGUAGES = ['en', 'zh'];
 
+export function cursorPager({ next = null, back = false, t }) {
+  /* Keyset pagination, so the controls can only say what the server actually
+     told us: there is another page, or there is not. No total, no page number
+     - the server counts nothing to answer a list, and a page whose rows moved
+     under it still lands on a stable boundary. */
+  if (!next && !back) return '';
+  return `<div class="ac-pager" role="group" aria-label="${esc(t.readingPager)}"><span class="ac-pager__buttons">`
+    + `<button type="button" class="ac-button" data-ac-page="prev"${back ? '' : ' disabled'}>${esc(t.previous)}</button>`
+    + `<button type="button" class="ac-button" data-ac-page="next" data-ac-cursor="${esc(next || '')}"${next ? '' : ' disabled'}>${esc(t.next)}</button>`
+    + '</span></div>';
+}
+
 export function isUnavailable(error) {
   /* The engine's own "not active yet", whichever shape the client surfaced it
      in. Matched on the category the server sends, never on a message an
@@ -220,6 +232,11 @@ export async function renderReading(host, env) {
   const { t, ui, alive, href } = env;
   const api = env.api || adminApi;
   const view = viewFrom(env.params);
+  /* One page position per section render: the cursor being shown, and the
+     cursors walked to get here so Previous can go back. Keyset pagination has
+     no page numbers to jump to, and inventing some would mean counting the
+     whole corpus to draw a list. */
+  const page = { cursor: null, back: [] };
   let timer = null;
   const stop = () => {
     clearInterval(timer);
@@ -289,20 +306,26 @@ export async function renderReading(host, env) {
       return;
     }
     if (view === 'add') {
-      const jobs = await api.readingJobs({ limit: 10 });
+      const jobs = await api.readingJobs({ limit: 10, cursor: page.cursor || '' });
       paint(`${panel({ title: t.readingAddTitle, note: t.readingAddNote, body: `<div class="ac-forms">${addForms(t)}</div>` })}
         ${panel({ title: t.readingJobsTitle, note: t.readingJobsNote, body: table({
           head: [t.readingColJob, t.colStatus, t.readingColStage, t.readingColAttempt, t.colError, t.colDate,
                  { label: t.colActions, hidden: true }],
           rows: jobRows(jobs.items || [], t, ui),
           empty: t.readingNoJobs,
-        }) })}`);
+        }) + cursorPager({ next: jobs.next_cursor, back: page.back.length > 0, t }) })}`);
       return;
     }
-    const page = view === 'queue'
-      ? await api.readingQueue({ status: VIEW_STATUS.queue })
-      : await api.readingQueue({ status: VIEW_STATUS[view] });
-    paint(panel({ title: t[`readingView_${view}`], note: t[`readingNote_${view}`], body: articleTable(page, t, ui) }));
+    const listed = await api.readingQueue({
+      status: VIEW_STATUS[view],
+      cursor: page.cursor || '',
+    });
+    paint(panel({
+      title: t[`readingView_${view}`],
+      note: t[`readingNote_${view}`],
+      body: articleTable(listed, t, ui)
+        + cursorPager({ next: listed.next_cursor, back: page.back.length > 0, t }),
+    }));
   };
 
   /* A runtime where the reviewed schema is not applied answers 503 for every
@@ -320,6 +343,17 @@ export async function renderReading(host, env) {
   await loadOrExplain();
 
   const onClick = async (event) => {
+    const step = event.target.closest('[data-ac-page]');
+    if (step) {
+      if (step.dataset.acPage === 'next') {
+        page.back.push(page.cursor);
+        page.cursor = step.dataset.acCursor || null;
+      } else {
+        page.cursor = page.back.pop() ?? null;
+      }
+      await loadOrExplain();
+      return;
+    }
     const open = event.target.closest('[data-ac-open]');
     if (open) {
       await openArticle(open.dataset.acOpen);

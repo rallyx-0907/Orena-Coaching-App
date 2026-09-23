@@ -214,6 +214,67 @@ def test_editing_published_content_bumps_the_revision_a_cache_validates_on(repos
     assert after["content_revision"] == before + 1
 
 
+def test_every_change_a_learner_can_see_moves_the_revision(repository):
+    """`content_revision` is what a cached copy revalidates against, so it has
+    to move for anything the learner routes return - not only the body. A
+    corrected topic or level that keeps the old revision leaves a learner
+    reading a card that is quietly wrong for up to a cache lifetime."""
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+
+    def revision():
+        return repository.get_article(article["id"])["content_revision"]
+
+    for change in (
+        {"title": "Rain returns to the valley floor"},
+        {"topic": "weather"},
+        {"excerpt": "The river rose overnight."},
+        {"body": BODY + "A correction followed. "},
+        {"reviewed_level": "C1"},
+    ):
+        before = revision()
+        repository.update_article(article["id"], actor="admin@example.com", **change)
+        assert revision() == before + 1, f"{change} is visible to a learner"
+
+
+def test_a_change_nobody_can_see_does_not_move_the_revision(repository):
+    """The converse matters too: a bump with no visible change makes every
+    cached copy refetch for nothing."""
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    before = repository.get_article(article["id"])["content_revision"]
+    repository.update_article(article["id"], actor="admin@example.com", subtopic="flooding")
+    assert repository.get_article(article["id"])["content_revision"] == before
+    repository.update_article(article["id"], actor="admin@example.com", title="Rain returns to the valley")
+    assert repository.get_article(article["id"])["content_revision"] == before, "an unchanged title is not a change"
+
+
+def test_a_target_decision_moves_the_revision_because_a_learner_reads_targets(repository):
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    targets = repository.get_article(article["id"])["targets"]
+    before = repository.get_article(article["id"])["content_revision"]
+    repository.decide_target(targets[0]["id"], approved=True, actor="admin@example.com")
+    after = repository.get_article(article["id"])["content_revision"]
+    assert after == before + 1
+    assert repository.get_published_article(article["id"])["content_revision"] == after
+
+
+def test_adding_and_removing_a_target_moves_the_revision_too(repository):
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    before = repository.get_article(article["id"])["content_revision"]
+    added = repository.add_target(
+        article["id"],
+        target=TargetInput(text="volunteers", canonical_form="volunteers", target_type="word",
+                           context="volunteers began to clear the mud", estimated_level="", rank=9),
+        actor="admin@example.com",
+    )
+    assert repository.get_article(article["id"])["content_revision"] == before + 1
+    repository.remove_target(added["id"], actor="admin@example.com")
+    assert repository.get_article(article["id"])["content_revision"] == before + 2
+
+
 # ---- projections ------------------------------------------------------------
 
 def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repository):
@@ -252,6 +313,34 @@ def test_the_review_queue_is_metadata_and_paginated(repository):
     second = repository.list_queue(limit=2, cursor=page["next_cursor"])
     assert {item["id"] for item in page["items"]} & {item["id"] for item in second["items"]} == set()
     assert len(repository.list_queue(limit=10_000)["items"]) <= MAX_ARTICLE_PAGE
+
+
+def test_neither_list_asks_the_database_for_a_body(repository):
+    """A projection that drops the body in Python still read it from disk and
+    carried it across the connection for every row on the page. Both lists -
+    the learner's and the admin queue - name their columns, so the cost of a
+    page stops depending on how long the articles on it are."""
+    from sqlalchemy import event
+
+    statements: list[str] = []
+
+    @event.listens_for(repository.engine, "before_cursor_execute")
+    def record(conn, cursor, statement, parameters, context, executemany):  # noqa: ANN001
+        statements.append(" ".join(statement.split()))
+
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    statements.clear()
+    repository.list_published(language="en")
+    repository.list_queue()
+    event.remove(repository.engine, "before_cursor_execute", record)
+
+    selects = [s for s in statements if s.upper().startswith("SELECT") and "reading_articles" in s]
+    assert len(selects) == 2
+    for statement in selects:
+        assert "reading_articles.body" not in statement, statement
+        assert "reading_articles.analysis_json" not in statement, statement
+        assert "reading_articles.title" in statement
 
 
 def test_the_learner_list_filters_in_the_database_by_level_and_topic(repository):

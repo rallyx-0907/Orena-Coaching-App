@@ -64,6 +64,12 @@ BUILT_IN_SOURCES: dict[str, tuple[str, str, str]] = {
 }
 
 LEARNER_VISIBLE_STATUS = "published"
+# Exactly what the learner routes return, and therefore exactly what must move
+# `content_revision` when it changes: the list projection's fields plus the
+# body and the approved targets the detail adds. `subtopic`, the analysis and
+# the review trail are admin-only, so changing one of those does not make every
+# cached copy refetch.
+LEARNER_VISIBLE_FIELDS = ("title", "body", "excerpt", "topic", "reviewed_level")
 QUEUE_STATUSES = ("draft", "processing", "needs_review", "ready")
 
 
@@ -725,8 +731,10 @@ class ReadingContentRepository:
             changes["reviewed_level"] = {"from": current["reviewed_level"], "to": reviewed_level}
         if len(values) == 1:
             return current
-        # Any change to what a learner reads invalidates a cached copy.
-        if {"title", "body", "excerpt"} & set(changes):
+        # Any change to what a learner reads invalidates a cached copy. The
+        # level and the topic are on the card, not only in the article, so a
+        # correction to either has to move the revision an ETag is built from.
+        if set(LEARNER_VISIBLE_FIELDS) & set(changes):
             values["content_revision"] = current["content_revision"] + 1
         with self.engine.begin() as connection:
             connection.execute(
@@ -796,7 +804,23 @@ class ReadingContentRepository:
         limit: int = DEFAULT_ARTICLE_PAGE,
     ) -> dict[str, Any]:
         bounded = max(1, min(int(limit), MAX_ARTICLE_PAGE))
-        query = select(ReadingArticle).where(ReadingArticle.status.in_(tuple(statuses)))
+        # The columns the queue draws, named for the same reason the learner
+        # list names its own: a reviewer scanning twenty-five candidates should
+        # not pull twenty-five article bodies across the connection to read
+        # their titles.
+        query = select(
+            ReadingArticle.id,
+            ReadingArticle.title,
+            ReadingArticle.language,
+            ReadingArticle.topic,
+            ReadingArticle.effective_level,
+            ReadingArticle.estimated_level,
+            ReadingArticle.reviewed_level,
+            ReadingArticle.word_count,
+            ReadingArticle.reading_time_seconds,
+            ReadingArticle.status,
+            ReadingArticle.created_at,
+        ).where(ReadingArticle.status.in_(tuple(statuses)))
         if cursor:
             after_at, after_id = _decode_cursor(cursor)
             query = query.where(
@@ -974,6 +998,7 @@ class ReadingContentRepository:
                     updated_at=moment,
                 )
             )
+            self._bump_revision(connection, row.article_id, moment)
             self._record_event(
                 connection,
                 article_id=row.article_id,
@@ -1016,6 +1041,7 @@ class ReadingContentRepository:
                     updated_at=moment,
                 )
             )
+            self._bump_revision(connection, _uuid(article_id), moment)
             self._record_event(
                 connection,
                 article_id=_uuid(article_id),
@@ -1040,6 +1066,7 @@ class ReadingContentRepository:
             connection.execute(
                 delete(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
             )
+            self._bump_revision(connection, row.article_id, _now(now))
             self._record_event(
                 connection,
                 article_id=row.article_id,
@@ -1073,6 +1100,23 @@ class ReadingContentRepository:
             }
             for row in rows
         ]
+
+    def _bump_revision(self, connection: Any, article_id: uuid.UUID, now: datetime) -> None:
+        """Move the number a learner's cached copy revalidates against.
+
+        Written inside the caller's transaction, so the change and the reason
+        to refetch it land together. An approved target is learner-visible -
+        it is in the detail read - which is why a decision about one counts as
+        a content change and not only as review bookkeeping.
+        """
+        connection.execute(
+            update(ReadingArticle)
+            .where(ReadingArticle.id == article_id)
+            .values(
+                content_revision=ReadingArticle.content_revision + 1,
+                updated_at=now,
+            )
+        )
 
     def _record_event(
         self,

@@ -65,6 +65,10 @@ PERMANENT_ERRORS = frozenset(
         "undecodable_source",
         "empty_source",
         "source_too_large",
+        # The bytes are gone; retrying reads the same absence. An admin
+        # re-uploading the file is a new submission, not a retry.
+        "upload_missing",
+        "upload_unavailable",
     }
 )
 RETRY_BACKOFF = (timedelta(minutes=1), timedelta(minutes=5), timedelta(minutes=30))
@@ -80,10 +84,16 @@ class ReadingContentEngine:
         *,
         content: ReadingContentRepository,
         jobs: ReadingJobRepository,
+        asset_store: Any = None,
         audit: Callable[..., None] | None = None,
     ) -> None:
         self.content = content
         self.jobs = jobs
+        # Where an uploaded file waits for the worker. A row is not a place to
+        # keep a file (SS46.10), and the process that accepts the upload is not
+        # the process that reads it, so "keep it in memory" is not an option
+        # either - it has to be somewhere both can reach.
+        self.assets = asset_store
         # Injectable so a test can supply a fetcher without a network, and so
         # a future RSS adapter is a registration rather than a branch here.
         self.adapters: dict[str, Callable[[], Any]] = {
@@ -113,15 +123,21 @@ class ReadingContentEngine:
         if kind not in JOB_TYPES:
             raise ReadingSourceError("unsupported_input", "This kind of source is not supported.")
         source_id = self.content.built_in_source_id(SOURCE_FOR_KIND[kind])
+        digest = request_digest(submitted, source_id=source_id)
+        asset_key = input_asset_key or self._store_upload(submitted, digest)
         job = self.jobs.enqueue(
             source_id=source_id,
             job_type=JOB_TYPES[kind],
             input_json=self._job_input(submitted),
-            request_hash=request_digest(submitted, source_id=source_id),
+            request_hash=digest,
             submitted_by=actor,
-            input_asset_key=input_asset_key,
+            input_asset_key=asset_key,
             now=now,
         )
+        if job["duplicate"] and asset_key and job["input_asset_key"] != asset_key:
+            # The same file was already queued under the job that came first.
+            # Keep that job's copy and drop this one rather than leaving two.
+            self._forget_upload(asset_key)
         self._record_audit(
             actor=actor,
             action="admin.reading.submit",
@@ -129,6 +145,32 @@ class ReadingContentEngine:
             payload={"kind": kind, "duplicate": job["duplicate"], "job_type": JOB_TYPES[kind]},
         )
         return job
+
+    def _store_upload(self, submitted: SubmittedInput, digest: str) -> str:
+        """Put an uploaded file where the worker can find it, and name the key.
+
+        The key is derived from the submission digest, so re-posting the same
+        file writes the same key rather than a second copy - the storage half
+        of the idempotency the queue already has.
+        """
+        if not submitted.payload:
+            return ""
+        if self.assets is None:
+            raise ReadingSourceError(
+                "upload_unavailable", "This deployment cannot accept file uploads yet."
+            )
+        key = f"reading/uploads/{digest}"
+        self.assets.put(key, submitted.payload)
+        return key
+
+    def _forget_upload(self, key: str) -> None:
+        """Best effort: a stray object with no job pointing at it is inert."""
+        if not key or self.assets is None:
+            return
+        try:
+            self.assets.delete(key)
+        except Exception:  # noqa: BLE001 - never fail a job over its own cleanup
+            _logger.warning("reading engine: could not remove upload %s", key, exc_info=True)
 
     def _job_input(self, submitted: SubmittedInput) -> dict[str, Any]:
         """The submission as the worker will rebuild it.
@@ -168,6 +210,16 @@ class ReadingContentEngine:
         if not job:
             return None
         job_id = job["id"]
+        if job.get("input_asset_key") and not payload:
+            # The upload this job names is gone - a wiped volume, a store that
+            # lost it. Saying so is the only honest outcome; an empty document
+            # would otherwise be "processed" into nothing.
+            return self._fail(
+                job,
+                code="upload_missing",
+                message="the uploaded file this job refers to could not be read",
+                now=now,
+            )
         # The worker that claimed this job is the only one allowed to report on
         # it. Every stage boundary re-asserts that and *stops* when the answer
         # is no: the job writes would land nowhere anyway, but the content
@@ -206,6 +258,7 @@ class ReadingContentEngine:
                 # Idempotent by construction: these bytes already produced a
                 # candidate - including one an admin rejected, which is how a
                 # rejection keeps rejecting.
+                self._forget_upload(job.get("input_asset_key", ""))
                 self.jobs.complete(
                     job_id,
                     worker_id=worker_id,
@@ -223,6 +276,7 @@ class ReadingContentEngine:
             if not self.jobs.advance_stage(job_id, "analyzing", worker_id=worker_id, now=now):
                 return lost
             article = self._build_candidate(item, snapshot, now=now)
+            self._forget_upload(job.get("input_asset_key", ""))
             self.jobs.complete(
                 job_id,
                 worker_id=worker_id,

@@ -31,7 +31,7 @@ import {
 } from '../static/orena/admin/imports.js';
 import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
 import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, SECTIONS } from '../static/orena/admin/shell.js';
-import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows } from '../static/orena/admin/reading.js';
+import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows, cursorPager } from '../static/orena/admin/reading.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = adminCopy.en;
@@ -466,6 +466,19 @@ assert.match(preview, /data-ac-action="published"/, 'publishing is an explicit a
 assert.doesNotMatch(previewBody({ ...article, status: 'published' }, en, 'en'), /data-ac-action="published"/,
   'a published article offers unpublish rather than publish again');
 assert.match(zh.readingNote_queue, /[一-鿿]/, 'the Chinese console is written in Chinese');
+/* Keyset pagination: the controls say only what the server told us. No page
+   number and no total, because answering a list must not cost a count of the
+   corpus - the invariant the whole partial-index design rests on. */
+assert.equal(cursorPager({ next: null, back: false, t: en }), '', 'one page needs no controls');
+const firstPage = cursorPager({ next: 'CURSOR-2', back: false, t: en });
+assert.match(firstPage, /data-ac-page="next" data-ac-cursor="CURSOR-2"/, 'Next carries the cursor it moves to');
+assert.match(firstPage, /data-ac-page="prev" disabled/, 'there is nothing before the first page');
+assert.doesNotMatch(firstPage, /\d+\s*(of|\/)\s*\d+/, 'no page number is invented');
+const lastPage = cursorPager({ next: null, back: true, t: en });
+assert.match(lastPage, /data-ac-page="next"[^>]*disabled/, 'the last page offers no Next');
+assert.doesNotMatch(lastPage, /data-ac-page="prev"[^>]*disabled/, 'but it can go back');
+assert.match(cursorPager({ next: 'x', back: true, t: zh }), /aria-label="翻页控制"/, 'and it is labelled in both languages');
+
 for (const key of Object.keys(en)) assert.ok(key in zh, `zh is missing ${key}`);
 for (const key of Object.keys(zh)) assert.ok(key in en, `en is missing ${key}`);
 

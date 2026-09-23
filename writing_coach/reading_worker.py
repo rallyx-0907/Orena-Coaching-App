@@ -67,7 +67,9 @@ class ReadingWorker:
         # How a file job's bytes are fetched back. Injected so the worker does
         # not have to know whether the asset store is a filesystem or an
         # object store.
-        self._asset_reader = asset_reader
+        self._asset_reader = asset_reader or getattr(
+            getattr(engine, "assets", None), "get", None
+        )
         self._running = True
 
     def run_once(self, *, now: datetime | None = None) -> dict[str, Any] | None:
@@ -119,6 +121,9 @@ def main() -> int:  # pragma: no cover - process entry point
     """
     import threading
 
+    from pathlib import Path
+
+    from writing_coach.book_asset_store import FilesystemBookAssetStore
     from writing_coach.persistence.reading_content_repository import ReadingContentRepository
     from writing_coach.persistence.runtime import runtime_engine
 
@@ -129,7 +134,11 @@ def main() -> int:  # pragma: no cover - process entry point
         return 1
     jobs = ReadingJobRepository(database)
     engine = ReadingContentEngine(
-        content=ReadingContentRepository(database), jobs=jobs
+        content=ReadingContentRepository(database),
+        jobs=jobs,
+        asset_store=FilesystemBookAssetStore(
+            Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets"))
+        ),
     )
     workers = [
         ReadingWorker(engine=engine, jobs=jobs, worker_id=f"{os.getpid()}-{index}")

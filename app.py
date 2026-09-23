@@ -740,7 +740,14 @@ def configure_reading_engine_from_runtime() -> None:
         content=content,
         jobs=jobs,
         engine=(
-            ReadingContentEngine(content=content, jobs=jobs)
+            ReadingContentEngine(
+                content=content,
+                jobs=jobs,
+                # An uploaded file waits here between the request that accepted
+                # it and the worker that reads it - the same filesystem-backed
+                # store the Book Library already uses, under its own key prefix.
+                asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
+            )
             if content is not None and jobs is not None
             else None
         ),
