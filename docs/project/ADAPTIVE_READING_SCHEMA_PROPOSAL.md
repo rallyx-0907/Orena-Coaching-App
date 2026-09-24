@@ -1,12 +1,13 @@
 # Adaptive Reading Practice — schema proposal
 
-    STATUS: ROUND 2 — PROPOSED, NOT APPLIED. Revised against every finding of
-            round 1 (docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md).
-            Round 2 is reviewed against the DDL, not prose.
+    STATUS: ROUND 3 — PROPOSED, NOT APPLIED. Round 1 (prose) and round 2
+            (DDL, 4563908) returned REQUEST CHANGES; this revision answers
+            every round-2 finding (docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md,
+            "Round 2" and "Answers to round 2" below).
     DDL:    migrations/proposed/20260924_0014_adaptive_reading.py
     PROOF:  tests/test_adaptive_reading_schema_proposed.py
     LANE:   admin/control-center
-    DATES:  round 1 2026-09-23, round 2 2026-09-24
+    DATES:  round 1 2026-09-23, rounds 2 and 3 2026-09-24
 
 This proposes the persistence Adaptive Reading Practice needs, and nothing
 else. The DDL sits in `migrations/proposed/`, which Alembic's default
@@ -80,8 +81,8 @@ grounded in one exact body.
 | Column | Type | Why |
 | --- | --- | --- |
 | `id` | uuid pk | |
-| `article_id` | uuid → `reading_articles` **ON DELETE RESTRICT** | §7 |
-| `language_code` | varchar(20) | the article's language; the parent key of the attempts' composite FK, so a zh attempt cannot attach to an en set |
+| `article_id` | uuid; `(article_id, language_code)` → `reading_articles (id, language)` **ON DELETE RESTRICT** | §7 |
+| `language_code` | varchar(20) | the article's language, **bound to it** by that composite FK (round-2 R11), and the parent key of the attempts' composite FK — so article → set → attempt cannot change language anywhere |
 | `support_language` | varchar(20) | the language the explanations are written in (required change 18) |
 | `article_body_sha256` | varchar(64) | the grounding anchor: the exact body every offset indexes (§6) |
 | `status` | varchar(20) | `draft`, `needs_review`, `approved`, `rejected`, `stale`, `archived` |
@@ -98,16 +99,26 @@ Constraints and triggers (all in the DDL):
   archived set never block a replacement; nothing is archived to make room
   (blocker 1).
 - `uq_reading_comprehension_set_scope` — `UNIQUE (id, language_code)`, the
-  parent key the attempts reference.
-- CHECKs: status enum; hash is 64 lowercase hex; identity fields non-empty; a
-  decided set has `reviewed_at`.
+  parent key the attempts reference. `uq_reading_article_language_scope` —
+  a unique **index** on `reading_articles (id, language)`, the parent key the
+  set references: an index, not a constraint, so SQLite need not rebuild
+  `reading_articles` (which other tables reference) to add it; `id` is already
+  unique, so it adds no rule to the article.
+- CHECKs: status enum; the hash is 64 characters that are **all lowercase hex**
+  (`ltrim(x, '0123456789abcdef') = ''`, portable to both dialects — round 2
+  found the round-2 CHECK accepted `'g' * 64`); identity fields non-empty; a
+  decided set has `reviewed_at` **and a non-empty `reviewed_by`**.
 - `reading_comprehension_set_guard` (trigger): a set is **created** undecided;
   status moves only along review transitions (`draft→needs_review`,
   `needs_review→draft|approved|rejected`, `approved→stale|archived`,
   `stale→approved|archived`); **entering `approved` requires at least one
   approved question and no undecided one** (required change 12); once decided
-  its article, languages, anchor, generator and model are **frozen**; a set
-  that reached learners (`approved`, `stale`, `archived`) **cannot be deleted**.
+  its article, languages, anchor, generator and model are **frozen**, and its
+  reviewer fields change only together with a status change — a later decision
+  names its own reviewer, nobody rewrites an earlier one; a set that reached
+  learners (`approved`, `stale`, `archived`) **cannot be deleted**. Every set
+  decision is also written to `reading_review_events` on its article by the
+  service, so the history of decisions survives a re-approval.
 - `question_count` is gone (reviewer: non-minimal): the Admin list counts over
   `ix_reading_comprehension_questions_set`.
 
@@ -141,13 +152,21 @@ exactly what it is.
 | `set_id` + `language_code` → sets `(id, language_code)` **RESTRICT** | NULL | NOT NULL |
 | `ordinal` | NULL | 1, 2, 3 … per account and language |
 | `operation_id`, `request_digest` | NULL | NOT NULL (§5.1) |
-| `evaluator_version`, `ability_policy_version` | NULL | NOT NULL (§5.2) |
-| `passage_level`, `passage_difficulty` | NULL | NOT NULL |
-| `ability_before`, `ability_after` | NULL | NOT NULL |
+| `evaluator_version`, `passage_level` | NULL | NOT NULL |
+| `ability_policy_version`, `passage_difficulty`, `ability_before`, `ability_after` | NULL | **all four or none** (B1): NULL means "not measured" |
 | `answers`, `correct_count`, `total`, `created_at` | as today | reused: `[{question_id, selected_index, correct}]`, bounded |
 
 - `ck_reading_attempt_generated_shape` and `ck_reading_attempt_set_shape` make
   the two shapes **exclusive and complete**.
+- `ck_reading_attempt_ability_group` makes the ability measurement all-or-none
+  (round-2 blocker B1). The answers are the evidence; the measurement is what a
+  policy made of them. If the active policy cannot measure an attempt — it has
+  no difficulty mapping for this level, it produces a value out of range, a
+  replay fails — the attempt still commits with the four columns NULL,
+  "not measured, not zero" (`ORENA_EVIDENCE_ARCHITECTURE.md` §2: "Unknown is not
+  zero"; §3: "Projection failure preserves source evidence and ordinary
+  practice access"). Round 2 made them NOT NULL, which made evidence depend on
+  the projection succeeding.
 - `ck_reading_attempt_set_counts` bounds set attempts only: `total > 0`,
   `0 <= correct_count <= total`, `json_array_length(answers) = total`. Legacy
   rows keep whatever the old writer and the importer produced; they are not
@@ -155,6 +174,13 @@ exactly what it is.
 - `reading_attempt_guard` (trigger): an attempt meets **only an approved set**,
   and a set attempt is **immutable** evidence. Legacy rows are untouched — the
   importer's upsert of them keeps working.
+- `answers` is one JSON column holding two element shapes: legacy rows hold
+  option indexes (`[0, 2, 1]`), set attempts hold
+  `[{question_id, selected_index, correct}]`. No portable CHECK can test the
+  element shape (PostgreSQL and SQLite path syntax differ), so the database
+  bounds only the length, and **the service validates every element** before
+  it writes. The proof shows the database alone accepts `[0]` on a set attempt
+  (round-2 R10).
 - `score` is gone (required change 13): it is `correct_count / total`, and a
   later change to scoring is captured by `evaluator_version` plus the per-answer
   `correct` flags, which are the facts.
@@ -175,7 +201,9 @@ shapes, and the old shape is scoped through `reading_sessions` while the new one
 is scoped directly. The account-deletion enumeration therefore names two
 predicates for this table (§5.4), and a reader that inner-joins attempts to
 sessions sees only the old shape — which is exactly the consumer work §9 makes a
-precondition of moving any learner to the new route.
+precondition of the first set-attempt write. A later, separately authorized
+backfill of `user_id`/`language_code` onto legacy rows would give deletion one
+predicate; it is not proposed now.
 
 ## 4. `reading_ability_projections` — a discardable learner projection
 
@@ -193,18 +221,30 @@ precondition of moving any learner to the new route.
 `UNIQUE (user_id, language_code, policy_version)`. The reviewer asked for
 `UNIQUE (user_id, language_code)`; the policy version is added because
 `ORENA_EVIDENCE_ARCHITECTURE.md` §3 defines projection identity as
-"account + learning language + projection-policy version", and it lets a new
-policy build beside the old one and selection switch when it is complete.
+"account **incarnation** + learning language + projection-policy version" — this
+schema keys the account by `user_id`, not the incarnation, for the reason in
+§5.5 — and it lets a new policy build beside the old one and selection switch
+when it is complete.
 
-`recent_json` is gone (required change 7): `uq_reading_attempt_ordinal`
-answers "the last N outcomes" with an index-only walk. `attempts` is gone:
-ordinals are contiguous, so `consumed_through_ordinal` *is* how much evidence
-the estimate rests on.
+`recent_json` is gone (required change 7): "the last N outcomes" is a backward
+walk of `uq_reading_attempt_ordinal` that stops after N rows — bounded, though
+not index-only, since `correct_count`/`total` are read from the rows (round 2
+F4 corrected the round-2 wording). `attempts` is gone: the service allocates
+ordinals contiguously, so `consumed_through_ordinal` is how much evidence the
+estimate rests on. Contiguity is the service's invariant, not the database's:
+the database refuses a duplicate ordinal, not a gap.
 
-**Why a table and not a derived read** (kept): selection runs on every passage
-request and must not replay a learner's history to answer. The evidence
-architecture allows exactly this — "if a materialized projection is needed" —
-on the condition that it is rebuildable, which §5.3 makes true.
+**Why a table and not a derived read — corrected (round-2 R8).** Round 2 said
+selection "must not replay a learner's history". That was wrong for the
+ability itself: the current ability under a policy is the latest measured
+attempt's `ability_after`, one bounded read. The table is kept for what is
+**not** one read: accuracy **per question type**, which is an aggregate over
+every attempt's answers joined to their questions' types; the ability when
+recent attempts were **not measured** (B1), which the projection carries
+through; and **policy transitions**, where a new policy's row is built beside
+the old one without rewriting any attempt. **The attempts are authoritative**:
+where the projection and a replay of the attempts disagree, the projection is
+wrong and is rebuilt.
 
 ## 5. The account-data contract — the four missing requirements
 
@@ -214,46 +254,58 @@ A submit carries an `operationId` chosen by the client for **one logical
 submit**, reused on every retry of it. The set attempt row is its own receipt:
 the committed result the contract asks a receipt to point at *is* that row, and
 it is immutable. `uq_reading_attempt_operation` =
-`UNIQUE (user_id, language_code, operation_id)` — a plain unique constraint:
-legacy rows hold NULL there and NULLs are distinct on both dialects, so no
-partial predicate is needed.
+`UNIQUE (user_id, operation_id)` — scoped to the account, **not** to the
+language (round-2 R7: with the language in the key, the same `operationId`
+replayed under another language committed a second attempt; the backbone's
+`mutation_receipts` scopes by `(incarnation, domain, operation_id)` for the same
+reason). A plain unique constraint: legacy rows hold NULL there and NULLs are
+distinct on both dialects, so no partial predicate is needed.
 
 The submit transaction (PostgreSQL; the SQLite backend refuses the write, as
 `save_listening_progress_record` and the Text Discussion repository already
 do):
 
 1. Scope comes from the server, never the body.
-2. Look up `(user, language, operation_id)`. Found with an equal
-   `request_digest` → return that row: `committed`, and **the ability step is
-   not applied again**. Found with a different digest → `rejected
-   {operation_reused}`.
-3. `INSERT … ON CONFLICT DO NOTHING` the projection row for the active policy,
-   then `SELECT … FOR UPDATE` it. This lock serializes every set-attempt write
-   for one learner and language. If its checkpoint is behind the attempts (it
-   was discarded), rebuild it here first.
+2. Look up `(user, operation_id)`. Found with an equal `request_digest` →
+   return that row: `committed`, and **the ability step is not applied again**.
+   Found with a different digest → `rejected {operation_reused}`.
+3. Take `pg_advisory_xact_lock` on the pair `(account, language)`. This lock —
+   **not** the discardable projection row, which round 2 used and which made
+   every submit depend on the projection existing — serializes every
+   set-attempt write for one learner and language, and is released at commit
+   or rollback.
 4. Re-check the operation under the lock (a duplicate may have committed while
    this one waited).
-5. Validate: the set is approved, in the learner's language and support
-   language, and still grounded (§6); the answers name exactly the set's
-   approved questions.
-6. Score under `evaluator_version`; compute `ability_after` under the active
-   `ability_policy_version`; insert the attempt with
-   `ordinal = consumed_through_ordinal + 1`; advance the projection. Commit.
+5. Validate, under `SELECT … FOR SHARE` of the article row (§6): the set is
+   approved, in the learner's language and support language, and still
+   grounded; the answers name exactly the set's approved questions, each
+   element well-formed.
+6. Score under `evaluator_version`. Allocate
+   `ordinal = max(ordinal) + 1` for the pair — one backward step of
+   `uq_reading_attempt_ordinal`.
+7. **The measurement, best-effort, inside a savepoint:** bring the active
+   policy's projection up to date (it may be missing or behind), compute
+   `ability_after`. If that fails, roll back to the savepoint and write the
+   four ability columns NULL; the projection is left behind its checkpoint,
+   which is exactly what "stale" means, and the next rebuild catches it up.
+8. Insert the attempt, advance the projection if it was measured. Commit.
 
-A raced duplicate that slips past step 4 hits the unique constraint, rolls back
-with no success receipt, and re-reads step 2. `uq_reading_attempt_ordinal`
-is the backstop that two different attempts can never claim one checkpoint
-slot. `request_digest` is SHA-256 over the canonical command
+The evidence therefore commits whether or not the projection can be built —
+proved: an attempt commits with the measurement NULL and no projection row at
+all. A raced duplicate that slips past step 4 hits the unique constraint, rolls
+back with no success receipt, and re-reads step 2. `uq_reading_attempt_ordinal`
+is the backstop that two different attempts can never claim one ordinal. `request_digest` is SHA-256 over the canonical command
 (`reading.comprehension_attempt.submit`, set id, sorted
 `question_id → selected_index`); it is the guard against reuse, **not** the
 identity — two distinct attempts with the same answers are two attempts.
 
 ### 5.2 Evaluator and rule versions
 
-`evaluator_version` records how the answers were judged; `ability_policy_version`
-records which rule moved `ability_before` to `ability_after`. Both NOT NULL on
-every set attempt (`ck_reading_attempt_set_shape`), non-empty
-(`ck_reading_attempt_set_values`).
+`evaluator_version` records how the answers were judged: NOT NULL on every set
+attempt (`ck_reading_attempt_set_shape`), non-empty
+(`ck_reading_attempt_set_values`). `ability_policy_version` records which rule
+moved `ability_before` to `ability_after`: present whenever a measurement is,
+absent together with it (B1).
 
 ### 5.3 Projection: policy version, checkpoint, discardable
 
@@ -263,8 +315,10 @@ every set attempt (`ck_reading_attempt_set_shape`), non-empty
   apply (`ORENA_EVIDENCE_ARCHITECTURE.md` §3, "Apply an evidence version once").
 - **Discardable** — every value is recomputed by replaying the account's set
   attempts in ordinal order under the policy version, from facts the attempts
-  hold (`passage_difficulty`, per-answer correctness, and each question's type
-  from its frozen set). Deleting a row costs a rebuild, never evidence; the
+  hold (`passage_level`, per-answer correctness, and each question's type from
+  its frozen set; the replay maps level to difficulty under its own policy).
+  An unmeasured attempt is replayed like any other, so a later policy can
+  measure what an earlier one could not. Deleting a row costs a rebuild, never evidence; the
   proof deletes one and shows the attempts untouched. The attempts' own
   `ability_before/after` are the historical record of what the policy said *at
   the time*; a rebuild under a new policy writes a new projection row and never
@@ -275,13 +329,23 @@ every set attempt (`ck_reading_attempt_set_shape`), non-empty
 The account-deletion workflow is not built, and D-055's gate
 (`tests/test_deletion_journal.py::test_no_runtime_code_deletes_or_re_registers_an_account_yet`)
 keeps any runtime path from deleting an account until it is. What it must
-delete for Reading is now enumerated in the migration as `ACCOUNT_OWNED`:
+delete for Reading — the whole Reading owner, not only what this migration
+adds — is enumerated, in deletion order, as `ACCOUNT_OWNED`:
 
 | Table | Predicate | Kind |
 | --- | --- | --- |
+| `reading_ability_projections` | `user_id = :user_id` | projection — discardable |
 | `reading_attempts` | `subject_kind = 'comprehension_set' AND user_id = :user_id` | evidence, keyed to the account |
-| `reading_attempts` | `session_id IN (SELECT id FROM reading_sessions WHERE user_id = :user_id)` | evidence, keyed through the session (already `ON DELETE CASCADE` from the session) |
-| `reading_ability_projections` | `user_id = :user_id` | projection — discardable, so deleting it first or last is equally safe |
+| `reading_attempts` | `session_id IN (SELECT id FROM reading_sessions WHERE user_id = :user_id)` | evidence, keyed through the session |
+| `reading_sessions` | `user_id = :user_id` | the learner's generated passages and goals — round 2 found the round-2 list omitted them (R2) |
+
+`text_discussions.reading_session_id` is `ON DELETE SET NULL`; the discussions
+themselves are an existing owner table of their own contract, deleted by the
+same workflow under that contract, and are not re-enumerated here.
+
+`ACCOUNT_OWNED` is in the migration only so the reviewer and the proof can
+read it. **At apply it moves into application code the deletion workflow
+imports** — the application never imports a migration.
 
 The proof runs that enumeration for one of two learners and shows the other
 learner and every platform row untouched, and separately that the `users`
@@ -291,11 +355,33 @@ the same predicates. At apply time the enumeration also joins the owner-table
 list the deletion workflow will consume, and `reading_attempts` joins
 `runtime_backup.COMPARED` (it is missing today).
 
-**Incarnation keying:** these rows are keyed by `user_id`, as every existing
-domain owner is (`saved_words`, `speaking_attempts`, `listening_progress`),
-not by the gated backbone's account incarnation. Keying new learner evidence to
-the incarnation is the account-architecture decision `AGENTS.md` §7 reserves;
-this proposal does not make it.
+### 5.5 What the backbone will add, and why it is not reused now (round-2 R9)
+
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` asks, beyond the four items above, for
+receipts that carry the **account incarnation** (§1), a **change record**
+written atomically with the receipt (§3, §4), and a per-incarnation **stream
+sequence** (§5). The I2 backbone built exactly those —
+`mutation_receipts`, `change_records`, `account_streams`,
+`projection_checkpoints` (`20260908_0005`) — and this proposal **does not
+write to them**, deliberately:
+
+- they are keyed by `account_incarnations.id`, and an incarnation row exists
+  only where the backbone is active (`ORENA_ACCOUNT_BACKBONE`, on in one lane
+  sandbox, off everywhere else); a Reading submit that required one would stop
+  working wherever the flag is off;
+- keying new learner evidence to the incarnation, rather than to `user_id` as
+  every existing domain owner is keyed (`saved_words`, `speaking_attempts`,
+  `listening_progress`), is the account-architecture decision `AGENTS.md` §7
+  reserves. This proposal does not make it.
+
+So those three items are **deferred to backbone activation**, and the path is
+additive: when Reading activates on the backbone, the submit transaction also
+writes a `mutation_receipts` row (domain `reading.comprehension_attempt`,
+`result_ref` = the attempt id) and a `change_records` row under the stream
+lock, in the same transaction as the attempt; the attempt's own
+`(user_id, operation_id)` receipt stays as the domain's dedupe. The projection
+checkpoint can then move to `projection_checkpoints`, keyed by stream sequence
+— which is why this one is kept discardable and nothing depends on it.
 
 ## 6. Revision and grounding
 
@@ -327,21 +413,33 @@ The service's rules (built after approval, specified now):
 
 1. **Generation** computes offsets from the body itself — never taken from the
    model — and requires `body[start:end] == evidence_text`.
-2. **Approval** recomputes SHA-256 of the current body, requires it to equal the
-   anchor, and re-verifies every span. A draft whose article changed is
-   re-anchored while still undecided (allowed by the trigger); a decided set's
-   anchor is frozen.
-3. **An article body edit** (`update_article` with `body` among the changes)
-   moves every approved set of that article whose anchor no longer matches to
-   `stale`, **in the same transaction**, with a review event. It is visible to
-   the Admin, never silent.
+2. **Approval** takes `SELECT … FOR UPDATE` on the article row, then recomputes
+   SHA-256 of the current body, requires it to equal the anchor, and re-verifies
+   every span, all in the transaction that moves the set to `approved`. A draft
+   whose article changed is re-anchored while still undecided (allowed by the
+   trigger); a decided set's anchor is frozen.
+3. **An article body edit** takes the same `SELECT … FOR UPDATE` on the article
+   row, reads the current body **inside** that transaction, and moves every
+   approved set of that article whose anchor no longer matches to `stale`, in
+   the same transaction, with a review event. It is visible to the Admin, never
+   silent. The shared row lock is what closes the race round 2 found (R3):
+   `update_article` today reads the article outside its transaction, and rule 3
+   alone stales only sets that are already approved, so an approval racing a
+   body edit could land on a stale anchor. With both taking the lock, either
+   the edit lands first and the approval's hash check fails, or the approval
+   lands first and the edit stales it. The database itself accepts approving a
+   set whose anchor no longer matches — the proof does not claim otherwise; the
+   lock and the hash check are the service's.
 4. **Serving and submitting** re-check the hash. A mismatch means the set is not
    served — the article is Free Reading for that learner — and a submit is
    `rejected {set_stale}`. This holds even if rule 3 were ever skipped.
 5. **`stale → approved`** is allowed only when the hash matches again.
 
-Offsets are Unicode code points into the body (Python string indices); the
-browser converts to UTF-16 for highlighting.
+**The hash input, exactly:** SHA-256 over the UTF-8 encoding of
+`reading_articles.body` as stored, with no normalization of any kind (no
+Unicode normalization, no trimming, no line-ending change), rendered as 64
+lowercase hex digits. Offsets are Unicode code points into that same string
+(Python string indices); the browser converts to UTF-16 for highlighting.
 
 **Stated limit:** the exact text of an article body that has since been edited
 is not retained. Attempts on it stay interpretable — each names its frozen set,
@@ -378,24 +476,34 @@ taken silently and nothing blocks silently. All proved.
 `reading_articles.content_kind varchar(20) NOT NULL DEFAULT 'article'`,
 `CHECK (content_kind IN ('article', 'news'))`.
 
-Round 1 proposed five values. Three collided or were invented:
+Round 1 proposed five values. Every vocabulary for these axes, server and
+client — round 2 found two client ones the round-2 inventory missed (R6):
 
-| Axis | Column | Values | Meaning |
+| Axis | Where | Values | Meaning |
 | --- | --- | --- | --- |
 | How content arrives | `reading_sources.source_type` | `manual, direct_url, file, rss, api, feed` | ingestion method |
-| What form a learner sees | `reading_articles.content_kind` | **`article, news`** | editorial form |
+| What form a learner sees | `reading_articles.content_kind` | **`article, news`** | editorial form of a corpus article |
+| What form a learner sees, in the Library | `static/orena/ui/library-browse.js` `TYPE_ORDER` / `READING_MATERIALS` | `book, excerpt, article, news, essay, story, dialogue, quote, …` | the Library's material chips, across every catalog |
+| (retired) form requested of the AI generator | `ReadingGenerateIn.material`, mirrored by `static/orena/content/reading.js` `READING_FORMS` | `article, book, news, quote` | never stored; both leave with the generator (§9 step 3) |
 | Which id space a discussion keys to | `text_discussions.source_kind` | `story, media, reading_session, book_chapter` | routing identity, not a form |
-| (retired) form requested of the AI generator | `ReadingGenerateIn.material` | `article, book, news, quote` | never stored; removed with the generator (§9 step 3) |
 
-- **`book_excerpt` is dropped.** A book is its own catalog (`reading_books`,
-  `20260916_0009`), which the Library already renders as Book. A second "book"
-  inside the article catalog would be two answers to one question.
-- **`story` is dropped.** It is a `text_discussions.source_kind` routing value;
-  as a content form it would read as the same word meaning something else.
-- **`essay` is dropped.** Nobody asked for it — the learner lane asked to tell
-  Book, Article and News apart — and adding a value later is a CHECK change.
-- **No fourth vocabulary.** `content_kind` uses `material`'s own words for the
-  same meanings (`article`, `news`), and `material` leaves with the generator.
+The Library's chip vocabulary is the one that already exists for this axis, so
+`content_kind` is **a subset of it with the same meanings**: `article` renders
+as the Library's `article` chip, `news` as its `news` chip. No new word, and no
+word with a second meaning.
+
+- **`book_excerpt` is not added.** A book is its own catalog (`reading_books`,
+  `20260916_0009`), which the Library renders as `book`; the Library's own word
+  for a part of one is `excerpt`, not `book_excerpt`.
+- **`essay` and `story` are not added now** — and, correcting round 2, not
+  because they are invented: the Library already renders both as material
+  chips. They are left out because the learner lane asked to tell Book, Article
+  and News apart and nothing else, and adding a value later is a CHECK change.
+  If added, they take the Library's words. (`story` as a form and `story` as a
+  `text_discussions.source_kind` routing value are different axes; the second
+  names an id space, not what a text is.)
+- **No fourth vocabulary.** `content_kind` reuses the Library's words, and
+  `material`/`READING_FORMS` leave with the generator.
 
 Default `'article'` because every existing row is one: `ADD COLUMN … DEFAULT`
 backfills in the catalogue and no data migration runs. At apply,
@@ -427,21 +535,25 @@ so none of them would see a set attempt:
 | 5 | Admin learner activity | `admin_repository` inner-joins attempts to sessions | set attempts invisible to the Admin |
 | 6 | Product activity events | `specialized_repository.list_product_activity_events`, same join | reading funnel undercounts |
 | 7 | Text Discussion | `discussion_repository` resolves a `reading_session` | unaffected; corpus articles are not a source kind yet (below) |
-| 8 | Import / read-compare tooling | `importer.py`, `read_compare.py` count through the session join | legacy tooling; unaffected, counts legacy rows only |
+| 8 | Import / shadow-verification tooling | `importer.target_counts` counts **all** of `reading_attempts`, unjoined; `verification.verify_shadow` compares it exactly with the legacy SQLite source; `read_compare.py` counts through the session join | round 2 found this row mis-described (F3): once one set attempt exists, `scripts/postgres_shadow.py` would report "Shadow verification FAILED" (measured: 3 unjoined vs 2 joined). At apply, `target_counts` counts `subject_kind = 'generated_session'` rows only — the only kind a legacy source can hold |
 
 The three steps, with the gates they now carry:
 
-1. **Now (this schema, once approved and authorized):** set attempts start
-   being written by the corpus route. The generated route keeps working. It is
-   marked deprecated in code and in `LEGACY_TOMBSTONES.md`.
-2. **Before any learner entry point moves to the corpus route:** consumers 2–6
-   read through one Reading-domain read contract, `list_reading_evidence`,
-   returning both subject kinds in one item shape
+1. **Now (this schema, once approved and authorized):** Admin authoring only —
+   sets are generated, reviewed and approved. **No learner runtime writes a set
+   attempt.** The generated route keeps working, and is marked deprecated in
+   code and in `LEGACY_TOMBSTONES.md`.
+2. **Before the first set-attempt write** — not merely before an entry point
+   moves (round-2 R5: writing set attempts while consumers still read only
+   sessions is itself the silent loss): consumers 2–6 read through one
+   Reading-domain read contract, `list_reading_evidence`, returning both
+   subject kinds in one item shape
    (`subject: {kind: 'generated_session', id} | {kind: 'comprehension_set', article_id, set_id}`,
    title, time, latest result), each with a test that a set attempt appears in
-   it. This is a hard precondition: moving the entry points first is exactly
-   the silent regression the reviewer found. The old route stays reachable by
-   an existing session id, so an attempt in flight is not lost.
+   it, and consumer 8 counts only generated-session rows. Only then does the
+   corpus route accept a submit and the learner entry points move. The old
+   route stays reachable by an existing session id, so an attempt in flight is
+   not lost.
 3. **Then, under its own authorization:** the generator and its prompts are
    removed. `reading_sessions` and the generated-session rows of
    `reading_attempts` stay, read-only, because they are learner evidence; they
@@ -471,6 +583,27 @@ The rule is written into the DDL, not into prose:
   so it needs no `FOR SHARE`; on PostgreSQL the question and attempt guards
   take `FOR SHARE` on the set, which is what serializes a question write
   against the set's approval (proved with two connections and a lock timeout).
+- **Each dialect's extra write is closed (round-2 R4, F5).** SQLite's
+  `INSERT OR REPLACE` / `UPDATE OR REPLACE` resolve a conflict by deleting the
+  other row and fire no DELETE trigger doing it — round 2 used it to forge a
+  set attempt and to turn an approved set back into a draft. SQLite now has
+  `*_conflict_guard` triggers that refuse, before conflict resolution, any
+  write colliding with a set, a question or a set attempt (by id, by
+  `(user, operation)`, by `(user, language, ordinal)`, or by the approved-set
+  key). A plain colliding write fails on the unique constraint anyway, so the
+  outcome is the refusal PostgreSQL gives — where `ON CONFLICT DO UPDATE` goes
+  through the UPDATE guards. PostgreSQL's `TRUNCATE … CASCADE` fires no row
+  trigger and ignores RESTRICT; statement-level `BEFORE TRUNCATE` guards now
+  refuse it on the sets and questions always, and on `reading_attempts`
+  whenever it holds a set attempt — so `TRUNCATE reading_articles CASCADE` or
+  `TRUNCATE users CASCADE` cannot take evidence either. The same scenario runs
+  on both dialects in each dialect's own syntax.
+- **Triggers on the ORM path, and after a rebuild.** At apply, `models.py`
+  attaches the same trigger DDL with `DDL(...).execute_if(dialect=...)`, and a
+  test asserts every trigger named in the migration exists on a
+  `create_all`-built database. Any future migration that batch-rebuilds one of
+  these tables on SQLite drops its triggers and must recreate them; the same
+  test catches one that does not.
 
 `tests/test_adaptive_reading_schema_proposed.py` runs **one scenario list on
 both dialects** and requires one outcome:
@@ -488,22 +621,24 @@ back from `pg_constraint` / `PRAGMA foreign_key_list`, rehearses up → down →
 with data present, proves the downgrade refusal, and checks the refusal is in
 the offline-rendered (`--sql`) downgrade.
 
-**Local execution, 2026-09-24 — not CI:** PostgreSQL 16.13, 46 passed, 1
-skipped (the two-connection serialization case is PostgreSQL-only by design);
-SQLite alone, 23 passed. CI will run the SQLite half on every push; the
+**Local execution, 2026-09-24 — not CI (round 3):** PostgreSQL 16.13, 60
+passed, 2 skipped (the SQLite halves of the two-connection serialization case
+and the TRUNCATE case, which are PostgreSQL-only by design); SQLite alone, 29
+passed. The downgrade-race case was checked against a mutation: weakening the
+lock to `ACCESS SHARE` makes it fail. CI will run the SQLite half on every push; the
 PostgreSQL half runs wherever `ORENA_TEST_POSTGRES_URL` is set.
 
 At apply, `models.py` gains the same declarations (both `where` clauses, the
-CHECKs, and the SQLite triggers attached with `DDL(...).execute_if(dialect='sqlite')`),
+CHECKs, the unique index on `reading_articles`, and the triggers as above),
 and a parity test compares the ORM-built schema with the migrated one.
 
 ## 11. Migration, rollback and downgrade
 
 **Upgrade** is additive and transactional on PostgreSQL (all or nothing): two
-new tables, one new projection table, one defaulted column on
-`reading_articles`, and on `reading_attempts` two `DROP NOT NULL`s, thirteen
-nullable-or-defaulted columns, two FKs, five CHECKs and two unique
-constraints. No existing row is rewritten. `ADD CONSTRAINT` validates by
+new tables, one new projection table, one defaulted column and one unique index
+`(id, language)` on `reading_articles`, and on `reading_attempts` two `DROP NOT
+NULL`s, thirteen nullable-or-defaulted columns, two FKs, six CHECKs and two
+unique constraints. No existing row is rewritten. `ADD CONSTRAINT` validates by
 scanning `reading_attempts` and `reading_articles`, which are small today; if
 either were large at apply time the constraints would be added `NOT VALID` and
 validated separately.
@@ -514,11 +649,23 @@ importer, which name none of them, write valid generated-session rows. The
 proof inserts and reads through the unchanged `ReadingAttempt` model after the
 upgrade.
 
-**Downgrade never removes learner data.** Its first statement is a guard that
-runs in the database's own transaction: if any set attempt, any set, any
-projection row, or any `content_kind` other than `article` exists, it raises
-and nothing is dropped. On PostgreSQL the guard is a `DO` block, so an
-offline-rendered downgrade script carries it too. With no footprint, the
+**Downgrade never removes learner data.** On PostgreSQL its first statement
+locks every table it would change — `reading_articles`,
+`reading_comprehension_sets`, `reading_comprehension_questions`,
+`reading_attempts`, `reading_ability_projections` — `IN SHARE ROW EXCLUSIVE
+MODE`, which blocks every writer and any second downgrade until it ends. Then a
+guard, in the same transaction: if any set attempt, any set, any projection
+row, or any `content_kind` other than `article` exists, it raises and nothing is
+dropped. Round 2 found the guard without the lock was a race (R1, F6): a
+downgrade waiting on a writer's uncommitted draft set and `content_kind='news'`
+proceeded after the commit and dropped both. With the lock, the guard runs only
+after that writer commits, and sees it — proved with two connections, and the
+proof fails if the lock is weakened. On SQLite the guard's reads open the
+transaction's snapshot and the DDL needs the database write lock: a writer that
+commits in between either waits for the reader (rollback journal) or makes the
+downgrade fail with `SQLITE_BUSY_SNAPSHOT` (WAL) — nothing is dropped unseen.
+On PostgreSQL the lock and the guard are both SQL (`LOCK TABLE`, a `DO` block),
+so an offline-rendered downgrade script carries them too. With no footprint, the
 downgrade drops the new objects and restores `NOT NULL` on `session_id` and
 `legacy_id` — which rewrites nothing, because the shape CHECK held both non-null
 for every remaining row. Proved on both dialects: a legacy attempt survives a
@@ -536,12 +683,25 @@ was, so the chain stays linear.
 ## 12. Apply-time work (not in this change)
 
 Specified so the reviewer can check it; none of it is built before approval:
-`models.py` declarations and the ORM parity test; the Reading repository's
-submit transaction (§5.1), ability rebuild (§5.3) and `list_reading_evidence`
-(§9); the engine's `update_article` staleness transition (§6 rule 3);
-`content_kind` in `LEARNER_VISIBLE_FIELDS` and the publish contract;
-`reading_attempts` in `runtime_backup.COMPARED`; the deprecation marker. The
-SQLite runtime repository refuses the set-attempt write, as it refuses
+
+- `models.py` declarations, the triggers on the `create_all` path, and the ORM
+  parity test (§10);
+- the Reading repository's submit transaction with the advisory lock and the
+  best-effort measurement (§5.1), the ability rebuild (§5.3), and
+  `list_reading_evidence` with consumers 2–6 moved onto it (§9 step 2);
+- the element-shape validation of `answers` (§3);
+- the article row lock and the in-transaction body read in approval and in
+  `update_article`, the staleness transition, and the exact hash input (§6);
+- set decisions written to `reading_review_events` (§2);
+- `ACCOUNT_OWNED` moved into application code for the deletion workflow (§5.4);
+- `importer.target_counts` counting generated-session rows only (§9, #8);
+- `content_kind` in `LEARNER_VISIBLE_FIELDS` and the publish contract (§8);
+- the learner surface reading the set's `explanation` in its
+  `support_language`: `static/orena/ui/comprehension.js` reads only
+  `explanation_vi` today, so the corpus path maps it there (§6);
+- `reading_attempts` in `runtime_backup.COMPARED`; the deprecation marker.
+
+The SQLite runtime repository refuses the set-attempt write, as it refuses
 Listening progress and Text Discussion turns today.
 
 ## 13. What is deliberately not proposed (unchanged)
@@ -576,7 +736,7 @@ Listening progress and Text Discussion turns today.
 | 3 | `user_id` a real FK | done, on the attempt and the projection |
 | 4 | uuid surrogate + unique on ability | done, `(user_id, language_code, policy_version)` (§4) |
 | 5 | rule/evaluator + projection policy version, rebuildable | done (§5.2, §5.3) |
-| 6 | idempotency key | done, `(user, language, operation_id)` + digest (§5.1) |
+| 6 | idempotency key | done, `(user, operation_id)` + digest (§5.1; the language left the key in round 3) |
 | 7 | drop `recent_json` | done |
 | 8 | partial progression index | superseded: no incomplete rows exist, so `uq_reading_attempt_ordinal` is the progression index, with no predicate |
 | 9 | mutual-exclusion CHECK + `machine_suggested` | done, on questions |
@@ -606,14 +766,40 @@ Listening progress and Text Discussion turns today.
    sandbox under the 2026-09-23 authorization; this proposal is the only file
    in `migrations/proposed/`.
 
-## Review questions for round 2
+## Answers to round 2, item by item
 
-1. Is extending `reading_attempts` with a discriminator the right reading of
-   "reuse equivalent existing records", against a new table plus a shared read
-   contract?
-2. Is the body hash, rather than a body revision counter on the article, the
-   right grounding anchor?
-3. Are the triggers the right place for the lifecycle rules, given that they
-   are written twice, or should any of them be repository-only?
-4. Is anything in the apply-time list (§12) something the schema should carry
-   now instead?
+Round 2 reviewed `4563908`: REQUEST CHANGES, one blocker. Its answers to the
+round-2 review questions are kept: extending `reading_attempts` is the right
+reading of §3/§6.7; the body hash is the right anchor; the triggers stay.
+
+| Finding | Answer | Where / proof |
+| --- | --- | --- |
+| **B1** evidence could not commit unless the projection succeeded | ability group all-or-none (`ck_reading_attempt_ability_group`); ordinal under an advisory lock, not the projection row; measurement best-effort in a savepoint | §3, §5.1; attempt commits unmeasured with no projection row; half a measurement refused |
+| R1 downgrade guard race | `LOCK TABLE … IN SHARE ROW EXCLUSIVE MODE` before the guard, in the offline script too | §11; two-connection race refused; mutation check |
+| R2 `ACCOUNT_OWNED` incomplete, wrong home | `reading_sessions` added; moves into app code at apply | §5.4; deletion proof counts sessions |
+| R3 approval races a body edit | both take the article row `FOR UPDATE` and read the body in-transaction; hash input specified | §6 (service rule; the DB is stated not to enforce it) |
+| R4 SQLite REPLACE bypass; PG TRUNCATE | SQLite conflict guards; PG `BEFORE TRUNCATE` guards | §10; replace/upsert refused on both; TRUNCATE refused |
+| R5 step 1 wrote set attempts before consumers moved | precondition is the first write | §9 |
+| R6 client vocabularies missing | Library `TYPE_ORDER` and `READING_FORMS` inventoried, `content_kind` a subset of the Library's words | §8 |
+| R7 operation id per language | `UNIQUE (user_id, operation_id)` | §5.1; replay under another language refused |
+| R8 projection justification wrong | corrected; attempts authoritative | §4 |
+| R9 incarnation, change records, stream, backbone tables | deferred to backbone activation, with the additive path and why not now | §5.5 |
+| R10 lookalike CHECKs | hex-only hash and digest; decided set names a non-empty reviewer; reviewer fields frozen outside a status change; `answers` element shape is the service's, stated | §2, §3; `'g' * 64` refused; rewrite refused |
+| R11 set language not bound to article | unique index `(id, language)` on articles + composite FK from the set | §2; zh set on en article refused |
+| F1 misquoted projection identity | quote corrected ("account incarnation"), keying explained | §4, §5.5 |
+| F2 "64 lowercase hex" was only length+lowercase | now true | §2 |
+| F3 consumer 8 mis-described | corrected, apply-time fix named | §9 |
+| F4 "index-only walk", contiguity | corrected; contiguity is the service's invariant | §4 |
+| F5 "the same rules" on both dialects | now true, with each dialect's extra write closed | §10 |
+| F6 "nothing is dropped" under a concurrent writer | now true, with the lock | §11 |
+
+## Review questions for round 3
+
+1. Is the advisory transaction lock on `(account, language)` the right
+   serialization for ordinal allocation, against locking the `users` row?
+2. Are the SQLite conflict guards a sufficient answer to `OR REPLACE`, or should
+   a test also forbid `OR REPLACE` / `prefix_with("OR REPLACE")` on these tables
+   in application code?
+3. Is leaving "approval requires a matching anchor" to the service (row lock +
+   hash check), rather than a PostgreSQL-only trigger that hashes the body, the
+   right side of the parity rule?

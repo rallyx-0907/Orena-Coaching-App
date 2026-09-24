@@ -1,4 +1,17 @@
-# Adaptive Reading schema — architecture review, round 1
+# Adaptive Reading schema — architecture review
+
+| Round | Reviewed | Verdict |
+| --- | --- | --- |
+| 1 | `00dcf18` (prose only) | REQUEST CHANGES — 5 blockers, 21 required changes, 6 factual errors |
+| 2 | `4563908` (proposal + DDL + two-dialect proof) | REQUEST CHANGES — 1 blocker, 11 required changes, 6 factual errors |
+| 3 | pending — delta review of the round-2 answers | |
+
+Nothing is applied in any round. Applying needs an APPROVED round **and** the
+human's schema/runtime authorization.
+
+---
+
+# Round 1
 
     VERDICT:         REQUEST CHANGES
     REVIEWER:        Delegated Architecture Reviewer (Claude Opus 5)
@@ -150,3 +163,104 @@ The DDL itself, the four `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` requirements, a
 downgrade story (learner evidence must not be down-migrated away), and the
 PostgreSQL constraint proof. Then this review is repeated against the migration
 rather than against prose.
+
+
+---
+
+# Round 2
+
+    VERDICT:         REQUEST CHANGES (one blocker; small, delta-reviewable)
+    REVIEWER:        Delegated Architecture Reviewer - an independent agent
+                     with a fresh context that did not write this work; read-
+                     only, left `git status` clean and no proof schemas behind
+    REVIEWED COMMIT: 456390829c7fad39f5e518cd7ab21411050865cd
+    REVIEWED:        docs/project/ADAPTIVE_READING_SCHEMA_PROPOSAL.md,
+                     migrations/proposed/20260924_0014_adaptive_reading.py,
+                     tests/test_adaptive_reading_schema_proposed.py
+    DATE:            2026-09-24
+    APPLIED:         no
+
+Recorded under `AGENTS.md`, "Architecture review authority". The implementer
+did not approve its own work.
+
+**Round-1 disposition.** Blockers 1, 2, 4 and 5 resolved (2 with two non-schema
+bypasses, R4); blocker 3 partially (B1, R2, R9). Required changes 1-19 resolved
+(17 deferred to apply, acceptable), 20 partially (F3), 21 resolved. All six
+round-1 factual errors resolved.
+
+**Human decisions 1-16.** Satisfied: 1, 2, 4, 5, 7, 9, 10, 12, 14, 15 (with
+R1), 16. Not or partially: 3 (B1, R2, R9), 6 (SQLite `OR REPLACE`, R4), 8 (the
+projection's justification, R8), 11 (two client vocabularies uninventoried,
+R6), 13 (step 1 wrote set attempts before consumers moved, R5).
+
+## Blocker
+
+**B1 - learner evidence could not commit unless the projection succeeded.**
+`ck_reading_attempt_set_shape` made `ability_policy_version`,
+`passage_difficulty`, `ability_before`, `ability_after` NOT NULL, and §5.1
+allocated the ordinal from, and rebuilt, the discardable projection row inside
+the submit. A policy with no mapping for a level, an out-of-range value or a
+failed replay would roll back every submit. Contradicts
+`ORENA_EVIDENCE_ARCHITECTURE.md` ("Projection failure preserves source
+evidence", "Unknown is not zero"). Fix: the four all-or-none; ordinal under a
+lock that is not the projection row; measurement best-effort; a proof that an
+attempt commits with the projection missing.
+
+## Required changes
+
+- **R1** Downgrade guard read without a lock: with an uncommitted draft set and
+  `content_kind='news'` in another transaction, the downgrade waited, then
+  succeeded and dropped both. Lock the tables before the guard.
+- **R2** `ACCOUNT_OWNED` omitted `reading_sessions`; move it into app code at apply.
+- **R3** Approval can race a body edit (`update_article` reads outside its
+  transaction); lock the article row in both, fix the hash input.
+- **R4** SQLite `INSERT OR REPLACE` forged a set attempt and reset an approved
+  set to a draft past the guards; PostgreSQL `TRUNCATE ... CASCADE` takes set
+  attempts with no trigger.
+- **R5** Step 1 must not write set attempts until consumers 2-6 have moved.
+- **R6** Inventory the Library's `TYPE_ORDER`/`READING_MATERIALS` and
+  `READING_FORMS`; `story`/`essay` are Library chips, not inventions.
+- **R7** `language_code` in the operation key let one `operationId` commit twice
+  under two languages.
+- **R8** The projection's "must not replay history" justification is false for
+  the ability itself; state that the attempt is authoritative.
+- **R9** Incarnation, change records, stream sequence and the unused backbone
+  tables: defer explicitly, with the path.
+- **R10** Hash/digest CHECKs accepted `'g' * 64`; a set attempt accepts
+  legacy-shaped `answers`; a decided set accepted an empty `reviewed_by` and
+  later rewrites of its reviewer fields.
+- **R11** Nothing bound a set's language to its article's: a zh set on an en
+  article was accepted.
+
+## Factual errors
+
+F1 the projection-identity quote dropped "incarnation"; F2 "64 lowercase hex"
+was length and case only; F3 consumer 8 (`importer.target_counts` counts
+unjoined, so shadow verification would fail); F4 "index-only walk" and
+database-enforced contiguity; F5 "the same rules" on both dialects under
+`OR REPLACE`; F6 "nothing is dropped" under a concurrent writer.
+
+## Reviewer's own checks (local execution, not CI)
+
+Implementer's proof reproduced (PostgreSQL 16: 46 passed, 1 skipped; SQLite 23
+passed). CI validators pass. `0013 -> 0014 -> 0013` catalogue-identical on
+PostgreSQL, re-upgrade identical; SQLite batch rebuild keeps the legacy unique
+and the session CASCADE; offline `--sql` upgrade and downgrade ran with
+`psql -v ON_ERROR_STOP=1`. Every accepted-but-wrong case above was
+demonstrated, not inferred.
+
+## Kept
+
+The approved-only inclusion predicate with both `where` clauses; plain uniques
+over nullable columns; RESTRICT attempt->set and set->article with the
+reached-learners delete guard; CASCADE to questions; the composite attempt->set
+FK; the exclusive-and-complete shape CHECKs; a row only once submitted; the
+frozen body-hash anchor; the honest structural span CHECK; the spanless
+`main_idea`/`authors_purpose` rule; `content_kind` `article|news`; source
+category and Text Discussion deferred; the refusing downgrade in the offline
+script; an upgrade old code can use; `FOR SHARE` serialization; one scenario
+list on both dialects; Float +/-1e6 with NaN and infinity refused;
+`passage_difficulty` beside `passage_level`.
+
+The answers to every item are in `ADAPTIVE_READING_SCHEMA_PROPOSAL.md`,
+"Answers to round 2, item by item".

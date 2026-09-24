@@ -253,7 +253,7 @@ def _set(engine, article_id, *, language="en", support="vi", status="draft", bod
     _insert(engine, "reading_comprehension_sets", id=set_id, article_id=article_id, language_code=language,
             support_language=support, article_body_sha256=_sha(body), status=status,
             generator_version="reading-questions/1", model="proof", validation_json={},
-            reviewed_by="", reviewed_at=extra.pop("reviewed_at", None), review_reason="",
+            reviewed_by=extra.pop("reviewed_by", ""), reviewed_at=extra.pop("reviewed_at", None), review_reason="",
             created_at=now, updated_at=now, **extra)
     return set_id
 
@@ -288,7 +288,7 @@ def _approved_set(engine, article_id=None, **kwargs):
     return article_id, set_id
 
 
-def _attempt(engine, user_id, set_id, *, language="en", ordinal=1, **overrides) -> uuid.UUID:
+def _attempt_values(user_id, set_id, *, language="en", ordinal=1, **overrides) -> dict:
     attempt_id = uuid.uuid4()
     values = dict(
         id=attempt_id, subject_kind="comprehension_set", user_id=user_id, language_code=language,
@@ -299,8 +299,30 @@ def _attempt(engine, user_id, set_id, *, language="en", ordinal=1, **overrides) 
         answers=[{"question_id": "q", "selected_index": 0, "correct": True}], correct_count=1, total=1,
     )
     values.update(overrides)
+    return values
+
+
+def _attempt(engine, user_id, set_id, **kwargs) -> uuid.UUID:
+    values = _attempt_values(user_id, set_id, **kwargs)
     _insert(engine, "reading_attempts", **values)
-    return attempt_id
+    return values["id"]
+
+
+def _replace(engine, name: str, conflict: list[str], /, **values) -> None:
+    """Each dialect's own way to overwrite a row that already exists: SQLite's
+    `INSERT OR REPLACE`, PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE`."""
+    table = _table(name, values)
+    if engine.dialect.name == "postgresql":
+        from sqlalchemy.dialects.postgresql import insert
+
+        statement = insert(table).values(**values).on_conflict_do_update(
+            index_elements=conflict,
+            set_={key: value for key, value in values.items() if key not in conflict},
+        )
+    else:
+        statement = sa.insert(table).values(**values).prefix_with("OR REPLACE")
+    with engine.begin() as connection:
+        connection.execute(statement)
 
 
 def _legacy_attempt(engine, user_id, *, language="en") -> tuple[uuid.UUID, uuid.UUID]:
@@ -329,7 +351,7 @@ def test_a_rejected_set_and_its_replacement_coexist_and_only_one_is_approved(db)
     rejected = _set(db, article)
     _question(db, rejected, rejected=True)
     _update(db, "reading_comprehension_sets", rejected, status="needs_review")
-    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now())
+    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now(), reviewed_by="admin")
     # The replacement is prepared and approved beside the rejection - nothing
     # had to be archived to make room.
     _, first = _approved_set(db, article)
@@ -338,10 +360,10 @@ def test_a_rejected_set_and_its_replacement_coexist_and_only_one_is_approved(db)
     second = _set(db, article)
     _question(db, second, approved=True)
     _update(db, "reading_comprehension_sets", second, status="needs_review")
-    _refused(lambda: _update(db, "reading_comprehension_sets", second, status="approved", reviewed_at=_now()))
+    _refused(lambda: _update(db, "reading_comprehension_sets", second, status="approved", reviewed_at=_now(), reviewed_by="admin"))
     # ...until the first stops being approved, and a stale set blocks nothing.
     _update(db, "reading_comprehension_sets", first, status="stale")
-    _update(db, "reading_comprehension_sets", second, status="approved", reviewed_at=_now())
+    _update(db, "reading_comprehension_sets", second, status="approved", reviewed_at=_now(), reviewed_by="admin")
     # Another support language is another set.
     _approved_set(db, article, support="en")
 
@@ -372,7 +394,7 @@ def test_the_purge_path_deletes_undecided_and_rejected_sets_explicitly_then_the_
     rejected = _set(db, article)
     _question(db, rejected, rejected=True)
     _update(db, "reading_comprehension_sets", rejected, status="needs_review")
-    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now())
+    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now(), reviewed_by="admin")
     # RESTRICT: the article does not take its sets with it...
     _refused(lambda: _delete(db, "reading_articles", article))
     # ...the purge deletes them first (their questions cascade), then the article.
@@ -472,7 +494,7 @@ def test_a_learner_meets_only_an_approved_set(db):
     _question(db, pending, approved=True)
     _update(db, "reading_comprehension_sets", pending, status="needs_review")
     _refused(lambda: _attempt(db, learner, pending))
-    _update(db, "reading_comprehension_sets", pending, status="approved", reviewed_at=_now())
+    _update(db, "reading_comprehension_sets", pending, status="approved", reviewed_at=_now(), reviewed_by="admin")
     _attempt(db, learner, pending, ordinal=1)
     _update(db, "reading_comprehension_sets", pending, status="stale")
     _refused(lambda: _attempt(db, learner, pending, ordinal=2))
@@ -522,8 +544,8 @@ def test_account_deletion_through_the_enumeration_removes_one_learner_and_nothin
     with db.begin() as connection:
         for table, predicate in module.ACCOUNT_OWNED:
             connection.execute(text(f"DELETE FROM {table} WHERE {predicate}"), {"user_id": _bind(db, leaving)})
-    assert _owned(db, leaving) == (0, 0, 0)
-    assert _owned(db, staying) == (1, 1, 1)
+    assert _owned(db, leaving) == (0, 0, 0, 0)
+    assert _owned(db, staying) == (1, 1, 1, 1)
     # Platform content is untouched by a learner leaving.
     assert _count(db, "reading_comprehension_sets", "id = :i", i=_bind(db, set_id)) == 1
 
@@ -537,15 +559,16 @@ def test_the_owner_foreign_keys_cascade_from_the_account_row_too(db):
             policy_version="reading-ability/1", ability=0.0, consumed_through_ordinal=1,
             by_question_type_json={}, updated_at=_now())
     _delete(db, "users", learner)
-    assert _owned(db, learner) == (0, 0, 0)
+    assert _owned(db, learner) == (0, 0, 0, 0)
 
 
-def _owned(db, learner) -> tuple[int, int, int]:
+def _owned(db, learner) -> tuple[int, int, int, int]:
     bound = _bind(db, learner)
     return (
         _count(db, "reading_attempts", "user_id = :u", u=bound),
         _count(db, "reading_attempts",
                "session_id IN (SELECT id FROM reading_sessions WHERE user_id = :u)", u=bound),
+        _count(db, "reading_sessions", "user_id = :u", u=bound),
         _count(db, "reading_ability_projections", "user_id = :u", u=bound),
     )
 
@@ -610,19 +633,19 @@ def test_a_set_is_grounded_in_one_body_and_that_anchor_is_frozen_once_decided(db
 
 def test_a_set_reaches_approval_only_through_review_with_every_question_decided(db):
     article = _article(db)
-    _refused(lambda: _set(db, article, status="approved", reviewed_at=_now()))
+    _refused(lambda: _set(db, article, status="approved", reviewed_at=_now(), reviewed_by="admin"))
     set_id = _set(db, article)
     undecided = _question(db, set_id)
     _update(db, "reading_comprehension_sets", set_id, status="needs_review")
     # An undecided question blocks approval...
-    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now()))
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(), reviewed_by="admin"))
     # ...and so does a set whose every question was rejected.
     _update(db, "reading_comprehension_questions", undecided, admin_rejected=True)
-    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now()))
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(), reviewed_by="admin"))
     kept = _question(db, set_id, approved=True, rank=1)
     # A decision has a moment.
     _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved"))
-    _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now())
+    _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(), reviewed_by="admin")
     # Frozen: no question is added, edited or removed after the decision.
     _refused(lambda: _question(db, set_id, approved=True))
     _refused(lambda: _update(db, "reading_comprehension_questions", kept, prompt="changed"))
@@ -638,7 +661,7 @@ def test_a_rejected_set_is_history_and_frozen(db):
     set_id = _set(db, _article(db))
     question = _question(db, set_id, rejected=True)
     _update(db, "reading_comprehension_sets", set_id, status="needs_review")
-    _update(db, "reading_comprehension_sets", set_id, status="rejected", reviewed_at=_now())
+    _update(db, "reading_comprehension_sets", set_id, status="rejected", reviewed_at=_now(), reviewed_by="admin")
     _refused(lambda: _update(db, "reading_comprehension_questions", question, prompt="rewritten"))
     _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="needs_review"))
 
@@ -672,7 +695,7 @@ def test_the_partial_index_keeps_its_predicate_and_every_upward_key_restricts(db
                 " 'reading_ability_projections'::regclass)"
             )).all())
             by_target = {
-                "reading_comprehension_sets_article_id_fkey": "r",
+                "fk_reading_comprehension_set_article_scope": "r",
                 "reading_comprehension_questions_set_id_fkey": "c",
                 "fk_reading_attempt_set_scope": "r",
                 "fk_reading_attempt_user": "c",
@@ -725,7 +748,7 @@ def test_question_writes_and_set_approval_serialize(db):
         transaction.commit()
         writer.close()
     # With the undecided question now committed, the approval's count sees it.
-    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now()))
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(), reviewed_by="admin"))
 
 
 def _bind(db, value: uuid.UUID):
@@ -780,6 +803,7 @@ def test_the_downgrade_refusal_is_in_the_offline_script_too():
     assert "WHERE status = 'approved'" in rendered
     assert "downgrade refused" in rendered
     assert rendered.index("downgrade refused") < rendered.index("DROP TABLE reading_ability_projections")
+    assert rendered.index("IN SHARE ROW EXCLUSIVE MODE") < rendered.index("downgrade refused")
 
 
 @contextmanager
@@ -813,3 +837,166 @@ def _columns(engine, table: str) -> set[str]:
 
 def _has_table(engine, table: str) -> bool:
     return sa.inspect(engine).has_table(table)
+
+
+# ---- round 2 findings -------------------------------------------------------------
+
+def test_evidence_commits_when_the_projection_cannot_measure_it(db):
+    """B1: the answers are the evidence. A policy that cannot measure them - no
+    mapping for this level, a failed replay - leaves the four ability facts
+    NULL together, and the attempt still commits with no projection at all."""
+    learner = _user(db)
+    _, set_id = _approved_set(db)
+    unmeasured = dict(ability_policy_version=None, passage_difficulty=None, ability_before=None,
+                      ability_after=None)
+    _attempt(db, learner, set_id, ordinal=1, **unmeasured)
+    assert _count(db, "reading_ability_projections", "user_id = :u", u=_bind(db, learner)) == 0
+    # All four or none: half a measurement is refused.
+    for present in unmeasured:
+        partial = {**unmeasured, present: 0.5 if present != "ability_policy_version" else "p/1"}
+        _refused(lambda partial=partial: _attempt(db, learner, set_id, ordinal=2, **partial))
+    # The facts that make it evidence are never optional.
+    for required in ("evaluator_version", "passage_level", "operation_id", "request_digest", "ordinal"):
+        _refused(lambda required=required: _attempt(db, learner, set_id,
+                                                    **{**unmeasured, "ordinal": 3, required: None}))
+
+
+def test_an_operation_id_is_scoped_to_the_account_not_the_language(db):
+    learner = _user(db)
+    _, english = _approved_set(db)
+    _, chinese = _approved_set(db, language="zh")
+    _attempt(db, learner, english, operation_id="submit-7")
+    _refused(lambda: _attempt(db, learner, chinese, language="zh", operation_id="submit-7"))
+    _attempt(db, learner, chinese, language="zh", operation_id="submit-8")
+
+
+def test_hashes_and_digests_are_hex_not_merely_lowercase(db):
+    article = _article(db)
+    learner = _user(db)
+    _, set_id = _approved_set(db)
+    for bad in ("g" * 64, "0" * 63 + " ", "a" * 65):
+        _refused(lambda bad=bad: _insert(db, "reading_comprehension_sets", id=uuid.uuid4(), article_id=article,
+                                       language_code="en", support_language="vi", article_body_sha256=bad,
+                                       status="draft", generator_version="g", model="",
+                                       validation_json={}, reviewed_by="", review_reason="",
+                                       created_at=_now(), updated_at=_now()))
+        _refused(lambda bad=bad: _attempt(db, learner, set_id, request_digest=bad))
+
+
+def test_a_decision_names_its_reviewer_and_is_not_rewritten_afterwards(db):
+    set_id = _set(db, _article(db))
+    _question(db, set_id, approved=True)
+    _update(db, "reading_comprehension_sets", set_id, status="needs_review")
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved",
+                             reviewed_at=_now(), reviewed_by=""))
+    _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(),
+            reviewed_by="admin-a", review_reason="clear")
+    for field, value in (("reviewed_by", "admin-b"), ("review_reason", "rewritten"),
+                         ("reviewed_at", _now())):
+        _refused(lambda field=field, value=value: _update(db, "reading_comprehension_sets", set_id,
+                                                          **{field: value}))
+    # A new decision is a status change, and may name its own reviewer.
+    _update(db, "reading_comprehension_sets", set_id, status="stale")
+    _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(),
+            reviewed_by="admin-b", review_reason="body reverted")
+
+
+def test_a_set_is_in_its_articles_language(db):
+    english = _article(db)
+    _refused(lambda: _set(db, english, language="zh"))
+    chinese = _article(db, language="zh")
+    _set(db, chinese, language="zh")
+
+
+def test_no_write_replaces_protected_rows_on_either_dialect(db):
+    """SQLite's REPLACE deletes the conflicting row without a DELETE trigger;
+    PostgreSQL's ON CONFLICT DO UPDATE goes through the UPDATE guards. Either
+    way a set attempt is not forged and an approved set is not reset."""
+    learner = _user(db)
+    article, set_id = _approved_set(db)
+    original = _attempt_values(learner, set_id, ordinal=1)
+    _insert(db, "reading_attempts", **original)
+    forged = {**original, "correct_count": 0, "ability_after": 9.0,
+              "answers": [{"question_id": "q", "selected_index": 1, "correct": False}]}
+    _refused(lambda: _replace(db, "reading_attempts", ["id"], **forged))
+    # A new id claiming the same checkpoint slot or the same operation.
+    same_slot = _attempt_values(learner, set_id, ordinal=1)
+    _refused(lambda: _replace(db, "reading_attempts", ["user_id", "language_code", "ordinal"], **same_slot))
+    same_operation = _attempt_values(learner, set_id, ordinal=2, operation_id=original["operation_id"])
+    _refused(lambda: _replace(db, "reading_attempts", ["user_id", "operation_id"], **same_operation))
+    with db.connect() as connection:
+        row = connection.execute(text("SELECT correct_count, ability_after FROM reading_attempts WHERE id = :i"),
+                                 {"i": _bind(db, original["id"])}).one()
+    assert (row.correct_count, row.ability_after) == (1, 0.25)
+    # An approved set is not reset to a draft with a new anchor.
+    reset = dict(id=set_id, article_id=article, language_code="en", support_language="vi",
+                 article_body_sha256=_sha("forged"), status="draft", generator_version="g", model="",
+                 validation_json={}, reviewed_by="", review_reason="", created_at=_now(), updated_at=_now())
+    _refused(lambda: _replace(db, "reading_comprehension_sets", ["id"], **reset))
+    assert _count(db, "reading_comprehension_questions", "set_id = :s", s=_bind(db, set_id)) == 1
+    # Approving a rival set cannot displace the approved one.
+    rival = _set(db, article)
+    _question(db, rival, approved=True)
+    _update(db, "reading_comprehension_sets", rival, status="needs_review")
+    with db.begin() as connection:
+        verb = "UPDATE OR REPLACE" if db.dialect.name == "sqlite" else "UPDATE"
+        with pytest.raises(REFUSALS):
+            connection.execute(text(
+                f"{verb} reading_comprehension_sets SET status = 'approved', reviewed_at = :t,"
+                " reviewed_by = 'admin' WHERE id = :i"), {"t": _now(), "i": _bind(db, rival)})
+    assert _count(db, "reading_comprehension_sets", "id = :i AND status = 'approved'", i=_bind(db, set_id)) == 1
+
+
+def test_truncate_cannot_take_reviewed_content_or_evidence(db):
+    if db.dialect.name != "postgresql":
+        pytest.skip("SQLite has no TRUNCATE")
+    learner = _user(db)
+    _, set_id = _approved_set(db)
+    _attempt(db, learner, set_id)
+    for statement in ("TRUNCATE reading_articles CASCADE", "TRUNCATE reading_comprehension_sets CASCADE",
+                      "TRUNCATE reading_comprehension_questions", "TRUNCATE users CASCADE"):
+        with pytest.raises(REFUSALS):
+            with db.begin() as connection:
+                connection.execute(text(statement))
+    assert _count(db, "reading_attempts", "user_id = :u", u=learner) == 1
+
+
+def test_a_downgrade_racing_a_writer_sees_the_write_instead_of_dropping_it(tmp_path):
+    """R1: the downgrade locks before it looks. A draft set committed while the
+    downgrade waits is seen by the guard - which refuses - not dropped."""
+    if not URL:
+        pytest.skip("ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
+    import threading
+    import time
+
+    with _fresh("postgresql", tmp_path) as (engine, _upgrade, downgrade):
+        article = _article(engine)
+        writer = engine.connect()
+        transaction = writer.begin()
+        writer.execute(sa.insert(_table("reading_comprehension_sets", [
+            "id", "article_id", "language_code", "support_language", "article_body_sha256", "status",
+            "generator_version", "model", "validation_json", "reviewed_by", "review_reason",
+            "created_at", "updated_at",
+        ])).values(id=uuid.uuid4(), article_id=article, language_code="en", support_language="vi",
+                   article_body_sha256=_sha(BODY), status="draft", generator_version="g", model="",
+                   validation_json={}, reviewed_by="", review_reason="", created_at=_now(),
+                   updated_at=_now()))
+        outcome: dict = {}
+
+        def run():
+            try:
+                downgrade()
+                outcome["result"] = "dropped"
+            except Exception as error:  # noqa: BLE001 - the refusal is the expected outcome
+                outcome["result"] = error
+
+        thread = threading.Thread(target=run)
+        thread.start()
+        time.sleep(1.5)  # the downgrade is now waiting on the writer's lock
+        transaction.commit()
+        writer.close()
+        thread.join(timeout=60)
+        assert isinstance(outcome.get("result"), Exception), outcome
+        assert "downgrade refused" in str(outcome["result"])
+        assert _has_table(engine, "reading_comprehension_sets")
+        assert _count(engine, "reading_comprehension_sets") == 1
