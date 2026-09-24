@@ -32,7 +32,7 @@ export async function renderSpeakingWorkspace(root, ctx) {
     if (!text) throw Error(ctx.c.unavailable);
     source = {
       id,
-      title: speakCopy(ctx.ui).ftSayFixed,
+      title: speakCopy(ctx.ui, ctx.support).ftSayFixed,
       level: '',
       assetId: '',
       playback: null,

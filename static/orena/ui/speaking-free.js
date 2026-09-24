@@ -91,7 +91,7 @@ export function freeResultHtml({ s, c, title, name = '', topic, language, ms, he
 <header class="sp-top sp-ftr__top"><button type="button" class="sp-back" data-sp-ftr-back><span class="sp-ftr__arrow">${icon('arrow-left', { size: 20 })}</span><span class="sp-back__caret">${icon('caret-left', { size: 22 })}</span><span class="sp-lesson sp-ftr__desk">${esc(`${title} · `)}<span lang="${esc(language)}">${esc(name || topic)}</span></span><span class="sp-lesson sp-ftr__phone" lang="${esc(language)}">${esc(name || topic)}</span></button><span class="sp-ftr__meta"><span class="sp-ftr__desk">${esc(`${langName} · `)}</span>${esc(short(ms))}</span><button type="button" class="sp-ftr__morebtn" data-sp-ftr-more aria-haspopup="dialog" aria-label="${esc(s.ftMore)}">${icon('dots-three', { size: 22 })}</button></header>
 <div class="sp-ftr__grid"><div class="sp-ftr__main"><div class="sp-ftr__said"><div class="sp-ftr__play"><button type="button" class="sp-ftr__playbtn" data-sp-ftr-play aria-label="${esc(s.ftPlay)}">${icon('play', { size: 22, filled: true })}</button><div class="sp-ftr__wave">${wave}</div></div><span class="sp-label">${esc(s.ftSaid)}</span><p class="sp-ftr__words">${markedTranscript(heard, fixes, language)}</p></div>
 ${cards ? `<div class="sp-ftr__fixes"><span class="sp-label">${esc(fixes.length === 1 ? s.ftFixesOne : fill(s.ftFixes, { n: fixes.length }))}</span><div class="sp-ftr__cards">${cards}</div></div>` : ''}</div>
-<div class="sp-ftr__side"><div class="sp-ftr__score"><div class="sp-ftr__head">${ring}<div><strong>${esc(headline)}</strong></div></div><div class="sp-crits">${criteria}</div></div>
+<div class="sp-ftr__side"><div class="sp-ftr__score"><div class="sp-ftr__head">${ring}<div><strong lang="${esc(coaching == null ? s.uiLang || '' : s.guideLang || '')}">${esc(headline)}</strong></div></div><div class="sp-crits">${criteria}</div></div>
 ${again ? `<div class="sp-ftr__again"><span class="sp-label">${esc(s.ftSayAgainLabel)}</span><p lang="${esc(language)}">${esc(again)}</p></div>` : ''}
 <div class="sp-ftr__buttons">${again ? `<button type="button" class="sp-ftbtn" data-sp-ftr-fixed>${icon('microphone', { size: 18 })}<span>${esc(s.ftSayFixed)}</span></button>` : ''}<button type="button" class="sp-ftbtn sp-ftbtn--accent" data-sp-ftr-again>${icon('microphone', { size: 18, filled: true })}<span>${esc(s.ftSpeakAgain)}</span></button></div>
 </div></div>
@@ -153,7 +153,7 @@ function openMoreSheet({ s, c, heard, language, onPick }) {
 
 export function mountFreeTalk(root, ctx, { id, title, name = '', topic, cue, next }) {
   const { api, c, language, memory } = ctx;
-  const s = speakCopy(ctx.ui);
+  const s = speakCopy(ctx.ui, ctx.support);
   let disposed = false;
   let phase = 'idle';
   const recorder = createLocalAudioRecorder();
@@ -178,6 +178,8 @@ export function mountFreeTalk(root, ctx, { id, title, name = '', topic, cue, nex
     mic.setAttribute('aria-pressed', String(value === 'recording'));
     const hint = q('[data-sp-hint]');
     hint.textContent = message;
+    // The instruction to speak is guidance (the support language); every other message is a state.
+    hint.lang = message === s.freeReady ? s.guideLang || '' : s.uiLang || '';
     hint.classList.toggle('sp-hint--error', value === 'error');
   }
 

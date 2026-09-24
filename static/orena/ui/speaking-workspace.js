@@ -91,10 +91,10 @@ export function resultHtml({ s, view, language, busy = false, hasModel = true })
   const rows = view.words
     .map(
       (word) =>
-        `<button type="button" class="sp-row${word.flagged ? ' sp-row--flag' : ''}" data-sp-word="${word.index}"><span class="sp-row__word"><b lang="${esc(language)}">${esc(word.text)}</b>${word.pinyin ? `<small>${esc(word.pinyin)}</small>` : ''}</span><span class="sp-row__mid">${barHtml(word)}<span class="sp-row__note">${esc(wordNote(s, word))}</span></span><span class="sp-row__score">${word.score}</span></button>`,
+        `<button type="button" class="sp-row${word.flagged ? ' sp-row--flag' : ''}" data-sp-word="${word.index}"><span class="sp-row__word"><b lang="${esc(language)}">${esc(word.text)}</b>${word.pinyin ? `<small>${esc(word.pinyin)}</small>` : ''}</span><span class="sp-row__mid">${barHtml(word)}<span class="sp-row__note" lang="${esc(s.guideLang || '')}">${esc(wordNote(s, word))}</span></span><span class="sp-row__score">${word.score}</span></button>`,
     )
     .join('');
-  return `<div class="sp-head">${ring(view.overall, 'lg', `<span class="sp-ring__text"><b>${view.overall}</b><small>${esc(fill(s.passedOf, { p: view.passedCount, n: view.totalCount }))}</small></span>`)}<div class="sp-head__copy"><strong class="sp-headline">${esc(title)}</strong>${sub ? `<p class="sp-sub">${esc(sub)}</p>` : ''}<div class="sp-metrics"><span>${esc(s.metricPronunciation)} <b>${view.overall}</b></span><span>${esc(s.metricFluency)} <b>${view.fluency}</b></span>${pace ? `<span>${esc(s.metricPace)} <b>${esc(pace)}</b></span>` : ''}</div></div></div>
+  return `<div class="sp-head">${ring(view.overall, 'lg', `<span class="sp-ring__text"><b>${view.overall}</b><small>${esc(fill(s.passedOf, { p: view.passedCount, n: view.totalCount }))}</small></span>`)}<div class="sp-head__copy"><strong class="sp-headline" lang="${esc(s.guideLang || '')}">${esc(title)}</strong>${sub ? `<p class="sp-sub" lang="${esc(s.guideLang || '')}">${esc(sub)}</p>` : ''}<div class="sp-metrics"><span>${esc(s.metricPronunciation)} <b>${view.overall}</b></span><span>${esc(s.metricFluency)} <b>${view.fluency}</b></span>${pace ? `<span>${esc(s.metricPace)} <b>${esc(pace)}</b></span>` : ''}</div></div></div>
 <div class="sp-body"${busy ? ' aria-busy="true"' : ''}><span class="sp-label">${esc(s[`eachWord_${unit}`])}</span><div class="sp-rows">${rows}</div>
 <div class="sp-actions"><button type="button" class="sp-btn" data-sp-hear-take title="${esc(s.hearYours)}"${view.measured ? '' : ' disabled'}>${icon('speaker-high', { size: 18 })}<span class="sp-btn__text">${esc(s.hearYours)}</span></button><button type="button" class="sp-btn" data-sp-compare title="${esc(s.compare)}"${view.measured && hasModel ? '' : ' disabled'}>${icon('columns', { size: 18 })}<span class="sp-btn__text">${esc(s.compare)}</span></button><button type="button" class="sp-btn sp-btn--accent sp-btn--next" data-sp-next><span>${esc(s.nextLine)}</span>${icon('arrow-right', { size: 18 })}</button></div></div>`;
 }
@@ -113,7 +113,7 @@ export function cardHtml({ s, view, language }) {
     .join('');
   // Tapping a line's score opens the comparison with the model (Orena Speaking 06).
   const score = ring(view.overall, 'sm', `<b>${view.overall}</b>`);
-  return `<div class="sp-card__head">${view.measured ? `<button type="button" class="sp-ring-btn" data-sp-open-compare aria-label="${esc(s.compare)}">${score}</button>` : score}<div class="sp-card__copy"><strong>${esc(title)}</strong>${sub ? `<small>${esc(sub)}</small>` : ''}</div></div>${rows ? `<div class="sp-mrows">${rows}</div>` : ''}<button type="button" class="sp-textbtn sp-card__next" data-sp-next>${esc(s.nextLine)} →</button>`;
+  return `<div class="sp-card__head">${view.measured ? `<button type="button" class="sp-ring-btn" data-sp-open-compare aria-label="${esc(s.compare)}">${score}</button>` : score}<div class="sp-card__copy" lang="${esc(s.guideLang || '')}"><strong>${esc(title)}</strong>${sub ? `<small>${esc(sub)}</small>` : ''}</div></div>${rows ? `<div class="sp-mrows">${rows}</div>` : ''}<button type="button" class="sp-textbtn sp-card__next" data-sp-next>${esc(s.nextLine)} →</button>`;
 }
 
 /* --- Word detail ------------------------------------------------------------------------------- */
@@ -145,7 +145,7 @@ export function detailHtml({ s, c, word, language }) {
     : `${word.score}${word.flagged ? ` · ${errorLabel(s, word.errorType)}` : ''}`;
   const toneWords = tones.map((tone) => s[`tone_${tone}`]).filter(Boolean).join(' · ');
   const panels = zh
-    ? `<div class="sp-tones"><div class="sp-tone"><span class="sp-label">${esc(s.model)}</span>${toneSvg(tones)}<span>${esc(toneWords)}</span></div><div class="sp-tone sp-tone--yours"><span class="sp-label">${esc(s.yours)}</span><span data-sp-yours-svg>${toneSvg([])}</span><span data-sp-yours-note>${esc(s.toneUnmeasured)}</span></div></div>`
+    ? `<div class="sp-tones"><div class="sp-tone"><span class="sp-label">${esc(s.model)}</span>${toneSvg(tones)}<span lang="${esc(s.guideLang || '')}">${esc(toneWords)}</span></div><div class="sp-tone sp-tone--yours"><span class="sp-label">${esc(s.yours)}</span><span data-sp-yours-svg>${toneSvg([])}</span><span data-sp-yours-note lang="${esc(s.guideLang || '')}">${esc(s.toneUnmeasured)}</span></div></div>`
     : '';
   const units = word.phonemes.length ? word.phonemes : word.syllables;
   const sounds = units.length
@@ -156,7 +156,7 @@ export function detailHtml({ s, c, word, language }) {
     score: fill(s.detailScore, { n: word.score }),
     weakest: word.weakest ? fill(s.weakestLine, { u: word.weakest.label, n: word.weakest.score }) : '',
   }).trim();
-  return `<button type="button" class="qs-x" data-sp-close aria-label="${esc(c.quickClose || s.close)}">${icon('x', { size: 18 })}</button><div class="sp-detail__head"><div class="sp-detail__word"><div class="sp-detail__glyph"><b lang="${esc(language)}">${esc(word.text)}</b><button type="button" class="sp-detail__speak" data-sp-say aria-label="${esc(s.hearModel)}">${icon('speaker-high', { size: 21, filled: true })}</button></div><div class="sp-detail__meta">${word.pinyin ? `<span class="sp-detail__reading">${esc(word.pinyin)}</span>` : ''}<span class="sp-chip${word.flagged ? ' sp-chip--flag' : ''}">${esc(chip)}</span></div></div></div><div class="sp-detail__rule"></div>${panels}${sounds}<p class="sp-detail__said">${esc(said)}</p><div class="sp-detail__actions"><button type="button" class="sp-dbtn" data-sp-hear-word${word.offsetKnown ? '' : ' disabled'}>${icon('speaker-high', { size: 18 })}<span>${esc(s.hearYou)}</span></button><button type="button" class="sp-dbtn sp-dbtn--accent" data-sp-alone>${icon('microphone', { size: 18, filled: true })}<span>${esc(s[`practiseAlone_${zh ? 'zh' : 'en'}`])}</span></button></div>`;
+  return `<button type="button" class="qs-x" data-sp-close aria-label="${esc(c.quickClose || s.close)}">${icon('x', { size: 18 })}</button><div class="sp-detail__head"><div class="sp-detail__word"><div class="sp-detail__glyph"><b lang="${esc(language)}">${esc(word.text)}</b><button type="button" class="sp-detail__speak" data-sp-say aria-label="${esc(s.hearModel)}">${icon('speaker-high', { size: 21, filled: true })}</button></div><div class="sp-detail__meta">${word.pinyin ? `<span class="sp-detail__reading">${esc(word.pinyin)}</span>` : ''}<span class="sp-chip${word.flagged ? ' sp-chip--flag' : ''}">${esc(chip)}</span></div></div></div><div class="sp-detail__rule"></div>${panels}${sounds}<p class="sp-detail__said" lang="${esc(s.guideLang || '')}">${esc(said)}</p><div class="sp-detail__actions"><button type="button" class="sp-dbtn" data-sp-hear-word${word.offsetKnown ? '' : ' disabled'}>${icon('speaker-high', { size: 18 })}<span>${esc(s.hearYou)}</span></button><button type="button" class="sp-dbtn sp-dbtn--accent" data-sp-alone>${icon('microphone', { size: 18, filled: true })}<span>${esc(s[`practiseAlone_${zh ? 'zh' : 'en'}`])}</span></button></div>`;
 }
 
 /* --- The room ---------------------------------------------------------------------------------- */
@@ -187,7 +187,7 @@ const SHADOW_TAIL_MS = 800;
 
 export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLeave = null } = {}) {
   const { api, language, memory } = ctx;
-  const s = speakCopy(ctx.ui);
+  const s = speakCopy(ctx.ui, ctx.support);
   const c = { ...ctx.c, ui: ctx.ui, lang: ctx.ui };
   let index = Math.max(0, Math.min(source.lines.length - 1, startIndex));
   let rate = 1;
@@ -305,8 +305,10 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
     const hint = q('[data-sp-hint]');
     if (!hint) return;
     hint.classList.remove('sp-hint--error');
+    hint.lang = s.uiLang || '';
     if (state.phase === TAKE.RECORDING) {
       hint.textContent = s.recordingHint;
+      hint.lang = s.langOf?.('recordingHint') || '';
       return;
     }
     if (state.phase === TAKE.PROCESSING) {
@@ -329,11 +331,12 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
     }
     if (focus) {
       // D-075: practising one word alone always has a way back to the line.
-      hint.innerHTML = `<span>${esc(fill(s.practisingAlone, { w: `${focus.text}${focus.pinyin ? ` · ${focus.pinyin}` : ''}` }))}</span> <button type="button" class="sp-link" data-sp-back-line>${esc(s.backToLine)}</button>`;
+      hint.innerHTML = `<span lang="${esc(s.langOf?.('practisingAlone') || '')}">${esc(fill(s.practisingAlone, { w: `${focus.text}${focus.pinyin ? ` · ${focus.pinyin}` : ''}` }))}</span> <button type="button" class="sp-link" data-sp-back-line>${esc(s.backToLine)}</button>`;
       q('[data-sp-back-line]').onclick = () => practiseAlone(null);
       return;
     }
     hint.textContent = s[`tapWord_${language === 'zh' ? 'zh' : 'en'}`];
+    hint.lang = s.langOf?.('tapWord_en') || '';
   }
 
   function paintState() {

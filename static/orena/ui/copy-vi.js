@@ -44,6 +44,7 @@ export const vi = {
   rights: 'Nguồn & bản quyền',
   learning: 'Ngôn ngữ đang học',
   support: 'Ngôn ngữ hỗ trợ',
+  interfaceLanguage: 'Ngôn ngữ giao diện',
   pinyin: 'Hiện phiên âm cho tiếng Trung',
 
   // --- When something cannot open ----------------------------------------

@@ -98,7 +98,7 @@ export function summaryHtml({ s, source, language, rows, missed, minutes, kept, 
   const chips = missed
     .map((item) => `<span class="sp-sum__chip"><b lang="${esc(language)}">${esc(item.text)}</b><small>${esc([item.reading, item.count > 1 ? fill(s.missedTimes, { n: item.count }) : ''].filter(Boolean).join(' · '))}</small></span>`)
     .join('');
-  return `<section class="sp-room sp-sum" data-view="summary"><div class="sp-sum__body"><div class="sp-sum__head"><span class="sp-label">${esc(fill(s.summaryMeta, { title: source.title, n: rows.length, m: minutes }))}</span><h1 class="sp-sum__title">${esc(average == null ? s.summaryTitleNone : fill(s.summaryTitle, { avg: average }))}</h1></div>
+  return `<section class="sp-room sp-sum" data-view="summary"><div class="sp-sum__body"><div class="sp-sum__head"><span class="sp-label">${esc(fill(s.summaryMeta, { title: source.title, n: rows.length, m: minutes }))}</span><h1 class="sp-sum__title" lang="${esc(s.guideLang || '')}">${esc(average == null ? s.summaryTitleNone : fill(s.summaryTitle, { avg: average }))}</h1></div>
 <div class="sp-sum__cols"><div class="sp-sum__list">${list}</div><div class="sp-sum__side">${chips ? `<div class="sp-sum__missed"><span class="sp-label">${esc(s[`missedLabel_${language === 'zh' ? 'zh' : 'en'}`])}</span><div class="sp-sum__chips">${chips}</div></div>` : ''}${kept ? `<span class="sp-sum__kept">${icon('check-circle', { size: 16, filled: true })}${esc(s.summaryKept)}</span>` : ''}
 <div class="sp-sum__actions">${again ? `<button type="button" class="sp-bigbtn sp-bigbtn--accent" data-sp-sum-again>${esc(fill(s.retryFlagged, { n: again }))}</button>` : ''}<button type="button" class="sp-bigbtn" data-sp-sum-home>${esc(fill(s.backToRoom, { room }))}</button></div></div></div></div></section>`;
 }
@@ -109,7 +109,7 @@ export function modeSwitchHtml({ s, mode }) {
 }
 
 export function shadowCardHtml({ s, rate, modelBars, lagMs }) {
-  return `<div class="sp-shadow"><div class="sp-shadow__head"><span>${esc(s.legendModel.toUpperCase())}</span><span>${rate}×</span></div><div class="sp-shadow__waves"><div class="sp-shadow__model">${barsHtml(modelBars)}</div><div class="sp-shadow__you" data-sp-shadow-you></div><span class="sp-shadow__head-line" data-sp-shadow-playhead></span></div>${lagMs != null ? `<span class="sp-shadow__lag">${esc(fill(s.shadowLag, { s: (Math.max(0, lagMs) / 1000).toFixed(1) }))}</span>` : ''}</div><p class="sp-shadow__hint">${esc(s.headphones)}</p>`;
+  return `<div class="sp-shadow"><div class="sp-shadow__head"><span>${esc(s.legendModel.toUpperCase())}</span><span>${rate}×</span></div><div class="sp-shadow__waves"><div class="sp-shadow__model">${barsHtml(modelBars)}</div><div class="sp-shadow__you" data-sp-shadow-you></div><span class="sp-shadow__head-line" data-sp-shadow-playhead></span></div>${lagMs != null ? `<span class="sp-shadow__lag" lang="${esc(s.guideLang || '')}">${esc(fill(s.shadowLag, { s: (Math.max(0, lagMs) / 1000).toFixed(1) }))}</span>` : ''}</div><p class="sp-shadow__hint">${esc(s.headphones)}</p>`;
 }
 
 /* 09 · the three states the workspace can be in besides working. */
@@ -122,5 +122,5 @@ export function offlineHtml({ s }) {
 }
 
 export function notHeardHtml({ s, kind, twice }) {
-  return `<div class="sp-notheard" role="alert">${icon('waveform', { size: 22 })}<div><strong>${esc(s.notHeardTitle)}</strong><p>${esc(kind === 'too_short' ? s.notHeardShort : s.notHeardText)}${twice ? ` ${esc(s.notHeardTwice)}` : ''}</p></div></div>`;
+  return `<div class="sp-notheard" role="alert">${icon('waveform', { size: 22 })}<div><strong>${esc(s.notHeardTitle)}</strong><p lang="${esc(s.guideLang || '')}">${esc(kind === 'too_short' ? s.notHeardShort : s.notHeardText)}${twice ? ` ${esc(s.notHeardTwice)}` : ''}</p></div></div>`;
 }
