@@ -8,7 +8,7 @@ only by watching it refuse. The same scenario list runs on:
 - **SQLite**, always, including in CI: the current ORM schema is built the way
   the hermetic suite builds it (`Base.metadata.create_all`, foreign keys on),
   and the proposed `upgrade()` is applied on top through Alembic's own
-  operations - batch rebuild, SQLite triggers, `sqlite_where` and all.
+  operations - table renames, SQLite triggers, `sqlite_where` and all.
 - **PostgreSQL**, when `ORENA_TEST_POSTGRES_URL` names a throwaway database:
   the real chain `20260811_0001 -> 20260923_0013` and then the proposal, in a
   fresh schema of its own, so a run leaves nothing behind and can be repeated.
@@ -677,8 +677,12 @@ def test_a_set_is_grounded_in_one_body_and_that_anchor_is_frozen_once_decided(db
     # An article edit makes the set stale; the admin can re-approve it once the
     # service has re-validated the anchor, or archive it.
     _update(db, "reading_comprehension_sets", approved, status="stale")
-    _update(db, "reading_comprehension_sets", approved, status="approved")
+    _update(db, "reading_comprehension_sets", approved, status="approved", reviewed_at=_now(),
+            reviewed_by="admin")
     _update(db, "reading_comprehension_sets", approved, status="archived")
+    # What the set was generated with is frozen with it.
+    _refused(lambda: _update(db, "reading_comprehension_sets", approved, validation_json={"rewritten": True}))
+    _refused(lambda: _update(db, "reading_comprehension_sets", approved, created_at=_now()))
 
 
 # ---- set lifecycle ---------------------------------------------------------------
@@ -722,15 +726,39 @@ def test_every_set_state_is_reversible_without_a_delete(db):
     _approved_set(db, article)
     _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved",
                              reviewed_at=_now(), reviewed_by="admin"))
-    # A rejected set reopens for review, and is editable again only then.
+    # Every re-decision records its own moment: a restore or a re-approval that
+    # would carry the earlier decision's reviewer forward is refused.
+    _update(db, "reading_comprehension_sets", set_id, status="archived")
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved"))
+    other_article, other = _approved_set(db)
+    _update(db, "reading_comprehension_sets", other, status="stale")
+    _refused(lambda: _update(db, "reading_comprehension_sets", other, status="approved"))
+    # A rejected set stays frozen history; trying again is a new draft set.
     rejected = _set(db, _article(db))
     question = _question(db, rejected, rejected=True)
     _update(db, "reading_comprehension_sets", rejected, status="needs_review")
-    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now(), reviewed_by="admin")
+    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now(), reviewed_by="rejecter",
+            review_reason="bad")
+    _refused(lambda: _update(db, "reading_comprehension_sets", rejected, status="needs_review"))
     _refused(lambda: _update(db, "reading_comprehension_questions", question, prompt="rewritten"))
-    _update(db, "reading_comprehension_sets", rejected, status="needs_review")
-    _update(db, "reading_comprehension_questions", question, prompt="rewritten", admin_rejected=False,
-            admin_approved=True)
+
+
+def test_a_learner_meets_only_the_published_corpus(db):
+    learner = _user(db)
+    article, set_id = _approved_set(db)
+    for status in ("unpublished", "archived"):
+        _update(db, "reading_articles", article, status=status)
+        _refused(lambda: _attempt(db, learner, set_id))
+    _update(db, "reading_articles", article, status="published")
+    _attempt(db, learner, set_id)
+
+
+def test_an_attempt_records_which_selection_policy_served_it(db):
+    learner = _user(db)
+    _, set_id = _approved_set(db)
+    _attempt(db, learner, set_id, ordinal=1, selection_policy_version="reading-select/1")
+    _attempt(db, learner, set_id, ordinal=2, selection_policy_version=None)  # the learner chose it
+    _refused(lambda: _attempt(db, learner, set_id, ordinal=3, selection_policy_version=""))
 
 
 def test_a_rejected_set_is_history_and_frozen(db):
@@ -1057,7 +1085,9 @@ def test_truncate_cannot_take_reviewed_content_or_evidence(db):
     _, set_id = _approved_set(db)
     _attempt(db, learner, set_id)
     for statement in ("TRUNCATE reading_articles CASCADE", "TRUNCATE reading_comprehension_sets CASCADE",
-                      "TRUNCATE reading_comprehension_questions", "TRUNCATE users CASCADE"):
+                      "TRUNCATE reading_comprehension_questions", "TRUNCATE users CASCADE",
+                      # the archive too: CASCADE would take every learner's text discussions
+                      "TRUNCATE reading_legacy_sessions CASCADE", "TRUNCATE reading_legacy_attempts"):
         with pytest.raises(REFUSALS):
             with db.begin() as connection:
                 connection.execute(text(statement))

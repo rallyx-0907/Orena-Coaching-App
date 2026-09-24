@@ -1,6 +1,9 @@
 # Adaptive Reading — canonical Reading model, schema proposal
 
-    STATUS: PROPOSED, NOT APPLIED — to be reviewed from the start.
+    STATUS: PROPOSED, NOT APPLIED. Canonical-model review round C1
+            (5e4e4c3): APPROVED WITH REQUIRED CHANGES, no blockers; every
+            required change is answered below ("Answers to round C1") and
+            the DDL changes go to a delta confirmation.
             Written for the human direction of 2026-09-24 (D-075): one Reading
             flow, one canonical evidence model. It replaces the earlier
             proposal of the same revision id, whose design kept
@@ -37,10 +40,10 @@ every processed result an Admin has not reviewed stays invisible to learners.
 | One Reading flow; AI never writes a source passage | this schema has no generated-passage path; the generator retires at apply (§9) |
 | Imports: Reading, Books, Media, Vocabulary, Sources | **already built** (`5f62174`); unchanged here |
 | Registered internet sources; automatic fetch makes candidates only | **already built**: the engine never publishes (`reading_content_engine.py`: "Nothing here publishes"); polling needs `state = 'active' AND automation_allowed` (`ck_reading_source_polling_requires_approval`); publication is an Admin act |
-| Ingestion method, source kind, content kind kept apart; source category deferred | §8 |
+| Ingestion method, source kind, content kind kept apart; source category deferred | §8: three existing columns, one per concept; source category has none |
 | Reversible lifecycles, no hard delete in normal flow | Books restore and the vocabulary lifecycle are **already built** (`02e8aa6`: `pending_review → published ↔ unpublished → archived → unpublished`); comprehension sets here are reversible too (§2) |
-| Rights and completeness are warnings; override is audited | **already built** for vocabulary (`ba931ba`: `warnings_at_publication`, `published_over_warnings`, audit entry with the warnings overridden) |
-| Adaptive Reading uses only the published corpus | §2, §4: a set belongs to a corpus article; selection reads published articles only |
+| Rights and completeness are warnings; override is audited | **already built for vocabulary** (`ba931ba`: `warnings_at_publication`, `published_over_warnings`, audit entry with the warnings overridden). **Not yet for Reading articles:** the console shows rights advice, but the publish route (`reading_admin_api.py`) records no warnings or override. Closing it is apply-time work (§12), reusing the vocabulary pattern — no schema |
+| Adaptive Reading uses only the published corpus | §3: the database refuses an attempt on a set whose article is not `published`; §4.1: selection reads published articles only |
 | A set has type, answer, explanation, evidence grounded in the exact passage version, and passes Admin review | §2, §6 |
 | One canonical attempt model; no parallel store | §1, §3 |
 | Idempotent submit; a retry creates no second attempt and moves ability once | §5.1 |
@@ -132,14 +135,22 @@ dialects):
 - A set is **created undecided** and moves only along review transitions:
   `draft → needs_review`; `needs_review → draft | approved | rejected`;
   `approved → stale | archived`; `stale → approved | archived`;
-  **`archived → approved` (restore)**; **`rejected → needs_review` (reopen)**.
-  Every state is reversible without a delete (D-075).
+  **`archived → approved` (restore)**. Nothing that reached learners needs a
+  delete to be undone (D-075). A **rejected** set stays frozen as review
+  history; trying again is a service act that copies its questions into a new
+  draft set, so the rejection is never rewritten (round C1, RC1).
+- **Every decision is a new decision:** entering `approved` or `rejected`
+  requires a new `reviewed_at` (and the CHECK a non-empty `reviewed_by`), so a
+  restore or a re-approval can never carry an earlier decision's reviewer
+  forward (round C1, RC1).
 - **Entering `approved` requires at least one approved question and no
-  undecided one** — also on a restore.
-- A decided set is **frozen**: its article, languages, anchor, generator and
-  model never change, and neither do its questions. Reviewer fields change only
-  on a transition into `approved` or `rejected` — a new decision names its own
-  reviewer; staling and archiving keep the decision's.
+  undecided one** — also on a restore — and, in the service, the §6 approval
+  check (lock, re-hash, re-verify spans) on **every** entry into `approved`,
+  whether from `needs_review`, `stale` or `archived`.
+- A decided set is **frozen**: its article, languages, anchor, generator,
+  model, `validation_json` and `created_at` never change, and neither do its
+  questions. Reviewer fields change only together with a new decision; staling
+  and archiving keep the decision's.
 - A set that reached learners (`approved`, `stale`, `archived`) is **never
   deleted**. Only `draft`, `needs_review` and `rejected` sets can be, and
   deleting one cascades its questions.
@@ -162,6 +173,7 @@ a learner's submitted answers to one approved set of one published article.
 | `evaluator_version` | NOT NULL | how the answers were judged |
 | `passage_level` | NOT NULL | the difficulty faced, as the level was then |
 | `ability_policy_version`, `passage_difficulty`, `ability_before`, `ability_after` | **all four or none** | the ability measurement; NULL is "not measured", never zero |
+| `selection_policy_version` | nullable | which selection policy served the passage; NULL when the learner chose it (round C1, Q4: an immutable attempt can never gain it later) |
 | `answers` | NOT NULL | `[{question_id, selected_index, correct}]`, one per approved question |
 | `correct_count`, `total` | NOT NULL | `total > 0`, `0 ≤ correct_count ≤ total`, `json_array_length(answers) = total` |
 | `created_at` | NOT NULL | when it was submitted |
@@ -169,9 +181,13 @@ a learner's submitted answers to one approved set of one published article.
 - **A row exists only once submitted.** An unfinished answer sheet is device
   work, not evidence (`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §2).
 - **Immutable:** every UPDATE is refused, on both dialects.
-- **Only an approved set** can receive an attempt (trigger; `FOR SHARE` on the
-  set on PostgreSQL, so a submit serializes against the set being staled or
-  archived).
+- **Only an approved set of a published article** can receive an attempt
+  (trigger on both dialects; on PostgreSQL `FOR SHARE` on the set and the
+  article, so a submit serializes against the set being staled or archived and
+  the article being unpublished or archived). Unpublishing or archiving an
+  article leaves its approved sets as they are — reviewed content, restorable
+  with the article — but they are not served and cannot receive an attempt
+  until the article is published again.
 - **The measurement never gates the evidence.** If the active policy cannot
   measure an attempt — no mapping for its level, an out-of-range value, a
   failed replay — the attempt commits with the four ability columns NULL
@@ -195,9 +211,13 @@ rating all fit; NaN and infinities refused); `consumed_through_ordinal` (the
 checkpoint); `by_question_type_json` (accuracy per question type);
 `updated_at`. `UNIQUE (user_id, language_code, policy_version)`.
 
-**The attempts are authoritative.** The current ability under a policy is the
-latest measured attempt's `ability_after` — one bounded read. The projection
-exists for what is *not* one read: accuracy **per question type** (an aggregate
+**The attempts are authoritative, and the definition is the replay.** The
+ability under a policy is what replaying the account's attempts in ordinal
+order under that policy produces. An attempt's own `ability_before/after` are a
+point-in-time record of what the policy said at submit — usually equal to the
+replay, but not after a transient measurement failure, which the replay later
+measures (round C1, F7). The projection is the cached replay, and exists for
+what is expensive to recompute: accuracy **per question type** (an aggregate
 over every attempt joined to its questions), the ability across **unmeasured**
 attempts, and **policy transitions** (a new policy's row is built beside the old
 one, and no attempt is rewritten). Where the projection and a replay disagree,
@@ -205,11 +225,14 @@ the projection is wrong and is rebuilt.
 
 ### 4.1 Choosing the next article — deterministic and testable
 
-A pure function, versioned as `selection_policy_version` in code, of: the
+A pure function, versioned as `selection_policy_version` (recorded on each
+attempt it served), of: the
 projection (ability, per-type accuracy), the learner's recent attempts
 (`uq_reading_attempt_ordinal`, walked backwards a bounded N), and the candidate
-pool — **published** articles in the learner's language with an **approved,
-still-anchored** set in their support language, not attempted recently.
+pool — **published** articles in the learner's language with an **approved**
+set in their support language, not attempted recently. "Approved" implies
+"anchored" because every body edit stales its sets in the same transaction
+(§6); only the one chosen article is re-hashed when served.
 
 1. **Ability** sets a target difficulty band around the current estimate.
 2. **Recent performance** moves the band: a run of high accuracy moves it up, a
@@ -246,9 +269,10 @@ refuses Listening progress and Text Discussion turns):
    namespace>)`). Not the projection row: that would make evidence depend on the
    projection existing.
 4. Re-check the operation under the lock.
-5. Validate under `SELECT … FOR SHARE` of the article row: the set is approved,
-   in the learner's language and support language, and still anchored (§6); the
-   answers name exactly the set's approved questions, each element well formed.
+5. Validate under `SELECT … FOR SHARE` of the article row: the article is
+   `published`; the set is approved, in the learner's language and support
+   language, and still anchored (§6); the answers name exactly the set's
+   approved questions, each element well formed.
 6. Score under `evaluator_version`; `ordinal = max(ordinal) + 1`.
 7. The measurement, best-effort in a savepoint: bring the projection up to
    date, compute `ability_after`; on failure roll back to the savepoint and
@@ -265,7 +289,7 @@ attempts with the same answers are two attempts.
 
 `evaluator_version` on every attempt; `ability_policy_version` whenever a
 measurement is present; `policy_version` on the projection;
-`selection_policy_version` in code (§4.1).
+`selection_policy_version` on every attempt a policy served (§4.1).
 
 ### 5.3 Projection: policy version, checkpoint, discardable
 
@@ -322,21 +346,25 @@ exact body:**
   every publish. Offsets are Unicode code points into that same string.
 - **Generation** computes offsets from the body, never from the model, and
   requires `body[start:end] == evidence_text`.
-- **Approval** takes `SELECT … FOR UPDATE` on the article, recomputes the hash,
+- **Approval** — every entry into `approved`, from `needs_review`, `stale` or
+  `archived` — takes `SELECT … FOR UPDATE` on the article, recomputes the hash,
   requires the anchor, re-verifies every span.
 - **A body edit** takes the same row lock, reads the body inside its own
   transaction, and moves every approved set whose anchor no longer matches to
   `stale`, with a review event — visible, never silent.
 - **Serving and submitting** re-check the hash; a mismatch is Free Reading for
   the learner and `rejected {set_stale}` for a submit.
-- **`stale → approved`** only when the hash matches again.
+- **`stale → approved` and `archived → approved`** only when the hash matches
+  again.
 
 **Old evidence stays true.** An attempt names its set; the set's questions,
 options, answer, explanation and literal `evidence_text` are frozen, and its
 hash names the exact body the learner read. Editing, archiving or deleting the
 article cannot change any of that (RESTRICT, frozen sets, immutable attempts).
-The whole text of a superseded body is not retained — retaining article
-revisions would be an engine change, not proposed here.
+A superseded body's text is not kept as a formal revision, but it is not lost:
+`update_article` records every body change as `changes.body.from/to` in
+`reading_review_events`, and an article with attempts cannot be deleted, so
+those events persist (round C1, F2 corrected an earlier "not retained").
 
 ## 7. Deletes — RESTRICT upward from evidence
 
@@ -357,14 +385,17 @@ reached learners is archived, never purged.
 
 ## 8. Three concepts, three columns
 
-| Concept | Column | Values |
+| Concept (D-075) | Column | Values |
 | --- | --- | --- |
-| How content enters | `reading_sources.source_type` | `manual, direct_url, file, rss, api, feed` |
-| What kind of source it is | — | **deferred** (D-075: not needed yet; the rights columns do its work) |
+| How content enters | `reading_ingestion_jobs.job_type` | `ingest_text, ingest_url, ingest_file` (a future poll adds its own) |
+| What kind of source it is | `reading_sources.source_type` | `manual, direct_url, file, rss, api, feed` |
 | What kind of content a learner sees | `reading_articles.content_kind` | `article, news` |
+| Source *category* (editorial: outlet, publisher, blog) | — | **deferred** (D-075), no schema |
 
-`source_type` names the ingestion method despite its name; renaming it is an
-engine change and not proposed. `content_kind` defaults to `article`, which
+Round C1 (F3) corrected an earlier reading that deferred "source kind": D-075
+keeps source kind as a concept and defers source **category**. All three kept
+concepts already have their own column; nothing here merges them. This mapping
+is this proposal's reading of D-075, stated so the human can correct it. `content_kind` defaults to `article`, which
 every existing row is, and reuses the Library's own chip words
 (`static/orena/ui/library-browse.js`), so no new vocabulary appears. A book is
 its own catalog (`reading_books`); `essay` and `story` are Library chips that
@@ -381,10 +412,14 @@ Every current reader of Reading evidence reads the legacy tables:
 | 2 | `/api/cross-skill-cue` | `list_reading_sessions(20)` | reads `list_reading_evidence` |
 | 3 | Collection (I4) | `list_reading_sessions` → `reading_entries` | reads `list_reading_evidence`, routes to the article |
 | 4 | Learner Summary (I6) | `list_reading_sessions` | reads `list_reading_evidence` |
-| 5 | Admin Activity | `admin_repository` joins attempts to sessions | counts canonical attempts |
+| 5 | Admin Activity | `admin_repository` joins attempts to sessions | counts canonical attempts; may also show a separately labeled "legacy reading" count from the archive until it is reset, so accounts do not look inactive |
 | 6 | Analytics | `list_product_activity_events`, same join | reads canonical attempts |
 | 7 | Text Discussion | resolves a `reading_session` | existing threads keep pointing at the archive; no new legacy threads |
-| 8 | Import / shadow tooling | `importer.py`, `verification.py` over the legacy tables | retired with the legacy SQLite import path, or pointed at the archive names |
+| 8 | Legacy SQLite import | `importer.py:434-473` writes legacy reading rows | the reading part of the import is **removed**: the archive refuses writes, so it cannot be pointed at it (round C1, F4) |
+| 9 | Shadow / cut-over verification | `importer.target_counts`, `verification.verify_shadow`, `read_compare.py`, `scripts/persistence_readiness.py`, `scripts/postgres_cutover_rehearsal.py` | reading counts read the archive names, or the reading comparison is dropped |
+| 10 | Self-tests and CI tests seeding legacy rows | `readiness_selftest.py`, `selftest.py`, `tests/test_postgres_foundation.py`, `tests/test_persistence_runtime_readiness.py`, `tests/test_admin_console_repository.py` | updated with the ORM mapping to the archive names |
+| 11 | Learner client | `static/orena/ui/comprehension.js`, `static/orena/infrastructure/api.js`, `static/orena/ui/reading.js` | the generated-session calls leave with the generator; the corpus flow replaces them |
+| 12 | Native mobile reading client | `mobile/` | frozen (`AGENTS.md` §5): reported, not changed |
 
 `list_reading_evidence` is the one Reading-domain read contract: canonical
 attempts only, newest first, each with its article, set, time and result.
@@ -419,8 +454,9 @@ writes the row each rule must refuse, reads the partial predicate and every
 canonical data present, races a writer against the downgrade on both dialects,
 and checks the refusal and the lock are in the offline (`--sql`) downgrade.
 
-**Local execution, 2026-09-24 — not CI:** PostgreSQL 16.13, 63 passed, 2
-skipped (PostgreSQL-only cases on their SQLite run); SQLite alone, 31 passed.
+**Local execution, 2026-09-24 — not CI (after round C1):** PostgreSQL 16.13,
+67 passed, 2 skipped (PostgreSQL-only cases on their SQLite run); SQLite alone,
+33 passed.
 
 ## 11. Migration, rollback and downgrade
 
@@ -432,6 +468,27 @@ is deleted.
 
 **Not old-code compatible, by design** (§3, §9): the migration and the code
 that retires the generated flow land together.
+
+**A deliberate departure from two governing documents — for the human to
+confirm at the authorization gate (round C1, RC3).**
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §6 step 2 asks for "additive Alembic
+changes" and step 5 to "keep existing domain API readers compatible", and
+`ORENA_BACKBONE_INTEGRATION_GATES.md` asks for reviewed additive schema. This
+migration renames two tables and gives one of their names to a new table,
+which is neither additive nor reader-compatible. It follows D-075 ("don't let
+the legacy shape decide the new architecture"; no long-lived parallel
+architecture), and the risk is bounded: startup verification already refuses a
+code/schema mismatch in both directions (`writing_coach/persistence/runtime.py`,
+`writing_coach/runtime_schema.py`), PostgreSQL DDL is transactional, old writes
+fail loudly, and the downgrade restores the legacy tables exactly while the
+canonical model is empty. Recorded here as the deviation; it becomes an
+accepted decision only when the human authorizes the apply.
+
+**Apply runbook (sandbox only, once authorized):** stop the app and worker
+containers → `python scripts/runtime_backup.py capture` → `alembic upgrade
+20260924_0014` (operator) → deploy the code of the same change → start →
+startup schema verification passes → run the §1 archive query and report it →
+the §12 run with learner submit still off → enable learner submit.
 
 **Downgrade never removes learner data.** It takes the write lock first
 (PostgreSQL `LOCK TABLE … IN SHARE ROW EXCLUSIVE MODE` over every table it
@@ -472,7 +529,11 @@ decisions written to `reading_review_events`; `ACCOUNT_OWNED` moved into
 application code; `content_kind` in `LEARNER_VISIBLE_FIELDS` and the publish
 contract; the learner surface reading `explanation` in `support_language`
 (`comprehension.js` reads `explanation_vi` today); `reading_attempts` in
-`runtime_backup.COMPARED`.
+`runtime_backup.COMPARED`; the Reading article publish route recording
+warnings and override in its audit entry, as vocabulary does; the ORM/migration
+parity test allowing for the archive keeping its legacy constraint names
+(`reading_attempts_session_id_fkey`, `uq_reading_attempt_legacy`), or pinning
+them in `models.py` (round C1, RC7).
 
 ## 13. Not proposed
 
@@ -480,7 +541,32 @@ No ML; no second vocabulary store; no change to Free Reading; no source
 category; no Text Discussion on corpus articles; no retention of whole article
 revisions; no automatic deletion of the legacy archive.
 
-## Review questions
+## Answers to round C1
+
+Round C1 (independent, from the start) reviewed `5e4e4c3`: **APPROVED WITH
+REQUIRED CHANGES**, no blockers. Its answers to the review questions: the
+rename archive is the right reading of D-075; nothing reads the archive as
+evidence (a labeled legacy baseline in Learner Summary would be the human's
+product decision, needing no schema); the non-compatible migration is
+acceptable on engineering risk but departs from two governing documents, so
+the human must confirm it; selection needs nothing stored to be testable, and
+a nullable `selection_policy_version` on the attempt is strongly recommended
+before apply.
+
+| Finding | Answer |
+| --- | --- |
+| RC1 re-decisions need not name a reviewer; a reopened set carried the rejection's reviewer into an approval | option (b): `rejected → needs_review` removed, a retry is a new draft set; and every entry into `approved`/`rejected` requires a new `reviewed_at` — both dialects, proved |
+| RC2 archive `TRUNCATE … CASCADE` wiped every learner's discussions | both archive tables under the TRUNCATE guard; the comment now names `DELETE` as the reset; proved |
+| RC3 departure from Account Data §6 and the I2 additive gate | §11: recorded as a deviation for the human's confirmation, with the apply runbook |
+| RC4 attempts on a non-published article; unpublish/archive semantics; approval check on every entry | the database refuses an attempt unless the article is `published` (both dialects, proved); §3, §5.1, §6 |
+| RC5 consumer inventory incomplete; row 8 impossible | §9 rows 8–12 |
+| RC6 factual errors F1–F7 | F1 test docstring; F2 §6; F3 §8; F4 §9; F5 now enforced (RC1); F6 migration comments; F7 §4 |
+| RC7 ORM parity and legacy constraint names | §12 |
+| Minor: `validation_json`, `created_at` rewritable on a decided set | frozen, both dialects, proved |
+| Q4 `selection_policy_version` | added: nullable, non-empty when present, proved |
+| Reading article publish records no warnings/override | apply-time (§12); conformance row corrected |
+
+## Review questions (round C1)
 
 1. Is archiving the legacy tables by rename + read-only trigger the right
    reading of D-075 ("archive read-only; the legacy shape decides nothing"),

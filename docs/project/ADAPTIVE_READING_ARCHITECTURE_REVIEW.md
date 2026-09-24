@@ -7,7 +7,7 @@
 | 3 | `c7050d6` (delta: the round-2 answers) | APPROVED WITH REQUIRED CHANGES — no blockers; RC1, RC2 made in `0d6efda`, RC3 apply-time |
 | 3, confirmation | `0d6efda` (delta: RC1, RC2, search_path) | **APPROVED** — no new findings |
 | — | **superseded 2026-09-24 by D-075** | the reviewed design kept `generated_session` as a second attempt subject; the human rejected keeping the legacy shape as a formal contract. **This approval does not carry to the canonical model.** |
-| C1 | canonical model (D-075), reviewed from the start | pending |
+| C1 | `5e4e4c3` — canonical model (D-075), reviewed from the start | APPROVED WITH REQUIRED CHANGES — no blockers; RC1, RC2 (DDL) answered in the next commit, pending a delta confirmation |
 
 Nothing is applied in any round. Rounds 1-3 reviewed the `generated_session`
 design, which D-075 superseded; their approval at `0d6efda` is void for the
@@ -366,3 +366,77 @@ on the proposal's apply-time list.
   catalogue-identical; offline `--sql` up and down clean, offline downgrade
   refuses against a schema holding a set; the round-3 adversarial suite
   re-run with the same outcomes. Local execution, not CI.
+
+
+---
+
+# Canonical model (D-075) — round C1
+
+    VERDICT:         APPROVED WITH REQUIRED CHANGES - no blockers
+    REVIEWER:        Delegated Architecture Reviewer - a new independent agent
+                     with a fresh context, not the reviewer of rounds 1-3; did
+                     not write this work; read-only; scratch databases dropped
+    REVIEWED COMMIT: 5e4e4c39a098accb82fef665df9858645b9f3500
+    DATE:            2026-09-24
+    APPLIED:         no; not product approval; not authorization
+
+**D-075 conformance.** Satisfied: one flow with no generated-passage path;
+Imports' five groups (`imports.js` `FLOWS`, `5f62174`); candidates only, never
+auto-published; reversible lifecycles, book restore, the vocabulary lifecycle;
+sets grounded and Admin-reviewed; one canonical attempt model; idempotent
+submit; no evidence cascade; rebuildable projection; the legacy flow retired
+without a `generated_session` contract; Text Discussion deferred; the READY
+run. Deferred appropriately: selection (§4.1), the consumer move. Partial: the
+three concepts (F3); rights warnings with an audited override are built for
+vocabulary, not for Reading article publish; published-only corpus (an attempt
+on an approved set of an archived article was accepted, RC4).
+
+**Regression check.** Every finding of the superseded rounds (B1, R1-R11,
+RC1-RC3, search_path) still resolved; none regressed.
+
+**Required changes.** RC1 (DDL) re-decisions need not name a new reviewer, and
+a reopened rejected set carried the rejection's reviewer into an approval -
+demonstrated on both dialects; recommended fix: drop `rejected ->
+needs_review` and make a retry a new draft set. RC2 (DDL) `TRUNCATE
+reading_legacy_sessions CASCADE` truncated every learner's `text_discussions`
+of every kind; guard the archive. RC3 record the departure from
+`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §6 steps 2 and 5 and the I2 additive gate
+for the human, with an apply runbook. RC4 require a published article at
+submit; state unpublish/archive semantics; run the approval check on every
+entry into `approved`. RC5 complete the consumer inventory; the importer
+cannot be pointed at a read-only archive. RC6 factual errors F1-F7. RC7 the
+ORM parity test and the archive's legacy constraint names.
+
+**Factual errors.** F1 "batch rebuild" in the proof docstring; F2 superseded
+bodies are retained in review events; F3 D-075 defers source category, not
+source kind; F4 importer "pointed at the archive"; F5 "names its own reviewer"
+was not enforced; F6 "rejected ... frozen" vs the reopen transition, and
+"archive left truncatable"; F7 two definitions of current ability.
+
+**Reviewer's checks (local execution, not CI).** Proof reproduced (PostgreSQL
+63 passed, 2 skipped; SQLite 31 passed); validators pass. PostgreSQL `0013 ->
+0014 -> 0013` and `0014 -> 0013 -> 0014` catalogue-identical (`pg_dump
+--schema-only` and catalogue queries), legacy rows seeded; SQLite identical up
+to identifier quoting, `integrity_check` ok, `foreign_key_check` empty. Offline
+`--sql` up/down/up under `psql -v ON_ERROR_STOP=1`; offline downgrade over a
+draft set refused. Archive bypasses refused (PostgreSQL `ON CONFLICT`, `MERGE`,
+CTE update; SQLite `OR REPLACE`/`OR IGNORE` on insert and update). A submit
+racing a stale update serializes both ways. Full `pg_dump`/`pg_restore
+--exit-on-error` with archive rows, stale and archived sets, attempts and a
+projection: identical counts.
+
+**Answers.** Rename archive: right. Nothing reads the archive as evidence:
+right; a labeled legacy baseline is the human's product decision. The
+non-compatible migration: acceptable on engineering risk, but the human must
+confirm the departure. Selection: nothing needs storing; a nullable
+`selection_policy_version` strongly recommended before apply.
+
+**Kept.** The rename archive with pkey renames; one attempt shape; RESTRICT and
+the composite language FKs; the approved-only partial index on both dialects;
+the all-or-none ability group; the account-scoped operation key and advisory
+lock; the body-hash anchor with a structural span CHECK; the SQLite conflict and
+PostgreSQL TRUNCATE guards; the lock-then-check downgrade in the offline script;
+pinned search_path; `content_kind` `article|news`; source category and corpus
+Text Discussion deferred; submit off until the consumers move; the READY gate.
+
+The answers are in `ADAPTIVE_READING_SCHEMA_PROPOSAL.md`, "Answers to round C1".

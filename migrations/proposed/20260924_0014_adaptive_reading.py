@@ -96,8 +96,9 @@ SET_STATUSES = ("draft", "needs_review", "approved", "rejected", "stale", "archi
 EDITABLE_SET_STATUSES = ("draft", "needs_review")
 # A set nobody ever served may be deleted; one that reached learners is
 # archived instead, so `archived` is reachable only from `approved`/`stale`.
-# Every state is reversible without a delete: `archived -> approved` restores,
-# `rejected -> needs_review` reopens.
+# Reversible without a delete: `archived -> approved` restores, `stale ->
+# approved` re-approves. A rejected set stays frozen as review history; to try
+# again, its questions are copied into a new draft set (a service act).
 DELETABLE_SET_STATUSES = ("draft", "needs_review", "rejected")
 QUESTION_TYPES = (
     "main_idea",
@@ -194,6 +195,8 @@ BEGIN
         OR NEW.article_body_sha256 IS DISTINCT FROM OLD.article_body_sha256
         OR NEW.generator_version IS DISTINCT FROM OLD.generator_version
         OR NEW.model IS DISTINCT FROM OLD.model
+        OR NEW.created_at IS DISTINCT FROM OLD.created_at
+        OR CAST(NEW.validation_json AS text) IS DISTINCT FROM CAST(OLD.validation_json AS text)
         OR ((NEW.status IS NOT DISTINCT FROM OLD.status
              OR NEW.status NOT IN ('approved', 'rejected')) AND (
                NEW.reviewed_by IS DISTINCT FROM OLD.reviewed_by
@@ -208,10 +211,18 @@ BEGIN
         OR (OLD.status = 'needs_review' AND NEW.status IN ('draft', 'approved', 'rejected'))
         OR (OLD.status = 'approved' AND NEW.status IN ('stale', 'archived'))
         OR (OLD.status = 'stale' AND NEW.status IN ('approved', 'archived'))
-        OR (OLD.status = 'archived' AND NEW.status = 'approved')
-        OR (OLD.status = 'rejected' AND NEW.status = 'needs_review'))
+        OR (OLD.status = 'archived' AND NEW.status = 'approved'))
     THEN
         RAISE EXCEPTION 'that comprehension set status change is not a review transition'
+            USING ERRCODE = '23514';
+    END IF;
+    -- Every decision is a new decision: entering `approved` or `rejected`
+    -- records its own moment, so a restore or re-approval can never carry an
+    -- earlier decision's reviewer forward unnoticed.
+    IF NEW.status IS DISTINCT FROM OLD.status AND NEW.status IN ('approved', 'rejected')
+       AND NEW.reviewed_at IS NOT DISTINCT FROM OLD.reviewed_at
+    THEN
+        RAISE EXCEPTION 'a decision records its own moment and reviewer'
             USING ERRCODE = '23514';
     END IF;
     IF NEW.status = 'approved' AND OLD.status IS DISTINCT FROM 'approved' THEN
@@ -264,22 +275,31 @@ END;
 $func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
-# An attempt meets only an approved set, and is immutable evidence: no UPDATE
-# at all. `FOR SHARE` on the set serializes a submit against the set being
-# staled or archived.
+# An attempt meets only an approved set of a published article, and is
+# immutable evidence: no UPDATE at all. `FOR SHARE` on the set and its article
+# serializes a submit against the set being staled or archived and the article
+# being unpublished or archived.
 _PG_ATTEMPT_GUARD = """
 CREATE OR REPLACE FUNCTION reading_attempt_guard() RETURNS trigger AS $func$
 DECLARE
     parent_status text;
+    article_status text;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
         RAISE EXCEPTION 'a reading attempt is immutable evidence'
             USING ERRCODE = '23514';
     END IF;
-    SELECT status INTO parent_status FROM reading_comprehension_sets
-     WHERE id = NEW.set_id FOR SHARE;
+    SELECT s.status, a.status INTO parent_status, article_status
+      FROM reading_comprehension_sets s
+      JOIN reading_articles a ON a.id = s.article_id
+     WHERE s.id = NEW.set_id
+       FOR SHARE;
     IF FOUND AND parent_status <> 'approved' THEN
         RAISE EXCEPTION 'a learner meets only an approved comprehension set'
+            USING ERRCODE = '23514';
+    END IF;
+    IF FOUND AND article_status <> 'published' THEN
+        RAISE EXCEPTION 'a learner meets only the published Reading Corpus'
             USING ERRCODE = '23514';
     END IF;
     RETURN NEW;
@@ -300,8 +320,10 @@ $func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 # TRUNCATE fires no row trigger and ignores RESTRICT under CASCADE, so
 # `TRUNCATE reading_articles CASCADE` or `TRUNCATE users CASCADE` would
 # otherwise take sets and learner evidence in one statement. SQLite has no
-# TRUNCATE. The archive is left truncatable: resetting sandbox-only legacy
-# data is an authorized operator act, not a lifecycle one.
+# TRUNCATE. The archive is guarded too: `TRUNCATE reading_legacy_sessions
+# CASCADE` would also truncate every learner's `text_discussions` of every
+# kind. A reset of sandbox-only legacy data is a `DELETE`, which sets a
+# discussion's `reading_session_id` to NULL and touches nothing else.
 _PG_TRUNCATE_GUARD = """
 CREATE OR REPLACE FUNCTION reading_evidence_truncate_guard() RETURNS trigger AS $func$
 BEGIN
@@ -327,7 +349,7 @@ _PG_TRIGGERS = (
     *(
         f"CREATE TRIGGER {table}_truncate_guard BEFORE TRUNCATE ON {table}"
         " FOR EACH STATEMENT EXECUTE FUNCTION reading_evidence_truncate_guard()"
-        for table in _PROTECTED
+        for table in (*_PROTECTED, *_ARCHIVE)
     ),
     *(
         f"CREATE TRIGGER {table}_read_only BEFORE INSERT OR UPDATE ON {table}"
@@ -338,7 +360,7 @@ _PG_TRIGGERS = (
 
 _PG_DROP = (
     *(f"DROP TRIGGER IF EXISTS {table}_read_only ON {table}" for table in _ARCHIVE),
-    *(f"DROP TRIGGER IF EXISTS {table}_truncate_guard ON {table}" for table in _PROTECTED),
+    *(f"DROP TRIGGER IF EXISTS {table}_truncate_guard ON {table}" for table in (*_PROTECTED, *_ARCHIVE)),
     "DROP TRIGGER IF EXISTS reading_attempt_guard ON reading_attempts",
     "DROP TRIGGER IF EXISTS reading_comprehension_question_guard ON reading_comprehension_questions",
     "DROP TRIGGER IF EXISTS reading_comprehension_set_guard ON reading_comprehension_sets",
@@ -380,6 +402,8 @@ _SQLITE_TRIGGERS = (
         OR NEW.article_body_sha256 IS NOT OLD.article_body_sha256
         OR NEW.generator_version IS NOT OLD.generator_version
         OR NEW.model IS NOT OLD.model
+        OR NEW.created_at IS NOT OLD.created_at
+        OR NEW.validation_json IS NOT OLD.validation_json
         OR ((NEW.status IS OLD.status OR NEW.status NOT IN ('approved', 'rejected')) AND (
                NEW.reviewed_by IS NOT OLD.reviewed_by
             OR NEW.reviewed_at IS NOT OLD.reviewed_at
@@ -392,8 +416,7 @@ _SQLITE_TRIGGERS = (
         OR (OLD.status = 'needs_review' AND NEW.status IN ('draft', 'approved', 'rejected'))
         OR (OLD.status = 'approved' AND NEW.status IN ('stale', 'archived'))
         OR (OLD.status = 'stale' AND NEW.status IN ('approved', 'archived'))
-        OR (OLD.status = 'archived' AND NEW.status = 'approved')
-        OR (OLD.status = 'rejected' AND NEW.status = 'needs_review'))
+        OR (OLD.status = 'archived' AND NEW.status = 'approved'))
     BEGIN SELECT RAISE(ABORT, 'that comprehension set status change is not a review transition'); END""",
     """CREATE TRIGGER reading_comprehension_set_approval_guard
     BEFORE UPDATE OF status ON reading_comprehension_sets
@@ -403,6 +426,11 @@ _SQLITE_TRIGGERS = (
         OR (SELECT count(*) FROM reading_comprehension_questions
              WHERE set_id = NEW.id AND NOT admin_approved AND NOT admin_rejected) > 0)
     BEGIN SELECT RAISE(ABORT, 'an approved set needs an approved question and no undecided one'); END""",
+    """CREATE TRIGGER reading_comprehension_set_decision_guard
+    BEFORE UPDATE OF status ON reading_comprehension_sets
+    WHEN NEW.status IS NOT OLD.status AND NEW.status IN ('approved', 'rejected')
+     AND NEW.reviewed_at IS OLD.reviewed_at
+    BEGIN SELECT RAISE(ABORT, 'a decision records its own moment and reviewer'); END""",
     f"""CREATE TRIGGER reading_comprehension_question_insert_guard
     BEFORE INSERT ON reading_comprehension_questions
     WHEN (SELECT status FROM reading_comprehension_sets WHERE id = NEW.set_id) NOT IN ({_SQLITE_EDITABLE})
@@ -440,6 +468,12 @@ _SQLITE_TRIGGERS = (
     BEFORE INSERT ON reading_attempts
     WHEN (SELECT status FROM reading_comprehension_sets WHERE id = NEW.set_id) <> 'approved'
     BEGIN SELECT RAISE(ABORT, 'a learner meets only an approved comprehension set'); END""",
+    """CREATE TRIGGER reading_attempt_published_guard
+    BEFORE INSERT ON reading_attempts
+    WHEN (SELECT a.status FROM reading_comprehension_sets s
+            JOIN reading_articles a ON a.id = s.article_id
+           WHERE s.id = NEW.set_id) <> 'published'
+    BEGIN SELECT RAISE(ABORT, 'a learner meets only the published Reading Corpus'); END""",
     """CREATE TRIGGER reading_attempt_update_guard
     BEFORE UPDATE ON reading_attempts
     BEGIN SELECT RAISE(ABORT, 'a reading attempt is immutable evidence'); END""",
@@ -464,6 +498,7 @@ _SQLITE_TRIGGER_NAMES = (
     *(f"{table}_read_only_{event}" for table in _ARCHIVE for event in ("insert", "update")),
     "reading_attempt_insert_conflict_guard",
     "reading_attempt_update_guard",
+    "reading_attempt_published_guard",
     "reading_attempt_insert_guard",
     "reading_comprehension_question_update_conflict_guard",
     "reading_comprehension_question_insert_conflict_guard",
@@ -472,6 +507,7 @@ _SQLITE_TRIGGER_NAMES = (
     "reading_comprehension_question_delete_guard",
     "reading_comprehension_question_update_guard",
     "reading_comprehension_question_insert_guard",
+    "reading_comprehension_set_decision_guard",
     "reading_comprehension_set_approval_guard",
     "reading_comprehension_set_transition_guard",
     "reading_comprehension_set_frozen_guard",
@@ -716,6 +752,10 @@ def upgrade() -> None:
         sa.Column("passage_difficulty", sa.Float(), nullable=True),
         sa.Column("ability_before", sa.Float(), nullable=True),
         sa.Column("ability_after", sa.Float(), nullable=True),
+        # Which selection policy served this passage; NULL when the learner
+        # chose it. Captured at submit because an immutable attempt can never
+        # gain it later, and it is what explains a choice after the fact.
+        sa.Column("selection_policy_version", sa.String(40), nullable=True),
         # `[{question_id, selected_index, correct}]`, one per approved question
         # of the set. The database bounds the length; the service validates
         # every element before it writes.
@@ -735,7 +775,8 @@ def upgrade() -> None:
         ),
         sa.CheckConstraint(
             "language_code <> '' AND ordinal >= 1 AND operation_id <> ''"
-            " AND evaluator_version <> '' AND passage_level <> ''",
+            " AND evaluator_version <> '' AND passage_level <> ''"
+            " AND (selection_policy_version IS NULL OR selection_policy_version <> '')",
             name="ck_reading_attempt_identity",
         ),
         sa.CheckConstraint(_hex64("request_digest"), name="ck_reading_attempt_digest"),
