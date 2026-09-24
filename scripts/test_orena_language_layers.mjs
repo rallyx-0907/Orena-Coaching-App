@@ -66,6 +66,10 @@ for (const [layer, via] of [['ui', 'interfaceLanguage'], ['support', 'supportLan
   assert.ok(assignments.length, `ctx.${layer} is assigned`);
   for (const value of assignments) assert.match(value, new RegExp(`^${via}\\(`), `ctx.${layer} = ${value} must come from ${via}()`);
 }
+// Every way into the preferences opens them, including the rows a room draws after the shell (Profile's
+// Languages row once did nothing): one delegated listener, not per-button bindings made too early.
+assert.match(app, /document\.addEventListener\("click", \(event\) => \{\s*const opener = event\.target\.closest\?\.\("\[data-preference\]"\);/);
+assert.equal(/querySelectorAll\("(#shell )?\[data-preference\]"\)\s*\.forEach\(\(x\) => \(x\.onclick/.test(app), false, 'no early per-button binding');
 // The interface is chosen on its own in the preferences, and saved on the device under its own key.
 assert.match(app, /<select name="interface">/);
 assert.match(app, /storage\.setItem\(INTERFACE_KEY, ctx\.ui\)/);

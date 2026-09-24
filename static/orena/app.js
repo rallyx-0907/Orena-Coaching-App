@@ -223,9 +223,6 @@ function shell() {
      the tab bar. Bringing your own content lives in Library. */
   document.getElementById("shell").innerHTML =
     `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
-  document
-    .querySelectorAll("#shell [data-preference]")
-    .forEach((x) => (x.onclick = () => preferences()));
   /* The rail and the tab bar belong to Home, Library, Vocabulary and Progress. A room where the
      learner works - the reader, the player, Dictation, the editor, a review - has none: the
      baseline's templates for them begin at a bar of their own. */
@@ -278,9 +275,6 @@ function paintTopBar() {
     return;
   }
   bar.innerHTML = topBar(ctx);
-  bar
-    .querySelectorAll("[data-preference]")
-    .forEach((x) => (x.onclick = () => preferences()));
   /* Not every destination's bar carries the search: Progress draws tabs and
      the window its numbers cover instead, as the source does. */
   const form = bar.querySelector("[data-global-search]");
@@ -666,6 +660,13 @@ async function boot() {
       event.preventDefault();
       root.focus({ preventScroll: true });
       root.scrollIntoView({ block: "start" });
+    });
+    /* One listener for every way into the preferences sheet - the rail's learner card, the top
+       bar, and the rows a room draws (Profile's settings). Binding each button as the shell drew it
+       left the rows a room renders afterwards with no handler: Profile's Languages row did nothing. */
+    document.addEventListener("click", (event) => {
+      const opener = event.target.closest?.("[data-preference]");
+      if (opener && !opener.disabled && !opener.closest("dialog")) preferences();
     });
     window.addEventListener("hashchange", render);
     await render();
