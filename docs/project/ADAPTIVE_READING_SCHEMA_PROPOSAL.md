@@ -1,9 +1,9 @@
 # Adaptive Reading Practice — schema proposal
 
-    STATUS: PROPOSED, NOT APPLIED. Round 1 (prose) and round 2 (DDL,
-            4563908) REQUEST CHANGES; round 3 (c7050d6) APPROVED WITH REQUIRED
-            CHANGES, no blockers. The two schema-level required changes are
-            made here (RC1, RC2); RC3 is apply-time. See
+    STATUS: ARCHITECTURE REVIEW APPROVED at 0d6efda - NOT APPLIED.
+            Rounds 1 and 2 REQUEST CHANGES; round 3 APPROVED WITH REQUIRED
+            CHANGES; RC1 and RC2 made and confirmed; RC3 is apply-time (§12).
+            Awaiting the human's schema/runtime authorization. See
             docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md.
     DDL:    migrations/proposed/20260924_0014_adaptive_reading.py
     PROOF:  tests/test_adaptive_reading_schema_proposed.py

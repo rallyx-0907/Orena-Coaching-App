@@ -4,10 +4,12 @@
 | --- | --- | --- |
 | 1 | `00dcf18` (prose only) | REQUEST CHANGES — 5 blockers, 21 required changes, 6 factual errors |
 | 2 | `4563908` (proposal + DDL + two-dialect proof) | REQUEST CHANGES — 1 blocker, 11 required changes, 6 factual errors |
-| 3 | `c7050d6` (delta: the round-2 answers) | **APPROVED WITH REQUIRED CHANGES** — no blockers; RC1, RC2 made in the next commit, RC3 apply-time |
+| 3 | `c7050d6` (delta: the round-2 answers) | APPROVED WITH REQUIRED CHANGES — no blockers; RC1, RC2 made in `0d6efda`, RC3 apply-time |
+| 3, confirmation | `0d6efda` (delta: RC1, RC2, search_path) | **APPROVED** — no new findings |
 
-Nothing is applied in any round. Applying needs an APPROVED round **and** the
-human's schema/runtime authorization.
+Nothing is applied in any round. The schema-review gate is passed at `0d6efda`;
+applying still needs the human's schema/runtime authorization, and approval of
+the schema is not product approval.
 
 ---
 
@@ -310,7 +312,8 @@ test path, RC1).
 -> 0014` catalogue-identical. Offline `--sql` up and down ran under `psql -v
 ON_ERROR_STOP=1`; the offline downgrade against a schema holding a set refused
 (rc 3) and the set remained. Every TRUNCATE, upsert and REPLACE path tried
-against protected rows refused; a full `pg_dump`/`pg_restore` with approved and
+against the protected tables refused (`TRUNCATE reading_ability_projections` is
+allowed by design - the projection is discardable); a full `pg_dump`/`pg_restore` with approved and
 stale sets and an attempt restored cleanly. The engine's SQLite suites pass on
 a schema upgraded through the proposal (102 passed, as unpatched) and
 `test_reading_engine_persistence_postgres` passes at the proposed head (32
@@ -327,3 +330,36 @@ would break parity.
 each with a proof (the RC1 proof fails if the fix is removed), and every
 PostgreSQL trigger function now carries `SET search_path FROM CURRENT`. RC3 is
 on the proposal's apply-time list.
+
+
+---
+
+# Round 3 confirmation
+
+    FINAL VERDICT:   APPROVED - the schema-review gate is passed
+    REVIEWER:        the same Delegated Architecture Reviewer; read-only;
+                     scratch databases and dump dropped
+    REVIEWED COMMIT: 0d6efda74d7d29146283a7f331d9765d7533ccdd (delta from c7050d6)
+    DATE:            2026-09-24
+    APPLIED:         no. Applying needs the human's schema/runtime
+                     authorization; this is not product approval.
+
+- **RC1 resolved.** The reviewer's original race re-run: a second connection's
+  real INSERT of a draft set right after the guard now gets "database is
+  locked"; the downgrade completes on a database with no feature data.
+- **RC2 resolved on both dialects.** Rewrites refused on approved->archived,
+  approved->stale (`review_reason`, `reviewed_at`), stale->archived, a no-op or
+  self status change on an approved set, and a rejected set; allowed are a
+  plain approved->stale, stale->approved with a new reviewer, and
+  needs_review->rejected naming its reviewer.
+- **RC3** correctly on the apply-time list, with the advisory-lock namespace.
+- **search_path resolved.** All four functions carry the pinned search_path;
+  statements firing the triggers under `SET LOCAL search_path = ''` work; a
+  `--data-only` restore no longer fails on "relation does not exist" (with
+  `--disable-triggers` it restores the set and the attempt); a full restore is
+  clean.
+- **No new findings; no regression.** Proof reproduced (PostgreSQL 61 passed,
+  2 skipped; SQLite 30 passed); validators pass; `0013 -> 0014 -> 0013 -> 0014`
+  catalogue-identical; offline `--sql` up and down clean, offline downgrade
+  refuses against a schema holding a set; the round-3 adversarial suite
+  re-run with the same outcomes. Local execution, not CI.
