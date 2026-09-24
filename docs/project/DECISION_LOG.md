@@ -2557,3 +2557,38 @@ evidence; the runtime works after being recreated.
 
 **Supersedes / Superseded by:** Supersedes the `generated_session` design of
 `ADAPTIVE_READING_SCHEMA_PROPOSAL.md` at `0d6efda` and its review approval.
+
+## D-076 — Canonical Reading cutover authorized for the admin sandbox only
+
+**Date:** 2026-09-24
+**Status:** Accepted (explicit human authorization, 2026-09-24)
+
+**Context.** The canonical Reading schema (`20260924_0014`, D-075) passed
+independent architecture review at `fdf198f` (round C1, confirmed). Its §11
+recorded a deliberate departure from `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §6
+steps 2 and 5 and the I2 additive-schema gate, for the human to confirm.
+
+**Decision.**
+
+- Apply `20260924_0014` to the **admin sandbox only**, including the
+  deliberate **non-additive cutover** from the legacy Reading tables to the
+  canonical model. The exception is intentional: the generated-reading
+  architecture is being retired, not preserved as a permanent compatibility
+  model. Production (8000) and preview (8010) keep every gate they had.
+- Apply after a backup, deploy the matching code in the same cutover, and run
+  the PostgreSQL upgrade/downgrade rehearsal and the lock-order proof.
+- The three concepts are: `job_type` = ingestion action; `source_type` =
+  source acquisition / feed mechanism; `content_kind` = learner-facing content
+  type. Editorial source category stays deferred. `source_type` is never
+  described as a publisher/news/blog category.
+- **Legacy Reading data is not deleted yet.** The archive inventory query runs
+  first and its result is reported. Test/dev-only data may then be reset;
+  meaningful learner history stays read-only.
+- **No legacy "earlier practice" in Learner Summary** for now. Legacy history
+  does not affect the canonical ability/progression model.
+- Proceed with removing the AI passage generator, moving every Reading consumer
+  to canonical evidence, adding the Reading rights-warning audit, and the live
+  end-to-end run. **Learner submit stays disabled until the complete E2E passes.**
+
+**Supersedes / Superseded by:** Confirms the deviation recorded in the
+proposal's §11 for the admin sandbox only; it authorizes nothing beyond it.

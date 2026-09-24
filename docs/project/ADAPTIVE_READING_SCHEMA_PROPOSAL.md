@@ -41,7 +41,7 @@ every processed result an Admin has not reviewed stays invisible to learners.
 | One Reading flow; AI never writes a source passage | this schema has no generated-passage path; the generator retires at apply (§9) |
 | Imports: Reading, Books, Media, Vocabulary, Sources | **already built** (`5f62174`); unchanged here |
 | Registered internet sources; automatic fetch makes candidates only | **already built**: the engine never publishes (`reading_content_engine.py`: "Nothing here publishes"); polling needs `state = 'active' AND automation_allowed` (`ck_reading_source_polling_requires_approval`); publication is an Admin act |
-| Ingestion method, source kind, content kind kept apart; source category deferred | §8: three existing columns, one per concept; source category has none |
+| Ingestion action, source acquisition mechanism, content kind kept apart; editorial source category deferred | §8: three existing columns, one per concept; editorial source category has none |
 | Reversible lifecycles, no hard delete in normal flow | Books restore and the vocabulary lifecycle are **already built** (`02e8aa6`: `pending_review → published ↔ unpublished → archived → unpublished`); comprehension sets here are reversible too (§2) |
 | Rights and completeness are warnings; override is audited | **already built for vocabulary** (`ba931ba`: `warnings_at_publication`, `published_over_warnings`, audit entry with the warnings overridden). **Not yet for Reading articles:** the console shows rights advice, but the publish route (`reading_admin_api.py`) records no warnings or override. Closing it is apply-time work (§12), reusing the vocabulary pattern — no schema |
 | Adaptive Reading uses only the published corpus | §3: the database refuses an attempt on a set whose article is not `published`; §4.1: selection reads published articles only |
@@ -394,17 +394,19 @@ reached learners is archived, never purged.
 
 ## 8. Three concepts, three columns
 
-| Concept (D-075) | Column | Values |
+| Concept (D-075, D-076) | Column | Values |
 | --- | --- | --- |
-| How content enters | `reading_ingestion_jobs.job_type` | `ingest_text, ingest_url, ingest_file` (a future poll adds its own) |
-| What kind of source it is | `reading_sources.source_type` | `manual, direct_url, file, rss, api, feed` |
-| What kind of content a learner sees | `reading_articles.content_kind` | `article, news` |
-| Source *category* (editorial: outlet, publisher, blog) | — | **deferred** (D-075), no schema |
+| **Ingestion action** — what one submission did | `reading_ingestion_jobs.job_type` | `ingest_text, ingest_url, ingest_file` (a future poll adds its own) |
+| **Source acquisition / feed mechanism** — how a registered source is fetched | `reading_sources.source_type` | `manual, direct_url, file, rss, api, feed` |
+| **Learner-facing content type** — what the learner is reading | `reading_articles.content_kind` | `article, news` |
+| Editorial source category | — | **deferred**, no schema |
 
-Round C1 (F3) corrected an earlier reading that deferred "source kind": D-075
-keeps source kind as a concept and defers source **category**. All three kept
-concepts already have their own column; nothing here merges them. This mapping
-is this proposal's reading of D-075, stated so the human can correct it. `content_kind` defaults to `article`, which
+`source_type` describes the mechanism by which content is acquired from a
+source — a manual paste, a direct URL, a file, an RSS/Atom feed, an API, a
+generic feed. It is **not** an editorial classification of who publishes the
+content; the kind of publisher (an outlet, a publisher, a blog) is the
+editorial source category, which stays deferred (D-076). All three kept
+concepts have their own column and nothing here merges them. `content_kind` defaults to `article`, which
 every existing row is, and reuses the Library's own chip words
 (`static/orena/ui/library-browse.js`), so no new vocabulary appears. A book is
 its own catalog (`reading_books`); `essay` and `story` are Library chips that
