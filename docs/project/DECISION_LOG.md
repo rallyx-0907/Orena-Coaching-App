@@ -2668,3 +2668,26 @@ three-layer rule `docs/product/ORENA_LANGUAGE_COHERENCE.md` already stated.
 **Open.** Static guidance on the other surfaces still reads the interface pack (coherence audit
 AUDIT-1b); each owner splits its keys. Storing the interface language on the account is a gated
 migration for the human.
+
+## D-080 — Every learner copy string declares its language layer (D-079 made app-wide)
+
+**Date:** 2026-09-24. **Source:** the human: D-079 was not complete while static guidance outside
+Speaking still read the interface pack (AUDIT-1b), and the Speaking copy relied on an allowlist of
+guidance keys ("not in the list = interface").
+
+**Decision.** Every key of every learner copy table declares its semantic layer - `interface`
+(button, menu, navigation, title, region heading, label, metadata, counter, placeholder, short system
+status), `support` (explanation, instruction, hint, coaching, verdict, feedback, the explanation of a
+result, a state or an error) or `target` (material; none lives in copy). There is no default layer.
+Each screen reads each string from the pack of its layer; a support language Orena has no pack for
+reads guidance in English, never in the interface language. Content explanations follow the same
+rule.
+
+**Applied.** `static/orena/ui/copy-layers.js` (every key, with the reason for each decision that
+differs from the plain rule), `static/orena/ui/layered-copy.js` (the one accessor), `ctx.c`,
+`refCopy(ctx)` and `speakCopy(ui, support)` built by it, Grammar's pattern names and notes on the
+support language. Gate: `scripts/test_orena_copy_layers.mjs` (in CI). Browser: cases A, B, C on
+desktop and phone across Home, Library, Progress, Profile, Reading, Listening, Dictation, Writing,
+Vocabulary, Grammar and Speaking - every visible copy string in its layer's language.
+
+**Replaces** the Speaking `GUIDANCE_KEYS` allowlist. Closes coherence audit AUDIT-1b.

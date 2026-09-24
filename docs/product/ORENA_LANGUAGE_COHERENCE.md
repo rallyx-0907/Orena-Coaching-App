@@ -101,18 +101,35 @@ cache is neither read nor written. `scripts/test_orena_language_layers.mjs`
 locks it (acceptance cases A, B and C; every combination; reload; stale cache;
 no chrome picked by support or target).
 
-### AUDIT-1b - Gap: static guidance outside Speaking reads the interface pack
+### AUDIT-1b - Closed 2026-09-24 (D-080): every copy string is read by its declared layer
 
 Until D-079 the interface language equalled the support language, so static
-hints and explanations in `copy.js` read correctly by coincidence. With the
-layers separated, a sentence that explains or instructs must be taken from the
-support language's pack. Speaking does this (`ui/speaking-copy.js`,
-`GUIDANCE_KEYS`: chrome from the interface pack, guidance from the support
-pack, English when Orena has no pack for the support language). The other
-surfaces - Reading, Listening, Dictation, Writing, Vocabulary, Grammar - still
-take their static guidance from `copy[ctx.ui]`; each owner splits its keys the
-same way. Generated text (coaching, translation, explanations) already follows
-`ctx.support`.
+hints and explanations read correctly by coincidence. With the layers apart,
+each string must come from the pack of its own layer. It now does, app-wide:
+
+- Every key of every learner copy table - the product copy (`ctx.c`), the shell
+  and shared screens (`referenceCopy`), Speaking - is declared `interface`,
+  `support` or `target` in `static/orena/ui/copy-layers.js` (1,572 keys, 315
+  support). There is no default layer.
+- `static/orena/ui/layered-copy.js` builds the copy a screen reads: interface
+  keys from the interface pack, support keys from the support language's pack,
+  else English (the fallback) - never the interface language instead. `ctx.c`,
+  `refCopy(ctx)` and `speakCopy(ui, support)` are all built by it; no surface
+  indexes a copy table directly.
+- Content explanations follow the same rule: grammar pattern names, grammar
+  notes and contrast explanations read the support language with an English
+  fallback (they used to fall back to the interface language); prepared
+  meanings already did.
+- `scripts/test_orena_copy_layers.mjs` fails on an undeclared key, a stale
+  declaration, a declaration against the plain rule without a recorded reason
+  (an explanation declared interface, a button declared support), a guidance-
+  named key declared interface, a key read from the wrong pack (all keys, cases
+  A/B/C), direct indexing of a copy table, and content picked by, or falling back
+  to, the interface language.
+
+Still true and deliberate: date and time formats follow the interface language
+(metadata), and a language is named in its own language where one is chosen
+or shown as a pair (endonyms).
 
 ### AUDIT-2 - Gap: Writing evaluator hardcodes the support language to Vietnamese
 
