@@ -15,7 +15,7 @@ independent layers. None may be inferred from another.
 
 | Layer | What it governs | Example values today |
 | --- | --- | --- |
-| **Interface language** | System chrome: navigation, menus, Settings, system-level labels/actions, account/app management UI | `en`, `zh` (`account_profile.py: interface_language`, `ctx.ui`) |
+| **Interface language** | System chrome: navigation, menus, Settings, system-level labels/actions, account/app management UI | `en`, `zh`, `vi` (`account_profile.py: interface_language`, held on the device; `ctx.ui` via `product/languages.js`) |
 | **Support/native language** | Explanation, annotation, instruction, hint, guidance, grammar/vocabulary explanation - the learner's chosen support language | 12 languages: `en`, `vi`, `zh`, `ja`, `ko`, `es`, `fr`, `de`, `pt`, `ru`, `id`, `th` (`writing_coach/core/support_languages.py`, `ctx.support`) |
 | **Target learning language** | Reading content, vocabulary target word/expression, exercises, examples - the language being learned | `en`, `zh` (`ctx.language`, `writing_coach/languages/{english,chinese}`) |
 
@@ -74,16 +74,45 @@ Scope: `static/orena/ui/*.js`, `static/orena/product/*.js`,
 change behavior; it records what the entry above only summarized, so the gap
 is traceable to file and line rather than to a paragraph.
 
-### AUDIT-1 - Compliant: interface layer is correctly isolated
+### AUDIT-1 - Was not compliant; fixed 2026-09-24 (D-079)
 
-`static/orena/ui/copy.js` is indexed only as `copy[ctx.ui]`
-(`static/orena/app.js:112,289`); nothing else reads it. `referenceCopy[ctx.ui]`
-follows the same pattern in `collection.js`, `discovery.js`, `reference.js` and
-`world.js`. No UI file was found reading `ctx.language` or `ctx.support` to
-select chrome copy. Interface language is currently limited to `en`/`zh`
-(`account_profile.py:80`, matching `CURRENT_HANDOFF.md`'s P1 note) - a scope
-limit, not a coherence violation, since it does not leak into the other two
-layers.
+The 2026-09-14 reading of this entry ("interface layer is correctly isolated")
+was wrong. `copy[ctx.ui]` was indexed correctly, but `ctx.ui` itself was
+*derived from the support language*: `static/orena/app.js` set
+`ctx.ui = uiLocale(ctx.support)` at profile load and in the preferences sheet,
+and booted from a device cache of the support language (`orena.support`). The
+interface layer therefore never existed on its own. Its visible failure: a page
+booted with one support language while the account's support language had
+changed elsewhere showed chrome, guidance and generated text in three languages
+on one screen (found in the Speaking word sheet).
+
+The source of truth is now `static/orena/product/languages.js`:
+
+- interface - the learner's choice, kept on the device under `orena.interface`
+  (the account setting `interface_language` is declared but not stored: its
+  column is a gated migration), else the browser's language when Orena is
+  written in it, else English; `en`, `zh`, `vi`;
+- support - the account's `support_language`, else `native_language`;
+- target - the learning language the server reports active.
+
+`app.js` assigns each `ctx` layer only through its resolver; the preferences
+sheet offers the interface language as its own choice; the old `orena.support`
+cache is neither read nor written. `scripts/test_orena_language_layers.mjs`
+locks it (acceptance cases A, B and C; every combination; reload; stale cache;
+no chrome picked by support or target).
+
+### AUDIT-1b - Gap: static guidance outside Speaking reads the interface pack
+
+Until D-079 the interface language equalled the support language, so static
+hints and explanations in `copy.js` read correctly by coincidence. With the
+layers separated, a sentence that explains or instructs must be taken from the
+support language's pack. Speaking does this (`ui/speaking-copy.js`,
+`GUIDANCE_KEYS`: chrome from the interface pack, guidance from the support
+pack, English when Orena has no pack for the support language). The other
+surfaces - Reading, Listening, Dictation, Writing, Vocabulary, Grammar - still
+take their static guidance from `copy[ctx.ui]`; each owner splits its keys the
+same way. Generated text (coaching, translation, explanations) already follows
+`ctx.support`.
 
 ### AUDIT-2 - Gap: Writing evaluator hardcodes the support language to Vietnamese
 

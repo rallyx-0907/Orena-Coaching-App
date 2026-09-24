@@ -213,21 +213,33 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
 
 ## The learner language contract
 
-Orena has two learner language roles, and only two.
+Orena has three language layers, and none is inferred from another (D-079;
+`docs/product/ORENA_LANGUAGE_COHERENCE.md` owns the full contract).
+
+**Interface language** owns the chrome: navigation, buttons, menus, Settings,
+section labels, titles, system states and errors. It is the learner's own
+choice (on the device until the account can keep it - a gated migration), else
+the browser's language when Orena is written in it, else English. It is never
+taken from the support language.
+
+**Support language** owns what explains: translations, hints, instructions,
+feedback, guidance, grammar and vocabulary explanation. Generated guidance is
+**requested** in the support language, not translated afterwards, and a stored
+one carries the language it was written in. A support language Orena has no
+written pack for reads its static guidance in English, never in the interface
+language instead.
 
 **Learning language** owns the material: lesson and book text, media
 transcripts, target vocabulary, practice sentences and the source content.
+Learner output keeps whatever language the learner produced.
 
-**Support language** owns everything Orena itself says: navigation, labels,
-controls, instructions, feedback, explanations, errors and status. Learner
-output keeps whatever language the learner produced.
-
-Generated guidance is **requested** in the support language, not translated
-afterwards, and a stored one carries the language it was written in. There is
-no third, independently chosen interface language: the support language decides
-what language the product speaks. A mixed interface is a defect unless the
-content deliberately contains those languages. A supported locale owns every string; English
-arriving silently in its place is a defect (rule 26).
+The three are resolved in one place (`static/orena/product/languages.js`) and a
+surface picks each string by its layer: chrome from the interface pack, guidance
+from the support pack, material as it is. Changing one layer never changes the
+other two; a reload, a stale cache or a profile read never moves one of them.
+A supported locale owns every string it asks for; English arriving silently in
+its place is a defect (rule 26). `scripts/test_orena_language_layers.mjs` locks
+this contract.
 
 ## Art direction owner
 

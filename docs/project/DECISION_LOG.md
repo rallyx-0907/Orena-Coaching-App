@@ -2628,3 +2628,43 @@ human instruction ranks first).
 **Open for the human.** Grammar's own page had no way in but the retired hub, and the design draws
 none (UI_BACKEND_GAPS, S24). The other workspaces (Reading, Listening, Dictation, Writing,
 Vocabulary) are not re-measured in this Speaking slice; each owner applies rule 49 and its gate.
+
+## D-079 — Three independent language layers: interface, support, target
+
+**Date:** 2026-09-24. **Source:** the human, closing Speaking's merge blockers ("FIX GỐC LỖI NGÔN NGỮ —
+APP-WIDE"), after a word sheet showed English, Vietnamese and Chinese at once.
+
+**Decision.** Orena has three language layers and none is inferred from another:
+
+- **interface** - navigation, buttons, menus, system chrome, Settings, system labels and actions;
+- **support/native** - explanation, translation, hint, instruction, guidance, grammar and vocabulary
+  explanation;
+- **target learning** - the material: sentence, word, transcript, exercise.
+
+`ctx.ui` is the interface language, `ctx.support` the support language, `ctx.language` the target
+language. The support language never decides the interface language. Acceptance cases: A (interface
+English, support Vietnamese, target Chinese), B (Vietnamese, Vietnamese, English), C (Chinese,
+English, Chinese), each holding across boot, reload, cache, profile load, preference change,
+navigation, the Speaking workspace and the word sheet.
+
+**Supersedes.** D-051's "learner-facing scaffolding follows the interface language" (scaffolding
+follows the support language), the Design Contract's former "two learner language roles, and only
+two" (rewritten), and commit `474ab59` ("the support language owns the UI"). It restores the
+three-layer rule `docs/product/ORENA_LANGUAGE_COHERENCE.md` already stated.
+
+**Applied (`feature/speaking`).**
+
+- Source of truth: `static/orena/product/languages.js`. Interface: the learner's choice on the device
+  (`orena.interface`) - the account's `interface_language` stays unstored, its column being a gated
+  migration - else the browser's language when Orena is written in it, else English. Support: the
+  account's `support_language` (else `native_language`). Target: the server's active language.
+- `app.js` assigns each layer only through its resolver; the old support cache (`orena.support`) is
+  neither read nor written; the preferences sheet offers the interface language as its own choice;
+  `account_profile.py` allows `vi` as an interface language (still not stored).
+- Speaking picks each string by its layer (`ui/speaking-copy.js`, `GUIDANCE_KEYS`), with `lang` on the
+  guidance it renders.
+- Gate: `scripts/test_orena_language_layers.mjs` (in CI).
+
+**Open.** Static guidance on the other surfaces still reads the interface pack (coherence audit
+AUDIT-1b); each owner splits its keys. Storing the interface language on the account is a gated
+migration for the human.
