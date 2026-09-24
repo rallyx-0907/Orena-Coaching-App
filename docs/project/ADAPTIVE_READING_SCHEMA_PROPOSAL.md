@@ -109,6 +109,14 @@ empty or populated archive changes nothing about the canonical model.
 One reviewed set of questions for one published article, in one support
 language, grounded in one exact body.
 
+**Published first (review round after `974e639`).** A set is generated, and
+approved, only while its article is `published` — D-075's order, import →
+review → publish → set. The application refuses both with
+`reading_article_not_published` (the Admin route before any AI call, the
+repository again under the article's row lock). The database does not enforce
+it: an article unpublished after its set's approval keeps the set, which is
+simply not served (§3) until the article is published again.
+
 | Column | Why |
 | --- | --- |
 | `article_id`, `language_code` → `reading_articles (id, language)` **RESTRICT** | the set's language is its article's by construction; an article cannot take its sets with it |
@@ -234,6 +242,15 @@ pool — **published** articles in the learner's language with an **approved**
 set in their support language, not attempted recently. "Approved" implies
 "anchored" because every body edit stales its sets in the same transaction
 (§6); only the one chosen article is re-hashed when served.
+
+**Who writes `selection_policy_version` (review round after `974e639`).** The
+server, never the request. A submit replays this function inside its own
+transaction, after the per-account advisory lock and before the attempt
+exists — the same evidence `GET /api/reading/practice/next` reads — and
+records the policy's version only when the chosen set is the one being
+answered; otherwise NULL. The submit body has no such field (`extra="forbid"`
+refuses one). The learner meets the choice on Home's "for you" rail. No
+column changes.
 
 1. **Ability** sets a target difficulty band around the current estimate.
 2. **Recent performance** moves the band: a run of high accuracy moves it up, a

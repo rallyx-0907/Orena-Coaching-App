@@ -169,7 +169,8 @@ def _evidence_call(call: Callable[[], Any]) -> Any:
         return _guarded(call)
     except ReadingEvidenceError as exc:
         status = 409 if exc.code in {"reading_set_frozen", "reading_set_transition_refused",
-                                     "reading_set_undeletable", "reading_set_stale"} else 422
+                                     "reading_set_undeletable", "reading_set_stale",
+                                     "reading_article_not_published"} else 422
         if exc.code in {"reading_processor_unavailable", "reading_processor_failed"}:
             status = 503
         raise orena_http_error(status, exc.code, str(exc)) from exc
@@ -706,6 +707,7 @@ def set_article_status(
 
 
 # -- comprehension sets ------------------------------------------------------------
+# For a published article only (D-075: import, review, publish, then the set).
 # The processor writes a draft; an administrator decides every question and the
 # set. Nothing here is visible to a learner until the set is approved, and an
 # approval re-checks that every question is grounded in the article's body as
@@ -731,6 +733,11 @@ def generate_comprehension_set(
     article = _guarded(lambda: _content().get_article(article_id))
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    # Published first (D-075): refused here before the provider is asked, and
+    # again under the article's lock when the draft is written.
+    if article.get("status") != "published":
+        raise orena_http_error(409, "reading_article_not_published",
+                               "Publish the article first: a comprehension set is built for a published article only.")
     support = payload.support_language.strip().casefold()
     processed = _evidence_call(lambda: process_article(article, support_code=support, generate=_state.generate))
     created = _evidence_call(lambda: _evidence().create_set(

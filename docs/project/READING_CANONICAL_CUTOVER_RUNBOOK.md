@@ -15,9 +15,20 @@ Two things this runbook does not decide:
   until the complete live E2E passes on the sandbox (steps 7–8).
 
 Placeholders: `<web>` is the sandbox application container, `<network>` its
-Docker network, `<pg-url>` its `POSTGRES_RUNTIME_URL`, `<repo>` the lane's
-worktree at the commit being deployed. Check `docker ps` first: only one lane
-operates Docker at a time (`AGENTS.md`, Safety).
+Docker network, `<pg-url>` its `POSTGRES_RUNTIME_URL`, `<sandbox-db>` the
+database that URL names, `<cluster>` the system identifier `target` prints,
+`<repo>` the lane's worktree at the commit being deployed. Check `docker ps`
+first: only one lane operates Docker at a time (`AGENTS.md`, Safety).
+
+**How the cutover script knows it is the sandbox.** No single check is trusted
+alone: `APP_ENV` must not be production and no URL may be on 8000 / 8010; the
+production compose default database (`postgres` / `becoming`) is refused by
+name even from a clean shell; `--confirm-sandbox <sandbox-db>` must name the
+URL's database and the connected server must report that same database; and
+`reset-legacy` also needs `--expect-cluster <cluster>`, so it deletes only in
+the PostgreSQL cluster `target` showed. The E2E driver accepts only a loopback
+base URL, never 8000 / 8010, and stops if the server's `/api/readiness` says
+`production`.
 
 ## 1. Stop writers
 
@@ -43,16 +54,18 @@ The rehearsal now also compares `reading_attempts`, `reading_comprehension_sets`
 and the two archive tables (None before the upgrade), and the echoed commands
 no longer show the connection password.
 
-## 3. Inventory the legacy archive — report it before anything else
+## 3. Name the target, then inventory the legacy archive — report it before anything else
 
 ```
 docker run --rm --network <network> -e POSTGRES_RUNTIME_URL="<pg-url>" \
   -e APP_ENV=development -e PUBLIC_BASE_URL=http://localhost:<sandbox-port> \
   -v "<repo>:/workspace:ro" -w /workspace ai-writing-coach:local \
-  python scripts/reading_canonical_cutover.py inventory --confirm-sandbox
+  sh -lc "python scripts/reading_canonical_cutover.py target --confirm-sandbox <sandbox-db> && \
+          python scripts/reading_canonical_cutover.py inventory --confirm-sandbox <sandbox-db>"
 ```
 
-It prints, per account and language, the legacy sessions and attempts, their
+`target` prints the database and its cluster's system identifier: record it
+with the inventory — step 9 needs it. The inventory prints, per account and language, the legacy sessions and attempts, their
 dates, the linked text discussions, masked identities and a hint of whether the
 account looks like test data. **Send this to the human.** The hint is not a
 decision.
@@ -63,7 +76,7 @@ With the new code (the image built from `<repo>`), still with writers stopped:
 
 ```
 python scripts/bootstrap_runtime_schema.py --upgrade --from 20260923_0013 --confirm
-python scripts/reading_canonical_cutover.py status --confirm-sandbox
+python scripts/reading_canonical_cutover.py status --confirm-sandbox <sandbox-db>
 ```
 
 `bootstrap_runtime_schema` refuses if the database is not at `20260923_0013`
@@ -87,8 +100,11 @@ python scripts/reading_canonical_e2e.py run --base-url http://localhost:<sandbox
   --state backups/reading-e2e-off.json --ai-provider gemini --ai-model gemini-3.5-flash-lite
 ```
 
-Expected: every check passes, including `learner submit is off: 503
-reading_submit_disabled` and `and it wrote nothing`, in English and Chinese.
+Expected: every check passes, including `a candidate gets no comprehension
+set: publish first`, `the selection policy offers a next article` (required:
+three articles per language are published with approved sets, so the policy
+must offer one), `learner submit is off: 503 reading_submit_disabled` and `and
+it wrote nothing`, in English and Chinese.
 
 ## 7. The complete E2E (submit on, sandbox only)
 
@@ -100,13 +116,24 @@ python scripts/reading_canonical_e2e.py run --base-url http://localhost:<sandbox
 ```
 
 It checks D-075 §12 steps 1–7 and 9: import → review → publish (rights
-warnings recorded beside the override) → a grounded set generated and approved
-→ the learner meets it without answers → the attempt persists → ability moves
-→ the next article is chosen by the policy, the same way twice → a retry is the
-same attempt and ability moves once → a reload keeps both → a body edit stales
-the set, keeps the questions and the evidence, refuses a new answer against the
-old text → Collection, Learner Summary, the cross-skill cue, Admin Activity and
-analytics read the canonical attempt.
+warnings recorded beside the override; a set before publishing is refused) →
+grounded sets generated and approved for three articles → the selection policy
+offers one, the same way twice (the run fails if it offers none) → the learner
+answers **the article the policy chose**, and the server records
+`selection_policy_version = reading-select/1` on that attempt (a request that
+tries to claim it is refused 422) → the next choice moves on → the learner
+answers an article they picked, which records no selection → the attempt
+persists, ability moves → a retry is the same attempt and ability moves once →
+a reload keeps both → a body edit stales the set, keeps the questions and the
+evidence, refuses a new answer against the old text → Collection, Learner
+Summary, Admin Activity and analytics read the canonical attempt, and the
+cross-skill cue names **this run's** attempt and article. The account should
+have no pending writing review: the cue prefers one to Reading, and the run
+reports that as a failure rather than passing over it.
+
+The policy's choice is what the learner sees first on the reading side of
+Home's "for you" rail (the rail Orena Home Discover draws for what fits the
+learner), from the same `/api/reading/practice/next`.
 
 ## 8. Recreate the runtime and verify
 
@@ -128,12 +155,12 @@ Only if the human decided from step 3 that the archive is test or
 development data:
 
 ```
-python scripts/reading_canonical_cutover.py reset-legacy --confirm-sandbox \
-  --expect-sessions <N> --expect-attempts <M>
+python scripts/reading_canonical_cutover.py reset-legacy --confirm-sandbox <sandbox-db> \
+  --expect-cluster <cluster> --expect-sessions <N> --expect-attempts <M>
 ```
 
-`N` and `M` are the totals step 3 printed; the command refuses if the archive
-holds anything else. Text discussions keep their rows and lose the link.
+`<cluster>`, `N` and `M` are what step 3 printed; the command refuses if the
+cluster is another one or the archive holds anything else. Text discussions keep their rows and lose the link.
 Otherwise leave the archive as it is: it is read-only, and nothing reads it as
 evidence, as an ability baseline or as "earlier practice".
 
@@ -146,6 +173,13 @@ downgrade refuses and changes nothing: the path is a reviewed forward repair,
 or a restore of step 2's backup.
 
 ## Rehearsed locally (2026-09-24, local execution, not the sandbox)
+
+These results are for the tooling at `974e639`. The review round that followed
+changed the E2E (three articles per language, the policy's choice required and
+answered, server-recorded provenance, the cue pinned to the run's attempt) and
+the cutover script's target checks; the new driver has been exercised by its
+unit tests and the refusals against a throwaway PostgreSQL, **not yet by a
+full live run** - the sandbox run in steps 6–8 is its first.
 
 PostgreSQL 16 in the cloud container, seeded at `20260923_0013` with 6 legacy
 sessions / 6 attempts for two accounts:

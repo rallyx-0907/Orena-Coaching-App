@@ -217,6 +217,32 @@ def test_an_unpublished_article_serves_no_set(world):
     assert evidence.served_set(article_id, support_language="vi") is None
 
 
+def test_a_set_is_built_and_approved_for_a_published_article_only(world):
+    """D-075: publish, then the set. A candidate gets no questions, and a set
+    whose article left the corpus before its approval stays undecided."""
+    engine, content, evidence, _ = world
+    candidate = _article(content, publish=False)
+    with pytest.raises(ReadingEvidenceError) as refused:
+        evidence.create_set(candidate, support_language="vi", generator_version="test/1", model="stub",
+                            questions=_questions(), validation={}, actor="admin", now=_tick())
+    assert refused.value.code == "reading_article_not_published"
+    assert evidence.list_sets(candidate) == []
+
+    article_id = _article(content)
+    built = evidence.create_set(article_id, support_language="vi", generator_version="test/1", model="stub",
+                                questions=_questions(), validation={}, actor="admin", now=_tick())
+    evidence.transition(built["id"], "needs_review", actor="admin", now=_tick())
+    for question in built["questions"]:
+        evidence.decide_question(built["id"], question["id"], decision="approve", actor="admin", now=_tick())
+    content.set_status(article_id, "unpublished", actor="admin", now=_tick())
+    with pytest.raises(ReadingEvidenceError) as refused:
+        evidence.transition(built["id"], "approved", actor="admin", now=_tick())
+    assert refused.value.code == "reading_article_not_published"
+    assert evidence.get_set(built["id"])["status"] == "needs_review"
+    content.set_status(article_id, "published", actor="admin", now=_tick())
+    assert evidence.transition(built["id"], "approved", actor="admin", now=_tick())["status"] == "approved"
+
+
 # ---- the submit ----------------------------------------------------------------
 
 @pytest.mark.parametrize("language", ["en", "zh"])
@@ -370,13 +396,70 @@ def test_the_next_article_is_chosen_by_rule_and_never_repeats(world):
     assert first["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
     assert "correct_index" not in first["set"]["questions"][0]
     set_id, answers = _answers(evidence, first["article_id"])
-    evidence.submit_attempt(set_id=set_id, operation_id="op", answers=answers, support_language="vi",
-                            selection_policy_version=first["selection_policy_version"])
+    saved = evidence.submit_attempt(set_id=set_id, operation_id="op", answers=answers, support_language="vi")
+    # The server recorded that the policy chose it; nothing was sent to say so.
+    assert saved.attempt["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
     second = evidence.next_article(support_language="vi")
     assert second["article_id"] != first["article_id"]
     # All right moved ability and recent performance up: the next is harder.
     assert second["article_id"] == by_level["B1"]
     assert evidence.list_evidence()[0]["passage_level"] == "A2"
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_selection_provenance_is_the_servers_and_never_the_requests(world, language):
+    engine, content, evidence, scope = world
+    scope.language = language
+    levels = LEVELS[language]
+    by_level = {level: _approved(content, evidence, language=language, level=level)[0] for level in levels}
+    chosen = evidence.next_article(support_language="vi")
+    other = next(article for article in by_level.values() if article != chosen["article_id"])
+    # An article the learner picked for themselves: the policy did not choose
+    # it, so the attempt says so - whatever a client might have wanted.
+    set_id, answers = _answers(evidence, other)
+    picked = evidence.submit_attempt(set_id=set_id, operation_id="picked", answers=answers, support_language="vi")
+    assert picked.attempt["selection_policy_version"] is None
+    # The request has no way to claim it.
+    with pytest.raises(TypeError):
+        evidence.submit_attempt(set_id=set_id, operation_id="claim", answers=answers, support_language="vi",
+                                selection_policy_version=policy.SELECTION_POLICY_VERSION)
+    # The article the policy chooses now - after that attempt moved the
+    # evidence - is the one it records, and a replay keeps what was recorded.
+    now = evidence.next_article(support_language="vi")
+    set_id, answers = _answers(evidence, now["article_id"])
+    served = evidence.submit_attempt(set_id=set_id, operation_id="served", answers=answers, support_language="vi")
+    assert served.attempt["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
+    replay = evidence.submit_attempt(set_id=set_id, operation_id="served", answers=answers, support_language="vi")
+    assert replay.replayed and replay.attempt == served.attempt
+    with engine.connect() as connection:
+        stored = dict(connection.execute(select(ReadingAttempt.operation_id,
+                                                ReadingAttempt.selection_policy_version)).all())
+    assert stored == {"picked": None, "served": policy.SELECTION_POLICY_VERSION}
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_an_offer_the_evidence_has_moved_past_is_not_recorded_as_the_policys(world, language):
+    """The policy's choice is the one for this attempt's ordinal. What it
+    offered before another attempt moved the evidence is no longer its choice,
+    and an attempt on it is the learner's own."""
+    _, content, evidence, scope = world
+    scope.language = language
+    easy, middle, hard = (("A2", "B1", "B2") if language == "en" else ("HSK2", "HSK3", "HSK4"))
+    by_level = {level: _approved(content, evidence, language=language, level=level)[0]
+                for level in (easy, middle, hard)}
+    # A fresh learner (ability 2.0) is offered the easy one.
+    offered = evidence.next_article(support_language="vi")
+    assert offered["article_id"] == by_level[easy]
+    # All right on the hard one, which the policy did not offer: ability
+    # 2.0 -> ~3.06 and recent performance lift the target to ~3.56.
+    set_id, answers = _answers(evidence, by_level[hard])
+    evidence.submit_attempt(set_id=set_id, operation_id="first", answers=answers, support_language="vi")
+    assert evidence.next_article(support_language="vi")["article_id"] == by_level[middle]
+    # The old offer is answered anyway: the learner's choice now.
+    set_id, answers = _answers(evidence, offered["article_id"])
+    late = evidence.submit_attempt(set_id=set_id, operation_id="late", answers=answers, support_language="vi")
+    assert late.status == "committed"
+    assert late.attempt["selection_policy_version"] is None
 
 
 def test_nothing_left_to_offer_is_none(world):

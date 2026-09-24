@@ -133,11 +133,11 @@ def call(app, method, path, *, admin=True, **kwargs):
     return asyncio.run(run())
 
 
-def _article(setup, language="en", *, rights=None, level="B1"):
+def _article(setup, language="en", *, rights=None, level="B1", content_hash=None):
     snapshot = setup.content.record_source_item(
         source_id=setup.content.built_in_source_id("manual"), source_native_id="", canonical_url="",
         title="Train", author="", published_at=None, language=language, body=BODIES[language],
-        content_hash=(language * 64)[:64] if rights is None else ("f" * 64), metadata={},
+        content_hash=content_hash or ((language * 64)[:64] if rights is None else ("f" * 64)), metadata={},
         rights=rights if rights is not None else {},
     )
     article = setup.content.create_article(
@@ -243,6 +243,7 @@ def test_the_processor_asks_questions_about_a_passage_and_never_writes_one(setup
 
 def test_an_ungrounded_draft_or_no_provider_is_refused_and_writes_nothing(setup):
     article_id = _article(setup)
+    _publish(setup, article_id)
     setup.provider.grounded = False
     refused = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
                    json={"support_language": "vi"})
@@ -253,6 +254,18 @@ def test_an_ungrounded_draft_or_no_provider_is_refused_and_writes_nothing(setup)
                        json={"support_language": "vi"})
     assert unavailable.status_code == 503
     assert unavailable.json()["detail"]["category"] == "reading_processor_unavailable"
+    assert setup.evidence.list_sets(article_id) == []
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_a_candidate_gets_no_set_and_the_provider_is_never_asked(setup, language):
+    """D-075: publish, then the set. Refused before the AI provider is called."""
+    article_id = _article(setup, language)
+    refused = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert refused.status_code == 409
+    assert refused.json()["detail"]["category"] == "reading_article_not_published"
+    assert setup.provider.calls == []
     assert setup.evidence.list_sets(article_id) == []
 
 
@@ -338,6 +351,40 @@ def test_a_submitted_sheet_is_scored_saved_once_and_answered_with_its_key(setup,
     assert ability["attempts"] == 1 and ability["language_code"] == language
     # The only article is attempted: nothing is left to choose.
     assert call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()["available"] is False
+
+
+def test_the_server_records_whether_the_policy_chose_the_set(setup):
+    """Selection provenance is server-owned: a body that claims it is refused,
+    an attempt on the article `/next` offered records the policy's version, and
+    one on an article the learner picked records none."""
+    setup.scope.submit = True
+    offered_first = {}
+    for level in ("A2", "C2"):
+        article_id = _article(setup, level=level, content_hash=(level.casefold() * 32)[:64])
+        _publish(setup, article_id)
+        _approved_set(setup, article_id)
+        offered_first[level] = article_id
+    chosen = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()
+    assert chosen["available"] and chosen["next"]["article_id"] == offered_first["A2"]
+    assert "correct_index" not in chosen["next"]["set"]["questions"][0]
+
+    def sheet(article_id, operation, **extra):
+        served = call(setup.app, "GET", f"/api/reading/practice/articles/{article_id}", admin=False).json()["set"]
+        return {"set_id": served["id"], "operation_id": operation,
+                "answers": {question["id"]: 0 for question in served["questions"]}, **extra}
+
+    claimed = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
+                   json=sheet(offered_first["C2"], "claim", selection_policy_version="reading-select/1"))
+    assert claimed.status_code == 422, "a client cannot claim the policy chose its article"
+    assert _attempts(setup) == 0
+    picked = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
+                  json=sheet(offered_first["C2"], "picked"))
+    assert picked.status_code == 200 and picked.json()["attempt"]["selection_policy_version"] is None
+    now = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()["next"]
+    served = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
+                  json=sheet(now["article_id"], "served"))
+    assert served.status_code == 200
+    assert served.json()["attempt"]["selection_policy_version"] == now["selection_policy_version"]
 
 
 def test_a_stale_set_refuses_a_new_submit_with_its_reason(setup):

@@ -242,7 +242,7 @@ function practiceSubmit(api, served) {
     served.questions.forEach((question, position) => {
       picked[question.id] = answers[position];
     });
-    const saved = await api.submitReadingPractice(served.id, operationId, picked, served.selection_policy_version || null);
+    const saved = await api.submitReadingPractice(served.id, operationId, picked);
     return saved?.results;
   };
 }

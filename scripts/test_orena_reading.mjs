@@ -46,6 +46,8 @@ assert.match(encounter, /api\.readingPracticeSet\(articleId\)/, 'the article rea
 assert.match(encounter, /practice\?\.submit_enabled/, 'questions are offered only while submit is open');
 assert.match(encounter, /operationId \|\|=/, 'one operation id per answer sheet, reused on retry');
 assert.match(encounter, /api\.submitReadingPractice\(/, 'answers go to canonical evidence');
+assert.doesNotMatch(readFileSync('static/orena/infrastructure/api.js', 'utf8') + encounter, /selection_policy_version|selectionPolicyVersion/,
+  'whether the selection policy chose a set is the server\'s to record, never the client\'s to claim');
 assert.doesNotMatch(encounter, /readingSession|'reading:'/, 'no generated session is opened');
 const history = readFileSync('static/orena/ui/history.js', 'utf8');
 assert.match(history, /api\.readingEvidence\(30\)/, 'history reads canonical Reading evidence');

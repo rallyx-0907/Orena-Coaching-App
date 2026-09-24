@@ -216,6 +216,35 @@ def test_a_committed_attempt_survives_the_edit_that_follows_it(engine):
     assert retry.replayed and retry.attempt == recorded.attempt
 
 
+def test_selection_provenance_is_decided_inside_the_submit(engine):
+    """On PostgreSQL the provenance is replayed in the submit's own
+    transaction, after the advisory lock, inside a savepoint: every attempt
+    records the policy's version exactly when `next_article` would have
+    offered its set, and never because a request said so."""
+    for _ in range(2):
+        _approved(engine)
+    _, evidence = _repositories(engine, user=f"learner-provenance-{uuid.uuid4().hex[:8]}")
+    for operation in ("first", "second", "third"):
+        offered = evidence.next_article(support_language="vi")
+        assert offered is not None
+        # The first sheet answers the offer; the others answer a fresh
+        # article, which the policy may or may not be choosing right now.
+        if operation == "first":
+            set_id = offered["set_id"]
+            served = evidence.served_set(offered["article_id"], support_language="vi")
+            answers = {question["id"]: 0 for question in served["questions"]}
+        else:
+            _, set_id, answers = _approved(engine)
+            offered = evidence.next_article(support_language="vi")
+        saved = evidence.submit_attempt(set_id=set_id, operation_id=operation, answers=answers,
+                                        support_language="vi")
+        assert saved.status == "committed"
+        expected = offered["selection_policy_version"] if offered["set_id"] == set_id else None
+        assert saved.attempt["selection_policy_version"] == expected, operation
+        if operation == "first":
+            assert expected == "reading-select/1"
+
+
 def test_many_retries_of_one_submit_at_once_record_one_attempt(engine):
     _, set_id, answers = _approved(engine)
     _, evidence = _repositories(engine, user="learner-retries")

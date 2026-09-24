@@ -154,6 +154,22 @@ const placed = homeHtml(
 );
 assert.match(placed, /class="hm-bar" role="img" aria-label="50%"/, 'a recorded place is drawn as it was recorded');
 
+/* The article the Reading selection policy chose (D-075) leads the reading side of "for you", once:
+   it is the rail the frames give to what fits the learner, and it is not a second card. */
+const chosen = { id: 'article:chosen-1', kind: 'article', material: 'article', title: 'Chosen article', language: 'en', level: 'B1' };
+const withChoice = homeHtml(ctxFor('en'), {
+  media: sampleMedia, reading: [...sampleReading, chosen], nextReading: chosen, vocabulary: [], saved: [], due: 0, collections: [],
+});
+const forYou = withChoice.slice(withChoice.indexOf('data-rail="for-you"'), withChoice.indexOf('data-rail="reading"'));
+const readingHrefs = [...forYou.matchAll(/href="([^"]+)"/g)].map((match) => decodeURIComponent(match[1])).filter((href) => /(article|story):/.test(href));
+assert.match(readingHrefs[0] || '', /article:chosen-1/, 'the policy\'s choice is the first reading card for the learner');
+assert.equal(readingHrefs.filter((href) => href.includes('article:chosen-1')).length, 1, 'and it is drawn once');
+const withoutChoice = homeHtml(ctxFor('en'), { media: sampleMedia, reading: sampleReading, vocabulary: [], saved: [], due: 0, collections: [] });
+assert.doesNotMatch(withoutChoice, /chosen-1/, 'no choice draws nothing in its place');
+/* Home asks the policy - the real /api/reading/practice/next - rather than guessing from the catalogue. */
+assert.match(world, /api\.readingPracticeNext\(\)/, 'Home reads the selection policy\'s next article');
+assert.match(world, /nextReading/, 'and hands it to the "for you" rail');
+
 /* Every number in the stylesheet is the frame's: the desktop card 300x170 at radius 16 in a 20px rail,
    the phone's 232x132 at 15 in a 14px one, the Continue art 210x118, the top bar 84 tall. */
 for (const [pattern, why] of [

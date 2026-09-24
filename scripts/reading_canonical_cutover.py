@@ -3,14 +3,14 @@
 Four read-mostly steps around `alembic upgrade 20260924_0014`, for the
 operator who runs it:
 
-    python scripts/reading_canonical_cutover.py target --confirm-sandbox
-    python scripts/reading_canonical_cutover.py inventory --confirm-sandbox
-    python scripts/reading_canonical_cutover.py status --confirm-sandbox
-    python scripts/reading_canonical_cutover.py reset-legacy --confirm-sandbox \\
-        --expect-sessions N --expect-attempts M
+    python scripts/reading_canonical_cutover.py target --confirm-sandbox <database>
+    python scripts/reading_canonical_cutover.py inventory --confirm-sandbox <database>
+    python scripts/reading_canonical_cutover.py status --confirm-sandbox <database>
+    python scripts/reading_canonical_cutover.py reset-legacy --confirm-sandbox <database> \\
+        --expect-cluster <system identifier> --expect-sessions N --expect-attempts M
 
-`target` names the database it would touch (password redacted) and refuses
-production and preview. `inventory` is the archive query of
+`target` names the database it would touch (password redacted) and the
+PostgreSQL cluster behind it, and refuses production and preview. `inventory` is the archive query of
 `ADAPTIVE_READING_SCHEMA_PROPOSAL.md` §1, before or after the upgrade (it reads
 whichever names the database has), with a *hint* per account of whether it
 looks like test or development data - never a decision. `status` reports the
@@ -24,9 +24,22 @@ delete what was reported. Text discussions keep their rows and lose the link
 do not run this for it.
 
 The database is `--url`, or `POSTGRES_RUNTIME_URL`. Run inside the sandbox
-application container so that its environment is the one checked; the refusal
-reads `APP_ENV` and `PUBLIC_BASE_URL` (production, or ports 8000 / 8010, are
-refused) and `--app-url` when given. Nothing here prints a secret.
+application container so that its environment is the one checked. The target
+is refused unless every one of these holds, so no single mistake - a pasted
+URL, an inherited environment, the wrong container - reaches production:
+
+* `APP_ENV` is not production, and neither `PUBLIC_BASE_URL` nor `--app-url` is
+  on port 8000 (production) or 8010 (preview);
+* the URL is not production's: neither the host nor the database of the
+  production compose default (`compose.yaml`, parity-tested);
+* `--confirm-sandbox` names the database, the URL names the same one, and the
+  server, once connected, says it is that database;
+* `reset-legacy` - the one command that deletes - is also pinned to the
+  PostgreSQL cluster `target` printed (`--expect-cluster`, the cluster's
+  `system_identifier`), so it deletes only in the cluster the operator looked
+  at.
+
+Nothing here prints a secret.
 """
 from __future__ import annotations
 
@@ -39,6 +52,11 @@ from urllib.parse import urlparse, urlunparse
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 REFUSED_PORTS = {8000, 8010}
+# The production runtime's database, as `compose.yaml` defaults it
+# (`POSTGRES_RUNTIME_URL`): its host and database are refused by name.
+# `tests/test_reading_canonical_cutover_scripts.py` keeps these equal to it.
+PRODUCTION_HOST = "postgres"
+PRODUCTION_DATABASE = "becoming"
 TEST_KEYS = {"legacy", "local-admin", "sandbox-learner"}
 TEST_EMAIL_SUFFIXES = (".invalid", "@example.com", "@example.org", "@localhost")
 
@@ -69,17 +87,68 @@ def _port(url: str) -> int | None:
         return None
 
 
-def refusal(*, url: str, app_url: str, environ: dict[str, str]) -> str | None:
-    """Why this target is not the admin sandbox, or None when it may be."""
+def database_name(url: str) -> str:
+    return urlparse(url).path.lstrip("/")
+
+
+def refusal(*, url: str, app_url: str, environ: dict[str, str], confirmed: str = "") -> str | None:
+    """Why this target is not the admin sandbox, or None when it may be.
+    Static - nothing is connected to here; `identity_refusal` checks what the
+    server itself says."""
     if not url:
         return "no database: pass --url or set POSTGRES_RUNTIME_URL"
-    if not urlparse(url).scheme.startswith("postgresql"):
+    parsed = urlparse(url)
+    if not parsed.scheme.startswith("postgresql"):
         return "the runtime is PostgreSQL; this is not a PostgreSQL URL"
+    if (parsed.hostname or "").casefold() == PRODUCTION_HOST or database_name(url) == PRODUCTION_DATABASE:
+        return (f"that is the production runtime's database ({PRODUCTION_HOST}/{PRODUCTION_DATABASE}, the "
+                "compose default): this authorization is for the admin sandbox only (D-076)")
+    if not confirmed:
+        return f"pass --confirm-sandbox <database> naming the sandbox's database ({redacted(url)})"
+    if confirmed != database_name(url):
+        return (f"--confirm-sandbox names {confirmed!r} but the URL is database {database_name(url)!r}: "
+                "nothing was touched")
     if str(environ.get("APP_ENV", "")).strip().casefold() == "production":
         return "APP_ENV is production: this authorization is for the admin sandbox only (D-076)"
     for name, value in (("PUBLIC_BASE_URL", environ.get("PUBLIC_BASE_URL", "")), ("--app-url", app_url)):
         if value and _port(value) in REFUSED_PORTS:
             return f"{name} is on port {_port(value)} - production (8000) and preview (8010) keep every gate"
+    return None
+
+
+def identity(url: str) -> dict[str, str]:
+    """What the server says it is: the database, and the cluster behind it
+    (`system_identifier`, fixed when the cluster was created - another
+    container, or a restore into another cluster, has a different one)."""
+    from sqlalchemy import text
+    from sqlalchemy.exc import DBAPIError
+
+    engine = _engine(url)
+    try:
+        with engine.connect() as connection:
+            found = {"database": str(connection.execute(text("SELECT current_database()")).scalar_one()),
+                     "cluster": ""}
+            try:
+                found["cluster"] = str(connection.execute(
+                    text("SELECT system_identifier FROM pg_control_system()")).scalar_one())
+            except DBAPIError:
+                pass  # not readable by this role: `reset-legacy` then refuses
+    finally:
+        engine.dispose()
+    return found
+
+
+def identity_refusal(found: dict[str, str], *, confirmed: str, expect_cluster: str | None) -> str | None:
+    """Why the connected server is not the one confirmed, or None."""
+    if found.get("database") != confirmed:
+        return (f"connected to database {found.get('database')!r}, not the confirmed {confirmed!r}: "
+                "nothing was touched")
+    if expect_cluster is not None:
+        if not found.get("cluster"):
+            return "this role cannot read the cluster's system identifier, so it cannot be pinned: nothing deleted"
+        if found["cluster"] != expect_cluster.strip():
+            return (f"the cluster is {found['cluster']}, not the {expect_cluster.strip()} `target` reported: "
+                    "nothing was touched")
     return None
 
 
@@ -154,7 +223,8 @@ def inventory(url: str) -> int:
     print("  hint: " + ("every account looks like test or development data" if all_test else
                         "some accounts may be real learners - keep their history read-only"))
     print("  The decision is the human's (D-076). To reset test data only after reporting this:")
-    print(f"  reset-legacy --confirm-sandbox --expect-sessions {totals[0]} --expect-attempts {totals[1]}")
+    print(f"  reset-legacy --confirm-sandbox {database_name(url)} --expect-cluster <from target> "
+          f"--expect-sessions {totals[0]} --expect-attempts {totals[1]}")
     return 0
 
 
@@ -214,21 +284,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("command", choices=("target", "inventory", "status", "reset-legacy"))
     parser.add_argument("--url", default="", help="defaults to POSTGRES_RUNTIME_URL")
     parser.add_argument("--app-url", default="", help="the sandbox's base URL, checked against 8000 / 8010")
-    parser.add_argument("--confirm-sandbox", action="store_true",
-                        help="required: this database is the admin sandbox (D-076)")
+    parser.add_argument("--confirm-sandbox", default="", metavar="DATABASE",
+                        help="required: the admin sandbox's database name (D-076)")
+    parser.add_argument("--expect-cluster", default=None, metavar="SYSTEM_IDENTIFIER",
+                        help="reset-legacy: the cluster `target` printed")
     parser.add_argument("--expect-sessions", type=int)
     parser.add_argument("--expect-attempts", type=int)
     args = parser.parse_args(argv)
     url = args.url or os.getenv("POSTGRES_RUNTIME_URL", "")
-    reason = refusal(url=url, app_url=args.app_url, environ=dict(os.environ))
+    reason = refusal(url=url, app_url=args.app_url, environ=dict(os.environ), confirmed=args.confirm_sandbox)
     if reason:
         print(f"refused: {reason}")
         return 2
-    if not args.confirm_sandbox:
-        print(f"refused: pass --confirm-sandbox to act on {redacted(url)}")
+    if args.command == "reset-legacy" and not args.expect_cluster:
+        print("refused: reset-legacy needs --expect-cluster, the system identifier `target` printed")
+        return 2
+    found = identity(url)
+    reason = identity_refusal(found, confirmed=args.confirm_sandbox,
+                              expect_cluster=args.expect_cluster if args.command == "reset-legacy" else None)
+    if reason:
+        print(f"refused: {reason}")
         return 2
     if args.command == "target":
         print(f"target {redacted(url)}")
+        print(f"database {found['database']}  cluster {found['cluster'] or '(not readable by this role)'}")
         print(f"APP_ENV={os.getenv('APP_ENV', '')!r} PUBLIC_BASE_URL={os.getenv('PUBLIC_BASE_URL', '')!r}")
         return 0
     if args.command == "inventory":

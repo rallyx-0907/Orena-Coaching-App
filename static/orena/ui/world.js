@@ -96,6 +96,10 @@ export async function renderWorld(root, ctx) {
     // 503 and the shelf is simply shorter - a room is not a place to explain a
     // migration, and `allSettled` already treats that as "nothing to add".
     api.readingArticles(language),
+    /* The article the Reading selection policy chooses next for this learner
+       (D-075): by measured ability, recent results and weak question types.
+       Home's "for you" rail is where the design puts what fits the learner. */
+    location.page === 'discover' ? api.readingPracticeNext() : Promise.resolve(null),
   ]);
   if (!alive()) return;
   const listeningPayload = result[0].status === 'fulfilled' ? result[0].value : {};
@@ -127,6 +131,23 @@ export async function renderWorld(root, ctx) {
       language: article.language || language,
     }),
   );
+  /* The policy's choice, as the card the catalogue already has for it; an
+     article outside this page of the catalogue is drawn from what the choice
+     itself carries. Nothing is chosen, nothing is drawn. */
+  const choice = result[4]?.status === 'fulfilled' && result[4].value?.available ? result[4].value.next : null;
+  const nextReading = choice?.article_id
+    ? articles.find((item) => item.id === `article:${choice.article_id}`) ||
+      (choice.set?.article?.title
+        ? {
+            id: `article:${choice.article_id}`,
+            kind: 'article',
+            material: 'article',
+            title: choice.set.article.title,
+            level: choice.set.article.level || '',
+            language,
+          }
+        : null)
+    : null;
   // Everything that is read rather than listened to, in one list.
   const published = publishedReadings(language);
   const readable = [...articles, ...published, ...text, ...memory.value.imports];
@@ -239,6 +260,7 @@ export async function renderWorld(root, ctx) {
     root.innerHTML = homeHtml(ctx, {
       media,
       reading: readable,
+      nextReading,
       vocabulary,
       saved: [...(memory.value.imports || []), ...(memory.value.mediaImports || [])],
       due,

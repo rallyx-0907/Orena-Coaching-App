@@ -21,6 +21,10 @@ where the code runs:
 * **Submit is idempotent.** The attempt row is its own receipt, keyed by
   `(user_id, operation_id)`; a retry with the same digest returns the stored
   attempt and moves ability no further.
+* **Selection provenance is server-owned.** An attempt carries the selection
+  policy's version only when the server, replaying that policy inside the
+  submit's transaction, chooses the very set being answered; nothing a client
+  sends can set it.
 
 PostgreSQL is the runtime. The SQLite path exists for the hermetic suite, where
 the advisory lock and `FOR SHARE`/`FOR UPDATE` are no-ops because SQLite
@@ -145,6 +149,17 @@ def stale_sets_for_body(connection: Any, article_id: uuid.UUID, new_body: str, *
             reason="the article's text changed", changes_json={"set_id": str(set_id)}, created_at=now,
         ))
     return [str(set_id) for set_id in stale]
+
+
+def _require_published(article: Any) -> None:
+    """A set is built and approved for a published corpus article only (D-075:
+    publish, then the set). A candidate has not been reviewed as content yet,
+    so questions about it would be reviewed before the text they ask about."""
+    if article.status != PUBLISHED:
+        raise ReadingEvidenceError(
+            "reading_article_not_published",
+            "Publish the article first: a comprehension set is built for a published article only.",
+        )
 
 
 def _now(value: datetime | None = None) -> datetime:
@@ -304,6 +319,7 @@ class ReadingEvidenceRepository:
             article = self._article(connection, article_uuid, "update")
             if article is None:
                 raise ReadingEvidenceError("reading_article_not_found", "That article is not in the catalog.")
+            _require_published(article)
             rows = self._grounded_rows(article.body, questions)
             set_id = uuid.uuid4()
             connection.execute(insert(ReadingComprehensionSet).values(
@@ -458,6 +474,8 @@ class ReadingEvidenceRepository:
                         raise ReadingEvidenceError("reading_reviewer_required", "A decision names its reviewer.")
                     values |= {"reviewed_by": actor, "reviewed_at": moment, "review_reason": reason}
                 if target == "approved":
+                    if article is not None:
+                        _require_published(article)
                     self._check_grounding(connection, row, article)
                     if row.status == "needs_review":
                         self._renumber(connection, set_uuid, moment)
@@ -563,10 +581,11 @@ class ReadingEvidenceRepository:
         operation_id: str,
         answers: Mapping[str, int],
         support_language: str,
-        selection_policy_version: str | None = None,
         now: datetime | None = None,
     ) -> SubmitResult:
-        """The idempotent submit. See the module docstring for the lock order."""
+        """The idempotent submit. See the module docstring for the lock order.
+        Its selection provenance is the server's to decide
+        (`_verified_selection`); the request has no say in it."""
         operation = str(operation_id or "").strip()
         if not operation or len(operation) > 120:
             return SubmitResult("rejected", reason="operation_id_required")
@@ -581,7 +600,7 @@ class ReadingEvidenceRepository:
         uid, language, user_key = self._scope()
         try:
             return self._submit(uid, user_key, language, set_uuid, operation, digest, selected,
-                                str(support_language or "").casefold(), selection_policy_version, _now(now))
+                                str(support_language or "").casefold(), _now(now))
         except IntegrityError:
             # A raced duplicate committed first: no success receipt was written
             # here, and the committed one is the answer.
@@ -609,8 +628,7 @@ class ReadingEvidenceRepository:
         ))
 
     def _submit(self, uid: uuid.UUID, user_key: str, language: str, set_uuid: uuid.UUID, operation: str,
-                digest: str, selected: dict[str, int], support: str, selection_policy_version: str | None,
-                moment: datetime) -> SubmitResult:
+                digest: str, selected: dict[str, int], support: str, moment: datetime) -> SubmitResult:
         with self.engine.begin() as connection:
             existing = self._receipt(connection, uid, operation)
             if existing is not None:
@@ -659,7 +677,11 @@ class ReadingEvidenceRepository:
             ordinal = int(connection.execute(select(func.coalesce(func.max(ReadingAttempt.ordinal), 0)).where(
                 ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)).scalar_one()) + 1
             level = str(article.effective_level or "").strip() or "unknown"
-            # 3. The measurement, best-effort: a failure leaves the evidence
+            # 3. Where the article came from - decided here, before this
+            #    attempt exists, exactly as `next_article` would have decided.
+            selection_policy_version = self._verified_selection(
+                connection, uid, language, row.support_language, ordinal, set_uuid)
+            # 4. The measurement, best-effort: a failure leaves the evidence
             #    unmeasured and the projection behind its checkpoint.
             measurement = self._measure(connection, uid, language, ordinal, level, judged, moment)
             attempt_id = uuid.uuid4()
@@ -671,7 +693,7 @@ class ReadingEvidenceRepository:
                 passage_difficulty=measurement.passage_difficulty if measurement else None,
                 ability_before=measurement.ability_before if measurement else None,
                 ability_after=measurement.ability_after if measurement else None,
-                selection_policy_version=selection_policy_version or None,
+                selection_policy_version=selection_policy_version,
                 answers=[item.as_answer() for item in judged],
                 correct_count=correct, total=len(judged), created_at=moment,
             ))
@@ -816,55 +838,86 @@ class ReadingEvidenceRepository:
 
     # -- choosing the next article --------------------------------------
 
-    def next_article(self, *, support_language: str) -> dict[str, Any] | None:
-        uid, language, _ = self._scope()
-        support = str(support_language or "").casefold()
-        with self.engine.connect() as connection:
-            latest = int(connection.execute(select(func.coalesce(func.max(ReadingAttempt.ordinal), 0)).where(
-                ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)).scalar_one())
-        ability = self.ability()
-        with self.engine.connect() as connection:
-            recent = connection.execute(
-                select(ReadingAttempt.correct_count, ReadingAttempt.total)
-                .where(ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)
-                .order_by(ReadingAttempt.ordinal.desc()).limit(RECENT_ATTEMPTS)
-            ).all()
-            attempted = connection.execute(
-                select(ReadingComprehensionSet.article_id).join(
-                    ReadingAttempt, ReadingAttempt.set_id == ReadingComprehensionSet.id)
-                .where(ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)
-            ).scalars().all()
-            pool = connection.execute(
-                select(ReadingArticle.id, ReadingArticle.effective_level, ReadingArticle.published_at,
-                       ReadingComprehensionSet.id.label("set_id"))
-                .join(ReadingComprehensionSet, ReadingComprehensionSet.article_id == ReadingArticle.id)
-                .where(ReadingArticle.status == PUBLISHED, ReadingArticle.language == language,
-                       ReadingComprehensionSet.status == "approved",
-                       ReadingComprehensionSet.support_language == support)
-                .order_by(ReadingArticle.published_at.desc(), ReadingArticle.id)
-                .limit(CANDIDATE_POOL)
-            ).all()
-            set_ids = [row.set_id for row in pool]
-            types: dict[Any, set[str]] = {}
-            if set_ids:
-                for set_id, qtype in connection.execute(
-                    select(ReadingComprehensionQuestion.set_id, ReadingComprehensionQuestion.question_type)
-                    .where(ReadingComprehensionQuestion.set_id.in_(set_ids),
-                           ReadingComprehensionQuestion.admin_approved.is_(True))
-                ).all():
-                    types.setdefault(set_id, set()).add(qtype)
-        choice = policy.choose(
-            ability=float(ability["ability"]),
-            by_question_type=ability["by_question_type"],
+    def _choose(self, connection: Any, uid: uuid.UUID, language: str, support: str,
+                state: policy.AbilityState, next_ordinal: int) -> policy.Choice | None:
+        """The selection policy over this learner's evidence as `connection`
+        sees it. The one place a choice is made: `next_article` offers it, and
+        a submit replays it to decide its own provenance."""
+        recent = connection.execute(
+            select(ReadingAttempt.correct_count, ReadingAttempt.total)
+            .where(ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)
+            .order_by(ReadingAttempt.ordinal.desc()).limit(RECENT_ATTEMPTS)
+        ).all()
+        attempted = connection.execute(
+            select(ReadingComprehensionSet.article_id).join(
+                ReadingAttempt, ReadingAttempt.set_id == ReadingComprehensionSet.id)
+            .where(ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)
+        ).scalars().all()
+        pool = connection.execute(
+            select(ReadingArticle.id, ReadingArticle.effective_level, ReadingArticle.published_at,
+                   ReadingComprehensionSet.id.label("set_id"))
+            .join(ReadingComprehensionSet, ReadingComprehensionSet.article_id == ReadingArticle.id)
+            .where(ReadingArticle.status == PUBLISHED, ReadingArticle.language == language,
+                   ReadingComprehensionSet.status == "approved",
+                   ReadingComprehensionSet.support_language == support)
+            .order_by(ReadingArticle.published_at.desc(), ReadingArticle.id)
+            .limit(CANDIDATE_POOL)
+        ).all()
+        set_ids = [row.set_id for row in pool]
+        types: dict[Any, set[str]] = {}
+        if set_ids:
+            for set_id, qtype in connection.execute(
+                select(ReadingComprehensionQuestion.set_id, ReadingComprehensionQuestion.question_type)
+                .where(ReadingComprehensionQuestion.set_id.in_(set_ids),
+                       ReadingComprehensionQuestion.admin_approved.is_(True))
+            ).all():
+                types.setdefault(set_id, set()).add(qtype)
+        return policy.choose(
+            ability=float(state.ability),
+            by_question_type=state.by_question_type,
             recent_accuracy=[row.correct_count / row.total for row in recent if row.total],
-            next_ordinal=latest + 1,
+            next_ordinal=next_ordinal,
             candidates=[
                 policy.Candidate(article_id=str(row.id), set_id=str(row.set_id), level=row.effective_level,
-                                 published_at=_iso(row.published_at) or "", question_types=frozenset(types.get(row.set_id, set())))
+                                 published_at=_iso(row.published_at) or "",
+                                 question_types=frozenset(types.get(row.set_id, set())))
                 for row in pool
             ],
             attempted_article_ids=[str(value) for value in attempted],
         )
+
+    def _verified_selection(self, connection: Any, uid: uuid.UUID, language: str, support: str,
+                            ordinal: int, set_uuid: uuid.UUID) -> str | None:
+        """A submit's selection provenance, decided by the server and never
+        taken from the request: the selection policy's version when this set
+        is the one the policy chooses for this attempt's ordinal - the same
+        choice `next_article` offered, replayed from the same evidence inside
+        the submit's own transaction, after the per-account lock - otherwise
+        NULL ("the learner chose it"). A failure here leaves the provenance
+        NULL; it never refuses the evidence."""
+        savepoint = connection.begin_nested() if self._postgres else None
+        try:
+            state = self._state(connection, uid, language, through=ordinal - 1)
+            choice = self._choose(connection, uid, language, support, state, ordinal)
+        except Exception:  # noqa: BLE001 - provenance must not gate the evidence
+            if savepoint is not None:
+                savepoint.rollback()
+            return None
+        if savepoint is not None:
+            savepoint.commit()
+        return choice.policy_version if choice is not None and choice.set_id == str(set_uuid) else None
+
+    def next_article(self, *, support_language: str) -> dict[str, Any] | None:
+        uid, language, _ = self._scope()
+        support = str(support_language or "").casefold()
+        # Brings the stored projection up to date, so the state below is read
+        # from its checkpoint rather than replayed.
+        ability = self.ability()
+        with self.engine.connect() as connection:
+            latest = int(connection.execute(select(func.coalesce(func.max(ReadingAttempt.ordinal), 0)).where(
+                ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)).scalar_one())
+            state = self._state(connection, uid, language, through=latest)
+            choice = self._choose(connection, uid, language, support, state, latest + 1)
         if choice is None:
             return None
         # "Approved" implies "anchored" because every body edit stales its sets
