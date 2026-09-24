@@ -1,9 +1,10 @@
 # Adaptive Reading Practice — schema proposal
 
-    STATUS: ROUND 3 — PROPOSED, NOT APPLIED. Round 1 (prose) and round 2
-            (DDL, 4563908) returned REQUEST CHANGES; this revision answers
-            every round-2 finding (docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md,
-            "Round 2" and "Answers to round 2" below).
+    STATUS: PROPOSED, NOT APPLIED. Round 1 (prose) and round 2 (DDL,
+            4563908) REQUEST CHANGES; round 3 (c7050d6) APPROVED WITH REQUIRED
+            CHANGES, no blockers. The two schema-level required changes are
+            made here (RC1, RC2); RC3 is apply-time. See
+            docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md.
     DDL:    migrations/proposed/20260924_0014_adaptive_reading.py
     PROOF:  tests/test_adaptive_reading_schema_proposed.py
     LANE:   admin/control-center
@@ -114,8 +115,9 @@ Constraints and triggers (all in the DDL):
   `stale→approved|archived`); **entering `approved` requires at least one
   approved question and no undecided one** (required change 12); once decided
   its article, languages, anchor, generator and model are **frozen**, and its
-  reviewer fields change only together with a status change — a later decision
-  names its own reviewer, nobody rewrites an earlier one; a set that reached
+  reviewer fields change only on a transition **into** `approved` or
+  `rejected` — a new decision names its own reviewer; staling and archiving
+  keep the decision's, and nobody rewrites an earlier one (round-3 RC2); a set that reached
   learners (`approved`, `stale`, `archived`) **cannot be deleted**. Every set
   decision is also written to `reading_review_events` on its article by the
   service, so the history of decisions survives a re-approval.
@@ -621,10 +623,10 @@ back from `pg_constraint` / `PRAGMA foreign_key_list`, rehearses up → down →
 with data present, proves the downgrade refusal, and checks the refusal is in
 the offline-rendered (`--sql`) downgrade.
 
-**Local execution, 2026-09-24 — not CI (round 3):** PostgreSQL 16.13, 60
-passed, 2 skipped (the SQLite halves of the two-connection serialization case
-and the TRUNCATE case, which are PostgreSQL-only by design); SQLite alone, 29
-passed. The downgrade-race case was checked against a mutation: weakening the
+**Local execution, 2026-09-24 — not CI (after round 3's required changes):**
+PostgreSQL 16.13, 61 passed, 2 skipped (the SQLite halves of the two-connection serialization case
+and the TRUNCATE case, which are PostgreSQL-only by design); SQLite alone, 30
+passed. The SQLite downgrade-lock case was mutation-checked the same way. The downgrade-race case was checked against a mutation: weakening the
 lock to `ACCESS SHARE` makes it fail. CI will run the SQLite half on every push; the
 PostgreSQL half runs wherever `ORENA_TEST_POSTGRES_URL` is set.
 
@@ -660,10 +662,13 @@ dropped. Round 2 found the guard without the lock was a race (R1, F6): a
 downgrade waiting on a writer's uncommitted draft set and `content_kind='news'`
 proceeded after the commit and dropped both. With the lock, the guard runs only
 after that writer commits, and sees it — proved with two connections, and the
-proof fails if the lock is weakened. On SQLite the guard's reads open the
-transaction's snapshot and the DDL needs the database write lock: a writer that
-commits in between either waits for the reader (rollback journal) or makes the
-downgrade fail with `SQLITE_BUSY_SNAPSHOT` (WAL) — nothing is dropped unseen.
+proof fails if the lock is weakened. On SQLite a `SELECT` alone opens no
+transaction under pysqlite's defaults — round 3 found the round-3 text claiming
+otherwise false (RC1) — so the downgrade first runs a write that changes
+nothing (`UPDATE reading_articles SET content_kind = content_kind WHERE 1 = 0`),
+which takes the database's write lock; no other connection can write until the
+downgrade ends, and only then does the guard look. Proved: a writer attempted
+right after the guard is locked out, and the proof fails without that write.
 On PostgreSQL the lock and the guard are both SQL (`LOCK TABLE`, a `DO` block),
 so an offline-rendered downgrade script carries them too. With no footprint, the
 downgrade drops the new objects and restores `NOT NULL` on `session_id` and
@@ -699,7 +704,14 @@ Specified so the reviewer can check it; none of it is built before approval:
 - the learner surface reading the set's `explanation` in its
   `support_language`: `static/orena/ui/comprehension.js` reads only
   `explanation_vi` today, so the corpus path maps it there (§6);
-- `reading_attempts` in `runtime_backup.COMPARED`; the deprecation marker.
+- `reading_attempts` in `runtime_backup.COMPARED`; the deprecation marker;
+- `models.py` declares `uq_reading_article_language_scope` together with the
+  composite set→article FK, and the ORM parity test covers it: on SQLite a
+  composite FK whose parent columns have no unique index fails every child
+  insert and parent delete with "foreign key mismatch" (round-3 RC3);
+- the advisory-lock key is pinned to a Reading namespace (for example
+  `hashtextextended(user_id::text || ':' || language, <reading namespace>)`) so
+  it cannot collide with another advisory-lock user (round-3 answer 1).
 
 The SQLite runtime repository refuses the set-attempt write, as it refuses
 Listening progress and Text Discussion turns today.
@@ -793,7 +805,22 @@ reading of §3/§6.7; the body hash is the right anchor; the triggers stay.
 | F5 "the same rules" on both dialects | now true, with each dialect's extra write closed | §10 |
 | F6 "nothing is dropped" under a concurrent writer | now true, with the lock | §11 |
 
-## Review questions for round 3
+## Answers to round 3
+
+Round 3 reviewed `c7050d6`: **APPROVED WITH REQUIRED CHANGES**, no blockers.
+
+| Finding | Answer |
+| --- | --- |
+| RC1 SQLite downgrade guard opened no transaction | a no-op write takes the write lock before the guard; proved with a second connection, mutation-checked |
+| RC2 reviewer fields rewritable on `approved→stale/archived`, `stale→archived` | they change only on a transition into `approved` or `rejected`, both dialects; proved |
+| RC3 ORM must declare the articles unique index with the composite FK | apply-time list (§12) |
+| Note: trigger functions depend on `search_path` | each PostgreSQL function now carries `SET search_path FROM CURRENT` |
+| Note: SQLite `INSERT OR REPLACE INTO users` cascades every owner table | a hazard for every learner table, not this proposal's; no code does it; recorded, not changed |
+| Q1 advisory lock | kept; key namespace pinned at apply |
+| Q2 conflict guards | sufficient; the static `OR REPLACE` test is optional and not added |
+| Q3 anchor check in the service | kept |
+
+## Review questions for round 3 (answered above)
 
 1. Is the advisory transaction lock on `(account, language)` the right
    serialization for ordinal allocation, against locking the `users` row?

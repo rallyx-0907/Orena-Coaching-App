@@ -895,7 +895,12 @@ def test_a_decision_names_its_reviewer_and_is_not_rewritten_afterwards(db):
                          ("reviewed_at", _now())):
         _refused(lambda field=field, value=value: _update(db, "reading_comprehension_sets", set_id,
                                                           **{field: value}))
-    # A new decision is a status change, and may name its own reviewer.
+    # A transition that is not a decision keeps the decision's reviewer.
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="stale",
+                             reviewed_by="someone-else"))
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="archived",
+                             review_reason="rewritten"))
+    # A new decision is a transition into approved, and may name its own reviewer.
     _update(db, "reading_comprehension_sets", set_id, status="stale")
     _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(),
             reviewed_by="admin-b", review_reason="body reverted")
@@ -1000,3 +1005,41 @@ def test_a_downgrade_racing_a_writer_sees_the_write_instead_of_dropping_it(tmp_p
         assert "downgrade refused" in str(outcome["result"])
         assert _has_table(engine, "reading_comprehension_sets")
         assert _count(engine, "reading_comprehension_sets") == 1
+
+
+def test_a_sqlite_downgrade_holds_the_write_lock_before_its_guard_looks(tmp_path):
+    """RC1 (round 3): a SELECT opens no transaction under pysqlite's defaults,
+    so without a write lock taken first a writer could commit between the
+    guard and the DDL and be dropped unseen. Pause the downgrade right after
+    its guard and try to write from another connection: it must be locked out."""
+    import sqlite3
+
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+
+    path = tmp_path / "race.db"
+    engine = _sqlite_at_head(path)
+    module = _proposal()
+    original = module._guard_downgrade
+    seen: dict = {}
+
+    def guard_then_race():
+        original()
+        other = sqlite3.connect(path, timeout=0.1)
+        try:
+            other.execute("UPDATE reading_articles SET content_kind = 'news' WHERE 1 = 0")
+            other.commit()
+            seen["writer"] = "committed"
+        except sqlite3.OperationalError as error:
+            seen["writer"] = str(error)
+        finally:
+            other.close()
+
+    module._guard_downgrade = guard_then_race
+    try:
+        with engine.begin() as connection:
+            with Operations.context(MigrationContext.configure(connection)):
+                module.downgrade()
+    finally:
+        engine.dispose()
+    assert "locked" in seen["writer"], seen

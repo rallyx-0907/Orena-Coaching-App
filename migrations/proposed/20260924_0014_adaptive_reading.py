@@ -169,7 +169,10 @@ def _dialect() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Triggers. No `:` anywhere in these bodies - Alembic wraps `op.execute` text
+# Triggers. Each function pins the `search_path` it was created under
+# (`SET search_path FROM CURRENT`), so a table name in its body resolves the
+# same way under a restore tool's empty search_path as at runtime.
+# No `:` anywhere in these bodies - Alembic wraps `op.execute` text
 # in `text()`, which reads `:word` as a bind parameter. ERRCODE 23514
 # (check_violation), as the engine's immutability trigger uses, so a
 # repository can tell this refusal from any other error.
@@ -202,7 +205,8 @@ BEGIN
         OR NEW.article_body_sha256 IS DISTINCT FROM OLD.article_body_sha256
         OR NEW.generator_version IS DISTINCT FROM OLD.generator_version
         OR NEW.model IS DISTINCT FROM OLD.model
-        OR (NEW.status IS NOT DISTINCT FROM OLD.status AND (
+        OR ((NEW.status IS NOT DISTINCT FROM OLD.status
+             OR NEW.status NOT IN ('approved', 'rejected')) AND (
                NEW.reviewed_by IS DISTINCT FROM OLD.reviewed_by
             OR NEW.reviewed_at IS DISTINCT FROM OLD.reviewed_at
             OR NEW.review_reason IS DISTINCT FROM OLD.review_reason)))
@@ -232,7 +236,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$func$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
 # `FOR SHARE` on the parent is what serializes a question write against the
@@ -266,7 +270,7 @@ BEGIN
     END IF;
     RETURN OLD;
 END;
-$func$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
 # An attempt meets only an approved set, and a set attempt is immutable
@@ -298,7 +302,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$func$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
 # TRUNCATE fires no row trigger and ignores RESTRICT under CASCADE, so
@@ -316,7 +320,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$func$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
 _PG_TRIGGERS = (
@@ -381,7 +385,7 @@ _SQLITE_TRIGGERS = (
         OR NEW.article_body_sha256 IS NOT OLD.article_body_sha256
         OR NEW.generator_version IS NOT OLD.generator_version
         OR NEW.model IS NOT OLD.model
-        OR (NEW.status IS OLD.status AND (
+        OR ((NEW.status IS OLD.status OR NEW.status NOT IN ('approved', 'rejected')) AND (
                NEW.reviewed_by IS NOT OLD.reviewed_by
             OR NEW.reviewed_at IS NOT OLD.reviewed_at
             OR NEW.review_reason IS NOT OLD.review_reason)))
@@ -546,7 +550,9 @@ def upgrade() -> None:
         ),
         # A decision has a moment and someone who made it. Staleness and
         # archiving are later facts about an already-decided set, so they keep
-        # the decision's. Outside a status change the trigger freezes all three.
+        # the decision's: the trigger lets the three change only on a
+        # transition *into* `approved` or `rejected` - a new decision, naming
+        # its own reviewer - and freezes them on every other update.
         sa.CheckConstraint(
             "status IN ('draft', 'needs_review') OR (reviewed_at IS NOT NULL AND reviewed_by <> '')",
             name="ck_reading_comprehension_set_reviewed",
@@ -879,12 +885,13 @@ def _guard_downgrade() -> None:
             f" RAISE EXCEPTION '{_REFUSAL}' USING ERRCODE = '55000'; END IF; END $guard$"
         )
         return
-    # SQLite: the reads below open the transaction's read snapshot, and the DDL
-    # that follows needs the database's write lock. In rollback-journal mode a
-    # committing writer waits for this reader; in WAL mode a writer that
-    # committed after the snapshot makes the upgrade to a write lock fail with
-    # SQLITE_BUSY_SNAPSHOT. Either way nothing is dropped unseen.
+    # SQLite: a SELECT alone opens no transaction under pysqlite's defaults, so
+    # a writer could commit between the guard and the DDL and be dropped
+    # unseen. A write that changes nothing takes the database's write lock
+    # first - no other connection can write until this transaction ends - and
+    # only then does the guard look.
     bind = op.get_bind()
+    bind.execute(sa.text("UPDATE reading_articles SET content_kind = content_kind WHERE 1 = 0"))
     for query in _FOOTPRINT:
         if bind.execute(sa.text(query)).first() is not None:
             raise RuntimeError(_REFUSAL)

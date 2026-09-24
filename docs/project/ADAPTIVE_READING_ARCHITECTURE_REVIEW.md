@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | 1 | `00dcf18` (prose only) | REQUEST CHANGES — 5 blockers, 21 required changes, 6 factual errors |
 | 2 | `4563908` (proposal + DDL + two-dialect proof) | REQUEST CHANGES — 1 blocker, 11 required changes, 6 factual errors |
-| 3 | pending — delta review of the round-2 answers | |
+| 3 | `c7050d6` (delta: the round-2 answers) | **APPROVED WITH REQUIRED CHANGES** — no blockers; RC1, RC2 made in the next commit, RC3 apply-time |
 
 Nothing is applied in any round. Applying needs an APPROVED round **and** the
 human's schema/runtime authorization.
@@ -264,3 +264,66 @@ list on both dialects; Float +/-1e6 with NaN and infinity refused;
 
 The answers to every item are in `ADAPTIVE_READING_SCHEMA_PROPOSAL.md`,
 "Answers to round 2, item by item".
+
+
+---
+
+# Round 3
+
+    VERDICT:         APPROVED WITH REQUIRED CHANGES - no blockers
+    REVIEWER:        the same Delegated Architecture Reviewer as round 2
+                     (independent; did not write this work); read-only; three
+                     scratch databases created and dropped, no proof schemas left
+    REVIEWED COMMIT: c7050d688bcdfacb1152daa9881c71d6b18ba7f6 (delta from 4563908)
+    DATE:            2026-09-24
+    APPLIED:         no. Applying needs the human's schema/runtime
+                     authorization; this verdict is not product approval.
+
+**Round-2 disposition.** B1 resolved (all-or-none ability group; an attempt
+with all four NULL accepted, half a group, `''`, NaN, -inf and 1e6+1 refused on
+PostgreSQL). R1 resolved on PostgreSQL (race re-run with a draft set +
+`content_kind`, and with an approved set + attempt: blocked, then refused).
+R2-R9 and R11 resolved. R10 mostly resolved (RC2 remained). F1-F5 corrected;
+F6 corrected for PostgreSQL, not SQLite (RC1). The round-2 record above is
+faithful. Human decisions 1-16 all satisfied (15 on PostgreSQL; SQLite is the
+test path, RC1).
+
+**Required changes.**
+
+- **RC1** The SQLite downgrade claim was false: under pysqlite defaults a SELECT
+  opens no transaction, and a second connection committed a draft set after
+  the guard; the downgrade then dropped it. Take the write lock before the
+  guard, or state a single-writer assumption.
+- **RC2** Reviewer fields were frozen only when the status did not change, so
+  `approved->archived` accepted `reviewed_by='someone-else'`. Allow them to
+  change only on a transition into `approved` or `rejected`.
+- **RC3 (apply)** `models.py` must declare `uq_reading_article_language_scope`
+  with the composite FK; on SQLite a composite FK without a unique parent index
+  raises "foreign key mismatch". Cover it in the ORM parity test.
+- Notes: pin `search_path` on the trigger functions (a `--data-only`
+  restore fails under an empty search_path - not new breakage in this repo);
+  SQLite `INSERT OR REPLACE INTO users` cascades every owner table - not this
+  proposal's.
+
+**Reviewer's checks (local execution, not CI).** Proof reproduced (PostgreSQL
+60 passed, 2 skipped; SQLite 29 passed). Validators pass. `0013 -> 0014 -> 0013
+-> 0014` catalogue-identical. Offline `--sql` up and down ran under `psql -v
+ON_ERROR_STOP=1`; the offline downgrade against a schema holding a set refused
+(rc 3) and the set remained. Every TRUNCATE, upsert and REPLACE path tried
+against protected rows refused; a full `pg_dump`/`pg_restore` with approved and
+stale sets and an attempt restored cleanly. The engine's SQLite suites pass on
+a schema upgraded through the proposal (102 passed, as unpatched) and
+`test_reading_engine_persistence_postgres` passes at the proposed head (32
+passed).
+
+**Answers to the round-3 questions.** (1) The advisory transaction lock, not a
+`users` row lock - that would conflict with every FK insert's `FOR KEY SHARE` on
+the user and serialize across languages; pin the key namespace at apply.
+(2) The conflict guards are sufficient; a static `OR REPLACE` test is optional.
+(3) The anchor check stays in the service; a PostgreSQL-only hashing trigger
+would break parity.
+
+**Resolution.** RC1 and RC2 are made in the commit that records this round,
+each with a proof (the RC1 proof fails if the fix is removed), and every
+PostgreSQL trigger function now carries `SET search_path FROM CURRENT`. RC3 is
+on the proposal's apply-time list.
