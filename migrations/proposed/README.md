@@ -15,11 +15,13 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**No proposal is open.** The table below is the history of what passed
-through here; every proposal now lives in `versions/`.
+**One proposal is open:** `20260924_0014_adaptive_reading.py` (Adaptive
+Reading Practice). The rest of the table is the history of what passed through
+here and now lives in `versions/`.
 
 | Proposal | Outcome |
 | --- | --- |
+| `20260924_0014_adaptive_reading.py` | **Open - not applied.** Round 1 (prose only) REQUEST CHANGES; round 2 is reviewed against this DDL and `docs/project/ADAPTIVE_READING_SCHEMA_PROPOSAL.md`. Two platform-content tables (`reading_comprehension_sets`, `reading_comprehension_questions`), one discardable learner projection (`reading_ability_projections`), `reading_attempts` extended with a second subject rather than paralleled, and `reading_articles.content_kind`. Proved on SQLite and PostgreSQL by `tests/test_adaptive_reading_schema_proposed.py`, which applies it from here without moving it. Moving it needs an APPROVED review and the human's schema/runtime authorization. See `docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`. |
 | `20260923_0013_reading_content_engine.py` | Independent architecture review **APPROVED** (`e09c6ce`, four rounds; plus a delta review of the rebase at `b338afa`). Human schema/runtime authorization given 2026-09-23 **for the lane sandbox (8012) only**; moved into `versions/` and applied there. Rehearsed up/down/up against a throwaway PostgreSQL 16. Six tables behind the Admin Reading Content Engine — `reading_sources`, `reading_source_items`, `reading_articles`, `reading_article_targets`, `reading_review_events`, `reading_ingestion_jobs`. Additive; nothing existing is altered. Rebased onto `20260922_0012` after `codex/work` was merged into this lane (2026-09-23), so the chain stays linear and one `git mv` applies it. See `docs/project/READING_CONTENT_ENGINE_SCHEMA_REVIEW_REQUEST.md`. |
 | `20260916_0009_reading_library.py` | Two tables — `reading_books`, `reading_book_chapters`, admin EPUB import into a shared catalog every learner reads. Three rounds of delegated independent architecture review, round 3 **APPROVED**. Human schema/runtime authorization given 2026-09-16; moved into `versions/` together with `20260916_0008` (its chain parent) and applied to the sandbox runtime. See `docs/project/READING_LIBRARY_SCHEMA_REVIEW_REQUEST.md`. |
 | `20260916_0008_vocabulary_content_catalog.py` | Shared vocabulary collections, reusable lexical entries, many-to-many memberships, and per-source import receipts; no learner-state or review tables. Independent architecture review **APPROVED** (`a1a90b7bfe8ebdd5f60e1a928f0b070f52cc3c8d`). Human schema/runtime authorization given 2026-09-16; moved into `versions/` and applied to the sandbox runtime. See `docs/project/VOCABULARY_SOURCE_SCHEMA_REVIEW_REQUEST.md`. |
