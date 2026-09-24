@@ -1496,3 +1496,24 @@ commit is reused.
   `test_orena_legacy_routes.mjs` passes; memory and architecture validators OK.
 - **Not re-measured here:** Reading, Listening, Dictation, Writing and Vocabulary workspaces. Rule 49
   binds them; each owner measures them against it (D-078).
+
+## Language layers (D-079) and the merge-blocker run on `4540efb` (2026-09-24)
+
+- **Root cause of the mixed screens:** `app.js` derived the interface language from the support
+  language (`ctx.ui = uiLocale(ctx.support)`) and booted from a device cache of the support language,
+  so a page opened with one support language kept that chrome while guidance and generated text
+  followed the account's newer support language (changed, here, by test runs on the shared sandbox).
+  Now `static/orena/product/languages.js` resolves interface, support and target from their own
+  sources; `scripts/test_orena_language_layers.mjs` locks it (fails on the old `app.js`).
+- **In a browser, cases A/B/C** (desk and phone; boot with a stale `orena.support` cache, reload,
+  profile load, a real preference change through Profile, navigation, the Speaking workspace with a
+  real Azure take, the word sheet on desk and phone, a mid-visit support change): 92 of 92.
+- **Found and fixed on the way:** Profile's setting rows did not open the preferences (their buttons
+  were drawn after the shell bound its handlers); one delegated listener now serves every way in.
+- **Same HEAD:** viewport 180/180 (VI/EN/ZH x 5 sizes x 12 screens), long content 16/16, stress 14/16
+  (the two 1920 lines are a transcript that fits without scrolling), legacy routes 24/24, scripted 6,
+  shadow restart, states 18/18, free talk 6; pytest 1787 passed / 118 skipped; CI `.mjs` gates pass but
+  the six inherited ones; Grammar's route (`#/practice?intent=grammar`) renders, back link Home.
+- **Still open:** S24 (Grammar's official way in) for the human; AUDIT-1b (static guidance outside
+  Speaking still reads the interface pack); storing the interface language on the account (gated
+  migration).
