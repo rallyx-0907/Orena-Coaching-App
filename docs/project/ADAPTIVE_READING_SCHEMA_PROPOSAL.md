@@ -1,9 +1,10 @@
 # Adaptive Reading — canonical Reading model, schema proposal
 
-    STATUS: PROPOSED, NOT APPLIED. Canonical-model review round C1
-            (5e4e4c3): APPROVED WITH REQUIRED CHANGES, no blockers; every
-            required change is answered below ("Answers to round C1") and
-            the DDL changes go to a delta confirmation.
+    STATUS: ARCHITECTURE REVIEW APPROVED at fdf198f — NOT APPLIED.
+            Canonical-model round C1 (5e4e4c3) APPROVED WITH REQUIRED
+            CHANGES; every change made and confirmed. Awaiting the human's
+            schema/runtime authorization, which includes confirming the
+            deviation recorded in §11.
             Written for the human direction of 2026-09-24 (D-075): one Reading
             flow, one canonical evidence model. It replaces the earlier
             proposal of the same revision id, whose design kept
@@ -279,6 +280,14 @@ refuses Listening progress and Text Discussion turns):
    write the four ability columns NULL.
 8. Insert the attempt; advance the projection if measured. Commit.
 
+**Lock order, always:** the advisory lock, then the article `FOR SHARE`
+(step 5), then the set — before the INSERT, whose trigger takes both rows
+`FOR SHARE` again. The body-edit path takes the article `FOR UPDATE` and then
+updates the set, so the same order on both sides is what keeps them from
+deadlocking; the C1 confirmation reproduced a deadlock when an attempt skips
+step 5 (no data lost either way, and a retry with the same `operationId` is
+safe). A test pins the order at apply.
+
 A raced duplicate past step 4 hits the unique constraint, rolls back with no
 success receipt, and re-reads step 2. `request_digest` is SHA-256 over the
 canonical command (`reading.attempt.submit`, set id, sorted `question_id →
@@ -533,7 +542,8 @@ contract; the learner surface reading `explanation` in `support_language`
 warnings and override in its audit entry, as vocabulary does; the ORM/migration
 parity test allowing for the archive keeping its legacy constraint names
 (`reading_attempts_session_id_fkey`, `uq_reading_attempt_legacy`), or pinning
-them in `models.py` (round C1, RC7).
+them in `models.py` (round C1, RC7); a test that a submit and a concurrent
+body edit serialize without deadlock under the §5.1 lock order.
 
 ## 13. Not proposed
 

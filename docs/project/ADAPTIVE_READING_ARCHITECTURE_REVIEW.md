@@ -7,7 +7,8 @@
 | 3 | `c7050d6` (delta: the round-2 answers) | APPROVED WITH REQUIRED CHANGES — no blockers; RC1, RC2 made in `0d6efda`, RC3 apply-time |
 | 3, confirmation | `0d6efda` (delta: RC1, RC2, search_path) | **APPROVED** — no new findings |
 | — | **superseded 2026-09-24 by D-075** | the reviewed design kept `generated_session` as a second attempt subject; the human rejected keeping the legacy shape as a formal contract. **This approval does not carry to the canonical model.** |
-| C1 | `5e4e4c3` — canonical model (D-075), reviewed from the start | APPROVED WITH REQUIRED CHANGES — no blockers; RC1, RC2 (DDL) answered in the next commit, pending a delta confirmation |
+| C1 | `5e4e4c3` — canonical model (D-075), reviewed from the start | APPROVED WITH REQUIRED CHANGES — no blockers |
+| C1, confirmation | `fdf198f` (delta: every C1 required change) | **APPROVED** — schema-review gate passed for the canonical model |
 
 Nothing is applied in any round. Rounds 1-3 reviewed the `generated_session`
 design, which D-075 superseded; their approval at `0d6efda` is void for the
@@ -440,3 +441,44 @@ pinned search_path; `content_kind` `article|news`; source category and corpus
 Text Discussion deferred; submit off until the consumers move; the READY gate.
 
 The answers are in `ADAPTIVE_READING_SCHEMA_PROPOSAL.md`, "Answers to round C1".
+
+
+---
+
+# Canonical model — round C1 confirmation
+
+    FINAL VERDICT:   APPROVED - the schema-review gate is passed for the
+                     canonical model
+    REVIEWER:        the round-C1 Delegated Architecture Reviewer; read-only;
+                     scratch databases dropped
+    REVIEWED COMMIT: fdf198f458a4c7bc16ee970a4cb8703c1a2ed3dc (delta from 5e4e4c3)
+    DATE:            2026-09-24
+    APPLIED:         no. Applying needs the human's schema/runtime
+                     authorization, including confirmation of the deviation
+                     from `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §6 steps 2 and 5
+                     and the I2 additive gate recorded in the proposal's §11.
+                     Not product approval.
+
+- **RC1 resolved, both dialects:** `rejected -> needs_review` refused; a
+  restore or re-approval keeping the same `reviewed_at` refused; with a new one
+  accepted; a draft with NULL `reviewed_at` approvable once one is supplied.
+- **RC2 resolved:** `TRUNCATE` of either archive table refused; the `DELETE`
+  reset works.
+- **RC3-RC7 resolved** (deviation and runbook, published-only attempts - also
+  under an empty search_path -, the consumer inventory, F1-F7, the apply list).
+  The §8 three-concept mapping checks out and is flagged for the human.
+- **Minor and Q4 resolved:** `validation_json`, `created_at` frozen;
+  `selection_policy_version` nullable, empty refused.
+- **Review record faithful.**
+- **New finding, not blocking:** the attempt guard takes `FOR SHARE` on set and
+  article; the body-edit path takes the article `FOR UPDATE` then updates the
+  set. An attempt inserted without the service's article lock first can
+  deadlock with it (reproduced; no data lost, a same-`operationId` retry safe).
+  With the §5.1 order there is no deadlock. Answered: the lock order is written
+  into §5.1 and a test for it is on the apply list.
+- **Checks (local execution, not CI):** proof 67 passed, 2 skipped (PostgreSQL
+  16.13), 33 passed (SQLite); validators pass; `0013 -> 0014 -> 0013` and `0014
+  -> 0013 -> 0014` catalogue-identical on PostgreSQL with legacy rows; SQLite
+  identical up to quoting, integrity and foreign-key checks clean; offline
+  `--sql` up/down/up clean, offline downgrade over a draft set refused; full
+  `pg_dump`/`pg_restore` identical; submit vs stale serialized both ways.
