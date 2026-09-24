@@ -1,5 +1,7 @@
 import { api } from "./infrastructure/api.js";
 import { copy, untranslated, supportedLocales } from "./ui/copy.js";
+import { layeredCopy } from "./ui/layered-copy.js";
+import { COPY_LAYERS } from "./ui/copy-layers.js";
 import {
   INTERFACE_KEY,
   interfaceLanguage,
@@ -19,9 +21,9 @@ import {
   navigationTabs,
   operatorEntry,
   topBar,
-  referenceCopy,
   experienceFor,
   renderContinue,
+  refCopy,
 } from "./ui/reference.js";
 import { icon } from "./ui/phosphor.js";
 import { renderProgress } from "./ui/progress.js";
@@ -166,7 +168,8 @@ const ui = interfaceLanguage({
 const ctx = {
   api,
   ui,
-  c: copy[ui],
+  // Before the profile is read the support language is unknown: guidance reads in English.
+  c: layeredCopy(copy, COPY_LAYERS, ui, undefined),
   language: "en",
   profile: {},
   commerce: null,
@@ -352,7 +355,7 @@ function preferences(onboarding = false) {
       ctx.support = supportLanguage(ctx.profile);
       // The interface is its own choice: never taken from the support language.
       ctx.ui = interfaceLanguage({ stored: data.get("interface"), supported: supportedLocales });
-      ctx.c = copy[ctx.ui];
+      ctx.c = layeredCopy(copy, COPY_LAYERS, ctx.ui, ctx.support);
       try {
         storage.setItem(INTERFACE_KEY, ctx.ui);
       } catch {
@@ -388,7 +391,7 @@ function preferences(onboarding = false) {
    draw them arrive - Vocabulary's "Saved words" row (Phase 6) and the profile
    sheet (Phase 10). No new chrome anywhere else. */
 function secondarySurfaces(scope) {
-  const r = referenceCopy[scope.ui] || referenceCopy.en;
+  const r = refCopy(scope);
   return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link("collection"))}">${esc(r.savedTitle)}</a><a href="${esc(link("history"))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
 }
 function validVideo(value) {
@@ -600,7 +603,7 @@ async function render() {
          which does not say where it goes. It also had no idea which room had
          failed, so a Listening item that could not open showed a Reading page.
          The way back is now the room the learner came from (D-057 rule 13). */
-      const r = referenceCopy[ctx.ui];
+      const r = refCopy(ctx);
       const room = experienceFor(ctx.location);
       const back =
         room === "listening"
@@ -647,6 +650,7 @@ async function boot() {
     // The profile answers for the support language only; the interface was resolved at boot from
     // its own source and is not changed by what the profile says.
     ctx.support = supportLanguage(profile);
+    ctx.c = layeredCopy(copy, COPY_LAYERS, ctx.ui, ctx.support);
     ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
     // New product direction remains internal until the human release gate.
     if (!user.is_admin) {

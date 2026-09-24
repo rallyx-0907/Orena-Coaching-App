@@ -14,7 +14,7 @@ import { icon } from './phosphor.js';
 import { art, duration, bindImages } from './content.js';
 import { contentCover } from './cover.js';
 import { libraryCoverUrl } from './library.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { link } from '../product/intent.js';
 import { masteryStars } from './vocabulary-experience.js';
 
@@ -43,7 +43,7 @@ function snippet(text, query) {
 
 export function renderSearch(root, ctx, sources) {
   const { api, c, language, alive } = ctx;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const state = { query: ctx.location.q || '', chip: 'all', words: null, books: [], collections: [] };
 
   function results() {

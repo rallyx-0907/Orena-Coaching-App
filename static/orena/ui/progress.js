@@ -17,7 +17,7 @@
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { growthDomainRow } from './growth-summary.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { link } from '../product/intent.js';
 import { rankFrame } from './rank-frame.js';
 import { ladderTiles, openTierCount, rankProgress, rankSummary } from '../product/rank.js';
@@ -132,7 +132,7 @@ function overviewPanels(r, words, recent) {
    component and every list says it has nothing yet, which is the honest
    picture of a screen whose data has not been built. */
 function trendsView(ctx) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const measures = [
     r.evidenceNaturalness, r.evidencePronunciation, r.progressRecall, r.progressListening,
   ].map((label) => `<div class="trend-row">`
@@ -317,7 +317,7 @@ function nextAction(r, words) {
 
 function view(ctx, { summary, vocabulary, summaryFailed, recent }) {
   const c = ctx.c;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const degraded = summaryFailed
     ? `<div class="state-panel" data-tone="error" role="alert">${icon('warning-circle', { size: 20 })}<div><strong>${esc(c.growthUnavailable)}</strong></div><button class="outline" type="button" data-progress-retry>${icon('arrow-counter-clockwise', { size: 16 })}<span>${esc(c.retry)}</span></button></div>`
     : '';
@@ -347,7 +347,7 @@ function view(ctx, { summary, vocabulary, summaryFailed, recent }) {
 }
 
 function skeleton(ctx) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   return `<section class="progress-page" aria-busy="true"><h1 class="progress-title">${esc(r.progress)}</h1><div class="progress-panel"><span class="skeleton skeleton--line" style="inline-size:40%"></span><span class="skeleton" style="block-size:120px"></span><div class="progress-domains">${DOMAINS.map(() => '<span class="skeleton skeleton--card"></span>').join('')}</div></div></section>`;
 }
 

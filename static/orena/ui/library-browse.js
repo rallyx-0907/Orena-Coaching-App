@@ -13,7 +13,7 @@ import { icon } from './phosphor.js';
 import { art, duration, bindImages } from './content.js';
 import { contentCover } from './cover.js';
 import { libraryCoverUrl } from './library.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { link } from '../product/intent.js';
 
 const KINDS = ['books', 'audio', 'video', 'collections', 'speaking'];
@@ -184,7 +184,7 @@ function card(entry, r) {
    way of bringing something in; the bar offers it and owns nothing about it. */
 export function renderLibraryBrowse(root, ctx, sources, { only = null, onImport = null, titleTag = 'h1' } = {}) {
   const { api, c, language, alive, memory } = ctx;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const scope = only ? KINDS.filter((kind) => only.includes(kind)) : KINDS;
   const skill = scope.length === 1 && scope[0] === 'books' ? 'reading' : scope.length === 1 && scope[0] === 'speaking' ? 'speaking' : scope.every((kind) => kind === 'audio' || kind === 'video') ? 'listening' : 'library';
   const state = {

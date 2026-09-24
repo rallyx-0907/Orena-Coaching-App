@@ -3,7 +3,7 @@ import { voiceInvitations } from '../content/voice-invitations.js';
 import { renderLibraryBrowse } from './library-browse.js';
 import { mountSpeakingWorkspace, sourceFromLesson, sourceFromItem } from './speaking-workspace.js';
 import { mountFreeTalk } from './speaking-free.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { speakCopy } from './speaking-copy.js';
 import { encounter } from '../product/encounter.js';
 
@@ -106,7 +106,7 @@ export async function renderSpeaking(root, ctx) {
   return mountFreeTalk(root, ctx, {
     id: location.id,
     // The frame's bar names the practice ("Nói tự do"); the situation itself is the topic card.
-    title: (referenceCopy[ctx.ui] || referenceCopy.en).libraryKind_speak_free,
+    title: refCopy(ctx).libraryKind_speak_free,
     // The situation's own short name for the result's bar ("Nói tự do · <name>").
     name: picked.title,
     topic: picked.prompt,

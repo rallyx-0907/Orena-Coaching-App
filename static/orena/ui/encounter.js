@@ -12,7 +12,7 @@ import { mountReader } from './reader.js';
 import { discussionSection, discussionSource, mountDiscussion } from './discussion.js';
 import { mountLexicalLayer } from './lexical.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { publishedReading } from '../content/reading-library.js';
 import { link, deeperPractice } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
@@ -95,7 +95,7 @@ function textEncounter(root, ctx, item, book = null) {
       : null,
   });
   const title = `${origin(item, c)} · ${item.title}`;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const from = { id: item.id, where: item.title, why: 'from_reading' };
   const notes = (item.phrases || []).length
     ? `<details class="reader-notes"><summary>${esc(c.readerNotes)}</summary>${item.phrases.map((p, i) => `<div class="reader-note"><p class="reader-note__word" lang="${language}">${esc(p.word)}</p>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p lang="${esc(ctx.support)}">${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button class="quiet" data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></div>`).join('')}</details>`
@@ -433,7 +433,7 @@ export async function renderEncounter(root, ctx) {
      once and a change of line never changes a height. */
   const transcriptRow = (s) => {
     const reading = payload.catalog?.pinyin_by_segment?.[s.segment_id];
-    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenLoopLine)}</span></button></div></li>`;
+    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc(refCopy(ctx).listenLoopLine)}</span></button></div></li>`;
   };
   /* The bar that owns the actions of the current line (`ui/learning-toolbar.js`).
      Icon-first, because these are the reusable learner actions - hear it
@@ -442,9 +442,9 @@ export async function renderEncounter(root, ctx) {
      assistive technology. Pinyin is not a quiet control here; it is absent
      when the learning language has no reading to show. */
   const lineActions = [
-    { name: 'autoscroll', kind: 'toggle', label: (referenceCopy[ctx.ui] || referenceCopy.en).listenAutoScroll, chip: (referenceCopy[ctx.ui] || referenceCopy.en).listenAutoScroll, chipIcon: 'arrows-down-up' },
+    { name: 'autoscroll', kind: 'toggle', label: refCopy(ctx).listenAutoScroll, chip: refCopy(ctx).listenAutoScroll, chipIcon: 'arrows-down-up' },
     language === 'zh'
-      ? { name: 'pinyin', icon: 'reading', kind: 'toggle', label: c.stagePinyin, chip: (referenceCopy[ctx.ui] || referenceCopy.en).readerPinyin }
+      ? { name: 'pinyin', icon: 'reading', kind: 'toggle', label: c.stagePinyin, chip: refCopy(ctx).readerPinyin }
       : null,
     { name: 'meaning', icon: 'meaning', kind: 'toggle', label: c.stageMeaning, chip: String(ctx.support || '').toUpperCase() },
   ];
@@ -453,7 +453,7 @@ export async function renderEncounter(root, ctx) {
      controls on the left; the synced transcript on the right, with the reading
      and support layers the design draws as chips. Comprehension for listening
      has no items yet, so its control keeps its place and says so (GAP-025). */
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const totalMs = (payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0);
   // What the baseline's identity line says: how hard, what kind, how long.
   const meta = [

@@ -16,7 +16,8 @@ import {
   matchLocale,
 } from '../static/orena/product/languages.js';
 import { supportedLocales } from '../static/orena/ui/copy.js';
-import { speakCopy, speakingCopy, GUIDANCE_KEYS } from '../static/orena/ui/speaking-copy.js';
+import { speakCopy, speakingCopy } from '../static/orena/ui/speaking-copy.js';
+import { SPEAKING_LAYERS } from '../static/orena/ui/copy-layers.js';
 
 const supported = supportedLocales;
 const resolve = ({ stored = '', browser = [], support = '', native = '', active = '' }) =>
@@ -79,7 +80,9 @@ assert.match(app, /stored: storage\.getItem\(INTERFACE_KEY\)/);
   const from = app.indexOf('ctx.profile = profile;');
   const load = app.slice(from, app.indexOf('ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);', from));
   assert.ok(from > 0 && load.length > 0, 'the profile load is found');
-  assert.equal(/ctx\.ui\b/.test(load), false, 'loading the profile does not change the interface');
+  assert.equal(/ctx\.ui\s*=[^=]/.test(load), false, 'loading the profile does not change the interface');
+  // It re-reads the copy by layer with the support language the profile just gave.
+  assert.match(load, /ctx\.c = layeredCopy\(copy, COPY_LAYERS, ctx\.ui, ctx\.support\);/);
 }
 // No learner surface picks its chrome copy by the support or the target language.
 const uiDir = new URL('../static/orena/ui/', import.meta.url);
@@ -89,8 +92,8 @@ for (const file of readdirSync(uiDir).filter((name) => name.endsWith('.js'))) {
 }
 
 // --- Speaking: chrome in the interface language, guidance in the support language ------------------
-for (const key of GUIDANCE_KEYS)
-  for (const pack of Object.keys(speakingCopy)) assert.ok(speakingCopy[pack][key], `${pack}.${key} exists`);
+// Every Speaking key has a declared layer (the full audit is scripts/test_orena_copy_layers.mjs).
+for (const key of Object.keys(speakingCopy.en)) assert.ok(['interface', 'support'].includes(SPEAKING_LAYERS[key]), `speaking.${key} is declared`);
 {
   const a = speakCopy('en', 'vi'); // CASE A
   assert.equal(a.nextLine, speakingCopy.en.nextLine, 'A: a button is the interface language');

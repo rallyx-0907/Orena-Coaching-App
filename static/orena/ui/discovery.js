@@ -6,7 +6,7 @@
 import { esc } from './html.js';
 import { link } from '../product/intent.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import {
   compactSupportMeaning,
   masteryStars,
@@ -33,13 +33,13 @@ function wordCard(card, ctx, index, total) {
   const state = vocabularyStatus(card);
   const stateKey = { new: 'vocabularyNew', learning: 'vocabularyLearningState', due: 'vocabularyDueState', mastered: 'vocabularyMasteredState' }[state];
   const stateLabel = ctx.c[stateKey] || state;
-  const r = referenceCopy[ctx.ui];
+  const r = refCopy(ctx);
   const starRow = `<span class="vocabulary-stars" aria-label="${esc(stars)}">${[0, 1, 2].map((n) => icon('star', { filled: n < filled, size: 12, className: n < filled ? 'is-earned' : '' })).join('')}</span>`;
   return `<article class="discover-vocabulary-card" data-vocabulary-card data-word-index="${index}" data-vocabulary-level="${esc(level || 'unknown')}" data-vocabulary-rank="${esc(vocabularyRank(card))}" data-vocabulary-skin="${esc(skin)}" data-vocabulary-state="${esc(state)}"${index ? ' hidden' : ''}><button class="word-card__face word-card__front" type="button" data-word-flip aria-label="${esc(`${card.headword} · ${r.flipCard}`)}"><span class="word-card__word" lang="${esc(targetLanguage)}">${esc(card.headword)}</span>${card.pronunciation ? `<span class="word-card__reading" lang="${esc(targetLanguage)}">${esc(card.pronunciation)}</span>` : ''}<span class="word-card__foot"><span class="word-card__hint">${icon('hand-tap', { size: 14 })}${esc(r.flipCard)}</span>${starRow}</span></button><div class="word-card__face word-card__back" hidden><div class="discover-vocabulary-card__top">${level ? `<small>${esc(level)}</small>` : '<small>—</small>'}${vocabularyRankToken(ctx.c, card)}</div><strong lang="${esc(targetLanguage)}">${esc(card.headword)}</strong>${meaning ? `<span class="discover-vocabulary-card__meaning" lang="${esc(ctx.support || '')}">${esc(meaning)}</span>` : ''}<span class="vocabulary-state vocabulary-state--${esc(state)}">${esc(stateLabel)}</span><div class="discover-vocabulary-card__actions"><a class="quiet" data-vocabulary-study="${index}" href="${esc(link('language'))}">${esc(ctx.c.vocabularyStudy || ctx.c.lookCloser)}</a>${card.saved ? `<span class="quiet" data-vocabulary-saved>${esc(ctx.c.vocabularySaved || ctx.c.saved)} ✓</span>` : `<button class="quiet" type="button" data-discover-vocabulary-save="${index}">${esc(ctx.c.vocabularySave || ctx.c.keep)} ＋</button>`}<button class="quiet" type="button" data-word-flip>${esc(r.flipBack)}</button></div></div></article>`;
 }
 
 export function todayWords(ctx, vocabulary) {
-  const r = referenceCopy[ctx.ui];
+  const r = refCopy(ctx);
   const total = vocabulary.length;
   const cards = vocabulary.map((card, index) => wordCard(card, ctx, index, total)).join('');
   return `<section class="today-words" data-today-words aria-labelledby="todayWordsTitle"><header class="home-rail-head"><h2 id="todayWordsTitle">${esc(r.todayWords)}</h2><span class="home-rail-meta" data-word-counter aria-live="polite">1 / ${total}</span></header><div class="today-words__stack" data-word-stack tabindex="0" aria-roledescription="${esc(r.todayWords)}">${cards}<span class="today-words__under" aria-hidden="true"></span><span class="today-words__under today-words__under--far" aria-hidden="true"></span></div><div class="today-words__nav"><button class="icon-button" type="button" data-word-prev aria-label="${esc(r.railPrevious)}">${icon('caret-right', { size: 18, className: 'is-flipped' })}</button><button class="icon-button" type="button" data-word-next aria-label="${esc(r.railNext)}">${icon('caret-right', { size: 18 })}</button></div></section>`;

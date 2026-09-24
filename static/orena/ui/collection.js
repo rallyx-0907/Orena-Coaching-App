@@ -1,5 +1,5 @@
 import { esc } from './html.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { link, sourceLink } from '../product/intent.js';
 import { icon } from './phosphor.js';
 import { art } from './content.js';
@@ -34,7 +34,7 @@ const SAVED_SEARCH_DEBOUNCE_MS = 220;
 
 export function renderCollection(root, ctx) {
   const c = ctx.c;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const { memory, api, alive, language } = ctx;
   const highlights = Object.entries(memory.value.keptLanguage || {}).map(([term, kept]) => ({ term, ...kept }));
   const content = [...(memory.value.imports || []), ...(memory.value.mediaImports || [])];

@@ -15,7 +15,7 @@ import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { art } from './content.js';
 import { speakCopy, fill } from './speaking-copy.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { pronunciationView } from '../capabilities/pronunciation-result.js';
 import { readingsFor } from '../capabilities/dictation-result.js';
 import { createSpeakingTake, TAKE, MAX_TAKE_MS } from '../capabilities/speaking-take.js';
@@ -169,7 +169,7 @@ export function roomHtml({ s, c, source, index, language, rate, level }) {
   const bars = Array.from({ length: BARS }, () => '<i></i>').join('');
   const where = [level, fill(s.lineOf, { i: index + 1, n: total })].filter(Boolean).join(' · ');
   return `<section class="sp-room" data-phase="idle">
-<header class="sp-top"><button type="button" class="sp-back" data-sp-back aria-label="${esc(source.title)}">${icon('arrow-left', { size: 20 })}<span class="sp-back__caret">${icon('caret-left', { size: 22 })}</span><span class="sp-lesson" lang="${esc(language)}">${esc(source.title)}</span></button><button type="button" class="sp-cancel" data-sp-cancel aria-label="${esc(s.cancelRecording)}">${icon('x', { size: 22 })}</button><h1 class="sp-name">${esc(`${s.room} · ${s.pronunciation}`)}</h1><small class="sp-where">${esc(where)}</small><small class="sp-count">${esc(`${index + 1} / ${total}`)}</small><small class="sp-count sp-count--rec">${esc(fill(s.lineOf, { i: index + 1, n: total }))}</small><span class="sp-streak" title="${esc((referenceCopy[c.ui] || referenceCopy.en).streakUnmeasured)}">${icon('flame', { size: 16, filled: true })}<b>0</b></span></header>
+<header class="sp-top"><button type="button" class="sp-back" data-sp-back aria-label="${esc(source.title)}">${icon('arrow-left', { size: 20 })}<span class="sp-back__caret">${icon('caret-left', { size: 22 })}</span><span class="sp-lesson" lang="${esc(language)}">${esc(source.title)}</span></button><button type="button" class="sp-cancel" data-sp-cancel aria-label="${esc(s.cancelRecording)}">${icon('x', { size: 22 })}</button><h1 class="sp-name">${esc(`${s.room} · ${s.pronunciation}`)}</h1><small class="sp-where">${esc(where)}</small><small class="sp-count">${esc(`${index + 1} / ${total}`)}</small><small class="sp-count sp-count--rec">${esc(fill(s.lineOf, { i: index + 1, n: total }))}</small><span class="sp-streak" title="${esc(refCopy({ ui: c.ui, support: c.support }).streakUnmeasured)}">${icon('flame', { size: 16, filled: true })}<b>0</b></span></header>
 <div class="sp-cols"><section class="sp-task"><div class="sp-state-host" data-sp-state hidden></div><div class="sp-steps" role="progressbar" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${index + 1}"><span class="sp-steps__segments">${segments}</span><span class="sp-steps__count">${index + 1}/${total}</span></div><div data-sp-mode-host></div>
 ${source.playback ? `<div class="sp-stage"><div class="sp-clip" data-sp-player data-kind="${esc(kind || '')}"><span class="sp-clip__art">${source.poster || ''}</span>${source.playback ? mediaPlayer(source.playback, source.title, { startMs: line.startMs, endMs: line.endMs, controls: false }) : ''}<span class="sp-glow" aria-hidden="true"></span><button type="button" class="sp-play" data-sp-model aria-label="${esc(s.hearModel)}">${icon('play', { size: 34, filled: true })}</button><span class="sp-badge">${icon('video-camera', { size: 14, filled: true })}<span>${esc(fill(s.clipModel, { t: clock(span) }))}</span></span><button type="button" class="sp-rate" data-sp-rate>${rate}×</button><span class="sp-clipbar"><i data-sp-clipbar></i></span></div></div>` : ''}
 <span class="sp-pill" data-sp-pill aria-live="off"><i></i><span data-sp-pill-text>${esc(fill(s.recordingPill, { t: '00:00' }))}</span></span>
@@ -188,7 +188,7 @@ const SHADOW_TAIL_MS = 800;
 export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLeave = null } = {}) {
   const { api, language, memory } = ctx;
   const s = speakCopy(ctx.ui, ctx.support);
-  const c = { ...ctx.c, ui: ctx.ui, lang: ctx.ui };
+  const c = { ...ctx.c, ui: ctx.ui, support: ctx.support, lang: ctx.ui };
   let index = Math.max(0, Math.min(source.lines.length - 1, startIndex));
   let rate = 1;
   let disposed = false;
@@ -858,7 +858,7 @@ export function mountSpeakingWorkspace(root, ctx, source, { startIndex = 0, onLe
     if (playerRoot()) disconnectMediaPlayer(playerRoot());
     const rows = source.lines.map((item) => ({ text: item.text, ...(results.get(item.id) || {}) }));
     const minutes = Math.max(1, Math.round((Date.now() - lessonStarted) / 60000));
-    const room = (referenceCopy[ctx.ui] || referenceCopy.en).speaking;
+    const room = refCopy(ctx).speaking;
     root.innerHTML = summaryHtml({ s, source, language, rows, missed: [...missed.values()].sort((a, b) => b.count - a.count).slice(0, 8), minutes, kept: anyKept, room });
     root.querySelectorAll('[data-sp-sum-line]').forEach((row) => (row.onclick = () => {
       screen = 'work';

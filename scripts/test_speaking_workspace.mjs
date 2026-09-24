@@ -17,7 +17,7 @@ import {
   toneSvg,
 } from '../static/orena/ui/speaking-workspace.js';
 
-const s = speakCopy('vi');
+const s = speakCopy('vi', 'vi');
 const zhResult = {
   score_kind: 'measured',
   reference_text: '你也是美国人吗？',
@@ -88,22 +88,22 @@ assert.equal((panels[1].match(/<polyline/g) || []).length, 0, 'no curve is drawn
 assert.match(detail, /mei3/, 'the provider’s units are listed as sounds, not as tones');
 assert.equal(toneSvg([]), '<svg viewBox="0 0 120 60" aria-hidden="true"></svg>');
 // The sheet's sentence is punctuated in the interface language, not with a hard-coded ". ".
-const zhDetail = detailHtml({ s: speakCopy('zh'), c: {}, word: zh.words[3], language: 'zh' });
+const zhDetail = detailHtml({ s: speakCopy('zh', 'zh'), c: {}, word: zh.words[3], language: 'zh' });
 assert.match(zhDetail, /读错了。得分 58。|。得分 58。/);
 assert.equal(/[^.]\. 得分/.test(zhDetail), false, 'no Latin full stop inside Chinese');
 assert.equal(/。 /.test(zhDetail), false, 'no Latin space between Chinese sentences');
 
 // Word detail, English: no tone panels; the phoneme that lost is shown with its own score.
 const en = pronunciationView({ score_kind: 'measured', reference_text: 'Two cats.', pron_score: 70, accuracy_score: 72, words: [{ word: 'cats', accuracy_score: 61, error_type: 'None', phonemes: [{ phoneme: 'k', accuracy_score: 95 }, { phoneme: 's', accuracy_score: 4 }] }] }, { language: 'en' });
-const enDetail = detailHtml({ s: speakCopy('en'), c: {}, word: en.words[0], language: 'en' });
+const enDetail = detailHtml({ s: speakCopy('en', 'en'), c: {}, word: en.words[0], language: 'en' });
 assert.equal(enDetail.includes('sp-tones'), false);
 assert.match(enDetail, /sp-sound sp-sound--low"><b>s<\/b><small>4<\/small>/);
-assert.equal(wordNote(speakCopy('en'), en.words[0]), 'Passed', 'passed is the provider’s flag, and the phoneme evidence is one tap away');
+assert.equal(wordNote(speakCopy('en', 'en'), en.words[0]), 'Passed', 'passed is the provider’s flag, and the phoneme evidence is one tap away');
 
 // Every interface language owns every string (Design Contract rule 26).
 for (const ui of ['vi', 'zh'])
   for (const key of Object.keys(speakingCopy.en)) assert.ok(String(speakingCopy[ui][key] || '').trim(), `${ui}.${key}`);
-assert.equal(speakCopy('vi').room, 'Nói');
+assert.equal(speakCopy('vi', 'vi').room, 'Nói');
 
 // The room reads the result only through the projection, and never talks to a provider.
 const workspace = readFileSync(new URL('../static/orena/ui/speaking-workspace.js', import.meta.url), 'utf8');

@@ -7,6 +7,8 @@ import { continuationEntries, continuationPlace, hint, pageIntro } from './patte
 import { entryIcon } from './icons.js';
 import { icon } from './phosphor.js';
 import { art } from './content.js';
+import { layeredCopy } from './layered-copy.js';
+import { REFERENCE_LAYERS } from './copy-layers.js';
 import { continuationExperience, continuationLink } from '../product/intent.js';
 
 export { entryIcon } from './icons.js';
@@ -729,7 +731,7 @@ referenceCopy.vi = {
   dictLine: 'dòng {i} / {n}',
   dictAsk: 'Nghe và gõ lại điều bạn nghe được',
   dictVideo: 'Video',
-  dictAudio: 'Audio',
+  dictAudio: 'Âm thanh',
   dictSpeed: 'Tốc độ',
   dictHintLevel: 'Gợi ý mức {n}/{m}',
   dictMoreHint: 'Thêm gợi ý',
@@ -965,8 +967,13 @@ const paths = [
   ['content', 'content', null, 'folder'], ['language', 'language', null, 'leaf'],
   ['recall', 'practice', 'recall', 'return'],
 ];
+/* The shell's copy for one learner: chrome in the interface language, guidance in the support
+   language (D-079; layers declared in ./copy-layers.js). */
+export function refCopy(ctx = {}) {
+  return layeredCopy(referenceCopy, REFERENCE_LAYERS, ctx.ui, ctx.support);
+}
 export function entryPoints(ui) {
-  const c = referenceCopy[ui] || referenceCopy.en;
+  const c = refCopy({ ui });
   return paths.map(([id, page, intent, icon]) => ({ id, label: c[id], href: link(page, { intent }), icon }));
 }
 export function experienceFor(location) {
@@ -1037,7 +1044,7 @@ export function navigationCurrent(location) {
   return experience;
 }
 export function navigationEntries(ui) {
-  const c = referenceCopy[ui] || referenceCopy.en;
+  const c = refCopy({ ui });
   const main = DESTINATIONS.map((x) => ({ ...x, label: c[x.label], href: link(x.page) }));
   const skills = SKILLS.map((x) => ({ ...x, label: c[x.id], href: link(x.page, { intent: x.intent }) }));
   return { main, skills };
@@ -1049,7 +1056,7 @@ const current = (on) => (on ? ' aria-current="page"' : '');
    says only what the app actually knows (D-068, the human asked for the card, 2026-09-22). */
 const LEARNING_NAME = { en: 'ENGLISH', zh: '中文' };
 export function accountCard(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const c = refCopy(ctx);
   const name = String(ctx.user?.name || '').trim() || String(ctx.user?.email || '').split('@')[0] || c.profile;
   const level = /^(A1|A2|B1|B2|C1|C2)$/.test(String(ctx.profile?.declared_level || '')) ? ctx.profile.declared_level : '';
   const learning = LEARNING_NAME[ctx.language] || String(ctx.language || '').toUpperCase();
@@ -1057,7 +1064,7 @@ export function accountCard(ctx) {
   return `<button type="button" class="account-card" data-preference><span class="account-card__mark">${icon('user', { size: 18 })}</span><span class="account-card__body"><strong>${esc(name)}</strong>${meta ? `<small class="ds-data">${esc(meta)}</small>` : ''}</span></button>`;
 }
 export function referenceNavigation(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const c = refCopy(ctx);
   const here = navigationCurrent(ctx.location);
   const { main, skills } = navigationEntries(ctx.ui);
   const mainLinks = main
@@ -1085,7 +1092,7 @@ export function referenceNavigation(ctx) {
 /* The phone's tab bar: five tabs, the last the learner's own, which opens the profile and settings
    sheet, so it is a button, not a link. */
 export function navigationTabs(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const c = refCopy(ctx);
   const here = navigationCurrent(ctx.location);
   const tabs = TABS.map((tab) => {
     const on = tab.owns.includes(here);
@@ -1106,7 +1113,7 @@ export function navigationTabs(ctx) {
    sheet, which is where the design keeps language settings; what is due is a
    counter on Vocabulary, where the design counts it. */
 export function topBar(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const c = refCopy(ctx);
   const here = navigationCurrent(ctx.location);
   /* The bar names the destination with the same word the rail uses - which for
      Vocabulary is the destination's own name, not the room's longer one. */
@@ -1116,7 +1123,7 @@ export function topBar(ctx) {
      what the source does - its trends frame carries them in the bar - and it
      is also what keeps the screen inside one viewport. */
   if (here === 'progress') {
-    const r = referenceCopy[ctx.ui] || referenceCopy.en;
+    const r = refCopy(ctx);
     const trends = ctx.location?.tab === 'trends';
     const tab = (id, label) =>
       `<a class="ptab" href="${esc(link('progress', id === 'overview' ? {} : { tab: id }))}"${
@@ -1135,7 +1142,7 @@ export function topBar(ctx) {
 /* Days in a row. Nothing counts them yet (GAP-001), so the chip keeps its
    place and says so rather than showing a number nobody measured. */
 export function streakChip(ctx) {
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const c = refCopy(ctx);
   return `<span class="streak-chip" title="${esc(c.streakUnmeasured)}">${icon('fire', { size: 14 })}<span class="ds-data">—</span><span class="sr-only">${esc(c.streakUnmeasured)}</span></span>`;
 }
 
@@ -1145,7 +1152,7 @@ export function streakChip(ctx) {
    is where operating the platform belongs. */
 export function operatorEntry(ctx) {
   if (ctx.user?.is_admin !== true) return '';
-  const c = referenceCopy[ctx.ui] || referenceCopy.en;
+  const c = refCopy(ctx);
   return `<nav class="sheet-links sheet-links--operator" aria-label="${esc(c.admin)}"><a href="${link('admin')}">${esc(c.admin)}</a></nav>`;
 }
 
@@ -1159,7 +1166,7 @@ export function languagePair(ctx) {
 }
 
 export function editorialIntro(ctx, {title, note, state, eyebrow}) {
-  return `<header class="editorial-intro"><div><small>${esc(eyebrow || referenceCopy[ctx.ui].fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;
+  return `<header class="editorial-intro"><div><small>${esc(eyebrow || refCopy(ctx).fieldNote)}</small><h1>${esc(title).replaceAll('\n','<br>')}</h1><p>${esc(note)}</p></div>${scene(state,{size:'hero'})}</header>`;
 }
 /* The room whose whole subject is coming back.
 
@@ -1198,7 +1205,7 @@ function progressBar(place, label) {
 
 /* The one the learner was last in, given the room to be recognised. */
 function continueLead(item, ctx) {
-  const c = referenceCopy[ctx.ui];
+  const c = refCopy(ctx);
   const place = continuationPlace(item);
   const progressLabel = place ? `${place.percent}% · ${item.context || item.title}` : '';
   return `<section class="continue-lead"><span class="continue-lead__visual" aria-hidden="true">${art(item)}</span><div class="continue-lead__body"><small>${entryIcon(continuationIcons[continuationExperience(item)] || 'return')}${esc(continueLabel(item, ctx))}</small><h2 lang="${esc(ctx.language)}">${esc(item.title)}</h2>${item.context ? `<p class="continue-lead__context" lang="${esc(ctx.language)}">${esc(item.context)}${place ? ` · ${place.index}/${place.total}` : ''}</p>` : ''}${progressBar(place, progressLabel)}<a class="primary" href="${esc(continuationLink(item))}">${esc(c.continueAction)} <span aria-hidden="true">→</span></a></div></section>`;
@@ -1211,7 +1218,7 @@ function continueCard(item, ctx) {
 }
 
 export function renderContinue(root, ctx) {
-  const c = referenceCopy[ctx.ui];
+  const c = refCopy(ctx);
   const threads = continuationEntries(ctx.memory);
   const [lead, ...rest] = threads;
   const body = lead

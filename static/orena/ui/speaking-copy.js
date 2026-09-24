@@ -2,8 +2,9 @@
    supported locale owns every string it asks for). The frames' Vietnamese is sample text (D-068);
    these are the product's words for the same places. Learner material - the line, its reading, its
    translation - is never here. */
-import { referenceCopy } from './reference.js';
-import { guidanceLocale } from '../product/languages.js';
+import { refCopy } from './reference.js';
+import { layeredCopy } from './layered-copy.js';
+import { SPEAKING_LAYERS } from './copy-layers.js';
 
 const en = {
   pronunciation: 'Pronunciation',
@@ -452,37 +453,18 @@ const zh = {
 
 export const speakingCopy = { en, vi, zh };
 
-/* The sentences that explain, instruct or give feedback: the support language's (D-079,
-   docs/product/ORENA_LANGUAGE_COHERENCE.md). Every other key - a button, a label, a title, a system
-   state or error - is the interface's. */
-export const GUIDANCE_KEYS = Object.freeze([
-  'tapWord_en', 'tapWord_zh', 'recordingHint', 'freeReady', 'practisingAlone',
-  'headlineNone_en', 'headlineNone_zh', 'headlineSome_en', 'headlineOne_en', 'headlineSome_zh', 'headlineOne_zh',
-  'subTap', 'subFlagged', 'noResult', 'paceSlower', 'paceFaster', 'paceSame',
-  'passed', 'error_mispronunciation', 'error_omission', 'error_unexpectedbreak', 'error_missingbreak',
-  'error_monotone', 'error_other', 'weakest', 'weakestLine', 'detailScore', 'detailSaid',
-  'tone_1', 'tone_2', 'tone_3', 'tone_4', 'tone_5', 'toneUnmeasured',
-  'shadowLag', 'headphones', 'notHeardText', 'notHeardShort', 'notHeardTwice',
-  'summaryTitle', 'summaryTitleNone', 'ftHeadlineFix', 'ftHeadlineNone', 'ftHeadlineFixOne',
-]);
-const GUIDANCE = new Set(GUIDANCE_KEYS);
-
-/* The room's words for one learner: the chrome in the interface language, the guidance in the
-   support language (its written pack, else English - never the interface language instead), and
-   the shared names (the room, the rail) in the interface language. `langOf(key)` says which
-   language a string came out in, for its element's `lang`. */
-export function speakCopy(ui, support = ui) {
-  const uiCode = speakingCopy[ui] ? ui : 'en';
-  const guideCode = guidanceLocale(support, Object.keys(speakingCopy));
-  const chrome = speakingCopy[uiCode];
-  const guide = speakingCopy[guideCode];
-  const shared = referenceCopy[uiCode] || referenceCopy.en;
-  const out = { ...chrome, room: shared.speaking };
-  for (const key of GUIDANCE_KEYS) out[key] = guide[key];
-  Object.defineProperty(out, 'langOf', { value: (key) => (GUIDANCE.has(key) ? guideCode : uiCode) });
-  Object.defineProperty(out, 'uiLang', { value: uiCode });
-  Object.defineProperty(out, 'guideLang', { value: guideCode });
-  return out;
+/* The room's words for one learner, each by its declared layer (D-079; ./copy-layers.js,
+   SPEAKING_LAYERS): chrome in the interface language, guidance - hints, verdicts, feedback, the
+   explanation of a result or an error - in the support language (its written pack, else English,
+   never the interface language instead); the shared room name in the interface language.
+   `langOf(key)` says which language a string came out in, for its element's `lang`. */
+export function speakCopy(ui, support) {
+  const own = layeredCopy(speakingCopy, SPEAKING_LAYERS, ui, support);
+  return Object.defineProperties({ ...own, room: refCopy({ ui, support }).speaking }, {
+    langOf: { value: own.langOf },
+    uiLang: { value: own.uiLang },
+    guideLang: { value: own.guideLang },
+  });
 }
 
 export const fill = (template, values) =>
