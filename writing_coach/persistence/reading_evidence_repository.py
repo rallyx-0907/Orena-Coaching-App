@@ -63,6 +63,19 @@ _ADVISORY_NAMESPACE = 0x52454144
 RECENT_ATTEMPTS = policy.RECENT_WINDOW
 CANDIDATE_POOL = 200
 
+# A learner's Reading rows, in deletion order: the enumeration the
+# account-deletion workflow consumes (D-054, `ORENA_ACCOUNT_DATA_ARCHITECTURE.md`
+# §5). The archive is the learner's too. The migration carries the same list
+# for its proof; `tests/test_reading_evidence_schema_parity.py` keeps the two
+# equal, because the application never imports a migration.
+ACCOUNT_OWNED: tuple[tuple[str, str], ...] = (
+    ("reading_ability_projections", "user_id = :user_id"),
+    ("reading_attempts", "user_id = :user_id"),
+    ("reading_legacy_attempts",
+     "session_id IN (SELECT id FROM reading_legacy_sessions WHERE user_id = :user_id)"),
+    ("reading_legacy_sessions", "user_id = :user_id"),
+)
+
 
 class ReadingEvidenceError(ValueError):
     """A refusal with a stable reason code the API turns into a response."""

@@ -96,7 +96,8 @@ class AttemptBody(BaseModel):
 def next_article(response: Response) -> dict[str, Any]:
     _no_store(response)
     choice = _guarded(lambda: _repo().next_article(support_language=_support()))
-    return {"available": choice is not None, "next": choice, "submit_enabled": submit_enabled()}
+    return {"available": choice is not None, "next": choice, "submit_enabled": submit_enabled(),
+            "support_language": _support()}
 
 
 @router.get("/articles/{article_id}")
@@ -105,7 +106,7 @@ def article_set(article_id: str, response: Response) -> dict[str, Any]:
     served = _guarded(lambda: _repo().served_set(article_id, support_language=_support()))
     if served is None:
         raise orena_http_error(404, "reading_set_not_available", "This article has no practice for you yet.")
-    return {"set": served, "submit_enabled": submit_enabled()}
+    return {"set": served, "submit_enabled": submit_enabled(), "support_language": _support()}
 
 
 @router.post("/attempts")

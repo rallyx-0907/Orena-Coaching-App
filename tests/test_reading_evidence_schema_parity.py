@@ -98,6 +98,12 @@ def test_the_orm_trigger_list_is_the_migrations_verbatim():
     assert tuple(SQLITE_TRIGGERS) == tuple(_migration()._SQLITE_TRIGGERS)
 
 
+def test_the_account_deletion_enumeration_is_the_migrations():
+    from writing_coach.persistence.reading_evidence_repository import ACCOUNT_OWNED
+
+    assert tuple(ACCOUNT_OWNED) == tuple(_migration().ACCOUNT_OWNED)
+
+
 def test_create_all_and_the_migration_build_the_same_canonical_schema(tmp_path):
     from writing_coach.persistence.models import Base
 

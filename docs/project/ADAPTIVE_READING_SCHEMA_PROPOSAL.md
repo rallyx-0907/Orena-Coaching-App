@@ -512,6 +512,16 @@ reviewed forward repair.
 
 ## 12. READY — only after a live end-to-end run (D-075)
 
+**Status (2026-09-24, D-076).** Authorized for the admin sandbox; the migration
+is in `migrations/versions/` and the apply-time work below is done (commit
+`24c60bb` and its follow-up). Rehearsed and run end to end **locally** on
+PostgreSQL 16 — backup and restore rehearsal, inventory, upgrade, downgrade,
+lock-order proof, the gated and the complete E2E, runtime recreate — with the
+results in `READING_CANONICAL_CUTOVER_RUNBOOK.md`. The sandbox apply, its
+inventory report and the sandbox E2E are the operator's steps in that runbook
+and have **not** run yet. Not READY until they pass on the sandbox; learner
+submit stays off there until then.
+
 Not before the schema is approved and authorized, and then only when this runs
 live on the sandbox:
 

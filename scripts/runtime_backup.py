@@ -102,6 +102,12 @@ COMPARED = (
     "speaking_attempts",
     "listening_progress",
     "shadowing_progress",
+    # Canonical Reading evidence and the archive it replaced (D-075). Before
+    # 20260924_0014 the archive tables do not exist and count as None.
+    "reading_attempts",
+    "reading_comprehension_sets",
+    "reading_legacy_sessions",
+    "reading_legacy_attempts",
 )
 
 
@@ -123,8 +129,18 @@ def _require_client_tools(*names: str) -> None:
         )
 
 
+def _redact(arg: str) -> str:
+    """A connection string with its password replaced, for the echo only."""
+    parsed = urlparse(arg)
+    if parsed.scheme and parsed.password:
+        return urlunparse(parsed._replace(netloc=parsed.netloc.replace(f":{parsed.password}@", ":***@")))
+    return arg
+
+
 def _run(argv: list[str]) -> subprocess.CompletedProcess:
-    print("$", " ".join(argv))
+    # The command is echoed so an operator sees what ran - never the password
+    # the connection string carries.
+    print("$", " ".join(_redact(arg) for arg in argv))
     return subprocess.run(argv, check=False, capture_output=True, text=True)
 
 
@@ -170,6 +186,9 @@ def _counts(url: str, database: str) -> dict[str, int | None]:
     counts: dict[str, int | None] = {}
     with engine.connect() as connection:
         for table in ("alembic_version", *COMPARED):
+            # A savepoint per read: on PostgreSQL a missing table aborts the
+            # transaction, and every count after it would read as None too.
+            savepoint = connection.begin_nested()
             try:
                 if table == "alembic_version":
                     counts[table] = connection.execute(
@@ -179,7 +198,9 @@ def _counts(url: str, database: str) -> dict[str, int | None]:
                     counts[table] = connection.execute(
                         text(f"SELECT count(*) FROM {table}")  # noqa: S608 - fixed list
                     ).scalar_one()
+                savepoint.commit()
             except Exception:
+                savepoint.rollback()
                 counts[table] = None
     engine.dispose()
     return counts
