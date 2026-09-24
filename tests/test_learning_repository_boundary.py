@@ -31,7 +31,6 @@ def test_specialized_services_are_storage_neutral_on_v134():
         "writing_coach/becoming_memory.py",
         "writing_coach/becoming_outcomes.py",
         "writing_coach/becoming_library.py",
-        "writing_coach/becoming_reading.py",
         "writing_coach/becoming_linguistics.py",
     ]
     assert version == "1.4.0"

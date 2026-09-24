@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from writing_coach import becoming_reading, media_interaction
+from writing_coach import media_interaction
 
 
 @pytest.fixture(autouse=True)
@@ -250,99 +250,6 @@ def test_spoken_coaching_carries_the_situation_it_was_answering(monkeypatch) -> 
 
     assert "Invite a friend somewhere you love." in seen[0]["user"]
     assert TRANSCRIPT in seen[0]["user"]
-
-
-# --------------------------------------------------------------------------
-# Generated reading passages
-# --------------------------------------------------------------------------
-
-PASSAGE = (
-    "Maya used to open several tabs before she had decided what to finish. "
-    "Last month she wrote one task on a card and worked on it for twenty-five "
-    "minutes without changing activities. The routine did not make hard work "
-    "easy, but it made distraction easier to notice."
-)
-
-
-def _question(index: int, evidence: str) -> dict[str, Any]:
-    return {
-        "question": f"Question {index}?",
-        "options": [f"a{index}", f"b{index}", f"c{index}", f"d{index}"],
-        "correct_index": 0,
-        "explanation_vi": "Giai thich.",
-        "evidence_fragment": evidence,
-    }
-
-
-def test_generated_reading_keeps_a_passage_whose_questions_are_answerable(monkeypatch) -> None:
-    generated = becoming_reading._validate_generated(
-        {
-            "title": "One Task Before Many Tabs",
-            "passage": PASSAGE,
-            "questions": [_question(i, "she wrote one task on a card") for i in range(1, 5)],
-        }
-    )
-
-    assert generated is not None
-    assert generated["title"] == "One Task Before Many Tabs"
-    assert [item["id"] for item in generated["questions"]] == [1, 2, 3, 4]
-    assert all(item["evidence_fragment"] in generated["passage"] for item in generated["questions"])
-
-
-def test_generated_reading_is_rejected_when_evidence_is_not_in_the_passage(monkeypatch) -> None:
-    """A question the passage cannot answer is worse than no question at all.
-
-    The learner is told the answer is in the text; if the evidence was never
-    there, they will look for something that does not exist.
-    """
-    questions = [_question(i, "she wrote one task on a card") for i in range(1, 5)]
-    questions[2]["evidence_fragment"] = "a sentence the passage does not contain"
-
-    assert becoming_reading._validate_generated(
-        {"title": "T", "passage": PASSAGE, "questions": questions}
-    ) is None
-
-
-@pytest.mark.parametrize(
-    "mutate,reason",
-    [
-        (lambda q: q.__setitem__("options", ["a", "b", "c"]), "three options is not four"),
-        (lambda q: q.__setitem__("options", ["same", "same", "c", "d"]), "duplicate options"),
-        (lambda q: q.__setitem__("correct_index", 9), "an answer outside the options"),
-        (lambda q: q.__setitem__("correct_index", None), "no answer at all"),
-        (lambda q: q.__setitem__("explanation_vi", "  "), "no explanation"),
-        (lambda q: q.__setitem__("question", ""), "no question"),
-    ],
-)
-def test_generated_reading_rejects_unusable_questions(mutate, reason) -> None:
-    questions = [_question(i, "she wrote one task on a card") for i in range(1, 5)]
-    mutate(questions[1])
-
-    assert becoming_reading._validate_generated(
-        {"title": "T", "passage": PASSAGE, "questions": questions}
-    ) is None, reason
-
-
-def test_generated_reading_rejects_a_passage_too_short_to_read() -> None:
-    assert becoming_reading._validate_generated(
-        {
-            "title": "T",
-            "passage": "Too short.",
-            "questions": [_question(i, "Too short.") for i in range(1, 5)],
-        }
-    ) is None
-
-
-def test_built_in_reading_answers_every_language_with_answerable_questions() -> None:
-    """The provider-free passage is what most runtimes actually serve."""
-    for language in ("en", "zh"):
-        fallback = becoming_reading._fallback(language, "B1", "daily_life")
-        assert fallback["title"] and len(fallback["passage"]) >= 120
-        assert len(fallback["questions"]) == 4
-        for question in fallback["questions"]:
-            assert question["evidence_fragment"] in fallback["passage"], language
-            assert len(question["options"]) == 4
-            assert question["correct_index"] in range(4)
 
 
 # --------------------------------------------------------------------------

@@ -26,9 +26,13 @@ ESSAYS = [
     {'id': 12, 'created_at': '2026-06-01T10:00:00+00:00', 'overall': 55.0, 'evaluator': 'ollama:qwen3:8b'},
     {'id': 7, 'created_at': '2026-09-10T10:00:00+00:00', 'overall': 70.0, 'evaluator': 'fallback-demo'},
 ]
+# Canonical Reading attempts (D-075). The first was recorded without an
+# observation time; one with no questions is not a check answered.
 READING = [
-    {'id': 1, 'created_at': '2026-09-12T09:00:00+00:00', 'latest_attempt': {'correct_count': 3, 'total': 4}},
-    {'id': 2, 'created_at': '2026-09-12T09:30:00+00:00', 'latest_attempt': None},
+    {'id': 'attempt-1', 'kind': 'reading_attempt', 'article_id': 'a1', 'created_at': None,
+     'correct_count': 3, 'total': 4},
+    {'id': 'attempt-0', 'kind': 'reading_attempt', 'article_id': 'a2', 'created_at': '2026-09-12T09:30:00+00:00',
+     'correct_count': 0, 'total': 0},
 ]
 LISTENING = [
     {'asset_id': 'a', 'segment_id': 'a:000', 'checked_attempt_count': 2, 'revealed': False, 'best_accuracy_percent': 92, 'updated_at': '2026-09-12T11:00:00Z'},

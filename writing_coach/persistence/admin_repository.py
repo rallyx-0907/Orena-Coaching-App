@@ -33,8 +33,8 @@ from writing_coach.persistence.models import (
     Essay,
     GrammarProgress,
     ListeningProgress,
+    LegacyReadingSession,
     ReadingAttempt,
-    ReadingSession,
     SavedWord,
     ShadowingProgress,
     SpeakingAttempt,
@@ -121,11 +121,9 @@ class AdminConsoleRepository:
 
         return union_all(
             part(Essay.user_id, Essay.created_at, "writing", Essay.language_code),
-            part(ReadingSession.user_id, ReadingSession.created_at, "reading", ReadingSession.language_code),
-            part(
-                ReadingSession.user_id, ReadingAttempt.created_at, "reading", ReadingSession.language_code,
-                source=ReadingAttempt.__table__.join(ReadingSession.__table__, ReadingAttempt.session_id == ReadingSession.id),
-            ),
+            # Canonical Reading evidence only (D-075): the archived generated
+            # sessions are not activity the product measures.
+            part(ReadingAttempt.user_id, ReadingAttempt.created_at, "reading", ReadingAttempt.language_code),
             part(ListeningProgress.user_id, ListeningProgress.updated_at, "listening", ListeningProgress.language_code),
             part(ShadowingProgress.user_id, ShadowingProgress.updated_at, "speaking", ShadowingProgress.language_code),
             part(SpeakingAttempt.user_id, SpeakingAttempt.created_at, "speaking", SpeakingAttempt.language_code),
@@ -338,7 +336,12 @@ class AdminConsoleRepository:
             ).all()
             measures = (
                 ("writing_submissions", Essay, Essay.language_code, Essay.created_at, ()),
-                ("reading_sessions", ReadingSession, ReadingSession.language_code, ReadingSession.created_at, ()),
+                ("reading_attempts", ReadingAttempt, ReadingAttempt.language_code, ReadingAttempt.created_at, ()),
+                # The archive, separately labeled so an account with only old
+                # generated-reading history does not look inactive to an
+                # administrator. Never evidence, never part of progression.
+                ("legacy_reading_sessions", LegacyReadingSession, LegacyReadingSession.language_code,
+                 LegacyReadingSession.created_at, ()),
                 ("listening_segments", ListeningProgress, ListeningProgress.language_code, ListeningProgress.updated_at, ()),
                 ("shadowing_segments", ShadowingProgress, ShadowingProgress.language_code, ShadowingProgress.updated_at, ()),
                 ("speaking_takes", SpeakingAttempt, SpeakingAttempt.language_code, SpeakingAttempt.created_at, ()),
@@ -358,16 +361,6 @@ class AdminConsoleRepository:
                     {"measure": name, "language": code, "count": int(count), "last_at": _iso(latest)}
                     for code, count, latest in rows
                 )
-            checks = session.execute(
-                select(ReadingSession.language_code, func.count(ReadingAttempt.id), func.max(ReadingAttempt.created_at))
-                .select_from(ReadingAttempt.__table__.join(ReadingSession.__table__, ReadingAttempt.session_id == ReadingSession.id))
-                .where(ReadingSession.user_id == identifier)
-                .group_by(ReadingSession.language_code)
-            ).all()
-            activity.extend(
-                {"measure": "reading_checks", "language": code, "count": int(count), "last_at": _iso(latest)}
-                for code, count, latest in checks
-            )
             incarnation = self._incarnation_states(session, [identifier]).get(str(identifier))
             events = self._activity()
             last_active = _utc(session.scalar(select(func.max(events.c.at)).where(events.c.user_id == identifier)))

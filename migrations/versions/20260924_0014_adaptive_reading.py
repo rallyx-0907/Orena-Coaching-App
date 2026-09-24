@@ -1,17 +1,19 @@
 """Adaptive Reading - one canonical Reading flow, one canonical evidence model.
 
-PROPOSED - NOT APPLIED. Written for the human direction of 2026-09-24
-(`docs/project/DECISION_LOG.md` D-075): Reading has one flow - Admin import ->
-review -> publish into the Reading Corpus -> comprehension set -> Admin review
--> learner attempt -> ability/progression -> next passage. The AI-generated
-passage flow retires. This file **replaces** the earlier proposal of the same
-revision id, which kept `generated_session` as a second attempt subject; that
-proposal's review approval (`0d6efda`) does not carry over to this one, which
-is reviewed from the start (`docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`).
+AUTHORIZED FOR THE ADMIN SANDBOX ONLY (`DECISION_LOG.md` D-076, 2026-09-24).
+Written for the human direction of 2026-09-24 (D-075): Reading has one flow -
+Admin import -> review -> publish into the Reading Corpus -> comprehension set
+-> Admin review -> learner attempt -> ability/progression -> next passage. The
+AI-generated passage flow retires. Independent architecture review APPROVED at
+`fdf198f` (round C1, `docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`);
+the earlier `generated_session` proposal of the same revision id and its
+approval (`0d6efda`) are superseded.
 
-It sits in `migrations/proposed/`, which Alembic's default `version_locations`
-never reads. Moving it into `versions/` is the apply step and needs an APPROVED
-review of *this* file and the human's schema/runtime authorization.
+This is a **deliberate non-additive cutover** (D-076): the legacy
+generated-reading tables are renamed into a read-only archive rather than kept
+as a compatibility model, and the code that retires the generated flow ships in
+the same deploy. Apply it only after a backup, with that code. Production and
+preview keep every gate: this authorization is for the admin sandbox alone.
 
 Revision ID: 20260924_0014
 Revises: 20260923_0013

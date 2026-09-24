@@ -13,8 +13,6 @@ import {
 } from '../product/intent.js';
 import { contentFor } from '../content/texts.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
-import { readingEntry, readingSessionId } from '../content/reading.js';
-import { openReadingRequest } from './reading.js';
 import { publishedReadings } from '../content/reading-library.js';
 import { vocabularyKeepPayload as sharedVocabularyKeepPayload } from './vocabulary-experience.js';
 import { renderLibraryBrowse } from './library-browse.js';
@@ -87,7 +85,6 @@ export async function renderWorld(root, ctx) {
   }));
   const result = await Promise.allSettled([
     api.listeningLibrary(language),
-    api.readingSessions(12),
     location.page === 'discover'
       ? api.dailyVocabularyFeed(language)
       : Promise.resolve({ items: [] }),
@@ -107,40 +104,15 @@ export async function renderWorld(root, ctx) {
   const media = (listeningPayload.items || [])
     .filter((x) => x.language === language)
     .map(listeningItem);
-  const vocabulary = result[2].status === 'fulfilled'
-    ? result[2].value.items || []
+  const vocabulary = result[1].status === 'fulfilled'
+    ? result[1].value.items || []
     : [];
   const failed = result[0].status === 'rejected';
-  // Passages the learner asked for before. They live with the account rather
-  // than on the device, so an empty list here is not the same as none kept.
-  const reading = (
-    result[1].status === 'fulfilled' ? result[1].value.items || [] : []
-  ).map((x) => readingEntry(x, language));
-  let readingFailed = result[1].status === 'rejected';
-  // The recent list is bounded. Kept passages must not disappear simply
-  // because the learner requested twelve newer ones.
-  if (location.page === 'content') {
-    const missing = memory.value.kept.filter(
-      (id) => readingSessionId(id) && !reading.some((x) => x.id === id),
-    );
-    const restored = await Promise.allSettled(
-      missing.map((id) => api.readingSession(readingSessionId(id))),
-    );
-    if (!alive()) return;
-    for (const item of restored) {
-      if (item.status === 'rejected') readingFailed = true;
-      else if (
-        item.value.found &&
-        item.value.session?.language_code === language
-      )
-        reading.push(readingEntry(item.value.session, language));
-    }
-  }
   /* Articles an administrator admitted through the Reading content engine.
      They are read exactly like everything else here, so they join the same
      list rather than getting a shelf of their own: what the learner gains is
      more to read, not a new place to look. */
-  const articles = (result[4]?.status === 'fulfilled' ? result[4].value.items || [] : []).map(
+  const articles = (result[3]?.status === 'fulfilled' ? result[3].value.items || [] : []).map(
     (article) => ({
       id: `article:${article.id}`,
       kind: 'article',
@@ -157,12 +129,11 @@ export async function renderWorld(root, ctx) {
   );
   // Everything that is read rather than listened to, in one list.
   const published = publishedReadings(language);
-  const readable = [...articles, ...published, ...reading, ...text, ...memory.value.imports];
+  const readable = [...articles, ...published, ...text, ...memory.value.imports];
   const all = [
     ...articles,
     ...published,
     ...media,
-    ...reading,
     ...text,
     ...memory.value.imports,
     ...memory.value.mediaImports,
@@ -176,9 +147,6 @@ export async function renderWorld(root, ctx) {
     pageIntro({ title, note, eyebrow, scene: state });
   const continuation = continuationShelf(ctx);
   const catalogError = failed
-    ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
-    : '';
-  const readingError = readingFailed
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
     : '';
   /* An intention arrives somewhere, and each somewhere looks like itself. This
@@ -218,7 +186,7 @@ export async function renderWorld(root, ctx) {
            one library, not a second one - a book card leads to the book page
            (#/book), which is where a chapter is chosen. Bringing a passage in
            stays the room's own action. */
-        ? `${readingError}<div class="reading-library" data-library-browse></div>`
+        ? `<div class="reading-library" data-library-browse></div>`
         : (() => {
             /* Listening opens on the same approved library as Reading, scoped
                to what can be listened to (D-059 Phase 7): one library, one set
@@ -242,7 +210,7 @@ export async function renderWorld(root, ctx) {
         intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
         {
           only: intent === 'reading' ? ['books'] : ['audio', 'video'],
-          onImport: intent === 'reading' ? () => openReadingRequest(ctx) : ctx.import,
+          onImport: ctx.import,
           titleTag: intent ? 'h1' : 'h2',
         },
       ) || (() => {});
@@ -274,7 +242,7 @@ export async function renderWorld(root, ctx) {
       vocabulary,
       saved: [...(memory.value.imports || []), ...(memory.value.mediaImports || [])],
       due,
-      collections: result[3].status === 'fulfilled' ? result[3].value.items || result[3].value.collections || [] : [],
+      collections: result[2].status === 'fulfilled' ? result[2].value.items || result[2].value.collections || [] : [],
       catalogError,
     });
     unbindHome = bindHome(root, ctx);
@@ -310,9 +278,6 @@ export async function renderWorld(root, ctx) {
   root
     .querySelectorAll('[data-bring]')
     .forEach((x) => (x.onclick = ctx.import));
-  root
-    .querySelectorAll('[data-read]')
-    .forEach((x) => (x.onclick = () => openReadingRequest(ctx)));
   root
     .querySelectorAll('[data-retry]')
     .forEach((button) =>

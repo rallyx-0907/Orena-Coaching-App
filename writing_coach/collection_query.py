@@ -195,25 +195,28 @@ def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[C
 
 
 def reading_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
-    """Passages the learner asked for, from the reading owner."""
+    """Corpus articles the learner practiced, from canonical Reading evidence
+    (D-075): one entry per article, its latest attempt first. The archived
+    generated sessions are never read here."""
     entries = []
+    seen: set[str] = set()
     for row in rows:
-        if row.get('id') in (None, ''):
+        article_id = str(row.get('article_id') or '')
+        if not article_id or article_id in seen:
             continue
-        ident = str(int(row['id']))
+        seen.add(article_id)
         entries.append(CollectionEntry(
             domain='reading',
-            id=ident,
+            id=article_id,
             title=str(row.get('title') or ''),
             snippet=_clip(row.get('topic')),
             learning_language=_language_of(row, language),
-            relationship='started',
+            relationship='practised',
             updated_at=str(row.get('created_at') or ''),
-            action=_action('open_source', route('encounter', id=f'reading:{ident}', intent='reading')),
-            detail={'questionCount': int(row.get('question_count') or 0)},
+            action=_action('open_source', route('encounter', id=f'article:{article_id}', intent='reading')),
+            detail={'correct': int(row.get('correct_count') or 0), 'total': int(row.get('total') or 0)},
         ))
     return entries
-
 
 def writing_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
     """The latest revision of each essay series, from the Writing owner.

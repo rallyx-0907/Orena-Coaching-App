@@ -39,10 +39,17 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.persistence.reading_content_repository import (
+    CONTENT_KINDS,
     MAX_ARTICLE_PAGE,
     ReadingContentRepository,
     TargetInput,
 )
+from writing_coach.persistence.reading_evidence_repository import (
+    ReadingEvidenceError,
+    ReadingEvidenceRepository,
+    question_inputs,
+)
+from writing_coach.reading_comprehension import GENERATOR_VERSION, process_article
 from writing_coach.persistence.reading_job_repository import (
     MAX_JOB_PAGE,
     InvalidCursor,
@@ -74,6 +81,8 @@ class _Reading:
     jobs: ReadingJobRepository | None = None
     engine: ReadingContentEngine | None = None
     audit: Callable[..., None] | None = None
+    evidence: ReadingEvidenceRepository | None = None
+    generate: Callable[..., Any] | None = None
 
 
 _state = _Reading()
@@ -86,10 +95,13 @@ def configure_reading_admin(
     jobs: ReadingJobRepository | None = None,
     engine: ReadingContentEngine | None = None,
     audit: Callable[..., None] | None = None,
+    evidence: ReadingEvidenceRepository | None = None,
+    generate: Callable[..., Any] | None = None,
 ) -> None:
     global _state
     _state = _Reading(
-        admin_guard=admin_guard, content=content, jobs=jobs, engine=engine, audit=audit
+        admin_guard=admin_guard, content=content, jobs=jobs, engine=engine, audit=audit,
+        evidence=evidence, generate=generate,
     )
 
 
@@ -142,6 +154,52 @@ def _jobs() -> ReadingJobRepository:
     if _state.jobs is None:
         raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
     return _state.jobs
+
+
+def _evidence() -> ReadingEvidenceRepository:
+    if _state.evidence is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
+    return _state.evidence
+
+
+def _evidence_call(call: Callable[[], Any]) -> Any:
+    """A comprehension-set refusal is the administrator's to read, with its
+    reason code; anything the schema cannot yet answer is the usual 503."""
+    try:
+        return _guarded(call)
+    except ReadingEvidenceError as exc:
+        status = 409 if exc.code in {"reading_set_frozen", "reading_set_transition_refused",
+                                     "reading_set_undeletable", "reading_set_stale"} else 422
+        if exc.code in {"reading_processor_unavailable", "reading_processor_failed"}:
+            status = 503
+        raise orena_http_error(status, exc.code, str(exc)) from exc
+
+
+def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Rights advice for publishing a Reading article, in the vocabulary
+    console's weights. None of it stops anything (D-075): the administrator
+    decides, and the decision is audited beside the warnings that were showing.
+
+    Read from the snapshot's rights answers - the evidence captured at
+    ingestion, and what the review pane already shows.
+    """
+    source = article.get("source") or {}
+    state = source.get("rights_state") or {}
+    warnings: list[dict[str, str]] = []
+    republish = state.get("can_republish", "unknown")
+    if republish == "denied":
+        warnings.append({"code": "rights_not_cleared", "level": "strong"})
+    elif republish != "allowed":
+        warnings.append({"code": "rights_unknown", "level": "warning"})
+    if article.get("is_adapted"):
+        adapt = state.get("can_adapt", "unknown")
+        if adapt == "denied":
+            warnings.append({"code": "adaptation_not_cleared", "level": "strong"})
+        elif adapt != "allowed":
+            warnings.append({"code": "adaptation_unknown", "level": "warning"})
+    if state.get("attribution_required", "unknown") == "unknown":
+        warnings.append({"code": "attribution_unknown", "level": "warning"})
+    return warnings
 
 
 def _actor(admin: Mapping[str, Any]) -> str:
@@ -237,6 +295,9 @@ class ArticleEditBody(BaseModel):
     # estimate; omitting the field leaves it untouched. They are different
     # requests, so they have different spellings.
     reviewed_level: str | None = None
+    # The learner-facing content type (`article`, `news`) - never the source's
+    # feed mechanism or an editorial category of the publisher (D-076).
+    content_kind: str | None = Field(default=None, max_length=20)
     reason: str = Field(default="", max_length=2000)
 
 
@@ -245,6 +306,27 @@ class ArticleStatusBody(BaseModel):
 
     status: str
     reason: str = Field(default="", max_length=2000)
+
+
+class ComprehensionSetBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The language the explanations are written in; the learner meets the set
+    # written in their own support language.
+    support_language: str = Field(min_length=2, max_length=20)
+
+
+class ComprehensionStatusBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(min_length=1, max_length=20)
+    reason: str = Field(default="", max_length=2000)
+
+
+class QuestionDecisionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: str = Field(min_length=1, max_length=20)
 
 
 class TargetDecisionBody(BaseModel):
@@ -546,6 +628,9 @@ def edit_article(
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
+    content_kind = payload.content_kind.strip().casefold() if payload.content_kind is not None else None
+    if content_kind is not None and content_kind not in CONTENT_KINDS:
+        raise orena_http_error(422, "reading_invalid_content_kind", "That is not a Reading content type.")
     article = _guarded(
         lambda: _content().update_article(
             article_id,
@@ -561,6 +646,7 @@ def edit_article(
             reviewed_level=(
                 "" if payload.reviewed_level is None else (payload.reviewed_level.strip() or None)
             ),
+            content_kind=content_kind,
             reason=payload.reason,
         )
     )
@@ -595,14 +681,126 @@ def set_article_status(
         raise orena_http_error(
             422, "reading_reason_required", "A rejection keeps its reason - say why."
         )
+    warnings: list[dict[str, str]] = []
+    if status == "published":
+        current = _guarded(lambda: _content().get_article(article_id))
+        if current is None:
+            raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+        warnings = publication_warnings(current)
     article = _guarded(
-        lambda: _content().set_status(article_id, status, actor=_actor(admin), reason=payload.reason.strip())
+        lambda: _content().set_status(
+            article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
+        )
     )
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}
+    if status == "published":
+        # An override is only meaningful beside what it overrode.
+        audit_payload |= {"warnings": warnings, "override": bool(warnings)}
     _audit(admin, f"admin.reading_article_{status}", entity_type="reading_article", entity_id=article_id,
-           payload={"status": status, "reason": payload.reason.strip()})
+           payload=audit_payload)
+    if status == "published":
+        return {**article, "publication_warnings": warnings}
     return article
+
+
+# -- comprehension sets ------------------------------------------------------------
+# The processor writes a draft; an administrator decides every question and the
+# set. Nothing here is visible to a learner until the set is approved, and an
+# approval re-checks that every question is grounded in the article's body as
+# it is now.
+
+SET_STATUSES = frozenset({"draft", "needs_review", "approved", "rejected", "archived"})
+
+
+@router.get("/articles/{article_id}/comprehension-sets")
+def list_comprehension_sets(request: Request, response: Response, article_id: str) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    return {"items": _evidence_call(lambda: _evidence().list_sets(article_id))}
+
+
+@router.post("/articles/{article_id}/comprehension-sets", status_code=201)
+def generate_comprehension_set(
+    request: Request, response: Response, article_id: str, payload: ComprehensionSetBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    article = _guarded(lambda: _content().get_article(article_id))
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    support = payload.support_language.strip().casefold()
+    processed = _evidence_call(lambda: process_article(article, support_code=support, generate=_state.generate))
+    created = _evidence_call(lambda: _evidence().create_set(
+        article_id, support_language=support, generator_version=GENERATOR_VERSION, model=processed.model,
+        questions=question_inputs(processed.questions), validation=processed.validation, actor=_actor(admin),
+    ))
+    _audit(admin, "admin.reading_comprehension_set_created", entity_type="reading_comprehension_set",
+           entity_id=created["id"], payload={"article_id": article_id, "questions": len(created["questions"]),
+                                             "support_language": support, "model": processed.model})
+    return created
+
+
+@router.get("/comprehension-sets/{set_id}")
+def get_comprehension_set(request: Request, response: Response, set_id: str) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    found = _evidence_call(lambda: _evidence().get_set(set_id))
+    if found is None:
+        raise orena_http_error(404, "reading_set_not_found", "That comprehension set does not exist.")
+    return found
+
+
+@router.post("/comprehension-sets/{set_id}/questions/{question_id}")
+def decide_comprehension_question(
+    request: Request, response: Response, set_id: str, question_id: str, payload: QuestionDecisionBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    decision = payload.decision.strip().casefold()
+    found = _evidence_call(lambda: _evidence().decide_question(
+        set_id, question_id, decision=decision, actor=_actor(admin)))
+    if found is None:
+        raise orena_http_error(404, "reading_question_not_found", "That question is not in this set.")
+    _audit(admin, f"admin.reading_comprehension_question_{decision}", entity_type="reading_comprehension_set",
+           entity_id=set_id, payload={"question_id": question_id})
+    return found
+
+
+@router.post("/comprehension-sets/{set_id}/status")
+def set_comprehension_status(
+    request: Request, response: Response, set_id: str, payload: ComprehensionStatusBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    status = payload.status.strip().casefold()
+    if status not in SET_STATUSES:
+        raise orena_http_error(422, "reading_invalid_status", "That is not a comprehension-set status.")
+    if status == "rejected" and not payload.reason.strip():
+        raise orena_http_error(422, "reading_reason_required", "A rejection keeps its reason - say why.")
+    found = _evidence_call(lambda: _evidence().transition(
+        set_id, status, actor=_actor(admin), reason=payload.reason.strip()))
+    if found is None:
+        raise orena_http_error(404, "reading_set_not_found", "That comprehension set does not exist.")
+    _audit(admin, f"admin.reading_comprehension_set_{status}", entity_type="reading_comprehension_set",
+           entity_id=set_id, payload={"status": status, "reason": payload.reason.strip()})
+    return found
+
+
+@router.post("/comprehension-sets/{set_id}/discard")
+def discard_comprehension_set(request: Request, response: Response, set_id: str) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    if not _evidence_call(lambda: _evidence().discard_set(set_id, actor=_actor(admin))):
+        raise orena_http_error(404, "reading_set_not_found", "That comprehension set does not exist.")
+    _audit(admin, "admin.reading_comprehension_set_discarded", entity_type="reading_comprehension_set",
+           entity_id=set_id)
+    return {"discarded": True, "id": set_id}
 
 
 @router.post("/articles/{article_id}/targets")

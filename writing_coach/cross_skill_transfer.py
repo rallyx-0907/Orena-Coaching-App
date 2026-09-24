@@ -37,22 +37,24 @@ def _writing(cue: Any, language: str) -> dict[str, Any] | None:
 
 
 def _reading(rows: Any, language: str) -> dict[str, Any] | None:
+    """The latest canonical Reading attempt (D-075): an answer sheet for an
+    approved set of a published article. The archived generated sessions are
+    never read here."""
     if not isinstance(rows, list):
         return None
     for item in rows:
         if not isinstance(item, dict) or not _language_ok(item, language):
             continue
-        session_id = item.get("id")
-        attempt = item.get("latest_attempt")
-        if not isinstance(session_id, int) or session_id <= 0 or not isinstance(attempt, dict):
+        attempt_id, article_id = item.get("id"), item.get("article_id")
+        if not isinstance(attempt_id, str) or not attempt_id or not isinstance(article_id, str) or not article_id:
             continue
-        correct, total = attempt.get("correct_count"), attempt.get("total")
+        correct, total = item.get("correct_count"), item.get("total")
         if not isinstance(correct, int) or isinstance(correct, bool) or not isinstance(total, int) or isinstance(total, bool) or total <= 0 or correct < 0 or correct > total:
             continue
         title = _text(item.get("title")) or _text(item.get("topic"))
         if not title:
             continue
-        return {"available": True, "state": "transfer", "source": "reading", "provenance": {"source": "reading", "record_id": session_id, "language": language, "attempt_id": attempt.get("id")}, "evidence": title, "action": {"kind": "reading", "session_id": session_id}}
+        return {"available": True, "state": "transfer", "source": "reading", "provenance": {"source": "reading", "record_id": article_id, "language": language, "attempt_id": attempt_id}, "evidence": title, "action": {"kind": "reading", "article_id": article_id}}
     return None
 
 
@@ -103,7 +105,7 @@ def select_cross_skill_cue(*, language: str, writing: Any = None, reading: Any =
 
 
 if __name__ == "__main__":
-    cue = select_cross_skill_cue(language="en", reading=[{"id": 2, "language": "en", "title": "Travel", "latest_attempt": {"correct_count": 3, "total": 4}}])
-    assert cue["source"] == "reading" and cue["action"]["session_id"] == 2
-    assert select_cross_skill_cue(language="zh", reading=[{"id": 2, "language": "en", "title": "Travel", "latest_attempt": {"correct_count": 3, "total": 4}}])["available"] is False
+    cue = select_cross_skill_cue(language="en", reading=[{"id": "attempt-2", "article_id": "article-2", "language": "en", "title": "Travel", "correct_count": 3, "total": 4}])
+    assert cue["source"] == "reading" and cue["action"]["article_id"] == "article-2"
+    assert select_cross_skill_cue(language="zh", reading=[{"id": "attempt-2", "article_id": "article-2", "language": "en", "title": "Travel", "correct_count": 3, "total": 4}])["available"] is False
     print("cross-skill transfer selftest: PASS")

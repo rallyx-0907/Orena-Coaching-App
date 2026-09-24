@@ -68,13 +68,18 @@ def test_new_navigation_is_independent_of_historical_skill_hierarchy() -> None:
 
 def test_reading_implementation_and_release_versions_remain_intact() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert (ROOT / "writing_coach/becoming_reading.py").is_file()
+    # One canonical Reading flow (D-075): the corpus, Admin-approved
+    # comprehension sets and canonical evidence. The generated-passage
+    # studio and its session routes are retired, not kept beside it.
+    assert not (ROOT / "writing_coach/becoming_reading.py").exists()
+    assert (ROOT / "writing_coach/reading_practice_api.py").is_file()
     assert (ROOT / "static/orena/ui/encounter.js").is_file()
+    assert "include_router(reading_practice_router)" in app
     for route in (
-        '@app.get("/api/reading/sessions"',
-        '@app.get("/api/reading/session/{session_id}"',
-        '@app.post("/api/reading/session"',
-        '@app.post("/api/reading/session/{session_id}/answer"',
+        '"/api/reading/sessions"',
+        '"/api/reading/session/{session_id}"',
+        '"/api/reading/session"',
+        '"/api/reading/session/{session_id}/answer"',
     ):
-        assert route in app
+        assert route not in app
     assert (ROOT / "VERSION").read_text(encoding="utf-8").strip() == "1.4.0"

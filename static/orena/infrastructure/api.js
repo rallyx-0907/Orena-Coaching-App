@@ -216,18 +216,17 @@ export const api={
   grammarReference:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/reference`),
   completeGrammar:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/complete`,{method:'POST'}),
   uncompleteGrammar:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/complete`,{method:'DELETE'}),
-  readingSessions:(limit=8)=>request(`/api/reading/sessions?limit=${encodeURIComponent(limit)}`),
-  readingSession:(id)=>request(`/api/reading/session/${encodeURIComponent(id)}`),
-  createReadingSession:(payload)=>request('/api/reading/session',{
+  // Canonical Reading (D-075): practice on the published corpus. The
+  // generated-passage session routes are retired.
+  readingPracticeNext:()=>request('/api/reading/practice/next'),
+  readingPracticeSet:(articleId)=>request(`/api/reading/practice/articles/${encodeURIComponent(articleId)}`),
+  // `operationId` names one logical submit and is reused by every retry of it.
+  submitReadingPractice:(setId,operationId,answers,selectionPolicyVersion=null)=>request('/api/reading/practice/attempts',{
     method:'POST',
     headers:JSON_HEADERS,
-    body:JSON.stringify(payload||{}),
+    body:JSON.stringify({set_id:setId,operation_id:operationId,answers,selection_policy_version:selectionPolicyVersion}),
   }),
-  submitReadingAnswers:(id,answers)=>request(`/api/reading/session/${encodeURIComponent(id)}/answer`,{
-    method:'POST',
-    headers:JSON_HEADERS,
-    body:JSON.stringify({answers}),
-  }),
+  readingEvidence:(limit=20)=>request(`/api/reading/practice/evidence?limit=${encodeURIComponent(limit)}`),
   importMedia:(payload)=>request('/api/media-learning/import',{
     method:'POST',
     headers:JSON_HEADERS,

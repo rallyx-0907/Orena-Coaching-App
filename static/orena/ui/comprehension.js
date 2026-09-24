@@ -18,7 +18,13 @@ import { openUnderstanding } from './understanding.js';
    with the words in the text that settle it. The API scores a whole set, so
    the answers are collected first and the same rail walks back through them
    with the results - a real score for real answers, never a per-question
-   verdict invented on the client. */
+   verdict invented on the client.
+
+   The questions are an Admin-approved set for a published corpus article
+   (D-075); the caller supplies `submit`, which saves the answer sheet as
+   canonical Reading evidence and returns, per question, whether it was right,
+   the correct option, the explanation in the learner's support language and
+   the words of the passage that settle it. */
 
 const fill = (template, values) =>
   String(template || '').replace(/\{(\w+)\}/g, (match, key) => (key in values ? String(values[key]) : match));
@@ -46,18 +52,19 @@ export function comprehensionSection(c, questions, latestAttempt) {
   </section>`;
 }
 
-/* Binds the check. `onEvidence` lets the encounter show the passage where an
-   answer lives, so a wrong answer sends the learner back to the text rather
-   than to a correction; `placeOfEvidence` tells it which paragraph that was,
-   when the encounter knows. */
+/* Binds the check. `submit(answers)` resolves to one result per question;
+   `onEvidence` lets the encounter show the passage where an answer lives, so a
+   wrong answer sends the learner back to the text rather than to a correction;
+   `placeOfEvidence` tells it which paragraph that was, when the encounter
+   knows. */
 export function bindComprehension(
   root,
   ctx,
-  { sessionId, questions, onEvidence, placeOfEvidence = null, origin = null },
+  { submit: submitAnswers, questions, onEvidence, placeOfEvidence = null, origin = null },
 ) {
   const section = root.querySelector('[data-comprehension]');
-  if (!section || !questions?.length) return;
-  const { c, api, support, alive } = ctx;
+  if (!section || !questions?.length || typeof submitAnswers !== 'function') return;
+  const { c, support, alive } = ctx;
   const invite = section.querySelector('[data-quiz-invite]');
   const step = section.querySelector('[data-quiz-step]');
   const state = section.querySelector('[data-comprehension-status]');
@@ -95,7 +102,8 @@ export function bindComprehension(
 
   const evidencePanel = (found) => {
     if (!found) return '';
-    const explanation = support === 'vi' && found.explanation_vi ? found.explanation_vi : '';
+    // Written in the learner's support language: a set is served only in it.
+    const explanation = found.explanation || '';
     const fragment = found.evidence_fragment || '';
     if (!explanation && !fragment) return '';
     const place = fragment && placeOfEvidence ? placeOfEvidence(fragment) : null;
@@ -105,7 +113,7 @@ export function bindComprehension(
         ? c.quizFromText
         : '';
     return `<div class="quiz-answer">${icon('info', { size: 20 })}<div>${
-      explanation ? `<p lang="vi">${esc(explanation)}</p>` : ''
+      explanation ? `<p lang="${esc(support || '')}">${esc(explanation)}</p>` : ''
     }${fragment ? `<blockquote>${esc(fragment)}</blockquote>` : ''}${
       where ? `<p class="ds-label quiz-answer__where">${esc(where)}</p>` : ''
     }${fragment ? `<button type="button" class="quiet" data-quiz-look="${esc(fragment)}">${esc(c.lookCloser)} ↗</button>` : ''}</div></div>`;
@@ -174,11 +182,11 @@ export function bindComprehension(
     state.textContent = c.saving;
     paintStep();
     try {
-      const scored = await ctx.mutate(() => api.submitReadingAnswers(sessionId, answers));
+      const scored = await ctx.mutate(() => submitAnswers(answers));
       if (!alive()) return;
-      if (!scored.valid || !Array.isArray(scored.results))
+      if (!Array.isArray(scored) || scored.length !== total)
         throw Error('Reading check unavailable');
-      results = scored.results;
+      results = scored;
       state.textContent = '';
       index = 0;
       paintStep();

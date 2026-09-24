@@ -173,7 +173,7 @@ assert.doesNotMatch(styles, /background:\s*#(?:[0-9a-f]{3}|[0-9a-f]{6})\b/i,
 
 /* The room reads its own data, and hands its bindings back when the route changes. */
 assert.match(world, /api\.listeningLibrary\(language\)/);
-assert.match(world, /api\.readingSessions\(12\)/);
+assert.doesNotMatch(world, /api\.readingSessions?\(/, 'the retired generated-reading sessions are not read (D-075)');
 assert.match(world, /api\.dailyVocabularyFeed\(language\)/);
 assert.match(world, /api\.vocabularyLibraryCollections\(language\)/, 'the Vocabulary rail is the learner\'s own sets');
 /* Home offers a review, so it asks how much is due - a counted number. It

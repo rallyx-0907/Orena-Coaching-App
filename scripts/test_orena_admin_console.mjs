@@ -79,7 +79,7 @@ for (const stage of new Set([...stages, 'source', 'persistence', 'validation']))
   assert.ok(en[`stage_${stage}`] && zh[`stage_${stage}`], `import stage "${stage}" is named`);
 }
 const measures = [...read('writing_coach/persistence/admin_repository.py').matchAll(/\("([a-z_]+)", [A-Z]\w+, [A-Z]\w+\.language_code/g)].map((match) => match[1]);
-for (const measure of new Set([...measures, 'reading_checks'])) assert.ok(en[`measure_${measure}`] && zh[`measure_${measure}`], `measure "${measure}" is named`);
+for (const measure of new Set(measures)) assert.ok(en[`measure_${measure}`] && zh[`measure_${measure}`], `measure "${measure}" is named`);
 const services = [...read('writing_coach/admin_console_api.py').matchAll(/"([a-z_]+)": (?:engine|attached)\(/g)].map((match) => match[1]);
 for (const service of new Set([...services, 'transcript_fallback'])) assert.ok(en[`service_${service}`] && zh[`service_${service}`], `service "${service}" is named`);
 const statuses = [

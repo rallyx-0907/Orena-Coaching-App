@@ -12,11 +12,8 @@ from writing_coach.becoming_linguistics import (
     configure_becoming_linguistics,
     linguistic_annotations_for_essay,
 )
-from writing_coach.becoming_reading import (
-    ReadingGenerateIn,
-    configure_becoming_reading,
-    create_reading_session,
-)
+from writing_coach.persistence.reading_evidence_repository import ReadingEvidenceError
+from writing_coach.reading_comprehension import process_article
 from writing_coach.ai.base import (
     AICapabilityError,
     AICapabilityConfigInvalid,
@@ -170,14 +167,6 @@ class SpecializedRepository:
     def select_library_terms(self, limit: int) -> list[str]:
         return []
 
-    def create_reading_session_record(self, record: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id": 1,
-            **record,
-            "questions_json": record["questions"],
-            "recycled_words_json": [],
-        }
-
     def get_linguistic_essay(self, essay_id: int) -> dict[str, Any] | None:
         if essay_id != 1:
             return None
@@ -191,20 +180,27 @@ class SpecializedRepository:
         self.module_data = value
 
 
-def test_reading_injected_generator_binds_the_shared_capability_key() -> None:
+ARTICLES = {
+    "en": {"title": "Rain", "body": "The river rose overnight.", "language": "en", "effective_level": "B1"},
+    "zh": {"title": "雨", "body": "河水一夜之间涨了。", "language": "zh", "effective_level": "HSK3"},
+}
+
+
+def test_reading_injected_processor_binds_the_shared_capability_key() -> None:
     calls: list[dict[str, Any]] = []
 
     def generate(**kwargs: Any) -> dict[str, Any]:
         calls.append(kwargs)
         return {"title": "invalid"}
 
-    configure_becoming_reading(SpecializedRepository(), generate)
-    session = create_reading_session(
-        ReadingGenerateIn(), language_code="en", target_level="B1"
-    )
+    # Reading's AI writes questions about a published passage; nothing it
+    # returns can become a passage, and an unusable answer is no set at all -
+    # never a built-in fallback (D-075).
+    with pytest.raises(ReadingEvidenceError) as refused:
+        process_article(ARTICLES["en"], support_code="vi", generate=generate)
 
     assert calls[0]["capability_key"] == "reading_generator"
-    assert session["generation_mode"] == "built-in"
+    assert refused.value.code == "reading_processor_ungrounded"
 
 
 @pytest.mark.parametrize(
@@ -222,10 +218,11 @@ def test_reading_capability_errors_do_not_use_builtin_fallback(
     def generate(**kwargs: Any) -> None:
         raise error("capability configuration failure")
 
-    configure_becoming_reading(SpecializedRepository(), generate)
-
-    with pytest.raises(error):
-        create_reading_session(ReadingGenerateIn(), language_code="zh", target_level="HSK3")
+    with pytest.raises(ReadingEvidenceError) as refused:
+        process_article(ARTICLES["zh"], support_code="vi", generate=generate)
+    assert refused.value.code == "reading_processor_unavailable"
+    assert "capability configuration failure" in str(refused.value)
+    assert isinstance(refused.value.__cause__, error)
 
 
 @pytest.mark.parametrize("language_code", ["en", "zh"])
@@ -252,18 +249,18 @@ def test_linguistics_annotations_quote_the_learner_text_exactly() -> None:
 
 
 @pytest.mark.parametrize(
-    ("language_code", "target_level"), [("en", "B1"), ("zh", "HSK3")]
+    "language_code", ["en", "zh"]
 )
 def test_reading_uses_capability_runtime_without_legacy_selection(
-    monkeypatch: pytest.MonkeyPatch, language_code: str, target_level: str
+    monkeypatch: pytest.MonkeyPatch, language_code: str
 ) -> None:
     monkeypatch.setenv("AI_RUNTIME_MODE", "capability")
     provider = Provider()
     install(monkeypatch, Repository(config()), provider)
     monkeypatch.setattr(platform, "active_selection", lambda: pytest.fail("legacy routing used"))
-    configure_becoming_reading(SpecializedRepository(), platform.generate_structured)
-
-    create_reading_session(ReadingGenerateIn(), language_code=language_code, target_level=target_level)
+    with pytest.raises(ReadingEvidenceError):
+        # The stub provider answers `{"ok": true}`: no questions, so no set.
+        process_article(ARTICLES[language_code], support_code="vi", generate=platform.generate_structured)
 
     assert provider.calls[0]["model"] == "capability-model"
 
@@ -290,10 +287,9 @@ def test_reading_capability_runtime_fails_closed(
     provider = Provider()
     install(monkeypatch, Repository(runtime_config), provider)
     monkeypatch.setattr(platform, "active_selection", lambda: pytest.fail("legacy routing used"))
-    configure_becoming_reading(SpecializedRepository(), platform.generate_structured)
-
-    with pytest.raises((AICapabilityNotConfigured, AICapabilityDisabled)):
-        create_reading_session(ReadingGenerateIn(), language_code="en", target_level="B1")
+    with pytest.raises(ReadingEvidenceError) as refused:
+        process_article(ARTICLES["en"], support_code="vi", generate=platform.generate_structured)
+    assert isinstance(refused.value.__cause__, (AICapabilityNotConfigured, AICapabilityDisabled))
     assert provider.calls == []
 
 

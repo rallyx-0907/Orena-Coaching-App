@@ -17,7 +17,6 @@ from writing_coach.persistence.models import (
     Essay,
     EssayRevision,
     ReadingAttempt,
-    ReadingSession,
     ListeningProgress,
     ShadowingProgress,
     SavedWord,
@@ -158,11 +157,6 @@ class SpecializedLearningRepository(Protocol):
     def update_library_review(self, word: str, values: dict[str, Any]) -> dict[str, Any] | None: ...
     def delete_library_record(self, word: str) -> bool: ...
     def select_library_terms(self, limit: int = 3) -> list[str]: ...
-    def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
-    def get_reading_session_record(self, session_id: int) -> dict[str, Any] | None: ...
-    def latest_reading_attempt(self, session_id: int) -> dict[str, Any] | None: ...
-    def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]: ...
-    def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None: ...
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def list_listening_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
     def list_recent_listening_progress_records(self, limit: int = 20) -> list[dict[str, Any]]: ...
@@ -290,44 +284,10 @@ class SQLiteSpecializedLearningRepository:
                 " ON vocabulary_learning(review_stage)"
             )
 
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS reading_sessions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    created_at TEXT NOT NULL,
-                    language_code TEXT NOT NULL,
-                    target_level TEXT NOT NULL,
-                    topic TEXT NOT NULL,
-                    learner_goal TEXT NOT NULL DEFAULT '',
-                    title TEXT NOT NULL,
-                    passage TEXT NOT NULL,
-                    questions_json TEXT NOT NULL,
-                    recycled_words_json TEXT NOT NULL DEFAULT '[]',
-                    generation_mode TEXT NOT NULL DEFAULT 'practice'
-                )
-                """
-            )
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS reading_attempts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id INTEGER NOT NULL,
-                    created_at TEXT NOT NULL,
-                    answers_json TEXT NOT NULL,
-                    correct_count INTEGER NOT NULL,
-                    total INTEGER NOT NULL,
-                    FOREIGN KEY(session_id) REFERENCES reading_sessions(id)
-                )
-                """
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reading_sessions_created "
-                "ON reading_sessions(created_at DESC)"
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reading_attempts_session "
-                "ON reading_attempts(session_id, id DESC)"
-            )
+            # No reading tables: the generated-passage flow is retired (D-075),
+            # and canonical Reading evidence lives only in the PostgreSQL
+            # runtime. A local database that still has the old tables keeps
+            # them untouched; nothing here reads or writes them.
             conn.commit()
 
     @staticmethod
@@ -746,52 +706,6 @@ class SQLiteSpecializedLearningRepository:
                 ).fetchall()
         return [str(r["word"]) for r in rows if str(r["word"] or "").strip()]
 
-    def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]:
-        with self._db() as conn:
-            cur=conn.execute(
-                """INSERT INTO reading_sessions(created_at,language_code,target_level,topic,learner_goal,title,passage,questions_json,recycled_words_json,generation_mode)
-                   VALUES(?,?,?,?,?,?,?,?,?,?)""",
-                (values["created_at"],values["language_code"],values["target_level"],values["topic"],values["learner_goal"],values["title"],values["passage"],
-                 json.dumps(values["questions"],ensure_ascii=False),json.dumps(values["recycled_words"],ensure_ascii=False),values["generation_mode"]),
-            )
-            sid=int(cur.lastrowid); conn.commit(); row=conn.execute("SELECT * FROM reading_sessions WHERE id=?",(sid,)).fetchone()
-        return dict(row)
-
-    def get_reading_session_record(self, session_id: int) -> dict[str, Any] | None:
-        with self._db() as conn: row=conn.execute("SELECT * FROM reading_sessions WHERE id=?",(session_id,)).fetchone()
-        return self._dict(row)
-
-    def latest_reading_attempt(self, session_id: int) -> dict[str, Any] | None:
-        with self._db() as conn:
-            row=conn.execute("SELECT correct_count,total,created_at FROM reading_attempts WHERE session_id=? ORDER BY id DESC LIMIT 1",(session_id,)).fetchone()
-        return self._dict(row)
-
-    def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]:
-        with self._db() as conn:
-            if not self._has_table(conn, "reading_sessions"):
-                return []
-            if self._has_table(conn, "reading_attempts"):
-                rows = conn.execute(
-                    """SELECT s.*,
-                       (SELECT correct_count FROM reading_attempts a WHERE a.session_id=s.id ORDER BY a.id DESC LIMIT 1) AS last_correct,
-                       (SELECT total FROM reading_attempts a WHERE a.session_id=s.id ORDER BY a.id DESC LIMIT 1) AS last_total
-                       FROM reading_sessions s ORDER BY s.id DESC LIMIT ?""",
-                    (limit,),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    """SELECT s.*, NULL AS last_correct, NULL AS last_total
-                       FROM reading_sessions s ORDER BY s.id DESC LIMIT ?""",
-                    (limit,),
-                ).fetchall()
-        return [dict(r) for r in rows]
-
-    def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None:
-        with self._db() as conn:
-            conn.execute("INSERT INTO reading_attempts(session_id,created_at,answers_json,correct_count,total) VALUES(?,?,?,?,?)",
-                         (session_id,values["created_at"],json.dumps(values["answers"]),values["correct_count"],values["total"]))
-            conn.commit()
-
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Durable Active Listening progress requires the PostgreSQL runtime.")
 
@@ -1112,52 +1026,6 @@ class PostgresSpecializedLearningRepository:
         page = self.list_library_page(limit=max(1, int(limit)), order="due")
         return [str(row["word"]) for row in page["rows"] if str(row["word"] or "").strip()]
 
-    def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]:
-        uid,lang=self._scope()
-        with Session(self.engine) as s, s.begin():
-            max_id=s.scalar(select(func.max(ReadingSession.legacy_id)).where(ReadingSession.user_id==uid,ReadingSession.language_code==lang))
-            legacy=int(max_id or 0)+1; sid=stable_uuid("reading-session",self._key(),lang,legacy)
-            r=ReadingSession(id=sid,user_id=uid,language_code=lang,legacy_id=legacy,created_at=self._dt(values["created_at"]),target_level=values["target_level"],
-                             topic=values["topic"],learner_goal=values["learner_goal"],title=values["title"],passage=values["passage"],questions=values["questions"],
-                             recycled_words=values["recycled_words"],generation_mode=values["generation_mode"]); s.add(r); s.flush(); return self._reading_payload(r)
-
-    def _reading_payload(self,r:ReadingSession)->dict[str,Any]:
-        return {"id":r.legacy_id,"created_at":self._iso(r.created_at),"language_code":r.language_code,"target_level":r.target_level,"topic":r.topic,
-                "learner_goal":r.learner_goal,"title":r.title,"passage":r.passage,"questions_json":json.dumps(r.questions,ensure_ascii=False),
-                "recycled_words_json":json.dumps(r.recycled_words,ensure_ascii=False),"generation_mode":r.generation_mode}
-
-    def _reading(self,s:Session,session_id:int)->ReadingSession|None:
-        uid,lang=self._scope(); return s.scalar(select(ReadingSession).where(ReadingSession.user_id==uid,ReadingSession.language_code==lang,ReadingSession.legacy_id==session_id))
-
-    def get_reading_session_record(self, session_id: int) -> dict[str, Any] | None:
-        with Session(self.engine) as s:
-            r=self._reading(s,session_id); return self._reading_payload(r) if r else None
-
-    def latest_reading_attempt(self, session_id: int) -> dict[str, Any] | None:
-        with Session(self.engine) as s:
-            r=self._reading(s,session_id)
-            if r is None: return None
-            a=s.scalar(select(ReadingAttempt).where(ReadingAttempt.session_id==r.id).order_by(ReadingAttempt.legacy_id.desc()).limit(1))
-            return None if a is None else {"correct_count":a.correct_count,"total":a.total,"created_at":self._iso(a.created_at)}
-
-    def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]:
-        uid,lang=self._scope()
-        with Session(self.engine) as s:
-            rows=s.scalars(select(ReadingSession).where(ReadingSession.user_id==uid,ReadingSession.language_code==lang).order_by(ReadingSession.legacy_id.desc()).limit(limit)).all()
-            out=[]
-            for r in rows:
-                item=self._reading_payload(r); a=s.scalar(select(ReadingAttempt).where(ReadingAttempt.session_id==r.id).order_by(ReadingAttempt.legacy_id.desc()).limit(1))
-                item["last_correct"]=a.correct_count if a else None; item["last_total"]=a.total if a else None; out.append(item)
-            return out
-
-    def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None:
-        with Session(self.engine) as s, s.begin():
-            r=self._reading(s,session_id)
-            if r is None: raise ValueError("Reading session not found")
-            max_id=s.scalar(select(func.max(ReadingAttempt.legacy_id))); legacy=int(max_id or 0)+1
-            s.add(ReadingAttempt(id=stable_uuid("reading-attempt",self._key(),self._language_provider().casefold(),legacy),session_id=r.id,legacy_id=legacy,
-                                 created_at=self._dt(values["created_at"]),answers=list(values["answers"]),correct_count=int(values["correct_count"]),total=int(values["total"])))
-
     def _listening_progress_payload(self, row: Any) -> dict[str, Any]:
         return {
             "id": str(row.id),
@@ -1379,14 +1247,14 @@ class PostgresSpecializedLearningRepository:
             for essay_id, occurred, uid in s.execute(select(Essay.id, Essay.created_at, Essay.user_id).where(Essay.created_at >= since)).all():
                 events.append({"skill": "writing", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
                 events.extend({"skill": "writing", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": stage, "funnel_key": str(essay_id), "funnel_only": True} for stage in ("attempted", "completed"))
-            for session_id, occurred, uid in s.execute(select(ReadingSession.id, ReadingSession.created_at, ReadingSession.user_id).where(ReadingSession.created_at >= since)).all():
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "started", "funnel_key": str(session_id), "funnel_only": True})
-            for session_id, occurred, uid, total in s.execute(select(ReadingAttempt.session_id, ReadingAttempt.created_at, ReadingSession.user_id, ReadingAttempt.total).join(ReadingSession, ReadingAttempt.session_id == ReadingSession.id).where(ReadingAttempt.created_at >= since)).all():
-                completed = isinstance(total, int) and total > 0
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": completed})
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "attempted", "funnel_key": str(session_id), "funnel_only": True})
-                if completed:
-                    events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "completed", "funnel_key": str(session_id), "funnel_only": True})
+            # Reading reads the canonical evidence only (D-075): one submitted
+            # attempt per row, so it is attempted and completed at once. There
+            # is no "started" record - a row exists only once submitted - and
+            # the funnel says so rather than inventing one.
+            for attempt_id, occurred, uid in s.execute(select(ReadingAttempt.id, ReadingAttempt.created_at, ReadingAttempt.user_id).where(ReadingAttempt.created_at >= since)).all():
+                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
+                for stage in ("attempted", "completed"):
+                    events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": stage, "funnel_key": str(attempt_id), "funnel_only": True})
             for asset_id, segment_id, occurred, uid, revealed, checked in s.execute(select(ListeningProgress.asset_id, ListeningProgress.segment_id, ListeningProgress.updated_at, ListeningProgress.user_id, ListeningProgress.revealed, ListeningProgress.checked_attempt_count).where(ListeningProgress.updated_at >= since)).all():
                 completed = bool(revealed or (checked or 0) > 0)
                 events.append({"skill": "listening", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": completed})

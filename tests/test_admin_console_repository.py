@@ -12,14 +12,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from writing_coach.persistence.admin_repository import AdminConsoleRepository
+from writing_coach.persistence.reading_content_repository import ReadingContentRepository
+from writing_coach.persistence.reading_evidence_repository import body_sha256
 from writing_coach.persistence.models import (
     AuditLog,
     Base,
     Essay,
     GrammarProgress,
     ListeningProgress,
+    ReadingArticle,
     ReadingAttempt,
-    ReadingSession,
+    ReadingComprehensionQuestion,
+    ReadingComprehensionSet,
+    ReadingSourceItem,
     SavedWord,
     ShadowingProgress,
     SpeakingAttempt,
@@ -79,13 +84,13 @@ def _seed_people(engine):
             UserLanguageProfile(id=uuid.uuid4(), user_id=_uid("bo"), language_code="zh", native_language="en",
                                 created_at=NOW - timedelta(days=3), updated_at=NOW - timedelta(days=3)),
         ])
+    _seed_reading_attempt(engine, _uid("bo"), language="zh", created_at=NOW - timedelta(days=1))
+    with Session(engine) as session, session.begin():
         session.add_all([
             Essay(id=uuid.uuid4(), user_id=_uid("ana"), language_code="en", legacy_id=1,
                   created_at=NOW - timedelta(days=40), text="private essay text that must never leave"),
             Essay(id=uuid.uuid4(), user_id=_uid("ana"), language_code="en", legacy_id=2,
                   created_at=NOW - timedelta(days=2), text="another private essay"),
-            ReadingSession(id=_uid("rs1"), user_id=_uid("bo"), language_code="zh", legacy_id=1,
-                           created_at=NOW - timedelta(days=2), passage="private passage"),
             ListeningProgress(id=uuid.uuid4(), user_id=_uid("bo"), language_code="zh", asset_id="a1",
                               segment_id="s1", updated_at=NOW - timedelta(days=1)),
             SavedWord(id=uuid.uuid4(), user_id=_uid("ana"), language_code="zh", word="学习", normalized_word="学习",
@@ -93,14 +98,57 @@ def _seed_people(engine):
                       last_reviewed_at=NOW - timedelta(hours=3)),
         ])
     with Session(engine) as session, session.begin():
-        session.add(ReadingAttempt(id=uuid.uuid4(), session_id=_uid("rs1"), legacy_id=1,
-                                   created_at=NOW - timedelta(days=1), total=3, correct_count=2))
         session.add(SpeakingAttempt(id=uuid.uuid4(), user_id=_uid("bo"), language_code="zh", take_id="t1",
                                     reference_text="private", transcript_text="private", created_at=NOW - timedelta(hours=5)))
         session.add(ShadowingProgress(id=uuid.uuid4(), user_id=_uid("ana"), language_code="en", asset_id="a2",
                                       segment_id="s2", updated_at=NOW - timedelta(days=10)))
         session.add(GrammarProgress(id=uuid.uuid4(), user_id=_uid("ana"), language_code="en", lesson_id="g1",
                                     completed_at=NOW - timedelta(days=20)))
+
+
+def _seed_reading_attempt(engine, user_id, *, language, created_at):
+    """One canonical Reading attempt: a published article, an approved set, the
+    learner's answers - built through the set's own review transitions, which
+    the schema enforces."""
+    content = ReadingContentRepository(engine)
+    content.ensure_built_in_sources()
+    body = "private passage text"
+    item_id, article_id, set_id, question_id = (uuid.uuid4() for _ in range(4))
+    moment = created_at - timedelta(hours=1)
+    with Session(engine) as session, session.begin():
+        session.add(ReadingSourceItem(
+            id=item_id, source_id=uuid.UUID(content.built_in_source_id("manual")), source_native_id="",
+            canonical_url="", original_title="T", original_author="", original_language=language,
+            original_content=body, content_hash=body_sha256(body), metadata_json={}, rights_snapshot_json={},
+            revision=1, fetched_at=moment, created_at=moment))
+    with Session(engine) as session, session.begin():
+        session.add(ReadingArticle(
+            id=article_id, source_item_id=item_id, title="T", body=body, excerpt="", language=language,
+            topic="", subtopic="", estimated_level="B1", estimated_level_confidence=0.5, effective_level="B1",
+            word_count=3, reading_time_seconds=10, is_adapted=False, adaptation_json={}, analysis_json={},
+            status="published", rejection_reason="", content_revision=1, created_at=moment, updated_at=moment,
+            published_at=moment))
+    with Session(engine) as session, session.begin():
+        session.add(ReadingComprehensionSet(
+            id=set_id, article_id=article_id, language_code=language, support_language="en",
+            article_body_sha256=body_sha256(body), status="draft", generator_version="test/1", model="",
+            validation_json={}, reviewed_by="", review_reason="", created_at=moment, updated_at=moment))
+    with Session(engine) as session, session.begin():
+        session.add(ReadingComprehensionQuestion(
+            id=question_id, set_id=set_id, rank=0, question_type="main_idea", prompt="private question",
+            options_json=["a", "b"], correct_index=0, explanation="x", machine_suggested=True,
+            admin_approved=True, admin_rejected=False, created_at=moment, updated_at=moment))
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE reading_comprehension_sets SET status = 'needs_review' WHERE id = :i"),
+                           {"i": set_id.hex})
+        connection.execute(text("UPDATE reading_comprehension_sets SET status = 'approved', reviewed_by = 'admin',"
+                                " reviewed_at = :t WHERE id = :i"), {"i": set_id.hex, "t": moment})
+    with Session(engine) as session, session.begin():
+        session.add(ReadingAttempt(
+            id=uuid.uuid4(), user_id=user_id, language_code=language, set_id=set_id, ordinal=1,
+            operation_id="op-1", request_digest="a" * 64, evaluator_version="reading-eval/1",
+            passage_level="B1", answers=[{"question_id": str(question_id), "selected_index": 0, "correct": True}],
+            correct_count=1, total=1, created_at=created_at))
 
 
 def test_account_totals_and_registrations_by_day(engine):
@@ -128,7 +176,7 @@ def test_activity_rows_group_every_domain_by_learner_day_domain_and_language(eng
         (str(_uid("ana")), "writing", "en", 1),
         (str(_uid("ana")), "vocabulary", "zh", 1),
         (str(_uid("ana")), "vocabulary", "zh", 1),
-        (str(_uid("bo")), "reading", "zh", 1),
+        # One canonical Reading attempt is one Reading event.
         (str(_uid("bo")), "reading", "zh", 1),
         (str(_uid("bo")), "listening", "zh", 1),
         (str(_uid("bo")), "speaking", "zh", 1),
@@ -187,6 +235,10 @@ def test_account_detail_reports_counts_by_domain_and_language_without_content(en
     assert counts[("shadowing_segments", "en")] == 1
     assert counts[("grammar_lessons", "en")] == 1
     assert "private" not in repr(detail)
+    reader = AdminConsoleRepository(engine).account_detail(str(_uid("bo")), now=NOW)
+    reading = {(row["measure"], row["language"]): row["count"] for row in reader["activity"]}
+    assert reading[("reading_attempts", "zh")] == 1
+    assert "private" not in repr(reader)
     assert AdminConsoleRepository(engine).account_detail(str(uuid.uuid4()), now=NOW) is None
     assert AdminConsoleRepository(engine).account_detail("not-a-uuid", now=NOW) is None
 

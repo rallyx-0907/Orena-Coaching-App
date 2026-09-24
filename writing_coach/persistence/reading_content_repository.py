@@ -32,7 +32,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -40,6 +40,7 @@ from typing import Any
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
+from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -69,7 +70,11 @@ LEARNER_VISIBLE_STATUS = "published"
 # body and the approved targets the detail adds. `subtopic`, the analysis and
 # the review trail are admin-only, so changing one of those does not make every
 # cached copy refetch.
-LEARNER_VISIBLE_FIELDS = ("title", "body", "excerpt", "topic", "reviewed_level")
+LEARNER_VISIBLE_FIELDS = ("title", "body", "excerpt", "topic", "reviewed_level", "content_kind")
+# What the learner is reading - the learner-facing content type (D-076). Not a
+# source's feed mechanism (`reading_sources.source_type`) and not an editorial
+# category of the publisher, which stays deferred.
+CONTENT_KINDS = ("article", "news")
 QUEUE_STATUSES = ("draft", "processing", "needs_review", "ready")
 
 
@@ -246,6 +251,7 @@ def _article(row: Any) -> dict[str, Any]:
         "word_count": row.word_count,
         "reading_time_seconds": row.reading_time_seconds,
         "is_adapted": bool(row.is_adapted),
+        "content_kind": row.content_kind,
         "adaptation": dict(row.adaptation_json or {}),
         "analysis": dict(row.analysis_json or {}),
         "status": row.status,
@@ -741,6 +747,7 @@ class ReadingContentRepository:
         topic: str | None = None,
         subtopic: str | None = None,
         reviewed_level: str | None = "",
+        content_kind: str | None = None,
         reason: str = "",
         now: datetime | None = None,
     ) -> dict[str, Any] | None:
@@ -762,6 +769,7 @@ class ReadingContentRepository:
             ("excerpt", excerpt),
             ("topic", topic),
             ("subtopic", subtopic),
+            ("content_kind", content_kind),
         ):
             if value is not None and value != current[field]:
                 values[field] = value
@@ -781,11 +789,28 @@ class ReadingContentRepository:
         if set(LEARNER_VISIBLE_FIELDS) & set(changes):
             values["content_revision"] = current["content_revision"] + 1
         with self.engine.begin() as connection:
+            # The article row first, `FOR UPDATE`, and its body read again
+            # inside this transaction: the same lock a comprehension set's
+            # approval and a learner's submit take, so a body edit and either
+            # of them serialize instead of racing (canonical Reading, §5.1/§6).
+            locked = select(ReadingArticle.body).where(ReadingArticle.id == _uuid(article_id))
+            if connection.dialect.name == "postgresql":
+                locked = locked.with_for_update()
+            stored_body = connection.execute(locked).scalar_one()
+            if "body" in values and values["body"] == stored_body:
+                values.pop("body")
+                changes.pop("body", None)
             connection.execute(
                 update(ReadingArticle)
                 .where(ReadingArticle.id == _uuid(article_id))
                 .values(**values)
             )
+            if "body" in values:
+                # Every approved comprehension set whose anchor no longer
+                # matches becomes `stale`, in this same transaction.
+                changes["stale_comprehension_sets"] = stale_sets_for_body(
+                    connection, _uuid(article_id), values["body"], actor=actor, now=moment
+                )
             self._record_event(
                 connection,
                 article_id=_uuid(article_id),
@@ -804,9 +829,14 @@ class ReadingContentRepository:
         *,
         actor: str,
         reason: str = "",
+        warnings: Sequence[Mapping[str, str]] = (),
         now: datetime | None = None,
     ) -> dict[str, Any] | None:
         """Move an article through its lifecycle, recording who and why.
+
+        `warnings` are the rights advice that was showing when an administrator
+        published anyway; they are recorded beside the decision, so an override
+        is never separated from what it overrode (D-075, D-076).
 
         Publication is the only transition that makes anything learner-visible,
         and it is always an admin's act: nothing in the pipeline calls this.
@@ -835,7 +865,11 @@ class ReadingContentRepository:
                 actor=actor,
                 action=status,
                 reason=reason,
-                changes={"status": {"from": current["status"], "to": status}},
+                changes={
+                    "status": {"from": current["status"], "to": status},
+                    **({"warnings": [dict(item) for item in warnings],
+                        "published_over_warnings": True} if warnings else {}),
+                },
                 now=moment,
             )
         return self.get_article(article_id)

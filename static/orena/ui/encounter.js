@@ -25,7 +25,7 @@ import {
 } from '../product/evidence.js';
 import { comprehensionSection, bindComprehension } from './comprehension.js';
 import { contentFor } from '../content/texts.js';
-import { readingText, readingSessionId, readable } from '../content/reading.js';
+import { readable } from '../content/reading.js';
 import { preparedMeaning } from '../content/language-notes.js';
 import {
   mediaPlayer,
@@ -179,7 +179,7 @@ function textEncounter(root, ctx, item, book = null) {
       }),
   );
   bindComprehension(root, ctx, {
-    sessionId: readingSessionId(item.id),
+    submit: item.practice?.submit,
     questions: item.questions,
     onEvidence: (fragment) => reader.showEvidence(fragment),
     /* Which paragraph settles the question, counted in the text the learner
@@ -229,20 +229,28 @@ function waitingMedia(root, ctx, payload) {
   root.querySelector('[data-retry]').onclick = () => window.location.reload();
   return () => disconnectMediaPlayer(playerRoot);
 }
+/* One answer sheet for one approved set. The operation id names the logical
+   submit, so a retry after a lost response replays the attempt the server
+   already saved rather than recording a second one; it is minted once per
+   sheet and reused by every try. The answer key comes back with the saved
+   attempt, never before it. */
+function practiceSubmit(api, served) {
+  let operationId = null;
+  return async (answers) => {
+    operationId ||= globalThis.crypto?.randomUUID?.() || `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const picked = {};
+    served.questions.forEach((question, position) => {
+      picked[question.id] = answers[position];
+    });
+    const saved = await api.submitReadingPractice(served.id, operationId, picked, served.selection_policy_version || null);
+    return saved?.results;
+  };
+}
 export async function renderEncounter(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
   const id = location.id;
   if (id.startsWith('published:')) {
     const item = publishedReading(id, language);
-    if (!item) throw Error(c.unavailable);
-    return textEncounter(root, ctx, item);
-  }
-  if (id.startsWith('reading:')) {
-    const sessionId = readingSessionId(id);
-    if (!sessionId) throw Error(c.unavailable);
-    const payload = await api.readingSession(sessionId);
-    const item = readingText(payload.found ? payload.session : null, language);
-    if (!alive()) return;
     if (!item) throw Error(c.unavailable);
     return textEncounter(root, ctx, item);
   }
@@ -290,7 +298,16 @@ export async function renderEncounter(root, ctx) {
        in. The server answers with the text, the targets an admin approved and
        the attribution its rights require; nothing about review or ingestion
        crosses this boundary, so there is nothing here to hide. */
-    const article = await api.readingArticle(id.slice('article:'.length));
+    const articleId = id.slice('article:'.length);
+    /* Its comprehension check is the set an Admin approved for it (D-075).
+       No set, or no approved one in the learner's support language, is Free
+       Reading - the text alone, which is a complete thing to do. */
+    const [article, practice] = await Promise.all([
+      api.readingArticle(articleId),
+      api.readingPracticeSet(articleId).catch(() => null),
+    ]);
+    if (!alive()) return;
+    const served = practice?.submit_enabled ? practice.set : null;
     const item = readable({
       id,
       title: article.title,
@@ -309,8 +326,14 @@ export async function renderEncounter(root, ctx) {
             provenance_url: article.attribution.source_url || '',
           }
         : undefined,
+      questions: (served?.questions || []).map((question) => ({
+        id: question.id,
+        question: question.prompt,
+        options: question.options,
+      })),
     });
     if (!item) throw Error(c.unavailable);
+    if (served && item.questions?.length) item.practice = { submit: practiceSubmit(api, served) };
     return textEncounter(root, ctx, item);
   }
   if (id.startsWith('story:') || id.startsWith('text:')) {

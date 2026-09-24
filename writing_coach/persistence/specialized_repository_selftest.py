@@ -42,14 +42,12 @@ def _initialize_compatibility_cases() -> None:
         with core.connect() as conn:
             assert {'native_language', 'theme_preset'} <= _columns(conn, 'learner_profile')
             assert _columns(conn, 'vocabulary_learning')
-            assert _columns(conn, 'reading_sessions')
-            assert _columns(conn, 'reading_attempts')
+            # The generated-reading tables are no longer created (D-075).
+            assert not _columns(conn, 'reading_sessions')
             assert _defaults(conn, 'learner_profile')['native_language'] == 'vi'
             assert _defaults(conn, 'learner_profile')['theme_preset'] == 'editorial'
             assert _defaults(conn, 'vocabulary_learning')['source_kind'] == 'manual'
             assert _defaults(conn, 'vocabulary_learning')['review_stage'] == '0'
-            assert 'idx_reading_sessions_created' in _indexes(conn, 'reading_sessions')
-            assert 'idx_reading_attempts_session' in _indexes(conn, 'reading_attempts')
             conn.execute("INSERT INTO vocabulary_learning VALUES('existing',NULL,'','manual','',3,4,0,'','2026-08-01T00:00:00+00:00','2026-08-01T00:00:00+00:00')")
             conn.commit()
         specialized.initialize()
@@ -79,8 +77,9 @@ def _initialize_compatibility_cases() -> None:
             row = conn.execute("SELECT word, review_stage, source_kind FROM vocabulary_learning WHERE word='legacy word'").fetchone()
             assert tuple(row) == ('legacy word', 0, 'manual')
             assert conn.execute('SELECT COUNT(*) FROM vocabulary_learning').fetchone()[0] == 1
-            assert conn.execute('SELECT COUNT(*) FROM reading_attempts').fetchone()[0] == 0
+            # An old database keeps its generated-reading rows untouched; none are added.
             assert conn.execute('SELECT COUNT(*) FROM reading_sessions').fetchone()[0] == 1
+            assert not _columns(conn, 'reading_attempts')
 
     with TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -106,9 +105,6 @@ def main():
     assert sr.get_profile_record()['goal']=='work'
     item=sr.save_library_record({'word':'focused work','phonetic':'','part_of_speech':'phrase','definition':'x','translation_vi':'y','source_essay_id':None,'source_fragment':'','source_kind':'manual','focus_note':'','now':now})
     assert item['review_stage']==0
-    session=sr.create_reading_session_record({'created_at':now,'language_code':'en','target_level':'B2','topic':'work','learner_goal':'work','title':'T','passage':'P','questions':[],'recycled_words':['focused work'],'generation_mode':'built-in'})
-    sr.create_reading_attempt_record(session['id'],{'created_at':now,'answers':[],'correct_count':0,'total':0})
-    assert sr.latest_reading_attempt(session['id'])['total']==0
     try:
         sr.create_speaking_attempt_record({'created_at':now,'language':'en','take_id':'take-1','asset_id':'asset-en','segment_id':'segment-1','reference_text':'Good morning.','transcript_text':'Good morning.','dimensions':{'content_match':100},'provenance':{},'evidence':{}})
     except RuntimeError as exc:
@@ -154,13 +150,11 @@ def main():
     assert legacy_items[0]['successful_recalls']==0
     assert legacy_items[0]['source_kind']=='manual'
     assert legacy_repo.select_library_terms(3)==['legacy word']
-    assert legacy_repo.list_reading_session_records(10)==[]
 
     empty=sqlite3.connect(':memory:'); empty.row_factory=sqlite3.Row
     empty_repo=SQLiteSpecializedLearningRepository(lambda:empty)
     assert empty_repo.list_library_records()==[]
     assert empty_repo.select_library_terms(3)==[]
-    assert empty_repo.list_reading_session_records(10)==[]
 
     engine=create_engine('sqlite+pysqlite:///:memory:'); Base.metadata.create_all(engine); uid=stable_uuid('user','u')
     with Session(engine) as db, db.begin(): db.add(User(id=uid,user_key='u',email='',name='',picture='',role='user',created_at=datetime.now(timezone.utc),last_login=None))
@@ -169,9 +163,6 @@ def main():
     assert pr.get_profile_record()['goal']=='work'
     pitem=pr.save_library_record({'word':'focused work','phonetic':'','part_of_speech':'phrase','definition':'x','translation_vi':'y','source_essay_id':None,'source_fragment':'','source_kind':'manual','focus_note':'','now':now})
     assert pitem['review_stage']==0
-    ps=pr.create_reading_session_record({'created_at':now,'language_code':'en','target_level':'B2','topic':'work','learner_goal':'work','title':'T','passage':'P','questions':[],'recycled_words':['focused work'],'generation_mode':'built-in'})
-    pr.create_reading_attempt_record(ps['id'],{'created_at':now,'answers':[],'correct_count':0,'total':0})
-    assert pr.latest_reading_attempt(ps['id'])['total']==0
     pspeaking=pr.create_speaking_attempt_record({'created_at':now,'language':'en','take_id':'take-1','asset_id':'asset-en','segment_id':'segment-1','reference_text':'Good morning.','transcript_text':'Good morning.','dimensions':{'content_match':100,'pronunciation':88,'fluency':82,'proficiency':None},'provenance':{'pronunciation':'azure-speech'},'evidence':{'pronunciation':{'words':[]}}})
     assert pspeaking['take_id']=='take-1'
     assert pspeaking['language']=='en'

@@ -1,17 +1,19 @@
-"""The proposed Adaptive Reading schema, proved on both dialects.
+"""The Adaptive Reading schema, proved on both dialects.
 
-`migrations/proposed/20260924_0014_adaptive_reading.py` is not in the applied
-chain. This file applies it anyway - to a throwaway database - and writes the
-rows each constraint and trigger must refuse, because a constraint is proved
-only by watching it refuse. The same scenario list runs on:
+`migrations/versions/20260924_0014_adaptive_reading.py` - authorized for the
+admin sandbox by D-076 - applied to a throwaway database, with the rows each
+constraint and trigger must refuse written against it, because a constraint is
+proved only by watching it refuse. The same scenario list runs on:
 
-- **SQLite**, always, including in CI: the current ORM schema is built the way
-  the hermetic suite builds it (`Base.metadata.create_all`, foreign keys on),
-  and the proposed `upgrade()` is applied on top through Alembic's own
-  operations - table renames, SQLite triggers, `sqlite_where` and all.
+- **SQLite**, always, including in CI: the schema is built the way the
+  hermetic suite builds it (`Base.metadata.create_all`, foreign keys on, the
+  ORM's copy of the migration's triggers). The migration's own SQLite path is
+  proved by the rehearsals: `downgrade()` to `20260923_0013`, legacy rows
+  seeded under the legacy names, `upgrade()` again - table renames, SQLite
+  triggers, `sqlite_where` and all, through Alembic's own operations.
 - **PostgreSQL**, when `ORENA_TEST_POSTGRES_URL` names a throwaway database:
-  the real chain `20260811_0001 -> 20260923_0013` and then the proposal, in a
-  fresh schema of its own, so a run leaves nothing behind and can be repeated.
+  the real chain `20260811_0001 -> 20260924_0014`, in a fresh schema of its
+  own, so a run leaves nothing behind and can be repeated.
 
 One outcome per scenario on both is the parity claim. The schema under proof is
 the canonical Reading model of D-075: legacy generated-passage tables archived
@@ -19,7 +21,7 @@ read-only, one canonical `reading_attempts`. Legacy rows are seeded *before*
 the upgrade, exactly as a real database would hold them.
 
     ORENA_TEST_POSTGRES_URL=postgresql+psycopg://user:pw@host/throwaway \\
-        python -m pytest tests/test_adaptive_reading_schema_proposed.py
+        python -m pytest tests/test_adaptive_reading_schema.py
 """
 from __future__ import annotations
 
@@ -42,20 +44,20 @@ from sqlalchemy import create_engine, event, text  # noqa: E402
 from sqlalchemy.exc import DBAPIError, IntegrityError  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-PROPOSAL = ROOT / "migrations" / "proposed" / "20260924_0014_adaptive_reading.py"
+MIGRATION = ROOT / "migrations" / "versions" / "20260924_0014_adaptive_reading.py"
 URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
 REFUSALS = (IntegrityError, DBAPIError, RuntimeError)
 DIALECTS = ["sqlite", "postgresql"]
 
 
-def _proposal():
-    spec = importlib.util.spec_from_file_location("adaptive_reading_proposal", PROPOSAL)
+def _migration():
+    spec = importlib.util.spec_from_file_location("adaptive_reading_migration", MIGRATION)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-# ---- building a database at the proposed head --------------------------------
+# ---- building a database at the head --------------------------------
 
 def _sqlite_engine(path: Path):
     engine = create_engine(f"sqlite+pysqlite:///{path}", future=True)
@@ -67,13 +69,13 @@ def _sqlite_engine(path: Path):
     return engine
 
 
-def _run_proposal(engine, step: str) -> None:
-    """Apply the proposal's `upgrade()`/`downgrade()` through Alembic's own
+def _run_migration(engine, step: str) -> None:
+    """Apply the migration's `upgrade()`/`downgrade()` through Alembic's own
     operations, exactly as `alembic upgrade` would call it."""
     from alembic.operations import Operations
     from alembic.runtime.migration import MigrationContext
 
-    module = _proposal()
+    module = _migration()
     with engine.begin() as connection:
         with Operations.context(MigrationContext.configure(connection)):
             getattr(module, step)()
@@ -84,7 +86,6 @@ def _sqlite_at_head(path: Path):
 
     engine = _sqlite_engine(path)
     Base.metadata.create_all(engine)
-    _run_proposal(engine, "upgrade")
     return engine
 
 
@@ -99,10 +100,6 @@ def _alembic(schema: str):
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
-    cfg.set_main_option(
-        "version_locations",
-        os.pathsep.join([str(ROOT / "migrations" / "versions"), str(ROOT / "migrations" / "proposed")]),
-    )
     cfg.set_main_option("sqlalchemy.url", _pg_schema_url(schema).replace("%", "%%"))
     return cfg
 
@@ -504,14 +501,14 @@ def test_code_written_for_the_legacy_shape_fails_loudly_instead_of_landing_anywh
     """There is no mixed period: the migration applies with the code that
     retires the generated flow. Anything still written for the old shape must
     fail, not write a half-row into the canonical model."""
-    from sqlalchemy.orm import Session
-
     from writing_coach.persistence.models import ReadingAttempt
 
+    # The ORM has no legacy shape left to write through.
+    assert "session_id" not in ReadingAttempt.__table__.c
+    # A raw writer that still names the legacy columns is refused outright.
     with pytest.raises(REFUSALS + (sa.exc.OperationalError, sa.exc.ProgrammingError)):
-        with Session(db) as session, session.begin():
-            session.add(ReadingAttempt(id=uuid.uuid4(), session_id=uuid.uuid4(), legacy_id=1,
-                                       created_at=_now(), answers=[0], correct_count=1, total=1))
+        _insert(db, "reading_attempts", id=uuid.uuid4(), session_id=uuid.uuid4(), legacy_id=1,
+                created_at=_now(), answers=[0], correct_count=1, total=1)
     assert _count(db, "reading_attempts", "correct_count = 1 AND total = 1 AND user_id IS NULL") == 0
 
 
@@ -567,7 +564,7 @@ def test_the_projection_is_one_row_per_account_language_and_policy_and_discardab
 
 @pytest.mark.parametrize("dialect", DIALECTS)
 def test_account_deletion_through_the_enumeration_removes_one_learner_and_nothing_else(dialect, tmp_path):
-    module = _proposal()
+    module = _migration()
     learners: list = []
 
     def seed(engine):
@@ -920,7 +917,7 @@ def test_the_downgrade_refusal_is_in_the_offline_script_too():
 
 @contextmanager
 def _fresh(dialect: str, tmp_path: Path, seed=None):
-    """A database of its own at the proposed head. `seed(engine)` runs first,
+    """A database of its own at the head. `seed(engine)` runs first,
     at `20260923_0013`, under the legacy names - what a real database holds when
     the migration meets it."""
     if dialect == "postgresql" and not URL:
@@ -928,13 +925,16 @@ def _fresh(dialect: str, tmp_path: Path, seed=None):
     if dialect == "sqlite":
         from writing_coach.persistence.models import Base
 
+        # The hermetic head, taken down to 20260923_0013 by the migration's own
+        # SQLite downgrade, seeded there, and brought back up by its upgrade.
         engine = _sqlite_engine(tmp_path / "rehearsal.db")
         Base.metadata.create_all(engine)
+        _run_migration(engine, "downgrade")
         if seed:
             seed(engine)
-        _run_proposal(engine, "upgrade")
+        _run_migration(engine, "upgrade")
         try:
-            yield engine, lambda: _run_proposal(engine, "upgrade"), lambda: _run_proposal(engine, "downgrade")
+            yield engine, lambda: _run_migration(engine, "upgrade"), lambda: _run_migration(engine, "downgrade")
         finally:
             engine.dispose()
         return
@@ -1147,7 +1147,7 @@ def test_a_sqlite_downgrade_holds_the_write_lock_before_its_guard_looks(tmp_path
 
     path = tmp_path / "race.db"
     engine = _sqlite_at_head(path)
-    module = _proposal()
+    module = _migration()
     original = module._guard_downgrade
     seen: dict = {}
 

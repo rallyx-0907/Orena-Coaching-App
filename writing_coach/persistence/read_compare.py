@@ -13,14 +13,15 @@ from writing_coach.persistence.models import (
     Essay,
     EssayRevision,
     GrammarProgress,
-    ReadingAttempt,
-    ReadingSession,
     SavedWord,
     UserLanguageProfile,
     WritingError,
 )
 
 
+# Reading is not compared: the generated-passage tables are a read-only archive
+# (D-075), the legacy SQLite import no longer writes them, and canonical Reading
+# evidence has no SQLite source to compare against.
 @dataclass(frozen=True)
 class ScopeCounts:
     user_key: str
@@ -31,8 +32,6 @@ class ScopeCounts:
     writing_errors: int
     saved_words: int
     grammar_progress: int
-    reading_sessions: int
-    reading_attempts: int
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -84,8 +83,6 @@ def _source_scope(source: LearningSource) -> ScopeCounts:
             writing_errors=errors,
             saved_words=saved_words,
             grammar_progress=_count(conn, "grammar_progress"),
-            reading_sessions=_count(conn, "reading_sessions"),
-            reading_attempts=_count(conn, "reading_attempts"),
         )
     finally:
         conn.close()
@@ -147,27 +144,6 @@ def _target_scope(engine: Engine, source: LearningSource) -> ScopeCounts:
             )
             or 0
         )
-        reading_sessions = int(
-            session.scalar(
-                select(func.count()).select_from(ReadingSession).where(
-                    ReadingSession.user_id == uid,
-                    ReadingSession.language_code == lang,
-                )
-            )
-            or 0
-        )
-        reading_attempts = int(
-            session.scalar(
-                select(func.count())
-                .select_from(ReadingAttempt)
-                .join(ReadingSession, ReadingAttempt.session_id == ReadingSession.id)
-                .where(
-                    ReadingSession.user_id == uid,
-                    ReadingSession.language_code == lang,
-                )
-            )
-            or 0
-        )
     return ScopeCounts(
         user_key=source.user_key,
         language_code=lang,
@@ -177,8 +153,6 @@ def _target_scope(engine: Engine, source: LearningSource) -> ScopeCounts:
         writing_errors=errors,
         saved_words=saved_words,
         grammar_progress=grammar,
-        reading_sessions=reading_sessions,
-        reading_attempts=reading_attempts,
     )
 
 
@@ -192,8 +166,6 @@ def compare_scoped_reads(engine: Engine, discovery: Discovery) -> dict[str, Any]
         "writing_errors",
         "saved_words",
         "grammar_progress",
-        "reading_sessions",
-        "reading_attempts",
     ]
     for source in discovery.learning_sources:
         source_counts = _source_scope(source)
