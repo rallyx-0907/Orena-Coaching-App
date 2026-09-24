@@ -2500,3 +2500,60 @@ and `test_orena_writing_workspace` — fail identically at the merge commit and
 were not introduced by admin work; they belong to whoever owns that UI.
 
 **Supersedes / Superseded by:** None.
+
+## D-075 — Reading has one canonical flow and one canonical evidence model
+
+**Date:** 2026-09-24
+**Status:** Accepted (explicit human direction, 2026-09-24)
+
+**Context.** The Adaptive Reading schema proposal, approved by independent
+review at `0d6efda`, extended `reading_attempts` with a `generated_session`
+subject so that the AI-generated passage flow and the corpus flow would share
+one attempts table. That kept the legacy shape as a formal, long-lived contract.
+
+**Decision.** Reading has one flow: Admin imports content -> reviews it ->
+publishes it to the Reading Corpus -> a comprehension set is generated and an
+Admin reviews it -> the learner attempts it -> the attempt is persisted ->
+ability/progression is updated -> the next passage is chosen. Specifically:
+
+- No internal AI writes a source passage. AI only processes existing content:
+  level, vocabulary, grammar, questions, explanations, evidence.
+- Imports keeps five groups: Reading, Books, Media, Vocabulary, Sources. An
+  Admin may register an internet source; automatic fetching from an approved
+  source creates candidates only and never publishes.
+- Ingestion method, source kind and content kind stay separate concepts;
+  source category is deferred while it is not needed.
+- Lifecycles are reversible and normal flow never hard-deletes. Books restore.
+  Vocabulary is `pending_review -> published <-> unpublished -> archived ->
+  restore to unpublished`. Rights and completeness are warnings; an Admin may
+  override, and the override is audited.
+- Adaptive Reading uses only the published Reading Corpus. A comprehension set
+  carries question type, answer, explanation and evidence grounded in the exact
+  version of the passage, and passes Admin review before a learner meets it.
+- A Reading attempt is one canonical evidence model; no parallel evidence
+  store. Submit is idempotent: a retry creates no second attempt and moves
+  ability once. Learner evidence never cascades away when content is edited,
+  archived or deleted.
+- Reading ability is a projection rebuildable from attempts, with a policy
+  version and checkpoint, deterministic and testable. The next article is
+  chosen by ability, recent performance and skill weakness - not purely at
+  random.
+- Cross-skill cue, Collection, Learner Summary, Admin Activity and Analytics
+  move to the canonical Reading evidence before new learner submits are enabled.
+- The AI-generated passage flow retires and is removed once the migration path
+  is done. Legacy data that is only sandbox/test is reset or reseeded; real
+  learner history is migrated or archived read-only. The legacy shape decides
+  nothing in the new architecture.
+- Text Discussion on a corpus article stays deferred, to its own proposal.
+
+**Process.** The schema proposal is rewritten for this model, written as real
+proposed DDL, independently reviewed, and taken to the human gate before any
+sandbox apply. **The approval of the earlier schema (`0d6efda`) does not carry
+to the new one.** The milestone is READY only after a live end-to-end run:
+import -> review -> publish -> learner attempt -> attempt persisted -> ability
+updated -> next passage chosen adaptively -> data still there after reload;
+a retry does not duplicate; editing an article does not silently falsify old
+evidence; the runtime works after being recreated.
+
+**Supersedes / Superseded by:** Supersedes the `generated_session` design of
+`ADAPTIVE_READING_SCHEMA_PROPOSAL.md` at `0d6efda` and its review approval.

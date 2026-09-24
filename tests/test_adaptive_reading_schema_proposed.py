@@ -13,8 +13,10 @@ only by watching it refuse. The same scenario list runs on:
   the real chain `20260811_0001 -> 20260923_0013` and then the proposal, in a
   fresh schema of its own, so a run leaves nothing behind and can be repeated.
 
-One outcome per scenario on both is the parity claim: the review round-1
-blocker was a constraint that held on one dialect and not the other.
+One outcome per scenario on both is the parity claim. The schema under proof is
+the canonical Reading model of D-075: legacy generated-passage tables archived
+read-only, one canonical `reading_attempts`. Legacy rows are seeded *before*
+the upgrade, exactly as a real database would hold them.
 
     ORENA_TEST_POSTGRES_URL=postgresql+psycopg://user:pw@host/throwaway \\
         python -m pytest tests/test_adaptive_reading_schema_proposed.py
@@ -291,7 +293,7 @@ def _approved_set(engine, article_id=None, **kwargs):
 def _attempt_values(user_id, set_id, *, language="en", ordinal=1, **overrides) -> dict:
     attempt_id = uuid.uuid4()
     values = dict(
-        id=attempt_id, subject_kind="comprehension_set", user_id=user_id, language_code=language,
+        id=attempt_id, user_id=user_id, language_code=language,
         set_id=set_id, ordinal=ordinal, operation_id=f"op-{attempt_id.hex}",
         request_digest=_sha(attempt_id.hex), evaluator_version="reading-eval/1",
         ability_policy_version="reading-ability/1", passage_level="B1", passage_difficulty=0.0,
@@ -326,8 +328,9 @@ def _replace(engine, name: str, conflict: list[str], /, **values) -> None:
 
 
 def _legacy_attempt(engine, user_id, *, language="en") -> tuple[uuid.UUID, uuid.UUID]:
-    """A generated-session attempt written with exactly the columns today's
-    writer and importer name - no `subject_kind`, no new column at all."""
+    """A generated-session and its attempt, written **before** the upgrade under
+    the legacy names and with exactly the columns today's writer names - the
+    rows a real database holds when the migration meets it."""
     session_id, attempt_id = uuid.uuid4(), uuid.uuid4()
     now = _now()
     legacy = uuid.uuid4().int % 1_000_000
@@ -417,17 +420,17 @@ def test_a_retried_submit_cannot_create_a_second_attempt(db):
     _refused(lambda: _attempt(db, learner, set_id, ordinal=1, operation_id="submit-2"))
     # Operation ids are scoped to the account: another learner's "submit-1" is theirs.
     _attempt(db, _user(db), set_id, ordinal=1, operation_id="submit-1")
-    # Legacy rows carry NULL in both keys and never collide with each other.
-    _legacy_attempt(db, learner)
-    _legacy_attempt(db, learner)
 
 
-def test_a_set_attempt_carries_every_fact_the_evidence_contract_requires(db):
+def test_an_attempt_carries_every_fact_the_evidence_contract_requires(db):
     learner = _user(db)
     _, set_id = _approved_set(db)
-    for missing in ("evaluator_version", "ability_policy_version", "operation_id", "request_digest",
-                    "passage_level", "passage_difficulty", "ability_before", "ability_after", "ordinal"):
-        _refused(lambda missing=missing: _attempt(db, learner, set_id, **{missing: None}))
+    for missing in ("evaluator_version", "operation_id", "request_digest", "passage_level", "ordinal",
+                    "user_id", "language_code", "set_id", "answers", "created_at"):
+        values = {**_attempt_values(learner, set_id), missing: None}
+        _refused(lambda values=values: _insert(db, "reading_attempts", **values))
+    for empty in ("evaluator_version", "operation_id", "passage_level"):
+        _refused(lambda empty=empty: _attempt(db, learner, set_id, **{empty: ""}))
     _refused(lambda: _attempt(db, learner, set_id, request_digest="ABC"))
     _refused(lambda: _attempt(db, learner, set_id, request_digest=_sha("x").upper()))
     _refused(lambda: _attempt(db, learner, set_id, ordinal=0))
@@ -436,49 +439,80 @@ def test_a_set_attempt_carries_every_fact_the_evidence_contract_requires(db):
     _refused(lambda: _attempt(db, learner, set_id, total=2, answers=[{"question_id": "q"}]))
     _refused(lambda: _attempt(db, learner, set_id, ability_after=float("nan")))
     _refused(lambda: _attempt(db, learner, set_id, ability_after=float("inf")))
-    # The two shapes are exclusive: a set attempt has no session.
-    session_id, _ = _legacy_attempt(db, learner)
-    _refused(lambda: _attempt(db, learner, set_id, session_id=session_id))
+    # One shape: the legacy columns do not exist on the canonical model.
+    _refused(lambda: _attempt(db, learner, set_id, session_id=uuid.uuid4()))
     _refused(lambda: _attempt(db, learner, set_id, subject_kind="generated_session"))
-    _refused(lambda: _attempt(db, learner, set_id, subject_kind="something_else"))
     # The range chooses no algorithm: a logit, a theta and an Elo rating all fit.
     _attempt(db, learner, set_id, ordinal=1, ability_before=-3.2, ability_after=-2.9)
     _attempt(db, learner, set_id, ordinal=2, ability_before=1480.0, ability_after=1496.5)
 
 
-def test_a_legacy_write_is_exactly_what_it_was_and_cannot_borrow_the_new_shape(db):
-    learner = _user(db)
-    _, attempt = _legacy_attempt(db, learner)
-    with db.connect() as connection:
-        kind = connection.execute(
-            text("SELECT subject_kind FROM reading_attempts WHERE id = :i"), {"i": _bind(db, attempt)}
-        ).scalar_one()
-    assert kind == "generated_session"
-    _, set_id = _approved_set(db)
-    session_id, _ = _legacy_attempt(db, learner)
-    _refused(lambda: _insert(db, "reading_attempts", id=uuid.uuid4(), session_id=session_id, legacy_id=2,
-                             created_at=_now(), answers=[0], correct_count=1, total=1, set_id=set_id))
-    # The importer's upsert of a legacy row still works: only set attempts are immutable.
-    _update(db, "reading_attempts", attempt, correct_count=0)
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_the_legacy_tables_become_a_read_only_archive_with_every_row(dialect, tmp_path):
+    """The generated-passage tables are renamed, not rewritten: every row
+    survives, the discussion that pointed at a session still does, and nothing
+    can be written to them any more - but a learner's rows can still be deleted."""
+    seeded = {}
+
+    def seed(engine):
+        learner = _user(engine)
+        session_id, attempt_id = _legacy_attempt(engine, learner)
+        discussion = uuid.uuid4()
+        table = sa.table("text_discussions", sa.column("id", sa.Uuid()), sa.column("user_id", sa.Uuid()),
+                         sa.column("language_code"), sa.column("source_kind"), sa.column("source_id"),
+                         sa.column("reading_session_id", sa.Uuid()), sa.column("turn_count"),
+                         sa.column("created_at", _TYPES["time"]), sa.column("updated_at", _TYPES["time"]))
+        with engine.begin() as connection:
+            connection.execute(sa.insert(table).values(
+                id=discussion, user_id=learner, language_code="en", source_kind="reading_session",
+                source_id="1", reading_session_id=session_id, turn_count=0, created_at=_now(),
+                updated_at=_now()))
+        seeded.update(learner=learner, session=session_id, attempt=attempt_id, discussion=discussion)
+
+    with _fresh(dialect, tmp_path, seed=seed) as (engine, _upgrade, _downgrade):
+        assert not _has_table(engine, "reading_sessions")
+        assert _count(engine, "reading_legacy_sessions", "id = :i", i=_bind(engine, seeded["session"])) == 1
+        with engine.connect() as connection:
+            row = connection.execute(text(
+                "SELECT correct_count, total FROM reading_legacy_attempts WHERE id = :i"),
+                {"i": _bind(engine, seeded["attempt"])}).one()
+        assert (row.correct_count, row.total) == (1, 1)
+        # Read-only.
+        _refused(lambda: _update(engine, "reading_legacy_attempts", seeded["attempt"], correct_count=0))
+        _refused(lambda: _update(engine, "reading_legacy_sessions", seeded["session"], title="rewritten"))
+        _refused(lambda: _legacy_insert_after_archive(engine, seeded["learner"]))
+        # The canonical table has none of the legacy shape.
+        assert {"session_id", "legacy_id", "subject_kind"}.isdisjoint(_columns(engine, "reading_attempts"))
+        # A learner's archive rows can still be deleted, and the discussion's
+        # reference follows the archive (ON DELETE SET NULL).
+        _delete(engine, "reading_legacy_sessions", seeded["session"])
+        assert _count(engine, "reading_legacy_attempts", "id = :i", i=_bind(engine, seeded["attempt"])) == 0
+        with engine.connect() as connection:
+            reference = connection.execute(text(
+                "SELECT reading_session_id FROM text_discussions WHERE id = :i"),
+                {"i": _bind(engine, seeded["discussion"])}).scalar_one()
+        assert reference is None
 
 
-def test_the_current_orm_model_still_reads_and_writes_after_the_upgrade(db):
-    """Code rollback without schema rollback is the real rollback path, so the
-    model in `models.py` today - which knows none of the new columns - must
-    keep working against the upgraded schema."""
+def _legacy_insert_after_archive(engine, learner) -> None:
+    _insert(engine, "reading_legacy_sessions", id=uuid.uuid4(), user_id=learner, language_code="en",
+            legacy_id=99, created_at=_now(), target_level="B1", topic="", learner_goal="", title="T",
+            passage="P", questions=[], recycled_words=[], generation_mode="practice")
+
+
+def test_code_written_for_the_legacy_shape_fails_loudly_instead_of_landing_anywhere(db):
+    """There is no mixed period: the migration applies with the code that
+    retires the generated flow. Anything still written for the old shape must
+    fail, not write a half-row into the canonical model."""
     from sqlalchemy.orm import Session
 
-    from writing_coach.persistence.models import ReadingAttempt, ReadingSession
+    from writing_coach.persistence.models import ReadingAttempt
 
-    learner = _user(db)
-    session_id, _ = _legacy_attempt(db, learner)
-    with Session(db) as session, session.begin():
-        session.add(ReadingAttempt(id=uuid.uuid4(), session_id=session_id, legacy_id=7, created_at=_now(),
-                                   answers=[1, 0], correct_count=1, total=2))
-    with Session(db) as session:
-        rows = session.scalars(sa.select(ReadingAttempt).where(ReadingAttempt.session_id == session_id)).all()
-        assert sorted(row.legacy_id for row in rows) == [1, 7]
-        assert session.get(ReadingSession, session_id) is not None
+    with pytest.raises(REFUSALS + (sa.exc.OperationalError, sa.exc.ProgrammingError)):
+        with Session(db) as session, session.begin():
+            session.add(ReadingAttempt(id=uuid.uuid4(), session_id=uuid.uuid4(), legacy_id=1,
+                                       created_at=_now(), answers=[0], correct_count=1, total=1))
+    assert _count(db, "reading_attempts", "correct_count = 1 AND total = 1 AND user_id IS NULL") == 0
 
 
 def test_a_learner_attempt_cannot_attach_to_a_set_in_another_language(db):
@@ -531,44 +565,62 @@ def test_the_projection_is_one_row_per_account_language_and_policy_and_discardab
     assert _count(db, "reading_attempts", "user_id = :u", u=_bind(db, learner)) == 1
 
 
-def test_account_deletion_through_the_enumeration_removes_one_learner_and_nothing_else(db):
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_account_deletion_through_the_enumeration_removes_one_learner_and_nothing_else(dialect, tmp_path):
     module = _proposal()
-    leaving, staying = _user(db), _user(db)
-    _, set_id = _approved_set(db)
-    for learner in (leaving, staying):
-        _legacy_attempt(db, learner)
-        _attempt(db, learner, set_id)
-        _insert(db, "reading_ability_projections", id=uuid.uuid4(), user_id=learner, language_code="en",
-                policy_version="reading-ability/1", ability=0.25, consumed_through_ordinal=1,
-                by_question_type_json={}, updated_at=_now())
-    with db.begin() as connection:
-        for table, predicate in module.ACCOUNT_OWNED:
-            connection.execute(text(f"DELETE FROM {table} WHERE {predicate}"), {"user_id": _bind(db, leaving)})
-    assert _owned(db, leaving) == (0, 0, 0, 0)
-    assert _owned(db, staying) == (1, 1, 1, 1)
-    # Platform content is untouched by a learner leaving.
-    assert _count(db, "reading_comprehension_sets", "id = :i", i=_bind(db, set_id)) == 1
+    learners: list = []
+
+    def seed(engine):
+        for _ in range(2):
+            learner = _user(engine)
+            _legacy_attempt(engine, learner)
+            learners.append(learner)
+
+    with _fresh(dialect, tmp_path, seed=seed) as (engine, _upgrade, _downgrade):
+        leaving, staying = learners
+        _, set_id = _approved_set(engine)
+        for learner in learners:
+            _attempt(engine, learner, set_id)
+            _insert(engine, "reading_ability_projections", id=uuid.uuid4(), user_id=learner,
+                    language_code="en", policy_version="reading-ability/1", ability=0.25,
+                    consumed_through_ordinal=1, by_question_type_json={}, updated_at=_now())
+        with engine.begin() as connection:
+            for table, predicate in module.ACCOUNT_OWNED:
+                connection.execute(text(f"DELETE FROM {table} WHERE {predicate}"),
+                                   {"user_id": _bind(engine, leaving)})
+        assert _owned(engine, leaving) == (0, 0, 0, 0)
+        assert _owned(engine, staying) == (1, 1, 1, 1)
+        # Platform content is untouched by a learner leaving.
+        assert _count(engine, "reading_comprehension_sets", "id = :i", i=_bind(engine, set_id)) == 1
 
 
-def test_the_owner_foreign_keys_cascade_from_the_account_row_too(db):
-    learner = _user(db)
-    _, set_id = _approved_set(db)
-    _legacy_attempt(db, learner)
-    _attempt(db, learner, set_id)
-    _insert(db, "reading_ability_projections", id=uuid.uuid4(), user_id=learner, language_code="en",
-            policy_version="reading-ability/1", ability=0.0, consumed_through_ordinal=1,
-            by_question_type_json={}, updated_at=_now())
-    _delete(db, "users", learner)
-    assert _owned(db, learner) == (0, 0, 0, 0)
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_the_owner_foreign_keys_cascade_from_the_account_row_too(dialect, tmp_path):
+    learners: list = []
+
+    def seed(engine):
+        learner = _user(engine)
+        _legacy_attempt(engine, learner)
+        learners.append(learner)
+
+    with _fresh(dialect, tmp_path, seed=seed) as (engine, _upgrade, _downgrade):
+        (learner,) = learners
+        _, set_id = _approved_set(engine)
+        _attempt(engine, learner, set_id)
+        _insert(engine, "reading_ability_projections", id=uuid.uuid4(), user_id=learner,
+                language_code="en", policy_version="reading-ability/1", ability=0.0,
+                consumed_through_ordinal=1, by_question_type_json={}, updated_at=_now())
+        _delete(engine, "users", learner)
+        assert _owned(engine, learner) == (0, 0, 0, 0)
 
 
 def _owned(db, learner) -> tuple[int, int, int, int]:
     bound = _bind(db, learner)
     return (
         _count(db, "reading_attempts", "user_id = :u", u=bound),
-        _count(db, "reading_attempts",
-               "session_id IN (SELECT id FROM reading_sessions WHERE user_id = :u)", u=bound),
-        _count(db, "reading_sessions", "user_id = :u", u=bound),
+        _count(db, "reading_legacy_attempts",
+               "session_id IN (SELECT id FROM reading_legacy_sessions WHERE user_id = :u)", u=bound),
+        _count(db, "reading_legacy_sessions", "user_id = :u", u=bound),
         _count(db, "reading_ability_projections", "user_id = :u", u=bound),
     )
 
@@ -654,7 +706,31 @@ def test_a_set_reaches_approval_only_through_review_with_every_question_decided(
     for illegal in ("draft", "needs_review", "rejected"):
         _refused(lambda illegal=illegal: _update(db, "reading_comprehension_sets", set_id, status=illegal))
     _update(db, "reading_comprehension_sets", set_id, status="archived")
-    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved"))
+    for illegal in ("draft", "needs_review", "rejected", "stale"):
+        _refused(lambda illegal=illegal: _update(db, "reading_comprehension_sets", set_id, status=illegal))
+
+
+def test_every_set_state_is_reversible_without_a_delete(db):
+    """Archive restores; rejection reopens. Restoring is a new decision, so it
+    names its reviewer - and it still meets the one-approved-set rule."""
+    article, set_id = _approved_set(db)
+    _update(db, "reading_comprehension_sets", set_id, status="archived")
+    _update(db, "reading_comprehension_sets", set_id, status="approved", reviewed_at=_now(),
+            reviewed_by="admin-restore")
+    # With another approved set in its place, a restore is refused.
+    _update(db, "reading_comprehension_sets", set_id, status="archived")
+    _approved_set(db, article)
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved",
+                             reviewed_at=_now(), reviewed_by="admin"))
+    # A rejected set reopens for review, and is editable again only then.
+    rejected = _set(db, _article(db))
+    question = _question(db, rejected, rejected=True)
+    _update(db, "reading_comprehension_sets", rejected, status="needs_review")
+    _update(db, "reading_comprehension_sets", rejected, status="rejected", reviewed_at=_now(), reviewed_by="admin")
+    _refused(lambda: _update(db, "reading_comprehension_questions", question, prompt="rewritten"))
+    _update(db, "reading_comprehension_sets", rejected, status="needs_review")
+    _update(db, "reading_comprehension_questions", question, prompt="rewritten", admin_rejected=False,
+            admin_approved=True)
 
 
 def test_a_rejected_set_is_history_and_frozen(db):
@@ -663,7 +739,8 @@ def test_a_rejected_set_is_history_and_frozen(db):
     _update(db, "reading_comprehension_sets", set_id, status="needs_review")
     _update(db, "reading_comprehension_sets", set_id, status="rejected", reviewed_at=_now(), reviewed_by="admin")
     _refused(lambda: _update(db, "reading_comprehension_questions", question, prompt="rewritten"))
-    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="needs_review"))
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="draft"))
+    _refused(lambda: _update(db, "reading_comprehension_sets", set_id, status="approved"))
 
 
 def test_content_kind_is_one_vocabulary_and_defaults_to_what_every_row_already_is(db):
@@ -692,13 +769,15 @@ def test_the_partial_index_keeps_its_predicate_and_every_upward_key_restricts(db
                 " AND connamespace = current_schema()::regnamespace"
                 " AND conrelid IN ('reading_comprehension_sets'::regclass,"
                 " 'reading_comprehension_questions'::regclass, 'reading_attempts'::regclass,"
-                " 'reading_ability_projections'::regclass)"
+                " 'reading_ability_projections'::regclass, 'reading_legacy_attempts'::regclass)"
             )).all())
             by_target = {
                 "fk_reading_comprehension_set_article_scope": "r",
                 "reading_comprehension_questions_set_id_fkey": "c",
                 "fk_reading_attempt_set_scope": "r",
-                "fk_reading_attempt_user": "c",
+                "reading_attempts_user_id_fkey": "c",
+                # the archive keeps its own cascade from session to attempt
+                "reading_attempts_session_id_fkey": "c",
                 "reading_ability_projections_user_id_fkey": "c",
             }
             for name, action in by_target.items():
@@ -715,7 +794,9 @@ def test_the_partial_index_keeps_its_predicate_and_every_upward_key_restricts(db
             assert sets["reading_articles"] == "RESTRICT"
             assert attempts["reading_comprehension_sets"] == "RESTRICT"
             assert attempts["users"] == "CASCADE"
-            assert attempts["reading_sessions"] == "CASCADE"
+            legacy = {row[2]: row[6] for row in connection.execute(text("PRAGMA foreign_key_list(reading_legacy_attempts)"))}
+            assert legacy["reading_legacy_sessions"] == "CASCADE"
+            assert "reading_sessions" not in attempts
             assert questions["reading_comprehension_sets"] == "CASCADE"
             assert projections["users"] == "CASCADE"
 
@@ -759,32 +840,35 @@ def _bind(db, value: uuid.UUID):
 # ---- migration and downgrade ----------------------------------------------------
 
 @pytest.mark.parametrize("dialect", DIALECTS)
-def test_downgrade_keeps_legacy_evidence_and_refuses_when_the_feature_has_data(dialect, tmp_path):
-    if dialect == "postgresql" and not URL:
-        pytest.skip("ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
-    with _fresh(dialect, tmp_path) as (engine, upgrade, downgrade):
+def test_downgrade_restores_the_legacy_tables_intact_and_refuses_once_canonical_data_exists(dialect, tmp_path):
+    seeded = {}
+
+    def seed(engine):
         learner = _user(engine)
-        _, legacy = _legacy_attempt(engine, learner)
-        # 1. Nothing written by the feature: the downgrade runs and the legacy
-        #    evidence is intact, NOT NULL restored.
+        seeded["learner"] = learner
+        seeded["session"], seeded["legacy"] = _legacy_attempt(engine, learner)
+
+    with _fresh(dialect, tmp_path, seed=seed) as (engine, upgrade, downgrade):
+        # 1. No canonical data: the downgrade runs, the archive gets its names
+        #    back with every row, and the legacy table is writable again.
         downgrade()
         assert _columns(engine, "reading_attempts") == {
             "id", "session_id", "legacy_id", "created_at", "answers", "correct_count", "total",
         }
+        assert not _has_table(engine, "reading_legacy_attempts")
         assert not _has_table(engine, "reading_comprehension_sets")
         assert "content_kind" not in _columns(engine, "reading_articles")
-        assert _count(engine, "reading_attempts", "id = :i", i=_bind(engine, legacy)) == 1
-        _refused(lambda: _insert(engine, "reading_attempts", id=uuid.uuid4(), session_id=None, legacy_id=1,
-                                 created_at=_now(), answers=[], correct_count=0, total=0))
-        # 2. Up again, and the feature writes one learner attempt: the downgrade
-        #    refuses and changes nothing.
+        assert _count(engine, "reading_attempts", "id = :i", i=_bind(engine, seeded["legacy"])) == 1
+        _update(engine, "reading_attempts", seeded["legacy"], correct_count=1)
+        # 2. Up again, and the canonical model records one attempt: the
+        #    downgrade refuses and changes nothing.
         upgrade()
         _, set_id = _approved_set(engine)
-        attempt = _attempt(engine, learner, set_id)
+        attempt = _attempt(engine, seeded["learner"], set_id)
         _refused(downgrade)
-        assert _has_table(engine, "reading_comprehension_sets")
+        assert _has_table(engine, "reading_legacy_attempts")
         assert _count(engine, "reading_attempts", "id = :i", i=_bind(engine, attempt)) == 1
-        assert _count(engine, "reading_attempts", "id = :i", i=_bind(engine, legacy)) == 1
+        assert _count(engine, "reading_legacy_attempts", "id = :i", i=_bind(engine, seeded["legacy"])) == 1
 
 
 def test_the_downgrade_refusal_is_in_the_offline_script_too():
@@ -807,9 +891,20 @@ def test_the_downgrade_refusal_is_in_the_offline_script_too():
 
 
 @contextmanager
-def _fresh(dialect: str, tmp_path: Path):
+def _fresh(dialect: str, tmp_path: Path, seed=None):
+    """A database of its own at the proposed head. `seed(engine)` runs first,
+    at `20260923_0013`, under the legacy names - what a real database holds when
+    the migration meets it."""
+    if dialect == "postgresql" and not URL:
+        pytest.skip("ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
     if dialect == "sqlite":
-        engine = _sqlite_at_head(tmp_path / "rehearsal.db")
+        from writing_coach.persistence.models import Base
+
+        engine = _sqlite_engine(tmp_path / "rehearsal.db")
+        Base.metadata.create_all(engine)
+        if seed:
+            seed(engine)
+        _run_proposal(engine, "upgrade")
         try:
             yield engine, lambda: _run_proposal(engine, "upgrade"), lambda: _run_proposal(engine, "downgrade")
         finally:
@@ -819,8 +914,11 @@ def _fresh(dialect: str, tmp_path: Path):
 
     with _pg_schema() as schema:
         cfg = _alembic(schema)
-        command.upgrade(cfg, "20260924_0014")
         engine = create_engine(_pg_schema_url(schema), future=True)
+        command.upgrade(cfg, "20260923_0013")
+        if seed:
+            seed(engine)
+        command.upgrade(cfg, "20260924_0014")
         try:
             yield (
                 engine,

@@ -1,96 +1,80 @@
-"""Adaptive Reading Practice - reviewed questions, learner evidence, ability.
+"""Adaptive Reading - one canonical Reading flow, one canonical evidence model.
 
-PROPOSED - NOT APPLIED. Round 2 of the independent architecture review
-(`docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`) returned REQUEST
-CHANGES on this file; round 3 reviews the revision against the round-2
-findings, together with `docs/project/ADAPTIVE_READING_SCHEMA_PROPOSAL.md`. It sits
-in `migrations/proposed/`, which Alembic's default `version_locations` never
-reads, so no environment's startup check can meet it. Moving it into
-`versions/` is the apply step and needs the human's schema/runtime
-authorization after an APPROVED review; this docstring authorizes nothing.
+PROPOSED - NOT APPLIED. Written for the human direction of 2026-09-24
+(`docs/project/DECISION_LOG.md` D-075): Reading has one flow - Admin import ->
+review -> publish into the Reading Corpus -> comprehension set -> Admin review
+-> learner attempt -> ability/progression -> next passage. The AI-generated
+passage flow retires. This file **replaces** the earlier proposal of the same
+revision id, which kept `generated_session` as a second attempt subject; that
+proposal's review approval (`0d6efda`) does not carry over to this one, which
+is reviewed from the start (`docs/project/ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`).
+
+It sits in `migrations/proposed/`, which Alembic's default `version_locations`
+never reads. Moving it into `versions/` is the apply step and needs an APPROVED
+review of *this* file and the human's schema/runtime authorization.
 
 Revision ID: 20260924_0014
 Revises: 20260923_0013
 
 ## What it changes
 
-Two new platform-content tables, one new learner projection, and two additive
-changes to existing tables:
-
-- `reading_comprehension_sets` / `reading_comprehension_questions` - a
-  reviewed set of questions for one published article, in one support
-  language, grounded in one exact body of that article. Platform content: no
-  learner key, no `users` foreign key.
-- `reading_attempts` is **extended, not paralleled**. It is already the Reading
-  domain's comprehension-attempt owner (submitted answers, correct count,
-  total). A second attempts table for the same evidence kind is exactly the
-  "parallel authoritative store" `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` SS3/SS6.7
-  forbids, so an attempt now has one of two subjects, named by
-  `subject_kind`: a `generated_session` (the existing rows, unchanged) or a
-  `comprehension_set` (Adaptive Reading). Two CHECKs make the two shapes
-  exclusive and complete.
+- **The legacy generated-passage tables become a read-only archive.**
+  `reading_sessions` -> `reading_legacy_sessions`, `reading_attempts` ->
+  `reading_legacy_attempts`, renamed with every row intact and frozen by
+  trigger: no insert, no update. Deletion stays possible, because the account
+  deletion workflow needs it and because resetting sandbox-only test data is a
+  human decision taken with evidence (the proposal gives the query), never
+  something a migration does. Their shape decides nothing below.
+- **`reading_attempts` is the one canonical Reading evidence model** - a new
+  table under the canonical name, with one shape: a learner's submitted answers
+  to one approved comprehension set of one published article, with its
+  idempotency receipt, evaluator version and (when measurable) the ability
+  measurement. There is no subject discriminator and no second shape.
+- `reading_comprehension_sets` / `reading_comprehension_questions` - the
+  reviewed questions for one published article, in one support language,
+  grounded in one exact body of that article. Platform content.
 - `reading_ability_projections` - a discardable, rebuildable projection of the
-  set attempts: account + language + policy version, with the ordinal it has
-  consumed through as its checkpoint.
-- `reading_articles.content_kind` - what form a learner sees (`article`,
-  `news`). Default `article`, which every existing row is.
+  attempts: account + language + policy version, checkpointed by ordinal.
+- `reading_articles.content_kind` (`article`, `news`) and a unique index
+  `(id, language)` so the set's language is bound to its article's.
+
+## Not compatible with the code that runs today - by design
+
+Old code reads and writes `reading_sessions`/`reading_attempts` in their legacy
+shape. After this migration the first name is gone and the second names the
+canonical table, so an old write fails loudly (missing NOT NULL columns, an
+unknown `session_id`) instead of landing anywhere. The migration therefore
+applies together with the code that retires the generated flow and reads the
+archive under its new name; there is no mixed period.
 
 ## Parity: one semantics on PostgreSQL and SQLite
 
-Every constraint here is chosen so the hermetic SQLite path enforces the same
-rule the PostgreSQL runtime does, and `tests/test_adaptive_reading_schema_
-proposed.py` runs one scenario list against both and requires one outcome:
-
-- The only partial index is declared with **both** `postgresql_where` and
-  `sqlite_where` - never one alone, which on SQLite silently becomes a full
-  index.
-- Idempotency and ordinal uniqueness are **plain** unique constraints over
-  nullable columns, not partial indexes: legacy rows carry NULL there, and both
-  dialects treat NULLs as distinct in a unique constraint, so the legacy rows
-  are outside the rule without a predicate to drift.
-- The JSON bounds use `json_array_length`, which both dialects have; the
-  evidence span uses `length()`, which counts characters on both.
-- The lifecycle rules a CHECK cannot express (a decided set is frozen; an
-  approved set has an approved question and no undecided one; an attempt meets
-  only an approved set; a set attempt is immutable) are triggers, written once
-  per dialect below and proved by the same scenarios.
-- The two dialects each have one write the other lacks, and each is closed:
-  SQLite's `INSERT/UPDATE OR REPLACE` deletes a conflicting row without firing
-  a DELETE trigger, so SQLite also gets conflict guards; PostgreSQL's
-  `TRUNCATE ... CASCADE` fires no row trigger and ignores RESTRICT, so
-  PostgreSQL also gets statement-level truncate guards.
+- The one partial index carries both `postgresql_where` and `sqlite_where`.
+- Idempotency and ordinal uniqueness are plain unique constraints.
+- JSON bounds use `json_array_length`, spans `length()`, hashes `ltrim` - all
+  present on both dialects with the same meaning.
+- Lifecycle rules a CHECK cannot express are triggers, written once per
+  dialect. SQLite's `INSERT/UPDATE OR REPLACE` (deletes a conflicting row
+  without a DELETE trigger) is closed by conflict guards; PostgreSQL's
+  `TRUNCATE ... CASCADE` (no row trigger, ignores RESTRICT) by statement guards.
+  `tests/test_adaptive_reading_schema_proposed.py` runs one scenario list on
+  both and requires one outcome.
 
 ## Deletes - RESTRICT upward from evidence
 
-- attempt -> set: `RESTRICT`. Learner evidence can never be taken by a content
-  delete; the delete fails instead.
-- set -> article `(article_id, language_code)` -> `(id, language)`: `RESTRICT`,
-  not CASCADE, and the set's language is the article's by construction. An article purge must delete its
-  evidence-free sets explicitly first, and a set that ever reached learners
-  (`approved`, `stale`, `archived`) refuses deletion outright - that article
-  is archived, never purged. Nothing is taken silently and nothing blocks
-  silently: both refusals raise.
-- question -> set: `CASCADE` downward - a question has no meaning without its
-  set, and only an undecided or rejected set can be deleted at all.
-- attempt -> user, projection -> user: `CASCADE`, as every learner owner table.
-  The account-deletion workflow (D-054/D-055, not yet built and gated by
-  `tests/test_deletion_journal.py`) deletes them explicitly; the enumeration is
-  `ACCOUNT_OWNED` below and is exercised by the proof.
+attempt -> set and set -> article are `RESTRICT`; a set that reached learners
+is never deleted (archived, and restorable); question -> set `CASCADE`;
+attempt/projection -> user `CASCADE`. `ACCOUNT_OWNED` below enumerates every
+Reading row an account owns, archive included.
 
 ## Downgrade never removes learner data
 
-`downgrade()` first locks every table it would change against writers
-(PostgreSQL, `SHARE ROW EXCLUSIVE`), then runs a guard *in the same
-transaction*: if any set attempt, any comprehension set, any ability projection
-row, or any `content_kind` other than `article` exists, it raises and nothing
-is dropped. The lock is what makes that true under a concurrent writer - one
-that commits while the downgrade waits is seen by the guard, not dropped by the
-DDL. Both are SQL on PostgreSQL, so an offline-rendered (`--sql`) downgrade
-carries them too. Once the feature has written anything, the rollback is the one
-`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` SS6 names - roll the *code* back and keep
-the additive schema (old code reads and writes this schema unchanged: the new
-columns are nullable or defaulted, which the proof also shows), or apply a
-reviewed forward repair.
+`downgrade()` takes the write lock first (PostgreSQL `LOCK TABLE ... SHARE ROW
+EXCLUSIVE`, SQLite a no-op write), then refuses if any canonical attempt, set,
+projection or non-default `content_kind` exists. With none, it drops the new
+objects, unfreezes the archive and gives it its old names back, every legacy
+row intact. Once the canonical model holds data, the rollback is a reviewed
+forward repair (`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` SS6).
 """
 from __future__ import annotations
 
@@ -112,6 +96,8 @@ SET_STATUSES = ("draft", "needs_review", "approved", "rejected", "stale", "archi
 EDITABLE_SET_STATUSES = ("draft", "needs_review")
 # A set nobody ever served may be deleted; one that reached learners is
 # archived instead, so `archived` is reachable only from `approved`/`stale`.
+# Every state is reversible without a delete: `archived -> approved` restores,
+# `rejected -> needs_review` reopens.
 DELETABLE_SET_STATUSES = ("draft", "needs_review", "rejected")
 QUESTION_TYPES = (
     "main_idea",
@@ -126,22 +112,24 @@ QUESTION_TYPES = (
 # The two types whose answer rests on the whole passage rather than a span.
 # Every other type must carry its evidence.
 SPANLESS_QUESTION_TYPES = ("main_idea", "authors_purpose")
-SUBJECT_KINDS = ("generated_session", "comprehension_set")
+# The legacy generated-passage tables, archived under these names.
+LEGACY_RENAMES = (
+    ("reading_attempts", "reading_legacy_attempts"),
+    ("reading_sessions", "reading_legacy_sessions"),
+)
 
 # Every Reading row owned by an account, and the predicate that finds a
 # learner's rows in each, in deletion order - the enumeration the
 # account-deletion workflow must consume (D-054, `ORENA_ACCOUNT_DATA_
-# ARCHITECTURE.md` SS5). It covers the whole Reading owner, not only what this
-# migration adds: the generated sessions (passage, goal) and their attempts are
-# the learner's too. The set attempts are keyed to the account directly; the
-# projection is discardable. Here for review and for the proof; at apply it
-# moves into application code the deletion workflow imports, because the
-# application never imports a migration.
+# ARCHITECTURE.md` SS5). The archive is the learner's too. Here for review and
+# for the proof; at apply it moves into application code the deletion workflow
+# imports, because the application never imports a migration.
 ACCOUNT_OWNED = (
     ("reading_ability_projections", "user_id = :user_id"),
-    ("reading_attempts", "subject_kind = 'comprehension_set' AND user_id = :user_id"),
-    ("reading_attempts", "session_id IN (SELECT id FROM reading_sessions WHERE user_id = :user_id)"),
-    ("reading_sessions", "user_id = :user_id"),
+    ("reading_attempts", "user_id = :user_id"),
+    ("reading_legacy_attempts",
+     "session_id IN (SELECT id FROM reading_legacy_sessions WHERE user_id = :user_id)"),
+    ("reading_legacy_sessions", "user_id = :user_id"),
 )
 
 # Finite and wide. `ability` is whatever scale the policy version uses - a
@@ -166,6 +154,7 @@ def _in_list(values: tuple[str, ...]) -> str:
 def _dialect() -> str:
     # `get_context()`, not `get_bind()`: offline rendering has no bind.
     return op.get_context().dialect.name
+
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +207,9 @@ BEGIN
            (OLD.status = 'draft' AND NEW.status = 'needs_review')
         OR (OLD.status = 'needs_review' AND NEW.status IN ('draft', 'approved', 'rejected'))
         OR (OLD.status = 'approved' AND NEW.status IN ('stale', 'archived'))
-        OR (OLD.status = 'stale' AND NEW.status IN ('approved', 'archived')))
+        OR (OLD.status = 'stale' AND NEW.status IN ('approved', 'archived'))
+        OR (OLD.status = 'archived' AND NEW.status = 'approved')
+        OR (OLD.status = 'rejected' AND NEW.status = 'needs_review'))
     THEN
         RAISE EXCEPTION 'that comprehension set status change is not a review transition'
             USING ERRCODE = '23514';
@@ -273,55 +264,55 @@ END;
 $func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
-# An attempt meets only an approved set, and a set attempt is immutable
-# evidence. Generated-session rows are untouched: the legacy importer upserts
-# them, and this migration changes nothing about how they are written.
+# An attempt meets only an approved set, and is immutable evidence: no UPDATE
+# at all. `FOR SHARE` on the set serializes a submit against the set being
+# staled or archived.
 _PG_ATTEMPT_GUARD = """
 CREATE OR REPLACE FUNCTION reading_attempt_guard() RETURNS trigger AS $func$
 DECLARE
     parent_status text;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        IF OLD.subject_kind = 'comprehension_set' THEN
-            RAISE EXCEPTION 'a comprehension attempt is immutable evidence'
-                USING ERRCODE = '23514';
-        END IF;
-        IF NEW.subject_kind = 'comprehension_set' THEN
-            RAISE EXCEPTION 'an existing attempt cannot become a comprehension attempt'
-                USING ERRCODE = '23514';
-        END IF;
-        RETURN NEW;
+        RAISE EXCEPTION 'a reading attempt is immutable evidence'
+            USING ERRCODE = '23514';
     END IF;
-    IF NEW.set_id IS NOT NULL THEN
-        SELECT status INTO parent_status FROM reading_comprehension_sets
-         WHERE id = NEW.set_id FOR SHARE;
-        IF FOUND AND parent_status <> 'approved' THEN
-            RAISE EXCEPTION 'a learner meets only an approved comprehension set'
-                USING ERRCODE = '23514';
-        END IF;
+    SELECT status INTO parent_status FROM reading_comprehension_sets
+     WHERE id = NEW.set_id FOR SHARE;
+    IF FOUND AND parent_status <> 'approved' THEN
+        RAISE EXCEPTION 'a learner meets only an approved comprehension set'
+            USING ERRCODE = '23514';
     END IF;
     RETURN NEW;
 END;
 $func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
 
-# TRUNCATE fires no row trigger and ignores RESTRICT under CASCADE, so
-# `TRUNCATE reading_articles CASCADE` would otherwise take sets and learner
-# evidence in one statement. Statement triggers close it. SQLite has no
-# TRUNCATE.
-_PG_TRUNCATE_GUARD = """
-CREATE OR REPLACE FUNCTION reading_comprehension_truncate_guard() RETURNS trigger AS $func$
+# The archive is read-only: history, not a store anyone writes to.
+_PG_ARCHIVE_GUARD = """
+CREATE OR REPLACE FUNCTION reading_legacy_archive_guard() RETURNS trigger AS $func$
 BEGIN
-    IF TG_TABLE_NAME <> 'reading_attempts'
-       OR EXISTS (SELECT 1 FROM reading_attempts WHERE subject_kind = 'comprehension_set')
-    THEN
-        RAISE EXCEPTION 'reviewed comprehension content and learner evidence are never truncated'
-            USING ERRCODE = '23514';
-    END IF;
-    RETURN NULL;
+    RAISE EXCEPTION 'the legacy Reading archive is read-only'
+        USING ERRCODE = '23514';
 END;
 $func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
 """
+
+# TRUNCATE fires no row trigger and ignores RESTRICT under CASCADE, so
+# `TRUNCATE reading_articles CASCADE` or `TRUNCATE users CASCADE` would
+# otherwise take sets and learner evidence in one statement. SQLite has no
+# TRUNCATE. The archive is left truncatable: resetting sandbox-only legacy
+# data is an authorized operator act, not a lifecycle one.
+_PG_TRUNCATE_GUARD = """
+CREATE OR REPLACE FUNCTION reading_evidence_truncate_guard() RETURNS trigger AS $func$
+BEGIN
+    RAISE EXCEPTION 'reviewed comprehension content and learner evidence are never truncated'
+        USING ERRCODE = '23514';
+END;
+$func$ LANGUAGE plpgsql SET search_path FROM CURRENT;
+"""
+
+_PROTECTED = ("reading_comprehension_sets", "reading_comprehension_questions", "reading_attempts")
+_ARCHIVE = ("reading_legacy_sessions", "reading_legacy_attempts")
 
 _PG_TRIGGERS = (
     "CREATE TRIGGER reading_comprehension_set_guard"
@@ -335,19 +326,24 @@ _PG_TRIGGERS = (
     " FOR EACH ROW EXECUTE FUNCTION reading_attempt_guard()",
     *(
         f"CREATE TRIGGER {table}_truncate_guard BEFORE TRUNCATE ON {table}"
-        " FOR EACH STATEMENT EXECUTE FUNCTION reading_comprehension_truncate_guard()"
-        for table in ("reading_comprehension_sets", "reading_comprehension_questions", "reading_attempts")
+        " FOR EACH STATEMENT EXECUTE FUNCTION reading_evidence_truncate_guard()"
+        for table in _PROTECTED
+    ),
+    *(
+        f"CREATE TRIGGER {table}_read_only BEFORE INSERT OR UPDATE ON {table}"
+        " FOR EACH ROW EXECUTE FUNCTION reading_legacy_archive_guard()"
+        for table in _ARCHIVE
     ),
 )
 
 _PG_DROP = (
-    "DROP TRIGGER IF EXISTS reading_attempts_truncate_guard ON reading_attempts",
-    "DROP TRIGGER IF EXISTS reading_comprehension_questions_truncate_guard ON reading_comprehension_questions",
-    "DROP TRIGGER IF EXISTS reading_comprehension_sets_truncate_guard ON reading_comprehension_sets",
-    "DROP FUNCTION IF EXISTS reading_comprehension_truncate_guard()",
+    *(f"DROP TRIGGER IF EXISTS {table}_read_only ON {table}" for table in _ARCHIVE),
+    *(f"DROP TRIGGER IF EXISTS {table}_truncate_guard ON {table}" for table in _PROTECTED),
     "DROP TRIGGER IF EXISTS reading_attempt_guard ON reading_attempts",
     "DROP TRIGGER IF EXISTS reading_comprehension_question_guard ON reading_comprehension_questions",
     "DROP TRIGGER IF EXISTS reading_comprehension_set_guard ON reading_comprehension_sets",
+    "DROP FUNCTION IF EXISTS reading_legacy_archive_guard()",
+    "DROP FUNCTION IF EXISTS reading_evidence_truncate_guard()",
     "DROP FUNCTION IF EXISTS reading_attempt_guard()",
     "DROP FUNCTION IF EXISTS reading_comprehension_question_guard()",
     "DROP FUNCTION IF EXISTS reading_comprehension_set_guard()",
@@ -360,12 +356,11 @@ _PG_DROP = (
 #
 # SQLite also has a write PostgreSQL does not: `INSERT OR REPLACE` / `UPDATE OR
 # REPLACE` resolve a uniqueness conflict by deleting the other row, and fire no
-# DELETE trigger doing it - which would forge a set attempt or turn an approved
-# set back into a draft past every guard above. The `*_conflict_guard`
-# triggers refuse any write that would collide with a protected row, *before*
-# conflict resolution runs. A plain write that collides fails on the unique
-# constraint anyway, so the outcome is the same refusal PostgreSQL gives
-# (where `ON CONFLICT DO UPDATE` goes through the UPDATE guards).
+# DELETE trigger doing it. The `*_conflict_guard` triggers refuse any write that
+# would collide with a protected row *before* conflict resolution runs. A plain
+# write that collides fails on the unique constraint anyway, so the outcome is
+# the refusal PostgreSQL gives (where `ON CONFLICT DO UPDATE` goes through the
+# UPDATE guards).
 _SQLITE_EDITABLE = _in_list(EDITABLE_SET_STATUSES)
 _SQLITE_TRIGGERS = (
     f"""CREATE TRIGGER reading_comprehension_set_insert_guard
@@ -396,7 +391,9 @@ _SQLITE_TRIGGERS = (
            (OLD.status = 'draft' AND NEW.status = 'needs_review')
         OR (OLD.status = 'needs_review' AND NEW.status IN ('draft', 'approved', 'rejected'))
         OR (OLD.status = 'approved' AND NEW.status IN ('stale', 'archived'))
-        OR (OLD.status = 'stale' AND NEW.status IN ('approved', 'archived')))
+        OR (OLD.status = 'stale' AND NEW.status IN ('approved', 'archived'))
+        OR (OLD.status = 'archived' AND NEW.status = 'approved')
+        OR (OLD.status = 'rejected' AND NEW.status = 'needs_review'))
     BEGIN SELECT RAISE(ABORT, 'that comprehension set status change is not a review transition'); END""",
     """CREATE TRIGGER reading_comprehension_set_approval_guard
     BEFORE UPDATE OF status ON reading_comprehension_sets
@@ -419,15 +416,6 @@ _SQLITE_TRIGGERS = (
     BEFORE DELETE ON reading_comprehension_questions
     WHEN (SELECT status FROM reading_comprehension_sets WHERE id = OLD.set_id) NOT IN ({_SQLITE_EDITABLE})
     BEGIN SELECT RAISE(ABORT, 'the questions of a decided comprehension set are frozen'); END""",
-    """CREATE TRIGGER reading_attempt_insert_guard
-    BEFORE INSERT ON reading_attempts
-    WHEN NEW.set_id IS NOT NULL
-     AND (SELECT status FROM reading_comprehension_sets WHERE id = NEW.set_id) <> 'approved'
-    BEGIN SELECT RAISE(ABORT, 'a learner meets only an approved comprehension set'); END""",
-    """CREATE TRIGGER reading_attempt_update_guard
-    BEFORE UPDATE ON reading_attempts
-    WHEN OLD.subject_kind = 'comprehension_set' OR NEW.subject_kind = 'comprehension_set'
-    BEGIN SELECT RAISE(ABORT, 'a comprehension attempt is immutable evidence'); END""",
     """CREATE TRIGGER reading_comprehension_set_insert_conflict_guard
     BEFORE INSERT ON reading_comprehension_sets
     WHEN EXISTS (SELECT 1 FROM reading_comprehension_sets WHERE id = NEW.id)
@@ -448,31 +436,39 @@ _SQLITE_TRIGGERS = (
     WHEN NEW.id IS NOT OLD.id
      AND EXISTS (SELECT 1 FROM reading_comprehension_questions WHERE id = NEW.id)
     BEGIN SELECT RAISE(ABORT, 'a comprehension question is never replaced'); END""",
+    """CREATE TRIGGER reading_attempt_insert_guard
+    BEFORE INSERT ON reading_attempts
+    WHEN (SELECT status FROM reading_comprehension_sets WHERE id = NEW.set_id) <> 'approved'
+    BEGIN SELECT RAISE(ABORT, 'a learner meets only an approved comprehension set'); END""",
+    """CREATE TRIGGER reading_attempt_update_guard
+    BEFORE UPDATE ON reading_attempts
+    BEGIN SELECT RAISE(ABORT, 'a reading attempt is immutable evidence'); END""",
     """CREATE TRIGGER reading_attempt_insert_conflict_guard
     BEFORE INSERT ON reading_attempts
     WHEN EXISTS (SELECT 1 FROM reading_attempts
-                  WHERE subject_kind = 'comprehension_set' AND (
-                        id = NEW.id
+                  WHERE id = NEW.id
                      OR (user_id = NEW.user_id AND operation_id = NEW.operation_id)
                      OR (user_id = NEW.user_id AND language_code = NEW.language_code
-                         AND ordinal = NEW.ordinal)))
-    BEGIN SELECT RAISE(ABORT, 'a comprehension attempt is never replaced'); END""",
-    """CREATE TRIGGER reading_attempt_update_conflict_guard
-    BEFORE UPDATE ON reading_attempts
-    WHEN EXISTS (SELECT 1 FROM reading_attempts
-                  WHERE subject_kind = 'comprehension_set' AND id <> OLD.id AND id = NEW.id)
-    BEGIN SELECT RAISE(ABORT, 'a comprehension attempt is never replaced'); END""",
+                         AND ordinal = NEW.ordinal))
+    BEGIN SELECT RAISE(ABORT, 'a reading attempt is never replaced'); END""",
+    *(
+        f"""CREATE TRIGGER {table}_read_only_{event.lower()}
+    BEFORE {event} ON {table}
+    BEGIN SELECT RAISE(ABORT, 'the legacy Reading archive is read-only'); END"""
+        for table in _ARCHIVE
+        for event in ("INSERT", "UPDATE")
+    ),
 )
 
 _SQLITE_TRIGGER_NAMES = (
-    "reading_attempt_update_conflict_guard",
+    *(f"{table}_read_only_{event}" for table in _ARCHIVE for event in ("insert", "update")),
     "reading_attempt_insert_conflict_guard",
+    "reading_attempt_update_guard",
+    "reading_attempt_insert_guard",
     "reading_comprehension_question_update_conflict_guard",
     "reading_comprehension_question_insert_conflict_guard",
     "reading_comprehension_set_update_conflict_guard",
     "reading_comprehension_set_insert_conflict_guard",
-    "reading_attempt_update_guard",
-    "reading_attempt_insert_guard",
     "reading_comprehension_question_delete_guard",
     "reading_comprehension_question_update_guard",
     "reading_comprehension_question_insert_guard",
@@ -485,7 +481,21 @@ _SQLITE_TRIGGER_NAMES = (
 
 
 def upgrade() -> None:
-    # ---- 1. What form a learner sees ---------------------------------------
+    # ---- 1. Archive the legacy generated-passage tables ---------------------
+    # A rename keeps every row, every constraint and every foreign key pointing
+    # at them (`text_discussions.reading_session_id` follows on both dialects;
+    # SQLite rewrites the reference since 3.26). Attempts first, so the session
+    # table they reference is renamed under them rather than before them.
+    for old, new in LEGACY_RENAMES:
+        op.rename_table(old, new)
+        # PostgreSQL names a primary key's index after its table, and a table
+        # rename keeps it: `reading_attempts_pkey` would still exist and collide
+        # with the canonical table's own primary key below. SQLite renames its
+        # automatic indexes with the table.
+        if _dialect() == "postgresql":
+            op.execute(f"ALTER TABLE {new} RENAME CONSTRAINT {old}_pkey TO {new}_pkey")
+
+    # ---- 2. What form a learner sees ---------------------------------------
     # One statement valid on both dialects: a column constraint inside ADD
     # COLUMN. On SQLite this avoids a batch rebuild of `reading_articles`, which
     # other tables reference and which a rebuild would drop and recreate.
@@ -505,7 +515,7 @@ def upgrade() -> None:
         "uq_reading_article_language_scope", "reading_articles", ["id", "language"], unique=True
     )
 
-    # ---- 2. A reviewed set of questions for one article ---------------------
+    # ---- 3. A reviewed set of questions for one article ---------------------
     op.create_table(
         "reading_comprehension_sets",
         sa.Column("id", sa.Uuid(), primary_key=True),
@@ -586,7 +596,7 @@ def upgrade() -> None:
         ["article_id", "created_at"],
     )
 
-    # ---- 3. The questions ---------------------------------------------------
+    # ---- 4. The questions ---------------------------------------------------
     op.create_table(
         "reading_comprehension_questions",
         sa.Column("id", sa.Uuid(), primary_key=True),
@@ -670,135 +680,97 @@ def upgrade() -> None:
         ["set_id", "rank"],
     )
 
-    # ---- 4. The existing attempt owner, given a second subject --------------
-    # `batch_alter_table` emits plain ALTERs on PostgreSQL (DROP NOT NULL and
-    # ADD COLUMN without a volatile default are catalogue-only there) and
-    # rebuilds the table on SQLite, which cannot relax NOT NULL in place.
-    # Nothing references `reading_attempts`, so the rebuild drops no child.
-    with op.batch_alter_table("reading_attempts") as batch:
-        batch.alter_column("session_id", existing_type=sa.Uuid(), nullable=True)
-        batch.alter_column("legacy_id", existing_type=sa.Integer(), nullable=True)
-        # Server default = the existing shape, so every existing row and every
-        # write from code that has never heard of this column is a
-        # generated-session attempt, exactly as it is today.
-        batch.add_column(
-            sa.Column(
-                "subject_kind", sa.String(20), nullable=False, server_default="generated_session"
-            )
-        )
-        batch.add_column(sa.Column("user_id", sa.Uuid(), nullable=True))
-        batch.add_column(sa.Column("language_code", sa.String(20), nullable=True))
-        batch.add_column(sa.Column("set_id", sa.Uuid(), nullable=True))
+    # ---- 5. The one canonical Reading evidence model -----------------------
+    op.create_table(
+        "reading_attempts",
+        sa.Column("id", sa.Uuid(), primary_key=True),
+        sa.Column(
+            "user_id",
+            sa.Uuid(),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column("language_code", sa.String(20), nullable=False),
+        sa.Column("set_id", sa.Uuid(), nullable=False),
         # Per account and language, max + 1, allocated under a per-(account,
-        # language) transaction lock that is not the discardable projection
-        # row. The replay order and the projection's checkpoint - server order,
-        # never the client's clock. Contiguity is the service's invariant: the
+        # language) advisory transaction lock - not the discardable projection
+        # row. The replay order and the projection's checkpoint: server order,
+        # never the client's clock. Contiguity is the service's invariant; the
         # database refuses a duplicate, not a gap.
-        batch.add_column(sa.Column("ordinal", sa.Integer(), nullable=True))
-        # Idempotency (SS4): one logical submit, not one HTTP try. The row is
-        # its own receipt - a retry finds it and returns it. The digest is the
-        # guard against the same id reused with different input.
-        batch.add_column(sa.Column("operation_id", sa.String(120), nullable=True))
-        batch.add_column(sa.Column("request_digest", sa.String(64), nullable=True))
+        sa.Column("ordinal", sa.Integer(), nullable=False),
+        # Idempotency (`ORENA_ACCOUNT_DATA_ARCHITECTURE.md` SS4): one logical
+        # submit, not one HTTP try. The row is its own receipt; the digest is
+        # the guard against the same id reused with different input.
+        sa.Column("operation_id", sa.String(120), nullable=False),
+        sa.Column("request_digest", sa.String(64), nullable=False),
         # How the answers were judged.
-        batch.add_column(sa.Column("evaluator_version", sa.String(40), nullable=True))
-        # The difficulty faced, as the level was then.
-        batch.add_column(sa.Column("passage_level", sa.String(20), nullable=True))
-        # The ability measurement: which policy moved it, the difficulty
-        # number that policy actually consumed (so before -> after stays
-        # explainable after the level-to-number mapping changes), and the
-        # before and after. **All four or none** (`ck_reading_attempt_ability_
-        # group`): the evidence is the answers, and it commits even when the
-        # projection cannot measure it - a policy with no mapping for this
-        # level, a replay that fails. NULL is "not measured", never zero
-        # (`ORENA_EVIDENCE_ARCHITECTURE.md` SS2, SS3: "Projection failure
-        # preserves source evidence").
-        batch.add_column(sa.Column("ability_policy_version", sa.String(40), nullable=True))
-        batch.add_column(sa.Column("passage_difficulty", sa.Float(), nullable=True))
-        batch.add_column(sa.Column("ability_before", sa.Float(), nullable=True))
-        batch.add_column(sa.Column("ability_after", sa.Float(), nullable=True))
-
-        batch.create_foreign_key(
-            "fk_reading_attempt_user", "users", ["user_id"], ["id"], ondelete="CASCADE"
-        )
-        # Composite: the set, in the attempt's own language. RESTRICT - a
-        # content delete can never take learner evidence with it.
-        batch.create_foreign_key(
-            "fk_reading_attempt_set_scope",
-            "reading_comprehension_sets",
+        sa.Column("evaluator_version", sa.String(40), nullable=False),
+        # The difficulty faced, as the article's level was then.
+        sa.Column("passage_level", sa.String(20), nullable=False),
+        # The ability measurement: which policy moved it, the difficulty number
+        # that policy consumed, before and after. All four or none: the answers
+        # are the evidence and commit even when no policy can measure them -
+        # NULL is "not measured", never zero (`ORENA_EVIDENCE_ARCHITECTURE.md`
+        # SS2, SS3).
+        sa.Column("ability_policy_version", sa.String(40), nullable=True),
+        sa.Column("passage_difficulty", sa.Float(), nullable=True),
+        sa.Column("ability_before", sa.Float(), nullable=True),
+        sa.Column("ability_after", sa.Float(), nullable=True),
+        # `[{question_id, selected_index, correct}]`, one per approved question
+        # of the set. The database bounds the length; the service validates
+        # every element before it writes.
+        sa.Column("answers", sa.JSON(), nullable=False),
+        sa.Column("correct_count", sa.Integer(), nullable=False),
+        sa.Column("total", sa.Integer(), nullable=False),
+        # The moment the answers were submitted. A row exists only once
+        # submitted: an unfinished answer sheet is device work, not evidence.
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        # The set, in the attempt's own language. RESTRICT: no content delete
+        # can take learner evidence with it.
+        sa.ForeignKeyConstraint(
             ["set_id", "language_code"],
-            ["id", "language_code"],
+            ["reading_comprehension_sets.id", "reading_comprehension_sets.language_code"],
+            name="fk_reading_attempt_set_scope",
             ondelete="RESTRICT",
-        )
-        batch.create_check_constraint(
-            "ck_reading_attempt_subject_kind", f"subject_kind IN ({_in_list(SUBJECT_KINDS)})"
-        )
-        # The two shapes, each exclusive and complete. A generated-session
-        # attempt is exactly what it is today, scoped through its session; a
-        # set attempt is scoped to the account directly and carries every
-        # fact the evidence contract requires.
-        batch.create_check_constraint(
-            "ck_reading_attempt_generated_shape",
-            "subject_kind <> 'generated_session' OR ("
-            "session_id IS NOT NULL AND legacy_id IS NOT NULL"
-            " AND user_id IS NULL AND language_code IS NULL AND set_id IS NULL"
-            " AND ordinal IS NULL AND operation_id IS NULL AND request_digest IS NULL"
-            " AND evaluator_version IS NULL AND ability_policy_version IS NULL"
-            " AND passage_level IS NULL AND passage_difficulty IS NULL"
-            " AND ability_before IS NULL AND ability_after IS NULL)",
-        )
-        batch.create_check_constraint(
-            "ck_reading_attempt_set_shape",
-            "subject_kind <> 'comprehension_set' OR ("
-            "session_id IS NULL AND legacy_id IS NULL"
-            " AND user_id IS NOT NULL AND language_code IS NOT NULL AND set_id IS NOT NULL"
-            " AND ordinal IS NOT NULL AND operation_id IS NOT NULL AND request_digest IS NOT NULL"
-            " AND evaluator_version IS NOT NULL AND passage_level IS NOT NULL)",
-        )
-        batch.create_check_constraint(
-            "ck_reading_attempt_ability_group",
+        ),
+        sa.CheckConstraint(
+            "language_code <> '' AND ordinal >= 1 AND operation_id <> ''"
+            " AND evaluator_version <> '' AND passage_level <> ''",
+            name="ck_reading_attempt_identity",
+        ),
+        sa.CheckConstraint(_hex64("request_digest"), name="ck_reading_attempt_digest"),
+        sa.CheckConstraint(
+            "total > 0 AND correct_count >= 0 AND correct_count <= total"
+            " AND json_array_length(answers) = total",
+            name="ck_reading_attempt_counts",
+        ),
+        sa.CheckConstraint(
             "(ability_policy_version IS NULL) = (passage_difficulty IS NULL)"
             " AND (passage_difficulty IS NULL) = (ability_before IS NULL)"
             " AND (ability_before IS NULL) = (ability_after IS NULL)",
-        )
-        # Counts are bounded for set attempts only: legacy rows keep whatever
-        # the old writer and the importer produced, and are not re-judged.
-        batch.create_check_constraint(
-            "ck_reading_attempt_set_counts",
-            "subject_kind <> 'comprehension_set' OR ("
-            "total > 0 AND correct_count >= 0 AND correct_count <= total"
-            " AND json_array_length(answers) = total)",
-        )
-        # Each branch is written `x IS NULL OR (...)` so no comparison with a
-        # NULL can make the whole CHECK pass by evaluating to unknown.
-        batch.create_check_constraint(
-            "ck_reading_attempt_set_values",
-            "(ordinal IS NULL OR ("
-            f"ordinal >= 1 AND operation_id <> '' AND {_hex64('request_digest')}"
-            " AND evaluator_version <> '' AND passage_level <> ''))"
-            " AND (ability_policy_version IS NULL OR ("
+            name="ck_reading_attempt_ability_group",
+        ),
+        # `x IS NULL OR (...)` so no comparison with a NULL can pass the CHECK
+        # by evaluating to unknown.
+        sa.CheckConstraint(
+            "ability_policy_version IS NULL OR ("
             f"ability_policy_version <> '' AND passage_difficulty {_FINITE}"
-            f" AND ability_before {_FINITE} AND ability_after {_FINITE}))",
-        )
-        # Plain unique constraints over nullable columns: generated-session rows
-        # hold NULL here, and NULLs are distinct in a unique constraint on both
-        # dialects, so no partial predicate is needed - or can drift. The
-        # operation is scoped to the account, not to a language: an id replayed
-        # under another language is the same logical action reused, and must be
-        # refused, as the backbone's `(incarnation, domain, operation_id)` does.
-        batch.create_unique_constraint(
-            "uq_reading_attempt_operation", ["user_id", "operation_id"]
-        )
-        # Also the progression read (`ORDER BY ordinal DESC`), the replay
-        # order, and the index account deletion finds a learner's rows by.
-        batch.create_unique_constraint(
-            "uq_reading_attempt_ordinal", ["user_id", "language_code", "ordinal"]
-        )
+            f" AND ability_before {_FINITE} AND ability_after {_FINITE})",
+            name="ck_reading_attempt_ability_values",
+        ),
+        # Scoped to the account, not the language: an id replayed under another
+        # language is the same logical action reused, and is refused - the
+        # backbone's receipts are `(incarnation, domain, operation_id)`.
+        sa.UniqueConstraint("user_id", "operation_id", name="uq_reading_attempt_operation"),
+        # The progression read (`ORDER BY ordinal DESC`), the replay order, and
+        # how account deletion finds a learner's rows.
+        sa.UniqueConstraint("user_id", "language_code", "ordinal", name="uq_reading_attempt_ordinal"),
+    )
     # What the RESTRICT check reads when a set is deleted, and "has anyone
     # attempted this set" for the Admin pane.
     op.create_index("ix_reading_attempts_set", "reading_attempts", ["set_id", "language_code"])
 
-    # ---- 5. The ability projection -----------------------------------------
+    # ---- 6. The ability projection -----------------------------------------
     # Discardable by definition (`ORENA_EVIDENCE_ARCHITECTURE.md` SS3): every
     # value here is recomputed by replaying the account's set attempts in
     # ordinal order under `policy_version`, and deleting a row costs a rebuild,
@@ -837,12 +809,11 @@ def upgrade() -> None:
         ),
     )
 
-    # ---- 6. The lifecycle rules a CHECK cannot express ----------------------
+    # ---- 7. The lifecycle rules a CHECK cannot express ----------------------
     if _dialect() == "postgresql":
-        op.execute(_PG_SET_GUARD)
-        op.execute(_PG_QUESTION_GUARD)
-        op.execute(_PG_ATTEMPT_GUARD)
-        op.execute(_PG_TRUNCATE_GUARD)
+        for function in (_PG_SET_GUARD, _PG_QUESTION_GUARD, _PG_ATTEMPT_GUARD,
+                         _PG_ARCHIVE_GUARD, _PG_TRUNCATE_GUARD):
+            op.execute(function)
         for statement in _PG_TRIGGERS:
             op.execute(statement)
     elif _dialect() == "sqlite":
@@ -852,32 +823,30 @@ def upgrade() -> None:
         raise NotImplementedError(f"no lifecycle triggers written for {_dialect()}")
 
 
-# The footprint a downgrade would destroy. Any of it present means the feature
-# has written something a learner did or an admin decided.
+# The footprint a downgrade would destroy. Any of it present means the canonical
+# flow has recorded something a learner did or an admin decided.
 _FOOTPRINT = (
-    "SELECT 1 FROM reading_attempts WHERE subject_kind = 'comprehension_set'",
+    "SELECT 1 FROM reading_attempts",
     "SELECT 1 FROM reading_comprehension_sets",
     "SELECT 1 FROM reading_ability_projections",
     "SELECT 1 FROM reading_articles WHERE content_kind <> 'article'",
 )
 _REFUSAL = (
-    "20260924_0014 downgrade refused - Adaptive Reading data exists. Downgrade never"
-    " removes learner evidence or reviewed content. Roll the code back and keep this"
-    " additive schema, or write a reviewed forward repair."
+    "20260924_0014 downgrade refused - canonical Reading data exists. Downgrade never"
+    " removes learner evidence or reviewed content. Write a reviewed forward repair."
 )
 
 
 def _guard_downgrade() -> None:
     if _dialect() == "postgresql":
-        # Lock first, then look. Without the lock a writer that committed
-        # while the guard was reading - a draft set, a `content_kind` - would
-        # be dropped by the DDL that follows. SHARE ROW EXCLUSIVE blocks every
-        # writer and every second downgrade until this transaction ends. SQL,
-        # so an offline-rendered downgrade carries the lock and the refusal.
+        # Lock first, then look: a writer that commits while the downgrade
+        # waits is seen by the guard, not dropped by the DDL. SHARE ROW
+        # EXCLUSIVE blocks every writer and any second downgrade until this
+        # transaction ends. SQL, so an offline-rendered downgrade carries it.
         op.execute(
             "LOCK TABLE reading_articles, reading_comprehension_sets,"
-            " reading_comprehension_questions, reading_attempts, reading_ability_projections"
-            " IN SHARE ROW EXCLUSIVE MODE"
+            " reading_comprehension_questions, reading_attempts, reading_ability_projections,"
+            " reading_legacy_sessions, reading_legacy_attempts IN SHARE ROW EXCLUSIVE MODE"
         )
         conditions = " OR ".join(f"EXISTS ({query})" for query in _FOOTPRINT)
         op.execute(
@@ -886,10 +855,8 @@ def _guard_downgrade() -> None:
         )
         return
     # SQLite: a SELECT alone opens no transaction under pysqlite's defaults, so
-    # a writer could commit between the guard and the DDL and be dropped
-    # unseen. A write that changes nothing takes the database's write lock
-    # first - no other connection can write until this transaction ends - and
-    # only then does the guard look.
+    # a write that changes nothing takes the database's write lock first; no
+    # other connection can write until the downgrade ends.
     bind = op.get_bind()
     bind.execute(sa.text("UPDATE reading_articles SET content_kind = content_kind WHERE 1 = 0"))
     for query in _FOOTPRINT:
@@ -907,46 +874,17 @@ def downgrade() -> None:
             op.execute(f"DROP TRIGGER IF EXISTS {name}")
 
     op.drop_table("reading_ability_projections")
-
     op.drop_index("ix_reading_attempts_set", table_name="reading_attempts")
-    with op.batch_alter_table("reading_attempts") as batch:
-        batch.drop_constraint("uq_reading_attempt_ordinal", type_="unique")
-        batch.drop_constraint("uq_reading_attempt_operation", type_="unique")
-        batch.drop_constraint("ck_reading_attempt_set_values", type_="check")
-        batch.drop_constraint("ck_reading_attempt_ability_group", type_="check")
-        batch.drop_constraint("ck_reading_attempt_set_counts", type_="check")
-        batch.drop_constraint("ck_reading_attempt_set_shape", type_="check")
-        batch.drop_constraint("ck_reading_attempt_generated_shape", type_="check")
-        batch.drop_constraint("ck_reading_attempt_subject_kind", type_="check")
-        batch.drop_constraint("fk_reading_attempt_set_scope", type_="foreignkey")
-        batch.drop_constraint("fk_reading_attempt_user", type_="foreignkey")
-        for column in (
-            "ability_after",
-            "ability_before",
-            "passage_difficulty",
-            "passage_level",
-            "ability_policy_version",
-            "evaluator_version",
-            "request_digest",
-            "operation_id",
-            "ordinal",
-            "set_id",
-            "language_code",
-            "user_id",
-            "subject_kind",
-        ):
-            batch.drop_column(column)
-        # Every remaining row is a generated-session attempt (the guard saw no
-        # other kind), and the shape CHECK held both columns NOT NULL for it,
-        # so restoring NOT NULL rewrites nothing and cannot fail.
-        batch.alter_column("legacy_id", existing_type=sa.Integer(), nullable=False)
-        batch.alter_column("session_id", existing_type=sa.Uuid(), nullable=False)
-
+    op.drop_table("reading_attempts")
     op.drop_index("ix_reading_comprehension_questions_set", table_name="reading_comprehension_questions")
     op.drop_table("reading_comprehension_questions")
     op.drop_index("ix_reading_comprehension_sets_article", table_name="reading_comprehension_sets")
     op.drop_index("uq_reading_comprehension_set_approved", table_name="reading_comprehension_sets")
     op.drop_table("reading_comprehension_sets")
-
     op.drop_index("uq_reading_article_language_scope", table_name="reading_articles")
     op.execute("ALTER TABLE reading_articles DROP COLUMN content_kind")
+    # The archive gets its names back, every row intact.
+    for old, new in reversed(LEGACY_RENAMES):
+        if _dialect() == "postgresql":
+            op.execute(f"ALTER TABLE {new} RENAME CONSTRAINT {new}_pkey TO {old}_pkey")
+        op.rename_table(new, old)

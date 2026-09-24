@@ -6,10 +6,13 @@
 | 2 | `4563908` (proposal + DDL + two-dialect proof) | REQUEST CHANGES — 1 blocker, 11 required changes, 6 factual errors |
 | 3 | `c7050d6` (delta: the round-2 answers) | APPROVED WITH REQUIRED CHANGES — no blockers; RC1, RC2 made in `0d6efda`, RC3 apply-time |
 | 3, confirmation | `0d6efda` (delta: RC1, RC2, search_path) | **APPROVED** — no new findings |
+| — | **superseded 2026-09-24 by D-075** | the reviewed design kept `generated_session` as a second attempt subject; the human rejected keeping the legacy shape as a formal contract. **This approval does not carry to the canonical model.** |
+| C1 | canonical model (D-075), reviewed from the start | pending |
 
-Nothing is applied in any round. The schema-review gate is passed at `0d6efda`;
-applying still needs the human's schema/runtime authorization, and approval of
-the schema is not product approval.
+Nothing is applied in any round. Rounds 1-3 reviewed the `generated_session`
+design, which D-075 superseded; their approval at `0d6efda` is void for the
+canonical model, which is reviewed from round C1. Applying needs an APPROVED
+review of the canonical model and the human's schema/runtime authorization.
 
 ---
 
