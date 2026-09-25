@@ -188,3 +188,55 @@ def test_apply_checks_and_migrates_on_one_connection_or_changes_nothing(capsys):
         with admin.begin() as connection:
             connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
         admin.dispose()
+
+
+def test_apply_takes_only_the_cutover_step_and_refuses_any_other_from_before_connecting(monkeypatch, capsys):
+    """`apply` is 20260923_0013 -> 20260924_0014 and nothing else: a --from that
+    matched some other database's revision would carry it across revisions this
+    command was never meant to apply."""
+    monkeypatch.setattr(cutover, "_engine", lambda url: (_ for _ in ()).throw(AssertionError("connected")))
+    for other in ("20260922_0012", "20260924_0014", "", "head"):
+        assert cutover.apply(SANDBOX_DB, confirmed="orena", expect_cluster="1", from_revision=other) == 2, other
+        assert "refused" in capsys.readouterr().out
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "http://localhost:8012")
+    assert cutover.main(["apply", "--url", SANDBOX_DB, "--confirm-sandbox", "orena", "--expect-cluster", "1",
+                         "--from", "20260922_0012"]) == 2
+    assert "only 20260923_0013 -> 20260924_0014" in capsys.readouterr().out
+
+
+@pytest.mark.skipif(not PG_URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
+def test_a_database_at_an_earlier_revision_cannot_be_migrated_by_the_cutover_command(capsys):
+    """A real database at 20260922_0012, with --from 20260922_0012 that matches
+    it, the right database and the right cluster: still refused, still at
+    20260922_0012."""
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine, text
+
+    schema = f"cutover_early_{uuid.uuid4().hex[:10]}"
+    separator = "&" if "?" in PG_URL else "?"
+    url = f"{PG_URL}{separator}options={quote(f'-csearch_path={schema}')}"
+    admin = create_engine(PG_URL, future=True)
+    with admin.begin() as connection:
+        connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+    try:
+        config = Config(str(ROOT / "alembic.ini"))
+        config.set_main_option("script_location", str(ROOT / "migrations"))
+        config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
+        command.upgrade(config, "20260922_0012")
+        found = cutover.identity(url)
+        assert cutover.apply(url, confirmed=found["database"], expect_cluster=found["cluster"],
+                             from_revision="20260922_0012") == 2
+        assert "only 20260923_0013 -> 20260924_0014" in capsys.readouterr().out
+        engine = create_engine(url, future=True)
+        try:
+            with engine.connect() as connection:
+                assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() \
+                    == "20260922_0012"
+        finally:
+            engine.dispose()
+    finally:
+        with admin.begin() as connection:
+            connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+        admin.dispose()

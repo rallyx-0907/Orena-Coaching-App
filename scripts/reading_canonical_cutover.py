@@ -180,6 +180,13 @@ def apply(url: str, *, confirmed: str, expect_cluster: str, from_revision: str,
           to_revision: str = CUTOVER_REVISION) -> int:
     """The cutover migration, gated and applied as one operation (see the
     module docstring)."""
+    # One step only: 20260923_0013 -> 20260924_0014. A database at any other
+    # revision would be taken across revisions this command was never meant
+    # to apply, so it is refused before anything is connected to.
+    if from_revision != CUTOVER_FROM:
+        print(f"refused: this command applies only {CUTOVER_FROM} -> {CUTOVER_REVISION}; --from "
+              f"{from_revision or '(none)'} is not {CUTOVER_FROM}: nothing was connected to or migrated")
+        return 2
     from alembic import command
     from alembic.runtime.migration import MigrationContext
     from sqlalchemy import text
