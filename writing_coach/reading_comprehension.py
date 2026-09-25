@@ -111,24 +111,78 @@ def _messages(*, title: str, body: str, language: str, level: str, support_code:
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+class _Malformed(ValueError):
+    """A question whose structure is not the schema's."""
+
+
+def _text(item: Mapping[str, Any], key: str, label: str) -> str:
+    value = item.get(key)
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise _Malformed(f"{label}: {key} is not text")
+    return value.strip()
+
+
+def _options(item: Mapping[str, Any], label: str) -> list[str]:
+    value = item.get("options")
+    if not isinstance(value, list):
+        raise _Malformed(f"{label}: options is not a list")
+    options = []
+    for option in value:
+        # Text, or a plain number a model wrote without quotes (a year, a
+        # count); never an object, a list, a boolean or null.
+        if isinstance(option, bool) or not isinstance(option, (str, int, float)):
+            raise _Malformed(f"{label}: an option is not text")
+        options.append(str(option).strip())
+    return options
+
+
+def _answer_index(item: Mapping[str, Any], label: str) -> int:
+    value = item.get("correct_index")
+    # An integer, however a model spelled it (1, 1.0, "1"); never a fraction,
+    # a boolean, infinity or anything else.
+    if isinstance(value, bool):
+        raise _Malformed(f"{label}: no answer index")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
+        return int(value.strip())
+    raise _Malformed(f"{label}: no answer index")
+
+
+def question_list(raw: Mapping[str, Any]) -> list[Any] | None:
+    """The questions as a list: an absent or null value is no questions; any
+    other non-list is not a question list at all (None)."""
+    value = raw.get("questions")
+    if value is None:
+        return []
+    return value if isinstance(value, list) else None
+
+
 def _validate(raw: Mapping[str, Any], body: str) -> tuple[list[dict[str, Any]], list[str]]:
-    """Keep the questions that are well formed and grounded; say why others went."""
+    """Keep the questions that are well formed and grounded; say why others
+    went. The caller has checked that `questions` is a list; a question whose
+    structure is not the schema's is set aside with its reason, never allowed
+    to raise."""
     kept: list[dict[str, Any]] = []
     issues: list[str] = []
-    for index, item in enumerate(raw.get("questions") or []):
+    for index, item in enumerate(question_list(raw) or []):
         label = f"question {index + 1}"
         if not isinstance(item, Mapping):
             issues.append(f"{label}: not an object")
             continue
-        qtype = str(item.get("question_type") or "").strip()
-        prompt = str(item.get("prompt") or "").strip()
-        explanation = str(item.get("explanation") or "").strip()
-        options = [str(value).strip() for value in (item.get("options") or [])]
-        evidence = str(item.get("evidence_text") or "").strip()
         try:
-            correct = int(item.get("correct_index"))
-        except (TypeError, ValueError):
-            issues.append(f"{label}: no answer index")
+            qtype = _text(item, "question_type", label)
+            prompt = _text(item, "prompt", label)
+            explanation = _text(item, "explanation", label)
+            evidence = _text(item, "evidence_text", label)
+            options = _options(item, label)
+            correct = _answer_index(item, label)
+        except _Malformed as exc:
+            issues.append(str(exc))
             continue
         if qtype not in QUESTION_TYPES:
             issues.append(f"{label}: unknown type {qtype!r}")
@@ -218,7 +272,14 @@ def _checked(result: Any, body: str, retries: list[dict[str, Any]]) -> Processed
     data = getattr(result, "data", result)
     if not isinstance(data, Mapping):
         raise UnusableResult("reading_processor_failed", "The AI provider returned no questions.")
-    questions, issues = _validate(data, body)
+    returned = question_list(data)
+    if returned is None:
+        raise UnusableResult("reading_processor_failed", "The AI provider's questions are not a list.")
+    try:
+        questions, issues = _validate(data, body)
+    except Exception as exc:  # noqa: BLE001 - a malformed answer is unusable, never a 500
+        _logger.warning("reading comprehension: a provider answer could not be validated", exc_info=True)
+        raise UnusableResult("reading_processor_failed", "The AI provider's questions could not be read.") from exc
     if len(questions) < MIN_QUESTIONS:
         raise UnusableResult(
             "reading_processor_ungrounded",
@@ -228,7 +289,7 @@ def _checked(result: Any, body: str, retries: list[dict[str, Any]]) -> Processed
     model = str(getattr(result, "model", "") or "")
     coverage = sorted({item["question_type"] for item in questions})
     validation: dict[str, Any] = {"issues": issues, "coverage": coverage, "kept": len(questions),
-                                  "returned": len(data.get("questions") or [])}
+                                  "returned": len(returned)}
     if retries:
         # Kept with the set, so the Admin reviewing it - and anyone reading the
         # sets later - sees that the provider's first answer was unusable.

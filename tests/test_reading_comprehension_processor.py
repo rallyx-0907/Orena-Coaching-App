@@ -160,6 +160,94 @@ def test_a_provider_that_fails_is_never_retried(failure, code):
     assert len(provider.calls) == 1
 
 
+def _with_first_question(language: str, **changes) -> dict:
+    data = _valid(language)
+    data["questions"][0] |= changes
+    return data
+
+
+def _all_questions(language: str, **changes) -> dict:
+    data = _valid(language)
+    for question in data["questions"]:
+        question |= changes
+    return data
+
+
+# Answers whose structure is not the schema's. Each must be classified as an
+# unusable result - retried once - and never escape as an incidental
+# TypeError / ValueError / AttributeError / OverflowError.
+MALFORMED = {
+    "questions-int": {"questions": 42},
+    "questions-float": {"questions": 4.2},
+    "questions-true": {"questions": True},
+    "questions-string": {"questions": "three questions"},
+    "questions-object": {"questions": {"question_type": "detail"}},
+    "question-scalars": {"questions": [42, "text", None, True, 3.5]},
+    "question-lists": {"questions": [[1, 2], [], ["detail"]]},
+    "options-int": _all_questions("en", options=42),
+    "options-string": _all_questions("en", options="forty, ten, sixty"),
+    "options-object": _all_questions("en", options={"a": "forty"}),
+    "options-null": _all_questions("en", options=None),
+    "options-of-objects": _all_questions("en", options=[{"a": 1}, {"b": 2}, {"c": 3}]),
+    "options-of-lists": _all_questions("en", options=[[1], [2], [3]]),
+    "options-of-null": _all_questions("en", options=[None, None, None]),
+    "prompt-object": _all_questions("en", prompt={"text": "How long?"}),
+    "type-list": _all_questions("en", question_type=["detail"]),
+    "evidence-list": _all_questions("en", evidence_text=["forty minutes"]),
+    "index-infinity": _all_questions("en", correct_index=float("inf")),
+    "index-nan": _all_questions("en", correct_index=float("nan")),
+    "index-fraction": _all_questions("en", correct_index=0.5),
+    "index-object": _all_questions("en", correct_index={"i": 0}),
+    "index-bool": _all_questions("en", correct_index=False),
+    "index-unicode-digit": _all_questions("en", correct_index="²"),
+}
+
+
+@pytest.mark.parametrize("malformed", list(MALFORMED.values()), ids=list(MALFORMED))
+def test_a_malformed_first_answer_is_retried_and_a_valid_second_succeeds(malformed):
+    provider = Provider(malformed, _valid("en"))
+    processed = _run(provider)
+    assert len(provider.calls) == 2
+    assert len(processed.questions) == 3
+    assert processed.validation["retries"][0]["reason"] in {"reading_processor_failed",
+                                                              "reading_processor_ungrounded"}
+
+
+@pytest.mark.parametrize("malformed", list(MALFORMED.values()), ids=list(MALFORMED))
+def test_a_malformed_answer_twice_is_the_normal_refusal_never_a_crash(malformed):
+    provider = Provider(malformed, malformed)
+    with pytest.raises(ReadingEvidenceError) as refused:
+        _run(provider)
+    assert refused.value.code in {"reading_processor_failed", "reading_processor_ungrounded"}
+    assert len(provider.calls) == 2, "still exactly one retry"
+
+
+def test_a_malformed_question_is_set_aside_and_the_well_formed_ones_still_count():
+    """One malformed question among four good ones is dropped with its reason;
+    the set is made from the rest - the grounding rules are unchanged."""
+    data = _valid("zh")
+    data["questions"].insert(1, {"question_type": "detail", "prompt": "?", "options": 42,
+                                 "correct_index": 0, "explanation": "x", "evidence_text": "四十分钟"})
+    provider = Provider(data)
+    processed = _run(provider, "zh")
+    assert len(provider.calls) == 1
+    assert len(processed.questions) == 3
+    assert any("options is not a list" in issue for issue in processed.validation["issues"])
+
+
+@pytest.mark.parametrize("index,expected", [(1, 1), (1.0, 1), ("1", 1), (" 2 ", 2)])
+def test_an_answer_index_is_an_integer_however_a_model_spelled_it(index, expected):
+    provider = Provider(_with_first_question("en", correct_index=index))
+    processed = _run(provider)
+    assert processed.questions[0]["correct_index"] == expected
+
+
+def test_numeric_options_a_model_left_unquoted_are_still_options():
+    data = _with_first_question("en", options=[40, 10, 60, 5])
+    processed = _run(Provider(data))
+    assert processed.questions[0]["options"] == ["40", "10", "60", "5"]
+
+
 def test_a_usable_first_answer_is_asked_once_and_records_no_retry():
     provider = Provider(_valid("zh"))
     processed = _run(provider, "zh")

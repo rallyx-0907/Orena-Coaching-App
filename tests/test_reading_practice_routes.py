@@ -71,11 +71,15 @@ class Provider:
         # Call numbers answered with an empty object: a result that arrived
         # but cannot make a set.
         self.unusable_calls: set[int] = set()
+        # Call number -> the exact data answered (a malformed structure).
+        self.scripted: dict[int, object] = {}
 
     def __call__(self, *, messages, schema, max_output_tokens, temperature, capability_key):
         self.calls.append({"messages": messages, "schema": schema, "capability_key": capability_key})
         if self.during is not None:
             self.during(len(self.calls))
+        if len(self.calls) in self.scripted:
+            return SimpleNamespace(data=self.scripted[len(self.calls)], model="stub-model")
         if len(self.calls) in self.unusable_calls:
             return SimpleNamespace(data={}, model="stub-model")
         language = "zh" if "questions in Chinese" in messages[0]["content"] else "en"
@@ -263,6 +267,35 @@ def test_an_unusable_first_answer_is_asked_again_and_the_retry_is_kept_with_the_
     assert len(setup.provider.calls) == 2
     retries = created.json()["validation"]["retries"]
     assert [item["reason"] for item in retries] == ["reading_processor_ungrounded"]
+
+
+@pytest.mark.parametrize("malformed", [
+    {"questions": 42},
+    {"questions": [42, None]},
+    {"questions": [{"question_type": "detail", "prompt": "?", "options": 42, "correct_index": 0,
+                    "explanation": "x", "evidence_text": "forty minutes"}] * 3},
+], ids=["questions-int", "question-scalars", "options-int"])
+def test_a_malformed_answer_is_retried_or_refused_over_http_never_a_500(setup, malformed):
+    article_id = _article(setup)
+    _publish(setup, article_id)
+    setup.provider.scripted = {1: malformed}
+    recovered = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                     json={"support_language": "vi"})
+    assert recovered.status_code == 201, recovered.text
+    assert len(setup.provider.calls) == 2
+    setup.provider.calls.clear()
+    other = _article(setup, content_hash="e" * 64)
+    _publish(setup, other)
+    setup.provider.scripted = {1: malformed, 2: malformed}
+    refused = call(setup.app, "POST", f"/api/admin/reading/articles/{other}/comprehension-sets",
+                   json={"support_language": "vi"})
+    # The existing refusals, with their existing statuses: no usable answer is
+    # 503 (as a non-object answer always was), too few grounded ones 422.
+    expected = {"reading_processor_failed": 503, "reading_processor_ungrounded": 422}
+    category = refused.json()["detail"]["category"]
+    assert category in expected and refused.status_code == expected[category], refused.text
+    assert len(setup.provider.calls) == 2
+    assert setup.evidence.list_sets(other) == []
 
 
 def test_two_unusable_answers_are_refused_as_before_and_write_nothing(setup):
