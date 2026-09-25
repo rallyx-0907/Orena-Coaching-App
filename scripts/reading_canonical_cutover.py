@@ -1,13 +1,22 @@
 """The canonical Reading cutover (D-075, D-076) - admin sandbox only.
 
-Four read-mostly steps around `alembic upgrade 20260924_0014`, for the
-operator who runs it:
+The cutover and the read-mostly steps around it, for the operator who runs it:
 
     python scripts/reading_canonical_cutover.py target --confirm-sandbox <database>
     python scripts/reading_canonical_cutover.py inventory --confirm-sandbox <database>
+    python scripts/reading_canonical_cutover.py apply --confirm-sandbox <database> \\
+        --expect-cluster <system identifier> --from 20260923_0013
     python scripts/reading_canonical_cutover.py status --confirm-sandbox <database>
     python scripts/reading_canonical_cutover.py reset-legacy --confirm-sandbox <database> \\
         --expect-cluster <system identifier> --expect-sessions N --expect-attempts M
+
+`apply` is the migration itself, `20260924_0014`, non-additive. It is one
+operation: on one connection and in one transaction it checks that the server
+is the confirmed database in the pinned cluster, takes a lock against a second
+migrator, checks the revision is `--from`, runs the Alembic upgrade on that same
+connection, and checks the result before committing. Nothing is checked in one
+command and migrated in another; `bootstrap_runtime_schema.py --upgrade`
+refuses to cross this revision and sends the operator here.
 
 `target` names the database it would touch (password redacted) and the
 PostgreSQL cluster behind it, and refuses production and preview. `inventory` is the archive query of
@@ -34,10 +43,10 @@ URL, an inherited environment, the wrong container - reaches production:
   production compose default (`compose.yaml`, parity-tested);
 * `--confirm-sandbox` names the database, the URL names the same one, and the
   server, once connected, says it is that database;
-* `reset-legacy` - the one command that deletes - is also pinned to the
-  PostgreSQL cluster `target` printed (`--expect-cluster`, the cluster's
-  `system_identifier`), so it deletes only in the cluster the operator looked
-  at.
+* `apply` and `reset-legacy` - the two commands that change anything - are
+  also pinned to the PostgreSQL cluster `target` printed (`--expect-cluster`,
+  the cluster's `system_identifier`), so they act only in the cluster the
+  operator looked at.
 
 Nothing here prints a secret.
 """
@@ -52,6 +61,11 @@ from urllib.parse import urlparse, urlunparse
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 REFUSED_PORTS = {8000, 8010}
+# The non-additive cutover revision and the one it follows.
+CUTOVER_REVISION = "20260924_0014"
+CUTOVER_FROM = "20260923_0013"
+# A second migrator waits on this, whoever it is: "RCUT" as a 32-bit integer.
+_APPLY_LOCK = 0x52435554
 # The production runtime's database, as `compose.yaml` defaults it
 # (`POSTGRES_RUNTIME_URL`): its host and database are refused by name.
 # `tests/test_reading_canonical_cutover_scripts.py` keeps these equal to it.
@@ -116,26 +130,32 @@ def refusal(*, url: str, app_url: str, environ: dict[str, str], confirmed: str =
     return None
 
 
-def identity(url: str) -> dict[str, str]:
-    """What the server says it is: the database, and the cluster behind it
-    (`system_identifier`, fixed when the cluster was created - another
+def identity_on(connection) -> dict[str, str]:
+    """What the server behind `connection` says it is: the database, and the
+    cluster (`system_identifier`, fixed when the cluster was created - another
     container, or a restore into another cluster, has a different one)."""
     from sqlalchemy import text
     from sqlalchemy.exc import DBAPIError
 
+    found = {"database": str(connection.execute(text("SELECT current_database()")).scalar_one()),
+             "cluster": ""}
+    savepoint = connection.begin_nested()
+    try:
+        found["cluster"] = str(connection.execute(
+            text("SELECT system_identifier FROM pg_control_system()")).scalar_one())
+        savepoint.commit()
+    except DBAPIError:
+        savepoint.rollback()  # not readable by this role: the commands that change anything refuse
+    return found
+
+
+def identity(url: str) -> dict[str, str]:
     engine = _engine(url)
     try:
-        with engine.connect() as connection:
-            found = {"database": str(connection.execute(text("SELECT current_database()")).scalar_one()),
-                     "cluster": ""}
-            try:
-                found["cluster"] = str(connection.execute(
-                    text("SELECT system_identifier FROM pg_control_system()")).scalar_one())
-            except DBAPIError:
-                pass  # not readable by this role: `reset-legacy` then refuses
+        with engine.begin() as connection:
+            return identity_on(connection)
     finally:
         engine.dispose()
-    return found
 
 
 def identity_refusal(found: dict[str, str], *, confirmed: str, expect_cluster: str | None) -> str | None:
@@ -150,6 +170,52 @@ def identity_refusal(found: dict[str, str], *, confirmed: str, expect_cluster: s
             return (f"the cluster is {found['cluster']}, not the {expect_cluster.strip()} `target` reported: "
                     "nothing was touched")
     return None
+
+
+class Refused(Exception):
+    """Raised inside `apply`'s transaction so that it rolls back."""
+
+
+def apply(url: str, *, confirmed: str, expect_cluster: str, from_revision: str,
+          to_revision: str = CUTOVER_REVISION) -> int:
+    """The cutover migration, gated and applied as one operation (see the
+    module docstring)."""
+    from alembic import command
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import text
+
+    from writing_coach.persistence.runtime import _runtime_alembic_config
+
+    engine = _engine(url)
+    try:
+        with engine.begin() as connection:
+            found = identity_on(connection)
+            reason = identity_refusal(found, confirmed=confirmed, expect_cluster=expect_cluster)
+            if reason:
+                raise Refused(reason)
+            connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": _APPLY_LOCK})
+            current = MigrationContext.configure(connection).get_current_revision()
+            if current != from_revision:
+                raise Refused(f"the database is at {current or 'no revision'}, not {from_revision}: "
+                              "nothing was migrated")
+            print(f"applying {from_revision} -> {to_revision} to database {found['database']} "
+                  f"in cluster {found['cluster']}")
+            config = _runtime_alembic_config()
+            config.attributes["connection"] = connection
+            command.upgrade(config, to_revision)
+            after = MigrationContext.configure(connection).get_current_revision()
+            if after != to_revision:
+                raise Refused(f"the upgrade ended at {after}, not {to_revision}: rolled back")
+            # Still the same server, at the end of the same transaction.
+            if identity_on(connection) != found:
+                raise Refused("the connection's identity changed during the upgrade: rolled back")
+    except Refused as exc:
+        print(f"refused: {exc}")
+        return 2
+    finally:
+        engine.dispose()
+    print(f"applied: database {found['database']} is at {to_revision}")
+    return 0
 
 
 def mask_email(email: str) -> str:
@@ -281,13 +347,15 @@ def reset_legacy(url: str, *, expect_sessions: int, expect_attempts: int) -> int
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
-    parser.add_argument("command", choices=("target", "inventory", "status", "reset-legacy"))
+    parser.add_argument("command", choices=("target", "inventory", "apply", "status", "reset-legacy"))
     parser.add_argument("--url", default="", help="defaults to POSTGRES_RUNTIME_URL")
     parser.add_argument("--app-url", default="", help="the sandbox's base URL, checked against 8000 / 8010")
     parser.add_argument("--confirm-sandbox", default="", metavar="DATABASE",
                         help="required: the admin sandbox's database name (D-076)")
     parser.add_argument("--expect-cluster", default=None, metavar="SYSTEM_IDENTIFIER",
-                        help="reset-legacy: the cluster `target` printed")
+                        help="apply, reset-legacy: the cluster `target` printed")
+    parser.add_argument("--from", dest="from_revision", default="",
+                        help=f"apply: the revision the database is at ({CUTOVER_FROM})")
     parser.add_argument("--expect-sessions", type=int)
     parser.add_argument("--expect-attempts", type=int)
     args = parser.parse_args(argv)
@@ -296,12 +364,19 @@ def main(argv: list[str] | None = None) -> int:
     if reason:
         print(f"refused: {reason}")
         return 2
-    if args.command == "reset-legacy" and not args.expect_cluster:
-        print("refused: reset-legacy needs --expect-cluster, the system identifier `target` printed")
+    changes = args.command in {"apply", "reset-legacy"}
+    if changes and not args.expect_cluster:
+        print(f"refused: {args.command} needs --expect-cluster, the system identifier `target` printed")
         return 2
+    if args.command == "apply":
+        if not args.from_revision:
+            print(f"refused: apply needs --from, the revision the database is at ({CUTOVER_FROM})")
+            return 2
+        return apply(url, confirmed=args.confirm_sandbox, expect_cluster=args.expect_cluster,
+                     from_revision=args.from_revision)
     found = identity(url)
     reason = identity_refusal(found, confirmed=args.confirm_sandbox,
-                              expect_cluster=args.expect_cluster if args.command == "reset-legacy" else None)
+                              expect_cluster=args.expect_cluster if changes else None)
     if reason:
         print(f"refused: {reason}")
         return 2

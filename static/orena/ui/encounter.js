@@ -234,7 +234,7 @@ function waitingMedia(root, ctx, payload) {
    already saved rather than recording a second one; it is minted once per
    sheet and reused by every try. The answer key comes back with the saved
    attempt, never before it. */
-function practiceSubmit(api, served) {
+function practiceSubmit(api, served, recommendation = '') {
   let operationId = null;
   return async (answers) => {
     operationId ||= globalThis.crypto?.randomUUID?.() || `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -242,7 +242,7 @@ function practiceSubmit(api, served) {
     served.questions.forEach((question, position) => {
       picked[question.id] = answers[position];
     });
-    const saved = await api.submitReadingPractice(served.id, operationId, picked);
+    const saved = await api.submitReadingPractice(served.id, operationId, picked, recommendation || null);
     return saved?.results;
   };
 }
@@ -333,7 +333,10 @@ export async function renderEncounter(root, ctx) {
       })),
     });
     if (!item) throw Error(c.unavailable);
-    if (served && item.questions?.length) item.practice = { submit: practiceSubmit(api, served) };
+    /* Reached from the recommendation's own card, the address carries the
+       signed recommendation; the server decides whether it counts. */
+    if (served && item.questions?.length)
+      item.practice = { submit: practiceSubmit(api, served, location.rec) };
     return textEncounter(root, ctx, item);
   }
   if (id.startsWith('story:') || id.startsWith('text:')) {

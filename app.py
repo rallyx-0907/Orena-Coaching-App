@@ -46,7 +46,7 @@ from writing_coach.writing_evaluator_contract import (
 from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
-from auth_support import APP_ENV, AUTH_ENABLED, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+from auth_support import APP_ENV, AUTH_ENABLED, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -754,7 +754,9 @@ def configure_reading_engine_from_runtime() -> None:
     global _reading_evidence_repository
     engine = _persistence_runtime.engine
     content = ReadingContentRepository(engine) if engine is not None else None
-    evidence = ReadingEvidenceRepository(engine) if engine is not None else None
+    # Recommendations from /next are signed with a key derived from the
+    # session secret, so a submit can prove the policy recommended its set.
+    evidence = ReadingEvidenceRepository(engine, recommendation_secret=SESSION_SECRET) if engine is not None else None
     _reading_evidence_repository = evidence
     jobs = ReadingJobRepository(engine) if engine is not None else None
     audit_repository = AdminConsoleRepository(engine) if engine is not None else None

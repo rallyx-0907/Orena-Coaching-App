@@ -25,10 +25,13 @@ alone: `APP_ENV` must not be production and no URL may be on 8000 / 8010; the
 production compose default database (`postgres` / `becoming`) is refused by
 name even from a clean shell; `--confirm-sandbox <sandbox-db>` must name the
 URL's database and the connected server must report that same database; and
-`reset-legacy` also needs `--expect-cluster <cluster>`, so it deletes only in
-the PostgreSQL cluster `target` showed. The E2E driver accepts only a loopback
-base URL, never 8000 / 8010, and stops if the server's `/api/readiness` says
-`production`.
+the two commands that change anything - `apply` (the migration) and
+`reset-legacy` - also need `--expect-cluster <cluster>`, so they act only in
+the PostgreSQL cluster `target` showed. `apply` makes those checks and runs the
+migration on one connection in one transaction; `bootstrap_runtime_schema.py
+--upgrade` refuses to cross `20260924_0014` at all. The E2E driver accepts only
+a loopback base URL, never 8000 / 8010, and stops if the server's
+`/api/readiness` says `production`.
 
 ## 1. Stop writers
 
@@ -65,22 +68,29 @@ docker run --rm --network <network> -e POSTGRES_RUNTIME_URL="<pg-url>" \
 ```
 
 `target` prints the database and its cluster's system identifier: record it
-with the inventory — step 9 needs it. The inventory prints, per account and language, the legacy sessions and attempts, their
+with the inventory — steps 4 and 9 need it. The inventory prints, per account and language, the legacy sessions and attempts, their
 dates, the linked text discussions, masked identities and a hint of whether the
 account looks like test data. **Send this to the human.** The hint is not a
 decision.
 
-## 4. Apply `20260924_0014`
+## 4. Apply `20260924_0014` — one gated command
 
-With the new code (the image built from `<repo>`), still with writers stopped:
+With the new code (the image built from `<repo>`), still with writers stopped,
+in the same kind of ephemeral container as step 3:
 
 ```
-python scripts/bootstrap_runtime_schema.py --upgrade --from 20260923_0013 --confirm
+python scripts/reading_canonical_cutover.py apply --confirm-sandbox <sandbox-db> \
+  --expect-cluster <cluster> --from 20260923_0013
 python scripts/reading_canonical_cutover.py status --confirm-sandbox <sandbox-db>
 ```
 
-`bootstrap_runtime_schema` refuses if the database is not at `20260923_0013`
-— the usual sign the connection string points somewhere unexpected.
+`apply` is the check and the migration together: on one connection, in one
+transaction, it confirms the server is `<sandbox-db>` in `<cluster>`, takes a
+lock against a second migrator, confirms the revision is `20260923_0013`, runs
+the Alembic upgrade on that same connection, and confirms the result is
+`20260924_0014` on the same server before committing. Any refusal rolls back
+and changes nothing. Do not run `bootstrap_runtime_schema.py --upgrade` for
+this step: it refuses to cross `20260924_0014` and prints the command above.
 
 ## 5. Deploy and start, submit off
 
@@ -100,11 +110,14 @@ python scripts/reading_canonical_e2e.py run --base-url http://localhost:<sandbox
   --state backups/reading-e2e-off.json --ai-provider gemini --ai-model gemini-3.5-flash-lite
 ```
 
-Expected: every check passes, including `a candidate gets no comprehension
-set: publish first`, `the selection policy offers a next article` (required:
-three articles per language are published with approved sets, so the policy
-must offer one), `learner submit is off: 503 reading_submit_disabled` and `and
-it wrote nothing`, in English and Chinese.
+Expected: every check passes - 19 per language, 38 in all with the local
+stand-in; the article-dependent checks scale with the questions the provider
+writes, not the count. They include `a candidate gets no comprehension set:
+publish first`, `the selection policy offers a next article` (required: three
+articles per language are published with approved sets, so the policy must
+offer one), `and it comes with a signed recommendation`, `learner submit is
+off: 503 reading_submit_disabled` and `and it wrote nothing`, in English and
+Chinese.
 
 ## 7. The complete E2E (submit on, sandbox only)
 
@@ -115,25 +128,43 @@ python scripts/reading_canonical_e2e.py run --base-url http://localhost:<sandbox
   --state backups/reading-e2e.json
 ```
 
-It checks D-075 §12 steps 1–7 and 9: import → review → publish (rights
-warnings recorded beside the override; a set before publishing is refused) →
-grounded sets generated and approved for three articles → the selection policy
-offers one, the same way twice (the run fails if it offers none) → the learner
-answers **the article the policy chose**, and the server records
-`selection_policy_version = reading-select/1` on that attempt (a request that
-tries to claim it is refused 422) → the next choice moves on → the learner
-answers an article they picked, which records no selection → the attempt
-persists, ability moves → a retry is the same attempt and ability moves once →
-a reload keeps both → a body edit stales the set, keeps the questions and the
-evidence, refuses a new answer against the old text → Collection, Learner
-Summary, Admin Activity and analytics read the canonical attempt, and the
-cross-skill cue names **this run's** attempt and article. The account should
-have no pending writing review: the cue prefers one to Reading, and the run
-reports that as a failure rather than passing over it.
+It checks D-075 §12 steps 1–7 and 9, per language (47 checks each, 94 in
+all with the local stand-in):
 
-The policy's choice is what the learner sees first on the reading side of
-Home's "for you" rail (the rail Orena Home Discover draws for what fits the
-learner), from the same `/api/reading/practice/next`.
+1. import → review → publish, rights warnings recorded beside the override; a
+   set before publishing is refused;
+2. grounded sets generated and approved for three articles;
+3. the selection policy offers one, the same choice twice (the run fails if it
+   offers none), with a signed recommendation;
+4. **provenance is the recommendation, not a coincidence.** A request that
+   states `selection_policy_version` itself is refused 422. The recommended
+   article is answered first *without* its recommendation - as if opened from
+   the library - and that attempt records no selection. It is then answered
+   *with* the recommendation `/next` issued, and the server records
+   `reading-select/1` although the evidence moved in between. The next choice
+   moves on;
+5. an article the learner picked records no selection; the attempt persists,
+   is scored against the approved key, ability moves; a retry is the same
+   attempt and ability moves once; a reload keeps all three attempts;
+6. a body edit stales the set, keeps the questions and the evidence, and
+   refuses a new answer against the old text;
+7. Collection and Learner Summary read the attempt; the cross-skill cue names
+   **this run's** attempt and article; **Admin Activity for this exact
+   account** (`account_id` from the learner's ability projection) counts
+   exactly this run's 3 attempts in this language more than before; **product
+   analytics** - which names no learner, by design - counts exactly 3 more
+   Reading activities and 3 more completions than before.
+
+Two conditions for an honest run: the account should have no pending writing
+review (the cue prefers one to Reading; the run reports it as a failure rather
+than passing over it), and no other learner should be submitting Reading in the
+sandbox while it runs (analytics is a count across learners, so another
+learner's attempt fails the exact-delta check rather than hiding in it).
+
+In the product, the recommendation is what Home's "for you" rail (the rail
+Orena Home Discover draws for what fits the learner) links to: only that card
+carries the signed recommendation, so the same article opened from the library
+or the Reading rail is the learner's own choice.
 
 ## 8. Recreate the runtime and verify
 
@@ -145,6 +176,13 @@ python scripts/reading_canonical_e2e.py verify --base-url http://localhost:<sand
 python scripts/reading_canonical_e2e.py verify --base-url http://localhost:<sandbox-port> \
   --state backups/reading-e2e-off.json
 ```
+
+Expected with the local stand-in: `verify` of the complete run 30 checks
+(per language: three articles still published with unchanged questions and
+the expected set status, all three attempts still evidence, Admin Activity's
+count for the account unchanged, ability unchanged, both retries replayed with
+the recommended attempt still `reading-select/1`, the cue still naming the
+run's attempt); of the gated run 18.
 
 **Only when steps 6–8 all pass** may learner submit stay on in the sandbox. If
 any check fails, restart with the flag unset and report the failure.
@@ -172,36 +210,43 @@ canonical set, attempt, projection or non-default `content_kind` exists the
 downgrade refuses and changes nothing: the path is a reviewed forward repair,
 or a restore of step 2's backup.
 
-## Rehearsed locally (2026-09-24, local execution, not the sandbox)
+## Rehearsed locally (local execution, not the sandbox)
 
-These results are for the tooling at `974e639`. The review round that followed
-changed the E2E (three articles per language, the policy's choice required and
-answered, server-recorded provenance, the cue pinned to the run's attempt) and
-the cutover script's target checks; the new driver has been exercised by its
-unit tests and the refusals against a throwaway PostgreSQL, **not yet by a
-full live run** - the sandbox run in steps 6–8 is its first.
+Each result below names the commit it was measured at. None of it is the
+sandbox run, and the AI provider was a local stand-in (an Ollama-shaped server
+answering only the question schema with spans copied from the E2E passages), so
+the sandbox run with Gemini (step 6) is also the first live check of the
+question processor.
 
-PostgreSQL 16 in the cloud container, seeded at `20260923_0013` with 6 legacy
-sessions / 6 attempts for two accounts:
+**At the commit that follows `1d9a36b`** (this review round), PostgreSQL 16 in
+a throwaway container, seeded at `20260923_0013` with 6 legacy sessions / 6
+attempts for two accounts:
 
-- capture 131,596 bytes, 266 restorable entries; restore rehearsal matched the
-  revision and every compared count;
-- inventory before and after the upgrade identical (6 / 6, archive renamed);
-- `bootstrap_runtime_schema --upgrade --from 20260923_0013` → ready at
-  `20260924_0014`; archive read-only (an update raised), 11 lifecycle triggers;
-- downgrade → legacy tables back with 6 / 6 rows and writable; upgrade again →
-  6 / 6, read-only; after canonical data existed the downgrade refused;
-- `reset-legacy` refused before the upgrade, with wrong or missing counts, and
-  reset 6 / 6 only with the exact counts (on a restored copy);
-- the gated E2E: 20 checks passed (EN, ZH); the complete E2E with submit on:
-  61 passed; after stopping the app and worker and restarting PostgreSQL,
-  `verify`: 12 + 6 passed; ports 8000 and 8010 refused;
-- the learner check in Chromium, desktop 1920×1080 and a touch phone 390×844,
-  English and Chinese: offered, answered, scored, the answer panel in the
-  support language;
-- the learner who owned 3 archived sessions started from the policy's initial
-  ability with 1 attempt: the archive gave no baseline.
+- `bootstrap_runtime_schema --upgrade --from 20260923_0013 --confirm` refused
+  (exit 1) and printed the `apply` command;
+- `apply` refused an empty database (no revision), a wrong `--expect-cluster`
+  and a wrong `--from`, each with nothing changed; with the database and
+  cluster `target` printed it migrated to `20260924_0014`: archive 6 / 6,
+  11 lifecycle triggers, startup readiness `ready`;
+- the gated E2E: 38 passed (EN, ZH); the complete E2E with submit on: 94
+  passed, including the recommended article answered without its
+  recommendation (NULL) and with it (`reading-select/1`), Admin Activity +3 for
+  the exact account per language and analytics +3 activities / +3 completions
+  per language; after removing the app and worker and restarting PostgreSQL,
+  `verify`: 30 + 18 passed;
+- in Chromium (desktop): on Home the "for you" card for the recommended article
+  carried a recommendation and the Reading rail's card for the same article
+  did not; answered through the quiz, the Reading rail's card recorded NULL and
+  the "for you" card `reading-select/1`.
 
-The AI provider there was a local stand-in serving grounded questions — the
-container has no provider — so the sandbox run with Gemini (step 6) is also
-the first live check of the question processor.
+Not re-run this round (unchanged tooling, results from `974e639`): the backup
+capture and restore rehearsal (131,596 bytes, 266 restorable entries, every
+compared count matched), the downgrade / upgrade with legacy rows (6 / 6 back
+and writable; downgrade refused once canonical data existed), `reset-legacy`
+(refused before the upgrade and with wrong counts; reset 6 / 6 only with the
+exact counts, on a restored copy), and the phone (390×844, touch) check.
+
+**At `1d9a36b`** the driver of that round - then with provenance recomputed at
+submit, since replaced - passed 36 gated, 89 complete and 28 on verify. **At
+`974e639`** the first driver passed 20, 61 and 12 + 6. Those counts belong to
+those drivers and are not comparable with the ones above.

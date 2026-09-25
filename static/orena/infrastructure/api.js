@@ -221,11 +221,12 @@ export const api={
   readingPracticeNext:()=>request('/api/reading/practice/next'),
   readingPracticeSet:(articleId)=>request(`/api/reading/practice/articles/${encodeURIComponent(articleId)}`),
   // `operationId` names one logical submit and is reused by every retry of it.
-  // Whether the selection policy chose the set is the server's to record.
-  submitReadingPractice:(setId,operationId,answers)=>request('/api/reading/practice/attempts',{
+  // `recommendation` is what /next issued, passed back untouched when the
+  // learner came from it; the server verifies it and records the provenance.
+  submitReadingPractice:(setId,operationId,answers,recommendation=null)=>request('/api/reading/practice/attempts',{
     method:'POST',
     headers:JSON_HEADERS,
-    body:JSON.stringify({set_id:setId,operation_id:operationId,answers}),
+    body:JSON.stringify({set_id:setId,operation_id:operationId,answers,...(recommendation?{recommendation}:{})}),
   }),
   readingEvidence:(limit=20)=>request(`/api/reading/practice/evidence?limit=${encodeURIComponent(limit)}`),
   importMedia:(payload)=>request('/api/media-learning/import',{

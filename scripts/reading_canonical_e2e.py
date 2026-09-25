@@ -26,9 +26,11 @@ production (`/api/readiness`).
    an article - the run fails when it offers none. With learner submit off
    (the D-076 default) a submit answers 503 and writes nothing, and the run
    stops there - it proves the gate, not the flow. With submit on:
-4. the learner answers the article the policy chose; the server records that
-   the policy chose it (`selection_policy_version`) - a request that tries to
-   claim it is refused - and the next choice moves on;
+4. the recommended article is answered first without its recommendation -
+   opened some other way - and records no selection; then with the signed
+   recommendation `/next` issued, and records the policy's version although
+   the evidence moved in between; a request that states provenance itself is
+   refused; the next choice moves on;
 5. the learner answers an article they picked themselves: the attempt
    persists with no selection recorded, and ability moves;
 6. a retried submit (same operation id) returns the same attempt and ability
@@ -36,9 +38,13 @@ production (`/api/readiness`).
 7. a fresh client (a reload) sees the attempts and the ability unchanged;
 8. an edit to the article body stales the set; the attempt is still evidence
    and the set's questions are unchanged;
-9. Collection, Learner Summary, the cross-skill cue - which must name this
-   run's attempt and article - Admin Activity and product analytics read the
-   canonical attempt.
+9. Collection and Learner Summary read the attempt; the cross-skill cue names
+   this run's attempt and article; Admin Activity, for this exact account
+   (`account_id` from the ability projection), counts exactly this run's
+   attempts in this language more than before; product analytics - which by
+   design names no learner - counts exactly that many more Reading activities
+   and completions than before. The sandbox should have no other learner
+   active while it runs.
 
 `verify`, after the runtime is recreated, checks that all of it is still true.
 
@@ -250,6 +256,28 @@ def _sheet(run: Run, article_id: str, key: dict[str, int], *, one_wrong: bool) -
     return served["set"]["id"], answers, len(questions)
 
 
+def _choice(offer: dict[str, Any]) -> dict[str, Any]:
+    """`/next` without its recommendation, which carries the moment it was
+    issued: the same choice a second later is signed differently."""
+    found = dict(offer)
+    if isinstance(found.get("next"), dict):
+        found["next"] = {key: value for key, value in found["next"].items() if key != "recommendation"}
+    return found
+
+
+def _account_attempts(run: Run, account_id: str, language: str) -> int:
+    """Admin Activity's canonical Reading count for exactly this account."""
+    detail = run.call("GET", f"/api/admin/console/users/{account_id}")
+    return sum(int(row["count"]) for row in detail.get("activity", [])
+               if row.get("measure") == "reading_attempts" and row.get("language") == language)
+
+
+def _analytics(run: Run) -> tuple[int, int]:
+    activity = run.call("GET", "/api/admin/product-activity?window_days=7")
+    reading = next((row for row in activity.get("skills", []) if row.get("skill") == "reading"), {})
+    return int(reading.get("activities", 0)), int(reading.get("completions", 0))
+
+
 def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float) -> dict[str, Any]:
     print(f"[{language}] admin: import, review, publish, comprehension sets")
     run.call("POST", "/api/platform/language", json={"language": language})
@@ -265,7 +293,9 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
     run.require("the selection policy offers a next article", bool(offered.get("available")), str(offered)[:200])
     choice = offered["next"]
     run.check("under the selection policy", choice["selection_policy_version"] == SELECTION_POLICY)
-    run.check("the same inputs choose the same article", offered == run.call("GET", "/api/reading/practice/next"))
+    run.check("the same inputs choose the same article",
+              _choice(offered) == _choice(run.call("GET", "/api/reading/practice/next")))
+    run.check("and it comes with a signed recommendation", str(choice.get("recommendation", "")).startswith("rr1."))
     run.check("and offer its set without answers", not any(
         {"correct_index", "explanation", "evidence_text"} & set(q) for q in choice["set"]["questions"]))
     state: dict[str, Any] = {"language": language, "support_language": support,
@@ -285,19 +315,35 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
         run.check("and it wrote nothing", len(after) == len(before_evidence))
         return state
 
-    # -- the article the policy chose --------------------------------------
+    # Exact identity and baselines, before this run's first attempt.
+    ability_start = run.call("GET", "/api/reading/practice/ability")
+    account_id = ability_start["account_id"]
+    admin_before = _account_attempts(run, account_id, language)
+    analytics_before = _analytics(run)
+    made = 0
+
+    # -- the article the policy recommended -------------------------------
     chosen_key = ours[choice["article_id"]]["key"] if choice["article_id"] in ours else _key(run, choice["set_id"])
     chosen_set, chosen_answers, _ = _sheet(run, choice["article_id"], chosen_key, one_wrong=False)
     run.check("the offered set is the one the learner meets", chosen_set == choice["set_id"])
     claimed = run.call("POST", "/api/reading/practice/attempts", expect=422,
                        json={"set_id": chosen_set, "operation_id": f"e2e-{nonce}-{language}-claim",
                              "answers": chosen_answers, "selection_policy_version": SELECTION_POLICY})
-    run.check("a request cannot claim the policy chose its article", bool(claimed))
+    run.check("a request cannot state provenance itself", bool(claimed))
+    independent = run.call("POST", "/api/reading/practice/attempts",
+                           json={"set_id": chosen_set, "operation_id": f"e2e-{nonce}-{language}-independent",
+                                 "answers": chosen_answers})
+    made += 1
+    run.check("the recommended article opened some other way is the learner's own choice",
+              independent["status"] == "committed" and independent["attempt"]["selection_policy_version"] is None,
+              str(independent["attempt"].get("selection_policy_version")))
     selected_operation = f"e2e-{nonce}-{language}-selected"
     selected = run.call("POST", "/api/reading/practice/attempts",
-                        json={"set_id": chosen_set, "operation_id": selected_operation, "answers": chosen_answers})
-    run.require("the attempt on the policy's choice persisted", selected["status"] == "committed")
-    run.check("the server recorded that the policy chose it",
+                        json={"set_id": chosen_set, "operation_id": selected_operation, "answers": chosen_answers,
+                              "recommendation": choice["recommendation"]})
+    made += 1
+    run.require("the attempt presenting the recommendation persisted", selected["status"] == "committed")
+    run.check("the server recorded the recommendation it issued, though evidence moved in between",
               selected["attempt"]["selection_policy_version"] == SELECTION_POLICY,
               str(selected["attempt"]["selection_policy_version"]))
     moved = run.call("GET", "/api/reading/practice/next")
@@ -305,7 +351,9 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
               not moved["available"] or moved["next"]["article_id"] != choice["article_id"])
     state |= {"selected": {"article_id": choice["article_id"], "set_id": chosen_set,
                            "operation_id": selected_operation, "answers": chosen_answers,
-                           "attempt_id": selected["attempt"]["id"]}}
+                           "recommendation": choice["recommendation"],
+                           "attempt_id": selected["attempt"]["id"]},
+              "independent_attempt_id": independent["attempt"]["id"]}
 
     # -- an article the learner picked -------------------------------------
     now_offered = moved["next"]["article_id"] if moved["available"] else None
@@ -318,6 +366,7 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
     ability_before = run.call("GET", "/api/reading/practice/ability")
     first_try = run.call("POST", "/api/reading/practice/attempts",
                          json={"set_id": set_id, "operation_id": operation, "answers": answers})
+    made += 1
     attempt = first_try["attempt"]
     run.check("the attempt persisted", first_try["status"] == "committed" and not first_try["replayed"])
     run.check("a picked article records no selection", attempt["selection_policy_version"] is None,
@@ -336,8 +385,9 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
     run.reload()
     run.call("POST", "/api/platform/language", json={"language": language})
     evidence = run.call("GET", "/api/reading/practice/evidence?limit=100")["items"]
-    run.check("after a reload both attempts are there",
-              {attempt["id"], selected["attempt"]["id"]} <= {item["id"] for item in evidence})
+    run.check("after a reload all three attempts are there",
+              {attempt["id"], selected["attempt"]["id"], independent["attempt"]["id"]}
+              <= {item["id"] for item in evidence})
     run.check("and the ability is unchanged", run.call("GET", "/api/reading/practice/ability") == ability)
 
     print(f"[{language}] edit the article body")
@@ -367,10 +417,14 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
     run.check("Learner Summary reads the attempt", any(
         item["ref"]["id"] == attempt["id"] for item in reading.get("observations", [])))
     _check_cue(run, language, attempt_id=attempt["id"], article_id=article_id)
-    activity = run.call("GET", "/api/admin/product-activity?window_days=7")
-    reading_skill = next((row for row in activity.get("skills", []) if row.get("skill") == "reading"), {})
-    run.check("analytics counts the Reading attempt", reading_skill.get("activities", 0) >= 1, str(reading_skill))
-    state |= {"article_id": article_id, "set_id": set_id, "operation_id": operation, "answers": answers,
+    admin_after = _account_attempts(run, account_id, language)
+    run.check(f"Admin Activity counts exactly this run's {made} attempts for this account and language",
+              admin_after - admin_before == made, f"{admin_before} -> {admin_after}")
+    analytics_after = _analytics(run)
+    run.check(f"analytics counts exactly {made} more Reading activities and completions",
+              (analytics_after[0] - analytics_before[0], analytics_after[1] - analytics_before[1]) == (made, made),
+              f"{analytics_before} -> {analytics_after}")
+    state |= {"account_id": account_id, "admin_reading_attempts": admin_after, "article_id": article_id, "set_id": set_id, "operation_id": operation, "answers": answers,
               "attempt_id": attempt["id"], "ability": ability, "questions": key,
               "edited_body_suffix": EDIT[language]}
     return state
@@ -392,20 +446,6 @@ def _check_cue(run: Run, language: str, *, attempt_id: str, article_id: str) -> 
               and provenance.get("language") == language
               and action.get("kind") == "reading" and action.get("article_id") == article_id,
               json.dumps(cue, ensure_ascii=False)[:300])
-
-
-def _admin_activity(run: Run) -> None:
-    users = run.call("GET", "/api/admin/console/users?sort=active&limit=10", expect={200, 503})
-    if not isinstance(users, dict) or not users.get("items"):
-        run.check("Admin Activity lists accounts", False, "no accounts readable")
-        return
-    for item in users["items"]:
-        detail = run.call("GET", f"/api/admin/console/users/{item['id']}")
-        counts = {row["measure"]: row["count"] for row in detail.get("activity", [])}
-        if counts.get("reading_attempts"):
-            run.check("Admin Activity counts canonical Reading attempts", True)
-            return
-    run.check("Admin Activity counts canonical Reading attempts", False)
 
 
 def _guard_server(run: Run) -> int | None:
@@ -434,12 +474,6 @@ def run_all(args: argparse.Namespace) -> int:
         except Failed as exc:
             run.failures.append(str(exc))
             print(f"  FAIL {exc}")
-    try:
-        if any(state.get("attempt_id") for state in states):
-            _admin_activity(run)
-    except Failed as exc:
-        run.failures.append(str(exc))
-        print(f"  FAIL {exc}")
     Path(args.state).parent.mkdir(parents=True, exist_ok=True)
     Path(args.state).write_text(json.dumps({"base_url": run.base, "nonce": nonce, "languages": states},
                                            ensure_ascii=False, indent=2), encoding="utf-8")
@@ -468,8 +502,11 @@ def verify(args: argparse.Namespace) -> int:
             if not state.get("attempt_id"):
                 continue
             evidence = run.call("GET", "/api/reading/practice/evidence?limit=100")["items"]
-            run.check(f"[{language}] both attempts are still evidence",
-                      {state["attempt_id"], state["selected"]["attempt_id"]} <= {item["id"] for item in evidence})
+            run.check(f"[{language}] all three attempts are still evidence",
+                      {state["attempt_id"], state["selected"]["attempt_id"], state["independent_attempt_id"]}
+                      <= {item["id"] for item in evidence})
+            run.check(f"[{language}] Admin Activity still counts this account's attempts",
+                      _account_attempts(run, state["account_id"], language) == state["admin_reading_attempts"])
             run.check(f"[{language}] the ability is unchanged",
                       run.call("GET", "/api/reading/practice/ability") == state["ability"])
             replay = run.call("POST", "/api/reading/practice/attempts",
@@ -480,7 +517,7 @@ def verify(args: argparse.Namespace) -> int:
             chosen = state["selected"]
             replay = run.call("POST", "/api/reading/practice/attempts",
                               json={"set_id": chosen["set_id"], "operation_id": chosen["operation_id"],
-                                    "answers": chosen["answers"]})
+                                    "answers": chosen["answers"], "recommendation": chosen["recommendation"]})
             run.check(f"[{language}] the policy's choice is still recorded as the policy's",
                       replay["replayed"] and replay["attempt"]["id"] == chosen["attempt_id"]
                       and replay["attempt"]["selection_policy_version"] == SELECTION_POLICY)

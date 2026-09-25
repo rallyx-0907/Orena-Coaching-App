@@ -48,6 +48,7 @@ from writing_coach.persistence.reading_content_repository import (  # noqa: E402
 from writing_coach.persistence.reading_evidence_repository import (  # noqa: E402
     QuestionInput,
     ReadingEvidenceRepository,
+    body_sha256,
     stale_sets_for_body,
 )
 
@@ -107,6 +108,12 @@ def _repositories(engine, user="learner-a", language="en"):
     return content, evidence
 
 
+def _anchor(content, article_id) -> str:
+    """The hash of the body the questions are written from - what the Admin
+    route takes before it asks the AI."""
+    return body_sha256(content.get_article(article_id)["body"])
+
+
 def _approved(engine):
     content, evidence = _repositories(engine)
     snapshot = content.record_source_item(
@@ -121,7 +128,7 @@ def _approved(engine):
                              context="", estimated_level="", rank=0)],
     )
     content.set_status(article["id"], "published", actor="admin")
-    built = evidence.create_set(article["id"], support_language="vi", generator_version="test/1", model="stub",
+    built = evidence.create_set(article["id"], expected_body_sha256=_anchor(content, article["id"]), support_language="vi", generator_version="test/1", model="stub",
                                 questions=[
                                     QuestionInput("detail", "How long?", ["forty", "ten", "five"], 0, "x",
                                                   "forty minutes"),
@@ -216,33 +223,42 @@ def test_a_committed_attempt_survives_the_edit_that_follows_it(engine):
     assert retry.replayed and retry.attempt == recorded.attempt
 
 
-def test_selection_provenance_is_decided_inside_the_submit(engine):
-    """On PostgreSQL the provenance is replayed in the submit's own
-    transaction, after the advisory lock, inside a savepoint: every attempt
-    records the policy's version exactly when `next_article` would have
-    offered its set, and never because a request said so."""
-    for _ in range(2):
+def test_a_recommendation_is_verified_and_spent_inside_the_submit(engine):
+    """On PostgreSQL the recommendation is checked in the submit's own
+    transaction, after the advisory lock: the recommended set records the
+    policy's version even after other evidence landed first; the same set
+    without it, or a second time, records none; and many submits presenting
+    one recommendation at once spend it exactly once."""
+    for _ in range(3):
         _approved(engine)
     _, evidence = _repositories(engine, user=f"learner-provenance-{uuid.uuid4().hex[:8]}")
-    for operation in ("first", "second", "third"):
-        offered = evidence.next_article(support_language="vi")
-        assert offered is not None
-        # The first sheet answers the offer; the others answer a fresh
-        # article, which the policy may or may not be choosing right now.
-        if operation == "first":
-            set_id = offered["set_id"]
-            served = evidence.served_set(offered["article_id"], support_language="vi")
-            answers = {question["id"]: 0 for question in served["questions"]}
-        else:
-            _, set_id, answers = _approved(engine)
-            offered = evidence.next_article(support_language="vi")
-        saved = evidence.submit_attempt(set_id=set_id, operation_id=operation, answers=answers,
-                                        support_language="vi")
-        assert saved.status == "committed"
-        expected = offered["selection_policy_version"] if offered["set_id"] == set_id else None
-        assert saved.attempt["selection_policy_version"] == expected, operation
-        if operation == "first":
-            assert expected == "reading-select/1"
+    offer = evidence.next_article(support_language="vi")
+    served = evidence.served_set(offer["article_id"], support_language="vi")
+    answers = {question["id"]: 0 for question in served["questions"]}
+    # Other evidence first, on a fresh article the learner picked.
+    _, other_set, other_answers = _approved(engine)
+    picked = evidence.submit_attempt(set_id=other_set, operation_id="picked", answers=other_answers,
+                                     support_language="vi")
+    assert picked.attempt["selection_policy_version"] is None
+
+    results: list = []
+
+    def submit(index: int) -> None:
+        results.append(evidence.submit_attempt(set_id=offer["set_id"], operation_id=f"rec-{index}",
+                                               answers=answers, support_language="vi",
+                                               recommendation=offer["recommendation"]))
+
+    threads = [threading.Thread(target=submit, args=(index,)) for index in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+    assert len(results) == 4 and all(result.status == "committed" for result in results)
+    counted = [result for result in results if result.attempt["selection_policy_version"] == "reading-select/1"]
+    assert len(counted) == 1, "one recommendation is spent by exactly one attempt"
+    plain = evidence.submit_attempt(set_id=offer["set_id"], operation_id="plain", answers=answers,
+                                    support_language="vi")
+    assert plain.attempt["selection_policy_version"] is None
 
 
 def test_many_retries_of_one_submit_at_once_record_one_attempt(engine):

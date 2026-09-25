@@ -35,6 +35,7 @@ from writing_coach.persistence.reading_content_repository import (  # noqa: E402
 from writing_coach.persistence.reading_evidence_repository import (  # noqa: E402
     QuestionInput,
     ReadingEvidenceError,
+    RECOMMENDATION_TTL,
     ReadingEvidenceRepository,
     body_sha256,
 )
@@ -118,9 +119,15 @@ def _questions(language="en"):
     ]
 
 
+def _anchor(content, article_id) -> str:
+    """The hash of the body the questions are written from - what the Admin
+    route takes before it asks the AI."""
+    return body_sha256(content.get_article(article_id)["body"])
+
+
 def _approved(content, evidence, *, language="en", level="B1", support="vi", body=None):
     article_id = _article(content, language=language, level=level, body=body)
-    built = evidence.create_set(article_id, support_language=support, generator_version="test/1", model="stub",
+    built = evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id), support_language=support, generator_version="test/1", model="stub",
                                 questions=_questions(language), validation={}, actor="admin", now=_tick())
     evidence.transition(built["id"], "needs_review", actor="admin", now=_tick())
     for question in built["questions"]:
@@ -146,7 +153,7 @@ def _count(engine, model, *where) -> int:
 def test_a_set_is_grounded_in_the_exact_body_by_code_point(world, language):
     _, content, evidence, _ = world
     article_id = _article(content, language=language, level=LEVELS[language][1])
-    built = evidence.create_set(article_id, support_language="VI", generator_version="test/1", model="stub",
+    built = evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id), support_language="VI", generator_version="test/1", model="stub",
                                 questions=_questions(language), validation={}, actor="admin")
     body = BODIES[language]
     assert built["status"] == "draft"
@@ -166,13 +173,13 @@ def test_an_ungrounded_question_is_refused_before_anything_is_written(world):
     article_id = _article(content)
     bad = [*_questions(), QuestionInput("detail", "Where?", ["a", "b"], 0, "x", "not in the passage", rank=3)]
     with pytest.raises(ReadingEvidenceError) as refused:
-        evidence.create_set(article_id, support_language="vi", generator_version="test/1", model="",
+        evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id), support_language="vi", generator_version="test/1", model="",
                             questions=bad, validation={}, actor="admin")
     assert refused.value.code == "reading_evidence_not_grounded"
     assert evidence.list_sets(article_id) == []
     uncited = [QuestionInput("detail", "Where?", ["a", "b"], 0, "x", None)]
     with pytest.raises(ReadingEvidenceError) as refused:
-        evidence.create_set(article_id, support_language="vi", generator_version="test/1", model="",
+        evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id), support_language="vi", generator_version="test/1", model="",
                             questions=uncited, validation={}, actor="admin")
     assert refused.value.code == "reading_evidence_required"
 
@@ -180,7 +187,7 @@ def test_an_ungrounded_question_is_refused_before_anything_is_written(world):
 def test_a_learner_meets_only_an_approved_set_and_never_its_answers(world):
     _, content, evidence, _ = world
     article_id = _article(content)
-    built = evidence.create_set(article_id, support_language="vi", generator_version="test/1", model="stub",
+    built = evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id), support_language="vi", generator_version="test/1", model="stub",
                                 questions=_questions(), validation={}, actor="admin", now=_tick())
     assert evidence.served_set(article_id, support_language="vi") is None
     evidence.transition(built["id"], "needs_review", actor="admin", now=_tick())
@@ -223,13 +230,13 @@ def test_a_set_is_built_and_approved_for_a_published_article_only(world):
     engine, content, evidence, _ = world
     candidate = _article(content, publish=False)
     with pytest.raises(ReadingEvidenceError) as refused:
-        evidence.create_set(candidate, support_language="vi", generator_version="test/1", model="stub",
+        evidence.create_set(candidate, expected_body_sha256=_anchor(content, candidate), support_language="vi", generator_version="test/1", model="stub",
                             questions=_questions(), validation={}, actor="admin", now=_tick())
     assert refused.value.code == "reading_article_not_published"
     assert evidence.list_sets(candidate) == []
 
     article_id = _article(content)
-    built = evidence.create_set(article_id, support_language="vi", generator_version="test/1", model="stub",
+    built = evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id), support_language="vi", generator_version="test/1", model="stub",
                                 questions=_questions(), validation={}, actor="admin", now=_tick())
     evidence.transition(built["id"], "needs_review", actor="admin", now=_tick())
     for question in built["questions"]:
@@ -244,6 +251,27 @@ def test_a_set_is_built_and_approved_for_a_published_article_only(world):
 
 
 # ---- the submit ----------------------------------------------------------------
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_a_set_is_anchored_only_to_the_body_its_questions_were_written_from(world, language):
+    """The hash is taken before the AI call; an edit that lands while the model
+    writes is refused under the article's lock, and nothing is written."""
+    engine, content, evidence, scope = world
+    scope.language = language
+    article_id = _article(content, language=language)
+    shown = _anchor(content, article_id)
+    content.update_article(article_id, actor="admin", body=BODIES[language] + EVIDENCE[language][0])
+    with pytest.raises(ReadingEvidenceError) as refused:
+        evidence.create_set(article_id, expected_body_sha256=shown, support_language="vi",
+                            generator_version="test/1", model="stub", questions=_questions(language),
+                            validation={}, actor="admin", now=_tick())
+    assert refused.value.code == "reading_article_changed"
+    assert evidence.list_sets(article_id) == []
+    built = evidence.create_set(article_id, expected_body_sha256=_anchor(content, article_id),
+                                support_language="vi", generator_version="test/1", model="stub",
+                                questions=_questions(language), validation={}, actor="admin", now=_tick())
+    assert built["article_body_sha256"] == _anchor(content, article_id) != shown
+
 
 @pytest.mark.parametrize("language", ["en", "zh"])
 def test_a_retried_submit_records_one_attempt_and_moves_ability_once(world, language):
@@ -386,18 +414,25 @@ def test_ability_is_per_account_and_language(world):
 
 # ---- the next article -------------------------------------------------------------
 
+def _choice(offer):
+    """A choice without its recommendation, which carries the moment it was
+    issued: two identical choices a second apart sign differently."""
+    return {key: value for key, value in offer.items() if key != "recommendation"}
+
+
 def test_the_next_article_is_chosen_by_rule_and_never_repeats(world):
     _, content, evidence, _ = world
     by_level = {level: _approved(content, evidence, level=level)[0] for level in ("A1", "A2", "B1", "C2")}
     first = evidence.next_article(support_language="vi")
-    assert first == evidence.next_article(support_language="vi"), "the same inputs choose the same article"
+    assert _choice(first) == _choice(evidence.next_article(support_language="vi")), \
+        "the same inputs choose the same article"
     # A fresh learner starts at A2.
     assert first["article_id"] == by_level["A2"]
     assert first["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
     assert "correct_index" not in first["set"]["questions"][0]
     set_id, answers = _answers(evidence, first["article_id"])
-    saved = evidence.submit_attempt(set_id=set_id, operation_id="op", answers=answers, support_language="vi")
-    # The server recorded that the policy chose it; nothing was sent to say so.
+    saved = evidence.submit_attempt(set_id=set_id, operation_id="op", answers=answers, support_language="vi",
+                                    recommendation=first["recommendation"])
     assert saved.attempt["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
     second = evidence.next_article(support_language="vi")
     assert second["article_id"] != first["article_id"]
@@ -407,59 +442,105 @@ def test_the_next_article_is_chosen_by_rule_and_never_repeats(world):
 
 
 @pytest.mark.parametrize("language", ["en", "zh"])
-def test_selection_provenance_is_the_servers_and_never_the_requests(world, language):
-    engine, content, evidence, scope = world
+def test_opening_the_recommended_article_some_other_way_is_the_learners_choice(world, language):
+    """Provenance is the recommendation the server issued, not a coincidence:
+    the very article the policy would choose, answered without its
+    recommendation, is recorded as the learner's own."""
+    _, content, evidence, scope = world
     scope.language = language
-    levels = LEVELS[language]
-    by_level = {level: _approved(content, evidence, language=language, level=level)[0] for level in levels}
-    chosen = evidence.next_article(support_language="vi")
-    other = next(article for article in by_level.values() if article != chosen["article_id"])
-    # An article the learner picked for themselves: the policy did not choose
-    # it, so the attempt says so - whatever a client might have wanted.
-    set_id, answers = _answers(evidence, other)
-    picked = evidence.submit_attempt(set_id=set_id, operation_id="picked", answers=answers, support_language="vi")
-    assert picked.attempt["selection_policy_version"] is None
-    # The request has no way to claim it.
+    for level in LEVELS[language]:
+        _approved(content, evidence, language=language, level=level)
+    offer = evidence.next_article(support_language="vi")
+    set_id, answers = _answers(evidence, offer["article_id"])
+    independent = evidence.submit_attempt(set_id=set_id, operation_id="library", answers=answers,
+                                          support_language="vi")
+    assert independent.attempt["selection_policy_version"] is None
+    # The request cannot state provenance itself.
     with pytest.raises(TypeError):
         evidence.submit_attempt(set_id=set_id, operation_id="claim", answers=answers, support_language="vi",
                                 selection_policy_version=policy.SELECTION_POLICY_VERSION)
-    # The article the policy chooses now - after that attempt moved the
-    # evidence - is the one it records, and a replay keeps what was recorded.
-    now = evidence.next_article(support_language="vi")
-    set_id, answers = _answers(evidence, now["article_id"])
-    served = evidence.submit_attempt(set_id=set_id, operation_id="served", answers=answers, support_language="vi")
-    assert served.attempt["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
-    replay = evidence.submit_attempt(set_id=set_id, operation_id="served", answers=answers, support_language="vi")
-    assert replay.replayed and replay.attempt == served.attempt
-    with engine.connect() as connection:
-        stored = dict(connection.execute(select(ReadingAttempt.operation_id,
-                                                ReadingAttempt.selection_policy_version)).all())
-    assert stored == {"picked": None, "served": policy.SELECTION_POLICY_VERSION}
 
 
 @pytest.mark.parametrize("language", ["en", "zh"])
-def test_an_offer_the_evidence_has_moved_past_is_not_recorded_as_the_policys(world, language):
-    """The policy's choice is the one for this attempt's ordinal. What it
-    offered before another attempt moved the evidence is no longer its choice,
-    and an attempt on it is the learner's own."""
-    _, content, evidence, scope = world
+def test_a_recommendation_keeps_its_provenance_when_evidence_moves_before_its_submit(world, language):
+    """Recommended, then another attempt lands first (another tab, another
+    article): the policy would choose differently now, and the recommendation
+    still counts - it records what was recommended, not a recomputation."""
+    engine, content, evidence, scope = world
     scope.language = language
     easy, middle, hard = (("A2", "B1", "B2") if language == "en" else ("HSK2", "HSK3", "HSK4"))
     by_level = {level: _approved(content, evidence, language=language, level=level)[0]
                 for level in (easy, middle, hard)}
-    # A fresh learner (ability 2.0) is offered the easy one.
-    offered = evidence.next_article(support_language="vi")
-    assert offered["article_id"] == by_level[easy]
-    # All right on the hard one, which the policy did not offer: ability
-    # 2.0 -> ~3.06 and recent performance lift the target to ~3.56.
+    offer = evidence.next_article(support_language="vi")
+    assert offer["article_id"] == by_level[easy]
+    # All right on the hard one first: ability 2.0 -> ~3.06, target ~3.56.
     set_id, answers = _answers(evidence, by_level[hard])
     evidence.submit_attempt(set_id=set_id, operation_id="first", answers=answers, support_language="vi")
-    assert evidence.next_article(support_language="vi")["article_id"] == by_level[middle]
-    # The old offer is answered anyway: the learner's choice now.
-    set_id, answers = _answers(evidence, offered["article_id"])
-    late = evidence.submit_attempt(set_id=set_id, operation_id="late", answers=answers, support_language="vi")
-    assert late.status == "committed"
-    assert late.attempt["selection_policy_version"] is None
+    assert evidence.next_article(support_language="vi")["article_id"] == by_level[middle], \
+        "the policy has moved on"
+    set_id, answers = _answers(evidence, offer["article_id"])
+    late = evidence.submit_attempt(set_id=set_id, operation_id="recommended", answers=answers,
+                                   support_language="vi", recommendation=offer["recommendation"])
+    assert late.attempt["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
+    replay = evidence.submit_attempt(set_id=set_id, operation_id="recommended", answers=answers,
+                                     support_language="vi", recommendation=offer["recommendation"])
+    assert replay.replayed and replay.attempt == late.attempt
+    # Spent: a second attempt on the same set does not count it again.
+    again = evidence.submit_attempt(set_id=set_id, operation_id="again", answers=answers,
+                                    support_language="vi", recommendation=offer["recommendation"])
+    assert again.attempt["selection_policy_version"] is None
+    with engine.connect() as connection:
+        stored = dict(connection.execute(select(ReadingAttempt.operation_id,
+                                                ReadingAttempt.selection_policy_version)).all())
+    assert stored == {"first": None, "recommended": policy.SELECTION_POLICY_VERSION, "again": None}
+
+
+def test_only_an_unaltered_live_recommendation_for_this_account_and_set_counts(world):
+    engine, content, evidence, scope = world
+    other_article, other_set = _approved(content, evidence, level="C2")
+    _approved(content, evidence, level="A2")
+    issued_at = datetime.now(UTC)
+    offer = evidence.next_article(support_language="vi", now=issued_at)
+    assert offer["article_id"] != other_article
+    token = offer["recommendation"]
+    set_id, answers = _answers(evidence, offer["article_id"])
+    _, other_answers = _answers(evidence, other_article)
+    version, body, signature = token.split(".")
+    flipped = signature[:-1] + ("A" if signature[-1] != "A" else "B")
+    forged = body[:-2] + ("AA" if body[-2:] != "AA" else "BB")
+    for operation, target, sheet, presented in (
+        ("altered-signature", set_id, answers, f"{version}.{body}.{flipped}"),
+        ("altered-payload", set_id, answers, f"{version}.{forged}.{signature}"),
+        ("garbage", set_id, answers, "not-a-recommendation"),
+        ("another-set", other_set, other_answers, token),
+    ):
+        result = evidence.submit_attempt(set_id=target, operation_id=operation, answers=sheet,
+                                         support_language="vi", recommendation=presented)
+        assert result.status == "committed", operation
+        assert result.attempt["selection_policy_version"] is None, operation
+    # Another account presenting this account's recommendation.
+    scope.user = "learner-b"
+    foreign = evidence.submit_attempt(set_id=set_id, operation_id="foreign", answers=answers,
+                                      support_language="vi", recommendation=token)
+    assert foreign.attempt["selection_policy_version"] is None
+    scope.user = "learner-a"
+    # Past its life.
+    expired = evidence.submit_attempt(set_id=set_id, operation_id="expired", answers=answers,
+                                      support_language="vi", recommendation=token,
+                                      now=issued_at + RECOMMENDATION_TTL + timedelta(minutes=1))
+    assert expired.attempt["selection_policy_version"] is None
+    # A deployment with another secret cannot have issued it.
+    stranger = ReadingEvidenceRepository(engine, user_key_provider=lambda: scope.user,
+                                         language_provider=lambda: scope.language,
+                                         recommendation_secret="another-deployment")
+    elsewhere = stranger.submit_attempt(set_id=set_id, operation_id="elsewhere", answers=answers,
+                                        support_language="vi", recommendation=token, now=issued_at)
+    assert elsewhere.attempt["selection_policy_version"] is None
+    # And the genuine one, in time, still counts.
+    genuine = evidence.submit_attempt(set_id=set_id, operation_id="genuine", answers=answers,
+                                      support_language="vi", recommendation=token,
+                                      now=issued_at + timedelta(hours=1))
+    assert genuine.attempt["selection_policy_version"] == policy.SELECTION_POLICY_VERSION
 
 
 def test_nothing_left_to_offer_is_none(world):

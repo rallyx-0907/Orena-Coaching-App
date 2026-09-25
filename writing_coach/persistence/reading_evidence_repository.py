@@ -21,10 +21,17 @@ where the code runs:
 * **Submit is idempotent.** The attempt row is its own receipt, keyed by
   `(user_id, operation_id)`; a retry with the same digest returns the stored
   attempt and moves ability no further.
-* **Selection provenance is server-owned.** An attempt carries the selection
-  policy's version only when the server, replaying that policy inside the
-  submit's transaction, chooses the very set being answered; nothing a client
-  sends can set it.
+* **Selection provenance is a server-issued recommendation.** `next_article`
+  signs what it recommends (HMAC over account, language, article, set, policy
+  version and the moment it was issued). An attempt carries the selection
+  policy's version only when its submit presents that signature, unaltered,
+  for the same account, language and set, within `RECOMMENDATION_TTL`, and the
+  recommendation has not already been spent on an earlier attempt. The
+  signature is not bound to the attempt's ordinal, so evidence recorded between
+  the recommendation and its submit does not void it; a learner who opens the
+  same article some other way presents none and is recorded as their own
+  choice. A missing, altered, foreign or expired one records NULL - it never
+  refuses the evidence.
 
 PostgreSQL is the runtime. The SQLite path exists for the hermetic suite, where
 the advisory lock and `FOR SHARE`/`FOR UPDATE` are no-ops because SQLite
@@ -32,11 +39,14 @@ serializes writers on the whole database.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
+import hmac
+import json
 import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import Engine, delete, func, insert, select, text, update
@@ -66,6 +76,14 @@ PUBLISHED = "published"
 _ADVISORY_NAMESPACE = 0x52454144
 RECENT_ATTEMPTS = policy.RECENT_WINDOW
 CANDIDATE_POOL = 200
+# How long a recommendation stays good for the submit it leads to. Long enough
+# to read an article across a day; short enough that an old page is not
+# counted as the policy's work.
+RECOMMENDATION_TTL = timedelta(days=2)
+_RECOMMENDATION_VERSION = "rr1"
+# The fallback matches the session signer's, for local single-user mode; a
+# deployment passes its own secret.
+_LOCAL_SECRET = "local-single-user-mode"
 
 # A learner's Reading rows, in deletion order: the enumeration the
 # account-deletion workflow consumes (D-054, `ORENA_ACCOUNT_DATA_ARCHITECTURE.md`
@@ -162,6 +180,14 @@ def _require_published(article: Any) -> None:
         )
 
 
+def _b64(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _unb64(text_value: str) -> bytes:
+    return base64.urlsafe_b64decode(text_value + "=" * (-len(text_value) % 4))
+
+
 def _now(value: datetime | None = None) -> datetime:
     return value or datetime.now(UTC)
 
@@ -190,10 +216,15 @@ class ReadingEvidenceRepository:
         *,
         user_key_provider: Callable[[], str] = current_user_key,
         language_provider: Callable[[], str] = current_language_code,
+        recommendation_secret: str = "",
     ) -> None:
         self.engine = engine
         self._user_key_provider = user_key_provider
         self._language_provider = language_provider
+        # Domain-separated from every other use of the same secret.
+        self._recommendation_key = hashlib.sha256(
+            b"orena.reading.recommendation\x00" + (recommendation_secret or _LOCAL_SECRET).encode("utf-8")
+        ).digest()
 
     # -- plumbing --------------------------------------------------------
 
@@ -298,9 +329,16 @@ class ReadingEvidenceRepository:
         questions: Sequence[QuestionInput],
         validation: Mapping[str, Any],
         actor: str,
+        expected_body_sha256: str,
         now: datetime | None = None,
     ) -> dict[str, Any]:
         """A draft set, grounded in the article's body as it is now.
+
+        `expected_body_sha256` is the hash of the body the questions were
+        written from, taken before the AI was asked. Under the article's lock
+        the body must still hash to it: an edit that landed while the model was
+        writing is refused (`reading_article_changed`), never anchored to text
+        the questions were not written about.
 
         Offsets are computed from the body; a question whose evidence is not in
         the body is refused before anything is written, so an ungrounded draft
@@ -320,6 +358,11 @@ class ReadingEvidenceRepository:
             if article is None:
                 raise ReadingEvidenceError("reading_article_not_found", "That article is not in the catalog.")
             _require_published(article)
+            if body_sha256(article.body) != str(expected_body_sha256 or ""):
+                raise ReadingEvidenceError(
+                    "reading_article_changed",
+                    "The article changed while its questions were being written. Generate them again.",
+                )
             rows = self._grounded_rows(article.body, questions)
             set_id = uuid.uuid4()
             connection.execute(insert(ReadingComprehensionSet).values(
@@ -581,11 +624,12 @@ class ReadingEvidenceRepository:
         operation_id: str,
         answers: Mapping[str, int],
         support_language: str,
+        recommendation: str | None = None,
         now: datetime | None = None,
     ) -> SubmitResult:
         """The idempotent submit. See the module docstring for the lock order.
-        Its selection provenance is the server's to decide
-        (`_verified_selection`); the request has no say in it."""
+        `recommendation` is what `next_article` issued, passed back untouched;
+        whether it counts is the server's to verify (`_recommended_version`)."""
         operation = str(operation_id or "").strip()
         if not operation or len(operation) > 120:
             return SubmitResult("rejected", reason="operation_id_required")
@@ -600,7 +644,7 @@ class ReadingEvidenceRepository:
         uid, language, user_key = self._scope()
         try:
             return self._submit(uid, user_key, language, set_uuid, operation, digest, selected,
-                                str(support_language or "").casefold(), _now(now))
+                                str(support_language or "").casefold(), recommendation, _now(now))
         except IntegrityError:
             # A raced duplicate committed first: no success receipt was written
             # here, and the committed one is the answer.
@@ -628,7 +672,8 @@ class ReadingEvidenceRepository:
         ))
 
     def _submit(self, uid: uuid.UUID, user_key: str, language: str, set_uuid: uuid.UUID, operation: str,
-                digest: str, selected: dict[str, int], support: str, moment: datetime) -> SubmitResult:
+                digest: str, selected: dict[str, int], support: str, recommendation: str | None,
+                moment: datetime) -> SubmitResult:
         with self.engine.begin() as connection:
             existing = self._receipt(connection, uid, operation)
             if existing is not None:
@@ -677,10 +722,10 @@ class ReadingEvidenceRepository:
             ordinal = int(connection.execute(select(func.coalesce(func.max(ReadingAttempt.ordinal), 0)).where(
                 ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)).scalar_one()) + 1
             level = str(article.effective_level or "").strip() or "unknown"
-            # 3. Where the article came from - decided here, before this
-            #    attempt exists, exactly as `next_article` would have decided.
-            selection_policy_version = self._verified_selection(
-                connection, uid, language, row.support_language, ordinal, set_uuid)
+            # 3. Where the article came from: the policy's, only on a
+            #    recommendation this server issued for this account and set.
+            selection_policy_version = self._recommended_version(
+                connection, recommendation, uid=uid, language=language, set_uuid=set_uuid, moment=moment)
             # 4. The measurement, best-effort: a failure leaves the evidence
             #    unmeasured and the projection behind its checkpoint.
             measurement = self._measure(connection, uid, language, ordinal, level, judged, moment)
@@ -820,6 +865,10 @@ class ReadingEvidenceRepository:
             if latest:
                 self._save_state(connection, uid, language, state, _now())
             return {
+                # Whose projection this is - the account the attempts are
+                # recorded under, so an operator can find exactly this
+                # account's evidence in Admin Activity.
+                "account_id": str(uid),
                 "language_code": language,
                 "policy_version": policy.ABILITY_POLICY_VERSION,
                 "ability": round(state.ability, 6),
@@ -886,28 +935,55 @@ class ReadingEvidenceRepository:
             attempted_article_ids=[str(value) for value in attempted],
         )
 
-    def _verified_selection(self, connection: Any, uid: uuid.UUID, language: str, support: str,
-                            ordinal: int, set_uuid: uuid.UUID) -> str | None:
-        """A submit's selection provenance, decided by the server and never
-        taken from the request: the selection policy's version when this set
-        is the one the policy chooses for this attempt's ordinal - the same
-        choice `next_article` offered, replayed from the same evidence inside
-        the submit's own transaction, after the per-account lock - otherwise
-        NULL ("the learner chose it"). A failure here leaves the provenance
-        NULL; it never refuses the evidence."""
-        savepoint = connection.begin_nested() if self._postgres else None
-        try:
-            state = self._state(connection, uid, language, through=ordinal - 1)
-            choice = self._choose(connection, uid, language, support, state, ordinal)
-        except Exception:  # noqa: BLE001 - provenance must not gate the evidence
-            if savepoint is not None:
-                savepoint.rollback()
-            return None
-        if savepoint is not None:
-            savepoint.commit()
-        return choice.policy_version if choice is not None and choice.set_id == str(set_uuid) else None
+    def _sign(self, payload: Mapping[str, Any]) -> str:
+        body = _b64(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+        signature = _b64(hmac.new(self._recommendation_key, f"{_RECOMMENDATION_VERSION}.{body}".encode("ascii"),
+                                  hashlib.sha256).digest())
+        return f"{_RECOMMENDATION_VERSION}.{body}.{signature}"
 
-    def next_article(self, *, support_language: str) -> dict[str, Any] | None:
+    def _recommendation(self, token: str | None) -> dict[str, Any] | None:
+        """The payload of a recommendation this server signed, or None."""
+        parts = str(token or "").split(".")
+        if len(parts) != 3 or parts[0] != _RECOMMENDATION_VERSION or len(token or "") > 1024:
+            return None
+        expected = _b64(hmac.new(self._recommendation_key, f"{parts[0]}.{parts[1]}".encode("ascii"),
+                                 hashlib.sha256).digest())
+        if not hmac.compare_digest(expected, parts[2]):
+            return None
+        try:
+            payload = json.loads(_unb64(parts[1]))
+        except (ValueError, UnicodeDecodeError):
+            return None
+        return payload if isinstance(payload, dict) else None
+
+    def _recommended_version(self, connection: Any, token: str | None, *, uid: uuid.UUID, language: str,
+                             set_uuid: uuid.UUID, moment: datetime) -> str | None:
+        """The selection policy's version when `token` is a live recommendation
+        of this set for this account and language that no earlier attempt has
+        spent; otherwise None - "the learner chose it"."""
+        payload = self._recommendation(token)
+        if payload is None:
+            return None
+        if (payload.get("u"), payload.get("l"), payload.get("s")) != (str(uid), language, str(set_uuid)):
+            return None
+        version = payload.get("p")
+        if not isinstance(version, str) or not version.strip():
+            return None
+        try:
+            issued = datetime.fromtimestamp(int(payload.get("t")), UTC)
+        except (TypeError, ValueError, OverflowError, OSError):
+            return None
+        if not (issued - timedelta(minutes=5) <= moment <= issued + RECOMMENDATION_TTL):
+            return None
+        spent = connection.execute(select(ReadingAttempt.id).where(
+            ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language,
+            ReadingAttempt.set_id == set_uuid, ReadingAttempt.selection_policy_version.is_not(None),
+        ).limit(1)).first()
+        return None if spent is not None else version
+
+    def next_article(self, *, support_language: str, now: datetime | None = None) -> dict[str, Any] | None:
+        """The policy's choice and a signed recommendation of it: the one
+        thing a submit can present to be recorded as the policy's work."""
         uid, language, _ = self._scope()
         support = str(support_language or "").casefold()
         # Brings the stored projection up to date, so the state below is read
@@ -925,10 +1001,13 @@ class ReadingEvidenceRepository:
         served = self.served_set(choice.article_id, support_language=support)
         if served is None:
             return None
+        issued = int(_now(now).timestamp())
         return {
             "article_id": choice.article_id,
             "set_id": choice.set_id,
             "selection_policy_version": choice.policy_version,
+            "recommendation": self._sign({"u": str(uid), "l": language, "a": choice.article_id,
+                                          "s": choice.set_id, "p": choice.policy_version, "t": issued}),
             "target_difficulty": choice.target_difficulty,
             "probe": choice.probe,
             "weak_types": list(choice.weak_types),

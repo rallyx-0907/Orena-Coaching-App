@@ -117,6 +117,14 @@ repository again under the article's row lock). The database does not enforce
 it: an article unpublished after its set's approval keeps the set, which is
 simply not served (§3) until the article is published again.
 
+**The body the model saw (review round after `1d9a36b`).** The Admin route
+hashes the article body before it asks the AI and passes that hash to the
+repository, which requires the body under the article's row lock to still have
+it. An edit that lands while the model is writing refuses the draft
+(`reading_article_changed`) - it is never anchored to text its questions were
+not written about - and the route writes the questions once more for the new
+text; a second edit in a row is answered 409 for the Admin to retry.
+
 | Column | Why |
 | --- | --- |
 | `article_id`, `language_code` → `reading_articles (id, language)` **RESTRICT** | the set's language is its article's by construction; an article cannot take its sets with it |
@@ -243,14 +251,21 @@ set in their support language, not attempted recently. "Approved" implies
 "anchored" because every body edit stales its sets in the same transaction
 (§6); only the one chosen article is re-hashed when served.
 
-**Who writes `selection_policy_version` (review round after `974e639`).** The
-server, never the request. A submit replays this function inside its own
-transaction, after the per-account advisory lock and before the attempt
-exists — the same evidence `GET /api/reading/practice/next` reads — and
-records the policy's version only when the chosen set is the one being
-answered; otherwise NULL. The submit body has no such field (`extra="forbid"`
-refuses one). The learner meets the choice on Home's "for you" rail. No
-column changes.
+**Who writes `selection_policy_version` (review rounds after `974e639` and
+`1d9a36b`).** The server, on a recommendation it issued - never the request,
+and never a recomputation. `GET /api/reading/practice/next` returns, with its
+choice, a recommendation signed with a server key (HMAC-SHA256, domain-separated
+from the session secret) over the account, language, article, set, policy
+version and the moment it was issued. A submit that presents it unaltered, for
+the same account, language and set, within two days, records that policy
+version; the first such attempt spends it. Anything else - no recommendation,
+an altered or foreign one, another set's, an expired one - records NULL and
+never refuses the evidence. Because the signature is not bound to the
+attempt's ordinal, evidence recorded between the recommendation and its submit
+does not void it; because only Home's "for you" card carries it, the same
+article opened from the library is the learner's own choice. The submit body
+cannot state the version itself (`extra="forbid"`). No column changes: the
+recommendation is verified, not stored.
 
 1. **Ability** sets a target difficulty band around the current estimate.
 2. **Recent performance** moves the band: a run of high accuracy moves it up, a

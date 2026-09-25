@@ -47,6 +47,7 @@ from writing_coach.persistence.reading_content_repository import (
 from writing_coach.persistence.reading_evidence_repository import (
     ReadingEvidenceError,
     ReadingEvidenceRepository,
+    body_sha256,
     question_inputs,
 )
 from writing_coach.reading_comprehension import GENERATOR_VERSION, process_article
@@ -170,10 +171,15 @@ def _evidence_call(call: Callable[[], Any]) -> Any:
     except ReadingEvidenceError as exc:
         status = 409 if exc.code in {"reading_set_frozen", "reading_set_transition_refused",
                                      "reading_set_undeletable", "reading_set_stale",
-                                     "reading_article_not_published"} else 422
+                                     "reading_article_not_published", "reading_article_changed"} else 422
         if exc.code in {"reading_processor_unavailable", "reading_processor_failed"}:
             status = 503
         raise orena_http_error(status, exc.code, str(exc)) from exc
+
+
+def _category(exc: HTTPException) -> str:
+    detail = exc.detail if isinstance(exc.detail, Mapping) else {}
+    return str(detail.get("category") or "")
 
 
 def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
@@ -739,15 +745,37 @@ def generate_comprehension_set(
         raise orena_http_error(409, "reading_article_not_published",
                                "Publish the article first: a comprehension set is built for a published article only.")
     support = payload.support_language.strip().casefold()
+    # The body the model is shown is the body the set is anchored to: its hash
+    # is taken before the AI call and required again under the article's lock.
+    # An edit in between refuses the draft and the questions are written again
+    # for the new text - once; a second change in a row is the admin's to retry.
+    try:
+        created, model = _written_set(admin, article_id, article, support)
+    except HTTPException as exc:
+        if _category(exc) != "reading_article_changed":
+            raise
+        article = _guarded(lambda: _content().get_article(article_id))
+        if article is None:
+            raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.") from exc
+        created, model = _written_set(admin, article_id, article, support)
+    _audit(admin, "admin.reading_comprehension_set_created", entity_type="reading_comprehension_set",
+           entity_id=created["id"], payload={"article_id": article_id, "questions": len(created["questions"]),
+                                             "support_language": support, "model": model})
+    return created
+
+
+def _written_set(admin: Mapping[str, Any], article_id: str, article: Mapping[str, Any],
+                 support: str) -> tuple[dict[str, Any], str]:
+    """One pass: hash the body, ask the processor about exactly that body, and
+    write the draft only if the body under the lock still has that hash."""
+    anchor = body_sha256(str(article.get("body") or ""))
     processed = _evidence_call(lambda: process_article(article, support_code=support, generate=_state.generate))
     created = _evidence_call(lambda: _evidence().create_set(
         article_id, support_language=support, generator_version=GENERATOR_VERSION, model=processed.model,
-        questions=question_inputs(processed.questions), validation=processed.validation, actor=_actor(admin),
+        questions=question_inputs(processed.questions), validation=processed.validation,
+        actor=_actor(admin), expected_body_sha256=anchor,
     ))
-    _audit(admin, "admin.reading_comprehension_set_created", entity_type="reading_comprehension_set",
-           entity_id=created["id"], payload={"article_id": article_id, "questions": len(created["questions"]),
-                                             "support_language": support, "model": processed.model})
-    return created
+    return created, processed.model
 
 
 @router.get("/comprehension-sets/{set_id}")

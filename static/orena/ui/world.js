@@ -135,7 +135,7 @@ export async function renderWorld(root, ctx) {
      article outside this page of the catalogue is drawn from what the choice
      itself carries. Nothing is chosen, nothing is drawn. */
   const choice = result[4]?.status === 'fulfilled' && result[4].value?.available ? result[4].value.next : null;
-  const nextReading = choice?.article_id
+  const recommended = choice?.article_id
     ? articles.find((item) => item.id === `article:${choice.article_id}`) ||
       (choice.set?.article?.title
         ? {
@@ -148,6 +148,9 @@ export async function renderWorld(root, ctx) {
           }
         : null)
     : null;
+  /* A copy that carries the signed recommendation: only this card leads to a
+     submit recorded as the policy's; the catalogue's own card does not. */
+  const nextReading = recommended ? { ...recommended, recommendation: choice.recommendation || '' } : null;
   // Everything that is read rather than listened to, in one list.
   const published = publishedReadings(language);
   const readable = [...articles, ...published, ...text, ...memory.value.imports];

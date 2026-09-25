@@ -10,8 +10,8 @@ app installs, never from the body.
 * `POST /attempts`           submit answers - idempotent by `operation_id`;
                              answers with each question's key once saved. The
                              attempt's `selection_policy_version` is set by the
-                             server when the policy chose this set, never by
-                             the request
+                             server, only on a `recommendation` it issued from
+                             `/next` for this account and set
 * `GET  /evidence`           the learner's canonical attempts, newest first
 * `GET  /ability`            the ability projection under the current policy
 
@@ -92,8 +92,10 @@ class AttemptBody(BaseModel):
     operation_id: str = Field(min_length=1, max_length=120)
     # question id -> the chosen option index
     answers: dict[str, int] = Field(min_length=1, max_length=12)
-    # No selection provenance: the server decides whether the policy chose this
-    # set, and a body that tries to say so is refused (`extra="forbid"`).
+    # The recommendation `/next` issued, passed back untouched when the learner
+    # came from it. The server verifies it; a body cannot state provenance
+    # itself (`selection_policy_version` is refused by `extra="forbid"`).
+    recommendation: str | None = Field(default=None, max_length=1024)
 
 
 @router.get("/next")
@@ -126,6 +128,7 @@ def submit_attempt(payload: AttemptBody, response: Response) -> dict[str, Any]:
         operation_id=payload.operation_id,
         answers=payload.answers,
         support_language=_support(),
+        recommendation=payload.recommendation,
     ))
     if result.status != "committed":
         status = 409 if result.reason == "operation_reused" else 422

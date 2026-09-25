@@ -48,6 +48,15 @@ assert.match(encounter, /operationId \|\|=/, 'one operation id per answer sheet,
 assert.match(encounter, /api\.submitReadingPractice\(/, 'answers go to canonical evidence');
 assert.doesNotMatch(readFileSync('static/orena/infrastructure/api.js', 'utf8') + encounter, /selection_policy_version|selectionPolicyVersion/,
   'whether the selection policy chose a set is the server\'s to record, never the client\'s to claim');
+assert.match(encounter, /practiceSubmit\(api, served, location\.rec\)/,
+  'the signed recommendation travels from the address to the submit, untouched');
+{
+  const { route, link } = await import('../static/orena/product/intent.js');
+  assert.equal(route(link('encounter', { id: 'article:a1', intent: 'reading', rec: 'rr1.p.s' }).slice(1)).rec, 'rr1.p.s',
+    'a recommendation survives the address it rides in');
+  assert.equal(route(link('encounter', { id: 'article:a1', intent: 'reading' }).slice(1)).rec, '',
+    'and an address without one carries none');
+}
 assert.doesNotMatch(encounter, /readingSession|'reading:'/, 'no generated session is opened');
 const history = readFileSync('static/orena/ui/history.js', 'utf8');
 assert.match(history, /api\.readingEvidence\(30\)/, 'history reads canonical Reading evidence');

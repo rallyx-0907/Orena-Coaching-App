@@ -3,9 +3,13 @@ never prints a secret."""
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
+import uuid
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -106,3 +110,81 @@ def test_the_inventory_masks_identity_and_only_hints():
     assert cutover.looks_like_test("legacy", "local@localhost.invalid")
     assert cutover.looks_like_test("sub-1", "qa@example.com")
     assert not cutover.looks_like_test("google-sub-1", "ana.learner@gmail.com")
+
+
+def test_apply_needs_the_cluster_and_the_revision_before_anything_is_connected(monkeypatch, capsys):
+    monkeypatch.setattr(cutover, "identity", lambda url: (_ for _ in ()).throw(AssertionError("connected")))
+    monkeypatch.setattr(cutover, "apply", lambda *a, **k: (_ for _ in ()).throw(AssertionError("applied")))
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "http://localhost:8012")
+    base = ["apply", "--url", SANDBOX_DB, "--confirm-sandbox", "orena"]
+    assert cutover.main(base + ["--from", "20260923_0013"]) == 2
+    assert "--expect-cluster" in capsys.readouterr().out
+    assert cutover.main(base + ["--expect-cluster", "1"]) == 2
+    assert "--from" in capsys.readouterr().out
+    # The production database is refused before either.
+    assert cutover.main(["apply", "--url", "postgresql+psycopg://u:p@postgres:5432/becoming",
+                         "--confirm-sandbox", "becoming", "--expect-cluster", "1", "--from", "x"]) == 2
+    assert "production" in capsys.readouterr().out
+
+
+def test_bootstrap_never_crosses_the_cutover_revision():
+    bootstrap = _load("bootstrap_runtime_schema")
+    assert bootstrap.gated_revision_between("20260923_0013", "20260924_0014") == "20260924_0014"
+    assert bootstrap.gated_revision_between("20260924_0014", "20260924_0014") is None
+    assert cutover.CUTOVER_REVISION in bootstrap.GATED_REVISIONS
+    assert "reading_canonical_cutover.py apply" in bootstrap.GATED_REVISIONS[cutover.CUTOVER_REVISION]
+
+
+PG_URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
+
+
+@pytest.mark.skipif(not PG_URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
+def test_apply_checks_and_migrates_on_one_connection_or_changes_nothing(capsys):
+    """Against a real server: a wrong cluster, a wrong revision and a wrong
+    database all leave the database at 20260923_0013; the confirmed one in
+    the pinned cluster is migrated to 20260924_0014 by the same command."""
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine, text
+
+    schema = f"cutover_apply_{uuid.uuid4().hex[:10]}"
+    separator = "&" if "?" in PG_URL else "?"
+    url = f"{PG_URL}{separator}options={quote(f'-csearch_path={schema}')}"
+    admin = create_engine(PG_URL, future=True)
+    with admin.begin() as connection:
+        connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+    try:
+        config = Config(str(ROOT / "alembic.ini"))
+        config.set_main_option("script_location", str(ROOT / "migrations"))
+        config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
+        command.upgrade(config, "20260923_0013")
+
+        def revision() -> str:
+            engine = create_engine(url, future=True)
+            try:
+                with engine.connect() as connection:
+                    return connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+            finally:
+                engine.dispose()
+
+        found = cutover.identity(url)
+        assert found["database"] and found["cluster"]
+        database, cluster = found["database"], found["cluster"]
+        for kwargs in (
+            {"confirmed": database, "expect_cluster": "1", "from_revision": "20260923_0013"},
+            {"confirmed": database, "expect_cluster": cluster, "from_revision": "20260922_0012"},
+            {"confirmed": "some_other_database", "expect_cluster": cluster, "from_revision": "20260923_0013"},
+        ):
+            assert cutover.apply(url, **kwargs) == 2, kwargs
+            assert revision() == "20260923_0013", kwargs
+        assert cutover.apply(url, confirmed=database, expect_cluster=cluster, from_revision="20260923_0013") == 0
+        assert revision() == "20260924_0014"
+        out = capsys.readouterr().out
+        assert f"cluster {cluster}" in out and "applied" in out
+        # Applied once: a second run finds the database past --from and refuses.
+        assert cutover.apply(url, confirmed=database, expect_cluster=cluster, from_revision="20260923_0013") == 2
+    finally:
+        with admin.begin() as connection:
+            connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+        admin.dispose()

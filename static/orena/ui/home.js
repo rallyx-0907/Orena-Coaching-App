@@ -83,7 +83,7 @@ export function homeHtml(ctx, { media = [], reading = [], nextReading = null, vo
   const percentOf = (id) => (places.get(id) ? places.get(id).percent : null);
 
   const listening = (item, badge) => card(ctx, { href: link('encounter', { id: item.id, intent: 'follow' }), title: item.title, meta: [item.level, lengthOf(item, r)].filter(Boolean).join(' · '), visual: art(item), glyph: badge ? 'headphones' : '', percent: percentOf(item.id), language: item.language || ctx.language });
-  const reads = (item, badge) => card(ctx, { href: link('encounter', { id: item.id, intent: 'reading' }), title: item.title, meta: [item.level, lengthOf(item, r)].filter(Boolean).join(' · '), visual: art(item), glyph: badge ? 'book-open' : '', percent: percentOf(item.id), language: item.language || ctx.language });
+  const reads = (item, badge) => card(ctx, { href: link('encounter', { id: item.id, intent: 'reading', rec: item.recommendation || '' }), title: item.title, meta: [item.level, lengthOf(item, r)].filter(Boolean).join(' · '), visual: art(item), glyph: badge ? 'book-open' : '', percent: percentOf(item.id), language: item.language || ctx.language });
 
   /* What is new for the learner alternates listening and reading, so a phone's first two cards show both.
      The article the Reading selection policy chose for them leads its reading side. */

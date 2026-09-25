@@ -158,8 +158,20 @@ assert.match(placed, /class="hm-bar" role="img" aria-label="50%"/, 'a recorded p
    it is the rail the frames give to what fits the learner, and it is not a second card. */
 const chosen = { id: 'article:chosen-1', kind: 'article', material: 'article', title: 'Chosen article', language: 'en', level: 'B1' };
 const withChoice = homeHtml(ctxFor('en'), {
-  media: sampleMedia, reading: [...sampleReading, chosen], nextReading: chosen, vocabulary: [], saved: [], due: 0, collections: [],
+  media: sampleMedia, reading: [...sampleReading, chosen], nextReading: { ...chosen, recommendation: 'rr1.payload.signature' },
+  vocabulary: [], saved: [], due: 0, collections: [],
 });
+/* Only the recommendation's own card carries the signed recommendation; the same article's catalogue
+   card does not, so opening it that way is the learner's own choice. */
+const cardsFor = (html, rail) => {
+  const from = html.indexOf(`data-rail="${rail}"`);
+  const body = html.slice(from, html.indexOf('data-rail="', from + 10) > 0 ? html.indexOf('data-rail="', from + 10) : undefined);
+  return [...body.matchAll(/href="([^"]+)"/g)].map((match) => match[1].replaceAll('&amp;', '&')).filter((href) => href.includes('chosen-1'));
+};
+assert.ok(cardsFor(withChoice, 'for-you').every((href) => new URLSearchParams(href.split('?')[1]).get('rec') === 'rr1.payload.signature'),
+  'the recommendation card carries the signed recommendation');
+assert.ok(cardsFor(withChoice, 'reading').length === 1 && cardsFor(withChoice, 'reading').every((href) => !href.includes('rec=')),
+  'the catalogue card for the same article carries none');
 const forYou = withChoice.slice(withChoice.indexOf('data-rail="for-you"'), withChoice.indexOf('data-rail="reading"'));
 const readingHrefs = [...forYou.matchAll(/href="([^"]+)"/g)].map((match) => decodeURIComponent(match[1])).filter((href) => /(article|story):/.test(href));
 assert.match(readingHrefs[0] || '', /article:chosen-1/, 'the policy\'s choice is the first reading card for the learner');

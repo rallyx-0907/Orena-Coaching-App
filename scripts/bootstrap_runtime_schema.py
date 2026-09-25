@@ -49,6 +49,33 @@ from writing_coach.runtime_schema import (  # noqa: E402
 )
 
 
+# Revisions this command never applies: each is non-additive and has its own
+# gated command, which checks the database and cluster on the connection it
+# migrates (D-076). Creating an empty schema is unaffected.
+GATED_REVISIONS = {
+    "20260924_0014": "python scripts/reading_canonical_cutover.py apply --confirm-sandbox <database> "
+                     "--expect-cluster <system identifier> --from 20260923_0013",
+}
+
+
+def gated_revision_between(actual: str | None, expected: str) -> str | None:
+    """The first gated revision an upgrade from `actual` to `expected` would
+    apply, or None."""
+    from alembic.script import ScriptDirectory
+    from alembic.script.revision import RevisionError
+
+    from writing_coach.persistence.runtime import _runtime_alembic_config
+
+    script = ScriptDirectory.from_config(_runtime_alembic_config())
+    try:
+        pending = [revision.revision for revision in script.iterate_revisions(expected, actual)]
+    except RevisionError:
+        # A revision this build's migrations do not know: Alembic cannot
+        # upgrade from it either, so there is no gated step to cross.
+        return None
+    return next((revision for revision in reversed(pending) if revision in GATED_REVISIONS), None)
+
+
 def inspect_runtime() -> tuple[str, str, str | None]:
     """(state, expected revision, actual revision) for the configured runtime."""
     from writing_coach.persistence.config import create_runtime_engine
@@ -123,6 +150,15 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"This database is at {actual or 'no revision'}, not "
                 f"{args.from_revision}. Check which database this is pointed at.",
+                file=sys.stderr,
+            )
+            return 1
+        gated = gated_revision_between(actual, expected)
+        if gated is not None:
+            print(
+                f"{actual} -> {expected} applies {gated}, a non-additive cutover this "
+                "command does not run. Apply it with its own gated command, which checks "
+                f"the database on the connection it migrates:\n  {GATED_REVISIONS[gated]}",
                 file=sys.stderr,
             )
             return 1

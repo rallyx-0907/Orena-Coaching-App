@@ -66,9 +66,13 @@ class Provider:
     def __init__(self) -> None:
         self.grounded = True
         self.calls: list[dict] = []
+        # Runs while the "model" is writing - an Admin's edit landing then.
+        self.during = None
 
     def __call__(self, *, messages, schema, max_output_tokens, temperature, capability_key):
         self.calls.append({"messages": messages, "schema": schema, "capability_key": capability_key})
+        if self.during is not None:
+            self.during(len(self.calls))
         language = "zh" if "questions in Chinese" in messages[0]["content"] else "en"
         return SimpleNamespace(data=_draft(language, grounded=self.grounded), model="stub-model")
 
@@ -353,20 +357,21 @@ def test_a_submitted_sheet_is_scored_saved_once_and_answered_with_its_key(setup,
     assert call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()["available"] is False
 
 
-def test_the_server_records_whether_the_policy_chose_the_set(setup):
-    """Selection provenance is server-owned: a body that claims it is refused,
-    an attempt on the article `/next` offered records the policy's version, and
-    one on an article the learner picked records none."""
+def test_provenance_is_the_recommendation_the_server_issued(setup):
+    """`/next` issues a signed recommendation. Presented with its submit, the
+    attempt records the policy's version; the same article opened without it
+    records none; a body cannot state provenance itself."""
     setup.scope.submit = True
-    offered_first = {}
+    ids = {}
     for level in ("A2", "C2"):
         article_id = _article(setup, level=level, content_hash=(level.casefold() * 32)[:64])
         _publish(setup, article_id)
         _approved_set(setup, article_id)
-        offered_first[level] = article_id
-    chosen = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()
-    assert chosen["available"] and chosen["next"]["article_id"] == offered_first["A2"]
-    assert "correct_index" not in chosen["next"]["set"]["questions"][0]
+        ids[level] = article_id
+    offer = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()
+    assert offer["available"] and offer["next"]["article_id"] == ids["A2"]
+    assert offer["next"]["recommendation"].startswith("rr1.")
+    assert "correct_index" not in offer["next"]["set"]["questions"][0]
 
     def sheet(article_id, operation, **extra):
         served = call(setup.app, "GET", f"/api/reading/practice/articles/{article_id}", admin=False).json()["set"]
@@ -374,17 +379,65 @@ def test_the_server_records_whether_the_policy_chose_the_set(setup):
                 "answers": {question["id"]: 0 for question in served["questions"]}, **extra}
 
     claimed = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
-                   json=sheet(offered_first["C2"], "claim", selection_policy_version="reading-select/1"))
-    assert claimed.status_code == 422, "a client cannot claim the policy chose its article"
+                   json=sheet(ids["A2"], "claim", selection_policy_version="reading-select/1"))
+    assert claimed.status_code == 422, "a client cannot state the policy chose its article"
     assert _attempts(setup) == 0
-    picked = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
-                  json=sheet(offered_first["C2"], "picked"))
-    assert picked.status_code == 200 and picked.json()["attempt"]["selection_policy_version"] is None
-    now = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()["next"]
-    served = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
-                  json=sheet(now["article_id"], "served"))
-    assert served.status_code == 200
-    assert served.json()["attempt"]["selection_policy_version"] == now["selection_policy_version"]
+    # The recommended article, opened another way: the learner's own choice.
+    independent = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
+                       json=sheet(ids["A2"], "independent"))
+    assert independent.status_code == 200
+    assert independent.json()["attempt"]["selection_policy_version"] is None
+    # A recommendation of one set does not vouch for another.
+    wrong_set = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
+                     json=sheet(ids["C2"], "other", recommendation=offer["next"]["recommendation"]))
+    assert wrong_set.json()["attempt"]["selection_policy_version"] is None
+    # A fresh recommendation, presented: the policy's.
+    fresh = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()
+    assert not fresh["available"], "both articles are attempted now"
+    for level in ("B1",):
+        article_id = _article(setup, level=level, content_hash=(level.casefold() * 32)[:64])
+        _publish(setup, article_id)
+        _approved_set(setup, article_id)
+        ids[level] = article_id
+    fresh = call(setup.app, "GET", "/api/reading/practice/next", admin=False).json()["next"]
+    assert fresh["article_id"] == ids["B1"]
+    recommended = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
+                       json=sheet(ids["B1"], "recommended", recommendation=fresh["recommendation"]))
+    assert recommended.status_code == 200
+    assert recommended.json()["attempt"]["selection_policy_version"] == fresh["selection_policy_version"]
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_an_edit_during_generation_is_refused_and_the_questions_written_again(setup, language):
+    """The body the model saw is the body the set anchors to. An edit landing
+    mid-generation refuses that draft and the questions are written again for
+    the new text; a second edit in a row is refused for the Admin to retry."""
+    article_id = _article(setup, language)
+    _publish(setup, article_id)
+    edited = BODIES[language] + SPANS[language][0]
+
+    def edit_once(call_number):
+        if call_number == 1:
+            setup.content.update_article(article_id, actor="admin", body=edited)
+
+    setup.provider.during = edit_once
+    created = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert created.status_code == 201, created.text
+    assert len(setup.provider.calls) == 2, "written again for the new text"
+    assert edited in setup.provider.calls[-1]["messages"][1]["content"]
+    assert created.json()["anchored"] is True
+    assert [item["id"] for item in setup.evidence.list_sets(article_id)] == [created.json()["id"]]
+
+    setup.provider.calls.clear()
+    bodies = iter([edited + " One.", edited + " Two."])
+    setup.provider.during = lambda _: setup.content.update_article(article_id, actor="admin", body=next(bodies))
+    refused = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert refused.status_code == 409
+    assert refused.json()["detail"]["category"] == "reading_article_changed"
+    assert len(setup.provider.calls) == 2
+    assert len(setup.evidence.list_sets(article_id)) == 1, "nothing written for a body the model never saw"
 
 
 def test_a_stale_set_refuses_a_new_submit_with_its_reason(setup):
