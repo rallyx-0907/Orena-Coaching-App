@@ -68,11 +68,16 @@ class Provider:
         self.calls: list[dict] = []
         # Runs while the "model" is writing - an Admin's edit landing then.
         self.during = None
+        # Call numbers answered with an empty object: a result that arrived
+        # but cannot make a set.
+        self.unusable_calls: set[int] = set()
 
     def __call__(self, *, messages, schema, max_output_tokens, temperature, capability_key):
         self.calls.append({"messages": messages, "schema": schema, "capability_key": capability_key})
         if self.during is not None:
             self.during(len(self.calls))
+        if len(self.calls) in self.unusable_calls:
+            return SimpleNamespace(data={}, model="stub-model")
         language = "zh" if "questions in Chinese" in messages[0]["content"] else "en"
         return SimpleNamespace(data=_draft(language, grounded=self.grounded), model="stub-model")
 
@@ -243,6 +248,58 @@ def test_the_processor_asks_questions_about_a_passage_and_never_writes_one(setup
     listed = call(setup.app, "GET", f"/api/admin/reading/articles/{article_id}/comprehension-sets").json()
     assert [item["id"] for item in listed["items"]] == [body["id"]]
     assert any(item["action"] == "admin.reading_comprehension_set_created" for item in setup.audited)
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_an_unusable_first_answer_is_asked_again_and_the_retry_is_kept_with_the_set(setup, language):
+    """The processor's one bounded retry, over HTTP: an empty first answer, a
+    valid second one, a set whose validation says the first was unusable."""
+    article_id = _article(setup, language)
+    _publish(setup, article_id)
+    setup.provider.unusable_calls = {1}
+    created = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert created.status_code == 201, created.text
+    assert len(setup.provider.calls) == 2
+    retries = created.json()["validation"]["retries"]
+    assert [item["reason"] for item in retries] == ["reading_processor_ungrounded"]
+
+
+def test_two_unusable_answers_are_refused_as_before_and_write_nothing(setup):
+    article_id = _article(setup)
+    _publish(setup, article_id)
+    setup.provider.unusable_calls = {1, 2}
+    refused = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert refused.status_code == 422
+    assert refused.json()["detail"]["category"] == "reading_processor_ungrounded"
+    assert len(setup.provider.calls) == 2
+    assert setup.evidence.list_sets(article_id) == []
+
+
+def test_a_retry_still_cannot_anchor_a_set_to_a_body_the_model_did_not_see(setup):
+    """The body changes while the first (unusable) answer is being written. The
+    processor's retry asks about the body it was given - the old one - so the
+    set it produces is refused under the article's lock, and the route writes
+    the questions again for the new text."""
+    article_id = _article(setup)
+    _publish(setup, article_id)
+    edited = BODIES["en"] + " He was tired."
+
+    def edit_during_first(call_number):
+        if call_number == 1:
+            setup.content.update_article(article_id, actor="admin", body=edited)
+
+    setup.provider.during = edit_during_first
+    setup.provider.unusable_calls = {1}
+    created = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert created.status_code == 201, created.text
+    assert len(setup.provider.calls) == 3, "unusable, then a retry about the old text, then the new text"
+    assert edited not in setup.provider.calls[1]["messages"][1]["content"], "the retry repeats the same request"
+    assert edited in setup.provider.calls[2]["messages"][1]["content"]
+    assert created.json()["anchored"] is True
+    assert "retries" not in created.json()["validation"], "the set that was written came from a clean answer"
 
 
 def test_an_ungrounded_draft_or_no_provider_is_refused_and_writes_nothing(setup):

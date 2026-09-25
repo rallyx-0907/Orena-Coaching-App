@@ -12,16 +12,24 @@ There is no deterministic fallback. A set of invented questions is worse than
 no set, so when no provider can answer, the request fails with a clear reason
 and the article stays Free Reading.
 
+One bounded retry: when a result arrives but cannot make a set - no usable
+questions, or fewer than `MIN_QUESTIONS` grounded ones - the same request is
+made once more and validated the same way. It is logged, and kept in the set's
+`validation.retries` when the second answer succeeds; a second unusable answer
+fails as before. A provider that fails (not configured, unauthorized,
+unavailable, erroring) is never retried.
+
 The capability key is `reading_generator` - the key the admin AI settings
 already store for Reading - now doing this job only.
 """
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from writing_coach.ai.base import AICapabilityError
+from writing_coach.ai.base import AICapabilityError, AIProviderResponseInvalid
 from writing_coach.core.support_languages import support_language
 from writing_coach.persistence.reading_evidence_repository import (
     QUESTION_TYPES,
@@ -30,10 +38,20 @@ from writing_coach.persistence.reading_evidence_repository import (
     locate_evidence,
 )
 
+_logger = logging.getLogger(__name__)
+
 READING_COMPREHENSION_CAPABILITY = "reading_generator"
 GENERATOR_VERSION = "reading-comprehension/1"
 MIN_QUESTIONS, MAX_QUESTIONS = 3, 6
+# One more request when a result arrives but cannot make a set (no questions,
+# or too few grounded ones). Never for a provider that failed.
+RETRIES_ON_UNUSABLE_RESULT = 1
 _MAX_BODY_CHARS = 12000
+
+
+class UnusableResult(ReadingEvidenceError):
+    """A provider answer that arrived but cannot make a set. The only refusal
+    that is retried; callers see its ordinary reason code."""
 
 
 @dataclass
@@ -145,12 +163,36 @@ def process_article(
     body = str(article.get("body") or "")
     if not body.strip():
         raise ReadingEvidenceError("reading_article_empty", "The article has no text to ask about.")
+    messages = _messages(
+        title=str(article.get("title") or ""), body=body, language=str(article.get("language") or ""),
+        level=str(article.get("effective_level") or ""), support_code=support_code,
+    )
+    retries: list[dict[str, Any]] = []
+    for attempt in range(1 + RETRIES_ON_UNUSABLE_RESULT):
+        # A provider that fails - not configured, unauthorized, unavailable,
+        # erroring - raises here and is never retried: asking again would not
+        # change the answer, and the administrator has to see it.
+        try:
+            return _checked(_ask(generate, messages), body, retries)
+        except UnusableResult as exc:
+            if attempt == RETRIES_ON_UNUSABLE_RESULT:
+                raise
+            # A result arrived but cannot make a set - no questions, or too few
+            # grounded ones. Models do this now and then; one more request, the
+            # same one, and the same validation. Nothing is invented and no
+            # grounding rule is relaxed.
+            retries.append({"attempt": attempt + 1, "reason": exc.code, "detail": str(exc)[:300]})
+            _logger.warning(
+                "reading comprehension: unusable provider result (%s), asking once more: %s",
+                exc.code, str(exc)[:300],
+            )
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
+def _ask(generate: Callable[..., Any], messages: list[dict[str, str]]) -> Any:
     try:
-        result = generate(
-            messages=_messages(
-                title=str(article.get("title") or ""), body=body, language=str(article.get("language") or ""),
-                level=str(article.get("effective_level") or ""), support_code=support_code,
-            ),
+        return generate(
+            messages=messages,
             schema=_schema(),
             max_output_tokens=2400,
             temperature=0.2,
@@ -158,6 +200,9 @@ def process_article(
         )
     except ReadingEvidenceError:
         raise
+    except AIProviderResponseInvalid as exc:
+        # The provider answered, but not with a usable payload.
+        raise UnusableResult("reading_processor_failed", "The AI provider returned no usable questions.") from exc
     except AICapabilityError as exc:
         # Not configured, disabled, misconfigured or unsupported: the
         # administrator's to fix in AI settings, and said in its own words.
@@ -166,21 +211,26 @@ def process_article(
         raise ReadingEvidenceError(
             "reading_processor_failed", "The AI provider could not write questions for this article."
         ) from exc
+
+
+def _checked(result: Any, body: str, retries: list[dict[str, Any]]) -> Processed:
+    """A usable draft from one provider result, or the refusal saying why not."""
     data = getattr(result, "data", result)
     if not isinstance(data, Mapping):
-        raise ReadingEvidenceError("reading_processor_failed", "The AI provider returned no questions.")
+        raise UnusableResult("reading_processor_failed", "The AI provider returned no questions.")
     questions, issues = _validate(data, body)
     if len(questions) < MIN_QUESTIONS:
-        raise ReadingEvidenceError(
+        raise UnusableResult(
             "reading_processor_ungrounded",
             f"Only {len(questions)} grounded questions came back; a set needs {MIN_QUESTIONS}. "
             + ("; ".join(issues) if issues else ""),
         )
     model = str(getattr(result, "model", "") or "")
     coverage = sorted({item["question_type"] for item in questions})
-    return Processed(
-        questions=questions,
-        model=model,
-        validation={"issues": issues, "coverage": coverage, "kept": len(questions),
-                    "returned": len(data.get("questions") or [])},
-    )
+    validation: dict[str, Any] = {"issues": issues, "coverage": coverage, "kept": len(questions),
+                                  "returned": len(data.get("questions") or [])}
+    if retries:
+        # Kept with the set, so the Admin reviewing it - and anyone reading the
+        # sets later - sees that the provider's first answer was unusable.
+        validation["retries"] = list(retries)
+    return Processed(questions=questions, model=model, validation=validation)
