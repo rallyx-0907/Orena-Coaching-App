@@ -2644,3 +2644,227 @@ proposal's §11 for the admin sandbox only; it authorizes nothing beyond it.
 
 The integration revision `20260924_0016` has a different parent and needs
 independent architecture review before any shared-runtime application.
+## D-084 — Speaking: "passed" is the provider's own flag; a Speaking library of its own plus a flow from Listening
+
+**Date:** 2026-09-23. **Source:** the human, answering four questions in the
+`feature/speaking` session before any code was written.
+
+**Context.** The Speaking workspace frame draws "5 / 7 ĐẠT", a "Đạt" under
+each word and an amber bar for a weak one, and no threshold for any of them
+had been approved. The Speaking library was blocked on content (SP-1), and the
+free-response room was a D-065 composition.
+
+**Decision.**
+
+1. A reference word is **not passed** when the pronunciation provider flags it
+   with its own miscue verdict (Azure `ErrorType` other than `None`:
+   Mispronunciation, Omission, ...). `passedCount` counts the reference words
+   it did not flag. Orena sets no numeric threshold; the provider's scores are
+   shown as numbers. The amber bar, the headline and the marks in the line
+   follow the same flag and nothing else.
+2. Speaking has **a library of its own** (an authored Speaking catalogue) **and
+   a flow from Listening** (published lessons offering the shadowing mode, the
+   clip as the model). Only real items are listed.
+3. The review sandbox for this lane is a separate container on **8013** with
+   its own throwaway database; 8000, 8010, 8011 and 8012 are other lanes'.
+4. Free talk is **rebuilt on its frame after** the pronunciation flow, keeping
+   the existing recognition and coaching.
+
+**Not decided here** (recorded as S1-S13 in `UI_BACKEND_GAPS.md`): a fluency
+threshold, tone assessment and its provider, durable recordings, the way back
+from practising one word, a "previous line" control, phrases for free talk.
+
+**Consequences.** `capabilities/pronunciation-result.js` is the only reader of
+the assessment; `toneActual` stays empty until a provider measures pitch; an
+unset `PRONUNCIATION_PROVIDER` no longer serves synthetic scores.
+
+## D-075 — Speaking: the new Claude Design Speaking UI is the learner flow; Azure proven before review
+
+**Date:** 2026-09-23. **Source:** the human, updating the Speaking decision now numbered D-084 in the `feature/speaking` session.
+
+**Decision.**
+
+1. The Speaking design in the Claude Design project, read at its source (DesignSync), is the
+   Speaking learner flow and replaces the current one. The backend and provider already built are
+   wired into it; no second Speaking flow runs beside it.
+2. Azure Pronunciation Assessment is run end to end for real before review, using the repository's
+   existing credential convention (not a `.env` assumed inside a worktree).
+3. No SpeechSuper yet: Azure's real Mandarin gap is measured first
+   (`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`), then decided.
+4. No fluency threshold.
+5. The word verdict is the provider's; a weak phoneme is shown in the word's detail and never
+   overrides the word's verdict.
+6. Practising one word alone has a way back to the current line.
+7. No "previous line" unless the design or product asks for it.
+8. The Speaking catalogue is not seeded with invented content.
+9. Free talk keeps its capability; its presentation follows the new Speaking UI.
+10. Speaking is reported READY FOR HUMAN REVIEW only when the source was read, the main UI updated,
+    Azure run end to end, and desktop and phone checked in EN, VI and ZH. No merge, no push.
+
+**Supersedes:** the open questions S5 (fluency threshold: none), S6 (weak phoneme: detail only), S8
+(previous line: not added) and the "no Azure yet" state of D-084.
+
+## D-076 — The new Speaking frames: what their notes decide and what they do not
+
+**Date:** 2026-09-23. **Source:** the human, answering four questions after the Speaking design was
+read at its source (`docs/design/canonical-ui/SYNC_2026-09-23.md`).
+
+**Decision.**
+
+1. **A line to practise again** is a line with at least one word the provider flagged. The frames'
+   "under 80" (lesson summary, attempts) is not adopted; "practise again" lists lines with flags.
+2. **Audio.** By default a recording lives only for the session and is gone after it. An optional
+   local retention, "Keep recent recordings", keeps at most five recordings per line on the learner's
+   device. Nothing is saved to the server or the library in this phase; a server library comes only
+   after a schema and a privacy/retention review, and is opt-in, never on by default.
+3. **Free talk is scored only on real measurements.** Pronunciation and fluency come from the
+   provider if its free-talk mode supports them. Grammar and vocabulary get no new AI scoring now;
+   they follow the metric rule until an evaluator is approved. No overall score (the frames' 30/70)
+   while a component it needs is missing. "Last time" is shown only against an earlier attempt
+   scored under the same contract. The correction cards and the line to say again may come from the
+   existing coaching: that is feedback, not a score.
+4. **In this slice:** the measured tone contour (pitch from the audio itself, drawn, with no written
+   verdict) and the shadowing mode. **Deferred:** Speaking settings (some options have no real
+   capability yet) and sending often-missed characters to the SRS queue (a persistence and
+   Vocabulary change for its own slice).
+
+## D-077 — Speaking review answers: free talk's older ways kept one step in; `say_again` approved
+
+**Date:** 2026-09-23. **Source:** the human, answering the first Speaking review report
+(`feature/speaking`).
+
+**Decision.**
+
+1. **S14.** Free talk keeps its older capabilities (look closer, develop into writing, start a
+   conversation). They need not sit on the result screen; they follow progressive disclosure in the
+   new UI. Built: a "⋯" button in the result's top bar opens the deep-ways sheet Listening already
+   uses, holding the three.
+2. **S15.** The `say_again` field of the `spoken-response` contract is approved, because it serves
+   the current Speaking flow (the result's "say this again" line and "say the corrected line"). It is
+   required in the provider schema and returned only as a line in the learning language's script,
+   else empty (`writing_coach/media_interaction.py`, `tests/test_learning_paths_with_provider.py`).
+3. **S3 stays a known gap.** Azure is not reliable enough to judge Mandarin tones; no SpeechSuper.
+4. **Not in this slice:** a paid tone provider, loudspeaker detection, a "previous line" control, new
+   SRS persistence, invented content for the Speaking catalogue or phrase suggestions.
+5. **S9, S10, S11, S16, S17, S23** stay documented gaps; scope is not widened for them unless a
+   direct bug of the current flow needs it.
+6. **Credentials.** The Azure key was rotated. No credential value is ever printed in a report, log
+   or error; the cause of the one print (a transport error quoting a header) is fixed in the speech
+   adapters.
+7. A full end-to-end run on the current HEAD precedes the next review report; results from older
+   commits do not stand in for it. No merge, no push.
+
+**Supersedes:** the open questions S14 and S15 in `docs/project/UI_BACKEND_GAPS.md`.
+
+## D-078 — App-wide: a learning workspace is the viewport, never a long page; one flow per capability
+
+**Date:** 2026-09-23. **Source:** the human, "APP-WIDE LEARNING WORKSPACE RULES — NON-NEGOTIABLE",
+given in the `feature/speaking` session. It overrides the design where they differ (explicit current
+human instruction ranks first).
+
+**Decision.**
+
+1. **The rule** (verbatim): "Learning workspace không được trở thành một page dài. Workspace shell
+   phải nằm trong viewport. Chỉ những vùng nội dung có bản chất dài mới được scroll nội bộ bên trong
+   workspace. Primary learning controls và primary actions phải luôn nằm trong vùng thao tác của
+   viewport." It binds every learning workspace (Reading, Listening, Speaking, Dictation, Writing,
+   Vocabulary, Grammar and later ones), desk and phone. Browsing pages (Home, Library, catalogues,
+   discovery, history) are exempt. No agent may loosen it for an implementation reason. Written as
+   Design Contract rule 49 with its acceptance items in the fidelity gate; `AGENTS.md` and
+   `CLAUDE.md` point to it.
+2. **Internal scroll only for content long by nature**, in one bounded region per need; finite
+   components are laid out directly and scroll regions are not nested.
+3. **When it does not fit, recompose** by the stated priority (content being learned, primary
+   interaction, task state, main feedback, submit/retry/next, support, detail); blind scaling is not
+   a fix.
+4. **One learner flow per capability.** Every way in reaches the current flow; old addresses
+   redirect and old learner screens are never rendered.
+5. **Speaking is to be cleaned up now** under this rule.
+
+**Applied in this slice (`feature/speaking`).**
+
+- Speaking: the room is bounded to the viewport. On a desk the task is fixed bands (steps, mode,
+  line, controls) around a stage where the model clip takes the free height at 16:9 and yields first;
+  the result is a fixed head, the word list (the one scroll region) and the actions in a foot band the
+  same height as the controls, so the two panels close on one line. The result's actions are one row:
+  "hear yours" and "compare" (icon-only on a narrow panel, still named), "next" as the primary; the
+  second "record again" left the panel, recording again is the microphone and the retry beside it. On
+  a phone the clip yields before the result card, whose flagged words scroll inside it. Compare
+  (attempts), the summary (the lesson's lines) and free talk (the transcript) each have one scroll
+  region. Measured at 1920x1080, 1440x900, 1366x768, 390x844 and 360x740, with a 32-character line,
+  a 7-line lesson, five real takes and DOM-filled stress content (28 lines, 15 attempts, a long
+  transcript).
+- Routing: `static/orena/product/legacy-routes.js`, applied by the router before any render:
+  `#/practice` (the Practice hub) goes Home; `#/practice?intent=shadowing` without a lesson goes to
+  the Speaking library; `?intent=dictation` to the Listening library (or the lesson's dictation with
+  an id); `?intent=writing` to `#/writing`. The hub (`practiceOverview`) and the list of moments are
+  deleted; the back links that led to the hub now name their owner (Vocabulary for the review, Home
+  for grammar); Progress's Dictation card and History's fallback point at the current places. Gate:
+  `scripts/test_orena_legacy_routes.mjs`.
+
+**Open for the human.** Grammar's own page had no way in but the retired hub, and the design draws
+none (UI_BACKEND_GAPS, S24). The other workspaces (Reading, Listening, Dictation, Writing,
+Vocabulary) are not re-measured in this Speaking slice; each owner applies rule 49 and its gate.
+
+## D-079 — Three independent language layers: interface, support, target
+
+**Date:** 2026-09-24. **Source:** the human, closing Speaking's merge blockers ("FIX GỐC LỖI NGÔN NGỮ —
+APP-WIDE"), after a word sheet showed English, Vietnamese and Chinese at once.
+
+**Decision.** Orena has three language layers and none is inferred from another:
+
+- **interface** - navigation, buttons, menus, system chrome, Settings, system labels and actions;
+- **support/native** - explanation, translation, hint, instruction, guidance, grammar and vocabulary
+  explanation;
+- **target learning** - the material: sentence, word, transcript, exercise.
+
+`ctx.ui` is the interface language, `ctx.support` the support language, `ctx.language` the target
+language. The support language never decides the interface language. Acceptance cases: A (interface
+English, support Vietnamese, target Chinese), B (Vietnamese, Vietnamese, English), C (Chinese,
+English, Chinese), each holding across boot, reload, cache, profile load, preference change,
+navigation, the Speaking workspace and the word sheet.
+
+**Supersedes.** D-051's "learner-facing scaffolding follows the interface language" (scaffolding
+follows the support language), the Design Contract's former "two learner language roles, and only
+two" (rewritten), and commit `474ab59` ("the support language owns the UI"). It restores the
+three-layer rule `docs/product/ORENA_LANGUAGE_COHERENCE.md` already stated.
+
+**Applied (`feature/speaking`).**
+
+- Source of truth: `static/orena/product/languages.js`. Interface: the learner's choice on the device
+  (`orena.interface`) - the account's `interface_language` stays unstored, its column being a gated
+  migration - else the browser's language when Orena is written in it, else English. Support: the
+  account's `support_language` (else `native_language`). Target: the server's active language.
+- `app.js` assigns each layer only through its resolver; the old support cache (`orena.support`) is
+  neither read nor written; the preferences sheet offers the interface language as its own choice;
+  `account_profile.py` allows `vi` as an interface language (still not stored).
+- Speaking picks each string by its layer (`ui/speaking-copy.js`, `GUIDANCE_KEYS`), with `lang` on the
+  guidance it renders.
+- Gate: `scripts/test_orena_language_layers.mjs` (in CI).
+
+**Open.** Static guidance on the other surfaces still reads the interface pack (coherence audit
+AUDIT-1b); each owner splits its keys. Storing the interface language on the account is a gated
+migration for the human.
+
+## D-080 — Every learner copy string declares its language layer (D-079 made app-wide)
+
+**Date:** 2026-09-24. **Source:** the human: D-079 was not complete while static guidance outside
+Speaking still read the interface pack (AUDIT-1b), and the Speaking copy relied on an allowlist of
+guidance keys ("not in the list = interface").
+
+**Decision.** Every key of every learner copy table declares its semantic layer - `interface`
+(button, menu, navigation, title, region heading, label, metadata, counter, placeholder, short system
+status), `support` (explanation, instruction, hint, coaching, verdict, feedback, the explanation of a
+result, a state or an error) or `target` (material; none lives in copy). There is no default layer.
+Each screen reads each string from the pack of its layer; a support language Orena has no pack for
+reads guidance in English, never in the interface language. Content explanations follow the same
+rule.
+
+**Applied.** `static/orena/ui/copy-layers.js` (every key, with the reason for each decision that
+differs from the plain rule), `static/orena/ui/layered-copy.js` (the one accessor), `ctx.c`,
+`refCopy(ctx)` and `speakCopy(ui, support)` built by it, Grammar's pattern names and notes on the
+support language. Gate: `scripts/test_orena_copy_layers.mjs` (in CI). Browser: cases A, B, C on
+desktop and phone across Home, Library, Progress, Profile, Reading, Listening, Dictation, Writing,
+Vocabulary, Grammar and Speaking - every visible copy string in its layer's language.
+
+**Replaces** the Speaking `GUIDANCE_KEYS` allowlist. Closes coherence audit AUDIT-1b.

@@ -190,6 +190,18 @@ class SettingsWithoutStorageAreHonestAboutIt(unittest.TestCase):
         self.assertEqual(effective['interface_language']['value'], 'zh')
         self.assertEqual(effective['interface_language']['source'], 'session')
 
+    def test_every_written_interface_language_is_allowed_and_none_is_the_support_language(self):
+        # D-079: the interface is chosen on its own - Vietnamese chrome with English support, or
+        # English chrome with Vietnamese support - and choosing it never touches the support language.
+        for code in ('en', 'zh', 'vi'):
+            effective = effective_settings(
+                {'support_language': 'en' if code != 'en' else 'vi'}, version=1,
+                overrides={'interface_language': code},
+            )
+            self.assertEqual(effective['interface_language']['value'], code)
+            self.assertNotEqual(effective['support_language']['value'], code)
+        self.assertNotIn('interface_language', STORED_SETTINGS)
+
 
 class PatchCannotSilentlyErase(unittest.TestCase):
     def setUp(self):

@@ -153,23 +153,18 @@ assert.doesNotMatch(listeningRoom, /data-response-host|responseComposer|reached-
 assert.doesNotMatch(encounter, /responseHost/, 'and nothing toggles one');
 
 /* --- Speaking is a module, entered without Listening -------------------- */
-assert.match(speaking, /function speakingLanding\(/, 'Speaking has a landing of its own');
-assert.match(speaking, /if \(!location\.id\) return speakingLanding\(/, 'arriving with nothing chosen reaches it');
-for (const key of ['speakContinue', 'speakRepeat', 'speakRespond', 'speakPrompt'])
-  assert.match(speaking, new RegExp(`c\\.${key}`), `${key} is one of the ways in`);
-assert.match(speaking, /continuationExperience\(x\) === 'speaking'/, 'unfinished speaking is real state');
-assert.match(speaking, /continuationExperience\(x\) === 'listening'/, 'a line worth repeating comes from real listening');
-assert.match(speaking, /body \? `<section class="speak-section"/,
-  'a way in with nothing behind it is absent rather than empty');
-/* Four ways in, each composed for what it is - not four of the same
-   rectangle (DESIGN_CONTRACT: the card-wall anti-pattern). */
-assert.match(speaking, /class="speak-resume"/, 'the one thing to carry on with leads with its artwork');
-assert.match(speaking, /class="speak-rail"/, 'lines worth repeating sit on a rail');
-assert.match(speaking, /class="speak-situations"/, 'situations are text and read as text');
-assert.doesNotMatch(speaking, /class="speak-card"/, 'the wall of equal cards is gone');
-assert.match(speaking, /entries\.find\(\(x\) => continuationExperience\(x\) === 'speaking'\)/,
-  'Continue is one current thing, not a history dump');
-assert.match(speaking, /mountLexicalLayer\(\{/, 'Speaking asks about language through the shared layer');
+/* Its landing is the design's Speaking library (Orena Speaking, "Speaking library"; D-067): the old
+   four-ways-in landing was a composition the design does not draw, and it is gone with its styles. */
+assert.match(speaking, /async function speakingLibrary\(/, 'Speaking has a landing of its own');
+assert.match(speaking, /if \(!location\.id\) return speakingLibrary\(/, 'arriving with nothing chosen reaches it');
+assert.match(speaking, /renderLibraryBrowse\(root, ctx, \{ speaking:/, 'the landing is the shared library browse, not a page-specific wall');
+assert.match(speaking, /only: \['speaking'\]/, 'showing Speaking only');
+assert.match(speaking, /id\.startsWith\('media:'\)/, 'a line worth repeating comes from real listening');
+assert.match(speaking, /api\.speakingLibrary\(/, 'the catalogue is read from the server, never composed in the page');
+assert.match(speaking, /mountFreeTalk\(/, 'speaking from a situation or a prompt is still a way in');
+assert.match(speaking, /onImport: \(\) => ownPrompt\(ctx\)/, 'and so is a topic of the learner’s own');
+assert.doesNotMatch(speaking, /class="speak-card"|class="speak-resume"|class="speak-rail"/, 'the old landing is not left behind');
+assert.doesNotMatch(rooms, /\.speak-resume|\.speak-rail|\.speak-situations/, 'nor are its styles');
 
 /* --- Microphone readiness, and what it may claim ------------------------ */
 const mic = read('static/orena/capabilities/mic-readiness.js');
@@ -187,16 +182,11 @@ for (const ui of ['en', 'zh'])
     'stageMeaning', 'stagePinyin', 'stageWordColors', 'stagePartsOfSpeech',
     'stagePractice', 'stageMore', 'stageShadowLine', 'stageSayYourself',
     'stageSaveSentence', 'stageBackToCurrent', 'wordConnectors',
-    'speakRepeat', 'speakRespond', 'speakPrompt', 'speakContinue',
     'micReady', 'micNoDevice', 'micDenied', 'micVeryQuiet',
   ]) {
     assert.equal(typeof copy[ui][key], 'string', `${ui}.${key} is localized`);
     assert.ok(copy[ui][key].trim(), `${ui}.${key} is not empty`);
   }
 assert.notEqual(copy.en.stagePractice, copy.zh.stagePractice);
-
-/* --- The phone is designed, not squeezed -------------------------------- */
-assert.match(rooms, /@media \(max-width: 600px\)[\s\S]*?\.speak-rail/, 'the Speaking rail has its own phone layout');
-assert.match(rooms, /@media \(max-width: 600px\)[\s\S]*?\.speak-resume/, 'so does the Speaking landing');
 
 console.log('Learning stage: current line first, one legend, compact actions, Dictation apart, Speaking standalone, EN/ZH: PASS');

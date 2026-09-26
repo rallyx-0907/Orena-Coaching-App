@@ -23,7 +23,7 @@
      `rank-frame.js`, which needs only the number. */
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { rankFrame } from './rank-frame.js';
 import { rankProgress, rankSummary } from '../product/rank.js';
 
@@ -85,7 +85,7 @@ function settingRow(glyph, label, value, { ready = true } = {}) {
 
 export function profileSection(ctx, { account, profile, vocabulary = null } = {}) {
   const c = ctx.c;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const languageName = ctx.language === 'zh' ? '中文' : 'English';
   const level = String(profile?.declared_level || '').trim();
   const planName = account?.plan?.name || '';
@@ -168,7 +168,7 @@ export function profileSection(ctx, { account, profile, vocabulary = null } = {}
 
 export async function renderProfile(root, ctx) {
   let released = false;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const paint = (html) => {
     if (!released && ctx.alive()) root.innerHTML = html;
   };

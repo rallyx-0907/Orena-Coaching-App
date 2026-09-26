@@ -402,11 +402,16 @@ export const api={
       body:form,
     });
   },
-  assessPronunciation:(blob,language,referenceText,filename='recording.webm')=>{
+  // The Speaking library: the Speaking catalogue plus Listening lessons that can be shadowed.
+  speakingLibrary:(language)=>request(`/api/speaking/library?language=${encodeURIComponent(language||'')}`),
+  speakingItem:(itemId)=>request(`/api/speaking/items/${encodeURIComponent(itemId)}`),
+  // mode 'scripted' assesses a line against its reference; 'unscripted' assesses free speech.
+  assessPronunciation:(blob,language,referenceText,mode='scripted',filename='recording.webm')=>{
     const form=new FormData();
     form.append('file',blob,filename);
     form.append('language',language||'');
     form.append('reference_text',referenceText||'');
+    form.append('mode',mode||'scripted');
     return request('/api/speech/pronunciation',{
       method:'POST',
       body:form,

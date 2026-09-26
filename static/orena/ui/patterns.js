@@ -63,9 +63,12 @@ export function pageIntro({
    local: how to leave. Where you are is already the heading's eyebrow, so the
    way back sits above it, in the same place every other room puts it.
 
-   `intentNavigation` remains for surfaces that genuinely need the whole map. */
-export function practiceReturn(c) {
-  return `<nav class="back-row practice-return" aria-label="${esc(c.practice)}"><a href="${link('practice')}">← ${esc(c.practice)}</a></nav>`;
+   `intentNavigation` remains for surfaces that genuinely need the whole map.
+
+   The Practice hub those rooms returned to is retired (D-078): a room's way back names the place in
+   the shell it returns to - Home, or the destination that owns the room. */
+export function roomReturn(label, href = link()) {
+  return `<nav class="back-row practice-return" aria-label="${esc(label)}"><a href="${href}">← ${esc(label)}</a></nav>`;
 }
 
 /* Supplementary information as a symbol, with its words on demand.

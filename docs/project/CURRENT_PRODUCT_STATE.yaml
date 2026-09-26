@@ -41,7 +41,7 @@
     "lane": "admin_speaking_integration"
   },
   "last_verified_application_commit": "8d5f3cdb707cabd2ee4dabca2558301bc2e78f70",
-  "last_verified_batch": "reading_room_word_lookup_and_discover_content_rails",
+  "last_verified_batch": "admin_canonical_reading_speaking_unified_local_verification",
   "current_program_stage": {
     "id": "R21",
     "name": "Mobile Release Readiness",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_canonical_ui_baseline",
     "status": "in_progress",
-    "next_task": "On codex/integrate-admin-speaking, integrate feature/speaking@d006383 and verify the unified branch after the independent architecture PASS on Admin Reading merge ec7ac28. Preserve the existing Codex learner UI and canonical Reading backend. The Claude Design source gate is UNVERIFIED by current human instruction and final visual verification is separate. Do not merge into codex/work before human review. Shared-runtime migrations and production remain human gates. No human product approval is implied."
+    "next_task": "Checkpoint and push only codex/integrate-admin-speaking after final unified verification, then present exact remote HEAD for external human review. Do not merge into codex/work or main. The Claude Design visual-source gate is UNVERIFIED by current human instruction; final visual review is separate. Shared-runtime migrations and production remain human gates. No human product approval is implied."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -205,5 +205,5 @@
     "canonical_ui_migration_in_progress_d065_compositions_remain_in_code_until_each_surface_migrates_dark_glass_foundation_landed",
     "canonical_ui_baseline_incomplete_for_profile_my_content_admin_onboarding_loading_empty_error_modal_and_tablet"
   ],
-  "last_verified_at": "2026-09-17"
+  "last_verified_at": "2026-09-26"
 }

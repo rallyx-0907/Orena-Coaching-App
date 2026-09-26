@@ -1,7 +1,7 @@
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { highlighted } from './quick-sheet.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 
 /* An optional check on what a passage left behind. It is offered after the
    text, never before it, and nothing in the encounter waits for it: a learner
@@ -48,7 +48,7 @@ export function bindComprehension(
   const section = root.querySelector('[data-comprehension]');
   if (!section || !questions?.length || !practice?.grade || !practice?.submit) return;
   const { c, support, alive } = ctx;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const step = section.querySelector('[data-quiz-step]');
   const state = section.querySelector('[data-comprehension-status]');
 

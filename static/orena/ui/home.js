@@ -12,7 +12,7 @@ import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { art, duration } from './content.js';
 import { contentCover } from './cover.js';
-import { referenceCopy, streakChip } from './reference.js';
+import { refCopy, streakChip } from './reference.js';
 import { link, continuationExperience, continuationLink } from '../product/intent.js';
 import { continuationEntries, continuationPlace } from './patterns.js';
 import { contentFor } from '../content/texts.js';
@@ -42,7 +42,7 @@ function card(ctx, { href, title, meta = '', visual, glyph = '', percent = null,
 
 function rail(ctx, { id, title, sub = '', items, all = '', carets = false }) {
   if (!items.length) return '';
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const controls = carets
     ? `<span class="hm-carets"><button type="button" class="hm-caret" data-rail-step="-1" aria-label="${esc(`${r.railPrevious}: ${title}`)}" disabled>${icon('caret-left', { size: 17 })}</button><button type="button" class="hm-caret hm-caret--next" data-rail-step="1" aria-label="${esc(`${r.railNext}: ${title}`)}">${icon('caret-right', { size: 17 })}</button></span>`
     : all
@@ -52,7 +52,7 @@ function rail(ctx, { id, title, sub = '', items, all = '', carets = false }) {
 }
 
 function continueStrip(ctx, entries) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const item = entries[0];
   if (!item) return '';
   const experience = continuationExperience(item);
@@ -71,13 +71,13 @@ function continueStrip(ctx, entries) {
 /* What is due is the learner's own saved vocabulary. The frames draw no place for it on Home, so it is
    the Continue strip's own shape and appears only when something is due. */
 function reviewStrip(ctx, due) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   if (!(Number(due) > 0)) return '';
   return `<a class="hm-review" href="${esc(link('practice', { intent: 'recall' }))}"><span class="hm-review__mark">${icon('cards', { filled: true, size: 20 })}</span><span class="hm-review__body"><strong>${esc(fill(r.reviewDue, { n: due }))}</strong><small>${esc(r.reviewNote)}</small></span><span class="hm-go hm-go--quiet">${esc(r.startAction)}</span></a>`;
 }
 
 export function homeHtml(ctx, { media = [], reading = [], nextReading = null, vocabulary = [], saved = [], due = 0, collections = [], catalogError = '' }) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const entries = continuationEntries(ctx.memory).slice(0, 8);
   const places = new Map(entries.map((entry) => [entry.id, continuationPlace(entry)]));
   const percentOf = (id) => (places.get(id) ? places.get(id).percent : null);

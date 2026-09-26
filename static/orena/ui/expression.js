@@ -1,6 +1,6 @@
 import {
   pageIntro,
-  practiceReturn,
+  roomReturn,
   continuationShelf,
   draftStatus,
   responseComposer,
@@ -46,7 +46,7 @@ import {
 import { learningToolbar, bindLearningToolbar } from './learning-toolbar.js';
 import { icon } from './phosphor.js';
 import { contentCover } from './cover.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { openRegisters } from './registers.js';
 import { link, sourceLink } from '../product/intent.js';
 import { patternsFor } from '../content/patterns.js';
@@ -201,7 +201,7 @@ export async function renderExpression(root, ctx) {
       ],
     },
   ];
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   root.innerHTML = `<header class="wr-top"><a class="wr-back" href="${hasSource ? sourceLink(id) : link('writing')}">${icon('arrow-left', { size: 20 })}<span>${esc(c.writingName)}</span></a><strong class="wr-title">${esc(title)}</strong>${draftStatus(ctx)}<span class="wr-count" data-word-count></span><button class="primary wr-go" form="expressionForm" data-review-action>${icon('sparkle', { size: 18 })}<span>${esc(c.reviewAction)}</span></button><button type="button" class="wr-second" data-revise-more>${icon('pencil-simple', { size: 17 })}<span>${esc(c.revision)}</span></button><span class="wr-menu">${learningToolbar(writingActions, { label: c.writingName })}</span></header><section class="learning-workspace writing-workspace" data-workspace="activity" data-review="waiting" data-compare="off"><div class="wr-tabs" role="group" aria-label="${esc(c.review)}"><button type="button" class="wr-tab" data-wr-tab="activity">${esc(r.writingTabDraft)}</button><button type="button" class="wr-tab" data-wr-tab="result">${esc(r.writingTabReview)}</button></div><div class="workspace-activity"><span class="wr-pane-label">${esc(r.writingTabDraft)}</span><form id="expressionForm" class="writing-sheet"><div class="wr-prompt">${icon('lightbulb', { size: 20 })}<div class="wr-prompt__body">${hasSource ? `<p class="wr-prompt__text" lang="${language}">${esc(prompt)}</p>` : ''}<label class="sr-only" for="writingTask">${esc(c.writingTask)}</label><input id="writingTask" name="task" maxlength="240" autocomplete="off" placeholder="${esc(c.writingIntentionNone)}" value="${esc(intention)}"></div></div><div class="draft-elsewhere" data-draft-elsewhere role="status" hidden></div><label class="sr-only" for="expressionText">${c.respond}</label><div class="wr-draft"><div class="wr-mirror" data-draft-marks aria-hidden="true" lang="${language}"></div><textarea id="expressionText" lang="${language}" minlength="10" maxlength="12000" rows="10" required placeholder="${c.responsePlaceholder}">${esc(memory.value.expressions[id] || series?.latest.text || '')}</textarea></div><span class="meta" data-character-count aria-live="polite"></span><p class="writing-trouble" data-writing-trouble hidden></p></form></div><section class="workspace-result writing-result" aria-label="${esc(c.review)}"><span class="wr-pane-label">${esc(r.writingTabReview)}</span><div class="workspace-result__bar"><button type="button" class="quiet" data-back-to-writing>← ${esc(c.writingKeepWriting)}</button></div><p class="review-stale" data-review-stale-note hidden><span>${esc(c.reviewStale)}</span><button type="button" class="quiet" data-review-again>${esc(c.reviewStaleAction)}</button></p><div class="workspace-result__scroll" id="writingFeedback" aria-live="polite">${excerpt ? `<aside class="expression-context"><small>${esc(c.expressionContext)}</small><blockquote lang="${language}">${esc(excerpt)}</blockquote><a class="quiet" href="${sourceLink(id)}">${c.returnLabel} ↗</a></aside>` : writingReviewWaiting(c)}</div></section></section><div class="workspace-secondary">${excerpt ? '' : `<aside class="expression-starters"><h2>${c.expressionStarters}</h2><p class="meta">${c.expressionStarterNote}</p>${invitations.map((item) => `<a href="${link('expression', { id: 'story:' + item.id })}"><small>${c.generated}</small><strong lang="${language}">${esc(item.prompt)}</strong><span>${c.usePrompt} ↗</span></a>`).join('')}</aside>`}<section class="revision-history" data-revisions></section></div>${continuationShelf(ctx, 2)}`;
   /* The activity and its result share one frame. Wide screens show both at
      once, so the result is beside the writing rather than below it. Narrow
@@ -843,7 +843,7 @@ async function renderRecallLanguage(root, ctx) {
        they knew it. The scheduler accepts two answers, so Hard and Easy keep
        their place in the approved panel and say they are not available yet
        (GAP-019); no interval is printed, because nothing previews one. */
-    const r = referenceCopy[ctx.ui] || referenceCopy.en;
+    const r = refCopy(ctx);
     const passed = Math.min(reviewed, reviewed + due.length);
     const total = reviewed + due.length;
 
@@ -1037,7 +1037,7 @@ async function renderRecallLanguage(root, ctx) {
        screen is its summary: both carry their own way on, so the room's return
        link and the page intro stay out of them. */
     const sitting = reviewing || (stage !== 'landing' && !current);
-    root.innerHTML = `${sitting ? '' : practiceReturn(c, 'recall')}${
+    root.innerHTML = `${sitting ? '' : roomReturn(c.language, link('language'))}${
       sitting ? '' : pageIntro({ title: c.recallTitle, note: c.recallTruth, eyebrow: c.recallName, compact: true })
     }${stage === 'landing' ? landing : current ? taskShell || card : done}${sheet}`;
     /* Asked once per word, when its card is on screen: the answer is cached
@@ -1333,7 +1333,7 @@ function vocabularyCopy(c, supportLanguage) {
     study: c.vocabularyStudy,
     open: c.vocabularyOpen,
     flip: c.vocabularyFlip,
-    know: (referenceCopy[supportLanguage] || referenceCopy.en).vocabKnow,
+    know: refCopy({ ui: c.uiLang, support: supportLanguage }).vocabKnow,
     front: c.vocabularyRecall,
     back: c.vocabularyLearn,
     vocabularyFeedSoundOn: c.vocabularyFeedSoundOn,
@@ -1730,7 +1730,7 @@ export async function renderLanguage(root, ctx) {
     return saved ? { ...card, saved: true, review_stage: saved.review_stage, due: saved.due, successful_recalls: saved.successful_recalls, lapse_count: saved.lapse_count } : card;
   });
 
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   /* --- Vocabulary, on its own frame (D-067, "Vocabulary library") --------
      The room is the library: the filter chips, then a grid of collections -
      a cover of 290x186 with its progress along the bottom, the name at 18/700
@@ -2642,7 +2642,7 @@ export async function renderGrammar(root, ctx) {
   if (!ctx.location.id) {
     const result = await api.grammarLibrary();
     if (!alive()) return;
-    const lessons = grammarShelf(result, patternsFor(language), ctx.ui);
+    const lessons = grammarShelf(result, patternsFor(language), ctx.support);
     /* A syllabus and a catalogue answer different questions. The flat list
        answers "where is the pattern whose name I already know"; a learner who
        does not yet know what they need has no way into it. The levels and
@@ -2651,7 +2651,7 @@ export async function renderGrammar(root, ctx) {
     const syllabus = grammarFamilies(lessons);
     const patternCount = (n) =>
       `${n} ${esc(n === 1 ? c.grammarPatternOne : c.grammarPatterns)}`;
-    root.innerHTML = `${practiceReturn(c, 'grammar')}${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}<section class="grammar-syllabus" aria-label="${esc(c.grammarSyllabus)}">${syllabus
+    root.innerHTML = `${roomReturn(c.backHome)}${pageIntro({ title: c.grammarTitle, note: c.grammarNote, eyebrow: c.grammarName, scene: 'thinking' })}<section class="grammar-syllabus" aria-label="${esc(c.grammarSyllabus)}">${syllabus
       .map(
         (level) =>
           `<section class="syllabus-level"><header><h2>${esc(level.level)}</h2><small>${patternCount(level.total)}</small></header><div class="family-row">${level.families
@@ -2738,7 +2738,9 @@ export async function renderGrammar(root, ctx) {
     id = `grammar:${lesson.id}`,
     note = patternsFor(language).find((x) => x.id === lesson.id),
     title =
-      note?.title[ctx.ui] ||
+      // A pattern's name explains it: the support language, else English - never the interface's (D-079).
+      note?.title?.[ctx.support] ||
+      note?.title?.en ||
       examples[0]?.target ||
       examples[0]?.en ||
       examples[0]?.zh ||
@@ -2749,9 +2751,9 @@ export async function renderGrammar(root, ctx) {
      here as it does in a writing review or a reading explanation. */
   const contrast = note?.contrast;
   const contrastBlock = contrast
-    ? `<section class="pattern-contrast"><h2>${esc(c.notThis)}</h2><p class="judgement" data-judgement="${esc(contrast.judgement)}">${esc(judgementLabel(c, contrast.judgement))}</p><blockquote lang="${esc(language)}"><del>${esc(contrast.instead)}</del></blockquote><p>${esc(contrast.why[ctx.support] || contrast.why[ctx.ui] || contrast.why.en)}</p><blockquote class="pattern-right" lang="${esc(language)}">${esc(note.line)}</blockquote></section>`
+    ? `<section class="pattern-contrast"><h2>${esc(c.notThis)}</h2><p class="judgement" data-judgement="${esc(contrast.judgement)}">${esc(judgementLabel(c, contrast.judgement))}</p><blockquote lang="${esc(language)}"><del>${esc(contrast.instead)}</del></blockquote><p>${esc(contrast.why[ctx.support] || contrast.why.en)}</p><blockquote class="pattern-right" lang="${esc(language)}">${esc(note.line)}</blockquote></section>`
     : '';
-  root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'grammar' })}">← ${c.grammarName}</a></div>${pageIntro({ title, eyebrow: lesson.level, compact: true })}${note ? `<section class="pattern-focus"><small>${c.generatedNote}</small><div class="pattern-parts" lang="${language}">${note.parts.map((x) => `<span>${esc(x)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p lang="${ctx.support}">${esc(note.note[ctx.support] || (ctx.support === 'vi' ? lesson.explanation_vi : '') || c.noMeaning)}</p></section>` : ''}<section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map((x, index) => `<blockquote lang="${language}">${esc(x.target || x.en || x.zh || '')}${x.pinyin && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<small>${esc(x.pinyin)}</small>` : ''}${ctx.support === 'vi' && (x.meaning_vi || x.vi) ? `<p lang="vi">${esc(x.meaning_vi || x.vi)}</p>` : ''}<button class="quiet" data-explain="${index}">${esc(c.lookCloser)} ↗</button></blockquote>`).join('')}</div>${contrastBlock}</section>${responseComposer(ctx, { id, title, prompt: c.yourExample })}`;
+  root.innerHTML = `<div class="back-row"><a href="${link('practice', { intent: 'grammar' })}">← ${c.grammarName}</a></div>${pageIntro({ title, eyebrow: lesson.level, compact: true })}${note ? `<section class="pattern-focus"><small>${c.generatedNote}</small><div class="pattern-parts" lang="${language}">${note.parts.map((x) => `<span>${esc(x)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p lang="${ctx.support}">${esc(note.note[ctx.support] || (ctx.support === 'vi' ? lesson.explanation_vi : '') || note.note.en || c.noMeaning)}</p></section>` : ''}<section class="grammar-encounter"><div><h2>${c.example}</h2>${examples.map((x, index) => `<blockquote lang="${language}">${esc(x.target || x.en || x.zh || '')}${x.pinyin && (language !== 'zh' || ctx.profile.pinyin !== 'off') ? `<small>${esc(x.pinyin)}</small>` : ''}${ctx.support === 'vi' && (x.meaning_vi || x.vi) ? `<p lang="vi">${esc(x.meaning_vi || x.vi)}</p>` : ''}<button class="quiet" data-explain="${index}">${esc(c.lookCloser)} ↗</button></blockquote>`).join('')}</div>${contrastBlock}</section>${responseComposer(ctx, { id, title, prompt: c.yourExample })}`;
   /* Grammar was the one capability that could not ask its own question. Every
      example now reaches the same explanation surface reading, listening,
      writing and speaking use, carrying the pattern as the context it sits in. */

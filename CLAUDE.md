@@ -86,6 +86,12 @@ swipe), in English, Vietnamese and Chinese, in the same batch. The shell has a
 rail/tab bar only on Home, Library, Vocabulary and Progress (rule 47): check the
 room you touch is on the right side of that line.
 
+**6b. The workspace is the viewport (Design Contract rule 49, D-078).** A learning workspace
+never scrolls as a page: measure it at 1920x1080, 1366x768, 390x844 and 360x740 with content as
+long as it gets (a long line, many attempts, a long transcript) - no page scroll, no horizontal
+overflow, primary controls inside the viewport, long content scrolling only in its own region.
+Recompose when it does not fit; never loosen the rule for an implementation reason.
+
 **7. Record what you cannot resolve.** A conflict between the design and the
 brand, an unpinned file, a gap the design marks incomplete, a backend that
 cannot supply a component: write it in `docs/project/UI_BACKEND_GAPS.md` and

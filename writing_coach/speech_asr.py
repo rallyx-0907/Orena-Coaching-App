@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -182,6 +183,10 @@ class GroqSpeechAsrProvider:
     ) -> None:
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("Groq API key is required.")
+        # The key goes into a header: printable ASCII with no space, refused otherwise by a message
+        # that never repeats it (a transport library would echo it in its own error).
+        if not re.fullmatch(r"[!-~]+", api_key.strip()):
+            raise ValueError("Groq API key has characters a request header cannot carry.")
         if timeout_seconds <= 0 or max_bytes <= 0:
             raise ValueError("Groq ASR limits must be positive.")
         self._api_key = api_key.strip()
@@ -249,8 +254,12 @@ class GroqSpeechAsrProvider:
             )
         except requests.Timeout as exc:
             raise SpeechAsrTimedOut() from exc
-        except requests.RequestException as exc:
-            raise SpeechAsrRequestFailed() from exc
+        except requests.RequestException:
+            # Raised below, outside this block, so it carries no cause or context: some transport
+            # errors quote the request's headers, the key among them.
+            response = None
+        if response is None:
+            raise SpeechAsrRequestFailed()
 
         return _parse_transcription_response(
             response,
@@ -299,8 +308,12 @@ class GroqSpeechAsrProvider:
             )
         except requests.Timeout as exc:
             raise SpeechAsrTimedOut() from exc
-        except requests.RequestException as exc:
-            raise SpeechAsrRequestFailed() from exc
+        except requests.RequestException:
+            # Raised below, outside this block, so it carries no cause or context: some transport
+            # errors quote the request's headers, the key among them.
+            response = None
+        if response is None:
+            raise SpeechAsrRequestFailed()
 
         return _parse_transcription_response(
             response,

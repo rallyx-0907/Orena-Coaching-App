@@ -5,62 +5,64 @@
 Purpose: current execution state only. Change when the active lane, verified
 batch, gates or next task changes. Do not store secrets, product philosophy or
 unverified claims. Product intent and technical authority follow
-`PROJECT_MEMORY.md`; no human product approval or production readiness is implied.
+`PROJECT_MEMORY.md`; local verification does not imply CI pass, human product
+approval, or production readiness.
 
 ## Current branch / lane
 
-`codex/integrate-admin-speaking` in the existing `-codex` worktree, by
-explicit human instruction. Base `codex/work@8557b0e`; integrate
-`admin/control-center@e9a2219`, then `feature/speaking@d006383`.
-Do not merge into `codex/work` or `main` before human review.
-This task preserves the existing learner UI and does not start the new Orena UI,
-a Grammar engine, native mobile work, or a product-direction change.
+`codex/integrate-admin-speaking` in the existing `-codex` worktree, by explicit
+human instruction. It integrates `admin/control-center@e9a2219` and
+`feature/speaking@d006383` over Codex `8557b0e`. Push only this integration
+branch for external review. Do not merge it into `codex/work` or `main`.
 
 ## Last verified batch
 
-Phase 1 Admin/canonical Reading is implemented in the integration working
-tree. The linear Alembic chain runs through My Library `20260923_0013`,
-Vocabulary Decks `20260923_0014`, Reading Content Engine
-`20260924_0015`, and Adaptive Reading `20260924_0016`.
-Admin decision IDs are D-081–D-083; Speaking retains D-075–D-080.
-Codex learner Reading keeps its per-question feedback UI and library
-capabilities on the canonical Reading backend. The duplicate generated
-Reading engine is removed.
+The unified local tree preserves Codex learner Reading and My Library on the
+canonical Reading backend, Admin, Speaking, and D-079/D-080 language layers.
+The duplicate generated Reading engine is removed. Decision IDs are Codex My
+Library D-074, Speaking D-075–D-080 and D-084, and Admin D-081–D-083.
 
-Phase 2 local evidence on this working tree: full Linux pytest using an
-isolated PostgreSQL 16 container `2411 passed, 3 skipped, 0 failed`;
-focused PostgreSQL Reading rehearsal `120 passed, 2 skipped`;
-browser ESM graph passed. The CI .mjs sweep has one inherited failure:
-`test_m3_pronunciation_contract.mjs` at its first `/82/` assertion,
-reproduced on clean `8557b0e`. Memory and architecture validators passed
-before checkpoint commit. No CI pass is
-claimed. The Claude Design source is unavailable; by explicit human
-instruction its visual-source gate is UNVERIFIED and does not block branch
-integration. Final visual verification is separate; do not redesign the UI.
+Local unified verification on 2026-09-26: full Linux pytest with isolated
+PostgreSQL 16 `2472 passed, 3 skipped, 0 failed`; all 66 CI `.mjs` gates
+passed; browser ESM graph passed with 121 modules; project-memory and
+architecture validators passed. The listening catalog check skipped as
+specified because its development snapshot is not committed. All 16 Alembic
+revisions upgraded a fresh throwaway PostgreSQL database to sole head
+`20260924_0016`. Browser checks on an isolated local app covered Reading,
+Admin routes, Vocabulary, My Library, Speaking library, shadowing, free talk
+error state, old practice route, language combinations A/B/C, and long content
+at 390×844 and 1920×1080 without horizontal overflow. Live speech and AI
+provider acceptance remains a separate human gate. No CI pass is claimed.
+
+The Claude Design source is unavailable. By explicit human instruction, the
+visual-source gate is **UNVERIFIED** and does not block branch integration;
+final visual fidelity review is separate. Do not redesign the existing UI to
+compensate for that unavailable source.
 
 ## DONE
 
-Admin/canonical Reading integration and Phase 2 local verification above.
-The checkpoint merge `ec7ac2897fb103a9f4a7898a6e256f351719e028`
+Admin/canonical Reading merge checkpoint `ec7ac2897fb103a9f4a7898a6e256f351719e028`
 received a PASS independent architecture delta review from GPT-6/Codex
 (`/root/architecture_review`), with no P0/P1 findings. Reviewer identity,
 commit and verdict are recorded in `ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`.
-Two P2 runbook corrections followed review.
+The unified Speaking merge and local verification are complete; final merge
+commit and remote ref verification are the remaining checkpoint steps.
 
 ## IN PROGRESS
 
-Integrate Speaking and run the full unified gates. Applying new migrations
-to a shared runtime still needs explicit human authorization. The PostgreSQL
-rehearsal used throwaway containers and no product volumes.
+Checkpoint the unified merge, confirm ancestry and clean working tree, and
+push only `codex/integrate-admin-speaking` after final gates remain green.
 
 ## PENDING
 
-Human review of the final integration branch after unified verification.
+Human review of the pushed integration HEAD. Human approval is required before
+any merge into `codex/work` or `main`.
 
 ## BLOCKED
 
-Shared-runtime application of the new Reading migrations pending explicit
-human authorization.
+Shared-runtime application of the new Reading migrations requires explicit
+human authorization. The PostgreSQL rehearsal used throwaway containers and
+no product volumes.
 
 ## OPEN P0
 
@@ -68,8 +70,8 @@ None identified in this integration batch.
 
 ## OPEN P1
 
-See `ORENA_STATUS.md` and `UI_BACKEND_GAPS.md`; this integration does not change
-product scope. The inherited pronunciation contract gate remains red.
+See `ORENA_STATUS.md` and `UI_BACKEND_GAPS.md`; this integration does not
+change product scope. No unified local verification gate is red.
 
 ## HUMAN GATES
 
@@ -80,10 +82,9 @@ previously reviewed and applied to dev/sandbox only; that authorization
 does not transfer to the renumbered Reading revisions. Production,
 preview, provider credentials, OAuth/DNS/Cloudflare, billing, deployment,
 and destructive lifecycle remain human gates. Never touch persistent
-volumes as cleanup. Open product P1s remain in `ORENA_STATUS.md` and
-`UI_BACKEND_GAPS.md`; do not resolve them as part of this integration.
+volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Integrate Speaking and run all unified gates. Stop on any
-architecture blocker; do not merge into `codex/work` before human review.
+Finish the merge checkpoint, push the integration branch only, read back its
+exact remote HEAD, and present the branch for external human review.

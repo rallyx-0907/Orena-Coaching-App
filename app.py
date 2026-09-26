@@ -110,6 +110,7 @@ from writing_coach.media_source_import import MediaSourceImporter
 from writing_coach.book_asset_store import FilesystemBookAssetStore
 from writing_coach.speech_asr import GroqSpeechAsrProvider
 from writing_coach.speech_pronunciation import build_speech_pronunciation_provider
+from writing_coach.speaking_library import router as speaking_library_router
 from writing_coach.core.errors import error_detail, orena_http_error
 from writing_coach.writing_limits import (
     MAX_BYTES,
@@ -544,6 +545,8 @@ configure_speaking_attempt_repository(
     else None
 )
 app.include_router(speech_router)
+# The Speaking library: the authored Speaking catalogue plus Listening lessons that can be shadowed.
+app.include_router(speaking_library_router)
 configure_listening_progress(
     _specialized_learning_repository
     if _persistence_runtime.backend == "postgresql"

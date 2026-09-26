@@ -1,20 +1,29 @@
 import { api } from "./infrastructure/api.js";
-import { copy, untranslated } from "./ui/copy.js";
+import { copy, untranslated, supportedLocales } from "./ui/copy.js";
+import { layeredCopy } from "./ui/layered-copy.js";
+import { COPY_LAYERS } from "./ui/copy-layers.js";
+import {
+  INTERFACE_KEY,
+  interfaceLanguage,
+  supportLanguage,
+  learningLanguage,
+} from "./product/languages.js";
 import { esc, dialog, status } from "./ui/html.js";
 import { route, link } from "./product/intent.js";
+import { legacyRedirect } from "./product/legacy-routes.js";
 import { learnerMemory } from "./product/memory.js";
 import { renderWorld } from "./ui/world.js";
 import { renderEncounter } from "./ui/encounter.js";
-import { renderSpeaking } from "./ui/speaking.js";
+import { renderSpeaking, renderSpeakingWorkspace } from "./ui/speaking.js";
 import { renderConversation } from "./ui/conversation.js";
 import {
   referenceNavigation,
   navigationTabs,
   operatorEntry,
   topBar,
-  referenceCopy,
   experienceFor,
   renderContinue,
+  refCopy,
 } from "./ui/reference.js";
 import { icon } from "./ui/phosphor.js";
 import { renderProgress } from "./ui/progress.js";
@@ -133,25 +142,22 @@ const storage = (() => {
     };
   }
 })();
-/* The learner's support language owns everything Orena says.
-
-   Orena has two learner language roles and only two: the learning language,
-   which owns the material, and the support language, which owns every word the
-   product itself speaks - navigation, controls, instructions, feedback,
-   errors. A third, independently chosen "interface language" produced exactly
-   what it sounds like: a learner studying English with Vietnamese support
-   reading an English product. The stored preference is kept so nothing breaks,
-   but it no longer decides this on its own.
+/* Three language layers, each from its own source, none inferred from another (D-079,
+   docs/product/ORENA_LANGUAGE_COHERENCE.md; resolved in product/languages.js): the interface
+   language speaks the chrome, the support language explains, the learning language is the
+   material. The interface language is the learner's own choice on this device (the account cannot
+   keep it yet - a gated migration), else the browser's language when Orena speaks it, else English.
+   It was once taken from the support language, which is how one screen came to mix three.
 
    A locale with no copy pack at all falls back to English rather than showing
    keys. A supported locale is expected to be complete, and a shortfall in one
    is said out loud here - on the developer's console, where it can be fixed -
    rather than reaching a learner as untold English (`ui/copy.js`). */
-const uiLocale = (support) =>
-  copy[String(support || "")] ? String(support) : "en";
-const ui = uiLocale(
-  storage.getItem("orena.support") || storage.getItem("orena.interface"),
-);
+const ui = interfaceLanguage({
+  stored: storage.getItem(INTERFACE_KEY),
+  browser: typeof navigator === "undefined" ? [] : navigator.languages || [navigator.language],
+  supported: supportedLocales,
+});
 {
   const gap = untranslated(ui);
   if (gap.length)
@@ -162,7 +168,8 @@ const ui = uiLocale(
 const ctx = {
   api,
   ui,
-  c: copy[ui],
+  // Before the profile is read the support language is unknown: guidance reads in English.
+  c: layeredCopy(copy, COPY_LAYERS, ui, undefined),
   language: "en",
   profile: {},
   commerce: null,
@@ -219,9 +226,6 @@ function shell() {
      the tab bar. Bringing your own content lives in Library. */
   document.getElementById("shell").innerHTML =
     `<a class="brand" href="#/" aria-label="Orena"><span class="brand-tail" aria-hidden="true"></span><span class="brand-word">orena</span></a>${referenceNavigation(ctx)}${navigationTabs(ctx)}`;
-  document
-    .querySelectorAll("#shell [data-preference]")
-    .forEach((x) => (x.onclick = () => preferences()));
   /* The rail and the tab bar belong to Home, Library, Vocabulary and Progress. A room where the
      learner works - the reader, the player, Dictation, the editor, a review - has none: the
      baseline's templates for them begin at a bar of their own. */
@@ -245,6 +249,9 @@ function shellBelongsTo(location) {
     location.page === "practice" &&
     ["recall", "dictation", "shadowing"].includes(location.intent)
   )
+    return false;
+  // A free-talk room is a room where the learner works; the Speaking library is not.
+  if (location.page === "practice" && location.intent === "speaking" && location.id)
     return false;
   return true;
 }
@@ -270,9 +277,6 @@ function paintTopBar() {
     return;
   }
   bar.innerHTML = topBar(ctx);
-  bar
-    .querySelectorAll("[data-preference]")
-    .forEach((x) => (x.onclick = () => preferences()));
   /* Not every destination's bar carries the search: Progress draws tabs and
      the window its numbers cover instead, as the source does. */
   const form = bar.querySelector("[data-global-search]");
@@ -318,11 +322,12 @@ function planUsageSection(scope) {
     .join("");
   return `<section class="plan-usage"><h2>${c.planUsage} — ${esc(commerce.plan?.name || "")}</h2><p>${c.planUsageNote}</p><ul>${rows}</ul></section>`;
 }
+const INTERFACE_NAMES = { en: "English", zh: "中文", vi: "Tiếng Việt" };
 function preferences(onboarding = false) {
   const c = ctx.c;
   const sheet = dialog({
     title: onboarding ? c.welcome : c.preferences,
-    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === "en" ? "selected" : ""}>English</option><option value="zh" ${ctx.language === "zh" ? "selected" : ""}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? "selected" : ""}>${title}</option>`).join("")}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== "off" ? "checked" : ""}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? "" : secondarySurfaces(ctx)}${onboarding ? "" : planUsageSection(ctx)}${onboarding ? "" : growthSummarySection(ctx)}`,
+    body: `<p>${onboarding ? c.welcomeNote : c.local}</p><form id="preferencesForm"><label>${c.learning}<select name="learning"><option value="en" ${ctx.language === "en" ? "selected" : ""}>English</option><option value="zh" ${ctx.language === "zh" ? "selected" : ""}>中文</option></select></label><label>${c.support}<select name="support">${ctx.supportLanguages.map(({ code, label: title }) => `<option value="${code}" ${ctx.support === code ? "selected" : ""}>${title}</option>`).join("")}</select></label><label>${c.interfaceLanguage}<select name="interface">${supportedLocales.map((code) => `<option value="${code}" ${ctx.ui === code ? "selected" : ""}>${INTERFACE_NAMES[code] || code}</option>`).join("")}</select></label><label class="check-label"><input name="pinyin" type="checkbox" ${ctx.profile.pinyin !== "off" ? "checked" : ""}>${c.pinyin}</label><p role="alert" id="preferenceError"></p><button class="primary">${onboarding ? c.enterOrena : c.apply}</button></form>${onboarding ? "" : secondarySurfaces(ctx)}${onboarding ? "" : planUsageSection(ctx)}${onboarding ? "" : growthSummarySection(ctx)}`,
   });
   sheet.querySelector("#preferencesForm").onsubmit = async (event) => {
     event.preventDefault();
@@ -335,7 +340,7 @@ function preferences(onboarding = false) {
       // Save full profile, preserving protected account settings. Language
       // changes wait for current evidence writes to finish.
       if (learningChanged) await api.setLanguage(data.get("learning"));
-      ctx.language = String(data.get("learning"));
+      ctx.language = learningLanguage(data.get("learning"));
       /* Send the two settings this form owns, against the version that was
          read when it opened. Read-modify-writing the whole profile meant a
          second device saving a different preference lost whichever change
@@ -346,12 +351,15 @@ function preferences(onboarding = false) {
         pinyin: data.has("pinyin") ? "auto" : "off",
         support_language: data.get("support"),
       });
-      ctx.support = ctx.profile.support_language || ctx.profile.native_language;
-      ctx.ui = uiLocale(data.get("support"));
-      ctx.c = copy[ctx.ui];
+      ctx.support = supportLanguage(ctx.profile);
+      // The interface is its own choice: never taken from the support language.
+      ctx.ui = interfaceLanguage({ stored: data.get("interface"), supported: supportedLocales });
+      ctx.c = layeredCopy(copy, COPY_LAYERS, ctx.ui, ctx.support);
       try {
-        storage.setItem("orena.support", String(data.get("support") || ""));
-      } catch {}
+        storage.setItem(INTERFACE_KEY, ctx.ui);
+      } catch {
+        // A device that cannot keep it still honours it for this visit.
+      }
       ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
       sheet.close();
       // Content identities are language-scoped. A language switch returns to
@@ -366,8 +374,7 @@ function preferences(onboarding = false) {
       if (error?.status === 409) {
         try {
           ctx.profile = await api.learnerProfile();
-          ctx.support =
-            ctx.profile.support_language || ctx.profile.native_language;
+          ctx.support = supportLanguage(ctx.profile);
           form.elements.pinyin.checked = ctx.profile.pinyin !== "off";
           form.elements.support.value = ctx.support;
         } catch {}
@@ -383,7 +390,7 @@ function preferences(onboarding = false) {
    draw them arrive - Vocabulary's "Saved words" row (Phase 6) and the profile
    sheet (Phase 10). No new chrome anywhere else. */
 function secondarySurfaces(scope) {
-  const r = referenceCopy[scope.ui] || referenceCopy.en;
+  const r = refCopy(scope);
   return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link("collection"))}">${esc(r.savedTitle)}</a><a href="${esc(link("history"))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
 }
 function validVideo(value) {
@@ -468,6 +475,12 @@ async function render() {
   cleanup = () => {};
   document.querySelectorAll("dialog").forEach((x) => x.close());
   ctx.location = route(location.hash);
+  // An address of a replaced screen goes to its new flow; the old screen is never drawn (D-078).
+  const replaced = legacyRedirect(ctx.location);
+  if (replaced) {
+    window.location.replace(link(...replaced));
+    return;
+  }
   root.dataset.experience = experienceFor(ctx.location);
   ctx.alive = () => generation === version;
   const scope = { ...ctx, alive: ctx.alive };
@@ -522,7 +535,11 @@ async function render() {
                               ? await renderLanguage(root, scope)
                               : page === "practice" &&
                                   ctx.location.intent === "speaking"
-                                ? renderSpeaking(root, scope)
+                                ? await renderSpeaking(root, scope)
+                                : page === "practice" &&
+                                    ctx.location.intent === "shadowing" &&
+                                    ctx.location.id
+                                  ? await renderSpeakingWorkspace(root, scope)
                                 : page === "practice" &&
                                     ctx.location.intent === "grammar"
                                   ? await renderGrammar(root, scope)
@@ -585,7 +602,7 @@ async function render() {
          which does not say where it goes. It also had no idea which room had
          failed, so a Listening item that could not open showed a Reading page.
          The way back is now the room the learner came from (D-057 rule 13). */
-      const r = referenceCopy[ctx.ui];
+      const r = refCopy(ctx);
       const room = experienceFor(ctx.location);
       const back =
         room === "listening"
@@ -595,6 +612,11 @@ async function render() {
                 href: link("practice", { intent: "reading" }),
                 label: r.reading,
               }
+            : room === "speaking"
+              ? {
+                  href: link("practice", { intent: "speaking" }),
+                  label: r.speaking,
+                }
             : { href: link(), label: r.discover };
       /* No technical detail on the page. Whatever was thrown is a developer's
          sentence - an English server message, an HTTP status - and printing it
@@ -625,18 +647,14 @@ async function boot() {
     ctx.languageProfiles = languages.languages || [];
     ctx.user = user;
     ctx.owner = user.email || user.mode || "local";
-    ctx.language = languages.active;
+    ctx.language = learningLanguage(languages.active);
     ctx.profile = profile;
     ctx.commerce = commerce;
     ctx.growth = growth;
-    ctx.support = profile.support_language || profile.native_language || "en";
-    ctx.ui = uiLocale(ctx.support);
-    ctx.c = copy[ctx.ui];
-    try {
-      storage.setItem("orena.support", ctx.support);
-    } catch {
-      // A device that cannot keep it still honours it for this visit.
-    }
+    // The profile answers for the support language only; the interface was resolved at boot from
+    // its own source and is not changed by what the profile says.
+    ctx.support = supportLanguage(profile);
+    ctx.c = layeredCopy(copy, COPY_LAYERS, ctx.ui, ctx.support);
     ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);
     // New product direction remains internal until the human release gate.
     if (!user.is_admin) {
@@ -650,6 +668,13 @@ async function boot() {
       event.preventDefault();
       root.focus({ preventScroll: true });
       root.scrollIntoView({ block: "start" });
+    });
+    /* One listener for every way into the preferences sheet - the rail's learner card, the top
+       bar, and the rows a room draws (Profile's settings). Binding each button as the shell drew it
+       left the rows a room renders afterwards with no handler: Profile's Languages row did nothing. */
+    document.addEventListener("click", (event) => {
+      const opener = event.target.closest?.("[data-preference]");
+      if (opener && !opener.disabled && !opener.closest("dialog")) preferences();
     });
     window.addEventListener("hashchange", render);
     await render();
