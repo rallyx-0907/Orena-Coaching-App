@@ -1,0 +1,435 @@
+{
+  "schema_version": "0.1",
+  "meta": {
+    "set_id": "en.core.sample",
+    "target_lang": "en",
+    "explanation_locales": ["vi"],
+    "l1": ["vi"],
+    "status": "draft_ai",
+    "note": "Bộ mẫu để test renderer và pipeline review. Toàn bộ nội dung là bản nháp AI, cần admin duyệt trước khi publish."
+  },
+
+  "level_scale": {
+    "orena": [1, 2, 3, 4, 5, 6],
+    "frameworks": {
+      "cefr": { "A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6 },
+      "hsk": null,
+      "jlpt": null
+    },
+    "note": "Bảng quy đổi HSK/JLPT để trống có chủ đích — admin cần chốt, không nên để AI tự đặt."
+  },
+
+  "block_types": {
+    "formula": "Công thức, render thành các thẻ màu. parts: mảng chuỗi.",
+    "rule_table": "Bảng quy tắc biến đổi. rows: [dạng gốc, dạng biến đổi, ghi chú vi].",
+    "timeline": "Trục thời gian sinh tự động. kind: point_past | ongoing_now | unspecified_past | habit | future_condition.",
+    "example": "Câu ví dụ. seg: mảng [đoạn, nhãn?]; ghép các đoạn phải ra đúng text. ruby dùng cho pinyin/furigana (để trống với tiếng Anh).",
+    "contrast": "So sánh hai điểm ngữ pháp dễ nhầm, từng cặp câu.",
+    "pitfall": "Lỗi đặc thù theo tiếng mẹ đẻ (l1). Không dịch máy giữa các L1.",
+    "note": "Ghi chú ngắn theo locale.",
+    "check": "Câu hỏi kiểm tra nhanh, answer là chỉ số trong options."
+  },
+
+  "functions": [
+    { "id": "fn.habit_fact", "title": { "vi": "Nói về thói quen, sự thật", "en": "Habits and facts" },
+      "realizations": { "en": ["en.present_simple.third_person_s"], "zh": [], "ja": ["ja.masu_form.present (planned)"] } },
+    { "id": "fn.existence", "title": { "vi": "Nói cái gì đó có ở đâu", "en": "Existence" },
+      "realizations": { "en": ["en.there_is_are"], "zh": ["zh.you_existence (planned)"], "ja": ["ja.aru_iru (planned)"] } },
+    { "id": "fn.quantity", "title": { "vi": "Số lượng, số nhiều", "en": "Quantity and plurality" },
+      "realizations": { "en": ["en.plural_nouns.regular", "en.countable_uncountable.much_many"], "zh": ["zh.measure_words (planned)"], "ja": ["ja.counters (planned)"] } },
+    { "id": "fn.reference", "title": { "vi": "Chỉ định người/vật (đã biết hay chưa)", "en": "Reference" },
+      "realizations": { "en": ["en.articles.a_an_the"], "zh": ["zh.zhe_na_measure (planned)"], "ja": ["ja.wa_ga (planned)"] } },
+    { "id": "fn.ongoing_now", "title": { "vi": "Việc đang diễn ra", "en": "Ongoing action" },
+      "realizations": { "en": ["en.present_continuous.now"], "zh": ["zh.zai_progressive (planned)"], "ja": ["ja.te_iru.progressive (planned)"] } },
+    { "id": "fn.completed_past", "title": { "vi": "Việc đã xong trong quá khứ", "en": "Completed past action" },
+      "realizations": { "en": ["en.past_simple"], "zh": ["zh.le_completion (planned)"], "ja": ["ja.ta_form (planned)"] } },
+    { "id": "fn.past_experience", "title": { "vi": "Trải nghiệm đã từng", "en": "Past experience" },
+      "realizations": { "en": ["en.present_perfect.experience"], "zh": ["zh.guo_experience (planned)"], "ja": ["ja.ta_koto_ga_aru (planned)"] } },
+    { "id": "fn.comparison", "title": { "vi": "So sánh hơn", "en": "Comparison" },
+      "realizations": { "en": ["en.comparatives"], "zh": ["zh.bi_comparison (planned)"], "ja": ["ja.yori_comparison (planned)"] } },
+    { "id": "fn.condition_real", "title": { "vi": "Điều kiện có thể xảy ra", "en": "Real condition" },
+      "realizations": { "en": ["en.conditional_first"], "zh": ["zh.ruguo_jiu (planned)"], "ja": ["ja.tara_ba (planned)"] } }
+  ],
+
+  "grammar_points": [
+    {
+      "id": "en.present_simple.third_person_s",
+      "target_lang": "en",
+      "function": "fn.habit_fact",
+      "level": { "framework": "cefr", "value": "A1", "orena": 1 },
+      "title": { "vi": "Thêm -s/-es với he/she/it", "en": "Third person -s" },
+      "prereqs": [],
+      "contrasts": [],
+      "error_tags": ["grammar.sva.3sg_s_missing", "grammar.sva.have_has"],
+      "status": "draft_ai",
+      "summary": { "vi": "Ở thì hiện tại đơn, khi chủ ngữ là he, she, it hoặc một người/vật số ít, động từ phải thêm -s hoặc -es." },
+      "blocks": [
+        { "type": "formula", "parts": ["He / She / It", "V + s/es"] },
+        { "type": "timeline", "kind": "habit" },
+        { "type": "rule_table", "rows": [
+          ["work", "works", "Đa số động từ: thêm -s"],
+          ["watch", "watches", "Tận cùng -s, -sh, -ch, -x, -o: thêm -es"],
+          ["study", "studies", "Phụ âm + y: đổi y thành -ies"],
+          ["play", "plays", "Nguyên âm + y: chỉ thêm -s"],
+          ["have", "has", "Bất quy tắc"]
+        ] },
+        { "type": "example", "text": "She works in a bank.", "seg": [["She "], ["works", "target"], [" in a bank."]], "ruby": null,
+          "tr": { "vi": "Cô ấy làm việc ở ngân hàng." } },
+        { "type": "example", "text": "My father watches the news every night.", "seg": [["My father "], ["watches", "target"], [" the news every night."]], "ruby": null,
+          "tr": { "vi": "Bố tôi xem thời sự mỗi tối." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "He go to school by bus.", "right": "He goes to school by bus.",
+          "why": { "vi": "Tiếng Việt không thay đổi động từ theo chủ ngữ ('anh ấy đi', 'tôi đi'), nên người Việt rất hay quên -s." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "My mother have two sisters.", "right": "My mother has two sisters.",
+          "why": { "vi": "'My mother' là ngôi thứ ba số ít, nên have phải đổi thành has." } },
+        { "type": "check", "items": [
+          { "q": "Tom ___ football on Sundays.", "options": ["play", "plays", "playes"], "answer": 1,
+            "explain": { "vi": "Tom là ngôi thứ ba số ít; play tận cùng bằng nguyên âm + y nên chỉ thêm -s." } },
+          { "q": "She ___ English at university.", "options": ["studys", "study", "studies"], "answer": 2,
+            "explain": { "vi": "Phụ âm + y → -ies: studies." } },
+          { "q": "My brother ___ a new laptop.", "options": ["has", "have", "haves"], "answer": 0,
+            "explain": { "vi": "have là bất quy tắc: he/she/it dùng has." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.there_is_are",
+      "target_lang": "en",
+      "function": "fn.existence",
+      "level": { "framework": "cefr", "value": "A1", "orena": 1 },
+      "title": { "vi": "There is / There are", "en": "There is / There are" },
+      "prereqs": ["en.plural_nouns.regular"],
+      "contrasts": [],
+      "error_tags": ["grammar.existential.have_for_there_is", "grammar.existential.is_are_agreement"],
+      "status": "draft_ai",
+      "summary": { "vi": "Dùng there is/there are để nói ở đâu đó có cái gì. Không dùng have cho nghĩa này." },
+      "blocks": [
+        { "type": "formula", "parts": ["There is", "+ danh từ số ít / không đếm được"] },
+        { "type": "formula", "parts": ["There are", "+ danh từ số nhiều"] },
+        { "type": "example", "text": "There is a new café near my house.", "seg": [["There is", "target"], [" a new café near my house."]], "ruby": null,
+          "tr": { "vi": "Có một quán cà phê mới gần nhà tôi." } },
+        { "type": "example", "text": "There are thirty students in my class.", "seg": [["There are", "target"], [" thirty students in my class."]], "ruby": null,
+          "tr": { "vi": "Lớp tôi có ba mươi học sinh." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "In my room have a big bed.", "right": "There is a big bed in my room.",
+          "why": { "vi": "Tiếng Việt dùng 'có' cho cả sở hữu ('tôi có xe') lẫn tồn tại ('phòng có giường'). Tiếng Anh tách ra: sở hữu dùng have, tồn tại dùng there is/are." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "There is many people in the park.", "right": "There are many people in the park.",
+          "why": { "vi": "People là số nhiều nên phải dùng are." } },
+        { "type": "check", "items": [
+          { "q": "___ a bank on this street?", "options": ["Is there", "Are there", "Have"], "answer": 0,
+            "explain": { "vi": "A bank số ít → Is there." } },
+          { "q": "My city ___ many parks.", "options": ["there are", "has", "have"], "answer": 1,
+            "explain": { "vi": "Chủ ngữ là my city (sở hữu) nên dùng has. Cách khác: There are many parks in my city." } },
+          { "q": "There ___ some milk in the fridge.", "options": ["are", "is", "have"], "answer": 1,
+            "explain": { "vi": "Milk không đếm được → is." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.plural_nouns.regular",
+      "target_lang": "en",
+      "function": "fn.quantity",
+      "level": { "framework": "cefr", "value": "A1", "orena": 1 },
+      "title": { "vi": "Danh từ số nhiều", "en": "Plural nouns" },
+      "prereqs": [],
+      "contrasts": [],
+      "error_tags": ["grammar.noun.plural_s_missing", "grammar.noun.irregular_plural"],
+      "status": "draft_ai",
+      "summary": { "vi": "Danh từ đếm được khi có từ hai trở lên phải đổi sang số nhiều, thường bằng cách thêm -s/-es." },
+      "blocks": [
+        { "type": "formula", "parts": ["số đếm / many / some", "+ N-s"] },
+        { "type": "rule_table", "rows": [
+          ["book", "books", "Đa số: thêm -s"],
+          ["box", "boxes", "Tận cùng -s, -x, -sh, -ch: thêm -es"],
+          ["city", "cities", "Phụ âm + y: đổi thành -ies"],
+          ["child", "children", "Bất quy tắc"],
+          ["person", "people", "Bất quy tắc"]
+        ] },
+        { "type": "example", "text": "I have three brothers.", "seg": [["I have three "], ["brothers", "target"], ["."]], "ruby": null,
+          "tr": { "vi": "Tôi có ba anh em trai." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I have three brother.", "right": "I have three brothers.",
+          "why": { "vi": "Tiếng Việt thể hiện số lượng bằng từ đứng trước ('ba', 'những', 'các') và danh từ giữ nguyên. Tiếng Anh vẫn phải thêm -s dù đã có số đếm." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "Many student like this teacher.", "right": "Many students like this teacher.",
+          "why": { "vi": "Many luôn đi với danh từ số nhiều." } },
+        { "type": "check", "items": [
+          { "q": "There are two ___ on the table.", "options": ["box", "boxs", "boxes"], "answer": 2,
+            "explain": { "vi": "Tận cùng -x → thêm -es." } },
+          { "q": "Five ___ are waiting outside.", "options": ["peoples", "people", "person"], "answer": 1,
+            "explain": { "vi": "Số nhiều của person là people (không thêm -s)." } },
+          { "q": "I visited many ___ in Europe.", "options": ["cities", "city", "citys"], "answer": 0,
+            "explain": { "vi": "Phụ âm + y → -ies." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.articles.a_an_the",
+      "target_lang": "en",
+      "function": "fn.reference",
+      "level": { "framework": "cefr", "value": "A2", "orena": 2 },
+      "title": { "vi": "Mạo từ a/an và the", "en": "Articles: a/an vs the" },
+      "prereqs": ["en.plural_nouns.regular"],
+      "contrasts": [],
+      "error_tags": ["grammar.article.missing", "grammar.article.a_vs_the", "grammar.article.a_vs_an"],
+      "status": "draft_ai",
+      "summary": { "vi": "a/an dùng cho thứ lần đầu nhắc tới hoặc không xác định; the dùng khi người nghe biết đang nói về cái nào." },
+      "blocks": [
+        { "type": "formula", "parts": ["a / an", "+ N số ít, chưa xác định"] },
+        { "type": "formula", "parts": ["the", "+ N đã xác định / duy nhất"] },
+        { "type": "rule_table", "rows": [
+          ["a", "a book, a university", "Trước âm phụ âm (xét theo âm, không theo chữ)"],
+          ["an", "an apple, an hour", "Trước âm nguyên âm"],
+          ["the", "the sun, the book I bought", "Duy nhất, hoặc đã nói tới trước đó"]
+        ] },
+        { "type": "example", "text": "I bought a book. The book is about Vietnam.",
+          "seg": [["I bought "], ["a", "target"], [" book. "], ["The", "target"], [" book is about Vietnam."]], "ruby": null,
+          "tr": { "vi": "Tôi mua một cuốn sách. Cuốn sách đó nói về Việt Nam." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I am student.", "right": "I am a student.",
+          "why": { "vi": "Tiếng Việt không có mạo từ ('tôi là sinh viên'). Trong tiếng Anh, danh từ đếm được số ít gần như luôn cần a/an/the hoặc một từ hạn định khác." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "Sun rises in east.", "right": "The sun rises in the east.",
+          "why": { "vi": "Sun và east là duy nhất nên dùng the." } },
+        { "type": "check", "items": [
+          { "q": "She is ___ engineer.", "options": ["a", "an", "the"], "answer": 1,
+            "explain": { "vi": "Engineer bắt đầu bằng âm nguyên âm → an." } },
+          { "q": "I saw a cat. ___ cat was black.", "options": ["A", "The", "An"], "answer": 1,
+            "explain": { "vi": "Con mèo đã được nhắc ở câu trước → the." } },
+          { "q": "He studies at ___ university in Hanoi.", "options": ["an", "a", "—"], "answer": 1,
+            "explain": { "vi": "University đọc là /juː/, âm phụ âm → a." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.present_continuous.now",
+      "target_lang": "en",
+      "function": "fn.ongoing_now",
+      "level": { "framework": "cefr", "value": "A1", "orena": 1 },
+      "title": { "vi": "Hiện tại tiếp diễn", "en": "Present continuous" },
+      "prereqs": ["en.present_simple.third_person_s"],
+      "contrasts": ["en.present_simple.third_person_s"],
+      "error_tags": ["grammar.tense.be_missing", "grammar.tense.ing_missing"],
+      "status": "draft_ai",
+      "summary": { "vi": "Dùng am/is/are + V-ing cho việc đang xảy ra ngay lúc nói hoặc trong giai đoạn này." },
+      "blocks": [
+        { "type": "formula", "parts": ["S", "am / is / are", "V-ing"] },
+        { "type": "timeline", "kind": "ongoing_now" },
+        { "type": "example", "text": "She is reading a book now.", "seg": [["She "], ["is reading", "target"], [" a book now."]], "ruby": null,
+          "tr": { "vi": "Cô ấy đang đọc sách." } },
+        { "type": "contrast", "with": "en.present_simple.third_person_s",
+          "pairs": [["I am working from home this week.", "I work in an office."]],
+          "explain": { "vi": "Tiếp diễn là tạm thời, đang diễn ra. Hiện tại đơn là thói quen, lâu dài." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "She reading a book.", "right": "She is reading a book.",
+          "why": { "vi": "Chữ 'đang' trong tiếng Việt ứng với cả cụm be + V-ing. Không được bỏ is/am/are." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I am go to school now.", "right": "I am going to school now.",
+          "why": { "vi": "Có be thì động từ phải ở dạng -ing." } },
+        { "type": "check", "items": [
+          { "q": "Listen! The baby ___.", "options": ["cries", "is crying", "crying"], "answer": 1,
+            "explain": { "vi": "'Listen!' cho thấy việc đang xảy ra → is crying." } },
+          { "q": "They ___ dinner at the moment.", "options": ["are having", "have", "having"], "answer": 0,
+            "explain": { "vi": "At the moment → hiện tại tiếp diễn, đủ be + V-ing." } },
+          { "q": "He usually ___ to work by bike.", "options": ["is going", "goes", "going"], "answer": 1,
+            "explain": { "vi": "Usually chỉ thói quen → hiện tại đơn." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.past_simple",
+      "target_lang": "en",
+      "function": "fn.completed_past",
+      "level": { "framework": "cefr", "value": "A2", "orena": 2 },
+      "title": { "vi": "Quá khứ đơn", "en": "Past simple" },
+      "prereqs": [],
+      "contrasts": [],
+      "error_tags": ["grammar.tense.past_unmarked", "grammar.tense.did_plus_past"],
+      "status": "draft_ai",
+      "summary": { "vi": "Dùng cho việc đã xong tại một thời điểm xác định trong quá khứ (yesterday, last week, in 2020...)." },
+      "blocks": [
+        { "type": "formula", "parts": ["S", "V-ed / V2"] },
+        { "type": "formula", "parts": ["S", "didn't", "V nguyên mẫu"] },
+        { "type": "timeline", "kind": "point_past" },
+        { "type": "rule_table", "rows": [
+          ["work", "worked", "Có quy tắc: thêm -ed"],
+          ["stop", "stopped", "Nhân đôi phụ âm cuối"],
+          ["go", "went", "Bất quy tắc"],
+          ["buy", "bought", "Bất quy tắc"]
+        ] },
+        { "type": "example", "text": "Yesterday I went to the market.", "seg": [["Yesterday I "], ["went", "target"], [" to the market."]], "ruby": null,
+          "tr": { "vi": "Hôm qua tôi đi chợ." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "Yesterday I go to the market.", "right": "Yesterday I went to the market.",
+          "why": { "vi": "Trong tiếng Việt, 'hôm qua' là đủ để biết thời gian. Trong tiếng Anh, động từ vẫn phải chuyển sang quá khứ." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I didn't went there.", "right": "I didn't go there.",
+          "why": { "vi": "Did đã mang nghĩa quá khứ, nên động từ sau nó giữ nguyên mẫu." } },
+        { "type": "check", "items": [
+          { "q": "We ___ a great film last night.", "options": ["see", "saw", "seed"], "answer": 1,
+            "explain": { "vi": "See là bất quy tắc: saw." } },
+          { "q": "She didn't ___ the email.", "options": ["read", "reads", "readed"], "answer": 0,
+            "explain": { "vi": "Sau didn't dùng động từ nguyên mẫu." } },
+          { "q": "The bus ___ suddenly.", "options": ["stoped", "stopped", "stop"], "answer": 1,
+            "explain": { "vi": "Stop: một nguyên âm + một phụ âm → nhân đôi p." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.present_perfect.experience",
+      "target_lang": "en",
+      "function": "fn.past_experience",
+      "level": { "framework": "cefr", "value": "A2", "orena": 2 },
+      "title": { "vi": "Hiện tại hoàn thành (trải nghiệm)", "en": "Present perfect for experience" },
+      "prereqs": ["en.past_simple"],
+      "contrasts": ["en.past_simple"],
+      "error_tags": ["grammar.tense.pp_with_finished_time", "grammar.tense.ever_in_positive"],
+      "status": "draft_ai",
+      "summary": { "vi": "Dùng have/has + V3 để nói bạn đã từng làm gì trong đời, khi không nêu thời điểm cụ thể." },
+      "blocks": [
+        { "type": "formula", "parts": ["S", "have / has", "V3", "(never / before / twice)"] },
+        { "type": "timeline", "kind": "unspecified_past", "relevance": "now" },
+        { "type": "example", "text": "I have visited Hanoi twice.", "seg": [["I "], ["have visited", "target"], [" Hanoi twice."]], "ruby": null,
+          "tr": { "vi": "Tôi đã đến Hà Nội hai lần." } },
+        { "type": "example", "text": "Have you ever eaten durian?", "seg": [["Have", "target"], [" you ever "], ["eaten", "target"], [" durian?"]], "ruby": null,
+          "tr": { "vi": "Bạn đã bao giờ ăn sầu riêng chưa?" } },
+        { "type": "contrast", "with": "en.past_simple",
+          "pairs": [["I have been to Da Lat.", "I went to Da Lat last year."]],
+          "explain": { "vi": "Không nêu thời gian → hiện tại hoàn thành. Có thời gian đã kết thúc (last year) → quá khứ đơn." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I have visited Da Lat last year.", "right": "I visited Da Lat last year.",
+          "why": { "vi": "Chữ 'đã' trong tiếng Việt dùng cho cả hai thì, nhưng tiếng Anh không cho dùng have + V3 với mốc thời gian đã kết thúc." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I have ever been to Japan.", "right": "I have been to Japan.",
+          "why": { "vi": "'Đã từng' dễ bị dịch thành ever, nhưng ever chỉ dùng trong câu hỏi và câu phủ định, không dùng trong câu khẳng định." } },
+        { "type": "check", "items": [
+          { "q": "She ___ sushi before.", "options": ["has never eaten", "never ate yesterday", "has ever eaten"], "answer": 0,
+            "explain": { "vi": "Trải nghiệm, không có thời điểm; never dùng được trong câu khẳng định dạng phủ nghĩa." } },
+          { "q": "I ___ this film in 2022.", "options": ["have seen", "saw", "have saw"], "answer": 1,
+            "explain": { "vi": "In 2022 là thời điểm đã kết thúc → quá khứ đơn." } },
+          { "q": "___ you ever ___ to Korea?", "options": ["Did / been", "Have / been", "Have / went"], "answer": 1,
+            "explain": { "vi": "Have + V3 (been)." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.countable_uncountable.much_many",
+      "target_lang": "en",
+      "function": "fn.quantity",
+      "level": { "framework": "cefr", "value": "A2", "orena": 2 },
+      "title": { "vi": "Đếm được / không đếm được, much / many", "en": "Countable vs uncountable" },
+      "prereqs": ["en.plural_nouns.regular"],
+      "contrasts": [],
+      "error_tags": ["grammar.noun.uncountable_plural", "grammar.quantifier.much_many"],
+      "status": "draft_ai",
+      "summary": { "vi": "Một số danh từ trong tiếng Anh không đếm được: không thêm -s, không đi với a/an, và dùng much thay vì many." },
+      "blocks": [
+        { "type": "formula", "parts": ["many / a few", "+ N đếm được số nhiều"] },
+        { "type": "formula", "parts": ["much / a little", "+ N không đếm được"] },
+        { "type": "rule_table", "rows": [
+          ["information", "a piece of information", "Không đếm được"],
+          ["advice", "some advice", "Không đếm được"],
+          ["homework", "a lot of homework", "Không đếm được"],
+          ["furniture", "two pieces of furniture", "Không đếm được"]
+        ] },
+        { "type": "example", "text": "Can you give me some advice?", "seg": [["Can you give me some "], ["advice", "target"], ["?"]], "ruby": null,
+          "tr": { "vi": "Bạn cho tôi vài lời khuyên được không?" } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "I need many informations.", "right": "I need a lot of information.",
+          "why": { "vi": "Trong tiếng Việt, 'thông tin' hay 'lời khuyên' có thể đếm được. Trong tiếng Anh, information và advice không đếm được. Lưu ý: trong câu khẳng định, a lot of tự nhiên hơn much." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "We have too many homeworks.", "right": "We have too much homework.",
+          "why": { "vi": "Homework không đếm được." } },
+        { "type": "check", "items": [
+          { "q": "How ___ money do you have?", "options": ["many", "much", "a few"], "answer": 1,
+            "explain": { "vi": "Money không đếm được → much." } },
+          { "q": "She gave me some useful ___.", "options": ["advices", "advice", "an advice"], "answer": 1,
+            "explain": { "vi": "Advice không đếm được." } },
+          { "q": "How ___ chairs are there?", "options": ["much", "many", "little"], "answer": 1,
+            "explain": { "vi": "Chairs đếm được số nhiều → many." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.comparatives",
+      "target_lang": "en",
+      "function": "fn.comparison",
+      "level": { "framework": "cefr", "value": "A2", "orena": 2 },
+      "title": { "vi": "So sánh hơn", "en": "Comparatives" },
+      "prereqs": [],
+      "contrasts": [],
+      "error_tags": ["grammar.comparative.double", "grammar.comparative.than_missing"],
+      "status": "draft_ai",
+      "summary": { "vi": "Tính từ ngắn thêm -er, tính từ dài dùng more; sau đó là than + đối tượng so sánh." },
+      "blocks": [
+        { "type": "formula", "parts": ["A", "be", "adj-er / more adj", "than", "B"] },
+        { "type": "rule_table", "rows": [
+          ["tall", "taller", "Tính từ 1 âm tiết: thêm -er"],
+          ["big", "bigger", "Nhân đôi phụ âm cuối"],
+          ["easy", "easier", "Phụ âm + y → -ier"],
+          ["expensive", "more expensive", "Tính từ dài: more"],
+          ["good / bad", "better / worse", "Bất quy tắc"]
+        ] },
+        { "type": "example", "text": "Ho Chi Minh City is bigger than Da Nang.", "seg": [["Ho Chi Minh City is "], ["bigger than", "target"], [" Da Nang."]], "ruby": null,
+          "tr": { "vi": "TP.HCM lớn hơn Đà Nẵng." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "This phone is more cheaper.", "right": "This phone is cheaper.",
+          "why": { "vi": "'Hơn' đã nằm trong đuôi -er, nên không dùng thêm more." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "She is taller me.", "right": "She is taller than me.",
+          "why": { "vi": "'Cao hơn tôi': chữ 'hơn' tương ứng với cả -er lẫn than. Không được bỏ than." } },
+        { "type": "check", "items": [
+          { "q": "English is ___ than Chinese for me.", "options": ["more easy", "easier", "more easier"], "answer": 1,
+            "explain": { "vi": "Easy → easier." } },
+          { "q": "This hotel is ___ than that one.", "options": ["expensiver", "more expensive", "most expensive"], "answer": 1,
+            "explain": { "vi": "Tính từ dài → more expensive." } },
+          { "q": "Today the weather is ___ than yesterday.", "options": ["badder", "worse", "more bad"], "answer": 1,
+            "explain": { "vi": "Bad là bất quy tắc: worse." } }
+        ] }
+      ]
+    },
+
+    {
+      "id": "en.conditional_first",
+      "target_lang": "en",
+      "function": "fn.condition_real",
+      "level": { "framework": "cefr", "value": "B1", "orena": 3 },
+      "title": { "vi": "Câu điều kiện loại 1", "en": "First conditional" },
+      "prereqs": ["en.present_simple.third_person_s"],
+      "contrasts": [],
+      "error_tags": ["grammar.conditional.will_in_if_clause", "grammar.conditional.result_tense"],
+      "status": "draft_ai",
+      "summary": { "vi": "Nói về điều có thể xảy ra ở tương lai: mệnh đề if dùng hiện tại đơn, mệnh đề kết quả dùng will." },
+      "blocks": [
+        { "type": "formula", "parts": ["If", "S + V hiện tại đơn", ",", "S + will + V"] },
+        { "type": "timeline", "kind": "future_condition" },
+        { "type": "example", "text": "If it rains, we will stay at home.", "seg": [["If it "], ["rains", "target"], [", we "], ["will stay", "target"], [" at home."]], "ruby": null,
+          "tr": { "vi": "Nếu trời mưa, chúng tôi sẽ ở nhà." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "If it will rain, we will stay at home.", "right": "If it rains, we will stay at home.",
+          "why": { "vi": "Câu tiếng Việt 'nếu trời (sẽ) mưa' khiến người học muốn thêm will vào vế if. Trong tiếng Anh, vế if dùng hiện tại đơn dù nói về tương lai." } },
+        { "type": "pitfall", "l1": "vi",
+          "wrong": "If I have time, I visit you.", "right": "If I have time, I will visit you.",
+          "why": { "vi": "Vế kết quả nói về tương lai nên cần will. Trong tiếng Việt, 'thì' hay 'sẽ' thường bị lược bỏ." } },
+        { "type": "check", "items": [
+          { "q": "If you ___ hard, you will pass.", "options": ["will study", "study", "studied"], "answer": 1,
+            "explain": { "vi": "Vế if → hiện tại đơn." } },
+          { "q": "If she calls, I ___ you.", "options": ["tell", "will tell", "told"], "answer": 1,
+            "explain": { "vi": "Vế kết quả → will + V." } },
+          { "q": "We ___ late if we don't hurry.", "options": ["will be", "are", "be"], "answer": 0,
+            "explain": { "vi": "Vế kết quả có thể đứng trước; vẫn dùng will." } }
+        ] }
+      ]
+    }
+  ]
+}
