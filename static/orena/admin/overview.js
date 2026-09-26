@@ -5,6 +5,7 @@
    as unavailable, never as zero. */
 import { barList, bindCharts, columnChart } from './charts.js';
 import { chip, esc, fill, info, kv, languageName, num, panel, relative, table, dateTime, notice } from './format.js';
+import { emptyBlock, errorBlock, failureDetail, loadingBlock, unavailableBlock } from './states.js';
 
 export function subjectLabel(item, t, providerNames = {}) {
   const subject = item.subject ? t[`cap_${item.subject}`] || item.subject : '';
@@ -29,6 +30,22 @@ function kpi({ label, value, sub, hintText = '', kind = '' }) {
 }
 
 /* Where each problem is acted on, down to the filter that shows it. */
+/* The design's list is labelled "sorted by severity", so it is sorted here
+   rather than trusting whatever order the endpoint happened to build. Equal
+   severities keep the server's order, which is its own judgement of urgency. */
+const SEVERITY_ORDER = { critical: 0, warning: 1, info: 2 };
+
+export function bySeverity(items) {
+  return [...(items || [])]
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const left = SEVERITY_ORDER[a.item.severity] ?? 3;
+      const right = SEVERITY_ORDER[b.item.severity] ?? 3;
+      return left - right || a.index - b.index;
+    })
+    .map((entry) => entry.item);
+}
+
 export function attentionLink(item) {
   if (item.kind === 'transcript_missing') return { kind: 'media', status: 'issues' };
   if (item.kind === 'content_waiting') return { kind: 'vocabulary', status: 'draft' };
@@ -85,9 +102,10 @@ export function overviewView(data, t, ui, sectionHref) {
   const attentionPanel = panel({
     title: t.attentionTitle,
     className: 'ac-panel--attention',
+    note: attention.length ? t.attentionSorted : '',
     body: attention.length
-      ? `<ul class="ac-attention">${attention.map((item) => attentionItem({ ...item, link: attentionLink(item) }, t, ui, sectionHref, providerNames)).join('')}</ul>`
-      : `<p class="ac-empty">${esc(t.attentionEmpty)}</p>`,
+      ? `<ul class="ac-attention">${bySeverity(attention).map((item) => attentionItem({ ...item, link: attentionLink(item) }, t, ui, sectionHref, providerNames)).join('')}</ul>`
+      : emptyBlock(t, { title: t.attentionEmpty, note: t.attentionEmptyNote }),
   });
 
   const health = Object.entries(ai.health || {}).filter(([, count]) => count > 0);
@@ -118,58 +136,109 @@ export function overviewView(data, t, ui, sectionHref) {
         }),
       })}${panel({
         body: columnChart({
-          title: t.chartActive,
-          series: (activity.daily || []).map((point) => ({ date: point.date, value: point.learners })),
+          // Fourteen days, the window the design shows: long enough to read a
+          // trend, short enough that every bar is legible.
+          title: t.chartActive14,
+          series: (activity.daily || []).slice(-14).map((point) => ({ date: point.date, value: point.learners })),
           t,
           ui,
         }),
       })}</div>`
-    : notice(t.accountsUnavailable, 'neutral');
+    : `<div class="ac-grid ac-grid--2">${panel({
+        title: t.chartRegistrations,
+        body: unavailableBlock(t, { title: t.chartRegistrations, note: t.accountsUnavailable }),
+      })}${panel({
+        title: t.chartActive14,
+        body: unavailableBlock(t, { title: t.chartActive14, note: t.accountsUnavailable }),
+      })}</div>`;
 
-  const domains = activity.available
-    ? panel({
-        title: t.chartDomains,
-        body: barList({
+  /* Every card the Overview promises stays on the board whether its number is
+     a number, a zero, or nothing at all. A card that vanishes when its source
+     is down changes the shape of the dashboard exactly when an operator is
+     trying to work out what is wrong with it - and a hole in a row is the one
+     thing they cannot read. The card stays and says which of the three it is. */
+  const domains = panel({
+    title: t.chartDomains,
+    body: activity.available
+      ? barList({
           ui,
           rows: (activity.domains || []).map((row) => ({
             label: t[`domain_${row.domain}`] || row.domain,
             value: row.events,
             note: fill(t.domainLearners, { count: num(row.learners, ui) }),
           })),
-        }),
-      })
-    : '';
+        })
+      : unavailableBlock(t, { title: t.chartDomains, note: t.activityUnavailable }),
+  });
 
-  const languages = data.languages?.available
-    ? panel({
-        title: t.chartLanguages,
-        body: table({
+  const languages = panel({
+    title: t.chartLanguages,
+    body: data.languages?.available
+      ? table({
           head: [t.colLanguage, { label: t.languagesProfiles, numeric: true }, { label: t.languagesActive, numeric: true }],
           rows: languageRows(data.languages, t, ui),
           empty: t.notAvailable,
-        }),
-      })
-    : '';
+        })
+      : unavailableBlock(t, { title: t.chartLanguages, note: t.languagesUnavailable }),
+  });
 
   const sources = content.sources || {};
   const unavailableSources = Object.entries(sources).filter(([, state]) => state !== 'ok');
+  /* By skill, published against waiting - the two numbers an operator decides
+     with. Reading keeps its own lifecycle and its own endpoint, so its row is
+     absent rather than zero when that endpoint cannot answer. */
+  const readingCounts = data.reading || null;
+  const skillRows = [
+    ['book', content.book?.published, content.book?.archived, t.contentWaitingArchived],
+    ['media', content.media?.published, content.media?.transcript_missing, t.contentWaitingTranscript],
+    ['vocabulary', content.vocabulary?.published, content.vocabulary?.draft, t.contentWaitingDraft],
+    readingCounts
+      ? ['reading', readingCounts.published, readingCounts.needs_review, t.contentWaitingReview]
+      : null,
+  ].filter(Boolean);
   const contentPanel = panel({
     title: t.contentPanel,
     actions: `<a class="ac-link" href="${esc(sectionHref('content'))}">${esc(fill(t.attentionOpen, { section: t.section_content }))}</a>`,
-    body: `${kv([
-      [t.contentBooks, esc(fill(t.contentBooksValue, { published: num(content.book?.published, ui), archived: num(content.book?.archived, ui) }))],
-      [t.contentMedia, esc(fill(t.contentMediaValue, {
-        published: num(content.media?.published, ui),
-        curated: num(content.media?.curated, ui),
-        imported: num(content.media?.imported, ui),
-      }))],
-      [t.contentVocabulary, esc(fill(t.contentVocabularyValue, { published: num(content.vocabulary?.published, ui), draft: num(content.vocabulary?.draft, ui) }))],
+    body: `${table({
+      head: [t.colSkill, { label: t.colPublished, numeric: true }, { label: t.colWaiting, numeric: true }, t.colWaitingMeans],
+      rows: skillRows.map(([kind, published, waiting, meaning]) => [
+        esc(t[`kind_${kind}`] || kind),
+        esc(num(published ?? 0, ui)),
+        esc(num(waiting ?? 0, ui)),
+        esc(meaning),
+      ]),
+      empty: t.notAvailable,
+    })}${readingCounts ? '' : unavailableBlock(t, { title: t.kind_reading, note: t.readingOpsUnavailable })}${kv([
       [t.lastImport, imports.available ? esc(imports.last_import_at ? relative(imports.last_import_at, ui) : t.none) : esc(t.notAvailable)],
       [t.failedImports7d, imports.available ? esc(num(imports.failed_7d, ui)) : esc(t.notAvailable)],
     ])}${unavailableSources.length ? `<p class="ac-chips">${unavailableSources.map(([kind]) => chip('unavailable', t, { label: t[`sourceUnavailable_${kind}`] || kind })).join('')}</p>` : ''}`,
   });
 
-  return `${strip}<div class="ac-grid ac-grid--attention">${attentionPanel}${aiPanel}</div>${trends}<div class="ac-grid ac-grid--3">${domains}${languages}${contentPanel}</div><p class="ac-footnote">${esc(fill(t.generatedAt, { time: dateTime(data.generated_at, ui) }))}</p>`;
+  /* System health: the readiness the server already computes, as a panel with
+     a check an operator can run - the design's "Kiểm tra". Nothing here probes
+     a provider; it re-reads the evidence. */
+  const readiness = data.readiness || null;
+  const healthPanel = panel({
+    title: t.systemHealthTitle,
+    actions: `<button type="button" class="ac-button" data-ac-recheck>${esc(t.systemHealthCheck)}</button>`,
+    body: readiness && readiness.available !== false
+      ? `${kv([
+          [t.overall, chip(readiness.state, t)],
+          [t.evidence, chip(readiness.evidence_state, t)],
+          [t.approval, chip(readiness.approval_state || 'not_granted', t)],
+        ])}${table({
+          head: [t.colIndicator, t.colState, t.colSourceOps],
+          rows: (readiness.indicators || []).slice(0, 6).map((indicator) => [
+            esc(t[`indicator_${indicator.name}`] || indicator.name),
+            chip(indicator.state, t),
+            esc(indicator.source || '—'),
+          ]),
+          empty: t.notAvailable,
+        })}`
+      : unavailableBlock(t, { title: t.systemHealthTitle, note: t.readinessUnavailableNote }),
+  });
+
+  return `${strip}<div class="ac-grid ac-grid--attention">${attentionPanel}${aiPanel}</div>${trends}<div class="ac-grid ac-grid--2">${contentPanel}${healthPanel}</div><div class="ac-grid ac-grid--2">${domains}${languages}</div><p class="ac-footnote">${esc(fill(t.generatedAt, { time: dateTime(data.generated_at, ui) }))}</p>`;
 }
 
 function languageRows(languages, t, ui) {
@@ -181,9 +250,40 @@ function languageRows(languages, t, ui) {
 
 export async function renderOverview(container, env) {
   const { t, ui, api, alive } = env;
-  const data = await api.overview();
-  if (!alive()) return;
-  env.remember?.({ attention: data.attention || [] });
-  container.innerHTML = overviewView(data, t, ui, env.href);
-  bindCharts(container, { ui });
+
+  const load = async () => {
+    container.innerHTML = loadingBlock(t, { shape: 'cards', rows: 4 });
+    /* Three reads, none of which may take the section down with it: the
+       overview is the answer, readiness and Reading are panels that say
+       "unavailable" on their own if they cannot answer. */
+    const [overview, readiness, reading] = await Promise.allSettled([
+      api.overview(),
+      api.readiness(),
+      api.readingOperations(),
+    ]);
+    if (!alive()) return;
+    if (overview.status === 'rejected') {
+      const failure = failureDetail(overview.reason, t);
+      container.innerHTML = errorBlock(t, {
+        title: t.stateErrorTitle,
+        detail: failure.detail,
+        reference: failure.reference,
+        link: `<a class="ac-link" href="${esc(env.href('operations'))}">${esc(t.stateSeeOperations)}</a>`,
+      });
+      container.querySelector('[data-ac-retry]')?.addEventListener('click', load, { once: true });
+      return;
+    }
+    const data = {
+      ...overview.value,
+      readiness: readiness.status === 'fulfilled' ? readiness.value : null,
+      reading: reading.status === 'fulfilled' ? reading.value.articles || {} : null,
+    };
+    if (data.reading) data.reading.published = reading.value.published ?? data.reading.published ?? 0;
+    env.remember?.({ attention: data.attention || [] });
+    container.innerHTML = overviewView(data, t, ui, env.href);
+    bindCharts(container, { ui });
+    container.querySelector('[data-ac-recheck]')?.addEventListener('click', load);
+  };
+
+  await load();
 }

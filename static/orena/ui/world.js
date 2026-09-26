@@ -1,41 +1,21 @@
-import { bindTodayWords, practiceOverview } from './discovery.js';
+import { bindTodayWords } from './discovery.js';
 import { homeHtml, bindHome } from './home.js';
-import { referenceCopy, editorialIntro } from './reference.js';
-import { duration, origin, art, bindImages } from './content.js';
-import { companionArt, scene } from './brand.js';
-import { pageIntro, practiceReturn, continuationShelf } from './patterns.js';
+import { origin, art, bindImages } from './content.js';
+import { companionArt } from './brand.js';
 import { esc, dialog } from './html.js';
 import {
   link,
   continuationLink,
   practiceIntentions,
-  supports,
 } from '../product/intent.js';
 import { contentFor } from '../content/texts.js';
 import { voiceInvitations } from '../content/voice-invitations.js';
-import { readingEntry, readingSessionId } from '../content/reading.js';
-import { openReadingRequest } from './reading.js';
 import { publishedReadings } from '../content/reading-library.js';
 import { vocabularyKeepPayload as sharedVocabularyKeepPayload } from './vocabulary-experience.js';
 import { renderLibraryBrowse } from './library-browse.js';
 import { renderSearch } from './search.js';
 import { listeningItem } from './media-library.js';
 
-// Imported media carries no catalog level, and its length is unknown until the
-// asset reports one. Join only what is actually true of this item, so an import
-// never shows a stray separator or a fabricated 0:00.
-function mediaLine(item) {
-  return [
-    item.level,
-    Number(item.duration_ms) > 0 ? duration(item.duration_ms) : '',
-  ]
-    .filter(Boolean)
-    .map((part) => esc(part))
-    .join(' · ');
-}
-function mediaItem(item, intent, c) {
-  return `<a class="voice-row" href="${link('encounter', { id: item.id, intent })}"><span class="voice-cover">${art(item)}<span class="voice-play" aria-hidden="true">▶</span></span><span><small>${mediaLine(item)}${mediaLine(item) ? ' · ' : ''}${item.kind === 'video' || item.kind === 'embed' ? c.video : c.audio}</small><strong lang="${item.language}">${esc(item.title)}</strong>${item.description ? `<span class="voice-description">${esc(item.description)}</span>` : ''}<span class="byline">${esc(item.source?.creator || origin(item, c))}</span></span><span aria-hidden="true">↗</span></a>`;
-}
 function contentRow(item, intent, c) {
   return `<article class="collection-row"><a class="collection-art" aria-label="${esc(item.title)}" href="${link('encounter', { id: item.id, intent })}">${art(item)}</a><div><small>${esc(origin(item, c))}</small><h2><a lang="${item.language || ''}" href="${link('encounter', { id: item.id, intent })}">${esc(item.title)} ↗</a></h2></div><button class="quiet" data-remove="${esc(item.id)}" aria-label="${esc(c.remove + ': ' + item.title)}">×</button></article>`;
 }
@@ -87,7 +67,6 @@ export async function renderWorld(root, ctx) {
   }));
   const result = await Promise.allSettled([
     api.listeningLibrary(language),
-    api.readingSessions(12),
     location.page === 'discover'
       ? api.dailyVocabularyFeed(language)
       : Promise.resolve({ items: [] }),
@@ -95,6 +74,14 @@ export async function renderWorld(root, ctx) {
     location.page === 'discover'
       ? api.vocabularyLibraryCollections(language)
       : Promise.resolve({ items: [] }),
+    // Published Reading articles. A runtime without the Reading engine answers
+    // 503 and the shelf is simply shorter - a room is not a place to explain a
+    // migration, and `allSettled` already treats that as "nothing to add".
+    api.readingArticles(language),
+    /* The article the Reading selection policy chooses next for this learner
+       (D-082): by measured ability, recent results and weak question types.
+       Home's "for you" rail is where the design puts what fits the learner. */
+    location.page === 'discover' ? api.readingPracticeNext() : Promise.resolve(null),
   ]);
   if (!alive()) return;
   const listeningPayload = result[0].status === 'fulfilled' ? result[0].value : {};
@@ -103,42 +90,56 @@ export async function renderWorld(root, ctx) {
   const media = (listeningPayload.items || [])
     .filter((x) => x.language === language)
     .map(listeningItem);
-  const vocabulary = result[2].status === 'fulfilled'
-    ? result[2].value.items || []
+  const vocabulary = result[1].status === 'fulfilled'
+    ? result[1].value.items || []
     : [];
   const failed = result[0].status === 'rejected';
-  // Passages the learner asked for before. They live with the account rather
-  // than on the device, so an empty list here is not the same as none kept.
-  const reading = (
-    result[1].status === 'fulfilled' ? result[1].value.items || [] : []
-  ).map((x) => readingEntry(x, language));
-  let readingFailed = result[1].status === 'rejected';
-  // The recent list is bounded. Kept passages must not disappear simply
-  // because the learner requested twelve newer ones.
-  if (location.page === 'content') {
-    const missing = memory.value.kept.filter(
-      (id) => readingSessionId(id) && !reading.some((x) => x.id === id),
-    );
-    const restored = await Promise.allSettled(
-      missing.map((id) => api.readingSession(readingSessionId(id))),
-    );
-    if (!alive()) return;
-    for (const item of restored) {
-      if (item.status === 'rejected') readingFailed = true;
-      else if (
-        item.value.found &&
-        item.value.session?.language_code === language
-      )
-        reading.push(readingEntry(item.value.session, language));
-    }
-  }
+  /* Articles an administrator admitted through the Reading content engine.
+     They are read exactly like everything else here, so they join the same
+     list rather than getting a shelf of their own: what the learner gains is
+     more to read, not a new place to look. */
+  const articles = (result[3]?.status === 'fulfilled' ? result[3].value.items || [] : []).map(
+    (article) => ({
+      id: `article:${article.id}`,
+      kind: 'article',
+      material: 'article',
+      title: article.title,
+      subtitle: article.excerpt || '',
+      topic: article.topic || '',
+      level: article.level || '',
+      time: article.reading_time_seconds
+        ? `${Math.max(1, Math.round(article.reading_time_seconds / 60))} min`
+        : '',
+      language: article.language || language,
+    }),
+  );
+  /* The policy's choice, as the card the catalogue already has for it; an
+     article outside this page of the catalogue is drawn from what the choice
+     itself carries. Nothing is chosen, nothing is drawn. */
+  const choice = result[4]?.status === 'fulfilled' && result[4].value?.available ? result[4].value.next : null;
+  const recommended = choice?.article_id
+    ? articles.find((item) => item.id === `article:${choice.article_id}`) ||
+      (choice.set?.article?.title
+        ? {
+            id: `article:${choice.article_id}`,
+            kind: 'article',
+            material: 'article',
+            title: choice.set.article.title,
+            level: choice.set.article.level || '',
+            language,
+          }
+        : null)
+    : null;
+  /* A copy that carries the signed recommendation: only this card leads to a
+     submit recorded as the policy's; the catalogue's own card does not. */
+  const nextReading = recommended ? { ...recommended, recommendation: choice.recommendation || '' } : null;
   // Everything that is read rather than listened to, in one list.
   const published = publishedReadings(language);
-  const readable = [...published, ...reading, ...text, ...memory.value.imports];
+  const readable = [...articles, ...published, ...text, ...memory.value.imports];
   const all = [
+    ...articles,
     ...published,
     ...media,
-    ...reading,
     ...text,
     ...memory.value.imports,
     ...memory.value.mediaImports,
@@ -147,87 +148,31 @@ export async function renderWorld(root, ctx) {
   // is practisable everywhere the catalog is.
   const practiceMedia = [...media, ...memory.value.mediaImports];
   const intent = location.intent;
-  const destination = (id) => link('encounter', { id, intent });
-  const headline = (title, note, eyebrow = '', state = '') =>
-    pageIntro({ title, note, eyebrow, scene: state });
-  const continuation = continuationShelf(ctx);
   const catalogError = failed
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
     : '';
-  const readingError = readingFailed
+  const readingError = result[3].status === 'rejected'
     ? `<p class="notice" role="alert">${c.unavailable} <button data-retry>${c.retry}</button></p>`
     : '';
-  /* An intention arrives somewhere, and each somewhere looks like itself. This
-     is the difference between a menu of forms and a set of places - one scene,
-     at the head of the page, doing orientation rather than decoration. */
-  const INTENT_SCENE = {
-    follow: 'listening',
-    reading: 'reading',
-    dictation: 'focus',
-    shadowing: 'speaking',
-    speaking: 'conversation',
-    grammar: 'thinking',
-    recall: 'remembering',
-  };
   if (location.page === 'practice') {
-    const r = referenceCopy[ctx.ui];
-    /* Reading opens on the books, not on a headline about reading. The room is
-       named, once and quietly, and the covers take the first viewport
-       (D-057 rule 13 and 15). */
-    /* Listening opens on the voices, for the same reason Reading opens on the
-       books: the headline and its paragraph told a learner nothing and cost
-       the first viewport (D-057 rule 13). */
-    const libraryRoom = intent === 'reading' || intent === 'follow';
-    const intro = libraryRoom
-      ? ''
-      : !intent
-      ? editorialIntro(ctx,{title:intent ? r.listenTitle : r.practiceTitle,note:intent ? r.listenNote : r.practiceNote,state:intent ? 'listening' : 'exploring',eyebrow:intent ? r.listening : r.practice})
-      : headline(c[`${intent}Intent`] || c[intent], c[`${intent}IntentNote`] || c[`${intent}Note`], c[`${intent}Name`] || c.practice, INTENT_SCENE[intent] || '');
-    /* The way back sits above the heading, and the heading's eyebrow names
-       the room - the way back already says "Practice". */
-    const practiceContinuation = libraryRoom ? '' : continuation;
-    root.innerHTML = `${intent && !libraryRoom ? practiceReturn(c, intent) : ''}${intro}${intent ? '' : practiceOverview(ctx)}${
+    /* Reading and Listening open on their libraries (D-059 Phases 5 and 7): the same search,
+       facets, sections and cards as #/content, scoped to what can be read or listened to. Every
+       other practice address is sent to its own flow before it gets here (D-078,
+       product/legacy-routes.js): the Practice hub and its list of moments are retired. */
+    root.innerHTML =
       intent === 'reading'
-        /* Reading opens on the library the design draws (D-059 Phase 5), with
-           books and the learner's own texts in it: the same search, facets,
-           sections and cards as #/content, scoped to what can be read. It is
-           one library, not a second one - a book card leads to the book page
-           (#/book), which is where a chapter is chosen. Bringing a passage in
-           stays the room's own action. */
         ? `${readingError}<div class="reading-library" data-library-browse></div>`
-        : (() => {
-            /* Listening opens on the same approved library as Reading, scoped
-               to what can be listened to (D-059 Phase 7): one library, one set
-               of cards, one search. Dictation, shadowing and speaking keep the
-               filtered list: those are practice modes over a source, not
-               browsing. */
-            if (!intent || intent === 'follow')
-              return `${catalogError}<div class="listening-library" data-library-browse></div>`;
-            return `<section class="voices"><div class="section-head"><h2>${c.chooseMoment}</h2><button class="quiet" data-bring>＋ ${c.bring}</button></div>${catalogError}${
-              practiceMedia
-                .filter((x) => supports(x, intent))
-                .map((x) => mediaItem(x, intent, c))
-                .join('') || `<p>${c.noCatalog}</p>`
-            }</section>`;
-          })()
-    }${practiceContinuation}`;
-    if (intent === 'reading' || !intent || intent === 'follow')
-      releaseLibrary = renderLibraryBrowse(
-        root.querySelector('[data-library-browse]'),
-        ctx,
-        intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
-        {
-          only: intent === 'reading' ? ['books'] : ['audio', 'video'],
-          /* "Nhập văn bản" means what it says: the learner brings their own
-             text in. It used to open the generator instead - the button was
-             labelled `libraryImportReading` and asked which topic and level to
-             *invent* a passage about, which is a different thing and not what
-             the canonical frame draws. Asking for a generated passage keeps
-             its own door (`[data-read]`). */
-          onImport: ctx.import,
-          titleTag: intent ? 'h1' : 'h2',
-        },
-      ) || (() => {});
+        : `${catalogError}<div class="listening-library" data-library-browse></div>`;
+    releaseLibrary = renderLibraryBrowse(
+      root.querySelector('[data-library-browse]'),
+      ctx,
+      intent === 'reading' ? { readable, media: [] } : { readable: [], media: practiceMedia },
+      {
+        only: intent === 'reading' ? ['books'] : ['audio', 'video'],
+        onImport: ctx.import,
+        titleTag: 'h1',
+      },
+    ) || (() => {});
   } else if (location.page === 'search') {
     releaseLibrary = renderSearch(root, ctx, { readable, media: practiceMedia }) || (() => {});
   } else if (location.page === 'content') {
@@ -253,10 +198,11 @@ export async function renderWorld(root, ctx) {
     root.innerHTML = homeHtml(ctx, {
       media,
       reading: readable,
+      nextReading,
       vocabulary,
       saved: [...(memory.value.imports || []), ...(memory.value.mediaImports || [])],
       due,
-      collections: result[3].status === 'fulfilled' ? result[3].value.items || result[3].value.collections || [] : [],
+      collections: result[2].status === 'fulfilled' ? result[2].value.items || result[2].value.collections || [] : [],
       catalogError,
     });
     unbindHome = bindHome(root, ctx);
@@ -292,9 +238,6 @@ export async function renderWorld(root, ctx) {
   root
     .querySelectorAll('[data-bring]')
     .forEach((x) => (x.onclick = ctx.import));
-  root
-    .querySelectorAll('[data-read]')
-    .forEach((x) => (x.onclick = () => openReadingRequest(ctx)));
   root
     .querySelectorAll('[data-retry]')
     .forEach((button) =>

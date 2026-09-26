@@ -12,7 +12,7 @@ import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { art, duration } from './content.js';
 import { contentCover } from './cover.js';
-import { referenceCopy, streakChip } from './reference.js';
+import { refCopy, streakChip } from './reference.js';
 import { link, continuationExperience, continuationLink } from '../product/intent.js';
 import { continuationEntries, continuationPlace } from './patterns.js';
 import { contentFor } from '../content/texts.js';
@@ -42,7 +42,7 @@ function card(ctx, { href, title, meta = '', visual, glyph = '', percent = null,
 
 function rail(ctx, { id, title, sub = '', items, all = '', carets = false }) {
   if (!items.length) return '';
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const controls = carets
     ? `<span class="hm-carets"><button type="button" class="hm-caret" data-rail-step="-1" aria-label="${esc(`${r.railPrevious}: ${title}`)}" disabled>${icon('caret-left', { size: 17 })}</button><button type="button" class="hm-caret hm-caret--next" data-rail-step="1" aria-label="${esc(`${r.railNext}: ${title}`)}">${icon('caret-right', { size: 17 })}</button></span>`
     : all
@@ -52,7 +52,7 @@ function rail(ctx, { id, title, sub = '', items, all = '', carets = false }) {
 }
 
 function continueStrip(ctx, entries) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const item = entries[0];
   if (!item) return '';
   const experience = continuationExperience(item);
@@ -71,25 +71,27 @@ function continueStrip(ctx, entries) {
 /* What is due is the learner's own saved vocabulary. The frames draw no place for it on Home, so it is
    the Continue strip's own shape and appears only when something is due. */
 function reviewStrip(ctx, due) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   if (!(Number(due) > 0)) return '';
   return `<a class="hm-review" href="${esc(link('practice', { intent: 'recall' }))}"><span class="hm-review__mark">${icon('cards', { filled: true, size: 20 })}</span><span class="hm-review__body"><strong>${esc(fill(r.reviewDue, { n: due }))}</strong><small>${esc(r.reviewNote)}</small></span><span class="hm-go hm-go--quiet">${esc(r.startAction)}</span></a>`;
 }
 
-export function homeHtml(ctx, { media = [], reading = [], vocabulary = [], saved = [], due = 0, collections = [], catalogError = '' }) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+export function homeHtml(ctx, { media = [], reading = [], nextReading = null, vocabulary = [], saved = [], due = 0, collections = [], catalogError = '' }) {
+  const r = refCopy(ctx);
   const entries = continuationEntries(ctx.memory).slice(0, 8);
   const places = new Map(entries.map((entry) => [entry.id, continuationPlace(entry)]));
   const percentOf = (id) => (places.get(id) ? places.get(id).percent : null);
 
   const listening = (item, badge) => card(ctx, { href: link('encounter', { id: item.id, intent: 'follow' }), title: item.title, meta: [item.level, lengthOf(item, r)].filter(Boolean).join(' · '), visual: art(item), glyph: badge ? 'headphones' : '', percent: percentOf(item.id), language: item.language || ctx.language });
-  const reads = (item, badge) => card(ctx, { href: link('encounter', { id: item.id, intent: 'reading' }), title: item.title, meta: [item.level, lengthOf(item, r)].filter(Boolean).join(' · '), visual: art(item), glyph: badge ? 'book-open' : '', percent: percentOf(item.id), language: item.language || ctx.language });
+  const reads = (item, badge) => card(ctx, { href: link('encounter', { id: item.id, intent: 'reading', rec: item.recommendation || '' }), title: item.title, meta: [item.level, lengthOf(item, r)].filter(Boolean).join(' · '), visual: art(item), glyph: badge ? 'book-open' : '', percent: percentOf(item.id), language: item.language || ctx.language });
 
-  // What is new for the learner alternates listening and reading, so a phone's first two cards show both.
+  /* What is new for the learner alternates listening and reading, so a phone's first two cards show both.
+     The article the Reading selection policy chose for them leads its reading side. */
+  const forYouReading = nextReading ? [nextReading, ...reading.filter((item) => item.id !== nextReading.id)] : reading;
   const mixed = [];
-  for (let i = 0; mixed.length < RAIL_LIMIT && (i < media.length || i < reading.length); i++) {
+  for (let i = 0; mixed.length < RAIL_LIMIT && (i < media.length || i < forYouReading.length); i++) {
     if (media[i]) mixed.push(listening(media[i], true));
-    if (reading[i] && mixed.length < RAIL_LIMIT) mixed.push(reads(reading[i], true));
+    if (forYouReading[i] && mixed.length < RAIL_LIMIT) mixed.push(reads(forYouReading[i], true));
   }
   const level = LEVEL.test(String(ctx.profile?.declared_level || '')) ? ctx.profile.declared_level : '';
 

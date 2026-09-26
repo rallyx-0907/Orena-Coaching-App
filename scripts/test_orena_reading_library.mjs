@@ -27,10 +27,10 @@ assert.match(app, /import: \(\) => importContent\(\),/, 'and that import is the 
 assert.match(app, /ctx\.memory\.add\(\{\s*title: data\.get\("title"\),\s*text: data\.get\("text"\),/s,
   'which keeps the learner’s own text');
 
-/* Asking for a generated passage is a real thing and keeps its own door, so
-   this fix removed no capability. */
-assert.match(world, /\[data-read\]/, 'the generator still has a way in');
-assert.match(world, /openReadingRequest\(ctx\)/, 'and is still wired to it');
+/* The Reading recommendation points at a published article. The retired
+   generator has no door in the library. */
+assert.match(world, /api\.readingPracticeNext\(\)/, 'the canonical recommendation is read');
+assert.doesNotMatch(world, /openReadingRequest\(ctx\)/, 'the retired generator is not wired');
 
 /* --- The header the frame draws ----------------------------------------- */
 

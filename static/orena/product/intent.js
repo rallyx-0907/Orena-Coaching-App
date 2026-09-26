@@ -60,11 +60,19 @@ export function route(hash = '') {
       ? q.get('intent')
       : null,
     q: q.get('q') || '',
+    rec: q.get('rec') || '',
+    /* The Speaking line a practice opens on survives reload. */
+    line: q.get('line') || '',
   };
 }
-export function link(page = 'discover', { id = '', intent = null, q = '', tab = '' } = {}) {
+export function link(page = 'discover', { id = '', intent = null, q = '', tab = '', rec = '', line = '' } = {}) {
   const query = new URLSearchParams();
   if (id) query.set('id', id);
+  // A signed recommendation from the Reading selection policy (D-082). Only the
+  // card that shows the recommendation carries it, so the same article opened
+  // any other way is the learner's own choice.
+  if (rec) query.set('rec', rec);
+  if (line) query.set('line', line);
   if (tab) query.set('tab', tab);
   if (q) query.set('q', q);
   if (practiceIntentions.includes(intent)) query.set('intent', intent);

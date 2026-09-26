@@ -15,7 +15,7 @@
 import { esc, dialog } from './html.js';
 import { mountLexicalLayer } from './lexical.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { contentCover } from './cover.js';
 import { link } from '../product/intent.js';
 import {
@@ -131,7 +131,7 @@ export function mountReader(
      over a split pane. The text takes the page; the side panel holds the word
      just looked up, notes and the contents. A phone drops the panel: the word
      arrives as the anchored sheet the design draws. */
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   /* The source draws this as a pill with the translate glyph and a word, not a
      bare language code: "Song ngữ" - the bilingual layer over the same text. */
   const layerChip = (key, label, on, available, glyph = null) =>

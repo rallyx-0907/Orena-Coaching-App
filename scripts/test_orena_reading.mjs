@@ -1,100 +1,62 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import {
-  readingText,
-  readingEntry,
-  readingSessionId,
-} from '../static/orena/content/reading.js';
+import { existsSync, readFileSync } from 'node:fs';
+import * as readingContent from '../static/orena/content/reading.js';
 import { comprehensionSection } from '../static/orena/ui/comprehension.js';
 import { copy } from '../static/orena/ui/copy.js';
-import { origin } from '../static/orena/ui/content.js';
+
+/* The generated-reading session adapters are retired with the generator
+   (D-082): a learner reads the published corpus, and its check is an
+   Admin-approved set. Nothing may bring the adapters back. */
+for (const name of ['readingText', 'readingEntry', 'readingSessionId', 'readingId'])
+  assert.ok(!(name in readingContent), `${name} is retired with the generated sessions`);
 
 for (const language of ['en', 'zh']) {
-  const passage =
-    language === 'en'
-      ? 'First line.\nStill here.\n\nA second paragraph.'
-      : '第一行。\n还在这里。\n\n第二段。';
-  const session = {
-    id: 12,
-    language_code: language,
-    passage,
-    title: '<a title>',
-    generation_mode: 'built-in',
-    topic: 'work',
-    material: 'news',
-    questions: [
-      { question: 'Why?', options: ['<one>', 'two', 'three', 'four'] },
-    ],
-  };
-  const content = readingText(session, language);
-  assert.equal(content.paragraphs.length, 2);
-  assert.equal(content.paragraphs[0], passage.split('\n\n')[0]);
-  /* A built-in passage answers every subject and form with the same words, so
-     it must not echo the request back as though it had honoured it. It used to
-     carry these as empty strings; the readable contract leaves out what a
-     source cannot honestly supply, so now they are absent entirely - the same
-     guarantee, stated more strictly. */
-  assert.ok(!('topic' in content), 'a built-in passage claims no subject');
-  assert.ok(!('material' in content), 'a built-in passage claims no form');
-  // A generated one did honour the request, and says so.
-  const written = readingText(
-    { ...session, generation_mode: 'generated' },
-    language,
-  );
-  assert.equal(written.topic, 'work');
-  assert.equal(written.material, 'news');
-  assert.equal(origin(content, copy[language]), copy[language].readingBuiltIn);
-  assert.equal(
-    readingText(
-      { ...session, language_code: language === 'en' ? 'zh' : 'en' },
-      language,
-    ),
-    null,
-  );
-  assert.equal(readingText({ ...session, id: '../evil' }, language), null);
-  assert.equal(readingText({ ...session, passage: '' }, language), null);
-  assert.equal(readingEntry(session, language).attempted, false);
-  assert.equal(
-    readingEntry(
-      { ...session, latest_attempt: { total: 4, correct_count: 0 } },
-      language,
-    ).attempted,
-    true,
-  );
-  /* The canonical check (D-067) opens at its first question - the frames draw
-     no invitation card - and the questions themselves are never in the page
-     markup, so a hostile option never renders as markup either. */
-  const markup = comprehensionSection(copy[language], content.questions);
+  const questions = [
+    { id: 'q1', question: '<Why?>', options: ['<one>', 'two', 'three', 'four'] },
+  ];
+  /* The canonical check opens on its first question, with feedback after each
+     answer. A hostile option does not become markup before the step renders. */
+  const markup = comprehensionSection(copy[language], questions);
   assert.match(markup, /^<section class="quiz"/);
-  assert.match(markup, /data-quiz-step/, 'the check is a step, painted when it opens');
-  assert.ok(!markup.includes('data-quiz-start'), 'the invitation card is gone (rule 44)');
-  assert.ok(!markup.includes('<form'), 'the questions are not in the page');
+  assert.match(markup, /data-quiz-step/, 'the check has a question step');
+  assert.ok(!markup.includes('data-quiz-start'), 'the old invitation is gone');
+  assert.ok(!markup.includes('<form'), 'the questions wait until the step renders');
+  assert.ok(!markup.includes('<one>'), 'a hostile option never renders as markup');
   /* A text with no questions used to render nothing at all, which is
      indistinguishable from a check that failed to load. Pure reading is valid,
      so the absence is now stated: still no form, but no silence either. */
   const none = comprehensionSection(copy[language], []);
-  assert.ok(!none.includes('data-quiz-step'), 'no questions means no check to open');
+  assert.ok(!none.includes('data-quiz-start'), 'no questions means no check to open');
   assert.ok(!none.includes('<form'), 'no questions means nothing to answer');
   assert.ok(
     none.includes(copy[language].readingOnlyNote),
     'a text without questions says so',
   );
 }
-for (const id of [
-  '',
-  'reading:0',
-  'reading:-1',
-  'reading:1/answer',
-  'reading:01',
-])
-  assert.equal(readingSessionId(id), null);
-assert.equal(readingSessionId('reading:12'), 12);
+
+/* A published article's check is the approved set served for it, and its
+   answers are saved as canonical Reading evidence under one operation id that
+   every retry reuses. */
 const encounter = readFileSync('static/orena/ui/encounter.js', 'utf8');
-assert.match(
-  encounter,
-  /payload\.found \? payload\.session : null/,
-  'Read the real API envelope',
-);
+assert.match(encounter, /api\.readingPracticeSet\(articleId\)/, 'the article reads its approved set');
+assert.match(encounter, /practice\?\.submit_enabled/, 'questions are offered only while submit is open');
+assert.match(encounter, /operationId \|\|=/, 'one operation id per answer sheet, reused on retry');
+assert.match(encounter, /api\.submitReadingPractice\(/, 'answers go to canonical evidence');
+assert.doesNotMatch(readFileSync('static/orena/infrastructure/api.js', 'utf8') + encounter, /selection_policy_version|selectionPolicyVersion/,
+  'whether the selection policy chose a set is the server\'s to record, never the client\'s to claim');
+assert.match(encounter, /practiceSubmit\(api, served, location\.rec\)/,
+  'the signed recommendation travels from the address to the submit, untouched');
+{
+  const { route, link } = await import('../static/orena/product/intent.js');
+  assert.equal(route(link('encounter', { id: 'article:a1', intent: 'reading', rec: 'rr1.p.s' }).slice(1)).rec, 'rr1.p.s',
+    'a recommendation survives the address it rides in');
+  assert.equal(route(link('encounter', { id: 'article:a1', intent: 'reading' }).slice(1)).rec, '',
+    'and an address without one carries none');
+}
+assert.doesNotMatch(encounter, /readingSession|'reading:'/, 'no generated session is opened');
+const history = readFileSync('static/orena/ui/history.js', 'utf8');
+assert.match(history, /api\.readingEvidence\(30\)/, 'history reads canonical Reading evidence');
+assert.doesNotMatch(history, /readingSessions/, 'and never the retired sessions');
 
 /* The readable contract. Books, public-domain works, articles and dialogues
    are more of what Reading already handles, and adding one should mean writing
@@ -211,12 +173,14 @@ assert.ok(
   'the absence is stated in copy, not left to the learner to infer',
 );
 
-// The count travels from the API rather than being guessed from the id.
-const readingService = readFileSync(
-  new URL('../writing_coach/becoming_reading.py', import.meta.url),
-  'utf8',
-);
+// The generated-passage studio is retired (D-082): no internal AI writes a
+// source passage, so neither its service nor its routes may come back.
 assert.ok(
-  readingService.includes('"question_count":len(_safe_json(row["questions_json"],[]))'),
-  'the sessions list must report how many questions a passage carries',
+  !existsSync(new URL('../writing_coach/becoming_reading.py', import.meta.url)),
+  'the AI passage generator is removed, not kept beside the corpus',
+);
+const appSource = readFileSync(new URL('../app.py', import.meta.url), 'utf8');
+assert.ok(
+  !appSource.includes('"/api/reading/session'),
+  'no route serves or creates a generated reading session',
 );

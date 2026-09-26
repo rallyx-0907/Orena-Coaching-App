@@ -39,10 +39,18 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.persistence.reading_content_repository import (
+    CONTENT_KINDS,
     MAX_ARTICLE_PAGE,
     ReadingContentRepository,
     TargetInput,
 )
+from writing_coach.persistence.reading_evidence_repository import (
+    ReadingEvidenceError,
+    ReadingEvidenceRepository,
+    body_sha256,
+    question_inputs,
+)
+from writing_coach.reading_comprehension import GENERATOR_VERSION, process_article
 from writing_coach.persistence.reading_job_repository import (
     MAX_JOB_PAGE,
     InvalidCursor,
@@ -54,6 +62,10 @@ from writing_coach.reading_source_import import (
     ReadingSourceError,
     SubmittedInput,
 )
+# The reaper's window, from the worker that owns it. Operations reads liveness
+# against the same threshold the recovery path uses, so "stale" on the screen
+# and "stale" in the database are one number rather than two that can drift.
+from writing_coach.reading_worker import DEFAULT_STALE_AFTER
 
 router = APIRouter(prefix="/api/admin/reading", tags=["admin-reading"])
 _logger = logging.getLogger(__name__)
@@ -70,6 +82,8 @@ class _Reading:
     jobs: ReadingJobRepository | None = None
     engine: ReadingContentEngine | None = None
     audit: Callable[..., None] | None = None
+    evidence: ReadingEvidenceRepository | None = None
+    generate: Callable[..., Any] | None = None
 
 
 _state = _Reading()
@@ -82,10 +96,13 @@ def configure_reading_admin(
     jobs: ReadingJobRepository | None = None,
     engine: ReadingContentEngine | None = None,
     audit: Callable[..., None] | None = None,
+    evidence: ReadingEvidenceRepository | None = None,
+    generate: Callable[..., Any] | None = None,
 ) -> None:
     global _state
     _state = _Reading(
-        admin_guard=admin_guard, content=content, jobs=jobs, engine=engine, audit=audit
+        admin_guard=admin_guard, content=content, jobs=jobs, engine=engine, audit=audit,
+        evidence=evidence, generate=generate,
     )
 
 
@@ -138,6 +155,58 @@ def _jobs() -> ReadingJobRepository:
     if _state.jobs is None:
         raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
     return _state.jobs
+
+
+def _evidence() -> ReadingEvidenceRepository:
+    if _state.evidence is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
+    return _state.evidence
+
+
+def _evidence_call(call: Callable[[], Any]) -> Any:
+    """A comprehension-set refusal is the administrator's to read, with its
+    reason code; anything the schema cannot yet answer is the usual 503."""
+    try:
+        return _guarded(call)
+    except ReadingEvidenceError as exc:
+        status = 409 if exc.code in {"reading_set_frozen", "reading_set_transition_refused",
+                                     "reading_set_undeletable", "reading_set_stale",
+                                     "reading_article_not_published", "reading_article_changed"} else 422
+        if exc.code in {"reading_processor_unavailable", "reading_processor_failed"}:
+            status = 503
+        raise orena_http_error(status, exc.code, str(exc)) from exc
+
+
+def _category(exc: HTTPException) -> str:
+    detail = exc.detail if isinstance(exc.detail, Mapping) else {}
+    return str(detail.get("category") or "")
+
+
+def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Rights advice for publishing a Reading article, in the vocabulary
+    console's weights. None of it stops anything (D-082): the administrator
+    decides, and the decision is audited beside the warnings that were showing.
+
+    Read from the snapshot's rights answers - the evidence captured at
+    ingestion, and what the review pane already shows.
+    """
+    source = article.get("source") or {}
+    state = source.get("rights_state") or {}
+    warnings: list[dict[str, str]] = []
+    republish = state.get("can_republish", "unknown")
+    if republish == "denied":
+        warnings.append({"code": "rights_not_cleared", "level": "strong"})
+    elif republish != "allowed":
+        warnings.append({"code": "rights_unknown", "level": "warning"})
+    if article.get("is_adapted"):
+        adapt = state.get("can_adapt", "unknown")
+        if adapt == "denied":
+            warnings.append({"code": "adaptation_not_cleared", "level": "strong"})
+        elif adapt != "allowed":
+            warnings.append({"code": "adaptation_unknown", "level": "warning"})
+    if state.get("attribution_required", "unknown") == "unknown":
+        warnings.append({"code": "attribution_unknown", "level": "warning"})
+    return warnings
 
 
 def _actor(admin: Mapping[str, Any]) -> str:
@@ -233,6 +302,9 @@ class ArticleEditBody(BaseModel):
     # estimate; omitting the field leaves it untouched. They are different
     # requests, so they have different spellings.
     reviewed_level: str | None = None
+    # The learner-facing content type (`article`, `news`) - never the source's
+    # feed mechanism or an editorial category of the publisher (D-083).
+    content_kind: str | None = Field(default=None, max_length=20)
     reason: str = Field(default="", max_length=2000)
 
 
@@ -243,10 +315,39 @@ class ArticleStatusBody(BaseModel):
     reason: str = Field(default="", max_length=2000)
 
 
+class ComprehensionSetBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The language the explanations are written in; the learner meets the set
+    # written in their own support language.
+    support_language: str = Field(min_length=2, max_length=20)
+
+
+class ComprehensionStatusBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(min_length=1, max_length=20)
+    reason: str = Field(default="", max_length=2000)
+
+
+class QuestionDecisionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: str = Field(min_length=1, max_length=20)
+
+
 class TargetDecisionBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     approved: bool
+
+
+class TargetOrderBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The whole order, not a move. Bounded because the list is the article's
+    # own targets and an unbounded array is an unbounded write.
+    order: list[str] = Field(default_factory=list, max_length=200)
 
 
 class TargetBody(BaseModel):
@@ -352,9 +453,13 @@ async def submit_content(
     language: str = Form(""),
     published_at: str = Form(""),
     source_name: str = Form(""),
-    can_republish: bool = Form(False),
-    can_adapt: bool = Form(False),
-    attribution_required: bool = Form(True),
+    # No default answer. A rights question the submitter did not answer stays
+    # unanswered in the snapshot: a `False` default would record a refusal
+    # nobody made, and a reviewer would then be deciding against evidence that
+    # was invented by a form.
+    can_republish: bool | None = Form(None),
+    can_adapt: bool | None = Form(None),
+    attribution_required: bool | None = Form(None),
     license_note: str = Form(""),
     upload: UploadFile | None = File(None),
 ) -> dict[str, Any]:
@@ -384,10 +489,14 @@ async def submit_content(
         published_at=published_at.strip(),
         source_name=source_name.strip(),
         rights={
-            "can_republish": can_republish,
-            "can_adapt": can_adapt,
-            "attribution_required": attribution_required,
-            "license_note": license_note.strip(),
+            key: value
+            for key, value in (
+                ("can_republish", can_republish),
+                ("can_adapt", can_adapt),
+                ("attribution_required", attribution_required),
+                ("license_note", license_note.strip() or None),
+            )
+            if value is not None
         },
     )
     try:
@@ -526,6 +635,9 @@ def edit_article(
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
+    content_kind = payload.content_kind.strip().casefold() if payload.content_kind is not None else None
+    if content_kind is not None and content_kind not in CONTENT_KINDS:
+        raise orena_http_error(422, "reading_invalid_content_kind", "That is not a Reading content type.")
     article = _guarded(
         lambda: _content().update_article(
             article_id,
@@ -541,6 +653,7 @@ def edit_article(
             reviewed_level=(
                 "" if payload.reviewed_level is None else (payload.reviewed_level.strip() or None)
             ),
+            content_kind=content_kind,
             reason=payload.reason,
         )
     )
@@ -575,14 +688,154 @@ def set_article_status(
         raise orena_http_error(
             422, "reading_reason_required", "A rejection keeps its reason - say why."
         )
+    warnings: list[dict[str, str]] = []
+    if status == "published":
+        current = _guarded(lambda: _content().get_article(article_id))
+        if current is None:
+            raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+        warnings = publication_warnings(current)
     article = _guarded(
-        lambda: _content().set_status(article_id, status, actor=_actor(admin), reason=payload.reason.strip())
+        lambda: _content().set_status(
+            article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
+        )
     )
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}
+    if status == "published":
+        # An override is only meaningful beside what it overrode.
+        audit_payload |= {"warnings": warnings, "override": bool(warnings)}
     _audit(admin, f"admin.reading_article_{status}", entity_type="reading_article", entity_id=article_id,
-           payload={"status": status, "reason": payload.reason.strip()})
+           payload=audit_payload)
+    if status == "published":
+        return {**article, "publication_warnings": warnings}
     return article
+
+
+# -- comprehension sets ------------------------------------------------------------
+# For a published article only (D-082: import, review, publish, then the set).
+# The processor writes a draft; an administrator decides every question and the
+# set. Nothing here is visible to a learner until the set is approved, and an
+# approval re-checks that every question is grounded in the article's body as
+# it is now.
+
+SET_STATUSES = frozenset({"draft", "needs_review", "approved", "rejected", "archived"})
+
+
+@router.get("/articles/{article_id}/comprehension-sets")
+def list_comprehension_sets(request: Request, response: Response, article_id: str) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    return {"items": _evidence_call(lambda: _evidence().list_sets(article_id))}
+
+
+@router.post("/articles/{article_id}/comprehension-sets", status_code=201)
+def generate_comprehension_set(
+    request: Request, response: Response, article_id: str, payload: ComprehensionSetBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    article = _guarded(lambda: _content().get_article(article_id))
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    # Published first (D-082): refused here before the provider is asked, and
+    # again under the article's lock when the draft is written.
+    if article.get("status") != "published":
+        raise orena_http_error(409, "reading_article_not_published",
+                               "Publish the article first: a comprehension set is built for a published article only.")
+    support = payload.support_language.strip().casefold()
+    # The body the model is shown is the body the set is anchored to: its hash
+    # is taken before the AI call and required again under the article's lock.
+    # An edit in between refuses the draft and the questions are written again
+    # for the new text - once; a second change in a row is the admin's to retry.
+    try:
+        created, model = _written_set(admin, article_id, article, support)
+    except HTTPException as exc:
+        if _category(exc) != "reading_article_changed":
+            raise
+        article = _guarded(lambda: _content().get_article(article_id))
+        if article is None:
+            raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.") from exc
+        created, model = _written_set(admin, article_id, article, support)
+    _audit(admin, "admin.reading_comprehension_set_created", entity_type="reading_comprehension_set",
+           entity_id=created["id"], payload={"article_id": article_id, "questions": len(created["questions"]),
+                                             "support_language": support, "model": model})
+    return created
+
+
+def _written_set(admin: Mapping[str, Any], article_id: str, article: Mapping[str, Any],
+                 support: str) -> tuple[dict[str, Any], str]:
+    """One pass: hash the body, ask the processor about exactly that body, and
+    write the draft only if the body under the lock still has that hash."""
+    anchor = body_sha256(str(article.get("body") or ""))
+    processed = _evidence_call(lambda: process_article(article, support_code=support, generate=_state.generate))
+    created = _evidence_call(lambda: _evidence().create_set(
+        article_id, support_language=support, generator_version=GENERATOR_VERSION, model=processed.model,
+        questions=question_inputs(processed.questions), validation=processed.validation,
+        actor=_actor(admin), expected_body_sha256=anchor,
+    ))
+    return created, processed.model
+
+
+@router.get("/comprehension-sets/{set_id}")
+def get_comprehension_set(request: Request, response: Response, set_id: str) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    found = _evidence_call(lambda: _evidence().get_set(set_id))
+    if found is None:
+        raise orena_http_error(404, "reading_set_not_found", "That comprehension set does not exist.")
+    return found
+
+
+@router.post("/comprehension-sets/{set_id}/questions/{question_id}")
+def decide_comprehension_question(
+    request: Request, response: Response, set_id: str, question_id: str, payload: QuestionDecisionBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    decision = payload.decision.strip().casefold()
+    found = _evidence_call(lambda: _evidence().decide_question(
+        set_id, question_id, decision=decision, actor=_actor(admin)))
+    if found is None:
+        raise orena_http_error(404, "reading_question_not_found", "That question is not in this set.")
+    _audit(admin, f"admin.reading_comprehension_question_{decision}", entity_type="reading_comprehension_set",
+           entity_id=set_id, payload={"question_id": question_id})
+    return found
+
+
+@router.post("/comprehension-sets/{set_id}/status")
+def set_comprehension_status(
+    request: Request, response: Response, set_id: str, payload: ComprehensionStatusBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    status = payload.status.strip().casefold()
+    if status not in SET_STATUSES:
+        raise orena_http_error(422, "reading_invalid_status", "That is not a comprehension-set status.")
+    if status == "rejected" and not payload.reason.strip():
+        raise orena_http_error(422, "reading_reason_required", "A rejection keeps its reason - say why.")
+    found = _evidence_call(lambda: _evidence().transition(
+        set_id, status, actor=_actor(admin), reason=payload.reason.strip()))
+    if found is None:
+        raise orena_http_error(404, "reading_set_not_found", "That comprehension set does not exist.")
+    _audit(admin, f"admin.reading_comprehension_set_{status}", entity_type="reading_comprehension_set",
+           entity_id=set_id, payload={"status": status, "reason": payload.reason.strip()})
+    return found
+
+
+@router.post("/comprehension-sets/{set_id}/discard")
+def discard_comprehension_set(request: Request, response: Response, set_id: str) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    if not _evidence_call(lambda: _evidence().discard_set(set_id, actor=_actor(admin))):
+        raise orena_http_error(404, "reading_set_not_found", "That comprehension set does not exist.")
+    _audit(admin, "admin.reading_comprehension_set_discarded", entity_type="reading_comprehension_set",
+           entity_id=set_id)
+    return {"discarded": True, "id": set_id}
 
 
 @router.post("/articles/{article_id}/targets")
@@ -616,6 +869,35 @@ def add_target(
     return target
 
 
+@router.post("/articles/{article_id}/target-order")
+def reorder_targets(
+    request: Request, response: Response, article_id: str, payload: TargetOrderBody
+) -> dict[str, Any]:
+    """The order a learner meets the targets in, as the reviewer arranged it.
+
+    Its own path rather than `/targets/order`, which would sit in the same
+    shape as `/targets/{target_id}` and be one route-ordering accident away
+    from being read as a target whose id is the word "order".
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    if _guarded(lambda: _content().get_article(article_id)) is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    targets = _guarded(
+        lambda: _content().reorder_targets(article_id, order=payload.order, actor=_actor(admin))
+    )
+    if targets is None:
+        raise orena_http_error(
+            400,
+            "reading_target_order_mismatch",
+            "An order must list this article's learning targets exactly once each.",
+        )
+    _audit(admin, "admin.reading_targets_reordered", entity_type="reading_article",
+           entity_id=article_id, payload={"count": len(targets)})
+    return {"targets": targets}
+
+
 @router.post("/articles/{article_id}/targets/{target_id}")
 def decide_target(
     request: Request, response: Response, article_id: str, target_id: str, payload: TargetDecisionBody
@@ -624,7 +906,9 @@ def decide_target(
     _same_origin(request)
     _no_store(response)
     target = _guarded(
-        lambda: _content().decide_target(target_id, approved=payload.approved, actor=_actor(admin))
+        lambda: _content().decide_target(
+            target_id, article_id=article_id, approved=payload.approved, actor=_actor(admin)
+        )
     )
     if target is None:
         raise orena_http_error(404, "reading_target_not_found", "That learning target is not on this article.")
@@ -641,6 +925,25 @@ def decide_target(
 # -- operations ----------------------------------------------------------------
 
 
+def _worker_health() -> dict[str, Any]:
+    """Who is processing, derived from the claims the queue already holds.
+
+    `derived_from_claims` is not decoration: the console renders a different
+    sentence for it. A worker that has never taken a job cannot appear here,
+    so "two workers" means "two workers were seen holding work", not "two
+    processes exist". Saying which of those two the number is keeps the panel
+    honest without a registry table, which is a schema decision this lane may
+    not make on its own.
+    """
+    items = _jobs().workers(stale_after=DEFAULT_STALE_AFTER)
+    return {
+        "items": items,
+        "running": sum(entry["running"] for entry in items),
+        "stale_after_seconds": int(DEFAULT_STALE_AFTER.total_seconds()),
+        "derived_from_claims": True,
+    }
+
+
 @router.get("/operations")
 def operations(request: Request, response: Response) -> dict[str, Any]:
     """Queue depth, article states and worker health, counted in the database."""
@@ -652,5 +955,6 @@ def operations(request: Request, response: Response) -> dict[str, Any]:
             "articles": _content().counts_by_status(),
             "published": _content().published_count(),
             "recent": _jobs().list_jobs(limit=5)["items"],
+            "workers": _worker_health(),
         }
     )

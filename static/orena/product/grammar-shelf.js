@@ -1,6 +1,6 @@
 // Editorial invitations enrich the catalog. They never limit what can be
 // explored, replace a Concept ID or fabricate a sample for an unready entry.
-export function grammarShelf(catalog, notes, ui) {
+export function grammarShelf(catalog, notes, support) {
   return (catalog.lessons || [])
     .filter((x) => x.kind !== 'review')
     .map((lesson) => {
@@ -10,7 +10,8 @@ export function grammarShelf(catalog, notes, ui) {
         ? {
             ...lesson,
             line,
-            heading: note?.title?.[ui] || line,
+            // A pattern's name explains it: the support language, else English (D-079).
+            heading: note?.title?.[support] || note?.title?.en || line,
             editorial: Boolean(note),
           }
         : null;

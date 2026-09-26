@@ -12,11 +12,8 @@ import { mountReader } from './reader.js';
 import { discussionSection, discussionSource, mountDiscussion } from './discussion.js';
 import { mountLexicalLayer } from './lexical.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
-import { pronunciationReportHtml } from './pronunciation-report.js';
-import { voiceEvidence } from './voice-evidence.js';
+import { refCopy } from './reference.js';
 import { publishedReading } from '../content/reading-library.js';
-import { mountVoiceResponse } from './voice-response.js';
 import { link, deeperPractice } from '../product/intent.js';
 import { encounter } from '../product/encounter.js';
 import {
@@ -25,7 +22,7 @@ import {
 } from '../product/evidence.js';
 import { comprehensionSection, bindComprehension } from './comprehension.js';
 import { contentFor } from '../content/texts.js';
-import { readingText, readingSessionId, readable } from '../content/reading.js';
+import { readable } from '../content/reading.js';
 import { preparedMeaning } from '../content/language-notes.js';
 import {
   mediaPlayer,
@@ -46,7 +43,6 @@ import {
   activeWordIndex,
   wordSpans,
 } from '../capabilities/word-timeline.js';
-import { evaluateVoice } from '../capabilities/voice-feedback.js';
 import {
   acquireMedia,
   translationRequest,
@@ -103,7 +99,7 @@ function textEncounter(root, ctx, item, book = null) {
     });
   remember();
   const title = `${origin(item, c)} · ${item.title}`;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const from = { id: item.id, where: item.title, why: 'from_reading' };
   const notes = (item.phrases || []).length
     ? `<details class="reader-notes"><summary>${esc(c.readerNotes)}</summary>${item.phrases.map((p, i) => `<div class="reader-note"><p class="reader-note__word" lang="${language}">${esc(p.word)}</p>${p.phonetic && ctx.profile.pinyin !== 'off' ? `<p class="pinyin">${esc(p.phonetic)}</p>` : ''}<p lang="${esc(ctx.support)}">${esc(preparedMeaning(p, language, ctx.support).text)}</p><blockquote lang="${language}">${esc(p.example)}</blockquote><button class="quiet" data-note="${i}">${c.savePhrase} ＋</button><p role="status"></p></div>`).join('')}</details>`
@@ -189,7 +185,7 @@ function textEncounter(root, ctx, item, book = null) {
       }),
   );
   bindComprehension(root, ctx, {
-    sessionId: readingSessionId(item.id),
+    practice: item.practice,
     questions: item.questions,
     onEvidence: (fragment) => reader.showEvidence(fragment),
     /* The paragraph the words stand in, from the text the learner just read:
@@ -238,20 +234,28 @@ function waitingMedia(root, ctx, payload) {
   root.querySelector('[data-retry]').onclick = () => window.location.reload();
   return () => disconnectMediaPlayer(playerRoot);
 }
+/* One answer sheet for one approved set. The operation id names the logical
+   submit, so a retry after a lost response replays the attempt the server
+   already saved rather than recording a second one; it is minted once per
+   sheet and reused by every try. The answer key comes back with the saved
+   attempt, never before it. */
+function practiceSubmit(api, served, recommendation = '') {
+  let operationId = null;
+  return async (answers) => {
+    operationId ||= globalThis.crypto?.randomUUID?.() || `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const picked = {};
+    served.questions.forEach((question, position) => {
+      picked[question.id] = answers[position];
+    });
+    const saved = await api.submitReadingPractice(served.id, operationId, picked, recommendation || null);
+    return saved?.results;
+  };
+}
 export async function renderEncounter(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
   const id = location.id;
   if (id.startsWith('published:')) {
     const item = publishedReading(id, language);
-    if (!item) throw Error(c.unavailable);
-    return textEncounter(root, ctx, item);
-  }
-  if (id.startsWith('reading:')) {
-    const sessionId = readingSessionId(id);
-    if (!sessionId) throw Error(c.unavailable);
-    const payload = await api.readingSession(sessionId);
-    const item = readingText(payload.found ? payload.session : null, language);
-    if (!alive()) return;
     if (!item) throw Error(c.unavailable);
     return textEncounter(root, ctx, item);
   }
@@ -293,6 +297,55 @@ export async function renderEncounter(root, ctx) {
         provenance: bookDetail?.provenance || null,
       },
     );
+  }
+  if (id.startsWith('article:')) {
+    /* A published Reading article, read in the room every other text is read
+       in. The server answers with the text, the targets an admin approved and
+       the attribution its rights require; nothing about review or ingestion
+       crosses this boundary, so there is nothing here to hide. */
+    const articleId = id.slice('article:'.length);
+    /* Its comprehension check is the set an Admin approved for it (D-082).
+       No set, or no approved one in the learner's support language, is Free
+       Reading - the text alone, which is a complete thing to do. */
+    const [article, practice] = await Promise.all([
+      api.readingArticle(articleId),
+      api.readingPracticeSet(articleId).catch(() => null),
+    ]);
+    if (!alive()) return;
+    const served = practice?.submit_enabled ? practice.set : null;
+    const item = readable({
+      id,
+      title: article.title,
+      language: article.language,
+      level: article.level,
+      subtitle: article.topic,
+      paragraphs: String(article.body || '').split(/\n\s*\n/),
+      phrases: (article.targets || []).map((target) => ({
+        word: target.text,
+        meaning: target.meaning || '',
+        note: target.context || '',
+      })),
+      source: article.attribution?.author || article.attribution?.source_url
+        ? {
+            creator: article.attribution.author || '',
+            provenance_url: article.attribution.source_url || '',
+          }
+        : undefined,
+      questions: (served?.questions || []).map((question) => ({
+        id: question.id,
+        question: question.prompt,
+        options: question.options,
+      })),
+    });
+    if (!item) throw Error(c.unavailable);
+    /* Reached from the recommendation's own card, the address carries the
+       signed recommendation; the server decides whether it counts. */
+    if (served && item.questions?.length)
+      item.practice = {
+        grade: (questionId, choice) => api.gradeReadingPracticeQuestion(served.id, questionId, choice),
+        submit: practiceSubmit(api, served, location.rec),
+      };
+    return textEncounter(root, ctx, item);
   }
   if (id.startsWith('story:') || id.startsWith('text:')) {
     const found = id.startsWith('story:')
@@ -398,7 +451,6 @@ export async function renderEncounter(root, ctx) {
     recording = false,
     recorder = createLocalAudioRecorder(),
     take = null,
-    takeId = '',
     practiceTarget = null,
     lastClockSegment = null;
   let disposed = false,
@@ -447,7 +499,7 @@ export async function renderEncounter(root, ctx) {
      once and a change of line never changes a height. */
   const transcriptRow = (s) => {
     const reading = payload.catalog?.pinyin_by_segment?.[s.segment_id];
-    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc((referenceCopy[ctx.ui] || referenceCopy.en).listenLoopLine)}</span></button></div></li>`;
+    return `<li><button data-segment="${esc(s.segment_id)}"><span class="line-when"><time>${duration(s.start_ms)}</time><span class="line-state" data-line-state></span></span><span class="line-original" lang="${language}">${esc(s.original_text)}</span><span class="line-pinyin" data-line-pinyin lang="${language}">${esc(typeof reading === 'string' ? reading : '')}</span><span class="line-meaning" lang="${esc(ctx.support)}">${esc(model.meaning(s.segment_id) || '')}</span></button><div class="line-pick" data-line-pick><button type="button" class="line-pick__loop" data-loop-line="${esc(s.segment_id)}">${icon('arrow-counter-clockwise', { size: 15 })}<span>${esc(refCopy(ctx).listenLoopLine)}</span></button></div></li>`;
   };
   /* The bar that owns the actions of the current line (`ui/learning-toolbar.js`).
      Icon-first, because these are the reusable learner actions - hear it
@@ -456,9 +508,9 @@ export async function renderEncounter(root, ctx) {
      assistive technology. Pinyin is not a quiet control here; it is absent
      when the learning language has no reading to show. */
   const lineActions = [
-    { name: 'autoscroll', kind: 'toggle', label: (referenceCopy[ctx.ui] || referenceCopy.en).listenAutoScroll, chip: (referenceCopy[ctx.ui] || referenceCopy.en).listenAutoScroll, chipIcon: 'arrows-down-up' },
+    { name: 'autoscroll', kind: 'toggle', label: refCopy(ctx).listenAutoScroll, chip: refCopy(ctx).listenAutoScroll, chipIcon: 'arrows-down-up' },
     language === 'zh'
-      ? { name: 'pinyin', icon: 'reading', kind: 'toggle', label: c.stagePinyin, chip: (referenceCopy[ctx.ui] || referenceCopy.en).readerPinyin }
+      ? { name: 'pinyin', icon: 'reading', kind: 'toggle', label: c.stagePinyin, chip: refCopy(ctx).readerPinyin }
       : null,
     { name: 'meaning', icon: 'meaning', kind: 'toggle', label: c.stageMeaning, chip: String(ctx.support || '').toUpperCase() },
   ];
@@ -467,7 +519,7 @@ export async function renderEncounter(root, ctx) {
      controls on the left; the synced transcript on the right, with the reading
      and support layers the design draws as chips. Comprehension for listening
      has no items yet, so its control keeps its place and says so (GAP-025). */
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const totalMs = (payload.catalog?.excerpt_end_ms || payload.asset.duration_ms) - (payload.catalog?.excerpt_start_ms || 0);
   // What the baseline's identity line says: how hard, what kind, how long.
   const meta = [
@@ -943,6 +995,9 @@ export async function renderEncounter(root, ctx) {
       onPick: (way) => {
         if (way === 'keep') return saveCurrentSentence();
         if (way === 'inspect') return inspectCurrentLine();
+        /* Saying the line - shadowing it or reading it aloud - is Speaking's own workspace,
+           opened on this line; the lesson is where the learner comes back to. */
+        if (way === 'shadowing' || way === 'speaking') return openSpeaking(line.segment_id);
         if (deeperPractice.includes(way)) openPractice(way);
       },
     });
@@ -1460,167 +1515,26 @@ export async function renderEncounter(root, ctx) {
         }
       };
       playLine();
-    } else if (intent === 'speaking') {
-      voiceCleanup = mountVoiceResponse(
-        body,
-        { ...ctx, alive: () => isAlive() && version === practiceVersion },
-        {
-          id,
-          title: item.title,
-          prompt: target.original_text,
-          assetId: payload.asset.asset_id,
-          segmentId: target.segment_id,
-          onRecording: (active) => {
-            recording = active;
-            setRecordingLock(active);
-          },
-        },
-      );
-    } else {
-      // Where the recording lives sits beside the control as a hint, as it
-      // does in the voice response; the guide is the instruction and stays.
-      body.innerHTML = `<blockquote class="practice-line" data-practice-line data-practice-segment="${esc(target.segment_id)}" lang="${language}">${esc(target.original_text)}</blockquote><p class="practice-meaning">${esc(model.meaning(target.segment_id) || '')}</p><p class="practice-guide">${intent === 'shadowing' ? c.shadowGuide : c.speakingGuide}</p><div class="button-row"><button class="outline" data-listen>${c.replay} ↺</button><button class="primary" data-record>● ${c.record}</button>${hint({ text: c.localAudio })}</div><p role="status" data-record-status></p><div data-take></div><div data-feedback></div>`;
-      body.querySelector('[data-listen]').onclick = playLine;
-      body.querySelector('[data-record]').onclick = async (event) => {
-        const button = event.currentTarget,
-          output = body.querySelector('[data-record-status]');
-        button.disabled = true;
-        if (recording) {
-          take = await recorder.stop();
-          recording = false;
-          setRecordingLock(false);
-          button.textContent = `● ${c.record}`;
-          if (!isAlive() || version !== practiceVersion) return;
-          if (take) {
-            takeId = crypto.randomUUID();
-            body.querySelector('[data-take]').innerHTML =
-              `<h3>${c.take}</h3><audio controls src="${esc(take.url)}"></audio><div class="button-row"><button class="primary" data-feedback-action>${c.feedback}</button>${intent === 'shadowing' ? `<button class="outline" data-pronunciation>${c.pronunciation}</button>` : ''}</div>`;
-            output.textContent = c.selfReport;
-            // Wire the take's own actions before anything is awaited: these
-            // buttons are already on screen, and a slow save must not leave
-            // them looking live while nothing answers a click.
-            body.querySelector('[data-feedback-action]').onclick = () =>
-              voiceFeedback();
-            bindPronunciation();
-            if (intent === 'shadowing') {
-              try {
-                await ctx.settledWrites();
-                if (!isAlive() || version !== practiceVersion) return;
-                const records = await api.shadowingProgress(
-                  payload.asset.asset_id,
-                );
-                const prior = (records.items || []).find(
-                  (x) => x.segment_id === target.segment_id,
-                );
-                await ctx.mutate(() =>
-                  api.saveShadowingProgress({
-                    asset_id: payload.asset.asset_id,
-                    segment_id: target.segment_id,
-                    completed_rounds: Math.min(
-                      1000,
-                      (prior?.completed_rounds || 0) + 1,
-                    ),
-                  }),
-                );
-                if (isAlive())
-                  output.textContent = c.persisted + ' · ' + c.selfReport;
-              } catch {
-                if (isAlive()) output.textContent = c.failedSave;
-              }
-            }
-          } else output.textContent = c.microphone;
-        } else {
-          stopSegmentPlayback(playerRoot, payload.playback);
-          // The previous take and any feedback about it stop being true the
-          // moment a new recording starts.
-          take = null;
-          takeId = '';
-          body.querySelector('[data-take]').innerHTML = '';
-          body.querySelector('[data-feedback]').textContent = '';
-          const activeRecorder = recorder;
-          const started = await activeRecorder.start();
-          if (!isAlive() || version !== practiceVersion) {
-            activeRecorder.cleanup();
-            return;
-          }
-          recording = started;
-          setRecordingLock(started);
-          button.textContent = started ? `■ ${c.stop}` : `● ${c.record}`;
-          output.textContent = started ? c.recording : c.microphone;
-        }
-        button.disabled = false;
-      };
-      function bindPronunciation() {
-        const pronunciationButton = body.querySelector('[data-pronunciation]');
-        if (!pronunciationButton) return;
-        pronunciationButton.onclick = async () => {
-          // A recording made while this request is in flight replaces the take,
-          // so the answer that comes back is about audio the learner has
-          // already moved on from.
-          const assessedTake = takeId,
-            assessedBlob = take?.blob;
-          pronunciationButton.disabled = true;
-          const area = body.querySelector('[data-feedback]');
-          area.textContent = c.loading;
-          try {
-            const result = await api.assessPronunciation(
-              assessedBlob,
-              language,
-              target.spoken_text || target.original_text,
-            );
-            if (
-              isAlive() &&
-              version === practiceVersion &&
-              assessedTake === takeId
-            )
-              area.innerHTML = pronunciationReportHtml(c, result, language);
-          } catch {
-            if (isAlive() && assessedTake === takeId) {
-              area.textContent = c.feedbackUnavailable;
-              pronunciationButton.disabled = false;
-            }
-          }
-        };
-      }
-      async function voiceFeedback() {
-        const currentTake = take,
-          currentTakeId = takeId;
-        const area = body.querySelector('[data-feedback]');
-        area.textContent = c.loading;
-        body.querySelector('[data-feedback-action]').disabled = true;
-        try {
-          const result = await ctx.mutate(() =>
-            evaluateVoice({
-              api,
-              blob: currentTake.blob,
-              language,
-              reference: target.spoken_text || target.original_text,
-              assetId: payload.asset.asset_id,
-              segmentId: target.segment_id,
-              takeId: currentTakeId,
-            }),
-          );
-          if (
-            !isAlive() ||
-            version !== practiceVersion ||
-            currentTakeId !== takeId
-          )
-            return;
-          // The envelope already separates measurement from derivation; show
-          // that separation rather than collapsing it into one percentage.
-          area.innerHTML = `<h3>${c.heard}</h3><p lang="${language}">${esc(result.heard)}</p>${voiceEvidence(c, result.evaluation, language)}<p>${result.saved ? c.persisted : c.failedSave}</p>`;
-        } catch {
-          if (isAlive() && version === practiceVersion) {
-            area.textContent = c.feedbackUnavailable;
-            body.querySelector('[data-feedback-action]').disabled = false;
-          }
-        }
-      }
     }
+  }
+  function openSpeaking(segmentId) {
+    ctx.go('practice', { intent: 'shadowing', id, line: segmentId });
   }
   bindImages(root, c);
   // Follow arrives here as an intention too, and its whole point is that
-  // nothing opens over the moment.
+  // nothing opens over the moment. An older link that asked the encounter for
+  // Shadowing or reading aloud now lands in the Speaking workspace.
+  if (practice === 'shadowing' || practice === 'speaking') {
+    window.location.replace(link('practice', { intent: 'shadowing', id, line: model.current?.segment_id || '' }));
+    return () => {
+      disposed = true;
+      bar.dispose();
+      lexical.destroy();
+      playerRoot.removeEventListener('orena:media-time', onClock);
+      playerRoot.removeEventListener('orena:media-state', onMediaState);
+      disconnectMediaPlayer(playerRoot);
+    };
+  }
   if (deeperPractice.includes(practice)) openPractice(practice);
   return () => {
     disposed = true;

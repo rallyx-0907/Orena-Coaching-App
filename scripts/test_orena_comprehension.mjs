@@ -16,32 +16,31 @@ import { readFileSync } from 'node:fs';
 const at = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const ui = at('static/orena/ui/comprehension.js');
 const api = at('static/orena/infrastructure/api.js');
-const server = at('writing_coach/becoming_reading.py');
-const app = at('app.py');
+const server = at('writing_coach/persistence/reading_evidence_repository.py');
+const routes = at('writing_coach/reading_practice_api.py');
 const css = at('static/orena/rooms.css');
 const encounter = at('static/orena/ui/encounter.js');
 const { copy } = await import('../static/orena/ui/copy.js');
 
 /* --- One question, answered as it is answered ---------------------------- */
 
-assert.match(server, /def grade_reading_answer\(session_id: int, index: int, payload: ReadingChoiceIn\) -> dict\[str, Any\]:/,
+assert.match(server, /def grade_question\(self, set_id: str, question_id: str, selected_index: int,/,
   'the server can score one question');
-assert.match(server, /class ReadingChoiceIn\(BaseModel\):/, 'with its own payload');
-assert.match(server, /choice: int = Field\(ge=0, le=3\)/, 'an option index, bounded like the set');
-assert.match(app, /@app\.post\("\/api\/reading\/session\/\{session_id\}\/answer\/\{index\}", name="becoming_reading_answer_one"\)/,
+assert.match(routes, /class QuestionChoiceBody\(BaseModel\):/, 'with its own payload');
+assert.match(routes, /selected_index: int = Field\(ge=0, le=5\)/, 'an option index, bounded like the set');
+assert.match(routes, /@router\.post\("\/sets\/\{set_id\}\/questions\/\{question_id\}\/grade"\)/,
   'and a route of its own beside the set');
 /* Grading one question records nothing: the attempt is the set. */
-const grading = server.slice(server.indexOf('def grade_reading_answer'), server.indexOf('def submit_reading_answers'));
-assert.ok(!grading.includes('create_reading_attempt_record'), 'scoring one question writes no attempt');
-assert.match(server, /def _question_result\(question: dict\[str, Any\], selected: int\) -> dict\[str, Any\]:/,
-  'one shape for a result, used by both');
-assert.match(api, /gradeReadingAnswer:\(id,index,choice\)=>request/, 'the client can ask for one');
+const grading = server.slice(server.indexOf('    def grade_question('), server.indexOf('    def answer_key('));
+assert.ok(!grading.includes('insert('), 'scoring one question writes no attempt');
+assert.match(grading, /"correct": selected_index == question\.correct_index/, 'the canonical question supplies the verdict');
+assert.match(api, /gradeReadingPracticeQuestion:\(setId,questionId,selectedIndex\)=>request/, 'the client can ask for one');
 
-assert.match(ui, /const scored = await api\.gradeReadingAnswer\(sessionId, index, answers\[index\]\);/,
+assert.match(ui, /const scored = await practice\.grade\(questions\[index\]\.id, answers\[index\]\);/,
   'answering asks the server, never the client');
-assert.match(ui, /if \(recorded \|\| answers\.some\(\(choice\) => choice === null\)\) return;/,
+assert.match(ui, /if \(recorded\) return true;/,
   'and the attempt is written once, when the learner has been through the set');
-assert.match(ui, /await ctx\.mutate\(\(\) => api\.submitReadingAnswers\(sessionId, answers\)\);/, 'through the same route as before');
+assert.match(ui, /await ctx\.mutate\(\(\) => practice\.submit\(answers\)\);/, 'through canonical Reading evidence');
 
 /* --- What the frames draw ------------------------------------------------ */
 

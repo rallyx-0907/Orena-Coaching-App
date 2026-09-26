@@ -200,6 +200,30 @@ class PostgresReadingLibraryRepository:
             ).scalar_one_or_none()
         return updated_id is not None
 
+    def restore_book(self, book_id: str) -> bool:
+        """The way back from `archive_book`.
+
+        Archiving never deleted the row, the chapters or the assets - it set a
+        status that `list_books()`/`get_book()` filter on - so restoring is the
+        same write in the other direction. Without it the one recovery path an
+        operator had was irreversible, which is a path nobody dares press.
+
+        Returns whether an archived row was found; restoring something that is
+        already on the shelf is not an error, it is simply nothing to do.
+        """
+        identity = _as_uuid(book_id)
+        if identity is None:
+            return False
+        with self._engine.begin() as connection:
+            restored_id = connection.execute(
+                text(
+                    "UPDATE reading_books SET status = 'ready', updated_at = :now "
+                    "WHERE id = :id AND status = 'archived' RETURNING id"
+                ),
+                {"id": identity, "now": datetime.now(UTC)},
+            ).scalar_one_or_none()
+        return restored_id is not None
+
     def list_books(
         self, *, learning_language: str, cursor: str | None = None, limit: int = DEFAULT_PAGE_LIMIT
     ) -> dict[str, Any]:

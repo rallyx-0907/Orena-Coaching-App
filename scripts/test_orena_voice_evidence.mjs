@@ -91,9 +91,12 @@ assert.ok(!unknown.includes('<li>'), 'an unlabelled step is not invented');
 assert.equal(sourceLabel(copy.en, null), copy.en.notMeasured);
 assert.equal(sourceLabel(copy.en, 'speech_asr'), copy.en.sourceAsr);
 
-// The surface must use this rather than collapsing the envelope again.
+// The surface must use this rather than collapsing the envelope again. The Listening encounter's
+// old Shadowing panel that also drew it was deleted when saying a line moved to the Speaking
+// workspace (a PronunciationResult, not this envelope); the free-response surface still draws it.
+const surface = readFileSync('static/orena/ui/voice-response.js', 'utf8');
+assert.match(surface, /voiceEvidence\(c, value\.evaluation, language\)/);
 const encounter = readFileSync('static/orena/ui/encounter.js', 'utf8');
-assert.match(encounter, /voiceEvidence\(c, result\.evaluation, language\)/);
 assert.doesNotMatch(
   encounter,
   /c\.contentMatch\}: \$\{result\.content_match/,

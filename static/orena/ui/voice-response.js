@@ -1,6 +1,6 @@
 import { esc, focusRegion } from './html.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { progressReporter, hint } from './patterns.js';
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { voiceEvidence } from './voice-evidence.js';
@@ -70,7 +70,7 @@ export function mountVoiceResponse(
      microphone sits on the centre line with hearing your own take on one side
      and trying again on the other, and what comes back is a sentence about
      two words - never a score. */
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   root.innerHTML = `<div class="voice-response speak-stage"><h2 class="speak-ask">${esc(r.speakAsk)}</h2><blockquote class="voice-prompt practice-line speak-line" data-practice-line lang="${language}">${esc(prompt)}</blockquote><div class="speak-wave" data-mic hidden><span class="speak-wave__state" data-mic-state></span><span class="speak-wave__device" data-mic-device></span><span class="speak-wave__bars" aria-hidden="true"><span data-mic-level></span></span></div><p class="speak-hint">${esc(r.speakTapRecord)}</p><div class="speak-controls"><button type="button" class="icon-button speak-side" data-play-take disabled aria-label="${esc(r.speakPlayMine)}">${icon('speaker-high', { size: 21 })}</button><button type="button" class="speak-mic" data-record aria-label="${esc(c.record)}">${icon('microphone', { size: 34, filled: true })}</button><button type="button" class="icon-button speak-side" data-retake aria-label="${esc(r.speakRetry)}">${icon('arrow-counter-clockwise', { size: 21 })}</button></div><div class="speak-meta"><span class="meta" data-clock aria-live="off"></span>${hint({ text: c.localAudio })}</div><p role="status" data-record-status></p><div data-take></div>${resultHost ? '' : '<section data-voice-result></section>'}<section class="speak-attempts"><h3 class="ds-label">${esc(r.speakAttempts)}</h3><div data-voice-history></div></section></div>`;
   root.querySelector('[data-play-take]').onclick = () => {
     const audio = root.querySelector('[data-take-audio]');

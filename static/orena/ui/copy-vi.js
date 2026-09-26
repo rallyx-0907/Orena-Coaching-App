@@ -20,6 +20,7 @@ export const vi = {
   vocabulary: 'Từ vựng',
   understanding: 'Cấu trúc & ý nghĩa',
   language: 'Ngôn ngữ của tôi',
+  backHome: 'Trang chủ',
   recall: 'Ôn lại',
   continue: 'Tiếp tục',
   content: 'Nội dung của tôi',
@@ -43,6 +44,7 @@ export const vi = {
   rights: 'Nguồn & bản quyền',
   learning: 'Ngôn ngữ đang học',
   support: 'Ngôn ngữ hỗ trợ',
+  interfaceLanguage: 'Ngôn ngữ giao diện',
   pinyin: 'Hiện phiên âm cho tiếng Trung',
 
   // --- When something cannot open ----------------------------------------
@@ -105,10 +107,6 @@ export const vi = {
   missing: 'Thiếu',
 
   // --- Speaking ----------------------------------------------------------
-  speakRepeat: 'Lặp lại một câu',
-  speakRespond: 'Phản hồi tình huống',
-  speakPrompt: 'Nói theo một đề bài',
-  speakContinue: 'Tiếp tục luyện nói',
   speakYourVoice: 'Bản thu của bạn',
   speakHeard: 'Hệ thống nhận diện được',
   speakHeardNote: 'Đây là kết quả nhận dạng giọng nói, không phải điểm phát âm.',

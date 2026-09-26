@@ -1,0 +1,2804 @@
+/* The Speaking workspace (D-066, D-067), every number taken from Orena Speaking: "Speaking workspace"
+   (desktop 1920x1080), "Speaking workspace mobile", "Speaking · recording" and "Speaking · char
+   detail" (390x844). Colour comes only from theme.css. The room has no rail and no tab bar (rule 47):
+   its template starts at its own 84px bar. */
+
+#main:has(> .sp-room) {
+  padding: 0;
+  max-width: none;
+}
+#main > .sp-room {
+  max-width: none;
+  margin: 0;
+}
+.sp-room {
+  --serif: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  /* The two panels close on one base line: the controls and the actions share this height. */
+  --sp-foot: 136px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* A learning workspace is the viewport, never a long page (D-078): only regions whose content
+     is long by nature (the word list, the attempts, the lesson's lines) scroll, inside. */
+  block-size: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
+  color: var(--text-primary);
+}
+:where(.sp-room, .qs--speak) button {
+  font: inherit;
+}
+
+/* --- The bar: 84px, padded 0 36 ------------------------------------------------------------- */
+.sp-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: none;
+  block-size: 84px;
+  box-sizing: border-box;
+  padding: 0 36px;
+  min-width: 0;
+}
+.sp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-70);
+  font-size: 16px;
+  cursor: pointer;
+}
+.sp-back__caret,
+.sp-cancel,
+.sp-count {
+  display: none;
+}
+.sp-lesson {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-inline-size: 28ch;
+}
+.sp-name {
+  margin: 0 0 0 8px;
+  outline: none;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.sp-where {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  color: var(--ink-60);
+  white-space: nowrap;
+}
+.sp-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+  block-size: 42px;
+  box-sizing: border-box;
+  padding: 0 15px;
+  border-radius: 999px;
+  background: var(--streak-wash);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--nav-active-ring);
+  color: var(--streak-ink);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+/* --- Two panes: 20 36 36, gap 22; the result pane is 640 wide -------------------------------- */
+.sp-cols {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-block-size: 0;
+  box-sizing: border-box;
+  padding: 12px 32px 28px;
+}
+/* The task: fixed bands (where you are, the mode, the line, the controls) around one flexible
+   stage, the model clip, which takes what is left and gives it back first. */
+.sp-task {
+  flex: 1;
+  min-width: 0;
+  min-block-size: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 32px 0;
+  border-radius: 20px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18), 0 8px 28px rgba(0, 0, 0, 0.42);
+  overflow: hidden;
+}
+.sp-result {
+  container: sp-result / inline-size;
+  inline-size: clamp(420px, 34vw, 640px);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+
+/* Where the line sits: 4px segments, gap 5, the done ones in the streak's amber. */
+.sp-steps {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  align-self: stretch;
+}
+.sp-steps__segments {
+  flex: 1;
+  display: flex;
+  gap: 5px;
+}
+.sp-steps__segments i {
+  flex: 1;
+  block-size: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.sp-steps__segments i[data-done] {
+  background: var(--streak);
+}
+.sp-steps__count {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  color: var(--ink-60);
+}
+
+/* The stage holds the model clip and takes the height the fixed bands leave; the clip keeps its
+   16:9 inside it (560x315 in the frame, up to 720 wide on a tall desk) and leaves when the stage
+   is too short to show it - the model is still one tap away on the controls. */
+.sp-stage {
+  flex: 1 1 0;
+  min-block-size: 0;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+@container (max-height: 96px) {
+  .sp-stage .sp-clip {
+    display: none;
+  }
+}
+/* The model clip: radius 18, a 86px play over a 140px glow. */
+.sp-clip {
+  position: relative;
+  flex: none;
+  inline-size: min(100cqi, 100cqb * 16 / 9, 720px);
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--artwork-wash);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18), 0 16px 44px rgba(0, 0, 0, 0.5);
+}
+.sp-clip__art,
+.sp-clip__art > *,
+.sp-clip video,
+.sp-clip iframe {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  border: 0;
+  object-fit: cover;
+}
+.sp-glow {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 140px;
+  block-size: 140px;
+  margin: -70px 0 0 -70px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(198, 150, 255, 0.4), transparent);
+  pointer-events: none;
+}
+.sp-play {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 86px;
+  block-size: 86px;
+  min-height: 0;
+  margin: -43px 0 0 -43px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--scrim-play);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.24);
+  color: var(--on-artwork);
+  cursor: pointer;
+}
+.sp-badge {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-inline-start: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--scrim-badge);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: var(--on-artwork);
+}
+.sp-badge svg {
+  color: var(--accent-ink);
+}
+.sp-rate {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-inline-end: 14px;
+  min-height: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--scrim-badge);
+  backdrop-filter: blur(8px);
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--on-artwork);
+  cursor: pointer;
+}
+.sp-clipbar {
+  position: absolute;
+  inset-inline: 16px;
+  inset-block-end: 16px;
+  block-size: 5px;
+  border-radius: 999px;
+  background: var(--scrim-track);
+  overflow: hidden;
+}
+.sp-clipbar i {
+  display: block;
+  inline-size: 0;
+  block-size: 100%;
+  border-radius: 999px;
+  background: var(--progress-violet);
+}
+
+/* The line: Noto Serif 600 36 / 1.4; a flagged word is marked as the frame marks it. */
+.sp-line {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(26px, 3.4vh, 36px);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+}
+.sp-tok--flag {
+  background: var(--speak-flag-mark);
+  border-bottom: 3px solid var(--speak-flag-line);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.sp-tok--focus {
+  background: var(--accent-highlight);
+  box-shadow: var(--accent-highlight-ring);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.sp-task:not(:has(.sp-stage)) .sp-line,
+.sp-room[data-mode='shadow'] .sp-line {
+  margin-top: auto;
+}
+.sp-reading {
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: clamp(15px, 1.7vh, 18px);
+  letter-spacing: 0.04em;
+  color: var(--ink-72);
+  text-align: center;
+}
+.sp-meaning {
+  margin: 0;
+  font-size: 16.5px;
+  color: var(--ink-60);
+  text-align: center;
+}
+
+/* The level: 42 bars of 6px, gap 6 - moved only by the live microphone. */
+.sp-wave {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 64px;
+}
+.sp-wave i {
+  inline-size: 6px;
+  block-size: 6%;
+  border-radius: 999px;
+  background: var(--wave-idle);
+  transition: block-size 80ms linear;
+}
+.sp-room[data-phase='recording'] .sp-wave i {
+  background: var(--wave-live);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sp-wave i {
+    transition: none;
+  }
+}
+
+/* The controls: 56 · 104 · 56, gap 22, in a foot band the result's actions share. */
+.sp-controls {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  block-size: var(--sp-foot);
+  box-sizing: border-box;
+  margin: auto -32px 0;
+  box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.16);
+}
+.sp-round {
+  inline-size: 56px;
+  block-size: 56px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-chip);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.2);
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-round:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sp-mic {
+  position: relative;
+  inline-size: 104px;
+  block-size: 104px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: 0 16px 40px rgba(123, 77, 232, 0.45);
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-mic:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.sp-mic__stop {
+  display: none;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 9px;
+  background: var(--record-stop);
+}
+.sp-room[data-phase='recording'] .sp-mic {
+  background: var(--record-stop-wash);
+  box-shadow: var(--record-stop-ring), var(--record-stop-glow);
+}
+.sp-room[data-phase='recording'] .sp-mic__icon {
+  display: none;
+}
+.sp-room[data-phase='recording'] .sp-mic__stop {
+  display: block;
+}
+.sp-hint {
+  flex: none;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-60);
+  text-align: center;
+}
+.sp-hint--error {
+  color: var(--text-on-glass);
+}
+.sp-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Recording: the red pill (ĐANG GHI · 00:04). */
+.sp-pill {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--record-wash);
+  box-shadow: var(--record-ring);
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  color: var(--record-ink);
+}
+.sp-pill i {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--record-dot);
+}
+.sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-pill {
+  display: inline-flex;
+}
+
+/* --- The result pane ------------------------------------------------------------------------- */
+.sp-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 28px;
+  background: var(--speak-head-wash);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07);
+}
+.sp-ring {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--o-accent-top) 0 var(--score), rgba(255, 255, 255, 0.1) var(--score) 100%);
+}
+.sp-ring::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+.sp-ring--lg {
+  inline-size: 92px;
+  block-size: 92px;
+}
+.sp-ring--lg::before {
+  inset: 9px;
+  background: var(--glass-soft);
+  backdrop-filter: blur(24px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+}
+.sp-ring__text {
+  position: relative;
+  text-align: center;
+}
+.sp-ring__text b {
+  display: block;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 27px;
+  line-height: 1;
+}
+.sp-ring__text small {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  color: var(--ink-60);
+}
+.sp-head__copy {
+  flex: 1;
+  min-width: 0;
+}
+.sp-headline {
+  display: block;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+}
+.sp-sub {
+  margin: 7px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-68);
+  /* The flagged words are all in the list below: the head names them in two lines at most. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+/* A narrow result panel (a smaller desk) keeps its head compact so the list keeps the room. */
+@container sp-result (max-width: 560px) {
+  .sp-head {
+    gap: 16px;
+    padding: 20px 24px;
+  }
+  .sp-ring--lg {
+    inline-size: 80px;
+    block-size: 80px;
+  }
+  .sp-headline {
+    font-size: 20px;
+  }
+  .sp-metrics {
+    gap: 6px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+}
+.sp-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 11px;
+  font-family: var(--mono-font);
+  font-size: 13px;
+  color: var(--ink-75);
+}
+.sp-metrics b {
+  font-weight: 400;
+  color: var(--text-on-action);
+}
+.sp-body {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 28px 0;
+  overflow: hidden;
+}
+.sp-body[aria-busy='true'] .sp-rows {
+  opacity: 0.5;
+}
+.sp-label {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--ink-60);
+}
+.sp-rows {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.sp-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.14);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.sp-row__word {
+  flex: none;
+  min-width: 76px;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.sp-row__word b {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.1;
+}
+.sp-row__word small {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  color: var(--ink-60);
+}
+.sp-row__mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sp-bar {
+  display: block;
+  block-size: 7px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+.sp-bar i {
+  display: block;
+  block-size: 100%;
+  border-radius: 999px;
+  background: var(--progress-violet);
+}
+.sp-bar--flag i {
+  background: var(--speak-flag-bar);
+}
+.sp-row__note {
+  font-size: 13px;
+  color: var(--ink-60);
+}
+.sp-row--flag .sp-row__note {
+  color: var(--ink-85);
+}
+.sp-row__score {
+  font-family: var(--mono-font);
+  font-size: 15px;
+  color: var(--ink-78);
+}
+.sp-row--flag .sp-row__score {
+  color: var(--speak-flag-ink);
+}
+.sp-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  block-size: var(--sp-foot);
+  box-sizing: border-box;
+  margin: auto -28px 0;
+  padding: 0 28px;
+  box-shadow: inset 0 1px 0 rgba(172, 144, 255, 0.16);
+}
+.sp-btn--next {
+  margin-inline-start: auto;
+}
+/* A short desk (768-820 high): the bands tighten; the microphone keeps its size. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .sp-room {
+    --sp-foot: 120px;
+  }
+  .sp-task {
+    gap: 12px;
+    padding-top: 20px;
+  }
+}
+/* A narrow result panel keeps the two secondary actions as icons, named for assistive tech. */
+@container sp-result (max-width: 560px) {
+  .sp-actions .sp-btn:not(.sp-btn--next) {
+    padding: 13px;
+  }
+  .sp-actions .sp-btn__text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass-focus);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.18);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-btn--accent {
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-shadow);
+}
+.sp-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* The phone's card; not on a desk. */
+.sp-card {
+  display: none;
+}
+
+/* --- Word detail (the Quick Sheet layer: a popover on a desk, a sheet on a phone) ------------- */
+.qs--speak {
+  width: 390px;
+  gap: 15px;
+  padding: 26px 20px 30px;
+}
+.sp-detail__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  /* The corner is the close control's: the speak button sits with the word, never beside the X. */
+  padding-inline-end: 44px;
+}
+.sp-detail__word {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* The word and its model sound on one line: the speak button belongs to the word it says. */
+.sp-detail__glyph {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.sp-detail__word b {
+  font-family: 'Noto Serif', 'Noto Sans SC', Georgia, serif;
+  font-weight: 600;
+  font-size: 42px;
+  line-height: 1;
+}
+.sp-detail__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.sp-detail__reading {
+  font-family: var(--mono-font);
+  font-size: 15px;
+  color: var(--accent-ink);
+}
+.sp-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  color: var(--text-on-glass);
+}
+.sp-chip--flag {
+  background: var(--speak-flag-mark);
+  box-shadow: var(--speak-flag-ring);
+  color: var(--speak-flag-chip-ink);
+}
+.sp-detail__speak {
+  flex: none;
+  inline-size: 48px;
+  block-size: 48px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 24px rgba(123, 77, 232, 0.45);
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-detail__rule {
+  block-size: 1px;
+  background: var(--glass-hairline);
+}
+.sp-tones {
+  display: flex;
+  gap: 14px;
+}
+.sp-tone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  background: var(--glass-well);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.14);
+  font-size: 12.5px;
+  color: var(--ink-70);
+}
+.sp-tone .sp-label {
+  letter-spacing: 0.12em;
+  color: var(--ink-68);
+}
+.sp-tone svg {
+  inline-size: 120px;
+  block-size: 60px;
+  fill: none;
+  stroke: var(--speak-curve);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sp-sounds {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sp-sounds__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sp-sound {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-inline-size: 36px;
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: var(--glass-well);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.14);
+}
+.sp-sound b {
+  font-family: var(--mono-font);
+  font-weight: 400;
+  font-size: 13px;
+}
+.sp-sound small {
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  color: var(--ink-60);
+}
+.sp-sound--low {
+  box-shadow: var(--speak-flag-panel-ring);
+}
+.sp-sound--low small {
+  color: var(--speak-flag-ink);
+}
+.sp-detail__said {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-on-glass);
+}
+.sp-detail__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 10px;
+}
+/* A long label (English "Practise this character alone") wraps inside its button, never out of the sheet. */
+.sp-detail__actions .sp-dbtn {
+  min-width: 0;
+  block-size: auto;
+  min-block-size: 50px;
+  padding: 8px 12px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+}
+.sp-detail__actions .sp-dbtn svg {
+  flex: none;
+}
+.sp-dbtn {
+  flex: 1;
+  block-size: 50px;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 14px;
+  white-space: nowrap;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-dbtn--accent {
+  flex: 1.25;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 24px rgba(123, 77, 232, 0.4);
+}
+.sp-dbtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- The phone: one column, the card under the line, the controls at the thumb ---------------- */
+@media (max-width: 900px) {
+  .sp-top {
+    block-size: auto;
+    gap: 10px;
+    padding: 14px 20px 0;
+  }
+  .qs--speak {
+    width: auto;
+  }
+  .sp-back {
+    flex: 1;
+    min-width: 0;
+    gap: 10px;
+    font-family: var(--display-font);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink-90);
+  }
+  .sp-back > svg,
+  .sp-name,
+  .sp-where,
+  .sp-streak {
+    display: none;
+  }
+  .sp-back__caret {
+    display: inline-flex;
+    color: var(--ink-80);
+  }
+  .sp-lesson {
+    max-inline-size: none;
+  }
+  .sp-count {
+    display: inline;
+    font-family: var(--mono-font);
+    font-size: 11.5px;
+    color: var(--ink-62);
+  }
+  .sp-count--rec {
+    display: none;
+  }
+  .sp-cols {
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+  .sp-task {
+    flex: 1;
+    min-block-size: 0;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 22px 20px 0;
+    border-radius: 0;
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    overflow: hidden;
+  }
+  .sp-steps {
+    order: -1;
+    margin: -8px 0 6px;
+  }
+  .sp-steps__count {
+    display: none;
+  }
+  /* The frame's 350x162 clip; it yields its height before the result card does. */
+  .sp-stage {
+    flex: 0 4 162px;
+  }
+  .sp-clip {
+    inline-size: min(100cqi, 100cqb * 350 / 162);
+    aspect-ratio: 350 / 162;
+    border-radius: 15px;
+  }
+  .sp-glow {
+    display: none;
+  }
+  .sp-play {
+    inline-size: 62px;
+    block-size: 62px;
+    margin: -31px 0 0 -31px;
+  }
+  .sp-play svg {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+  .sp-badge {
+    inset-block-start: 11px;
+    inset-inline-start: 11px;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+  }
+  .sp-badge svg {
+    inline-size: 12px;
+    block-size: 12px;
+  }
+  .sp-rate {
+    inset-block-start: 11px;
+    inset-inline-end: 11px;
+    padding: 4px 9px;
+    font-size: 10.5px;
+  }
+  .sp-clipbar {
+    display: none;
+  }
+  .sp-line {
+    font-size: 22px;
+    line-height: 1.55;
+    letter-spacing: 0;
+  }
+  .sp-tok--flag {
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 4px;
+  }
+  .sp-reading {
+    font-size: 13px;
+    letter-spacing: 0.03em;
+  }
+  .sp-meaning {
+    font-size: 14px;
+  }
+  .sp-wave,
+  .sp-result,
+  .sp-hint {
+    display: none;
+  }
+  .sp-room[data-phase='processing'] .sp-hint,
+  .sp-room[data-phase='error'] .sp-hint,
+  .sp-hint--error {
+    display: block;
+    font-size: 14px;
+  }
+  .sp-card {
+    flex: 0 1 auto;
+    min-block-size: 0;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--glass-base);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-ring);
+  }
+  .sp-card__head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sp-ring--sm {
+    inline-size: 52px;
+    block-size: 52px;
+    background: conic-gradient(var(--o-accent-top) 0 var(--score), rgba(255, 255, 255, 0.12) var(--score) 100%);
+  }
+  .sp-ring--sm::before {
+    inset: 6px;
+    background: rgba(20, 15, 34, 0.85);
+  }
+  .sp-ring--sm b {
+    position: relative;
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 17px;
+  }
+  .sp-card__copy {
+    flex: 1;
+    min-width: 0;
+  }
+  .sp-card__copy strong {
+    display: block;
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 16px;
+  }
+  .sp-card__copy small {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-top: 3px;
+    font-size: 12.5px;
+    color: var(--ink-68);
+  }
+  /* The flagged words are the card's only long part: they scroll inside it. */
+  .sp-mrows {
+    flex: 0 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .sp-mrow,
+  .sp-card__next {
+    flex: none;
+  }
+  .sp-mrow {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .sp-mrow b {
+    flex: none;
+    inline-size: 52px;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 18px;
+    text-align: start;
+  }
+  .sp-mrow .sp-bar {
+    flex: 1;
+    block-size: 6px;
+  }
+  .sp-mrow__score {
+    font-family: var(--mono-font);
+    font-size: 12.5px;
+    color: var(--speak-flag-ink);
+  }
+  .sp-controls {
+    flex: none;
+    align-self: stretch;
+    gap: 20px;
+    block-size: auto;
+    margin: auto -20px 0;
+    padding: 10px 20px 30px;
+    box-shadow: none;
+  }
+  .sp-round {
+    inline-size: 50px;
+    block-size: 50px;
+  }
+  .sp-round svg {
+    inline-size: 21px;
+    block-size: 21px;
+  }
+  .sp-mic {
+    inline-size: 84px;
+    block-size: 84px;
+    box-shadow: 0 14px 34px rgba(123, 77, 232, 0.45);
+  }
+  .sp-mic__icon svg {
+    inline-size: 36px;
+    block-size: 36px;
+  }
+
+  /* Recording, on a phone, is its own frame: a cross to cancel, the line, the level, the stop.
+     Shadowing records inside its own frame ("Shadowing mobile") and keeps the room as it is. */
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] {
+    background: var(--record-ground);
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-back,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-count:not(.sp-count--rec),
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-steps,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-stage,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-meaning,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-card,
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-round {
+    display: none;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-cancel {
+    display: inline-flex;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-80);
+    cursor: pointer;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-count--rec {
+    display: inline;
+    margin-inline-start: auto;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-task {
+    justify-content: center;
+    gap: 22px;
+    padding: 30px 22px 0;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-line {
+    font-size: 26px;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-reading {
+    color: var(--ink-70);
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-wave {
+    display: flex;
+    gap: 5px;
+    block-size: 104px;
+  }
+  /* The phone's recording frame draws 34 bars. */
+  .sp-wave i:nth-child(n + 35) {
+    display: none;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-hint {
+    display: block;
+    font-size: 14px;
+    color: var(--ink-65);
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-controls {
+    margin-top: auto;
+    padding-bottom: 34px;
+  }
+  .sp-room:not([data-mode='shadow'])[data-phase='recording'] .sp-mic {
+    inline-size: 92px;
+    block-size: 92px;
+  }
+  /* The 3-2-1 before a shadow take is written in the hint (the design names it, draws no place). */
+  .sp-room[data-counting] .sp-hint {
+    display: block;
+    font-size: 14px;
+  }
+
+}
+
+/* --- Free talk (Orena Speaking, "Speaking · free talk", 390x844). The design draws no desktop
+   frame: a desk shows the same column, centred (UI_BACKEND_GAPS, SP-10). ------------------------ */
+.sp-free {
+  inline-size: 100%;
+  max-inline-size: 560px;
+  margin: 0 auto;
+}
+#main > .sp-room.sp-free {
+  margin: 0 auto;
+  max-width: 560px;
+}
+.sp-free__top {
+  block-size: auto;
+  padding: 14px 20px 0;
+}
+.sp-free__back {
+  flex: 1;
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-90);
+}
+.sp-free .sp-back__caret {
+  display: inline-flex;
+  color: var(--ink-80);
+}
+.sp-free__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 20px 0;
+}
+.sp-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px 19px;
+  border-radius: 18px;
+  background: var(--glass-focus);
+  backdrop-filter: blur(24px) saturate(1.4) brightness(1.05);
+  box-shadow: var(--glass-ring-focus);
+}
+.sp-topic .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-75);
+}
+.sp-topic h1 {
+  margin: 0;
+  outline: none;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: -0.018em;
+}
+.sp-topic p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-78);
+}
+.sp-said {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 16px 17px;
+  border-radius: 16px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-said .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-68);
+}
+.sp-said__words {
+  margin: 0;
+  font-family: var(--serif, 'Noto Serif', 'Noto Sans SC', Georgia, serif);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.sp-said__comment {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 10px;
+  box-shadow: var(--rule-top);
+  font-size: 13px;
+  color: var(--ink-80);
+}
+.sp-said__comment svg {
+  flex: none;
+  color: var(--o-good);
+}
+.sp-free .sp-hint {
+  display: block;
+  font-size: 14px;
+}
+.sp-free__controls {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding: 10px 20px 32px;
+}
+.sp-fbtn {
+  flex: 1;
+  min-width: 0;
+  block-size: 50px;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--text-on-action);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sp-fbtn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sp-fbtn svg {
+  flex: none;
+}
+.sp-fbtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sp-mic--free {
+  flex: none;
+  inline-size: 72px;
+  block-size: 72px;
+  box-shadow: 0 12px 32px rgba(123, 77, 232, 0.45);
+}
+.sp-free[data-phase='recording'] .sp-mic--free {
+  background: var(--record-stop-wash);
+  box-shadow: var(--record-stop-ring), var(--record-stop-glow);
+}
+.sp-free[data-phase='recording'] .sp-mic__icon {
+  display: none;
+}
+.sp-free[data-phase='recording'] .sp-mic__stop {
+  display: block;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 8px;
+}
+.qs--free {
+  gap: 14px;
+}
+.sp-free__ways {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sp-free__ways .sp-dbtn {
+  flex: 1 1 140px;
+}
+.sp-free__evidence summary {
+  cursor: pointer;
+  color: var(--text-on-glass-soft);
+}
+@media (max-width: 900px) {
+  #main > .sp-room.sp-free {
+    max-width: none;
+  }
+}
+
+/* === Orena Speaking 05-09, read at the source 2026-09-23 ======================================= */
+
+/* --- 07 · the mode switch and the shadowing card ---------------------------------------------- */
+.sp-mode {
+  display: flex;
+  align-self: center;
+  inline-size: min(420px, 100%);
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--speak-segment-well);
+  box-shadow: var(--glass-ring);
+}
+.sp-mode button {
+  flex: 1;
+  block-size: 36px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--ink-74);
+  font-size: 13px;
+  cursor: pointer;
+}
+.sp-mode button[aria-checked='true'] {
+  background: var(--speak-segment-on);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.sp-shadow {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-shadow__head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono-font);
+  font-size: 10.5px;
+  color: var(--ink-64);
+}
+.sp-shadow__waves {
+  position: relative;
+  block-size: 56px;
+}
+.sp-shadow__model,
+.sp-shadow__you {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.sp-shadow__model {
+  opacity: 0.45;
+}
+.sp-shadow__model i,
+.sp-shadow__you i,
+.sp-cmp__wave i {
+  flex: 1;
+  border-radius: 999px;
+  background: var(--speak-model-bar);
+}
+.sp-shadow__you i {
+  flex: 0 0 calc((100% - 117px) / 40);
+  background: var(--speak-you);
+}
+.sp-shadow__head-line {
+  position: absolute;
+  inset-block: -4px;
+  left: 0;
+  inline-size: 2px;
+  border-radius: 2px;
+  background: var(--on-artwork);
+}
+.sp-shadow__lag {
+  font-size: 12.5px;
+  color: var(--ink-74);
+}
+/* The card and the note are siblings in the task column (frame "Shadowing mobile": 22px apart). */
+[data-sp-shadow-host] {
+  display: contents;
+}
+.sp-shadow__hint {
+  margin: 0;
+  max-inline-size: 30ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-70);
+  text-align: center;
+}
+.sp-room[data-mode='shadow'] .sp-wave,
+.sp-room[data-mode='shadow'] .sp-stage {
+  display: none;
+}
+.sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic {
+  background: var(--speak-shadow-stop);
+  box-shadow: var(--speak-shadow-stop-ring);
+}
+/* Shadowing's stop is the stop glyph in white on the red (frame "Shadowing mobile"). */
+.sp-mic__shadow-stop {
+  display: none;
+  color: var(--text-on-action);
+}
+.sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic__stop {
+  display: none;
+}
+.sp-room[data-mode='shadow'][data-phase='recording'] .sp-mic__shadow-stop {
+  display: inline-flex;
+}
+
+/* --- 09 · states: the microphone blocked, not heard, offline while grading -------------------- */
+.sp-state-host {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sp-room[data-blocked='mic'] .sp-task > :not(.sp-state-host),
+.sp-room[data-blocked='offline'] .sp-task > :not(.sp-state-host) {
+  display: none;
+}
+.sp-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-inline-size: 420px;
+  padding: 0 32px 60px;
+  text-align: center;
+}
+.sp-state__icon {
+  inline-size: 72px;
+  block-size: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.sp-state__icon--mic {
+  background: var(--speak-state-mic-wash);
+  box-shadow: var(--speak-state-mic-ring);
+  color: var(--speak-state-mic);
+}
+.sp-state__icon--warn {
+  background: var(--speak-state-warn-wash);
+  box-shadow: var(--speak-state-warn-ring);
+  color: var(--speak-state-warn);
+}
+.sp-state__title {
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 1.33;
+}
+.sp-state__text {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-76);
+}
+.sp-state__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  align-self: stretch;
+  margin-top: 18px;
+}
+.sp-bigbtn {
+  inline-size: 100%;
+  block-size: 50px;
+  min-height: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.sp-bigbtn--accent {
+  block-size: 54px;
+  color: var(--text-on-action);
+  border-radius: 17px;
+  background: var(--accent-gradient);
+  box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
+  font-weight: 800;
+  font-size: 16px;
+}
+.sp-textbtn {
+  min-height: 0;
+  padding: 4px;
+  border: 0;
+  background: none;
+  font-size: 13.5px;
+  color: var(--ink-74);
+  cursor: pointer;
+}
+.sp-notheard {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--speak-notheard-wash);
+  box-shadow: var(--speak-notheard-ring);
+}
+.sp-notheard > svg {
+  flex: none;
+  color: var(--speak-state-warn);
+}
+.sp-notheard strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+.sp-notheard p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-80);
+}
+.sp-result > .sp-notheard {
+  margin: 24px 28px 0;
+}
+.sp-room[data-listen-only] .sp-mic,
+.sp-room[data-listen-only] .sp-controls [data-sp-again] {
+  display: none;
+}
+
+/* --- 06 · compare with the model ------------------------------------------------------------------ */
+.sp-cmp__top {
+  padding: 0 56px;
+}
+.sp-cmp__top .sp-back {
+  font-size: 17px;
+  color: var(--ink-76);
+}
+.sp-cmp__phone,
+.sp-cmp__bar {
+  display: none;
+}
+.sp-cmp__grid {
+  flex: 1;
+  min-block-size: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 460px;
+  gap: 40px;
+  max-inline-size: 1800px;
+  box-sizing: border-box;
+  padding: 10px 56px 50px;
+}
+.sp-cmp__main {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+.sp-cmp__line {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 1.5;
+}
+.sp-cmp__line .sp-tok--flag {
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 3px;
+}
+.sp-cmp__card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 30px;
+  border-radius: 24px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-cmp__legend {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-size: 15px;
+}
+.sp-cmp__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sp-cmp__legend .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-64);
+}
+.sp-swatch {
+  inline-size: 18px;
+  block-size: 4px;
+  border-radius: 2px;
+  background: var(--speak-model-line);
+}
+.sp-swatch--you {
+  background: var(--speak-you);
+}
+.sp-cmp__waves {
+  position: relative;
+  block-size: 110px;
+}
+.sp-cmp__wave {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.sp-cmp__wave--model {
+  opacity: 0.5;
+}
+.sp-cmp__wave--you i {
+  background: var(--speak-you);
+}
+.sp-cmp__tone-label {
+  padding-top: 6px;
+  letter-spacing: 0.13em;
+  color: var(--ink-64);
+}
+.sp-tone-svg {
+  inline-size: 100%;
+  block-size: 200px;
+}
+.sp-tone-svg .sp-grid line {
+  stroke: var(--speak-grid);
+}
+.sp-tone-svg polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sp-curve-model {
+  stroke: var(--speak-model-line);
+}
+.sp-curve-you {
+  stroke: var(--speak-you);
+}
+.sp-band {
+  fill: var(--speak-band);
+}
+.sp-cmp__note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-68);
+}
+.sp-cmp__buttons {
+  display: flex;
+  gap: 14px;
+}
+.sp-pillbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  block-size: 58px;
+  min-height: 0;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-pillbtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sp-pillbtn--accent {
+  margin-inline-start: auto;
+  padding: 0 32px;
+  background: var(--accent-gradient);
+  box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
+  font-weight: 800;
+}
+.sp-cmp__attempts {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 26px;
+  border-radius: 24px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-attempt {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 0;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--speak-attempt);
+  box-shadow: var(--speak-attempt-ring);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.sp-attempt > svg {
+  flex: none;
+  color: var(--accent-ink);
+}
+.sp-attempt--best {
+  background: var(--glass-focus);
+  box-shadow: var(--speak-attempt-best-ring);
+}
+.sp-attempt__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sp-attempt__text b {
+  font-size: 17px;
+  font-weight: 700;
+}
+.sp-attempt__text small {
+  font-size: 14px;
+  color: var(--ink-66);
+}
+.sp-attempt__score {
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 24px;
+}
+.is-flagged {
+  color: var(--speak-flag-ink);
+}
+.is-clear {
+  color: var(--speak-clear-ink);
+}
+.is-pending {
+  color: var(--ink-62);
+}
+.sp-keep {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-68);
+  cursor: pointer;
+}
+.sp-keep input {
+  margin-top: 4px;
+  accent-color: var(--o-accent-top);
+}
+.sp-keep b {
+  display: block;
+  font-weight: 700;
+  color: var(--text-on-glass);
+}
+
+/* --- 05 · the lesson summary ------------------------------------------------------------------------ */
+.sp-sum__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  inline-size: min(1000px, 100%);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 70px 20px 40px;
+}
+.sp-sum__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sp-sum__head .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-64);
+}
+.sp-sum__title {
+  margin: 0;
+  outline: none;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.sp-sum__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+  align-items: start;
+}
+.sp-sum__list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-sum__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.sp-sum__n {
+  inline-size: 14px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  color: var(--ink-60);
+}
+.sp-sum__text {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sp-sum__score {
+  font-family: var(--mono-font);
+  font-size: 13px;
+}
+.sp-sum__side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sp-sum__missed {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.sp-sum__missed .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-64);
+}
+.sp-sum__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sp-sum__chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  block-size: 40px;
+  padding: 0 13px;
+  border-radius: 12px;
+  background: var(--speak-chip-flag);
+  box-shadow: var(--speak-chip-flag-ring);
+}
+.sp-sum__chip b {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 18px;
+}
+.sp-sum__chip small {
+  font-size: 12px;
+  color: var(--ink-78);
+}
+.sp-sum__kept {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-74);
+}
+.sp-sum__kept svg {
+  color: var(--speak-kept-ink);
+}
+.sp-sum__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- phones --------------------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .sp-room[data-mode='shadow'] .sp-clip,
+  .sp-room[data-mode='shadow'] .sp-meaning,
+  .sp-room[data-mode='shadow']:not([data-phase='result']) .sp-card,
+  .sp-room[data-mode='shadow'] .sp-steps {
+    display: none;
+  }
+  .sp-mode {
+    order: -2;
+    inline-size: 100%;
+    margin-top: -8px;
+  }
+  .sp-room[data-blocked] .sp-controls,
+  .sp-room[data-blocked] .sp-count {
+    display: none;
+  }
+  /* Frames "Speaking mic blocked mobile" / "offline grading mobile": the message centred in the
+     space above (60px clear of it), the actions a bar at the foot, the button the full 350. */
+  .sp-room[data-blocked] .sp-task {
+    padding-bottom: 0;
+  }
+  .sp-room[data-blocked] .sp-state-host {
+    align-self: stretch;
+    align-items: stretch;
+  }
+  .sp-room[data-blocked] .sp-state {
+    flex: 1;
+    max-inline-size: none;
+    padding: 0;
+  }
+  .sp-room[data-blocked] .sp-state__icon {
+    margin-top: auto;
+  }
+  .sp-room[data-blocked] .sp-state__title,
+  .sp-room[data-blocked] .sp-state__text {
+    padding-inline: 12px;
+  }
+  .sp-room[data-blocked] .sp-state__text {
+    margin-bottom: 60px;
+  }
+  .sp-room[data-blocked] .sp-state__actions {
+    margin-top: auto;
+    padding: 12px 0 30px;
+  }
+  /* The frame's link is a 19px line; a 24px box is the smallest target WCAG 2.2 allows. */
+  .sp-room[data-blocked] .sp-state__actions .sp-textbtn {
+    padding: 2px 4px;
+    line-height: 20px;
+  }
+  /* Shadowing and the three states draw the lesson name in primary ink; the workspace in 0.9. */
+  .sp-room[data-mode='shadow'] .sp-top .sp-back,
+  .sp-room[data-blocked] .sp-top .sp-back,
+  .sp-room:has(.sp-notheard) .sp-top .sp-back {
+    color: var(--text-primary);
+  }
+  /* Not heard (09 B) is its own warm box in place of the result card, with no hint under it. */
+  .sp-card:has(> .sp-notheard) {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .sp-room:has(.sp-notheard) .sp-hint {
+    display: none;
+  }
+  .sp-cmp__top {
+    padding: 14px 20px 12px;
+    block-size: auto;
+  }
+  .sp-cmp__top .sp-back {
+    font-size: 15px;
+  }
+  .sp-cmp__desk,
+  .sp-cmp__arrow,
+  .sp-cmp__buttons {
+    display: none;
+  }
+  .sp-cmp__phone {
+    display: inline;
+  }
+  .sp-cmp .sp-back__caret {
+    display: inline-flex;
+  }
+  .sp-cmp__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 20px 0;
+  }
+  .sp-cmp__line {
+    font-size: 21px;
+    line-height: 1.55;
+    text-align: center;
+  }
+  .sp-cmp__card {
+    gap: 10px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .sp-cmp__legend {
+    gap: 14px;
+    font-size: 12px;
+  }
+  .sp-cmp__legend .sp-label,
+  .sp-cmp__waves,
+  .sp-cmp__tone-label {
+    display: none;
+  }
+  .sp-cmp[data-tone='false'] .sp-cmp__waves {
+    display: block;
+  }
+  .sp-swatch {
+    inline-size: 14px;
+    block-size: 3px;
+  }
+  .sp-tone-svg {
+    block-size: 110px;
+  }
+  .sp-tone-svg polyline {
+    stroke-width: 7;
+  }
+  .sp-cmp__attempts {
+    align-self: stretch;
+    gap: 8px;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .sp-attempt {
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: 14px;
+  }
+  .sp-attempt > svg {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+  .sp-attempt__text b {
+    font-size: 14px;
+  }
+  .sp-attempt__text small {
+    font-size: 11.5px;
+  }
+  .sp-attempt__score {
+    font-size: 19px;
+  }
+  .sp-cmp__bar {
+    position: sticky;
+    inset-block-end: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding: 12px 20px 30px;
+  }
+  .sp-cmp__bar .sp-fbtn {
+    block-size: 52px;
+    border-radius: 16px;
+  }
+  .sp-fbtn--accent {
+    flex: 1.3;
+    background: var(--accent-gradient);
+    box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
+    font-weight: 800;
+    font-size: 15px;
+  }
+  .sp-sum__body {
+    inline-size: auto;
+    margin: 0;
+    padding: 24px 20px 30px;
+  }
+  .sp-sum__cols {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+}
+.sp-ring-btn {
+  flex: none;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.sp-card__next {
+  align-self: flex-end;
+}
+[data-sp-mode-host] {
+  display: flex;
+  justify-content: center;
+  align-self: stretch;
+}
+[data-sp-mode-host]:empty {
+  display: none;
+}
+@media (max-width: 900px) {
+  [data-sp-mode-host] {
+    order: -2;
+    margin-top: -8px;
+  }
+  .sp-mode {
+    margin-top: 0;
+  }
+}
+
+/* --- 04 · the free talk result (desktop grid 1fr 600; the phone stacks score, said, one fix) ---- */
+.sp-ftr__top {
+  padding: 0 56px;
+}
+.sp-ftr__top .sp-back {
+  font-size: 17px;
+  color: var(--ink-76);
+}
+.sp-ftr__meta {
+  margin-inline-start: auto;
+  font-family: var(--mono-font);
+  font-size: 15px;
+  color: var(--ink-70);
+}
+.sp-ftr__phone,
+.sp-ftr .sp-back__caret,
+.sp-ftr .sp-fix--phone {
+  display: none;
+}
+.sp-ftr__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 600px;
+  gap: 40px;
+  max-inline-size: 1800px;
+  box-sizing: border-box;
+  padding: 20px 56px 50px;
+}
+.sp-ftr__main,
+.sp-ftr__side {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+.sp-ftr__side {
+  gap: 20px;
+}
+.sp-ftr__said,
+.sp-ftr__again {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 30px;
+  border-radius: 24px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-ftr__said .sp-label,
+.sp-ftr__fixes .sp-label,
+.sp-ftr__again .sp-label {
+  letter-spacing: 0.13em;
+  color: var(--ink-64);
+}
+.sp-ftr__play {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sp-ftr__playbtn {
+  flex: none;
+  inline-size: 52px;
+  block-size: 52px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
+  color: var(--text-on-action);
+  cursor: pointer;
+}
+.sp-ftr__wave {
+  flex: 1;
+  block-size: 52px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.sp-ftr__wave i {
+  flex: 1;
+  border-radius: 999px;
+  background: var(--speak-wave-soft);
+}
+.sp-ftr__wave i.is-strong {
+  background: var(--speak-wave-strong);
+}
+.sp-ftr__words {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.75;
+}
+.sp-fix-mark {
+  background: var(--speak-flag-mark);
+  border-bottom: 2px solid var(--speak-flag-line);
+  border-radius: 4px;
+  padding: 1px 3px;
+  color: inherit;
+}
+.sp-ftr__fixes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sp-ftr__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.sp-fix {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-ring);
+}
+.sp-fix__label {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  color: var(--speak-flag-ink);
+}
+.sp-fix__change {
+  font-size: 18px;
+}
+.sp-fix__change s {
+  color: var(--ink-60);
+}
+.sp-fix__why {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-74);
+}
+.sp-ftr__score {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px 28px;
+  border-radius: 24px;
+  background: var(--glass-focus);
+  box-shadow: inset 0 0 0 1px rgba(172, 144, 255, 0.26);
+}
+.sp-ftr__head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.sp-ftr__head strong {
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 24px;
+}
+.sp-ring--ft {
+  inline-size: 96px;
+  block-size: 96px;
+  background: conic-gradient(var(--o-accent-top) 0 var(--score), var(--track) var(--score) 100%);
+}
+.sp-ring--ft::before {
+  inset: 11px;
+  background: var(--speak-score-inner);
+}
+.sp-ring--ft b {
+  position: relative;
+  font-family: var(--display-font);
+  font-weight: 800;
+  font-size: 32px;
+}
+.sp-crits {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sp-crit {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  line-height: 1.4;
+}
+.sp-crit__label {
+  flex: none;
+  inline-size: 96px;
+  font-size: 13.5px;
+  color: var(--ink-84);
+}
+.sp-crit .sp-bar {
+  flex: 1;
+  block-size: 6px;
+}
+.sp-crit__value {
+  inline-size: 24px;
+  font-family: var(--mono-font);
+  font-size: 12.5px;
+  text-align: right;
+}
+.sp-ftr__again {
+  gap: 12px;
+  padding: 22px 26px;
+  border-radius: 22px;
+}
+.sp-ftr__again p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.6;
+}
+.sp-ftr__buttons {
+  display: flex;
+  gap: 14px;
+}
+.sp-ftbtn {
+  flex: 1;
+  block-size: 60px;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--accent-chip);
+  box-shadow: var(--accent-chip-ring);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.sp-ftbtn--accent {
+  flex: 1.2;
+  background: var(--accent-gradient);
+  box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
+  font-weight: 800;
+  color: var(--text-on-action);
+}
+.sp-ftr__morebtn {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  min-height: 0;
+  margin-inline-start: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glass-well);
+  box-shadow: var(--glass-ring);
+  color: var(--text-on-glass);
+  cursor: pointer;
+}
+.sp-ftr__morebtn:hover,
+.sp-ftr__morebtn:focus-visible {
+  box-shadow: var(--glass-ring-focus);
+}
+@media (max-width: 900px) {
+  .sp-ftr__top {
+    block-size: auto;
+    padding: 14px 20px 12px;
+  }
+  .sp-ftr__top .sp-back {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--display-font);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 20px;
+  }
+  .sp-ftr__desk,
+  .sp-ftr__arrow,
+  .sp-ftr__fixes,
+  .sp-ftr__again,
+  .sp-ftr__play {
+    display: none;
+  }
+  .sp-ftr__phone,
+  .sp-ftr .sp-back__caret {
+    display: inline-flex;
+  }
+  .sp-ftr__meta {
+    font-size: 11.5px;
+    color: var(--ink-62);
+  }
+  .sp-ftr__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 20px 0;
+  }
+  .sp-ftr__main,
+  .sp-ftr__side {
+    display: contents;
+  }
+  .sp-ftr__score {
+    order: 1;
+    gap: 14px;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .sp-ftr__head {
+    gap: 14px;
+  }
+  .sp-ftr__head strong {
+    font-size: 17px;
+  }
+  .sp-ring--ft {
+    inline-size: 64px;
+    block-size: 64px;
+  }
+  .sp-ring--ft::before {
+    inset: 7px;
+  }
+  .sp-ring--ft b {
+    font-size: 21px;
+  }
+  .sp-crits {
+    gap: 8px;
+  }
+  .sp-ftr__said {
+    order: 2;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .sp-ftr__words {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+  .sp-ftr .sp-fix--phone {
+    order: 3;
+    display: flex;
+    gap: 5px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--speak-card-well);
+    backdrop-filter: none;
+  }
+  .sp-fix--phone .sp-fix__label {
+    font-size: 10.5px;
+  }
+  .sp-fix--phone .sp-fix__change {
+    font-size: 14.5px;
+  }
+  .sp-fix--phone .sp-fix__why {
+    font-size: 12.5px;
+    color: var(--ink-72);
+  }
+  .sp-ftr__buttons {
+    order: 4;
+    position: sticky;
+    inset-block-end: 0;
+    gap: 10px;
+    margin-top: auto;
+    padding: 12px 0 18px;
+  }
+  .sp-ftbtn {
+    block-size: 52px;
+    border-radius: 16px;
+    font-size: 14.5px;
+  }
+  .sp-ftbtn--accent {
+    flex: 1.6;
+    font-size: 15px;
+  }
+  .sp-ftr__morebtn {
+    inline-size: 36px;
+    block-size: 36px;
+    margin-inline-start: 10px;
+  }
+}
+@media (max-width: 900px) {
+  /* The phone frame's primary action is saying the corrected line. */
+  .sp-ftr__buttons [data-sp-ftr-fixed] {
+    flex: 1.6;
+    order: 2;
+    background: var(--accent-gradient);
+    box-shadow: 0 10px 26px rgba(123, 77, 232, 0.36);
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--text-on-action);
+  }
+  .sp-ftr__buttons [data-sp-ftr-fixed] ~ .sp-ftbtn--accent {
+    flex: 1;
+    background: var(--accent-chip);
+    box-shadow: var(--accent-chip-ring);
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--text-primary);
+  }
+}
+
+/* --- D-078 · every Speaking workspace is the viewport ------------------------------------------------
+   The room is bounded (.sp-room). Each screen names the one region whose content is long by nature,
+   and only that region scrolls; everything finite sits in the layout directly, and the primary
+   actions are never below it. */
+
+/* Free talk: the topic and the controls are fixed; what you said scrolls. */
+.sp-free__body {
+  min-block-size: 0;
+  overflow: hidden;
+}
+.sp-free__body > * {
+  flex: none;
+}
+.sp-free__body > .sp-said {
+  flex: 0 1 auto;
+  min-block-size: 0;
+}
+.sp-said__words {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sp-free__controls {
+  position: static;
+  flex: none;
+}
+
+/* Free talk result (04): the transcript scrolls; the score, the line to say and the actions stay. */
+.sp-ftr__grid {
+  min-block-size: 0;
+  grid-template-rows: minmax(0, 1fr);
+  padding-block-end: 32px;
+}
+.sp-ftr__main,
+.sp-ftr__side {
+  min-block-size: 0;
+}
+.sp-ftr__main > * {
+  flex: none;
+}
+.sp-ftr__main > .sp-ftr__said {
+  flex: 0 1 auto;
+  min-block-size: 0;
+}
+.sp-ftr__said > * {
+  flex: none;
+}
+.sp-ftr__said > .sp-ftr__words {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Compare (06): the attempts list scrolls inside its panel; the take button stays. */
+.sp-cmp__grid {
+  grid-template-rows: minmax(0, 1fr);
+  padding-block-end: 32px;
+}
+.sp-cmp__main {
+  min-block-size: 0;
+}
+.sp-cmp__attempts {
+  max-block-size: 100%;
+  min-block-size: 0;
+  box-sizing: border-box;
+}
+.sp-cmp__attempts > * {
+  flex: none;
+}
+.sp-attempts__list > * {
+  flex: none;
+}
+.sp-attempts__list {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Lesson summary (05): the lesson's lines scroll; the title and the way back stay. */
+.sp-sum__body {
+  flex: 1;
+  min-block-size: 0;
+  padding-block: 40px 32px;
+}
+.sp-sum__head {
+  flex: none;
+}
+.sp-sum__cols {
+  flex: 1;
+  min-block-size: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.sp-sum__list {
+  max-block-size: 100%;
+  min-block-size: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sp-sum__row {
+  flex: none;
+}
+
+@media (max-width: 900px) {
+  .sp-ftr__grid {
+    flex: 1;
+    min-block-size: 0;
+    padding-block-end: 0;
+  }
+  .sp-ftr__grid > *,
+  .sp-ftr__main > *,
+  .sp-ftr__side > * {
+    flex: none;
+  }
+  .sp-ftr__said {
+    flex: 0 1 auto;
+    min-block-size: 0;
+  }
+  .sp-ftr__buttons {
+    position: static;
+  }
+  .sp-cmp__grid {
+    min-block-size: 0;
+    padding-block-end: 0;
+  }
+  .sp-cmp__grid > *,
+  .sp-cmp__main > * {
+    flex: none;
+  }
+  .sp-cmp__attempts {
+    flex: 0 1 auto;
+    max-block-size: none;
+  }
+  .sp-sum__body {
+    padding-block: 24px 30px;
+  }
+  .sp-sum__cols {
+    display: flex;
+  }
+  .sp-sum__list {
+    flex: 0 1 auto;
+    max-block-size: none;
+  }
+  .sp-sum__side {
+    flex: none;
+  }
+}

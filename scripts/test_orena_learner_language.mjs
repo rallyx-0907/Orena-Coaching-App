@@ -1,9 +1,11 @@
 /* The learner language contract, enforced against the surfaces themselves.
 
-   Orena has two learner language roles and only two. The support language owns
-   every word Orena says - navigation, controls, headings, instructions, status,
-   errors, feedback, explanations, tooltips. The learning language owns the
-   material - the transcript, the book, the target sentence, the example.
+   Orena has three language layers and none is inferred from another (D-079):
+   the interface language owns the chrome, the support language owns what
+   explains, the learning language owns the material. Which layer a surface
+   reads is locked by test_orena_language_layers.mjs; this gate checks that
+   each supported locale owns every string the surfaces ask for, whichever
+   layer asks.
 
    The gate this replaces was too shallow to catch the defect it was meant to
    catch: a partial Vietnamese pack merged over English still rendered, so

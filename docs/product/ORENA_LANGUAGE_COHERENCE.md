@@ -15,7 +15,7 @@ independent layers. None may be inferred from another.
 
 | Layer | What it governs | Example values today |
 | --- | --- | --- |
-| **Interface language** | System chrome: navigation, menus, Settings, system-level labels/actions, account/app management UI | `en`, `zh` (`account_profile.py: interface_language`, `ctx.ui`) |
+| **Interface language** | System chrome: navigation, menus, Settings, system-level labels/actions, account/app management UI | `en`, `zh`, `vi` (`account_profile.py: interface_language`, held on the device; `ctx.ui` via `product/languages.js`) |
 | **Support/native language** | Explanation, annotation, instruction, hint, guidance, grammar/vocabulary explanation - the learner's chosen support language | 12 languages: `en`, `vi`, `zh`, `ja`, `ko`, `es`, `fr`, `de`, `pt`, `ru`, `id`, `th` (`writing_coach/core/support_languages.py`, `ctx.support`) |
 | **Target learning language** | Reading content, vocabulary target word/expression, exercises, examples - the language being learned | `en`, `zh` (`ctx.language`, `writing_coach/languages/{english,chinese}`) |
 
@@ -74,16 +74,62 @@ Scope: `static/orena/ui/*.js`, `static/orena/product/*.js`,
 change behavior; it records what the entry above only summarized, so the gap
 is traceable to file and line rather than to a paragraph.
 
-### AUDIT-1 - Compliant: interface layer is correctly isolated
+### AUDIT-1 - Was not compliant; fixed 2026-09-24 (D-079)
 
-`static/orena/ui/copy.js` is indexed only as `copy[ctx.ui]`
-(`static/orena/app.js:112,289`); nothing else reads it. `referenceCopy[ctx.ui]`
-follows the same pattern in `collection.js`, `discovery.js`, `reference.js` and
-`world.js`. No UI file was found reading `ctx.language` or `ctx.support` to
-select chrome copy. Interface language is currently limited to `en`/`zh`
-(`account_profile.py:80`, matching `CURRENT_HANDOFF.md`'s P1 note) - a scope
-limit, not a coherence violation, since it does not leak into the other two
-layers.
+The 2026-09-14 reading of this entry ("interface layer is correctly isolated")
+was wrong. `copy[ctx.ui]` was indexed correctly, but `ctx.ui` itself was
+*derived from the support language*: `static/orena/app.js` set
+`ctx.ui = uiLocale(ctx.support)` at profile load and in the preferences sheet,
+and booted from a device cache of the support language (`orena.support`). The
+interface layer therefore never existed on its own. Its visible failure: a page
+booted with one support language while the account's support language had
+changed elsewhere showed chrome, guidance and generated text in three languages
+on one screen (found in the Speaking word sheet).
+
+The source of truth is now `static/orena/product/languages.js`:
+
+- interface - the learner's choice, kept on the device under `orena.interface`
+  (the account setting `interface_language` is declared but not stored: its
+  column is a gated migration), else the browser's language when Orena is
+  written in it, else English; `en`, `zh`, `vi`;
+- support - the account's `support_language`, else `native_language`;
+- target - the learning language the server reports active.
+
+`app.js` assigns each `ctx` layer only through its resolver; the preferences
+sheet offers the interface language as its own choice; the old `orena.support`
+cache is neither read nor written. `scripts/test_orena_language_layers.mjs`
+locks it (acceptance cases A, B and C; every combination; reload; stale cache;
+no chrome picked by support or target).
+
+### AUDIT-1b - Closed 2026-09-24 (D-080): every copy string is read by its declared layer
+
+Until D-079 the interface language equalled the support language, so static
+hints and explanations read correctly by coincidence. With the layers apart,
+each string must come from the pack of its own layer. It now does, app-wide:
+
+- Every key of every learner copy table - the product copy (`ctx.c`), the shell
+  and shared screens (`referenceCopy`), Speaking - is declared `interface`,
+  `support` or `target` in `static/orena/ui/copy-layers.js` (1,572 keys, 315
+  support). There is no default layer.
+- `static/orena/ui/layered-copy.js` builds the copy a screen reads: interface
+  keys from the interface pack, support keys from the support language's pack,
+  else English (the fallback) - never the interface language instead. `ctx.c`,
+  `refCopy(ctx)` and `speakCopy(ui, support)` are all built by it; no surface
+  indexes a copy table directly.
+- Content explanations follow the same rule: grammar pattern names, grammar
+  notes and contrast explanations read the support language with an English
+  fallback (they used to fall back to the interface language); prepared
+  meanings already did.
+- `scripts/test_orena_copy_layers.mjs` fails on an undeclared key, a stale
+  declaration, a declaration against the plain rule without a recorded reason
+  (an explanation declared interface, a button declared support), a guidance-
+  named key declared interface, a key read from the wrong pack (all keys, cases
+  A/B/C), direct indexing of a copy table, and content picked by, or falling back
+  to, the interface language.
+
+Still true and deliberate: date and time formats follow the interface language
+(metadata), and a language is named in its own language where one is chosen
+or shown as a pair (endonyms).
 
 ### AUDIT-2 - Gap: Writing evaluator hardcodes the support language to Vietnamese
 

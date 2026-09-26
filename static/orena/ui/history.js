@@ -9,7 +9,7 @@
    none rather than a number that was never measured. */
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { link } from '../product/intent.js';
 
 const WINDOW_DAYS = 30;
@@ -26,7 +26,7 @@ const firstLine = (text) => String(text || '').split('\n')[0].trim();
 const clip = (text, n = 60) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
 
 function rows(ctx, results) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const [essays, reading, speaking, outcomes] = results;
   const out = [];
   if (essays.status === 'fulfilled')
@@ -45,9 +45,9 @@ function rows(ctx, results) {
         at: s.created_at,
         kind: 'reading',
         title: `${r.reading} · ${clip(s.title || '')}`,
-        meta: s.latest_attempt ? r.historyAnswered.replace('{n}', s.latest_attempt.correct_count).replace('{t}', s.latest_attempt.total) : '',
+        meta: Number.isFinite(Number(s.total)) ? r.historyAnswered.replace('{n}', s.correct_count).replace('{t}', s.total) : '',
         score: '',
-        href: link('encounter', { id: `reading:${s.id}`, intent: 'reading' }),
+        href: link('encounter', { id: `article:${s.article_id}`, intent: 'reading' }),
       });
   if (speaking.status === 'fulfilled')
     for (const a of speaking.value.items || []) {
@@ -71,7 +71,7 @@ function rows(ctx, results) {
         title: `${r[kind] || kind} · ${clip(o.title || o.source_title || '')}`,
         meta: '',
         score: Number.isFinite(score) ? String(Math.round(score)) : '',
-        href: o.source_id ? link('encounter', { id: o.source_id, intent: o.intent || null }) : link('practice'),
+        href: o.source_id ? link('encounter', { id: o.source_id, intent: o.intent || null }) : link(),
       });
     }
   const since = Date.now() - WINDOW_DAYS * 86400000;
@@ -81,7 +81,7 @@ function rows(ctx, results) {
 }
 
 function dayLabel(ctx, at) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const date = new Date(at);
   const today = new Date();
   if (date.toDateString() === today.toDateString()) return r.historyToday;
@@ -91,10 +91,10 @@ function dayLabel(ctx, at) {
 
 export async function renderHistory(root, ctx) {
   const c = ctx.c;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const head = `<header class="history-head"><a class="icon-button history-back" href="${esc(link('progress'))}" aria-label="${esc(r.progress)}">${icon('caret-right', { size: 18, className: 'is-flipped' })}</a><h1>${esc(r.historyTitle)}</h1><span class="history-window ds-label">${esc(r.historyWindow)}</span></header>`;
   root.innerHTML = `<section class="history-page">${head}<div class="history-list" aria-busy="true">${Array.from({ length: 4 }, () => '<span class="skeleton history-skeleton"></span>').join('')}</div></section>`;
-  const results = await Promise.allSettled([ctx.api.essays(), ctx.api.readingSessions(30), ctx.api.speakingAttempts(30), ctx.api.practiceOutcomes(30)]);
+  const results = await Promise.allSettled([ctx.api.essays(), ctx.api.readingEvidence(30), ctx.api.speakingAttempts(30), ctx.api.practiceOutcomes(30)]);
   if (!ctx.alive()) return;
   const list = rows(ctx, results);
   const failed = results.filter((x) => x.status === 'rejected').length;

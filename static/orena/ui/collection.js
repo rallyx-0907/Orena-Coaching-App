@@ -1,5 +1,5 @@
 import { esc } from './html.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { icon } from './phosphor.js';
 import { link } from '../product/intent.js';
 
@@ -69,9 +69,9 @@ function day(value) {
 }
 
 export function renderCollection(root, ctx) {
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const c = ctx.c;
   const { api, alive, language } = ctx;
+  const r = refCopy(ctx);
   const state = {
     kind: '', entries: null, failed: false, query: '', totals: {}, total: null,
     cursor: '', loading: false, request: 0, timer: null, partial: false,

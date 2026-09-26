@@ -57,7 +57,6 @@ def main() -> None:
         "writing_coach/becoming_memory.py",
         "writing_coach/becoming_outcomes.py",
         "writing_coach/becoming_library.py",
-        "writing_coach/becoming_reading.py",
         "writing_coach/becoming_linguistics.py",
     ]
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
@@ -72,7 +71,7 @@ def main() -> None:
         req("class SQLiteSpecializedLearningRepository" in repo, "v1.3.3 SQLite specialized repository missing")
         req("class PostgresSpecializedLearningRepository" in repo, "v1.3.3 PostgreSQL specialized repository missing")
         if version == "1.3.4":
-            for rel in ["writing_coach/becoming_memory.py", "writing_coach/becoming_library.py", "writing_coach/becoming_reading.py"]:
+            for rel in ["writing_coach/becoming_memory.py", "writing_coach/becoming_library.py"]:
                 src = text(rel)
                 for forbidden in ["import sqlite3", "sqlite3.Connection", "CREATE TABLE", "ALTER TABLE", "PRAGMA"]:
                     req(forbidden not in src, f"v1.3.4 service schema coupling remains: {rel}: {forbidden}")

@@ -8,7 +8,7 @@
 import { esc, dialog } from './html.js';
 import { feedbackHtml } from './writing-feedback.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { link, continuationExperience } from '../product/intent.js';
 import { contentCover } from './cover.js';
 import { contentFor } from '../content/texts.js';
@@ -66,7 +66,7 @@ export function writingEntryHtml({ ctx, r, draft, words, prompts, replyLink, lev
 
 export function renderWritingEntry(root, ctx) {
   const { memory, language } = ctx;
-  const r = referenceCopy[ctx.ui] || referenceCopy.en;
+  const r = refCopy(ctx);
   const entries = continuationEntries(memory, { experience: 'writing' });
   const draft = entries[0] || null;
   const text = draft ? String(memory.value.expressions?.[draft.id] || '') : '';

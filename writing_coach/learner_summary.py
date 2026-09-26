@@ -145,21 +145,21 @@ def _writing(rows: Sequence[Mapping[str, Any]], tally: _Tally) -> dict[str, Any]
 
 
 def _reading(rows: Sequence[Mapping[str, Any]], tally: _Tally) -> dict[str, Any]:
+    """Canonical Reading attempts only (D-082, D-083): the archived generated
+    sessions are not an earlier practice this summary shows."""
     observations = []
     for row in rows:
-        attempt = row.get('latest_attempt')
-        if not isinstance(attempt, Mapping):
+        total = int(row.get('total') or 0)
+        if total <= 0:
             continue
-        # The list read carries the latest check but not when it was answered;
-        # that time is not invented from the passage's creation.
-        observed = _instant(attempt.get('created_at'))
+        observed = _instant(row.get('created_at'))
         in_window = tally.add(observed)
         if (in_window or observed is None) and len(observations) < LATEST:
             observations.append({
                 'ref': {'domain': 'reading', 'id': str(row.get('id'))},
                 'measure': 'comprehension_matched',
-                'value': {'correct': int(attempt.get('correct_count') or 0), 'total': int(attempt.get('total') or 0)},
-                'producer': 'reading-check',
+                'value': {'correct': int(row.get('correct_count') or 0), 'total': total},
+                'producer': 'reading-attempt',
                 'synthetic': False,
                 'assisted': None,
                 'observedAt': observed.isoformat() if observed else None,

@@ -67,7 +67,9 @@ class ReadingWorker:
         # How a file job's bytes are fetched back. Injected so the worker does
         # not have to know whether the asset store is a filesystem or an
         # object store.
-        self._asset_reader = asset_reader
+        self._asset_reader = asset_reader or getattr(
+            getattr(engine, "assets", None), "get", None
+        )
         self._running = True
 
     def run_once(self, *, now: datetime | None = None) -> dict[str, Any] | None:
@@ -119,17 +121,28 @@ def main() -> int:  # pragma: no cover - process entry point
     """
     import threading
 
+    from pathlib import Path
+
+    from writing_coach.book_asset_store import FilesystemBookAssetStore
+    from writing_coach.persistence.config import create_runtime_engine
     from writing_coach.persistence.reading_content_repository import ReadingContentRepository
-    from writing_coach.persistence.runtime import runtime_engine
 
     logging.basicConfig(level=logging.INFO)
-    database = runtime_engine()
-    if database is None:
-        _logger.error("reading worker: no runtime database is configured")
+    try:
+        # The same engine the application builds, from the same environment.
+        # PostgreSQL only: the queue is the runtime's, and SQLite is frozen
+        # rollback/archive, never something a worker writes to.
+        database = create_runtime_engine()
+    except Exception:  # noqa: BLE001 - a misconfigured worker says so and stops
+        _logger.exception("reading worker: no runtime database is configured")
         return 1
     jobs = ReadingJobRepository(database)
     engine = ReadingContentEngine(
-        content=ReadingContentRepository(database), jobs=jobs
+        content=ReadingContentRepository(database),
+        jobs=jobs,
+        asset_store=FilesystemBookAssetStore(
+            Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets"))
+        ),
     )
     workers = [
         ReadingWorker(engine=engine, jobs=jobs, worker_id=f"{os.getpid()}-{index}")

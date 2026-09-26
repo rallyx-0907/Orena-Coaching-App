@@ -242,6 +242,74 @@ def test_a_target_decision_is_recorded_as_the_admins(setup):
     assert decided["admin_approved"] is True and decided["machine_suggested"] is True
 
 
+def test_a_rights_question_nobody_answered_is_not_recorded_as_a_refusal(setup):
+    """The form's defaults must not become assertions in the snapshot."""
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    source = call(setup["admin"], "GET", f"/api/admin/reading/articles/{outcome['article_id']}").json()["source"]
+    assert source["rights"] == {}
+    assert source["rights_state"]["can_republish"] == "unknown"
+    assert source["metadata"]["rights_known"] is False
+
+
+def test_an_answered_rights_question_is_recorded_as_answered(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs",
+         data={"kind": "text", "text": ARTICLE + " A second paragraph so the hash differs.",
+               "can_republish": "true", "can_adapt": "false"})
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    source = call(setup["admin"], "GET", f"/api/admin/reading/articles/{outcome['article_id']}").json()["source"]
+    assert source["rights_state"]["can_republish"] == "allowed"
+    assert source["rights_state"]["can_adapt"] == "denied"
+    assert source["rights_state"]["attribution_required"] == "unknown"
+
+
+def test_the_reviewer_can_set_the_order_targets_are_taught_in(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    path = f"/api/admin/reading/articles/{outcome['article_id']}/target-order"
+    preview = call(setup["admin"], "GET", f"/api/admin/reading/articles/{outcome['article_id']}").json()
+    reversed_order = [target["id"] for target in preview["targets"]][::-1]
+    body = call(setup["admin"], "POST", path, json={"order": reversed_order}).json()
+    assert [target["id"] for target in body["targets"]] == reversed_order
+    # A partial order would silently renumber the rest; it is refused instead.
+    assert call(setup["admin"], "POST", path, json={"order": reversed_order[:1]}).status_code == 400
+
+
+def test_one_articles_url_cannot_decide_another_articles_target(setup):
+    """The path names both, so both have to agree - otherwise the decision
+    lands on one article and the audit trail records the other."""
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    first = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    call(setup["admin"], "POST", "/api/admin/reading/jobs",
+         data={"kind": "text", "text": ARTICLE + " A different second article entirely."})
+    second = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    victim = call(setup["admin"], "GET", f"/api/admin/reading/articles/{second['article_id']}").json()["targets"][0]
+    crossed = call(setup["admin"], "POST",
+                   f"/api/admin/reading/articles/{first['article_id']}/targets/{victim['id']}",
+                   json={"approved": True})
+    assert crossed.status_code == 404
+    after = call(setup["admin"], "GET", f"/api/admin/reading/articles/{second['article_id']}").json()
+    assert after["targets"][0]["admin_approved"] is False
+    assert "target_approved" not in [event["action"] for event in after["events"]]
+    # And nothing was recorded against the article whose URL was used, either.
+    first_events = call(setup["admin"], "GET", f"/api/admin/reading/articles/{first['article_id']}").json()["events"]
+    assert "target_approved" not in [event["action"] for event in first_events]
+
+
+def test_one_articles_url_cannot_reorder_another_articles_targets(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    first = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    call(setup["admin"], "POST", "/api/admin/reading/jobs",
+         data={"kind": "text", "text": ARTICLE + " Another article, again different."})
+    second = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    theirs = [t["id"] for t in
+              call(setup["admin"], "GET", f"/api/admin/reading/articles/{second['article_id']}").json()["targets"]]
+    crossed = call(setup["admin"], "POST",
+                   f"/api/admin/reading/articles/{first['article_id']}/target-order",
+                   json={"order": theirs})
+    assert crossed.status_code == 400
+
+
 def test_an_unknown_article_is_a_404_not_a_500(setup):
     missing = call(setup["admin"], "GET", f"/api/admin/reading/articles/{uuid.uuid4()}")
     assert missing.status_code == 404
@@ -343,6 +411,18 @@ def test_operations_counts_the_queue_without_carrying_payloads(setup):
     body = call(setup["admin"], "GET", "/api/admin/reading/operations").json()
     assert body["queue"]["queued"] == 1
     assert all("input_json" not in row for row in body["recent"])
+
+
+def test_operations_names_the_worker_holding_a_job(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    setup["jobs"].claim("worker-7")
+    workers = call(setup["admin"], "GET", "/api/admin/reading/operations").json()["workers"]
+    assert workers["stale_after_seconds"] > 0 and workers["running"] == 1
+    assert [(entry["worker_id"], entry["state"]) for entry in workers["items"]] == [
+        ("worker-7", "working")
+    ]
+    # Counting claims is not a registry, and Operations must not imply it is.
+    assert workers["derived_from_claims"] is True
 
 
 def test_retry_makes_a_new_job_and_keeps_the_failure(setup):

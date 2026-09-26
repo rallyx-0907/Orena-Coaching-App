@@ -209,7 +209,8 @@ def test_content_library_lists_all_three_domains_with_counts_and_filters(setup):
     assert body["counts"]["media"] >= 1
     media = call(setup["app"], "GET", "/api/admin/console/content?kind=media&status=issues").json()
     assert [item["id"] for item in media["items"]] == ["youtube-abcdefghijk"]
-    assert media["items"][0]["actions"] == ["preview", "reprocess"]
+    # A published item offers the two ways off the shelf; neither destroys it.
+    assert media["items"][0]["actions"] == ["preview", "reprocess", "unpublish", "archive"]
     vocabulary = call(setup["app"], "GET", "/api/admin/console/content?kind=vocabulary").json()
     assert vocabulary["items"][0]["actions"] == ["preview", "publish"]
 
@@ -223,6 +224,41 @@ def test_content_preview_returns_domain_detail(setup):
     assert vocabulary["entries"][0]["term"] == "agenda"
     assert vocabulary["entries"][0]["meaning"] == "chương trình"
     assert call(setup["app"], "GET", "/api/admin/console/content/media/nope").status_code == 404
+
+
+def test_media_can_be_taken_back_and_put_out_again(setup):
+    """The lifecycle an operator actually needs, and no destruction in it."""
+    path = "/api/admin/console/content/media/youtube-abcdefghijk/status"
+    store = setup["store"]
+    off = call(setup["app"], "POST", path, json={"status": "unpublished"})
+    assert off.status_code == 200 and off.json()["record"]["status"] == "unpublished"
+    assert "republish" in off.json()["record"]["actions"]
+    # Gone from what a learner may browse, entirely present for an operator.
+    assert store.list(language="zh") == []
+    assert [item.media_id for item in store.list(language="zh", status=None)] == ["youtube-abcdefghijk"]
+    kept = store.get("youtube-abcdefghijk")
+    assert kept.source["provenance_url"] and kept.canonical_url
+
+    listed = call(setup["app"], "GET", "/api/admin/console/content?kind=media").json()
+    assert [item["status"] for item in listed["items"] if item["id"] == "youtube-abcdefghijk"] == ["unpublished"]
+
+    back = call(setup["app"], "POST", path, json={"status": "published"})
+    assert back.status_code == 200 and back.json()["record"]["status"] == "published"
+    assert [item.media_id for item in store.list(language="zh")] == ["youtube-abcdefghijk"]
+
+    # Archiving media is a state on the media route, never the book route -
+    # they share the word "archive" and nothing else.
+    gone = call(setup["app"], "POST", path, json={"status": "archived"})
+    assert gone.status_code == 200 and gone.json()["record"]["status"] == "archived"
+    assert "restore" in gone.json()["record"]["actions"]
+    assert store.list(language="zh") == []
+    assert store.get("youtube-abcdefghijk").lesson == store.get("youtube-abcdefghijk").lesson
+    restored = call(setup["app"], "POST", path, json={"status": "published"})
+    assert restored.status_code == 200 and restored.json()["record"]["status"] == "published"
+
+    assert call(setup["app"], "POST", path, json={"status": "deleted"}).status_code == 422
+    assert call(setup["app"], "POST",
+                "/api/admin/console/content/media/nope/status", json={"status": "archived"}).status_code == 404
 
 
 def test_publish_requires_an_attested_admission_and_is_audited(setup):

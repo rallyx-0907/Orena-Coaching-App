@@ -76,8 +76,10 @@ ACCOUNT_SETTINGS: dict[str, Setting] = {
     'support_language': Setting(
         'support_language', configured_default(), validator=_supported_support_language
     ),
+    # The interface languages Orena is written in (static/orena/ui/copy.js, supportedLocales).
+    # Independent of the support language (D-079); still not stored - its column is a gated migration.
     'interface_language': Setting(
-        'interface_language', 'en', allowed=('en', 'zh'), stored=False
+        'interface_language', 'en', allowed=('en', 'zh', 'vi'), stored=False
     ),
 }
 

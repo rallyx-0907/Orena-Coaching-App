@@ -9,7 +9,9 @@ from writing_coach.persistence.models import Base
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Alembic may run inside the application's test process. Keep the
+    # application's loggers alive while configuring Alembic's own handlers.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 
@@ -28,6 +30,15 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    # A caller that has already checked which database this is (the Reading
+    # cutover's `apply`) passes its own connection, so the check and the
+    # migration run on the same connection, in the same transaction.
+    supplied = config.attributes.get("connection")
+    if supplied is not None:
+        context.configure(connection=supplied, target_metadata=target_metadata, compare_type=True)
+        with context.begin_transaction():
+            context.run_migrations()
+        return
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

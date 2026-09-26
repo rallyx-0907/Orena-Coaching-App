@@ -13,7 +13,7 @@ from writing_coach.persistence.importer import (
     import_to_engine,
     source_counts,
 )
-from writing_coach.persistence.models import Base, Essay, ReadingSession
+from writing_coach.persistence.models import Base, Essay
 from writing_coach.persistence.product_repository import PostgresProductRepository
 from writing_coach.persistence.verification import verify_shadow
 
@@ -117,7 +117,6 @@ def main() -> None:
         source = source_counts(discovery)
         assert source.essays == 1
         assert source.saved_words == 1
-        assert source.reading_sessions == 1
 
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         Base.metadata.create_all(engine)
@@ -165,14 +164,11 @@ def main() -> None:
 
         with engine.connect() as conn:
             essay_languages = set(conn.execute(select(Essay.language_code)).scalars())
-            reading_languages = set(conn.execute(select(ReadingSession.language_code)).scalars())
         assert essay_languages == {"en", "zh"}, essay_languages
-        assert reading_languages == {"en", "zh"}, reading_languages
 
         result = verify_shadow(engine, discovery)
         assert result.ok, result.mismatches
         assert result.target["essays"] == 2
-        assert result.target["reading_sessions"] == 2
 
     print("BECOMING PostgreSQL shadow foundation self-test OK")
     print("Idempotent SQLite -> SQLAlchemy import: PASS")

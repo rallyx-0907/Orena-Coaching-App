@@ -48,13 +48,14 @@ def repository(tmp_path):
     return repository
 
 
-def _enqueue(repository, *, request_hash="hash-1", text="The river rose overnight."):
+def _enqueue(repository, *, request_hash="hash-1", text="The river rose overnight.", now=None):
     return repository.enqueue(
         source_id=str(SOURCE),
         job_type="ingest_text",
         input_json={"kind": "text", "text": text},
         request_hash=request_hash,
         submitted_by="admin@example.com",
+        now=now,
     )
 
 
@@ -263,3 +264,74 @@ def test_failing_without_a_retry_ends_the_job_and_frees_the_hash(repository):
             )
         ).all()
     assert live == []
+
+
+# ---- who is doing the work --------------------------------------------------
+
+def test_the_registry_names_every_worker_holding_work(repository):
+    _enqueue(repository, request_hash="h-a", text="one")
+    _enqueue(repository, request_hash="h-b", text="two")
+    repository.claim("worker-a")
+    repository.claim("worker-b")
+    workers = repository.workers(stale_after=timedelta(minutes=5))
+    assert {entry["worker_id"] for entry in workers} == {"worker-a", "worker-b"}
+    assert all(entry["running"] == 1 and entry["state"] == "working" for entry in workers)
+    assert all(entry["last_seen_at"] for entry in workers)
+
+
+def test_a_worker_that_stopped_reporting_is_stale_not_absent(repository):
+    # The clock is relative on purpose: a fixed hour makes the queue's
+    # `next_retry_at <= now` true only until the wall clock passes it, and the
+    # test then fails for the time of day rather than for the code.
+    started = datetime.now(UTC)
+    _enqueue(repository, now=started)
+    repository.claim("worker-gone", now=started)
+    workers = repository.workers(
+        stale_after=timedelta(minutes=5), now=started + timedelta(minutes=9)
+    )
+    assert [(entry["worker_id"], entry["state"]) for entry in workers] == [
+        ("worker-gone", "stale")
+    ]
+    assert workers[0]["heartbeat_age_seconds"] >= 540
+    assert workers[0]["running"] == 1
+
+
+def test_a_worker_that_finished_is_idle_rather_than_missing(repository):
+    moment = datetime.now(UTC)
+    job = _enqueue(repository, now=moment)
+    repository.claim("worker-a", now=moment)
+    repository.complete(
+        job["id"], worker_id="worker-a", result_kind="article",
+        article_id=None, source_item_id=None, now=moment,
+    )
+    workers = repository.workers(
+        stale_after=timedelta(minutes=5), now=moment + timedelta(minutes=1)
+    )
+    assert [(entry["worker_id"], entry["state"], entry["running"]) for entry in workers] == [
+        ("worker-a", "idle", 0)
+    ]
+
+
+def test_a_worker_nobody_has_heard_from_leaves_the_registry(repository):
+    moment = datetime.now(UTC)
+    job = _enqueue(repository, now=moment)
+    repository.claim("worker-a", now=moment)
+    repository.complete(
+        job["id"], worker_id="worker-a", result_kind="article",
+        article_id=None, source_item_id=None, now=moment,
+    )
+    assert repository.workers(
+        stale_after=timedelta(minutes=5), now=moment + timedelta(hours=2)
+    ) == []
+
+
+def test_the_registry_puts_the_stale_worker_first(repository):
+    started = datetime.now(UTC)
+    _enqueue(repository, request_hash="h-a", text="one", now=started)
+    _enqueue(repository, request_hash="h-b", text="two", now=started)
+    repository.claim("worker-stalled", now=started)
+    repository.claim("worker-fine", now=started + timedelta(minutes=9))
+    workers = repository.workers(
+        stale_after=timedelta(minutes=5), now=started + timedelta(minutes=9)
+    )
+    assert [entry["worker_id"] for entry in workers] == ["worker-stalled", "worker-fine"]

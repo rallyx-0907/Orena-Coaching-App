@@ -77,8 +77,9 @@ navigation task, read and obey:
   `docs/design/canonical-ui/` is an incomplete cache pinned on 2026-09-21; where
   it and the source differ, the source wins, and a lane that cannot read the
   source says so instead of deciding from the cache;
-- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-48 (measured, not
-  invented, old interaction deleted) and the fidelity gate;
+- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-49 (measured, not
+  invented, old interaction deleted; rule 49: a learning workspace is the
+  viewport, never a long page) and the fidelity gate;
 - `docs/product/ORENA_PRODUCT_CONSTITUTION.md` and
   `docs/product/ORENA_CONTENT_ARCHITECTURE.md`: what Orena is for and how content
   is organised (not how a surface looks);

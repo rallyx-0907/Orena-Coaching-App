@@ -1,6 +1,6 @@
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
-import { referenceCopy } from './reference.js';
+import { refCopy } from './reference.js';
 import { bindImages } from './content.js';
 import { contentCover } from './cover.js';
 import { link } from '../product/intent.js';
@@ -188,7 +188,7 @@ function bookDetail(c, r, open, reading, view = {}) {
 /* The page's markup, pure: the caller owns the container and the state. */
 export function librarySection(c, state = {}) {
   const heading = `<h2 class="sr-only">${esc(c.libraryTitle)}</h2>`;
-  const r = referenceCopy[state.ui] || referenceCopy.en;
+  const r = refCopy({ ui: state.ui, support: state.support });
   return `${heading}${bookDetail(c, r, state.open || {}, state.reading, state.view)}`;
 }
 
@@ -296,7 +296,7 @@ export function paintBookPage(container, ctx, id) {
   const paint = () => {
     if (!alive()) return;
     container.innerHTML = librarySection(c, {
-      open, reading: readingFromMemory(ctx.memory), view, ui: ctx.ui,
+      open, reading: readingFromMemory(ctx.memory), view, ui: ctx.ui, support: ctx.support,
     });
     bindImages(container, c);
     bindBookControls(container, view, paint);

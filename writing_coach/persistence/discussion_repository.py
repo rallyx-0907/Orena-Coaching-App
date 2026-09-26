@@ -35,7 +35,7 @@ from sqlalchemy.orm import Session
 
 from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.persistence.ids import stable_uuid
-from writing_coach.persistence.models import ReadingSession, TextDiscussion, TextDiscussionTurn
+from writing_coach.persistence.models import LegacyReadingSession, TextDiscussion, TextDiscussionTurn
 
 SOURCE_KINDS = ("story", "media", "reading_session", "book_chapter")
 MAX_TURNS = 200
@@ -173,10 +173,10 @@ class PostgresTextDiscussionRepository:
         uid, lang = self._scope()
         with Session(self.engine) as session:
             row = session.scalar(
-                select(ReadingSession).where(
-                    ReadingSession.user_id == uid,
-                    ReadingSession.language_code == lang,
-                    ReadingSession.legacy_id == legacy_id,
+                select(LegacyReadingSession).where(
+                    LegacyReadingSession.user_id == uid,
+                    LegacyReadingSession.language_code == lang,
+                    LegacyReadingSession.legacy_id == legacy_id,
                 )
             )
             return row.id if row else None
