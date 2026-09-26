@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_canonical_ui_baseline",
     "status": "in_progress",
-    "next_task": "On codex/integrate-admin-speaking, complete independent architecture review of the renumbered Admin canonical Reading migrations, then integrate feature/speaking@d006383 and verify the unified branch. Preserve the existing Codex learner UI and the canonical Reading backend. The Claude Design source gate is UNVERIFIED by current human instruction and final visual verification is separate. Do not merge into codex/work before human review. Shared-runtime migrations and production remain human gates. No human product approval is implied."
+    "next_task": "On codex/integrate-admin-speaking, integrate feature/speaking@d006383 and verify the unified branch after the independent architecture PASS on Admin Reading merge ec7ac28. Preserve the existing Codex learner UI and canonical Reading backend. The Claude Design source gate is UNVERIFIED by current human instruction and final visual verification is separate. Do not merge into codex/work before human review. Shared-runtime migrations and production remain human gates. No human product approval is implied."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

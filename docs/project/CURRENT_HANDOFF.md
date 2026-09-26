@@ -32,8 +32,8 @@ isolated PostgreSQL 16 container `2411 passed, 3 skipped, 0 failed`;
 focused PostgreSQL Reading rehearsal `120 passed, 2 skipped`;
 browser ESM graph passed. The CI .mjs sweep has one inherited failure:
 `test_m3_pronunciation_contract.mjs` at its first `/82/` assertion,
-reproduced on clean `8557b0e`. Memory and architecture validators must
-pass again after this handoff update before checkpoint commit. No CI pass is
+reproduced on clean `8557b0e`. Memory and architecture validators passed
+before checkpoint commit. No CI pass is
 claimed. The Claude Design source is unavailable; by explicit human
 instruction its visual-source gate is UNVERIFIED and does not block branch
 integration. Final visual verification is separate; do not redesign the UI.
@@ -41,24 +41,26 @@ integration. Final visual verification is separate; do not redesign the UI.
 ## DONE
 
 Admin/canonical Reading integration and Phase 2 local verification above.
+The checkpoint merge `ec7ac2897fb103a9f4a7898a6e256f351719e028`
+received a PASS independent architecture delta review from GPT-6/Codex
+(`/root/architecture_review`), with no P0/P1 findings. Reviewer identity,
+commit and verdict are recorded in `ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`.
+Two P2 runbook corrections followed review.
 
 ## IN PROGRESS
 
-Checkpoint this merge, obtain an independent architecture review of
-the renumbered migrations against that commit, and record reviewer identity,
-reviewed commit, and outcome in Git. Then integrate Speaking and run the full
-unified gates. Do not apply new migrations to a shared runtime without
-separate review and human authorization. The PostgreSQL rehearsal used
-throwaway containers and no product volumes.
+Integrate Speaking and run the full unified gates. Applying new migrations
+to a shared runtime still needs explicit human authorization. The PostgreSQL
+rehearsal used throwaway containers and no product volumes.
 
 ## PENDING
 
-Speaking integration and unified branch verification after architecture review.
+Human review of the final integration branch after unified verification.
 
 ## BLOCKED
 
-Shared-runtime application of the new Reading migrations pending independent
-architecture review and explicit human authorization.
+Shared-runtime application of the new Reading migrations pending explicit
+human authorization.
 
 ## OPEN P0
 
@@ -83,6 +85,5 @@ volumes as cleanup. Open product P1s remain in `ORENA_STATUS.md` and
 
 ## NEXT EXACT TASK
 
-Commit the verified Admin merge, record an independent architecture review of
-that commit, then integrate Speaking and run all unified gates. Stop on any
+Integrate Speaking and run all unified gates. Stop on any
 architecture blocker; do not merge into `codex/work` before human review.

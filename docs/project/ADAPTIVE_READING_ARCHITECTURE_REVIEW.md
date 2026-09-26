@@ -6,6 +6,17 @@ changes its parent. Independent delta review is required before this new
 revision is applied to a shared runtime. Historical identifiers below remain
 as the reviewers recorded them.
 
+**Integration delta review (2026-09-26):** Independent Delegated Architecture
+Reviewer GPT-6/Codex (`/root/architecture_review`) reviewed merge commit
+`ec7ac2897fb103a9f4a7898a6e256f351719e028` and returned **PASS** for
+proceeding with Speaking integration: 16 unique revisions, one linear chain
+ending at `20260924_0016`, no P0/P1 findings, and Reading DDL semantics
+unchanged from the Admin parent except revision/parent and explanatory labels.
+The reviewer found two P2 runbook gaps (the separate `0014`→`0015` preparation
+and historical rehearsal IDs); both were corrected after the reviewed commit.
+This review is not authorization to apply migrations to a shared runtime;
+the human's explicit runtime authorization gate still applies.
+
 | Round | Reviewed | Verdict |
 | --- | --- | --- |
 | 1 | `00dcf18` (prose only) | REQUEST CHANGES — 5 blockers, 21 required changes, 6 factual errors |

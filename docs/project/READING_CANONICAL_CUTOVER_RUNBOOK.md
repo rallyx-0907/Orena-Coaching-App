@@ -78,6 +78,16 @@ decision.
 
 ## 4. Apply `20260924_0016` — one gated command
 
+This command begins at `20260924_0015`. On the Codex sandbox, the preceding
+Reading Content Engine upgrade from Vocabulary Decks `20260923_0014` to
+`20260924_0015` is a **separate** migration step. It must first receive its
+own independent architecture review and explicit human sandbox authorization;
+verify the database and cluster target, stop writers, take and verify a backup,
+then apply that exact single revision under the independently reviewed
+procedure. Confirm Alembic reports `20260924_0015` before starting this step.
+Neither the Admin lane's earlier sandbox approval nor this integration's
+isolated PostgreSQL rehearsal authorizes applying it to the Codex sandbox.
+
 With the new code (the image built from `<repo>`), still with writers stopped,
 in the same kind of ephemeral container as step 3:
 
@@ -221,15 +231,16 @@ answering only the question schema with spans copied from the E2E passages), so
 the sandbox run with Gemini (step 6) is also the first live check of the
 question processor.
 
-**At the commit that follows `1d9a36b`** (this review round), PostgreSQL 16 in
-a throwaway container, seeded at `20260924_0015` with 6 legacy sessions / 6
+**At the commit that follows `1d9a36b`** (the historical Admin-lane review
+round, before integration renumbering), PostgreSQL 16 in a throwaway container,
+seeded at `20260923_0013` with 6 legacy sessions / 6
 attempts for two accounts:
 
-- `bootstrap_runtime_schema --upgrade --from 20260924_0015 --confirm` refused
+- `bootstrap_runtime_schema --upgrade --from 20260923_0013 --confirm` refused
   (exit 1) and printed the `apply` command;
 - `apply` refused an empty database (no revision), a wrong `--expect-cluster`
   and a wrong `--from`, each with nothing changed; with the database and
-  cluster `target` printed it migrated to `20260924_0016`: archive 6 / 6,
+  cluster `target` printed it migrated to `20260924_0014`: archive 6 / 6,
   11 lifecycle triggers, startup readiness `ready`;
 - the gated E2E: 38 passed (EN, ZH); the complete E2E with submit on: 94
   passed, including the recommended article answered without its
