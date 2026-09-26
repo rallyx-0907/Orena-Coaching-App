@@ -19,8 +19,6 @@ from writing_coach.persistence.models import (
     PlanEntitlement,
     PlanRecord,
     PlatformSetting,
-    ReadingAttempt,
-    ReadingSession,
     SavedWord,
     Subscription,
     UsageEvent,
@@ -97,8 +95,6 @@ class ImportStats:
     writing_errors: int = 0
     saved_words: int = 0
     grammar_progress: int = 0
-    reading_sessions: int = 0
-    reading_attempts: int = 0
     subscriptions: int = 0
     usage_events: int = 0
     platform_settings: int = 0
@@ -185,8 +181,6 @@ def source_counts(discovery: Discovery) -> ImportStats:
                 stats.writing_errors += sum(1 for item in _json(row["errors_json"] if "errors_json" in row.keys() else "[]", []) if isinstance(item, dict))
             stats.saved_words += len(_rows(conn, "saved_words"))
             stats.grammar_progress += len(_rows(conn, "grammar_progress"))
-            stats.reading_sessions += len(_rows(conn, "reading_sessions"))
-            stats.reading_attempts += len(_rows(conn, "reading_attempts"))
 
     if discovery.product_db:
         with _sqlite(discovery.product_db) as conn:
@@ -430,49 +424,9 @@ def import_to_engine(engine: Engine, discovery: Discovery) -> ImportStats:
                     else:
                         for k,v in values.items(): setattr(item,k,v)
 
-                session_map={}
-                for row in _rows(conn,"reading_sessions"):
-                    legacy_id=int(row["id"])
-                    sid=stable_uuid("reading-session",source.user_key,lang,legacy_id)
-                    session_map[legacy_id]=sid
-                    item=session.get(ReadingSession,sid)
-                    values=dict(
-                        user_id=user.id,
-                        # Keep PostgreSQL identity aligned with the canonical source DB scope.
-                        language_code=lang,
-                        legacy_id=legacy_id,
-                        created_at=_dt(row["created_at"], fallback=_now()) or _now(),
-                        target_level=str(row["target_level"] or ""),
-                        topic=str(row["topic"] or ""),
-                        learner_goal=str(row["learner_goal"] or ""),
-                        title=str(row["title"] or ""),
-                        passage=str(row["passage"] or ""),
-                        questions=_json(row["questions_json"],[]),
-                        recycled_words=_json(row["recycled_words_json"],[]),
-                        generation_mode=str(row["generation_mode"] or "practice"),
-                    )
-                    if item is None: session.add(ReadingSession(id=sid,**values))
-                    else:
-                        for k,v in values.items(): setattr(item,k,v)
-                session.flush()
-                for row in _rows(conn,"reading_attempts"):
-                    legacy_id=int(row["id"])
-                    source_session=int(row["session_id"])
-                    target_session=session_map.get(source_session)
-                    if target_session is None: continue
-                    aid=stable_uuid("reading-attempt",source.user_key,lang,legacy_id)
-                    item=session.get(ReadingAttempt,aid)
-                    values=dict(
-                        session_id=target_session,
-                        legacy_id=legacy_id,
-                        created_at=_dt(row["created_at"], fallback=_now()) or _now(),
-                        answers=_json(row["answers_json"],[]),
-                        correct_count=int(row["correct_count"] or 0),
-                        total=int(row["total"] or 0),
-                    )
-                    if item is None: session.add(ReadingAttempt(id=aid,**values))
-                    else:
-                        for k,v in values.items(): setattr(item,k,v)
+                # Legacy generated-reading rows are not imported: that flow is
+                # retired (D-082) and its PostgreSQL tables are a read-only
+                # archive. Canonical Reading evidence has no SQLite source.
 
         if discovery.product_db:
             with _sqlite(discovery.product_db) as conn:
@@ -536,8 +490,6 @@ def target_counts(engine: Engine) -> ImportStats:
         "writing_errors": WritingError,
         "saved_words": SavedWord,
         "grammar_progress": GrammarProgress,
-        "reading_sessions": ReadingSession,
-        "reading_attempts": ReadingAttempt,
         "subscriptions": Subscription,
         "usage_events": UsageEvent,
         "platform_settings": PlatformSetting,

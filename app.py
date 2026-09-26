@@ -46,7 +46,7 @@ from writing_coach.writing_evaluator_contract import (
 from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
-from auth_support import APP_ENV, AUTH_ENABLED, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+from auth_support import APP_ENV, AUTH_ENABLED, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -172,7 +172,6 @@ from writing_coach.persistence.deck_repository import DeckRepository
 from writing_coach.deck_api import configure_decks, router as deck_router
 from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
-from writing_coach.becoming_reading import ReadingAnswerIn, ReadingChoiceIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, grade_reading_answer, list_reading_sessions, submit_reading_answers
 from writing_coach.cross_skill_transfer import select_cross_skill_cue
 from writing_coach.product_activity_api import product_activity_response
 from writing_coach.readiness_summary import build_readiness_summary
@@ -594,11 +593,25 @@ configure_media_library_payload(stored_media_payload)
 configure_listening_media_library(_media_library_store)
 app.include_router(media_library_router)
 app.include_router(media_library_upload_router)
+# Canonical Reading evidence (D-075): the one Reading read contract every
+# consumer uses - the cross-skill cue, Collection, Learner Summary. The
+# repository is installed with the Reading engine below (PostgreSQL only);
+# until then, and on the SQLite test backend, there is no evidence to read.
+# The archived generated sessions are never read here.
+_reading_evidence_repository = None
+
+
+def list_reading_evidence(limit: int = 20) -> dict[str, Any]:
+    if _reading_evidence_repository is None:
+        return {"items": []}
+    return {"items": _reading_evidence_repository.list_evidence(limit)}
+
+
 # Collection retrieval (I4 step 1): one read over the owners that exist, each
 # read through what it already serves. No surface calls it yet.
 configure_collection(runtime_owners(
     library=lambda limit, search='': list_library_vocabulary(limit=limit, search=search),
-    reading=list_reading_sessions,
+    reading=list_reading_evidence,
     essays=_learning_repository.list_latest_series,
     specialized=_specialized_learning_repository,
     grammar=lambda: _completed_grammar_rows(),
@@ -651,7 +664,7 @@ app.include_router(word_clips_router)
 # through the reads the app already serves. No surface calls it yet.
 configure_learner_summary(runtime_sources(
     essays=lambda: _learning_repository.list_essays(0, ascending=True),
-    reading=list_reading_sessions,
+    reading=list_reading_evidence,
     grammar=_learning_repository.completed_grammar_ids,
     library=lambda limit: list_library_vocabulary(limit=limit),
     specialized=_specialized_learning_repository,
@@ -686,7 +699,6 @@ configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
 configure_becoming_library(_specialized_learning_repository)
 configure_becoming_library_content(_persistence_runtime.vocabulary_repository)
-configure_becoming_reading(_specialized_learning_repository, generate_structured)
 configure_becoming_linguistics(_specialized_learning_repository)
 
 # Reading Library (shared book catalog). Postgres-only, matching every other
@@ -726,6 +738,7 @@ from writing_coach.account_backbone import (  # noqa: E402
 from writing_coach.admin_console_api import (  # noqa: E402
     configure_admin_console,
     describe_runtime_services,
+    publication_warnings,
     router as admin_console_router,
     schema_facts,
 )
@@ -780,11 +793,23 @@ from writing_coach.reading_articles_api import (  # noqa: E402
     router as reading_articles_router,
 )
 from writing_coach.reading_content_engine import ReadingContentEngine  # noqa: E402
+from writing_coach.persistence.reading_evidence_repository import (  # noqa: E402
+    ReadingEvidenceRepository,
+)
+from writing_coach.reading_practice_api import (  # noqa: E402
+    configure_reading_practice,
+    router as reading_practice_router,
+)
 
 
 def configure_reading_engine_from_runtime() -> None:
+    global _reading_evidence_repository
     engine = _persistence_runtime.engine
     content = ReadingContentRepository(engine) if engine is not None else None
+    # Recommendations from /next are signed with a key derived from the
+    # session secret, so a submit can prove the policy recommended its set.
+    evidence = ReadingEvidenceRepository(engine, recommendation_secret=SESSION_SECRET) if engine is not None else None
+    _reading_evidence_repository = evidence
     jobs = ReadingJobRepository(engine) if engine is not None else None
     audit_repository = AdminConsoleRepository(engine) if engine is not None else None
     configure_reading_admin(
@@ -792,20 +817,37 @@ def configure_reading_engine_from_runtime() -> None:
         content=content,
         jobs=jobs,
         engine=(
-            ReadingContentEngine(content=content, jobs=jobs)
+            ReadingContentEngine(
+                content=content,
+                jobs=jobs,
+                # An uploaded file waits here between the request that accepted
+                # it and the worker that reads it - the same filesystem-backed
+                # store the Book Library already uses, under its own key prefix.
+                asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
+            )
             if content is not None and jobs is not None
             else None
         ),
         # The same `audit_logs` table the console already writes to. One audit
         # system, not a second one for this feature.
         audit=audit_repository.record_event if audit_repository is not None else None,
+        # Canonical Reading: comprehension sets, written by the AI processor
+        # (never a passage) and decided by an administrator.
+        evidence=evidence,
+        generate=generate_structured,
     )
     configure_reading_articles(content, language_supported=is_enabled)
+    # Learner practice on the published corpus. Submit stays off until the
+    # live end-to-end run passes (D-076): ORENA_READING_PRACTICE_SUBMIT=on.
+    configure_reading_practice(
+        evidence, support_language=lambda: _resolved_writing_support_language()[0]
+    )
 
 
 configure_reading_engine_from_runtime()
 app.include_router(reading_admin_router)
 app.include_router(reading_articles_router)
+app.include_router(reading_practice_router)
 
 def weighted_overall(result: dict[str, Any]) -> float:
     return calculate_weighted_overall(result, active_rubric_weights())
@@ -2767,25 +2809,15 @@ def _vocabulary_admission(
                 "message": "Confirm source rights and collection readiness before publishing.",
             },
         )
-    if rights_status not in _VOCABULARY_PUBLISHABLE_RIGHTS:
-        raise HTTPException(
-            422,
-            detail={
-                "category": "vocabulary_rights_required",
-                "retryable": False,
-                "message": "Choose a verified source-rights status before publishing.",
-            },
-        )
-    if completeness != "complete":
-        raise HTTPException(
-            422,
-            detail={
-                "category": "vocabulary_completeness_required",
-                "retryable": False,
-                "message": "Only a complete, reviewed collection can be published to learners.",
-            },
-        )
+    # Rights and completeness are decision support, not a permission gate (the
+    # same rule the console's publish route follows): they tell an
+    # administrator what they are about to do, and the administrator decides.
+    # The attestation above is that decision and is still required - an
+    # unattested request is not an override, it is a request nobody made.
+    warnings = publication_warnings(rights_status, completeness)
     admission["attested_by"] = imported_by
+    admission["warnings_at_publication"] = warnings
+    admission["published_over_warnings"] = bool(warnings)
     return "published", admission
 
 
@@ -3054,7 +3086,7 @@ def becoming_cross_skill_cue_get() -> dict[str, Any]:
     except Exception:
         writing = None
     try:
-        reading_payload = list_reading_sessions(20)
+        reading_payload = list_reading_evidence(20)
         raw_reading = reading_payload.get("items", []) if isinstance(reading_payload, dict) else []
         reading = [{**item, "language": language} for item in raw_reading if isinstance(item, dict)]
     except Exception:
@@ -3520,53 +3552,9 @@ def becoming_vocabulary_feed(
     return {"items": items, "date": datetime.now().astimezone().date().isoformat()}
 # === BECOMING VOCABULARY FEED ROUTES END ===
 
-# === BECOMING READING STUDIO ROUTES START ===
-@app.get("/api/reading/sessions", name="becoming_reading_sessions")
-def becoming_reading_sessions(limit: int = 8) -> dict[str, Any]:
-    return list_reading_sessions(limit)
-
-@app.get("/api/reading/session/{session_id}", name="becoming_reading_session")
-def becoming_reading_session(session_id: int) -> dict[str, Any]:
-    return get_reading_session(session_id)
-
-@app.post("/api/reading/session", name="becoming_reading_create")
-def becoming_reading_create(payload: ReadingGenerateIn) -> dict[str, Any]:
-    language = active_profile().code
-    default_level = "HSK4" if language == "zh" else "B2"
-    target_level = validate_target_level(payload.target_level or default_level)
-    return create_reading_session(
-        payload,
-        language_code=language,
-        target_level=target_level,
-        learner_profile=get_learner_profile(),
-    )
-
-@app.post("/api/reading/session/{session_id}/answer", name="becoming_reading_answer")
-def becoming_reading_answer(
-    session_id: int,
-    payload: ReadingAnswerIn,
-) -> dict[str, Any]:
-    result = submit_reading_answers(session_id, payload)
-    if not result.get("found", False):
-        raise HTTPException(404, "Reading session not found.")
-    if not result.get("valid", True):
-        raise HTTPException(422, result.get("message") or "Invalid reading answers.")
-    return result
-@app.post("/api/reading/session/{session_id}/answer/{index}", name="becoming_reading_answer_one")
-def becoming_reading_answer_one(
-    session_id: int,
-    index: int,
-    payload: ReadingChoiceIn,
-) -> dict[str, Any]:
-    """One question of the check, answered as the learner answers it."""
-    result = grade_reading_answer(session_id, index, payload)
-    if not result.get("found", False):
-        raise HTTPException(404, "Reading session not found.")
-    if not result.get("valid", True):
-        raise HTTPException(422, result.get("message") or "Invalid reading answer.")
-    return result
-
-# === BECOMING READING STUDIO ROUTES END ===
+# The generated-reading studio (`/api/reading/session*`) is retired (D-075,
+# D-076): no internal AI writes a source passage. Reading is the published
+# corpus (`/api/reading/articles`) and its practice (`/api/reading/practice`).
 
 # === BECOMING LINGUISTIC LENS ROUTES START ===
 @app.post("/api/essays/{essay_id}/linguistic-annotations", name="becoming_linguistic_annotations")

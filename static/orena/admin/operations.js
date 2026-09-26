@@ -7,6 +7,7 @@
 import { adminApi } from './api.js';
 import { capabilityLabel } from './ai.js';
 import { chip, dateTime, esc, fill, kv, latency, mono, notice, num, panel, percent, table } from './format.js';
+import { futureBadge, gapNote, unavailableBlock } from './states.js';
 
 export function readinessView(readiness, t) {
   if (!readiness || readiness.available === false) return panel({ title: t.readinessTitle, body: notice(t.notAvailable, 'neutral') });
@@ -145,6 +146,104 @@ export function impactView(activity, t, ui) {
   return panel({ title: t.impactTitle, body });
 }
 
+/* The four areas the canonical design gives Operations: what the runtime is,
+   what the worker is doing, what polling will do when it exists, and what an
+   operator can act on right now. They are one section rather than four
+   screens, because an operator reading one is usually about to read another. */
+const WORKER_TONE = { working: 'ok', stale: 'warning', idle: 'info' };
+
+/* How long, in the units an operator thinks in. Seconds matter for a heartbeat
+   - "4 min" is the difference between fine and about to be reaped - so this is
+   not the relative-date formatter.
+
+   `ago` because a point in the past and a length of time are different
+   sentences: "7 s ago" is when a worker last reported, "5 min" is how long the
+   reaper waits. Writing the second one as "5 min ago" would be a small lie
+   about what the number means. */
+export function age(seconds, t, ui, { ago = true } = {}) {
+  if (seconds === null || seconds === undefined) return t.notAvailable;
+  const value = Number(seconds);
+  const key = (unit) => (ago ? `age${unit}` : `span${unit}`);
+  if (value < 60) return fill(t[key('Seconds')], { count: num(Math.max(0, Math.round(value)), ui) });
+  if (value < 3600) return fill(t[key('Minutes')], { count: num(Math.round(value / 60), ui) });
+  return fill(t[key('Hours')], { count: num(Math.round(value / 3600), ui) });
+}
+
+export function workerView(reading, t, ui) {
+  if (!reading) return panel({ title: t.opsWorker, body: unavailableBlock(t, { title: t.opsWorker, note: t.readingOpsUnavailable }) });
+  const queue = reading.queue || {};
+  const running = Number(queue.running || 0);
+  const workers = reading.workers || null;
+  /* The design asks Operations who is processing, not only how much is in the
+     queue. The answer comes from the claims, so it names workers that have
+     held work - `derived_from_claims` is why the panel says so rather than
+     implying this is every process that exists. */
+  const registry = workers
+    ? `${table({
+        head: [t.opsWorkerColId, t.colState, { label: t.opsWorkerColHolding, numeric: true }, t.opsWorkerColLastSeen],
+        rows: (workers.items || []).map((worker) => [
+          mono(worker.worker_id),
+          chip(WORKER_TONE[worker.state] || 'info', t, { label: t[`workerState_${worker.state}`] || worker.state }),
+          esc(num(worker.running || 0, ui)),
+          esc(age(worker.heartbeat_age_seconds, t, ui)),
+        ]),
+        empty: t.opsWorkerNone,
+      })}${kv([
+        [t.opsWorkerParallel, esc(num(workers.running || 0, ui))],
+        [t.opsWorkerRecovery, esc(age(workers.stale_after_seconds, t, ui, { ago: false }))],
+      ])}${workers.derived_from_claims ? `<p class="ac-note">${esc(t.opsWorkerDerived)}</p>` : ''}`
+    : gapNote(t, t.opsWorkerHeartbeatGap);
+  return panel({
+    title: t.opsWorker,
+    note: t.readingOpsWorkerNote,
+    body: `${kv([
+      [t.opsWorkerState, running ? chip('ok', t, { label: t.opsWorkerRunning }) : chip('info', t, { label: t.opsWorkerIdle })],
+      [t.readingOpsQueued, esc(num(queue.queued || 0, ui))],
+      [t.readingOpsRunning, esc(num(running, ui))],
+      [t.readingOpsFailed, queue.failed ? chip('invalid', t, { label: num(queue.failed, ui) }) : esc(num(0, ui))],
+    ])}${registry}`,
+  });
+}
+
+export function pollingView(t) {
+  /* Shown and disabled: recurring sources are designed, the registry and the
+     rights gate exist, and nothing polls yet. The design keeps the control in
+     the frame so the shape of the product is visible before it works. */
+  // The badge rides in `actions`, which is raw markup; a panel escapes its
+  // title, as it should.
+  return panel({
+    title: t.opsPolling,
+    actions: futureBadge(t),
+    body: `<p class="ac-note">${esc(t.opsPollingNote)}</p><div class="ac-actions"><button type="button" class="ac-button" disabled>${esc(t.opsPollingRun)}</button></div>`,
+  });
+}
+
+export function actionableErrorsView(reading, activity, t, ui) {
+  const failed = Number(reading?.queue?.failed || 0);
+  const impact = activity?.learner_impact_failures;
+  const rows = [];
+  if (failed) {
+    rows.push([
+      esc(t.opsErrorReadingJobs),
+      esc(num(failed, ui)),
+      `<a class="ac-link" href="#/admin?id=imports&status=failed">${esc(t.opsErrorOpenImports)}</a>`,
+    ]);
+  }
+  for (const row of impact?.by_capability || []) {
+    rows.push([
+      esc(t[`cap_${row.capability}`] || row.capability),
+      esc(num(row.failure_count, ui)),
+      `<a class="ac-link" href="#/admin?id=ai">${esc(t.opsErrorOpenAi)}</a>`,
+    ]);
+  }
+  return panel({
+    title: t.opsErrors,
+    body: rows.length
+      ? table({ head: [t.colWhat, { label: t.colCount, numeric: true }, { label: t.colActions, hidden: true }], rows })
+      : `<p class="ac-empty">${esc(t.opsErrorsNone)}</p>`,
+  });
+}
+
 export function readingEngineView(reading, t, ui) {
   /* The engine's own state, from its own endpoint: queue depth by state and
      how much is published. A runtime where the reviewed schema is not applied
@@ -164,7 +263,7 @@ export function readingEngineView(reading, t, ui) {
 }
 
 export function operationsSectionView({ readiness, runtime, operations, activity, reading = null }, t, ui) {
-  return `<div class="ac-stack">${readinessView(readiness, t)}<div class="ac-grid ac-grid--2">${activationView(runtime, t)}${systemView(runtime, t)}</div>${readingEngineView(reading, t, ui)}${operationsView(operations, t, ui, runtime?.ai?.health_rules)}${impactView(activity, t, ui)}</div>`;
+  return `<div class="ac-stack">${actionableErrorsView(reading, activity, t, ui)}${readinessView(readiness, t)}<div class="ac-grid ac-grid--2">${activationView(runtime, t)}${systemView(runtime, t)}</div><div class="ac-grid ac-grid--2">${workerView(reading, t, ui)}${pollingView(t)}</div>${operationsView(operations, t, ui, runtime?.ai?.health_rules)}${impactView(activity, t, ui)}</div>`;
 }
 
 export async function renderOperations(container, env) {

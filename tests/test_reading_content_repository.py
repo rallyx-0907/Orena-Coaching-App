@@ -214,6 +214,67 @@ def test_editing_published_content_bumps_the_revision_a_cache_validates_on(repos
     assert after["content_revision"] == before + 1
 
 
+def test_every_change_a_learner_can_see_moves_the_revision(repository):
+    """`content_revision` is what a cached copy revalidates against, so it has
+    to move for anything the learner routes return - not only the body. A
+    corrected topic or level that keeps the old revision leaves a learner
+    reading a card that is quietly wrong for up to a cache lifetime."""
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+
+    def revision():
+        return repository.get_article(article["id"])["content_revision"]
+
+    for change in (
+        {"title": "Rain returns to the valley floor"},
+        {"topic": "weather"},
+        {"excerpt": "The river rose overnight."},
+        {"body": BODY + "A correction followed. "},
+        {"reviewed_level": "C1"},
+    ):
+        before = revision()
+        repository.update_article(article["id"], actor="admin@example.com", **change)
+        assert revision() == before + 1, f"{change} is visible to a learner"
+
+
+def test_a_change_nobody_can_see_does_not_move_the_revision(repository):
+    """The converse matters too: a bump with no visible change makes every
+    cached copy refetch for nothing."""
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    before = repository.get_article(article["id"])["content_revision"]
+    repository.update_article(article["id"], actor="admin@example.com", subtopic="flooding")
+    assert repository.get_article(article["id"])["content_revision"] == before
+    repository.update_article(article["id"], actor="admin@example.com", title="Rain returns to the valley")
+    assert repository.get_article(article["id"])["content_revision"] == before, "an unchanged title is not a change"
+
+
+def test_a_target_decision_moves_the_revision_because_a_learner_reads_targets(repository):
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    targets = repository.get_article(article["id"])["targets"]
+    before = repository.get_article(article["id"])["content_revision"]
+    repository.decide_target(targets[0]["id"], article_id=article["id"], approved=True, actor="admin@example.com")
+    after = repository.get_article(article["id"])["content_revision"]
+    assert after == before + 1
+    assert repository.get_published_article(article["id"])["content_revision"] == after
+
+
+def test_adding_and_removing_a_target_moves_the_revision_too(repository):
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    before = repository.get_article(article["id"])["content_revision"]
+    added = repository.add_target(
+        article["id"],
+        target=TargetInput(text="volunteers", canonical_form="volunteers", target_type="word",
+                           context="volunteers began to clear the mud", estimated_level="", rank=9),
+        actor="admin@example.com",
+    )
+    assert repository.get_article(article["id"])["content_revision"] == before + 1
+    repository.remove_target(added["id"], actor="admin@example.com")
+    assert repository.get_article(article["id"])["content_revision"] == before + 2
+
+
 # ---- projections ------------------------------------------------------------
 
 def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repository):
@@ -230,7 +291,7 @@ def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repositor
 def test_the_learner_detail_carries_the_body_and_only_approved_targets(repository):
     article = _article(repository)
     targets = repository.get_article(article["id"])["targets"]
-    repository.decide_target(targets[0]["id"], approved=True, actor="admin@example.com")
+    repository.decide_target(targets[0]["id"], article_id=article["id"], approved=True, actor="admin@example.com")
     repository.set_status(article["id"], "published", actor="admin@example.com")
     detail = repository.get_published_article(article["id"])
     assert detail["body"] == BODY
@@ -252,6 +313,34 @@ def test_the_review_queue_is_metadata_and_paginated(repository):
     second = repository.list_queue(limit=2, cursor=page["next_cursor"])
     assert {item["id"] for item in page["items"]} & {item["id"] for item in second["items"]} == set()
     assert len(repository.list_queue(limit=10_000)["items"]) <= MAX_ARTICLE_PAGE
+
+
+def test_neither_list_asks_the_database_for_a_body(repository):
+    """A projection that drops the body in Python still read it from disk and
+    carried it across the connection for every row on the page. Both lists -
+    the learner's and the admin queue - name their columns, so the cost of a
+    page stops depending on how long the articles on it are."""
+    from sqlalchemy import event
+
+    statements: list[str] = []
+
+    @event.listens_for(repository.engine, "before_cursor_execute")
+    def record(conn, cursor, statement, parameters, context, executemany):  # noqa: ANN001
+        statements.append(" ".join(statement.split()))
+
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    statements.clear()
+    repository.list_published(language="en")
+    repository.list_queue()
+    event.remove(repository.engine, "before_cursor_execute", record)
+
+    selects = [s for s in statements if s.upper().startswith("SELECT") and "reading_articles" in s]
+    assert len(selects) == 2
+    for statement in selects:
+        assert "reading_articles.body" not in statement, statement
+        assert "reading_articles.analysis_json" not in statement, statement
+        assert "reading_articles.title" in statement
 
 
 def test_the_learner_list_filters_in_the_database_by_level_and_topic(repository):
@@ -296,9 +385,9 @@ def test_a_target_decision_is_recorded_as_the_admins_not_the_machines(repository
     article = _article(repository)
     target = repository.get_article(article["id"])["targets"][0]
     assert target["machine_suggested"] is True and target["admin_approved"] is False
-    decided = repository.decide_target(target["id"], approved=True, actor="admin@example.com")
+    decided = repository.decide_target(target["id"], article_id=article["id"], approved=True, actor="admin@example.com")
     assert decided["admin_approved"] is True and decided["machine_suggested"] is True
-    rejected = repository.decide_target(target["id"], approved=False, actor="admin@example.com")
+    rejected = repository.decide_target(target["id"], article_id=article["id"], approved=False, actor="admin@example.com")
     assert rejected["admin_approved"] is False and rejected["admin_rejected"] is True
 
 
@@ -388,3 +477,72 @@ def test_the_engine_never_writes_an_article_without_its_snapshot(repository):
         )
     with repository.engine.connect() as connection:
         assert connection.execute(select(ReadingArticle.id)).all() == []
+
+
+# ---- rights, in three states ------------------------------------------------
+
+def test_an_unanswered_rights_question_is_not_a_refusal(repository):
+    """`False` and "nobody said" are different answers and look different."""
+    snapshot = repository.record_source_item(
+        source_id=repository.built_in_source_id("manual"),
+        source_native_id="", canonical_url="", title="Unasserted", author="",
+        published_at=None, language="en", body=BODY + "x",
+        content_hash=f"{abs(hash(BODY + 'x')):064x}"[:64],
+        metadata={"input_kind": "text"}, rights={},
+    )
+    assert snapshot["rights_state"]["can_republish"] == "unknown"
+    assert snapshot["rights_state"]["attribution_required"] == "unknown"
+
+
+def test_a_right_that_was_answered_says_which_answer(repository):
+    snapshot = repository.record_source_item(
+        source_id=repository.built_in_source_id("manual"),
+        source_native_id="", canonical_url="", title="Answered", author="",
+        published_at=None, language="en", body=BODY + "y",
+        content_hash=f"{abs(hash(BODY + 'y')):064x}"[:64],
+        metadata={"input_kind": "text"},
+        rights={"can_republish": True, "can_adapt": False},
+    )
+    state = snapshot["rights_state"]
+    assert state["can_republish"] == "allowed"
+    assert state["can_adapt"] == "denied"
+    assert state["automation_allowed"] == "unknown"
+
+
+def test_the_duplicate_warning_names_the_other_source(repository):
+    """A count is not a decision. An admin needs to know *whose* copy it is."""
+    first = _snapshot(repository)
+    repository.record_source_item(
+        source_id=repository.built_in_source_id("file"),
+        source_native_id="", canonical_url="", title="Rain returns", author="",
+        published_at=None, language="en", body=BODY, content_hash=first["content_hash"],
+        metadata={}, rights={},
+    )
+    seen = repository.find_duplicate_content(
+        first["content_hash"], exclude_source_id=repository.built_in_source_id("file")
+    )
+    assert [item["source_name"] for item in seen] == ["Manual paste"]
+
+
+# ---- the order targets are taught in ----------------------------------------
+
+def test_reordering_targets_writes_the_new_rank_and_records_who_did_it(repository):
+    article = _article(repository, body=BODY + "order", native_id="ord")
+    detail = repository.get_article(article["id"])
+    first, second = [target["id"] for target in detail["targets"]]
+    reordered = repository.reorder_targets(article["id"], order=[second, first], actor="admin@example.com")
+    assert [target["id"] for target in reordered] == [second, first]
+    assert [target["rank"] for target in reordered] == [0, 1]
+    assert [target["id"] for target in repository.get_article(article["id"])["targets"]] == [second, first]
+    assert repository.list_review_events(article["id"])[-1]["action"] == "targets_reordered"
+
+
+def test_an_order_that_is_not_this_articles_targets_is_refused(repository):
+    article = _article(repository, body=BODY + "refuse", native_id="ref")
+    other = _article(repository, body=BODY + "other", native_id="oth")
+    mine = [target["id"] for target in repository.get_article(article["id"])["targets"]]
+    theirs = [target["id"] for target in repository.get_article(other["id"])["targets"]]
+    assert repository.reorder_targets(article["id"], order=[mine[0]], actor="a@b.c") is None
+    assert repository.reorder_targets(article["id"], order=[mine[0], theirs[0]], actor="a@b.c") is None
+    # Refused means nothing moved.
+    assert [target["id"] for target in repository.get_article(article["id"])["targets"]] == mine

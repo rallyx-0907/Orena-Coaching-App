@@ -37,8 +37,8 @@
     }
   ],
   "active_branch_or_lane": {
-    "expected_development_branch": "codex/work",
-    "lane": "canonical_ui_baseline_integration"
+    "expected_development_branch": "codex/integrate-admin-speaking",
+    "lane": "admin_speaking_integration"
   },
   "last_verified_application_commit": "8d5f3cdb707cabd2ee4dabca2558301bc2e78f70",
   "last_verified_batch": "reading_room_word_lookup_and_discover_content_rails",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_canonical_ui_baseline",
     "status": "in_progress",
-    "next_task": "Integrate the Canonical UI Baseline (D-066), one vertical slice at a time, on codex/work. The baseline in docs/design/canonical-ui/ is the visual, interaction and data authority; the backend adapts to it. Tracker: docs/project/UI_BACKEND_GAPS.md (canonical UI, contract, backend, data source, tests, status). Order: Word and Sentence Sheet, Writing review and revision, Listening and Dictation, Reading comprehension per question, catalogue Search; then learner persistence, progress measurement, pronunciation providers. A metric with no measurement renders 0 in its canonical component and is never stored as data. Ink/Paper and D-065 are retired and are deleted once a surface is migrated. Schema and migration for learner-owned data need a recorded independent architecture review; production, credentials and billing stay human gates. No human product approval is implied."
+    "next_task": "On codex/integrate-admin-speaking, complete independent architecture review of the renumbered Admin canonical Reading migrations, then integrate feature/speaking@d006383 and verify the unified branch. Preserve the existing Codex learner UI and the canonical Reading backend. The Claude Design source gate is UNVERIFIED by current human instruction and final visual verification is separate. Do not merge into codex/work before human review. Shared-runtime migrations and production remain human gates. No human product approval is implied."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

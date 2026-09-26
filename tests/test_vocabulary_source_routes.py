@@ -147,7 +147,7 @@ def test_admin_import_keeps_unattested_collection_out_of_learner_catalog(monkeyp
     assert repository.list_collections("en") == []
 
 
-def test_admin_import_rejects_publish_without_verified_admission(monkeypatch, tmp_path) -> None:
+def test_admin_import_publishes_over_an_unverified_right_and_records_it(monkeypatch, tmp_path) -> None:
     from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
 
     repository = sqlite_vocabulary_repository(tmp_path / "admission.db")
@@ -174,8 +174,16 @@ def test_admin_import_rejects_publish_without_verified_admission(monkeypatch, tm
         },
         files=[("files", ("words.txt", b"hello\n", "text/plain"))],
     )
-    assert response.status_code == 422
-    assert response.json()["detail"]["category"] == "vocabulary_rights_required"
+    # Rights are decision support: an unverified status is a warning recorded
+    # with the publication, not a refusal. The administrator attested, so the
+    # administrator decided.
+    assert response.status_code == 200
+    stored = repository.get_collection("unverified-pack", status=None)
+    admission = stored["provenance"]["admission"]
+    assert admission["published_over_warnings"] is True
+    # No rights answer was given at all, which is the softer of the two.
+    assert [w["code"] for w in admission["warnings_at_publication"]] == ["rights_unknown"]
+    assert admission["attested_by"]
 
 
 def test_batch_import_keeps_a_bad_source_isolated(monkeypatch, tmp_path) -> None:

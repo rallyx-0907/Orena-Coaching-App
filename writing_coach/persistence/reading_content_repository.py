@@ -1,6 +1,6 @@
 """Sources, snapshots, articles, targets and the review trail.
 
-Schema: `migrations/proposed/20260922_0010_reading_content_engine.py` -
+Schema: `migrations/proposed/20260924_0015_reading_content_engine.py` -
 proposed, reviewed, rehearsed, not yet applied to any runtime. See
 `docs/project/READING_CONTENT_ENGINE_SCHEMA_REVIEW_REQUEST.md`.
 
@@ -32,7 +32,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -40,6 +40,7 @@ from typing import Any
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
+from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -64,6 +65,16 @@ BUILT_IN_SOURCES: dict[str, tuple[str, str, str]] = {
 }
 
 LEARNER_VISIBLE_STATUS = "published"
+# Exactly what the learner routes return, and therefore exactly what must move
+# `content_revision` when it changes: the list projection's fields plus the
+# body and the approved targets the detail adds. `subtopic`, the analysis and
+# the review trail are admin-only, so changing one of those does not make every
+# cached copy refetch.
+LEARNER_VISIBLE_FIELDS = ("title", "body", "excerpt", "topic", "reviewed_level", "content_kind")
+# What the learner is reading - the learner-facing content type (D-083). Not a
+# source's feed mechanism (`reading_sources.source_type`) and not an editorial
+# category of the publisher, which stays deferred.
+CONTENT_KINDS = ("article", "news")
 QUEUE_STATUSES = ("draft", "processing", "needs_review", "ready")
 
 
@@ -156,6 +167,35 @@ def _source(row: Any) -> dict[str, Any]:
     }
 
 
+PERMISSIONS = ("automation_allowed", "can_republish", "can_adapt")
+
+
+def rights_state(rights: Any) -> dict[str, str]:
+    """A rights question has three answers, and `False` is only one of them.
+
+    The snapshot stores exactly what the submitter asserted, so a key that is
+    absent means nobody answered - not that the answer was no. Flattening the
+    two together is how a manual paste with no rights information ends up
+    looking identical to content a publisher explicitly refused, and an admin
+    cannot tell which decision they are about to make.
+
+    Permissions read `allowed` / `denied` / `unknown`. Attribution is an
+    obligation rather than a permission, so it answers in its own words -
+    calling a required attribution "allowed" would be a sentence nobody means.
+    """
+    answered = rights if isinstance(rights, dict) else {}
+    state = {
+        key: ("allowed" if answered[key] else "denied") if key in answered else "unknown"
+        for key in PERMISSIONS
+    }
+    state["attribution_required"] = (
+        ("required" if answered["attribution_required"] else "not_required")
+        if "attribution_required" in answered
+        else "unknown"
+    )
+    return state
+
+
 def _item(row: Any) -> dict[str, Any]:
     return {
         "id": str(row.id),
@@ -170,6 +210,7 @@ def _item(row: Any) -> dict[str, Any]:
         "content_hash": row.content_hash,
         "metadata": dict(row.metadata_json or {}),
         "rights": dict(row.rights_snapshot_json or {}),
+        "rights_state": rights_state(row.rights_snapshot_json),
         "revision": row.revision,
         "supersedes_id": str(row.supersedes_id) if row.supersedes_id else None,
         "superseded_at": _iso(row.superseded_at),
@@ -210,6 +251,7 @@ def _article(row: Any) -> dict[str, Any]:
         "word_count": row.word_count,
         "reading_time_seconds": row.reading_time_seconds,
         "is_adapted": bool(row.is_adapted),
+        "content_kind": row.content_kind,
         "adaptation": dict(row.adaptation_json or {}),
         "analysis": dict(row.analysis_json or {}),
         "status": row.status,
@@ -543,6 +585,10 @@ class ReadingContentRepository:
         Legitimate - rights differ per source - but an admin about to publish
         a second copy should be told, which is why this exists and why the
         hash has a non-unique index of its own.
+
+        The source is named, not just identified. "Also under 2 other sources"
+        is not something anyone can decide with; "also under Manual paste" is,
+        because the rights that make a second copy legitimate are the source's.
         """
         with self.engine.connect() as connection:
             rows = connection.execute(
@@ -550,13 +596,23 @@ class ReadingContentRepository:
                     ReadingSourceItem.id,
                     ReadingSourceItem.source_id,
                     ReadingSourceItem.original_title,
-                ).where(
+                    ReadingSource.name.label("source_name"),
+                    ReadingSource.slug.label("source_slug"),
+                )
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                .where(
                     ReadingSourceItem.content_hash == content_hash,
                     ReadingSourceItem.source_id != _uuid(exclude_source_id),
                 )
             ).all()
         return [
-            {"id": str(row.id), "source_id": str(row.source_id), "title": row.original_title}
+            {
+                "id": str(row.id),
+                "source_id": str(row.source_id),
+                "source_name": row.source_name,
+                "source_slug": row.source_slug,
+                "title": row.original_title,
+            }
             for row in rows
         ]
 
@@ -691,6 +747,7 @@ class ReadingContentRepository:
         topic: str | None = None,
         subtopic: str | None = None,
         reviewed_level: str | None = "",
+        content_kind: str | None = None,
         reason: str = "",
         now: datetime | None = None,
     ) -> dict[str, Any] | None:
@@ -712,6 +769,7 @@ class ReadingContentRepository:
             ("excerpt", excerpt),
             ("topic", topic),
             ("subtopic", subtopic),
+            ("content_kind", content_kind),
         ):
             if value is not None and value != current[field]:
                 values[field] = value
@@ -725,15 +783,34 @@ class ReadingContentRepository:
             changes["reviewed_level"] = {"from": current["reviewed_level"], "to": reviewed_level}
         if len(values) == 1:
             return current
-        # Any change to what a learner reads invalidates a cached copy.
-        if {"title", "body", "excerpt"} & set(changes):
+        # Any change to what a learner reads invalidates a cached copy. The
+        # level and the topic are on the card, not only in the article, so a
+        # correction to either has to move the revision an ETag is built from.
+        if set(LEARNER_VISIBLE_FIELDS) & set(changes):
             values["content_revision"] = current["content_revision"] + 1
         with self.engine.begin() as connection:
+            # The article row first, `FOR UPDATE`, and its body read again
+            # inside this transaction: the same lock a comprehension set's
+            # approval and a learner's submit take, so a body edit and either
+            # of them serialize instead of racing (canonical Reading, §5.1/§6).
+            locked = select(ReadingArticle.body).where(ReadingArticle.id == _uuid(article_id))
+            if connection.dialect.name == "postgresql":
+                locked = locked.with_for_update()
+            stored_body = connection.execute(locked).scalar_one()
+            if "body" in values and values["body"] == stored_body:
+                values.pop("body")
+                changes.pop("body", None)
             connection.execute(
                 update(ReadingArticle)
                 .where(ReadingArticle.id == _uuid(article_id))
                 .values(**values)
             )
+            if "body" in values:
+                # Every approved comprehension set whose anchor no longer
+                # matches becomes `stale`, in this same transaction.
+                changes["stale_comprehension_sets"] = stale_sets_for_body(
+                    connection, _uuid(article_id), values["body"], actor=actor, now=moment
+                )
             self._record_event(
                 connection,
                 article_id=_uuid(article_id),
@@ -752,9 +829,14 @@ class ReadingContentRepository:
         *,
         actor: str,
         reason: str = "",
+        warnings: Sequence[Mapping[str, str]] = (),
         now: datetime | None = None,
     ) -> dict[str, Any] | None:
         """Move an article through its lifecycle, recording who and why.
+
+        `warnings` are the rights advice that was showing when an administrator
+        published anyway; they are recorded beside the decision, so an override
+        is never separated from what it overrode (D-082, D-083).
 
         Publication is the only transition that makes anything learner-visible,
         and it is always an admin's act: nothing in the pipeline calls this.
@@ -783,7 +865,11 @@ class ReadingContentRepository:
                 actor=actor,
                 action=status,
                 reason=reason,
-                changes={"status": {"from": current["status"], "to": status}},
+                changes={
+                    "status": {"from": current["status"], "to": status},
+                    **({"warnings": [dict(item) for item in warnings],
+                        "published_over_warnings": True} if warnings else {}),
+                },
                 now=moment,
             )
         return self.get_article(article_id)
@@ -796,7 +882,23 @@ class ReadingContentRepository:
         limit: int = DEFAULT_ARTICLE_PAGE,
     ) -> dict[str, Any]:
         bounded = max(1, min(int(limit), MAX_ARTICLE_PAGE))
-        query = select(ReadingArticle).where(ReadingArticle.status.in_(tuple(statuses)))
+        # The columns the queue draws, named for the same reason the learner
+        # list names its own: a reviewer scanning twenty-five candidates should
+        # not pull twenty-five article bodies across the connection to read
+        # their titles.
+        query = select(
+            ReadingArticle.id,
+            ReadingArticle.title,
+            ReadingArticle.language,
+            ReadingArticle.topic,
+            ReadingArticle.effective_level,
+            ReadingArticle.estimated_level,
+            ReadingArticle.reviewed_level,
+            ReadingArticle.word_count,
+            ReadingArticle.reading_time_seconds,
+            ReadingArticle.status,
+            ReadingArticle.created_at,
+        ).where(ReadingArticle.status.in_(tuple(statuses)))
         if cursor:
             after_at, after_id = _decode_cursor(cursor)
             query = query.where(
@@ -947,33 +1049,100 @@ class ReadingContentRepository:
         return {status: int(total) for status, total in rows}
 
     # ---- targets ---------------------------------------------------------
+    def reorder_targets(
+        self, article_id: str, *, order: list[str], actor: str, now: datetime | None = None
+    ) -> list[dict[str, Any]] | None:
+        """The order a learner meets these targets in, set by the reviewer.
+
+        `rank` already decides the order everything reads them in, so this
+        writes that column rather than inventing a second notion of order.
+
+        The whole list is sent, not a move: an "up one" endpoint has to be
+        replayed in sequence to be correct, and two reviewers dragging at the
+        same time would interleave into an order neither of them chose. Sending
+        the order means the last write is a complete intention.
+
+        Refused as a whole - returning None and moving nothing - when the list
+        is not exactly this article's targets. A partial order would silently
+        renumber the rest, which is a worse outcome than a rejected request.
+        """
+        if _lookup_uuid(article_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            existing = connection.execute(
+                select(ReadingArticleTarget.id).where(
+                    ReadingArticleTarget.article_id == _uuid(article_id)
+                )
+            ).all()
+            mine = {str(row.id) for row in existing}
+            wanted = [str(target_id) for target_id in order]
+            if len(wanted) != len(set(wanted)) or set(wanted) != mine:
+                return None
+            for rank, target_id in enumerate(wanted):
+                connection.execute(
+                    update(ReadingArticleTarget)
+                    .where(ReadingArticleTarget.id == _uuid(target_id))
+                    .values(rank=rank, updated_at=moment)
+                )
+            self._bump_revision(connection, _uuid(article_id), moment)
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action="targets_reordered",
+                reason="",
+                changes={"count": len(wanted)},
+                now=moment,
+            )
+            rows = connection.execute(
+                select(ReadingArticleTarget)
+                .where(ReadingArticleTarget.article_id == _uuid(article_id))
+                .order_by(ReadingArticleTarget.rank, ReadingArticleTarget.id)
+            ).all()
+        return [_target(row) for row in rows]
+
     def decide_target(
-        self, target_id: str, *, approved: bool, actor: str, now: datetime | None = None
+        self,
+        target_id: str,
+        *,
+        article_id: str,
+        approved: bool,
+        actor: str,
+        now: datetime | None = None,
     ) -> dict[str, Any] | None:
         """The admin's decision, kept separate from the machine's suggestion.
 
         `machine_suggested` is never cleared: "the machine proposed this and a
         human approved it" and "a human added this" are different facts, and a
         future processor re-run has to be able to tell them apart.
+
+        The article is part of the identity, not context. The route names both,
+        and a target id taken from one article and posted under another's URL
+        would otherwise decide the first article's target while the audit entry
+        and the revision bump landed on the second - a decision recorded
+        against content it was never made about.
         """
-        if _lookup_uuid(target_id) is None:
+        if _lookup_uuid(target_id) is None or _lookup_uuid(article_id) is None:
             return None
+        owned = (ReadingArticleTarget.id == _uuid(target_id)) & (
+            ReadingArticleTarget.article_id == _uuid(article_id)
+        )
         moment = _now(now)
         with self.engine.begin() as connection:
-            row = connection.execute(
-                select(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
-            ).first()
+            row = connection.execute(select(ReadingArticleTarget).where(owned)).first()
             if row is None:
                 return None
             connection.execute(
                 update(ReadingArticleTarget)
-                .where(ReadingArticleTarget.id == _uuid(target_id))
+                .where(owned)
                 .values(
                     admin_approved=bool(approved),
                     admin_rejected=not approved,
                     updated_at=moment,
                 )
             )
+            self._bump_revision(connection, row.article_id, moment)
             self._record_event(
                 connection,
                 article_id=row.article_id,
@@ -983,9 +1152,7 @@ class ReadingContentRepository:
                 changes={"target": row.text},
                 now=moment,
             )
-            updated = connection.execute(
-                select(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
-            ).first()
+            updated = connection.execute(select(ReadingArticleTarget).where(owned)).first()
         return _target(updated)
 
     def add_target(
@@ -1016,6 +1183,7 @@ class ReadingContentRepository:
                     updated_at=moment,
                 )
             )
+            self._bump_revision(connection, _uuid(article_id), moment)
             self._record_event(
                 connection,
                 article_id=_uuid(article_id),
@@ -1040,6 +1208,7 @@ class ReadingContentRepository:
             connection.execute(
                 delete(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
             )
+            self._bump_revision(connection, row.article_id, _now(now))
             self._record_event(
                 connection,
                 article_id=row.article_id,
@@ -1073,6 +1242,23 @@ class ReadingContentRepository:
             }
             for row in rows
         ]
+
+    def _bump_revision(self, connection: Any, article_id: uuid.UUID, now: datetime) -> None:
+        """Move the number a learner's cached copy revalidates against.
+
+        Written inside the caller's transaction, so the change and the reason
+        to refetch it land together. An approved target is learner-visible -
+        it is in the detail read - which is why a decision about one counts as
+        a content change and not only as review bookkeeping.
+        """
+        connection.execute(
+            update(ReadingArticle)
+            .where(ReadingArticle.id == article_id)
+            .values(
+                content_revision=ReadingArticle.content_revision + 1,
+                updated_at=now,
+            )
+        )
 
     def _record_event(
         self,

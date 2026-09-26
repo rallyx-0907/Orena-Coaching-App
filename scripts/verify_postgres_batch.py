@@ -12,7 +12,6 @@ COMMANDS = [
     [sys.executable, "-m", "writing_coach.becoming_practice_selftest"],
     [sys.executable, "-m", "writing_coach.becoming_outcomes_selftest"],
     [sys.executable, "-m", "writing_coach.becoming_library_selftest"],
-    [sys.executable, "-m", "writing_coach.becoming_reading_selftest"],
     [sys.executable, "-m", "writing_coach.becoming_linguistics_selftest"],
     [sys.executable, "-m", "writing_coach.becoming_polish_selftest"],
     [sys.executable, "-m", "writing_coach.becoming_polish_r2_selftest"],

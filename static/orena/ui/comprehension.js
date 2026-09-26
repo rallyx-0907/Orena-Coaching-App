@@ -43,11 +43,11 @@ export function comprehensionSection(c, questions) {
 export function bindComprehension(
   root,
   ctx,
-  { sessionId, questions, onEvidence, passageOfEvidence = null, onDiscuss = null },
+  { practice, questions, onEvidence, passageOfEvidence = null, onDiscuss = null },
 ) {
   const section = root.querySelector('[data-comprehension]');
-  if (!section || !questions?.length) return;
-  const { c, api, support, alive } = ctx;
+  if (!section || !questions?.length || !practice?.grade || !practice?.submit) return;
+  const { c, support, alive } = ctx;
   const r = referenceCopy[ctx.ui] || referenceCopy.en;
   const step = section.querySelector('[data-quiz-step]');
   const state = section.querySelector('[data-comprehension-status]');
@@ -84,7 +84,7 @@ export function bindComprehension(
   const answeredView = () => {
     const found = graded[index];
     const last = index === total - 1;
-    const explanation = support === 'vi' && found.explanation_vi ? found.explanation_vi : '';
+    const explanation = found.explanation || '';
     const verdict = found.correct
       ? `<span class="quiz-verdict" data-tone="right">${icon('check-circle', { filled: true, size: 24 })}<strong>${esc(c.quizRight)}</strong></span>`
       : `<span class="quiz-verdict" data-tone="wrong">${icon('x-circle', { filled: true, size: 24 })}<strong>${esc(c.quizWrong)}</strong></span>`;
@@ -95,7 +95,7 @@ export function bindComprehension(
       ? `<button type="button" class="quiz-quiet" data-quiz-discuss>${icon('chats-circle', { size: 18 })}${esc(r.readerDiscuss)}</button>`
       : '';
     return `${head()}<div class="quiz-result">${verdict}${evidence(found)}${
-      explanation ? `<p class="quiz-why" lang="vi">${esc(explanation)}</p>` : ''
+      explanation ? `<p class="quiz-why" lang="${esc(support || '')}">${esc(explanation)}</p>` : ''
     }</div><div class="quiz-foot">${back || discuss ? `<div class="quiz-actions">${back}${discuss}</div>` : ''}<button type="button" class="primary quiz-primary" data-quiz-next>${esc(last ? c.quizFinish : c.quizNext)}</button></div>`;
   };
 
@@ -113,8 +113,11 @@ export function bindComprehension(
       };
     });
     step.querySelector('[data-quiz-answer]')?.addEventListener('click', answer);
-    step.querySelector('[data-quiz-next]')?.addEventListener('click', () => {
-      if (index === total - 1) return leave();
+    step.querySelector('[data-quiz-next]')?.addEventListener('click', async () => {
+      if (index === total - 1) {
+        if (await record()) leave();
+        return;
+      }
       index += 1;
       paintStep();
       step.scrollIntoView({ block: 'nearest' });
@@ -141,13 +144,13 @@ export function bindComprehension(
     state.textContent = c.saving;
     paintStep();
     try {
-      const scored = await api.gradeReadingAnswer(sessionId, index, answers[index]);
+      const scored = await practice.grade(questions[index].id, answers[index]);
       if (!alive()) return;
-      if (!scored.valid || !scored.result) throw Error('Reading check unavailable');
+      if (!scored?.result) throw Error('Reading check unavailable');
       graded[index] = scored.result;
       state.textContent = '';
       paintStep();
-      await record();
+      if (index === total - 1) await record();
     } catch {
       if (alive()) state.textContent = c.comprehensionUnavailable;
     } finally {
@@ -159,12 +162,18 @@ export function bindComprehension(
   /* One attempt for the set, written when the learner has been through it, so
      what is stored about a learner's reading means what it always meant. */
   async function record() {
-    if (recorded || answers.some((choice) => choice === null)) return;
-    recorded = true;
+    if (recorded) return true;
+    if (answers.some((choice) => choice === null)) return false;
     try {
-      await ctx.mutate(() => api.submitReadingAnswers(sessionId, answers));
+      const results = await ctx.mutate(() => practice.submit(answers));
+      if (!Array.isArray(results) || results.length !== total)
+        throw Error('Reading attempt unavailable');
+      recorded = true;
+      state.textContent = '';
+      return true;
     } catch {
-      recorded = false;
+      if (alive()) state.textContent = c.comprehensionUnavailable;
+      return false;
     }
   }
 

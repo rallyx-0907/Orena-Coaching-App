@@ -52,7 +52,7 @@ def _collection(**overrides):
     return {**base, **overrides}
 
 
-def test_book_records_keep_identity_and_offer_archive_only_while_published():
+def test_book_records_keep_identity_and_offer_the_way_back_when_archived():
     ready = content.book_record(_book())
     assert ready["kind"] == "book" and ready["id"] == "b1"
     assert ready["status"] == "published"
@@ -62,7 +62,8 @@ def test_book_records_keep_identity_and_offer_archive_only_while_published():
     archived = content.book_record(_book(status="archived"))
     assert archived["status"] == "archived"
     assert archived["image"] == ""
-    assert archived["actions"] == ["preview"]
+    # Archiving is a recovery path, so it has a way back; nothing was deleted.
+    assert archived["actions"] == ["preview", "restore"]
 
 
 def test_imported_media_reports_transcript_state_and_reprocess_only_for_url_sources():
@@ -72,14 +73,16 @@ def test_imported_media_reports_transcript_state_and_reprocess_only_for_url_sour
     assert with_transcript["facts"]["transcript"] == "available"
     assert with_transcript["facts"]["segment_count"] == 2
     assert with_transcript["issues"] == []
-    assert with_transcript["actions"] == ["preview", "reprocess"]
+    # Published, so the two ways off the shelf are offered beside reprocess.
+    assert with_transcript["actions"] == ["preview", "reprocess", "unpublish", "archive"]
 
     captionless = content.media_record(_entry(segments=None))
     assert captionless["facts"]["transcript"] == "missing"
     assert captionless["issues"] == ["transcript_missing"]
 
     upload = content.media_record(_entry("upload-1", provider="upload", url="", segments=None))
-    assert upload["actions"] == ["preview"]
+    # An upload cannot be read again, but it can still be taken off the shelf.
+    assert upload["actions"] == ["preview", "unpublish", "archive"]
     assert upload["issues"] == ["transcript_missing"]
 
 
@@ -111,9 +114,16 @@ def test_vocabulary_collections_waiting_for_review_are_drafts_that_can_be_publis
     assert pending["issues"] == ["pending_review"]
     assert pending["actions"] == ["preview", "publish"]
     assert pending["subtitle"] == "TOEIC · A2–B1 · work"
+    # A published collection can now be taken back or retired, reversibly.
     published = content.vocabulary_record(_collection(status="published"))
     assert published["status"] == "published"
-    assert published["actions"] == ["preview"]
+    assert published["actions"] == ["preview", "unpublish", "archive"]
+    taken = content.vocabulary_record(_collection(status="unpublished"))
+    assert taken["actions"] == ["preview", "publish", "archive"]
+    # Restore returns it to the shelf, so an archived collection offers no
+    # publish: putting it back in front of learners is a separate decision.
+    retired = content.vocabulary_record(_collection(status="archived"))
+    assert retired["actions"] == ["preview", "restore"]
 
 
 def test_filter_search_sort_and_paginate_across_kinds():

@@ -30,7 +30,7 @@ import logging
 import os
 from collections import defaultdict
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, time, timedelta
 from typing import Any
 from urllib.parse import urlencode, urlsplit
@@ -71,6 +71,27 @@ ACTIVITY_DOMAINS = ("writing", "reading", "listening", "speaking", "vocabulary",
 TREND_DAYS = 30
 RETENTION_COHORT_DAYS = 90
 PUBLISHABLE_RIGHTS = frozenset({"public_domain", "licensed", "creator_authorized", "internal_curated"})
+
+
+def publication_warnings(rights: str, completeness: str) -> list[dict[str, str]]:
+    """What an administrator should know before publishing, in three weights.
+
+    None of these stops anything. A rights answer nobody gave and a rights
+    answer that was refused are different sizes of the same warning, and a
+    collection that is still being worked on is a third - the administrator
+    weighs them and decides, and the decision is audited with the warnings
+    that were showing when they made it.
+    """
+    warnings: list[dict[str, str]] = []
+    if not rights or rights == "unknown":
+        warnings.append({"code": "rights_unknown", "level": "warning"})
+    elif rights not in PUBLISHABLE_RIGHTS:
+        warnings.append({"code": "rights_not_cleared", "level": "strong"})
+    if completeness and completeness != "complete":
+        warnings.append({"code": "collection_incomplete", "level": "warning"})
+    elif not completeness:
+        warnings.append({"code": "completeness_unknown", "level": "warning"})
+    return warnings
 TRANSCRIPT_PREVIEW_SEGMENTS = 12
 VOCABULARY_PREVIEW_ENTRIES = 25
 
@@ -274,7 +295,9 @@ def _shared_media() -> tuple[list[Any], str]:
     if store is None:
         return [], "unavailable"
     try:
-        entries = store.list(language=None, library="shared")
+        # The operator's listing, so every state: an item taken off the shelf
+        # is exactly the one an operator has come here to find again.
+        entries = store.list(language=None, library="shared", status=None)
     except Exception:  # noqa: BLE001 - a broken index is reported, not raised
         return [], "index_unreadable"
     return list(entries), str(getattr(store, "last_read_issue", "") or "")
@@ -553,6 +576,9 @@ def _media_receipt(admin: Mapping[str, Any], row: dict[str, Any], language: str,
         "language": language,
         "status": status if status in {"ok", "duplicate"} else "error",
         "detail": "" if status in {"ok", "duplicate"} else str(row.get("detail") or ""),
+        # The importer's stable code, so the history reads the same vocabulary
+        # as the live row instead of matching on a sentence.
+        "category": "" if status in {"ok", "duplicate"} else str(row.get("category") or ""),
         "title": entry.title if entry is not None else "",
         "has_transcript": bool(segments),
         "segment_count": len(segments),
@@ -950,6 +976,9 @@ def runtime(request: Request, response: Response) -> dict[str, Any]:
 
 # -- content actions -------------------------------------------------------------------
 
+# Three states and no deletion among them (see `media_library_store`).
+MEDIA_STATES = ("published", "unpublished", "archived")
+
 
 class PublishIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -996,31 +1025,139 @@ def publish_collection(collection_id: str, payload: PublishIn, request: Request,
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
+    # Rights and completeness are decision support, not a permission gate: they
+    # tell an administrator what they are about to do, and the administrator
+    # decides. What the server still insists on is the decision itself - an
+    # unattested request is not an override, it is a request that nobody made.
     if not payload.attested:
         raise orena_http_error(422, "vocabulary_admission_required",
-                               "Confirm source rights and collection readiness before publishing.")
-    rights = payload.rights_status.strip().casefold()
-    if rights not in PUBLISHABLE_RIGHTS:
-        raise orena_http_error(422, "vocabulary_rights_required", "Choose a verified source-rights status before publishing.")
-    if payload.completeness.strip().casefold() != "complete":
-        raise orena_http_error(422, "vocabulary_completeness_required",
-                               "Only a complete, reviewed collection can be published to learners.")
+                               "Confirm you are publishing this collection before it reaches learners.")
     if not _vocabulary_available():
         raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+    rights = payload.rights_status.strip().casefold()
+    completeness = payload.completeness.strip().casefold()
+    warnings = publication_warnings(rights, completeness)
     admission = {
-        "rights_status": rights,
-        "completeness": "complete",
+        "rights_status": rights or "unknown",
+        "completeness": completeness or "unknown",
         "review_status": "approved",
         "publication_attested": True,
         "attested_by": _actor(admin),
+        # What the administrator was shown at the moment they decided. An
+        # override is only meaningful if the warning it overrode is recorded
+        # beside it.
+        "warnings_at_publication": warnings,
+        "published_over_warnings": bool(warnings),
     }
     try:
         collection = _state.vocabulary_repository.finalize_collection_publication(collection_id, admission=admission)
     except ValueError as exc:
+        # The repository refuses for technical invariants only - a collection
+        # that was never imported, content the runtime could not serve.
         raise orena_http_error(422, "vocabulary_publication_refused", str(exc)) from exc
     _audit(admin, "admin.content.publish", entity_type="vocabulary_collection", entity_id=collection_id,
-           payload={"rights_status": rights, "completeness": "complete", "outcome": "ok"})
-    return {"published": True, "collection": collection}
+           payload={"rights_status": admission["rights_status"], "completeness": admission["completeness"],
+                    "warnings": warnings, "override": bool(warnings), "outcome": "ok"})
+    return {"published": True, "collection": collection, "warnings": warnings}
+
+
+class MediaStatusIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(default="", max_length=20)
+
+
+class CollectionStatusIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(default="", max_length=20)
+
+
+@router.post("/content/vocabulary/{collection_id}/status")
+def set_collection_status(
+    collection_id: str, payload: CollectionStatusIn, request: Request, response: Response
+) -> dict[str, Any]:
+    """Move a collection through the editorial flow, reversibly.
+
+    `archived -> unpublished` is the only way back out of archived: restoring
+    returns a collection to the shelf, never straight in front of a learner.
+    Publishing again is a separate act by someone who has looked at it.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    wanted = payload.status.strip().casefold()
+    if not _vocabulary_available():
+        raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+    try:
+        collection = _state.vocabulary_repository.set_collection_status(
+            collection_id, wanted, actor=_actor(admin)
+        )
+    except ValueError as exc:
+        raise orena_http_error(422, "vocabulary_status_refused", str(exc)) from exc
+    _audit(admin, "admin.content.status", entity_type="vocabulary_collection", entity_id=collection_id,
+           payload={"to": wanted, "outcome": "ok"})
+    return {"collection": collection}
+
+
+@router.post("/content/book/{book_id}/restore")
+def restore_book(book_id: str, request: Request, response: Response) -> dict[str, Any]:
+    """The way back from archive. Nothing was deleted, so nothing is rebuilt."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    import uuid as _uuid
+
+    try:
+        _uuid.UUID(book_id)
+    except ValueError as exc:
+        raise orena_http_error(404, "content_not_found", "This book is not in the catalog.") from exc
+    reading = _state.reading_repository
+    if reading is None:
+        raise orena_http_error(503, "reading_library_unavailable", "The Reading Library is not configured for this deployment.")
+    try:
+        restored = reading.restore_book(book_id)
+    except Exception as exc:  # noqa: BLE001 - schema not ready or database down
+        _logger.warning("admin console: restore failed for %s", book_id, exc_info=True)
+        raise orena_http_error(503, "reading_library_unavailable", "The Reading Library is not available.") from exc
+    if not restored:
+        current = _state.repository.get_book(book_id) if _state.repository is not None else None
+        if current is not None and current.get("status") == "ready":
+            _audit(admin, "admin.content.restore", entity_type="book", entity_id=book_id,
+                   payload={"outcome": "unchanged"})
+            return {"restored": True, "id": book_id, "unchanged": True}
+        raise orena_http_error(404, "content_not_found", "No archived book has this identifier.")
+    _audit(admin, "admin.content.restore", entity_type="book", entity_id=book_id, payload={"outcome": "ok"})
+    return {"restored": True, "id": book_id}
+
+
+@router.post("/content/media/{media_id}/status")
+def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, response: Response) -> dict[str, Any]:
+    """Take a media item off the shelf, retire it, or put it back.
+
+    A state, never a deletion: the bytes, the transcript, the provenance and
+    the audit trail all survive every one of these, so an operator can change
+    their mind. Removing the row is a separate, deliberate path and is not
+    part of this flow.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    wanted = payload.status.strip().casefold()
+    if wanted not in MEDIA_STATES:
+        raise orena_http_error(422, "media_status_invalid",
+                               "A media item is published, unpublished or archived.")
+    store = _state.media_store
+    entry = store.get(media_id) if store is not None else None
+    if entry is None or entry.library != "shared":
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    previous = getattr(entry, "status", "published")
+    if previous != wanted:
+        store.upsert(replace(entry, status=wanted))
+    _audit(admin, "admin.content.status", entity_type="media", entity_id=media_id,
+           payload={"from": previous, "to": wanted, "outcome": "unchanged" if previous == wanted else "ok"})
+    refreshed = store.get(media_id)
+    return {"record": media_record(refreshed) if refreshed is not None else None}
 
 
 @router.post("/content/media/{media_id}/reprocess")

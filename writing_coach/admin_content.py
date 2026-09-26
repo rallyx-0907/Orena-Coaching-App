@@ -81,7 +81,9 @@ def book_record(book: Mapping[str, Any]) -> dict[str, Any]:
             "source_kind": _text(book.get("source_kind")),
         },
         "issues": [],
-        "actions": ["preview", "archive"] if ready else ["preview"],
+        # Archiving was the only recovery path and it was one-way. Both
+        # directions are offered now, and neither destroys anything.
+        "actions": ["preview", "archive"] if ready else ["preview", "restore"],
     }
 
 
@@ -106,8 +108,7 @@ def media_record(entry: Any) -> dict[str, Any]:
         "title": entry.title,
         "subtitle": " · ".join(part for part in (source_label(entry), _text(entry.creator)) if part),
         "language": entry.language,
-        # Imported shared media is served to learners the moment it is stored.
-        "status": "published",
+        "status": getattr(entry, "status", "published"),
         "origin": "imported",
         "created_at": entry.created_at,
         "updated_at": entry.created_at,
@@ -122,8 +123,29 @@ def media_record(entry: Any) -> dict[str, Any]:
             "transcript": "available" if segments else "missing",
         },
         "issues": [] if segments else ["transcript_missing"],
-        "actions": ["preview", "reprocess"] if reprocessable else ["preview"],
+        "actions": _media_actions(getattr(entry, "status", "published"), reprocessable),
     }
+
+
+def _media_actions(status: str, reprocessable: bool) -> list[str]:
+    """What can be done from where this item is.
+
+    A drawer that always offers the same pair asks an operator to work out
+    which of them does anything; the states are the vocabulary, so the actions
+    follow them. `delete` is deliberately absent: taking an item off the shelf
+    must not destroy its transcript, its provenance or its audit trail, and a
+    genuine mistake is a separate, deliberate path.
+    """
+    actions = ["preview"]
+    if reprocessable:
+        actions.append("reprocess")
+    if status == "published":
+        actions += ["unpublish", "archive"]
+    elif status == "unpublished":
+        actions += ["republish", "archive"]
+    else:
+        actions.append("restore")
+    return actions
 
 
 def curated_media_record(lesson: Any) -> dict[str, Any]:
@@ -170,7 +192,7 @@ def vocabulary_record(collection: Mapping[str, Any]) -> dict[str, Any]:
         "title": _text(collection.get("title")),
         "subtitle": " · ".join(part for part in (_text(collection.get("framework")), level, _text(collection.get("topic"))) if part),
         "language": _text(collection.get("language")),
-        "status": "draft" if pending else "published",
+        "status": _collection_status(collection),
         "origin": _text(collection.get("origin")) or "imported",
         "created_at": collection.get("created_at"),
         "updated_at": collection.get("updated_at"),
@@ -184,8 +206,37 @@ def vocabulary_record(collection: Mapping[str, Any]) -> dict[str, Any]:
             "completeness": _text(collection.get("completeness")),
         },
         "issues": ["pending_review"] if pending else [],
-        "actions": ["preview", "publish"] if pending else ["preview"],
+        "actions": _collection_actions(_collection_status(collection)),
     }
+
+
+def _collection_status(collection: Mapping[str, Any]) -> str:
+    """The editorial state, in the console's own vocabulary.
+
+    `pending_review` reads as a draft to an operator scanning a mixed list;
+    the other three are already the words the console uses everywhere else.
+    """
+    # The admin repository projects `catalog_status` under `status`; a caller
+    # that hands the raw row keeps its own name. Both are read so neither
+    # caller has to know which one it is.
+    status = _text(collection.get("status")) or _text(collection.get("catalog_status")) or "pending_review"
+    return "draft" if status == "pending_review" else status
+
+
+def _collection_actions(status: str) -> list[str]:
+    """What can be done from where this collection is.
+
+    Restore from archived returns it to the shelf as `unpublished`, never
+    straight to learners - so an archived collection offers restore and not
+    publish, and the operator publishes again deliberately afterwards.
+    """
+    if status == "draft":
+        return ["preview", "publish"]
+    if status == "published":
+        return ["preview", "unpublish", "archive"]
+    if status == "unpublished":
+        return ["preview", "publish", "archive"]
+    return ["preview", "restore"]
 
 
 def transcript_attention_count(records: Iterable[Mapping[str, Any]]) -> int:

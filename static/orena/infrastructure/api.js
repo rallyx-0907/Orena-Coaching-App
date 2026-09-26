@@ -284,6 +284,12 @@ export const api={
   // Shared Reading Library: admin-imported books, open to every learner.
   // libraryBookChapter backs the `book:<id>/<chapterId>` encounter locator
   // in ui/encounter.js; adminImportLibraryBooks is admin-gated server-side.
+  /* Published Reading articles - what the Admin Reading engine admitted. The
+     list is a page of lightweight cards and the detail is one article; neither
+     says anything about review, ingestion or a candidate, because a learner
+     has no business with any of that. */
+  readingArticles:(languageCode,cursor)=>request(`/api/reading/articles?language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
+  readingArticle:(articleId)=>request(`/api/reading/articles/${encodeURIComponent(articleId)}`),
   libraryBooks:(languageCode,cursor)=>request(`/api/reading/library/books?learning_language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
   libraryBook:(bookId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}`),
   libraryBookChapter:(bookId,chapterId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}/chapters/${encodeURIComponent(chapterId)}`),
@@ -298,25 +304,24 @@ export const api={
   grammarReference:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/reference`),
   completeGrammar:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/complete`,{method:'POST'}),
   uncompleteGrammar:(id)=>request(`/api/library/grammar/${encodeURIComponent(id)}/complete`,{method:'DELETE'}),
-  readingSessions:(limit=8)=>request(`/api/reading/sessions?limit=${encodeURIComponent(limit)}`),
-  readingSession:(id)=>request(`/api/reading/session/${encodeURIComponent(id)}`),
-  createReadingSession:(payload)=>request('/api/reading/session',{
+  // Canonical Reading (D-082): practice on the published corpus. The
+  // generated-passage session routes are retired.
+  readingPracticeNext:()=>request('/api/reading/practice/next'),
+  readingPracticeSet:(articleId)=>request(`/api/reading/practice/articles/${encodeURIComponent(articleId)}`),
+  gradeReadingPracticeQuestion:(setId,questionId,selectedIndex)=>request(`/api/reading/practice/sets/${encodeURIComponent(setId)}/questions/${encodeURIComponent(questionId)}/grade`,{
     method:'POST',
     headers:JSON_HEADERS,
-    body:JSON.stringify(payload||{}),
+    body:JSON.stringify({selected_index:selectedIndex}),
   }),
-  // One question, answered as the learner answers it; the attempt is still the
-  // whole set, sent once at the end.
-  gradeReadingAnswer:(id,index,choice)=>request(`/api/reading/session/${encodeURIComponent(id)}/answer/${encodeURIComponent(index)}`,{
+  // `operationId` names one logical submit and is reused by every retry of it.
+  // `recommendation` is what /next issued, passed back untouched when the
+  // learner came from it; the server verifies it and records the provenance.
+  submitReadingPractice:(setId,operationId,answers,recommendation=null)=>request('/api/reading/practice/attempts',{
     method:'POST',
     headers:JSON_HEADERS,
-    body:JSON.stringify({choice}),
+    body:JSON.stringify({set_id:setId,operation_id:operationId,answers,...(recommendation?{recommendation}:{})}),
   }),
-  submitReadingAnswers:(id,answers)=>request(`/api/reading/session/${encodeURIComponent(id)}/answer`,{
-    method:'POST',
-    headers:JSON_HEADERS,
-    body:JSON.stringify({answers}),
-  }),
+  readingEvidence:(limit=20)=>request(`/api/reading/practice/evidence?limit=${encodeURIComponent(limit)}`),
   importMedia:(payload)=>request('/api/media-learning/import',{
     method:'POST',
     headers:JSON_HEADERS,

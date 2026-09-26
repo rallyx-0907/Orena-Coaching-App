@@ -171,7 +171,9 @@ def admin_library(request: Request, language: str = "") -> dict[str, Any]:
     _require_admin(request)
     store, _, _ = _installed()
     selected = language.strip().casefold() or None
-    entries = [item for item in store.list(language=selected) if item.library == "shared"]
+    # An operator's listing, so every state: the one they came to look for is
+    # usually the one that is no longer in front of learners.
+    entries = [item for item in store.list(language=selected, status=None) if item.library == "shared"]
     return {
         "items": [_admin_entry(item) for item in entries],
         "counts": {"shared": len(entries)},
@@ -248,7 +250,8 @@ def admin_import(request: Request, payload: MediaImportIn) -> dict[str, Any]:
         _logger.warning("media import failed: %s", type(exc).__name__)
         raise orena_http_error(503, "media_import_unavailable", "Media import is not available right now.") from exc
     rows = [
-        {"url": item.url, "status": item.status, "detail": item.detail, "media_id": item.media_id, "lesson_id": item.lesson_id}
+        {"url": item.url, "status": item.status, "detail": item.detail, "category": item.category,
+         "media_id": item.media_id, "lesson_id": item.lesson_id}
         for item in report.items
     ]
     return {"items": rows, "summary": _summary(rows)}

@@ -2350,3 +2350,25 @@ theo" walking to question 2, and "Xem lại trong bài" closing the sheet onto t
 marked words in the text. Sizes measured in place: 25/800/-0.02em question,
 17/18 radius-15 options, 16.5/1.8 evidence, 15.5 reason, 13.5 skip line, 50px
 quiet actions, 54px primary.
+---
+
+## The learner rail on the Platform Admin console (2026-09-23, DECIDED)
+
+**Resolved by the human on 2026-09-23: the rail is removed from `#/admin`.**
+Platform Admin is a full-width workspace inside Orena - not a learner room and
+not a separate site - and it carries one named way back, "Back to Orena", in
+its own header.
+
+This matches `DESIGN_CONTRACT.md` rule 47, which gives the rail to Home,
+Library, Vocabulary and Progress only, and the canonical Admin frame
+(`Orena Admin Control Center.dc.html`), which draws no learner rail at all and
+lays its tables out for the whole width.
+
+Implemented in `static/orena/admin/admin.css`
+(`body:has(#main[data-experience='admin'])` stands the shell down and sets
+`--rail-width: 0`) and `static/orena/admin/shell.js` (the back link). The
+console went from 885px of usable width to 1199px on a 1280px window.
+
+The reader's precedent - a room may quiet the shell but never removes a
+destination - is honoured by the back link rather than by keeping the rail:
+Admin is not a learner room, and the one destination it needs is the way out.

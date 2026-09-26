@@ -10,6 +10,7 @@ import { adminApi } from './api.js';
 import { barList, bindCharts, columnChart } from './charts.js';
 import { openDrawer } from './drawer.js';
 import { chip, dateShort, dateTime, esc, fill, info, kv, languageName, notice, num, pager, panel, relative, select, table } from './format.js';
+import { gapNote } from './states.js';
 
 export const PAGE_SIZE = 25;
 
@@ -87,7 +88,9 @@ export function accountsTable(list, t, ui) {
   const rows = (list.items || []).map((item) => ({
     attributes: ` data-account-row="${esc(item.id)}"`,
     cells: [
-      `<div class="ac-cell-stack"><button type="button" class="ac-rowlink" data-account="${esc(item.id)}">${esc(item.display_name || t.unnamed)}</button>${item.role === 'admin' ? `<span class="ac-tag">${esc(t.role_admin)}</span>` : ''}<span class="ac-muted">${esc(item.email_masked || '')}</span></div>`,
+      `<div class="ac-cell-stack"><button type="button" class="ac-rowlink" data-account="${esc(item.id)}">${esc(item.display_name || t.unnamed)}</button><span class="ac-muted">${esc(item.email_masked || '')}</span></div>`,
+      // Role is a column an operator scans, not a tag hidden in the name cell.
+      esc(item.role === 'admin' ? t.role_admin : t.role_user),
       `<span title="${esc(dateTime(item.joined_at, ui))}">${esc(dateShort(item.joined_at, ui))}</span>`,
       esc((item.languages || []).map((code) => languageName(code, t)).join(t.enumSep) || '—'),
       `<span class="ac-muted">${esc(item.level || t.levelUnknown)}</span>`,
@@ -96,11 +99,11 @@ export function accountsTable(list, t, ui) {
     ],
   }));
   return `${table({
-    head: [t.colAccount, t.colJoined, t.colLanguages, t.colLevel, t.colLastActive, t.colStatus],
+    head: [t.colAccount, t.filterRole, t.colJoined, t.colLanguages, t.colLevel, t.colLastActive, t.colStatus],
     rows,
     empty: t.noAccounts,
     className: 'ac-table--accounts',
-  })}${pager({ offset: list.offset || 0, limit: list.limit || PAGE_SIZE, total: list.total || 0 }, t, ui)}`;
+  })}${pager({ offset: list.offset || 0, limit: list.limit || PAGE_SIZE, total: list.total || 0 }, t, ui)}${gapNote(t, t.usersActivityGap)}`;
 }
 
 export function accountDetailView(detail, t, ui) {
@@ -127,7 +130,7 @@ export function accountDetailView(detail, t, ui) {
   });
   return `<div class="ac-stack">${kv([
     [t.colAccount, `<strong>${esc(detail.display_name || t.unnamed)}</strong><br><span>${esc(detail.email || '')}</span>`],
-    [t.filterRole, esc(detail.role === 'admin' ? t.role_admin : t.role_user)],
+    [t.filterRole, `${esc(detail.role === 'admin' ? t.role_admin : t.role_user)} <button type="button" class="ac-button" disabled title="${esc(t.usersRoleGap)}">${esc(t.usersChangeRole)}</button>`],
     [t.colStatus, chip(detail.status, t)],
     [t.colJoined, esc(dateTime(detail.joined_at, ui))],
     [t.detailLastLogin, esc(dateTime(detail.last_login_at, ui))],

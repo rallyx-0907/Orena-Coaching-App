@@ -2515,3 +2515,132 @@ elsewhere by the human on 2026-09-23.
 
 **Supersedes / Superseded by:** nothing. Extends D-066/D-067's design authority
 into the data contract behind it.
+## D-081 — codex/work was merged into admin/control-center as a one-way synchronization
+
+**Date:** 2026-09-23
+**Status:** Accepted
+
+**Context.** `AGENTS.md` §3 keeps the two lanes intentionally independent and
+forbids taking learner-facing implementation from the other lane "unless the
+human explicitly instructs it". On 2026-09-23 the human merged `codex/work`
+into `admin/control-center` themselves (merge commit `61e9668`, preceded by
+their own `52c7246` "checkpoint learner UI before admin integration"), and the
+Reading Content Engine work continued on top of it. The delta reviewer raised
+that the instruction behind the merge was not recorded anywhere, and that the
+rebase of the engine's migration onto the merged chain is downstream of it.
+
+**Decision.** The merge is recorded here as a deliberate, human-performed
+**synchronization in one direction only**: the admin lane takes the learner
+lane's current state so that admin work is built against what learners
+actually have. The lane's migration chain was rebased onto the merged head
+(`20260922_0012`) rather than joined with an Alembic merge revision, so
+`migrations/versions/` keeps one linear chain.
+
+**What this decision does not authorize.** It is not authorization for the
+reverse merge. `admin/control-center` is still not merged into `codex/work` or
+`main`, and nothing here changes `AGENTS.md` §3's rule that the two
+implementations stay independent: a future sync in either direction is its own
+human instruction, recorded on its own.
+
+**Consequence.** Work in this lane may now assume the learner UI that arrived
+with the merge. Two node gates that came with it — `test_orena_vocabulary_theme_tokens`
+and `test_orena_writing_workspace` — fail identically at the merge commit and
+were not introduced by admin work; they belong to whoever owns that UI.
+
+**Supersedes / Superseded by:** None.
+
+## D-082 — Reading has one canonical flow and one canonical evidence model
+
+**Date:** 2026-09-24
+**Status:** Accepted (explicit human direction, 2026-09-24)
+
+**Context.** The Adaptive Reading schema proposal, approved by independent
+review at `0d6efda`, extended `reading_attempts` with a `generated_session`
+subject so that the AI-generated passage flow and the corpus flow would share
+one attempts table. That kept the legacy shape as a formal, long-lived contract.
+
+**Decision.** Reading has one flow: Admin imports content -> reviews it ->
+publishes it to the Reading Corpus -> a comprehension set is generated and an
+Admin reviews it -> the learner attempts it -> the attempt is persisted ->
+ability/progression is updated -> the next passage is chosen. Specifically:
+
+- No internal AI writes a source passage. AI only processes existing content:
+  level, vocabulary, grammar, questions, explanations, evidence.
+- Imports keeps five groups: Reading, Books, Media, Vocabulary, Sources. An
+  Admin may register an internet source; automatic fetching from an approved
+  source creates candidates only and never publishes.
+- Ingestion method, source kind and content kind stay separate concepts;
+  source category is deferred while it is not needed.
+- Lifecycles are reversible and normal flow never hard-deletes. Books restore.
+  Vocabulary is `pending_review -> published <-> unpublished -> archived ->
+  restore to unpublished`. Rights and completeness are warnings; an Admin may
+  override, and the override is audited.
+- Adaptive Reading uses only the published Reading Corpus. A comprehension set
+  carries question type, answer, explanation and evidence grounded in the exact
+  version of the passage, and passes Admin review before a learner meets it.
+- A Reading attempt is one canonical evidence model; no parallel evidence
+  store. Submit is idempotent: a retry creates no second attempt and moves
+  ability once. Learner evidence never cascades away when content is edited,
+  archived or deleted.
+- Reading ability is a projection rebuildable from attempts, with a policy
+  version and checkpoint, deterministic and testable. The next article is
+  chosen by ability, recent performance and skill weakness - not purely at
+  random.
+- Cross-skill cue, Collection, Learner Summary, Admin Activity and Analytics
+  move to the canonical Reading evidence before new learner submits are enabled.
+- The AI-generated passage flow retires and is removed once the migration path
+  is done. Legacy data that is only sandbox/test is reset or reseeded; real
+  learner history is migrated or archived read-only. The legacy shape decides
+  nothing in the new architecture.
+- Text Discussion on a corpus article stays deferred, to its own proposal.
+
+**Process.** The schema proposal is rewritten for this model, written as real
+proposed DDL, independently reviewed, and taken to the human gate before any
+sandbox apply. **The approval of the earlier schema (`0d6efda`) does not carry
+to the new one.** The milestone is READY only after a live end-to-end run:
+import -> review -> publish -> learner attempt -> attempt persisted -> ability
+updated -> next passage chosen adaptively -> data still there after reload;
+a retry does not duplicate; editing an article does not silently falsify old
+evidence; the runtime works after being recreated.
+
+**Supersedes / Superseded by:** Supersedes the `generated_session` design of
+`ADAPTIVE_READING_SCHEMA_PROPOSAL.md` at `0d6efda` and its review approval.
+
+## D-083 — Canonical Reading cutover authorized for the admin sandbox only
+
+**Date:** 2026-09-24
+**Status:** Accepted (explicit human authorization, 2026-09-24)
+
+**Context.** The Admin-lane canonical Reading schema (`20260924_0014`, now
+`20260924_0016` in this integration, D-082) passed
+independent architecture review at `fdf198f` (round C1, confirmed). Its §11
+recorded a deliberate departure from `ORENA_ACCOUNT_DATA_ARCHITECTURE.md` §6
+steps 2 and 5 and the I2 additive-schema gate, for the human to confirm.
+
+**Decision.**
+
+- Apply the Admin-lane `20260924_0014` to the **admin sandbox only**, including the
+  deliberate **non-additive cutover** from the legacy Reading tables to the
+  canonical model. The exception is intentional: the generated-reading
+  architecture is being retired, not preserved as a permanent compatibility
+  model. Production (8000) and preview (8010) keep every gate they had.
+- Apply after a backup, deploy the matching code in the same cutover, and run
+  the PostgreSQL upgrade/downgrade rehearsal and the lock-order proof.
+- The three concepts are: `job_type` = ingestion action; `source_type` =
+  source acquisition / feed mechanism; `content_kind` = learner-facing content
+  type. Editorial source category stays deferred. `source_type` is never
+  described as a publisher/news/blog category.
+- **Legacy Reading data is not deleted yet.** The archive inventory query runs
+  first and its result is reported. Test/dev-only data may then be reset;
+  meaningful learner history stays read-only.
+- **No legacy "earlier practice" in Learner Summary** for now. Legacy history
+  does not affect the canonical ability/progression model.
+- Proceed with removing the AI passage generator, moving every Reading consumer
+  to canonical evidence, adding the Reading rights-warning audit, and the live
+  end-to-end run. **Learner submit stays disabled until the complete E2E passes.**
+
+**Supersedes / Superseded by:** Confirms the deviation recorded in the
+proposal's §11 for the admin sandbox only; it authorizes nothing beyond it.
+
+The integration revision `20260924_0016` has a different parent and needs
+independent architecture review before any shared-runtime application.

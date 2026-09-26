@@ -5,12 +5,12 @@ def req(ok,msg):
 def text(rel): return (ROOT/rel).read_text(encoding='utf-8')
 req((ROOT/'VERSION').read_text().strip() == '1.4.0','VERSION must be v1.4.0')
 app=text('app.py'); repo=text('writing_coach/persistence/specialized_repository.py')
-for name in ['becoming_memory.py','becoming_outcomes.py','becoming_library.py','becoming_reading.py','becoming_linguistics.py']:
+for name in ['becoming_memory.py','becoming_outcomes.py','becoming_library.py','becoming_linguistics.py']:
     src=text('writing_coach/'+name)
     req('_repo()' in src or '_repository' in src, name+' must use repository boundary')
     # Runtime service logic must not own connection factories anymore.
     req('_db_factory' not in src and 'def _db()' not in src, name+' still owns DB factory')
-for name in ['becoming_memory.py','becoming_library.py','becoming_reading.py']:
+for name in ['becoming_memory.py','becoming_library.py']:
     src=text('writing_coach/'+name)
     for forbidden in ['import sqlite3','sqlite3.Connection','CREATE TABLE','ALTER TABLE','PRAGMA']:
         req(forbidden not in src,name+' still owns SQLite schema detail: '+forbidden)
@@ -41,11 +41,14 @@ req('def initialize(self)' not in postgres,'PostgreSQL specialized repository mu
 req('configure_becoming_memory(_specialized_learning_repository)' in app,'memory not wired to repository')
 req('configure_becoming_outcomes(_specialized_learning_repository)' in app,'outcomes not wired to repository')
 req('configure_becoming_library(_specialized_learning_repository)' in app,'library not wired to repository')
-req('configure_becoming_reading(_specialized_learning_repository, generate_structured)' in app,'reading not wired to repository')
+# The generated-reading service is retired (D-082); canonical Reading has its
+# own repository, ReadingEvidenceRepository, wired with the Reading engine.
+req('configure_becoming_reading' not in app,'the retired generated-reading service is wired again')
+req('ReadingEvidenceRepository(engine)' in app,'canonical Reading evidence is not wired')
 req('configure_becoming_linguistics(_specialized_learning_repository)' in app,'linguistics not wired to repository')
 req((ROOT/'docs/SPECIALIZED_PERSISTENCE_BOUNDARY.md').exists(),'missing boundary doc')
 print('BECOMING specialized persistence boundary validation OK')
-print('Memory / Outcomes / Active Recall / Reading / Linguistics: repository-bound')
+print('Memory / Outcomes / Active Recall / Linguistics: repository-bound; Reading: canonical evidence')
 print('Specialized SQLite schema ownership: repository-bound')
 print('SQLite specialized repository: FROZEN ROLLBACK / ARCHIVE ONLY')
 print('PostgreSQL specialized repository: AUTHORITATIVE')

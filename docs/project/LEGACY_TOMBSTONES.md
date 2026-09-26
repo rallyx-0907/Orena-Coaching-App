@@ -164,3 +164,26 @@ removed merely because current code conflicts with them.
   persistence compatibility identifiers.
 - **What must not happen:** these symbols must not define current product
   identity, routing, architecture, or a separate learning system.
+
+## AI-generated Reading passages (`becoming_reading`, `/api/reading/session*`)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-082, D-083).
+- **Current replacement:** one canonical Reading flow - Admin import -> review ->
+  publish into the Reading Corpus -> an Admin-reviewed comprehension set ->
+  the learner's canonical attempt (`reading_attempts`) -> ability -> the next
+  article (`writing_coach/reading_practice_api.py`,
+  `writing_coach/persistence/reading_evidence_repository.py`).
+- **Why retired:** an internal AI writing the source passage a learner reads,
+  with its own session and attempt shape, was a second Reading architecture
+  beside the published corpus. AI is a processor that runs after the source
+  exists; it never writes one.
+- **What may remain:** the read-only archive `reading_legacy_sessions` /
+  `reading_legacy_attempts` (renamed by `20260924_0016`, frozen by trigger,
+  deletable only by account deletion or an authorized reset after the archive
+  inventory); the AI capability key `reading_generator`, which now only writes
+  comprehension questions for a published passage.
+- **What must not happen:** a generated or AI-rewritten source passage served
+  to a learner; a session or attempt model beside the canonical one; reading
+  the archive as evidence, as a baseline for ability or progression, or as
+  "earlier practice" in Learner Summary; a deterministic or built-in fallback
+  that invents questions when no provider answers.

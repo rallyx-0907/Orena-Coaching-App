@@ -62,7 +62,14 @@ LIBRARY = [
     {'word': 'Harbour', 'definition': 'a sheltered place for boats', 'added_at': '2026-09-10T08:00:00+00:00', 'source_kind': 'reading'},
     {'word': 'lantern', 'definition': 'a lamp with a case', 'added_at': '2026-09-11T08:00:00Z'},
 ]
-READING = [{'id': 1, 'title': 'The last train home', 'topic': 'travel', 'created_at': '2026-09-12T09:00:00+00:00', 'question_count': 4}]
+# Canonical Reading evidence (D-082), newest first: two attempts on one corpus
+# article are one Collection entry - the article, not each answer sheet.
+READING = [
+    {'id': 'attempt-2', 'kind': 'reading_attempt', 'article_id': '1', 'title': 'The last train home', 'topic': 'travel',
+     'created_at': '2026-09-12T09:00:00+00:00', 'correct_count': 3, 'total': 4},
+    {'id': 'attempt-1', 'kind': 'reading_attempt', 'article_id': '1', 'title': 'The last train home', 'topic': 'travel',
+     'created_at': '2026-09-05T09:00:00+00:00', 'correct_count': 1, 'total': 4},
+]
 ESSAYS = [{'id': 7, 'series_id': 1, 'prompt': '', 'text': 'Yesterday I went to the harbour and watched the boats.', 'created_at': '2026-09-09T10:00:00+00:00', 'revision_no': 2}]
 LISTENING = [
     {'asset_id': 'shared-source', 'segment_id': 'shared-source:000', 'updated_at': '2026-09-12T10:00:00+00:00'},
@@ -154,10 +161,13 @@ def test_the_same_numeric_id_in_two_domains_stays_two_objects():
 
 def test_every_action_is_a_real_route_or_none():
     # Keyed by domain and id: keyed by id alone, essay series 1 would overwrite
-    # reading session 1 - the collision domain refs exist to prevent.
+    # reading article 1 - the collision domain refs exist to prevent.
     result = {(entry['ref']['domain'], entry['ref']['id']): entry for entry in query_collection(EN, everything(), secret=SECRET)['entries']}
     # The same strings intent.js link() builds.
-    assert result[('reading', '1')]['action'] == {'kind': 'open_source', 'route': '#/encounter?id=reading%3A1&intent=reading'}
+    assert result[('reading', '1')]['action'] == {'kind': 'open_source', 'route': '#/encounter?id=article%3A1&intent=reading'}
+    # The latest attempt speaks for the article.
+    assert result[('reading', '1')]['detail'] == {'correct': 3, 'total': 4}
+    assert result[('reading', '1')]['updatedAt'] == '2026-09-12T09:00:00+00:00'
     assert result[('language', 'harbour')]['action']['route'] == '#/language'
     assert result[('media', 'lesson-one')]['action']['route'] == '#/encounter?id=media%3Alesson-one&intent=dictation'
     assert result[('speaking', 'take-lesson')]['action']['route'] == '#/encounter?id=media%3Aknown-lesson&intent=speaking'

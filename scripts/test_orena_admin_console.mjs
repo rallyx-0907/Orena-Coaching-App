@@ -30,8 +30,9 @@ import {
   renderImports,
 } from '../static/orena/admin/imports.js';
 import { readinessView, systemView, operationsView, activationView, impactView } from '../static/orena/admin/operations.js';
-import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, SECTIONS } from '../static/orena/admin/shell.js';
-import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows } from '../static/orena/admin/reading.js';
+import { sectionFrom, sectionHref, frameView, envView, hashParams, badgeCounts, legacyParams, SECTIONS } from '../static/orena/admin/shell.js';
+import { watch as watchJob, items as trayItems, clear as clearTray, trayView, refresh as refreshTray, progress as trayProgress, inFlight, ticking, POLL_MS, SETTLED_MS } from '../static/orena/admin/tray.js';
+import { VIEWS, viewFrom, articleRows, previewBody, jobRows, sourceRows, cursorPager, submissionFrom, targetRows, targetSummary } from '../static/orena/admin/reading.js';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = adminCopy.en;
@@ -78,7 +79,7 @@ for (const stage of new Set([...stages, 'source', 'persistence', 'validation']))
   assert.ok(en[`stage_${stage}`] && zh[`stage_${stage}`], `import stage "${stage}" is named`);
 }
 const measures = [...read('writing_coach/persistence/admin_repository.py').matchAll(/\("([a-z_]+)", [A-Z]\w+, [A-Z]\w+\.language_code/g)].map((match) => match[1]);
-for (const measure of new Set([...measures, 'reading_checks'])) assert.ok(en[`measure_${measure}`] && zh[`measure_${measure}`], `measure "${measure}" is named`);
+for (const measure of new Set(measures)) assert.ok(en[`measure_${measure}`] && zh[`measure_${measure}`], `measure "${measure}" is named`);
 const services = [...read('writing_coach/admin_console_api.py').matchAll(/"([a-z_]+)": (?:engine|attached)\(/g)].map((match) => match[1]);
 for (const service of new Set([...services, 'transcript_fallback'])) assert.ok(en[`service_${service}`] && zh[`service_${service}`], `service "${service}" is named`);
 const statuses = [
@@ -187,8 +188,12 @@ assert.match(routing, /data-capability="future_capability"/, 'a capability added
 assert.match(routing, /future capability/, 'an unnamed capability falls back to its key');
 assert.equal((routing.match(/data-ac-action="edit"/g) || []).length, 2, 'only configurable capabilities can be edited');
 assert.equal((routing.match(/data-ac-action="test"/g) || []).length, 1, 'only a saved, enabled route can be tested');
-assert.match(routing, /Local \(deterministic\)/);
+/* The canonical row is one scan line: the state chip carries a word, and the
+   sentence explaining it rides on the chip's title rather than wrapping the
+   row to twice its height. */
+assert.match(routing, /title="Runs locally without a provider\.">.*?Local</, 'a local capability says so in one word, with the sentence on the chip');
 assert.match(routing, /Reserved/);
+assert.doesNotMatch(routing, /<small>[^<]*recorded requests/, 'health evidence rides on the chip, not as a third line in the cell');
 assert.match(routing, /Degraded/);
 const providerMarkup = providersView({ ...state, providerForm: 'groq', providerMessage: '', confirmRemove: null, expanded: null }, en, 'en');
 assert.doesNotMatch(providerMarkup, /sk-SHOULD-NEVER-RENDER/, 'a provider payload field is never echoed');
@@ -422,7 +427,12 @@ assert.match(operationsTable, /50%/, 'and with its failure-rate rule');
 assert.doesNotMatch(operationsView({ available: true, has_data: true, recent: [], by_capability: [] }, en, 'en'), new RegExp(en.opsHealthRule.split('{')[0]), 'no rule is shown when the server did not state one');
 
 // ---- shell -------------------------------------------------------------------
-assert.deepEqual(SECTIONS, ['overview', 'ai', 'users', 'content', 'reading', 'imports', 'operations']);
+/* Six areas, and Reading is a Content view rather than a seventh (canonical
+   design). A link to the tab it briefly had still lands somewhere real. */
+assert.deepEqual(SECTIONS, ['overview', 'ai', 'users', 'content', 'imports', 'operations']);
+assert.equal(sectionFrom({ id: 'reading' }), 'content', 'the old Reading tab resolves into Content');
+assert.deepEqual(legacyParams({ id: 'reading' }), { kind: 'reading' }, 'and it carries the kind with it');
+assert.equal(legacyParams({ id: 'content' }), null, 'a current id carries nothing extra');
 assert.equal(sectionFrom({ id: 'ai' }), 'ai');
 assert.equal(sectionFrom({ id: 'nope' }), 'overview');
 assert.equal(sectionHref('overview'), '#/admin');
@@ -432,7 +442,7 @@ assert.deepEqual(badgeCounts(attention), { ai: 1, content: 1, operations: 1 });
 const frame = frameView({ section: 'users', t: zh, attention });
 assert.match(frame, /aria-current="page">用户/);
 assert.match(frame, /<h1>平台管理<\/h1>/);
-assert.equal((frame.match(/class="ac-tab"/g) || []).length, 7);
+assert.equal((frame.match(/class="ac-tab"/g) || []).length, 6);
 
 // ---- reading ------------------------------------------------------------------
 /* The engine's operator surface: six views of one catalog, a preview that is
@@ -466,6 +476,19 @@ assert.match(preview, /data-ac-action="published"/, 'publishing is an explicit a
 assert.doesNotMatch(previewBody({ ...article, status: 'published' }, en, 'en'), /data-ac-action="published"/,
   'a published article offers unpublish rather than publish again');
 assert.match(zh.readingNote_queue, /[一-鿿]/, 'the Chinese console is written in Chinese');
+/* Keyset pagination: the controls say only what the server told us. No page
+   number and no total, because answering a list must not cost a count of the
+   corpus - the invariant the whole partial-index design rests on. */
+assert.equal(cursorPager({ next: null, back: false, t: en }), '', 'one page needs no controls');
+const firstPage = cursorPager({ next: 'CURSOR-2', back: false, t: en });
+assert.match(firstPage, /data-ac-page="next" data-ac-cursor="CURSOR-2"/, 'Next carries the cursor it moves to');
+assert.match(firstPage, /data-ac-page="prev" disabled/, 'there is nothing before the first page');
+assert.doesNotMatch(firstPage, /\d+\s*(of|\/)\s*\d+/, 'no page number is invented');
+const lastPage = cursorPager({ next: null, back: true, t: en });
+assert.match(lastPage, /data-ac-page="next"[^>]*disabled/, 'the last page offers no Next');
+assert.doesNotMatch(lastPage, /data-ac-page="prev"[^>]*disabled/, 'but it can go back');
+assert.match(cursorPager({ next: 'x', back: true, t: zh }), /aria-label="翻页控制"/, 'and it is labelled in both languages');
+
 for (const key of Object.keys(en)) assert.ok(key in zh, `zh is missing ${key}`);
 for (const key of Object.keys(zh)) assert.ok(key in en, `en is missing ${key}`);
 
@@ -604,5 +627,78 @@ for (const pair of [['--sage-surface', '--on-sage'], ['--coral-surface', '--on-c
   assert.ok(css.includes(pair[0]) && css.includes(pair[1]), `${pair[0]} is always worn with ${pair[1]}`);
 }
 assert.ok(table({ head: ['A'], rows: [] , empty: 'none' }).includes('none'));
+
+/* ---- the form's own answer, not a default ------------------------------ */
+/* The server stopped turning an unanswered rights question into `False`; the
+   form has to stop sending one. A select whose empty value means "not
+   answered" only carries the key when an operator chose an answer - the API
+   client then omits an absent key rather than posting an empty string, which
+   the server could not tell apart from an answer. */
+const emptyForm = { text: { value: 'A pasted paragraph.' }, language: { value: 'en' } };
+assert.ok(!('can_republish' in submissionFrom(emptyForm, 'text')),
+  'an unanswered rights question is not in the submission at all');
+assert.equal(submissionFrom({ ...emptyForm, can_republish: { value: 'allowed' } }, 'text').can_republish, true);
+assert.equal(submissionFrom({ ...emptyForm, can_republish: { value: 'denied' } }, 'text').can_republish, false);
+const addMarkup = read('static/orena/admin/reading.js');
+assert.doesNotMatch(addMarkup, /can_republish\?\.checked/,
+  'rights is a three-answer choice, never a checkbox whose unticked state means refusal');
+for (const key of ['readingRightsUnanswered', 'readingRightsAllowed', 'readingRightsDenied']) {
+  assert.ok(en[key] && zh[key], `the rights choice "${key}" has words in both languages`);
+}
+const apiSource = read('static/orena/admin/api.js');
+assert.match(apiSource, /value === undefined \|\| value === null/,
+  'the submit client omits an absent field instead of posting an empty string');
+
+/* A dropped target keeps its row and its way back, and the panel says how many
+   are kept against how many are dropped - including when that number is 0. */
+const someTargets = [
+  { id: 'a', text: 'higher ground', target_type: 'phrase', context: 'c', admin_approved: false, admin_rejected: false },
+  { id: 'b', text: 'flooded', target_type: 'word', context: 'c', admin_approved: false, admin_rejected: true },
+];
+const targetMarkup = targetRows(someTargets, en).map((row) => row.cells.join('')).join('');
+assert.ok(targetMarkup.includes(en.readingTargetRestore), 'a dropped target offers the way back');
+assert.ok(targetRows(someTargets, en)[1].attributes.includes('data-ac-dropped'), 'a dropped target stays, marked');
+assert.equal(targetSummary(someTargets, en), '1 kept, 1 dropped. Arrows set the order a learner meets them in.');
+assert.ok(!targetSummary([], en).includes('{'), 'a zero reaches the sentence');
+
+/* ---- the tray outlives the view that started it (study 04) -------------- */
+/* The design's rule is that nothing waits in a modal: the form goes away and
+   what is in flight follows the operator around the console. So the tray's
+   state is a module, not a variable inside the Reading view, and the frame
+   renders it outside the section host - which is replaced on every route
+   change. These assertions are what "persists across tabs" means in code. */
+clearTray();
+assert.equal(trayView(en, { href }), '', 'an empty tray draws nothing at all');
+watchJob({ id: 'job-1', label: 'The ferry timetable' });
+const trayMarkup = trayView(en, { href });
+assert.ok(trayMarkup.includes('The ferry timetable'), 'the tray names what was submitted');
+assert.ok(trayMarkup.includes(en.readingTrayOpenImports), 'the tray offers the full list');
+assert.equal(inFlight(), 1, 'a queued job counts as in flight');
+assert.ok(trayView(en, { href, collapsed: true }).includes('data-collapsed="1"'), 'the tray collapses');
+
+const trayFrame = frameView({ section: 'overview', t: en });
+const trayAt = trayFrame.indexOf('data-ac-tray-host');
+const sectionAt = trayFrame.indexOf('data-ac-section');
+assert.ok(trayAt > -1 && trayAt < sectionAt, 'the tray hangs outside the section host, above it');
+
+/* Progress is the engine's own stage, and a finished job settles rather than
+   vanishing mid-sentence. */
+assert.ok(trayProgress({ stage: 'analyzing', status: 'running' }) > trayProgress({ stage: 'fetching', status: 'running' }));
+assert.equal(trayProgress({ stage: 'done', status: 'completed' }), 100);
+await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done', result_kind: 'article_created' }) }, 1000);
+assert.equal(inFlight(), 0, 'a finished job leaves the in-flight count');
+assert.equal(trayItems().length, 1, 'and stays on screen long enough to be read');
+assert.ok(ticking(), 'the clock keeps running while a finished job is still shown');
+await refreshTray({ readingJob: async () => ({ status: 'completed', stage: 'done' }) }, 1000 + SETTLED_MS + 1);
+assert.equal(trayItems().length, 0, 'then leaves - the tray is work in flight, not history');
+assert.equal(ticking(), false, 'and only then does the clock stop');
+/* One clock and one settle window for the whole console: a second constant
+   somewhere else is how "the tray hides itself" stops being true. */
+assert.ok(POLL_MS > 0 && SETTLED_MS > POLL_MS, 'the settle window outlasts a poll');
+assert.doesNotMatch(read('static/orena/admin/reading.js'), /setInterval/,
+  'the Add view follows the tray clock instead of running a second one');
+assert.doesNotMatch(read('static/orena/admin/shell.js'), /TRAY_POLL_MS|= 5000/,
+  'the shell takes the interval from tray.js rather than declaring its own');
+clearTray();
 
 console.log('Platform Admin control center: copy parity, server contracts, honest absence, no secrets, isolated imports, one colour owner PASS');

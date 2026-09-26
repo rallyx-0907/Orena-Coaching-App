@@ -154,6 +154,34 @@ const placed = homeHtml(
 );
 assert.match(placed, /class="hm-bar" role="img" aria-label="50%"/, 'a recorded place is drawn as it was recorded');
 
+/* The article the Reading selection policy chose (D-082) leads the reading side of "for you", once:
+   it is the rail the frames give to what fits the learner, and it is not a second card. */
+const chosen = { id: 'article:chosen-1', kind: 'article', material: 'article', title: 'Chosen article', language: 'en', level: 'B1' };
+const withChoice = homeHtml(ctxFor('en'), {
+  media: sampleMedia, reading: [...sampleReading, chosen], nextReading: { ...chosen, recommendation: 'rr1.payload.signature' },
+  vocabulary: [], saved: [], due: 0, collections: [],
+});
+/* Only the recommendation's own card carries the signed recommendation; the same article's catalogue
+   card does not, so opening it that way is the learner's own choice. */
+const cardsFor = (html, rail) => {
+  const from = html.indexOf(`data-rail="${rail}"`);
+  const body = html.slice(from, html.indexOf('data-rail="', from + 10) > 0 ? html.indexOf('data-rail="', from + 10) : undefined);
+  return [...body.matchAll(/href="([^"]+)"/g)].map((match) => match[1].replaceAll('&amp;', '&')).filter((href) => href.includes('chosen-1'));
+};
+assert.ok(cardsFor(withChoice, 'for-you').every((href) => new URLSearchParams(href.split('?')[1]).get('rec') === 'rr1.payload.signature'),
+  'the recommendation card carries the signed recommendation');
+assert.ok(cardsFor(withChoice, 'reading').length === 1 && cardsFor(withChoice, 'reading').every((href) => !href.includes('rec=')),
+  'the catalogue card for the same article carries none');
+const forYou = withChoice.slice(withChoice.indexOf('data-rail="for-you"'), withChoice.indexOf('data-rail="reading"'));
+const readingHrefs = [...forYou.matchAll(/href="([^"]+)"/g)].map((match) => decodeURIComponent(match[1])).filter((href) => /(article|story):/.test(href));
+assert.match(readingHrefs[0] || '', /article:chosen-1/, 'the policy\'s choice is the first reading card for the learner');
+assert.equal(readingHrefs.filter((href) => href.includes('article:chosen-1')).length, 1, 'and it is drawn once');
+const withoutChoice = homeHtml(ctxFor('en'), { media: sampleMedia, reading: sampleReading, vocabulary: [], saved: [], due: 0, collections: [] });
+assert.doesNotMatch(withoutChoice, /chosen-1/, 'no choice draws nothing in its place');
+/* Home asks the policy - the real /api/reading/practice/next - rather than guessing from the catalogue. */
+assert.match(world, /api\.readingPracticeNext\(\)/, 'Home reads the selection policy\'s next article');
+assert.match(world, /nextReading/, 'and hands it to the "for you" rail');
+
 /* Every number in the stylesheet is the frame's: the desktop card 300x170 at radius 16 in a 20px rail,
    the phone's 232x132 at 15 in a 14px one, the Continue art 210x118, the top bar 84 tall. */
 for (const [pattern, why] of [
@@ -173,7 +201,7 @@ assert.doesNotMatch(styles, /background:\s*#(?:[0-9a-f]{3}|[0-9a-f]{6})\b/i,
 
 /* The room reads its own data, and hands its bindings back when the route changes. */
 assert.match(world, /api\.listeningLibrary\(language\)/);
-assert.match(world, /api\.readingSessions\(12\)/);
+assert.doesNotMatch(world, /api\.readingSessions?\(/, 'the retired generated-reading sessions are not read (D-082)');
 assert.match(world, /api\.dailyVocabularyFeed\(language\)/);
 assert.match(world, /api\.vocabularyLibraryCollections\(language\)/, 'the Vocabulary rail is the learner\'s own sets');
 /* Home offers a review, so it asks how much is due - a counted number. It

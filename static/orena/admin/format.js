@@ -10,7 +10,13 @@ import { hint } from '../ui/patterns.js';
 export { esc };
 
 export function fill(template, values = {}) {
-  return String(template ?? '').replace(/\{(\w+)\}/g, (_, key) => (values[key] ?? values[key] === 0 ? String(values[key]) : `{${key}}`));
+  /* Zero is a value. `values[key] ?? values[key] === 0` reads as "or zero" but
+     binds as `(values[key] ?? (values[key] === 0))`, so a 0 short-circuits to
+     a falsy 0 and the placeholder survives into the sentence - "{dropped}
+     dropped" instead of "0 dropped". Only null and undefined mean unfilled. */
+  return String(template ?? '').replace(/\{(\w+)\}/g, (_, key) => (
+    values[key] === undefined || values[key] === null ? `{${key}}` : String(values[key])
+  ));
 }
 
 export function locale(ui) {
@@ -127,7 +133,11 @@ export function table({ head = [], rows = [], empty = '', caption = '', classNam
     const cells = Array.isArray(row) ? row : row.cells;
     const attributes = Array.isArray(row) ? '' : row.attributes || '';
     return `<tr${attributes}>${cells.map((cell, index) => {
-      const spec = typeof head[index] === 'string' || !head[index] ? {} : head[index];
+      const column = head[index];
+      const spec = typeof column === 'string' || !column ? { label: typeof column === 'string' ? column : '' } : column;
+      /* Every cell carries its column's name, so a narrow screen can stack the
+         row into a card and still say what each value is (canonical study 02:
+         the mobile panels are the same data, read vertically). */
       return `<td${spec.numeric ? ' data-numeric' : ''}${spec.label ? ` data-label="${esc(spec.label)}"` : ''}>${cell}</td>`;
     }).join('')}</tr>`;
   }).join('');

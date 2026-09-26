@@ -25,7 +25,7 @@ import {
 } from '../product/evidence.js';
 import { comprehensionSection, bindComprehension } from './comprehension.js';
 import { contentFor } from '../content/texts.js';
-import { readingText, readingSessionId, readable } from '../content/reading.js';
+import { readable } from '../content/reading.js';
 import { preparedMeaning } from '../content/language-notes.js';
 import {
   mediaPlayer,
@@ -189,7 +189,7 @@ function textEncounter(root, ctx, item, book = null) {
       }),
   );
   bindComprehension(root, ctx, {
-    sessionId: readingSessionId(item.id),
+    practice: item.practice,
     questions: item.questions,
     onEvidence: (fragment) => reader.showEvidence(fragment),
     /* The paragraph the words stand in, from the text the learner just read:
@@ -238,20 +238,28 @@ function waitingMedia(root, ctx, payload) {
   root.querySelector('[data-retry]').onclick = () => window.location.reload();
   return () => disconnectMediaPlayer(playerRoot);
 }
+/* One answer sheet for one approved set. The operation id names the logical
+   submit, so a retry after a lost response replays the attempt the server
+   already saved rather than recording a second one; it is minted once per
+   sheet and reused by every try. The answer key comes back with the saved
+   attempt, never before it. */
+function practiceSubmit(api, served, recommendation = '') {
+  let operationId = null;
+  return async (answers) => {
+    operationId ||= globalThis.crypto?.randomUUID?.() || `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const picked = {};
+    served.questions.forEach((question, position) => {
+      picked[question.id] = answers[position];
+    });
+    const saved = await api.submitReadingPractice(served.id, operationId, picked, recommendation || null);
+    return saved?.results;
+  };
+}
 export async function renderEncounter(root, ctx) {
   const { api, c, language, memory, location, alive } = ctx;
   const id = location.id;
   if (id.startsWith('published:')) {
     const item = publishedReading(id, language);
-    if (!item) throw Error(c.unavailable);
-    return textEncounter(root, ctx, item);
-  }
-  if (id.startsWith('reading:')) {
-    const sessionId = readingSessionId(id);
-    if (!sessionId) throw Error(c.unavailable);
-    const payload = await api.readingSession(sessionId);
-    const item = readingText(payload.found ? payload.session : null, language);
-    if (!alive()) return;
     if (!item) throw Error(c.unavailable);
     return textEncounter(root, ctx, item);
   }
@@ -293,6 +301,55 @@ export async function renderEncounter(root, ctx) {
         provenance: bookDetail?.provenance || null,
       },
     );
+  }
+  if (id.startsWith('article:')) {
+    /* A published Reading article, read in the room every other text is read
+       in. The server answers with the text, the targets an admin approved and
+       the attribution its rights require; nothing about review or ingestion
+       crosses this boundary, so there is nothing here to hide. */
+    const articleId = id.slice('article:'.length);
+    /* Its comprehension check is the set an Admin approved for it (D-082).
+       No set, or no approved one in the learner's support language, is Free
+       Reading - the text alone, which is a complete thing to do. */
+    const [article, practice] = await Promise.all([
+      api.readingArticle(articleId),
+      api.readingPracticeSet(articleId).catch(() => null),
+    ]);
+    if (!alive()) return;
+    const served = practice?.submit_enabled ? practice.set : null;
+    const item = readable({
+      id,
+      title: article.title,
+      language: article.language,
+      level: article.level,
+      subtitle: article.topic,
+      paragraphs: String(article.body || '').split(/\n\s*\n/),
+      phrases: (article.targets || []).map((target) => ({
+        word: target.text,
+        meaning: target.meaning || '',
+        note: target.context || '',
+      })),
+      source: article.attribution?.author || article.attribution?.source_url
+        ? {
+            creator: article.attribution.author || '',
+            provenance_url: article.attribution.source_url || '',
+          }
+        : undefined,
+      questions: (served?.questions || []).map((question) => ({
+        id: question.id,
+        question: question.prompt,
+        options: question.options,
+      })),
+    });
+    if (!item) throw Error(c.unavailable);
+    /* Reached from the recommendation's own card, the address carries the
+       signed recommendation; the server decides whether it counts. */
+    if (served && item.questions?.length)
+      item.practice = {
+        grade: (questionId, choice) => api.gradeReadingPracticeQuestion(served.id, questionId, choice),
+        submit: practiceSubmit(api, served, location.rec),
+      };
+    return textEncounter(root, ctx, item);
   }
   if (id.startsWith('story:') || id.startsWith('text:')) {
     const found = id.startsWith('story:')

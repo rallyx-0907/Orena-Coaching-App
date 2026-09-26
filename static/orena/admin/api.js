@@ -48,6 +48,9 @@ export const adminApi = {
   contentDetail: (kind, id) => request(`/api/admin/console/content/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`),
   archiveBook: (id) => request(`/api/admin/console/content/book/${encodeURIComponent(id)}/archive`, { method: 'POST' }),
   publishCollection: (id, body) => request(`/api/admin/console/content/vocabulary/${encodeURIComponent(id)}/publish`, json('POST', body)),
+  restoreBook: (id) => request(`/api/admin/console/content/book/${encodeURIComponent(id)}/restore`, { method: 'POST' }),
+  setCollectionStatus: (id, status) =>
+    request(`/api/admin/console/content/vocabulary/${encodeURIComponent(id)}/status`, json('POST', { status })),
   reprocessMedia: (id) => request(`/api/admin/console/content/media/${encodeURIComponent(id)}/reprocess`, { method: 'POST' }),
   importBook: (file, language) => {
     const form = files('files', [file]);
@@ -82,6 +85,7 @@ export const adminApi = {
   // Reading Content Engine. Submitting is multipart because a file may ride
   // with it; everything else is JSON. Nothing here decides who may call it.
   readingSources: () => request('/api/admin/reading/sources'),
+  readingCreateSource: (body) => request('/api/admin/reading/sources', json('POST', body)),
   readingSetSourceState: (id, state) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state })),
   readingSetPolling: (id, state, enabled) =>
@@ -97,12 +101,26 @@ export const adminApi = {
       `/api/admin/reading/articles/${encodeURIComponent(articleId)}/targets/${encodeURIComponent(targetId)}`,
       json('POST', { approved }),
     ),
+  setMediaStatus: (id, status) =>
+    request(`/api/admin/console/content/media/${encodeURIComponent(id)}/status`, json('POST', { status })),
+  readingReorderTargets: (articleId, order) =>
+    request(
+      `/api/admin/reading/articles/${encodeURIComponent(articleId)}/target-order`,
+      json('POST', { order }),
+    ),
   readingJobs: (params) => request(`/api/admin/reading/jobs${query(params)}`),
+  readingJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}`),
   readingRetryJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
   readingOperations: () => request('/api/admin/reading/operations'),
   readingSubmit: (submitted, file = null) => {
     const form = new FormData();
-    for (const [key, value] of Object.entries(submitted)) form.append(key, value === true ? 'true' : value === false ? 'false' : String(value ?? ''));
+    for (const [key, value] of Object.entries(submitted)) {
+      /* An absent field is not sent at all. `String(undefined ?? '')` would
+         post an empty string, and the server cannot tell an empty string from
+         an answer - a question nobody answered has to arrive as no field. */
+      if (value === undefined || value === null) continue;
+      form.append(key, value === true ? 'true' : value === false ? 'false' : String(value));
+    }
     if (file) form.append('upload', file, file.name);
     return request('/api/admin/reading/jobs', { method: 'POST', body: form });
   },
