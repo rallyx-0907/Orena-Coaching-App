@@ -1,0 +1,2 @@
+# Pipeline output is compared byte-for-byte and diffed in review: keep LF everywhere.
+* text=auto eol=lf
