@@ -37,8 +37,8 @@
     }
   ],
   "active_branch_or_lane": {
-    "expected_development_branch": "codex/integrate-admin-speaking",
-    "lane": "admin_speaking_integration"
+    "expected_development_branch": "codex/work",
+    "lane": "unified_baseline"
   },
   "last_verified_application_commit": "5e3d53aa1ff6442ccf8ae0c21f84d9221116c339",
   "last_verified_batch": "admin_canonical_reading_speaking_unified_local_verification",
@@ -48,9 +48,9 @@
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "orena_web_canonical_ui_baseline",
-    "status": "in_progress",
-    "next_task": "External human review of the pushed codex/integrate-admin-speaking branch. Do not merge into codex/work or main without approval. The Claude Design visual-source gate is UNVERIFIED by current human instruction; final visual review is separate. Shared-runtime migrations and production remain human gates. No human product approval is implied."
+    "id": "orena_intelligence_lane",
+    "status": "authorized",
+    "next_task": "Create or fast-forward feature/orena-intelligence from the latest codex/work unified baseline and implement Agent Intelligence there under D-085. Keep orchestration above existing domain services; expose only explicit allowlisted capabilities; do not redesign learner UI or duplicate domain engines. Shared-runtime migrations, production and provider activation remain human gates."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
