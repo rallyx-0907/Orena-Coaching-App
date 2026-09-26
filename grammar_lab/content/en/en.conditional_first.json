@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.2",
+  "id": "en.conditional_first",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.present_simple.third_person_s"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {},
+  "title": {"vi": "Câu điều kiện loại 1", "en": "First conditional"},
+  "summary": {
+    "vi": "Nói về điều có thể xảy ra ở tương lai: mệnh đề if dùng hiện tại đơn, mệnh đề kết quả dùng will."
+  },
+  "blocks": [
+    {"type": "formula", "parts": ["If", "S + V hiện tại đơn", ",", "S + will + V"]},
+    {"type": "timeline", "kind": "future_condition"},
+    {
+      "type": "example",
+      "text": "If it rains, we will stay at home.",
+      "seg": [["If it "], ["rains", "target"], [", we "], ["will stay", "target"], [" at home."]],
+      "tr": {"vi": "Nếu trời mưa, chúng tôi sẽ ở nhà."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "If it will rain, we will stay at home.",
+      "right": "If it rains, we will stay at home.",
+      "error_tag": "tense",
+      "why": {
+        "vi": "Câu tiếng Việt 'nếu trời (sẽ) mưa' khiến người học muốn thêm will vào vế if. Trong tiếng Anh, vế if dùng hiện tại đơn dù nói về tương lai."
+      }
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "If I have time, I visit you.",
+      "right": "If I have time, I will visit you.",
+      "error_tag": "tense",
+      "why": {
+        "vi": "Vế kết quả nói về tương lai nên cần will. Trong tiếng Việt, 'thì' hay 'sẽ' thường bị lược bỏ."
+      }
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "If you ___ hard, you will pass.",
+          "options": ["will study", "study", "studied"],
+          "answer": 1,
+          "explain": {"vi": "Vế if → hiện tại đơn."}
+        },
+        {
+          "q": "If she calls, I ___ you.",
+          "options": ["tell", "will tell", "told"],
+          "answer": 1,
+          "explain": {"vi": "Vế kết quả → will + V."}
+        },
+        {
+          "q": "We ___ late if we don't hurry.",
+          "options": ["will be", "are", "be"],
+          "answer": 0,
+          "explain": {"vi": "Vế kết quả có thể đứng trước; vẫn dùng will."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}

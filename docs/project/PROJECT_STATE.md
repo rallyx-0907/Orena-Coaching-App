@@ -332,6 +332,27 @@ capability-driven Chinese reading aids/Pinyin, and activity-evidence completion
 semantics are protected. Future skill integrations consume these contracts
 rather than duplicating or mass-rewriting Grammar.
 
+## Grammar Lab (branch `feature/grammar-lab`, not merged)
+
+Phase 0 of `docs/grammar_lab/SPEC.md` exists only on `feature/grammar-lab`, in
+`grammar_lab/` and `docs/grammar_lab/`. It is an offline, file-based lab with
+its own `pyproject.toml`; it does not import app code, and the app does not
+import it. No app code, evaluator, migration or runtime was changed.
+
+- Contract: `grammar_lab/schema/grammar_set.schema.json` (v0.2),
+  `inventory.schema.json`, and `error_tags.json`, generated from the writing
+  evaluator's closed `ERROR_CATEGORIES` (13 English, 18 Chinese, no Japanese).
+- Content: the 10-point English sample upgraded to v0.2, one file per point,
+  all `draft_ai`. Its dotted error tags are not evaluator labels, so each
+  pitfall now carries a coarse evaluator label.
+- Verification (local execution, not CI): `validate --lang en` is clean, and
+  113 tests pass in the lab venv. The app CI does not collect these tests.
+- The lab's grammar point IDs are independent of the R5 Concept IDs. How they
+  join is an open human decision before integration (SPEC §8).
+
+Detail and open decisions: `docs/grammar_lab/PHASE0_DECISIONS.md`. Status: phase
+0 awaits human review. Phase 1 has not started.
+
 ## R6 Speaking Core
 
 R6 is **COMPLETE / LOCAL ACCEPTANCE PASS** at the prepared-media internal

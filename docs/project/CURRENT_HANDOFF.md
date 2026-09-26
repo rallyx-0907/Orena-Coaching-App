@@ -14,6 +14,10 @@ restore the deleted learner product. Native mobile / Expo / React Native is
 frozen. Human instruction authorizes full-stack WEB work on the capabilities
 themselves, not only on the foundation.
 
+This checkout: `feature/grammar-lab`, Grammar Lab phase 0 (docs/grammar_lab/
+SPEC.md) in `grammar_lab/` only; app, engine, migrations untouched. NEXT:
+human review of docs/grammar_lab/PHASE0_DECISIONS.md; phase 1 waits.
+
 ## DONE
 
 D-046 and the product reset are committed; the shared media, transcript,
@@ -145,12 +149,9 @@ None identified.
 
 ## Baseline test evidence
 
-The 20 inherited Python failures in `test_governance_contract.py`,
-`test_media_ingestion.py`, and `test_media_learning.py` were reconciled against
-the current Orena architecture: 17 assertions now validate canonical documents
-and paths, while the three R10/R12/R20 matrix tests were retired with the
-removed legacy wrappers and frozen-native scope. The exact local suite now
-passes with `901 passed, 104 skipped, 5 warnings`; this is not a CI claim.
+20 inherited failures (governance, media ingestion/learning) reconciled: 17
+now check canonical docs/paths; R10/R12/R20 matrix tests retired. Suite count:
+Last verified batch (not a CI claim).
 
 ## HUMAN GATES
 

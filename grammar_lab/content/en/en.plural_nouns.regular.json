@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.2",
+  "id": "en.plural_nouns.regular",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["agreement"],
+  "source_refs": {},
+  "title": {"vi": "Danh từ số nhiều", "en": "Plural nouns"},
+  "summary": {
+    "vi": "Danh từ đếm được khi có từ hai trở lên phải đổi sang số nhiều, thường bằng cách thêm -s/-es."
+  },
+  "blocks": [
+    {"type": "formula", "parts": ["số đếm / many / some", "+ N-s"]},
+    {
+      "type": "rule_table",
+      "rows": [
+        ["book", "books", {"vi": "Đa số: thêm -s"}],
+        ["box", "boxes", {"vi": "Tận cùng -s, -x, -sh, -ch: thêm -es"}],
+        ["city", "cities", {"vi": "Phụ âm + y: đổi thành -ies"}],
+        ["child", "children", {"vi": "Bất quy tắc"}],
+        ["person", "people", {"vi": "Bất quy tắc"}]
+      ]
+    },
+    {
+      "type": "example",
+      "text": "I have three brothers.",
+      "seg": [["I have three "], ["brothers", "target"], ["."]],
+      "tr": {"vi": "Tôi có ba anh em trai."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "I have three brother.",
+      "right": "I have three brothers.",
+      "error_tag": "agreement",
+      "why": {
+        "vi": "Tiếng Việt thể hiện số lượng bằng từ đứng trước ('ba', 'những', 'các') và danh từ giữ nguyên. Tiếng Anh vẫn phải thêm -s dù đã có số đếm."
+      }
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "Many student like this teacher.",
+      "right": "Many students like this teacher.",
+      "error_tag": "agreement",
+      "why": {"vi": "Many luôn đi với danh từ số nhiều."}
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "There are two ___ on the table.",
+          "options": ["box", "boxs", "boxes"],
+          "answer": 2,
+          "explain": {"vi": "Tận cùng -x → thêm -es."}
+        },
+        {
+          "q": "Five ___ are waiting outside.",
+          "options": ["peoples", "people", "person"],
+          "answer": 1,
+          "explain": {"vi": "Số nhiều của person là people (không thêm -s)."}
+        },
+        {
+          "q": "I visited many ___ in Europe.",
+          "options": ["cities", "city", "citys"],
+          "answer": 0,
+          "explain": {"vi": "Phụ âm + y → -ies."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}

@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.2",
+  "id": "en.present_continuous.now",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.present_simple.third_person_s"],
+  "contrasts": ["en.present_simple.third_person_s"],
+  "error_tags": ["tense"],
+  "source_refs": {},
+  "title": {"vi": "Hiện tại tiếp diễn", "en": "Present continuous"},
+  "summary": {"vi": "Dùng am/is/are + V-ing cho việc đang xảy ra ngay lúc nói hoặc trong giai đoạn này."},
+  "blocks": [
+    {"type": "formula", "parts": ["S", "am / is / are", "V-ing"]},
+    {"type": "timeline", "kind": "ongoing_now"},
+    {
+      "type": "example",
+      "text": "She is reading a book now.",
+      "seg": [["She "], ["is reading", "target"], [" a book now."]],
+      "tr": {"vi": "Cô ấy đang đọc sách."}
+    },
+    {
+      "type": "contrast",
+      "with": "en.present_simple.third_person_s",
+      "pairs": [["I am working from home this week.", "I work in an office."]],
+      "explain": {"vi": "Tiếp diễn là tạm thời, đang diễn ra. Hiện tại đơn là thói quen, lâu dài."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "She reading a book.",
+      "right": "She is reading a book.",
+      "error_tag": "tense",
+      "why": {"vi": "Chữ 'đang' trong tiếng Việt ứng với cả cụm be + V-ing. Không được bỏ is/am/are."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "I am go to school now.",
+      "right": "I am going to school now.",
+      "error_tag": "tense",
+      "why": {"vi": "Có be thì động từ phải ở dạng -ing."}
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "Listen! The baby ___.",
+          "options": ["cries", "is crying", "crying"],
+          "answer": 1,
+          "explain": {"vi": "'Listen!' cho thấy việc đang xảy ra → is crying."}
+        },
+        {
+          "q": "They ___ dinner at the moment.",
+          "options": ["are having", "have", "having"],
+          "answer": 0,
+          "explain": {"vi": "At the moment → hiện tại tiếp diễn, đủ be + V-ing."}
+        },
+        {
+          "q": "He usually ___ to work by bike.",
+          "options": ["is going", "goes", "going"],
+          "answer": 1,
+          "explain": {"vi": "Usually chỉ thói quen → hiện tại đơn."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}
