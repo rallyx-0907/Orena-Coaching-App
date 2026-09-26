@@ -49,7 +49,7 @@
   },
   "current_primary_workstream": {
     "id": "orena_intelligence_lane",
-    "status": "authorized",
+    "status": "pending",
     "next_task": "Create or fast-forward feature/orena-intelligence from the latest codex/work unified baseline and implement Agent Intelligence there under D-085. Keep orchestration above existing domain services; expose only explicit allowlisted capabilities; do not redesign learner UI or duplicate domain engines. Shared-runtime migrations, production and provider activation remain human gates."
   },
   "design": {
