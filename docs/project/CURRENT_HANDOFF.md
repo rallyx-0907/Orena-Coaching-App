@@ -12,8 +12,9 @@ approval, or production readiness.
 
 `codex/integrate-admin-speaking` in the existing `-codex` worktree, by explicit
 human instruction. It integrates `admin/control-center@e9a2219` and
-`feature/speaking@d006383` over Codex `8557b0e`. Push only this integration
-branch for external review. Do not merge it into `codex/work` or `main`.
+`feature/speaking@d006383` over Codex `8557b0e`. The integration branch is
+pushed to `origin` for external review. Do not merge it into `codex/work` or
+`main` without human approval.
 
 ## Last verified batch
 
@@ -46,13 +47,12 @@ received a PASS independent architecture delta review from GPT-6/Codex
 (`/root/architecture_review`), with no P0/P1 findings. Reviewer identity,
 commit and verdict are recorded in `ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`.
 The unified Speaking merge `5e3d53aa1ff6442ccf8ae0c21f84d9221116c339`
-and local verification are complete; remote ref verification is the remaining
-checkpoint step.
+and local verification are complete. The integration branch was pushed, and
+the remote ref was read back equal to the local checkpoint HEAD.
 
 ## IN PROGRESS
 
-Checkpoint current memory, confirm ancestry and clean working tree, and push
-only `codex/integrate-admin-speaking` after final gates remain green.
+Awaiting external human review of the pushed integration branch.
 
 ## PENDING
 
@@ -87,5 +87,5 @@ volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Push the integration branch only, read back its exact remote HEAD, and present
-the branch for external human review.
+Present the exact remote HEAD and local verification evidence for external
+human review. Do not merge into `codex/work` or `main` without approval.

@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_canonical_ui_baseline",
     "status": "in_progress",
-    "next_task": "Push only codex/integrate-admin-speaking after final unified local verification and present exact remote HEAD for external human review. Do not merge into codex/work or main. The Claude Design visual-source gate is UNVERIFIED by current human instruction; final visual review is separate. Shared-runtime migrations and production remain human gates. No human product approval is implied."
+    "next_task": "External human review of the pushed codex/integrate-admin-speaking branch. Do not merge into codex/work or main without approval. The Claude Design visual-source gate is UNVERIFIED by current human instruction; final visual review is separate. Shared-runtime migrations and production remain human gates. No human product approval is implied."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
