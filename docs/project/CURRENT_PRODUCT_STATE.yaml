@@ -40,7 +40,7 @@
     "expected_development_branch": "codex/integrate-admin-speaking",
     "lane": "admin_speaking_integration"
   },
-  "last_verified_application_commit": "8d5f3cdb707cabd2ee4dabca2558301bc2e78f70",
+  "last_verified_application_commit": "5e3d53aa1ff6442ccf8ae0c21f84d9221116c339",
   "last_verified_batch": "admin_canonical_reading_speaking_unified_local_verification",
   "current_program_stage": {
     "id": "R21",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_web_canonical_ui_baseline",
     "status": "in_progress",
-    "next_task": "Checkpoint and push only codex/integrate-admin-speaking after final unified verification, then present exact remote HEAD for external human review. Do not merge into codex/work or main. The Claude Design visual-source gate is UNVERIFIED by current human instruction; final visual review is separate. Shared-runtime migrations and production remain human gates. No human product approval is implied."
+    "next_task": "Push only codex/integrate-admin-speaking after final unified local verification and present exact remote HEAD for external human review. Do not merge into codex/work or main. The Claude Design visual-source gate is UNVERIFIED by current human instruction; final visual review is separate. Shared-runtime migrations and production remain human gates. No human product approval is implied."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

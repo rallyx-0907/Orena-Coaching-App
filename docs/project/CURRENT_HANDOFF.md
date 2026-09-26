@@ -45,13 +45,14 @@ Admin/canonical Reading merge checkpoint `ec7ac2897fb103a9f4a7898a6e256f351719e0
 received a PASS independent architecture delta review from GPT-6/Codex
 (`/root/architecture_review`), with no P0/P1 findings. Reviewer identity,
 commit and verdict are recorded in `ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`.
-The unified Speaking merge and local verification are complete; final merge
-commit and remote ref verification are the remaining checkpoint steps.
+The unified Speaking merge `5e3d53aa1ff6442ccf8ae0c21f84d9221116c339`
+and local verification are complete; remote ref verification is the remaining
+checkpoint step.
 
 ## IN PROGRESS
 
-Checkpoint the unified merge, confirm ancestry and clean working tree, and
-push only `codex/integrate-admin-speaking` after final gates remain green.
+Checkpoint current memory, confirm ancestry and clean working tree, and push
+only `codex/integrate-admin-speaking` after final gates remain green.
 
 ## PENDING
 
@@ -86,5 +87,5 @@ volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Finish the merge checkpoint, push the integration branch only, read back its
-exact remote HEAD, and present the branch for external human review.
+Push the integration branch only, read back its exact remote HEAD, and present
+the branch for external human review.
