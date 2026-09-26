@@ -2868,3 +2868,39 @@ desktop and phone across Home, Library, Progress, Profile, Reading, Listening, D
 Vocabulary, Grammar and Speaking - every visible copy string in its layer's language.
 
 **Replaces** the Speaking `GUIDANCE_KEYS` allowlist. Closes coherence audit AUDIT-1b.
+
+## D-085 — Orena Intelligence is a separate lane over the unified Codex baseline
+
+**Date:** 2026-09-27
+**Status:** Accepted (explicit human direction)
+
+**Context.** The Admin + Speaking integration was externally reviewed and merged
+into `codex/work` by PR #63 at
+`9c0fe315601877b43ac23aaffec915628635f9ae`. Orena's own Agent Intelligence now
+needs an isolated lane so it can evolve in parallel without reopening the
+completed domain integration or coupling the product to one model provider.
+
+**Decision.**
+
+1. `codex/work` is the unified baseline. Orena Intelligence develops in a
+   separate branch/worktree, `feature/orena-intelligence`, created from the
+   latest unified baseline.
+2. The Intelligence lane owns orchestration above the product: learner context,
+   evidence/memory assembly, capability discovery and routing, contextual
+   handoff, agent actions, conversation coordination, and model/provider
+   abstraction.
+3. It reuses the existing Reading, Listening, Speaking, Writing, Vocabulary,
+   Grammar, Progress and other domain services. It does not create duplicate
+   domain engines merely to make the agent easier to implement.
+4. Agent actions are explicit, schema-bound, allowlisted capabilities. The agent
+   does not receive unrestricted internal API access and must not invent actions
+   the application cannot execute.
+5. Model and provider names are infrastructure details. Learner-facing identity
+   remains Orena; switching or falling back between providers must not change
+   that product identity.
+6. This decision does not authorize learner-UI redesign, production provider
+   activation, shared-runtime migration, deployment, or destructive persistence
+   change. Existing human gates remain in force.
+7. The Intelligence lane may run in parallel with future UI work, but domain
+   contracts remain authoritative and any later integration back into
+   `codex/work` requires its own review and verification.
