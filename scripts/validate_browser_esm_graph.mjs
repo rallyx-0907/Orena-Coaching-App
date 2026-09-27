@@ -8,7 +8,18 @@ const root = path.join(projectRoot, 'static', 'orena');
 // load; `ui/admin.js` is reached by a dynamic import when an admin enters
 // #/admin, so it is not in the learner's static graph - and would stop being
 // validated at all if it were not named here.
-const entries = [path.join(root, 'app.js'), path.join(root, 'ui', 'admin.js')];
+// `main.js` is the new learner UI's entry (D-091); its screens load by dynamic import from
+// shell/screens.js, so each one is a root here too.
+const screensDir = path.join(root, 'screens');
+const screenEntries = fs.existsSync(screensDir)
+  ? fs.readdirSync(screensDir).map((name) => path.join(screensDir, name, 'screen.js')).filter((file) => fs.existsSync(file))
+  : [];
+const entries = [
+  path.join(root, 'app.js'),
+  path.join(root, 'ui', 'admin.js'),
+  ...(fs.existsSync(path.join(root, 'main.js')) ? [path.join(root, 'main.js')] : []),
+  ...screenEntries,
+];
 const cache = new Map();
 
 async function load(file) {

@@ -172,6 +172,14 @@ Two agent lanes work this repository independently:
 - **Codex** — `codex/work`
 - **Claude** — `claude/<task>`
 
+One further lane builds a different layer, not a learner implementation:
+
+- **Orena Intelligence** — `feature/orena-intelligence` (D-085). It owns
+  `/api/agent/*` and the orchestration above the domain services, builds against
+  `docs/project/AGENT_CONTRACT.md` only, receives that contract and the new
+  learner UI by merging `codex/work` forward, and never edits the contract or
+  learner UI (D-086).
+
 `git worktree list` shows the lanes as separate checkouts. When a lane is
 assigned, work in it. Do not create another branch or worktree because a
 workflow habit suggests one.

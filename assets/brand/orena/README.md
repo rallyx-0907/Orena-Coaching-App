@@ -12,6 +12,18 @@ Start here:
 
 Do not regenerate the mascot from memory when these references are available.
 
+## Logo and Orena Intelligence mark (D-090)
+
+`logo/orena-marks.svg` holds the learner app's brand mark (`ol-mark`, the
+gradient swirl) and the Orena Intelligence mark (`ol-intel` with its `-still`,
+`-listen`, `-speak` and `-think` states) as an SVG sprite, copied verbatim from
+the pinned learner design (`docs/design/canonical-ui/screens/Orena.dc.html`,
+revision `1790473816124946`). `logo/orena-mark.svg` is the rail's brand chip
+built from the same symbol, used as the favicon. They replace the curled-tail
+mark in the learner app (D-090). Never redraw them; a new revision of the
+design replaces them from its own pin. The mascot and everything below are
+unchanged.
+
 ## Art direction authority (D-057)
 
 This package is Orena's **Art Bible**: the canonical owner of the product's art

@@ -1,0 +1,242 @@
+/* Navigation of the new learner UI, following the design's own rules (the state script's nav(),
+   back(), navFor() and crumbVals(); Design Contract rules 47, 49):
+
+   - one hash route at a time (shell/routes.js); an unknown address goes to Today;
+   - the place the learner came from (navOrigin: the last of the six primary places) stays lit in
+     the rail and the phone bar while they work somewhere deeper, and names the breadcrumb's
+     section;
+   - a learning workspace (route.focus) sets :root[data-focus="1"]: no top bar, no phone header,
+     no phone bar, and the main column never scrolls as a page;
+   - navigating closes every sheet, aborts the previous room's requests
+     (infrastructure/navigation.js) and runs the previous room's cleanup;
+   - a lesson route shows the design's loading skeleton while it loads, and its load error with
+     Back / Retry when it fails;
+   - a route whose screen is not built yet shows the design's Coming soon screen. */
+import { beginNavigation } from '../infrastructure/navigation.js';
+import { mount } from '../kit/html.js';
+import { closeSheet } from '../kit/overlay.js';
+import { loadingMarkup, errorMarkup } from '../kit/states.js';
+import { shellCopy as t } from '../copy/shell.js';
+import { PRIMARY, DEFAULT_ROUTE, match, href, byId } from './routes.js';
+import { SCREENS } from './screens.js';
+
+const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
+const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
+const ORIGIN_KEY = 'orena.next.navOrigin';
+const DEPTH_KEY = 'orena.next.depth';
+
+function session(key, value) {
+  try {
+    if (value === undefined) return window.sessionStorage.getItem(key);
+    window.sessionStorage.setItem(key, String(value));
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function createRouter({ frame, getContext }) {
+  const root = document.documentElement;
+  let origin = session(ORIGIN_KEY) || DEFAULT_ROUTE;
+  let depth = Number(session(DEPTH_KEY)) || 0;
+  let cleanup = null;
+  let generation = 0;
+  let current = null;
+  let crumbOverride = '';
+
+  function state() {
+    const route = current?.route;
+    const active = route && PRIMARY.includes(route.id) ? route.id : origin;
+    const section = route && !CRUMB_PRIMARY.includes(route.id) ? (route.id === 'progress' ? 'profile' : origin) : '';
+    return {
+      active,
+      context: getContext(),
+      crumb: {
+        section: section ? t(sectionLabel(section)) : '',
+        sectionHref: section ? href(section) : '',
+        screen: crumbOverride || (route ? t(route.crumb) : ''),
+      },
+    };
+  }
+
+  function sectionLabel(id) {
+    return { today: 'today', discover: 'discover', orena: 'orena', practice: 'practiceHub', library: 'myLibrary', progress: 'progress', profile: 'profile' }[id] || 'today';
+  }
+
+  function paint() {
+    frame.paint(state());
+    const title = state().crumb.screen;
+    document.title = title ? `${title} · Orena` : 'Orena';
+  }
+
+  function go(target, { replace = false } = {}) {
+    const hash = target.startsWith('#') ? target : `#${target.startsWith('/') ? target : `/${target}`}`;
+    if (hash === location.hash) return render();
+    if (replace) location.replace(hash);
+    else {
+      depth += 1;
+      session(DEPTH_KEY, depth);
+      location.hash = hash;
+    }
+    return null;
+  }
+
+  function back() {
+    if (depth > 0) {
+      depth -= 1;
+      session(DEPTH_KEY, depth);
+      history.back();
+    } else go(href(origin), { replace: true });
+  }
+
+  function setCrumb(text) {
+    crumbOverride = String(text || '');
+    frame.paintCrumb(state());
+    document.title = crumbOverride ? `${crumbOverride} · Orena` : document.title;
+  }
+
+  async function loadScreen(route) {
+    const loader = SCREENS[route.screen];
+    if (loader) return (await loader()).default;
+    /* A screen that is not built yet: the design's Coming soon, titled with the place's name. */
+    const coming = (await SCREENS.coming()).default;
+    return (element, ctx) => coming(element, { ...ctx, params: { key: route.crumb }, placeholder: true });
+  }
+
+  async function render() {
+    const found = match(location.hash);
+    if (!found) {
+      go(href(DEFAULT_ROUTE), { replace: true });
+      return;
+    }
+    const mine = (generation += 1);
+    const signal = beginNavigation();
+    closeSheet();
+    try {
+      cleanup?.();
+    } catch (error) {
+      console.error('[Orena] screen cleanup failed', error);
+    }
+    cleanup = null;
+    crumbOverride = '';
+    current = found;
+    const { route } = found;
+    if (PRIMARY.includes(route.id)) {
+      origin = route.id;
+      session(ORIGIN_KEY, origin);
+    }
+    root.dataset.focus = route.focus ? '1' : '0';
+    root.dataset.route = route.id;
+    paint();
+
+    const main = frame.main;
+    main.scrollTop = 0;
+    const element = document.createElement('section');
+    element.className = 'o-screen';
+    element.dataset.screen = route.id;
+    main.replaceChildren(element);
+
+    let skeleton = 0;
+    if (route.lesson) {
+      skeleton = setTimeout(() => {
+        if (mine !== generation) return;
+        const holder = document.createElement('div');
+        holder.dataset.state = 'loading';
+        mount(holder, loadingMarkup(t('loadingLesson')));
+        main.append(holder);
+      }, 150);
+    }
+
+    const ctx = {
+      route,
+      params: found.params,
+      query: found.query,
+      signal,
+      context: getContext(),
+      go,
+      back,
+      href,
+      setCrumb,
+      replace: (target) => go(target, { replace: true }),
+      isCurrent: () => mine === generation,
+    };
+
+    try {
+      const screen = await loadScreen(route);
+      if (mine !== generation) return;
+      const result = await screen(element, ctx);
+      if (mine !== generation) {
+        if (typeof result === 'function') result();
+        return;
+      }
+      cleanup = typeof result === 'function' ? result : null;
+    } catch (error) {
+      if (mine !== generation || error?.name === 'AbortError') return;
+      console.error('[Orena] screen failed', route.id, error);
+      showError(route, main, () => render());
+    } finally {
+      clearTimeout(skeleton);
+      if (mine === generation) main.querySelector('[data-state="loading"]')?.remove();
+    }
+    if (mine === generation) main.focus({ preventScroll: true });
+  }
+
+  function showError(route, main, retry) {
+    const offline = navigator.onLine === false;
+    const holder = document.createElement('div');
+    holder.dataset.state = 'error';
+    mount(
+      holder,
+      errorMarkup({
+        title: t(STORY_ROUTES.includes(route.id) ? 'errorStory' : 'errorLesson'),
+        text: t(offline ? 'errorOffline' : 'errorServer'),
+        backLabel: t('back'),
+        retryLabel: t('retry'),
+      }),
+    );
+    holder.querySelector('[data-error-back]').addEventListener('click', () => back());
+    holder.querySelector('[data-error-retry]').addEventListener('click', () => retry());
+    main.append(holder);
+  }
+
+  function onKey(event) {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      go(href('search'));
+    }
+  }
+
+  function onClick(event) {
+    const target = event.target.closest?.('[data-go]');
+    if (target && !event.defaultPrevented) {
+      if (event.target.closest('[data-voice]')) return;
+      event.preventDefault();
+      go(target.dataset.go);
+    }
+  }
+
+  function onLinkClick(event) {
+    const link = event.target.closest?.('a[href^="#/"]');
+    if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || link.target) return;
+    event.preventDefault();
+    go(link.getAttribute('href'));
+  }
+
+  return {
+    start() {
+      window.addEventListener('hashchange', render);
+      document.addEventListener('keydown', onKey);
+      document.addEventListener('click', onClick);
+      document.addEventListener('click', onLinkClick);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && event.target.matches?.('[data-go][role="link"]')) go(event.target.dataset.go);
+      });
+      return render();
+    },
+    go,
+    back,
+    repaint: paint,
+    current: () => current,
+    route: (id) => byId(id),
+  };
+}

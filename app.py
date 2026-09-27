@@ -313,7 +313,9 @@ def orena_asset(asset_path: str, request: Request):
 ORENA_BRAND_ROOT = (ROOT / "assets" / "brand" / "orena").resolve()
 # The reference sheets are design authority for people, not runtime imagery -
 # several megabytes each, and never something to put in front of a learner.
-ORENA_BRAND_SERVED = ("actions", "expressions", "scenes")
+# `logo` is the brand mark and the Orena Intelligence mark (D-090), rendered by
+# the new learner UI from this one copy.
+ORENA_BRAND_SERVED = ("actions", "expressions", "scenes", "logo")
 
 @app.get("/orena-brand/{asset_path:path}", include_in_schema=False)
 def orena_brand_asset(asset_path: str):
@@ -1300,6 +1302,16 @@ def home() -> HTMLResponse:
     # instead, which is the same freshness for a fraction of the bytes.
     return HTMLResponse(
         (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/next", response_class=HTMLResponse)
+def next_learner_ui() -> HTMLResponse:
+    # The new learner UI (D-088), built beside the old one until it replaces it
+    # at `/` in one cutover (D-091). Same caching reason as `/`.
+    return HTMLResponse(
+        (ROOT / "templates" / "orena" / "next.html").read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 

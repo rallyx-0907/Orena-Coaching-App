@@ -1,6 +1,6 @@
 import { api } from "./infrastructure/api.js";
 import { copy, untranslated, supportedLocales } from "./ui/copy.js";
-import { layeredCopy } from "./ui/layered-copy.js";
+import { layeredCopy } from "./product/layered-copy.js";
 import { COPY_LAYERS } from "./ui/copy-layers.js";
 import {
   INTERFACE_KEY,

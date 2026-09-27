@@ -105,6 +105,9 @@ jobs:
           node scripts/test_orena_rank_frame.mjs
           node scripts/test_orena_vocabulary_saved_card.mjs
           node scripts/test_orena_room_navigation_cancellation.mjs
+          node scripts/test_orena_kit.mjs
+          node scripts/test_orena_shell.mjs
+          node scripts/test_orena_copy.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite

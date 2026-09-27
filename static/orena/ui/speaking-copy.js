@@ -3,7 +3,7 @@
    these are the product's words for the same places. Learner material - the line, its reading, its
    translation - is never here. */
 import { refCopy } from './reference.js';
-import { layeredCopy } from './layered-copy.js';
+import { layeredCopy } from '../product/layered-copy.js';
 import { SPEAKING_LAYERS } from './copy-layers.js';
 
 const en = {
