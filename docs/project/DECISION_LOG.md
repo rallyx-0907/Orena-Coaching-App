@@ -3184,3 +3184,15 @@ forward, would be integrating its agent into a moving hybrid.
 **Amends:** D-092 point 3/§7 rule on `label`. D-092 otherwise stands.
 
 **Addendum (2026-09-27, the same amendment, explicit human direction).** Contract v3 also fixes the canonical streams S1 and S13, which put a §6.1 navigation id (`review_due`, `vocabulary.review_due`) in `suggestion.intent` although §4 requires a prompt intent. §4 now defines a prompt intent (the `prompt.` namespace, never a §6.1 id; tapping a suggestion sends its label as the learner's message), S1 and S13 use `prompt.review_due`, the mock follows, and `scripts/test_orena_agent.mjs` checks both the fixtures and the mock. `contract_version` stays 3.
+
+## D-095 — Grammar Lab phase 0 self-reviewed and approved to proceed to phase 1
+
+**Date:** 2026-09-27. **Status:** Accepted (self-review explicitly authorized by the human's phase-1 brief: "if solid enough to build phase 1 on top, self-approve and record why").
+
+**Context.** Phase 0 of `docs/grammar_lab/SPEC.md` (schema v0.2, `validate.py`, 113 tests, a 10-point English sample) sat at "awaits human review" in `docs/grammar_lab/PHASE0_DECISIONS.md`. The human asked Claude Code to review it and either self-approve with a recorded reason, or stop and describe a real gap — not a matter of taste.
+
+**Decision.** Approved to proceed. Schema v0.2 matches SPEC §3; every SPEC §5.2 validate rule has a passing and a failing test case (`test_every_documented_rule_has_a_passing_and_a_failing_case` enforces this); 113 tests pass, including schema-validity, sample-migration round-trip, and `error_tags.json`-matches-the-engine contract tests; the 10 sample points read naturally, are grammatically and level-appropriate, and carry real pitfalls with valid `error_tag`s. The three open questions in `PHASE0_DECISIONS.md` §5 (raw error-tag granularity, joining R5 Concept IDs, HSK 7-9 banding) do not block phase 1: SPEC §7's phase-1 acceptance criterion is an offline English pipeline plus a human-reviewed gold set, none of which touches the engine or R5.
+
+**Consequences.** Phase 1 (`evaluator_client.py`, `llm_client.py`, `rules/en_morphology.py`, `generate.py`, `verify.py`, `route.py`, `report`) was built on top of this approval in the same session. The R5-relationship question is investigated separately in `PHASE0_DECISIONS.md` §6 (three options, a recommendation) and remains an open human decision before phase 4 -- this entry does not decide it.
+
+**Supersedes / Superseded by:** Nothing.
