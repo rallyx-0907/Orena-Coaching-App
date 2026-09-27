@@ -3,12 +3,14 @@
 Governance
 
 Purpose: the single interface between the Orena Intelligence backend (lane `feature/orena-intelligence`, D-085) and the new learner UI that replaces the old one on `codex/work` (D-086). Both sides implement this file; neither reads the other's implementation.
-Authority: D-085, D-086, D-092. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
+Authority: D-085, D-086, D-092, D-094. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 2`
+`contract_version: 3`
 
-v2 (D-092, 2026-09-27): the Orena destination (`orena.home`), an opening turn without a learner message (`trigger: "open"`), `display` fields on actions and evidence, and action payloads and ids that match the real APIs (words by `{ text, lang }`, client-held takes by `take_ref`, the stored attempt record by `attempt_id`). A server never sends a v2-only field, id or action shape to a client that declared `contract_version: 1`; to such a client it sends none of the changed actions (§7).
+v3 (D-094, 2026-09-27): an action's `label` is in the **interface** language - a button is interface layer (D-080) - not the support language v2 said. Nothing else changed.
+
+v2 (D-092, 2026-09-27): the Orena destination (`orena.home`), an opening turn without a learner message (`trigger: "open"`), `display` fields on actions and evidence, and action payloads and ids that match the real APIs (words by `{ text, lang }`, client-held takes by `take_ref`, the stored attempt record by `attempt_id`). A server never sends a v2-only field, id or action shape to a client that declared `contract_version: 1`; to such a client it sends none of the changed actions (§7). To a client that declared `contract_version: 2` it may still send action labels in the support language.
 
 ---
 
@@ -44,7 +46,7 @@ SSE framing: `event: <name>\ndata: <json>\n\n`. The stream always ends with `don
 
 ```json
 {
-  "contract_version": 2,
+  "contract_version": 3,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -222,7 +224,7 @@ Rules:
 - `risk` is fixed by `type` in this table, never by the model.
 - `CONFIRM` actions run only after the UI's own confirmation.
 - Blocked, and never emitted: delete collection, reset progress, clear history, bulk remove, anything admin.
-- `label` is in the `support` language, ≤ 24 characters.
+- `label` is in the `interface` language (`context.locale.interface`), ≤ 24 characters: a button is interface layer (D-080). The text an action's card explains (`display.reason`) stays in the `support` language.
 - An action with an unknown `type`, or not in `supported_actions`, is ignored and logged by the client.
 - An action is shown as a button; the client never runs it without a learner tap, except `navigate` when the learner's message was itself the request ("đưa tôi tới…").
 - Words: the vocabulary library keys a word on its text and the **session's active learning language**. A word action whose `lang` is not the active learning language is not executed; the client logs it.
@@ -234,7 +236,7 @@ Rules:
 ## 8. Capabilities — `GET /api/agent/capabilities`
 
 ```json
-{ "contract_version": 2,
+{ "contract_version": 3,
   "capabilities": [
     { "id": "speaking.pronunciation.line", "title": "…", "surfaces": ["speaking.workspace"],
       "actions": ["play_model", "play_user", "say_again", "compare_with_model"],

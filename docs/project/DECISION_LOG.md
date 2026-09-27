@@ -3172,3 +3172,13 @@ forward, would be integrating its agent into a moving hybrid.
 **Consequences.** A later design revision that fixes its own contrast replaces these values from its pin; one that does not is measured again under rule 41.
 
 **Supersedes / Superseded by:** Nothing. Applies rule 41 to D-088's tokens.
+
+## D-094 — Agent contract v3: an action's label is interface layer (amends D-092)
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human direction).
+
+**Context.** Contract v2 (D-092) said an action's `label` is in the support language. D-080 made every learner copy string declare its layer, and a button is interface layer. The agent's actions are drawn as buttons, so v2 contradicted D-080.
+
+**Decision.** `AGENT_CONTRACT.md` becomes `contract_version: 3`. An action's `label` is in the interface language (`context.locale.interface`), at most 24 characters. The explanation an action's card carries (`display.reason`) stays in the support language, and so does every segment. A server may still send support-language labels to a client that declared version 2. The UI's request declares version 3; its mock labels buttons in the interface language; `scripts/test_orena_agent.mjs` checks both.
+
+**Amends:** D-092 point 3/§7 rule on `label`. D-092 otherwise stands.

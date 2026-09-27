@@ -14,8 +14,8 @@ approval, or production readiness.
 `9c0fe31`, integration HEAD `7565f6d`). D-085: Agent Intelligence develops on
 `feature/orena-intelligence`. D-086: the new learner UI replaces the old one on
 `codex/work` and is the only UI that carries the agent; both lanes build
-against `docs/project/AGENT_CONTRACT.md` (contract_version 2, D-092), edited
-only on `codex/work`.
+against `docs/project/AGENT_CONTRACT.md` (contract_version 3, D-092, D-094),
+edited only on `codex/work`.
 
 **New learner UI migration (D-088 - D-091), in progress on `codex/work`.** The
 design is Claude Design project `e6dc1cb2`, revision `1790473816124946`, pinned
@@ -50,13 +50,14 @@ The intelligence lane integrates against `/next`. Frame → route → code → s
 
 ## Last verified batch
 
-2026-09-27, new UI foundation, local: the three new gates, 66 of the 68 other
-CI `.mjs` gates, the browser ESM graph (138 modules), route tests and the
-memory/architecture validators pass; the shell measured against the pinned
-frame at 1440x900, checked at 390x844, in en / vi / zh and both themes. The two
-failing gates, `test_orena_reading_library` and `test_orena_writing_workspace`,
-fail identically on the reviewed commit `7565f6d` - inherited, old-UI surfaces
-the cutover replaces. No CI pass is claimed.
+2026-09-27, new UI foundation, local: all 69 CI `.mjs` gates, the browser ESM
+graph, route tests and the memory/architecture validators pass; the shell
+measured against the pinned frame at 1440x900, checked at 390x844, in en / vi /
+zh and both themes. `test_orena_reading_library` and
+`test_orena_writing_workspace` used to fail on Windows checkouts: the cause was
+CRLF in the working tree against line-oriented gate patterns, fixed at the
+repository level by `.gitattributes` (source text LF in every checkout); the
+gates are unchanged. No CI pass is claimed.
 
 2026-09-26, unified baseline: full Linux pytest with PostgreSQL 16
 `2472 passed, 3 skipped`; all 16 Alembic revisions reach head `20260924_0016`
