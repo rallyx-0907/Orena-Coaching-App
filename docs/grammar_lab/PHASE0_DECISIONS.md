@@ -173,3 +173,10 @@ phải kỹ thuật.
 đóng băng), tận dụng năng lực pitfall/error_tag/verify mà R5 hiện không có, và không tạo ra "syllabus
 thứ hai" mà app đã cam kết tránh. Không cần quyết ngay — chỉ cần trước giai đoạn 4; giai đoạn 1 (mục
 này) chạy hoàn toàn offline, không đụng R5.
+
+**Quyết định của người (28/09/2026)**: chọn phương án 2 — nối output Grammar Lab vào Concept ID của R5;
+không thay thế, không tách vĩnh viễn. SPEC §8 đã viết lại theo hướng "làm giàu concept R5 hiện có"
+thay vì bảng/route song song (xem SPEC §8 và cảnh báo protected-area ở đầu mục đó). Số quyết định
+chính thức (D-xxx) sẽ cấp khi nhánh này tích hợp về `codex/work` — `D-xxx` chỉ được cấp trên `codex/work`
+theo quy ước của repo; nội dung quyết định đã ghi đầy đủ ở đây và không chờ số mới có hiệu lực. Không
+chặn giai đoạn 1–3.
