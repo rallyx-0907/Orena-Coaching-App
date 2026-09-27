@@ -147,12 +147,9 @@ _PLAN = (
         "get_word_detail",
         "adapter",
         "writing_coach.becoming_library:catalog_entry_for",
-        "The read-only card path. Not word_detail.py: every call there reaches a provider and writes "
-        "operation telemetry.",
-        composes=(
-            "writing_coach.vocabulary_cards:vocabulary_card_from_saved_word",
-            "writing_coach.vocabulary_cards:vocabulary_card_from_catalog_entry",
-        ),
+        "The catalogue entry and the saved state, read-only. Not word_detail.py: every call there reaches a "
+        "provider and writes operation telemetry.",
+        composes=("writing_coach.becoming_library:saved_vocabulary_state",),
         evidence_source="vocabulary.review",
     ),
     PlannedTool(
@@ -225,9 +222,8 @@ _PLAN = (
     PlannedTool(
         "get_writing_history_summary",
         "adapter",
-        "writing_coach.learner_summary:learner_summary",
-        "Writing domain of the summary plus the persisted error events by category.",
-        composes=("writing_coach.writing_analytics:parse_persisted_error_events",),
+        "writing_coach.writing_analytics:parse_persisted_error_events",
+        "The error categories across the learner's versions, through the app's own /api/error-memory read.",
         evidence_source="writing.evaluation",
     ),
     # --- grammar -----------------------------------------------------------------

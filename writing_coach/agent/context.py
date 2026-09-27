@@ -23,7 +23,7 @@ from writing_coach.agent.locale import InternalLocale
 from writing_coach.agent.schemas import AppContextSnapshot, ClientInfo, CoachNote, ContractLocale, SelectedItem, TurnRequest
 from writing_coach.agent.session import AgentSessionState
 
-CONTEXT_IDS = ("lesson_id", "content_id", "attempt_id", "essay_id")
+CONTEXT_IDS = ("lesson_id", "content_id", "attempt_id", "take_ref", "essay_id")
 
 
 @dataclass(frozen=True)

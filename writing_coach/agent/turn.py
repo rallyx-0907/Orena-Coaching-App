@@ -10,6 +10,11 @@ before any claim that cites it. A reply tool shapes the answer and runs
 nothing. At most `max_tool_iterations_per_turn` rounds may call tools; the
 round after that is offered no tools and must answer.
 
+An opening turn (contract §3.2, `trigger: "open"`) has no learner message:
+one short greeting, sent whole rather than streamed so it can be held to
+240 characters, then at least one suggestion and at most two LOW actions.
+It is not a learner turn: it is counted as `agent.open`, not `agent.turn`.
+
 A provider that fails ends the turn with an `error` event (`retry`); nothing
 switches provider. A client that goes away stops the turn where it is. A turn
 that completes is metered - counted, never refused (R5) - and its session is
@@ -46,7 +51,15 @@ from writing_coach.agent.events import (
     error_event,
 )
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
-from writing_coach.agent.outputs import REPLY_TOOL_NAMES, ReplyOutputs, reply_tool_specs
+from writing_coach.agent.contract import OPENING_MAX_CHARS
+from writing_coach.agent.events import Display
+from writing_coach.agent.outputs import (
+    KIND_BY_SOURCE,
+    REPLY_TOOL_NAMES,
+    ReplyOutputs,
+    opening_suggestions,
+    reply_tool_specs,
+)
 from writing_coach.agent.prompts import opening_messages
 from writing_coach.agent.provider import (
     AgentTurnProvider,
@@ -74,6 +87,7 @@ _log = logging.getLogger(__name__)
 
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
 TURN_FEATURE = "agent.turn"
+OPEN_FEATURE = "agent.open"
 TOKENS_FEATURE = "agent.tokens"
 
 
@@ -88,6 +102,20 @@ def learner_context(learner: LearnerScope) -> Iterator[None]:
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
         USER_KEY_CTX.reset(user_token)
+
+
+def _fit_greeting(text: str) -> str:
+    """An opening greeting within 240 characters, cut at a sentence end when one fits."""
+
+    text = text.strip()
+    if len(text) <= OPENING_MAX_CHARS:
+        return text
+    head = text[:OPENING_MAX_CHARS]
+    ends = [head.rfind(mark) for mark in (". ", "! ", "? ", "。", "！", "？")]
+    cut = max(ends)
+    if cut >= OPENING_MAX_CHARS // 3:
+        return head[: cut + 1].strip()
+    return head[: OPENING_MAX_CHARS - 1].rstrip() + "…"
 
 
 def _estimate_tokens(messages: list[ProviderMessage]) -> int:
@@ -145,12 +173,21 @@ class _Turn:
                 frozenset({DecisionQuestion.CAPABILITY}),
             )
             here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
-            messages = opening_messages(turn, tier1, [c for c in here if c], session)
+            messages = opening_messages(turn, tier1, [c for c in here if c], session, opening=self.opening)
             outputs = ReplyOutputs(
                 client=self.request.client,
                 interface=self.locale.interface,
                 support=self.locale.support,
                 target=self.locale.target,
+                version=self.stream.version,
+                opening=self.opening,
+                take_ref=self.request.context.take_ref,
+            )
+            # What the request named may be named back; everything else must be read first.
+            context = self.request.context
+            selected = context.selected_item.id if context.selected_item else None
+            outputs.learn_ids(
+                v for v in (context.content_id, context.lesson_id, context.essay_id, context.attempt_id, selected) if v
             )
             yield from self._rounds(messages, outputs)
             if self.should_stop():
@@ -171,13 +208,17 @@ class _Turn:
         self._keep(session, turn)
         self._meter()
 
+    @property
+    def opening(self) -> bool:
+        return self.request.opening and self.stream.version >= 2
+
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         read_specs = tuple(
             ProviderToolSpec.from_tool(tool)
             for tool in self.rt.tools.tools()
             if self.learner.contract_language in tool.languages
         )
-        reply_specs = reply_tool_specs(self.request.client, self.locale.target)
+        reply_specs = reply_tool_specs(self.request.client, self.locale.target, version=self.stream.version)
         limit = self.rt.limits.max_tool_iterations_per_turn
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
@@ -200,7 +241,8 @@ class _Turn:
                 if isinstance(item, TextDelta) and item.text:
                     round_text.append(item.text)
                     self.text.append(item.text)
-                    yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=item.text))
+                    if not self.opening:  # an opening greeting is sent whole, once it fits
+                        yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=item.text))
                 elif isinstance(item, ToolCallRequest):
                     calls.append(item)
                 elif isinstance(item, TurnFinished):
@@ -217,12 +259,12 @@ class _Turn:
                     answer = outputs.handle(call.name, call.arguments, known_evidence=frozenset(self.evidence_ids))
                 else:
                     read_any = True
-                    answer = yield from self._read(call, messages)
+                    answer = yield from self._read(call, messages, outputs)
                 messages.append(ProviderMessage(role="tool", content=answer, tool_call_id=call.id))
             if not read_any and round_text:
                 return  # the answer is written and its extras are attached
 
-    def _read(self, call: ToolCallRequest, messages: list[ProviderMessage]) -> Iterator[Event]:
+    def _read(self, call: ToolCallRequest, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         registered = call.name in self.rt.tools.names()
         tool = self.rt.tools.get(call.name) if registered else None
         if tool is None or self.learner.contract_language not in tool.languages:
@@ -244,6 +286,9 @@ class _Turn:
             yield self._unavailable(tool.name)
             return "unavailable: the service did not answer"
         yield from self._report(tool.name, result)
+        kind = next((KIND_BY_SOURCE.get(e.source) for e in result.evidence if e.source in KIND_BY_SOURCE), None)
+        outputs.learn_from(result.data, kind=kind)
+        outputs.learn_from([dict(e.ref) for e in result.evidence], kind=kind)
         return self._tool_message(result, messages)
 
     def _report(self, name: str, result: ToolResult) -> Iterator[Event]:
@@ -255,7 +300,13 @@ class _Turn:
         yield self.stream.emit(ToolResultEvent(tool=name, summary=summary, evidence_ids=ids))
         for evidence_id, evidence in zip(ids, result.evidence, strict=True):
             yield self.stream.emit(
-                EvidenceEvent(id=evidence_id, source=evidence.source, ref=dict(evidence.ref), excerpt=dict(evidence.excerpt))
+                EvidenceEvent(
+                    id=evidence_id,
+                    source=evidence.source,
+                    ref=dict(evidence.ref),
+                    excerpt=dict(evidence.excerpt),
+                    display=Display(kind=KIND_BY_SOURCE[evidence.source]) if evidence.source in KIND_BY_SOURCE else None,
+                )
             )
         self.evidence_ids.extend(ids)
         self.records.append(ToolResultRecord(tool=name, summary=result.summary, evidence_ids=tuple(ids)))
@@ -287,6 +338,11 @@ class _Turn:
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
         index = 0
         text = "".join(self.text)
+        if self.opening:
+            text = _fit_greeting(text)
+            if not outputs.suggestions:
+                for intent in opening_suggestions(self.request.context.known_surface):
+                    outputs.suggest(intent)
         if text:
             yield self.stream.emit(
                 SegmentEnd(index=0, lang=self.locale.support, text=text, voice_style=outputs.voice_style),
@@ -312,7 +368,9 @@ class _Turn:
         limit = self.rt.limits.max_recent_tool_results
 
         def change(state):
-            state = state.with_context(turn.context).with_turn()
+            state = state.with_context(turn.context)
+            if not self.opening:  # an opening turn is not a learner turn (§3.2)
+                state = state.with_turn()
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
             return state
@@ -323,7 +381,7 @@ class _Turn:
     def _meter(self) -> None:
         if self.rt.meter is None:
             return
-        counted = [(TURN_FEATURE, 1)]
+        counted = [(OPEN_FEATURE if self.opening else TURN_FEATURE, 1)]
         if self.usage_known:
             counted.append((TOKENS_FEATURE, self.usage_in + self.usage_out))
         for feature, amount in counted:

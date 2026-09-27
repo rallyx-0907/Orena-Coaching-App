@@ -91,6 +91,38 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "Issues: {n}", "vi": "Điểm cần sửa: {n}", "zh-CN": "问题：{n}"},
         ),
+        "tool.get_saved_word_state": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking your saved words", "vi": "Đang xem từ đã lưu", "zh-CN": "正在查看已保存的词"},
+        ),
+        "tool.get_word_detail": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Looking up the word", "vi": "Đang tra từ", "zh-CN": "正在查词"},
+        ),
+        "tool.get_writing_feedback_items": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Reading the feedback items", "vi": "Đang xem các điểm cần sửa", "zh-CN": "正在查看修改建议"},
+        ),
+        "tool.get_writing_history_summary": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Reading your writing history", "vi": "Đang xem lịch sử bài viết", "zh-CN": "正在查看写作记录"},
+        ),
+        "result.get_saved_word_state": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Saved: {n}", "vi": "Đã lưu: {n}", "zh-CN": "已保存：{n}"},
+        ),
+        "result.get_word_detail": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Entries: {n}", "vi": "Mục từ: {n}", "zh-CN": "词条：{n}"},
+        ),
+        "result.get_writing_feedback_items": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Issues: {n}", "vi": "Điểm cần sửa: {n}", "zh-CN": "问题：{n}"},
+        ),
+        "result.get_writing_history_summary": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Error types: {n}", "vi": "Loại lỗi: {n}", "zh-CN": "错误类型：{n}"},
+        ),
         "result.unavailable": _entry(
             CopyLayer.INTERFACE,
             {"en": "Not available", "vi": "Chưa xem được", "zh-CN": "暂时无法查看"},

@@ -12,7 +12,7 @@
         "writing.review",
         "writing.revision"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [
         "essay_id",
         "selected_item"

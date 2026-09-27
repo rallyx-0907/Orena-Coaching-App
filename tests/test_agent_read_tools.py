@@ -22,7 +22,10 @@ def registry(review=None):
 
 def test_the_registered_tools_are_the_planned_ones_read_only_and_labelled():
     tools = registry()
-    assert tools.names() == {"get_due_review_summary", "get_due_vocabulary", "get_current_writing_evaluation"}
+    assert tools.names() == {
+        "get_due_review_summary", "get_due_vocabulary", "get_current_writing_evaluation",
+        "get_saved_word_state", "get_word_detail", "get_writing_feedback_items", "get_writing_history_summary",
+    }  # fmt: skip
     for tool in tools.tools():
         planned = PLANNED_TOOLS[tool.name]
         assert tool.backed_by == planned.backed_by, tool.name
@@ -196,3 +199,81 @@ def test_chinese_due_words_fit_the_byte_budget(monkeypatch):
     monkeypatch.setattr(becoming_library, "list_library_vocabulary", lambda **kwargs: {"items": [row] * 10, "total": 10})
     result = registry().invoke("get_due_vocabulary", ZH, {"limit": 10})
     assert result.size_bytes() <= 7 * 1024 and result.count == 10
+
+
+# --- Slice 1c tools --------------------------------------------------------------------
+
+
+def test_saved_word_state_answers_word_by_word(monkeypatch):
+    seen = []
+
+    def state(candidates):
+        seen.append(candidates)
+        return {"机会": {"word": "机会", "stage_label": "Learning", "due": True, "lapse_count": 2, "next_review_at": "2026-09-28"}}
+
+    monkeypatch.setattr(becoming_library, "saved_vocabulary_state", state)
+    result = registry().invoke("get_saved_word_state", ZH, {"words": ["机会", "学习"]})
+    assert seen == [("机会", "学习")]
+    assert result.data["words"] == [
+        {"word": "机会", "saved": True, "stage": "Learning", "due": True, "lapses": 2, "next_review_at": "2026-09-28"},
+        {"word": "学习", "saved": False},
+    ]
+    assert result.count == 1 and [e.ref for e in result.evidence] == [{"text": "机会"}]
+    with pytest.raises(ToolArgumentsInvalid):
+        registry().invoke("get_saved_word_state", ZH, {"words": [f"w{i}" for i in range(11)]})
+
+
+def test_word_detail_reads_the_catalogue_and_the_saved_state(monkeypatch):
+    entry = {
+        "word": "serendipity",
+        "part_of_speech": "noun",
+        "level": "C1",
+        "definition": "luck in finding good things by chance",
+        "support_translations": {"vi": "sự tình cờ may mắn", "zh": "意外之喜"},
+        "examples": [{"text": "It was pure serendipity."}, "Another.", "A third."],
+    }
+    monkeypatch.setattr(becoming_library, "catalog_entry_for", lambda term: entry if term == "serendipity" else None)
+    monkeypatch.setattr(becoming_library, "saved_vocabulary_state", lambda candidates: {})
+    result = registry().invoke("get_word_detail", EN, {"text": "serendipity"})
+    assert result.data["in_catalog"] and not result.data["saved"] and result.count == 1
+    assert result.data["examples"] == ["It was pure serendipity.", "Another."]
+    unknown = registry().invoke("get_word_detail", EN, {"text": "zzz"})
+    assert unknown.data["in_catalog"] is False and unknown.count == 0
+
+
+def test_feedback_items_filter_by_kind():
+    review = {
+        "strengths": "Clear opening.",
+        "issues": [
+            {"fragment": "a", "correction": "b", "why": "w", "kind": "grammar"},
+            {"fragment": "c", "correction": "d", "why": "w", "kind": "vocabulary"},
+            {"fragment": "e", "correction": "f", "why": "w", "kind": "grammar"},
+        ],
+    }
+    tools = registry(lambda essay_id: review)
+    grammar = tools.invoke("get_writing_feedback_items", EN, {"essay_id": "3", "kind": "grammar"})
+    assert grammar.count == 2 and [i["evidence"] for i in grammar.data["issues"]] == ["issues[0]", "issues[2]"]
+    assert [e.ref["path"] for e in grammar.evidence] == ["issues[0]", "issues[2]"]
+    everything = tools.invoke("get_writing_feedback_items", ZH, {"essay_id": "3"})
+    assert everything.count == 3 and everything.data["strengths"] == "Clear opening."
+
+
+def test_history_summary_reads_the_apps_error_memory():
+    from writing_coach.agent.runtime import build_tool_registry
+
+    memory = {
+        "revision_count": 12,
+        "items": [
+            {"category": "tense", "total": 5, "older": 4, "newer": 1, "first_seen": "2026-09-01", "last_seen": "2026-09-20"},
+            {"category": "article", "total": 9, "older": 3, "newer": 6, "first_seen": "2026-09-02", "last_seen": "2026-09-26"},
+        ],
+    }
+    tools = build_tool_registry(writing_review=lambda essay_id: None, writing_history=lambda: memory)
+    result = tools.invoke("get_writing_history_summary", EN, {})
+    assert [row["category"] for row in result.data["categories"]] == ["article", "tense"]
+    assert result.data["revision_count"] == 12 and result.count == 2
+    assert result.evidence[0].excerpt == {"total": 9, "older": 3, "newer": 6}
+
+
+def test_the_app_hands_in_its_error_memory(app_module):
+    assert "writing_history=lambda: api_error_memory()" in __import__("pathlib").Path(app_module.__file__).read_text(encoding="utf-8")

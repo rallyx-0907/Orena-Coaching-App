@@ -99,17 +99,19 @@ def test_unknown_request_fields_are_ignored_for_a_newer_client():
 
 
 def test_a_newer_contract_version_is_answered_in_this_one():
-    turn = TurnRequest.model_validate(request(contract_version=2))
-    assert turn.version == 1
+    from writing_coach.agent.contract import CONTRACT_VERSION
+
+    turn = TurnRequest.model_validate(request(contract_version=CONTRACT_VERSION + 1))
+    assert turn.version == CONTRACT_VERSION
     with pytest.raises(ValidationError):
         TurnRequest.model_validate(request(contract_version=0))
 
 
 def test_an_unknown_surface_degrades_to_no_surface():
     body = request()
-    body["context"]["surface"] = "orena.home"
+    body["context"]["surface"] = "atlas.home"
     turn = TurnRequest.model_validate(body)
-    assert turn.context.surface == "orena.home"
+    assert turn.context.surface == "atlas.home"
     assert turn.context.known_surface is None
 
 
@@ -190,3 +192,49 @@ def test_client_declarations_are_intersected_with_the_contract():
     client = TurnRequest.model_validate(body).client
     assert client.allowed_actions == {"navigate", "save_word"}
     assert client.allowed_intents == {"vocabulary.review_due"}
+
+
+# --- version 2 (D-092) ---------------------------------------------------------------
+
+
+def v2(**overrides):
+    return request(contract_version=2, **overrides)
+
+
+def test_an_opening_turn_carries_no_message():
+    body = v2(trigger="open")
+    del body["message"]
+    turn = TurnRequest.model_validate(body)
+    assert turn.opening and turn.message is None
+    with pytest.raises(ValidationError, match="no message"):
+        TurnRequest.model_validate(v2(trigger="open"))
+    with pytest.raises(ValidationError):
+        TurnRequest.model_validate(v2(trigger="wake"))
+
+
+def test_a_message_turn_is_the_default_and_needs_a_message():
+    assert TurnRequest.model_validate(v2()).trigger == "message"
+    body = v2()
+    del body["message"]
+    with pytest.raises(ValidationError, match="needs a message"):
+        TurnRequest.model_validate(body)
+
+
+def test_a_version_one_client_has_no_opening_turn():
+    body = request(contract_version=1, trigger="open")
+    turn = TurnRequest.model_validate(body)
+    assert turn.trigger == "message" and not turn.opening
+    del body["message"]
+    with pytest.raises(ValidationError):
+        TurnRequest.model_validate(body)
+
+
+def test_a_word_is_text_and_language_and_a_take_is_a_client_reference():
+    body = v2()
+    body["context"]["selected_item"] = {"type": "word", "text": "我", "lang": "zh-CN"}
+    body["context"]["take_ref"] = "take-7"
+    turn = TurnRequest.model_validate(body)
+    assert turn.context.selected_item.lang == "zh-CN" and turn.context.take_ref == "take-7"
+    body["context"]["selected_item"]["lang"] = "zh"
+    with pytest.raises(ValidationError):
+        TurnRequest.model_validate(body)

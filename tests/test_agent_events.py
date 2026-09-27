@@ -7,11 +7,12 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from writing_coach.agent.contract import ACTIONS, SURFACES
+from writing_coach.agent.contract import ACTIONS, CONTRACT_VERSION, SURFACES
 from writing_coach.agent.events import (
     ActionNotSupported,
     AudioChunkEvent,
     ContractViolation,
+    Display,
     DoneEvent,
     ErrorEvent,
     EvidenceEvent,
@@ -40,9 +41,9 @@ def client(actions=ALL_ACTIONS, intents=ALL_INTENTS):
     return ClientInfo(ui_version="t", supported_actions=list(actions), supported_intents=list(intents))
 
 
-def stream(**kwargs):
-    s = TurnStream(version=1, client=kwargs.pop("client", client()), **kwargs)
-    s.emit(SessionEvent(session_id="s1", contract_version=1))
+def stream(version=CONTRACT_VERSION, **kwargs):
+    s = TurnStream(version=version, client=kwargs.pop("client", client()), **kwargs)
+    s.emit(SessionEvent(session_id="s1", contract_version=version))
     return s
 
 
@@ -93,7 +94,7 @@ def test_s1_app_help():
 def test_s5_save_word():
     s = stream()
     s.emit(SegmentEnd(index=0, lang="vi", text="Mình lưu 我 cho bạn nhé.", voice_style="brief_ack"))
-    action = s.emit(make_action("a1", "save_word", "Lưu từ", {"word_id": "w1"}))
+    action = s.emit(make_action("a1", "save_word", "Lưu từ", {"text": "我", "lang": "zh-CN"}))
     s.emit(done())
     assert action.risk == "LOW"
     assert names(s) == ["session", "segment_end", "action", "done"]
@@ -138,7 +139,7 @@ def test_s2_pronunciation_claim_rests_on_flagged_evidence():
     s.emit(SegmentEnd(index=0, lang="vi", text="Azure đánh dấu 是 …", voice_style="gentle_correction"), cites=["e1"])
     s.emit(SegmentEnd(index=1, lang="zh-CN", text="是", voice_style="reference"))
     s.emit(make_action("a1", "play_model", "Nghe mẫu", {"content_id": "c1", "item_id": "i1"}))
-    s.emit(make_action("a2", "say_again", "Nói lại", {"attempt_id": "att-1", "item_id": "i1"}))
+    s.emit(make_action("a2", "say_again", "Nói lại", {"content_id": "c1", "item_id": "i1"}))
     s.emit(done())
     assert names(s)[-4:] == ["segment_end", "action", "action", "done"]
 
@@ -161,18 +162,18 @@ def test_se_provider_failure_ends_with_error():
 
 
 def test_session_comes_first_and_once():
-    s = TurnStream(version=1, client=client())
+    s = TurnStream(version=CONTRACT_VERSION, client=client())
     with pytest.raises(ContractViolation):
         s.emit(done())
-    s.emit(SessionEvent(session_id="s1", contract_version=1))
+    s.emit(SessionEvent(session_id="s1", contract_version=CONTRACT_VERSION))
     with pytest.raises(ContractViolation):
         s.emit(SessionEvent(session_id="s2", contract_version=1))
 
 
 def test_session_carries_the_negotiated_version():
-    s = TurnStream(version=1, client=client())
+    s = TurnStream(version=CONTRACT_VERSION, client=client())
     with pytest.raises(ContractViolation):
-        s.emit(SessionEvent(session_id="s1", contract_version=2))
+        s.emit(SessionEvent(session_id="s1", contract_version=1))
 
 
 def test_nothing_after_done_or_error():
@@ -249,7 +250,7 @@ def test_the_client_decides_which_actions_exist():
     assert s.allows_action("navigate", "vocabulary.review_due")
     assert not s.allows_action("navigate", "writing.revision")
     with pytest.raises(ActionNotSupported):
-        s.emit(make_action("a1", "save_word", "Lưu từ", {"word_id": "w1"}))
+        s.emit(make_action("a1", "save_word", "Lưu từ", {"text": "我", "lang": "zh-CN"}))
     with pytest.raises(ActionNotSupported):
         s.emit(make_action("a2", "navigate", "Sửa bài", {"intent": "writing.revision", "essay_id": "9"}))
     s.emit(make_action("a3", "navigate", "Ôn từ", {"intent": "vocabulary.review_due"}))
@@ -262,11 +263,11 @@ def test_blocked_and_unknown_actions_cannot_be_built():
 
 
 def test_risk_comes_from_the_table_never_from_the_caller():
-    assert make_action("a1", "unsave_word", "Bỏ lưu", {"word_id": "w1"}).risk == "CONFIRM"
+    assert make_action("a1", "unsave_word", "Bỏ lưu", {"text": "我", "lang": "zh-CN"}).risk == "CONFIRM"
     with pytest.raises(ValidationError):
         from writing_coach.agent.events import ActionEvent
 
-        ActionEvent(id="a1", type="unsave_word", label="Bỏ lưu", payload={"word_id": "w1"}, risk="LOW")
+        ActionEvent(id="a1", type="unsave_word", label="Bỏ lưu", payload={"text": "我", "lang": "zh-CN"}, risk="LOW")
 
 
 @pytest.mark.parametrize(
@@ -281,6 +282,11 @@ def test_risk_comes_from_the_table_never_from_the_caller():
         ("start_review", {"scope": "week"}),
         ("start_review", {"scope": "word"}),
         ("start_targeted_drill", {"focus": "tone", "item_ids": []}),
+        ("start_review", {"scope": "due", "text": "我", "lang": "zh-CN"}),
+        ("add_word_to_collection", {"text": "我", "lang": "zh-CN", "target": {"system": "shelf", "id": "d1"}}),
+        ("add_word_to_collection", {"text": "我", "lang": "zh-CN", "target": "d1"}),
+        ("play_user", {"attempt_id": "a1"}),
+        ("navigate", {"intent": "vocabulary.word", "word_id": "w1"}),
         ("start_targeted_drill", {"focus": "rhythm", "item_ids": ["i1"]}),
         ("play_model", {"content_id": 7}),
     ],
@@ -294,12 +300,16 @@ def test_payloads_follow_the_table(action_type, payload):
     "action_type, payload",
     [
         ("save_word", {"text": "我", "lang": "zh-CN"}),
-        ("save_word", {"word_id": "w1"}),
         ("say_again", {"content_id": "c1"}),
-        ("add_word_to_collection", {"word_id": "w1", "collection_id": "c1"}),
-        ("start_review", {"scope": "word", "word_id": "w1"}),
+        ("add_word_to_collection", {"text": "我", "lang": "zh-CN"}),
+        ("add_word_to_collection", {"text": "我", "lang": "zh-CN", "target": {"system": "library", "id": "c1"}}),
+        ("start_review", {"scope": "word", "text": "我", "lang": "zh-CN"}),
+        ("start_review", {"scope": "due"}),
         ("start_targeted_drill", {"focus": "tone", "item_ids": ["i1", "i2"]}),
-        ("navigate", {"intent": "speaking.word_detail", "attempt_id": "a", "item_id": "i"}),
+        ("play_user", {"take_ref": "t1", "item_id": "i1"}),
+        ("navigate", {"intent": "speaking.word_detail", "take_ref": "t1", "item_id": "i"}),
+        ("navigate", {"intent": "vocabulary.word", "text": "我", "lang": "zh-CN"}),
+        ("navigate", {"intent": "orena.home"}),
     ],
 )
 def test_valid_payloads(action_type, payload):
@@ -357,3 +367,34 @@ def test_memory_update_shapes():
         MemoryUpdateEvent(op="upsert", note={**note, "kind": "mood"})
     with pytest.raises(ValidationError):
         MemoryUpdateEvent(op="replace_all", note={"id": "n1"})
+
+
+# --- version 2 and the clients that declared version 1 (contract §0, D-092) ---------------
+
+
+def test_a_version_one_client_gets_none_of_the_changed_actions_or_intents():
+    s = stream(version=1)
+    for changed in ("save_word", "unsave_word", "add_word_to_collection", "start_review", "say_again", "play_user"):
+        assert not s.allows_action(changed)
+    assert s.allows_action("play_model") and s.allows_action("navigate", "vocabulary.review_due")
+    assert not s.allows_action("navigate", "orena.home")
+    assert not s.allows_action("navigate", "vocabulary.word")
+    with pytest.raises(ActionNotSupported):
+        s.emit(make_action("a1", "save_word", "Lưu từ", {"text": "我", "lang": "zh-CN"}))
+
+
+def test_display_reaches_only_a_version_two_client():
+    display = Display(kind="writing", reason="Hai lỗi động từ lặp lại.")
+    for version, expected in ((2, {"kind": "writing", "reason": "Hai lỗi động từ lặp lại."}), (1, None)):
+        s = stream(version=version)
+        action = s.emit(make_action("a1", "navigate", "Sửa bài", {"intent": "writing.revision", "essay_id": "9"}, display=display))
+        wire = json.loads(sse_frame(action).split("data: ", 1)[1])
+        assert wire.get("display") == expected
+        assert ("display" in wire) is (expected is not None)
+
+
+def test_display_is_bounded():
+    with pytest.raises(ValidationError):
+        Display(kind="games")
+    with pytest.raises(ValidationError):
+        Display(reason="x" * 91)

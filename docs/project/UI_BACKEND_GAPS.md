@@ -2659,8 +2659,10 @@ named in it.
 
 ### I-C. Contract actions whose payload differs from the existing APIs
 
-Recorded, not changed here: the contract is edited only on `codex/work`
-(D-086), and the human placed these in contract v2 (ruling 2026-09-27).
+**Resolved by contract v2 (D-092), served since Slice 1c:** words are `{text, lang}`,
+takes are a client `take_ref`, `say_again` names the line, `start_review` is `due` or one
+word, and `add_word_to_collection` names a deck or a library collection. The rows stay as
+the record of why. I-16's read-by-id is still missing (N-9).
 
 | # | Action | Contract payload | What the API takes |
 | --- | --- | --- | --- |
@@ -2683,4 +2685,4 @@ Recorded, not changed here: the contract is edited only on `codex/work`
 | I-22 | Legacy route health | The legacy route has no cooldown or availability check today; the agent adds none, so a failing provider fails each turn with `retry` until the operator changes the selection. |
 | I-23 | Identity answers (spec §35) | Not built: the model is instructed to answer as Orena and never name a provider; a deterministic identity answer through the `DecisionProvider` is a later slice. |
 | I-24 | Rate limit per learner or IP (spec §22) | Not built; the endpoints are off outside development and sandbox (R9). Needed before any activation. |
-| I-25 | Capability status | Every capability stays `pending`, including `review.due`, whose two tools now run: marking one `active` is a verification step for the human. |
+| I-25 | Capability status | `vocabulary.words`, `review.due` and `writing.review` are `active` since Slice 1c: every tool they name runs and their contract streams (S1, S5, S9, S13) pass in EN and ZH. Every other capability stays `pending` until its tools exist. |

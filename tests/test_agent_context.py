@@ -12,6 +12,13 @@ from writing_coach.agent.decision import DecisionQuestion, Decisions, DecisionSt
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.schemas import AppContextSnapshot, ClientInfo, CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache
+from writing_coach.agent.runtime import build_tool_registry
+
+
+def capabilities():
+    """The registry as the app loads it: active capabilities need their tools registered."""
+
+    return load_capability_registry(registered_tools=build_tool_registry(writing_review=lambda essay_id: None).names())
 
 NOW = datetime(2026, 9, 27, 12, 0, tzinfo=UTC)
 
@@ -77,7 +84,7 @@ def test_this_word_resolves_from_the_session_when_the_client_sends_no_selection(
 
 
 def test_an_unknown_surface_is_no_surface():
-    assert build_tier1(turn(context=snapshot(surface="orena.home")), now=NOW).surface is None
+    assert build_tier1(turn(context=snapshot(surface="atlas.home")), now=NOW).surface is None
 
 
 def test_coach_notes_live_heaviest_first():
@@ -121,7 +128,7 @@ def test_redaction_covers_every_name_a_tool_argument_may_not_use():
 
 @pytest.mark.parametrize("target, has_tone", [("zh-CN", True), ("en", False)])
 def test_the_stub_picks_capabilities_from_surface_and_language(target, has_tone):
-    registry = load_capability_registry()
+    registry = capabilities()
     state = DecisionState(
         turn=turn(context=snapshot(target=target)),
         tier1=build_tier1(turn(context=snapshot(target=target)), now=NOW),
@@ -134,6 +141,6 @@ def test_the_stub_picks_capabilities_from_surface_and_language(target, has_tone)
 
 
 def test_the_stub_answers_only_what_it_is_asked():
-    registry = load_capability_registry()
+    registry = capabilities()
     state = DecisionState(turn=turn(), tier1=build_tier1(turn(), now=NOW), registry=registry)
     assert StubDecisionProvider().decide(state, frozenset()) == Decisions()

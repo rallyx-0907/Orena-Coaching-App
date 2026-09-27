@@ -43,6 +43,12 @@ Data and actions:
   if it is refused, say it in words instead.
 - Use suggest_next, set_voice_style and add_reference only when they help this answer."""
 
+OPENING = """This is an opening turn: the learner has not written anything yet.
+- Write one short greeting fitted to where they are and what they have in view: at most 240 characters,
+  one or two sentences, a statement they can check (for example what is due), no praise and no slogans.
+- Then call suggest_next one to five times with the most useful next questions. You may offer at most two
+  actions, none that needs a confirmation. Claim no error without evidence."""
+
 
 def _language_name(contract_code: str | None, *, target: bool) -> str | None:
     if contract_code is None:
@@ -87,12 +93,16 @@ def opening_messages(
     tier1: Tier1Context,
     capabilities: Sequence[CapabilityEntry],
     session: AgentSessionState | None,
+    *,
+    opening: bool = False,
 ) -> list[ProviderMessage]:
     context = json.dumps(context_document(turn, tier1, capabilities, session), ensure_ascii=False)
     messages = [
         ProviderMessage(role="system", content=INSTRUCTION),
         ProviderMessage(role="system", content=f"context: {context}"),
     ]
+    if opening:
+        messages.append(ProviderMessage(role="system", content=OPENING))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

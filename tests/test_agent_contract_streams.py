@@ -107,10 +107,11 @@ def harness():
     configure_agent(None)
 
 
-def turn(client: TestClient, target: str, message: str, context: dict, actions=(), intents=()):
+def turn(client: TestClient, target: str, message: str | None, context: dict, actions=(), intents=(), version=2, **extra):
     body = {
-        "contract_version": 1,
-        "message": message,
+        "contract_version": version,
+        **({"message": message} if message is not None else {}),
+        **extra,
         "client": {"ui_version": "next-0", "supported_actions": list(actions), "supported_intents": list(intents)},
         "context": {"locale": {"interface": "vi", "support": "vi", "target": target, "content": target}, **context},
     }
@@ -161,7 +162,11 @@ def test_s5_save_word(harness, target):
         harness.client([round_one]),
         target,
         "Lưu từ này.",
-        {"surface": "vocabulary.word", "activity_type": "vocabulary", "selected_item": {"type": "word", "text": word}},
+        {
+            "surface": "vocabulary.word",
+            "activity_type": "vocabulary",
+            "selected_item": {"type": "word", "text": word, "lang": target},
+        },
         actions=("save_word", "navigate"),
     )
     assert names(events) == canonical("S5")
@@ -230,8 +235,91 @@ def test_s9_writing(harness, target):
     assert by_name["segment_end"][0]["voice_style"] == "neutral_explain"
     assert by_name["action"][0]["type"] == "navigate"
     assert by_name["action"][0]["payload"] == {"intent": "writing.revision", "essay_id": "9"}
+    # version 2: the essay's record was read, so the action and each evidence item say it is writing
+    assert by_name["action"][0]["display"] == {"kind": "writing"}
+    assert {e["display"]["kind"] for e in by_name["evidence"]} == {"writing"}
     # the tool read as the authenticated learner, through the app-style middleware
     assert harness.readers == ["learner-1"]
+
+
+@TARGETS
+def test_s13_opening(harness, target):
+    round_one = (
+        TextDelta("Hôm nay bạn có 12 từ đến hạn ôn."),
+        ToolCallRequest("c1", "suggest_next", {"intent": "review_due"}),
+        ToolCallRequest("c2", "suggest_next", {"intent": "app_help"}),
+        TurnFinished(0, 10, "tool_calls"),
+    )
+    events = turn(
+        harness.client([round_one]), target, None, {"surface": "orena.home"}, trigger="open",
+    )  # fmt: skip
+    assert names(events) == canonical("S13")
+    segment = dict(events)["segment_end"]
+    assert (segment["index"], segment["lang"], segment["voice_style"]) == (0, "vi", "neutral_explain")
+    assert len(segment["text"]) <= 240
+    assert "memory_update" not in names(events) and "evidence" not in names(events)
+    suggestions = [data for name, data in events if name == "suggestion"]
+    # Ruling R12 and §4: a suggestion names a prompt intent. S13's own fixture shows a navigation id
+    # there (vocabulary.review_due); that contradiction is reported to the human, R12 is followed.
+    assert [s["intent"] for s in suggestions] == ["review_due", "app_help"]
+    assert suggestions[0]["label"] == "Ôn từ đến hạn"
+
+
+def test_s13_gives_a_way_forward_even_when_the_model_names_none(harness):
+    events = turn(harness.client([reply("Chào bạn, hôm nay ôn vài từ nhé.")]), "zh-CN", None, {"surface": "orena.home"}, trigger="open")
+    assert names(events) == ["session", "segment_end", "suggestion", "suggestion", "done"]
+
+
+def test_s13_a_long_greeting_is_held_to_240_characters(harness):
+    long = "Câu này dài. " * 40
+    events = turn(harness.client([reply(long)]), "en", None, {"surface": "orena.home"}, trigger="open")
+    assert len(dict(events)["segment_end"]["text"]) <= 240
+    assert "segment_delta" not in [name for name, _ in events]  # sent whole, once it fits
+
+
+def test_s13_offers_no_action_that_needs_a_confirmation(harness):
+    round_one = (
+        TextDelta("Chào bạn."),
+        ToolCallRequest("c1", "propose_action", {"type": "unsave_word", "payload": {"text": "机会", "lang": "zh-CN"}}),
+        TurnFinished(0, 4, "tool_calls"),
+    )
+    events = turn(
+        harness.client([round_one, reply("Chào bạn.")]), "zh-CN", None, {"surface": "orena.home"},
+        actions=("unsave_word",), trigger="open",
+    )  # fmt: skip
+    assert "action" not in names(events)
+
+
+def test_a_version_one_client_gets_s5_without_the_action(harness):
+    round_one = (
+        TextDelta("Mình lưu 我 cho bạn nhé."),
+        ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"text": "我", "lang": "zh-CN"}}),
+        TurnFinished(0, 9, "tool_calls"),
+    )
+    events = turn(
+        harness.client([round_one]), "zh-CN", "Lưu từ này.",
+        {"surface": "vocabulary.my_language", "selected_item": {"type": "word", "text": "我"}},
+        actions=("save_word",), version=1,
+    )  # fmt: skip
+    assert dict(events)["session"]["contract_version"] == 1
+    assert names(events) == ["session", "segment_end", "done"]
+
+
+def test_an_invented_id_never_reaches_the_client(harness):
+    rounds = [
+        (
+            ToolCallRequest(
+                "c1", "propose_action", {"type": "navigate", "payload": {"intent": "writing.revision", "essay_id": "777"}}
+            ),
+            TurnFinished(0, 4, "tool_calls"),
+        ),
+        reply("Mình chưa đọc bài đó."),
+    ]
+    events = turn(
+        harness.client(rounds), "en", "Mở bài 777.", {"surface": "writing.review", "essay_id": "9"},
+        actions=("navigate",), intents=("writing.revision",),
+    )  # fmt: skip
+    assert "action" not in names(events)
 
 
 def test_the_canonical_sequences_are_the_contracts():
@@ -241,3 +329,4 @@ def test_the_canonical_sequences_are_the_contracts():
     assert canonical("S9") == [
         "session", "tool_call", "tool_result", "evidence", "evidence", "segment_end", "action", "done",
     ]  # fmt: skip
+    assert canonical("S13") == ["session", "segment_end", "suggestion", "suggestion", "done"]

@@ -19,6 +19,13 @@ from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.session import SessionCache
 from writing_coach.agent.tools import AgentTool, LearnerScope, ToolEvidence, ToolPermission, ToolRegistry, ToolResult
 from writing_coach.agent.turn import AgentRuntime
+from writing_coach.agent.runtime import build_tool_registry
+
+
+def capabilities():
+    """The registry as the app loads it: active capabilities need their tools registered."""
+
+    return load_capability_registry(registered_tools=build_tool_registry(writing_review=lambda essay_id: None).names())
 from writing_coach.core.request_context import current_user_key
 
 VI = LearnerScope(user_key="learner-1", language="zh")
@@ -49,7 +56,7 @@ def registry(seen=None, fail_with=None):
             raise fail_with
         return ToolResult(
             summary="two flagged syllables",
-            data={"items": ["是", "美"], "producer": "internal-model"},
+            data={"items": ["是", "美"], "producer": "internal-model", "content_id": "c9", "item_id": "i1"},
             evidence=(
                 ToolEvidence("x1", "speech.pronunciation", {"attempt_id": "a1", "path": "words[0]"}, {"score": 6, "flagged": True}),
                 ToolEvidence("x2", "speech.pronunciation", {"attempt_id": "a1", "path": "words[1]"}, {"score": 71, "flagged": False}),
@@ -75,7 +82,7 @@ def registry(seen=None, fail_with=None):
 
 def turn_request(message="Tại sao tôi sai từ này?", actions=("navigate", "save_word", "play_model"), **extra):
     body = {
-        "contract_version": 1,
+        "contract_version": 2,
         "message": message,
         "client": {
             "ui_version": "t",
@@ -98,7 +105,7 @@ def runtime(rounds, *, tools=None, limits=None, meter=None, clock=None):
     rt = AgentRuntime(
         provider=provider,
         tools=tools if tools is not None else registry(),
-        capabilities=load_capability_registry(),
+        capabilities=capabilities(),
         sessions=SessionCache(new_id=lambda: f"s{next(ids)}"),
         limits=limits or AgentLimits(),
         meter=meter,
@@ -400,3 +407,63 @@ def test_a_saved_word_is_saved_in_the_language_being_learned():
     events = run(rt)
     assert "action" not in names(events)
     assert "language being learned" in provider.requests[1].messages[-1].content
+
+
+# --- contract version 2 in the turn ---------------------------------------------------------
+
+
+def opening_request(**extra):
+    body = turn_request().model_dump(mode="json", exclude_none=True)
+    body.pop("message")
+    body.update(trigger="open", **extra)
+    body["context"]["surface"] = "orena.home"
+    return TurnRequest.model_validate(body)
+
+
+def test_an_opening_turn_is_metered_as_an_opening_not_a_learner_turn():
+    meter = []
+    rt, provider = runtime([reply("Hôm nay có 3 từ đến hạn.")], meter=lambda *args: meter.append(args))
+    events = run(rt, opening_request())
+    assert [feature for _, feature, _, _ in meter] == ["agent.open", "agent.tokens"]
+    assert rt.sessions.get(events[0].session_id, "learner-1").turn_count == 0
+    assert all(m.role != "user" for m in provider.requests[0].messages)
+    assert any("opening turn" in m.content for m in provider.requests[0].messages if m.role == "system")
+
+
+def test_an_id_the_model_invents_is_refused_and_one_it_read_is_accepted():
+    rt, provider = runtime(
+        [
+            (
+                ToolCallRequest("c1", "propose_action", {"type": "play_model", "payload": {"content_id": "c404"}}),
+                TurnFinished(0, 3, "tool_calls"),
+            ),
+            call_tools(("c2", "get_test_items", {})),
+            (
+                TextDelta("Nghe mẫu nhé."),
+                ToolCallRequest("c3", "propose_action", {"type": "play_model", "payload": {"content_id": "c9", "item_id": "i1"}}),
+                TurnFinished(0, 3, "tool_calls"),
+            ),
+        ]
+    )
+    events = run(rt)
+    assert "never be invented" in provider.requests[1].messages[-1].content
+    actions = [e for e in events if e.name == "action"]
+    assert [a.payload for a in actions] == [{"content_id": "c9", "item_id": "i1"}]
+
+
+def test_a_take_is_named_only_as_the_client_sent_it():
+    request = turn_request(actions=("play_user",))
+    body = request.model_dump(mode="json", exclude_none=True)
+    body["context"]["take_ref"] = "take-7"
+    rt, provider = runtime(
+        [
+            (
+                ToolCallRequest("c1", "propose_action", {"type": "play_user", "payload": {"take_ref": "take-8"}}),
+                ToolCallRequest("c2", "propose_action", {"type": "play_user", "payload": {"take_ref": "take-7"}}),
+                TurnFinished(0, 3, "tool_calls"),
+            ),
+            reply("Nghe lại nhé."),
+        ]
+    )
+    events = run(rt, TurnRequest.model_validate(body))
+    assert [e.payload for e in events if e.name == "action"] == [{"take_ref": "take-7"}]

@@ -11,7 +11,7 @@
         "vocabulary.my_language",
         "vocabulary.word"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [
         "selected_item"
       ],
@@ -41,9 +41,10 @@
       },
       "surfaces": [
         "vocabulary.review_due",
+        "orena.home",
         "home"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [],
       "actions": [
         "start_review",

@@ -63,26 +63,60 @@ def test_action_allowlist_and_risk():
     }
 
 
-@pytest.mark.parametrize(
-    "action, payload_cell_keys",
-    [
-        ("play_model", {"content_id", "item_id"}),
-        ("play_user", {"attempt_id", "item_id"}),
-        ("say_again", {"attempt_id", "content_id", "item_id"}),
-        ("compare_with_model", {"attempt_id", "item_id"}),
-        ("save_word", {"word_id", "text", "lang"}),
-        ("add_word_to_collection", {"word_id", "collection_id"}),
-        ("start_review", {"scope", "word_id"}),
-        ("start_targeted_drill", {"focus", "item_ids"}),
-        ("unsave_word", {"word_id"}),
-    ],
-)
-def test_action_payload_keys_match_the_table(action, payload_cell_keys):
-    cell = re.search(rf"^\| `{action}` \| `(.*?)` \|", _section("## 7."), re.M).group(1)
-    assert set(re.findall(r"[a-z_]+", re.sub(r'"[^"]*"', "", cell))) == payload_cell_keys
+def _payload_keys(cell: str) -> set[str]:
+    """The top-level keys of the payload object(s) in a §7 table cell."""
+
+    cell = re.sub(r'"[^"]*"', "", cell)
+    keys, depth = set(), 0
+    for token in re.findall(r"[{}]|[a-z_]+", cell):
+        if token == "{":
+            depth += 1
+        elif token == "}":
+            depth -= 1
+        elif depth == 1:
+            keys.add(token)
+    return keys
+
+
+def _payload_cell(action: str) -> str:
+    return re.search(rf"^\| `{action}` \| (.*?) \| (?:LOW|CONFIRM) \|", _section("## 7."), re.M).group(1)
+
+
+@pytest.mark.parametrize("action", sorted(set(contract.ACTIONS) - {"navigate"}))
+def test_action_payload_keys_match_the_table(action):
     spec = contract.ACTIONS[action]
     keys = set().union(*(shape.required | shape.optional for shape in spec.shapes))
-    assert keys == payload_cell_keys
+    assert _payload_keys(_payload_cell(action)) == keys
+
+
+def test_action_value_sets_match_the_table():
+    assert '`{ scope: "due" }` or `{ scope: "word", text, lang }`' in _payload_cell("start_review")
+    assert contract.ACTIONS["start_review"].values["scope"] == {"due", "word"}
+    assert set(re.findall(r'"([a-z]+)"', _payload_cell("start_targeted_drill"))) == contract.ACTIONS[
+        "start_targeted_drill"
+    ].values["focus"]
+    assert set(re.findall(r'"([a-z]+)"', _payload_cell("add_word_to_collection"))) == contract.COLLECTION_SYSTEMS
+
+
+def test_version_one_clients_get_only_what_version_two_left_unchanged():
+    assert "sends none of the changed actions" in CONTRACT
+    assert contract.V1_ACTIONS == {"navigate", "play_model", "start_targeted_drill"}
+    assert contract.V1_ACTIONS <= set(contract.ACTIONS)
+    assert "orena.home" not in contract.V1_SURFACES
+    assert contract.actions_for_version(1) == contract.V1_ACTIONS
+    assert contract.actions_for_version(2) == set(contract.ACTIONS)
+
+
+def test_version_two_rules():
+    assert re.search(r"`trigger` ∈ `message` .*\| `open`", CONTRACT)
+    assert contract.TRIGGERS == {"message", "open"}
+    assert "≤ 240 characters" in _section("### 3.2") and contract.OPENING_MAX_CHARS == 240
+    assert "×(1-5)" in _section("### 3.2") and contract.OPENING_MAX_SUGGESTIONS == 5
+    assert "×(0-2)" in _section("### 3.2") and contract.OPENING_MAX_ACTIONS == 2
+    assert "≤ 90 characters" in _section("### 5.5") and contract.MAX_DISPLAY_REASON_CHARS == 90
+    kinds = re.search(r'"kind": "([^"]+)"', _section("### 5.5")).group(1)
+    assert {kind.strip() for kind in kinds.split("|")} == contract.DISPLAY_KINDS
+    assert "(`content_id`, `grammar_id`, `essay_id`, `target.id`) come from tool reads" in _section("## 7.")
 
 
 def test_event_names():
@@ -109,13 +143,13 @@ def test_small_enumerations():
     assert _quoted(r"metered\s+\{(.*?)\}") == contract.BUDGET_STATES
     assert _quoted(r"error\s+\{(.*?)\}\n") == contract.ERROR_FALLBACKS
     assert _quoted(r"memory_update\s+\{(.*?)\}") == contract.MEMORY_OPS
-    assert '"type": "word | sentence | feedback_item | grammar_point"' in CONTRACT
-    assert contract.SELECTED_ITEM_TYPES == {"word", "sentence", "feedback_item", "grammar_point"}
+    assert _enum_after("`selected_item`: `type` ∈") == contract.SELECTED_ITEM_TYPES
     assert '"kind": "preference | goal | plan"' in CONTRACT
     assert contract.COACH_NOTE_KINDS == {"preference", "goal", "plan"}
     assert "send at most 20, most weighted first, total ≤ 2 KB" in CONTRACT
     assert (contract.MAX_COACH_NOTES, contract.MAX_COACH_NOTES_BYTES) == (20, 2048)
-    assert "`label` is in the `support` language, ≤ 24 characters" in CONTRACT
+    # The label's length is the contract's; its language layer follows ruling R12 (interface, D-080).
+    assert re.search(r"`label` is in the `[a-z]+` language, ≤ 24 characters", CONTRACT)
     assert contract.MAX_ACTION_LABEL_CHARS == 24
     assert 'format: "pcm16_24k"' in CONTRACT and contract.AUDIO_FORMATS == {"pcm16_24k"}
 

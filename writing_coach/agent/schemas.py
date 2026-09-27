@@ -7,6 +7,10 @@ id this version does not know is kept but not recognised (`known_surface`), so
 a newer client's surface degrades to "no surface" instead of failing the turn.
 What the contract closes - locale codes per layer, activity type, selection and
 note kinds, the coach-note budget - is enforced.
+
+Version 2 adds the opening turn: `trigger: "open"` carries no message
+(contract §3.2). A client that declared version 1 has no trigger; whatever it
+sends there is read as a message turn, which needs a message.
 """
 
 from __future__ import annotations
@@ -24,6 +28,7 @@ from writing_coach.agent.contract import (
     MAX_COACH_NOTES_BYTES,
     SELECTED_ITEM_TYPES,
     SURFACES,
+    TRIGGERS,
     negotiated_version,
 )
 from writing_coach.agent.locale import InternalLocale, UnsupportedLanguage, require_layer_language, to_internal
@@ -84,9 +89,22 @@ class ContractLocale(_Incoming):
 
 
 class SelectedItem(_Incoming):
+    """A word is `{text, lang}` (the product has no word ids); the others carry id and text."""
+
     type: str
     id: str | None = Field(default=None, pattern=_ID)
     text: str | None = Field(default=None, min_length=1, max_length=500)
+    lang: str | None = None
+
+    @field_validator("lang")
+    @classmethod
+    def _lang(cls, value: str | None) -> str | None:
+        if value is not None:
+            try:
+                require_layer_language("content", value)
+            except UnsupportedLanguage as exc:
+                raise ValueError(str(exc)) from exc
+        return value
 
     @field_validator("type")
     @classmethod
@@ -115,6 +133,7 @@ class AppContextSnapshot(_Incoming):
     lesson_id: str | None = Field(default=None, pattern=_ID)
     content_id: str | None = Field(default=None, pattern=_ID)
     attempt_id: str | None = Field(default=None, pattern=_ID)
+    take_ref: str | None = Field(default=None, pattern=_ID)
     essay_id: str | None = Field(default=None, pattern=_ID)
     selected_item: SelectedItem | None = None
     client_evidence: ClientEvidence | None = None
@@ -155,21 +174,27 @@ def coach_notes_bytes(notes: list[CoachNote]) -> int:
 
 
 class TurnRequest(_Incoming):
-    """`POST /api/agent/turn` body. In version 1 a turn carries a message."""
+    """`POST /api/agent/turn` body (contract §3)."""
 
     contract_version: int = Field(ge=1)
     session_id: str | None = Field(default=None, pattern=_ID)
-    message: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
+    trigger: str = "message"
+    message: str | None = Field(default=None, max_length=MAX_MESSAGE_CHARS)
     client: ClientInfo
     context: AppContextSnapshot
     coach_notes: list[CoachNote] = Field(default_factory=list, max_length=MAX_COACH_NOTES)
 
-    @field_validator("message")
-    @classmethod
-    def _message(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("message is empty")
-        return value
+    @model_validator(mode="after")
+    def _turn_kind(self) -> TurnRequest:
+        if negotiated_version(self.contract_version) < 2:
+            object.__setattr__(self, "trigger", "message")
+        if self.trigger not in TRIGGERS:
+            raise ValueError(f"unknown trigger {self.trigger!r}")
+        if self.trigger == "message" and (self.message is None or not self.message.strip()):
+            raise ValueError("a message turn needs a message")
+        if self.trigger == "open" and self.message is not None:
+            raise ValueError("an opening turn carries no message")
+        return self
 
     @model_validator(mode="after")
     def _notes_budget(self) -> TurnRequest:
@@ -180,3 +205,7 @@ class TurnRequest(_Incoming):
     @property
     def version(self) -> int:
         return negotiated_version(self.contract_version)
+
+    @property
+    def opening(self) -> bool:
+        return self.trigger == "open"

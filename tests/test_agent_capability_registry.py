@@ -21,7 +21,9 @@ GAPS_DOC = (ROOT / "docs/project/UI_BACKEND_GAPS.md").read_text(encoding="utf-8"
 
 @pytest.fixture(scope="module")
 def registry():
-    return load_capability_registry()
+    from writing_coach.agent.runtime import build_tool_registry
+
+    return load_capability_registry(registered_tools=build_tool_registry(writing_review=lambda i: None).names())
 
 
 def test_every_v1_domain_is_known(registry):
@@ -43,8 +45,15 @@ def test_every_v1_domain_is_known(registry):
         assert expected in ids
 
 
-def test_slice_1a_registers_nothing_active(registry):
-    assert {entry.status for entry in registry.entries()} == {"pending"}
+def test_vocabulary_and_writing_are_active_and_everything_else_pending(registry):
+    active = {entry.id for entry in registry.entries() if entry.status == "active"}
+    assert active == {"vocabulary.words", "review.due", "writing.review"}
+    assert {entry.status for entry in registry.entries() if entry.id not in active} == {"pending"}
+
+
+def test_the_registry_does_not_load_without_the_active_capabilities_tools():
+    with pytest.raises(CapabilityRegistryInvalid, match="not registered"):
+        load_capability_registry()
 
 
 def test_entries_use_only_contract_ids(registry):
@@ -70,7 +79,7 @@ def test_en_and_zh_parity_or_a_reason(registry):
 
 def test_public_shape_is_the_contracts(registry):
     body = registry.public(interface="vi", target="zh-CN")
-    assert body["contract_version"] == 1
+    assert body["contract_version"] == 2
     first = body["capabilities"][0]
     assert set(first) == {"id", "title", "surfaces", "actions", "languages", "evidence_source", "status"}
     ids = {item["id"] for item in body["capabilities"]}
@@ -91,7 +100,8 @@ def test_for_surface_is_deterministic_and_language_aware(registry):
     assert "speaking.pronunciation.tone" in zh and "speaking.pronunciation.tone" not in en
     assert zh == [e.id for e in registry.for_surface("speaking.workspace", "zh-CN")]
     assert registry.for_surface(None, "en") == ()
-    assert registry.for_surface("orena.home", "en") == ()
+    assert registry.for_surface("atlas.home", "en") == ()
+    assert "home.overview" in {e.id for e in registry.for_surface("orena.home", "en")}
 
 
 # --- loader refusals -----------------------------------------------------------

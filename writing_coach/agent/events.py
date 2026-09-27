@@ -8,6 +8,9 @@ client did not declare, a `navigate` to an intent the client does not have, a
 risk other than the table's. Refusal raises `ContractViolation`; a caller asks
 `allows_action` first and says the thing in words instead (contract §3.1).
 
+Version 2 fields (`display`) never reach a client that declared version 1,
+and neither do the actions and intents version 2 changed (contract §0).
+
 Segments carry no citation field on the wire. A caller that states an error
 passes the evidence ids it rests on as `cites`, and the stream checks that
 each was already sent (contract §4 ordering; spec D10).
@@ -26,17 +29,23 @@ from writing_coach.agent.contract import (
     ACTIONS,
     AUDIO_FORMATS,
     BUDGET_STATES,
+    COLLECTION_SYSTEMS,
+    DISPLAY_KINDS,
     ERROR_FALLBACKS,
     EVENT_NAMES,
     EVIDENCE_SOURCES,
     MAX_ACTION_LABEL_CHARS,
+    MAX_DISPLAY_REASON_CHARS,
     MEMORY_OPS,
     SURFACES,
     TERMINAL_EVENTS,
     VOICE_ONLY_EVENTS,
     VOICE_STATES,
     VOICE_STYLES,
+    WORD_ACTIONS,
     ActionRisk,
+    actions_for_version,
+    intents_for_version,
 )
 from writing_coach.agent.errors import ERROR_KINDS
 from writing_coach.agent.locale import content_languages
@@ -60,7 +69,30 @@ class Event(BaseModel):
     name: ClassVar[str]
 
     def to_wire(self) -> dict[str, Any]:
-        return self.model_dump(mode="json", by_alias=True)
+        wire = self.model_dump(mode="json", by_alias=True)
+        if "display" in wire:
+            # §5.5: display and each of its fields are absent when there is none, never null.
+            display = {key: value for key, value in (wire.pop("display") or {}).items() if value is not None}
+            if display:
+                wire["display"] = display
+        return wire
+
+
+class Display(BaseModel):
+    """§5.5: title, kind, duration copied from a domain record; `reason` checkable."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    title: str | None = Field(default=None, min_length=1, max_length=120)
+    kind: str | None = None
+    duration_s: int | None = Field(default=None, ge=0)
+    reason: str | None = Field(default=None, min_length=1, max_length=MAX_DISPLAY_REASON_CHARS)
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, value: str | None) -> str | None:
+        if value is not None and value not in DISPLAY_KINDS:
+            raise ValueError(f"unknown display kind {value!r}")
+        return value
 
 
 def _lang(value: str) -> str:
@@ -126,6 +158,7 @@ class EvidenceEvent(Event):
     source: str
     ref: dict[str, Any]
     excerpt: dict[str, Any]
+    display: Display | None = None
 
     @field_validator("source")
     @classmethod
@@ -144,6 +177,7 @@ class ActionEvent(Event):
     label: str = Field(min_length=1, max_length=MAX_ACTION_LABEL_CHARS)
     payload: dict[str, Any]
     risk: ActionRisk
+    display: Display | None = None
 
     @model_validator(mode="after")
     def _allowlisted(self) -> ActionEvent:
@@ -172,24 +206,42 @@ def _check_payload(action_type: str, payload: dict[str, Any]) -> None:
         for key, allowed in spec.values.items():
             if key in payload and payload[key] not in allowed:
                 raise ValueError(f"{action_type}.{key} must be one of {sorted(allowed)}")
-    if action_type == "start_review" and payload.get("scope") == "word" and not payload.get("word_id"):
-        raise ValueError("start_review with scope 'word' needs word_id")
+    if action_type == "start_review":
+        word = {"text", "lang"} <= keys
+        if (payload.get("scope") == "word") != word:
+            raise ValueError("start_review names a word exactly when its scope is 'word'")
     if action_type == "start_targeted_drill":
         items = payload.get("item_ids")
         if not isinstance(items, list) or not items or not all(isinstance(i, str) and i for i in items):
             raise ValueError("start_targeted_drill.item_ids must be a non-empty list of ids")
-    if action_type == "save_word" and "lang" in payload:
+    if action_type == "add_word_to_collection" and "target" in payload:
+        target = payload["target"]
+        if (
+            not isinstance(target, dict)
+            or set(target) != {"system", "id"}
+            or target["system"] not in COLLECTION_SYSTEMS
+            or not isinstance(target["id"], str)
+            or not target["id"]
+        ):
+            raise ValueError("add_word_to_collection.target is {system: deck | library, id}")
+    if "lang" in payload:
         _lang(payload["lang"])
     for key, value in payload.items():
-        if key not in {"item_ids"} and not isinstance(value, str):
-            raise ValueError(f"{action_type}.{key} must be a string")
+        if key in {"item_ids", "target"}:
+            continue
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"{action_type}.{key} must be a non-empty string")
+    if action_type in WORD_ACTIONS and len(payload.get("text", "")) > 120:
+        raise ValueError(f"{action_type}.text is a word or phrase")
 
 
-def make_action(action_id: str, action_type: str, label: str, payload: dict[str, Any]) -> ActionEvent:
+def make_action(
+    action_id: str, action_type: str, label: str, payload: dict[str, Any], *, display: Display | None = None
+) -> ActionEvent:
     spec = ACTIONS.get(action_type)
     if spec is None:
         raise ContractViolation(f"action {action_type!r} is not in the allowlist")
-    return ActionEvent(id=action_id, type=action_type, label=label, payload=payload, risk=spec.risk)
+    return ActionEvent(id=action_id, type=action_type, label=label, payload=payload, risk=spec.risk, display=display)
 
 
 class SuggestionEvent(Event):
@@ -333,6 +385,9 @@ class TurnStream:
         self.version = version
         self.client = client
         self.mode = mode
+        # What this client may be sent: what it declared, within what its version has.
+        self.allowed_actions = client.allowed_actions & actions_for_version(version)
+        self.allowed_intents = client.allowed_intents & intents_for_version(version)
         self.events: list[Event] = []
         self._segments: dict[int, dict[str, Any]] = {}
         self._ended: set[int] = set()
@@ -345,10 +400,10 @@ class TurnStream:
         return bool(self.events) and self.events[-1].name in TERMINAL_EVENTS
 
     def allows_action(self, action_type: str, intent: str | None = None) -> bool:
-        if action_type not in self.client.allowed_actions:
+        if action_type not in self.allowed_actions:
             return False
         if action_type == "navigate":
-            return intent in self.client.allowed_intents
+            return intent in self.allowed_intents
         return True
 
     def emit(self, event: Event, *, cites: Iterable[str] = ()) -> Event:
@@ -363,6 +418,8 @@ class TurnStream:
             raise ContractViolation(f"{event.name} is voice only")
         if cites and event.name != "segment_end":
             raise ContractViolation("only a segment cites evidence")
+        if self.version < 2 and getattr(event, "display", None) is not None:
+            event = event.model_copy(update={"display": None})  # a version-2 field
         check = getattr(self, f"_check_{event.name}", None)
         if check is not None:
             check(event, cites)

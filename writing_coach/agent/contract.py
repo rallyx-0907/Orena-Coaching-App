@@ -8,6 +8,11 @@ file and fails when a table here and the file disagree, so a contract bump that
 reaches this lane by merge cannot be missed.
 
 Adding an id is a contract change made on `codex/work`, never here.
+
+Version 2 (D-092) is served. A client that declares version 1 gets nothing
+version 2 added or changed: no `display`, no opening turn, no `orena.home`,
+and none of the actions or navigation intents whose payload changed
+(`V1_ACTIONS`, `V1_SURFACES`).
 """
 
 from __future__ import annotations
@@ -17,7 +22,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 
-CONTRACT_VERSION = 1
+CONTRACT_VERSION = 2
 
 
 def negotiated_version(client_version: int) -> int:
@@ -39,6 +44,7 @@ def negotiated_version(client_version: int) -> int:
 SURFACES: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         "home": (),
+        "orena.home": (),
         "library": (),
         "reading.library": (),
         "reading.workspace": ("content_id",),
@@ -48,13 +54,13 @@ SURFACES: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "speaking.library": (),
         "speaking.workspace": ("content_id",),
         "speaking.free_talk": (),
-        "speaking.word_detail": ("attempt_id", "item_id"),
-        "speaking.compare": ("attempt_id", "item_id"),
+        "speaking.word_detail": ("take_ref", "item_id"),
+        "speaking.compare": ("take_ref", "item_id"),
         "writing.workspace": (),
         "writing.review": ("essay_id",),
         "writing.revision": ("essay_id",),
         "vocabulary.my_language": (),
-        "vocabulary.word": ("word_id",),
+        "vocabulary.word": ("text", "lang"),
         "vocabulary.review_due": (),
         "grammar.catalog": (),
         "grammar.point": ("grammar_id",),
@@ -63,6 +69,9 @@ SURFACES: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "preferences.agent_memory": (),
     }
 )
+# What a version-1 client may be sent as a navigation intent: every id whose
+# parameters did not change in version 2, and none that version 2 added.
+V1_SURFACES = frozenset(SURFACES) - {"orena.home", "speaking.word_detail", "speaking.compare", "vocabulary.word"}
 
 
 # --- §3 request vocabularies -------------------------------------------------
@@ -83,6 +92,7 @@ ACTIVITY_TYPES = frozenset(
     }
 )
 SELECTED_ITEM_TYPES = frozenset({"word", "sentence", "feedback_item", "grammar_point"})
+TRIGGERS = frozenset({"message", "open"})
 COACH_NOTE_KINDS = frozenset({"preference", "goal", "plan"})
 MAX_COACH_NOTES = 20
 MAX_COACH_NOTES_BYTES = 2048
@@ -135,6 +145,16 @@ EVIDENCE_SOURCES = frozenset(
 )
 
 
+# §5.5 display on an action or evidence (version 2)
+DISPLAY_KINDS = frozenset({"reading", "listening", "speaking", "writing", "vocabulary", "grammar", "review"})
+MAX_DISPLAY_REASON_CHARS = 90
+
+# §3.2 the opening turn (version 2)
+OPENING_MAX_CHARS = 240
+OPENING_MAX_SUGGESTIONS = 5
+OPENING_MAX_ACTIONS = 2
+
+
 # --- §7 actions --------------------------------------------------------------
 
 
@@ -172,19 +192,14 @@ ACTIONS: Mapping[str, ActionSpec] = MappingProxyType(
     {
         "navigate": ActionSpec(ActionRisk.LOW, ()),
         "play_model": ActionSpec(ActionRisk.LOW, (_shape("content_id", optional=("item_id",)),)),
-        "play_user": ActionSpec(ActionRisk.LOW, (_shape("attempt_id", optional=("item_id",)),)),
-        "say_again": ActionSpec(
-            ActionRisk.LOW,
-            (_shape("attempt_id", optional=("item_id",)), _shape("content_id", optional=("item_id",))),
-        ),
-        "compare_with_model": ActionSpec(ActionRisk.LOW, (_shape("attempt_id", "item_id"),)),
-        "save_word": ActionSpec(ActionRisk.LOW, (_shape("word_id"), _shape("text", "lang"))),
-        "add_word_to_collection": ActionSpec(
-            ActionRisk.LOW, (_shape("word_id", optional=("collection_id",)),)
-        ),
+        "play_user": ActionSpec(ActionRisk.LOW, (_shape("take_ref", optional=("item_id",)),)),
+        "say_again": ActionSpec(ActionRisk.LOW, (_shape("content_id", optional=("item_id",)),)),
+        "compare_with_model": ActionSpec(ActionRisk.LOW, (_shape("take_ref", "item_id"),)),
+        "save_word": ActionSpec(ActionRisk.LOW, (_shape("text", "lang"),)),
+        "add_word_to_collection": ActionSpec(ActionRisk.LOW, (_shape("text", "lang", optional=("target",)),)),
         "start_review": ActionSpec(
             ActionRisk.LOW,
-            (_shape("scope", optional=("word_id",)),),
+            (_shape("scope"), _shape("scope", "text", "lang")),
             MappingProxyType({"scope": frozenset({"due", "word"})}),
         ),
         "start_targeted_drill": ActionSpec(
@@ -192,7 +207,26 @@ ACTIONS: Mapping[str, ActionSpec] = MappingProxyType(
             (_shape("focus", "item_ids"),),
             MappingProxyType({"focus": frozenset({"tone", "stress", "word"})}),
         ),
-        "unsave_word": ActionSpec(ActionRisk.CONFIRM, (_shape("word_id"),)),
+        "unsave_word": ActionSpec(ActionRisk.CONFIRM, (_shape("text", "lang"),)),
     }
 )
+# `add_word_to_collection.target` names the collection system (§7).
+COLLECTION_SYSTEMS = frozenset({"deck", "library"})
+# Payload keys that name a word (§7): a word is its text in the learning language.
+WORD_ACTIONS = frozenset({"save_word", "unsave_word", "add_word_to_collection"})
+# Payload keys holding an id, which must come from a tool read or the request
+# (§7 "Ids in payloads come from tool reads, never from generation").
+READ_ID_KEYS = frozenset({"content_id", "grammar_id", "essay_id", "item_id"})
+# The actions whose shape version 2 left unchanged: all a version-1 client gets.
+V1_ACTIONS = frozenset({"navigate", "play_model", "start_targeted_drill"})
+
+
+def actions_for_version(version: int) -> frozenset[str]:
+    return frozenset(ACTIONS) if version >= 2 else V1_ACTIONS
+
+
+def intents_for_version(version: int) -> frozenset[str]:
+    return frozenset(SURFACES) if version >= 2 else V1_SURFACES
+
+
 MAX_ACTION_LABEL_CHARS = 24

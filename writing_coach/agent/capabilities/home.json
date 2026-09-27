@@ -8,7 +8,8 @@
         "zh-CN": "学习概况"
       },
       "surfaces": [
-        "home"
+        "home",
+        "orena.home"
       ],
       "status": "pending",
       "contexts": [],
@@ -34,6 +35,7 @@
       },
       "surfaces": [
         "home",
+        "orena.home",
         "progress"
       ],
       "status": "pending",

@@ -13,7 +13,7 @@ from writing_coach.agent.capability_registry import load_capability_registry
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.platform_provider import PlatformAgentTurnProvider
 from writing_coach.agent.provider import AgentTurnProvider
-from writing_coach.agent.read_tools import WritingReviewReader, read_tools
+from writing_coach.agent.read_tools import WritingHistoryReader, WritingReviewReader, more_read_tools, read_tools
 from writing_coach.agent.session import SessionCache
 from writing_coach.agent.tools import ToolRegistry
 from writing_coach.agent.turn import AgentRuntime
@@ -21,9 +21,21 @@ from writing_coach.agent.turn import AgentRuntime
 RecordUsage = Callable[..., None]  # ProductRepository.record_usage(*, user_key, feature, amount, request_id)
 
 
-def build_tool_registry(*, writing_review: WritingReviewReader, limits: AgentLimits = DEFAULT_LIMITS) -> ToolRegistry:
+def _no_history() -> dict:
+    return {"items": [], "revision_count": 0}
+
+
+def build_tool_registry(
+    *,
+    writing_review: WritingReviewReader,
+    writing_history: WritingHistoryReader = _no_history,
+    limits: AgentLimits = DEFAULT_LIMITS,
+) -> ToolRegistry:
     registry = ToolRegistry(limits=limits)
-    for tool in read_tools(writing_review=writing_review):
+    for tool in (
+        *read_tools(writing_review=writing_review),
+        *more_read_tools(writing_review=writing_review, writing_history=writing_history),
+    ):
         registry.register(tool)
     return registry
 
@@ -32,10 +44,11 @@ def build_agent_runtime(
     *,
     writing_review: WritingReviewReader,
     record_usage: RecordUsage | None,
+    writing_history: WritingHistoryReader = _no_history,
     provider: AgentTurnProvider | None = None,
     limits: AgentLimits = DEFAULT_LIMITS,
 ) -> AgentRuntime:
-    tools = build_tool_registry(writing_review=writing_review, limits=limits)
+    tools = build_tool_registry(writing_review=writing_review, writing_history=writing_history, limits=limits)
 
     def meter(user_key: str, feature: str, amount: int, request_id: str) -> None:
         if record_usage is not None:

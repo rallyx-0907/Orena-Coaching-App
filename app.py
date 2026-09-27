@@ -696,6 +696,7 @@ def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
 configure_agent(
     build_agent_runtime(
         writing_review=_agent_writing_review,
+        writing_history=lambda: api_error_memory(),
         record_usage=_persistence_runtime.product_repository.record_usage,
     )
     if agent_enabled(os.environ, production=APP_ENV == "production")
