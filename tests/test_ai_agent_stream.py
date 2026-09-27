@@ -147,14 +147,14 @@ def test_tool_call_fragments_are_joined_by_index(monkeypatch):
         delta(tool_calls=[{"index": 1, "id": "call_b", "function": {"name": "suggest_next", "arguments": '{"intent"'}}]),
         delta(tool_calls=[{"index": 0, "function": {"arguments": '{"limit"'}}]),
         delta(tool_calls=[{"index": 0, "function": {"arguments": ": 3}"}}]),
-        delta(tool_calls=[{"index": 1, "function": {"arguments": ': "review_due"}'}}]),
+        delta(tool_calls=[{"index": 1, "function": {"arguments": ': "prompt.review_due"}'}}]),
         finish("tool_calls"),
     ]
     post_returning(monkeypatch, StreamResponse(chunks))
     events = run(provider(monkeypatch))
     assert events[:2] == [
         ChatToolCall(id="call_a", name="get_due_vocabulary", arguments='{"limit": 3}'),
-        ChatToolCall(id="call_b", name="suggest_next", arguments='{"intent": "review_due"}'),
+        ChatToolCall(id="call_b", name="suggest_next", arguments='{"intent": "prompt.review_due"}'),
     ]
     assert events[-1].finish_reason == "tool_calls"
 

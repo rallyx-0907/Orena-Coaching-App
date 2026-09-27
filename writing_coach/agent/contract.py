@@ -9,10 +9,13 @@ reaches this lane by merge cannot be missed.
 
 Adding an id is a contract change made on `codex/work`, never here.
 
-Version 2 (D-092) is served. A client that declares version 1 gets nothing
-version 2 added or changed: no `display`, no opening turn, no `orena.home`,
-and none of the actions or navigation intents whose payload changed
-(`V1_ACTIONS`, `V1_SURFACES`).
+Version 3 (D-094) is served. Version 3 changed no shape: an action's label is
+interface copy (it always was here, ruling R12) and a suggestion's intent is a
+prompt intent in the `prompt.` namespace (`PROMPT_NAMESPACE`), never a §6.1
+id. Both hold for every client, since neither is a field an older client lacks.
+A client that declares version 1 gets nothing version 2 added or changed: no
+`display`, no opening turn, no `orena.home`, and none of the actions or
+navigation intents whose payload changed (`V1_ACTIONS`, `V1_SURFACES`).
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 
-CONTRACT_VERSION = 2
+CONTRACT_VERSION = 3
 
 
 def negotiated_version(client_version: int) -> int:
@@ -230,3 +233,5 @@ def intents_for_version(version: int) -> frozenset[str]:
 
 
 MAX_ACTION_LABEL_CHARS = 24
+# §4: a suggestion's intent names the question it asks, in this namespace (v3, D-094).
+PROMPT_NAMESPACE = "prompt."

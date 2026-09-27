@@ -133,7 +133,7 @@ def test_s1_app_help(harness, target):
     round_one = (
         TextDelta("Màn này giữ các từ bạn đã lưu "),
         TextDelta("và cho biết từ nào đến hạn ôn."),
-        ToolCallRequest("c1", "suggest_next", {"intent": "review_due"}),
+        ToolCallRequest("c1", "suggest_next", {"intent": "prompt.review_due"}),
         TurnFinished(0, 12, "tool_calls"),
     )
     events = turn(
@@ -145,7 +145,7 @@ def test_s1_app_help(harness, target):
     assert names(events) == canonical("S1")
     segment = dict(events)["segment_end"]
     assert (segment["index"], segment["lang"], segment["voice_style"]) == (0, "vi", "neutral_explain")
-    assert dict(events)["suggestion"] == {"label": "Ôn từ đến hạn", "intent": "review_due"}
+    assert dict(events)["suggestion"] == {"label": "Ôn từ đến hạn", "intent": "prompt.review_due"}
     assert any(name == "segment_delta" for name, _ in events)
 
 
@@ -246,8 +246,8 @@ def test_s9_writing(harness, target):
 def test_s13_opening(harness, target):
     round_one = (
         TextDelta("Hôm nay bạn có 12 từ đến hạn ôn."),
-        ToolCallRequest("c1", "suggest_next", {"intent": "review_due"}),
-        ToolCallRequest("c2", "suggest_next", {"intent": "app_help"}),
+        ToolCallRequest("c1", "suggest_next", {"intent": "prompt.review_due"}),
+        ToolCallRequest("c2", "suggest_next", {"intent": "prompt.app_help"}),
         TurnFinished(0, 10, "tool_calls"),
     )
     events = turn(
@@ -259,9 +259,7 @@ def test_s13_opening(harness, target):
     assert len(segment["text"]) <= 240
     assert "memory_update" not in names(events) and "evidence" not in names(events)
     suggestions = [data for name, data in events if name == "suggestion"]
-    # Ruling R12 and §4: a suggestion names a prompt intent. S13's own fixture shows a navigation id
-    # there (vocabulary.review_due); that contradiction is reported to the human, R12 is followed.
-    assert [s["intent"] for s in suggestions] == ["review_due", "app_help"]
+    assert [s["intent"] for s in suggestions] == ["prompt.review_due", "prompt.app_help"]
     assert suggestions[0]["label"] == "Ôn từ đến hạn"
 
 

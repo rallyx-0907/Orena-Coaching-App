@@ -37,6 +37,7 @@ from writing_coach.agent.contract import (
     MAX_DISPLAY_REASON_CHARS,
     OPENING_MAX_ACTIONS,
     OPENING_MAX_SUGGESTIONS,
+    PROMPT_NAMESPACE,
     READ_ID_KEYS,
     SURFACES,
     VOICE_STYLES,
@@ -48,18 +49,18 @@ from writing_coach.agent.events import ActionEvent, Display, SuggestionEvent, ma
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
 
-# Prompt intents (contract §4 `suggestion.intent`): what a suggestion asks,
-# not where it goes. The contract leaves the vocabulary to the server; it is
-# this table, and none of its ids is a surface id.
+# Prompt intents (contract §4 `suggestion.intent`, v3): what a suggestion asks,
+# not where it goes, in the `prompt.` namespace. The contract leaves the
+# vocabulary to the server; it is this table, each id keyed to its label copy.
 PROMPT_INTENTS: Mapping[str, str] = MappingProxyType(
     {
-        "review_due": "suggest.review_due",
-        "writing_feedback": "suggest.writing_feedback",
-        "app_help": "suggest.app_help",
+        "prompt.review_due": "prompt.review_due",
+        "prompt.writing_feedback": "prompt.writing_feedback",
+        "prompt.app_help": "prompt.app_help",
     }
 )
-if set(PROMPT_INTENTS) & set(SURFACES):
-    raise RuntimeError("a prompt intent may not be a navigation intent")
+if set(PROMPT_INTENTS) & set(SURFACES) or not all(i.startswith(PROMPT_NAMESPACE) for i in PROMPT_INTENTS):
+    raise RuntimeError("a prompt intent is in the prompt. namespace and is never a navigation intent")
 
 # The domain a record belongs to, by the evidence source a tool read it as (§5.5 `kind`).
 KIND_BY_SOURCE: Mapping[str, str] = MappingProxyType(
@@ -99,10 +100,10 @@ def opening_suggestions(surface: str | None) -> tuple[str, ...]:
     """The ways forward an opening turn offers when the model named none (§3.2: at least one)."""
 
     if surface is None or surface in {"home", "orena.home"} or surface.startswith("vocabulary."):
-        return ("review_due", "app_help")
+        return ("prompt.review_due", "prompt.app_help")
     if surface.startswith("writing."):
-        return ("writing_feedback", "app_help")
-    return ("app_help",)
+        return ("prompt.writing_feedback", "prompt.app_help")
+    return ("prompt.app_help",)
 
 
 def reply_tool_specs(

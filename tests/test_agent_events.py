@@ -81,12 +81,18 @@ def test_text_is_sent_as_written():
 # --- the canonical streams, built through the stream (contract §12) ----------
 
 
+@pytest.mark.parametrize("intent", ["review_due", "vocabulary.review_due", "prompt"])
+def test_a_suggestion_names_a_prompt_intent(intent):
+    with pytest.raises(ValidationError):
+        SuggestionEvent(label="Ôn từ đến hạn", intent=intent)
+
+
 def test_s1_app_help():
     s = stream()
     s.emit(SegmentDelta(index=0, lang="vi", text_delta="Màn này "))
     s.emit(SegmentDelta(index=0, lang="vi", text_delta="giữ các từ của bạn."))
     s.emit(SegmentEnd(index=0, lang="vi", text="Màn này giữ các từ của bạn.", voice_style="neutral_explain"))
-    s.emit(SuggestionEvent(label="Ôn từ đến hạn", intent="review_due"))
+    s.emit(SuggestionEvent(label="Ôn từ đến hạn", intent="prompt.review_due"))
     s.emit(done())
     assert names(s) == ["session", "segment_delta", "segment_delta", "segment_end", "suggestion", "done"]
 
@@ -219,7 +225,7 @@ def test_a_claim_cannot_cite_evidence_not_yet_sent():
     with pytest.raises(ContractViolation, match="not yet sent"):
         s.emit(SegmentEnd(index=0, lang="vi", text="Bạn sai.", voice_style="gentle_correction"), cites=["e1"])
     with pytest.raises(ContractViolation):
-        s.emit(SuggestionEvent(label="x", intent="y"), cites=["e1"])
+        s.emit(SuggestionEvent(label="x", intent="prompt.y"), cites=["e1"])
 
 
 def test_evidence_and_action_ids_are_unique():

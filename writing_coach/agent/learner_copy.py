@@ -255,15 +255,15 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "What Orena remembers", "vi": "Orena ghi nhớ gì", "zh-CN": "Orena 记住的内容"},
         ),
-        "suggest.review_due": _entry(
+        "prompt.review_due": _entry(
             CopyLayer.INTERFACE,
             {"en": "Review due words", "vi": "Ôn từ đến hạn", "zh-CN": "复习到期的词"},
         ),
-        "suggest.writing_feedback": _entry(
+        "prompt.writing_feedback": _entry(
             CopyLayer.INTERFACE,
             {"en": "Where do I go wrong?", "vi": "Tôi hay sai chỗ nào?", "zh-CN": "我常错在哪里？"},
         ),
-        "suggest.app_help": _entry(
+        "prompt.app_help": _entry(
             CopyLayer.INTERFACE,
             {"en": "What is this screen for?", "vi": "Màn này dùng để làm gì?", "zh-CN": "这个页面是做什么的？"},
         ),

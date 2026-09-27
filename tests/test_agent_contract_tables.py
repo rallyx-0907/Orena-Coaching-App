@@ -148,10 +148,29 @@ def test_small_enumerations():
     assert contract.COACH_NOTE_KINDS == {"preference", "goal", "plan"}
     assert "send at most 20, most weighted first, total ≤ 2 KB" in CONTRACT
     assert (contract.MAX_COACH_NOTES, contract.MAX_COACH_NOTES_BYTES) == (20, 2048)
-    # The label's length is the contract's; its language layer follows ruling R12 (interface, D-080).
-    assert re.search(r"`label` is in the `[a-z]+` language, ≤ 24 characters", CONTRACT)
+    # v3 (D-094): an action's label is interface copy, which ruling R12 already served.
+    assert "`label` is in the `interface` language (`context.locale.interface`), ≤ 24 characters" in CONTRACT
     assert contract.MAX_ACTION_LABEL_CHARS == 24
     assert 'format: "pcm16_24k"' in CONTRACT and contract.AUDIO_FORMATS == {"pcm16_24k"}
+
+
+def test_action_labels_are_interface_copy():
+    from writing_coach.agent.learner_copy import CATALOG, CopyLayer
+
+    for key, entry in CATALOG.items():
+        if key.startswith(("action.", "navigate.", "prompt.")):
+            assert entry.layer is CopyLayer.INTERFACE, key
+
+
+def test_suggestion_intents_are_prompt_intents():
+    from writing_coach.agent.outputs import PROMPT_INTENTS
+
+    assert "in the `prompt.` namespace" in _section("## 4.")
+    assert contract.PROMPT_NAMESPACE == "prompt."
+    fixtures = set(re.findall(r"suggestion\{\"[^\"]*\", ([a-z_.]+)\}", CONTRACT))
+    assert fixtures == {"prompt.review_due"}
+    assert fixtures <= set(PROMPT_INTENTS)
+    assert all(i.startswith("prompt.") and i not in contract.SURFACES for i in PROMPT_INTENTS)
 
 
 def test_negotiated_version_never_exceeds_the_client():

@@ -102,7 +102,7 @@ def test_a_turn_streams_contract_events(client):
 def test_capabilities_follow_the_callers_locale(client):
     enable()
     zh = client.get("/api/agent/capabilities", params={"interface": "vi"}).json()
-    assert zh["contract_version"] == 2
+    assert zh["contract_version"] == 3
     ids = {item["id"] for item in zh["capabilities"]}
     assert "speaking.pronunciation.tone" in ids and "speaking.pronunciation.stress" not in ids
     titles = {item["id"]: item["title"] for item in zh["capabilities"]}

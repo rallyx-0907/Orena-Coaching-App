@@ -79,7 +79,7 @@ def test_en_and_zh_parity_or_a_reason(registry):
 
 def test_public_shape_is_the_contracts(registry):
     body = registry.public(interface="vi", target="zh-CN")
-    assert body["contract_version"] == 2
+    assert body["contract_version"] == 3
     first = body["capabilities"][0]
     assert set(first) == {"id", "title", "surfaces", "actions", "languages", "evidence_source", "status"}
     ids = {item["id"] for item in body["capabilities"]}

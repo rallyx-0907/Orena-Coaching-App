@@ -9,7 +9,8 @@ risk other than the table's. Refusal raises `ContractViolation`; a caller asks
 `allows_action` first and says the thing in words instead (contract §3.1).
 
 Version 2 fields (`display`) never reach a client that declared version 1,
-and neither do the actions and intents version 2 changed (contract §0).
+and neither do the actions and intents version 2 changed (contract §0). A
+suggestion's intent is a prompt intent (`prompt.`, §4, v3) for every client.
 
 Segments carry no citation field on the wire. A caller that states an error
 passes the evidence ids it rests on as `cites`, and the stream checks that
@@ -37,6 +38,7 @@ from writing_coach.agent.contract import (
     MAX_ACTION_LABEL_CHARS,
     MAX_DISPLAY_REASON_CHARS,
     MEMORY_OPS,
+    PROMPT_NAMESPACE,
     SURFACES,
     TERMINAL_EVENTS,
     VOICE_ONLY_EVENTS,
@@ -248,6 +250,13 @@ class SuggestionEvent(Event):
     name: ClassVar[str] = "suggestion"
     label: str = Field(min_length=1, max_length=80)
     intent: str = Field(pattern=_INTENT, max_length=64)
+
+    @model_validator(mode="after")
+    def _prompt_intent(self) -> SuggestionEvent:
+        # §4 (v3): what the suggestion asks, never where it goes; going somewhere is `navigate`.
+        if not self.intent.startswith(PROMPT_NAMESPACE) or self.intent in SURFACES:
+            raise ValueError(f"a suggestion names a prompt intent, not {self.intent!r}")
+        return self
 
 
 class MemoryUpdateEvent(Event):
