@@ -1,6 +1,6 @@
 """Managed LLM API wrapper with a cache keyed by input hash (SPEC §2, §5.1).
 
-Two provider families are wired in, because SPEC §5.3/§9 requires the model
+Three provider families are wired in, because SPEC §5.3/§9 requires the model
 that *verifies* a check item (blind solve) to differ from the model that
 *generated* it — otherwise the same blind spot could pass its own work:
 
@@ -9,6 +9,17 @@ that *verifies* a check item (blind solve) to differ from the model that
   Anthropic's supported way to get that reliably).
 - ``openai``: Chat Completions with ``response_format: json_schema`` (strict
   mode), OpenAI's equivalent.
+- ``gemini``: ``generateContent`` with ``generationConfig.responseMimeType
+  = application/json`` + ``responseSchema``. Uses the ``x-goog-api-key``
+  header, never the ``?key=`` query parameter -- a secret does not belong in
+  a URL. Offered because a Gemini key is already provisioned for this
+  project (the app's sandbox, per CLAUDE.md); it is a separate key entered
+  for the lab's own use, never the app's embedded one (grammar_lab is
+  independent and never reads app secrets).
+
+None of the three request shapes below have been exercised against a live
+API key from this environment (see README) -- they follow each provider's
+current published reference as of 2026-09-27, not a tested round trip.
 
 Every call is cached on disk keyed by a hash of everything that determines
 the output (provider, model, system+user prompt, schema, temperature, seed),
@@ -42,11 +53,15 @@ DEFAULT_CACHE_DIR = LAB_ROOT / ".cache" / "llm"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+GEMINI_API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+PROVIDERS = {"anthropic", "openai", "gemini"}
+_ENV_VAR_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY"}
 
 # USD per 1,000,000 tokens (input, output). Checked live against
-# platform.claude.com/docs/en/about-claude/pricing and
-# platform.openai.com/docs/pricing on 2026-09-27 -- still only a snapshot,
-# re-check before trusting a cost estimate (see module docstring).
+# platform.claude.com/docs/en/about-claude/pricing, platform.openai.com/docs/pricing
+# and ai.google.dev/gemini-api/docs/pricing on 2026-09-27 -- still only a
+# snapshot, re-check before trusting a cost estimate (see module docstring).
 PRICING: dict[str, tuple[float, float]] = {
     "claude-haiku-4-5-20251001": (1.0, 5.0),
     "claude-sonnet-5": (2.0, 10.0),
@@ -54,6 +69,7 @@ PRICING: dict[str, tuple[float, float]] = {
     "gpt-6-luna": (0.10, 0.50),
     "gpt-6-sol": (2.0, 10.0),
     "gpt-6-astra": (10.0, 50.0),
+    "gemini-3.5-flash-lite": (0.30, 2.50),
 }
 
 
@@ -106,13 +122,12 @@ class LLMClient:
         transport: httpx.BaseTransport | None = None,
         timeout: float = 120.0,
     ) -> None:
-        if provider not in {"anthropic", "openai"}:
-            raise ValueError(f"unknown provider {provider!r}; expected 'anthropic' or 'openai'")
+        if provider not in PROVIDERS:
+            raise ValueError(f"unknown provider {provider!r}; expected one of {sorted(PROVIDERS)}")
         self.provider = provider
         self.model = model
         self.cache_dir = cache_dir
-        env_var = "ANTHROPIC_API_KEY" if provider == "anthropic" else "OPENAI_API_KEY"
-        self.api_key = api_key if api_key is not None else os.environ.get(env_var, "")
+        self.api_key = api_key if api_key is not None else os.environ.get(_ENV_VAR_BY_PROVIDER[provider], "")
         self._client = httpx.Client(transport=transport, timeout=timeout)
 
     def close(self) -> None:
@@ -148,14 +163,13 @@ class LLMClient:
             return LLMResult(cached["data"], usage, self.model, self.provider, cached=True)
 
         if not self.api_key:
-            raise LLMError(
-                f"no API key for provider {self.provider!r}; set "
-                f"{'ANTHROPIC_API_KEY' if self.provider == 'anthropic' else 'OPENAI_API_KEY'}"
-            )
+            raise LLMError(f"no API key for provider {self.provider!r}; set {_ENV_VAR_BY_PROVIDER[self.provider]}")
         if self.provider == "anthropic":
             data, usage = self._call_anthropic(system, user, json_schema, schema_name, temperature, max_tokens)
-        else:
+        elif self.provider == "openai":
             data, usage = self._call_openai(system, user, json_schema, schema_name, temperature, seed, max_tokens)
+        else:
+            data, usage = self._call_gemini(system, user, json_schema, temperature, max_tokens)
 
         self._write_cache(key, data, usage)
         return LLMResult(data, usage, self.model, self.provider, cached=False)
@@ -218,6 +232,37 @@ class LLMClient:
             raise LLMError(f"OpenAI response content was not JSON: {content!r}") from exc
         usage_raw = response.get("usage", {})
         usage = LLMUsage(int(usage_raw.get("prompt_tokens", 0)), int(usage_raw.get("completion_tokens", 0)))
+        return data, usage
+
+    def _call_gemini(
+        self, system: str, user: str, json_schema: dict[str, Any], temperature: float, max_tokens: int,
+    ) -> tuple[dict[str, Any], LLMUsage]:
+        url = GEMINI_API_URL_TEMPLATE.format(model=self.model)
+        body = {
+            "systemInstruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": user}]}],
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": max_tokens,
+                "responseMimeType": "application/json",
+                "responseSchema": json_schema,
+            },
+        }
+        # x-goog-api-key, not ?key=<api_key> in the URL: a secret does not belong in a URL/query string.
+        response = self._post(url, body, headers={"x-goog-api-key": self.api_key, "content-type": "application/json"})
+        candidates = response.get("candidates") or []
+        if not candidates:
+            raise LLMError(f"Gemini response had no candidates: {response!r}")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text = next((part["text"] for part in parts if "text" in part), None)
+        if text is None:
+            raise LLMError(f"Gemini response had no text part: {response!r}")
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise LLMError(f"Gemini response text was not JSON: {text!r}") from exc
+        usage_raw = response.get("usageMetadata", {})
+        usage = LLMUsage(int(usage_raw.get("promptTokenCount", 0)), int(usage_raw.get("candidatesTokenCount", 0)))
         return data, usage
 
     def _post(self, url: str, body: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:

@@ -26,7 +26,8 @@ python -m grammar_lab.pipeline.cli validate --lang en --json   # báo cáo dạn
 python -m grammar_lab.pipeline.cli validate --lang en --mark   # ghi status=flagged + flags validate:<mã> vào file lỗi
 python -m grammar_lab.pipeline.cli export-error-tags           # xuất lại schema/error_tags.json từ engine chấm bài
 
-# Giai đoạn 1 (SPEC §5.1-§5.5) -- cần ANTHROPIC_API_KEY / OPENAI_API_KEY và một evaluator sandbox.
+# Giai đoạn 1 (SPEC §5.1-§5.5) -- cần một key managed API (ANTHROPIC_API_KEY / OPENAI_API_KEY /
+# GEMINI_API_KEY, riêng của lab, không phải key trong sandbox app) và một evaluator sandbox.
 python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple,en.there_is_are
 python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8011
 python -m grammar_lab.pipeline.cli route --lang en --gold-set-passed   # bỏ cờ này -> mọi mục bị flagged (SPEC §5.4)

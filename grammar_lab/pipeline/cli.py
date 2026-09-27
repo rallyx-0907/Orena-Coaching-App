@@ -86,7 +86,7 @@ def generate(
     lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
     l1: str = typer.Option("vi", "--l1", help="Learner L1 (informational; blocks cover every L1 in the set manifest)."),
     ids: str = typer.Option(..., "--ids", help="Comma-separated point ids, e.g. en.past_simple,en.there_is_are."),
-    provider: str = typer.Option("anthropic", "--provider", help="LLM provider: anthropic | openai."),
+    provider: str = typer.Option("anthropic", "--provider", help="LLM provider: anthropic | openai | gemini."),
     model: str = typer.Option("claude-haiku-4-5-20251001", "--model", help="Model id for that provider."),
     regenerate_note: str = typer.Option(
         "", "--regenerate-note",

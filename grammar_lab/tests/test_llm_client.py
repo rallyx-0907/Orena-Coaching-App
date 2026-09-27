@@ -31,9 +31,21 @@ def _openai_transport(calls: list[httpx.Request]) -> httpx.MockTransport:
     return httpx.MockTransport(handler)
 
 
+def _gemini_transport(calls: list[httpx.Request]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={
+            "candidates": [{"content": {"parts": [{"text": json.dumps({"greeting": "hi"})}]}}],
+            "usageMetadata": {"promptTokenCount": 6, "candidatesTokenCount": 2},
+        })
+    return httpx.MockTransport(handler)
+
+
+_MODEL_BY_PROVIDER = {"anthropic": "claude-haiku-4-5-20251001", "openai": "gpt-6-luna", "gemini": "gemini-3.5-flash-lite"}
+
+
 def client(tmp_path: Path, provider: str, transport: httpx.MockTransport) -> LLMClient:
-    model = "claude-haiku-4-5-20251001" if provider == "anthropic" else "gpt-6-luna"
-    return LLMClient(provider, model, api_key="test-key", cache_dir=tmp_path, transport=transport)
+    return LLMClient(provider, _MODEL_BY_PROVIDER[provider], api_key="test-key", cache_dir=tmp_path, transport=transport)
 
 
 def test_anthropic_returns_tool_use_input(tmp_path: Path) -> None:
@@ -53,6 +65,31 @@ def test_openai_returns_parsed_json_content(tmp_path: Path) -> None:
     assert result.data == {"greeting": "hi"}
     assert result.usage.input_tokens == 8 and result.usage.output_tokens == 3
     assert len(calls) == 1
+
+
+def test_gemini_returns_parsed_json_from_the_text_part(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    c = client(tmp_path, "gemini", _gemini_transport(calls))
+    result = c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert result.data == {"greeting": "hi"}
+    assert result.usage.input_tokens == 6 and result.usage.output_tokens == 2
+    assert len(calls) == 1
+
+
+def test_gemini_sends_api_key_as_header_never_in_the_url(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    client(tmp_path, "gemini", _gemini_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    request = calls[0]
+    assert "key=" not in str(request.url)
+    assert request.headers["x-goog-api-key"] == "test-key"
+
+
+def test_gemini_response_without_candidates_raises(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"candidates": [], "promptFeedback": {"blockReason": "SAFETY"}})
+    c = client(tmp_path, "gemini", httpx.MockTransport(handler))
+    with pytest.raises(LLMError, match="candidates"):
+        c.complete(system="s", user="u", json_schema=SCHEMA)
 
 
 def test_second_call_with_same_input_is_cached_and_makes_no_request(tmp_path: Path) -> None:
