@@ -19,45 +19,53 @@ store:** page-specific polish lists, temporary defects, screenshots, or generic
 framework guidance. What is left to build or fix lives in
 `docs/project/UI_BACKEND_GAPS.md`.
 
-## The authority: the Claude Design project (D-066, D-067)
+**Re-pointed by D-088 (2026-09-27).** The design moved to a new Claude Design
+project and the Dark Glass system (D-066) is superseded on learner surfaces.
+Rules 30-38, 42, 46-48 below are rewritten for the new design; every other rule
+keeps its number and its text.
+
+## The authority: the Claude Design project (D-088)
 
 The visual, interaction and data source of truth for every learner surface is
-the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
-("Orena visual direction analysis") in Claude Design, **read at its source**.
+the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
+**read at its source**, pinned at revision `1790473816124946`.
 
-- An agent with the `DesignSync` tool reads the project directly
-  (`list_files`, `get_file`; reads only, never a write). The repository copy in
-  `docs/design/canonical-ui/` is a **cache** pinned on 2026-09-21, and an
-  incomplete one: it lacks `Orena Quick Sheet.dc.html`, the design project's
-  own `CLAUDE.md`, `UI_BASELINE.md` and the `ui-baseline/*.md` rules, and
-  `ui-implementation/`. Where the cache and the source differ, the source wins.
-  A lane that cannot read the source says so and asks the human to re-pin; it
-  does not decide from the cache alone.
-- Before any learner-facing task, read: the design project's `CLAUDE.md`,
-  `UI_BASELINE.md`, `ui-baseline/components/components.md`,
-  `patterns/patterns.md`, `templates/templates.md`, `states/states.md`,
-  `responsive/responsive.md`, `screens/screen-matrix.md`, the canonical
-  screen file for the surface, and `Orena Quick Sheet.dc.html` for any
-  explanation layer. `ui-implementation/` (Home, Reading library and
-  workspace) is reference for structure, not a second visual authority.
-- Within the design: the canonical `.dc.html` frame, then the data contract,
-  then the `.md` indexes (derived, corrected by the frames), then
-  `ui-implementation/`. The design's own LEGACY list (Device Overview, Design
-  Overview, Screens and Parts 2-9, Card Component, Visual Direction, Visual
-  Grammar, Checklist, Recalibration) is never a visual source.
+- The repository copy in `docs/design/canonical-ui/screens/` is a byte-for-byte
+  pin of that revision (`SYNC_2026-09-27.md`, `PINS.tsv`): `Orena.dc.html` (the
+  shell, 63 frames and the state script), `Onboarding.dc.html` and
+  `Compare-With-Model.dc.html`. `DesignSync` (`list_files`, `get_file`; reads
+  only) returns at most 256 KiB of a file, so `Orena.dc.html` (832 KB) is read
+  from the pin or from a fresh human export, never from a truncated read. When
+  the human revises the design, the new revision is pinned and diffed against
+  `PINS.tsv` before any surface changes.
+- Before a learner-facing task, read: the frame(s) for the surface, the state
+  script's handlers for them (what opens it, what each action does, which
+  routes are focus workspaces), `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`
+  (where each frame lives in code), and the brief
+  (`docs/design/canonical-ui/brief/ORENA_DESIGN_SPEC.md`) for intent.
+- Within the design: the frame, then the state script, then the brief. A screen
+  the brief names that no frame draws is not designed. The script's prototype
+  internals (simulated audio and scores, demo attempts, canned data, a browser
+  pitch tracker) are not product behaviour; the product's real services are
+  shown in the design's components.
 - The human's current instruction outranks all of it. Every existing UI rule in
   this repository, in code comments and in older decisions is subordinate to the
-  design; a rule that conflicts with it is void, not "balanced" against it.
+  design; a rule that conflicts with it is void, not "balanced" against it -
+  except rules 49 and 50, which the human reaffirmed for the new design: where
+  a frame breaks them, the surface is recomposed and the deviation recorded.
+- Platform Admin keeps `screens/Orena-Admin-Control-Center.dc.html` (project
+  7a5604ca) until the human opens Admin (D-088 point 6).
 
 ## What "the same as the design" means (D-067)
 
 42. **Measured, not eyeballed.** A surface is compared with its source frame
     number by number: size, radius, gap, padding, weight, letter-spacing,
-    colour, type stack, icon and its fill state, taken from the frame's own
-    computed style at true scale (the desktop frame is drawn at 62% of
-    1920x1080; the phone frame is 1:1). A surface is not `REVIEWABLE` while a
-    deviation is unlisted, and a deviation is either removed or recorded as a
-    human decision. Looking similar is not a result.
+    colour, type stack, icon, in both themes, taken from the frame's own
+    computed style at true scale (the desktop frame fills the window below the
+    48px prototype strip, so a 1920x1080 window draws it 1:1; the phone frame is
+    390x844, 1:1). A surface is not `REVIEWABLE` while a deviation is unlisted,
+    and a deviation is either removed or recorded as a human decision. Looking
+    similar is not a result.
 43. **No invention.** The screen carries what the source draws and nothing
     else: no extra button, chip, badge, hint, notice, heading, empty or loading
     visual, animation, confirmation, or explanatory line, and none of the
@@ -76,19 +84,28 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
     copied as data. A piece of copy the frame draws where the product has none
     is still written, in the support language, to the learner language
     contract below.
-46. **Icons are Phosphor 2.1.1, official paths only.** Regular by default,
-    fill where the source fills (active tab, earned state). Paths are taken from
-    the official package, never typed or adapted, and an icon the source uses
-    but the app lacks is added from the package.
-47. **The shell belongs to four places.** The rail (desktop) and the five-tab
-    bar (phone) exist on Home, Library (including each skill's library),
-    Vocabulary and Progress. A room where the learner works - reader, player,
-    Dictation, editor, a review - has neither; its template starts at its own
-    bar.
-48. **Two frames.** Desktop 1920x1080 and phone 390x844. There is no
-    intermediate breakpoint; the tablet is a recorded gap in the design. Height
-    budgets are the design's (936px of content on desktop, about 636px of
-    scrolling area on a phone).
+46. **Icons are Lucide at one pinned release, official paths only (D-088).**
+    Each icon the design draws is identified by name and rendered from the
+    official `lucide-static` package at the release pinned in
+    `static/orena/kit/icons.js`; the design's hand-typed variants of the same
+    icons are replaced by the package's paths. Paths are never typed or
+    adapted, and an icon the design uses but the app lacks is added from the
+    package. The brand marks (`ol-mark`, `ol-intel` and its states) are brand
+    artwork, not icons (D-090).
+47. **The shell belongs to the browsing places.** The desktop rail is always
+    present; the desktop top bar, and the phone header and five-item bar, exist
+    on Today, Discover, Orena
+    Home, Practice Hub (and a skill's hub), My Library, Progress, Profile,
+    Content Detail, Collection Detail, Word Detail, Grammar Library and Coming
+    soon. Every route
+    in the design script's focus list (reader, listening, dictation, the
+    speaking and writing rooms, reviews, check understanding, grammar, search,
+    settings and the rest) is a learning workspace: no top bar, no phone
+    header, no tab bar; its template starts at its own bar.
+48. **Two frames.** Desktop (the frame fills the window; verified at 1920x1080)
+    and phone 390x844. The layout switches between them at one width
+    (`static/orena/kit/device.js`); there is no intermediate breakpoint, and the
+    tablet is a recorded gap in the design.
 
 49. **A learning workspace is the viewport, never a long page (D-078).** "Learning workspace
     không được trở thành một page dài. Workspace shell phải nằm trong viewport. Chỉ những vùng nội
@@ -161,50 +178,50 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
       Orena Intelligence conversation the learner deliberately opened. Those
       still follow the same preference for concise, useful wording.
 
-## The baseline's visual rules
+## The design's visual rules (D-088, D-089)
 
-30. **One system: Dark Glass.** Ground `#050310` with the cosmic field
-    (`tokens.json`), flat glass with one inset ring (no bevel, no bright top
-    edge), a shallow shadow, the violet accent gradient. There is no second
-    theme; Paper and Ink/Paper are retired. Colour values live only in
-    `static/orena/theme.css`, taken from the design's tokens; no component
-    invents a colour.
-31. **Light is light, not a coloured surface.** Semantic colour (good, warn,
-    bad, info, the seven usage verdicts) colours text and icons and never fills
-    a glass surface. The one recorded exception is the "chưa chắc" amber chip
-    on a review grade. Diffs follow the design: wrong is amber, missing is blue,
-    extra is red and struck through.
+30. **One system, two themes.** The design's light and dark token sets, both
+    shipped, following the operating system (D-089); the Reader's light/dark
+    button is the one in-product switch and is a device preference. Colour
+    values live only in the new UI's token file (`static/orena/kit/tokens.css`;
+    the old `theme.css` serves only the old UI until the cutover, D-091), taken
+    from the design exactly; no component invents a colour.
+31. **Semantic colour is the design's.** Good, warning, error, support and AI
+    colours appear as the design draws them - as ink, and as their `-soft`
+    fills on chips, badges and result blocks where the frame fills them - and
+    never as the only signal. Diffs follow the design.
 32. **Skill hue** belongs to artwork, icons and small markers, as the design
     draws it, and is never the only signal.
-33. **Explanations open in place.** A popover on a desk, a bottom sheet on a
-    phone; audio pauses at its position and resumes when the layer closes; the
-    learner never changes page to ask. Disclosure is progressive: the first
-    layer answers the commonest question, everything deeper is behind one
-    button.
-34. **Type.** Nunito 700/800 for display, Nunito Sans for interface, DM Mono
-    for labels and figures (10.5-12px, letter-spacing 0.12-0.14em), Noto Serif
-    for reading text and Han characters. The scale is the design's (page title
-    44, section 26, card title 17, body 15.5, meta 12.5). A face with no glyphs
-    for a locale falls back technically (Vietnamese labels set in Roboto Mono),
-    never by redesign.
-35. **Geometry is the design's.** Radii (sheet 26, panel 20, card 17,
-    control 15), spacing, the 280px rail, the 84px top bar, the 88px phone bar
-    and the sheet handle (42x4) are read from the frames, not chosen.
-36. **A card carries only what decides.** Title, artwork, level or length when
-    it changes the decision, progress if the learner is partway. No source,
-    licence, description or model on a card.
-37. **Artwork.** Until real artwork exists, content uses the artwork slot the
-    design defines (dot field and a hue bloom at the real ratio); real artwork
-    replaces it with no layout change. The mascot, scenes and real artwork stay
-    under the Art Bible (see "Art direction owner").
-38. **Navigation** is the design's: Home, Library, Vocabulary, Progress and
-    Profile, the four skills under KỸ NĂNG, and the five-item phone bar. Nothing
-    is added to it.
-39. **States.** Loading, empty and error are **not drawn** in the design (it
-    marks them incomplete). Until the human supplies them, show only what is
-    functionally necessary in the existing pattern, with no new visual and no
-    new copy beyond a plain statement, and record it as a gap. Do not invent
-    skeletons, empty-state cards or reassurance text.
+33. **Explanations open in place.** In the design's sheet: a panel docked at the
+    right on a desk, a bottom sheet on a phone; opening one pauses audio at its
+    position and the learner never changes page to ask. Disclosure is
+    progressive: the first layer answers the commonest question, everything
+    deeper is behind one button.
+34. **Type.** Outfit for the interface, Fredoka for the wordmark, Literata for
+    reading text, JetBrains Mono for figures and labels, Noto Sans SC and Noto
+    Serif SC for Chinese; sizes, weights and letter-spacing are the frame's. A
+    face with no glyphs for a locale falls back technically, never by redesign:
+    Outfit has no Vietnamese subset, so Vietnamese interface text is set in a
+    Vietnamese-complete face of the same family (recorded deviation).
+35. **Geometry is the design's.** Radii, spacing, the 232px rail, the 64px top
+    bar, the 72px floating phone bar with its raised Orena action, the 440px
+    desk sheet and the phone sheet's radius and height are read from the frames
+    and their device variables, not chosen.
+36. **A card carries what the design's card carries** - no more: no invented
+    metadata, and no field the backend cannot supply shown as sample text.
+37. **Artwork.** Until real artwork exists, content uses the placeholder the
+    design draws for a missing image, at the real ratio; real artwork replaces
+    it with no layout change. The mascot, scenes and real artwork stay under the
+    Art Bible (see "Art direction owner").
+38. **Navigation** is the design's (rule 47): Today, Discover, Practice Hub and
+    My Library in the rail with the Ask Orena card and the account row; Today,
+    Discover, Orena, Practice and Library in the phone bar. Nothing is added to
+    it.
+39. **States.** The design draws a banner, a loading skeleton, a load error, a
+    Coming soon screen, its empty states and the microphone states; those are
+    used as drawn. A state the design still does not draw shows only what is
+    functionally necessary in the nearest drawn pattern, with no new visual and
+    no new copy beyond a plain statement, and is recorded as a gap.
 40. **The design decides, the backend adapts.** No component is removed, moved
     or redesigned because a backend cannot supply it. A metric with no measured
     value shows **0** in its canonical component and never an invented figure;
@@ -299,7 +316,8 @@ in addition to `docs/project/REVIEW_POLICY.md`:
 - the source was read at its source (see the authority above), not from memory,
   a screenshot or the cache alone;
 - English, Chinese and Vietnamese are each verified, in the same batch;
-- every colour comes from the semantic tokens and contrast passes;
+- every colour comes from the semantic tokens and contrast passes, in the light
+  and the dark theme;
 - no legacy implementation of the same surface remains: it is deleted;
 - learner-visible copy passes rule 50's copy audit: no slogan/marketing filler,
   no redundant subtitle or duplicated meaning, learning content remains the

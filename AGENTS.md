@@ -70,16 +70,18 @@ Before any learner-facing product, UX, UI, visual, content-discovery, Library,
 Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
 navigation task, read and obey:
 
-- **The Claude Design project, at its source** (D-066, D-067):
-  `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`. It is the visual, interaction and data
-  authority for every learner-facing surface. `docs/project/DESIGN_CONTRACT.md`
-  ("The authority") lists exactly what to read from it. The copy in
-  `docs/design/canonical-ui/` is an incomplete cache pinned on 2026-09-21; where
-  it and the source differ, the source wins, and a lane that cannot read the
-  source says so instead of deciding from the cache;
-- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-49 (measured, not
+- **The Claude Design project, at its source** (D-088):
+  `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, pinned byte for byte at revision
+  `1790473816124946` in `docs/design/canonical-ui/screens/`. It is the visual,
+  interaction and data authority for every learner-facing surface.
+  `docs/project/DESIGN_CONTRACT.md` ("The authority") lists exactly what to read
+  from it; `docs/design/canonical-ui/IMPLEMENTATION_MAP.md` says where each of
+  its frames lives in code. A new revision is pinned and diffed before any
+  surface changes;
+- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-50 (measured, not
   invented, old interaction deleted; rule 49: a learning workspace is the
-  viewport, never a long page) and the fidelity gate;
+  viewport, never a long page; rule 50: learning-first sparse copy) and the
+  fidelity gate;
 - `docs/product/ORENA_PRODUCT_CONSTITUTION.md` and
   `docs/product/ORENA_CONTENT_ARCHITECTURE.md`: what Orena is for and how content
   is organised (not how a surface looks);
@@ -253,17 +255,19 @@ IDs, environment-specific paths, migration records, API responses or temporary
 UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
-**Theme.** The learner interface is the Canonical UI Baseline (D-066): one Dark
-Glass system, read at its source in the Claude Design project (D-067; the copy in
-`docs/design/canonical-ui/` is a cache). D-059's Ink and Paper
-themes are retired and D-065 is superseded; there is no hybrid and no second
-visual system. Legacy compositions still in the code are work to migrate, not
-authority to preserve.
+**Theme.** The learner interface is the design of D-088, with its light and dark
+themes following the operating system (D-089). It is being built as the new UI
+at `/next` and replaces the old UI at `/` in one cutover (D-091); until then the
+old UI (Dark Glass, D-066) is the verified baseline at `/`, work to replace, not
+authority to preserve. D-059's Ink and Paper themes stay retired; there is no
+hybrid screen and no second visual system inside either UI.
 
-- Colour has one owner: `static/orena/theme.css`, with the values of
-  `docs/design/canonical-ui/tokens.json`. Components read only its semantic
-  tokens. Do not add a second `:root` colour block anywhere. Semantic colour
-  (good, warn, bad, info) is ink for text and icons, never a fill on glass.
+- Colour has one owner per UI: the new UI reads only the semantic tokens of
+  `static/orena/kit/tokens.css`, holding both themes' values exactly as the
+  design gives them; the old UI's `static/orena/theme.css` goes at the cutover.
+  Do not add another colour block anywhere. Semantic colour is used as the
+  design draws it (ink, and the `-soft` fills it draws), never as the only
+  signal.
 - Do not invent a colour skin, and do not recolour canonical mascot or brand
   artwork. Orena Orange `#FF7A3D` stays the mascot's and the artwork's colour.
 - Accessibility never redesigns the baseline. A token that fails AA is replaced

@@ -133,8 +133,33 @@ removed merely because current code conflicts with them.
   pieces are deleted.
 - **What must not happen:** building anything new on Ink, Paper, the reader's
   sepia block, borderless cards or the learning-surface opening sentence; a
-  hybrid of the two systems; a Paper or light theme returning as a setting;
-  reading D-059 or D-065 as design authority.
+  hybrid of the two systems; Ink, Paper or any theme other than the current
+  design's returning as a setting; reading D-059 or D-065 as design authority.
+- **Amended by D-089 (2026-09-27):** the ban on "a light theme" no longer
+  applies to the light theme of the current learner design (Claude Design
+  project e6dc1cb2, D-088). That theme is the design's own - not Paper - and
+  ships with its dark theme, following the operating system. Ink, Paper, sepia
+  and any hybrid stay retired.
+
+## The Dark Glass baseline (D-066) and its design project 7a5604ca
+
+- **Status:** SUPERSEDED for learner surfaces (D-088, explicit human
+  instruction 2026-09-27). Removal from the code finishes at the new UI's
+  cutover (D-091).
+- **Current replacement:** the learner design in Claude Design project
+  `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, pinned in
+  `docs/design/canonical-ui/screens/` (`SYNC_2026-09-27.md`).
+- **Why retired:** the human approved a new design that changes the navigation,
+  the shell, the type, the icons, the colour system and nearly every component.
+- **What may remain until the cutover:** the old UI at `/` (`templates/orena/index.html`,
+  `static/orena/app.js`, `static/orena/ui/*.js` presentation, the old
+  stylesheets, `theme.js`) as the verified baseline while `/next` is built; the
+  old pins under `docs/design/canonical-ui/superseded/7a5604ca/`; the Admin
+  Control Center pin, which is still Admin's authority.
+- **What must not happen:** new learner work on the old UI, Dark Glass, Nunito,
+  Phosphor or the old five-item navigation; the new UI importing old `ui/*.js`
+  presentation or old stylesheets; a hybrid screen; citing the 7a5604ca frames
+  as design authority for a learner surface.
 
 ## The UI rules before the baseline (D-046, D-051, D-057, D-060 measurements)
 

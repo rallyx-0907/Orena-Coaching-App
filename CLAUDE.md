@@ -22,35 +22,33 @@ Claude's lane is `claude/<task>` (`AGENTS.md`, "Lanes").
 
 ---
 
-## The UI: read the design at its source, measure, invent nothing (D-067)
+## The UI: read the design at its source, measure, invent nothing (D-067, D-088)
 
 These replace every earlier habit about learner-facing UI. Any UI rule you
 remember from before 2026-09-21 — from a code comment, an older decision, the
 old Design Contract, a previous session — is void where it disagrees with the
 design. If it is not in the design, it is not a reason to add or keep UI.
 
-**1. Read the source, not a copy.** The design is the Claude Design project
-`7a5604ca-1e11-4d8e-8305-7d0cb32d552d`. Read it with `DesignSync`
-(`ToolSearch select:DesignSync`; use only `list_files` and `get_file`, never a
-write method). `docs/design/canonical-ui/` is an incomplete cache: it has no
-Quick Sheet file, no design `CLAUDE.md`, no `UI_BASELINE.md`, no `ui-baseline/*.md`
-rules, no `ui-implementation/`. Before a learner-facing task read, from the
-project: `CLAUDE.md`, `UI_BASELINE.md`, `ui-baseline/components/components.md`,
-`patterns/patterns.md`, `templates/templates.md`, `states/states.md`,
-`responsive/responsive.md`, `screens/screen-matrix.md`, the screen's canonical
-`.dc.html`, and `Orena Quick Sheet.dc.html` for any sheet. The rules documents
-are short; the `.dc.html` files are large (a `get_file` result may be tens of
-KB), so read the one you need. Never work from memory of the design or from
-last session's screenshot.
+**1. Read the source, not a copy of a copy.** The design is the Claude Design
+project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` (D-088), pinned byte for byte in
+`docs/design/canonical-ui/screens/` (`SYNC_2026-09-27.md`). `DesignSync`
+(`ToolSearch select:DesignSync`; only `list_files` and `get_file`) truncates a
+file at 256 KiB: `Orena.dc.html` is 832 KB, so a `get_file` read of it silently
+stops at the Profile frame, before the phone bar, every sheet and the state
+script. Read it from the pin; to check for a newer revision, compare the first
+256 KiB and ask the human for an export. Before a learner-facing task read the
+surface's frame(s), the state script's handlers for them (end of
+`Orena.dc.html`), `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`, and the
+brief (`docs/design/canonical-ui/brief/`) for intent. Never work from memory of
+the design or from last session's screenshot.
 
 **2. Serve and render the frames to compare.** `file://` is blocked in the
-Playwright tool. Serve the pinned folder for frames the cache has:
-`cd docs/design/canonical-ui && python -m http.server 8765 --bind 127.0.0.1`
-(stop it afterwards), open `screens/Orena-<Name>.dc.html`, and locate a frame by
-`[data-screen-label="…"]`. The desktop frame is drawn at 62% (divide measured
-sizes by 0.62; computed `font-size` is already true, only box sizes are scaled);
-the phone frame is 1:1, so compare phone frames against the app at 390x844.
-For a file the cache lacks, take the numbers from the `get_file` text.
+Playwright tool. Serve the pin:
+`cd docs/design/canonical-ui/screens && python -m http.server 8765 --bind 127.0.0.1`
+(stop it afterwards), open `Orena.dc.html`, switch Desktop/Mobile and Light/Dark
+with the prototype strip, and locate a frame by `[data-screen-label="…"]`. The
+desktop frame fills the window below the 48px strip (true scale); the phone
+frame is 390x844, 1:1.
 
 **3. Measure, do not eyeball.** For each element the source draws, read its
 computed style from the source frame and from the running app and compare:
@@ -71,20 +69,22 @@ source draws something, look it up in the source before adding it.
 
 **4b. The design's words are sample content (D-068).** Layout, colour, type and
 component style are the standard; the frame's copy, lessons and numbers are not.
-Every label is in the learner's language setting, translated. The logo stays as
-the app has it.
+Every label is in the learner's language setting, translated. The logo and the
+Orena Intelligence mark are the design's (D-090).
 
-**5. Icons are official.** Phosphor 2.1.1 from the package
-(`https://unpkg.com/@phosphor-icons/core@2.1.1/assets/{regular|fill}/<name>[-fill].svg`),
-inlined in `static/orena/ui/phosphor.js`. Never type a path from memory (two
-typed ones were wrong); fetch, compare, replace. Add an icon the design uses
-and the app lacks from the package.
+**5. Icons are official.** Lucide, from `lucide-static` at the release pinned in
+`static/orena/kit/icons.js`. The design's own paths are partly hand-typed
+variants of Lucide icons; identify each by name and take the package's path.
+Never type a path from memory; fetch, compare, replace. Add an icon the design
+uses and the app lacks from the package.
 
 **6. Verify in a browser, every language, real touch.** Desktop at 1920x1080
 and a phone context created with `hasTouch`/`isMobile` (CDP touch events for a
-swipe), in English, Vietnamese and Chinese, in the same batch. The shell has a
-rail/tab bar only on Home, Library, Vocabulary and Progress (rule 47): check the
-room you touch is on the right side of that line.
+swipe), in English, Vietnamese and Chinese, and in the light and dark themes,
+in the same batch. The shell (rail, top bar, phone header and bar) exists only
+on the browsing places of rule 47; every route in the design's focus list is a
+workspace without it: check the room you touch is on the right side of that
+line. Until the cutover (D-091) the new UI is at `/next`; `/` is the old UI.
 
 **6b. The workspace is the viewport (Design Contract rule 49, D-078).** A learning workspace
 never scrolls as a page: measure it at 1920x1080, 1366x768, 390x844 and 360x740 with content as

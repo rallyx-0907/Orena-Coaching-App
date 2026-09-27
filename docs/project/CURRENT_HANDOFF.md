@@ -23,6 +23,33 @@ unified baseline. Agent Intelligence implementation belongs on
 D-086: the new learner UI replaces the old one on codex/work and is the only UI that carries the agent.
 Both lanes build against `docs/project/AGENT_CONTRACT.md` (contract_version 1), edited only on `codex/work`.
 
+**New learner UI migration (D-088 - D-091), in progress on `codex/work`.** The
+design is Claude Design project `e6dc1cb2`, revision `1790473816124946`, pinned
+in `docs/design/canonical-ui/screens/` (`SYNC_2026-09-27.md`). Strategy (D-091):
+the new UI is built beside the old one and replaces it in one cutover. Between
+slices `codex/work` is always in this state:
+
+- `/` serves the **old** UI (Dark Glass), unchanged, with all its gates green;
+- `/next` serves the **new** UI (`templates/orena/next.html`,
+  `static/orena/main.js`, `shell/`, `kit/`, `screens/`, `copy/`, `agent/`),
+  holding the surfaces listed under "New UI coverage" below;
+- both import one domain layer (`product/`, `capabilities/`, `content/`,
+  `infrastructure/`); no learner-data schema has changed;
+- the agent panel exists only in the new UI and runs on the contract mock
+  (AGENT_CONTRACT §11-12); nothing calls `/api/agent/*` until the human says the
+  intelligence lane is integrated. A contract v2 proposal (Orena destination
+  surface id, opening turn without a learner message) is awaiting the human's
+  approval: `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`.
+
+The intelligence lane integrates against `/next`. Frame → route → code → status
+is in `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
+
+### New UI coverage
+
+None yet: the design is pinned and the governance for it is recorded; the
+foundation slice (tokens for both themes, icons, brand marks, primitives, shell,
+router, copy mechanism, `/next`) is being built.
+
 ## Last verified batch
 
 The unified local tree preserves Codex learner Reading and My Library on the
@@ -42,10 +69,12 @@ error state, old practice route, language combinations A/B/C, and long content
 at 390×844 and 1920×1080 without horizontal overflow. Live speech and AI
 provider acceptance remains a separate human gate. No CI pass is claimed.
 
-The Claude Design source is unavailable. By explicit human instruction, the
-visual-source gate is **UNVERIFIED** and does not block branch integration;
-final visual fidelity review is separate. Do not redesign the existing UI to
-compensate for that unavailable source.
+Visual-source gate: **PINNED** (2026-09-27). The design source (project
+`e6dc1cb2`, revision `1790473816124946`) was read in full - through DesignSync
+for every file under 256 KiB and from the human's export for `Orena.dc.html`,
+whose first 256 KiB match the DesignSync read byte for byte - and pinned in
+`docs/design/canonical-ui/`. Fidelity is judged per surface of the new UI
+against that pin (`IMPLEMENTATION_MAP.md`); the old UI at `/` is not redesigned.
 
 ## DONE
 
@@ -99,8 +128,13 @@ volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Start `feature/orena-intelligence` from the latest `codex/work` unified
-baseline and keep Agent Intelligence work isolated there. Follow D-085: build
-orchestration above existing domain services, expose only explicit allowlisted
-capabilities, do not duplicate Reading/Listening/Speaking/Writing/Vocabulary/
-Grammar/Progress backends, and do not redesign learner UI in this lane.
+On `codex/work` (UI lane): build the new UI's foundation slice under D-091 -
+`kit/tokens.css` with both themes and the device variables, Lucide icons at the
+pinned release, the brand marks, the primitives, the shell (rail, top bar, phone
+header and bar, focus mode), the router with the design's routes, the copy
+mechanism for en / vi / zh, and `/next` - then the surface slices listed in
+`IMPLEMENTATION_MAP.md`, then the cutover.
+
+On `feature/orena-intelligence` (unchanged): develop Agent Intelligence in its
+own lane under D-085, against `AGENT_CONTRACT.md`; do not redesign learner UI
+there.
