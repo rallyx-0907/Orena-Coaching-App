@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.2",
+  "id": "en.comparatives",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.comparison",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["word_form", "sentence_structure"],
+  "source_refs": {},
+  "title": {"vi": "So sánh hơn", "en": "Comparatives"},
+  "summary": {"vi": "Tính từ ngắn thêm -er, tính từ dài dùng more; sau đó là than + đối tượng so sánh."},
+  "blocks": [
+    {"type": "formula", "parts": ["A", "be", "adj-er / more adj", "than", "B"]},
+    {
+      "type": "rule_table",
+      "rows": [
+        ["tall", "taller", {"vi": "Tính từ 1 âm tiết: thêm -er"}],
+        ["big", "bigger", {"vi": "Nhân đôi phụ âm cuối"}],
+        ["easy", "easier", {"vi": "Phụ âm + y → -ier"}],
+        ["expensive", "more expensive", {"vi": "Tính từ dài: more"}],
+        ["good / bad", "better / worse", {"vi": "Bất quy tắc"}]
+      ]
+    },
+    {
+      "type": "example",
+      "text": "Ho Chi Minh City is bigger than Da Nang.",
+      "seg": [["Ho Chi Minh City is "], ["bigger than", "target"], [" Da Nang."]],
+      "tr": {"vi": "TP.HCM lớn hơn Đà Nẵng."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "This phone is more cheaper.",
+      "right": "This phone is cheaper.",
+      "error_tag": "word_form",
+      "why": {"vi": "'Hơn' đã nằm trong đuôi -er, nên không dùng thêm more."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "She is taller me.",
+      "right": "She is taller than me.",
+      "error_tag": "sentence_structure",
+      "why": {"vi": "'Cao hơn tôi': chữ 'hơn' tương ứng với cả -er lẫn than. Không được bỏ than."}
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "English is ___ than Chinese for me.",
+          "options": ["more easy", "easier", "more easier"],
+          "answer": 1,
+          "explain": {"vi": "Easy → easier."}
+        },
+        {
+          "q": "This hotel is ___ than that one.",
+          "options": ["expensiver", "more expensive", "most expensive"],
+          "answer": 1,
+          "explain": {"vi": "Tính từ dài → more expensive."}
+        },
+        {
+          "q": "Today the weather is ___ than yesterday.",
+          "options": ["badder", "worse", "more bad"],
+          "answer": 1,
+          "explain": {"vi": "Bad là bất quy tắc: worse."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}

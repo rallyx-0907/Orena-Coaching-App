@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:orena:grammar_lab:inventory:0.2",
+  "title": "Orena Grammar Lab master inventory (inventory/<lang>.yaml)",
+  "description": "Flat list of items to cover for one target language, merged from reference sources (SPEC §4). Metadata only: never source explanation text. Level scales mirror grammar_set.schema.json level_scales (kept in sync by tests).",
+  "type": "array",
+  "items": {"$ref": "#/$defs/item"},
+  "$defs": {
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inv_id", "label", "level", "function", "sources", "maps_to", "status"],
+      "properties": {
+        "inv_id": {"type": "string", "pattern": "^(en|zh|ja)\\.inv\\.\\d{4}$"},
+        "label": {"type": "string", "minLength": 1},
+        "level": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["framework", "value"],
+          "properties": {
+            "framework": {"enum": ["cefr", "hsk3", "jlpt"]},
+            "value": {"type": "string", "minLength": 1}
+          }
+        },
+        "function": {"type": "string", "pattern": "^fn\\.[a-z0-9_]+$"},
+        "sources": {
+          "description": "Source catalogue codes keyed by source (egp, core_inventory, hsk3, jlpt_legacy, ...).",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+          "additionalProperties": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+        },
+        "maps_to": {
+          "description": "Grammar point IDs covering this item; filled once the point exists.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^(en|zh|ja)\\.[a-z0-9_]+(\\.[a-z0-9_]+)*$"}
+        },
+        "status": {"enum": ["proposed", "approved", "out_of_scope"]},
+        "reason": {"description": "Required when status is out_of_scope.", "type": "string", "minLength": 1},
+        "note": {"type": "string"}
+      },
+      "allOf": [
+        {
+          "if": {"required": ["status"], "properties": {"status": {"const": "out_of_scope"}}},
+          "then": {"required": ["reason"]}
+        },
+        {
+          "if": {"required": ["inv_id"], "properties": {"inv_id": {"pattern": "^en\\."}}},
+          "then": {
+            "properties": {
+              "maps_to": {"items": {"pattern": "^en\\."}},
+              "level": {"properties": {"framework": {"const": "cefr"}, "value": {"enum": ["A1", "A2", "B1", "B2", "C1", "C2"]}}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["inv_id"], "properties": {"inv_id": {"pattern": "^zh\\."}}},
+          "then": {
+            "properties": {
+              "maps_to": {"items": {"pattern": "^zh\\."}},
+              "level": {"properties": {"framework": {"const": "hsk3"}, "value": {"enum": ["1", "2", "3", "4", "5", "6", "7", "8", "9"]}}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["inv_id"], "properties": {"inv_id": {"pattern": "^ja\\."}}},
+          "then": {
+            "properties": {
+              "maps_to": {"items": {"pattern": "^ja\\."}},
+              "level": {"properties": {"framework": {"const": "jlpt"}, "value": {"enum": ["N5", "N4", "N3", "N2", "N1"]}}}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

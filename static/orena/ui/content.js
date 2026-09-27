@@ -2,6 +2,14 @@ import { esc, safeExternal } from './html.js';
 import { contentCover } from './cover.js';
 
 // Content presentation is shared by discovery, practice and the encounter.
+// duration() briefly re-exported product/duration.js (D-091), on the assumption the new
+// learner UI's Discover screen wanted the same clock format. It does not: the pinned design's
+// own script (orena-script.js's `fmt`) pads only the seconds, never the minutes ("1:18"), while
+// this screen's own gate (scripts/test_orena_library.mjs) fixes this UI's minutes at two digits
+// ("00:46"). Restored as this module's own local formula - the two callers never shared one
+// contract, only a similar-looking one - so product/duration.js can carry the design's real
+// format for the new UI (static/orena/screens/discover/model.js) without moving this screen's
+// duration display.
 export const duration = (ms) => {
   const seconds = Math.round((Number(ms) || 0) / 1000);
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;

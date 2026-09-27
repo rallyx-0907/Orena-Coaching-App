@@ -14,7 +14,7 @@ approval, or production readiness.
 `9c0fe31`, integration HEAD `7565f6d`). D-085: Agent Intelligence develops on
 `feature/orena-intelligence`. D-086: the new learner UI replaces the old one on
 `codex/work` and is the only UI that carries the agent; both lanes build
-against `docs/project/AGENT_CONTRACT.md` (contract_version 3, D-092, D-094),
+against `docs/project/AGENT_CONTRACT.md` (contract_version 4, D-092, D-094, D-095),
 edited only on `codex/work`.
 
 **New learner UI migration (D-088 - D-091), in progress on `codex/work`.** The
@@ -42,13 +42,40 @@ The intelligence lane integrates against `/next`. Frame → route → code → s
   equal the pin (gated); Lucide icons at `lucide-static@0.525.0`; the brand
   marks from `assets/brand/orena/logo/`; kit primitives; the shell (rail, top
   bar, phone header and bar, focus mode, breadcrumb, nav origin), measured equal
-  to the design's shell; the router with all 47 routes (unbuilt ones show the
-  design's Coming soon); copy in en / vi / zh by layer. Gates
-  `test_orena_kit`, `test_orena_shell`, `test_orena_copy`. Open: colour
-  contrast N-8 (`UI_BACKEND_GAPS.md`) awaits the human.
-- **Surfaces:** none yet.
+  to the design's shell; the router with all 48 routes (unbuilt ones show the
+  design's Coming soon); copy in en / vi / zh by layer, one copy engine
+  (placeholders and plural forms, `test_orena_copy_engine`). Gates
+  `test_orena_kit`, `test_orena_shell`, `test_orena_copy`. Colour contrast N-8
+  is settled by D-093.
+- **Wave A destinations (IMPLEMENTING - built, reviewed, integrated; browser
+  re-check pending):** Today, Discover, Content Detail, Practice Hub, My
+  Library, Collection Detail, Word Detail (with the stroke sheet), Grammar
+  Library, Grammar Concept, Progress, Profile, Settings, Search, and the Import
+  and Notifications sheets (the bell opens Notifications), on shared components
+  (`kit/components.js`). Each surface was built from its frame, measured,
+  verified in the browser against the isolated app on :8021 in en / vi / zh and
+  both themes, and reviewed by an independent agent whose findings were fixed;
+  an integration pass then removed the per-screen copy workarounds, closed the
+  shared-kit fidelity gaps and wired the shell, CI and docs. Gates
+  `test_orena_screen_*`, `test_orena_components`. The browser re-check of the
+  integrated tree is pending: Docker stopped during the integration pass and
+  the isolated app could not run. Backend gaps and the open design questions:
+  `UI_BACKEND_GAPS.md` section N.
+- **Agent (contract v4, D-095):** the transport answers every §2.1 status;
+  hiding the shell's Orena entry points when the agent is absent is not wired
+  yet (with the Orena panel, Wave B).
+- **Next:** Wave B - the learning workspaces (reading, listening, dictation,
+  speaking, writing, review), the Orena panel on the mock, onboarding.
 
 ## Last verified batch
+
+2026-09-27, Wave A destinations integrated, local: all 85 CI `.mjs` gates and
+the browser ESM graph (188 modules) pass on the working tree, with the
+memory/architecture validators. `test_orena_vocabulary_theme_tokens.mjs`, which
+CI does not run, fails identically on a clean `HEAD` (an old-UI gate for a
+retired vocabulary CSS scope; to be replaced at the cutover, not deleted). The
+integrated tree's browser re-check is pending (Docker down). No CI pass is
+claimed.
 
 2026-09-27, new UI foundation, local: all 69 CI `.mjs` gates, the browser ESM
 graph, route tests and the memory/architecture validators pass; the shell
@@ -78,19 +105,9 @@ governed (D-088 - D-091, `e3f8ba2`); new UI foundation at `/next`.
 New learner UI surface slices (`IMPLEMENTATION_MAP.md`), then the cutover.
 No Agent Intelligence implementation is integrated into `codex/work` yet.
 
-`feature/orena-intelligence`: Slice 1a is REVIEWABLE (local verification,
-2026-09-27) - `writing_coach/agent/` contracts, registries, fake provider and
-voice interfaces, three `AIOperation` values; no router, no persistence, no
-provider call. Human rulings R1-R7 are in `AGENT_SPEC.md` §0; the lane's gaps
-are `UI_BACKEND_GAPS.md` I-1..I-21.
-
 ## PENDING
 
 Human action: the sandbox migration (BLOCKED below).
-
-Intelligence lane: Slice 1b in progress; the Admin labels for the four agent
-capability keys are on codex/work (71e84a0), so the keys land in 1b as inert
-definitions (I-17).
 
 ## BLOCKED
 
@@ -145,7 +162,14 @@ Library, Collection, Word, Grammar Library, Progress, Profile, Settings, Search,
 sheets), then the workspaces (Reader, Listening, Dictation, Speaking, Writing,
 Review), the agent panel on the mock, onboarding, then the cutover.
 
-Intelligence lane (`feature/orena-intelligence`): Slice 1b under D-085 against
-`AGENT_CONTRACT.md` - router behind AGENT_ENABLED (off by default), turn SSE and
-capabilities, Vocabulary and Writing read tools in EN and ZH, contract tests
-S1, S5, S8, S9; no learner-UI redesign there.
+Intelligence lane (`feature/orena-intelligence`): Agent Intelligence under
+D-085 against `AGENT_CONTRACT.md`; no learner-UI redesign there.
+
+## Grammar Lab (merged from `feature/grammar-lab`)
+
+Phase 0 of `docs/grammar_lab/SPEC.md`: an isolated, offline, file-based content
+pipeline in `grammar_lab/` (own `pyproject.toml`, own tests) and
+`docs/grammar_lab/`. It does not import app code, the app does not import it,
+and app CI does not collect its tests; no app code, router, engine, migration or
+runtime is involved. NEXT: human review of `docs/grammar_lab/PHASE0_DECISIONS.md`
+(including how lab point IDs join the R5 Concept IDs, SPEC §8); phase 1 waits.

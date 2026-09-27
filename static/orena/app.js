@@ -12,6 +12,7 @@ import { esc, dialog, status } from "./ui/html.js";
 import { route, link } from "./product/intent.js";
 import { legacyRedirect } from "./product/legacy-routes.js";
 import { learnerMemory } from "./product/memory.js";
+import { isSupportedMediaUrl } from "./product/media-url.js";
 import { renderWorld } from "./ui/world.js";
 import { renderEncounter } from "./ui/encounter.js";
 import { renderSpeaking, renderSpeakingWorkspace } from "./ui/speaking.js";
@@ -393,24 +394,6 @@ function secondarySurfaces(scope) {
   const r = refCopy(scope);
   return `<nav class="sheet-links" aria-label="${esc(r.allDestinations)}"><a href="${esc(link("collection"))}">${esc(r.savedTitle)}</a><a href="${esc(link("history"))}">${esc(r.historyTitle)}</a></nav>${operatorEntry(scope)}`;
 }
-function validVideo(value) {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.username || url.password || url.port)
-      return false;
-    if (url.hostname === "youtu.be") return /^\/[\w-]{11}$/.test(url.pathname);
-    return (
-      ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(
-        url.hostname,
-      ) &&
-      ((url.pathname === "/watch" &&
-        /^[\w-]{11}$/.test(url.searchParams.get("v") || "")) ||
-        /^\/(shorts|embed)\/[\w-]{11}$/.test(url.pathname))
-    );
-  } catch {
-    return false;
-  }
-}
 function importContent() {
   const c = ctx.c;
   const sheet = dialog({
@@ -448,7 +431,7 @@ function importContent() {
   sheet.querySelector("#mediaImport").onsubmit = (event) => {
     event.preventDefault();
     const url = String(new FormData(event.currentTarget).get("url")).trim();
-    if (!validVideo(url)) {
+    if (!isSupportedMediaUrl(url)) {
       event.currentTarget.querySelector("[role=alert]").textContent =
         c.invalidUrl;
       return;

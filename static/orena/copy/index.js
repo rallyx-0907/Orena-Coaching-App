@@ -39,9 +39,10 @@ function resolved(namespace) {
   return layeredCopy(table.packs, table.layers, current.ui, current.support);
 }
 
+/* A placeholder takes any given value, 0 included; one without a value stays visible. */
 function fill(text, params) {
   if (!params) return text;
-  return String(text).replace(/\{(\w+)\}/g, (match, name) => (params[name] ?? params[name] === 0 ? String(params[name]) : match));
+  return String(text).replace(/\{(\w+)\}/g, (match, name) => (params[name] != null ? String(params[name]) : match));
 }
 
 export function t(namespace, key, params) {
@@ -53,11 +54,19 @@ export function t(namespace, key, params) {
   return fill(out, params);
 }
 
-/* English is the only pack with a singular form; keys `x_one` / `x_other`, vi and zh use `x_other`. */
+/* Keys `x_one` / `x_other`: the form is chosen by the plural rules of the language the key renders
+   in (Intl.PluralRules), never by which forms a table holds. English reads `_one` at n === 1;
+   Vietnamese and Chinese have no singular and read `_other` at every n. */
 export function plural(namespace, key, n, params = {}) {
   const copy = resolved(namespace);
-  const one = n === 1 && copy[`${key}_one`] != null;
-  return fill(copy[one ? `${key}_one` : `${key}_other`] ?? copy[key] ?? key, { n, ...params });
+  const form = pluralRules(copy.langOf(key)).select(n);
+  return fill(copy[`${key}_${form}`] ?? copy[`${key}_other`] ?? copy[key] ?? key, { n, ...params });
+}
+
+const rules = new Map();
+function pluralRules(lang) {
+  if (!rules.has(lang)) rules.set(lang, new Intl.PluralRules(lang));
+  return rules.get(lang);
 }
 
 /* The language a key renders in, for its element's `lang` attribute. */

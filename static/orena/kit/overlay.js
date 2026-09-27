@@ -59,7 +59,7 @@ export function openSheet({ label = '', className = '', full = false, scrim = tr
   const handle = {
     element: sheet,
     close: () => {
-      if (open === handle) closeSheet();
+      if (open?.handle === handle) closeSheet();
     },
   };
   let cleanup = null;

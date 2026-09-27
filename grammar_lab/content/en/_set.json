@@ -1,0 +1,8 @@
+{
+  "schema_version": "0.2",
+  "set_id": "en.core",
+  "target_lang": "en",
+  "explanation_locales": ["vi"],
+  "l1": ["vi"],
+  "note": "Upgraded from docs/grammar_lab/sample_v0.1.json. All points are AI drafts awaiting review."
+}

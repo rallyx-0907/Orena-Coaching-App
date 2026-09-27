@@ -3184,3 +3184,19 @@ forward, would be integrating its agent into a moving hybrid.
 **Amends:** D-092 point 3/§7 rule on `label`. D-092 otherwise stands.
 
 **Addendum (2026-09-27, the same amendment, explicit human direction).** Contract v3 also fixes the canonical streams S1 and S13, which put a §6.1 navigation id (`review_due`, `vocabulary.review_due`) in `suggestion.intent` although §4 requires a prompt intent. §4 now defines a prompt intent (the `prompt.` namespace, never a §6.1 id; tapping a suggestion sends its label as the learner's message), S1 and S13 use `prompt.review_due`, the mock follows, and `scripts/test_orena_agent.mjs` checks both the fixtures and the mock. `contract_version` stays 3.
+
+## D-095 — Agent contract v4: HTTP statuses and error classes the UI must handle (amends D-092)
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human direction).
+
+**Context.** Contracts v2 and v3 described the turn stream and its `error` event but not the HTTP statuses of `/api/agent/*` or the error classes. The intelligence lane's server (`writing_coach/agent/api.py`, `errors.py`, `ratelimit.py`, read on `feature/orena-intelligence` at `f36f465`) answers 404 while `AGENT_ENABLED` is off (always in production), 429 `rate_limited` with `Retry-After` from a per-learner sliding window, 409 `target_language_mismatch` when the request's target language is not the learner's learning language, and 422 for a malformed request; its stream errors are `provider_unavailable` and `internal_error` (`retry`) and `voice_unavailable` (`text_only`). A UI that reads a 404 as an error, or treats a rate limit as a failure, would show the learner something false.
+
+**Decision.** `AGENT_CONTRACT.md` becomes `contract_version: 4`.
+
+1. §2.1 is the status table. 404: Orena is absent for the visit - every entry point hidden, no error, no retry; learned from `GET /api/agent/capabilities` at start or any 404. 429: a brief wait state (Orena stays thinking), then the same request again after `Retry-After`, waiting again if refused, cancellable. 409 `target_language_mismatch`: the UI re-reads the learning language, applies it as any language change and keeps the message unsent; no automatic resend. 401 is the app's sign-in handling; 422 is a client defect ending the turn with `fallback: none`.
+2. §4.1 lists the classes and fallbacks. The UI acts on `fallback` (`retry`: a learner's retry control, never automatic; `text_only`: voice closes, text continues; `none`: message only), an unknown class by its fallback, an unknown fallback as `none`. The client's own `transport` class covers a network failure, an unlisted status and a stream without `done`/`error`.
+3. The mock plays H404, H409 and H429 for review.
+
+The UI's side ships with it: `static/orena/agent/contract.js` (version 4, the tables as data), `transport.js` (the live path answers every status; still off), `presence.js` (Orena absent for the visit), `session.js` (wait, unsent and absent states), `mock.js`; `scripts/test_orena_agent.mjs` reads both tables from the contract text and drives the live transport with a fake fetch. Hiding the shell's entry points on `absent` is wired with the Wave A shell integration.
+
+**Amends:** D-092 (§2 and §4 grow a table each; nothing else changes). A server answers a v3 client as before.

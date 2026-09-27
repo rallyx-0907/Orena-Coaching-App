@@ -126,4 +126,31 @@
   --avatar-ink: #7A2E4A;
   /* The placeholder the design draws where artwork is missing (rule 37). */
   --art-placeholder: repeating-linear-gradient(135deg, rgba(255, 255, 255, .5) 0 6px, transparent 6px 12px), var(--tint2);
+
+  /* Purpose-named "white on a fixed-dark surface, regardless of app theme" tokens (D-091 kit
+     fidelity pass): each frame below draws its own literal unconditionally - never gated by
+     body[data-theme] - so each is defined once here rather than duplicated per theme or reusing a
+     same-shaped token meant for something else (the toast's own chip/ink stay named for the toast).
+     - --photo-chip / --photo-progress: a translucent-white chip/progress-track drawn on
+       photographic artwork (heroMedia()'s type pill - Content Detail, Collection Detail -
+       04-Discover.html/21-Collection-Detail.html/05-Content-Detail.html all draw the pill at
+       rgba(255,255,255,.18); mediaCard()'s start-progress track - 04-Discover.html - at .25).
+     - --hero-chip: the translucent tile background on Profile's hero card (25-Profile-Today-s-
+       progress.html, rgba(255,255,255,.08) - lighter than --toast-chip's .14).
+     - --hero-cta-ink: the "Due review" tile's own secondary CTA text on the hero card (#C9BFFF).
+     - --hero-cta-fill / --hero-cta-fill-ink: the hero's primary "Open Progress" CTA - a white pill
+       with dark ink, not an accent fill (#fff / #1A1433).
+     - --sh-hero: the hero card's own elevation (0 18px 40px rgba(60,40,140,.28)), a fixed purple
+       shadow distinct from the per-theme --sh1/2/3 scale.
+     - --deco-strong / --deco-soft: Today's hero card's two decorative circles
+       (10-Today.html, rgba(255,255,255,.22) / rgba(255,255,255,.16)). */
+  --photo-chip: rgba(255, 255, 255, .18);
+  --photo-progress: rgba(255, 255, 255, .25);
+  --hero-chip: rgba(255, 255, 255, .08);
+  --hero-cta-ink: #C9BFFF;
+  --hero-cta-fill: #fff;
+  --hero-cta-fill-ink: #1A1433;
+  --sh-hero: 0 18px 40px rgba(60, 40, 140, .28);
+  --deco-strong: rgba(255, 255, 255, .22);
+  --deco-soft: rgba(255, 255, 255, .16);
 }

@@ -11,6 +11,7 @@ import { esc } from './html.js';
 import { icon } from './phosphor.js';
 import { refCopy } from './reference.js';
 import { link } from '../product/intent.js';
+import { withinWindow, sortByRecency, dayBucket } from '../product/activity-log.js';
 
 const WINDOW_DAYS = 30;
 const DOMAIN = {
@@ -74,19 +75,14 @@ function rows(ctx, results) {
         href: o.source_id ? link('encounter', { id: o.source_id, intent: o.intent || null }) : link(),
       });
     }
-  const since = Date.now() - WINDOW_DAYS * 86400000;
-  return out
-    .filter((x) => x.at && Date.parse(x.at) >= since)
-    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  return sortByRecency(withinWindow(out, WINDOW_DAYS));
 }
 
 function dayLabel(ctx, at) {
   const r = refCopy(ctx);
-  const date = new Date(at);
-  const today = new Date();
-  if (date.toDateString() === today.toDateString()) return r.historyToday;
+  if (dayBucket(at) === 'today') return r.historyToday;
   const locale = ctx.ui === 'zh' ? 'zh-CN' : ctx.ui === 'vi' ? 'vi-VN' : 'en-GB';
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date);
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(new Date(at));
 }
 
 export async function renderHistory(root, ctx) {

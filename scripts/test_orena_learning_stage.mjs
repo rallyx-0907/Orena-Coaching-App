@@ -137,7 +137,16 @@ assert.doesNotMatch(actions, /name: '(replay|practice|colors|legend|more)'/,
 const lineSheet = readFileSync(new URL('../static/orena/ui/line-sheet.js', import.meta.url), 'utf8');
 for (const intent of ['dictation', 'shadowing', 'speaking', 'keep', 'inspect'])
   assert.match(lineSheet, new RegExp(`name: '${intent}'`), `${intent} is one of the ways to work on a line`);
-assert.match(encounter, /localStorage\.setItem\(STAGE_KEY/, 'the three preferences are kept as the reader keeps its own');
+/* D-091: autoscroll/meaning's read-write moved out of this file into product/transcript-stage.js
+   (shared with the new Settings screen's Learning tab, static/orena/screens/settings/), so this
+   still proves the three preferences are kept - through the shared module, not a second inline
+   copy - and that the module itself still does the actual write, the way the reader keeps its
+   own. */
+const transcriptStage = readFileSync(new URL('../static/orena/product/transcript-stage.js', import.meta.url), 'utf8');
+assert.match(encounter, /import \{ readStage, writeStage \} from '\.\.\/product\/transcript-stage\.js'/,
+  'the stage read/write is the shared preference module, not a second local implementation');
+assert.match(encounter, /writeStage\(stage\)/, 'the three preferences are kept as the reader keeps its own');
+assert.match(transcriptStage, /storage\.setItem\(STAGE_KEY/, 'which is where they are actually written');
 assert.doesNotMatch(encounter, /class="moment-actions"/, 'the row of equal buttons is gone');
 assert.doesNotMatch(encounter, /class="stage-toggles"/, 'and so is the row of text pills');
 /* Nothing in the bar is a large text button: an icon carries it and the

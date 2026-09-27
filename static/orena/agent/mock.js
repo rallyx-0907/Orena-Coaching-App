@@ -7,7 +7,9 @@
    Selection: a forced stream (`?agent=S2b` in the address, for review), else the request itself -
    an opening turn is S13, a request about another learner's progress S8, "save" on a selected
    word S5, a question on a writing review S9, a question on a flagged pronunciation S2, anything
-   else S1. */
+   else S1. `?agent=H404`, `H409` or `H429` plays what the transport makes of that HTTP status
+   (§2.1): Orena absent, the language changed elsewhere, or a short wait before the turn is sent
+   again and answered. */
 import { CONTRACT_VERSION } from './contract.js';
 
 const WORDS = {
@@ -201,8 +203,21 @@ export function chooseStream(request, forced = '') {
   return 'S1';
 }
 
+/* §2.1 statuses, as the transport reports them. */
+export const STATUSES = Object.freeze({ H404: 'absent', H409: 'language_mismatch', H429: 'wait' });
+const RETRY_AFTER = 2;
+
 /* The mock transport: an async iterable of { event, data }, paced like a stream, abortable. */
 export async function* mockTurn(request, { signal, forced = '', pace = 45 } = {}) {
+  if (STATUSES[forced] && forced !== 'H429') {
+    yield { event: STATUSES[forced], data: {} };
+    return;
+  }
+  if (forced === 'H429') {
+    yield { event: 'wait', data: { seconds: RETRY_AFTER } };
+    await new Promise((resolve) => setTimeout(resolve, pace ? RETRY_AFTER * 1000 : 0));
+    if (signal?.aborted) return;
+  }
   const events = STREAMS[chooseStream(request, forced)](request);
   for (const [event, data] of events) {
     if (signal?.aborted) return;
