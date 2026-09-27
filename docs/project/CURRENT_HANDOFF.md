@@ -10,11 +10,15 @@ approval, or production readiness.
 
 ## Current branch / lane
 
-`codex/integrate-admin-speaking` in the existing `-codex` worktree, by explicit
-human instruction. It integrates `admin/control-center@e9a2219` and
-`feature/speaking@d006383` over Codex `8557b0e`. The integration branch is
-pushed to `origin` for external review. Do not merge it into `codex/work` or
-`main` without human approval.
+`codex/work` is the unified development baseline. The Admin + Speaking
+integration was externally reviewed and merged by PR #63 at
+`9c0fe315601877b43ac23aaffec915628635f9ae`, incorporating integration HEAD
+`7565f6d921b22fe5562c963ce2f4f18b3e6deccf` over Codex `8557b0e`, with
+`admin/control-center@e9a2219` and `feature/speaking@d006383` in its ancestry.
+
+D-085 authorizes Orena Intelligence as a separate development lane from this
+unified baseline. Agent Intelligence implementation belongs on
+`feature/orena-intelligence`, not directly on `codex/work`.
 
 ## Last verified batch
 
@@ -47,17 +51,22 @@ received a PASS independent architecture delta review from GPT-6/Codex
 (`/root/architecture_review`), with no P0/P1 findings. Reviewer identity,
 commit and verdict are recorded in `ADAPTIVE_READING_ARCHITECTURE_REVIEW.md`.
 The unified Speaking merge `5e3d53aa1ff6442ccf8ae0c21f84d9221116c339`
-and local verification are complete. The integration branch was pushed, and
-the remote ref was read back equal to the local checkpoint HEAD.
+and local verification are complete. Integration HEAD
+`7565f6d921b22fe5562c963ce2f4f18b3e6deccf` was externally reviewed and merged
+into `codex/work` through PR #63 at
+`9c0fe315601877b43ac23aaffec915628635f9ae`.
 
 ## IN PROGRESS
 
-Awaiting external human review of the pushed integration branch.
+`codex/work` is the unified baseline. D-085 opens the separate Orena
+Intelligence lane; no Agent Intelligence implementation has been integrated
+back into the baseline yet.
 
 ## PENDING
 
-Human review of the pushed integration HEAD. Human approval is required before
-any merge into `codex/work` or `main`.
+Create or fast-forward `feature/orena-intelligence` from the latest
+`codex/work`, then develop and verify Agent Intelligence in that isolated
+lane before any later integration review.
 
 ## BLOCKED
 
@@ -87,5 +96,8 @@ volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Present the exact remote HEAD and local verification evidence for external
-human review. Do not merge into `codex/work` or `main` without approval.
+Start `feature/orena-intelligence` from the latest `codex/work` unified
+baseline and keep Agent Intelligence work isolated there. Follow D-085: build
+orchestration above existing domain services, expose only explicit allowlisted
+capabilities, do not duplicate Reading/Listening/Speaking/Writing/Vocabulary/
+Grammar/Progress backends, and do not redesign learner UI in this lane.
