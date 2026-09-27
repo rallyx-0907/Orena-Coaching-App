@@ -151,7 +151,14 @@ Slice 1c  REVIEWABLE (local, 2026-09-27). 1c-1 4672fdd: contract v2 (orena.home,
           xác. Contract streams S1, S5, S8, S9, S13.
 Contract v4 merge 0e2b1ee (D-095: §2.1 HTTP status, §4.1 error class; phần xung đột của handoff lấy
           bản codex/work theo R13) và phục vụ v4. Handoff chỉ còn chỗ cho một dòng trỏ về đây (giới hạn 8 KB).
-Tiếp      Chạy live có kiểm soát (R17, gate [PROVIDER], đã duyệt, trần 2,00 USD); rồi Slice 2 (§26).
+Live      R17 đã chạy 2026-09-28 (duyệt, trần 2,00 USD; sandbox :8015 đã gỡ). Gemini gemini-3.5-flash-lite:
+          tool call về nguyên cục (không `index`) kèm extra_content.google.thought_signature, phải gửi lại ở vòng
+          sau (3c208af); usage về trên stream khi xin include_usage (giá đã vào pricing.py); request chỉ có
+          system bị từ chối nên lượt mở đầu có một user message cố định nêu ngôn ngữ support (5653de1). Đo
+          (45 turn đạt): event đầu ≈ 0,01 s; segment đầu trung vị 2,9 s, p90 3,9 s; xong trung vị 3,4 s;
+          ≈ 3,9k token vào / 140 ra mỗi turn ≈ 0,0015 USD; tổng thực ≈ 0,09 USD. Lỗi còn lại là HTTP 429
+          quota của gói key (≈ 25-30 lượt gọi/phút), không phải lỗi request.
+Tiếp      Người quyết: gói/quota provider trước khi kích hoạt; rồi Slice 2 (§26).
 ```
 
 ---
