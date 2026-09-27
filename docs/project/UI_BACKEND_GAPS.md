@@ -74,7 +74,11 @@ saturation kept:
 | light | white on `--red` (count badges) | 4.47 | `--red` #D93D42 → #D93B40 | 4.52 |
 
 Contract gaps for the agent surfaces: `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`
-(awaiting approval).
+(awaiting approval). One backend gap it names: **N-9** - a speaking attempt's
+audio-free record (`POST /api/speech/attempts` returns its id) cannot be read by
+id; the list filters only by `asset_id` / `segment_id`. An owner-scoped read by
+id (repository method, optionally `GET /api/speech/attempts/{id}`) needs no
+schema change.
 
 # CHỜ NGƯỜI QUYẾT ĐỊNH — sổ đăng ký mở (cập nhật 2026-09-22)
 
