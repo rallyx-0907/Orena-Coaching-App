@@ -88,6 +88,9 @@ def context_document(
     return redact_for_provider(document)
 
 
+OPENING_TRIGGER = "[The learner opened Orena. There is no message from them: this is the opening turn.]"
+
+
 def opening_messages(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -103,6 +106,9 @@ def opening_messages(
     ]
     if opening:
         messages.append(ProviderMessage(role="system", content=OPENING))
+        # A request of system messages alone is refused by some providers (Gemini: "contents is not
+        # specified"). The trigger is stated as a fixed user message; it carries no learner text.
+        messages.append(ProviderMessage(role="user", content=OPENING_TRIGGER))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

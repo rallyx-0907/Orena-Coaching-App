@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-08-28.v1"
+PRICING_CATALOG_VERSION = "2026-09-28.v1"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -31,6 +31,8 @@ _CATALOG = MappingProxyType({
     ("deepseek", "deepseek-chat"): TokenPricing("deepseek", "deepseek-chat", "USD", 0.27, 1.10),
     ("deepseek", "deepseek-reasoner"): TokenPricing("deepseek", "deepseek-reasoner", "USD", 0.55, 2.19),
     ("groq", "llama-3.3-70b-versatile"): TokenPricing("groq", "llama-3.3-70b-versatile", "USD", 0.59, 0.79),
+    # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
+    ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
 })
 
 

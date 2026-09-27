@@ -75,11 +75,17 @@ class ChatTextDelta:
 
 @dataclass(frozen=True)
 class ChatToolCall:
-    """A complete native tool call; `arguments` is the provider's JSON text."""
+    """A complete native tool call; `arguments` is the provider's JSON text.
+
+    `extra` is what the provider attached to the call for itself (Gemini's
+    `extra_content` holds a thought signature) and requires back, verbatim, when
+    the call is sent in the next round. It is opaque: never parsed, never shown.
+    """
 
     id: str
     name: str
     arguments: str
+    extra: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

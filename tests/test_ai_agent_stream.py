@@ -111,7 +111,7 @@ def test_the_request_is_a_streaming_chat_with_tools(monkeypatch):
     seen = []
     post_returning(monkeypatch, StreamResponse([finish("stop"), b"data: [DONE]"]), seen)
     tools = [{"type": "function", "function": {"name": "get_x", "description": "x", "parameters": {"type": "object"}}}]
-    item = provider(monkeypatch)
+    item = provider(monkeypatch, "groq")  # an endpoint not asked for stream usage
     run(item, tools=tools, temperature=0.2)
     url, kwargs = seen[0]
     assert url == "https://provider.invalid/v1/chat/completions"
@@ -369,7 +369,8 @@ def test_each_read_waits_no_longer_than_the_turn_has_left(monkeypatch):
 
 
 def test_usage_is_asked_for_only_where_the_endpoint_documents_it(monkeypatch):
-    for provider_id, asked in (("openai", True), ("deepseek", True), ("gemini", False), ("groq", False)):
+    # Gemini: verified on the live run of 2026-09-28 (usage arrives on the stream when asked).
+    for provider_id, asked in (("openai", True), ("deepseek", True), ("gemini", True), ("groq", False)):
         seen = []
         post_returning(monkeypatch, StreamResponse([finish("stop")]), seen)
         run(provider(monkeypatch, provider_id))
@@ -401,3 +402,44 @@ def test_the_turn_budget_reaches_the_provider(monkeypatch, telemetry):
     monkeypatch.setattr(platform, "active_selection", lambda: (item, "m"))
     list(platform.stream_agent_turn(messages=[], tools=[], max_output_tokens=10, timeout_seconds=12.0))
     assert item.calls[0]["read_timeout"] == 12.0
+
+
+# --- the live run, 2026-09-28: Gemini's thought signature --------------------------------
+
+
+def test_a_tool_calls_provider_data_is_kept_and_sent_back_verbatim(monkeypatch):
+    """Gemini 3 answers 400 unless a call's `extra_content` (its thought signature) comes back with it."""
+
+    signature = {"google": {"thought_signature": "opaque=="}}
+    chunks = [
+        delta(tool_calls=[{"id": "call_491546", "type": "function", "extra_content": signature,
+                           "function": {"name": "get_due_count", "arguments": "{}"}}]),
+        finish("tool_calls", {"prompt_tokens": 48, "completion_tokens": 12}),
+    ]  # fmt: skip
+    post_returning(monkeypatch, StreamResponse(chunks))
+    call = run(provider(monkeypatch))[0]
+    assert call == ChatToolCall(id="call_491546", name="get_due_count", arguments="{}", extra=signature)
+
+    request = ToolCallRequest("call_491546", "get_due_count", {}, echo=signature)
+    wired = wire_message(ProviderMessage(role="assistant", content="", tool_calls=(request,)))
+    assert wired["tool_calls"][0]["extra_content"] == signature
+    plain = wire_message(ProviderMessage(role="assistant", content="", tool_calls=(ToolCallRequest("c1", "x", {}),)))
+    assert "extra_content" not in plain["tool_calls"][0]
+
+
+def test_the_adapter_hands_the_provider_data_to_the_turn():
+    signature = {"google": {"thought_signature": "opaque=="}}
+
+    def stream_turn(**kwargs):
+        return iter([ChatToolCall("c1", "get_x", "{}", extra=signature), ChatFinished("tool_calls", 5, 1)])
+
+    request = ProviderTurnRequest(messages=(ProviderMessage(role="user", content="hi"),), tools=())
+    events = list(PlatformAgentTurnProvider(stream_turn).stream(request))
+    assert events[0] == ToolCallRequest("c1", "get_x", {}, echo=signature)
+
+
+def test_gemini_flash_lite_is_priced():
+    from writing_coach.ai.pricing import estimate_token_cost
+
+    cost = estimate_token_cost("gemini", "gemini-3.5-flash-lite", {"prompt_tokens": 1_000_000, "completion_tokens": 1_000_000})
+    assert cost["state"] != "unpriced" and cost["amount"] == pytest.approx(2.80)

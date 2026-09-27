@@ -44,6 +44,7 @@ def wire_message(message: ProviderMessage) -> dict[str, Any]:
                 "id": call.id,
                 "type": "function",
                 "function": {"name": call.name, "arguments": json.dumps(dict(call.arguments), ensure_ascii=False)},
+                **({"extra_content": dict(call.echo)} if call.echo else {}),
             }
             for call in message.tool_calls
         ]
@@ -101,7 +102,9 @@ class PlatformAgentTurnProvider:
                 if isinstance(event, ChatTextDelta):
                     yield TextDelta(event.text)
                 elif isinstance(event, ChatToolCall):
-                    yield ToolCallRequest(id=event.id, name=event.name, arguments=parse_arguments(event.arguments))
+                    yield ToolCallRequest(
+                        id=event.id, name=event.name, arguments=parse_arguments(event.arguments), echo=event.extra
+                    )
                 elif isinstance(event, ChatFinished):
                     yield TurnFinished(
                         input_tokens=event.prompt_tokens,

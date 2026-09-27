@@ -2,7 +2,7 @@
 #
 # A compose project of its own - never the app's `ai-writing-coach` project,
 # never :8000/:8010/:8011/:8012 - with a throwaway PostgreSQL on tmpfs and no
-# named volume: `down` leaves nothing behind. Run only after the human approved
+# named volume: `down` leaves nothing behind. AGENT_LIVE_PORT=8015 when :8013 is taken. Run only after the human approved
 # the run and its cost cap:
 #
 #   docker compose -p orena-agent-live -f scripts/agent_live/compose.yaml --env-file .env up -d
@@ -55,7 +55,7 @@ services:
     working_dir: /app
     environment:
       APP_ENV: development
-      PUBLIC_BASE_URL: http://127.0.0.1:8013
+      PUBLIC_BASE_URL: http://127.0.0.1:${AGENT_LIVE_PORT:-8013}
       AGENT_ENABLED: "true"
       PERSISTENCE_BACKEND: postgresql
       POSTGRES_RUNTIME_URL: postgresql+psycopg://live:live-throwaway@db:5432/agent_live
@@ -78,7 +78,7 @@ services:
       - /data
     volumes: *code
     ports:
-      - "127.0.0.1:8013:8000"
+      - "127.0.0.1:${AGENT_LIVE_PORT:-8013}:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully

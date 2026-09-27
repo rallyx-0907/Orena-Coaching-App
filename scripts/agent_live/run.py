@@ -43,6 +43,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "docs/project/AGENT_CONTRACT.md"
 SANDBOX_PORT = 8013
+SANDBOX_PORTS = {8013, 8015}  # 8015 when another lane holds 8013
 SHARED_PORTS = {8000, 8010, 8011, 8012}
 
 # Published paid-tier rate of gemini-3.5-flash-lite (ai.google.dev pricing, read 2026-09-27), USD per 1M tokens.
@@ -207,7 +208,7 @@ def summarize(result: dict) -> dict:
     return {
         "sequence": [n for n in names if n != "segment_delta"],
         "deltas": names.count("segment_delta"),
-        "tools": [e["data"].get("tool") for e in result["events"] if e["name"] == "tool_call"],
+        "tools": [e["data"].get("name") for e in result["events"] if e["name"] == "tool_call"],  # §4 { name, label }
         "actions": [e["data"] for e in result["events"] if e["name"] == "action"],
         "suggestions": [e["data"].get("intent") for e in result["events"] if e["name"] == "suggestion"],
         "tokens_in": tokens_in,
@@ -241,14 +242,14 @@ def main() -> int:
     if args.plan:
         return 0
     parsed = urllib.parse.urlparse(args.base_url)
-    if parsed.hostname not in {"127.0.0.1", "localhost"} or parsed.port in SHARED_PORTS or parsed.port != SANDBOX_PORT:
-        sys.exit(f"refusing: the live run drives only the throwaway sandbox on 127.0.0.1:{SANDBOX_PORT}")
+    if parsed.hostname not in {"127.0.0.1", "localhost"} or parsed.port in SHARED_PORTS or parsed.port not in SANDBOX_PORTS:
+        sys.exit(f"refusing: the live run drives only the throwaway sandbox on 127.0.0.1:{sorted(SANDBOX_PORTS)}")
     if not args.approved or args.cap_usd is None or args.cap_usd <= 0:
         sys.exit("refusing: needs --approved and the approved --cap-usd")
 
     client = Client(args.base_url)
     status, readiness = client.call("GET", "/api/readiness")
-    if isinstance(readiness, dict) and "production" in json.dumps(readiness).casefold():
+    if not isinstance(readiness, dict) or readiness.get("environment") != "development":
         sys.exit("refusing: the server reports production")
     status, capabilities = client.call("GET", "/api/agent/capabilities?interface=vi")
     if status != 200:
@@ -258,7 +259,7 @@ def main() -> int:
     if status != 200:
         sys.exit(f"could not select Gemini ({status})")
 
-    spent, rows = 0.0, []
+    spent, rows, provider_failures, provider_answered = 0.0, [], 0, False
     for target in targets:
         t = TARGETS[target]
         client.call("POST", "/api/platform/language", {"language": t["language"]})
@@ -269,7 +270,12 @@ def main() -> int:
             break
         status, essay = client.call("POST", "/api/evaluate", {"text": t["essay"], "learning_language": t["language"]})
         spent += WORST_SETUP_USD  # its usage is not visible here; the bound is counted
-        essay_id = str(essay.get("id")) if status == 200 and isinstance(essay, dict) else None
+        if status != 200:
+            # The first use of a real key: a provider-level failure stops the run, no retries.
+            print(f"stopping: the essay review (a provider call) answered {status}: {str(essay)[:300]}")
+            return finish(rows, spent, args.out)
+        provider_answered = True
+        essay_id = str(essay.get("id")) if isinstance(essay, dict) else None
         for repeat in range(args.repeat):
             for scenario in scenarios(target, essay_id):
                 if repeat and not scenario.model:
@@ -294,6 +300,12 @@ def main() -> int:
                     "matches_canonical": expected == summary.get("sequence") if expected else None, **summary,
                 }  # fmt: skip
                 rows.append(row)
+                failed = scenario.model and (result["status"] != 200 or summary.get("error"))
+                provider_failures = provider_failures + 1 if failed else 0
+                if failed and (not provider_answered or provider_failures >= 2):
+                    print(f"stopping: provider failure {summary.get('error') or result.get('body')}; no retries")
+                    return finish(rows, spent, args.out)
+                provider_answered = provider_answered or (scenario.model and not failed)
                 print(
                     f"{target:6} {scenario.name:15} #{repeat} {result['status']} first={row['t_first_event']}s "
                     f"segment={row['t_first_segment']}s done={row['t_done']}s tools={summary.get('tools')} "

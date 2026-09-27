@@ -26,6 +26,9 @@ class ToolCallRequest:
     id: str
     name: str
     arguments: Mapping[str, Any] = field(default_factory=dict)
+    # The provider's own data for this call, sent back verbatim with it next round (Gemini's
+    # thought signature). Opaque: the turn never reads it, the learner never sees it.
+    echo: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True)

@@ -781,10 +781,12 @@ class OpenAICompatibleProvider:
                         key = _tool_call_key(part, position, order)
                         slot = calls.get(key)
                         if slot is None:
-                            slot = calls[key] = {"id": "", "name": "", "arguments": []}
+                            slot = calls[key] = {"id": "", "name": "", "arguments": [], "extra": None}
                             order.append(key)
                         if isinstance(part.get("id"), str) and part["id"]:
                             slot["id"] = part["id"]
+                        if isinstance(part.get("extra_content"), dict):
+                            slot["extra"] = part["extra_content"]
                         function = part.get("function") if isinstance(part.get("function"), dict) else {}
                         if isinstance(function.get("name"), str) and function["name"]:
                             slot["name"] = function["name"]
@@ -800,7 +802,12 @@ class OpenAICompatibleProvider:
             slot = calls[key]
             if not slot["name"]:
                 raise AIProviderResponseInvalid(f"{self.name} sent a tool call without a name.")
-            yield ChatToolCall(id=slot["id"] or f"call_{number}", name=slot["name"], arguments="".join(slot["arguments"]))
+            yield ChatToolCall(
+                id=slot["id"] or f"call_{number}",
+                name=slot["name"],
+                arguments="".join(slot["arguments"]),
+                extra=slot["extra"],
+            )
         reason = "tool_calls" if order else ("length" if finish_reason == "length" else "stop")
         details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
         yield ChatFinished(
@@ -812,9 +819,10 @@ class OpenAICompatibleProvider:
         )
 
 
-# Endpoints documented to send a usage chunk on a stream when asked
+# Endpoints that send a usage chunk on a stream when asked
 # (`stream_options.include_usage`). Groq reports it unasked (`x_groq.usage`).
-_STREAM_USAGE_PROVIDERS = frozenset({"openai", "deepseek"})
+# Gemini's OpenAI-compatible endpoint: verified by the agent's live run, 2026-09-28.
+_STREAM_USAGE_PROVIDERS = frozenset({"openai", "deepseek", "gemini"})
 
 
 def _tool_call_key(part: dict[str, Any], position: int, order: list[object]) -> object:

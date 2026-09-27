@@ -426,7 +426,10 @@ def test_an_opening_turn_is_metered_as_an_opening_not_a_learner_turn():
     events = run(rt, opening_request())
     assert [feature for _, feature, _, _ in meter] == ["agent.open", "agent.tokens"]
     assert rt.sessions.get(events[0].session_id, "learner-1").turn_count == 0
-    assert all(m.role != "user" for m in provider.requests[0].messages)
+    # no learner text: the one user message is the server's fixed trigger (Gemini refuses a system-only request)
+    from writing_coach.agent.prompts import OPENING_TRIGGER
+
+    assert [m.content for m in provider.requests[0].messages if m.role == "user"] == [OPENING_TRIGGER]
     assert any("opening turn" in m.content for m in provider.requests[0].messages if m.role == "system")
 
 
@@ -577,3 +580,15 @@ def test_an_opening_answered_with_only_whitespace_is_no_answer():
     events = run(rt, opening_request())
     assert names(events) == ["session", "error"] and events[-1].error_class == "provider_unavailable"
     assert meter == []
+
+
+def test_a_calls_provider_data_goes_back_with_it_in_the_next_round():
+    signature = {"google": {"thought_signature": "opaque=="}}
+    rounds = [
+        (ToolCallRequest("c1", "get_test_items", {}, echo=signature), TurnFinished(3, 1, "tool_calls")),
+        reply("Hai âm tiết bị đánh dấu."),
+    ]
+    rt, provider = runtime(rounds)
+    run(rt)
+    assistant = [m for m in provider.requests[1].messages if m.role == "assistant"][-1]
+    assert assistant.tool_calls[0].echo == signature
