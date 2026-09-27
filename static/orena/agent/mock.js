@@ -1,8 +1,8 @@
 /* The UI lane's mock agent (AGENT_CONTRACT §11): replays the contract's canonical streams (§12)
    with no backend, so the new UI is built and tested against the exact event sequence and payload
    shapes the intelligence lane's server must also produce. Only the wording differs; the mock
-   speaks the request's support language (vi, en or zh) so every interface language can be
-   reviewed. Nothing here is product copy or learner data.
+   speaks the request's support language (vi, en or zh), and labels its action buttons in the
+   interface language (§7, D-094), so every language combination can be reviewed. Nothing here is product copy or learner data.
 
    Selection: a forced stream (`?agent=S2b` in the address, for review), else the request itself -
    an opening turn is S13, a request about another learner's progress S8, "save" on a selected
@@ -78,6 +78,12 @@ function words(request) {
   return WORDS[support] || WORDS.en;
 }
 
+/* Action labels are buttons: interface language (AGENT_CONTRACT §7, D-094). */
+function labels(request) {
+  const ui = String(request?.context?.locale?.interface || 'en').slice(0, 2);
+  return WORDS[ui] || WORDS.en;
+}
+
 function supportLang(request) {
   return String(request?.context?.locale?.support || 'en');
 }
@@ -105,7 +111,7 @@ function session(request) {
 export const STREAMS = {
   S1(request) {
     const w = words(request);
-    return [session(request), ...segment(0, supportLang(request), w.s1, 'neutral_explain'), ['suggestion', { label: w.s1s, intent: 'vocabulary.review_due' }], done()];
+    return [session(request), ...segment(0, supportLang(request), w.s1, 'neutral_explain'), ['suggestion', { label: w.s1s, intent: 'prompt.review_due' }], done()];
   },
   S5(request) {
     const w = words(request);
@@ -113,7 +119,7 @@ export const STREAMS = {
     return [
       session(request),
       ['segment_end', { index: 0, lang: supportLang(request), text: fill(w.s5, item.text), voice_style: 'brief_ack' }],
-      ['action', { id: 'a1', type: 'save_word', label: w.s5l, payload: { text: item.text || '', lang: item.lang || request.context?.locale?.target || 'en' }, risk: 'LOW' }],
+      ['action', { id: 'a1', type: 'save_word', label: labels(request).s5l, payload: { text: item.text || '', lang: item.lang || request.context?.locale?.target || 'en' }, risk: 'LOW' }],
       done(),
     ];
   },
@@ -129,7 +135,7 @@ export const STREAMS = {
       ['evidence', { id: 'e1', source: 'writing.evaluation', ref: { essay_id: request.context?.essay_id, path: 'errors[0]' }, excerpt: { category: 'verb_tense' } }],
       ['evidence', { id: 'e2', source: 'writing.evaluation', ref: { essay_id: request.context?.essay_id, path: 'errors[2]' }, excerpt: { category: 'preposition' } }],
       ...segment(0, supportLang(request), w.s9, 'neutral_explain'),
-      ['action', { id: 'a1', type: 'navigate', label: w.s9l, payload: { intent: 'writing.revision', essay_id: request.context?.essay_id }, risk: 'LOW' }],
+      ['action', { id: 'a1', type: 'navigate', label: labels(request).s9l, payload: { intent: 'writing.revision', essay_id: request.context?.essay_id }, risk: 'LOW' }],
       done(),
     ];
   },
@@ -148,8 +154,8 @@ export const STREAMS = {
     if (flagged) {
       events.push(['segment_end', { index: 1, lang: target, text: item.text || '', voice_style: 'reference' }]);
       const line = { content_id: request.context?.content_id, item_id: item.id };
-      events.push(['action', { id: 'a1', type: 'play_model', label: w.s2p, payload: line, risk: 'LOW' }]);
-      events.push(['action', { id: 'a2', type: 'say_again', label: w.s2a, payload: line, risk: 'LOW' }]);
+      events.push(['action', { id: 'a1', type: 'play_model', label: labels(request).s2p, payload: line, risk: 'LOW' }]);
+      events.push(['action', { id: 'a2', type: 'say_again', label: labels(request).s2a, payload: line, risk: 'LOW' }]);
     }
     events.push(done());
     return events;
@@ -165,9 +171,9 @@ export const STREAMS = {
     return [
       session(request),
       ['segment_end', { index: 0, lang: supportLang(request), text: w.s13, voice_style: 'neutral_explain' }],
-      ['suggestion', { label: w.s1s, intent: 'vocabulary.review_due' }],
-      ['suggestion', { label: w.s13a, intent: 'coaching.next_step' }],
-      ['suggestion', { label: w.s13b, intent: 'vocabulary.explain' }],
+      ['suggestion', { label: w.s1s, intent: 'prompt.review_due' }],
+      ['suggestion', { label: w.s13a, intent: 'prompt.next_step' }],
+      ['suggestion', { label: w.s13b, intent: 'prompt.explain_word' }],
       done(),
     ];
   },

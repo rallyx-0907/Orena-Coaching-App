@@ -1,10 +1,10 @@
-/* The agent contract as data (docs/project/AGENT_CONTRACT.md, contract_version 2, D-092).
+/* The agent contract as data (docs/project/AGENT_CONTRACT.md, contract_version 3, D-092, D-094).
 
    Everything the new UI needs to speak the contract lives here: the version, the closed enums, the
    action allowlist with its fixed risk, the surface / intent id space, and the locale mapping at
    the UI's boundary. DOM-free, so scripts/test_orena_agent.mjs checks it against the contract text. */
 
-export const CONTRACT_VERSION = 2;
+export const CONTRACT_VERSION = 3;
 
 export const EVENTS = Object.freeze([
   'session', 'segment_delta', 'segment_end', 'tool_call', 'tool_result', 'evidence', 'action',

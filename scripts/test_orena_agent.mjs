@@ -1,5 +1,5 @@
-/* Gate for the new UI's side of the Orena agent contract (docs/project/AGENT_CONTRACT.md, v2;
-   D-086, D-092). The contract data the UI uses is read against the contract's own text; the mock's
+/* Gate for the new UI's side of the Orena agent contract (docs/project/AGENT_CONTRACT.md, v3;
+   D-086, D-092, D-094). The contract data the UI uses is read against the contract's own text; the mock's
    canonical streams keep §4's ordering guarantees and §7's shapes; requests, the reducer, the
    dispatcher, device memory and the intent map behave as the contract says. */
 import assert from 'node:assert/strict';
@@ -83,6 +83,10 @@ for (const [id, make] of Object.entries(STREAMS)) {
       if (data.type === 'navigate') assert.ok(data.payload.intent in contract.SURFACES, `${id}: navigate intent`);
     }
   }
+  for (const { event, data } of events.filter((e) => e.event === 'suggestion')) {
+    assert.match(data.intent, /^prompt\.[a-z_]+$/, `${id}: a suggestion carries a prompt intent (§4, D-094)`);
+    assert.ok(!(data.intent in contract.SURFACES), `${id}: a suggestion intent is never a §6.1 id`);
+  }
   if (id === 'S13') {
     assert.ok(!events.some((e) => e.event === 'memory_update'), 'S13 is read-only');
     assert.ok(events.filter((e) => e.event === 'action').every((e) => contract.ACTIONS[e.data.type] === 'LOW'), 'S13 has only LOW actions');
@@ -92,14 +96,28 @@ for (const [id, make] of Object.entries(STREAMS)) {
     assert.ok(events.filter((e) => e.event === 'suggestion').length >= 1 && events.filter((e) => e.event === 'suggestion').length <= 5, 'S13 suggestions');
   }
 }
+// The contract's own fixtures use prompt intents in suggestions (§4, §12 S1/S13).
+for (const match of text.matchAll(/suggestion\{"[^"]*", ([\w.]+)\}/g)) {
+  assert.match(match[1], /^prompt\./, `§12 fixture suggestion intent ${match[1]} is a prompt intent`);
+}
+// Action labels are buttons: interface language, not support language (§7, D-094, D-080).
+assert.match(section('## 7. Actions', '## 8.'), /`label` is in the `interface` language/, '§7 puts labels in the interface layer');
+const mixed = buildRequest({
+  message: 'Lưu từ này.',
+  context: { selected_item: { type: 'word', text: '我', lang: 'zh' } },
+  languages: { interface: 'en', support: 'vi', target: 'zh' },
+});
+const saveEvents = STREAMS.S5(mixed).map(([event, data]) => ({ event, data }));
+assert.equal(saveEvents.find((e) => e.event === 'action').data.label, 'Save word', 'the button speaks the interface language');
+assert.equal(saveEvents.find((e) => e.event === 'segment_end').data.lang, 'vi', 'the reply speaks the support language');
 assert.equal(chooseStream({ trigger: 'open', context: {} }), 'S13');
 assert.equal(chooseStream({ message: 'Cho tôi xem tiến độ của user khác.', context: {} }), 'S8');
 assert.equal(chooseStream({ message: 'Lưu từ này.', context: { selected_item: { type: 'word', text: '我' } } }), 'S5');
 assert.equal(chooseStream({ message: 'x', context: { surface: 'writing.review', essay_id: '3' } }), 'S9');
 assert.equal(chooseStream({ message: 'x', context: {} }, 'SE'), 'SE');
 
-// 5. Requests: v2, omit what does not apply, contract language codes, words by text.
-assert.equal(base.contract_version, 2);
+// 5. Requests: the contract's version, omit what does not apply, contract language codes, words by text.
+assert.equal(base.contract_version, contract.CONTRACT_VERSION);
 assert.equal(base.context.locale.target, 'zh-CN');
 assert.deepEqual(base.context.selected_item, { type: 'word', text: '是', lang: 'zh-CN' }, 'a word has no id, only text and lang');
 const open = buildRequest({ trigger: 'open', context: { surface: 'orena.home' }, languages: { interface: 'en', support: 'en', target: 'en' } });

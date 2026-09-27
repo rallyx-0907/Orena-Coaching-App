@@ -1,0 +1,29 @@
+# Line endings.
+#
+# The validation gates (scripts/*.mjs, scripts/*.py, tests/) read source files as text and match
+# line-oriented patterns ("\n"). On a Windows checkout with core.autocrlf=true the working tree
+# got CRLF, and gates failed for an environment reason rather than a code one
+# (test_orena_reading_library and test_orena_writing_workspace, from 7565f6d on). Source text is
+# therefore LF in every checkout, whatever the platform; the repository already stores it as LF.
+# Windows-native scripts keep CRLF in the working tree.
+
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.py    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.svg   text eol=lf
+*.txt   text eol=lf
+*.tsv   text eol=lf
+*.toml  text eol=lf
+*.ini   text eol=lf
+*.sql   text eol=lf
+*.sh    text eol=lf
+
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
