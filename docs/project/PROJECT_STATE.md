@@ -332,9 +332,9 @@ capability-driven Chinese reading aids/Pinyin, and activity-evidence completion
 semantics are protected. Future skill integrations consume these contracts
 rather than duplicating or mass-rewriting Grammar.
 
-## Grammar Lab (merged into `codex/work` from `feature/grammar-lab`)
+## Grammar Lab (`feature/grammar-lab-pipeline`, from `codex/work`)
 
-Phase 0 of `docs/grammar_lab/SPEC.md` lives in `grammar_lab/` and
+Phase 0 and phase 1 of `docs/grammar_lab/SPEC.md` live in `grammar_lab/` and
 `docs/grammar_lab/`, isolated from the app. It is an offline, file-based lab with
 its own `pyproject.toml`; it does not import app code, and the app does not
 import it. No app code, evaluator, migration or runtime was changed.
@@ -345,13 +345,30 @@ import it. No app code, evaluator, migration or runtime was changed.
 - Content: the 10-point English sample upgraded to v0.2, one file per point,
   all `draft_ai`. Its dotted error tags are not evaluator labels, so each
   pitfall now carries a coarse evaluator label.
+- Phase 1 pipeline (SPEC §7 checklist): `evaluator_client.py` (staging/HTTP
+  only, no default `base_url` -- the public tunnel is production, a Safety
+  human gate), `llm_client.py` (Anthropic + OpenAI, cache by input hash),
+  `rules/en_morphology.py` (deterministic tables for 6 of the 10 points),
+  `generate.py` + `prompts/generate_point.md`, `verify.py` + `prompts/
+  blind_solve.md` (engine pitfall match, clean examples, blind solve --
+  vocabulary-level and back-translation deferred to phase 3 per SPEC §7),
+  `route.py` (SPEC §5.4 scoring/threshold) and `report_step.py`
+  (`reports/<run_id>/report.{json,html}`), wired into the CLI as `generate`,
+  `verify`, `route`, `report`.
 - Verification (local execution, not CI): `validate --lang en` is clean, and
-  113 tests pass in the lab venv. The app CI does not collect these tests.
-- The lab's grammar point IDs are independent of the R5 Concept IDs. How they
-  join is an open human decision before integration (SPEC §8).
+  215 tests pass in the lab venv (113 phase 0 + 102 phase 1). The app CI does
+  not collect these tests. No real managed-API/evaluator run has happened yet
+  (no key configured in the agent's environment) -- the CLI wiring itself was
+  smoke-tested and fails cleanly on the missing key rather than crashing.
+- The lab's grammar point IDs are independent of the R5 Concept IDs; R5 is
+  live (508 concepts, `/api/library/grammar*`) and a protected area. How the
+  lab joins it before integration is an open human decision -- investigation,
+  3 options and a recommendation are in `PHASE0_DECISIONS.md` §6.
 
-Detail and open decisions: `docs/grammar_lab/PHASE0_DECISIONS.md`. Status: phase
-0 awaits human review. Phase 1 has not started.
+Detail and open decisions: `docs/grammar_lab/PHASE0_DECISIONS.md`. Status:
+phase 0 self-reviewed and approved to proceed (Claude Code, 2026-09-27); phase
+1 tooling built and unit-tested, not yet run against a real API key or a real
+evaluator sandbox.
 
 ## R6 Speaking Core
 

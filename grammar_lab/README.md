@@ -25,11 +25,24 @@ python -m grammar_lab.pipeline.cli validate --lang en          # SPEC §5.2, exi
 python -m grammar_lab.pipeline.cli validate --lang en --json   # báo cáo dạng JSON
 python -m grammar_lab.pipeline.cli validate --lang en --mark   # ghi status=flagged + flags validate:<mã> vào file lỗi
 python -m grammar_lab.pipeline.cli export-error-tags           # xuất lại schema/error_tags.json từ engine chấm bài
+
+# Giai đoạn 1 (SPEC §5.1-§5.5) -- cần ANTHROPIC_API_KEY / OPENAI_API_KEY và một evaluator sandbox.
+python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple,en.there_is_are
+python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8011
+python -m grammar_lab.pipeline.cli route --lang en --gold-set-passed   # bỏ cờ này -> mọi mục bị flagged (SPEC §5.4)
+python -m grammar_lab.pipeline.cli report --lang en                    # reports/<run_id>/report.{json,html}
+
 python -m pytest grammar_lab/tests                              # toàn bộ test
 ```
 
 Mã lỗi của `validate` được liệt kê ở đầu [`pipeline/validate.py`](pipeline/validate.py); mỗi mã có ít
 nhất một ca đúng và một ca sai trong `tests/test_validate_rules.py`.
+
+`generate`/`verify` gọi API thật (`llm_client.py` có cache theo hash input ở `.cache/llm/`, không
+tính phí lần chạy lại). `evaluator_client.py` chỉ có chế độ staging (HTTP); **không có `base_url` mặc
+định** -- endpoint công khai duy nhất, `orena.chillpickle.org`, chui thẳng vào container production
+(`writing-coach:8000`), một "human gate" theo `AGENTS.md` phần Safety. Trỏ `--evaluator-url` vào một
+sandbox được phép thao tác (vd. `orena-foundation-web` ở `:8011`).
 
 ## Bố cục
 
@@ -42,8 +55,12 @@ nhất một ca đúng và một ca sai trong `tests/test_validate_rules.py`.
 | `content/<lang>/<id>.json` | Mỗi grammar point một file, tên file = `id` |
 | `functions/functions.yaml` | Lớp chức năng giao tiếp dùng chung |
 | `inventory/<lang>.yaml` | Danh mục chính (giai đoạn 3; hiện là `[]`) |
-| `pipeline/` | CLI và các bước; `generate`, `verify`, `route`, `coverage`, `*_client` là stub của giai đoạn 1 |
-| `rules/`, `prompts/`, `preview/` | Stub của giai đoạn 1–2 |
+| `pipeline/` | CLI và các bước. `coverage.py` còn là stub (cần inventory, giai đoạn 3); `preview/` là stub giai đoạn 2 |
+| `rules/en_morphology.py` | Bảng biến đổi tất định (SPEC §5.1 bước 1): third person -s, số nhiều, quá khứ, -ing, so sánh |
+| `pipeline/content_store.py` | Đọc/ghi `content/<lang>/` dùng chung giữa generate/verify/route |
+| `pipeline/llm_client.py` | Managed API (Anthropic, OpenAI), cache theo hash input ở `.cache/llm/` |
+| `pipeline/evaluator_client.py` | Client HTTP chế độ staging cho engine chấm bài (không có `base_url` mặc định) |
+| `pipeline/run_context.py`, `report_step.py` | `reports/<run_id>/*.json` + `reports/latest.txt` nối các bước; `report` gộp thành JSON/HTML |
 | `reports/<run_id>/` | Kết quả chạy (không commit) |
 
 ## Quy ước

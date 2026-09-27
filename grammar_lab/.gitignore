@@ -3,5 +3,6 @@
 __pycache__/
 reports/*
 !reports/.gitkeep
+.cache/
 *.egg-info/
 build/

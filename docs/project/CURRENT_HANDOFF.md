@@ -121,11 +121,27 @@ Review), the agent panel on the mock, onboarding, then the cutover.
 Intelligence lane (`feature/orena-intelligence`): Agent Intelligence under
 D-085 against `AGENT_CONTRACT.md`; no learner-UI redesign there.
 
-## Grammar Lab (merged from `feature/grammar-lab`)
+## Grammar Lab (`feature/grammar-lab-pipeline`, from `codex/work`)
 
-Phase 0 of `docs/grammar_lab/SPEC.md`: an isolated, offline, file-based content
-pipeline in `grammar_lab/` (own `pyproject.toml`, own tests) and
-`docs/grammar_lab/`. It does not import app code, the app does not import it,
-and app CI does not collect its tests; no app code, router, engine, migration or
-runtime is involved. NEXT: human review of `docs/grammar_lab/PHASE0_DECISIONS.md`
-(including how lab point IDs join the R5 Concept IDs, SPEC §8); phase 1 waits.
+An isolated, offline, file-based content pipeline in `grammar_lab/` (own
+`pyproject.toml`, own tests) and `docs/grammar_lab/`. It does not import app
+code, the app does not import it, and app CI does not collect its tests; no
+app code, router, engine, migration or runtime is involved.
+
+Phase 0 (schema v0.2, 10-point English sample, `validate.py`) was
+self-reviewed and approved by Claude Code (2026-09-27,
+`PHASE0_DECISIONS.md`). Phase 1 (SPEC §7 checklist) is built and unit-tested
+(215 tests): `evaluator_client.py`, `llm_client.py` (Anthropic + OpenAI),
+`rules/en_morphology.py`, `generate.py`, `verify.py`, `route.py`, `report`.
+NEXT:
+
+- A real run needs `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` (none configured in
+  the agent's environment) and an evaluator sandbox reachable at
+  `--evaluator-url` -- never the public `orena.chillpickle.org` tunnel, which
+  is the production container (`writing-coach:8000`), a Safety human gate.
+  Estimated cost for a 10-point generate+verify smoke run: well under $1
+  (Haiku 4.5 generate + a small OpenAI-family model for blind solve).
+- Human review of `docs/grammar_lab/PHASE0_DECISIONS.md` §6: how lab point
+  IDs join the R5 Concept IDs before integration (SPEC §8). R5 is live (508
+  concepts, `/api/library/grammar*`) and a protected area; §6 has the
+  investigation, three options and a recommendation.
