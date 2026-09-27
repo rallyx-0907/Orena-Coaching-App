@@ -1,10 +1,10 @@
-/* The agent contract as data (docs/project/AGENT_CONTRACT.md, contract_version 3, D-092, D-094).
+/* The agent contract as data (docs/project/AGENT_CONTRACT.md, contract_version 4, D-092, D-094, D-095).
 
    Everything the new UI needs to speak the contract lives here: the version, the closed enums, the
    action allowlist with its fixed risk, the surface / intent id space, and the locale mapping at
    the UI's boundary. DOM-free, so scripts/test_orena_agent.mjs checks it against the contract text. */
 
-export const CONTRACT_VERSION = 3;
+export const CONTRACT_VERSION = 4;
 
 export const EVENTS = Object.freeze([
   'session', 'segment_delta', 'segment_end', 'tool_call', 'tool_result', 'evidence', 'action',
@@ -77,6 +77,36 @@ export function fromContractLang(code) {
   if (value === 'zh-cn' || value === 'zh' || value.startsWith('zh-')) return 'zh';
   return value || 'en';
 }
+
+/* §4.1: the classes a server sends and the fallback each carries. The UI acts on the fallback. */
+export const ERROR_CLASSES = Object.freeze({ provider_unavailable: 'retry', internal_error: 'retry', voice_unavailable: 'text_only' });
+export const FALLBACKS = Object.freeze(['retry', 'text_only', 'none']);
+
+export function fallbackOf(value) {
+  return FALLBACKS.includes(value) ? value : 'none';
+}
+
+/* §2.1: what a response's status means before any stream is read. `wait` carries the seconds
+   Retry-After gives (whole seconds, at least 1; an HTTP date is read too). */
+export function readStatus(status, retryAfter = null, now = Date.now()) {
+  if (status >= 200 && status < 300) return { kind: 'stream' };
+  if (status === 401) return { kind: 'signed_out' };
+  if (status === 404) return { kind: 'absent' };
+  if (status === 409) return { kind: 'language_mismatch' };
+  if (status === 429) return { kind: 'wait', seconds: retrySeconds(retryAfter, now) };
+  return { kind: 'error', class: 'transport', fallback: status === 422 ? 'none' : 'retry' };
+}
+
+function retrySeconds(value, now) {
+  const text = String(value ?? '').trim();
+  if (/^\d+$/.test(text)) return Math.max(1, Number(text));
+  const at = Date.parse(text);
+  return Number.isFinite(at) ? Math.max(1, Math.ceil((at - now) / 1000)) : 1;
+}
+
+/* What the transport tells the conversation about a status (§2.1). The client makes these
+   itself; a server never sends them, so they are not §4 events. */
+export const CLIENT_EVENTS = Object.freeze(['wait', 'absent', 'language_mismatch']);
 
 export const LIMITS = Object.freeze({
   coachNotes: 20,

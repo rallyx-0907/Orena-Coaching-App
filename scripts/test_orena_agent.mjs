@@ -1,7 +1,8 @@
-/* Gate for the new UI's side of the Orena agent contract (docs/project/AGENT_CONTRACT.md, v3;
-   D-086, D-092, D-094). The contract data the UI uses is read against the contract's own text; the mock's
-   canonical streams keep §4's ordering guarantees and §7's shapes; requests, the reducer, the
-   dispatcher, device memory and the intent map behave as the contract says. */
+/* Gate for the new UI's side of the Orena agent contract (docs/project/AGENT_CONTRACT.md, v4;
+   D-086, D-092, D-094, D-095). The contract data the UI uses is read against the contract's own
+   text; the mock's canonical streams keep §4's ordering guarantees and §7's shapes; requests, the
+   reducer, the dispatcher, device memory and the intent map behave as the contract says; the live
+   transport answers every §2.1 status and §4.1 fallback as the contract's tables say. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
@@ -180,4 +181,111 @@ assert.equal(intentHref('reading.workspace', {}), null);
 assert.deepEqual(supportedIntents(new Set(['coming'])), [], 'nothing is offered before its screen exists');
 assert.ok(supportedIntents(new Set(['today', 'orena'])).includes('orena.home'));
 
-console.log(`Orena agent contract v${contract.CONTRACT_VERSION}: data equals the contract text, ${Object.keys(STREAMS).length} canonical streams keep §4/§7, requests, reducer, dispatcher, device memory and intents behave; live transport off: PASS`);
+// 10. §2.1 HTTP statuses and §4.1 error classes: the tables the UI reads equal the contract text,
+//     and the live transport answers each status as they say (driven with a fake fetch; it stays off).
+const statusRows = [...section('### 2.1 HTTP status', '## 3.').matchAll(/^\| `(\d{3})` \|/gm)].map((m) => Number(m[1]));
+assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429], '§2.1 statuses');
+assert.deepEqual(
+  Object.fromEntries(statusRows.map((s) => [s, contract.readStatus(s, '3').kind])),
+  { 200: 'stream', 401: 'signed_out', 404: 'absent', 409: 'language_mismatch', 422: 'error', 429: 'wait' },
+  'each status reads as §2.1 says',
+);
+assert.equal(contract.readStatus(422).fallback, 'none', 'a 422 is a client defect: nothing to retry');
+assert.equal(contract.readStatus(500).fallback, 'retry', 'a status outside §2.1 is a transport error');
+assert.equal(contract.readStatus(429, '7').seconds, 7);
+assert.equal(contract.readStatus(429, null).seconds, 1, 'no Retry-After waits the minimum');
+assert.equal(contract.readStatus(429, 'Sun, 27 Sep 2026 00:00:10 GMT', Date.parse('2026-09-27T00:00:00Z')).seconds, 10, 'an HTTP date is read');
+const fallbackRows = [...section('### 4.1 Error classes', 'The classes a server sends').matchAll(/^\| `(\w+)` \| /gm)].map((m) => m[1]).filter((name) => name !== 'fallback');
+assert.deepEqual(fallbackRows, [...contract.FALLBACKS], '§4.1 fallbacks');
+assert.match(section('## 4. Events', 'Ordering guarantees'), /fallback: "retry" \| "text_only" \| "none"/, '§4 error event names the same fallbacks');
+const classRows = [...section('The classes a server sends', '## 5.').matchAll(/^\| `(\w+)` \| `(\w+)` \|/gm)].map((m) => [m[1], m[2]]).filter(([name]) => name !== 'class');
+assert.deepEqual(Object.fromEntries(classRows), { ...contract.ERROR_CLASSES }, '§4.1 classes and their fallbacks');
+assert.equal(contract.fallbackOf('later'), 'none', 'an unknown fallback reads as none');
+
+const { liveTurn, turn, probe } = await import('../static/orena/agent/transport.js');
+const { orenaPresent, onOrenaPresence } = await import('../static/orena/agent/presence.js');
+const SSE_OK = 'event: session\ndata: {"session_id":"s1","contract_version":4}\n\nevent: done\ndata: {"usage":{},"trace_id":"t"}\n\n';
+const answer = (status, body = null, headers = {}) => new Response(body, { status, headers });
+async function drive(responses, { abortOnSleep = false } = {}) {
+  const queue = [...responses];
+  const sent = [];
+  const slept = [];
+  const out = [];
+  const controller = new AbortController();
+  const fetchImpl = async (url, init) => {
+    sent.push(JSON.parse(init.body));
+    const next = queue.shift();
+    if (next instanceof Error) throw next;
+    return next;
+  };
+  const sleep = async (ms) => {
+    slept.push(ms);
+    if (abortOnSleep) controller.abort();
+  };
+  for await (const e of liveTurn(base, { signal: controller.signal, fetchImpl, sleep, signedOut: () => out.push({ event: 'signed_out' }), log: () => {} })) out.push(e);
+  return { events: out.map((e) => (e.event === 'error' ? `error:${e.data.class}:${e.data.fallback}` : e.event)), sent, slept };
+}
+let run = await drive([answer(429, '{"detail":"rate_limited"}', { 'Retry-After': '3' }), answer(200, SSE_OK)]);
+assert.deepEqual(run.events, ['wait', 'session', 'done'], '429: wait, then the turn');
+assert.deepEqual(run.slept, [3000], 'waited Retry-After seconds');
+assert.equal(run.sent.length, 2);
+assert.deepEqual(run.sent[1], run.sent[0], 'the same request is sent again');
+run = await drive([answer(429, null, { 'Retry-After': '2' }), answer(429, null, { 'Retry-After': '5' }), answer(200, SSE_OK)]);
+assert.deepEqual(run.slept, [2000, 5000], 'refused again, it waits again');
+run = await drive([answer(429, null, { 'Retry-After': '4' })], { abortOnSleep: true });
+assert.deepEqual([run.events, run.sent.length], [['wait'], 1], 'a cancelled wait sends nothing more');
+run = await drive([answer(404, '{"detail":"Not Found"}')]);
+assert.deepEqual(run.events, ['absent'], '404: Orena is absent, no error');
+run = await drive([answer(409, '{"detail":"target_language_mismatch"}')]);
+assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409: handed back, never resent');
+run = await drive([answer(401)]);
+assert.deepEqual(run.events, ['signed_out'], '401: the app signs the learner in again');
+run = await drive([answer(422, '{"detail":[]}')]);
+assert.deepEqual(run.events, ['error:transport:none'], '422: a client defect, nothing to retry');
+run = await drive([answer(503)]);
+assert.deepEqual(run.events, ['error:transport:retry'], 'an unlisted status: retry');
+run = await drive([new TypeError('network')]);
+assert.deepEqual(run.events, ['error:transport:retry'], 'a network failure: retry');
+run = await drive([answer(200, 'event: session\ndata: {"session_id":"s1"}\n\n')]);
+assert.deepEqual(run.events, ['session', 'error:transport:retry'], 'a stream without done or error: retry');
+run = await drive([answer(200, 'event: session\ndata: {"session_id":"s1"}\n\nevent: error\ndata: {"class":"voice_unavailable","message":"m","fallback":"text_only"}\n\n')]);
+assert.deepEqual(run.events, ['session', 'error:voice_unavailable:text_only'], 'a server error passes through');
+
+// The transport tells the shell when Orena is absent; while the mock serves, Orena is present.
+let probed = 0;
+assert.equal(await probe({ fetchImpl: async () => { probed += 1; return answer(404); } }), true, 'the mock is always on');
+assert.equal(probed, 0, 'nothing calls /api/agent/* while AGENT_LIVE is false');
+const presence = [];
+const stopWatching = onOrenaPresence((value) => presence.push(value));
+assert.equal(orenaPresent(), true);
+globalThis.location = { hash: '#/orena?agent=H404' };
+const absentRun = [];
+for await (const e of turn(base)) absentRun.push(e.event);
+assert.deepEqual(absentRun, ['absent'], 'the mock plays a 404');
+assert.deepEqual([orenaPresent(), presence], [false, [false]], 'a 404 hides Orena for the visit');
+stopWatching();
+delete globalThis.location;
+
+// The mock plays the other statuses; the reducer folds them.
+const waited = [];
+for await (const e of mockTurn(base, { forced: 'H429', pace: 0 })) waited.push(e.event);
+assert.deepEqual(waited.slice(0, 2), ['wait', 'session'], 'H429: a wait, then the answer');
+const mismatch = [];
+for await (const e of mockTurn(base, { forced: 'H409', pace: 0 })) mismatch.push(e.event);
+assert.deepEqual(mismatch, ['language_mismatch']);
+const folded = createSession({ log: () => {} });
+folded.learner('Tại sao?');
+folded.apply({ event: 'wait', data: { seconds: 3 } });
+assert.deepEqual([folded.state().thinking, folded.state().waiting], [true, 3], 'a wait keeps Orena thinking');
+folded.apply({ event: 'language_mismatch', data: {} });
+assert.deepEqual([folded.state().unsent, folded.state().thinking, folded.state().messages.length], ['Tại sao?', false, 0], 'the message is handed back unsent');
+folded.learner('Tại sao?');
+folded.apply({ event: 'session', data: { session_id: 's9' } });
+folded.apply({ event: 'error', data: { class: 'something_new', message: 'm', fallback: 'later' } });
+assert.deepEqual(folded.state().messages.at(-1).error, { class: 'something_new', message: 'm', fallback: 'none' }, 'unknown class: act on the fallback; unknown fallback: none');
+const gone = createSession({ log: () => {} });
+gone.opening();
+gone.apply({ event: 'absent', data: {} });
+assert.deepEqual([gone.state().absent, gone.state().thinking, gone.state().messages.length], [true, false, 0], 'absent: no error, nothing to show');
+
+console.log(`Orena agent contract v${contract.CONTRACT_VERSION}: data equals the contract text, ${Object.keys(STREAMS).length} canonical streams keep §4/§7, requests, reducer, dispatcher, device memory and intents behave, every §2.1 status and §4.1 fallback is answered as written; live transport off: PASS`);

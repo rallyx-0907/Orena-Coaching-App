@@ -3,10 +3,12 @@
 Governance
 
 Purpose: the single interface between the Orena Intelligence backend (lane `feature/orena-intelligence`, D-085) and the new learner UI that replaces the old one on `codex/work` (D-086). Both sides implement this file; neither reads the other's implementation.
-Authority: D-085, D-086, D-092, D-094. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
+Authority: D-085, D-086, D-092, D-094, D-095. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 3`
+`contract_version: 4`
+
+v4 (D-095, 2026-09-27): §2.1 names the HTTP statuses of `/api/agent/*` and what the UI does with each - `404` while the agent is off (Orena is absent, not an error), `409 target_language_mismatch`, `429 rate_limited` with `Retry-After` (wait, then send again) - and §4.1 names the stream's error classes and what each `fallback` asks of the UI. No event, field, action or intent changed; a server answers a v3 client exactly as before.
 
 v3 (D-094, 2026-09-27): an action's `label` is in the **interface** language - a button is interface layer (D-080) - not the support language v2 said; and a suggestion's `intent` is a **prompt intent** in the `prompt.` namespace, never a §6.1 id - the canonical streams S1 and S13 used navigation ids there. Nothing else changed.
 
@@ -40,13 +42,28 @@ Auth: the app's existing session. The server never trusts an identifier the mode
 
 SSE framing: `event: <name>\ndata: <json>\n\n`. The stream always ends with `done` or `error`. The client may abort (fetch AbortController); the server stops generating.
 
+### 2.1 HTTP status
+
+The client reads the status before it reads a stream. Every `/api/agent/*` route answers one of these:
+
+| Status | Body | When | The UI |
+| --- | --- | --- | --- |
+| `200` | the stream (§4), or the registry (§8) | the request was admitted | reads it |
+| `401` | the app's | no authenticated session; the app's auth answers before the agent runs | the app's own sign-in handling, as for any API; not an agent state |
+| `404` | `{"detail": "Not Found"}` | the agent is off on this server: `AGENT_ENABLED` is not on, and always in production. While it is off every `/api/agent/*` request answers 404, a malformed one too (never 422) | Orena is absent for the rest of the visit: the UI hides every Orena entry point (the rail's Ask Orena field and mic, the phone bar's centre action, every Ask Orena control, the Orena destination). Not an error: no message, no retry. The UI learns it from `GET /api/agent/capabilities` when it starts, or from any 404 on these routes |
+| `409` | `{"detail": "target_language_mismatch"}` | turn only: `context.locale.target`, mapped at the server's boundary (`zh-CN` → `zh`), is not the learner's learning language on the server - it changed in another tab or on another device after the UI built its context. Nothing ran and nothing was metered | the UI re-reads the learner's learning language and applies it as any change of learning language; the learner's message stays unsent in the composer; nothing is resent automatically |
+| `422` | a validation detail | a request that does not match §3, or an `interface` on §8 that is not an interface language | a client defect: the client logs it and ends the turn with its own `transport` error, `fallback: none` (§4.1) |
+| `429` | `{"detail": "rate_limited"}`, header `Retry-After: <seconds>` (whole seconds, at least 1) | the learner's sliding window is full; turns and capability reads are counted apart. Checked after the 404 and before the body is read: nothing ran, nothing was metered, and the refused request is not counted | a brief wait state, not an error: Orena stays thinking, then the client sends the same request again after `Retry-After` seconds; refused again, it waits again. The learner may cancel the wait (abort) |
+
+A `409` or `422` counts toward the learner's limit; only a refused `429` does not.
+
 ---
 
 ## 3. Request — `POST /api/agent/turn`
 
 ```json
 {
-  "contract_version": 3,
+  "contract_version": 4,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -125,6 +142,26 @@ done           { usage: { input_tokens, output_tokens }, trace_id }
 Ordering guarantees: `session` first; every `segment_delta` for an index precedes its `segment_end`; an `evidence` event precedes any `segment_end` that cites it; `done` or `error` last.
 
 `error.message` is learner-safe and already in the `support` language. It never contains a provider name, key, region or raw provider output.
+
+### 4.1 Error classes
+
+An `error` event ends the turn. The UI acts on its `fallback`, never on its `class`: an unknown class is handled by its `fallback`, and an unknown `fallback` reads as `none`.
+
+| `fallback` | The UI |
+| --- | --- |
+| `retry` | shows `message` with a retry control; retrying sends the same turn again as a new request. A retry is the learner's, never automatic: there is no switch to another provider |
+| `text_only` | the voice session ended (§9): voice mode closes, the conversation continues in text, and `message` says so |
+| `none` | shows `message`; there is nothing to retry |
+
+The classes a server sends:
+
+| `class` | `fallback` | When |
+| --- | --- | --- |
+| `provider_unavailable` | `retry` | the model provider did not answer usably: down, timed out, empty or malformed |
+| `internal_error` | `retry` | any other failure inside the turn |
+| `voice_unavailable` | `text_only` | a voice session failed (§9) |
+
+The client adds one class of its own, which a server never sends: `transport`, with `fallback: retry` when the network fails, a status outside §2.1 arrives, or the stream ends without `done` or `error`, and with `fallback: none` for a `422`. Its message is the client's own copy in the `support` language.
 
 A suggestion's `intent` is a prompt intent: it names the question the suggestion asks, in the `prompt.` namespace (`prompt.review_due`, `prompt.next_step`, `prompt.explain_word`, …). It is never a §6.1 surface or navigation id - going somewhere is an `action` (`navigate`). Tapping a suggestion sends its `label` as the learner's next message.
 
@@ -238,7 +275,7 @@ Rules:
 ## 8. Capabilities — `GET /api/agent/capabilities`
 
 ```json
-{ "contract_version": 3,
+{ "contract_version": 4,
   "capabilities": [
     { "id": "speaking.pronunciation.line", "title": "…", "surfaces": ["speaking.workspace"],
       "actions": ["play_model", "play_user", "say_again", "compare_with_model"],
@@ -278,6 +315,8 @@ POST /api/agent/voice/session
 ## 11. Mock agent (UI lane)
 
 The UI builds and tests against a frontend mock that replays §12 streams, selected by a flag, with no backend. The same streams are the backend's contract tests: the real server must produce the same event sequence and payload shapes (text may differ).
+
+The mock also answers the §2.1 statuses a live server can give (`?agent=H404`, `H409`, `H429` in the address), so every state the UI owes them can be built and reviewed without a backend.
 
 ---
 

@@ -2,8 +2,13 @@
    its stream (§4) into what the panel draws. DOM-free; the panel renders `state()`.
 
    The client shows Orena as thinking from sending a turn until the first event, and a tool's
-   learner-safe label while it runs (§4). Unknown events are ignored and logged. */
-import { CONTRACT_VERSION, EVENTS, toContractLang, SELECTED_ITEM_TYPES } from './contract.js';
+   learner-safe label while it runs (§4). Unknown events are ignored and logged.
+
+   The transport's own events (§2.1) fold in too: `wait` keeps Orena thinking through a rate-limit
+   pause (`waiting` holds the seconds); `language_mismatch` hands the learner's message back unsent
+   (`unsent`), for the panel to return to the composer once the learning language is re-read;
+   `absent` means Orena is off (`absent`), which the panel answers by closing, not by an error. */
+import { CONTRACT_VERSION, EVENTS, CLIENT_EVENTS, fallbackOf, toContractLang, SELECTED_ITEM_TYPES } from './contract.js';
 
 const CONTEXT_FIELDS = ['surface', 'activity_type', 'lesson_id', 'content_id', 'attempt_id', 'take_ref', 'essay_id', 'client_evidence'];
 
@@ -44,6 +49,9 @@ export function createSession({ log = console.warn } = {}) {
   const messages = [];
   let thinking = false;
   let tool = null;
+  let waiting = null;
+  let unsent = null;
+  let absent = false;
 
   const current = () => {
     const last = messages[messages.length - 1];
@@ -54,25 +62,45 @@ export function createSession({ log = console.warn } = {}) {
   };
 
   return {
-    state: () => ({ sessionId, messages: messages.map((m) => ({ ...m })), thinking, tool }),
+    state: () => ({ sessionId, messages: messages.map((m) => ({ ...m })), thinking, tool, waiting, unsent, absent }),
     sessionId: () => sessionId,
     /* The learner's own message (not added for an opening turn). */
     learner(text) {
       messages.push({ role: 'learner', text: String(text) });
       thinking = true;
+      unsent = null;
     },
     opening() {
       thinking = true;
+      unsent = null;
     },
     restore(saved) {
       for (const message of saved || []) messages.push({ ...message, done: true });
     },
     apply({ event, data = {} }) {
+      if (CLIENT_EVENTS.includes(event)) {
+        if (event === 'wait') {
+          waiting = Number(data.seconds) || 1;
+          thinking = true;
+          return;
+        }
+        thinking = false;
+        waiting = null;
+        tool = null;
+        const last = messages[messages.length - 1];
+        if (last?.role === 'learner') {
+          messages.pop();
+          unsent = last.text;
+        }
+        if (event === 'absent') absent = true;
+        return;
+      }
       if (!EVENTS.includes(event)) {
         log('[Orena agent] ignored unknown event', event);
         return;
       }
       thinking = false;
+      waiting = null;
       if (event === 'session') {
         sessionId = data.session_id || sessionId;
         return;
@@ -107,7 +135,7 @@ export function createSession({ log = console.warn } = {}) {
       } else if (event === 'suggestion') {
         reply.suggestions.push(data);
       } else if (event === 'error') {
-        reply.error = { class: data.class, message: String(data.message || ''), fallback: data.fallback || 'none' };
+        reply.error = { class: data.class, message: String(data.message || ''), fallback: fallbackOf(data.fallback) };
         reply.done = true;
         tool = null;
       } else if (event === 'done') {

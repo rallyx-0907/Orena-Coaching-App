@@ -14,7 +14,7 @@ approval, or production readiness.
 `9c0fe31`, integration HEAD `7565f6d`). D-085: Agent Intelligence develops on
 `feature/orena-intelligence`. D-086: the new learner UI replaces the old one on
 `codex/work` and is the only UI that carries the agent; both lanes build
-against `docs/project/AGENT_CONTRACT.md` (contract_version 3, D-092, D-094),
+against `docs/project/AGENT_CONTRACT.md` (contract_version 4, D-092, D-094, D-095),
 edited only on `codex/work`.
 
 **New learner UI migration (D-088 - D-091), in progress on `codex/work`.** The
