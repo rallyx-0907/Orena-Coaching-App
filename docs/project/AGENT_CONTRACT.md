@@ -8,7 +8,7 @@ Change when: a field, event, action, intent or rule below changes. Edit **only o
 
 `contract_version: 3`
 
-v3 (D-094, 2026-09-27): an action's `label` is in the **interface** language - a button is interface layer (D-080) - not the support language v2 said. Nothing else changed.
+v3 (D-094, 2026-09-27): an action's `label` is in the **interface** language - a button is interface layer (D-080) - not the support language v2 said; and a suggestion's `intent` is a **prompt intent** in the `prompt.` namespace, never a §6.1 id - the canonical streams S1 and S13 used navigation ids there. Nothing else changed.
 
 v2 (D-092, 2026-09-27): the Orena destination (`orena.home`), an opening turn without a learner message (`trigger: "open"`), `display` fields on actions and evidence, and action payloads and ids that match the real APIs (words by `{ text, lang }`, client-held takes by `take_ref`, the stored attempt record by `attempt_id`). A server never sends a v2-only field, id or action shape to a client that declared `contract_version: 1`; to such a client it sends none of the changed actions (§7). To a client that declared `contract_version: 2` it may still send action labels in the support language.
 
@@ -125,6 +125,8 @@ done           { usage: { input_tokens, output_tokens }, trace_id }
 Ordering guarantees: `session` first; every `segment_delta` for an index precedes its `segment_end`; an `evidence` event precedes any `segment_end` that cites it; `done` or `error` last.
 
 `error.message` is learner-safe and already in the `support` language. It never contains a provider name, key, region or raw provider output.
+
+A suggestion's `intent` is a prompt intent: it names the question the suggestion asks, in the `prompt.` namespace (`prompt.review_due`, `prompt.next_step`, `prompt.explain_word`, …). It is never a §6.1 surface or navigation id - going somewhere is an `action` (`navigate`). Tapping a suggestion sends its `label` as the learner's next message.
 
 The client shows Orena as thinking from the moment it sends a turn until the first event, and shows `tool_call.label` while a tool runs; there is no separate text-mode thinking event.
 
@@ -284,7 +286,7 @@ The UI builds and tests against a frontend mock that replays §12 streams, selec
 `S1 app_help` — surface `vocabulary.my_language`, "Màn này dùng để làm gì?"
 
 ```text
-session → segment_delta… → segment_end{0, vi, …, neutral_explain} → suggestion{"Ôn từ đến hạn", review_due} → done
+session → segment_delta… → segment_end{0, vi, …, neutral_explain} → suggestion{"Ôn từ đến hạn", prompt.review_due} → done
 ```
 
 `S5 save_word` — selected word 我 (`{ type: word, text: "我", lang: "zh-CN" }`), "Lưu từ này."
@@ -325,7 +327,7 @@ session → tool_call{get_pronunciation_attempt} → tool_result{…, [e1]}
 
 ```text
 session → segment_end{0, vi, "…", neutral_explain}
-→ suggestion{"Ôn từ đến hạn", vocabulary.review_due} → suggestion{…} → done   # no memory_update, no error claim
+→ suggestion{"Ôn từ đến hạn", prompt.review_due} → suggestion{…} → done   # prompt intents only; no memory_update, no error claim
 ```
 
 `SE provider failure` — `session → error{class:"provider_unavailable", message:"Orena đang bận, thử lại sau nhé.", fallback:"retry"}`.

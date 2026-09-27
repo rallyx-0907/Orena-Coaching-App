@@ -111,7 +111,7 @@ function session(request) {
 export const STREAMS = {
   S1(request) {
     const w = words(request);
-    return [session(request), ...segment(0, supportLang(request), w.s1, 'neutral_explain'), ['suggestion', { label: w.s1s, intent: 'vocabulary.review_due' }], done()];
+    return [session(request), ...segment(0, supportLang(request), w.s1, 'neutral_explain'), ['suggestion', { label: w.s1s, intent: 'prompt.review_due' }], done()];
   },
   S5(request) {
     const w = words(request);
@@ -171,9 +171,9 @@ export const STREAMS = {
     return [
       session(request),
       ['segment_end', { index: 0, lang: supportLang(request), text: w.s13, voice_style: 'neutral_explain' }],
-      ['suggestion', { label: w.s1s, intent: 'vocabulary.review_due' }],
-      ['suggestion', { label: w.s13a, intent: 'coaching.next_step' }],
-      ['suggestion', { label: w.s13b, intent: 'vocabulary.explain' }],
+      ['suggestion', { label: w.s1s, intent: 'prompt.review_due' }],
+      ['suggestion', { label: w.s13a, intent: 'prompt.next_step' }],
+      ['suggestion', { label: w.s13b, intent: 'prompt.explain_word' }],
       done(),
     ];
   },

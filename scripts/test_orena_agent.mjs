@@ -83,6 +83,10 @@ for (const [id, make] of Object.entries(STREAMS)) {
       if (data.type === 'navigate') assert.ok(data.payload.intent in contract.SURFACES, `${id}: navigate intent`);
     }
   }
+  for (const { event, data } of events.filter((e) => e.event === 'suggestion')) {
+    assert.match(data.intent, /^prompt\.[a-z_]+$/, `${id}: a suggestion carries a prompt intent (§4, D-094)`);
+    assert.ok(!(data.intent in contract.SURFACES), `${id}: a suggestion intent is never a §6.1 id`);
+  }
   if (id === 'S13') {
     assert.ok(!events.some((e) => e.event === 'memory_update'), 'S13 is read-only');
     assert.ok(events.filter((e) => e.event === 'action').every((e) => contract.ACTIONS[e.data.type] === 'LOW'), 'S13 has only LOW actions');
@@ -91,6 +95,10 @@ for (const [id, make] of Object.entries(STREAMS)) {
     assert.ok(segs[0].data.text.length <= contract.LIMITS.openingSegment, 'S13 greeting is short');
     assert.ok(events.filter((e) => e.event === 'suggestion').length >= 1 && events.filter((e) => e.event === 'suggestion').length <= 5, 'S13 suggestions');
   }
+}
+// The contract's own fixtures use prompt intents in suggestions (§4, §12 S1/S13).
+for (const match of text.matchAll(/suggestion\{"[^"]*", ([\w.]+)\}/g)) {
+  assert.match(match[1], /^prompt\./, `§12 fixture suggestion intent ${match[1]} is a prompt intent`);
 }
 // Action labels are buttons: interface language, not support language (§7, D-094, D-080).
 assert.match(section('## 7. Actions', '## 8.'), /`label` is in the `interface` language/, '§7 puts labels in the interface layer');
