@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
@@ -16,6 +17,10 @@ from writing_coach.ai.base import (
     AIProviderResponseInvalid,
     AIProviderUnavailable,
     AIResult,
+    ChatFinished,
+    ChatStreamEvent,
+    ChatTextDelta,
+    ChatToolCall,
     extract_json_object,
 )
 from writing_coach.ai.capabilities import AIOperation
@@ -37,6 +42,9 @@ class ProviderDefinition:
 
 
 _STRUCTURED_TEXT_OPERATIONS = frozenset({AIOperation.STRUCTURED_TEXT_GENERATION})
+# The managed chat providers also stream agent turns with native tool calls
+# (Orena Intelligence, D-085). A local model never does (spec D2).
+_CLOUD_CHAT_OPERATIONS = _STRUCTURED_TEXT_OPERATIONS | {AIOperation.AGENT_TURN}
 
 _RATE_LIMIT_HEADER_KEYS = {
     "x-ratelimit-limit-requests": "requests_limit",
@@ -87,7 +95,7 @@ _PROVIDER_DEFINITIONS = (
         name="OpenAI API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
     ProviderDefinition(
@@ -95,7 +103,7 @@ _PROVIDER_DEFINITIONS = (
         name="DeepSeek API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
     ProviderDefinition(
@@ -103,7 +111,7 @@ _PROVIDER_DEFINITIONS = (
         name="Groq API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
     ProviderDefinition(
@@ -111,7 +119,7 @@ _PROVIDER_DEFINITIONS = (
         name="Gemini API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
 )
@@ -661,6 +669,171 @@ class OpenAICompatibleProvider:
                 "rate_limit": dict(self._last_rate_limit),
             },
         )
+
+
+    def stream_chat(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        model: str,
+        max_output_tokens: int,
+        temperature: float | None = None,
+        should_stop: Callable[[], bool] = lambda: False,
+        read_timeout: float | None = None,
+    ) -> Iterator[ChatStreamEvent]:
+        """One streamed chat round with native tool calls (Orena Intelligence, D-085).
+
+        The same chat/completions endpoint as `generate_json_once`, with
+        `stream: true` and the OpenAI `tools` array. Transport and HTTP
+        failures raise here, before anything streams; the returned iterator
+        yields text deltas, then each complete tool call, then one
+        `ChatFinished`, and stops early when `should_stop()` turns true.
+        `read_timeout` bounds each wait for the response and for every next
+        piece of it, so a silent provider cannot hold a worker thread for the
+        whole server timeout after the learner has gone.
+        """
+
+        if not self.configured:
+            raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
+        if not model:
+            raise AIProviderUnavailable(f"No model is selected for {self.name}.")
+        body: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "stream": True,
+            "max_tokens": max_output_tokens,
+        }
+        if tools:
+            body["tools"] = tools
+        if temperature is not None:
+            body["temperature"] = temperature
+        if self.id in _STREAM_USAGE_PROVIDERS:
+            # These report usage on a stream only when asked; an endpoint whose
+            # support is unverified is not sent a field it may reject, and its
+            # usage stays unknown rather than being guessed.
+            body["stream_options"] = {"include_usage": True}
+        wait = min(float(self.timeout), read_timeout) if read_timeout and read_timeout > 0 else float(self.timeout)
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._headers(),
+                json=body,
+                timeout=(min(10.0, wait), wait),
+                stream=True,
+            )
+        except requests.ConnectionError as exc:
+            raise AIProviderUnavailable(f"{self.name} is not reachable.") from exc
+        except requests.Timeout as exc:
+            raise AIProviderUnavailable(f"{self.name} timed out.") from exc
+        self._last_rate_limit = _normalized_rate_limit_headers(getattr(response, "headers", None))
+        if response.status_code >= 400:
+            detail = ""
+            try:
+                detail = str(response.json().get("error", {}).get("message") or "")
+            except Exception:
+                pass
+            finally:
+                response.close()
+            error = AIProviderError(f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip())
+            error.rate_limit = dict(self._last_rate_limit)
+            raise error
+        return self._read_chat_stream(response, should_stop)
+
+    def _read_chat_stream(
+        self, response: requests.Response, should_stop: Callable[[], bool]
+    ) -> Iterator[ChatStreamEvent]:
+        calls: dict[object, dict[str, Any]] = {}
+        order: list[object] = []
+        finish_reason = ""
+        usage: dict[str, Any] = {}
+        try:
+            for raw in response.iter_lines():
+                if should_stop():
+                    return
+                line = raw.decode("utf-8") if isinstance(raw, bytes) else str(raw or "")
+                if not line.startswith("data:"):
+                    continue  # blank keep-alives, comments, event names
+                data = line[len("data:"):].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except ValueError as exc:
+                    raise AIProviderResponseInvalid(f"{self.name} sent a malformed stream chunk.") from exc
+                if not isinstance(chunk, dict):
+                    raise AIProviderResponseInvalid(f"{self.name} sent a malformed stream chunk.")
+                if chunk.get("error"):
+                    raise AIProviderError(f"{self.name} reported an error while streaming.")
+                for container in (chunk, chunk.get("x_groq")):
+                    if isinstance(container, dict) and isinstance(container.get("usage"), dict):
+                        usage = container["usage"]
+                for choice in chunk.get("choices") or ():
+                    if not isinstance(choice, dict) or choice.get("index", 0) != 0:
+                        continue
+                    delta = choice.get("delta") if isinstance(choice.get("delta"), dict) else {}
+                    content = delta.get("content")
+                    if isinstance(content, str) and content:
+                        yield ChatTextDelta(content)
+                    for position, part in enumerate(delta.get("tool_calls") or ()):
+                        if not isinstance(part, dict):
+                            continue
+                        key = _tool_call_key(part, position, order)
+                        slot = calls.get(key)
+                        if slot is None:
+                            slot = calls[key] = {"id": "", "name": "", "arguments": []}
+                            order.append(key)
+                        if isinstance(part.get("id"), str) and part["id"]:
+                            slot["id"] = part["id"]
+                        function = part.get("function") if isinstance(part.get("function"), dict) else {}
+                        if isinstance(function.get("name"), str) and function["name"]:
+                            slot["name"] = function["name"]
+                        if isinstance(function.get("arguments"), str):
+                            slot["arguments"].append(function["arguments"])
+                    if isinstance(choice.get("finish_reason"), str) and choice["finish_reason"]:
+                        finish_reason = choice["finish_reason"]
+        except requests.RequestException as exc:
+            raise AIProviderUnavailable(f"{self.name} stopped streaming.") from exc
+        finally:
+            response.close()
+        for number, key in enumerate(order):
+            slot = calls[key]
+            if not slot["name"]:
+                raise AIProviderResponseInvalid(f"{self.name} sent a tool call without a name.")
+            yield ChatToolCall(id=slot["id"] or f"call_{number}", name=slot["name"], arguments="".join(slot["arguments"]))
+        reason = "tool_calls" if order else ("length" if finish_reason == "length" else "stop")
+        details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
+        yield ChatFinished(
+            finish_reason=reason,
+            prompt_tokens=_count(usage.get("prompt_tokens")),
+            completion_tokens=_count(usage.get("completion_tokens")),
+            cached_tokens=_count(details.get("cached_tokens")),
+            rate_limit=dict(self._last_rate_limit),
+        )
+
+
+# Endpoints documented to send a usage chunk on a stream when asked
+# (`stream_options.include_usage`). Groq reports it unasked (`x_groq.usage`).
+_STREAM_USAGE_PROVIDERS = frozenset({"openai", "deepseek"})
+
+
+def _tool_call_key(part: dict[str, Any], position: int, order: list[object]) -> object:
+    """Which call a streamed fragment belongs to.
+
+    OpenAI numbers fragments with `index`; an endpoint that sends each call
+    whole may leave it out, so a fragment with a new id starts a new call and
+    one with neither continues the last.
+    """
+
+    if isinstance(part.get("index"), int):
+        return ("index", part["index"])
+    if isinstance(part.get("id"), str) and part["id"]:
+        return ("id", part["id"])
+    return order[-1] if order else ("position", position)
+
+
+def _count(value: object) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
 
 def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:

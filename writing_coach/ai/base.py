@@ -66,6 +66,36 @@ class AIProviderUnsupportedOperation(AICapabilityUnsupported):
     """A known provider cannot perform a capability's declared operation."""
 
 
+@dataclass(frozen=True)
+class ChatTextDelta:
+    """A piece of streamed assistant text."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class ChatToolCall:
+    """A complete native tool call; `arguments` is the provider's JSON text."""
+
+    id: str
+    name: str
+    arguments: str
+
+
+@dataclass(frozen=True)
+class ChatFinished:
+    """The end of one streamed round, with whatever usage the provider reported."""
+
+    finish_reason: str
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    cached_tokens: int | None = None
+    rate_limit: dict[str, int | None] | None = None
+
+
+ChatStreamEvent = ChatTextDelta | ChatToolCall | ChatFinished
+
+
 @dataclass
 class AIResult:
     data: dict[str, Any]

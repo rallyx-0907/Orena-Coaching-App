@@ -35,8 +35,10 @@ class TextDelta:
 
 @dataclass(frozen=True)
 class TurnFinished:
-    input_tokens: int
-    output_tokens: int
+    """The end of a round. A count the provider did not report is None, never 0."""
+
+    input_tokens: int | None
+    output_tokens: int | None
     finish_reason: Literal["stop", "tool_calls", "length"]
     cached_input_tokens: int = 0
 
@@ -75,6 +77,9 @@ class ProviderTurnRequest:
     tools: tuple[ProviderToolSpec, ...] = ()
     max_output_tokens: int = 1024
     temperature: float | None = None
+    # What is left of the turn's budget: a provider waits no longer than this
+    # for a response or for its next piece.
+    timeout_seconds: float | None = None
 
 
 def never_stop() -> bool:

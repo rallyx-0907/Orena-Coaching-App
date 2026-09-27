@@ -162,10 +162,13 @@ def test_static_validation_and_provider_id_parity_require_no_network(monkeypatch
     monkeypatch.setattr("requests.post", network_forbidden)
     validate_capability_config("writing_evaluator", config())
     assert {item.id for item in provider_definitions()} == set(build_providers())
-    assert all(
-        item.supported_operations == frozenset({AIOperation.STRUCTURED_TEXT_GENERATION})
-        for item in provider_definitions()
-    )
+    for item in provider_definitions():
+        # Every provider generates structured text; the managed chat providers
+        # also stream agent turns (D-085), and a local model never does (D2).
+        expected = {AIOperation.STRUCTURED_TEXT_GENERATION}
+        if item.kind == "cloud":
+            expected.add(AIOperation.AGENT_TURN)
+        assert item.supported_operations == frozenset(expected), item.id
 
 
 def _exercise_repository(repository, *, sqlite_path: Path | None = None) -> None:

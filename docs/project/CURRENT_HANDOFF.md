@@ -121,6 +121,17 @@ deployment, destructive lifecycle, and new learner-owned persistence (e.g.
 onboarding state beyond the device) remain human gates. Never touch persistent
 volumes as cleanup.
 
+## Agent lane
+
+Owned by `feature/orena-intelligence` (D-085); the only part of this file that
+lane edits. Slices 1a and 1b REVIEWABLE (local verification, 2026-09-27), not
+integrated into `codex/work`: `/api/agent/turn` (SSE) and
+`/api/agent/capabilities` behind `AGENT_ENABLED` (off by default, never in
+production), the legacy AI selection (never a local model), Vocabulary and
+Writing read tools in EN and ZH, contract streams S1, S5, S8, S9, the four agent
+capability keys inert; no schema change. Rulings, progress and the next slice:
+`AGENT_SPEC.md` §0; gaps: `UI_BACKEND_GAPS.md` I-1..I-25.
+
 ## NEXT EXACT TASK
 
 UI lane (`codex/work`): build the surface slices of `IMPLEMENTATION_MAP.md` on

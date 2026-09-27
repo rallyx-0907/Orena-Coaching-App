@@ -36,6 +36,10 @@ EXPECTED_KEYS = {
     "speech_asr",
     "pronunciation_evaluator",
     "speaking_evaluator",
+    "agent_turn_fast",
+    "agent_turn_deep",
+    "conversational_speech",
+    "text_to_speech",
 }
 
 

@@ -28,7 +28,8 @@ def test_the_package_exists_with_its_parts():
     for part in (
         "contract", "schemas", "locale", "events", "learner_copy", "errors", "tools", "limits",
         "session", "provider", "fake_provider", "capability_registry", "tool_plan", "decision",
-        "context", "redaction", "voice",
+        "context", "redaction", "voice", "outputs", "prompts", "turn", "api", "runtime",
+        "read_tools", "platform_provider",
     ):  # fmt: skip
         assert part in names
 
@@ -48,16 +49,26 @@ def test_no_provider_key_is_read_here():
         assert "_API_KEY" not in text, path.name
 
 
-def test_no_router_is_installed_in_slice_1a():
+def test_the_router_is_mounted_once_behind_its_flag():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "writing_coach.agent" not in app
-    assert "/api/agent" not in app
+    assert app.count("app.include_router(agent_router)") == 1
+    assert "if agent_enabled(os.environ, production=APP_ENV == \"production\")" in app
+    assert '"/api/agent' not in app  # the routes are the agent package's own, not app.py's
 
 
-def test_the_three_operations_exist_and_no_capability_uses_them_yet():
+def test_the_flag_is_documented_off():
+    example = (ROOT / ".env.example").read_text(encoding="utf-8")
+    assert "AGENT_ENABLED=false" in example
+
+
+def test_the_agent_keys_are_defined_and_inert():
     assert AIOperation.AGENT_TURN == "agent_turn"
     assert AIOperation.CONVERSATIONAL_SPEECH == "conversational_speech"
     assert AIOperation.TEXT_TO_SPEECH == "text_to_speech"
     agent_operations = {AIOperation.AGENT_TURN, AIOperation.CONVERSATIONAL_SPEECH, AIOperation.TEXT_TO_SPEECH}
-    # The four keys wait for their Admin console labels (human ruling 2026-09-27, option C).
-    assert not [definition.key for definition in all_capabilities() if definition.operation in agent_operations]
+    keys = {d.key: d for d in all_capabilities() if d.operation in agent_operations}
+    assert set(keys) == {"agent_turn_fast", "agent_turn_deep", "conversational_speech", "text_to_speech"}
+    # Reserved until a reviewed activation (rulings R1, 2026-09-27): not configurable, no fallback.
+    for definition in keys.values():
+        assert definition.provider_backed and not definition.configurable and not definition.implemented
+        assert {policy.value for policy in definition.allowed_fallback_policies} == {"none"}

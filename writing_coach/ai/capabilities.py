@@ -24,10 +24,7 @@ class AIOperation(StrEnum):
     SPEECH_RECOGNITION = "speech_recognition"
     PRONUNCIATION_EVALUATION = "pronunciation_evaluation"
     SPEAKING_EVALUATION = "speaking_evaluation"
-    # Orena Intelligence (D-085). Operations only: no capability key uses them
-    # yet. The four keys (agent_turn_fast, agent_turn_deep,
-    # conversational_speech, text_to_speech) join the catalog once the Admin
-    # console has their EN/ZH labels, which the admin copy gate requires.
+    # Orena Intelligence (D-085).
     AGENT_TURN = "agent_turn"  # streaming turn with native tool calls
     CONVERSATIONAL_SPEECH = "conversational_speech"  # speech-to-speech session
     TEXT_TO_SPEECH = "text_to_speech"
@@ -183,6 +180,38 @@ _DEFINITIONS = (
     _definition(
         "speaking_evaluator",
         operation=AIOperation.SPEAKING_EVALUATION,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    # Orena Intelligence (D-085), reserved like the speech keys: defined, not
+    # configurable, no fallback. Until a reviewed activation makes them
+    # configurable, an agent turn routes through the legacy active selection
+    # like every learner call (human ruling 2026-09-27).
+    _definition(
+        "agent_turn_fast",
+        operation=AIOperation.AGENT_TURN,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    _definition(
+        "agent_turn_deep",
+        operation=AIOperation.AGENT_TURN,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    _definition(
+        "conversational_speech",
+        operation=AIOperation.CONVERSATIONAL_SPEECH,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    _definition(
+        "text_to_speech",
+        operation=AIOperation.TEXT_TO_SPEECH,
         provider_backed=True,
         configurable=False,
         implemented=False,

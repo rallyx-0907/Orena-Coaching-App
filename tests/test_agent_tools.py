@@ -33,10 +33,10 @@ LABEL = "tool.test_label"
 def test_label(monkeypatch):
     catalog = dict(learner_copy.CATALOG)
     catalog[LABEL] = learner_copy._entry(
-        learner_copy.CopyLayer.SUPPORT, {"en": "Looking", "vi": "Đang xem", "zh-CN": "正在查看"}
+        learner_copy.CopyLayer.INTERFACE, {"en": "Looking", "vi": "Đang xem", "zh-CN": "正在查看"}
     )
-    catalog["tool.interface_label"] = learner_copy._entry(
-        learner_copy.CopyLayer.INTERFACE, {"en": "Look", "vi": "Xem", "zh-CN": "查看"}
+    catalog["tool.support_label"] = learner_copy._entry(
+        learner_copy.CopyLayer.SUPPORT, {"en": "Look", "vi": "Xem", "zh-CN": "查看"}
     )
     monkeypatch.setattr(learner_copy, "CATALOG", MappingProxyType(catalog))
 
@@ -142,11 +142,11 @@ def test_en_and_zh_both_unless_a_linguistic_reason():
         ToolRegistry().register(tool(languages=("en", "zh")))
 
 
-def test_the_label_is_support_layer_copy():
+def test_the_label_is_interface_layer_copy():
     with pytest.raises(ToolError):
         ToolRegistry().register(tool(label_key="tool.missing"))
-    with pytest.raises(ToolError):
-        ToolRegistry().register(tool(label_key="tool.interface_label"))
+    with pytest.raises(ToolError, match="interface"):
+        ToolRegistry().register(tool(label_key="tool.support_label"))
 
 
 def test_arguments_are_closed_and_never_name_a_learner():

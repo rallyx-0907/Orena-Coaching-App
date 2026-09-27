@@ -4,8 +4,9 @@ A tool is a named, schema-bound read of an existing service. Its declaration
 says what it may do (`permission`), what already does the work (`backed_by`,
 "module:attribute", checked to exist when the tool registers), which target
 languages it serves (EN and zh-CN both, unless a linguistic reason says why
-not - REVIEW_POLICY scores a one-language shared feature P1) and which support
-copy labels it while it runs (`label_key`).
+not - REVIEW_POLICY scores a one-language shared feature P1) and which
+interface copy labels it while it runs (`label_key`: a short system status,
+D-080; human ruling 2026-09-27).
 
 The registry is the gateway. In V1 it admits only `READ_ONLY` tools, and it
 runs every tool for a `LearnerScope` built from the authenticated request -
@@ -121,9 +122,13 @@ class ToolEvidence:
 
 @dataclass(frozen=True)
 class ToolResult:
+    """What a tool read. `summary` and `data` go to the model; the learner sees
+    `count` through interface copy (`result.<tool>`), never model-facing text."""
+
     summary: str
     data: Mapping[str, Any]
     evidence: tuple[ToolEvidence, ...] = ()
+    count: int = 0
 
     def size_bytes(self) -> int:
         body = {
@@ -252,8 +257,8 @@ class ToolRegistry:
     @staticmethod
     def _check_label(tool: AgentTool) -> None:
         entry = learner_copy.CATALOG.get(tool.label_key)
-        if entry is None or entry.layer is not learner_copy.CopyLayer.SUPPORT:
-            raise ToolError(f"{tool.name}: label_key {tool.label_key!r} must be support-layer copy")
+        if entry is None or entry.layer is not learner_copy.CopyLayer.INTERFACE:
+            raise ToolError(f"{tool.name}: label_key {tool.label_key!r} must be interface-layer copy")
 
     @staticmethod
     def _check_arguments(tool: AgentTool) -> None:

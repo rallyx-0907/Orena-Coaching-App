@@ -89,6 +89,36 @@ R6  Gemini: chưa duyệt Live, TTS, token tạm, google-genai. Slice 1b–3 dù
 R7  Không cần sandbox cho 1a/1b.
 ```
 
+Phán quyết cho Slice 1b (2026-09-27):
+
+```text
+R8  Agent định tuyến qua active_selection legacy (như mọi lời gọi AI của learner), không chờ key riêng.
+    4 key agent vào catalog ở dạng trơ (implemented=False, configurable=False, {NONE}); chuyển sang key
+    riêng là một bước kích hoạt có review sau. Provider local (Ollama) bị từ chối, không bao giờ được dùng (D2).
+R9  /api/agent/* tắt mặc định bằng cờ server AGENT_ENABLED; chỉ bật ở dev/sandbox; production không bao giờ
+    phục vụ, dù cờ nói gì. Khi tắt, cả hai route trả 404.
+R10 S5 dùng save_word { text, lang } (contract §7 cho phép). Các action lệch payload còn lại chờ contract v2.
+R11 session_id không tìm thấy (restart, worker khác) → mở phiên mới, không lỗi.
+R12 suggestion.intent là prompt intent (§4), không phải navigation id; mọi label (tool, action, suggestion)
+    là copy lớp interface (D-080). Hai điểm này đã chuyển sang contract v2.
+R13 CURRENT_HANDOFF.md: lane chỉ sửa đúng mục "## Agent lane" của mình; PENDING, NEXT EXACT TASK và
+    Human decisions thuộc codex/work. Chi tiết tiến độ của lane nằm ở đây (§0) và trong báo cáo slice.
+```
+
+Tiến độ lane (cập nhật mỗi slice):
+
+```text
+Slice 1a  REVIEWABLE, b2fbc2f (2026-09-27). writing_coach/agent/: contract, schemas, locale, events,
+          learner_copy, errors, tools, limits, session, provider, fake_provider, capability_registry +
+          capabilities/*.json (15, pending), tool_plan (31 tool, 7 gap), decision, context, redaction, voice.
+Slice 1b  REVIEWABLE (local, 2026-09-27). /api/agent/turn (SSE) + /api/agent/capabilities sau AGENT_ENABLED;
+          turn (vòng tool ≤ 4, reply tools, evidence trước claim, metering agent.turn/agent.tokens);
+          OpenAICompatibleProvider.stream_chat + platform.stream_agent_turn (legacy selection, từ chối local);
+          read tools get_due_review_summary, get_due_vocabulary, get_current_writing_evaluation (EN, ZH);
+          4 key agent trơ; daily_usage cho cả hai store; contract streams S1, S5, S8, S9.
+Tiếp      Merge codex/work forward (contract v2, D-092), cập nhật contract test; rồi Slice 2 (§26).
+```
+
 ---
 
 ## 1. Mục tiêu

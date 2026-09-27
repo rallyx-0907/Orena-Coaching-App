@@ -2674,8 +2674,12 @@ Recorded, not changed here: the contract is edited only on `codex/work`
 
 | # | Item | State |
 | --- | --- | --- |
-| I-17 | Capability keys `agent_turn_fast`, `agent_turn_deep`, `conversational_speech`, `text_to_speech` | Waiting: the Admin console copy (`cap_<key>`, `capHint_<key>`, EN and ZH) is added on `codex/work` first, because `scripts/test_orena_admin_console.mjs` requires it; this lane then adds the keys as `implemented=False`, `configurable=False`, fallback `{NONE}` (ruling 2026-09-27, option C). The three `AIOperation` values are in. |
-| I-18 | Streaming and native tool calls | Absent from `writing_coach/ai` today. Slice 1b extends the existing OpenAI-compatible provider (chat/completions); no new dependency. |
+| I-17 | Capability keys `agent_turn_fast`, `agent_turn_deep`, `conversational_speech`, `text_to_speech` | In the catalog as reserved definitions (`implemented=False`, `configurable=False`, fallback `{NONE}`) since the Admin labels landed on `codex/work` (71e84a0). The agent routes through the legacy active selection until a reviewed activation makes `agent_turn_fast` configurable (R8). |
+| I-18 | Streaming and native tool calls | Built on the existing OpenAI-compatible chat/completions path (`OpenAICompatibleProvider.stream_chat`, no new dependency), tested against recorded stream shapes only. How Gemini's and DeepSeek's compatible endpoints number tool-call fragments and report usage on a stream is not yet verified live [PROVIDER]. |
 | I-19 | Live speech, TTS, ephemeral tokens, `google-genai` | Not approved (ruling 2026-09-27). Voice stays interfaces only. [PROVIDER] |
-| I-20 | Metering | V1 counts through `record_usage` with a per-day sum; `ProductRepository` has only `monthly_usage`, so a daily read is to be added. `budget_state` is always `ok`; `soft_limited` waits for the quota ledger (E1). |
+| I-20 | Metering | Each completed turn records `agent.turn` (1) and `agent.tokens` through `record_usage`; `daily_usage` reads a UTC day on both stores, no migration. `budget_state` is always `ok` and no `metered` event is sent in V1; `soft_limited` waits for the quota ledger (E1). |
 | I-21 | Provider fallback | None automatic (ARCHITECTURE_INVARIANTS). A failed provider ends the turn with `error.fallback = retry`; a failed voice session continues `text_only`. |
+| I-22 | Legacy route health | The legacy route has no cooldown or availability check today; the agent adds none, so a failing provider fails each turn with `retry` until the operator changes the selection. |
+| I-23 | Identity answers (spec §35) | Not built: the model is instructed to answer as Orena and never name a provider; a deterministic identity answer through the `DecisionProvider` is a later slice. |
+| I-24 | Rate limit per learner or IP (spec §22) | Not built; the endpoints are off outside development and sandbox (R9). Needed before any activation. |
+| I-25 | Capability status | Every capability stays `pending`, including `review.due`, whose two tools now run: marking one `active` is a verification step for the human. |

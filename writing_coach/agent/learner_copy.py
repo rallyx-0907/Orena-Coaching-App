@@ -1,11 +1,13 @@
 """Server-written learner copy, each key declaring its language layer (D-080).
 
-The agent's own words - `error.message`, `tool_call.label`, a capability's
-title - are copy, not model output (spec §13). Every key names its layer, and
-the text is chosen from the pack of that layer: `interface` for names and
-labels, `support` for explanations and states. There is no default layer, and
-no `target` copy (material never lives in copy). A support language without a
-pack reads English, never the interface language (D-080).
+The agent's own words - `error.message`, `tool_call.label`, an action's or a
+suggestion's label, a capability's title - are copy, not model output (spec
+§13). Every key names its layer, and the text is chosen from the pack of that
+layer: `interface` for names, labels, buttons and short system statuses (every
+`label` the agent sends, human ruling 2026-09-27), `support` for explanations
+and the explanation of an error. There is no default layer, and no `target`
+copy (material never lives in copy). A support language without a pack reads
+English, never the interface language (D-080).
 
 Packs are keyed by contract codes (`zh-CN`, not `zh`).
 """
@@ -65,6 +67,174 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
                 "zh-CN": "出了点问题，请重试。",
             },
         ),
+        "tool.get_due_review_summary": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking your review queue", "vi": "Đang xem các từ cần ôn", "zh-CN": "正在查看复习队列"},
+        ),
+        "tool.get_due_vocabulary": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Reading your due words", "vi": "Đang xem từ đến hạn", "zh-CN": "正在查看到期的词"},
+        ),
+        "tool.get_current_writing_evaluation": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Reading your writing feedback", "vi": "Đang xem nhận xét bài viết", "zh-CN": "正在查看写作反馈"},
+        ),
+        "result.get_due_review_summary": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Due: {n}", "vi": "Đến hạn: {n}", "zh-CN": "到期：{n}"},
+        ),
+        "result.get_due_vocabulary": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Words: {n}", "vi": "Số từ: {n}", "zh-CN": "词数：{n}"},
+        ),
+        "result.get_current_writing_evaluation": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Issues: {n}", "vi": "Điểm cần sửa: {n}", "zh-CN": "问题：{n}"},
+        ),
+        "result.unavailable": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Not available", "vi": "Chưa xem được", "zh-CN": "暂时无法查看"},
+        ),
+        "action.play_model": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Play model", "vi": "Nghe mẫu", "zh-CN": "播放示范"},
+        ),
+        "action.play_user": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Play my take", "vi": "Nghe lại mình", "zh-CN": "播放我的录音"},
+        ),
+        "action.say_again": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Say it again", "vi": "Nói lại", "zh-CN": "再说一遍"},
+        ),
+        "action.compare_with_model": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Compare", "vi": "So sánh với mẫu", "zh-CN": "与示范对比"},
+        ),
+        "action.save_word": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Save word", "vi": "Lưu từ", "zh-CN": "保存单词"},
+        ),
+        "action.add_word_to_collection": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Add to collection", "vi": "Thêm vào bộ sưu tập", "zh-CN": "加入收藏集"},
+        ),
+        "action.start_review": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Start review", "vi": "Ôn ngay", "zh-CN": "开始复习"},
+        ),
+        "action.start_targeted_drill": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Practice this", "vi": "Luyện phần này", "zh-CN": "专项练习"},
+        ),
+        "action.unsave_word": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Remove word", "vi": "Bỏ lưu từ", "zh-CN": "取消保存"},
+        ),
+        "navigate.home": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Home", "vi": "Trang chính", "zh-CN": "首页"},
+        ),
+        "navigate.library": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Library", "vi": "Thư viện", "zh-CN": "资料库"},
+        ),
+        "navigate.reading.library": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Reading library", "vi": "Thư viện đọc", "zh-CN": "阅读库"},
+        ),
+        "navigate.reading.workspace": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Open the text", "vi": "Mở bài đọc", "zh-CN": "打开文章"},
+        ),
+        "navigate.listening.library": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Listening library", "vi": "Thư viện nghe", "zh-CN": "听力库"},
+        ),
+        "navigate.listening.workspace": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Open the lesson", "vi": "Mở bài nghe", "zh-CN": "打开听力"},
+        ),
+        "navigate.listening.dictation": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Start dictation", "vi": "Chép chính tả", "zh-CN": "开始听写"},
+        ),
+        "navigate.speaking.library": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Speaking library", "vi": "Thư viện nói", "zh-CN": "口语库"},
+        ),
+        "navigate.speaking.workspace": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Open speaking", "vi": "Mở bài nói", "zh-CN": "打开口语练习"},
+        ),
+        "navigate.speaking.free_talk": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Free talk", "vi": "Nói tự do", "zh-CN": "自由对话"},
+        ),
+        "navigate.speaking.word_detail": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "See this word", "vi": "Xem từ này", "zh-CN": "查看这个词"},
+        ),
+        "navigate.speaking.compare": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Compare", "vi": "So sánh với mẫu", "zh-CN": "与示范对比"},
+        ),
+        "navigate.writing.workspace": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Write", "vi": "Viết bài", "zh-CN": "写作"},
+        ),
+        "navigate.writing.review": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "See feedback", "vi": "Xem nhận xét", "zh-CN": "查看反馈"},
+        ),
+        "navigate.writing.revision": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Revise", "vi": "Sửa bài", "zh-CN": "修改文章"},
+        ),
+        "navigate.vocabulary.my_language": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "My words", "vi": "Từ của tôi", "zh-CN": "我的词汇"},
+        ),
+        "navigate.vocabulary.word": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Open word", "vi": "Mở từ", "zh-CN": "打开单词"},
+        ),
+        "navigate.vocabulary.review_due": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Review due words", "vi": "Ôn từ đến hạn", "zh-CN": "复习到期的词"},
+        ),
+        "navigate.grammar.catalog": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Grammar", "vi": "Ngữ pháp", "zh-CN": "语法"},
+        ),
+        "navigate.grammar.point": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Open pattern", "vi": "Mở mẫu ngữ pháp", "zh-CN": "打开语法点"},
+        ),
+        "navigate.progress": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Progress", "vi": "Tiến độ", "zh-CN": "学习进度"},
+        ),
+        "navigate.preferences": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Preferences", "vi": "Cài đặt", "zh-CN": "设置"},
+        ),
+        "navigate.preferences.agent_memory": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "What Orena remembers", "vi": "Orena ghi nhớ gì", "zh-CN": "Orena 记住的内容"},
+        ),
+        "suggest.review_due": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Review due words", "vi": "Ôn từ đến hạn", "zh-CN": "复习到期的词"},
+        ),
+        "suggest.writing_feedback": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Where do I go wrong?", "vi": "Tôi hay sai chỗ nào?", "zh-CN": "我常错在哪里？"},
+        ),
+        "suggest.app_help": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "What is this screen for?", "vi": "Màn này dùng để làm gì?", "zh-CN": "这个页面是做什么的？"},
+        ),
     }
 )
 
@@ -73,11 +243,15 @@ def layer_language(layer: CopyLayer, *, interface: str, support: str) -> str:
     return interface if layer is CopyLayer.INTERFACE else support
 
 
-def text(key: str, *, interface: str, support: str) -> tuple[str, str]:
-    """Return `(language, text)` for a key, read from its own layer's pack."""
+def text(key: str, *, interface: str, support: str, **params: object) -> tuple[str, str]:
+    """Return `(language, text)` for a key, read from its own layer's pack.
+
+    `params` fill `{name}` placeholders (counts only; never learner content).
+    """
 
     entry = CATALOG[key]
     language = layer_language(entry.layer, interface=interface, support=support)
-    if language in entry.texts:
-        return language, entry.texts[language]
-    return FALLBACK_LANGUAGE, entry.texts[FALLBACK_LANGUAGE]
+    if language not in entry.texts:
+        language = FALLBACK_LANGUAGE
+    words = entry.texts[language]
+    return language, words.format(**params) if params else words

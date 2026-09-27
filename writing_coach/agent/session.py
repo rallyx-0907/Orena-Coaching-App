@@ -132,6 +132,30 @@ class SessionCache:
             self._store(stored)
             return stored
 
+    def update(
+        self, session_id: str, user_key: str, change: Callable[[AgentSessionState], AgentSessionState]
+    ) -> AgentSessionState | None:
+        """Apply `change` to the stored state under the lock (read-modify-write).
+
+        Two turns of one session finishing together each add to what the other
+        stored, instead of the later one overwriting the earlier. None when the
+        session is gone or not this learner's.
+        """
+
+        with self._lock:
+            now = self._clock()
+            self._purge(now)
+            current = self._sessions.get(session_id)
+            if current is None or current.user_key != user_key:
+                return None
+            changed = change(current)
+            if changed.agent_session_id != session_id or changed.user_key != user_key:
+                raise ValueError("a session change may not move the session")
+            kept = changed.recent_tool_results[-self._tool_limit :]
+            stored = replace(changed, recent_tool_results=kept, updated_at=now)
+            self._store(stored)
+            return stored
+
     def record_tool_result(self, state: AgentSessionState, record: ToolResultRecord) -> AgentSessionState:
         return self.save(state.with_tool_result(record, limit=self._tool_limit))
 
