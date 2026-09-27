@@ -81,6 +81,498 @@ id; the list filters only by `asset_id` / `segment_id`. An owner-scoped read by
 id (repository method, optionally `GET /api/speech/attempts/{id}`) needs no
 schema change.
 
+**N-10** - Content Detail's Related rail (`static/orena/screens/content/screen.js`,
+frame 05, D2 "Data the backend must provide: ... a related-items list"). No
+endpoint answers "what else is like this one" for any content kind; there is no
+similarity, co-occurrence or curator-picked relation anywhere in the schema.
+Built conservatively rather than invented: for an article or a shared-library
+book, Related is a capped page of the same listing Discover already reads
+(`GET /api/reading/articles` / `GET /api/reading/library/books`), minus the
+current item - real content, not a relevance ranking. For a Listening lesson it
+is the same against `GET /api/listening/library`. A learner's own upload or
+imported text has no shared catalogue to draw from at all, so Related is simply
+absent there (rule 40 - an absent list is empty, never invented), matching the
+"a section disappears with no items" precedent Practice Hub's In-Progress list
+already sets. A real "related to this one" signal needs its own field or query,
+which is a content/relevance decision, not a frontend one.
+
+**N-11** - Word Detail's "Mark known" footer link (`static/orena/screens/word/screen.js`,
+frame 22, D7 §2/§4 `wdWC.onKnown`/`knownLabel`). The pinned script's own handler
+for this control (`orena-script.js` `wordCard()`, `onKnown`) only flips a local
+prototype flag (`this.state.known`) that nothing else in the app reads - one of
+the prototype's own simulated internals the brief marks as not behaviour to
+copy, not a real product concept. The real scheduler (`becoming_library.py`)
+has no "known" state distinct from `review_stage`: three review grades
+(`again`/`unsure`/`got_it`) advance or hold the stage; there is no fourth
+"graduate out of review entirely" action. Built conservatively: the control is
+not drawn (rule 40/44 - nothing invented over a control with no real backend
+action), the rest of the card footer (mastery bars, stage, due date) renders
+from the real saved item as before. A real "mark known" needs a product
+decision (does it stop scheduling the word entirely, and how does that differ
+from grading `got_it` enough times) before it is a backend field.
+
+**N-18** - Search (`static/orena/screens/search/screen.js`, `model.js`, frame 27).
+No global search endpoint exists anywhere in the API (grepped `writing_coach/`
+for a free-text, cross-domain search route; none). Built conservatively from
+what does exist rather than invented: `GET /api/vocabulary/catalogue/search`
+(server-searched) for Words, `GET /api/collection?query=` for the learner's own
+"My Library" items, `GET /api/reading/articles` and `GET /api/listening/library`
+client-filtered by title/topic (neither route takes a free-text query) for
+Content, and the learner's device-memory imports (`product/memory.js`). Three
+sources the design's own placeholder names ("media, collections, saved items,
+imported files and every transcript line") have no backend at all, so the
+placeholder was shortened rather than promising a source that is not searched:
+- No route searches inside a shared-library book chapter's or a published
+  article's own text (transcript lines / article sentences) - same absence
+  N-10 already names for Content Detail's Related rail.
+- No route searches the admin-curated vocabulary *collections* themselves
+  (`vocabulary_collections` - distinct from the per-word catalogue search
+  above, which already is composed in).
+- Recent searches are device-only (`localStorage`, bounded to 8, this session's
+  `model.js` `readRecent`/`pushRecent`), matching how device-memory
+  continuation already works elsewhere (Architecture holds §7: learner-data
+  persistence/schema is GPT-6's open decision) - not a per-account, cross-device
+  history. A real search history needs the same persistence decision before it
+  can move server-side.
+
+**N-19** - Collection Detail (`static/orena/screens/collection/screen.js`,
+`model.js`, frame 21, D2 §6). Three fields the frame draws have no backend
+source at all:
+- The cover image. `VocabularyCollection` (`writing_coach/persistence/models.py`)
+  carries no image/asset column, so `heroMedia()` is called with `image: ''`
+  (rule 40) and the cover renders as the plain scrim gradient with no photo.
+- The collection's own curated description (`col.desc`). Same table, no
+  description column. Rendered as absent (rule 43 - nothing shown where the
+  frame's markup would otherwise sit), not an empty paragraph.
+- "`{{n}}` met in your sources" (`colProgress`). No aggregate anywhere counts
+  how many of a collection's words the learner has met in their own reading or
+  listening content (the closest real thing, `progress.learned_count`, is a
+  saved/review relationship, not a source-encounter count). Always `0`.
+Fourth: `colSave` (save/bookmark a whole collection). No endpoint or
+device-memory concept saves a curated collection as a unit (concept A) -
+`POST /api/library/vocabulary` and `DELETE /api/library/vocabulary/{word}`
+only ever address one word. Built conservatively: the button is drawn (the
+frame draws it) but its handler shows an honest "not available yet" toast
+instead of inventing a client-only bookmark that would silently not persist.
+A real implementation needs either a `vocabulary_collections`-level saved-set
+table or a new relationship on the existing per-word save, plus a cover-image
+and description field on the collection record and a word-to-source-encounter
+index (the same shape RD-8/VC-10 above already need for a single word).
+
+(The `copy/index.js` `fill()`-drops-zero bug this surface hit while building is
+consolidated with its four sibling screens' own hits of the same bug, and a
+second copy-engine bug, into **N-34** below - resolved centrally, not repeated
+per screen here.)
+
+**N-20** - Grammar Library and Grammar Concept (`static/orena/screens/grammar/`,
+`static/orena/screens/grammar-concept/`, frames 44/47, E5). Content gap, not a
+UI bug: `GET /api/library/grammar/{id}`'s `learning_model` explanatory prose
+(`meaning.summary`, `common_mistake.why`, `personal_practice.prompt`) and every
+lesson's `examples[]` translation field (`meaning_vi`/`vi`) are authored in
+Vietnamese only, for both the English-target and the Chinese-target catalogue
+(confirmed live against both; no `meaning_en`/`meaning_zh` field and no
+`en`/`zh` key on those `learning_model` fields exists anywhere in the content
+pipeline or its migration script, despite the schema's `_text()` validator
+supporting an arbitrary locale key plus the literal `"default"`). Built
+conservatively: the example translation line is shown only to a vi-support
+learner and left off for every other support language (`model.js`'s
+`examplesOf`, gated on `guidanceLocale(support, ['vi'])` - the field the
+previous pass of this surface had gated on nothing, showing the Vietnamese
+gloss unconditionally to every learner regardless of support language, a real
+EN/ZH parity bug fixed in this pass); the explanatory-prose fields keep their
+existing locale-map fallback (`pickLocale`, now checking the schema's own
+`default` key explicitly rather than accidentally landing on it via object key
+order) and so still surface the Vietnamese text via `default` for a non-vi-
+support learner, since these fields carry real prose worth keeping over
+blanking most of the Concept card's teaching content for the majority of
+learners - a difference from the flat, non-schema `examples[]` field, recorded
+as a question for the human below, not resolved silently. Needs English and
+Chinese authoring of this prose (and, ambitiously, per-support-language
+example glosses) to close for real. **See also N-33**: the lesson `title`
+field itself - the primary heading on both screens - has the same
+Vietnamese-only gap but no locale-map shape at all to fall back through,
+unlike the fields above.
+
+**N-21** - Today (`static/orena/screens/today/screen.js`, `model.js`, frame
+10-Today.html, D1 §5). Three cards the frame draws have no cross-activity
+backend at all:
+- The daily-goal ring and its 3 skill mini-rings (`pgGoal.pct/dash`,
+  `tdSkills[3].dash`). No endpoint measures "percent of today's goal" or a
+  per-skill daily percent for any of Reading/Listening/Speaking together - the
+  closest real thing, `GET /api/learner-summary?window=7d`, is a 7-day
+  activity-count read, not a daily goal or a percent of anything. Always `0`
+  (rule 40); the sub-caption uses the real 7-day evidence when any exists,
+  naming its own window ("This week: …") rather than claiming "today"/"this
+  session" the way the frame's own sample text does.
+- The streak card (`pgStreak.n/days`). No cross-activity streak exists
+  anywhere in the schema; the only stored streak is Writing's own,
+  `GET /api/dashboard`'s `streak_days` field, scoped to writing submissions
+  alone - reusing it here would misrepresent a single-activity number as an
+  all-activity one, so it is not reused. Always `0`, all 7 days undone.
+- The level/XP card (`pgLevel.badge/name/xp/pct/next`). No gamified level/XP
+  system exists anywhere in the domain (checked `writing_coach/persistence/
+  models.py` and the API surface) - `badge` renders a placeholder glyph ("–")
+  rather than the learner's real level (`B2` in the frame's own sample is a
+  target-language proficiency label, a different concept, already shown
+  correctly in the shell's own language pill).
+A real daily goal, per-skill percent, cross-activity streak and level/XP
+system are each a product-and-schema decision (Architecture holds §7), not
+something this surface can measure.
+
+(This screen's own hit of the `copy/index.js` `fill()`-drops-zero bug - the
+streak count, skill percents and XP value - is consolidated into **N-34**.)
+
+**N-22** - Practice Hub / Skill Hub (`static/orena/screens/practice/`, frames
+08-Practice-Hub.html, 09-Skill-Hub.html, D2 §3-4).
+
+**Corrected by independent review, 2026-09-27**: this entry previously claimed
+Listen and Reading had no backend at all ("no endpoint answers 'the next
+listening item' or 'the next reading item' for a learner generically"). That
+was factually wrong, and checkable from files already in this working tree:
+`GET /api/listening/library` (`api.listeningLibrary`, already called by
+`screens/today/screen.js` and `screens/discover/screen.js`) returns real
+catalogue items, each carrying `available_modes`
+(`listening_catalog.py`'s `PRACTICE_MODES`: `listen`/`active`/`dictation`/
+`shadowing`); `GET /api/reading/practice/next` (`api.readingPracticeNext`,
+also already called by `screens/today/screen.js`) is literally "the next
+reading item for a learner, generically" and answers `{"available": bool,
+"next": …}` - `available: false` in this sandbox is a real, honest empty (no
+article published here yet), not a missing endpoint. Both are now wired the
+same way `speakModes()` already consumed the Speaking library:
+`model.js`'s `listenModes()` gates a Dictation and a Shadowing tile on
+whether the Listening library currently has an item carrying that mode, and
+`readingModes()` gates a Start-Reading-Practice tile on the queue's own
+`available` flag. `SKILL_ORDER`/`buildSkillSections` are now data-driven (a
+skill's section renders only when its builder actually returned a mode this
+visit) rather than the previous hardcoded four-skill list - Listen's and
+Reading's sections appear or disappear with the real data, the same way the
+design's own Continue section disappears when it is empty.
+
+What remains a genuine gap, after the correction above: Listen's "React /
+Reuse" and "Retell" (its own "Use what you hear" group) have no
+`available_modes` value in the schema to gate on at all (`PRACTICE_MODES` is
+exactly `listen`/`active`/`dictation`/`shadowing` - no react/retell entry),
+and Reading's "Paraphrase"/"Inference"/"Context Shift" (its own "Transfer"
+group) have no id source either - both stay out (rule 40). Both skills' own
+"Continue listening"/"Continue reading" groups are device-memory
+continuation, already surfaced separately by `continuationRows()`, not a
+catalogue-backed mode, so they were never part of this gap. **Write silently
+dropped three of the design's modes, now recorded rather than left implicit
+in a code comment**: "Respond to Content" (`shell/routes.js` already has
+`{ id: 'respond', path: 'respond/:id', screen: 'respond', crumb:
+'respondToContent' }`, but `respond` is not registered in `shell/screens.js`,
+and - unlike Listen/Reading above - no generic "which content to respond to"
+id source exists anywhere to supply it even once the screen is built), and
+"Prompt"/"Your Topic" (Writing's own entry setup for a fresh draft - a
+screen-internal choice for `writing`'s own compose flow to make once it
+branches, not a Practice Hub fork). No mode of any skill carries a real
+duration estimate anywhere in the schema (the frame's own `~3 min`/`~8 min`/
+`~10 min` per mode is the prototype's invented sample data, not a measured
+field) - every mode row/tile omits it rather than fabricating one. No
+"locked"/"not yet available" signal exists for a mode that is real but
+conditionally gated (the frame's `pi.op`/`SOON` dimming, Skill Hub's `md.op`)
+- since nothing here is drawn at all unless it is fully real and addressable
+today, that state is never needed, not missing. Vocabulary's Due Review count
+and Speaking's/Listening's/Reading's per-mode level are the only real
+per-mode metadata fields that exist; Writing's recommendation
+(`GET /api/practice-recommendation`) is the only real per-skill recommender -
+Speak/Listen/Vocabulary/Grammar/Reading Skill Hubs correctly show no
+recommendation card rather than one with no real reason behind it.
+
+(This screen's own hit of `copy/index.js`'s second bug - `plural()` reading
+English's own `_one` form, backfilled into the merged object, for a Vietnamese
+or Chinese interface at n=1 - is consolidated into **N-34**, alongside My
+Library's identical hit.)
+
+**N-23** - My Library (`static/orena/screens/library/`, frame 12, D2 §5). The
+pinned copy's compact export mis-hints `libTabs` at 4 entries
+(`hint-placeholder-count="4"`, a truncated-export placeholder guess, not real
+sample data); the live design script (`orena-script.js`'s `LIBT` array and
+`libIsActive`) proves 5 real tabs - Saved content, Saved language, Collections,
+**Active use**, Due Review - so this surface was corrected to build all five,
+not the four an earlier pass had inferred from the cache alone. Three real
+backend gaps found while building the fifth tab and the rest of the room (the
+third added on independent review - a real navigation defect the room's own
+first pass shipped, not just a documentation gap; see below):
+
+1. **Active use's four cards are a fixed shortcut menu, not fetched rows**
+   (`orena-script.js`'s `activeUse` array is static demo data, not a per-user
+   list): Due review → `#/review`, Context Transfer → `#/transfer`, Situation
+   Reaction (context variant) → `#/situation`, Timed Recall → `#/timed`. All
+   four are real focus routes in `shell/routes.js` with no screen registered
+   yet, so today each correctly lands on the router's own Coming-soon fallback
+   - the same place the Due tab's own "Start review" button already sends a
+   learner. No duration estimate exists for any of them, the same absence
+   N-22 already documents for Practice/Skill Hub's own mode tiles (this tab is
+   effectively Vocabulary's own mode list, reached from a second place); `dur`
+   is simply not carried rather than showing N-22's same invented "~3 min".
+2. **A saved word/phrase's tap-to-jump-to-source (`ll.onSource` in the frame,
+   "jump to the source context where a word/phrase was met") has no general
+   target.** `SavedWord` (`writing_coach/persistence/models.py`) carries
+   `source_essay_id` only for words saved from a writing essay, and a bare
+   `source_kind` category (`manual`/`dictionary`/`feedback`/`strength`/
+   `reading`/`feed`/`collection`) for the rest - no reading/listening source id
+   at all for the common cases. `screens/word/model.js` already reads the same
+   two fields for Word Detail and treats them as a display label only, never a
+   link, which this screen follows: the text block is not made clickable
+   rather than wiring a jump that would work for a minority of saved words and
+   silently do nothing for the rest. A real "open where this was met" needs a
+   source id/type recorded per saved word (reading article, listening lesson,
+   collection card, essay) at save time, for every `source_kind` that can be
+   opened.
+3. **Collections tab: no detail screen exists yet for either backend concept
+   it lists** (`static/orena/screens/` has no such folder; `shell/routes.js`
+   defines only the one `collection/:id` route, and that is reserved for a
+   third, unrelated concept - a curated vocabulary pack, `GET
+   /api/vocabulary/library/collections/{id}`, reached from Discover, not from
+   a learner's own library). The room's first pass sent every Collections-tab
+   card (both a My Library collection, `GET /api/library/collections`, and a
+   Vocabulary deck, `GET /api/vocabulary/decks`) into that same wrong route,
+   which independent review caught 404ing 100% of the time
+   (`{"detail":"Vocabulary collection not found."}`) the moment a real card
+   exists to click - the sandbox account had zero of either, so the room's own
+   verification journey never actually clicked one. Fixed: both card kinds now
+   land on the design's own Coming-soon (`#/coming/collection`, reusing the
+   existing `collection` shellCopy title rather than inventing new copy) until
+   a real "My Library collection detail" and "Vocabulary deck detail" screen
+   exist - each needs its own route, screen and, for the deck case, its own
+   review-launch action (`shell/routes.js` currently has neither).
+
+(This screen's own hits of both `copy/index.js` bugs - `fill()` dropping the
+Due tab's `{min}`/count placeholders at `0`, and `plural()` reading English's
+`_one` form under vi/zh for `collectionItems` - are consolidated into
+**N-34**.)
+
+**N-24** - Progress (`static/orena/screens/progress/screen.js`, `model.js`,
+frame 17, D8). Consolidated record of this surface's rule-40 zero/honest-empty
+fallbacks (full detail already lives in `model.js`'s own doc comment; listed
+here per this section's own precedent, since Progress has more distinct
+no-backend-source items than any sibling screen recorded above): no domain
+tracks study time or a streak (Overview hero's time readout and 7-day bar
+chart, dropped for an honest note rather than a fabricated "0 hr 0 min"); no
+domain has a proficiency percentage or trend delta (`learner_summary.py`'s
+`growth.status` is universally `"unavailable"` - the Skills card's five rows
+always render `pct: 0`/`delta: null`); nothing generates a "this week's story"
+headline or a "next, based on evidence" recommendation; no owner computes any
+of the five Knowing → Using stages (Recognized/Recalled/Used/Transferred/Fast
+retrieval - both the Overview mini-card and the full tab are always zero); the
+whole Trends tab is a detection/generation feature with no backend owner at
+all; the Evidence "Review" filter always empties honestly because vocabulary
+recall has one lifetime aggregate count, not a dated per-event log; and no
+milestone/achievement data exists for the Rank tab's Milestones list. All
+eight render their rule-40 zero or an honest empty state, none fabricated. A
+real implementation of any of these needs the same backend measurement (study
+time, per-domain proficiency scoring, a recommendation engine, KU-stage
+instrumentation, or a milestone table) before the frontend has anything real
+to bind to.
+
+Settings (`static/orena/screens/settings/`, frame 26, E1 "Data the backend must
+provide"). Every row the frame draws is built and shown; a row with no real
+source behind it is drawn disabled with its honest fallback value (rule 40),
+never removed (rule 43) and never wired to pretend. Seven such gaps:
+
+**N-25** - Learning tab, "Word highlight (estimated)". No mechanism anywhere in
+the app (grepped `capabilities/`, `product/`, every `screen/`/`ui/` module)
+estimates or highlights the word currently being spoken inside a transcript
+segment. The toggle is drawn off and inert. A real implementation needs either
+word-level timing in the transcript data or a heuristic over segment duration
+and word count, neither of which exists today.
+
+**N-26** - Learning tab, "Autoplay next segment". No stored preference or
+playback behaviour anywhere continues to the next transcript segment
+automatically; the Listening room's own toolbar (`ui/encounter.js`,
+`product/transcript-stage.js`) has no `autoplay` field. Drawn off and inert.
+Needs a third field in the transcript-stage shape and the Listening room's own
+playback loop to honour it.
+
+**N-27** - Review tab, "Session length". No stored field means "items per
+sitting" anywhere; `product/recall-modes.js`'s own review settings carry
+`newPerDay` and `limitPerDay` (daily caps), neither of which is a per-session
+item count. Drawn with the middle option (10) selected and inert, per the same
+never-invented-edge convention `SESSION_LENGTH_FALLBACK` documents. Needs a
+third field in `recall-modes.js`'s settings shape and the Review room reading
+it to size a sitting.
+
+**N-28** - The whole Notifications tab (4 rows: due review, writing review
+ready, media ready, system and account). No notification-preference storage
+exists anywhere in the app - no device key, no profile field, no table - and
+there is no notification-sending mechanism to gate in the first place. All four
+toggles are drawn off and inert. Needs a real notification channel (push,
+email or in-app) before a preference for it means anything.
+
+**N-29** - Plan & privacy tab, "Orena messages" quota bar. No entitlement key
+for AI-tutor conversation turns exists in `writing_coach/product/catalog.py`'s
+plan catalogue (`writing.evaluate`, `writing.improve`, `library.grammar`,
+`dictionary.lookup`, `vocabulary.save`, `analytics.*`, `practice.personalized`,
+`export.report` - no `orena.messages` or equivalent). Drawn as 0/0 and inert.
+Needs a catalogue entitlement plus a counter on `agent-bridge.js`'s Ask-Orena
+calls.
+
+**N-30** - Plan & privacy tab, "Pronunciation minutes" quota bar. Same absence:
+no entitlement key measures pronunciation practice time anywhere in the
+catalogue. Drawn as 0/0 and inert. Needs a catalogue entitlement plus a
+duration counter over Speaking/Shadowing attempts
+(`POST /api/speech/pronunciation`, `POST /api/speech/attempts`).
+
+**N-31** - Plan & privacy tab, "Learner audio" ("Delete audio"). No route
+deletes a learner's stored audio or media anywhere in the API (`speech_*.py`,
+`media_*.py`, `library_api.py` grepped) - only `DELETE
+/api/library/vocabulary/{word}` and `DELETE /api/library/items/{id}` exist, and
+neither touches stored audio bytes. The row is drawn with its real retention
+sentence and an inert "Delete audio" button. Needs a deletion route over
+whatever store keeps Speaking/Compare recordings and imported media.
+
+(The "Plus plan" row's "Manage" action is inert too, but is not a new gap here:
+`docs/product/ORENA_COMMERCE_ARCHITECTURE.md` §2 already documents
+`billing_ready=False` everywhere, which is why no plan action anywhere in the
+app has a real destination yet.)
+
+**N-32** - Profile (`static/orena/screens/profile/screen.js`, `model.js`, frames
+24-25 "Profile" / "Profile · Today's progress", D8/E1). Five real backend gaps,
+each already rule-40 zeroed/honestly-empty in the built screen, none fabricated:
+
+1. **Day streak** (the stats card's flame number and the hero's Streak tile).
+   No cross-activity streak table exists anywhere in the schema - the only
+   stored streak is Writing's own, `GET /api/dashboard`'s `streak_days` field,
+   scoped to writing submissions alone, so it is not reused here (the same
+   reasoning N-21 already applied to Today's identical streak card). Always
+   `0`; the 7-cell day strip shows no day as done.
+2. **This-week minutes** (the hero's "This week" tile and the stats card's
+   clock stat). No domain aggregates study time per day or per week anywhere
+   in the schema. Always `0`; the design's own `weekDelta` line ("+N min vs
+   last week") is dropped rather than comparing two unmeasured numbers.
+3. **Weekly-goal done-count** (the identity card's 5-segment bar, "0 / 5").
+   The segment *count* itself (5) is the design's own fixed constant
+   (`WEEKLY_GOAL_TARGET`, a rendering parameter, not a claimed measurement,
+   the same way Today's 3 skill rings are a fixed set) - no configurable
+   weekly-goal-in-days feature exists to measure a real done-count against it.
+4. **Daily-goal tile** (the hero's 4th tile, a 60x60 ring). No per-day
+   study-time aggregate exists to fill the ring (always drawn at a real,
+   honest 0% via `kit/components.js`'s `progressRing()`, the same pattern
+   Today's own goal ring already ships for the identical gap, N-21); the
+   design's own "15 minutes" target is a constant living only inside the
+   prototype's fake session-stopwatch function (`orena-script.js`'s
+   `sessVals()`), with no standing as a real setting anywhere, so the tile's
+   value line reads an honest "Not tracked yet" rather than a fabricated
+   "0 / 15 min" against a target that does not really exist. A real daily-goal
+   ring needs both a per-day study-time measure and a real daily-goal-minutes
+   setting.
+5. **Achievements** (the identity card's 4-badge row: "First article", "10
+   videos", "Speak 7 days · 4/7", "C1 writer"; `screens/profile/screen.js`'s
+   own top comment cites this item as "N-25" - stale from before this
+   section's renumbering, this **N-32** item 5 is the current id). Omitted
+   entirely, not drawn at a zero state, because there is no catalogue to read
+   even a zero from -
+   `learner_summary.py`'s own achievements object is
+   `{status:'unavailable', reason:'no_approved_policy'}`, unlike the four
+   items above, which each have a real (always-zero) field to bind to.
+
+All five need the same class of backend work as their Today/Progress
+counterparts (N-21, N-24): a cross-activity study-time aggregate, a
+cross-activity streak table, a configurable weekly-goal setting, and an
+achievements/milestone catalogue, before the frontend has anything real to
+bind to.
+
+**N-33** - Grammar Library and Grammar Concept, found on independent review of
+N-20 (`static/orena/screens/grammar/`, `static/orena/screens/grammar-concept/`,
+frames 44/47). For the **Chinese-target (HSK) catalogue**,
+`GET /api/library/grammar` and `GET /api/library/grammar/{id}` return `title`
+as a **flat Vietnamese string** - e.g. `"SVO cơ bản"` (HSK1), `"过: kinh
+nghiệm"` (HSK2), `"把字句: nền tảng"` (HSK3) - confirmed against both the live
+API and the source content
+(`writing_coach/languages/chinese/grammar_curriculum.json`: every lesson's
+`title` field is a plain string, no `title_en`/`title_zh` key and no
+locale-map shape at all). This is a different and more severe gap than N-20's
+already-disclosed one: N-20's `learning_model` prose fields and `examples[]`
+at least have somewhere to look for a non-Vietnamese value (the prose fields
+via a documented `"default"`-key locale map; the frontend now honestly omits
+`examples[]`'s translation line for a non-vi-support learner because that
+field has no map to fall back through). `title` has no locale mechanism to
+select from, English or Chinese, so it is not fixable in the frontend at all
+- there is no field to `pickLocale` between.
+
+By contrast, every **English**-target lesson's `title` is genuine English at
+every level A1-C2 (spot-checked; confirmed via
+`writing_coach/languages/english/grammar_curriculum.json`), so this is
+specific to the Chinese track's content authoring, not a general quirk of the
+`title` field.
+
+Impact: `title` is the **primary heading** on both screens - the Library
+row's bold title (`screen.js`'s `listRow({ title: item.title, ... })`) and
+the Concept screen's header (`pageHeader({ title: lesson.title, ... })`,
+`ctx.setCrumb(lesson.title)`). For a Chinese-target learner without
+Vietnamese support, this heading, plus the N-20 prose fields shown via
+`default`, is Vietnamese text they cannot read; only the raw Chinese example
+sentences and the Latin pattern-chip letters (S/V/O) are genuinely theirs
+across most of the 239-lesson HSK catalogue. Needs an English/Chinese
+`title` authored per lesson (or a locale-map shape matching `learning_model`'s
+own `_text()`/`"default"` convention) in the Chinese grammar curriculum before
+the frontend has anything to select.
+
+**N-34 - RESOLVED (2026-09-27).** Two `copy/index.js` bugs, each hit
+independently while building several screens above and previously recorded as
+a separate note on each one (Collection Detail N-19, Grammar N-20, Today N-21,
+Practice Hub N-22, My Library N-23): (1) `fill()` dropped a `{n}`/`{min}`-style
+placeholder whenever the interpolated value was exactly `0`, leaving the
+literal token in the rendered string - hit by every rule-40 zero that a
+screen tried to interpolate; (2) `plural(key, n)` chose the singular form by
+checking the *merged*, English-backfilled copy object, so a Vietnamese or
+Chinese interface read the English `_one` string at `n === 1` instead of its
+own `_other` form. Both are now fixed centrally in `copy/index.js`: `fill()`
+fills a real `0`, and `plural()` picks the form with `Intl.PluralRules` of the
+language the key actually renders in, so vi/zh always read `<key>_other` and
+English reads `<key>_one` only at `n === 1`. The five screens' own local
+workarounds (`zeroSafe()`, the presence-based `fillSafe()`, bare ranked keys
+in place of `_one`/`_other`) are being removed now that the shared fix covers
+them - nothing left for a screen to work around locally.
+
+### Open design questions for the human
+
+Real product/content decisions this section's entries above could not resolve
+by building conservatively - each already has its own no-invented-data
+fallback in place; these ask which fallback should become the real feature.
+
+1. **Today** (frame 10-Today.html, N-21) - the brief's own spec,
+   `docs/design/canonical-ui/brief/ORENA_DESIGN_SPEC.md` §7, lists parts **D**
+   ("review reminder pill", "N mục cần ôn" linking to My Library's Due Review)
+   and **G** (practice entry shortcuts) as part of Today's structure, with no
+   phasing note - but the pinned frame itself draws neither. Built as the
+   frame draws it (rule 43/44): neither is on the screen. Is their absence
+   from this particular export intentional for this revision, or should a
+   future revision add them?
+2. **Import** (`screens/import/sheet.js`, frame 58-Import.html) - the design's
+   own script toasts "Text and File import are not built in this round" for
+   both; this build already goes further than the design for Text (a real
+   device-memory path into the Reader), matching the design's toast for File
+   only. `infrastructure/api.js` does carry a real learner-facing upload route
+   (`api.mediaUpload`, `POST /api/media-learning/upload`, already used
+   elsewhere for a learner's own media file) - it is not yet known whether
+   that route fits whatever "File" in Import is meant to accept (a document
+   for Reading vs. a media file), so wiring it was not assumed. Wire File to
+   it now, ahead of the design's own phasing, or wait for a design revision
+   that specifies File's real shape?
+3. **Grammar Concept** (N-33) - the Chinese-target (HSK) curriculum's
+   explanatory prose and, worse, its lesson titles exist only in Vietnamese,
+   with no English/Chinese field or locale-map to select from. A learner
+   whose support language is not Vietnamese currently sees a Vietnamese
+   heading and (for the prose fields) Vietnamese explanation text. What
+   should that learner see instead until the content is authored in English
+   and Chinese - blank the field (rule 40's honest-empty, losing the teaching
+   content entirely), keep the Vietnamese text as the closest thing to real
+   content (today's choice for the prose fields, not available for `title`),
+   or something else?
+4. **Grammar Concept template** (`SCRATCH/reports/primitives.md`, design
+   inventory E5) - the pinned design carries two structurally different
+   source frames for this one screen, `23-Grammar-Concept.html` (hand-built)
+   and `47-Grammar-Concept.html` (a generic template), with no note on which
+   is canonical. `kit/components.js`'s `pageHeader()` currently defaults to
+   the generic frame's numbers. Which frame is the real one?
+5. **Settings, Support language** (`screens/settings/`, frame 26) - drawn as
+   a segmented control, which reads as a design assuming a short list; the
+   real backend list is about a dozen languages, kept usable today with
+   horizontal scroll inside the control (rule 49). Worth a picker/sheet
+   instead if the support-language list keeps growing?
+
 # CHỜ NGƯỜI QUYẾT ĐỊNH — sổ đăng ký mở (cập nhật 2026-09-22)
 
 Đây là **danh sách duy nhất** cần anh duyệt. Mỗi mục ghi rõ đang làm gì và hai lựa chọn, để chỉ

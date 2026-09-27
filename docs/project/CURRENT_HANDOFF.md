@@ -42,13 +42,40 @@ The intelligence lane integrates against `/next`. Frame → route → code → s
   equal the pin (gated); Lucide icons at `lucide-static@0.525.0`; the brand
   marks from `assets/brand/orena/logo/`; kit primitives; the shell (rail, top
   bar, phone header and bar, focus mode, breadcrumb, nav origin), measured equal
-  to the design's shell; the router with all 47 routes (unbuilt ones show the
-  design's Coming soon); copy in en / vi / zh by layer. Gates
-  `test_orena_kit`, `test_orena_shell`, `test_orena_copy`. Open: colour
-  contrast N-8 (`UI_BACKEND_GAPS.md`) awaits the human.
-- **Surfaces:** none yet.
+  to the design's shell; the router with all 48 routes (unbuilt ones show the
+  design's Coming soon); copy in en / vi / zh by layer, one copy engine
+  (placeholders and plural forms, `test_orena_copy_engine`). Gates
+  `test_orena_kit`, `test_orena_shell`, `test_orena_copy`. Colour contrast N-8
+  is settled by D-093.
+- **Wave A destinations (IMPLEMENTING - built, reviewed, integrated; browser
+  re-check pending):** Today, Discover, Content Detail, Practice Hub, My
+  Library, Collection Detail, Word Detail (with the stroke sheet), Grammar
+  Library, Grammar Concept, Progress, Profile, Settings, Search, and the Import
+  and Notifications sheets (the bell opens Notifications), on shared components
+  (`kit/components.js`). Each surface was built from its frame, measured,
+  verified in the browser against the isolated app on :8021 in en / vi / zh and
+  both themes, and reviewed by an independent agent whose findings were fixed;
+  an integration pass then removed the per-screen copy workarounds, closed the
+  shared-kit fidelity gaps and wired the shell, CI and docs. Gates
+  `test_orena_screen_*`, `test_orena_components`. The browser re-check of the
+  integrated tree is pending: Docker stopped during the integration pass and
+  the isolated app could not run. Backend gaps and the open design questions:
+  `UI_BACKEND_GAPS.md` section N.
+- **Agent (contract v4, D-095):** the transport answers every §2.1 status;
+  hiding the shell's Orena entry points when the agent is absent is not wired
+  yet (with the Orena panel, Wave B).
+- **Next:** Wave B - the learning workspaces (reading, listening, dictation,
+  speaking, writing, review), the Orena panel on the mock, onboarding.
 
 ## Last verified batch
+
+2026-09-27, Wave A destinations integrated, local: all 85 CI `.mjs` gates and
+the browser ESM graph (188 modules) pass on the working tree, with the
+memory/architecture validators. `test_orena_vocabulary_theme_tokens.mjs`, which
+CI does not run, fails identically on a clean `HEAD` (an old-UI gate for a
+retired vocabulary CSS scope; to be replaced at the cutover, not deleted). The
+integrated tree's browser re-check is pending (Docker down). No CI pass is
+claimed.
 
 2026-09-27, new UI foundation, local: all 69 CI `.mjs` gates, the browser ESM
 graph, route tests and the memory/architecture validators pass; the shell

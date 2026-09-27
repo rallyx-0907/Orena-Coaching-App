@@ -1,0 +1,265 @@
+/* My Library (frame 12), measured. Root: no side padding here - `.o-main` already applies
+   `var(--pad)`; only this section's own vertical rhythm lives below. */
+.s-library {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 22px;
+}
+
+/* ---- Content tab: a row per saved book/article/listening item ---- */
+.s-library-content-grid {
+  display: grid;
+  grid-template-columns: var(--cols-ip);
+  gap: 14px;
+}
+.s-library-content-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--sh1);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.s-library-content-row:hover {
+  box-shadow: var(--sh2);
+  transform: translateY(-1px);
+}
+.s-library-content-row__body {
+  flex: 1;
+  min-width: 0;
+}
+.s-library-content-row__type {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-library-content-row__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-library-content-row__source {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-library-content-row__progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.s-library-content-row__progress .o-progress {
+  flex: 1;
+  height: 6px;
+  background: var(--surface3);
+}
+.s-library-content-row__pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  flex: none;
+}
+.s-library-content-row__chevron {
+  color: var(--muted);
+  display: flex;
+  flex: none;
+}
+
+/* ---- Saved-Language tab: a compact row per saved word/phrase ---- */
+.s-library-lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-library-lang-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.s-library-chip {
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.s-library-chip--new {
+  background: var(--green-soft);
+  color: var(--green);
+  font-weight: 700;
+}
+.s-library-lang-row__text {
+  flex: 1;
+  min-width: 0;
+}
+.s-library-lang-row__word {
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-library-lang-row__sub {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-library-lang-row__play {
+  color: var(--text3);
+  display: flex;
+  padding: 4px;
+  border: 0;
+  background: none;
+  flex: none;
+}
+.s-library-lang-empty .o-empty {
+  padding: 28px 20px;
+}
+
+/* ---- Collections tab: the shared media-card grid, image-less cards ---- */
+.s-library-collections-grid {
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 20px;
+}
+
+/* ---- Active-use tab: fixed shortcuts into Vocabulary's own Recall/Use/Transfer flows ---- */
+.s-library-active-grid {
+  display: grid;
+  grid-template-columns: var(--cols-ip);
+  gap: 14px;
+}
+.s-library-active-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--sh1);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.s-library-active-card:hover {
+  box-shadow: var(--sh2);
+  transform: translateY(-1px);
+}
+.s-library-active-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s-library-active-card__stage {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-library-active-card__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-library-active-card__desc {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* ---- Due-Review tab ---- */
+.s-library-due-grid {
+  display: grid;
+  grid-template-columns: var(--ls-cols);
+  gap: 20px;
+}
+.s-library-due-hero {
+  padding: 26px;
+  border-radius: 20px;
+  background: var(--tint2);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-library-due-hero__eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-library-due-hero__count {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.s-library-due-hero__count span {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-library-due-hero__stats {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.s-library-due-hero__stats b {
+  color: var(--text);
+}
+.s-library-due-cta {
+  width: 100%;
+  padding: 18px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+.s-library-due-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-library-due-list__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-library-due-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 15px;
+  box-shadow: var(--sh1);
+}
+.s-library-due-row__text {
+  font-weight: 600;
+}
+.s-library-due-row__meta {
+  font-size: 13px;
+  color: var(--muted);
+}

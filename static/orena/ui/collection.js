@@ -2,6 +2,7 @@ import { esc } from './html.js';
 import { refCopy } from './reference.js';
 import { icon } from './phosphor.js';
 import { link } from '../product/intent.js';
+import { refOf } from '../product/collection-ref.js';
 
 /* Thư viện của tôi (D-067, "Thư viện của tôi · desktop" and "· mobile") - one
    library over everything the learner kept, whatever kind it is.
@@ -94,7 +95,6 @@ export function renderCollection(root, ctx) {
   };
 
   const kindOf = (id) => KINDS.find((kind) => kind.id === id);
-  const refOf = (entry) => `${entry.ref.domain}:${entry.ref.id}`;
   const ownOf = (entry) => state.own.get(refOf(entry)) || null;
   const entryFor = (ref) => (state.entries || []).find((entry) => refOf(entry) === ref) || null;
 

@@ -126,6 +126,7 @@ export function createRouter({ frame, getContext }) {
       session(ORIGIN_KEY, origin);
     }
     root.dataset.focus = route.focus ? '1' : '0';
+    root.dataset.bare = route.bare ? '1' : '0';
     root.dataset.route = route.id;
     paint();
 
@@ -222,12 +223,29 @@ export function createRouter({ frame, getContext }) {
     go(link.getAttribute('href'));
   }
 
+  /* The bell (desktop top bar and phone header, shell/frame.js's two `[data-open="notifications"]`
+     buttons): opens the design's notifications sheet (screens/notifications/sheet.js), loaded
+     lazily so it never joins first paint - the same `import(...).then(...)` pattern every other
+     shell-drawn sheet trigger already uses (e.g. discover/screen.js's Import button). */
+  function onOpenClick(event) {
+    const target = event.target.closest?.('[data-open]');
+    if (!target || event.defaultPrevented) return;
+    const which = target.dataset.open;
+    if (which === 'notifications') {
+      event.preventDefault();
+      import('../screens/notifications/sheet.js')
+        .then((module) => module.openNotifications({ context: getContext(), go }))
+        .catch((error) => console.error('[Orena] Notifications is not available yet', error));
+    }
+  }
+
   return {
     start() {
       window.addEventListener('hashchange', render);
       document.addEventListener('keydown', onKey);
       document.addEventListener('click', onClick);
       document.addEventListener('click', onLinkClick);
+      document.addEventListener('click', onOpenClick);
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && event.target.matches?.('[data-go][role="link"]')) go(event.target.dataset.go);
       });

@@ -1,0 +1,154 @@
+/* Practice Hub (frame 08) and Skill Hub (frame 09), measured. Both are browse/picker screens
+   (route.focus=false), not learning workspaces - `.o-main` already gives every screen its side
+   gutters (var(--pad)) and bottom padding and plays the "rise" entrance; this only adds each
+   root's own vertical rhythm and grid, exactly as the frames draw them. Row/tile bodies reuse
+   kit/components.js's listRow/sectionHead/pageHeader/rowIconSwatch - only what those shared
+   classes do not already cover lives here. */
+
+/* ---- Practice Hub root ---- */
+.s-practice {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-top: 24px;
+  max-width: 1120px;
+}
+
+/* ---- Continue (in-progress) rows: listRow variant="shadow" already gives the shape/shadow;
+   only the frame's translateY hover (kit's shared row only changes the shadow) is added here. */
+.s-practice-continue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-practice-continue-row:hover {
+  transform: translateY(-2px);
+}
+.s-practice-pill {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+/* ---- Skill sections ---- */
+.s-practice-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* The frame's <h2> is 700; kit's shared sectionHead canonicalises on 600 for Today/Progress's own
+   use of the same component (kit request: sectionHead has no per-caller weight - recorded in the
+   report rather than touching the shared file). */
+.s-practice-section .c-section-head__title {
+  font-weight: 700;
+}
+.s-practice-grid {
+  display: grid;
+  grid-template-columns: var(--ph3);
+  gap: 12px;
+}
+/* The frame's grid tile border is the lighter `--border` token, not listRow's own outline default
+   (`--border2`) - a real, recorded difference (kit request), plus the frame's translateY hover
+   (kit's shared outline row only changes the shadow). */
+.s-practice-tile {
+  border-color: var(--border);
+}
+.s-practice-tile:hover {
+  transform: translateY(-2px);
+}
+/* listRow's shared title/sub don't set a line-height, and its sub defaults to --muted/13px for
+   its other callers - Practice Hub's own tile draws 15/20 and 12/17 with the meta in --text3
+   (measured against the live source; kit request: no per-caller line-height/colour on listRow). */
+.s-practice-tile .c-row__title {
+  line-height: 20px;
+}
+.s-practice-tile .c-row__sub {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text3);
+}
+
+/* ---- Skill Hub root ---- */
+.s-practice-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+.s-practice-hub__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* The frame's mode row highlights on hover by turning its border accent-coloured, not by adding a
+   shadow (kit's shared outline row's own hover only changes the shadow), and its internal gap is
+   12px, not listRow's shared 14px (kit request: no per-caller gap on listRow). */
+.s-practice-hubrow {
+  gap: 12px;
+}
+.s-practice-hubrow:hover {
+  box-shadow: none;
+  border-color: var(--accent);
+}
+/* Confirmed live against the design source (09-Skill-Hub.html): the back button is 40x40/radius
+   14 with a 20px title, not Grammar Concept's 40x40/radius 12 that pageHeader's `compact` variant
+   otherwise canonicalises on (kit request: no per-caller back-button radius on pageHeader).
+   titleSize is passed as 20 at the call site; only the radius needs overriding here. */
+.s-practice-hub .c-pagehead .o-iconbtn {
+  border-radius: 14px;
+}
+.s-practice-hubrow__meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Recommendation card (Skill Hub only, currently Write - the only skill with a real
+   recommender; see model.js writeRecommendation) ---- */
+.s-practice-rec {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--accent-soft);
+  color: var(--text);
+  text-align: left;
+}
+.s-practice-rec__body {
+  flex: 1;
+  min-width: 0;
+}
+.s-practice-rec__eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-practice-rec__title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.s-practice-rec__reason {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-practice-rec__cta {
+  flex: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 600;
+}

@@ -1,0 +1,276 @@
+/* Import overlay (pinned design frame 58, opened from Discover's "+ Import"). Two real paths, no
+   fictional preview or fake progress (Design Contract rule 40):
+
+   - text  -> device memory (product/memory.js#add), straight into the Reader - there never was a
+             preview/processing step for text, in the old dialog or the new frame's own bindings.
+   - url   -> capabilities/media-acquisition.js#acquireMedia (POST /api/media-learning/import, then
+             /import/status while the backend's own job is resumable), then Listening.
+
+   File is not a third path: the frame draws no `impIsFile` step at all - its own onClick handler
+   (`impPickText` in orena-script.js) is a toast, "Text and File import are not built in this
+   round," while it stays on the type picker. This build matches that exactly (rule 43/44: an
+   offered control must work as the source defines it, and nothing the source does not draw is
+   built) - clicking File toasts and the type step stays open; there is no upload flow here.
+
+   The frame's own "Preview" step (I3b) has no cheap counterpart on the backend - the only way to
+   learn a URL's title/thumbnail/duration is to run the same acquisition the "Processing" step runs -
+   so Preview and Processing are one real step here (recorded in SCRATCH/reports/sheets.md), and the
+   frame's four-stage checklist (fetch/transcribe/translate/ready) is one status row, because that is
+   all the backend's own job state (`import_job.state`/`resumable`/`failure_kind`) reports. */
+import { openSheet, fillSheet } from '../../kit/overlay.js';
+import { html, raw } from '../../kit/html.js';
+import { icon } from '../../kit/icons.js';
+import { useStyles } from '../../kit/styles.js';
+import { toast } from '../../kit/toast.js';
+import { shellCopy as s } from '../../copy/shell.js';
+import { href } from '../../shell/routes.js';
+import { api } from '../../infrastructure/api.js';
+import { acquireMedia } from '../../capabilities/media-acquisition.js';
+import { isSupportedMediaUrl } from '../../product/media-url.js';
+import { t } from './copy.js';
+import { textStats, importErrorKey, urlMediaEntry } from './model.js';
+
+const STEP_LABEL = { type: 'stepType', text: 'stepText', url: 'stepUrl', processing: 'stepProcessing' };
+
+export async function openImport(ctx = {}) {
+  const context = ctx.context || {};
+  const memory = context.memory || null;
+  const navigate = (routeId, params) => {
+    const target = href(routeId, params);
+    if (typeof ctx.go === 'function') ctx.go(target);
+    else window.location.hash = target;
+  };
+
+  let alive = true;
+  let sheetEl = null;
+  let sheetHandle = null;
+
+  const state = {
+    step: 'type',
+    title: '',
+    text: '',
+    url: '',
+    urlError: '',
+    textError: '',
+    processError: '',
+    busy: false,
+  };
+
+  function go(step) {
+    state.step = step;
+    state.urlError = '';
+    state.textError = '';
+    state.processError = '';
+    paint();
+  }
+
+  function optionMarkup() {
+    return html`
+      <button type="button" class="s-import__option s-import__option--primary" data-pick="url">
+        <div class="s-import__option-title">${t('optionUrlTitle')}</div>
+        <div class="s-import__option-sub">${t('introUrl')}</div>
+      </button>
+      <button type="button" class="s-import__option" data-pick="text">
+        <div class="s-import__option-title">${t('optionTextTitle')}</div>
+        <div class="s-import__option-sub">${t('introText')}</div>
+      </button>
+      <button type="button" class="s-import__option" data-pick="file">
+        <div class="s-import__option-title">${t('optionFileTitle')}</div>
+        <div class="s-import__option-sub">${t('introFile')}</div>
+      </button>
+    `;
+  }
+
+  function textMarkup() {
+    const stats = textStats(state.text);
+    return html`
+      <label class="s-import__label" for="s-import-title">${t('fieldTitleLabel')}</label>
+      <input id="s-import-title" class="s-import__input" data-field="title" value="${state.title}" placeholder="${t('fieldTitlePlaceholder')}" maxlength="120">
+      <label class="s-import__label" for="s-import-text">${t('fieldTextLabel')}</label>
+      <textarea id="s-import-text" class="s-import__textarea" data-field="text" rows="8" placeholder="${t('fieldTextPlaceholder')}" maxlength="12000">${state.text}</textarea>
+      <div class="s-import__stats">
+        <span class="o-tag o-tag--accent" data-role="lang">${context.language === 'zh' ? s('lang_zh') : s('lang_en')}</span>
+        <span class="o-tag" data-role="stats">${stats.unit === 'characters' ? t('statsCharacters', { count: stats.count, sentences: stats.sentences }) : t('statsWords', { count: stats.count, sentences: stats.sentences })}</span>
+      </div>
+      <div class="s-import__warn" data-role="tooshort" ${stats.tooShort ? '' : 'hidden'}>${t('tooShort')}</div>
+      ${state.textError ? html`<div class="s-import__error">${state.textError}</div>` : ''}
+      <div class="s-import__footer">
+        <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-back="type">${s('back')}</button>
+        <button type="button" class="o-btn o-btn--primary s-import__cta" data-submit="text">${t('importToReader')}</button>
+      </div>
+    `;
+  }
+
+  function urlMarkup() {
+    return html`
+      <label class="s-import__label" for="s-import-url">${t('fieldUrlLabel')}</label>
+      <input id="s-import-url" class="s-import__input s-import__input--url" type="url" inputmode="url" data-field="url" value="${state.url}" placeholder="${t('fieldUrlPlaceholder')}">
+      ${state.urlError ? html`<div class="s-import__error">${state.urlError}</div>` : ''}
+      <div class="s-import__footer">
+        <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-back="type">${s('back')}</button>
+        <button type="button" class="o-btn o-btn--primary s-import__cta" data-submit="url">${t('importAndProcess')}</button>
+      </div>
+    `;
+  }
+
+  function processingMarkup() {
+    if (state.processError) {
+      return html`
+        <div class="s-import__error">${state.processError}</div>
+        <div class="s-import__footer">
+          <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-back="url">${s('back')}</button>
+          <button type="button" class="o-btn o-btn--primary s-import__cta" data-retry>${s('retry')}</button>
+        </div>
+      `;
+    }
+    return html`
+      <div class="s-import__stage">
+        <span class="o-spinner" aria-hidden="true"></span>
+        <div class="s-import__stage-label">${t('statusImporting')}</div>
+      </div>
+      <div class="s-import__note">${t('noPercent')}</div>
+    `;
+  }
+
+  function bodyMarkup() {
+    if (state.step === 'text') return textMarkup();
+    if (state.step === 'url') return urlMarkup();
+    if (state.step === 'processing') return processingMarkup();
+    return optionMarkup();
+  }
+
+  function markup() {
+    return html`<div class="o-sheet__head">
+      <div>
+        <div class="o-sheet__title">${t('title')}</div>
+        <div class="s-import__step">${t(STEP_LABEL[state.step])}</div>
+      </div>
+      <button type="button" class="o-iconbtn o-iconbtn--close" data-sheet-close aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
+    </div>
+    <div class="o-sheet__body s-import__body">${bodyMarkup()}</div>`;
+  }
+
+  function paint() {
+    if (!sheetEl || !alive) return;
+    fillSheet(sheetEl, sheetHandle, markup());
+    bind();
+  }
+
+  function bind() {
+    sheetEl.querySelector('[data-pick="url"]')?.addEventListener('click', () => go('url'));
+    sheetEl.querySelector('[data-pick="text"]')?.addEventListener('click', () => go('text'));
+    // The frame draws no File step at all (no `impIsFile` block) - its own handler for this button
+    // is a toast, and the type step stays open. This build matches that exactly (rule 44).
+    sheetEl.querySelector('[data-pick="file"]')?.addEventListener('click', () => toast(t('fileNotBuilt'), { iconName: 'circle-alert' }));
+    sheetEl.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', () => go(btn.dataset.back)));
+
+    if (state.step === 'text') {
+      const titleInput = sheetEl.querySelector('[data-field="title"]');
+      const textArea = sheetEl.querySelector('[data-field="text"]');
+      const statsEl = sheetEl.querySelector('[data-role="stats"]');
+      const warnEl = sheetEl.querySelector('[data-role="tooshort"]');
+      const submitBtn = sheetEl.querySelector('[data-submit="text"]');
+      titleInput?.addEventListener('input', () => { state.title = titleInput.value; });
+      textArea?.addEventListener('input', () => {
+        state.text = textArea.value;
+        const stats = textStats(state.text);
+        if (statsEl) statsEl.textContent = stats.unit === 'characters' ? t('statsCharacters', { count: stats.count, sentences: stats.sentences }) : t('statsWords', { count: stats.count, sentences: stats.sentences });
+        if (warnEl) warnEl.hidden = !stats.tooShort;
+      });
+      submitBtn?.addEventListener('click', submitText);
+    }
+    if (state.step === 'url') {
+      const urlInput = sheetEl.querySelector('[data-field="url"]');
+      urlInput?.addEventListener('input', () => { state.url = urlInput.value; });
+      urlInput?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); submitUrl(); } });
+      sheetEl.querySelector('[data-submit="url"]')?.addEventListener('click', submitUrl);
+    }
+    if (state.step === 'processing' && state.processError) {
+      sheetEl.querySelector('[data-retry]')?.addEventListener('click', submitUrl);
+    }
+  }
+
+  function submitText() {
+    if (state.busy) return;
+    const stats = textStats(state.text);
+    if (stats.tooShort) {
+      // The frame never disables this button - it stays full-accent and answers an early click
+      // with this same toast (its impTextProcess handler); the inline warning line already shown
+      // under the stats chip is the frame's other half of this state.
+      toast(t('tooShort'), { iconName: 'circle-alert' });
+      return;
+    }
+    if (!memory?.add) {
+      state.textError = t('error_generic');
+      paint();
+      return;
+    }
+    try {
+      const item = memory.add({ title: state.title.trim() || state.text.trim().slice(0, 60), text: state.text });
+      sheetHandle?.close();
+      navigate('reader', { id: item.id });
+    } catch {
+      // The only remaining throw path once tooShort is guarded is memory.add's own 20-item cap
+      // (product/memory.js) - a real, honest limit, not a made-up message.
+      state.textError = t('error_generic');
+      paint();
+    }
+  }
+
+  async function submitUrl() {
+    if (state.busy) return;
+    if (!isSupportedMediaUrl(state.url.trim())) {
+      state.urlError = t('urlInvalid');
+      paint();
+      return;
+    }
+    state.busy = true;
+    state.step = 'processing';
+    state.processError = '';
+    paint();
+    try {
+      const result = await acquireMedia({
+        api,
+        url: state.url.trim(),
+        target: context.language,
+        owner: context.owner || 'local',
+        language: context.language,
+        alive: () => alive,
+        onProgress: () => { if (alive) paint(); },
+      });
+      if (!alive) return;
+      state.busy = false;
+      if (!result || result.asset?.processing_state === 'failed') {
+        state.processError = t(importErrorKey(result?.import_job?.failure_kind));
+        paint();
+        return;
+      }
+      const entry = urlMediaEntry(state.url.trim(), result);
+      memory?.addMedia?.(entry);
+      sheetHandle?.close();
+      navigate('listening', { id: entry.id });
+    } catch (error) {
+      if (!alive) return;
+      state.busy = false;
+      state.processError = t(importErrorKey(error?.category));
+      paint();
+    }
+  }
+
+  await useStyles('screens/import/import.css');
+  if (!ctx.isCurrent || ctx.isCurrent()) {
+    sheetHandle = openSheet({
+      label: t('title'),
+      className: 's-import',
+      render(element, handle) {
+        sheetEl = element;
+        sheetHandle = handle;
+        paint();
+        return () => {
+          alive = false;
+        };
+      },
+    });
+  }
+  return sheetHandle;
+}

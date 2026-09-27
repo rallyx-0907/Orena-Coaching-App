@@ -109,6 +109,20 @@ jobs:
           node scripts/test_orena_shell.mjs
           node scripts/test_orena_copy.mjs
           node scripts/test_orena_copy_engine.mjs
+          node scripts/test_orena_components.mjs
+          node scripts/test_orena_screen_today.mjs
+          node scripts/test_orena_screen_discover.mjs
+          node scripts/test_orena_screen_content.mjs
+          node scripts/test_orena_screen_practice.mjs
+          node scripts/test_orena_screen_library.mjs
+          node scripts/test_orena_screen_collection.mjs
+          node scripts/test_orena_screen_word.mjs
+          node scripts/test_orena_screen_grammar.mjs
+          node scripts/test_orena_screen_search.mjs
+          node scripts/test_orena_screen_progress.mjs
+          node scripts/test_orena_screen_profile.mjs
+          node scripts/test_orena_screen_settings.mjs
+          node scripts/test_orena_screen_sheets.mjs
           node scripts/test_orena_agent.mjs
       - run: python -m pytest -q test_app.py tests
         env:

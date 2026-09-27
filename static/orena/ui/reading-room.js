@@ -8,6 +8,20 @@
 import { esc, safeExternal } from './html.js';
 import { symbol } from './symbols.js';
 import { link } from '../product/intent.js';
+import {
+  READER_DEFAULTS,
+  CHOICES,
+  READER_SIZE,
+  LEADING,
+  MEASURE,
+  readerSettings,
+  readerPresentation,
+} from '../product/reader-settings.js';
+/* Re-exported unchanged: ui/reader.js, ui/lexical.js and
+   scripts/test_orena_reading_room.mjs import these names from this module. The values and the
+   clamping now live in product/reader-settings.js (moved there so the new Settings screen can use
+   them without importing old UI); nothing about them changed. */
+export { READER_DEFAULTS, READER_SIZE, readerSettings, readerPresentation };
 
 /* What each endpoint accepts, named once so a request is shaped to fit rather
    than refused. */
@@ -155,40 +169,8 @@ export function tocHtml(c, { bookId, chapters, currentId, provenance = null }) {
 }
 
 /* --- Settings ------------------------------------------------------------ */
-
-export const READER_DEFAULTS = Object.freeze({
-  size: 1,
-  font: 'serif',
-  spacing: 'normal',
-  width: 'medium',
-});
-const CHOICES = {
-  font: ['serif', 'sans'],
-  spacing: ['compact', 'normal', 'relaxed'],
-  width: ['narrow', 'medium', 'wide'],
-};
-export const READER_SIZE = Object.freeze({ min: 0.85, max: 1.4, step: 0.05 });
-const LEADING = { compact: 1.55, normal: 1.75, relaxed: 2 };
-const MEASURE = { narrow: '36rem', medium: '44rem', wide: '50rem' };
-export function readerSettings(raw) {
-  const value = raw && typeof raw === 'object' ? raw : {};
-  const settings = { ...READER_DEFAULTS };
-  const size = Number(value.size);
-  if (Number.isFinite(size))
-    settings.size =
-      Math.round(Math.min(READER_SIZE.max, Math.max(READER_SIZE.min, size)) * 100) / 100;
-  for (const [key, allowed] of Object.entries(CHOICES))
-    if (allowed.includes(value[key])) settings[key] = value[key];
-  return settings;
-}
-
-export function readerPresentation(settings) {
-  const s = readerSettings(settings);
-  return {
-    style: `--reader-scale: ${s.size}; --reader-leading: ${LEADING[s.spacing]}; --reader-measure: ${MEASURE[s.width]};`,
-    font: s.font,
-  };
-}
+/* READER_DEFAULTS, CHOICES, READER_SIZE, LEADING, MEASURE, readerSettings() and
+   readerPresentation() now live in product/reader-settings.js (imported and re-exported above). */
 
 const choiceRow = (c, label, key, current, labels) =>
   `<div class="reader-setting"><span class="reader-setting__label">${esc(label)}</span><div class="reader-segmented">${CHOICES[key]

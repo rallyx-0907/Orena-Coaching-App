@@ -1,0 +1,323 @@
+/* Frame "Grammar Concept" (frame 47, the generic template - primitives.md's pageHeader compact
+   default). Measured from SCRATCH/inventory/E5-grammar-quicksheets-orena.md §2.2.
+
+   Design Contract rule 49: this route is a learning workspace (shell/routes.js `gconcept.focus`).
+   The frame's own export scrolls the whole page (E5 §2.3 flags this); the shell instead fits the
+   column and scrolls only the card region, per rule 49 - never loosened for an implementation
+   reason. `.o-screen[data-screen="gconcept"]` is this screen's own selector on the router's shared
+   section element, not an edit to shell.css. */
+.o-screen[data-screen='gconcept'] {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-gc {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.s-gc__head {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  flex: none;
+}
+
+.s-gc__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.s-gc__inner {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+/* Header's "Ask Orena" action (E5 §2.2: text-only, border/colour override to accent). */
+.s-gc__ask {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-gc__ask:hover {
+  background: var(--accent-soft);
+}
+
+.s-gc__card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.s-gc__summary {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.s-gc__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Pattern chips (E5 §2.2: role palette a=accent/b=green/k=neutral/m=amber - model.js's
+   roleBucket()). */
+.s-gc__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.s-gc__chip {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.s-gc__chip--a { background: var(--accent-soft); color: var(--accent); }
+.s-gc__chip--b { background: var(--green-soft); color: var(--green); }
+.s-gc__chip--k { background: var(--surface3); color: var(--text); }
+.s-gc__chip--m { background: var(--amber-soft); color: var(--amber); }
+
+.s-gc__arrow {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+
+/* Generic pattern fallback (model.js primaryPattern's `rows` kind - a block type 47 draws no
+   dedicated visual for, reusing the example-row shell rather than inventing one). */
+.s-gc__row {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.s-gc__rowLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.s-gc__rowNote {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Example rows (E5 §2.2: padding 14/16, radius 14, bg surface2, 16/1.55; translation is a real
+   extension - the frame's own example rows never carry a second line, but the lesson's own
+   examples[] carries one for a vi-support learner (model.js's examplesOf: the catalogue's only
+   translation field is Vietnamese, shown only when the learner's support language is vi - never
+   unconditionally, and never dropped for a vi-support learner). */
+.s-gc__example {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.s-gc__exampleTr {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* Common mistake (E5 §2.2: 22x22 circle, literal Unicode glyph - not an SVG icon, on this frame).
+   Ink is --badge-ink, not --accent-ink: white accent-ink on the dark theme's --red/--green fails
+   WCAG AA for this 12px/700 glyph text (2.77:1 / 1.88:1, computed with the same formula
+   scripts/test_orena_kit.mjs uses; needs 4.5:1 - 12px bold is below the "large text" threshold).
+   --badge-ink is the kit's existing per-theme AA ink for a coloured badge fill (dark theme: a
+   near-black ink at 6.94:1/10.24:1 against red/green; light theme: white, identical to
+   accent-ink there, so no visual change in light theme) - already gate-proven against --red
+   (kit/tokens.css, scripts/test_orena_kit.mjs PAIRS); the green pairing has no existing gate entry
+   (kit request below) but was computed with the same formula before use here. */
+.s-gc__mistake {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-gc__mline {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.s-gc__glyph {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--badge-ink);
+}
+.s-gc__glyph--bad { background: var(--red); }
+.s-gc__glyph--good { background: var(--green); }
+.s-gc__mtext--bad { color: var(--red); text-decoration: line-through; }
+.s-gc__mtext--good { font-weight: 600; }
+.s-gc__mwhy {
+  font-size: 13.5px;
+  color: var(--muted);
+  padding-left: 32px;
+}
+
+/* Quiz (E5 §2.2). */
+.s-gc__quizhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.s-gc__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.s-gc__quizprog {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-gc__qprompt {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+}
+.s-gc__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-gc__opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  width: 100%;
+}
+.s-gc__opt--correct {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--green);
+  font-weight: 600;
+}
+.s-gc__opt--wrong {
+  border-color: var(--red);
+  background: var(--red-soft);
+  color: var(--red);
+  font-weight: 600;
+}
+.s-gc__optGlyph {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1.5px solid var(--border2);
+}
+.s-gc__opt--correct .s-gc__optGlyph {
+  border-color: var(--green);
+  background: var(--green);
+  color: var(--badge-ink);
+}
+.s-gc__opt--wrong .s-gc__optGlyph {
+  border-color: var(--red);
+  background: var(--red);
+  color: var(--badge-ink);
+}
+.s-gc__why {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.s-gc__quizfoot {
+  display: flex;
+  justify-content: flex-end;
+}
+.s-gc__cta {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-gc__score {
+  font-size: 20px;
+  font-weight: 700;
+}
+.s-gc__qdone {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+/* Try it yourself (E5 §2.2 shape; a textarea, not a single-line input - real personal_practice
+   placeholders carry embedded newlines for a multi-sentence prompt, recorded as a deviation). */
+.s-gc__tryPrompt {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.s-gc__tryRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-gc__tryInput {
+  flex: 1;
+  min-width: 200px;
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+}
+.s-gc__tryInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}

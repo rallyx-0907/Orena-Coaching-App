@@ -81,10 +81,12 @@ uses and the app lacks from the package.
 **6. Verify in a browser, every language, real touch.** Desktop at 1920x1080
 and a phone context created with `hasTouch`/`isMobile` (CDP touch events for a
 swipe), in English, Vietnamese and Chinese, and in the light and dark themes,
-in the same batch. The shell (rail, top bar, phone header and bar) exists only
-on the browsing places of rule 47; every route in the design's focus list is a
-workspace without it: check the room you touch is on the right side of that
-line. Until the cutover (D-091) the new UI is at `/next`; `/` is the old UI.
+in the same batch. Per rule 47, the desktop rail is always present; the
+desktop top bar, and the phone header and bar, exist only on the browsing
+places rule 47 lists. Every route in the design's focus list is a learning
+workspace without the top bar, phone header and phone bar (the rail stays):
+check the room you touch is on the right side of that line. Until the cutover
+(D-091) the new UI is at `/next`; `/` is the old UI.
 
 **6b. The workspace is the viewport (Design Contract rule 49, D-078).** A learning workspace
 never scrolls as a page: measure it at 1920x1080, 1366x768, 390x844 and 360x740 with content as

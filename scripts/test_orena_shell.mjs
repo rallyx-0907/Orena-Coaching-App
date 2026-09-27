@@ -17,7 +17,8 @@ const focusList = JSON.parse(script.match(/b\.dataset\.focus=(\[[^\]]+\])\.inclu
 // The design's "grammar" (one fixed concept) and "gconcept" (any concept) are one screen here.
 const ALIASES = { grammar: 'gconcept' };
 const designFocus = new Set(focusList.map((key) => ALIASES[key] || key));
-const ourFocus = new Set(ROUTES.filter((route) => route.focus).map((route) => route.design));
+// Onboarding (bare) comes from Onboarding.dc.html, not from Orena.dc.html's focus list.
+const ourFocus = new Set(ROUTES.filter((route) => route.focus && !route.bare).map((route) => route.design));
 assert.deepEqual([...ourFocus].sort(), [...designFocus].sort(), 'learning workspaces are the design focus list');
 for (const route of ROUTES.filter((r) => !r.focus)) assert.ok(!designFocus.has(route.design), `${route.id} keeps the shell, as the design does`);
 
@@ -38,6 +39,7 @@ const ROUTE_OF_FLAG = {
   Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming',
 };
 const designKeys = new Set(ROUTES.map((route) => route.design));
+assert.ok(ROUTES.every((route) => !route.bare || route.design === 'onboarding'), 'only onboarding is drawn without a shell');
 for (const flag of designRoutes) {
   assert.ok(flag in ROUTE_OF_FLAG, `design screen flag is${flag} is mapped`);
   assert.ok(designKeys.has(ROUTE_OF_FLAG[flag]), `design screen ${flag} has a route`);

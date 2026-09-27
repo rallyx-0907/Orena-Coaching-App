@@ -4,4 +4,17 @@
    it; scripts/validate_browser_esm_graph.mjs walks every screen listed here. */
 export const SCREENS = Object.freeze({
   coming: () => import('../screens/coming/screen.js'),
+  today: () => import('../screens/today/screen.js'),
+  word: () => import('../screens/word/screen.js'),
+  library: () => import('../screens/library/screen.js'),
+  profile: () => import('../screens/profile/screen.js'),
+  content: () => import('../screens/content/screen.js'),
+  discover: () => import('../screens/discover/screen.js'),
+  progress: () => import('../screens/progress/screen.js'),
+  collection: () => import('../screens/collection/screen.js'),
+  grammar: () => import('../screens/grammar/screen.js'),
+  'grammar-concept': () => import('../screens/grammar-concept/screen.js'),
+  search: () => import('../screens/search/screen.js'),
+  practice: () => import('../screens/practice/screen.js'),
+  settings: () => import('../screens/settings/screen.js'),
 });

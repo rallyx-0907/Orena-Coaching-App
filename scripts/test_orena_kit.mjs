@@ -98,7 +98,12 @@ const PAIRS = [
   ['muted', 'bg'], ['muted', 'surface'], ['muted', 'surface2'],
   ['text3', 'bg'], ['text3', 'surface'], ['text3', 'surface2'],
   ['accent', 'bg'], ['accent', 'surface'], ['accent', 'accent-soft'], ['accent-text', 'accent-soft'], ['accent-text', 'surface'],
-  ['accent-ink', 'accent-fill'], ['accent-ink', 'accent-fill-hover'], ['accent-ink', 'accent-fill-press'], ['badge-ink', 'red'],
+  ['accent-ink', 'accent-fill'], ['accent-ink', 'accent-fill-hover'], ['accent-ink', 'accent-fill-press'],
+  // kit.css's .o-banner__glyph (every kind: ok/info/warn/err) reads --badge-ink against its own
+  // kind's solid fill, not --accent-ink (D-091 kit fidelity pass - white ink fails AA against all
+  // four in dark theme; --badge-ink is the same fix grammar-concept.css already used for its own
+  // mistake/quiz glyphs).
+  ['badge-ink', 'red'], ['badge-ink', 'green'], ['badge-ink', 'amber'], ['badge-ink', 'accent-text'],
   ['green', 'green-soft'], ['red', 'red-soft'], ['amber', 'amber-soft'], ['ai-ink', 'ai-soft'],
   ['green', 'surface'], ['red', 'surface'], ['amber', 'surface'],
 ];

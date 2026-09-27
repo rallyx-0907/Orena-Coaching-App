@@ -1,0 +1,377 @@
+/* Shared components of the new learner UI, drawn the same way in several frames of the pinned
+   design (D-088). Built by the primitives pass; a screen's one-off layout lives in its own sheet.
+   Markup: kit/components.js. Colours are tokens only (kit/tokens.css); geometry that genuinely
+   differs by screen (radius, padding, ring size) is a component parameter, not a modifier class,
+   per the frame-by-frame numbers recorded in SCRATCH/reports/primitives.md. */
+
+/* ---- Media card (Today "For you", Discover, My Library Content/Collections) ---- */
+.c-media {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+}
+.c-media__img {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  flex: none;
+  background-color: var(--surface2);
+  background-size: cover;
+  background-position: center;
+}
+.c-media__badge--tl {
+  top: 10px;
+  left: 10px;
+}
+.c-media__badge--br {
+  top: auto;
+  left: auto;
+  bottom: 10px;
+  right: 10px;
+  font-size: 12px;
+}
+.c-media__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--photo-progress);
+}
+.c-media__progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.c-media__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 18px 20px;
+  flex: 1;
+}
+.c-media__title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.c-media__meta {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.c-media__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+/* ---- List row (My Library, Progress, Profile, Settings, Search, Notifications, Grammar
+   Library, Skill Hub, Import) ---- */
+.c-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+.c-row--shadow {
+  box-shadow: var(--sh1);
+}
+.c-row--outline {
+  border: 1px solid var(--border2);
+}
+.c-row--shadow:hover,
+.c-row--outline:hover {
+  box-shadow: var(--sh2);
+}
+.c-row__lead {
+  flex: none;
+  display: flex;
+}
+.c-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.c-row__title {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Notifications' own row (59-Notifications.html) draws a kind+when line above the title, and its
+   title is line-height:1.4 there (every other listRow consumer's 15px title draws no line-height
+   at all, confirmed live - 19px "normal" in both, so this stays scoped to the kind-line shape
+   rather than becoming the row's own default). No "when" half: no per-row timestamp exists to
+   fill it (rule 40), so `kind` carries only the kind label. */
+.c-row__kind {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.c-row__kind + .c-row__title {
+  line-height: 1.4;
+}
+.c-row__kind ~ .c-row__sub {
+  font-size: 13.5px;
+}
+.c-row__sub {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Profile's own action rows (25-Profile-Today-s-progress.html) draw the sub on the same line as
+   the title, not stacked under it, with no truncation at all (a short fixed label, never long
+   enough to need one) - listRow's `inlineSub` option nests this class inside the title instead of
+   as the body's second child. */
+.c-row__title--loose {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.c-row__sub--inline {
+  display: inline;
+  font-weight: 500;
+  margin-left: 10px;
+  overflow: visible;
+  white-space: normal;
+}
+.c-row__trail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.c-row__chevron {
+  flex: none;
+  display: flex;
+  color: var(--muted);
+}
+.c-row__swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.c-row__thumb {
+  flex: none;
+  background-color: var(--surface2);
+  background-size: cover;
+  background-position: center;
+}
+.c-row__badge {
+  flex: none;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ---- Section heading row (Today "For you", Progress "Knowing -> Using") ---- */
+.c-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.c-section-head__title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+}
+.c-section-head--sm .c-section-head__title {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.c-section-head__action {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+.c-section-head--sm .c-section-head__action {
+  font-size: 13px;
+  color: var(--accent-text);
+}
+
+/* ---- Progress ring (Today's daily-goal ring and skill rings; Profile's daily-goal ring) ---- */
+.c-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.c-ring__svg {
+  transform: rotate(-90deg);
+  display: block;
+}
+.c-ring__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+/* ---- Segmented control (Settings' choice rows; Progress's range picker) ---- */
+.c-seg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface2);
+}
+.c-seg--hero {
+  background: var(--toast-chip);
+}
+.c-seg__opt {
+  flex: none;
+  border: 0;
+  border-radius: 0;
+  padding: 9px 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.c-seg--hero .c-seg__opt {
+  background: none;
+}
+.c-seg--equal .c-seg__opt {
+  flex: 1;
+  height: 36px;
+  padding: 0;
+}
+.c-seg__opt[aria-pressed="true"] {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+.c-seg__opt[aria-pressed="true"]:hover {
+  background: var(--accent-fill-hover);
+}
+
+/* ---- Hero media (Content Detail, Collection Detail) ---- */
+.c-hero {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface2);
+  background-size: cover;
+  background-position: center;
+}
+.c-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--scrim), transparent 60%);
+}
+.c-hero__content {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 18px;
+  color: var(--toast-ink);
+}
+.c-hero__pill {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--photo-chip);
+  color: var(--toast-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.c-hero__title {
+  margin: 8px 0 0;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.c-hero__meta {
+  margin: 4px 0 0;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+/* ---- Page header (Grammar Library, Settings; compact: Grammar Concept, Skill Hub) ---- */
+.c-pagehead {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.c-pagehead--compact {
+  align-items: center;
+}
+.c-pagehead__body {
+  flex: 1;
+  min-width: 0;
+}
+.c-pagehead__title--compact {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.c-pagehead__meta {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.c-pagehead__actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* ---- Mastery bars (My Library Saved-Language rows, Collection Detail word rows) ---- */
+.c-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+.c-bars__bar {
+  width: 6px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+/* No selector here keys off :root[data-device] - every component takes its own width from its
+   container, and the one measured device delta in this set (Content/Collection Detail's hero,
+   260px desktop / 200px mobile) is a caller-supplied `height`; kit/html.js's px() passes a string
+   through unchanged, so a screen calls heroMedia({ height: 'var(--hero-h)', ... }) and the
+   existing device variable (kit/device.css) does the rest - no new device var needed here. */

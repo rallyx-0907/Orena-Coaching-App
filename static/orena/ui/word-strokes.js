@@ -20,41 +20,10 @@
  */
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
-
-/* How many steps the "thứ tự nét" strip shows. The frame draws five, which is
-   what fits a phone; a character with fewer strokes shows one step per
-   stroke. */
-export const STEPS = 5;
-
-/* Which strokes each step has drawn by. Evenly spread across the character, so
-   the last step is always the whole of it - a strip that stopped at stroke 11
-   of 13 would be showing an unfinished character as if it were the word. */
-export function stepsFor(count, steps = STEPS) {
-  const total = Math.max(0, Number(count) || 0);
-  if (!total) return [];
-  const many = Math.min(steps, total);
-  return Array.from({ length: many }, (_, at) => Math.round(((at + 1) * total) / many));
-}
-
-/* The character as it stands after `upto` strokes: the strokes written so far
-   in full, and the rest of it faint - which is what the frame's dimmed later
-   cells are showing. */
-export function glyphSvg(character, { upto = 0, size = 1024, faint = true, className = '' } = {}) {
-  const paths = character?.stroke_paths || [];
-  const drawn = paths
-    .map(
-      (path, at) =>
-        at < upto
-          ? `<path d="${esc(path)}" class="stroke-glyph__on"></path>`
-          : faint
-            ? `<path d="${esc(path)}" class="stroke-glyph__off"></path>`
-            : '',
-    )
-    .join('');
-  /* The pack's glyph box has y running upward, which is why every renderer of
-     this data flips it. Without the transform the character is upside down. */
-  return `<svg class="stroke-glyph ${className}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><g transform="scale(1, -1) translate(0, -900)">${drawn}</g></svg>`;
-}
+/* The geometry (stroke stepping, the glyph itself) moved to
+   product/hanzi-strokes.js (D-091): pure, no DOM, shared with the new
+   learner UI's Word Detail / Stroke Practice sheet rather than kept twice. */
+export { STEPS, stepsFor, glyphSvg } from '../product/hanzi-strokes.js';
 
 function componentCard(item) {
   const surface = String(item?.surface || '');

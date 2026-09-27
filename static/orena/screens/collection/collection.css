@@ -1,0 +1,170 @@
+/* Collection Detail (frame 21, D2 §6), measured against the pinned design's
+   [data-screen-label="Collection Detail"]. Colours are tokens only; classes are prefixed
+   s-collection-. Device split (two columns -> one) is the shared --ls-cols variable
+   (kit/device.css) - no width media query. */
+
+.s-collection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 16px;
+}
+
+.s-collection-grid {
+  display: grid;
+  grid-template-columns: var(--ls-cols);
+  gap: 24px;
+  align-items: start;
+}
+
+.s-collection-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* The hero's own aspect ratio (16/8, radius 24 via heroMedia's default) - not the fixed
+   var(--hero-h) height Content Detail uses (D2 §6 desktop composition). heroMedia is called
+   with height:'auto' so this is the only rule that decides the box height. */
+.c-hero[data-hero='collection'] {
+  aspect-ratio: 16 / 8;
+}
+
+/* Bare (unlabeled) progress track - Content Detail's own is the same track/fill plus a label
+   row this frame does not draw. */
+.s-collection-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.s-collection-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.s-collection-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Large accent CTA (colReview) - D-093: --accent-fill/--accent-ink, not the frame's literal
+   --accent/--accent-ink (white ink never sits on --accent). */
+.s-collection-cta {
+  flex: 1;
+  min-width: 160px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.15s;
+}
+.s-collection-cta:hover {
+  background: var(--accent-fill-hover);
+}
+.s-collection-cta:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+
+/* Secondary outline pill (48px, colSave) - identical signature to Content Detail's dSave. */
+.s-collection-save {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.s-collection-save:hover {
+  background: var(--surface2);
+}
+
+.s-collection-desc {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.s-collection-words {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-collection-words-heading {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Word row: gap:14 across all direct children (body, NEW-or-bars, play icon) - not a nested
+   trailing group with its own gap, so this is written locally rather than through listRow(),
+   whose single trailing slot would introduce an 8px sub-gap the frame does not draw. */
+.s-collection-word {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.s-collection-word__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.s-collection-word__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-collection-word__meaning {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-collection-word__new {
+  flex: none;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+.s-collection-word__play {
+  flex: none;
+  color: var(--text3);
+  display: flex;
+  padding: 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.s-collection-word__play[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
