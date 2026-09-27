@@ -20,6 +20,9 @@ D-085 authorizes Orena Intelligence as a separate development lane from this
 unified baseline. Agent Intelligence implementation belongs on
 `feature/orena-intelligence`, not directly on `codex/work`.
 
+D-086: the new learner UI replaces the old one on codex/work and is the only UI that carries the agent.
+Both lanes build against `docs/project/AGENT_CONTRACT.md` (contract_version 1), edited only on `codex/work`.
+
 ## Last verified batch
 
 The unified local tree preserves Codex learner Reading and My Library on the
