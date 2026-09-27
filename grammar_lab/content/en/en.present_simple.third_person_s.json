@@ -1,0 +1,92 @@
+{
+  "schema_version": "0.2",
+  "id": "en.present_simple.third_person_s",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.habit_fact",
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["agreement"],
+  "source_refs": {},
+  "title": {"vi": "Thêm -s/-es với he/she/it", "en": "Third person -s"},
+  "summary": {
+    "vi": "Ở thì hiện tại đơn, khi chủ ngữ là he, she, it hoặc một người/vật số ít, động từ phải thêm -s hoặc -es."
+  },
+  "blocks": [
+    {"type": "formula", "parts": ["He / She / It", "V + s/es"]},
+    {"type": "timeline", "kind": "habit"},
+    {
+      "type": "rule_table",
+      "rows": [
+        ["work", "works", {"vi": "Đa số động từ: thêm -s"}],
+        ["watch", "watches", {"vi": "Tận cùng -s, -sh, -ch, -x, -o: thêm -es"}],
+        ["study", "studies", {"vi": "Phụ âm + y: đổi y thành -ies"}],
+        ["play", "plays", {"vi": "Nguyên âm + y: chỉ thêm -s"}],
+        ["have", "has", {"vi": "Bất quy tắc"}]
+      ]
+    },
+    {
+      "type": "example",
+      "text": "She works in a bank.",
+      "seg": [["She "], ["works", "target"], [" in a bank."]],
+      "tr": {"vi": "Cô ấy làm việc ở ngân hàng."}
+    },
+    {
+      "type": "example",
+      "text": "My father watches the news every night.",
+      "seg": [["My father "], ["watches", "target"], [" the news every night."]],
+      "tr": {"vi": "Bố tôi xem thời sự mỗi tối."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "He go to school by bus.",
+      "right": "He goes to school by bus.",
+      "error_tag": "agreement",
+      "why": {
+        "vi": "Tiếng Việt không thay đổi động từ theo chủ ngữ ('anh ấy đi', 'tôi đi'), nên người Việt rất hay quên -s."
+      }
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "My mother have two sisters.",
+      "right": "My mother has two sisters.",
+      "error_tag": "agreement",
+      "why": {"vi": "'My mother' là ngôi thứ ba số ít, nên have phải đổi thành has."}
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "Tom ___ football on Sundays.",
+          "options": ["play", "plays", "playes"],
+          "answer": 1,
+          "explain": {"vi": "Tom là ngôi thứ ba số ít; play tận cùng bằng nguyên âm + y nên chỉ thêm -s."}
+        },
+        {
+          "q": "She ___ English at university.",
+          "options": ["studys", "study", "studies"],
+          "answer": 2,
+          "explain": {"vi": "Phụ âm + y → -ies: studies."}
+        },
+        {
+          "q": "My brother ___ a new laptop.",
+          "options": ["has", "have", "haves"],
+          "answer": 0,
+          "explain": {"vi": "have là bất quy tắc: he/she/it dùng has."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}

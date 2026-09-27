@@ -120,3 +120,12 @@ Review), the agent panel on the mock, onboarding, then the cutover.
 
 Intelligence lane (`feature/orena-intelligence`): Agent Intelligence under
 D-085 against `AGENT_CONTRACT.md`; no learner-UI redesign there.
+
+## Grammar Lab (merged from `feature/grammar-lab`)
+
+Phase 0 of `docs/grammar_lab/SPEC.md`: an isolated, offline, file-based content
+pipeline in `grammar_lab/` (own `pyproject.toml`, own tests) and
+`docs/grammar_lab/`. It does not import app code, the app does not import it,
+and app CI does not collect its tests; no app code, router, engine, migration or
+runtime is involved. NEXT: human review of `docs/grammar_lab/PHASE0_DECISIONS.md`
+(including how lab point IDs join the R5 Concept IDs, SPEC §8); phase 1 waits.

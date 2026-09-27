@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.2",
+  "id": "en.countable_uncountable.much_many",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.plural_nouns.regular"],
+  "contrasts": [],
+  "error_tags": ["word_form", "word_choice"],
+  "source_refs": {},
+  "title": {"vi": "Đếm được / không đếm được, much / many", "en": "Countable vs uncountable"},
+  "summary": {
+    "vi": "Một số danh từ trong tiếng Anh không đếm được: không thêm -s, không đi với a/an, và dùng much thay vì many."
+  },
+  "blocks": [
+    {"type": "formula", "parts": ["many / a few", "+ N đếm được số nhiều"]},
+    {"type": "formula", "parts": ["much / a little", "+ N không đếm được"]},
+    {
+      "type": "rule_table",
+      "rows": [
+        ["information", "a piece of information", {"vi": "Không đếm được"}],
+        ["advice", "some advice", {"vi": "Không đếm được"}],
+        ["homework", "a lot of homework", {"vi": "Không đếm được"}],
+        ["furniture", "two pieces of furniture", {"vi": "Không đếm được"}]
+      ]
+    },
+    {
+      "type": "example",
+      "text": "Can you give me some advice?",
+      "seg": [["Can you give me some "], ["advice", "target"], ["?"]],
+      "tr": {"vi": "Bạn cho tôi vài lời khuyên được không?"}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "I need many informations.",
+      "right": "I need a lot of information.",
+      "error_tag": "word_form",
+      "why": {
+        "vi": "Trong tiếng Việt, 'thông tin' hay 'lời khuyên' có thể đếm được. Trong tiếng Anh, information và advice không đếm được. Lưu ý: trong câu khẳng định, a lot of tự nhiên hơn much."
+      }
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "We have too many homeworks.",
+      "right": "We have too much homework.",
+      "error_tag": "word_choice",
+      "why": {"vi": "Homework không đếm được."}
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "How ___ money do you have?",
+          "options": ["many", "much", "a few"],
+          "answer": 1,
+          "explain": {"vi": "Money không đếm được → much."}
+        },
+        {
+          "q": "She gave me some useful ___.",
+          "options": ["advices", "advice", "an advice"],
+          "answer": 1,
+          "explain": {"vi": "Advice không đếm được."}
+        },
+        {
+          "q": "How ___ chairs are there?",
+          "options": ["much", "many", "little"],
+          "answer": 1,
+          "explain": {"vi": "Chairs đếm được số nhiều → many."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}

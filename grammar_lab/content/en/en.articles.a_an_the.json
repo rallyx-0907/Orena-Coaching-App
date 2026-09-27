@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.2",
+  "id": "en.articles.a_an_the",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.plural_nouns.regular"],
+  "contrasts": [],
+  "error_tags": ["article"],
+  "source_refs": {},
+  "title": {"vi": "Mạo từ a/an và the", "en": "Articles: a/an vs the"},
+  "summary": {
+    "vi": "a/an dùng cho thứ lần đầu nhắc tới hoặc không xác định; the dùng khi người nghe biết đang nói về cái nào."
+  },
+  "blocks": [
+    {"type": "formula", "parts": ["a / an", "+ N số ít, chưa xác định"]},
+    {"type": "formula", "parts": ["the", "+ N đã xác định / duy nhất"]},
+    {
+      "type": "rule_table",
+      "rows": [
+        ["a", "a book, a university", {"vi": "Trước âm phụ âm (xét theo âm, không theo chữ)"}],
+        ["an", "an apple, an hour", {"vi": "Trước âm nguyên âm"}],
+        ["the", "the sun, the book I bought", {"vi": "Duy nhất, hoặc đã nói tới trước đó"}]
+      ]
+    },
+    {
+      "type": "example",
+      "text": "I bought a book. The book is about Vietnam.",
+      "seg": [["I bought "], ["a", "target"], [" book. "], ["The", "target"], [" book is about Vietnam."]],
+      "tr": {"vi": "Tôi mua một cuốn sách. Cuốn sách đó nói về Việt Nam."}
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "I am student.",
+      "right": "I am a student.",
+      "error_tag": "article",
+      "why": {
+        "vi": "Tiếng Việt không có mạo từ ('tôi là sinh viên'). Trong tiếng Anh, danh từ đếm được số ít gần như luôn cần a/an/the hoặc một từ hạn định khác."
+      }
+    },
+    {
+      "type": "pitfall",
+      "l1": ["vi"],
+      "wrong": "Sun rises in east.",
+      "right": "The sun rises in the east.",
+      "error_tag": "article",
+      "why": {"vi": "Sun và east là duy nhất nên dùng the."}
+    },
+    {
+      "type": "check",
+      "items": [
+        {
+          "q": "She is ___ engineer.",
+          "options": ["a", "an", "the"],
+          "answer": 1,
+          "explain": {"vi": "Engineer bắt đầu bằng âm nguyên âm → an."}
+        },
+        {
+          "q": "I saw a cat. ___ cat was black.",
+          "options": ["A", "The", "An"],
+          "answer": 1,
+          "explain": {"vi": "Con mèo đã được nhắc ở câu trước → the."}
+        },
+        {
+          "q": "He studies at ___ university in Hanoi.",
+          "options": ["an", "a", "—"],
+          "answer": 1,
+          "explain": {"vi": "University đọc là /juː/, âm phụ âm → a."}
+        }
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "sample_v0.1",
+    "run_id": "migrate.sample_v0.1",
+    "generated_at": "2026-09-26T00:00:00+07:00",
+    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+  },
+  "review": null
+}

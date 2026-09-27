@@ -1,0 +1,380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:orena:grammar_lab:grammar_set:0.2",
+  "title": "Orena Grammar Lab grammar set (schema v0.2)",
+  "description": "Contract between Grammar Lab and the Orena app (SPEC §3). The root validates one grammar point file content/<lang>/<id>.json. $defs.set_manifest validates content/<lang>/_set.json and $defs.functions_file validates functions/functions.yaml.",
+  "level_scales": {
+    "en": {"framework": "cefr", "values": ["A1", "A2", "B1", "B2", "C1", "C2"]},
+    "zh-Hans": {"framework": "hsk3", "values": ["1", "2", "3", "4", "5", "6", "7", "8", "9"]},
+    "ja": {"framework": "jlpt", "values": ["N5", "N4", "N3", "N2", "N1"]}
+  },
+  "$ref": "#/$defs/grammar_point",
+  "$defs": {
+    "schema_version": {"const": "0.2"},
+    "target_lang": {
+      "description": "BCP-47 target language. Only simplified script is allowed for Chinese.",
+      "enum": ["en", "zh-Hans", "ja"]
+    },
+    "locale": {
+      "description": "Explanation locale. Chinese explanations are simplified only (zh-Hans).",
+      "enum": ["vi", "en", "zh-Hans", "ja"]
+    },
+    "l1": {
+      "description": "Learner first language (a language, not a script).",
+      "enum": ["vi", "zh", "en", "ja"]
+    },
+    "locale_map": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"$ref": "#/$defs/locale"},
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "point_id": {
+      "description": "<lang>.<slug>; lang is the short code en | zh | ja. Immutable after publish.",
+      "type": "string",
+      "pattern": "^(en|zh|ja)\\.[a-z0-9_]+(\\.[a-z0-9_]+)*$"
+    },
+    "point_id_list": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/point_id"}
+    },
+    "function_id": {"type": "string", "pattern": "^fn\\.[a-z0-9_]+$"},
+    "error_tag": {
+      "description": "Error label of the Orena writing evaluator; same identifier rule as the engine contract. Membership is checked against schema/error_tags.json by validate.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "level": {
+      "description": "Level in the target language's own scale (see level_scales). rank = 1-based position of value in that scale; used only for sorting, filtering and prereq checks inside one language.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["framework", "value", "rank"],
+      "properties": {
+        "framework": {"enum": ["cefr", "hsk3", "jlpt"]},
+        "value": {"type": "string", "minLength": 1},
+        "rank": {"type": "integer", "minimum": 1}
+      }
+    },
+    "status": {"enum": ["draft_ai", "auto_ok", "flagged", "approved", "rejected"]},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "prompt_version", "run_id", "generated_at"],
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "prompt_version": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "generated_at": {"$ref": "#/$defs/timestamp"},
+        "migrated_from": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "schema_version"],
+          "properties": {
+            "file": {"type": "string", "minLength": 1},
+            "schema_version": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer", "reviewed_at", "seconds"],
+      "properties": {
+        "reviewer": {"type": "string", "minLength": 1},
+        "reviewed_at": {"$ref": "#/$defs/timestamp"},
+        "seconds": {"type": "number", "minimum": 0},
+        "note": {"type": ["string", "null"]},
+        "reject_reason": {
+          "description": "Fixed rejection reasons (SPEC §6).",
+          "enum": ["wrong_grammar", "wrong_level", "unclear_explanation", "unrealistic_pitfall", "other"]
+        }
+      }
+    },
+    "grammar_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "id", "version", "target_lang", "function", "level", "prereqs", "contrasts",
+        "error_tags", "source_refs", "title", "summary", "blocks", "status", "provenance", "review"
+      ],
+      "properties": {
+        "schema_version": {"$ref": "#/$defs/schema_version"},
+        "id": {"$ref": "#/$defs/point_id"},
+        "version": {"type": "integer", "minimum": 1},
+        "target_lang": {"$ref": "#/$defs/target_lang"},
+        "function": {"$ref": "#/$defs/function_id"},
+        "level": {"$ref": "#/$defs/level"},
+        "prereqs": {"$ref": "#/$defs/point_id_list"},
+        "contrasts": {"$ref": "#/$defs/point_id_list"},
+        "error_tags": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/error_tag"}},
+        "source_refs": {
+          "description": "Catalogue codes only (egp, core_inventory, hsk3, ...); never source text.",
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+          "additionalProperties": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        },
+        "title": {"$ref": "#/$defs/locale_map"},
+        "summary": {"$ref": "#/$defs/locale_map"},
+        "blocks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/block"}},
+        "status": {"$ref": "#/$defs/status"},
+        "flags": {
+          "description": "Routing reasons, e.g. validate:example.no_target.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z_]+:[a-z0-9_.]+$"}
+        },
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "review": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/review"}]}
+      },
+      "allOf": [
+        {
+          "if": {"required": ["target_lang"], "properties": {"target_lang": {"const": "en"}}},
+          "then": {
+            "properties": {
+              "id": {"pattern": "^en\\."},
+              "level": {"properties": {"framework": {"const": "cefr"}, "value": {"enum": ["A1", "A2", "B1", "B2", "C1", "C2"]}}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["target_lang"], "properties": {"target_lang": {"const": "zh-Hans"}}},
+          "then": {
+            "properties": {
+              "id": {"pattern": "^zh\\."},
+              "level": {"properties": {"framework": {"const": "hsk3"}, "value": {"enum": ["1", "2", "3", "4", "5", "6", "7", "8", "9"]}}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["target_lang"], "properties": {"target_lang": {"const": "ja"}}},
+          "then": {
+            "properties": {
+              "id": {"pattern": "^ja\\."},
+              "level": {"properties": {"framework": {"const": "jlpt"}, "value": {"enum": ["N5", "N4", "N3", "N2", "N1"]}}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["status"], "properties": {"status": {"enum": ["approved", "rejected"]}}},
+          "then": {"properties": {"review": {"$ref": "#/$defs/review"}}}
+        },
+        {
+          "if": {"required": ["status"], "properties": {"status": {"const": "rejected"}}},
+          "then": {"properties": {"review": {"required": ["reject_reason"]}}}
+        }
+      ]
+    },
+    "block": {
+      "description": "bridge is intentionally absent: it is derived from the function at render time and never stored.",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"enum": ["formula", "rule_table", "timeline", "example", "contrast", "pitfall", "note", "check"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"type": {"const": "formula"}}}, "then": {"$ref": "#/$defs/block_formula"}},
+        {"if": {"properties": {"type": {"const": "rule_table"}}}, "then": {"$ref": "#/$defs/block_rule_table"}},
+        {"if": {"properties": {"type": {"const": "timeline"}}}, "then": {"$ref": "#/$defs/block_timeline"}},
+        {"if": {"properties": {"type": {"const": "example"}}}, "then": {"$ref": "#/$defs/block_example"}},
+        {"if": {"properties": {"type": {"const": "contrast"}}}, "then": {"$ref": "#/$defs/block_contrast"}},
+        {"if": {"properties": {"type": {"const": "pitfall"}}}, "then": {"$ref": "#/$defs/block_pitfall"}},
+        {"if": {"properties": {"type": {"const": "note"}}}, "then": {"$ref": "#/$defs/block_note"}},
+        {"if": {"properties": {"type": {"const": "check"}}}, "then": {"$ref": "#/$defs/block_check"}}
+      ]
+    },
+    "block_formula": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "parts"],
+      "properties": {
+        "type": {"const": "formula"},
+        "parts": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "block_rule_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "rows"],
+      "properties": {
+        "type": {"const": "rule_table"},
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "description": "[base, derived, note_i18n]",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "prefixItems": [
+              {"type": "string", "minLength": 1},
+              {"type": "string", "minLength": 1},
+              {"$ref": "#/$defs/locale_map"}
+            ]
+          }
+        }
+      }
+    },
+    "block_timeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "kind"],
+      "properties": {
+        "type": {"const": "timeline"},
+        "kind": {
+          "description": "Closed enum. Extending it requires a matching preview/app renderer.",
+          "enum": ["point_past", "ongoing_now", "unspecified_past", "habit", "future_condition", "future_plan", "past_ongoing"]
+        },
+        "relevance": {"type": "string", "minLength": 1}
+      }
+    },
+    "block_example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text", "seg", "tr"],
+      "properties": {
+        "type": {"const": "example"},
+        "text": {"type": "string", "minLength": 1},
+        "seg": {
+          "description": "Source of truth: concatenating the segment strings must equal text.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "description": "[segment, label?]",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "prefixItems": [
+              {"type": "string", "minLength": 1},
+              {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+            ]
+          }
+        },
+        "ruby": {
+          "description": "Pinyin/furigana parallel to seg (same length); null for a segment without reading.",
+          "type": "array",
+          "items": {"type": ["string", "null"]}
+        },
+        "tr": {"$ref": "#/$defs/locale_map"}
+      }
+    },
+    "block_contrast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "with", "pairs", "explain"],
+      "properties": {
+        "type": {"const": "contrast"},
+        "with": {"$ref": "#/$defs/point_id"},
+        "pairs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {"type": "string", "minLength": 1}
+          }
+        },
+        "explain": {"$ref": "#/$defs/locale_map"}
+      }
+    },
+    "block_pitfall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "l1", "wrong", "right", "error_tag", "why"],
+      "properties": {
+        "type": {"const": "pitfall"},
+        "l1": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/l1"}},
+        "wrong": {"type": "string", "minLength": 1},
+        "right": {"type": "string", "minLength": 1},
+        "error_tag": {"$ref": "#/$defs/error_tag"},
+        "why": {"$ref": "#/$defs/locale_map"}
+      }
+    },
+    "block_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": {
+        "type": {"const": "note"},
+        "text": {"$ref": "#/$defs/locale_map"}
+      }
+    },
+    "block_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "items"],
+      "properties": {
+        "type": {"const": "check"},
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["q", "options", "answer", "explain"],
+            "properties": {
+              "q": {"type": "string", "minLength": 1},
+              "options": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+              "answer": {"description": "0-based index into options.", "type": "integer", "minimum": 0},
+              "explain": {"$ref": "#/$defs/locale_map"}
+            }
+          }
+        }
+      }
+    },
+    "set_manifest": {
+      "description": "content/<lang>/_set.json: locales and L1s every point of the set must cover.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "set_id", "target_lang", "explanation_locales", "l1"],
+      "properties": {
+        "schema_version": {"$ref": "#/$defs/schema_version"},
+        "set_id": {"type": "string", "pattern": "^(en|zh|ja)\\.[a-z0-9_]+(\\.[a-z0-9_]+)*$"},
+        "target_lang": {"$ref": "#/$defs/target_lang"},
+        "explanation_locales": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/locale"}},
+        "l1": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/l1"}},
+        "note": {"type": "string"}
+      }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "realizations"],
+      "properties": {
+        "id": {"$ref": "#/$defs/function_id"},
+        "title": {"$ref": "#/$defs/locale_map"},
+        "realizations": {"$ref": "#/$defs/realization_map"},
+        "planned": {
+          "description": "Grammar point IDs intended for this function but not written yet; not reference-checked.",
+          "$ref": "#/$defs/realization_map"
+        },
+        "can_do_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "realization_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "en": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^en\\.[a-z0-9_]+(\\.[a-z0-9_]+)*$"}},
+        "zh-Hans": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^zh\\.[a-z0-9_]+(\\.[a-z0-9_]+)*$"}},
+        "ja": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^ja\\.[a-z0-9_]+(\\.[a-z0-9_]+)*$"}}
+      }
+    },
+    "functions_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "functions"],
+      "properties": {
+        "schema_version": {"$ref": "#/$defs/schema_version"},
+        "functions": {"type": "array", "items": {"$ref": "#/$defs/function"}}
+      }
+    }
+  }
+}
