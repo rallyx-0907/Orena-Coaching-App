@@ -2,6 +2,17 @@
 
 26/09/2026 · branch `feature/grammar-lab` · trạng thái: chờ người duyệt, **chưa bắt đầu giai đoạn 1**.
 
+**Claude Code (self-review, 27/09/2026): reviewed and approved to proceed.** Schema v0.2 khớp
+SPEC §3; 520 dòng `validate.py` có một luật cho mỗi mục SPEC §5.2, và `test_validate_rules.py`
+ép mỗi luật có cả case pass lẫn fail (`test_every_documented_rule_has_a_passing_and_a_failing_case`
+canh việc này). 113 test pass, gồm cả `test_contract.py` (schema là Draft 2020-12 hợp lệ, sample
+migrate round-trip, `error_tags.json` khớp `ERROR_CATEGORIES` của engine) và test hiệu năng (100
+điểm dưới 5s). 10 điểm mẫu đọc tự nhiên, đúng ngữ pháp, đúng level, có pitfall thật gắn `error_tag`
+hợp lệ. Ba câu hỏi ở §5 (nhãn lỗi thô, nối với R5 Concept ID, băng HSK 7-9) không chặn giai đoạn 1:
+SPEC §7 giai đoạn 1 chỉ cần pipeline tiếng Anh + gold set người duyệt, không đụng engine hay R5.
+Nối R5 Concept ID được SPEC §8 xếp vào giai đoạn 4; xem điều tra riêng về quan hệ với hệ thống
+ngữ pháp hiện có của app trong `docs/project/CURRENT_HANDOFF.md` (mục Grammar Lab).
+
 ## 1. Đã giao
 
 | Deliverable (SPEC §7) | File |
@@ -114,5 +125,51 @@ verify ở giai đoạn 1 sẽ cho biết engine thực tế gán nhãn nào.
 - Chấp nhận nhãn thô của engine, hay mở rộng danh sách nhãn (thay đổi engine, ngoài phạm vi lab)?
 - Quan hệ với R5 Grammar KB đã có trong app (508 concept, Concept ID ổn định, "không phải syllabus thứ
   hai" theo CURRENT_HANDOFF): ID của Grammar Lab (`en.past_simple`…) hiện độc lập với Concept ID R5.
-  Cần quyết cách nối trước giai đoạn 4.
+  Cần quyết cách nối trước giai đoạn 4. **Điều tra và khuyến nghị ở mục 6.**
 - HSK 3.0: 9 bậc riêng hay bậc gộp 7–9 như phụ lục ngữ pháp.
+
+## 6. Điều tra: quan hệ với R5 Grammar KB (27/09/2026, Claude Code)
+
+**Bằng chứng** (đọc trực tiếp code, không suy đoán):
+
+- `grammar_learning_model.py`, `grammar_knowledge.py`, `grammar_catalog.py` **không chứa nội dung** —
+  cả ba chỉ validate hình dạng (luồng 8 giai đoạn `notice→...→transfer`; catalog phẳng), nhận nội dung
+  làm tham số, không neo vào tiếng Anh/Trung cụ thể. Không có xung đột trực tiếp với schema
+  `grammar_point` của lab.
+- Nội dung thật nằm ở nơi khác và **đang chạy thật**: `writing_coach/languages/{english,chinese}/
+  grammar_curriculum.json` (269 + 239 = 508 mục, khớp con số "508 concept") và `grammar_knowledge.json`
+  (schema_version 2, đầy đủ cho cả 508). App expose qua `GET/POST /api/library/grammar*` trong `app.py`
+  (dòng ~2033-2124), có route trong UI mới ở `/next` (`static/orena/shell/routes.js`: `grammar`,
+  `grammar/:id`). Đây là **con đường học ngữ pháp thật của người học hôm nay**, không phải dữ liệu chết.
+- R5 được khai là **protected area**: `AGENTS.md` §6 liệt "R5 Grammar contracts and Concept IDs";
+  `ARCHITECTURE_INVARIANTS.md` ("Closed-stage protection") khóa ở baseline PR #44, giữ Concept ID ổn
+  định, cấm "recreate superseded broad structural Grammar migration write paths".
+- `ORENA_CONTENT_ARCHITECTURE.md` §11 nói thẳng hướng sản phẩm: nội dung Grammar luôn "neo vào R5 stable
+  Grammar Concept ID"; Understanding Engine "có thể dùng Concept ID để làm căn cứ giải thích, không
+  nhân đôi hay thay thế curriculum". Tức là vai trò "tra cứu cho Agent trích dẫn" **R5 đã làm rồi** —
+  giả thuyết "curriculum vs tra cứu" trong đề bài không đứng được: cả hai vai trò đó đều đã là R5.
+
+**Kết luận**: đây không phải trường hợp "một bên rỗng, tự quyết được" — validator rỗng, nhưng nội dung
+mà nó validate (R5) rất sống và đang phục vụ người học. Grammar Lab, nếu đến giai đoạn 4, sẽ tạo ra
+`grammar_point` cho **cùng một mục đích** (dạy ngữ pháp có thứ tự, có level) mà R5 đã đang làm — khác
+với giả thuyết ban đầu là hai hệ phục vụ hai mục đích tách biệt. Đây đúng là quyết định sản phẩm, không
+phải kỹ thuật.
+
+**3 phương án cho giai đoạn 4** (không chặn giai đoạn 1 — SPEC giai đoạn 0-3 không đụng app):
+
+1. **Thay thế R5** bằng nội dung Grammar Lab (schema đa khối, có pitfall gắn `error_tag`, đã verify qua
+   engine chấm bài, đối chiếu EGP/HSK/JLPT). Giá trị cao nhất nhưng đụng thẳng "protected area" và
+   "đóng ở baseline PR #44" — cần review kiến trúc riêng, rủi ro lớn nhất.
+2. **Nối vào R5**: Grammar Lab sinh nội dung nhưng xuất bản dưới **Concept ID của R5** (không dùng
+   `en.past_simple` song song); dùng để nâng cấp các mục "foundation" yếu (đặc biệt tiếng Trung, audit
+   cũ ghi "239 generic/placeholder") và bổ sung năng lực R5 chưa có (pitfall ↔ `error_tag` ↔ nút "Học
+   điểm này" mà SPEC §8 vẽ ra). Khớp đúng câu "neo vào Concept ID ổn định" trong Content Architecture.
+   Việc kỹ thuật: ánh xạ ID lab → Concept ID hiện có, hoặc để R5 cấp Concept ID mới rồi lab gán ngược.
+3. **Giữ tách biệt, không tích hợp**: Grammar Lab dừng ở vai trò thử nghiệm/R&D, không import vào app;
+   R5 tiếp tục là con đường Grammar duy nhất. Rẻ nhất nhưng bỏ phí phần verify/pitfall đã đầu tư, và
+   không có lý do rõ để tiếp tục sinh nội dung Anh/Trung song song R5 quá lâu.
+
+**Khuyến nghị của Claude Code**: phương án 2. Nó tôn trọng "R5 không bị đụng, Concept ID ổn định" (đã
+đóng băng), tận dụng năng lực pitfall/error_tag/verify mà R5 hiện không có, và không tạo ra "syllabus
+thứ hai" mà app đã cam kết tránh. Không cần quyết ngay — chỉ cần trước giai đoạn 4; giai đoạn 1 (mục
+này) chạy hoàn toàn offline, không đụng R5.
