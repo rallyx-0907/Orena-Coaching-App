@@ -340,8 +340,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 99px;
-  background: var(--accent);
-  color: var(--badge-ink);
+  background: var(--accent-fill);
+  color: var(--accent-ink);
   font-size: 10px;
   font-weight: 600;
   display: flex;
@@ -458,7 +458,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--badge-ink);
+  color: var(--accent-ink);
 }
 
 /* The layer every sheet, scrim and toast sits in, over the whole frame. */

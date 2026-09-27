@@ -58,20 +58,21 @@ table when the human decides it or the design changes.
 | N-5 | Tablet | One switch between the desk and phone layouts (below 900 px the phone layout) | The design has two frames and no tablet (rule 48). |
 | N-6 | Phone learning workspaces | Recomposed to the viewport where a phone frame scrolls as a page (Listening Workspace on a phone first) | Rule 49, reaffirmed by the human for this design. |
 | N-7 | Rule 50 | Decorative subtitles and taglines in the frames are not carried (e.g. "Your study companion", "Find something worth learning from.") | Rule 50 / D-087; listed per surface as it is built. |
-| N-8 | Colour contrast | **Awaiting the human.** The design's own tokens fail AA 4.5:1 for small text in 13 pairs (measured by `scripts/test_orena_kit.mjs`, which pins each at its ratio until decided). The new UI ships the design's exact colours meanwhile. | Rule 41 allows the smallest technical token change; because it touches the design's main colours it is proposed, not applied. See the table below. |
+| N-8 | Colour contrast | **Applied (D-093).** The design's own tokens failed AA 4.5:1 for small text in 13 pairs; the smallest lightness-only change below is in `kit/tokens.css` and gated. | Rule 41; the human chose the minimal adjustment. |
 
-**N-8, measured and proposed.** Smallest change in lightness only, hue and
-saturation kept:
+**N-8, measured and applied (D-093).** Lightness only, hue and saturation kept
+(the applied values differ from the first proposal by at most one step, taken to
+clear 4.5 with margin):
 
-| Theme | Pair (where it shows) | Now | Proposed | After |
+| Theme | Pair (where it shows) | Design | Applied | After |
 | --- | --- | ---: | --- | ---: |
-| dark | `--text3` on bg / surface / surface2 (placeholders, meta, inactive phone tabs) | 4.40 / 4.07 / 3.77 | `--text3` #77778E → #848499 | 5.25 / 4.86 / 4.50 |
+| dark | `--text3` on bg / surface / surface2 (placeholders, meta, inactive phone tabs) | 4.40 / 4.07 / 3.77 | `--text3` #77778E → #858599 | 5.32 / 4.92 / 4.56 |
 | dark | `--accent` on `--accent-soft` (active rail item, language pill) | 4.19 | `--accent` #7D78F5 → #847FF6 | 4.53 |
-| dark | white on `--accent` (primary buttons) | 3.57 | a filled-control token `--accent-fill` #6761F3 (buttons only) | 4.58 |
-| dark | white on `--red` (count badges) | 2.77 | badge numbers in `--bg` ink instead of white (lightening/darkening the red alone would change its hue) | 6.5 |
+| dark | white on `--accent` (primary buttons) | 3.57 | a filled-control token `--accent-fill` #6862F3 (hover #5E58EA, pressed #544EDC) | 4.54 |
+| dark | white on `--red` (count badges) | 2.77 | badge numbers in a dark `--badge-ink` #0E0E16 (moving the red alone would change its hue) | 6.94 |
 | light | `--text3` on bg / surface / surface2 | 2.95 / 3.21 / 2.93 | `--text3` #8E8EA2 → #6E6E86 | 4.56 / 4.96 / 4.52 |
-| light | `--green` / `--red` / `--amber` on their `-soft` (result tags) | 3.90 / 3.91 / 3.62 | #138A5A → #117E52, #D93D42 → #D1292E, #B86E00 → #A16000 | 4.55 / 4.52 / 4.55 |
-| light | white on `--red` (count badges) | 4.47 | `--red` #D93D42 → #D93B40 | 4.52 |
+| light | `--green` / `--red` / `--amber` on their `-soft` (result tags) | 3.90 / 3.91 / 3.62 | #138A5A → #117E52, #D93D42 → #D0292E, #B86E00 → #A16000 | 4.55 / 4.55 / 4.56 |
+| light | white on `--red` (count badges) | 4.47 | the same `--red` #D0292E | 5.20 |
 
 Contract gaps for the agent surfaces: `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`
 (awaiting approval). One backend gap it names: **N-9** - a speaking attempt's

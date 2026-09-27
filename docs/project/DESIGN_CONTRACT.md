@@ -185,7 +185,8 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
     button is the one in-product switch and is a device preference. Colour
     values live only in the new UI's token file (`static/orena/kit/tokens.css`;
     the old `theme.css` serves only the old UI until the cutover, D-091), taken
-    from the design exactly; no component invents a colour.
+    from the design exactly except the AA adjustments of D-093; no component
+    invents a colour.
 31. **Semantic colour is the design's.** Good, warning, error, support and AI
     colours appear as the design draws them - as ink, and as their `-soft`
     fills on chips, badges and result blocks where the frame fills them - and

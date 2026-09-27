@@ -1,0 +1,125 @@
+/* One Orena conversation as data: build a turn request (AGENT_CONTRACT §3) and fold the events of
+   its stream (§4) into what the panel draws. DOM-free; the panel renders `state()`.
+
+   The client shows Orena as thinking from sending a turn until the first event, and a tool's
+   learner-safe label while it runs (§4). Unknown events are ignored and logged. */
+import { CONTRACT_VERSION, EVENTS, toContractLang, SELECTED_ITEM_TYPES } from './contract.js';
+
+const CONTEXT_FIELDS = ['surface', 'activity_type', 'lesson_id', 'content_id', 'attempt_id', 'take_ref', 'essay_id', 'client_evidence'];
+
+/* §3: omit what does not apply; locale in contract codes (zh → zh-CN); a word by { text, lang }. */
+export function buildRequest({ trigger = 'message', message = '', context = {}, languages = {}, sessionId = '', client = {}, notes = [] }) {
+  const request = { contract_version: CONTRACT_VERSION };
+  if (sessionId) request.session_id = sessionId;
+  request.trigger = trigger === 'open' ? 'open' : 'message';
+  if (request.trigger === 'message') request.message = String(message || '').trim();
+  request.client = {
+    ui_version: client.ui_version || 'orena-next',
+    supported_actions: [...(client.supported_actions || [])],
+    supported_intents: [...(client.supported_intents || [])],
+  };
+  const ctx = {};
+  for (const field of CONTEXT_FIELDS) if (context[field] != null && context[field] !== '') ctx[field] = context[field];
+  const target = toContractLang(languages.target);
+  ctx.locale = {
+    interface: String(languages.interface || 'en'),
+    support: String(languages.support || 'en'),
+    target,
+    content: toContractLang(context.content_lang || languages.target),
+  };
+  const item = context.selected_item;
+  if (item && SELECTED_ITEM_TYPES.includes(item.type) && String(item.text || '').trim()) {
+    ctx.selected_item =
+      item.type === 'word'
+        ? { type: 'word', text: String(item.text).trim(), lang: toContractLang(item.lang || languages.target) }
+        : { type: item.type, ...(item.id ? { id: String(item.id) } : {}), text: String(item.text).trim() };
+  }
+  request.context = ctx;
+  if (notes.length) request.coach_notes = notes;
+  return request;
+}
+
+export function createSession({ log = console.warn } = {}) {
+  let sessionId = '';
+  const messages = [];
+  let thinking = false;
+  let tool = null;
+
+  const current = () => {
+    const last = messages[messages.length - 1];
+    if (last?.role === 'orena' && !last.done) return last;
+    const reply = { role: 'orena', segments: [], actions: [], evidence: [], suggestions: [], error: null, metered: null, done: false };
+    messages.push(reply);
+    return reply;
+  };
+
+  return {
+    state: () => ({ sessionId, messages: messages.map((m) => ({ ...m })), thinking, tool }),
+    sessionId: () => sessionId,
+    /* The learner's own message (not added for an opening turn). */
+    learner(text) {
+      messages.push({ role: 'learner', text: String(text) });
+      thinking = true;
+    },
+    opening() {
+      thinking = true;
+    },
+    restore(saved) {
+      for (const message of saved || []) messages.push({ ...message, done: true });
+    },
+    apply({ event, data = {} }) {
+      if (!EVENTS.includes(event)) {
+        log('[Orena agent] ignored unknown event', event);
+        return;
+      }
+      thinking = false;
+      if (event === 'session') {
+        sessionId = data.session_id || sessionId;
+        return;
+      }
+      if (event === 'metered') {
+        current().metered = data.budget_state || null;
+        return;
+      }
+      if (event === 'tool_call') {
+        tool = { name: data.name, label: String(data.label || '') };
+        thinking = true;
+        return;
+      }
+      if (event === 'tool_result') {
+        tool = null;
+        return;
+      }
+      const reply = current();
+      if (event === 'segment_delta') {
+        const seg = reply.segments.find((s) => s.index === data.index) || reply.segments[reply.segments.push({ index: data.index, lang: data.lang, text: '', partial: true }) - 1];
+        seg.text += String(data.text_delta || '');
+      } else if (event === 'segment_end') {
+        const seg = reply.segments.find((s) => s.index === data.index);
+        const done = { index: data.index, lang: data.lang, text: String(data.text || ''), voice_style: data.voice_style, partial: false };
+        if (seg) Object.assign(seg, done);
+        else reply.segments.push(done);
+        reply.segments.sort((a, b) => a.index - b.index);
+      } else if (event === 'evidence') {
+        reply.evidence.push(data);
+      } else if (event === 'action') {
+        reply.actions.push(data);
+      } else if (event === 'suggestion') {
+        reply.suggestions.push(data);
+      } else if (event === 'error') {
+        reply.error = { class: data.class, message: String(data.message || ''), fallback: data.fallback || 'none' };
+        reply.done = true;
+        tool = null;
+      } else if (event === 'done') {
+        reply.done = true;
+        tool = null;
+      }
+      // memory_update, voice_state and audio_chunk are handled by the panel and voice mode.
+    },
+    /* The finished reply, for device memory (text and actions only; evidence stays with the turn). */
+    lastReply() {
+      const last = messages[messages.length - 1];
+      return last?.role === 'orena' ? last : null;
+    },
+  };
+}

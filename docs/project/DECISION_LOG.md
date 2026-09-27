@@ -3138,3 +3138,37 @@ forward, would be integrating its agent into a moving hybrid.
 
 **Supersedes / Superseded by:** Nothing. Extends D-086.
 
+## D-092 — Agent contract v2: the Orena destination, the opening turn, and payloads the product can execute
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human approval of `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`, unchanged).
+
+**Context.** The new learner design (D-088) makes Orena a destination and opens a thread with Orena speaking first; contract v1 could address neither. The intelligence lane's pre-flight, checked against the real APIs, found that five v1 actions and three surface ids named identifiers the product does not have: words have no id (the library keys a word on its text and the session's learning language), take audio is never stored (D-076), a speaking attempt record cannot be read by id, a review has no single call, and two collection systems exist. Neither lane had implemented v1's actions.
+
+**Decision.** `AGENT_CONTRACT.md` becomes `contract_version: 2`:
+
+1. `orena.home` is a surface id and a navigation intent.
+2. `trigger: "open"` is an opening turn without a learner message: one short greeting, suggestions, at most two LOW actions, read-only, not a learner turn (new stream S13).
+3. `action` and `evidence` may carry `display` (title, kind, duration from domain records; a checkable `reason` of at most 90 characters).
+4. Words are `{ text, lang }`; `play_user` and `compare_with_model` act on a client-minted `take_ref`; `say_again` names the line; `start_review` is client-composed (`due` or one word); `add_word_to_collection` names `deck` or `library`; `attempt_id` is the stored audio-free record's id; `vocabulary.word`, `speaking.word_detail` and `speaking.compare` take those identifiers.
+5. The contract keeps `zh-CN`; the product's internal code is `zh`; each side maps at its own boundary.
+6. A server sends no v2-only field, id or changed action to a client that declared version 1.
+
+**Consequences.** The new UI declares v2 intents and actions, sends `trigger: open`, mints `take_ref`, executes the payloads through the listed APIs, and its mock replays S13 and the revised S5. The intelligence lane merges `codex/work` forward and implements the same in its contract tests. Backend gap N-9 (owner-scoped read of a speaking attempt record by id, no schema change) is recorded in `UI_BACKEND_GAPS.md`.
+
+**Supersedes / Superseded by:** Supersedes contract_version 1 (D-086 stands).
+
+## D-093 — The new design's colours are adjusted minimally for AA contrast
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human choice among the options recorded in `UI_BACKEND_GAPS.md` N-8).
+
+**Context.** Measured against the pinned design's own tokens, 13 text-on-ground pairs failed AA 4.5:1 for the small interface text they carry: in the dark theme `--text3` (placeholders, meta, inactive phone tabs), `--accent` on `--accent-soft` (the active rail item, the language pill), white on `--accent` (primary buttons) and white on `--red` (count badges); in the light theme `--text3` and the green, red and amber result inks on their soft fills. Design Contract rule 41: accessibility never redesigns; a failing token gets the smallest technical change that keeps the visual intent.
+
+**Decision.** Lightness only, hue and saturation kept:
+
+1. Dark: `--text3` #77778E → #858599; `--accent` #7D78F5 → #847FF6; filled controls under white text use a new `--accent-fill` #6862F3 (hover #5E58EA, pressed #544EDC) instead of `--accent`; the numbers on the red count badge use a new `--badge-ink` #0E0E16.
+2. Light: `--text3` #8E8EA2 → #6E6E86; `--green` #138A5A → #117E52; `--red` #D93D42 → #D0292E; `--amber` #B86E00 → #A16000; `--accent-fill` is the design's own accent (#5A55E3, hover #4C47D2, pressed #403BBE); `--badge-ink` stays white.
+3. Every other token is the design's value. `scripts/test_orena_kit.mjs` pins these exact values, checks every drawn pair at 4.5:1 in both themes, and refuses white ink on `--accent`.
+
+**Consequences.** A later design revision that fixes its own contrast replaces these values from its pin; one that does not is measured again under rule 41.
+
+**Supersedes / Superseded by:** Nothing. Applies rule 41 to D-088's tokens.

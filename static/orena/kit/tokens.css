@@ -20,11 +20,17 @@
   --border2: #34344A;
   --text: #F3F3F8;
   --muted: #A9A9BC;
-  --text3: #77778E;
-  --accent: #7D78F5;
+  --text3: #858599; /* AA, D-093 (design #77778E) */
+  --accent: #847FF6; /* AA, D-093 (design #7D78F5) */
   --accent-hover: #8E8AF7;
   --accent-press: #6C67E6;
   --accent-ink: #fff;
+  /* Filled controls under white text: AA, D-093 (the design fills with --accent). */
+  --accent-fill: #6862F3;
+  --accent-fill-hover: #5E58EA;
+  --accent-fill-press: #544EDC;
+  /* Numbers on the red count badge: dark ink, AA, D-093 (the design uses white). */
+  --badge-ink: #0E0E16;
   --accent-soft: #24224A;
   --tint2: #302C66;
   --accent-text: #A9A5FF;
@@ -59,22 +65,26 @@
   --border2: #DCDCE7;
   --text: #17171F;
   --muted: #5C5C6E;
-  --text3: #8E8EA2;
+  --text3: #6E6E86; /* AA, D-093 (design #8E8EA2) */
   --accent: #5A55E3;
   --accent-hover: #4C47D2;
   --accent-press: #403BBE;
   --accent-ink: #fff;
+  --accent-fill: #5A55E3;
+  --accent-fill-hover: #4C47D2;
+  --accent-fill-press: #403BBE;
+  --badge-ink: #fff;
   --accent-soft: #EFEDFD;
   --tint2: #DDD9FB;
   --accent-text: #4C47D2;
   --ring: rgba(90, 85, 227, .24);
-  --green: #138A5A;
+  --green: #117E52; /* AA, D-093 (design #138A5A) */
   --green-soft: #E6F6EE;
   --support: #2B6FD9;
   --support-soft: #E8F1FE;
-  --amber: #B86E00;
+  --amber: #A16000; /* AA, D-093 (design #B86E00) */
   --amber-soft: #FEF3DD;
-  --red: #D93D42;
+  --red: #D0292E; /* AA, D-093 (design #D93D42) */
   --red-soft: #FDECEC;
   --ai: linear-gradient(135deg, #6B5CF6 0%, #A35CF2 55%, #F2789F 100%);
   --ai-soft: #F5F0FF;
@@ -111,8 +121,6 @@
   --toast-ink: #fff;
   --toast-chip: rgba(255, 255, 255, .14);
   --toast-action: rgba(255, 255, 255, .12);
-  /* White text on the red count badge and on the mark disc, as the frames draw it. */
-  --badge-ink: #fff;
   /* The initials avatar's gradient and ink (the design has no learner photo). */
   --avatar-bg: linear-gradient(135deg, #FFD4B8, #F7A8C4);
   --avatar-ink: #7A2E4A;

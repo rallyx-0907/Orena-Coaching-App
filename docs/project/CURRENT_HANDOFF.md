@@ -14,8 +14,8 @@ approval, or production readiness.
 `9c0fe31`, integration HEAD `7565f6d`). D-085: Agent Intelligence develops on
 `feature/orena-intelligence`. D-086: the new learner UI replaces the old one on
 `codex/work` and is the only UI that carries the agent; both lanes build
-against `docs/project/AGENT_CONTRACT.md` (contract_version 1), edited only on
-`codex/work`.
+against `docs/project/AGENT_CONTRACT.md` (contract_version 2, D-092), edited
+only on `codex/work`.
 
 **New learner UI migration (D-088 - D-091), in progress on `codex/work`.** The
 design is Claude Design project `e6dc1cb2`, revision `1790473816124946`, pinned
@@ -31,8 +31,7 @@ slices `codex/work` is always in this state:
   `infrastructure/`); no learner-data schema has changed;
 - the agent panel exists only in the new UI, on the contract mock
   (AGENT_CONTRACT §11-12); nothing calls `/api/agent/*` until the human says the
-  intelligence lane is integrated. Contract v2 proposal awaiting approval:
-  `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`.
+  intelligence lane is integrated.
 
 The intelligence lane integrates against `/next`. Frame → route → code → status:
 `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
@@ -86,8 +85,7 @@ are `UI_BACKEND_GAPS.md` I-1..I-21.
 
 ## PENDING
 
-Human decisions: contrast N-8; agent contract v2 proposal. Human action: the
-sandbox migration (BLOCKED below).
+Human action: the sandbox migration (BLOCKED below).
 
 Intelligence lane: Slice 1b in progress; the Admin labels for the four agent
 capability keys are on codex/work (71e84a0), so the keys land in 1b as inert

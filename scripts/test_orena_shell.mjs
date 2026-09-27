@@ -71,7 +71,8 @@ assert.equal(byId('reader').focus, true);
 
 // 6. Agent intents are the contract's (AGENT_CONTRACT §6.1), each used once.
 const contract = fs.readFileSync('docs/project/AGENT_CONTRACT.md', 'utf8');
-const section = contract.slice(contract.indexOf('### 6.1'), contract.indexOf('## 7.'));
+const sixOne = contract.slice(contract.indexOf('### 6.1'), contract.indexOf('## 7.'));
+const section = sixOne.slice(sixOne.indexOf('```text') + 7, sixOne.indexOf('```', sixOne.indexOf('```text') + 7));
 const ids = new Set([...section.matchAll(/\b([a-z]+(?:\.[a-z_]+)?)(?:\{[^}]*\})?/g)].map((m) => m[1]));
 const seen = new Set();
 for (const route of ROUTES.filter((r) => r.intent)) {
