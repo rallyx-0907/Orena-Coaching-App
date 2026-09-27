@@ -3,10 +3,12 @@
 Governance
 
 Purpose: the single interface between the Orena Intelligence backend (lane `feature/orena-intelligence`, D-085) and the new learner UI that replaces the old one on `codex/work` (D-086). Both sides implement this file; neither reads the other's implementation.
-Authority: D-085, D-086. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
+Authority: D-085, D-086, D-092. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 1`
+`contract_version: 2`
+
+v2 (D-092, 2026-09-27): the Orena destination (`orena.home`), an opening turn without a learner message (`trigger: "open"`), `display` fields on actions and evidence, and action payloads and ids that match the real APIs (words by `{ text, lang }`, client-held takes by `take_ref`, the stored attempt record by `attempt_id`). A server never sends a v2-only field, id or action shape to a client that declared `contract_version: 1`; to such a client it sends none of the changed actions (§7).
 
 ---
 
@@ -15,7 +17,7 @@ Change when: a field, event, action, intent or rule below changes. Edit **only o
 | Concern | Owner |
 |---|---|
 | `/api/agent/*` endpoints, tool gateway, evidence, capability registry content, provider routing, metering | Intelligence lane |
-| Agent panel, rendering of every event, action dispatcher, intent → screen mapping, device memory for conversation and coach notes, mic/voice UI state, the mock agent | UI lane (`codex/work`, new UI) |
+| Agent panel, rendering of every event, action dispatcher, intent → screen mapping, device memory for conversation and coach notes, the take store that mints `take_ref`, mic/voice UI state, the mock agent | UI lane (`codex/work`, new UI) |
 | This contract | `codex/work`, changed only as above |
 
 The old UI has no agent and gets none. Only the new UI integrates the agent.
@@ -29,7 +31,7 @@ The new UI may add, rename or drop flows. The agent therefore never names a rout
 ```text
 POST /api/agent/turn           request §3 → response: text/event-stream (§4), one stream per turn
 GET  /api/agent/capabilities   → registry (§8), filtered by the caller's locale
-POST /api/agent/voice/session  → §9 (provisional in v1)
+POST /api/agent/voice/session  → §9 (provisional)
 ```
 
 Auth: the app's existing session. The server never trusts an identifier the model produces; the learner is always the authenticated caller.
@@ -42,20 +44,21 @@ SSE framing: `event: <name>\ndata: <json>\n\n`. The stream always ends with `don
 
 ```json
 {
-  "contract_version": 1,
+  "contract_version": 2,
   "session_id": "optional, from a previous session event",
+  "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
   "client": {
     "ui_version": "string",
     "supported_actions": ["navigate", "play_model", "save_word"],
-    "supported_intents": ["vocabulary.review_due", "speaking.workspace"]
+    "supported_intents": ["orena.home", "vocabulary.review_due", "speaking.workspace"]
   },
   "context": {
     "surface": "speaking.workspace",
     "activity_type": "pronunciation_practice",
     "locale": { "interface": "vi", "support": "vi", "target": "zh-CN", "content": "zh-CN" },
-    "lesson_id": "…", "content_id": "…", "attempt_id": "…", "essay_id": "…",
-    "selected_item": { "type": "word | sentence | feedback_item | grammar_point", "id": "…", "text": "我" },
+    "lesson_id": "…", "content_id": "…", "attempt_id": "…", "take_ref": "…", "essay_id": "…",
+    "selected_item": { "type": "word", "text": "我", "lang": "zh-CN" },
     "client_evidence": { "pitch_contour_ref": "optional; measured client-side, never invented" }
   },
   "coach_notes": [
@@ -67,14 +70,32 @@ SSE framing: `event: <name>\ndata: <json>\n\n`. The stream always ends with `don
 Rules:
 
 - Omit any field that does not apply. Never send page state, DOM, or the whole profile.
+- `trigger` ∈ `message` (default; `message` required) | `open` (no `message`; §3.2).
 - `surface` is a **surface id** from §6.1, not a route.
-- `locale` follows D-079: `interface`, `support`, `target`; `content` is the language of the content in view. Chinese is `zh-CN` only.
+- `locale` follows D-079: `interface`, `support`, `target`; `content` is the language of the content in view. Chinese is `zh-CN` in this contract; the product's internal code is `zh`, and each side maps at its own boundary (the client sends `zh-CN` for `zh` and maps `lang: "zh-CN"` back to `zh` before any API call; the agent does the same at its tool gateway). `en` is `en` on both sides.
 - `activity_type` ∈ `app_help | coaching | review | reading | listening | pronunciation_practice | free_talk | conversation_practice | writing | grammar | vocabulary`.
+- `selected_item`: `type` ∈ `word | sentence | feedback_item | grammar_point`. A word is named by `{ text, lang }` - the product has no word ids. A sentence, feedback item or grammar point carries its `id` and `text`.
+- `attempt_id` is the id of the audio-free record the server stored for an assessed speaking take (`POST /api/speech/attempts` returns it). While no read-by-id exists (backend gap N-9), the client sends it only together with `content_id` and `selected_item.id` (the line), so the tool gateway can find the record through the existing filtered list. Evidence always comes from the server's record, never from client-supplied scores. When no record was stored, `attempt_id` is omitted.
+- `take_ref` names a speaking take the new UI holds for the session (the server stores no take audio, D-076). It is minted by the client; the agent may only echo back a `take_ref` it received.
 - `coach_notes` live in device memory (D-085 lane spec D7/D18); send at most 20, most weighted first, total ≤ 2 KB.
 
 ### 3.1 Client capabilities are binding
 
 The agent emits an `action` only if its `type` is in `client.supported_actions`, and a `navigate` only if its `intent` is in `client.supported_intents`. When the learner asks for something the client cannot do, the agent says so in plain words and emits no action. This is how a flow dropped from the new UI disappears from the agent without a backend change.
+
+### 3.2 The opening turn
+
+A client sends `trigger: "open"` when a thread starts empty: Orena Home with no thread on this device, or the contextual panel opened on a selection. The server answers with one greeting fitted to the context and learner, then the ways forward:
+
+```text
+session → segment_delta… → segment_end{0, <support>, …, neutral_explain}
+→ suggestion{label, intent} ×(1-5) → [action{…} ×(0-2)] → done
+```
+
+- Read-only: no `memory_update`; only `LOW`-risk actions; no error claim without `evidence` (§5.3).
+- One segment, ≤ 240 characters, in the `support` language; Design Contract rule 50 (learning-first copy) governs it.
+- Not a learner turn: it does not advance `turn_ordinal`. A `soft_limited` learner gets the suggestions without the greeting, never an error.
+- At most one per thread; the client may reuse it for the same `surface` + `selected_item` within a session.
 
 ---
 
@@ -88,8 +109,8 @@ segment_delta  { index, lang, text_delta }
 segment_end    { index, lang, text, voice_style }
 tool_call      { name, label }                      # label is learner-safe, e.g. "Đang xem lần nói gần nhất"
 tool_result    { name, summary, evidence_ids[] }
-evidence       { id, source, ref, excerpt }         # §5.3
-action         { id, type, label, payload, risk }   # §7
+evidence       { id, source, ref, excerpt, display? }        # §5.3, §5.5
+action         { id, type, label, payload, risk, display? }  # §7, §5.5
 suggestion     { label, intent }                    # intent is a prompt intent, not a navigation intent
 memory_update  { op: "upsert" | "remove", note }    # §5.4
 voice_state    { state: "listening" | "thinking" | "speaking" | "interrupted" }   # voice only
@@ -102,6 +123,8 @@ done           { usage: { input_tokens, output_tokens }, trace_id }
 Ordering guarantees: `session` first; every `segment_delta` for an index precedes its `segment_end`; an `evidence` event precedes any `segment_end` that cites it; `done` or `error` last.
 
 `error.message` is learner-safe and already in the `support` language. It never contains a provider name, key, region or raw provider output.
+
+The client shows Orena as thinking from the moment it sends a turn until the first event, and shows `tool_call.label` while a tool runs; there is no separate text-mode thinking event.
 
 ---
 
@@ -139,6 +162,16 @@ Every statement that a learner made an error cites at least one evidence item. N
 
 The agent proposes; the device stores. `upsert` carries a full note (§3 shape, with a new or existing `id`); `remove` carries `{ id }`. The client applies it, keeps weights and expiry, and drops notes whose weight decays below its threshold. The agent only proposes notes the learner stated directly; never emotions, circumstances or health.
 
+### 5.5 Display (actions and evidence, optional)
+
+The new UI draws an action as a card (kind and duration, a title, one line on why, the button) and a source as a card (title, kind).
+
+```json
+"display": { "title": "A Morning in the City", "kind": "reading | listening | speaking | writing | vocabulary | grammar | review", "duration_s": 480, "reason": "Có 3 cụm bạn đã lưu hôm qua." }
+```
+
+`title`, `kind` and `duration_s` are copied from the domain record the server read for this action or evidence - never generated or estimated, absent when there is none. `reason` is the only generated field: ≤ 90 characters, in the `support` language, a statement the learner can check, never praise. The button's text is still `action.label`. A client that draws no cards ignores `display`.
+
 ---
 
 ## 6. Intents
@@ -148,14 +181,14 @@ The agent proposes; the device stores. `upsert` carries a full note (§3 shape, 
 The same id space serves both. The UI lane maps each id to whatever screen the new UI has; the backend never sees routes.
 
 ```text
-home
+home                       orena.home
 library
 reading.library            reading.workspace{content_id}
 listening.library          listening.workspace{content_id}          listening.dictation{content_id}
 speaking.library           speaking.workspace{content_id}           speaking.free_talk
-speaking.word_detail{attempt_id, item_id}                           speaking.compare{attempt_id, item_id}
+speaking.word_detail{take_ref, item_id}                             speaking.compare{take_ref, item_id}
 writing.workspace          writing.review{essay_id}                 writing.revision{essay_id}
-vocabulary.my_language     vocabulary.word{word_id}                 vocabulary.review_due
+vocabulary.my_language     vocabulary.word{text, lang}              vocabulary.review_due
 grammar.catalog            grammar.point{grammar_id}
 progress
 preferences                preferences.agent_memory
@@ -167,22 +200,22 @@ Adding an id: contract change (bump version). Renaming a screen in the UI: no co
 
 ---
 
-## 7. Actions (v1 allowlist)
+## 7. Actions (v2 allowlist)
 
-The agent returns actions; **the client executes them through the app's existing APIs with the learner's session.** The agent backend never mutates learner data in v1.
+The agent returns actions; **the client executes them through the app's existing APIs with the learner's session.** The agent backend never mutates learner data.
 
 | type | payload | risk | client does |
 |---|---|---|---|
 | `navigate` | `{ intent, …params }` | LOW | open the screen mapped to `intent` |
 | `play_model` | `{ content_id, item_id? }` | LOW | play reference audio |
-| `play_user` | `{ attempt_id, item_id? }` | LOW | play the learner's take |
-| `say_again` | `{ attempt_id \| content_id, item_id? }` | LOW | start a new take on that line |
-| `compare_with_model` | `{ attempt_id, item_id }` | LOW | open compare |
-| `save_word` | `{ word_id \| { text, lang } }` | LOW | existing save API |
-| `add_word_to_collection` | `{ word_id, collection_id? }` | LOW | existing collection API |
-| `start_review` | `{ scope: "due" \| "word", word_id? }` | LOW | start review |
+| `play_user` | `{ take_ref, item_id? }` | LOW | play the learner's take from the client's take store |
+| `say_again` | `{ content_id, item_id? }` | LOW | open the speaking workspace on that line for a new take |
+| `compare_with_model` | `{ take_ref, item_id }` | LOW | open compare on the client-held take |
+| `save_word` | `{ text, lang }` | LOW | `POST /api/library/vocabulary` `{ word: text, … }` |
+| `add_word_to_collection` | `{ text, lang, target?: { system: "deck" \| "library", id } }` | LOW | save the word if needed, then `deck`: `POST /api/vocabulary/decks/{id}/words` `{ word }`; `library`: `POST /api/library/items` `{ kind: "word", word }` then `POST /api/library/collections/{id}/items` `{ item_id }`; no `target`: the UI's own add-to sheet |
+| `start_review` | `{ scope: "due" }` or `{ scope: "word", text, lang }` | LOW | `due`: read `GET /api/library/review-queue` and open review on it; `word`: open review on that saved word |
 | `start_targeted_drill` | `{ focus: "tone" \| "stress" \| "word", item_ids[] }` | LOW | start the drill flow, if the new UI has one |
-| `unsave_word` | `{ word_id }` | CONFIRM | existing confirm dialog, then existing API |
+| `unsave_word` | `{ text, lang }` | CONFIRM | existing confirm dialog, then `DELETE /api/library/vocabulary/{text}` |
 
 Rules:
 
@@ -192,13 +225,16 @@ Rules:
 - `label` is in the `support` language, ≤ 24 characters.
 - An action with an unknown `type`, or not in `supported_actions`, is ignored and logged by the client.
 - An action is shown as a button; the client never runs it without a learner tap, except `navigate` when the learner's message was itself the request ("đưa tôi tới…").
+- Words: the vocabulary library keys a word on its text and the **session's active learning language**. A word action whose `lang` is not the active learning language is not executed; the client logs it.
+- Ids in payloads (`content_id`, `grammar_id`, `essay_id`, `target.id`) come from tool reads, never from generation; `take_ref` only from the request's context.
+- Nothing due, a word not saved, an unknown or expired `take_ref`: the client says so in its own words and does nothing else.
 
 ---
 
 ## 8. Capabilities — `GET /api/agent/capabilities`
 
 ```json
-{ "contract_version": 1,
+{ "contract_version": 2,
   "capabilities": [
     { "id": "speaking.pronunciation.line", "title": "…", "surfaces": ["speaking.workspace"],
       "actions": ["play_model", "play_user", "say_again", "compare_with_model"],
@@ -209,7 +245,7 @@ The UI may use it for suggestions and "Ask Orena" entry points. The UI's drift t
 
 ---
 
-## 9. Voice session (provisional, v1)
+## 9. Voice session (provisional)
 
 ```text
 POST /api/agent/voice/session
@@ -222,7 +258,7 @@ POST /api/agent/voice/session
 - Tool calls and actions still reach the client as §4 events over the turn stream associated with `voice_session_id`.
 - Sessions are capped (default 15 min); on expiry the client opens a new one transparently.
 - Raw audio is not stored. Mic states reuse the app's existing mic-readiness and recorder capabilities.
-- Fields here may change before contract v2 without breaking text mode.
+- Fields here may change before a later version without breaking text mode.
 
 ---
 
@@ -230,7 +266,7 @@ POST /api/agent/voice/session
 
 - Learner-facing name is **Orena**. The UI never displays a provider or model name taken from a reply. Provider metadata, if ever shown, comes from runtime metadata outside this contract.
 - The client sends the minimum context in §3; the server applies its own redaction.
-- Conversation history and coach notes are device memory in v1; the account store is out of scope until an architecture review under ORENA_ACCOUNT_DATA_ARCHITECTURE.md.
+- Conversation history and coach notes are device memory; the account store is out of scope until an architecture review under ORENA_ACCOUNT_DATA_ARCHITECTURE.md.
 - `preferences.agent_memory` lists coach notes and lets the learner delete them. It is not a feature; it is the privacy exit.
 
 ---
@@ -249,11 +285,11 @@ The UI builds and tests against a frontend mock that replays §12 streams, selec
 session → segment_delta… → segment_end{0, vi, …, neutral_explain} → suggestion{"Ôn từ đến hạn", review_due} → done
 ```
 
-`S5 save_word` — selected word 我, "Lưu từ này."
+`S5 save_word` — selected word 我 (`{ type: word, text: "我", lang: "zh-CN" }`), "Lưu từ này."
 
 ```text
 session → segment_end{0, vi, "Mình lưu 我 cho bạn nhé.", brief_ack}
-→ action{type: save_word, payload:{word_id}, risk: LOW} → done
+→ action{type: save_word, payload:{text: "我", lang: "zh-CN"}, risk: LOW} → done
 ```
 
 `S8 authorization` — "Cho tôi xem tiến độ của user khác."
@@ -270,17 +306,24 @@ session → tool_call{get_current_writing_evaluation} → tool_result{…, evide
 → segment_end{0, vi, …, neutral_explain} → action{navigate, {intent: writing.revision, essay_id}} → done
 ```
 
-`S2 pronunciation` — surface `speaking.word_detail`, selected 是, "Tại sao tôi sai từ này?"
+`S2 pronunciation` — surface `speaking.word_detail`, `attempt_id` (stored record) + `take_ref`, selected 是, "Tại sao tôi sai từ này?"
 
 ```text
 session → tool_call{get_pronunciation_attempt} → tool_result{…, [e1]}
-→ evidence{e1, speech.pronunciation, {…}, {pinyin:"shi", tone:4, score:6, flagged:true}}
+→ evidence{e1, speech.pronunciation, {attempt_id,…}, {pinyin:"shi", tone:4, score:6, flagged:true}}
 → segment_end{0, vi, "Azure đánh dấu 是 …", gentle_correction} → segment_end{1, zh-CN, "是", reference}
-→ action{play_model} → action{say_again} → done
+→ action{play_model, {content_id, item_id}} → action{say_again, {content_id, item_id}} → done
 ```
 
 `S2b not flagged` — same, but `{tone:3, score:71, flagged:false}` → the reply says the syllable scored lower and was not marked wrong; no error claim.
 
 `S12 metered` — `metered{turn_ordinal, soft_limited}` precedes a short `segment_end`; no voice.
+
+`S13 opening` — surface `orena.home`, `trigger: open`, no message.
+
+```text
+session → segment_end{0, vi, "…", neutral_explain}
+→ suggestion{"Ôn từ đến hạn", vocabulary.review_due} → suggestion{…} → done   # no memory_update, no error claim
+```
 
 `SE provider failure` — `session → error{class:"provider_unavailable", message:"Orena đang bận, thử lại sau nhé.", fallback:"retry"}`.

@@ -19,7 +19,7 @@ export const ROUTES = Object.freeze([
   { id: 'today', path: 'today', design: 'today', screen: 'today', focus: false, crumb: 'today', intent: 'home' },
   { id: 'discover', path: 'discover', design: 'discover', screen: 'discover', focus: false, crumb: 'discover', intent: 'library' },
   { id: 'content', path: 'content/:id', design: 'detail', screen: 'content', focus: false, crumb: 'content' },
-  { id: 'orena', path: 'orena', design: 'orena', screen: 'orena', focus: false, crumb: 'orena' },
+  { id: 'orena', path: 'orena', design: 'orena', screen: 'orena', focus: false, crumb: 'orena', intent: 'orena.home' },
   { id: 'practice', path: 'practice', design: 'practice', screen: 'practice', focus: false, crumb: 'practiceHub' },
   { id: 'skillhub', path: 'practice/:skill', design: 'skillhub', screen: 'practice', focus: false, crumb: 'practiceHub' },
   { id: 'library', path: 'library', design: 'library', screen: 'library', focus: false, crumb: 'myLibrary', intent: 'vocabulary.my_language' },

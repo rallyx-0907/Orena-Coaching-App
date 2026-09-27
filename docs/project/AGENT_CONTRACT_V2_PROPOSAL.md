@@ -1,12 +1,8 @@
 # Agent contract v2 — proposal (awaiting human approval)
 
-**Status:** PROPOSED, 2026-09-27, revised the same day with the intelligence
-lane's pre-flight findings (checked against the real APIs on `codex/work`). Not
-in force: `AGENT_CONTRACT.md` stays at `contract_version: 1` until the human
-approves. After approval the change is made in `AGENT_CONTRACT.md` on
-`codex/work` only, `contract_version` becomes 2, and a Decision Log entry records
-it (D-086; the human's migration brief, item 6). Until then the new UI runs on
-the v1 mock.
+**Status:** APPROVED by the human unchanged and applied, 2026-09-27: `AGENT_CONTRACT.md`
+is `contract_version: 2` (D-092). This file stays as the record of the reasoning;
+the contract is the authority.
 
 **Why.** Two reasons. (a) The new learner design (D-088) makes Orena a place of
 its own - Orena Home, the phone bar's centre action, the rail's "Ask Orena" card
