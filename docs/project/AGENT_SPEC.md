@@ -8,6 +8,10 @@
 > Trạng thái nền tại thời điểm viết (2026-09-27): `codex/work` là unified baseline sau PR #63
 > (9c0fe315…, Admin + Speaking đã merge, external review); D-085 đã ghi trong DECISION_LOG.md và
 > CURRENT_HANDOFF.md. Lane này được tạo từ baseline đó.
+>
+> **Giao diện nằm ngoài lane này.** UI mới thay toàn bộ UI cũ trên `codex/work` (D-086) và chỉ UI mới có agent.
+> Hai lane gặp nhau duy nhất ở `docs/project/AGENT_CONTRACT.md` — file đó thắng mọi mục trong spec này
+> khi nói về request, event, action, intent. Contract chỉ được sửa trên `codex/work`; lane này nhận bằng merge.
 
 ---
 
@@ -50,13 +54,15 @@ D9  EN và ZH là first-class, mỗi slice giao cả hai (ARCHITECTURE_INVARIANT
     nếu EN trước ZH sau). VI là interface/support.
 D10 Bằng chứng phát âm: "no fake pronunciation result" (D-066). Agent chỉ được gọi là lỗi những gì
     provider flag; điểm hạ mà không flag thì nói là "bị hạ điểm", không suy ra nguyên nhân.
-D11 Panel agent là learner-facing surface → đi qua DESIGN_CONTRACT (D-067, rules 42–48).
-    Handoff ghi Claude Design source hiện "unavailable" (visual-source gate UNVERIFIED theo lệnh người,
-    cấm redesign để bù). Vì vậy nguồn frame cho panel là một trong hai, do người chốt khi agent hỏi P3:
-      (a) export frame được pin vào docs/design/canonical-ui/screens/ (như Orena-Speaking.dc.html);
-      (b) chưa có export → Slice 1b dừng ở fake agent + backend + API; không dựng panel.
-D12 Streaming (event stream) là contract từ Slice 1. Response là `segments[{lang,text,voice_style}]`.
-D13 Frontend ghép vào FAKE AGENT trước, đổi endpoint khi core ổn.
+D11 UI KHÔNG thuộc lane này (D-086). UI mới thay toàn bộ UI cũ (kể cả behavior, thêm/bỏ luồng) trên
+    codex/work, và chỉ UI mới có agent. Lane này không sửa static/orena/**, templates/**, không dựng
+    panel, không viết mock frontend. Giao diện giữa hai lane là docs/project/AGENT_CONTRACT.md.
+    Agent không bao giờ nêu route/screen: chỉ intent + action trong contract, và chỉ những gì client
+    khai báo trong client.supported_actions / supported_intents (contract §3.1).
+D12 Transport, request, event, segment, evidence, action, intent, voice session: theo AGENT_CONTRACT.md
+    (contract_version 1). Lane này implement contract; không mở rộng contract tại đây.
+D13 Contract tests: các canonical stream trong contract §12 là fixture chung. UI lane replay chúng bằng
+    mock; lane này phải phát ra cùng chuỗi event và cùng shape payload (text có thể khác).
 D14 Test tự động không gọi provider thật (golden WAV + fake provider). Gate là `.github/workflows/ci.yml`.
 D15 Tracker gap duy nhất là docs/project/UI_BACKEND_GAPS.md. Không tạo file gap riêng.
 D16 Decision model (Jev…) không dùng trong V1; chỉ giữ chỗ `DecisionProvider`.
@@ -82,7 +88,7 @@ Xây dựng một AI Assistant riêng cho Orena có khả năng:
 Không triển khai như một chatbot độc lập chỉ biết trả lời text.
 
 ```text
-Orena UI (frame trong Claude Design project)
+UI mới trên codex/work (D-086) — ngoài lane này
    │  AppContextSnapshot + event stream
    ▼
 Orena Intelligence Agent (Agent Core)
@@ -120,13 +126,14 @@ P1  Xác nhận đang ở feature/orena-intelligence và HEAD chứa D-085 (grep
     và CURRENT_HANDOFF.md). Không thấy → lane chưa fast-forward từ codex/work → DỪNG, báo người.
 P2  Xác nhận merge PR #63 (9c0fe315) nằm trong ancestry: git merge-base --is-ancestor 9c0fe315 HEAD.
     Có → Slice 1a rồi 1b liên tục trong lane này. Không → DỪNG, báo người.
-P3  Nguồn frame cho panel: có file export trong docs/design/canonical-ui/screens/ cho agent panel không?
-    Có → ghi tên file. Không → hỏi người chọn D11 (a) hay (b); chưa có câu trả lời thì không làm UI.
+P3  docs/project/AGENT_CONTRACT.md tồn tại và giống hệt bản trên codex/work
+    (git diff origin/codex/work -- docs/project/AGENT_CONTRACT.md phải rỗng)? Ghi contract_version.
+    Thiếu hoặc lệch → DỪNG, báo người (contract chỉ vào lane bằng merge codex/work).
 P4  alembic heads == 1 và head là 20260924_0016? Liệt kê 3 migration cuối. Khác → báo, không sửa.
 P5  writing_coach/ai/capabilities.py: liệt kê AIOperation và capability key hiện có.
     providers.py: provider nào hỗ trợ streaming? tool calling? (v2.1 giả định: chưa có cả hai)
-P6  Endpoint hiện có mà action dispatcher sẽ gọi: vocabulary save/unsave/collection, review start,
-    speech attempts/retry, navigation intents (static/orena/product/intent.js). Liệt kê.
+P6  Endpoint hiện có mà client sẽ gọi khi thực thi action contract §7 (save/unsave word, collection, review,
+    speech attempts). Chỉ liệt kê để map payload; không đọc/sửa code frontend.
 P7  learner_summary_api.py trả gì? Có đủ cho coaching snapshot (mục 24) không? Thiếu gì?
 P8  text_discussion.py: cơ chế metering turn (ordinal, không từ chối) — dùng lại cho budget được không?
 P9  Gemini: capability key nào đang trỏ gemini trong sandbox? Key có dùng được cho Live API không (câu hỏi cho người)?
@@ -149,25 +156,7 @@ Agent trả structured action; frontend gọi API hiện có bằng session củ
 
 ### 3.3 Agent phải context-aware
 
-```json
-{
-  "surface": "speaking.workspace",
-  "route": "#/speaking/workspace/…",
-  "activity_type": "pronunciation_practice",
-  "locale": {
-    "interface": "vi",
-    "support": "vi",
-    "target": "zh-CN",
-    "content": "zh-CN"
-  },
-  "lesson_id": "…",
-  "content_id": "…",
-  "attempt_id": "…",
-  "selected_item": { "type": "word", "id": "…", "text": "我" }
-}
-```
-
-Field không có thì omit. Không gửi page state. `route` lấy từ `static/orena/product/intent.js` sau merge Speaking (route đã đổi: Practice hub retired, one learner flow per capability).
+Request và `context` theo **AGENT_CONTRACT.md §3**: `surface` là surface id (không phải route), `locale` 3 lớp D-079 + `content`, `activity_type` enum, selection, `coach_notes` từ device memory, và `client.supported_actions/intents` là ràng buộc (contract §3.1).
 
 ### 3.4 Bằng chứng trước, giải thích sau (D10)
 
@@ -203,25 +192,25 @@ Nếu syllable chỉ bị hạ điểm (ví dụ 60–71) mà không flag:
 
 ## 5. Capability Registry
 
-Path: `writing_coach/agent/capabilities/*.json` (backend là source of truth; frontend đọc qua API).
+Path: `writing_coach/agent/capabilities/*.json`. Phục vụ qua `GET /api/agent/capabilities` đúng shape contract §8.
 
 ```json
 {
   "id": "speaking.pronunciation.line",
   "title": "Say a line and get it assessed",
-  "routes": ["#/speaking/workspace"],
+  "surfaces": ["speaking.workspace", "speaking.word_detail"],
   "status": "active | pending",
   "contexts": ["attempt_id", "content_id", "selected_item"],
-  "actions": ["play_model", "play_user", "say_again", "open_word_detail", "compare_with_model"],
-  "supported_languages": ["en", "zh-CN"],
-  "evidence_source": "POST /api/speech/pronunciation → PronunciationResult",
-  "related_capabilities": ["speaking.free_talk", "vocabulary.word_detail"]
+  "actions": ["play_model", "play_user", "say_again", "compare_with_model"],
+  "languages": ["en", "zh-CN"],
+  "evidence_source": "speech.pronunciation",
+  "tools": ["get_pronunciation_attempt", "get_pronunciation_word_detail"]
 }
 ```
 
-- `status: pending` cho capability chưa có route trên lane (Speaking trước merge; Progress chưa migrate). Test drift bỏ qua `pending`, bắt buộc với `active`.
-- Test drift: mọi route `active` tồn tại trong `intent.js`; mọi action có handler ở dispatcher.
-- `evidence_source` bắt buộc cho capability có chấm điểm — để D10 kiểm được.
+- Registry **không chứa route**. `surfaces` và `actions` chỉ dùng id có trong contract §6–§7.
+- Drift test phía backend: mọi surface/action trong registry có trong contract; mọi `tools[]` có trong tool registry; mọi `evidence_source` thuộc enum contract §5.3.
+- Drift phía UI (surface nào UI mới thực sự có) là việc của lane UI (contract §8); backend xử lý qua `client.supported_*`.
 
 ---
 
@@ -308,7 +297,7 @@ Mức rủi ro gắn với `type` trong registry, không nằm trong prompt.
 
 ## 10. Context assembly
 
-Tier 1 (always): user ref, `locale` 3 lớp + content, route/capability/activity_type, selection, coach notes (device memory, vài trăm token, có TTL).
+Tier 1 (always): user ref, `locale` 3 lớp + content, surface/capability/activity_type, selection, coach notes (device memory, vài trăm token, có TTL).
 Tier 2 (on demand): evidence cho câu hỏi hiện tại (attempt, evaluation, feedback items…).
 Tier 3 (coaching): learning snapshot, recurring mistakes, review load, goals.
 
@@ -341,91 +330,32 @@ Ba lớp. User không phải quản lý gì.
 
 ---
 
-## 13. Agent API (D12)
+## 13. Agent API → AGENT_CONTRACT.md §2–§4, §9
 
-```http
-POST /api/agent/turn                     → { agent_session_id, stream: "ws" | "sse", url }
-WS   /api/agent/stream/{agent_session_id}
-POST /api/agent/voice/session            → { voice_session_id, transport, ephemeral_token }
-GET  /api/agent/capabilities             → registry (đã lọc theo locale + status)
-```
+Implement đúng contract. Chi tiết phía backend:
 
-Event stream (một contract cho text và voice):
-
-```text
-session        { agent_session_id }
-segment_delta  { segment_index, lang, text_delta }
-segment_end    { segment_index, lang, text, voice_style }
-tool_call      { name, args_redacted }
-tool_result    { name, summary, evidence_ref }
-action         { type, label, payload, risk }
-suggestion     { label, intent }
-audio_chunk    { segment_index, pcm_base64 }        # voice cascade mode
-voice_state    { listening | thinking | speaking | interrupted }
-metered        { turn_ordinal, budget_state }        # theo pattern text_discussion (mục 22)
-error          { class, message_user_visible, fallback }
-done           { trace_id, usage }
-```
-
-Voice: frontend nối trực tiếp tới transport của vendor bằng ephemeral token do backend cấp; key vendor không xuống frontend. Tool call/delegation từ vendor → backend → Tool Gateway. Đi qua `writing_coach/ai/credentials.py` + `platform.py`, không đọc env trực tiếp (P6 của lane Speaking: "a provider key never travels in an error").
+- `POST /api/agent/turn` trả `text/event-stream`, dừng sinh khi client abort.
+- `session_id` trỏ tới session cache TTL (mục 11), không bảng mới.
+- `tool_call.label` và `error.message` sinh bằng copy có khai báo lớp ngôn ngữ (D-080), không bằng model.
+- Voice session (contract §9): cấp ephemeral token qua `writing_coach/ai/credentials.py` + `platform.py`; key không bao giờ xuống client hay vào error.
 
 ---
 
-## 14. Structured actions (D6, D12)
+## 14. Actions, segments, evidence → AGENT_CONTRACT.md §5–§7
 
-```json
-{
-  "segments": [
-    { "lang": "vi",    "text": "Azure đánh dấu 是 là phát âm sai, điểm 6/100. Nghe mẫu rồi thử lại nhé:", "voice_style": "gentle_correction" },
-    { "lang": "zh-CN", "text": "是", "voice_style": "reference" }
-  ],
-  "actions": [
-    { "type": "play_model", "label": "Nghe mẫu",   "payload": { "content_id": "…", "item_id": "…" }, "risk": "LOW_RISK" },
-    { "type": "say_again",  "label": "Nói lại",    "payload": { "attempt_id": "…" },                "risk": "LOW_RISK" }
-  ],
-  "suggestions": [ { "label": "So sánh với mẫu", "intent": "compare_with_model" } ],
-  "evidence": [ { "source": "speech.pronunciation", "attempt_id": "…", "path": "words[2].phonemes[0]" } ]
-}
-```
+Phía backend phải bảo đảm:
 
-`voice_style` enum: `neutral_explain | encouraging | gentle_correction | celebrate | reference | brief_ack`. `reference` → phát bằng reference/word audio có sẵn, không bằng giọng hội thoại.
-
-Frontend: action dispatcher map `type` → API/intent hiện có; `CONFIRM` qua dialog hiện có; `type` lạ → bỏ qua và log. Render bằng component canonical; không invent card.
-
-`evidence[]` là field mới: mỗi câu khẳng định về lỗi phải có ít nhất một evidence; frontend có thể hiện "Vì sao Orena nói vậy?".
+- Chỉ phát `action.type` thuộc allowlist contract §7 **và** thuộc `client.supported_actions`; `navigate` chỉ với intent thuộc `client.supported_intents`. Không đủ → nói bằng lời, không action.
+- `risk` lấy từ bảng contract §7, không từ model.
+- Mọi khẳng định lỗi có ít nhất một `evidence` phát trước `segment_end` trích nó (D10).
+- `voice_style` thuộc enum contract §5.2; `reference` cho đoạn cần phát âm mẫu.
+- `memory_update` chỉ cho fact learner nói trực tiếp (mục 12).
 
 ---
 
-## 15. UI integration (D11, D13)
+## 15. UI → lane codex/work (D-086)
 
-Panel agent phải có frame trong Claude Design project; đọc, đo, so, sửa, gate theo DESIGN_CONTRACT (D-067). Không có frame thì Slice 1 dừng ở fake agent + backend.
-
-```text
-1. Chốt event stream contract (mục 13).
-2. Fake agent server phát đúng contract (fixtures theo E2E), không cần provider.
-3. Ghép UI vào fake agent theo frame; viết .mjs gate cho panel (theo pattern scripts/test_orena_*.mjs).
-4. Đổi endpoint sang core. Fake agent giữ làm fixture.
-```
-
-Tái dùng: `static/orena/capabilities/audio-recorder.js`, `mic-readiness.js`, `voice-feedback.js`, pattern trong `ui/voice-response.js` (kiểm tra speech service một lần/session, fail-open). Không tạo navigation system mới; entry đúng chỗ frame vẽ.
-
----
-
-## 16. Contextual Ask Orena
-
-Vocabulary word → Ask Orena; Pronunciation word detail → Explain; Reading selection → Explain (qua `text_discussion`); Writing feedback item → Why?; Quiz result → Why? Tất cả mở cùng một Agent.
-
----
-
-## 17. Initial UI behavior
-
-Context indicator (không technical ID) · Conversation · Suggested actions · Composer (text + mic) · Voice state. Theo frame.
-
----
-
-## 18. Suggested prompts
-
-2–4 suggestion theo context, hard-code intent, không hard-code response. Mọi copy key khai báo lớp ngôn ngữ (D-080, `copy-layers.js`).
+Panel, dispatcher, mapping intent → màn hình, device memory, mock, "Ask Orena", suggested prompts, trạng thái mic/voice: đều thuộc UI mới trên codex/work, dựng theo AGENT_CONTRACT.md. Lane này không làm và không review code UI; chỉ bảo đảm server tuân contract bằng contract tests (mục 28).
 
 ---
 
@@ -488,7 +418,7 @@ Mỗi request: `request_id, agent_session_id, capability_key, provider, model, l
 
 ## 23. App knowledge
 
-Registry + route metadata + copy layers + help. V1 lookup deterministic; RAG sau.
+Registry + surface/intent metadata (contract §6) + copy layers + help. V1 lookup deterministic; RAG sau.
 
 ---
 
@@ -546,21 +476,22 @@ Tests: schema, permission (assert READ_ONLY only), registry loader, session, fak
 KHÔNG: đăng ký router vào app.py, sửa app.js/api.js/theme.css/index.html/compose.yaml/ci.yml, migration.
 ```
 
-### Slice 1b — Vertical slice đầu tiên (tiếp ngay sau 1a REVIEWABLE, cùng lane)
+### Slice 1b — Vertical slice đầu tiên (tiếp ngay sau 1a REVIEWABLE, cùng lane) — backend only
 
 ```text
-Đăng ký router (1 chỗ trong app.py), /api/agent/turn + stream, 2–3 read tool: Vocabulary + Writing
-(EN và ZH cùng lúc, D9), fake agent server, ghép panel theo frame, .mjs gate cho panel,
-registry route active cho Home/Vocabulary/Writing, drift test.
-E2E 1, 5, 8, 9 (mục 27). Thêm gate vào ci.yml theo pattern hiện có.
+Đăng ký router agent (1 chỗ trong app.py). POST /api/agent/turn (SSE), GET /api/agent/capabilities
+theo contract. 2–3 read tool Vocabulary + Writing, EN và ZH cùng lúc (D9).
+Contract tests: server phát đúng chuỗi event S1, S5, S8, S9 (contract §12) với provider fake.
+Registry: surface/action id theo contract; drift test backend (mục 5).
+KHÔNG: static/orena/**, templates/**, panel, mock frontend, .mjs gate UI.
 ```
 
 ### Slice 2 — Read-only đầy đủ + actions
 
 ```text
-Toàn bộ tool mục 8 (Speaking qua speech_api /attempts, Grammar, Reading, Listening),
-action dispatcher → intent.js/API hiện có, suggested prompts, 2 điểm "Ask Orena".
-E2E 2, 3, 4, 7. Tone/stress theo D10.
+Toàn bộ tool mục 8 (Speaking qua speech_api /attempts, Grammar, Reading, Listening).
+Action theo contract §7, lọc theo client.supported_*. Contract tests S2, S2b, S12, SE.
+E2E 2, 3, 4, 7 ở mức API. Tone/stress theo D10.
 ```
 
 ### Slice 3 — Coaching
@@ -584,6 +515,9 @@ Sau mỗi slice: REVIEWABLE, báo cáo theo mục 39, chờ người.
 
 ## 27. Required E2E flows
 
+Lane này kiểm các flow ở mức **API + event stream** (test client gửi request contract §3, assert event contract §4).
+E2E trên giao diện thuộc lane UI, chạy bằng mock trước, bằng server thật khi tích hợp.
+
 ```text
 E2E 1  App help        Vocabulary: "Màn này dùng để làm gì?" → đúng context, EN và ZH.
 E2E 2  Context ref     chọn 我: "Tại sao tôi sai từ này?" → không hỏi lại từ; evidence từ attempt.
@@ -605,8 +539,8 @@ E2E 13 Parity          mọi E2E trên chạy với target=en và target=zh-CN (
 ## 28. Tests
 
 ```text
-unit · schema · permission (READ_ONLY only) · authorization · context assembly · registry drift (active only)
-provider mock · action dispatcher · .mjs gate cho panel · E2E trên fake agent · parity EN/ZH
+unit · schema · permission (READ_ONLY only) · authorization · context assembly · registry drift (backend)
+provider mock · contract tests (mọi canonical stream contract §12) · client.supported_* filtering · parity EN/ZH
 ```
 
 Bắt buộc thêm:
@@ -621,10 +555,11 @@ Bắt buộc thêm:
 ## 29. Success criteria V1
 
 ```text
-- Agent mở được trong app theo frame; biết screen và selection.
+- Server tuân AGENT_CONTRACT.md v1: mọi canonical stream §12 pass contract tests; không action/intent ngoài client.supported_*.
+- Biết surface và selection từ context (không route).
 - Query được learning data thật (Vocabulary, Writing, Speaking, Grammar, Reading, Listening) cho EN và ZH.
 - Mọi khẳng định về lỗi có evidence_ref; không có fake pronunciation result.
-- Action đúng, frontend thực thi qua API hiện có; ít nhất một learning action end-to-end.
+- Action đúng allowlist và payload; end-to-end trên UI được xác nhận khi lane UI tích hợp (ngoài phạm vi V1 của lane này).
 - Tool authorization ở gateway; không DB access; backend không mutate; không migration mới.
 - Provider đổi được bằng cấu hình Admin › AI; fake provider chạy toàn bộ test.
 - Voice vi/en/zh qua ConversationalSpeechSession; en đạt D5; vi/zh TTFA < 1s, barge-in, blind listening ≥ 70%.
@@ -747,7 +682,9 @@ Trace: `voice_session_id, vendor, mode, language, ttfa, interruptions, fallback_
 ## 38. Implementation order (chốt)
 
 ```text
-Người   : D11 nguồn frame (a/b) · Gemini Live credential (P9) · sandbox port cho lane (P10) · SpeechSuper? — D1 và merge đã xong (D-085, PR #63)
+Người   : D-086 + AGENT_CONTRACT.md trên codex/work rồi merge forward vào lane · Gemini Live credential (P9)
+          · sandbox port cho lane (P10) · SpeechSuper? — D1 và merge Admin/Speaking đã xong (D-085, PR #63)
+UI lane : UI mới trên codex/work, panel + mock theo contract (song song, độc lập)
 Track 0 : voice spike (người chạy, song song)
 Slice 1a: backend cô lập — có thể bắt đầu ngay sau D1
 Slice 1b: vertical slice Vocabulary + Writing — sau merge
@@ -764,7 +701,7 @@ Gửi nguyên đoạn này:
 
 > Cold start per `AGENTS.md` §2: verify live Git state, then read the canonical sequence in `docs/project/PROJECT_MEMORY.md`. Then read `docs/project/AGENT_SPEC.md` (v2.1). Section 0 lists binding decisions; where it conflicts with any older agent spec, v2.1 wins; where it conflicts with repository governance (AGENTS.md, ARCHITECTURE_INVARIANTS.md, DESIGN_CONTRACT.md, REVIEW_POLICY.md), governance wins and you report the conflict as a `MEMORY CONTRADICTION`.
 >
-> Answer pre-flight P1–P10 (section 2) and stop. You are on lane `feature/orena-intelligence`, opened by D-085; do not create any other branch or worktree. If P1 or P2 fails, stop and report; do not fix Git state yourself. Slice 1a is authorized now; Slice 1b follows in the same lane once 1a is REVIEWABLE and P3 has a human answer.
+> Answer pre-flight P1–P10 (section 2) and stop. You are on lane `feature/orena-intelligence`, opened by D-085; do not create any other branch or worktree. If P1 or P2 fails, stop and report; do not fix Git state yourself. Slice 1a is authorized now; Slice 1b follows in the same lane once 1a is REVIEWABLE. This lane never edits `static/orena/**`, `templates/**` or `docs/project/AGENT_CONTRACT.md`; the contract is authoritative for request, events, actions and intents, and a needed contract change is reported to the human, not made here.
 >
 > Slice 1a scope: `writing_coach/agent/` only (schemas with the three language layers + content, `ToolPermission` enum, `AgentTool`, tool registry with only `READ_ONLY` tools registrable, event-stream contract, deterministic fake provider, TTL session cache, capability registry loader with every entry `status: pending`, `DecisionProvider` stub, voice interfaces), plus the three `AIOperation` values and four capability keys in `writing_coach/ai/capabilities.py` (definitions only). Tests for all of it, hermetic, never calling a real provider. No router registration in `app.py`, no edits to `static/orena/**`, `compose.yaml`, `.env.example`, `ci.yml`, no migration, no new persistence for learner-owned data (AGENTS.md §7).
 >
