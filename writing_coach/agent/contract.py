@@ -9,7 +9,9 @@ reaches this lane by merge cannot be missed.
 
 Adding an id is a contract change made on `codex/work`, never here.
 
-Version 3 (D-094) is served. Version 3 changed no shape: an action's label is
+Version 4 (D-095) is served; it names the HTTP statuses (§2.1) and the
+error classes (§4.1) this server already answered with, and changes no event.
+Version 3 (D-094) changed no shape either: an action's label is
 interface copy (it always was here, ruling R12) and a suggestion's intent is a
 prompt intent in the `prompt.` namespace (`PROMPT_NAMESPACE`), never a §6.1
 id. Both hold for every client, since neither is a field an older client lacks.
@@ -25,7 +27,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 
-CONTRACT_VERSION = 3
+CONTRACT_VERSION = 4
 
 
 def negotiated_version(client_version: int) -> int:

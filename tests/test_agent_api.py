@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
 from writing_coach.agent.api import agent_enabled, configure_agent, router
+from writing_coach.agent.contract import CONTRACT_VERSION
 from writing_coach.agent.capability_registry import load_capability_registry
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, reply
 from writing_coach.agent.limits import AgentLimits
@@ -104,7 +105,7 @@ def test_a_turn_streams_contract_events(client):
 def test_capabilities_follow_the_callers_locale(client):
     enable()
     zh = client.get("/api/agent/capabilities", params={"interface": "vi"}).json()
-    assert zh["contract_version"] == 3
+    assert zh["contract_version"] == CONTRACT_VERSION
     ids = {item["id"] for item in zh["capabilities"]}
     assert "speaking.pronunciation.tone" in ids and "speaking.pronunciation.stress" not in ids
     titles = {item["id"]: item["title"] for item in zh["capabilities"]}
@@ -213,3 +214,18 @@ def test_who_orena_is_is_answered_without_a_provider(client):
     frames = [frame for frame in response.text.split("\n\n") if frame]
     assert [frame.split("\n", 1)[0] for frame in frames] == ["event: session", "event: segment_end", "event: done"]
     assert "Mình là Orena" in frames[1]
+
+
+def test_the_statuses_answer_as_contract_section_2_1_says(client):
+    """404 while off, 409 and 422 counted, 429 with a whole-second Retry-After of at least 1."""
+
+    configure_agent(None)
+    off = client.post("/api/agent/turn", json={})
+    assert (off.status_code, off.json()) == (404, {"detail": "Not Found"})
+    enable(limits=AgentLimits(turns_per_window=2))
+    mismatch = client.post("/api/agent/turn", json=body(target="en"))
+    assert (mismatch.status_code, mismatch.json()) == (409, {"detail": "target_language_mismatch"})
+    assert client.post("/api/agent/turn", json={"contract_version": 1}).status_code == 422
+    limited = client.post("/api/agent/turn", json=body())
+    assert (limited.status_code, limited.json()) == (429, {"detail": "rate_limited"})
+    assert limited.headers["retry-after"].isdigit() and int(limited.headers["retry-after"]) >= 1

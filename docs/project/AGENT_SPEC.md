@@ -60,7 +60,7 @@ D11 UI KHÔNG thuộc lane này (D-086). UI mới thay toàn bộ UI cũ (kể c
     Agent không bao giờ nêu route/screen: chỉ intent + action trong contract, và chỉ những gì client
     khai báo trong client.supported_actions / supported_intents (contract §3.1).
 D12 Transport, request, event, segment, evidence, action, intent, voice session: theo AGENT_CONTRACT.md
-    (hiện là contract_version 3, D-094; nhận bằng merge codex/work). Lane này implement contract; không mở
+    (hiện là contract_version 4, D-095; nhận bằng merge codex/work). Lane này implement contract; không mở
     rộng contract tại đây.
 D13 Contract tests: các canonical stream trong contract §12 là fixture chung. UI lane replay chúng bằng
     mock; lane này phải phát ra cùng chuỗi event và cùng shape payload (text có thể khác).
@@ -149,8 +149,9 @@ Slice 1c  REVIEWABLE (local, 2026-09-27). 1c-1 4672fdd: contract v2 (orena.home,
           capability mỗi phút mỗi learner, 429 + Retry-After. Review đối kháng 9a0b0df: id gắn với khóa đã
           đọc, lượt mở đầu chỉ khoảng trắng là lỗi, get_word_detail đọc catalogue DB, gate danh tính chính
           xác. Contract streams S1, S5, S8, S9, S13.
-Tiếp      Merge codex/work (contract v4, D-095) đang chờ người: xung đột ở CURRENT_HANDOFF.md ngoài mục
-          Agent lane. Rồi chạy live có kiểm soát (R17, gate [PROVIDER]); rồi Slice 2 (§26).
+Contract v4 merge 0e2b1ee (D-095: §2.1 HTTP status, §4.1 error class; phần xung đột của handoff lấy
+          bản codex/work theo R13) và phục vụ v4. Handoff chỉ còn chỗ cho một dòng trỏ về đây (giới hạn 8 KB).
+Tiếp      Chạy live có kiểm soát (R17, gate [PROVIDER], đã duyệt, trần 2,00 USD); rồi Slice 2 (§26).
 ```
 
 ---

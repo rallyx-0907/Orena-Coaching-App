@@ -11,7 +11,7 @@ from writing_coach.agent.capability_registry import (
     CapabilityRegistryInvalid,
     load_capability_registry,
 )
-from writing_coach.agent.contract import ACTIONS, EVIDENCE_SOURCES, SURFACES
+from writing_coach.agent.contract import ACTIONS, CONTRACT_VERSION, EVIDENCE_SOURCES, SURFACES
 from writing_coach.agent.tool_plan import PLANNED_TOOLS, PlannedTool, gaps
 from writing_coach.agent.tools import resolve_backing
 
@@ -79,7 +79,7 @@ def test_en_and_zh_parity_or_a_reason(registry):
 
 def test_public_shape_is_the_contracts(registry):
     body = registry.public(interface="vi", target="zh-CN")
-    assert body["contract_version"] == 3
+    assert body["contract_version"] == CONTRACT_VERSION
     first = body["capabilities"][0]
     assert set(first) == {"id", "title", "surfaces", "actions", "languages", "evidence_source", "status"}
     ids = {item["id"] for item in body["capabilities"]}

@@ -165,7 +165,8 @@ def test_action_labels_are_interface_copy():
 def test_suggestion_intents_are_prompt_intents():
     from writing_coach.agent.outputs import PROMPT_INTENTS
 
-    assert "in the `prompt.` namespace" in _section("## 4.")
+    section_4 = CONTRACT[CONTRACT.index("## 4.") : CONTRACT.index("## 5.")]  # with its subsections
+    assert "in the `prompt.` namespace" in section_4
     assert contract.PROMPT_NAMESPACE == "prompt."
     fixtures = set(re.findall(r"suggestion\{\"[^\"]*\", ([a-z_.]+)\}", CONTRACT))
     assert fixtures == {"prompt.review_due"}
@@ -178,3 +179,32 @@ def test_negotiated_version_never_exceeds_the_client():
     assert contract.negotiated_version(contract.CONTRACT_VERSION + 1) == contract.CONTRACT_VERSION
     with pytest.raises(ValueError):
         contract.negotiated_version(0)
+
+
+# --- v4 (D-095): §2.1 HTTP statuses and §4.1 error classes ------------------------------
+
+
+def _table_rows(heading: str) -> list[list[str]]:
+    rows = re.findall(r"^\|(.+)\|\s*$", _section(heading), re.M)
+    cells = [[cell.strip() for cell in row.split("|")] for row in rows]
+    return [row for row in cells[2:]]  # the header and its rule are not rows
+
+
+def test_the_error_classes_are_the_contracts():
+    from writing_coach.agent.errors import ERROR_KINDS
+
+    rows = [r for r in _table_rows("### 4.1") if len(r) == 3 and r[0].startswith("`") and r[1].startswith("`")]
+    by_class = {row[0].strip("`"): row[1].strip("`") for row in rows if row[1].strip("`") in contract.ERROR_FALLBACKS}
+    assert by_class == {kind.error_class: kind.fallback for kind in ERROR_KINDS.values()}
+    fallbacks = {row[0].strip("`") for row in _table_rows("### 4.1") if len(row) == 2}
+    assert fallbacks == contract.ERROR_FALLBACKS
+    assert "`transport`" in _section("### 4.1") and "transport" not in ERROR_KINDS  # the client's own, never sent
+
+
+def test_the_http_statuses_are_the_contracts():
+    statuses = {row[0].strip("`"): row[1] for row in _table_rows("### 2.1") if row[0].startswith("`")}
+    assert set(statuses) == {"200", "401", "404", "409", "422", "429"}
+    assert '`{"detail": "Not Found"}`' in statuses["404"]
+    assert '`{"detail": "target_language_mismatch"}`' in statuses["409"]
+    assert '`{"detail": "rate_limited"}`' in statuses["429"] and "Retry-After" in statuses["429"]
+    assert "A `409` or `422` counts toward the learner's limit; only a refused `429` does not." in CONTRACT
