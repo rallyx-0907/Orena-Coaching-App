@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>html:has(body[data-theme=dark]){background:#0E0E16}html:has(body[data-theme=light]){background:#F6F5FB}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Outfit','Noto Sans SC',system-ui,sans-serif;background:var(--page) fixed;background-color:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:var(--accent)}a:hover{color:var(--accent-hover)}
+body[data-theme="light"]{--page:linear-gradient(160deg,#E9EEFB 0%,#EEEAFB 45%,#F4E8F5 100%);--surface:#FFFFFF;--surface2:#F4F4F9;--surface3:#EBEBF3;--border:#ECECF3;--border2:#DCDCE7;--text:#17171F;--muted:#5C5C6E;--text3:#8E8EA2;--accent:#5A55E3;--accent-hover:#4C47D2;--accent-soft:#EFEDFD;--tint2:#DDD9FB;--ring:rgba(90,85,227,.24);--green:#138A5A;--green-soft:#E6F6EE;--amber:#B86E00;--amber-soft:#FEF3DD;--red:#D93D42;--red-soft:#FDECEC;--you:#FF7A3D;color-scheme:light;--sh1:0 1px 2px rgba(23,23,50,.04),0 2px 10px rgba(23,23,50,.04);--sh2:0 2px 6px rgba(40,36,110,.05),0 12px 32px rgba(40,36,110,.10)}
+body[data-theme="dark"]{--page:linear-gradient(160deg,#0B0B12,#16122A);--surface:#171722;--surface2:#1E1E2B;--surface3:#272736;--border:#262634;--border2:#34344A;--text:#F3F3F8;--muted:#A9A9BC;--text3:#77778E;--accent:#7D78F5;--accent-hover:#8E8AF7;--accent-soft:#24224A;--tint2:#302C66;--ring:rgba(125,120,245,.4);--green:#3DD68C;--green-soft:#12291F;--amber:#F5B544;--amber-soft:#2E2412;--red:#FF6B70;--red-soft:#331719;--you:#FF9A5C;color-scheme:dark;--sh1:0 1px 2px rgba(0,0,0,.3);--sh2:0 8px 24px rgba(0,0,0,.45)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@container cmp (max-width:700px){
+  [data-pb]{position:static!important;padding:8px!important;gap:8px!important}
+  [data-pb] [data-pb-label]{display:none}
+  [data-pb] [data-pb-play]{padding:0 6px!important;width:48px;justify-content:center}
+  [data-pb] [data-pb-modes]{order:3;flex:1 1 100%!important}
+  [data-pb] [data-pb-speed]{padding:0 12px!important}
+}
+</style>
+</helmet>
+<div data-screen-label="Compare With Model" style="min-height:{{ wrapMinH }};padding:{{ wrapPad }};display:flex;justify-content:center">
+  <div style="width:100%;max-width:1180px;display:flex;flex-direction:column;gap:20px;container-type:inline-size;container-name:cmp">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 420px">
+        <div style="font-size:13px;font-weight:600;color:var(--accent)">Speaking · test bench</div>
+        <h1 style="margin:0;font-size:32px;line-height:1.15;font-weight:700;letter-spacing:-.025em">Compare with model</h1>
+        <p style="margin:0;color:var(--muted);font-size:15px;line-height:22px;max-width:600px;text-wrap:pretty">Record one sentence. Orena compares your pitch, rhythm and words with the model and shows where they differ.</p>
+      </div></sc-if>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:100%;min-width:0">
+        <sc-if value="{{ hasPills }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:3px"><sc-for list="{{ pills }}" as="pl" hint-placeholder-count="2"><button onClick="{{ pl.onClick }}" style="min-width:108px;height:60px;padding:8px 14px;border-radius:14px;border:1.5px solid {{ pl.border }};background:{{ pl.bg }};color:var(--text);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;flex:none;position:relative"><span style="font-size:12.5px;font-weight:500;color:{{ pl.lc }};white-space:nowrap">{{ pl.label }}</span><span style="font-size:20px;font-weight:700;line-height:1.1">{{ pl.score }}</span><sc-if value="{{ pl.crown }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:10px;bottom:10px;color:var(--amber);display:flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:block"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5z"></path></svg></span></sc-if></button></sc-for></div></sc-if>
+        <sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}"><button onClick="{{ toggleTheme }}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:13.5px;font-weight:600;flex:none;white-space:nowrap">{{ themeLabel }}</button></sc-if>
+      </div>
+    </div>
+
+    <sc-if value="{{ showChips }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:8px;flex-wrap:wrap">
+      <sc-for list="{{ sentChips }}" as="sc" hint-placeholder-count="4"><button onClick="{{ sc.onClick }}" style="height:38px;padding:0 14px;border-radius:999px;border:1px solid {{ sc.border }};background:{{ sc.bg }};color:{{ sc.color }};font-size:13.5px;font-weight:600;white-space:nowrap">{{ sc.label }}</button></sc-for>
+    </div></sc-if>
+
+    <sc-if value="{{ showRecord }}" hint-placeholder-val="{{ true }}">
+    <div style="border-radius:24px;background:var(--surface);box-shadow:var(--sh1);padding:24px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="height:28px;padding:0 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:600;display:flex;align-items:center">{{ sent.tag }}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onClick="{{ playModel }}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>Hear model</button>
+          <button onClick="{{ toggleSpeed }}" style="height:40px;min-width:52px;padding:0 12px;border-radius:12px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600">{{ speedLabel }}</button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:6px 4px;align-items:flex-end">
+        <sc-for list="{{ tokens }}" as="tk" hint-placeholder-count="8"><span style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:6px 7px 5px;border-radius:10px;background:{{ tk.bg }};border-bottom:3px solid {{ tk.bar }}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:16px;color:{{ tk.subColor }};white-space:nowrap">{{ tk.sub }}</span><span style="font-size:{{ tokSize }};line-height:1.25;font-weight:{{ tk.fw }};white-space:nowrap">{{ tk.w }}</span></span></sc-for>
+      </div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.5">{{ sent.hint }}</div>
+
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--border)">
+        <button onClick="{{ recToggle }}" title="{{ recTitle }}" style="width:72px;height:72px;border-radius:999px;border:0;background:{{ recBg }};color:#fff;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 0 {{ recRing }} var(--ring),var(--sh2);transition:box-shadow .08s">
+          <sc-if value="{{ isRec }}" hint-placeholder-val="{{ false }}"><span style="width:22px;height:22px;border-radius:5px;background:#fff;display:block"></span></sc-if>
+          <sc-if value="{{ notRec }}" hint-placeholder-val="{{ true }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></sc-if>
+        </button>
+        <div style="flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:16px;font-weight:600;color:{{ statusColor }}">{{ statusTitle }}</div>
+          <div style="font-size:13.5px;color:var(--muted);line-height:1.5">{{ statusSub }}</div>
+          <sc-if value="{{ isRec }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 300 60" style="width:100%;max-width:340px;height:48px;display:block;margin-top:4px"><polyline points="{{ livePts }}" fill="none" stroke="var(--you)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline></svg></sc-if>
+        </div>
+        <button onClick="{{ runDemo }}" style="height:40px;padding:0 14px;border-radius:12px;border:1px dashed var(--border2);background:transparent;color:var(--muted);font-size:13.5px;font-weight:600;flex:none">Use demo attempt</button>
+      </div>
+    </div>
+
+    </sc-if>
+
+    <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:14px 18px;border-radius:16px;background:var(--amber-soft);color:var(--text);font-size:14.5px;line-height:1.5;animation:rise .2s ease"><b style="color:var(--amber)">Couldn't analyse that take.</b> {{ errorText }}</div>
+    </sc-if>
+
+    <sc-if value="{{ hasRes }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:20px;animation:rise .25s ease">
+        <div data-screen-label="Result summary" style="border-radius:24px;background:var(--surface);box-shadow:var(--sh1);padding:24px;display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:none">
+              <div style="position:relative;width:112px;height:112px">
+                <svg viewBox="0 0 112 112" style="width:112px;height:112px;display:block;transform:rotate(-90deg)"><circle cx="56" cy="56" r="46" fill="none" stroke="var(--surface3)" stroke-width="9"></circle><circle cx="56" cy="56" r="46" fill="none" stroke="{{ ringColor }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ ringDash }}"></circle></svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:36px;line-height:1;font-weight:700;letter-spacing:-.03em">{{ score }}</span><span style="font-size:12px;color:var(--muted);margin-top:3px">/100</span></div>
+              </div>
+              <span style="font-size:15px;font-weight:600;color:{{ ringColor }};white-space:nowrap">{{ scoreLabel }}</span>
+            </div>
+            <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3;flex:0 1 auto">{{ headline }}</span><sc-if value="{{ res.demo }}" hint-placeholder-val="{{ false }}"><span style="height:24px;padding:0 9px;border-radius:7px;background:var(--amber-soft);color:var(--amber);font-size:12px;font-weight:600;display:flex;align-items:center">Demo data</span></sc-if></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ chips }}" as="ch" hint-placeholder-count="4"><span style="min-height:36px;padding:6px 14px;border-radius:12px;background:var(--surface2);display:inline-flex;align-items:center;gap:8px;font-size:14px;line-height:1.3;white-space:nowrap;max-width:100%"><span style="color:{{ ch.color }};display:flex"><sc-if value="{{ ch.ok }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="m8 12 2.5 2.5L16 9"></path></svg></sc-if><sc-if value="{{ ch.bad }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6M9 9l6 6"></path></svg></sc-if><sc-if value="{{ ch.clock }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 7v5l3 2"></path></svg></sc-if><sc-if value="{{ ch.info }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></sc-if></span>{{ ch.text }}</span></sc-for></div>
+              <div style="font-size:13px;color:var(--muted)">{{ metricLine }}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)">
+                <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:3px;border-radius:2px;background:var(--accent);display:block"></span>Model</span>
+                <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:3px;border-radius:2px;background:var(--green);display:block"></span>You</span>
+              </div>
+              <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)">
+                <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:4px;background:var(--amber-soft);box-shadow:inset 0 0 0 1px var(--amber);display:block"></span>Close</span>
+                <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:4px;background:var(--red-soft);box-shadow:inset 0 0 0 1px var(--red);display:block"></span>Needs work</span>
+              </div>
+            </div>
+            <div style="overflow-x:auto;scrollbar-width:thin;margin:0 -4px;padding:4px">
+              <div style="min-width:{{ gridMin }};display:flex;gap:6px">
+                <sc-for list="{{ tiles }}" as="tl" hint-placeholder-count="6">
+                  <button onClick="{{ tl.onSel }}" style="flex:{{ tl.grow }} 1 0px;min-width:{{ tl.minW }};padding:14px 8px 8px;border-radius:18px;border:0;background:{{ tl.bg }};box-shadow:{{ tl.ring }};color:var(--text);display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden">
+                    <span style="font-size:{{ tileFont }};line-height:1.2;font-weight:700;white-space:nowrap;color:{{ tl.wc }}">{{ tl.w }}</span>
+                    <span style="font-size:13px;color:{{ tl.subc }};white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis">{{ tl.sub }}</span>
+                    <div style="width:100%;margin-top:10px;border-radius:12px;background:var(--surface);display:grid;grid-template-columns:1fr 1px 1fr;padding:10px 0 12px">
+                      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 6px;min-width:0"><span style="font-size:11.5px;font-weight:600;color:var(--muted)">Model</span><svg viewBox="0 0 100 30" preserveAspectRatio="none" style="width:100%;height:46px;display:block"><polyline points="{{ tl.mPts }}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline></svg></div>
+                      <span style="background:var(--border);display:block"></span>
+                      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 6px;min-width:0"><span style="font-size:11.5px;font-weight:600;color:var(--muted)">You</span><svg viewBox="0 0 100 30" preserveAspectRatio="none" style="width:100%;height:46px;display:block"><polyline points="{{ tl.uPts }}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline></svg></div>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)"><span>Tap a word for details · open Timing to compare rhythm</span><span style="white-space:nowrap">{{ axisRight }}</span></div>
+          </div>
+        </div>
+
+        <div data-screen-label="Word detail" style="border-radius:24px;background:var(--surface);box-shadow:var(--sh1);padding:22px;display:flex;flex-wrap:wrap;gap:22px">
+          <div style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+              <div style="font-size:14px;font-weight:600;color:var(--muted);padding-top:4px">Word detail</div>
+              <div style="display:flex;align-items:center;gap:10px;flex:none">
+                <span style="font-size:12px;color:var(--muted)">Word score</span>
+                <div style="position:relative;width:62px;height:62px;flex:none"><svg viewBox="0 0 62 62" style="width:62px;height:62px;display:block;transform:rotate(-90deg)"><circle cx="31" cy="31" r="26" fill="none" stroke="var(--surface3)" stroke-width="6"></circle><circle cx="31" cy="31" r="26" fill="none" stroke="{{ d.scoreColor }}" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{ d.scoreDash }}"></circle></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;letter-spacing:-.02em">{{ d.score }}</div></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="font-size:{{ dFont }};line-height:1.1;font-weight:600;letter-spacing:-.01em">{{ d.w }}</span><button onClick="{{ d.hearWord }}" title="Hear model" style="width:40px;height:40px;border-radius:999px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M19 5a10 10 0 0 1 0 14"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:17px;color:var(--muted)">{{ d.sub }}</span><span style="height:30px;padding:0 12px;border-radius:999px;background:{{ d.pillBg }};color:{{ d.pillColor }};font-size:13px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap">{{ d.pill }}</span></div>
+            <div style="padding:14px 16px;border-radius:16px;background:var(--accent-soft);display:flex;gap:10px;font-size:14.5px;line-height:1.55"><span style="color:var(--accent);display:flex;padding-top:2px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"></path></svg></span><span>{{ d.tip }}</span></div>
+          </div>
+
+          <div style="flex:1.7 1 340px;min-width:0;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface2)"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="flex:1;height:38px;border-radius:10px;background:{{ tb.bg }};color:{{ tb.color }};font-size:14px;font-weight:600;white-space:nowrap;padding:0 8px">{{ tb.label }}</button></sc-for></div>
+            <sc-if value="{{ tabTone }}" hint-placeholder-val="{{ true }}">
+              <div style="border-radius:16px;border:1px solid var(--border2);padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-size:15px;font-weight:600">{{ d.chartTitle }}</div>
+                <div style="position:relative">
+                  <svg viewBox="0 0 320 130" style="width:100%;height:auto;display:block;overflow:visible">
+                    <line x1="40" y1="20" x2="312" y2="20" stroke="var(--border)"></line><line x1="40" y1="65" x2="312" y2="65" stroke="var(--border)" stroke-dasharray="4 4"></line><line x1="40" y1="110" x2="312" y2="110" stroke="var(--border)"></line>
+                    <text x="0" y="24" font-size="11" fill="var(--muted)" font-family="Outfit,sans-serif">High</text><text x="0" y="114" font-size="11" fill="var(--muted)" font-family="Outfit,sans-serif">Low</text>
+                    <polyline points="{{ d.mLine }}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <polyline points="{{ d.uLine }}" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <sc-if value="{{ d.hasCo }}" hint-placeholder-val="{{ false }}"><circle cx="{{ d.coX }}" cy="{{ d.coY }}" r="5" fill="var(--red)" stroke="var(--surface)" stroke-width="2"></circle></sc-if>
+                  </svg>
+                  <sc-if value="{{ d.hasCo }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:{{ d.coLeft }};top:{{ d.coTop }};transform:{{ d.coTf }};max-width:190px;padding:6px 10px;border-radius:10px;background:var(--red-soft);color:var(--red);font-size:12.5px;font-weight:600;line-height:1.35;text-align:center;box-shadow:var(--sh1)">{{ d.coText }}</div></sc-if>
+                </div>
+                <div style="display:flex;gap:16px;font-size:13px;color:var(--muted)"><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:999px;background:var(--accent);display:block"></span>Model</span><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:999px;background:var(--green);display:block"></span>You</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ tabTiming }}" hint-placeholder-val="{{ false }}">
+              <div style="border-radius:16px;border:1px solid var(--border2);padding:16px;display:flex;flex-direction:column;gap:14px">
+                <div style="font-size:15px;font-weight:600">{{ d.w }} · timing</div>
+                <div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px 12px;align-items:center;font-size:13px">
+                  <span style="color:var(--accent);font-weight:600">Model</span><div style="position:relative;height:12px;border-radius:6px;background:var(--surface2)"><span style="position:absolute;top:0;height:12px;border-radius:6px;background:var(--accent);left:{{ tm.mLeft }};width:{{ tm.mW }}"></span></div>
+                  <span style="color:var(--green);font-weight:600">You</span><div style="position:relative;height:12px;border-radius:6px;background:var(--surface2)"><span style="position:absolute;top:0;height:12px;border-radius:6px;background:var(--green);left:{{ tm.uLeft }};width:{{ tm.uW }}"></span></div>
+                  <span></span><div style="display:flex;justify-content:space-between;color:var(--muted);font-size:12px"><span>{{ tm.lo }}</span><span>{{ tm.hi }}</span></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.5"><span><span style="color:var(--muted)">Model </span>{{ tm.mTxt }}</span><span><span style="color:var(--muted)">You </span>{{ tm.uTxt }}</span><span style="color:var(--muted)">{{ tm.note }}</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ tabPron }}" hint-placeholder-val="{{ false }}">
+              <div style="border-radius:16px;border:1px solid var(--border2);padding:16px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;color:{{ pr.color }}"><sc-if value="{{ pr.ok }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="m8 12 2.5 2.5L16 9"></path></svg></sc-if><sc-if value="{{ pr.bad }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6M9 9l6 6"></path></svg></sc-if><sc-if value="{{ pr.clock }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 7v5l3 2"></path></svg></sc-if><sc-if value="{{ pr.info }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></sc-if>{{ pr.title }}</div>
+                <div style="font-size:14px;line-height:1.55">{{ pr.body }}</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.5">{{ pr.heard }}</div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="flex:1 1 230px;min-width:0;display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:18px;background:var(--surface2)">
+            <div style="font-size:15px;font-weight:600">Details</div>
+            <div style="display:flex;flex-direction:column;gap:12px"><sc-for list="{{ d.rows }}" as="dr" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px"><span style="color:var(--muted);white-space:nowrap">{{ dr.label }}</span><span style="display:flex;align-items:center;gap:6px;font-weight:600;color:{{ dr.color }};text-align:right"><sc-if value="{{ dr.ok }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="m8 12 2.5 2.5L16 9"></path></svg></sc-if><sc-if value="{{ dr.bad }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6M9 9l6 6"></path></svg></sc-if><sc-if value="{{ dr.clock }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 7v5l3 2"></path></svg></sc-if><sc-if value="{{ dr.info }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></sc-if>{{ dr.value }}</span></div></sc-for></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto">
+              <button onClick="{{ d.hearWord }}" style="flex:1 1 110px;height:42px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:7px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M19 5a10 10 0 0 1 0 14"></path></svg>Hear model</button>
+              <button onClick="{{ d.hearMine }}" style="flex:1 1 110px;height:42px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:7px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><path d="M12 19v3"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><rect x="9" y="2" width="6" height="13" rx="3"></rect></svg>Hear yours</button>
+            </div>
+          </div>
+        </div>
+
+        <div data-screen-label="Playback bar" data-pb="1" style="position:sticky;bottom:16px;z-index:5;border-radius:20px;background:var(--surface);box-shadow:var(--sh2);border:1px solid var(--border);padding:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button data-pb-play="1" onClick="{{ playAll }}" style="height:48px;padding:0 16px 0 6px;border-radius:14px;border:1px solid var(--border2);background:var(--surface);color:var(--text);display:inline-flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600;flex:none"><span style="width:36px;height:36px;border-radius:999px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:block"><path d="M7 4.5v15l12-7.5z"></path></svg></sc-if><sc-if value="{{ isPlaying }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:block"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if></span><span data-pb-label="1">{{ playLabel }}</span></button>
+          <div data-pb-modes="1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:4px;padding:4px;border-radius:14px;background:var(--surface2);flex:1 1 320px;min-width:0"><sc-for list="{{ modes }}" as="md" hint-placeholder-count="4"><button onClick="{{ md.onClick }}" style="min-width:0;white-space:nowrap;height:40px;padding:0 8px;border-radius:10px;background:{{ md.bg }};color:{{ md.color }};font-size:13.5px;font-weight:600;white-space:nowrap">{{ md.label }}</button></sc-for></div>
+          <button data-pb-speed="1" onClick="{{ toggleSpeed }}" style="height:48px;padding:0 14px;border-radius:14px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;flex:none;white-space:nowrap"><span data-pb-label="1" style="color:var(--muted);font-weight:500">Speed </span>{{ speedLabel }}</button>
+          <button onClick="{{ retry }}" style="height:48px;padding:0 22px;border-radius:14px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>Try again</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasHistory }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Attempt history" style="border-radius:24px;background:var(--surface);box-shadow:var(--sh1);padding:22px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1 1 260px;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px;font-weight:600">Attempt history</span><span style="height:24px;min-width:24px;padding:0 8px;border-radius:999px;background:var(--surface3);font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center">{{ histCount }}</span></div>
+            <div style="font-size:13.5px;color:var(--muted);line-height:1.45">{{ histSummary }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex:none">
+            <svg viewBox="0 0 180 40" style="width:180px;height:40px;display:block;overflow:visible"><line x1="0" y1="36" x2="180" y2="36" stroke="var(--border)" stroke-width="1"></line><polyline points="{{ spark }}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline><sc-for list="{{ sparkDots }}" as="dt"><circle cx="{{ dt.cx }}" cy="{{ dt.cy }}" r="{{ dt.r }}" fill="{{ dt.fill }}" stroke="var(--accent)" stroke-width="2"></circle></sc-for></svg>
+            <button onClick="{{ clearHistory }}" style="height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:13px;font-weight:600">Clear</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ history }}" as="hs" hint-placeholder-count="2">
+            <button onClick="{{ hs.onView }}" style="width:100%;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 14px;border-radius:16px;border:1.5px solid {{ hs.border }};background:{{ hs.bg }};color:var(--text);text-align:left">
+              <div style="display:flex;align-items:center;gap:12px;flex:1 0 170px;min-width:0">
+                <span style="width:36px;height:36px;border-radius:11px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none">#{{ hs.n }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap"><span style="font-size:14px;font-weight:600">{{ hs.when }}</span><sc-if value="{{ hs.isBest }}" hint-placeholder-val="{{ false }}"><span style="height:20px;padding:0 7px;border-radius:6px;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:600;display:flex;align-items:center">Best</span></sc-if><sc-if value="{{ hs.demo }}" hint-placeholder-val="{{ false }}"><span style="height:20px;padding:0 7px;border-radius:6px;background:var(--amber-soft);color:var(--amber);font-size:11px;font-weight:600;display:flex;align-items:center">Demo</span></sc-if></div>
+                  <span style="font-size:12.5px;color:var(--muted);line-height:1.35">{{ hs.focus }}</span>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px 14px;flex:3 1 340px;min-width:0">
+                <sc-for list="{{ hs.metrics }}" as="mt"><div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:11.5px;color:var(--muted)">{{ mt.label }}</span><div style="display:flex;align-items:baseline;gap:5px;white-space:nowrap"><span style="font-size:15px;font-weight:700">{{ mt.value }}</span><span style="font-size:12px;font-weight:600;color:{{ mt.dc }}">{{ mt.delta }}</span></div></div></sc-for>
+              </div>
+              <sc-if value="{{ hs.hasAudio }}" hint-placeholder-val="{{ false }}"><span onClick="{{ hs.onPlay }}" title="Play this attempt" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--border2);background:var(--surface);display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:block"><path d="M7 4.5v15l12-7.5z"></path></svg></span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;color:var(--text3)">Tap an attempt to open its full analysis above. Differences are compared with the attempt before it.</div>
+      </div>
+    </sc-if>
+
+    <div style="font-size:12.5px;color:var(--text3);line-height:1.6;max-width:720px">Pitch and timing come from your microphone and are analysed in the browser. The model line is Orena's reference pattern for this sentence, not a recording of the voice you hear. Word recognition uses the browser's speech recognition where available; if it isn't, the pronunciation score is left blank rather than guessed.</div>
+  </div>
+
+  <sc-if value="{{ toastOn }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);padding:12px 18px;border-radius:14px;background:var(--text);color:var(--surface);font-size:14px;font-weight:500;box-shadow:var(--sh2);animation:rise .2s ease;max-width:calc(100vw - 40px)">{{ toastText }}</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},&quot;embedded&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;startSentence&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:3,&quot;tsType&quot;:&quot;number&quot;}}">
+const N = 120;
+const SENTS = [
+ {id:"en1",lang:"en-GB",label:"Statement",tag:"English · statement",final:"fall",text:"By the time I get to the tram stop, it's usually around seven forty-five.",hint:"Stressed words carry the rhythm: time, tram, usually, seven, forty-five. The voice falls at the end.",
+  words:[["By","baɪ",0],["the","ðə",0],["time","taɪm",2],["I","aɪ",0],["get","ɡet",1],["to","tə",0],["the","ðə",0],["tram","træm",2],["stop,","stɒp",1],["it's","ɪts",0],["usually","ˈjuːʒuəli",2],["around","əˈraʊnd",1],["seven","ˈsevn",2],["forty-five.","ˌfɔːtiˈfaɪv",2]]},
+ {id:"en2",lang:"en-GB",label:"Yes/no question",tag:"English · question",final:"rise",text:"Could you send me the notes before the meeting?",hint:"A yes/no question: the voice rises on the last stressed word, meeting.",
+  words:[["Could","kʊd",0],["you","jə",0],["send","send",2],["me","mi",0],["the","ðə",0],["notes","nəʊts",2],["before","bɪˈfɔː",1],["the","ðə",0],["meeting?","ˈmiːtɪŋ",2]]},
+ {id:"en3",lang:"en-GB",label:"Short opinion",tag:"English · opinion",final:"fall",text:"Honestly, I've grown to like it.",hint:"“Honestly” stands alone with a small rise; grown and like carry the stress.",
+  words:[["Honestly,","ˈɒnɪstli",2],["I've","aɪv",0],["grown","ɡrəʊn",2],["to","tə",0],["like","laɪk",2],["it.","ɪt",0]]},
+ {id:"zh1",lang:"zh-CN",label:"中文 · tones",tag:"Chinese · tones",final:"tones",text:"我习惯早出门",hint:"Each syllable has its own tone: wǒ (3, low), xí (2, rising), guàn (4, falling), zǎo (3, low), chū (1, high level), mén (2, rising).",
+  words:[["我","wǒ",3],["习","xí",2],["惯","guàn",4],["早","zǎo",3],["出","chū",1],["门","mén",2]]}
+];
+const TONE_NAME = {1:"high level",2:"rising",3:"low / dipping",4:"falling",0:"unclear"};
+const TONE_COL = {1:"#E5484D",2:"#D98E00",3:"#2F9E6E",4:"#4867EC"};
+const sylls = w => Math.max(1,(w.toLowerCase().replace(/[^a-z]/g,"").match(/[aeiouy]+/g)||[]).length);
+const mean = a => a.reduce((x,y)=>x+y,0)/Math.max(1,a.length);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+function acf(buf,sr){ const n=buf.length; let rms=0; for(let i=0;i<n;i++) rms+=buf[i]*buf[i]; rms=Math.sqrt(rms/n); if(rms<0.01) return {f:0,rms};
+  let r1=0,r2=n-1; const th=0.2; for(let i=0;i<n/2;i++) if(Math.abs(buf[i])<th){r1=i;break;} for(let i=1;i<n/2;i++) if(Math.abs(buf[n-i])<th){r2=n-i;break;}
+  const b=buf.slice(r1,r2), m=b.length, maxLag=Math.min(m-1,Math.floor(sr/65)); const c=new Float32Array(maxLag+1);
+  for(let i=0;i<=maxLag;i++){ let s=0; for(let j=0;j<m-i;j++) s+=b[j]*b[j+i]; c[i]=s; }
+  let d=0; while(d<maxLag&&c[d]>c[d+1]) d++; let mx=-1,mp=-1; for(let i=d;i<=maxLag;i++) if(c[i]>mx){mx=c[i];mp=i;}
+  if(mp<=0||mp>=maxLag) return {f:0,rms}; const x1=c[mp-1],x2=c[mp],x3=c[mp+1]; const A=(x1+x3-2*x2)/2,B=(x3-x1)/2; const T0=A?mp-B/(2*A):mp; const f=sr/T0;
+  return {f:(f>65&&f<500)?f:0,rms}; }
+function spans(S){ const w=S.words.map(x=>S.final==="tones"?1:sylls(x[0])+(x[2]===2?0.35:0)); const tot=w.reduce((a,b)=>a+b,0); let acc=0; return w.map(v=>{ const a=Math.round(acc/tot*N); acc+=v; return [a,Math.round(acc/tot*N)]; }); }
+function modelContour(S){ const sp=spans(S), out=new Array(N).fill(0);
+  sp.forEach(([a,b],k)=>{ const st=S.words[k][2], last=k===sp.length-1, comma=/,$/.test(S.words[k][0]);
+    for(let i=a;i<b;i++){ const u=(i-a)/Math.max(1,b-a-1), t=i/(N-1); let v;
+      if(S.final==="tones"){ v=st===1?3.2:st===2?-1.2+4.6*u:st===3?-2.6-1.2*Math.sin(Math.PI*u):st===4?3.6-6.8*u:-1; }
+      else { const decl=2-3*t; v=decl+(st===2?0.8+2.6*Math.sin(Math.PI*u):st===1?0.3+1.2*Math.sin(Math.PI*u):-0.9); if(comma) v+=1.4*u; if(last&&S.final==="fall") v-=4.2*u; if(last&&S.final==="rise") v+=5.5*u*u+2*(1-t); }
+      out[i]=v; } });
+  const sm=out.map((_,i)=>mean(out.slice(Math.max(0,i-2),i+3))); const mu=mean(sm); return sm.map(v=>v-mu); }
+function dtw(a,b){ const n=a.length,m=b.length,W=Math.max(Math.abs(n-m),Math.round(n*0.07)); const D=Array.from({length:n+1},()=>new Float64Array(m+1).fill(Infinity)); D[0][0]=0;
+  for(let i=1;i<=n;i++){ const lo=Math.max(1,i-W),hi=Math.min(m,i+W); for(let j=lo;j<=hi;j++){ const c=Math.abs(a[i-1]-b[j-1]); D[i][j]=c+Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]); } }
+  let i=n,j=m; const path=[]; while(i>0&&j>0){ path.push([i-1,j-1]); const x=D[i-1][j-1],y=D[i-1][j],z=D[i][j-1]; if(x<=y&&x<=z){i--;j--;} else if(y<z) i--; else j--; } return path.reverse(); }
+function pearson(a,b){ const ma=mean(a),mb=mean(b); let s=0,sa=0,sb=0; for(let i=0;i<a.length;i++){ const x=a[i]-ma,y=b[i]-mb; s+=x*y; sa+=x*x; sb+=y*y; } return sa&&sb?s/Math.sqrt(sa*sb):0; }
+function std(a){ const m=mean(a); return Math.sqrt(mean(a.map(v=>(v-m)*(v-m)))); }
+function classifyTone(u){ const q=Math.max(1,Math.floor(u.length/4)); const s=mean(u.slice(0,q)), e=mean(u.slice(-q)), mn=Math.min(...u), mu=mean(u);
+  if(e-s>1.3) return 2; if(s-e>2.2) return 4; if(mn<Math.min(s,e)-1.2||mu<-1.4) return 3; return mu>-0.6?1:3; }
+const normW = w => w.toLowerCase().replace(/[^a-z'\u3400-\u9fff]/g,"");
+
+class Component extends DCLogic {
+  x = { si:0, speed:1, phase:"idle", frames:[], level:0, res:null, err:null, hist:{}, blobUrl:null, asr:null, demo:false, toast:null };
+  layoutLabels(){ const el=this.strip; if(!el) return; const L=[...el.children].filter(n=>n.tagName==="SPAN"); if(!L.length) return; const W=el.clientWidth, gap=4;
+    const items=L.map(n=>{ n.style.display="block"; n.style.top="0px"; const w=n.offsetWidth, c=parseFloat(n.style.left)/100*W; return {n,a:c-w/2,b:c+w/2,p:+n.dataset.flag}; });
+    const place=list=>{ const end=[-1e9,-1e9]; const out=[]; for(const it of list){ const r=it.a>=end[0]+gap?0:it.a>=end[1]+gap?1:-1; if(r<0){ out.push(it); continue; } it.row=r; end[r]=it.b; } return out; };
+    items.forEach(it=>{ it.row=null; });
+    const pri=[...items].sort((x,y)=>{ const r=v=>v===1?0:v===2?1:2; return r(x.p)-r(y.p)||x.a-y.a; });
+    const end=[[],[]]; const fits=(row,it)=>end[row].every(o=>it.b+gap<=o.a||it.a>=o.b+gap);
+    for(const it of pri){ const r=fits(0,it)?0:fits(1,it)?1:-1; if(r<0){ it.row=null; continue; } it.row=r; end[r].push(it); }
+    items.forEach(it=>{ if(it.row==null) it.n.style.display="none"; else it.n.style.top=(it.row*18)+"px"; }); }
+  componentDidUpdate(){ this.layoutLabels(); }
+  componentDidMount(){ this.onRs=()=>this.layoutLabels(); window.addEventListener("resize",this.onRs); this.scriptKey=this.props.script?this.props.script.id:null; if(this.props.embedded){ this.theme=document.body.dataset.theme||"dark"; if(this.props.startSentence!=null) this.x.si=this.props.startSentence; } else { this.theme=this.props.startTheme ?? "dark"; document.body.dataset.theme=this.theme; } this.forceUpdate(); }
+  componentWillUnmount(){ window.removeEventListener("resize",this.onRs); clearInterval(this.x.iv); this.stopStreams(); }
+  sents(){ const sc=this.props.script; return sc&&sc.words&&sc.words.length?[sc]:SENTS; }
+  sent(){ const L=this.sents(); if(this.x.si>=L.length) this.x.si=0; return L[this.x.si]; }
+  toast(t){ this.x.toast=t; this.forceUpdate(); clearTimeout(this.tt); this.tt=setTimeout(()=>{ this.x.toast=null; this.forceUpdate(); },2400); }
+  speak(){ this.stopPlay(); const S=this.sent(); try{ const u=new SpeechSynthesisUtterance(S.text); u.lang=S.lang; u.rate=0.9*this.x.speed; const v=(speechSynthesis.getVoices()||[]).find(v=>v.lang&&v.lang.toLowerCase().startsWith(S.lang.slice(0,2))); if(v) u.voice=v; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){ this.toast("Speech playback isn't available in this browser"); } }
+  stopStreams(){ const R=this.x.rec; if(!R) return; try{ R.sr&&R.sr.abort(); }catch(e){} try{ R.stream.getTracks().forEach(t=>t.stop()); }catch(e){} try{ R.ac.close(); }catch(e){} }
+  async startRec(){ if(this.x.rec) return; this.x.err=null; let stream;
+    try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+    catch(e){ this.x.err="The microphone is unavailable or permission was denied. Allow mic access and try again, or use the demo attempt."; this.forceUpdate(); return; }
+    const S=this.sent(); const ac=new (window.AudioContext||window.webkitAudioContext)(); const src=ac.createMediaStreamSource(stream); const an=ac.createAnalyser(); an.fftSize=2048; src.connect(an); const buf=new Float32Array(an.fftSize);
+    const chunks=[]; let mr=null; try{ mr=new MediaRecorder(stream); mr.ondataavailable=e=>e.data&&e.data.size&&chunks.push(e.data); mr.start(); }catch(e){}
+    const frames=[], t0=performance.now(); let started=false, lastVoice=0; this.x.asr=null;
+    const R={stream,ac,mr,chunks,frames}; this.x.rec=R; this.x.phase="rec"; this.x.frames=frames;
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(SR){ try{ const r=new SR(); r.lang=S.lang; r.interimResults=false; r.maxAlternatives=1; r.onresult=e=>{ this.x.asr=[...e.results].map(x=>x[0].transcript).join(" "); if(this.x.phase==="done"&&this.x.res&&!this.x.res.demo) this.analyze(false); }; r.onerror=()=>{}; r.start(); R.sr=r; }catch(e){} }
+    this.x.iv=setInterval(()=>{ an.getFloatTimeDomainData(buf); const p=acf(buf,ac.sampleRate); const t=(performance.now()-t0)/1000; frames.push({t,f:p.f,rms:p.rms}); this.x.level=clamp(p.rms*9,0,1);
+      if(p.rms>0.02){ started=true; lastVoice=t; } if((started&&t-lastVoice>1.4)||t>10) this.stopRec(); else if(frames.length%2===0) this.forceUpdate(); },40);
+    this.forceUpdate(); }
+  stopRec(){ const R=this.x.rec; if(!R) return; clearInterval(this.x.iv); this.x.rec=null; this.x.level=0;
+    const finish=()=>{ try{ R.stream.getTracks().forEach(t=>t.stop()); }catch(e){} try{ R.ac.close(); }catch(e){} };
+    try{ R.sr&&R.sr.stop(); }catch(e){}
+    if(R.mr&&R.mr.state!=="inactive"){ R.mr.onstop=()=>{ const url=R.chunks.length?URL.createObjectURL(new Blob(R.chunks,{type:R.mr.mimeType||"audio/webm"})):null; this.x.blobUrl=url; if(this.x.lastEntry&&!this.x.lastEntry.demo&&!this.x.lastEntry.blobUrl) this.x.lastEntry.blobUrl=url; finish(); this.forceUpdate(); }; R.mr.stop(); } else finish();
+    this.x.frames=R.frames; this.x.demo=false; this.x.phase="done"; this.analyze(true); }
+  demo(){ if(this.x.rec) return; const S=this.sent(), M=modelContour(S), sp=spans(S); const dev=S.final==="tones"?2:S.words.findIndex((w,i)=>i>1&&w[2]===2);
+    const tries=(this.x.hist[S.id]||[]).length, k2=Math.min(1,tries*0.45); const exp=this.expectedDur(S), dur=exp*Math.max(1.02,1.2-0.06*tries), frames=[]; const base=175;
+    for(let t=0;t<dur+0.7;t+=0.04){ const inSpeech=t>=0.3&&t<=0.3+dur; if(!inSpeech){ frames.push({t,f:0,rms:0.004}); continue; } const u=(t-0.3)/dur, i=clamp(Math.round(u*(N-1)),0,N-1);
+      let v=M[i]*0.82+Math.sin(t*23)*0.35; const k=sp.findIndex(([a,b])=>i>=a&&i<b); if(k===dev){ const [a,b]=sp[k], w=(i-a)/Math.max(1,b-a-1); const off=S.final==="tones"?2.6:mean(M)-0.4; v=off+(M[i]*0.9-off)*k2; }
+      if(S.final==="rise"&&k===sp.length-1) v=M[i]*0.35; const gap=(i%17===0); frames.push({t,f:gap?0:base*Math.pow(2,v/12),rms:0.08}); }
+    this.x.frames=frames; this.x.asr=S.final==="tones"||tries>=2?S.text:S.text.replace("tram","tam").replace("notes","nose").replace("grown","grow"); this.x.demo=true; this.x.phase="done"; this.x.blobUrl=null; this.analyze(true); }
+  expectedDur(S){ return S.final==="tones"?S.words.length*0.3:S.words.reduce((a,w)=>a+sylls(w[0]),0)*0.2+0.25; }
+  analyze(newAttempt){ const S=this.sent(), fr=this.x.frames; this.x.err=null;
+    const th=0.018; const first=fr.findIndex(f=>f.rms>th); let last=-1; for(let i=fr.length-1;i>=0;i--) if(fr[i].rms>th){ last=i; break; }
+    if(first<0||last-first<8){ this.x.res=null; this.x.err="Not enough voice was picked up. Speak a little louder and closer to the mic, then try again."; this.forceUpdate(); return; }
+    const seg=fr.slice(first,last+1); const fs=seg.map(x=>x.f).filter(Boolean);
+    if(fs.length<8){ this.x.res=null; this.x.err="No clear pitch was detected — this usually means a noisy room or whispering. Try again in a quieter spot."; this.forceUpdate(); return; }
+    const med=[...fs].sort((a,b)=>a-b)[Math.floor(fs.length/2)];
+    let st=seg.map(x=>x.f?12*Math.log2(x.f/med):null); const idx=st.map((v,i)=>v==null?null:i).filter(v=>v!=null);
+    st=st.map((v,i)=>{ if(v!=null) return v; let p=idx.filter(j=>j<i).pop(), n=idx.find(j=>j>i); if(p==null) return st[n]; if(n==null) return st[p]; return st[p]+(st[n]-st[p])*(i-p)/(n-p); });
+    st=st.map((v,i)=>{ const w=st.slice(Math.max(0,i-2),i+3).sort((a,b)=>a-b); return w[Math.floor(w.length/2)]; });
+    const U=Array.from({length:N},(_,i)=>{ const p=i/(N-1)*(st.length-1), a=Math.floor(p), b=Math.min(st.length-1,a+1); return st[a]+(st[b]-st[a])*(p-a); }); const mu=mean(U); for(let i=0;i<N;i++) U[i]-=mu;
+    const M=modelContour(S), path=dtw(M,U); const acc=new Array(N).fill(0), cnt=new Array(N).fill(0); path.forEach(([i,j])=>{ acc[i]+=U[j]; cnt[i]++; }); const A=acc.map((v,i)=>cnt[i]?v/cnt[i]:0);
+    const jmin=new Array(N).fill(Infinity), jmax=new Array(N).fill(-1); path.forEach(([i,j])=>{ if(j<jmin[i]) jmin[i]=j; if(j>jmax[i]) jmax[i]=j; });
+    const userSlice=(a,b)=>{ const q=Math.floor((b-a)*0.2); const s=U.slice(a+q,b-q); return s.length>=3?s:U.slice(a,b); };
+    const dAvg=mean(M.map((v,i)=>Math.abs(v-A[i]))); const sim=clamp(Math.round(100*Math.exp(-dAvg/3.4)),0,100); const r=pearson(M,A); const into=clamp(Math.round((r+0.15)/1.15*100),0,100);
+    const rangeRatio=std(A)/Math.max(0.1,std(M));
+    const dur=seg[seg.length-1].t-seg[0].t, exp=this.expectedDur(S)/1, ratio=dur/exp; const pace=clamp(Math.round(100-Math.abs(Math.log2(ratio))*120),0,100);
+    const sp=spans(S), zh=S.final==="tones";
+    const heard=this.x.asr!=null?(zh?this.x.asr.replace(/\s/g,""):this.x.asr.split(/\s+/).map(normW)):null;
+    const rows=S.words.map(([w,sub,level],k)=>{ const [a,b]=sp[k], m=M.slice(a,b), u=userSlice(a,b); let status="ok", want, got;
+      const missed=heard!=null&&(zh?!heard.includes(w):!heard.includes(normW(w)));
+      if(zh){ const t=classifyTone(u); want="tone "+level+" · "+TONE_NAME[level]; got="tone "+t+" · "+TONE_NAME[t]; if(t!==level) status="wrong"; return {w,sub,want,got,status,missed,level,det:t}; }
+      const prom=mean(u)-mean(U), mprom=mean(m)-mean(M); const last=k===S.words.length-1;
+      if(last&&S.final!=="tones"){ const us=u[u.length-1]-u[0], ms=m[m.length-1]-m[0]; want=S.final==="rise"?"voice rises":"voice falls"; got=us>1?"rises":us<-1?"falls":"stays level"; if(Math.sign(us)!==Math.sign(ms)||Math.abs(us)<1) status=Math.sign(us)===-Math.sign(ms)&&Math.abs(us)>1?"wrong":"weak"; }
+      else if(level===2){ want="stressed · higher, longer"; got=prom>mprom*0.6?"stressed":prom>mprom*0.25?"a little flat":"not stressed"; if(prom<=mprom*0.25) status="wrong"; else if(prom<=mprom*0.6) status="weak"; }
+      else { want=level===1?"light stress":"unstressed · quick"; got=prom>mprom+2?"too prominent":"fine"; if(prom>mprom+2&&level===0) status="weak"; }
+      return {w,sub:"/"+sub+"/",want,got,status,missed,level}; });
+    const pron=heard!=null?Math.round(rows.filter(x=>!x.missed).length/rows.length*100):null;
+    const toneOk=zh?Math.round(rows.filter(x=>x.status==="ok").length/rows.length*100):null;
+    const bad=rows.find(x=>x.status==="wrong")||rows.find(x=>x.status==="weak"); const miss=rows.find(x=>x.missed);
+    let tip;
+    if(zh&&bad) tip=bad.w+" "+bad.sub.replace(/\//g,"")+" should be tone "+bad.level+" ("+TONE_NAME[bad.level]+"); yours sounded like tone "+bad.det+". "+({1:"Hold it high and flat.",2:"Start mid and push upward, like asking “huh?”.",3:"Let it sink low — in the middle of a phrase it barely rises again.",4:"Start high and drop sharply, like a firm “No!”."}[bad.level]);
+    else if(bad&&bad.w===S.words[S.words.length-1][0]) tip=S.final==="rise"?"This is a yes/no question — let your voice rise clearly on “"+bad.w.replace(/[?.,]/g,"")+"”.":"Let your voice fall at the end so it sounds finished, not like a question.";
+    else if(bad) tip="Stress “"+bad.w.replace(/[?.,]/g,"")+"” — make it a little longer and higher than the words around it.";
+    else if(miss) tip="“"+miss.w.replace(/[?.,]/g,"")+"” wasn't recognised — say it more clearly, especially the consonants.";
+    else if(rangeRatio<0.6) tip="The melody is right but quite flat. Exaggerate the ups and downs slightly.";
+    else if(ratio>1.2) tip="Close to the model. Now try it a bit faster, without pausing between words.";
+    else tip="Very close to the model. Try it at normal speed without looking at the text.";
+    const hist=this.x.hist[S.id]||(this.x.hist[S.id]=[]); let n, entry;
+    if(newAttempt||!this.x.res){ n=hist.length+1; entry={n,at:Date.now(),demo:this.x.demo,blobUrl:null}; hist.push(entry); this.x.lastEntry=entry; } else { n=this.x.res.n; entry=hist.find(e=>e.n===n); }
+    if(entry) Object.assign(entry,{sim,v2:zh?toneOk:into,pron,ratio,focus:bad?bad.w.replace(/[?.,]/g,""):miss?miss.w.replace(/[?.,]/g,""):null,focusKind:bad?(zh?"tone":bad.w===S.words[S.words.length-1][0]?"ending":"stress"):miss?"unclear":null});
+    const col=v=>v==null?"var(--text3)":v>=80?"var(--green)":v>=60?"var(--amber)":"var(--red)";
+    const tiles=[
+      {label:"Pronunciation",value:pron==null?"—":String(pron),unit:pron==null?"":"%",pct:(pron||0)+"%",color:col(pron),note:pron==null?"Word recognition isn't available in this browser, so no score is given.":rows.filter(x=>x.missed).length?rows.filter(x=>x.missed).length+" word"+(rows.filter(x=>x.missed).length>1?"s":"")+" not recognised":"All words recognised"},
+      {label:"Similarity to model",value:String(sim),unit:"/100",pct:sim+"%",color:col(sim),note:"How closely your pitch line follows the model after aligning the timing"},
+      zh?{label:"Tones",value:String(toneOk),unit:"%",pct:toneOk+"%",color:col(toneOk),note:rows.filter(x=>x.status==="ok").length+" of "+rows.length+" syllables had the right tone shape"}:{label:"Intonation",value:String(into),unit:"/100",pct:into+"%",color:col(into),note:rangeRatio<0.6?"Right shape, but your range is narrower than the model":"Shape of the melody: stresses and the final "+(S.final==="rise"?"rise":"fall")},
+      {label:"Pace",value:ratio.toFixed(2),unit:"× model",pct:pace+"%",color:col(pace),note:ratio>1.12?"Slower than the model — fine for practice":ratio<0.88?"Faster than the model":"Close to the model's pace"}
+    ];
+    const X=i=>20+i*(600/(N-1)), Y=v=>clamp(100-v*9,22,178);
+    const bands=sp.map(([a,b],k)=>{ const rw=rows[k]; return {x:X(a),w:Math.max(2,X(b-1)-X(a)),fill:rw.status==="wrong"?"rgba(217,61,66,.10)":rw.status==="weak"?"rgba(242,169,0,.12)":"transparent"}; });
+    const labels=sp.map(([a,b],k)=>{ const w=S.words[k]; return {left:(((X(a)+X(Math.max(a,b-1)))/2)/640*100).toFixed(2)+"%",t:zh?w[0]:w[0].replace(/[?.,]/g,""),fs:zh?"16px":"11.5px",fw:w[2]===2||zh?600:400,flag:rows[k].status!=="ok"?"1":w[2]===2?"2":"0",fill:rows[k].status==="ok"?"var(--muted)":rows[k].status==="weak"?"var(--amber)":"var(--red)"}; });
+    const exp0=this.expectedDur(S); const Wt=S.words.map((w,k)=>{ const [a,b]=sp[k]; let lo=Infinity,hi=-1; for(let i=a;i<b;i++){ lo=Math.min(lo,jmin[i]); hi=Math.max(hi,jmax[i]); } return {ms:a/N*exp0,me:b/N*exp0,us:lo/N*dur,ue:(hi+1)/N*dur,m:M.slice(a,b),u:userSlice(a,b)}; });
+    let gaps=0, run=0; seg.forEach(f=>{ if(f.rms<th) run++; else { if(run*0.04>0.35) gaps++; run=0; } });
+    const parts=[[sim,0.4],[zh?toneOk:into,0.3],[pace,0.1]]; if(pron!=null) parts.push([pron,0.2]); const overall=Math.round(parts.reduce((s,[v,w])=>s+v*w,0)/parts.reduce((s,[,w])=>s+w,0));
+    this.x.res={words:Wt,gaps,speechStart:seg[0].t,dur,exp:exp0,ratio,sim,into,toneOk,pron,overall,heard:this.x.asr,zh,n,demo:this.x.demo,meta:(dur).toFixed(1)+" s of speech"+(this.x.asr!=null?" · heard: “"+this.x.asr+"”":""),tiles,rows,tip,
+      __c:0,chart:{model:M.map((v,i)=>X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" "),user:A.map((v,i)=>X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" "),seps:sp.slice(1).map(([a])=>({x:X(a)})),bands,labels}};
+    if(entry){ entry.res=this.x.res; entry.score=overall; } this.x.viewing=n; if(newAttempt||this.x.sel==null) this.x.sel=this.defSel(this.x.res);
+    this.forceUpdate(); }
+  defSel(r){ if(!r||!r.rows) return 0; const i=r.rows.findIndex(w=>w.status!=="ok"||w.missed); return i<0?0:i; }
+  curEntry(){ const R=this.x.res, H=this.x.hist[this.sent().id]||[]; return R?H.find(e=>e.n===R.n):null; }
+  stopPlay(){ this.ptok=(this.ptok||0)+1; try{ speechSynthesis.cancel(); }catch(e){} if(this.aud){ try{ this.aud.pause(); }catch(e){} this.aud=null; } clearTimeout(this.pT); this.x.playing=false; this.x.pw=null; }
+  say(text,cb){ const tok=this.ptok, S=this.sent(); try{ const u=new SpeechSynthesisUtterance(text); u.lang=S.lang; u.rate=0.9*this.x.speed; const v=(speechSynthesis.getVoices()||[]).find(v=>v.lang&&v.lang.toLowerCase().startsWith(S.lang.slice(0,2))); if(v) u.voice=v; let fired=false; u.onend=u.onerror=()=>{ if(fired) return; fired=true; if(tok===this.ptok&&cb) cb(); }; speechSynthesis.speak(u); }catch(e){ cb&&cb(); } }
+  hear(from,to,cb){ const tok=this.ptok, e=this.curEntry(); if(!e||!e.blobUrl){ cb&&cb(false); return; } const a=new Audio(e.blobUrl); this.aud=a; a.playbackRate=this.x.speed; let went=false;
+    const go=()=>{ if(went) return; went=true; try{ if(from>0) a.currentTime=from; }catch(er){} a.play().catch(()=>{}); if(isFinite(to)) this.pT=setTimeout(()=>{ try{ a.pause(); }catch(er){} if(tok===this.ptok&&cb) cb(true); },Math.max(180,(to-from)/this.x.speed*1000)); };
+    a.onended=()=>{ if(tok===this.ptok&&cb) cb(true); }; if(a.readyState>=1) go(); else { a.addEventListener("loadedmetadata",go,{once:true}); setTimeout(go,500); } }
+  playAll(){ if(this.x.playing){ this.stopPlay(); this.forceUpdate(); return; } const R=this.x.res; if(!R) return; this.stopPlay(); this.x.playing=true; const tok=this.ptok, S=this.sent(), e=this.curEntry(), hasA=!!(e&&e.blobUrl), m=this.x.mode||"seq";
+    const done=()=>{ if(tok!==this.ptok) return; this.x.playing=false; this.x.pw=null; this.forceUpdate(); };
+    if(!hasA&&m!=="model") this.toast(e&&e.demo?"The demo attempt has no audio, so only the model plays":"No recording for this attempt, so only the model plays");
+    if(m==="model"||(!hasA&&m!=="alt")) this.say(S.text,done);
+    else if(m==="mine") this.hear(0,Infinity,done);
+    else if(m==="seq") this.say(S.text,()=>this.hear(0,Infinity,done));
+    else { const step=k=>{ if(tok!==this.ptok) return; if(k>=R.rows.length) return done(); this.x.pw=k; this.forceUpdate(); this.say(R.rows[k].w.replace(/[?.,]/g,""),()=>{ if(!hasA) return step(k+1); const W=R.words[k]; this.hear(Math.max(0,R.speechStart+W.us-0.05),R.speechStart+W.ue+0.05,()=>step(k+1)); }); }; step(0); }
+    this.forceUpdate(); }
+  viewVals(){ const x=this.x, S=this.sent(), zh=S.final==="tones", R=x.res, H=x.hist[S.id]||[];
+    const best=H.reduce((b,e)=>(e.score!=null&&(!b||e.score>b.score))?e:b,null);
+    const out={hasPills:H.length>0,showRecord:!R||x.phase==="rec"||!!x.err,
+      pills:H.map(e=>{ const on=!!R&&R.n===e.n; return {label:"Attempt "+e.n,score:e.score==null?"—":String(e.score),crown:H.length>1&&!!best&&best.n===e.n,border:on?"var(--accent)":"var(--border2)",bg:on?"var(--accent-soft)":"var(--surface)",lc:on?"var(--accent)":"var(--muted)",onClick:()=>{ this.stopPlay(); x.res=e.res; x.sel=this.defSel(e.res); x.err=null; this.forceUpdate(); }}; })};
+    if(!R||!R.words) return out;
+    const col=v=>v>=80?"var(--green)":v>=60?"var(--amber)":"var(--red)", C=2*Math.PI*46, sc=R.overall;
+    const chips=[]; const ck=(k,text)=>chips.push({text,ok:k==="ok",bad:k==="bad",clock:k==="clock",info:k==="info",color:k==="ok"?"var(--green)":k==="bad"?"var(--red)":k==="clock"?"var(--amber)":"var(--muted)"});
+    const rows=R.rows, missedN=rows.filter(r=>r.missed).length;
+    if(R.pron==null) ck("info","Pronunciation not measured"); else if(!missedN) ck("ok","Clear pronunciation"); else ck("bad",missedN+" word"+(missedN>1?"s":"")+" unclear");
+    if(zh){ const okN=rows.filter(r=>r.status==="ok").length; ck(okN===rows.length?"ok":"bad","Tones correct ("+okN+"/"+rows.length+")"); }
+    else { const key=rows.filter((r,k)=>r.level===2&&k<rows.length-1), okN=key.filter(r=>r.status==="ok").length; ck(okN===key.length?"ok":"bad","Stress on "+okN+"/"+key.length+" key words"); const lr=rows[rows.length-1]; ck(lr.status==="ok"?"ok":"bad",S.final==="rise"?(lr.status==="ok"?"Rises at the end":"Missing the rise at the end"):(lr.status==="ok"?"Falls at the end":"Ending doesn't fall")); }
+    ck(R.gaps?"bad":"ok",R.gaps?R.gaps+" extra pause"+(R.gaps>1?"s":""):"No extra pauses");
+    const diff=R.dur-R.exp; if(Math.abs(R.ratio-1)<0.1) ck("ok","Same pace as the model"); else ck("clock",Math.abs(diff).toFixed(2)+" s "+(diff>0?"slower":"faster")+" than the model");
+    const kf=R.exp/Math.max(0.1,R.dur), W=R.words.map(t=>({...t,us:t.us*kf,ue:t.ue*kf})), sel=Math.min(x.sel||0,rows.length-1);
+    const stc=r=>r.status==="wrong"?"var(--red)":(r.status==="weak"||r.missed)?"var(--amber)":"var(--green)";
+    const pts=arr=>arr.length?arr.map((v,i)=>((arr.length<2?50:i/(arr.length-1)*100)).toFixed(1)+","+clamp(15-v*2.2,2,28).toFixed(1)).join(" "):"";
+    const minW=w=>Math.max(zh?58:54,(zh?w.length*24:w.length*9)+26);
+    const wscore=k=>{ const r=rows[k], t=W[k]; const shape=r.status==="ok"?100:r.status==="weak"?70:35; const dS=Math.abs(t.us-t.ms), lr=(t.ue-t.us)/Math.max(0.05,t.me-t.ms); const tim=clamp(100-dS*120-Math.abs(Math.log(lr))*60,30,100); const parts=[[shape,0.55],[tim,0.25]]; if(R.pron!=null) parts.push([r.missed?35:100,0.2]); return Math.round(parts.reduce((s,[v,w])=>s+v*w,0)/parts.reduce((s,[,w])=>s+w,0)); };
+    const tiles=rows.map((r,k)=>{ const t=W[k], span=Math.max(0.04,t.me-t.ms); const cap=k===rows.length-1?100:115; let L=clamp((t.us-t.ms)/span*100,-8,92), Wd=clamp((t.ue-t.us)/span*100,8,120); if(L+Wd>cap) Wd=Math.max(8,cap-L); const c=x.pw===k?"var(--accent)":stc(r), on=k===sel||x.pw===k;
+      return {w:r.w.replace(/[?.,]/g,""),sub:zh?r.sub:r.sub.replace(/\//g,""),grow:span.toFixed(3),minW:Math.max(116,minW(r.w.replace(/[?.,]/g,"")))+"px",bg:r.status==="wrong"?"var(--red-soft)":(r.status==="weak"||r.missed)?"var(--amber-soft)":on?"var(--green-soft)":"var(--surface2)",ring:on?"inset 0 0 0 2px "+c:"none",subc:r.status==="wrong"?"var(--red)":(r.status==="weak"||r.missed)?"var(--amber)":"var(--muted)",wc:r.status==="wrong"?"var(--red)":(r.status==="weak"||r.missed)?"var(--amber)":"var(--text)",mPts:pts(t.m),uPts:pts(t.u),uLeft:L.toFixed(1)+"%",uW:Wd.toFixed(1)+"%",onSel:()=>{ x.sel=k; this.forceUpdate(); }}; });
+    const r=rows[sel], t=W[sel], dS=t.us-t.ms, lr=(t.ue-t.us)/Math.max(0.05,t.me-t.ms), isLast=!zh&&sel===rows.length-1, clean=r.w.replace(/[?.,]/g,"");
+    const st=r.missed&&r.status==="ok"?"unclear":r.status;
+    const pill={ok:["Good","var(--green-soft)","var(--green)"],weak:["Close","var(--amber-soft)","var(--amber)"],wrong:["Needs work","var(--red-soft)","var(--red)"],unclear:["Unclear","var(--amber-soft)","var(--amber)"]}[st];
+    const startTxt=Math.abs(dS)<0.08?"starts on time":"starts "+Math.abs(dS).toFixed(2)+" s "+(dS>0?"late":"early"), lenTxt=lr>1.3?lr.toFixed(1)+"× longer than the model":lr<0.75?lr.toFixed(1)+"× shorter than the model":"about the same length";
+    let tip;
+    if(zh&&r.status!=="ok") tip="“"+r.w+"” should be tone "+r.level+" ("+TONE_NAME[r.level]+"); yours sounded like tone "+r.det+". "+({1:"Hold it high and flat.",2:"Start mid and push upward, like asking “huh?”.",3:"Let it sink low; in the middle of a phrase it barely rises again.",4:"Start high and drop sharply, like a firm “No!”."}[r.level]);
+    else if(isLast&&r.status!=="ok") tip=S.final==="rise"?"This is a yes/no question. Let your voice rise clearly on “"+clean+"”.":"Let your voice fall on “"+clean+"” so the sentence sounds finished.";
+    else if(r.status!=="ok"&&r.level===2) tip="Make “"+clean+"” a little longer and higher than the words around it. It carries the stress.";
+    else if(r.status!=="ok") tip="Keep “"+clean+"” light and quick. It shouldn't stand out.";
+    else if(r.missed) tip="“"+clean+"” wasn't recognised. Say it more clearly, especially the consonants.";
+    else if(Math.abs(dS)>=0.2) tip="Good shape. The word "+startTxt+"; link it more smoothly to the word before.";
+    else tip="This word matches the model well.";
+    const rs=(arr,n)=>Array.from({length:n},(_,i)=>{ if(!arr.length) return 0; const p=i/(n-1)*(arr.length-1), a=Math.floor(p), b=Math.min(arr.length-1,a+1); return arr[a]+(arr[b]-arr[a])*(p-a); });
+    const mm=rs(t.m,40), uu=rs(t.u,40), PX=i=>40+i*(272/39), PY=v=>clamp(65-v*7,10,120);
+    let ci=0, mx=-1; mm.forEach((v,i)=>{ const dd=Math.abs(v-uu[i]); if(dd>mx){ mx=dd; ci=i; } });
+    const coY=PY(uu[ci]), coText=zh?"Sounds like tone "+r.det+", should be "+TONE_NAME[r.level]:isLast?(r.got.charAt(0).toUpperCase()+r.got.slice(1))+", should "+(S.final==="rise"?"rise":"fall"):r.level===2?"Too flat: lift and lengthen":"Too strong: keep it light";
+    const ico=k=>({ok:k==="ok",bad:k==="bad",clock:false,info:false});
+    const lo=Math.min(t.ms,t.us)-0.1, hi=Math.max(t.me,t.ue)+0.1, spn=hi-lo, pc=v=>((v-lo)/spn*100).toFixed(1)+"%";
+    const heard=R.heard;
+    return {...out,
+      ringColor:col(sc),ringDash:(C*sc/100).toFixed(1)+" "+C.toFixed(1),score:String(sc),scoreLabel:sc>=90?"Excellent":sc>=80?"Very good":sc>=65?"Good":"Keep going",
+      headline:sc>=90?"Natural and clear.":sc>=80?"Clear, with small differences.":sc>=65?"Understandable, with a few things to fix.":"Keep practising this one.",
+      chips,metricLine:"Similarity to model "+R.sim+"/100 · "+(zh?"Tones "+R.toneOk+"%":"Intonation "+R.into+"/100")+" · "+R.dur.toFixed(1)+" s of speech",
+      gridMin:(rows.reduce((s,r)=>s+Math.max(116,minW(r.w.replace(/[?.,]/g,""))),0)+6*(rows.length-1))+"px",tiles,tileFont:zh?"26px":"19px",axisRight:"Model "+R.exp.toFixed(1)+" s · You "+R.dur.toFixed(1)+" s",
+      dFont:zh?"44px":"32px",
+      d:{score:String(wscore(sel)),scoreColor:rows[sel].status==="wrong"?"var(--red)":(rows[sel].status==="weak"||rows[sel].missed)?"var(--amber)":"var(--green)",scoreDash:(2*Math.PI*26*wscore(sel)/100).toFixed(1)+" "+(2*Math.PI*26).toFixed(1),scoreWord:wscore(sel)>=85?"Great":wscore(sel)>=70?"Good":wscore(sel)>=55?"Close":"Needs work",w:clean,sub:zh?r.sub:r.sub,pill:pill[0],pillBg:pill[1],pillColor:pill[2],tip,
+        hearWord:()=>{ this.stopPlay(); this.say(clean); },
+        hearMine:()=>{ const e=this.curEntry(); if(!e||!e.blobUrl){ this.toast(e&&e.demo?"The demo attempt has no audio":"No recording for this attempt"); return; } this.stopPlay(); const rw=R.words[sel]; this.hear(Math.max(0,R.speechStart+rw.us-0.08),R.speechStart+rw.ue+0.08); },
+        chartTitle:zh?clean+" ("+r.sub+") · Tone "+r.level+", "+TONE_NAME[r.level]:clean+" · "+r.want,
+        mLine:mm.map((v,i)=>PX(i).toFixed(1)+","+PY(v).toFixed(1)).join(" "),uLine:uu.map((v,i)=>PX(i).toFixed(1)+","+PY(v).toFixed(1)).join(" "),
+        hasCo:r.status!=="ok",coX:PX(ci).toFixed(1),coY:coY.toFixed(1),coLeft:clamp(PX(ci)/320*100,22,78).toFixed(1)+"%",coTop:(coY/130*100).toFixed(1)+"%",coTf:PY(mm[ci])<coY-4||coY<40?"translate(-50%, 12px)":"translate(-50%, calc(-100% - 12px))",coText,
+        rows:[
+          {label:zh?"Tone":isLast?"Ending":r.level===2?"Stress":"Weight",value:r.status==="ok"?(zh?"Correct":"Matches"):r.status==="weak"?"Slightly off":"Off",color:r.status==="ok"?"var(--green)":r.status==="weak"?"var(--amber)":"var(--red)",...ico(r.status==="ok"?"ok":"bad")},
+          {label:"Start",value:Math.abs(dS)<0.08?"On time":(dS>0?"+":"−")+Math.abs(dS).toFixed(2)+" s ("+(dS>0?"late":"early")+")",color:Math.abs(dS)<0.08?"var(--text)":"var(--amber)",...ico("")},
+          {label:"Length",value:lr>1.3?lr.toFixed(1)+"× longer":lr<0.75?lr.toFixed(1)+"× shorter":"Close to model",color:"var(--text)",...ico("")},
+          {label:"Pronunciation",value:R.pron==null?"Not measured":r.missed?"Unclear":"Clear",color:R.pron==null?"var(--muted)":r.missed?"var(--red)":"var(--green)",...ico(R.pron==null?"":r.missed?"bad":"ok")}]},
+      tabs:[["tone",zh?"Tone":"Pitch"],["timing","Timing"],["pron","Pronunciation"]].map(([id,label])=>({label,onClick:()=>{ x.tab=id; this.forceUpdate(); },bg:(x.tab||"tone")===id?"var(--accent)":"transparent",color:(x.tab||"tone")===id?"#fff":"var(--muted)"})),
+      tabTone:(x.tab||"tone")==="tone",tabTiming:x.tab==="timing",tabPron:x.tab==="pron",
+      tm:{mLeft:pc(t.ms),mW:((t.me-t.ms)/spn*100).toFixed(1)+"%",uLeft:pc(t.us),uW:((t.ue-t.us)/spn*100).toFixed(1)+"%",lo:Math.max(0,lo).toFixed(2)+" s",hi:hi.toFixed(2)+" s",mTxt:t.ms.toFixed(2)+"–"+t.me.toFixed(2)+" s",uTxt:t.us.toFixed(2)+"–"+t.ue.toFixed(2)+" s",note:"Measured at your own overall pace: the word "+startTxt+" and is "+lenTxt+"."},
+      pr:R.pron==null?{title:"Not measured",body:"This browser has no speech recognition, so Orena can't check which words were heard. Pitch and timing are still analysed.",heard:"",color:"var(--muted)",ok:false,bad:false,clock:false,info:true}
+        :r.missed?{title:"Not recognised",body:"“"+clean+"” "+(zh?"("+r.sub+")":r.sub)+" wasn't found in what was heard. Say it more clearly and don't swallow the final sound.",heard:heard?"Heard: “"+heard+"”":"",color:"var(--red)",ok:false,bad:true,clock:false,info:false}
+        :{title:"Recognised",body:"“"+clean+"” "+(zh?"("+r.sub+")":r.sub)+" was heard clearly.",heard:heard?"Heard: “"+heard+"”":"",color:"var(--green)",ok:true,bad:false,clock:false,info:false},
+      modes:[["seq","Model → You"],["alt","Word by word"],["model","Model only"],["mine","Yours only"]].map(([id,label])=>({label,onClick:()=>{ this.stopPlay(); x.mode=id; this.forceUpdate(); },bg:(x.mode||"seq")===id?"var(--accent)":"transparent",color:(x.mode||"seq")===id?"#fff":"var(--muted)"})),
+      playAll:()=>this.playAll(),isPlaying:!!x.playing,notPlaying:!x.playing,playLabel:x.playing?"Stop":"Play",
+      retry:()=>{ this.stopPlay(); window.scrollTo({top:0,behavior:"smooth"}); this.startRec(); }
+    }; }
+  renderVals(){ { const sk=this.props.script?this.props.script.id:null; if(this.scriptKey!==undefined&&sk!==this.scriptKey){ this.scriptKey=sk; try{this.stopPlay();}catch(e){} Object.assign(this.x,{si:0,res:null,err:null,phase:"idle",sel:null}); } } const x=this.x, S=this.sent(), zh=S.final==="tones", R=x.res, rec=x.phase==="rec";
+    const statusMap={pill:{ok:["Match","var(--green-soft)","var(--green)"],weak:["Close","var(--amber-soft)","var(--amber)"],wrong:["Off","var(--red-soft)","var(--red)"]}};
+    const byWord=R?R.rows:null;
+    const fr=x.frames||[], tail=fr.slice(-110);
+    const live=rec?tail.map((f,i)=>{ const v=f.f?12*Math.log2(f.f/170):null; return v==null?null:(i*(300/109)).toFixed(1)+","+clamp(30-v*2.2,4,56).toFixed(1); }).filter(Boolean).join(" "):"";
+    return {
+      standalone:!this.props.embedded,wrapPad:this.props.embedded?"0":"32px 20px 64px",wrapMinH:this.props.embedded?"0":"100vh",toggleTheme:()=>{ this.theme=this.theme==="dark"?"light":"dark"; document.body.dataset.theme=this.theme; this.forceUpdate(); },themeLabel:this.theme==="dark"?"Light mode":"Dark mode",
+      showChips:!this.props.script,sentChips:this.sents().map((s,i)=>({label:s.label,onClick:()=>{ if(x.rec) return; this.stopPlay(); x.si=i; x.sel=null; x.res=null; x.err=null; x.phase="idle"; this.forceUpdate(); },border:i===x.si?"var(--tint2)":"var(--border2)",bg:i===x.si?"var(--accent-soft)":"var(--surface)",color:i===x.si?"var(--accent)":"var(--text)"})),
+      sent:S,tokSize:zh?"30px":"19px",
+      tokens:S.words.map((w,k)=>{ const rw=byWord&&byWord[k]; const st=rw?rw.status:null; return {w:w[0],sub:zh?w[1]:(w[2]===2&&w[1].indexOf("ˈ")<0?"ˈ":"")+w[1],subColor:zh?TONE_COL[w[2]]:w[2]===2?"var(--accent)":"var(--text3)",fw:zh||w[2]===2?600:400,
+        bg:st==="wrong"?"var(--red-soft)":st==="weak"?"var(--amber-soft)":st==="ok"?"var(--green-soft)":"transparent",bar:st==="wrong"?"var(--red)":st==="weak"?"var(--amber)":st==="ok"?"var(--green)":(zh||w[2]===2)?"var(--tint2)":"transparent"}; }),
+      playModel:()=>this.speak(),toggleSpeed:()=>{ const L=[0.75,1,1.25]; x.speed=L[(L.indexOf(x.speed)+1)%L.length]; this.forceUpdate(); },speedLabel:x.speed+"×",
+      recToggle:()=>{ if(x.rec) this.stopRec(); else this.startRec(); },recTitle:rec?"Stop":"Record",isRec:rec,notRec:!rec,recBg:rec?"var(--red)":"var(--accent)",recRing:rec?Math.round(4+x.level*18)+"px":"0px",
+      statusTitle:rec?"Listening… speak now":R?"Take analysed":"Ready when you are",statusColor:rec?"var(--red)":"var(--text)",
+      statusSub:rec?"Recording stops by itself after a short pause. Tap the square to stop now.":R?"Tap the mic to try again — each attempt is kept below.":"Hear the model first if you like, then tap the mic and read the sentence once.",
+      livePts:live||"0,30 1,30",runDemo:()=>this.demo(),
+      stripRef:el=>{ this.strip=el; if(el) requestAnimationFrame(()=>this.layoutLabels()); },
+      hasError:!!x.err,errorText:x.err||"",hasRes:!!R,res:R||{tiles:[],rows:[]},
+      chart:R?R.chart:{bands:[],seps:[],labels:[],model:"",user:""},chartTitle:zh?"Pitch per syllable":"Intonation",chartNote:zh?"Each band is one syllable. Your line is time-aligned to the model so you can compare the tone shapes directly.":"Your line is time-aligned to the model. Peaks should sit on the stressed words; shaded words differ most.",
+      rowsTitle:zh?"Tone by syllable":"Stress and melody by word",
+      ...(R?{res:{...R,rows:R.rows.map(rw=>{ const p=statusMap.pill[rw.missed&&rw.status==="ok"?"weak":rw.status]; return {...rw,got:rw.missed?rw.got+" · not recognised":rw.got,pill:rw.missed&&rw.status==="ok"?"Unclear":p[0],pillBg:p[1],pillColor:p[2],bg:rw.status==="ok"&&!rw.missed?"transparent":"var(--surface2)"}; })}}:{}),
+      playMine:()=>{ const e=(x.hist[S.id]||[]).find(e=>R&&e.n===R.n); if(!e||!e.blobUrl){ this.toast(e&&e.demo?"The demo attempt has no audio":"No recording for this attempt"); return; } try{ new Audio(e.blobUrl).play(); }catch(er){} },
+      ...(()=>{ const H=x.hist[S.id]||[]; const last=H[H.length-1]; const best=H.reduce((b,e)=>e.sim>(b?b.sim:-1)?e:b,null);
+        const ago=t=>{ const s=Math.round((Date.now()-t)/1000); return s<45?"Just now":s<3600?Math.max(1,Math.round(s/60))+" min ago":new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); };
+        const d=(c,p)=>{ if(p==null||c==null) return {t:"",c:"var(--muted)"}; const v=Math.round(c-p); return v===0?{t:"±0",c:"var(--muted)"}:{t:(v>0?"+":"−")+Math.abs(v),c:v>0?"var(--green)":"var(--red)"}; };
+        const paceTxt=r=>r>1.12?r.toFixed(1)+"× slower":r<0.88?(1/r).toFixed(1)+"× faster":"On pace";
+        const focusTxt=e=>!e.focus?"No clear issue":e.focusKind==="tone"?"Tone on "+e.focus:e.focusKind==="ending"?"Ending on “"+e.focus+"”":e.focusKind==="unclear"?"“"+e.focus+"” unclear":"Stress on “"+e.focus+"”";
+        const W=180,Ht=40, pts=H.map((e,i)=>({x:H.length<2?W/2:6+i*((W-12)/(H.length-1)),y:Ht-4-(e.sim/100)*(Ht-8)}));
+        return { hasHistory:H.length>0, histCount:H.length,
+          histSummary:H.length<2?"Your first attempt on this sentence. Try again to see how it changes.":"Similarity "+H[0].sim+" → "+last.sim+" over "+H.length+" attempts · best "+best.sim+" (#"+best.n+")",
+          spark:pts.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" "), sparkDots:pts.map((p,i)=>({cx:p.x.toFixed(1),cy:p.y.toFixed(1),r:H[i].n===(R&&R.n)?4.5:3,fill:H[i].n===(R&&R.n)?"var(--accent)":"var(--surface)"})),
+          isOld:!!(R&&last&&R.n!==last.n), backToLatest:()=>{ if(!last) return; x.res=last.res; x.viewing=last.n; x.err=null; this.forceUpdate(); },
+          clearHistory:()=>{ this.stopPlay(); H.forEach(e=>{ if(e.blobUrl) try{ URL.revokeObjectURL(e.blobUrl); }catch(er){} }); x.hist[S.id]=[]; x.res=null; x.lastEntry=null; x.phase="idle"; this.forceUpdate(); },
+          history:H.map((e,i)=>{ const p=H[i-1]; const on=R&&e.n===R.n; const ds=d(e.sim,p&&p.sim), dv=d(e.v2,p&&p.v2), dp=d(e.pron,p&&p.pron);
+            return {n:e.n,when:ago(e.at),focus:focusTxt(e),demo:!!e.demo,isBest:H.length>1&&best&&best.n===e.n,hasAudio:!!e.blobUrl,
+              border:on?"var(--tint2)":"transparent",bg:on?"var(--accent-soft)":"var(--surface2)",
+              metrics:[{label:"Similarity",value:String(e.sim),delta:ds.t,dc:ds.c},{label:zh?"Tones":"Intonation",value:e.v2+(zh?"%":""),delta:dv.t,dc:dv.c},{label:"Pronunciation",value:e.pron==null?"—":e.pron+"%",delta:dp.t,dc:dp.c},{label:"Pace",value:paceTxt(e.ratio),delta:"",dc:"var(--muted)"}],
+              onView:()=>{ this.stopPlay(); x.res=e.res; x.sel=this.defSel(e.res); x.viewing=e.n; x.err=null; window.scrollTo({top:0,behavior:"smooth"}); this.forceUpdate(); },
+              onPlay:ev=>{ ev.stopPropagation(); try{ new Audio(e.blobUrl).play(); }catch(er){} }}; }).reverse() }; })(),
+      toastOn:!!x.toast,toastText:x.toast||"",
+      ...this.viewVals()
+    };
+  }
+}
+</script>
+</body>
+</html>

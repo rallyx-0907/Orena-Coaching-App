@@ -2965,3 +2965,176 @@ being learned and diluted attention.
 **Applied to:** both `codex/work` and `feature/orena-intelligence` so the
 learner UI and Intelligence lane share the same copy-density constraint.
 
+## D-088 — The learner design moves to Claude Design project e6dc1cb2; it replaces the Dark Glass baseline on every learner surface
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human direction).
+
+**Context.** The human approved a new learner design, in a different Claude
+Design project from the one D-066/D-067 named, and made it "the visual and
+interaction root of Orena", to be implemented app-wide as the canonical learner
+UI that D-086 says replaces the old one. It changes the navigation (six places
+instead of four), the type, the icon family, the colour system (two themes) and
+nearly every component, so the old visual rules cannot be balanced against it.
+
+**Decision.**
+
+1. The authority for how every learner surface looks, behaves and what it shows
+   is Claude Design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, read at its
+   source and pinned byte for byte at revision `1790473816124946` in
+   `docs/design/canonical-ui/screens/` (`Orena.dc.html`, `Onboarding.dc.html`,
+   `Compare-With-Model.dc.html`; `SYNC_2026-09-27.md`, `PINS.tsv`). Within it:
+   the frames, then the state script at the end of `Orena.dc.html` (behaviour),
+   then the brief in `docs/design/canonical-ui/brief/` (intent). A screen the
+   brief names and no frame draws is not designed. The script's prototype
+   internals - simulated audio, canned scores, a browser pitch tracker, demo
+   attempts, hard-coded positions - are not product behaviour: the product keeps
+   its real services (Azure pronunciation, the YIN tracker, real media and
+   positions) and shows their results in the design's components.
+2. It supersedes project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d` for learner
+   surfaces, and with it the Dark Glass system of D-066 and Design Contract
+   rules 30, 31, 34, 35, 36, 37, 38, 46, 47 and 48 as written: ground and glass,
+   Nunito / Nunito Sans / DM Mono / Noto Serif, Phosphor, the five-item
+   navigation, the 280px rail, the card and artwork-slot rules, the old shell
+   and frame rules. The new system is the design's own: Outfit for the
+   interface, Fredoka for the wordmark, Literata for reading text, JetBrains
+   Mono for figures and labels, Noto Sans SC / Noto Serif SC for Chinese; the
+   Lucide icon family at one pinned official release, every path taken from the
+   package (the design's hand-typed variants of the same icons are replaced by
+   the package's); Today, Discover, Practice Hub and My Library in the desktop
+   rail with the "Ask Orena" card and the account row, and Today, Discover,
+   Orena (the raised centre action), Practice and Library in the phone bar;
+   Progress and Settings reached from Profile; a learning workspace (the
+   design's focus list) has no top bar and no tab bar.
+3. The design draws states: Banner, Loading, Load error, Coming soon, its empty
+   states and the microphone states. Rule 39 no longer forbids what it draws;
+   what it still does not draw follows rule 39.
+4. Unchanged and binding on the new UI: rules 9, 14, 16, 26-29, 32, 33, 40-45,
+   49 and 50, the learner language contract (D-079), D-068 point 1 (the
+   design's words and data are sample content). Where the design and a rule
+   disagree - a phone learning workspace drawn as a scrolling page against rule
+   49, a decorative subtitle against rule 50 - the rule wins, the surface is
+   recomposed or trimmed, and the deviation is recorded in
+   `docs/project/UI_BACKEND_GAPS.md`.
+5. A face without the glyphs a locale needs falls back technically, never by
+   redesign (as D-061 did for DM Mono): Outfit has no Vietnamese subset, so
+   Vietnamese interface text is set in a Vietnamese-complete face of the same
+   geometric family, recorded as a deviation.
+6. Platform Admin is not part of this change. `screens/Orena-Admin-Control-Center.dc.html`
+   stays its authority until the human opens Admin; the new project's
+   `Orena Admin.dc.html` is read only for shared primitives.
+7. A design file over 256 KiB cannot be read whole through DesignSync; it is
+   read from a human export and pinned byte for byte, and a later revision is
+   diffed against `PINS.tsv`.
+
+**Consequences.** `DESIGN_CONTRACT.md` (the authority and the visual rules),
+the design pointers in `AGENTS.md` and `CLAUDE.md`, and the cache README are
+rewritten; the learner pins of 7a5604ca move to
+`docs/design/canonical-ui/superseded/7a5604ca/`; the visual-source gate in
+`CURRENT_HANDOFF.md` is no longer UNVERIFIED.
+
+**Supersedes / Superseded by:** Supersedes D-066 (its visual system and its
+authority for learner surfaces) and the authority pointer of D-067; D-067's
+method - read at the source, measure, invent nothing, delete the old
+interaction - stands. Supersedes the Dark Glass ground decisions D-070, D-071
+and D-073, and makes D-061 moot. D-068 point 2 is superseded by D-090.
+
+## D-089 — The learner UI ships the design's light and dark themes, following the operating system
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human direction).
+
+**Context.** The new design (D-088) defines complete light and dark token sets.
+The product has had one dark theme since D-066, and `LEGACY_TOMBSTONES.md`
+forbade "a Paper or light theme returning as a setting".
+
+**Decision.**
+
+1. Both of the design's themes ship. The theme follows the operating system
+   (`prefers-color-scheme`) and changes with it live.
+2. The one in-product control the design draws - the light/dark button in the
+   Reader's toolbar - switches the whole app, as the design's script does. The
+   choice is a device preference kept in the browser (like the interface
+   language before its column exists), never account data; it can be cleared
+   to follow the system again. No Settings row is added: the design draws none.
+3. Colour keeps one owner, the new UI's token file, holding both themes'
+   values exactly as the design gives them; no component invents a colour, and
+   AA contrast is checked for both themes.
+4. This light theme is the new design's own. D-059's Ink and Paper themes, the
+   sepia reader block and every hybrid remain retired.
+
+**Supersedes / Superseded by:** Supersedes the tombstone clause "a Paper or
+light theme returning as a setting" (the Ink / Paper tombstone is updated to
+say so) and D-066's single-theme rule.
+
+## D-090 — The design's logo and Orena Intelligence mark replace the curled-tail mark in the learner app
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human direction).
+
+**Decision.**
+
+1. The learner app's brand mark is the design's: the gradient swirl (`ol-mark`)
+   in its dark disc, with the Fredoka wordmark "Orena", in the rail, the phone
+   header, onboarding and the favicon. It replaces the orange curled-tail mark
+   (`static/orena/assets/mark.svg`) there.
+2. The design's Orena Intelligence mark (`ol-intel` and its thinking, listening
+   and speaking states) is the agent's identity wherever the design draws the
+   agent: the Ask Orena card, the phone bar's centre action, Orena Home, the
+   contextual panel and voice mode.
+3. The marks are brand assets: their source copy lives in the Art Bible
+   package (`assets/brand/orena/`), taken from the pinned design without
+   redrawing, and the app renders that copy.
+4. The red-panda mascot, its artwork and the Art Bible's rules are unchanged;
+   Orena Orange stays the mascot's colour.
+
+**Supersedes / Superseded by:** Supersedes D-068 point 2 ("the logo stays as it
+is").
+
+## D-091 — The new learner UI is built beside the old one and replaces it in one cutover
+
+**Date:** 2026-09-27. **Status:** Accepted (migration strategy chosen by the
+implementing lane under the human's migration brief; recorded for every lane).
+
+**Context.** D-086 and D-088 replace the whole learner UI. Two ways were open:
+migrate the old UI in place, surface by surface, or build the new UI beside it
+and switch over once. The new design changes the navigation, the shell, the
+type, the icons, the colour system and nearly every component at once, so
+there is no surface where the two systems can sit on one screen without the
+hybrid the contract forbids; an in-place migration would leave `/` a mixed app
+for the whole migration, and the intelligence lane, which merges `codex/work`
+forward, would be integrating its agent into a moving hybrid.
+
+**Decision.**
+
+1. The new UI is a separate entry: `templates/orena/next.html`, served at
+   `/next`. `/` keeps serving the old UI, unchanged and fully gated, until the
+   cutover.
+2. Its code lives under final names from the start - `static/orena/main.js`
+   (entry), `shell/` (frame, router, focus mode, overlays), `kit/` (tokens,
+   icons, brand, primitives), `screens/` (one folder per canonical surface),
+   `copy/` (interface strings, en / vi / zh, with their language layer),
+   `agent/` (panel, dispatcher, device memory, contract mock) - so the cutover
+   renames nothing.
+3. It reuses the domain layer (`product/`, `capabilities/`, `content/`,
+   `infrastructure/`) and the backend as they are. It never imports the old
+   `ui/*.js` presentation or the old stylesheets. Logic worth keeping that sits
+   in an old `ui/` module is moved (not copied) into the domain layer, and both
+   UIs import it until the cutover.
+4. Each slice builds a coherent set of surfaces with real data and real
+   journeys, adds gates for them, is verified in a browser (desktop and phone,
+   en / vi / zh, both themes), and is committed and pushed. A surface the
+   backend cannot serve yet uses the design's own Coming soon screen, never
+   invented data.
+5. The cutover slice makes `/` serve the new UI, sends every old address into
+   the new flow (`product/legacy-routes.js`), deletes the old template,
+   `ui/*.js` presentation, the old stylesheets and `theme.js`, writes a
+   `LEGACY_TOMBSTONES.md` entry per retired surface, and replaces each retired
+   surface's gate with a gate on its successor. No gate is deleted to make CI
+   pass.
+6. Between slices `codex/work` is always in this state: `/` is the old UI,
+   verified; `/next` is the new UI, with the surfaces listed under "New UI
+   coverage" in `CURRENT_HANDOFF.md`; both share one domain layer; no
+   learner-data schema has changed; the agent panel exists only in the new UI,
+   on the contract mock (D-086), and calls no `/api/agent/*` until the human
+   says the intelligence lane is integrated.
+
+**Supersedes / Superseded by:** Nothing. Extends D-086.
+

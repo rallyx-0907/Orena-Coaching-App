@@ -38,6 +38,30 @@ Baseline pin: 2026-09-21, design project
 `docs/design/canonical-ui/PINS.tsv`. Audit facts below were read from code and
 schema on that date at `76e69b9`; none has been run against the baseline UI.
 
+**Since 2026-09-27 the learner design is project `e6dc1cb2`, revision
+`1790473816124946` (D-088), built as the new UI at `/next` (D-091).** Its rows
+are in "N. The new learner design" directly below; the sections after it
+describe the superseded Dark Glass UI still served at `/` until the cutover and
+stay as history.
+
+## N. The new learner design (D-088), 2026-09-27
+
+Deviations from the pinned frames, each with its reason. A row leaves this
+table when the human decides it or the design changes.
+
+| # | Where | Deviation | Why |
+| --- | --- | --- | --- |
+| N-1 | Every Vietnamese string | Set in Plus Jakarta Sans (via `:lang(vi)`), not Outfit | Outfit has no Vietnamese subset (latin, latin-ext only); letters like ế ạ ữ would fall back glyph by glyph inside a word. Plus Jakarta Sans is the face this design project used before its skin, and has the subset. Technical fallback, D-088 point 5. |
+| N-2 | Icons | The package's path for each icon, not the frame's hand-typed variant (x, mic, search, volume-2, inbox, pencil, clock and ~20 more) | Rule 46: official paths only, `lucide-static@0.525.0` (the release matching the most frame icons byte for byte, 45 of the design's icons). |
+| N-3 | Coming soon | The frame's footer line ("Kept in the navigation so the Orena information architecture stays complete.") and its sample "Would resume at" block are not shown | The footer is a note to the reviewer, not learner copy (rule 50); the resume block shows only when a real resume position exists. |
+| N-4 | Prototype strip | Desktop / Mobile / Light / Dark buttons above the frame are not built | Prototype chrome. Device follows the window (rule 48), theme follows the system (D-089). |
+| N-5 | Tablet | One switch between the desk and phone layouts (below 900 px the phone layout) | The design has two frames and no tablet (rule 48). |
+| N-6 | Phone learning workspaces | Recomposed to the viewport where a phone frame scrolls as a page (Listening Workspace on a phone first) | Rule 49, reaffirmed by the human for this design. |
+| N-7 | Rule 50 | Decorative subtitles and taglines in the frames are not carried (e.g. "Your study companion", "Find something worth learning from.") | Rule 50 / D-087; listed per surface as it is built. |
+
+Contract gaps for the agent surfaces: `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`
+(awaiting approval).
+
 # CHỜ NGƯỜI QUYẾT ĐỊNH — sổ đăng ký mở (cập nhật 2026-09-22)
 
 Đây là **danh sách duy nhất** cần anh duyệt. Mỗi mục ghi rõ đang làm gì và hai lựa chọn, để chỉ

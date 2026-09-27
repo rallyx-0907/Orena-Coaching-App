@@ -1,0 +1,2 @@
+- Sau mỗi lượt làm xong, báo cáo nhanh bằng tiếng Việt theo 3 mục: **Đã làm**, **Đã check** (check thế nào, trên viewport nào), **Còn thiếu**.
+- Ưu tiên hoàn thiện Learning App trước; Admin chỉ làm sau khi Learning App hoàn thành.
