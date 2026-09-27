@@ -2515,6 +2515,7 @@ elsewhere by the human on 2026-09-23.
 
 **Supersedes / Superseded by:** nothing. Extends D-066/D-067's design authority
 into the data contract behind it.
+
 ## D-081 — codex/work was merged into admin/control-center as a one-way synchronization
 
 **Date:** 2026-09-23
@@ -2573,7 +2574,7 @@ ability/progression is updated -> the next passage is chosen. Specifically:
   source category is deferred while it is not needed.
 - Lifecycles are reversible and normal flow never hard-deletes. Books restore.
   Vocabulary is `pending_review -> published <-> unpublished -> archived ->
-  restore to unpublished`. Rights and completeness are warnings; an Admin may
+restore to unpublished`. Rights and completeness are warnings; an Admin may
   override, and the override is audited.
 - Adaptive Reading uses only the published Reading Corpus. A comprehension set
   carries question type, answer, explanation and evidence grounded in the exact
@@ -2644,6 +2645,7 @@ proposal's §11 for the admin sandbox only; it authorizes nothing beyond it.
 
 The integration revision `20260924_0016` has a different parent and needs
 independent architecture review before any shared-runtime application.
+
 ## D-084 — Speaking: "passed" is the provider's own flag; a Speaking library of its own plus a flow from Listening
 
 **Date:** 2026-09-23. **Source:** the human, answering four questions in the
@@ -2904,3 +2906,22 @@ completed domain integration or coupling the product to one model provider.
 7. The Intelligence lane may run in parallel with future UI work, but domain
    contracts remain authoritative and any later integration back into
    `codex/work` requires its own review and verification.
+
+## D-086 — The new learner UI replaces the old one on codex/work; only it carries Orena Intelligence, through one shared contract
+
+Date: 2026-09-27 Status: Accepted (explicit human direction)
+
+Context. D-085 opened feature/orena-intelligence for the agent backend and gave it no learner-UI authority. The human is applying a new learner UI on codex/work that replaces the old UI entirely — its behavior included — and may add flows and retire old ones. The agent must appear only in that new UI. The two lanes do not read each other's implementation (AGENTS.md §3), so they need one interface both can build against.
+
+Decision.
+
+The new learner UI is built on codex/work and replaces the old learner UI, including behavior; flows it does not carry are retired with it. The old UI receives no agent integration.
+docs/project/AGENT_CONTRACT.md (contract_version 1) is the only interface between the new UI and the intelligence lane: request, SSE events, segments, evidence, the action allowlist, surface/navigation intents, capabilities and the provisional voice session.
+The contract is edited only on codex/work, by a reviewed commit that bumps contract_version and is recorded here. feature/orena-intelligence receives it by merging codex/work forward and never edits it.
+The agent names intents and actions, never routes or screens, and emits only what the client declares in client.supported_actions / supported_intents. A flow the new UI drops therefore disappears from the agent without a backend change.
+The UI lane owns the agent panel, the action dispatcher, intent-to-screen mapping, device memory for conversation and coach notes, mic/voice state, and a frontend mock that replays the contract's canonical streams. The intelligence lane owns /api/agent/\* and must reproduce the same streams in its contract tests.
+Mutating actions are executed by the client through existing APIs with the learner's session; the agent backend stays read-only in v1.
+
+This decision does not authorize production provider activation, shared-runtime migration, deployment or destructive persistence change, and does not settle visual fidelity: the Claude Design source remains unavailable and the visual-source gate UNVERIFIED as recorded in CURRENT_HANDOFF.md. Integration of the intelligence lane into codex/work requires its own review and verification.
+
+Supersedes / Superseded by: nothing. Extends D-085.
