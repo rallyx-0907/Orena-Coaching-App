@@ -44,14 +44,24 @@ function norm(value) {
 const tokens = fs.readFileSync(path.join(ROOT, 'kit/tokens.css'), 'utf8');
 const device = fs.readFileSync(path.join(ROOT, 'kit/device.css'), 'utf8');
 
-// 1. Tokens: both themes, exactly the design's.
+// 1. Tokens: both themes, exactly the design's - except the smallest AA adjustments the human
+// approved (D-093, rule 41) and the two tokens they added (a fill for white-on-violet controls, the
+// ink of the red count badge).
+const ADJUSTED = {
+  dark: { text3: '#858599', accent: '#847ff6' },
+  light: { text3: '#6e6e86', green: '#117e52', red: '#d0292e', amber: '#a16000' },
+};
+const ADDED = ['accent-fill', 'accent-fill-hover', 'accent-fill-press', 'badge-ink'];
 for (const theme of ['dark', 'light']) {
   const design = vars(block(helmet, `body[data-theme="${theme}"]`));
   const ours = vars(block(tokens, `:root[data-theme="${theme}"]`));
   // The design's bezel and frame border draw the prototype device; the product has none (N-4).
   for (const prototypeOnly of ['bezel', 'frame-border']) delete design[prototypeOnly];
-  assert.deepEqual(Object.keys(ours).sort(), Object.keys(design).sort(), `${theme}: the same token names as the design`);
-  for (const [name, value] of Object.entries(design)) assert.equal(ours[name], value, `${theme} --${name} is the design's value`);
+  assert.deepEqual(Object.keys(ours).sort(), [...Object.keys(design), ...ADDED].sort(), `${theme}: the design's token names plus the D-093 additions`);
+  for (const [name, value] of Object.entries(design)) {
+    const expected = ADJUSTED[theme][name] ? norm(ADJUSTED[theme][name]) : value;
+    assert.equal(ours[name], expected, `${theme} --${name} is ${ADJUSTED[theme][name] ? 'the D-093 value' : "the design's value"}`);
+  }
 }
 const hues = vars(block(helmet, 'body{--tone1'.replace('body{', 'body{')));
 const ourRoot = vars(block(tokens, ':root {'));
@@ -82,34 +92,23 @@ function contrast(a, b) {
   return (x + 0.05) / (y + 0.05);
 }
 // Every pair the design draws as text or an icon on a ground. Interface text here is small
-// (11-15px, the bold ones below 18.66px), so AA is 4.5:1 throughout.
+// (11-15px, the bold ones below 18.66px), so AA is 4.5:1 for every pair, in both themes.
 const PAIRS = [
   ['text', 'bg'], ['text', 'surface'], ['text', 'surface2'],
   ['muted', 'bg'], ['muted', 'surface'], ['muted', 'surface2'],
   ['text3', 'bg'], ['text3', 'surface'], ['text3', 'surface2'],
   ['accent', 'bg'], ['accent', 'surface'], ['accent', 'accent-soft'], ['accent-text', 'accent-soft'], ['accent-text', 'surface'],
-  ['accent-ink', 'accent'], ['badge-ink', 'red'],
+  ['accent-ink', 'accent-fill'], ['accent-ink', 'accent-fill-hover'], ['accent-ink', 'accent-fill-press'], ['badge-ink', 'red'],
   ['green', 'green-soft'], ['red', 'red-soft'], ['amber', 'amber-soft'], ['ai-ink', 'ai-soft'],
+  ['green', 'surface'], ['red', 'surface'], ['amber', 'surface'],
 ];
-/* The pinned design's own colours fail AA here. Rule 41 allows the smallest technical token change
-   that keeps the visual intent; because these touch the design's main colours the change is put to
-   the human first (UI_BACKEND_GAPS N-8). Until then each is pinned at its measured ratio: a pair
-   that gets worse, or a new failing pair, fails this gate. */
-const DEVIATIONS = {
-  'dark text3/bg': 4.40, 'dark text3/surface': 4.07, 'dark text3/surface2': 3.77,
-  'dark accent/accent-soft': 4.19, 'dark accent-ink/accent': 3.57, 'dark badge-ink/red': 2.77,
-  'light text3/bg': 2.95, 'light text3/surface': 3.21, 'light text3/surface2': 2.93,
-  'light badge-ink/red': 4.47, 'light green/green-soft': 3.90, 'light red/red-soft': 3.91, 'light amber/amber-soft': 3.62,
-};
 const measured = [];
 for (const theme of ['dark', 'light']) {
   const palette = { ...vars(block(tokens, ':root {')), ...vars(block(tokens, `:root[data-theme="${theme}"]`)) };
   for (const [ink, ground] of PAIRS) {
     const ratio = contrast(palette[ink], palette[ground]);
-    const key = `${theme} ${ink}/${ground}`;
-    measured.push(`${key} ${ratio.toFixed(2)}`);
-    if (key in DEVIATIONS) assert.ok(ratio >= DEVIATIONS[key] - 0.005, `${key} got worse: ${ratio.toFixed(2)} < recorded ${DEVIATIONS[key]}`);
-    else assert.ok(ratio >= 4.5, `${theme}: --${ink} on --${ground} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+    measured.push(`${theme} ${ink}/${ground} ${ratio.toFixed(2)}`);
+    assert.ok(ratio >= 4.5, `${theme}: --${ink} on --${ground} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
   }
 }
 
@@ -139,6 +138,14 @@ for (const file of files) {
   const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   const literal = code.match(/(?<![&\w])#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/);
   assert.equal(literal, null, `${file}: colour literal ${literal?.[0]} - colours live only in kit/tokens.css`);
+  // White text never sits on --accent: filled controls use --accent-fill (D-093).
+  if (file.endsWith('.css')) {
+    for (const rule of code.split('}')) {
+      if (/background:\s*var\(--accent\)\s*;/.test(rule) && /(^|[^-])color:\s*var\(--(accent-ink|badge-ink)\)/.test(rule)) {
+        assert.fail(`${file}: white ink on --accent - use --accent-fill (D-093)`);
+      }
+    }
+  }
   // 6. The new UI does not import the old UI.
   for (const spec of source.matchAll(/(?:import|from)\s*\(?\s*['"]([^'"]+)['"]/g)) {
     assert.ok(!/(^|\/)ui\/[\w-]+\.js$/.test(spec[1]), `${file} imports old presentation ${spec[1]}`);
@@ -157,4 +164,4 @@ assert.equal(String(html`<p>${raw('<b>x</b>')}</p>`), '<p><b>x</b></p>');
 assert.equal(String(html`<ul>${['<a>', html`<li>ok</li>`]}</ul>`), '<ul>&lt;a&gt;<li>ok</li></ul>');
 assert.equal(String(html`${null}${false}${undefined}${0}`), '0');
 
-console.log(`Orena kit: tokens and device variables are the pinned design's, AA checked in both themes (${measured.length} pairs, ${Object.keys(DEVIATIONS).length} recorded design deviations awaiting the human), icons are lucide-static@${release}, one colour owner, no old UI imported: PASS`);
+console.log(`Orena kit: tokens and device variables are the pinned design's, AA holds in both themes (${measured.length} pairs; D-093 adjustments), icons are lucide-static@${release}, one colour owner, no old UI imported: PASS`);
