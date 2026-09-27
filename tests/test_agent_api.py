@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from writing_coach.agent.api import agent_enabled, configure_agent, router
 from writing_coach.agent.capability_registry import load_capability_registry
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, reply
+from writing_coach.agent.limits import AgentLimits
 from writing_coach.agent.runtime import build_tool_registry
 from writing_coach.agent.session import SessionCache
 from writing_coach.agent.turn import AgentRuntime
@@ -43,7 +44,7 @@ def client():
 
     @app.middleware("http")
     async def learner(request: Request, call_next):
-        user = USER_KEY_CTX.set("learner-1")
+        user = USER_KEY_CTX.set(request.headers.get("x-test-user", "learner-1"))
         language = LANGUAGE_CODE_CTX.set(request.headers.get("x-test-language", "zh"))
         try:
             return await call_next(request)
@@ -56,7 +57,7 @@ def client():
     configure_agent(None)
 
 
-def enable(rounds=()):
+def enable(rounds=(), limits=None):
     tools = build_tool_registry(writing_review=lambda essay_id: None)
     configure_agent(
         AgentRuntime(
@@ -64,6 +65,7 @@ def enable(rounds=()):
             tools=tools,
             capabilities=load_capability_registry(registered_tools=tools.names()),
             sessions=SessionCache(),
+            **({"limits": limits} if limits else {}),
         )
     )
 
@@ -174,3 +176,40 @@ def test_the_app_serves_a_whole_turn_when_enabled(monkeypatch):
     ]  # fmt: skip
     assert len(selected.requests) == 2 and selected.requests[0]["tools"][0]["type"] == "function"
     assert usage.daily_usage(user_key="legacy", feature="agent.turn") == before + 1
+
+
+# --- spec §22: a learner's requests are limited; §35: identity over the wire ------------------
+
+
+def test_one_turn_too_many_is_429_with_retry_after_and_runs_nothing(client):
+    enable(limits=AgentLimits(turns_per_window=2))  # no scripted round: a provider call would fail
+    assert client.post("/api/agent/turn", json=body(target="en")).status_code == 409  # counted
+    assert client.post("/api/agent/turn", json={"contract_version": 1}).status_code == 422  # counted too
+    refused = client.post("/api/agent/turn", json=body())
+    assert refused.status_code == 429 and refused.json()["detail"] == "rate_limited"
+    assert 1 <= int(refused.headers["retry-after"]) <= 60
+    # another learner has a window of their own
+    assert client.post("/api/agent/turn", json=body(target="en"), headers={"x-test-user": "learner-2"}).status_code == 409
+
+
+def test_capability_reads_have_their_own_limit(client):
+    enable(limits=AgentLimits(capability_reads_per_window=1))
+    assert client.get("/api/agent/capabilities", params={"interface": "vi"}).status_code == 200
+    refused = client.get("/api/agent/capabilities", params={"interface": "vi"})
+    assert refused.status_code == 429 and "retry-after" in refused.headers
+    assert client.post("/api/agent/turn", json=body(target="en")).status_code == 409  # turns are counted apart
+
+
+def test_while_off_nothing_is_counted_and_everything_is_404(client):
+    configure_agent(None)
+    for _ in range(30):
+        assert client.post("/api/agent/turn", json=body()).status_code == 404
+
+
+def test_who_orena_is_is_answered_without_a_provider(client):
+    enable()  # no scripted round: the provider would fail if it were asked
+    response = client.post("/api/agent/turn", json=body(message="Bạn là ai?"))
+    assert response.status_code == 200, response.text
+    frames = [frame for frame in response.text.split("\n\n") if frame]
+    assert [frame.split("\n", 1)[0] for frame in frames] == ["event: session", "event: segment_end", "event: done"]
+    assert "Mình là Orena" in frames[1]

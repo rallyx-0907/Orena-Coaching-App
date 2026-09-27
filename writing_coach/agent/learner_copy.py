@@ -43,6 +43,27 @@ def _entry(layer: CopyLayer, texts: dict[str, str]) -> CopyEntry:
 
 CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
     {
+        "identity.who": _entry(
+            CopyLayer.SUPPORT,
+            {
+                "en": "I'm Orena, your AI learning assistant and personal coach in this app. "
+                "Ask me about this screen, your progress, or what to practise next.",
+                "vi": "Mình là Orena, trợ lý học tập AI và huấn luyện viên riêng của bạn trong ứng dụng này. "
+                "Bạn có thể hỏi mình về màn hình này, tiến độ học, hay nên luyện gì tiếp.",
+                "zh-CN": "我是 Orena，你在这个应用里的 AI 学习助手和私人教练。"
+                "你可以问我这个页面的用法、你的学习进度，或者接下来该练什么。",
+            },
+        ),
+        "identity.model": _entry(
+            CopyLayer.SUPPORT,
+            {
+                "en": "I'm Orena, your AI learning assistant and personal coach. "
+                "The AI model behind me is chosen by Orena and may change, so I don't name one.",
+                "vi": "Mình là Orena, trợ lý học tập AI và huấn luyện viên riêng của bạn. "
+                "Mô hình AI phía sau do Orena chọn và có thể thay đổi, nên mình không nêu tên mô hình.",
+                "zh-CN": "我是 Orena，你的 AI 学习助手和私人教练。背后的 AI 模型由 Orena 选择，可能会更换，所以我不说具体名称。",
+            },
+        ),
         "error.provider_unavailable": _entry(
             CopyLayer.SUPPORT,
             {

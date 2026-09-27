@@ -1,4 +1,4 @@
-"""Hard limits for one agent turn and one session (spec §11, §20, contract §9).
+"""Hard limits for one agent turn, one session and one learner (spec §11, §20, §22, contract §9).
 
 Values the spec states are used as stated (4 tool iterations, 8 KB per tool
 result, 15-minute voice sessions); the rest are conservative defaults. They are
@@ -22,6 +22,11 @@ class AgentLimits:
     max_sessions: int = 10_000
     max_recent_tool_results: int = 8
     voice_session_cap_seconds: float = 15 * 60
+    # Requests one learner may make in a sliding window (spec §22), per process.
+    rate_window_seconds: float = 60.0
+    turns_per_window: int = 12
+    capability_reads_per_window: int = 60
+    rate_limited_learners: int = 10_000  # learners remembered, least recently seen forgotten first
 
     def __post_init__(self) -> None:
         for field in fields(self):

@@ -8,7 +8,7 @@ import pytest
 
 from writing_coach.agent.capability_registry import load_capability_registry
 from writing_coach.agent.context import TurnInput, build_tier1
-from writing_coach.agent.decision import DecisionQuestion, Decisions, DecisionState, StubDecisionProvider
+from writing_coach.agent.decision import DecisionQuestion, Decisions, DecisionState, RuleDecisionProvider
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.schemas import AppContextSnapshot, ClientInfo, CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache
@@ -134,13 +134,13 @@ def test_the_stub_picks_capabilities_from_surface_and_language(target, has_tone)
         tier1=build_tier1(turn(context=snapshot(target=target)), now=NOW),
         registry=registry,
     )
-    decisions = StubDecisionProvider().decide(state, frozenset({DecisionQuestion.CAPABILITY}))
+    decisions = RuleDecisionProvider().decide(state, frozenset({DecisionQuestion.CAPABILITY}))
     assert "speaking.pronunciation.line" in decisions.capability_ids
     assert ("speaking.pronunciation.tone" in decisions.capability_ids) is has_tone
-    assert decisions.needs_tools is None and decisions.authorized and not decisions.identity_question
+    assert decisions.needs_tools is None and decisions.authorized and decisions.identity is None
 
 
 def test_the_stub_answers_only_what_it_is_asked():
     registry = capabilities()
     state = DecisionState(turn=turn(), tier1=build_tier1(turn(), now=NOW), registry=registry)
-    assert StubDecisionProvider().decide(state, frozenset()) == Decisions()
+    assert RuleDecisionProvider().decide(state, frozenset()) == Decisions()

@@ -15,6 +15,11 @@ one short greeting, sent whole rather than streamed so it can be held to
 240 characters, then at least one suggestion and at most two LOW actions.
 It is not a learner turn: it is counted as `agent.open`, not `agent.turn`.
 
+A learner who asks who Orena is, or which model answers (spec §35), is
+answered from copy, the same every time, before any model is asked: one
+segment in the support language, then `done`. The `DecisionProvider` decides
+whether a message is that question.
+
 A provider that fails ends the turn with an `error` event (`retry`); nothing
 switches provider. A client that goes away stops the turn where it is. A turn
 that completes is metered - counted, never refused (R5) - and its session is
@@ -35,8 +40,15 @@ from typing import Any
 from writing_coach.agent import learner_copy
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import TurnInput, build_tier1
-from writing_coach.agent.decision import DecisionProvider, DecisionQuestion, DecisionState, StubDecisionProvider
+from writing_coach.agent.decision import (
+    DecisionProvider,
+    DecisionQuestion,
+    Decisions,
+    DecisionState,
+    RuleDecisionProvider,
+)
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
+from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
     DoneEvent,
     EvidenceEvent,
@@ -71,6 +83,7 @@ from writing_coach.agent.provider import (
     TurnFinished,
     never_stop,
 )
+from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
@@ -128,12 +141,26 @@ class AgentRuntime:
     tools: ToolRegistry
     capabilities: CapabilityRegistry
     sessions: SessionCache
-    decider: DecisionProvider = field(default_factory=StubDecisionProvider)
+    decider: DecisionProvider = field(default_factory=RuleDecisionProvider)
     limits: AgentLimits = DEFAULT_LIMITS
     meter: Meter | None = None
     clock: Callable[[], float] = time.monotonic
     new_trace_id: Callable[[], str] = lambda: uuid.uuid4().hex
     max_output_tokens: int = 1024
+    turn_limiter: SlidingWindowLimiter = field(init=False)
+    read_limiter: SlidingWindowLimiter = field(init=False)
+
+    def __post_init__(self) -> None:
+        limits = self.limits
+        self.turn_limiter = SlidingWindowLimiter(
+            limits.turns_per_window, limits.rate_window_seconds, max_keys=limits.rate_limited_learners, clock=self.clock
+        )
+        self.read_limiter = SlidingWindowLimiter(
+            limits.capability_reads_per_window,
+            limits.rate_window_seconds,
+            max_keys=limits.rate_limited_learners,
+            clock=self.clock,
+        )
 
     def run(
         self, request: TurnRequest, learner: LearnerScope, *, should_stop: Callable[[], bool] = never_stop
@@ -158,6 +185,7 @@ class _Turn:
         self.evidence_ids: list[str] = []
         self.records: list[ToolResultRecord] = []
         self.text: list[str] = []
+        self.provider_rounds = 0
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
 
     # --- the turn ------------------------------------------------------------
@@ -168,34 +196,18 @@ class _Turn:
         try:
             turn = TurnInput.from_request(self.request)
             tier1 = build_tier1(turn, session)
+            questions = {DecisionQuestion.CAPABILITY}
+            if not self.opening:  # an opening turn has no message to ask about
+                questions.add(DecisionQuestion.IDENTITY_QUESTION)
             decisions = self.rt.decider.decide(
-                DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities),
-                frozenset({DecisionQuestion.CAPABILITY}),
+                DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities), frozenset(questions)
             )
-            here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
-            messages = opening_messages(turn, tier1, [c for c in here if c], session, opening=self.opening)
-            outputs = ReplyOutputs(
-                client=self.request.client,
-                interface=self.locale.interface,
-                support=self.locale.support,
-                target=self.locale.target,
-                version=self.stream.version,
-                opening=self.opening,
-                take_ref=self.request.context.take_ref,
-            )
-            # What the request named may be named back; everything else must be read first.
-            context = self.request.context
-            selected = context.selected_item.id if context.selected_item else None
-            outputs.learn_ids(
-                v for v in (context.content_id, context.lesson_id, context.essay_id, context.attempt_id, selected) if v
-            )
-            yield from self._rounds(messages, outputs)
+            if decisions.identity is not None:
+                yield from self._identity(decisions.identity)
+            else:
+                yield from self._model_turn(turn, tier1, decisions, session)
             if self.should_stop():
                 return
-            if not self.text:
-                # Nothing to say is not an answer: the learner is told, and it is not metered.
-                raise ProviderUnavailable("the provider answered with nothing")
-            yield from self._finish(outputs)
         except AgentError as exc:
             if not self.should_stop():
                 yield self._error(exc.error_class)
@@ -211,6 +223,41 @@ class _Turn:
     @property
     def opening(self) -> bool:
         return self.request.opening and self.stream.version >= 2
+
+    def _model_turn(self, turn: TurnInput, tier1, decisions: Decisions, session) -> Iterator[Event]:
+        here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
+        messages = opening_messages(turn, tier1, [c for c in here if c], session, opening=self.opening)
+        outputs = ReplyOutputs(
+            client=self.request.client,
+            interface=self.locale.interface,
+            support=self.locale.support,
+            target=self.locale.target,
+            version=self.stream.version,
+            opening=self.opening,
+            take_ref=self.request.context.take_ref,
+        )
+        # What the request named may be named back; everything else must be read first.
+        context = self.request.context
+        selected = context.selected_item.id if context.selected_item else None
+        outputs.learn_ids(
+            v for v in (context.content_id, context.lesson_id, context.essay_id, context.attempt_id, selected) if v
+        )
+        yield from self._rounds(messages, outputs)
+        if self.should_stop():
+            return
+        if not self.text:
+            # Nothing to say is not an answer: the learner is told, and it is not metered.
+            raise ProviderUnavailable("the provider answered with nothing")
+        yield from self._finish(outputs)
+
+    def _identity(self, question: IdentityQuestion) -> Iterator[Event]:
+        """Spec §35: who Orena is comes from copy, never from a model, and names no provider."""
+
+        lang, answer = learner_copy.text(
+            f"identity.{question.value}", interface=self.locale.interface, support=self.locale.support
+        )
+        yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=answer, voice_style="neutral_explain"))
+        yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         read_specs = tuple(
@@ -233,6 +280,7 @@ class _Turn:
             )
             round_text: list[str] = []
             calls: list[ToolCallRequest] = []
+            self.provider_rounds += 1
             for item in self.rt.provider.stream(request, should_stop=self.should_stop):
                 if self.should_stop():
                     return
@@ -382,7 +430,7 @@ class _Turn:
         if self.rt.meter is None:
             return
         counted = [(OPEN_FEATURE if self.opening else TURN_FEATURE, 1)]
-        if self.usage_known:
+        if self.usage_known and self.provider_rounds:  # an identity answer asks no model
             counted.append((TOKENS_FEATURE, self.usage_in + self.usage_out))
         for feature, amount in counted:
             try:

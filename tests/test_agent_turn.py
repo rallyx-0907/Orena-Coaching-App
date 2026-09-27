@@ -467,3 +467,55 @@ def test_a_take_is_named_only_as_the_client_sent_it():
     )
     events = run(rt, TurnRequest.model_validate(body))
     assert [e.payload for e in events if e.name == "action"] == [{"take_ref": "take-7"}]
+
+
+# --- spec §35: who Orena is, from copy, before any model --------------------------------
+
+
+def test_an_identity_question_is_answered_from_copy_and_no_model_is_asked():
+    meter = []
+    rt, provider = runtime([], meter=lambda *args: meter.append(args))  # nothing scripted: a model call fails
+    events = run(rt, turn_request(message="Bạn là ai vậy?"))
+    assert names(events) == ["session", "segment_end", "done"]
+    assert provider.requests == []
+    segment = events[1]
+    assert (segment.lang, segment.voice_style) == ("vi", "neutral_explain")
+    assert segment.text == learner_copy.CATALOG["identity.who"].texts["vi"]
+    assert events[-1].usage.input_tokens == 0 and events[-1].usage.output_tokens == 0
+    assert [feature for _, feature, _, _ in meter] == ["agent.turn"]  # a learner turn; no tokens were spent
+    assert rt.sessions.get(events[0].session_id, "learner-1").turn_count == 1
+
+
+def test_a_model_question_is_answered_in_the_support_language():
+    body = turn_request(message="你是什么模型？").model_dump(mode="json", exclude_none=True)
+    body["context"]["locale"].update(interface="zh-CN", support="zh-CN")
+    rt, provider = runtime([])
+    events = run(rt, TurnRequest.model_validate(body))
+    assert events[1].lang == "zh-CN" and events[1].text == learner_copy.CATALOG["identity.model"].texts["zh-CN"]
+    assert provider.requests == []
+
+
+def test_a_version_one_client_gets_the_same_answer():
+    rt, provider = runtime([])
+    events = run(rt, turn_request(message="Who are you?", contract_version=1))
+    assert names(events) == ["session", "segment_end", "done"] and provider.requests == []
+
+
+def test_the_decision_provider_is_the_gate():
+    from writing_coach.agent.decision import DecisionQuestion, Decisions
+    from writing_coach.agent.identity import IdentityQuestion
+
+    asked = []
+
+    class Decider:
+        def decide(self, state, questions):
+            asked.append(questions)
+            return Decisions(identity=IdentityQuestion.MODEL if DecisionQuestion.IDENTITY_QUESTION in questions else None)
+
+    rt, provider = runtime([reply("Chào bạn.")])
+    rt.decider = Decider()
+    events = run(rt)  # any message: the decider says what it is
+    assert events[1].text == learner_copy.CATALOG["identity.model"].texts["vi"] and provider.requests == []
+    run(rt, opening_request())  # an opening turn has no message and is never asked about
+    assert DecisionQuestion.IDENTITY_QUESTION not in asked[-1]
+    assert len(provider.requests) == 1

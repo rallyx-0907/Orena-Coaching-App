@@ -9,10 +9,16 @@ The learner is the authenticated caller, read from the request context the
 auth middleware sets; the session language decides which learner data the
 tools read, so a request whose target language disagrees with it is refused
 before anything runs.
+
+Each learner may send `turns_per_window` turns and `capability_reads_per_window`
+capability reads in a sliding window (spec §22). One more is answered 429
+`rate_limited` with `Retry-After`, after the 404 and before the body is read,
+so a malformed request counts too.
 """
 
 from __future__ import annotations
 
+import math
 import threading
 from collections.abc import AsyncIterator, Iterator, Mapping
 
@@ -22,6 +28,7 @@ from starlette.concurrency import iterate_in_threadpool
 
 from writing_coach.agent.events import Event, sse_frame
 from writing_coach.agent.locale import interface_languages, to_internal
+from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import LearnerScope
 from writing_coach.agent.turn import AgentRuntime
@@ -51,11 +58,29 @@ def _require_runtime() -> AgentRuntime:
     return _runtime
 
 
+def _admit(limiter: SlidingWindowLimiter) -> None:
+    wait = limiter.check(LearnerScope.from_request_context().user_key)
+    if wait is not None:
+        raise HTTPException(
+            status_code=429, detail="rate_limited", headers={"Retry-After": str(max(1, math.ceil(wait)))}
+        )
+
+
+def _turn_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
+    _admit(runtime.turn_limiter)
+    return runtime
+
+
+def _read_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
+    _admit(runtime.read_limiter)
+    return runtime
+
+
 # `Depends` runs before the body and query are validated, so while the agent is
 # off every request is 404 - a malformed one too, never a 422 naming the schema.
 @router.post("/turn")
 async def agent_turn(
-    body: TurnRequest, request: Request, runtime: AgentRuntime = Depends(_require_runtime)
+    body: TurnRequest, request: Request, runtime: AgentRuntime = Depends(_turn_allowed)
 ) -> StreamingResponse:
     learner = LearnerScope.from_request_context()
     if to_internal(body.context.locale.target) != learner.language:
@@ -91,7 +116,7 @@ async def agent_turn(
 
 @router.get("/capabilities")
 def agent_capabilities(
-    interface: str = Query(default="en", max_length=16), runtime: AgentRuntime = Depends(_require_runtime)
+    interface: str = Query(default="en", max_length=16), runtime: AgentRuntime = Depends(_read_allowed)
 ) -> dict:
     if interface not in interface_languages():
         raise HTTPException(status_code=422, detail="unknown interface language")
