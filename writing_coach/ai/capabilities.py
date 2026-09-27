@@ -8,10 +8,10 @@ route requests without duplicating capabilities by learning language.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Mapping
 
 from writing_coach.ai.base import AICapabilityUnsupported
 
@@ -24,6 +24,13 @@ class AIOperation(StrEnum):
     SPEECH_RECOGNITION = "speech_recognition"
     PRONUNCIATION_EVALUATION = "pronunciation_evaluation"
     SPEAKING_EVALUATION = "speaking_evaluation"
+    # Orena Intelligence (D-085). Operations only: no capability key uses them
+    # yet. The four keys (agent_turn_fast, agent_turn_deep,
+    # conversational_speech, text_to_speech) join the catalog once the Admin
+    # console has their EN/ZH labels, which the admin copy gate requires.
+    AGENT_TURN = "agent_turn"  # streaming turn with native tool calls
+    CONVERSATIONAL_SPEECH = "conversational_speech"  # speech-to-speech session
+    TEXT_TO_SPEECH = "text_to_speech"
 
 
 class AIFallbackPolicy(StrEnum):

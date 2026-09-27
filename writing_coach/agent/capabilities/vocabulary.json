@@ -1,0 +1,63 @@
+{
+  "capabilities": [
+    {
+      "id": "vocabulary.words",
+      "title": {
+        "en": "Your words",
+        "vi": "Từ của bạn",
+        "zh-CN": "我的词汇"
+      },
+      "surfaces": [
+        "vocabulary.my_language",
+        "vocabulary.word"
+      ],
+      "status": "pending",
+      "contexts": [
+        "selected_item"
+      ],
+      "actions": [
+        "navigate",
+        "save_word",
+        "unsave_word",
+        "add_word_to_collection",
+        "play_model"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "vocabulary.review",
+      "tools": [
+        "get_word_detail",
+        "get_saved_word_state"
+      ]
+    },
+    {
+      "id": "review.due",
+      "title": {
+        "en": "Words due for review",
+        "vi": "Từ cần ôn",
+        "zh-CN": "待复习的词"
+      },
+      "surfaces": [
+        "vocabulary.review_due",
+        "home"
+      ],
+      "status": "pending",
+      "contexts": [],
+      "actions": [
+        "start_review",
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "vocabulary.review",
+      "tools": [
+        "get_due_review_summary",
+        "get_due_vocabulary"
+      ]
+    }
+  ]
+}

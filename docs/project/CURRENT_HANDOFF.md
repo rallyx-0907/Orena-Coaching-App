@@ -94,11 +94,17 @@ into `codex/work` through PR #63 at
 Intelligence lane; no Agent Intelligence implementation has been integrated
 back into the baseline yet.
 
+`feature/orena-intelligence`: Slice 1a is REVIEWABLE (local verification,
+2026-09-27) - `writing_coach/agent/` contracts, registries, fake provider and
+voice interfaces, three `AIOperation` values; no router, no persistence, no
+provider call. Human rulings R1-R7 are in `AGENT_SPEC.md` §0; the lane's gaps
+are `UI_BACKEND_GAPS.md` I-1..I-21.
+
 ## PENDING
 
-Create or fast-forward `feature/orena-intelligence` from the latest
-`codex/work`, then develop and verify Agent Intelligence in that isolated
-lane before any later integration review.
+The four agent capability keys wait for their Admin console labels on
+`codex/work` (I-17). Contract v2 (`AGENT_CONTRACT_V2_PROPOSAL.md`) awaits the
+human; the intelligence lane adds it only after it merges forward.
 
 ## BLOCKED
 
@@ -135,6 +141,8 @@ header and bar, focus mode), the router with the design's routes, the copy
 mechanism for en / vi / zh, and `/next` - then the surface slices listed in
 `IMPLEMENTATION_MAP.md`, then the cutover.
 
-On `feature/orena-intelligence` (unchanged): develop Agent Intelligence in its
-own lane under D-085, against `AGENT_CONTRACT.md`; do not redesign learner UI
-there.
+On `feature/orena-intelligence`: human review of Slice 1a, then Slice 1b
+(`AGENT_SPEC.md` §26): the agent router, `POST /api/agent/turn` (SSE) and
+`GET /api/agent/capabilities`, two or three Vocabulary and Writing read tools
+in EN and ZH, streaming and tool calls on the existing OpenAI-compatible
+provider, contract tests S1, S5, S8, S9. No learner UI there.

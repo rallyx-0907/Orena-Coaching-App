@@ -1,0 +1,33 @@
+{
+  "capabilities": [
+    {
+      "id": "grammar.point",
+      "title": {
+        "en": "Grammar patterns",
+        "vi": "Mẫu ngữ pháp",
+        "zh-CN": "语法点"
+      },
+      "surfaces": [
+        "grammar.catalog",
+        "grammar.point"
+      ],
+      "status": "pending",
+      "contexts": [
+        "selected_item"
+      ],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "grammar.catalog",
+      "tools": [
+        "get_grammar_point",
+        "search_grammar_points",
+        "get_grammar_mistakes_summary"
+      ]
+    }
+  ]
+}

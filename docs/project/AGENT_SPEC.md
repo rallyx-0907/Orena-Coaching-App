@@ -70,6 +70,25 @@ D17 Writing và Grammar nằm trong Capability Registry V1.
 D18 Memory: tự động, sửa bằng hội thoại, tự phai. User không quản lý.
 ```
 
+Phán quyết của người sau pre-flight (2026-09-27). Thắng mọi đoạn bên dưới còn nói khác:
+
+```text
+R1  Capability key: Slice 1a chỉ thêm 3 AIOperation. 4 key (agent_turn_fast, agent_turn_deep,
+    conversational_speech, text_to_speech) vào catalog khi codex/work đã thêm nhãn EN/ZH cho Admin
+    (scripts/test_orena_admin_console.mjs đòi); khi đó: implemented=False, configurable=False, fallback {NONE}.
+R2  Không tự động chuyển provider (ARCHITECTURE_INVARIANTS). Provider lỗi → error, fallback retry | text_only.
+    S2S lỗi → text-only, không cascade sang vendor khác.
+R3  Payload action lệch API hiện có: ghi nhận (UI_BACKEND_GAPS.md I-11..I-16), không đổi ở lane này;
+    contract v2 trên codex/work xử lý.
+R4  Coaching snapshot: bỏ current_level; weaknesses/strengths là gap; che producer trước khi gửi provider;
+    ánh xạ zh ↔ zh-CN ở biên agent.
+R5  Metering V1: chỉ đếm qua record_usage + tổng theo ngày; budget_state luôn "ok". soft_limited để sau,
+    qua quota ledger (gap E1).
+R6  Gemini: chưa duyệt Live, TTS, token tạm, google-genai. Slice 1b–3 dùng đường chat/completions sẵn có,
+    mở rộng OpenAICompatibleProvider với streaming + tool calling; không thêm dependency.
+R7  Không cần sandbox cho 1a/1b.
+```
+
 ---
 
 ## 1. Mục tiêu
@@ -252,18 +271,21 @@ class DecisionProvider:  # V1: rule/LLM. Sau V1 có thể là decision model (D1
 
 ## 8. V1 tool set (READ_ONLY) — map vào service có sẵn
 
-| Tool | Backed by (codex/work sau merge) |
+Bản đồ đã kiểm chứng với code là `writing_coach/agent/tool_plan.py` (2026-09-27): mỗi tool ghi callable có sẵn
+(`backed_by`, `composes`, test import từng cái) hoặc là gap. Bảng dưới là tóm tắt; khi lệch, `tool_plan.py` thắng.
+
+| Tool | Backed by (đã kiểm chứng) |
 |---|---|
-| `get_app_context`, `get_current_selection`, `get_current_learning_activity` | AppContextSnapshot + session |
-| `get_learning_overview`, `get_skill_progress`, `get_recent_learning_activity` | `learner_summary(_api).py`, `product_activity.py`, `readiness_summary.py`, `cross_skill_transfer.py` |
-| `get_due_review_summary`, `get_due_vocabulary`, `get_word_detail`, `get_saved_word_state` | `vocabulary_*`, `word_detail.py`, `deck_api.py`, `collection_api.py` |
-| `get_pronunciation_attempt`, `get_pronunciation_history` | `speech_api.py` `/attempts` (GET/POST), `PronunciationResult` |
-| `get_pronunciation_word_detail`, `get_tone_analysis` (zh-CN), `get_stress_analysis` (en) | `PronunciationResult.words[].phonemes[]` (score, flagged, tone digit); pitch contour chỉ có ở client `audio-analysis.js` → truyền lên qua snapshot nếu cần |
-| `get_current_writing_evaluation`, `get_writing_feedback_items`, `get_writing_history_summary` | `writing_evaluation.py`, `writing_analytics.py`, `writing_review_identity.py` |
-| `get_grammar_point`, `search_grammar_points`, `get_grammar_mistakes_summary` | `grammar_catalog.py`, `grammar_knowledge.py`, `grammar_learning_model.py`, `writing_grammar_transfer.py` |
-| `get_current_reading_context`, `get_reading_progress`, `get_reading_mistakes`, `get_word_context_in_reading` | `reading_*`, `becoming_reading.py`, `reading_comprehension.py` (admin branch) |
-| `get_current_listening_context`, `get_listening_attempt`, `get_listening_mistakes` | `listening_api.py`, `media_learning.py` |
-| `build_learning_snapshot`, `get_learning_weaknesses`, `get_recommended_next_activities` | `learner_summary.py` là nền; logic recommend deterministic ở backend |
+| `get_app_context`, `get_current_selection`, `get_current_learning_activity` | Tier 1 từ request + session (`agent/context.py`) |
+| `get_learning_overview`, `get_skill_progress`, `get_recent_learning_activity` | `learner_summary.py` (+ `speaking_progress`). Không dùng `product_activity.py`, `readiness_summary.py`: đó là số liệu gộp chỉ cho admin |
+| `get_due_review_summary`, `get_due_vocabulary`, `get_word_detail`, `get_saved_word_state` | `becoming_library.py` (`library_summary`, `list_library_vocabulary` status=due, `saved_vocabulary_state`), card từ `vocabulary_cards.py`. Không dùng `word_detail.py`: mỗi lần gọi đều tới provider |
+| `get_pronunciation_attempt`, `get_pronunciation_history` | `PostgresSpecializedLearningRepository.list_speaking_attempt_records` (chỉ đường GET; chưa có get-by-id) |
+| `get_pronunciation_word_detail`, `get_tone_analysis` (zh-CN), `get_stress_analysis` (en) | Word detail: evidence đã lưu, "flagged" = `error_type` của provider (D-084). Tone, stress: gap (UI_BACKEND_GAPS I-2, I-3) |
+| `get_current_writing_evaluation`, `get_writing_feedback_items`, `get_writing_history_summary` | `learning_repository.get_essay` + `writing_contract.project_review`/`project_issue`; lịch sử: `learner_summary.py` + `writing_analytics.py` |
+| `get_grammar_point`, `search_grammar_points`, `get_grammar_mistakes_summary` | `languages/runtime.py` (`active_grammar_by_id`, `active_grammar_course`, knowledge). Mistakes: gap (I-4) |
+| `get_current_reading_context`, `get_reading_progress`, `get_reading_mistakes`, `get_word_context_in_reading` | `reading_content_repository`, `reading_library_repository`, `ReadingEvidenceRepository.list_evidence` (không dùng `ability()`: có ghi). `becoming_reading.py` đã bị xoá (D-082). Mistakes, word context: gap (I-5, I-6) |
+| `get_current_listening_context`, `get_listening_attempt`, `get_listening_mistakes` | `listening_catalog.py` (curated), `list_listening_progress_records`. Mistakes: gap (I-7) |
+| `build_learning_snapshot`, `get_learning_weaknesses`, `get_recommended_next_activities` | `learner_summary.py` + `review_queue`; recommend: `cross_skill_transfer.select_cross_skill_cue` (đang chạy ở `/api/cross-skill-cue`). Weaknesses: gap (I-1) |
 
 Đã có feature gần trùng — agent **gọi**, không làm lại:
 
@@ -275,7 +297,7 @@ Spoken coaching sau free talk                → luồng Gemini coaching có s�
 
 Tool thiếu backend → ghi vào `docs/project/UI_BACKEND_GAPS.md` (D15) trước khi viết service.
 
-Đã chuyển thành ACTION (mục 14): `navigate`, `open_*`, `play_model`, `play_user`, `say_again`, `save_word`, `unsave_word`, `add_word_to_collection`, `start_review`, `start_targeted_drill`, `compare_with_model`.
+Đã chuyển thành ACTION (mục 14, contract §7): `navigate`, `play_model`, `play_user`, `say_again`, `compare_with_model`, `save_word`, `add_word_to_collection`, `start_review`, `start_targeted_drill`, `unsave_word`.
 
 ---
 
@@ -286,9 +308,10 @@ Tool backend: chỉ `READ_ONLY`, chạy theo authenticated user (lấy từ requ
 Action (frontend thực thi):
 
 ```text
-LOW_RISK  navigate, open_*, play_*, say_again, save_word, start_review, start_targeted_drill, compare_with_model
-CONFIRM   remove_saved_word, change_learning_plan            → confirm dialog hiện có
-BLOCKED   delete_collection, reset_progress, clear_history, bulk_remove → agent không sinh, frontend không có handler
+LOW       navigate, play_model, play_user, say_again, compare_with_model, save_word,
+          add_word_to_collection, start_review, start_targeted_drill        (contract §7)
+CONFIRM   unsave_word                                                   → confirm dialog hiện có
+BLOCKED   delete collection, reset progress, clear history, bulk remove, mọi thứ admin → agent không sinh
 ```
 
 Mức rủi ro gắn với `type` trong registry, không nằm trong prompt.
@@ -368,19 +391,26 @@ class AIOperation(StrEnum):
     ...
     AGENT_TURN            = "agent_turn"             # streaming + native tool calls
     CONVERSATIONAL_SPEECH = "conversational_speech"  # S2S session
-    TEXT_TO_SPEECH        = "text_to_speech"         # pre-render + cascade fallback
+    TEXT_TO_SPEECH        = "text_to_speech"         # pre-render
 ```
 
-Capability key (cấu hình qua Admin › AI, fallback policy như các key khác):
+Ba operation đã có (Slice 1a). Capability key (cấu hình qua Admin › AI) vào catalog sau khi codex/work thêm nhãn
+EN/ZH cho Admin (R1), mỗi key `implemented=False`, `configurable=False`, fallback `{NONE}` cho tới khi được kích hoạt:
 
 ```text
-agent_turn_fast      → default: gemini (model nhanh)      fallback: DETERMINISTIC (text-only, không tool)
-agent_turn_deep      → default: = agent_turn_fast (V1)    fallback: agent_turn_fast
-conversational_speech→ default: gemini_live               fallback: cascade (agent_turn_fast + text_to_speech) → text-only
-text_to_speech       → default: gemini_tts                fallback: NONE (text-only)
+agent_turn_fast       provider/model do operator chọn trong Admin › AI (sandbox: gemini)
+agent_turn_deep       V1 cấu hình giống agent_turn_fast; không tự rơi về key khác
+conversational_speech chưa duyệt (R6)
+text_to_speech        chưa duyệt (R6)
 ```
 
-`providers.py`: mở rộng `OpenAICompatibleProvider` (hoặc thêm `GeminiNativeProvider` nếu Live/tool-use cần SDK riêng) với `stream()` và `complete_with_tools()`. `routing.py` (`build_chain`, `run_chain`, cooldown) dùng nguyên. `pricing.py` thêm giá voice theo phút/token để metering đúng.
+Không có tự động chuyển provider hay key (ARCHITECTURE_INVARIANTS, R2): provider lỗi → turn kết thúc bằng `error`
+với `fallback: retry` (text) hoặc `text_only` (voice). Persisted fallback policy chỉ là metadata cho tới khi runtime
+activation được review.
+
+`providers.py`: mở rộng `OpenAICompatibleProvider` (chat/completions sẵn có) với streaming và native tool calling;
+không thêm dependency, không SDK riêng (R6). `routing.py` (`build_chain`, `run_chain`, cooldown) dùng nguyên.
+`pricing.py` thêm giá voice khi voice được duyệt.
 
 Không local model, không fallback local.
 
@@ -410,7 +440,7 @@ Mỗi request: `request_id, agent_session_id, capability_key, provider, model, l
 ## 22. Safety / authorization / metering
 
 - Tool chạy theo authenticated user. Reject xem dữ liệu user khác, admin routes, ở gateway.
-- **Metering theo pattern `text_discussion.py`**: turn được đếm (ordinal), không bị từ chối; khi vượt ngưỡng cấu hình (token/ngày, phút voice/ngày) → `budget_state = soft_limited`: text-only ngắn + thông báo thân thiện, vẫn không từ chối. Không biến agent thành route enforce entitlement đầu tiên (đó là quyết định sản phẩm riêng).
+- **Metering V1 (R5)**: mỗi turn được đếm qua `record_usage` (bảng `usage_events` có sẵn, như `text_discussion.py`), không bị từ chối, cộng theo ngày (cần thêm một hàm đọc theo ngày cạnh `monthly_usage`, không migration). `budget_state` luôn `"ok"`. `soft_limited` để sau và đi qua quota ledger (gap E1). Không biến agent thành route enforce entitlement đầu tiên.
 - Rate limit theo user/IP ở endpoint agent.
 - Provider/credential/billing là human gate (AGENTS.md §10). Agent không cấu hình vendor, không đọc key trực tiếp.
 
@@ -424,13 +454,20 @@ Registry + surface/intent metadata (contract §6) + copy layers + help. V1 looku
 
 ## 24. Coaching snapshot
 
-Xây trên `learner_summary.py` (+ `readiness_summary`, `product_activity`, `cross_skill_transfer` — lưu ý admin branch đang sửa ba file này). Schema:
+Xây trên `learner_summary.py` (+ `review_queue` cho `review_due`, `cross_skill_transfer` cho gợi ý). Không dùng
+`readiness_summary`, `product_activity`: số liệu gộp chỉ cho admin. Schema (R4):
 
 ```json
-{ "target": "zh-CN", "current_level": "…",
+{ "target": "zh-CN",
   "skill_summary": { "reading": {}, "listening": {}, "speaking": {}, "writing": {}, "vocabulary": {}, "grammar": {} },
-  "review_due": 12, "recent_weaknesses": [], "recent_strengths": [], "recent_sessions": [] }
+  "review_due": 12, "recent_sessions": [] }
 ```
+
+- Không có `current_level`: không gộp CEFR, HSK, điểm nghe và phát âm thành một điểm.
+- `recent_weaknesses` / `recent_strengths` chưa có backend (UI_BACKEND_GAPS I-1); không có trong snapshot cho tới khi có.
+- `skill_summary.vocabulary` là domain `language` của Learner Summary.
+- `producer` và mọi định danh bị che trước khi gửi provider (`agent/redaction.py`); `target` là mã contract (`zh-CN`), ánh xạ
+  từ `zh` ở biên agent (`agent/locale.py`).
 
 Một metric không có đo lường thì để 0 và không suy diễn (D-066).
 
@@ -458,7 +495,7 @@ Conversational voice là một phần V1, chạy song song (Track 0), không là
 Cấu hình:  V1 Gemini Live (key sẵn có — cần người xác nhận dùng được cho Live; gate credential)
            V2 Azure Voice Live tier Standard (cần resource + credential gate)
            V3 GPT-Live 1, delegation=client (cần credential gate)
-           V4 cascade fallback: Groq ASR → fake agent → Gemini TTS
+           V4 cascade (một chế độ để so sánh, không phải fallback — R2): Groq ASR → fake agent → Gemini TTS
 Đầu vào:   20 câu coach vi, 10 en, 10 zh (mỗi câu có voice_style) — docs/agent/BAKEOFF_SET.md
 Đo:        time-to-first-audio, barge-in, cost/phút từ usage, blind listening 3–5 người Việt
 Output:    docs/operations/AGENT_VOICE_SPIKE_<date>.md (theo mẫu SPEAKING_AZURE_E2E_2026-09-23.md:
@@ -471,7 +508,7 @@ Output:    docs/operations/AGENT_VOICE_SPIKE_<date>.md (theo mẫu SPEAKING_AZUR
 writing_coach/agent/: schemas (AppContextSnapshot 3 lớp + content, ToolPermission, AgentTool,
 event stream contract), tool registry, fake provider, session cache TTL, capability registry loader
 (tất cả entry status=pending), DecisionProvider stub, các interface voice (mục 33).
-ai/capabilities.py: 3 AIOperation + 4 capability key (chỉ định nghĩa, chưa provider).
+ai/capabilities.py: 3 AIOperation. 4 capability key theo R1 (sau nhãn Admin trên codex/work).
 Tests: schema, permission (assert READ_ONLY only), registry loader, session, fake provider.
 KHÔNG: đăng ký router vào app.py, sửa app.js/api.js/theme.css/index.html/compose.yaml/ci.yml, migration.
 ```
@@ -505,7 +542,7 @@ coach notes lớp 3 (device memory). E2E 6.
 
 ```text
 ConversationalSpeechSession với vendor từ Track 0 qua capability conversational_speech;
-ephemeral token; delegation → gateway; pre-render cache; reference audio; failover → cascade → text;
+ephemeral token; delegation → gateway; pre-render cache; reference audio; S2S lỗi → text-only (R2);
 metering voice. E2E 10, 11, 12. Privacy: không lưu raw audio (handoff: durable learner audio cần privacy review riêng).
 ```
 
@@ -529,7 +566,7 @@ E2E 7  Navigation      "Đưa tôi tới các từ cần ôn." → action naviga
 E2E 8  Authorization   "Cho tôi xem tiến độ của user khác." → reject ở gateway.
 E2E 9  Writing         ở Writing review: "Bài này tôi hay sai chỗ nào?" → evaluation thật + lịch sử.
 E2E 10 Voice           nói vi "từ này phát âm sao?" → TTFA < 1s, voice_style đúng, ngắt lời được.
-E2E 11 Voice failover  vendor lỗi → cascade hoặc text, không crash, user được báo.
+E2E 11 Voice failure   vendor lỗi → text-only (error.fallback = text_only), không crash, user được báo; không sang vendor khác.
 E2E 12 Metering        vượt ngưỡng → soft_limited, vẫn trả lời ngắn, không gọi vendor voice.
 E2E 13 Parity          mọi E2E trên chạy với target=en và target=zh-CN (D9).
 ```
@@ -563,7 +600,7 @@ Bắt buộc thêm:
 - Tool authorization ở gateway; không DB access; backend không mutate; không migration mới.
 - Provider đổi được bằng cấu hình Admin › AI; fake provider chạy toàn bộ test.
 - Voice vi/en/zh qua ConversationalSpeechSession; en đạt D5; vi/zh TTFA < 1s, barge-in, blind listening ≥ 70%.
-- Failover về cascade/text; metering hoạt động.
+- Voice lỗi → text-only, không tự chuyển provider (R2); metering đếm được (R5).
 - E2E 1–13 pass; existing learner flows không regression; gate CI xanh (có evidence).
 ```
 
@@ -588,12 +625,13 @@ Web → Agent Core ← Mobile (frozen) / Desktop / Robot. Robot cần backend mu
 Locale = `interface`, `support`, `target` (D-079) + `content`. Agent Core không hard-code ngôn ngữ. Capability đặc thù ngôn ngữ khai báo trong registry:
 
 ```json
-{ "id": "speaking.pronunciation.tone",   "supported_languages": ["zh-CN"], "evidence_source": "PronunciationResult.words[].phonemes[].tone,score,flagged" }
-{ "id": "speaking.pronunciation.stress", "supported_languages": ["en"],    "evidence_source": "PronunciationResult.words[].phonemes[] (prosody off by default)" }
-{ "id": "speaking.pronunciation.pitch",  "supported_languages": ["ja"],    "status": "pending" }
+{ "id": "speaking.pronunciation.tone",   "languages": ["zh-CN"], "evidence_source": "speech.pronunciation", "linguistic_reason": "…" }
+{ "id": "speaking.pronunciation.stress", "languages": ["en"],    "evidence_source": "speech.pronunciation", "linguistic_reason": "…" }
 ```
 
-Chinese chỉ zh-CN. Japanese khai báo pending. Mỗi slice giao EN và ZH cùng lúc.
+Chinese chỉ zh-CN. Japanese chưa khai báo: `ja` là support language nhưng không phải target language trong
+`core/language_registry.py`, nên registry (chỉ nhận target language) chưa có entry pitch; khai báo khi `ja` thành target.
+Mỗi slice giao EN và ZH cùng lúc.
 
 ---
 
@@ -626,13 +664,16 @@ class PrerenderedSpeechCache:           # AIOperation.TEXT_TO_SPEECH, cùng voic
 
 ### 33.2 Provider routing (điền sau Track 0)
 
-| Ngôn ngữ | Conversational primary | Fallback 1 | Fallback 2 | Reference | Pre-render |
-|---|---|---|---|---|---|
-| vi | S2S `{VENDOR}` (mặc định Gemini Live) | cascade: Groq ASR → Agent → Gemini TTS vi-VN | text-only | — | TTS cùng vendor/voice |
-| en | S2S `{VENDOR}` | cascade → Gemini TTS en-US | text-only | word_audio / Azure en-US | như trên |
-| zh | S2S `{VENDOR}` | cascade → Gemini TTS zh-CN (preview) hoặc Azure zh-CN | text-only | word_audio / Azure zh-CN | như trên |
-| ja | S2S `{VENDOR}` | cascade → Gemini TTS ja-JP | text-only | pending | như trên |
+Voice chưa được duyệt (R6). Khi được duyệt, mỗi ngôn ngữ có một đường chính; lỗi thì về text-only, không cascade
+sang vendor khác (R2):
 
+| Ngôn ngữ | Conversational (sau Track 0) | Khi lỗi | Reference | Pre-render |
+|---|---|---|---|---|
+| vi | S2S `{VENDOR}` | text-only | — | TTS cùng vendor/voice |
+| en | S2S `{VENDOR}` | text-only | word_audio / Azure en-US | như trên |
+| zh | S2S `{VENDOR}` | text-only | word_audio / Azure zh-CN | như trên |
+
+Cascade (Groq ASR → Agent → TTS) là một chế độ server có thể chọn khi mở phiên, không phải đường cứu phiên S2S lỗi.
 Đổi vendor = đổi capability key trong Admin › AI, không sửa code.
 
 ### 33.3 Session mode theo activity, không theo lượt
@@ -675,7 +716,7 @@ Minimum necessary context. `ProviderContextBuilder`: scope theo task, redact, si
 
 ## 37. Voice observability & failover
 
-Trace: `voice_session_id, vendor, mode, language, ttfa, interruptions, fallback_count, audio_seconds_in/out, cost_estimate, error_class`. Health/cooldown dùng `ai/routing.py` sẵn có; failover ở router, không ở prompt.
+Trace: `voice_session_id, vendor, mode, language, ttfa, interruptions, text_only_fallbacks, audio_seconds_in/out, cost_estimate, error_class`. Health/cooldown dùng `ai/routing.py` sẵn có. Không tự chuyển vendor (R2): phiên lỗi kết thúc bằng `error{class: voice_unavailable, fallback: text_only}` và hội thoại tiếp tục bằng text.
 
 ---
 
@@ -727,7 +768,8 @@ codex/work
     /attempts /pronunciation; speaking_evaluator.py; pinyin_alignment.py. word_audio.py = Wikimedia + Kokoro (KOKORO_TTS_URL).
   - Sẵn có gần trùng agent: conversation.py (partner-turn), text_discussion.py (D-072.2, metering), learner_summary(_api).py,
     readiness_summary, product_activity, cross_skill_transfer, grammar_catalog/knowledge/learning_model, writing_evaluation*.
-  - Sandbox: orena-foundation-web:8011; Gemini gemini-3.5-flash-lite đã cấu hình (key trong sandbox env); pytest 1938 passed / 118 skipped.
+  - Sandbox: orena-foundation-web:8011; Gemini gemini-3.5-flash-lite đã cấu hình (key trong sandbox env); pytest 2472 passed / 3 skipped / 0 failed
+    (verification hợp nhất 2026-09-26, PostgreSQL 16 cách ly, theo CURRENT_HANDOFF.md).
   - Human gates: production/preview, migration apply, provider, credential, OAuth/DNS/Cloudflare, billing, destructive history.
 
 feature/speaking (38 commit / 86 file, REVIEWABLE, sandbox :8013)

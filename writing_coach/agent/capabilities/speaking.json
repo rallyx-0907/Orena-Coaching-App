@@ -1,0 +1,129 @@
+{
+  "capabilities": [
+    {
+      "id": "speaking.pronunciation.line",
+      "title": {
+        "en": "Pronunciation of a line",
+        "vi": "Phát âm từng câu",
+        "zh-CN": "逐句发音"
+      },
+      "surfaces": [
+        "speaking.workspace",
+        "speaking.word_detail",
+        "speaking.compare"
+      ],
+      "status": "pending",
+      "contexts": [
+        "attempt_id",
+        "content_id",
+        "selected_item"
+      ],
+      "actions": [
+        "play_model",
+        "play_user",
+        "say_again",
+        "compare_with_model"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "speech.pronunciation",
+      "tools": [
+        "get_pronunciation_attempt",
+        "get_pronunciation_word_detail",
+        "get_pronunciation_history"
+      ]
+    },
+    {
+      "id": "speaking.pronunciation.tone",
+      "title": {
+        "en": "Tones",
+        "vi": "Thanh điệu",
+        "zh-CN": "声调"
+      },
+      "surfaces": [
+        "speaking.workspace",
+        "speaking.word_detail",
+        "speaking.compare"
+      ],
+      "status": "pending",
+      "contexts": [
+        "attempt_id",
+        "selected_item",
+        "client_evidence"
+      ],
+      "actions": [
+        "play_model",
+        "say_again",
+        "start_targeted_drill"
+      ],
+      "languages": [
+        "zh-CN"
+      ],
+      "evidence_source": "speech.pronunciation",
+      "tools": [
+        "get_tone_analysis"
+      ],
+      "linguistic_reason": "Lexical tone is a property of Chinese syllables."
+    },
+    {
+      "id": "speaking.pronunciation.stress",
+      "title": {
+        "en": "Word stress",
+        "vi": "Trọng âm",
+        "zh-CN": "重音"
+      },
+      "surfaces": [
+        "speaking.workspace",
+        "speaking.word_detail",
+        "speaking.compare"
+      ],
+      "status": "pending",
+      "contexts": [
+        "attempt_id",
+        "selected_item"
+      ],
+      "actions": [
+        "play_model",
+        "say_again",
+        "start_targeted_drill"
+      ],
+      "languages": [
+        "en"
+      ],
+      "evidence_source": "speech.pronunciation",
+      "tools": [
+        "get_stress_analysis"
+      ],
+      "linguistic_reason": "Lexical stress placement is an English feature Chinese does not share."
+    },
+    {
+      "id": "speaking.free_talk",
+      "title": {
+        "en": "Free talk",
+        "vi": "Nói tự do",
+        "zh-CN": "自由对话"
+      },
+      "surfaces": [
+        "speaking.free_talk",
+        "speaking.library"
+      ],
+      "status": "pending",
+      "contexts": [
+        "attempt_id"
+      ],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "speech.pronunciation",
+      "tools": [
+        "get_pronunciation_history"
+      ]
+    }
+  ]
+}

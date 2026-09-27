@@ -2609,3 +2609,55 @@ commit is reused.
 - **Still open:** S24 (Grammar's official way in) for the human; AUDIT-1b (static guidance outside
   Speaking still reads the interface pack); storing the interface language on the account (gated
   migration).
+
+## I. Orena Intelligence (D-085), lane `feature/orena-intelligence`, 2026-09-27
+
+The agent's read-only tools, their actions and their provider path, measured
+against the code in Slice 1a. The tool plan is `writing_coach/agent/tool_plan.py`;
+`tests/test_agent_capability_registry.py` fails if a gap below is missing here.
+No row is built by inventing a service; each waits for the owner or decision
+named in it.
+
+### I-A. Tools with no backing service
+
+| # | Tool | What is missing | Who decides |
+| --- | --- | --- | --- |
+| I-1 | `get_learning_weaknesses` | No cross-skill weakness or strength computation; the Learner Summary reports growth as unavailable in every domain. The coaching snapshot carries no `recent_weaknesses` / `recent_strengths` until one exists (human ruling 2026-09-27). | Product: what counts as a weakness, per domain |
+| I-2 | `get_tone_analysis` (zh-CN) | No measured tone: the provider's syllable tone is the reference label, `toneActual` stays empty until a provider measures pitch (D-084). A client-measured contour can only arrive as `client_evidence.pitch_contour_ref`. | Human: SpeechSuper or another tone provider [PROVIDER] |
+| I-3 | `get_stress_analysis` (en) | No per-word stress: one overall prosody score, requested for en-US only and off by default. | Human: turn prosody on, or a stress provider [PROVIDER] |
+| I-4 | `get_grammar_mistakes_summary` | Grammar progress stores completion only; essays keep heuristic category links, not grammar ids. | Product: whether a writing issue may be attributed to a grammar point |
+| I-5 | `get_reading_mistakes` | No public read of which questions a learner answered wrong across attempts; the answers live only inside the Reading evidence repository's private replay. | Reading owner: a read-only method on `ReadingEvidenceRepository` |
+| I-6 | `get_word_context_in_reading` | No service returns the sentence around a word from a content id. The client can send the sentence as `selected_item.text`. | UI lane (send it) or Reading owner (a deterministic extractor) |
+| I-7 | `get_listening_mistakes` | Dictation comparison runs in the client; no server-side mismatch list exists. | Listening owner |
+
+### I-B. Backing services a read-only tool may not call as they are
+
+| # | Service | Why | Plan |
+| --- | --- | --- | --- |
+| I-8 | `ReadingEvidenceRepository.ability()` | Refreshes a stored ability projection (UPDATE/INSERT) before answering. | `get_reading_progress` uses `list_evidence` only, until a pure read exists. |
+| I-9 | The Listening lesson routes | A meaning missing from the cache calls a translation provider and writes the cache. | `get_current_listening_context` reads the curated catalog only; imported media waits for a cache-only read. |
+| I-10 | `word_detail.py` | Every call reaches a provider and writes operation telemetry. | `get_word_detail` uses the catalog and card builders, no provider. |
+
+### I-C. Contract actions whose payload differs from the existing APIs
+
+Recorded, not changed here: the contract is edited only on `codex/work`
+(D-086), and the human placed these in contract v2 (ruling 2026-09-27).
+
+| # | Action | Contract payload | What the API takes |
+| --- | --- | --- | --- |
+| I-11 | `save_word`, `unsave_word`, `add_word_to_collection`, `start_review{word}` | `word_id` | No API returns or accepts a saved-word id: words are keyed by text under the session's language (`POST /api/library/vocabulary`, `DELETE /api/library/vocabulary/{word}`). |
+| I-12 | `save_word` | `{text, lang}` | No `lang` field: the language is the session's. |
+| I-13 | `add_word_to_collection` | `collection_id` | Two collection systems: Decks (`/api/vocabulary/decks/{deck_id}/words`, by word text) and My Library collections (`/api/library/collections/{collection_id}/items`, by library item id, itself made from a saved word). |
+| I-14 | `play_user` | `{attempt_id}` | No audio is stored for a take (by design); only the client's own recording could play. |
+| I-15 | `start_review` | one action | No single call: the due list, then one review call per card. |
+| I-16 | `get_pronunciation_attempt`, `compare_with_model` | `attempt_id` | No get-by-id; attempts are listed by `asset_id` / `segment_id`. |
+
+### I-D. Provider layer and activation
+
+| # | Item | State |
+| --- | --- | --- |
+| I-17 | Capability keys `agent_turn_fast`, `agent_turn_deep`, `conversational_speech`, `text_to_speech` | Waiting: the Admin console copy (`cap_<key>`, `capHint_<key>`, EN and ZH) is added on `codex/work` first, because `scripts/test_orena_admin_console.mjs` requires it; this lane then adds the keys as `implemented=False`, `configurable=False`, fallback `{NONE}` (ruling 2026-09-27, option C). The three `AIOperation` values are in. |
+| I-18 | Streaming and native tool calls | Absent from `writing_coach/ai` today. Slice 1b extends the existing OpenAI-compatible provider (chat/completions); no new dependency. |
+| I-19 | Live speech, TTS, ephemeral tokens, `google-genai` | Not approved (ruling 2026-09-27). Voice stays interfaces only. [PROVIDER] |
+| I-20 | Metering | V1 counts through `record_usage` with a per-day sum; `ProductRepository` has only `monthly_usage`, so a daily read is to be added. `budget_state` is always `ok`; `soft_limited` waits for the quota ledger (E1). |
+| I-21 | Provider fallback | None automatic (ARCHITECTURE_INVARIANTS). A failed provider ends the turn with `error.fallback = retry`; a failed voice session continues `text_only`. |

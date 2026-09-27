@@ -1,0 +1,37 @@
+{
+  "capabilities": [
+    {
+      "id": "listening.dictation",
+      "title": {
+        "en": "Listening and dictation",
+        "vi": "Nghe và chép chính tả",
+        "zh-CN": "听力与听写"
+      },
+      "surfaces": [
+        "listening.library",
+        "listening.workspace",
+        "listening.dictation"
+      ],
+      "status": "pending",
+      "contexts": [
+        "content_id",
+        "lesson_id",
+        "selected_item"
+      ],
+      "actions": [
+        "navigate",
+        "save_word"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "listening.dictation",
+      "tools": [
+        "get_current_listening_context",
+        "get_listening_attempt",
+        "get_listening_mistakes"
+      ]
+    }
+  ]
+}
