@@ -39,9 +39,10 @@ function resolved(namespace) {
   return layeredCopy(table.packs, table.layers, current.ui, current.support);
 }
 
+/* A placeholder takes any given value, 0 included; one without a value stays visible. */
 function fill(text, params) {
   if (!params) return text;
-  return String(text).replace(/\{(\w+)\}/g, (match, name) => (params[name] ?? params[name] === 0 ? String(params[name]) : match));
+  return String(text).replace(/\{(\w+)\}/g, (match, name) => (params[name] != null ? String(params[name]) : match));
 }
 
 export function t(namespace, key, params) {

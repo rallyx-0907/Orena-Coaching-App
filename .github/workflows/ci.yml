@@ -108,6 +108,7 @@ jobs:
           node scripts/test_orena_kit.mjs
           node scripts/test_orena_shell.mjs
           node scripts/test_orena_copy.mjs
+          node scripts/test_orena_copy_engine.mjs
           node scripts/test_orena_agent.mjs
       - run: python -m pytest -q test_app.py tests
         env:
