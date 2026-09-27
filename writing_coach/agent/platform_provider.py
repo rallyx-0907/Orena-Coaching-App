@@ -92,6 +92,8 @@ class PlatformAgentTurnProvider:
                 timeout_seconds=request.timeout_seconds,
             )
         except (AIProviderError, AICapabilityError) as exc:
+            # For the operator only: the learner is told `provider_unavailable`, never this.
+            _log.warning("agent provider round did not start: %s", exc)
             raise ProviderUnavailable("the provider did not start") from exc
         return self._convert(events)
 
@@ -113,4 +115,5 @@ class PlatformAgentTurnProvider:
                         cached_input_tokens=event.cached_tokens or 0,
                     )
         except (AIProviderError, AICapabilityError) as exc:
+            _log.warning("agent provider round stopped: %s", exc)
             raise ProviderUnavailable("the provider stopped") from exc

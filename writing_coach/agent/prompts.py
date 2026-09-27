@@ -91,6 +91,18 @@ def context_document(
 OPENING_TRIGGER = "[The learner opened Orena. There is no message from them: this is the opening turn.]"
 
 
+def opening_trigger(support_name: str | None) -> str:
+    """The fixed user message of an opening turn, naming the language to greet in.
+
+    The live run showed a model answering an English trigger in English, whatever
+    the support language; the greeting is a segment, so it is in the support language.
+    """
+
+    if not support_name:
+        return OPENING_TRIGGER
+    return f"{OPENING_TRIGGER[:-1]} Greet them in {support_name}.]"
+
+
 def opening_messages(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -108,7 +120,8 @@ def opening_messages(
         messages.append(ProviderMessage(role="system", content=OPENING))
         # A request of system messages alone is refused by some providers (Gemini: "contents is not
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
-        messages.append(ProviderMessage(role="user", content=OPENING_TRIGGER))
+        support_name = _language_name(tier1.contract_locale.support, target=False)
+        messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

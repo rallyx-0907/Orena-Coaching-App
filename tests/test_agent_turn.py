@@ -429,7 +429,10 @@ def test_an_opening_turn_is_metered_as_an_opening_not_a_learner_turn():
     # no learner text: the one user message is the server's fixed trigger (Gemini refuses a system-only request)
     from writing_coach.agent.prompts import OPENING_TRIGGER
 
-    assert [m.content for m in provider.requests[0].messages if m.role == "user"] == [OPENING_TRIGGER]
+    users = [m.content for m in provider.requests[0].messages if m.role == "user"]
+    assert len(users) == 1 and users[0].startswith(OPENING_TRIGGER[:-1])
+    # the live run: an English trigger drew an English greeting; it names the support language
+    assert users[0].endswith("Greet them in Vietnamese.]")
     assert any("opening turn" in m.content for m in provider.requests[0].messages if m.role == "system")
 
 

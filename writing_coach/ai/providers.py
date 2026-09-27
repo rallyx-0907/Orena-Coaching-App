@@ -541,11 +541,7 @@ class OpenAICompatibleProvider:
         )
         self._last_rate_limit = _normalized_rate_limit_headers(getattr(response, "headers", None))
         if response.status_code >= 400:
-            detail = ""
-            try:
-                detail = str(response.json().get("error", {}).get("message") or "")
-            except Exception:
-                pass
+            detail = _error_detail(response)
             error = AIProviderError(
                 f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip()
             )
@@ -728,11 +724,8 @@ class OpenAICompatibleProvider:
             raise AIProviderUnavailable(f"{self.name} timed out.") from exc
         self._last_rate_limit = _normalized_rate_limit_headers(getattr(response, "headers", None))
         if response.status_code >= 400:
-            detail = ""
             try:
-                detail = str(response.json().get("error", {}).get("message") or "")
-            except Exception:
-                pass
+                detail = _error_detail(response)
             finally:
                 response.close()
             error = AIProviderError(f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip())
@@ -817,6 +810,18 @@ class OpenAICompatibleProvider:
             cached_tokens=_count(details.get("cached_tokens")),
             rate_limit=dict(self._last_rate_limit),
         )
+
+
+def _error_detail(response: Any) -> str:
+    """The provider's own error message, or "". Gemini's OpenAI-compatible endpoint wraps it in a list."""
+
+    try:
+        payload = response.json()
+        if isinstance(payload, list) and payload and isinstance(payload[0], dict):
+            payload = payload[0]
+        return str(payload.get("error", {}).get("message") or "")
+    except Exception:
+        return ""
 
 
 # Endpoints that send a usage chunk on a stream when asked

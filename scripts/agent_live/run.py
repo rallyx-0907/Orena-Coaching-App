@@ -230,11 +230,13 @@ def main() -> int:
     parser.add_argument("--cap-usd", type=float)
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--targets", default="en,zh-CN")
+    parser.add_argument("--only", default="", help="comma-separated scenario names, e.g. S5,S9 (default: all)")
     parser.add_argument("--approved", action="store_true", help="the human approved this run and its cap")
     parser.add_argument("--plan", action="store_true", help="print the plan and its worst case; send nothing")
     parser.add_argument("--out", default=str(Path(tempfile.gettempdir()) / "orena-agent-live-run.json"))
     args = parser.parse_args()
     targets = [t for t in args.targets.split(",") if t]
+    only = {name for name in args.only.split(",") if name}
 
     turns = plan()["model_turns_per_target_per_repeat"] * args.repeat * len(targets)
     worst = turns * WORST_TURN_USD + len(targets) * WORST_SETUP_USD
@@ -278,6 +280,8 @@ def main() -> int:
         essay_id = str(essay.get("id")) if isinstance(essay, dict) else None
         for repeat in range(args.repeat):
             for scenario in scenarios(target, essay_id):
+                if only and scenario.name not in only:
+                    continue
                 if repeat and not scenario.model:
                     continue
                 if scenario.model and spent + WORST_TURN_USD > args.cap_usd:
