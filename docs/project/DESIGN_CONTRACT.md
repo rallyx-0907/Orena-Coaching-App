@@ -123,6 +123,44 @@ the design project `7a5604ca-1e11-4d8e-8305-7d0cb32d552d`
       an old address redirects (`static/orena/product/legacy-routes.js`) and the old screen is never
       rendered.
 
+50. **Learning-first copy: every visible sentence must earn its place (D-087).**
+    Orena is a learning workspace, not a marketing surface. Persistent UI copy
+    exists only when it helps the learner understand, decide, act, stay safe, or
+    interpret learning feedback. Delete copy that merely decorates, motivates,
+    restates what is already visible, explains an obvious control, or describes
+    a feature the interface already demonstrates. In particular, do not invent
+    slogans, inspirational headings, marketing-style subheads, "journey /
+    mastery / unlock your potential" language, reassurance filler, or routine
+    celebration. This applies equally to human-written and AI-generated UI copy.
+
+    - **Default to absence.** Page subtitle: none unless necessary. Card
+      description: none unless it changes a decision. Persistent explanatory
+      paragraph: none unless a reasonable learner could misunderstand or make a
+      consequential mistake without it.
+    - **Keep controls terse.** Prefer 1-3 words for a button when unambiguous.
+      Status text is the shortest clear phrase. An empty state gets at most one
+      short sentence plus one action. Routine success feedback confirms the
+      result; it does not celebrate the act.
+    - **Never duplicate meaning.** A title such as "Vocabulary review" does not
+      get a subtitle such as "Review your vocabulary words." A label does not
+      need a sentence explaining the same label.
+    - **Prefer evidence over prose.** Show "12 due today", "Tone accuracy +8%"
+      or the actual next action instead of a generic progress or encouragement
+      sentence when the measured state already says more.
+    - **Learning content wins attention.** On a learning screen, material being
+      learned, the primary interaction, task state and actionable feedback have
+      visual priority over product copy. Support text yields before learning
+      content when space or attention is constrained.
+    - **Sentence justification.** Every new or changed learner-visible sentence
+      must be justifiable by comprehension, safety, task completion or learning
+      feedback. Labels and essential data do not need a prose justification.
+      If removing a sentence changes none of those four, remove it.
+    - **Scope.** This rule governs persistent learner UI and unsolicited product
+      copy. It does not remove lesson material, user-requested explanations,
+      substantive error/safety messages, necessary pedagogical feedback, or an
+      Orena Intelligence conversation the learner deliberately opened. Those
+      still follow the same preference for concise, useful wording.
+
 ## The baseline's visual rules
 
 30. **One system: Dark Glass.** Ground `#050310` with the cosmic field
@@ -263,6 +301,9 @@ in addition to `docs/project/REVIEW_POLICY.md`:
 - English, Chinese and Vietnamese are each verified, in the same batch;
 - every colour comes from the semantic tokens and contrast passes;
 - no legacy implementation of the same surface remains: it is deleted;
+- learner-visible copy passes rule 50's copy audit: no slogan/marketing filler,
+  no redundant subtitle or duplicated meaning, learning content remains the
+  visual focus, and every retained sentence has a functional reason;
 - a learning workspace meets rule 49 at every verified size: the shell within the viewport, no page
   scroll to finish the task, long content scrolling only in its own region, primary controls and
   submit/retry/next always in view, no horizontal overflow, nothing overlapping or squeezed to fit,
