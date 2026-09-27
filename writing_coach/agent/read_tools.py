@@ -296,7 +296,8 @@ def _word_detail(learner: LearnerScope, args: WordArguments) -> ToolResult:
         "in_catalog": bool(entry),
         "part_of_speech": _clip(entry.get("part_of_speech"), 40) or None,
         "level": _clip(entry.get("level"), 20) or None,
-        "definition": _clip(entry.get("definition"), 200) or None,
+        # The seed catalogue writes `definition`; the published one (DB) writes `detailed_definitions`.
+        "definition": next(iter(_texts(entry.get("definition") or entry.get("detailed_definitions"), 1, 200)), None),
         "translations": {str(code): _clip(text, 120) for code, text in list(translations.items())[:3]},
         "readings": _texts(entry.get("readings") or entry.get("reading") or entry.get("pinyin"), 3, 60),
         "examples": _texts(entry.get("examples"), 2, 160),

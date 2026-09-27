@@ -35,6 +35,7 @@ import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any
 
 from writing_coach.agent import learner_copy
@@ -115,6 +116,10 @@ def learner_context(learner: LearnerScope) -> Iterator[None]:
     finally:
         LANGUAGE_CODE_CTX.reset(language_token)
         USER_KEY_CTX.reset(user_token)
+
+
+# A selected item's id names what its type is; a word has no id (§3) and a feedback item is no payload field.
+SELECTED_ID_KEYS = MappingProxyType({"grammar_point": "grammar_id", "sentence": "item_id"})
 
 
 def _fit_greeting(text: str) -> str:
@@ -236,17 +241,18 @@ class _Turn:
             opening=self.opening,
             take_ref=self.request.context.take_ref,
         )
-        # What the request named may be named back; everything else must be read first.
+        # What the request named may be named back, as what it named; everything else must be read first.
         context = self.request.context
-        selected = context.selected_item.id if context.selected_item else None
-        outputs.learn_ids(
-            v for v in (context.content_id, context.lesson_id, context.essay_id, context.attempt_id, selected) if v
-        )
+        for key in ("content_id", "lesson_id", "essay_id", "attempt_id"):
+            outputs.learn_ids(key, (getattr(context, key),))
+        selected = context.selected_item
+        if selected is not None and selected.type in SELECTED_ID_KEYS:
+            outputs.learn_ids(SELECTED_ID_KEYS[selected.type], (selected.id,))
         yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
-        if not self.text:
-            # Nothing to say is not an answer: the learner is told, and it is not metered.
+        if not "".join(self.text).strip():
+            # Nothing to say (or only whitespace) is not an answer: the learner is told, and it is not metered.
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
 

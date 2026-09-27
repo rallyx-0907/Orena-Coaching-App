@@ -277,3 +277,23 @@ def test_history_summary_reads_the_apps_error_memory():
 
 def test_the_app_hands_in_its_error_memory(app_module):
     assert "writing_history=lambda: api_error_memory()" in __import__("pathlib").Path(app_module.__file__).read_text(encoding="utf-8")
+
+
+def test_word_detail_reads_a_published_entry_too(monkeypatch):
+    # The published (DB) catalogue has no `definition`: its meaning is in `detailed_definitions`.
+    entry = {
+        "id": "91",
+        "word": "机会",
+        "part_of_speech": "noun",
+        "level": "HSK3",
+        "short_meanings": [{"language": "vi", "text": "cơ hội"}],
+        "detailed_definitions": [{"language": "zh-CN", "text": "恰好的时候；时机"}],
+        "support_translations": {"vi": "cơ hội"},
+        "readings": [{"text": "jīhuì"}],
+        "examples": [],
+    }
+    monkeypatch.setattr(becoming_library, "catalog_entry_for", lambda term: entry)
+    monkeypatch.setattr(becoming_library, "saved_vocabulary_state", lambda candidates: {})
+    result = registry().invoke("get_word_detail", ZH, {"text": "机会"})
+    assert result.data["definition"] == "恰好的时候；时机"
+    assert result.data["translations"] == {"vi": "cơ hội"} and result.data["readings"] == ["jīhuì"]

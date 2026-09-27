@@ -446,7 +446,7 @@ def test_an_id_the_model_invents_is_refused_and_one_it_read_is_accepted():
         ]
     )
     events = run(rt)
-    assert "never be invented" in provider.requests[1].messages[-1].content
+    assert "never invented" in provider.requests[1].messages[-1].content
     actions = [e for e in events if e.name == "action"]
     assert [a.payload for a in actions] == [{"content_id": "c9", "item_id": "i1"}]
 
@@ -519,3 +519,61 @@ def test_the_decision_provider_is_the_gate():
     run(rt, opening_request())  # an opening turn has no message and is never asked about
     assert DecisionQuestion.IDENTITY_QUESTION not in asked[-1]
     assert len(provider.requests) == 1
+
+
+# --- review of Slice 1c -------------------------------------------------------------
+
+
+def test_an_id_is_named_only_as_what_it_was_read_as():
+    from writing_coach.agent.outputs import ReplyOutputs
+    from writing_coach.agent.schemas import ClientInfo
+
+    client = ClientInfo.model_validate(
+        {
+            "ui_version": "t",
+            "supported_actions": ["navigate", "add_word_to_collection", "start_targeted_drill"],
+            "supported_intents": ["grammar.point", "writing.revision"],
+        }
+    )
+    outputs = ReplyOutputs(client=client, interface="vi", support="vi", target="zh-CN", version=3)
+    outputs.learn_ids("essay_id", ("42",))
+    outputs.learn_from({"collections": [{"collection_id": "7"}], "items": [{"item_id": "i1"}]})
+
+    def propose(action_type, payload):
+        return outputs.handle("propose_action", {"type": action_type, "payload": payload}, known_evidence=frozenset())
+
+    assert propose("navigate", {"intent": "grammar.point", "grammar_id": "42"}).startswith("refused")
+    assert propose("navigate", {"intent": "writing.revision", "essay_id": "42"}).startswith("accepted")
+    word = {"text": "机会", "lang": "zh-CN"}
+    assert propose("add_word_to_collection", {**word, "target": {"system": "deck", "id": "7"}}).startswith("refused")
+    assert propose("add_word_to_collection", {**word, "target": {"system": "library", "id": "7"}}).startswith("accepted")
+    assert propose("start_targeted_drill", {"focus": "tone", "item_ids": ["i1", "42"]}).startswith("refused")
+
+
+def test_a_selected_item_id_is_named_as_its_type():
+    body = turn_request(actions=("navigate",)).model_dump(mode="json", exclude_none=True)
+    body["client"]["supported_intents"] = ["grammar.point"]
+    body["context"]["selected_item"] = {"type": "grammar_point", "id": "g5", "text": "把"}
+    rounds = [
+        (
+            ToolCallRequest("c1", "propose_action", {"type": "navigate", "payload": {"intent": "grammar.point", "grammar_id": "g5"}}),
+            TurnFinished(0, 3, "tool_calls"),
+        ),
+        reply("Xem điểm ngữ pháp này nhé."),
+    ]
+    rt, _ = runtime(rounds)
+    events = run(rt, TurnRequest.model_validate(body))
+    assert [e.payload for e in events if e.name == "action"] == [{"intent": "grammar.point", "grammar_id": "g5"}]
+
+
+def test_an_opening_answered_with_only_whitespace_is_no_answer():
+    meter = []
+    round_one = (
+        TextDelta("\n  "),
+        ToolCallRequest("c1", "suggest_next", {"intent": "prompt.app_help"}),
+        TurnFinished(0, 2, "tool_calls"),
+    )
+    rt, _ = runtime([round_one], meter=lambda *args: meter.append(args))
+    events = run(rt, opening_request())
+    assert names(events) == ["session", "error"] and events[-1].error_class == "provider_unavailable"
+    assert meter == []

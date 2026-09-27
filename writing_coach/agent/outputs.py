@@ -73,8 +73,12 @@ KIND_BY_SOURCE: Mapping[str, str] = MappingProxyType(
         "grammar.catalog": "grammar",
     }
 )
-# Keys whose values in a tool result are ids an action may name.
-_ID_KEYS = READ_ID_KEYS | {"id", "lesson_id", "deck_id", "collection_id"}
+# Keys whose values in a tool result are ids an action may name - each only
+# under the same key it was read as (contract §7): an essay id is never a
+# grammar id, however equal the two strings are.
+_ID_KEYS = READ_ID_KEYS | {"lesson_id", "attempt_id", "deck_id", "collection_id"}
+# `target.system` -> the key a collection id must have been read as.
+TARGET_ID_KEYS: Mapping[str, str] = MappingProxyType({"deck": "deck_id", "library": "collection_id"})
 
 REPLY_STYLES = tuple(sorted(VOICE_STYLES - {"reference"}))
 MAX_ACTIONS = 3
@@ -187,7 +191,8 @@ class ReplyOutputs:
     version: int = CONTRACT_VERSION
     opening: bool = False
     take_ref: str | None = None
-    known_ids: dict[str, str | None] = field(default_factory=dict)  # id -> domain kind of its record
+    # key an id was read as -> {id -> domain kind of its record}
+    known_ids: dict[str, dict[str, str | None]] = field(default_factory=dict)
     actions: list[ActionEvent] = field(default_factory=list)
     suggestions: list[SuggestionEvent] = field(default_factory=list)
     citations: list[str] = field(default_factory=list)
@@ -196,12 +201,17 @@ class ReplyOutputs:
 
     # --- ids the turn has seen ------------------------------------------------
 
-    def learn_ids(self, ids: Iterable[object], *, kind: str | None = None) -> None:
+    def learn_ids(self, key: str, ids: Iterable[object], *, kind: str | None = None) -> None:
+        """Ids the turn may name back, each as the `key` it was read or sent as."""
+
+        known = self.known_ids.setdefault(key, {})
         for value in ids:
             if isinstance(value, (str, int)) and not isinstance(value, bool) and str(value):
-                key = str(value)
-                if self.known_ids.get(key) is None:
-                    self.known_ids[key] = kind
+                if known.get(str(value)) is None:
+                    known[str(value)] = kind
+
+    def knows(self, key: str, value: object) -> bool:
+        return str(value) in self.known_ids.get(key, {})
 
     def learn_from(self, value: Any, *, kind: str | None = None) -> None:
         """Every id-keyed value anywhere in a tool's data or evidence reference."""
@@ -209,7 +219,7 @@ class ReplyOutputs:
         if isinstance(value, Mapping):
             for key, item in value.items():
                 if str(key) in _ID_KEYS and not isinstance(item, (Mapping, list, tuple)):
-                    self.learn_ids((item,), kind=kind)
+                    self.learn_ids(str(key), (item,), kind=kind)
                 else:
                     self.learn_from(item, kind=kind)
         elif isinstance(value, (list, tuple)):
@@ -274,14 +284,16 @@ class ReplyOutputs:
         """None when every id and word in the payload is one the turn may name."""
 
         for key in READ_ID_KEYS & set(payload):
-            if str(payload[key]) not in self.known_ids:
-                return f"refused: {key} must come from a tool result or the context, never be invented"
+            if not self.knows(key, payload[key]):
+                return f"refused: {key} must be one a tool returned as {key} or the context sent, never invented"
         target = payload.get("target")
-        if isinstance(target, Mapping) and str(target.get("id")) not in self.known_ids:
-            return "refused: target.id must come from a tool result, never be invented"
+        if isinstance(target, Mapping):
+            read_as = TARGET_ID_KEYS.get(str(target.get("system")))
+            if read_as is None or not self.knows(read_as, target.get("id")):
+                return "refused: target.id must be a collection a tool returned, never invented"
         items = payload.get("item_ids")
-        if isinstance(items, list) and any(str(item) not in self.known_ids for item in items):
-            return "refused: item_ids must come from a tool result or the context"
+        if isinstance(items, list) and not all(self.knows("item_id", item) for item in items):
+            return "refused: item_ids must be items a tool returned or the context sent"
         if "take_ref" in payload and (self.take_ref is None or payload["take_ref"] != self.take_ref):
             return "refused: take_ref only as the client sent it"
         if "lang" in payload and payload["lang"] != self.target:
@@ -298,11 +310,12 @@ class ReplyOutputs:
         kind = None
         for key in ("essay_id", "content_id", "grammar_id"):
             if key in payload:
-                kind = self.known_ids.get(str(payload[key]))
+                kind = self.known_ids.get(key, {}).get(str(payload[key]))
                 break
         target = payload.get("target")
         if kind is None and isinstance(target, Mapping):
-            kind = self.known_ids.get(str(target.get("id")))
+            read_as = TARGET_ID_KEYS.get(str(target.get("system")), "")
+            kind = self.known_ids.get(read_as, {}).get(str(target.get("id")))
         if reason is None and kind is None:
             return None
         return Display(kind=kind, reason=reason)
