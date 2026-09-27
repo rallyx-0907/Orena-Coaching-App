@@ -60,7 +60,8 @@ D11 UI KHÔNG thuộc lane này (D-086). UI mới thay toàn bộ UI cũ (kể c
     Agent không bao giờ nêu route/screen: chỉ intent + action trong contract, và chỉ những gì client
     khai báo trong client.supported_actions / supported_intents (contract §3.1).
 D12 Transport, request, event, segment, evidence, action, intent, voice session: theo AGENT_CONTRACT.md
-    (contract_version 1). Lane này implement contract; không mở rộng contract tại đây.
+    (hiện là contract_version 3, D-094; nhận bằng merge codex/work). Lane này implement contract; không mở
+    rộng contract tại đây.
 D13 Contract tests: các canonical stream trong contract §12 là fixture chung. UI lane replay chúng bằng
     mock; lane này phải phát ra cùng chuỗi event và cùng shape payload (text có thể khác).
 D14 Test tự động không gọi provider thật (golden WAV + fake provider). Gate là `.github/workflows/ci.yml`.
@@ -100,9 +101,32 @@ R9  /api/agent/* tắt mặc định bằng cờ server AGENT_ENABLED; chỉ b�
 R10 S5 dùng save_word { text, lang } (contract §7 cho phép). Các action lệch payload còn lại chờ contract v2.
 R11 session_id không tìm thấy (restart, worker khác) → mở phiên mới, không lỗi.
 R12 suggestion.intent là prompt intent (§4), không phải navigation id; mọi label (tool, action, suggestion)
-    là copy lớp interface (D-080). Hai điểm này đã chuyển sang contract v2.
+    là copy lớp interface (D-080). Hai điểm này thành luật contract ở v3 (D-094): intent gợi ý thuộc
+    namespace `prompt.`, label action là lớp interface.
 R13 CURRENT_HANDOFF.md: lane chỉ sửa đúng mục "## Agent lane" của mình; PENDING, NEXT EXACT TASK và
     Human decisions thuộc codex/work. Chi tiết tiến độ của lane nằm ở đây (§0) và trong báo cáo slice.
+```
+
+Phán quyết cho Slice 1c (2026-09-27):
+
+```text
+R14 Merge codex/work (contract v2, D-092; rồi v3, D-094) và phục vụ phiên bản mới; client khai báo phiên bản
+    thấp hơn không nhận gì phiên bản sau thêm/đổi. Id trong payload action chỉ lấy từ request hoặc từ tool đã
+    đọc trong turn; id model tự nghĩ bị từ chối (contract §7).
+R15 Câu hỏi danh tính/model trả lời bằng quy tắc qua DecisionProvider, trước mọi lời gọi model (§35);
+    gate ưu tiên chính xác: có dấu và rõ nghĩa → copy; không dấu mà mơ hồ ("cau la gi", "ban la gi",
+    "may la gi") → để model trả lời (instruction vẫn giữ danh tính Orena); không dấu mà rõ ("ban la ai") → khớp.
+    Rate limit theo learner, trả 429 (§22); 404/409/429 do Codex ghi vào contract §2.1 (v4, D-095).
+R16 Capability Vocabulary (vocabulary.words, review.due) và Writing (writing.review) sang active khi contract
+    test v2 của chúng đạt. Sau 1c: báo cáo và dừng; bước kế là chạy live có kiểm soát với provider thật
+    (gate [PROVIDER]) — người quyết.
+R17 Chạy live [PROVIDER] (chuẩn bị, CHƯA chạy; chờ người duyệt kịch bản và trần chi phí): compose project
+    riêng `orena-agent-live` (scripts/agent_live/compose.yaml), Postgres dùng một lần trên tmpfs, không
+    named volume, cổng 127.0.0.1:8013, không bao giờ :8000/:8010/:8011/:8012; AGENT_ENABLED=true chỉ ở đó;
+    provider qua active_selection legacy (Gemini gemini-3.5-flash-lite); learner phát triển của DB dùng một
+    lần, không dữ liệu learner thật. Kịch bản (scripts/agent_live/run.py): S1, S5, S8, S9, S13, 2 câu danh
+    tính, 3 câu tự do; target EN và ZH, support VI; mỗi turn model lặp 3 lần. Đo: hình dạng tool call và
+    usage khi stream, time-to-first-segment, chi phí thực. Runner dừng trước khi vượt trần.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -116,7 +140,17 @@ Slice 1b  REVIEWABLE (local, 2026-09-27). /api/agent/turn (SSE) + /api/agent/cap
           OpenAICompatibleProvider.stream_chat + platform.stream_agent_turn (legacy selection, từ chối local);
           read tools get_due_review_summary, get_due_vocabulary, get_current_writing_evaluation (EN, ZH);
           4 key agent trơ; daily_usage cho cả hai store; contract streams S1, S5, S8, S9.
-Tiếp      Merge codex/work forward (contract v2, D-092), cập nhật contract test; rồi Slice 2 (§26).
+Slice 1c  REVIEWABLE (local, 2026-09-27). 1c-1 4672fdd: contract v2 (orena.home, turn mở đầu
+          trigger:"open" = S13, display, payload theo API thật), id chỉ từ lượt đọc, 4 read tool
+          get_saved_word_state, get_word_detail, get_writing_feedback_items, get_writing_history_summary
+          (EN, ZH), capability vocabulary.words, review.due, writing.review active. v3 ff6d3c8 (merge 05fbaad):
+          intent gợi ý prompt.*, label action lớp interface. 1c-2 f36f465: identity.py + RuleDecisionProvider
+          trả lời danh tính/model từ copy trước model (EN, VI, ZH); ratelimit.py 12 turn / 60 lượt đọc
+          capability mỗi phút mỗi learner, 429 + Retry-After. Review đối kháng 9a0b0df: id gắn với khóa đã
+          đọc, lượt mở đầu chỉ khoảng trắng là lỗi, get_word_detail đọc catalogue DB, gate danh tính chính
+          xác. Contract streams S1, S5, S8, S9, S13.
+Tiếp      Merge codex/work (contract v4, D-095) đang chờ người: xung đột ở CURRENT_HANDOFF.md ngoài mục
+          Agent lane. Rồi chạy live có kiểm soát (R17, gate [PROVIDER]); rồi Slice 2 (§26).
 ```
 
 ---

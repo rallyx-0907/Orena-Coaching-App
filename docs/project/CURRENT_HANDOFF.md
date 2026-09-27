@@ -123,13 +123,19 @@ volumes as cleanup.
 ## Agent lane
 
 Owned by `feature/orena-intelligence` (D-085); the only part of this file that
-lane edits. Slices 1a and 1b REVIEWABLE (local verification, 2026-09-27), not
-integrated into `codex/work`: `/api/agent/turn` (SSE) and
+lane edits. Slices 1a, 1b and 1c REVIEWABLE (local verification, 2026-09-27),
+not integrated into `codex/work`: `/api/agent/turn` (SSE) and
 `/api/agent/capabilities` behind `AGENT_ENABLED` (off by default, never in
-production), the legacy AI selection (never a local model), Vocabulary and
-Writing read tools in EN and ZH, contract streams S1, S5, S8, S9, the four agent
-capability keys inert; no schema change. Rulings, progress and the next slice:
-`AGENT_SPEC.md` §0; gaps: `UI_BACKEND_GAPS.md` I-1..I-25.
+production), serving contract v3 (D-094) to v3 clients and each older version
+only what it has; the legacy AI selection (never a local model); Vocabulary and
+Writing read tools in EN and ZH with their capabilities active; the opening turn
+(S13); action ids only from what a tool read; identity answered by rule before
+any model; a per-learner rate limit (429); contract streams S1, S5, S8, S9, S13;
+the four agent capability keys inert; no schema change. Waiting on the human:
+the merge of contract v4 (D-095; it conflicts outside this section), then the
+prepared, not yet run, controlled live run with a real provider ([PROVIDER],
+`scripts/agent_live/`, its cost cap approved first). Rulings, progress and
+the next slice: `AGENT_SPEC.md` §0; gaps: `UI_BACKEND_GAPS.md` I-1..I-25.
 
 ## NEXT EXACT TASK
 

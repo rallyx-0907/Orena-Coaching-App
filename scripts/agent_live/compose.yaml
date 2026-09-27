@@ -1,0 +1,84 @@
+# The controlled live run of the agent ([PROVIDER] gate, AGENT_SPEC.md §0 R17).
+#
+# A compose project of its own - never the app's `ai-writing-coach` project,
+# never :8000/:8010/:8011/:8012 - with a throwaway PostgreSQL on tmpfs and no
+# named volume: `down` leaves nothing behind. Run only after the human approved
+# the run and its cost cap:
+#
+#   docker compose -p orena-agent-live -f scripts/agent_live/compose.yaml --env-file .env up -d
+#   python scripts/agent_live/run.py --cap-usd <approved> --approved
+#   docker compose -p orena-agent-live -f scripts/agent_live/compose.yaml down
+#
+# Only GEMINI_* is read from the env file; the key is never printed.
+name: orena-agent-live
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: live
+      POSTGRES_PASSWORD: live-throwaway
+      POSTGRES_DB: agent_live
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U live -d agent_live"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # No automatic startup Alembic (ARCHITECTURE_INVARIANTS): the schema is
+  # applied here, once, to the throwaway database only.
+  migrate:
+    image: ai-writing-coach:local
+    working_dir: /app
+    command: ["python", "scripts/agent_live/migrate.py"]
+    environment:
+      POSTGRES_RUNTIME_URL: postgresql+psycopg://live:live-throwaway@db:5432/agent_live
+    volumes: &code
+      - ../../app.py:/app/app.py:ro
+      - ../../auth_support.py:/app/auth_support.py:ro
+      - ../../grammar_course.py:/app/grammar_course.py:ro
+      - ../../writing_coach:/app/writing_coach:ro
+      - ../../migrations:/app/migrations:ro
+      - ../../alembic.ini:/app/alembic.ini:ro
+      - ../../scripts/agent_live:/app/scripts/agent_live:ro
+      - ../../VERSION:/app/VERSION:ro
+      - ../../static:/app/static:ro
+      - ../../templates:/app/templates:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: ai-writing-coach:local
+    working_dir: /app
+    environment:
+      APP_ENV: development
+      PUBLIC_BASE_URL: http://127.0.0.1:8013
+      AGENT_ENABLED: "true"
+      PERSISTENCE_BACKEND: postgresql
+      POSTGRES_RUNTIME_URL: postgresql+psycopg://live:live-throwaway@db:5432/agent_live
+      # No sign-in: the one development learner of this throwaway database is the test account.
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_REDIRECT_URI: ""
+      # The legacy selection is set to Gemini by the runner; no local model is reachable.
+      OLLAMA_URL: http://127.0.0.1:9
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY must be set for the live run}
+      GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai}
+      GEMINI_MODELS: ${GEMINI_MODELS:-}
+      CLOUD_AI_TIMEOUT: "60"
+      WRITING_DB: /data/writing.db
+      AUTH_DB: /data/auth.db
+      PLATFORM_DB: /data/platform.db
+      PRODUCT_DB: /data/product.db
+      USER_DATA_ROOT: /data/users
+    tmpfs:
+      - /data
+    volumes: *code
+    ports:
+      - "127.0.0.1:8013:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
