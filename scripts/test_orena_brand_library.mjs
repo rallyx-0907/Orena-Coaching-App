@@ -65,10 +65,13 @@ assert.ok(!scene('<script>').includes('<script>'), 'state names are escaped');
 const library = read('static/orena/content/brand-library.js');
 assert.ok(!library.includes('references/'), 'the reference sheets are not product imagery');
 const app = read('app.py');
+/* `logo` joined the product directories with D-090: the logo and the Orena Intelligence mark are
+   served from their one copy in the Art Bible. The reference sheets still never are. */
 assert.ok(
-  app.includes('ORENA_BRAND_SERVED = ("actions", "expressions", "scenes")'),
+  app.includes('ORENA_BRAND_SERVED = ("actions", "expressions", "scenes", "logo")'),
   'the brand route serves only product directories',
 );
+assert.ok(!/ORENA_BRAND_SERVED = \([^)]*references/.test(app), 'the reference sheets are never served');
 assert.ok(
   app.includes('ORENA_BRAND_ROOT = (ROOT / "assets" / "brand" / "orena").resolve()'),
   'artwork is served from where it lives rather than copied into the web tree',

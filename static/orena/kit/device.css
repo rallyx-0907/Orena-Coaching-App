@@ -1,0 +1,109 @@
+/* Layout variables per device and for learning workspaces, copied from the pinned design's
+   <helmet> (body[data-device=desktop|mobile], body[data-focus="1"]). kit/device.js sets
+   data-device from the window width (Design Contract rule 48: two frames, one switch) and the
+   router sets data-focus for the design's focus routes (rule 47).
+
+   The design's --frame-* variables draw a device bezel around the prototype; in the product the
+   app is the window, so they are not carried. Everything else is the design's value. */
+
+:root[data-device="desktop"] {
+  --rail: flex;
+  --bnav: none;
+  --topbar: flex;
+  --mtop: none;
+  --cols: repeat(auto-fill, minmax(230px, 1fr));
+  --cols-ip: repeat(auto-fill, minmax(280px, 1fr));
+  --ls-cols: minmax(0, 1.05fr) minmax(0, 1fr);
+  --pad: 32px;
+  --sheet-inset: 0 0 0 auto;
+  --sheet-w: 440px;
+  --sheet-r: 0;
+  --sheet-maxh: 100%;
+  --h1: 40px;
+  --hero-h: 260px;
+  --rail-w: 232px;
+  --hide-mobile: block;
+  --hide-desktop: none;
+  --cv-cols: minmax(0, 1fr) 220px minmax(0, 1fr);
+  --mhead: none;
+  --ls-sec-h: 100%;
+  --ls-flex: 1;
+  --ls-mcol: flex;
+  --ls-tovf: auto;
+  --ls-ctl-pos: static;
+  --ls-sec-d: flex;
+  --ls-lbl: inline;
+  --ls-tgap: 14px;
+  --ls-tpad: 12px 14px;
+  --ls-lpad: 12px;
+  --ls-tmin: 0;
+  --ph3: repeat(3, minmax(0, 1fr));
+  --tb-label: inline;
+  --tb-pad: 12px;
+  --toast-b: 28px;
+  --wrap-starters: wrap;
+  --seg-flex: none;
+  --ph-cols: minmax(0, 1.8fr) minmax(280px, 1fr);
+  --td-cols: minmax(0, 1.2fr) minmax(0, 1fr);
+  --tile-cols: repeat(3, minmax(0, 1fr));
+  --tile-desc: block;
+  --tile-minh: 112px;
+  --tile-pad: 14px;
+  --tile-gap: 8px;
+}
+
+:root[data-device="mobile"] {
+  --rail: none;
+  --bnav: flex;
+  --topbar: none;
+  --mtop: flex;
+  --cols: repeat(2, minmax(0, 1fr));
+  --cols-ip: 1fr;
+  --ls-cols: 1fr;
+  --pad: 20px;
+  --sheet-inset: auto 0 0 0;
+  --sheet-w: auto;
+  --sheet-r: 28px 28px 0 0;
+  --sheet-maxh: 80%;
+  --h1: 28px;
+  --hero-h: 200px;
+  --rail-w: 0;
+  --hide-mobile: none;
+  --hide-desktop: block;
+  --cv-cols: 1fr;
+  --mhead: flex;
+  --ls-sec-h: auto;
+  --ls-flex: none;
+  --ls-mcol: contents;
+  --ls-tovf: visible;
+  --ls-ggap: 14px;
+  --ls-spacer: 0;
+  --ls-cgap: 6px;
+  --ls-sec-d: none;
+  --ls-lbl: none;
+  --ls-tgap: 8px;
+  --ls-tpad: 10px 8px;
+  --ls-lpad: 4px;
+  --ls-tmin: auto;
+  --ph3: 1fr;
+  --tb-label: none;
+  --tb-pad: 11px;
+  --toast-b: 108px;
+  --wrap-starters: nowrap;
+  --seg-flex: 1 1 100%;
+  --ph-cols: 1fr;
+  --td-cols: 1fr;
+  --tile-cols: repeat(3, minmax(0, 1fr));
+  --tile-desc: none;
+  --tile-minh: 0;
+  --tile-pad: 10px;
+  --tile-gap: 4px;
+}
+
+/* A learning workspace: no top bar, no phone header, no tab bar (the rail stays on a desk, as
+   the design's focus mode leaves it). */
+:root[data-focus="1"] {
+  --topbar: none;
+  --bnav: none;
+  --mhead: none;
+}

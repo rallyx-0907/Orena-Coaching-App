@@ -7,7 +7,7 @@ import { continuationEntries, continuationPlace, hint, pageIntro } from './patte
 import { entryIcon } from './icons.js';
 import { icon } from './phosphor.js';
 import { art } from './content.js';
-import { layeredCopy } from './layered-copy.js';
+import { layeredCopy } from '../product/layered-copy.js';
 import { REFERENCE_LAYERS } from './copy-layers.js';
 import { continuationExperience, continuationLink } from '../product/intent.js';
 

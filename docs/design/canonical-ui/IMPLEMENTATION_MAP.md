@@ -22,14 +22,15 @@ Routes are hash routes of the new entry (`/next#/…` until the cutover, then
 
 | Design element | Code | Gate | Status |
 | --- | --- | --- | --- |
-| Tokens (light, dark), device variables | `static/orena/kit/tokens.css`, `kit/device.css`, `kit/device.js` | `scripts/test_orena_kit.mjs` | planned |
-| Icons (Lucide, pinned release) | `kit/icons.js` | `scripts/test_orena_kit.mjs` | planned |
-| Brand marks (`ol-mark`, `ol-intel*`) | `kit/brand.js` ← `assets/brand/orena/logo/` | `scripts/test_orena_kit.mjs` | planned |
-| Desktop rail, top bar, phone header, phone bar, focus mode | `shell/frame.js`, `shell/shell.css` | `scripts/test_orena_shell.mjs` | planned |
-| Router, back stack, breadcrumb, nav origin | `shell/router.js`, `shell/routes.js` | `scripts/test_orena_shell.mjs` | planned |
-| Banner · Loading · Load error | `kit/states.js` | `scripts/test_orena_kit.mjs` | planned |
-| Toast | `kit/toast.js` | `scripts/test_orena_kit.mjs` | planned |
-| Sheet host (desk panel / phone bottom sheet, scrim) | `kit/sheet.js` | `scripts/test_orena_kit.mjs` | planned |
+| Words (en / vi / zh, by language layer) | `copy/index.js`, `copy/shell.js`, `screens/<name>/copy.js` | `scripts/test_orena_copy.mjs` | reviewable |
+| Tokens (light, dark), device variables | `static/orena/kit/tokens.css`, `kit/device.css`, `kit/boot.js`, `kit/device.js` | `scripts/test_orena_kit.mjs` | reviewable (AA: N-8 awaits the human) |
+| Icons (Lucide, pinned release) | `kit/icons.js` ← `scripts/sync_lucide_icons.py` (lucide-static@0.525.0) | `scripts/test_orena_kit.mjs` | reviewable |
+| Brand marks (`ol-mark`, `ol-intel*`) | `kit/brand.js` ← `assets/brand/orena/logo/` | `tests/test_orena_routes.py` | reviewable |
+| Desktop rail, top bar, phone header, phone bar, focus mode | `shell/frame.js`, `shell/shell.css`, `shell/context.js` | `scripts/test_orena_shell.mjs` | reviewable |
+| Router, back stack, breadcrumb, nav origin | `shell/router.js`, `shell/routes.js`, `shell/screens.js` | `scripts/test_orena_shell.mjs` | reviewable |
+| Banner · Loading · Load error | `kit/states.js` (offline banner in `main.js`) | `scripts/test_orena_kit.mjs` | reviewable |
+| Toast | `kit/toast.js` | `scripts/test_orena_kit.mjs` | building |
+| Sheet host (desk panel / phone bottom sheet, scrim) | `kit/overlay.js` | `scripts/test_orena_kit.mjs` | building |
 | Filter Sheet | `screens/discover/filter-sheet.js` | | planned |
 | Word Quick Sheet · Sentence Quick Sheet | `screens/quick-sheet/` | | planned |
 | Vocabulary Focus | `screens/listening/vocabulary-focus.js` | | planned |
@@ -57,7 +58,7 @@ Routes are hash routes of the new entry (`/next#/…` until the cutover, then
 | 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` | planned |
 | 17 | Progress | `#/progress` | shell | `screens/progress/` | planned |
 | 24–25 | Profile, Today's progress | `#/profile` | shell | `screens/profile/` | planned |
-| 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | planned |
+| 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | reviewable |
 | 26 | Settings | `#/settings` | focus | `screens/settings/` | planned |
 | 27 | Search | `#/search` | focus | `screens/search/` | planned |
 | 14 | Reader | `#/read/:id` | focus | `screens/reader/` | planned |

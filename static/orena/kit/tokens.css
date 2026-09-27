@@ -1,0 +1,121 @@
+/* The new learner UI's one colour owner (D-088, D-089; Design Contract rules 16, 30).
+
+   Both themes' values are copied exactly from the pinned design
+   (docs/design/canonical-ui/screens/Orena.dc.html, <helmet>, body[data-theme=…]). The theme is
+   chosen by kit/device.js: the operating system's prefers-color-scheme, unless the learner used
+   the Reader's light/dark button (a device preference). Nothing else in the new UI writes a
+   colour literal except where the design itself draws one on brand artwork (the mark's disc).
+
+   The design scopes these to body; they sit on the root element here so the first paint - before
+   <body> exists - already has them. */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: linear-gradient(160deg, #0B0B12, #16122A);
+  --bg: #0E0E16;
+  --surface: #171722;
+  --surface2: #1E1E2B;
+  --surface3: #272736;
+  --border: #262634;
+  --border2: #34344A;
+  --text: #F3F3F8;
+  --muted: #A9A9BC;
+  --text3: #77778E;
+  --accent: #7D78F5;
+  --accent-hover: #8E8AF7;
+  --accent-press: #6C67E6;
+  --accent-ink: #fff;
+  --accent-soft: #24224A;
+  --tint2: #302C66;
+  --accent-text: #A9A5FF;
+  --ring: rgba(125, 120, 245, .4);
+  --green: #3DD68C;
+  --green-soft: #12291F;
+  --support: #7FB2FF;
+  --support-soft: #15233A;
+  --amber: #F5B544;
+  --amber-soft: #2E2412;
+  --red: #FF6B70;
+  --red-soft: #331719;
+  --ai: linear-gradient(135deg, #7B6CFF 0%, #B06CF7 55%, #F58AAE 100%);
+  --ai-soft: #231D40;
+  --ai-ink: #C3B3FF;
+  --ai-line: #3A2F6B;
+  --scrim: rgba(0, 0, 0, .6);
+  --sh1: 0 1px 2px rgba(0, 0, 0, .3);
+  --sh2: 0 8px 24px rgba(0, 0, 0, .45);
+  --sh3: 0 24px 64px rgba(0, 0, 0, .6);
+  --shadow: 0 24px 64px rgba(0, 0, 0, .6);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: linear-gradient(160deg, #E9EEFB 0%, #EEEAFB 45%, #F4E8F5 100%);
+  --bg: #F5F5FA;
+  --surface: #FFFFFF;
+  --surface2: #F4F4F9;
+  --surface3: #EBEBF3;
+  --border: #ECECF3;
+  --border2: #DCDCE7;
+  --text: #17171F;
+  --muted: #5C5C6E;
+  --text3: #8E8EA2;
+  --accent: #5A55E3;
+  --accent-hover: #4C47D2;
+  --accent-press: #403BBE;
+  --accent-ink: #fff;
+  --accent-soft: #EFEDFD;
+  --tint2: #DDD9FB;
+  --accent-text: #4C47D2;
+  --ring: rgba(90, 85, 227, .24);
+  --green: #138A5A;
+  --green-soft: #E6F6EE;
+  --support: #2B6FD9;
+  --support-soft: #E8F1FE;
+  --amber: #B86E00;
+  --amber-soft: #FEF3DD;
+  --red: #D93D42;
+  --red-soft: #FDECEC;
+  --ai: linear-gradient(135deg, #6B5CF6 0%, #A35CF2 55%, #F2789F 100%);
+  --ai-soft: #F5F0FF;
+  --ai-ink: #6A4FE0;
+  --ai-line: #D6C8FD;
+  --scrim: rgba(24, 22, 48, .38);
+  --sh1: 0 1px 2px rgba(23, 23, 50, .04), 0 2px 10px rgba(23, 23, 50, .04);
+  --sh2: 0 2px 6px rgba(40, 36, 110, .05), 0 12px 32px rgba(40, 36, 110, .10);
+  --sh3: 0 24px 64px rgba(40, 36, 110, .20);
+  --shadow: 0 24px 64px rgba(40, 36, 110, .20);
+}
+
+/* Theme-independent hues the design sets on body: tone marks for Chinese (1-4), and the skill
+   hues that colour skill icons and small markers only (rule 32). */
+:root {
+  --tone1: #D63A57;
+  --tone2: #C27A00;
+  --tone3: #0F8F8F;
+  --tone4: #3B57D6;
+  --skill-read: #FF7A3D;
+  --skill-listen: #1FB8B8;
+  --skill-speak: #EE4F6C;
+  --skill-write: #7B4FD8;
+  --skill-vocab: #F2B705;
+  --skill-grammar: #4867EC;
+  /* The brand mark's disc, as the design draws it behind ol-mark / ol-intel (brand artwork,
+     D-090), and the toast's fixed ink surface. */
+  --mark-disc: radial-gradient(circle at 30% 20%, #2B2158, #150F2E 72%);
+  --mark-glow: 0 4px 12px rgba(122, 92, 246, .3);
+  --mark-glow-strong: 0 4px 12px rgba(122, 92, 246, .35);
+  --mark-glow-bar: 0 10px 24px rgba(122, 92, 246, .35);
+  --mark-ring: inset 0 0 0 1px rgba(255, 255, 255, .07);
+  --toast-bg: #1C1B2E;
+  --toast-ink: #fff;
+  --toast-chip: rgba(255, 255, 255, .14);
+  --toast-action: rgba(255, 255, 255, .12);
+  /* White text on the red count badge and on the mark disc, as the frames draw it. */
+  --badge-ink: #fff;
+  /* The initials avatar's gradient and ink (the design has no learner photo). */
+  --avatar-bg: linear-gradient(135deg, #FFD4B8, #F7A8C4);
+  --avatar-ink: #7A2E4A;
+  /* The placeholder the design draws where artwork is missing (rule 37). */
+  --art-placeholder: repeating-linear-gradient(135deg, rgba(255, 255, 255, .5) 0 6px, transparent 6px 12px), var(--tint2);
+}

@@ -4,7 +4,7 @@
    The layer of every key is declared in ./copy-layers.js; there is no default. A key missing from
    the declarations reads in English and is reported once on the console, and the gate
    (scripts/test_orena_copy_layers.mjs) fails on it before it can ship. */
-import { guidanceLocale } from '../product/languages.js';
+import { guidanceLocale } from './languages.js';
 
 const cache = new WeakMap();
 const reported = new Set();

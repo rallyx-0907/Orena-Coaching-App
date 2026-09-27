@@ -1,0 +1,304 @@
+/* Global rules of the new learner UI, from the pinned design's <helmet> (D-088). Colours are
+   read from kit/tokens.css only. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* The design gives every grid/flex child min-width:0 (by inline-style selector); here it is a
+   zero-specificity default for the whole app, so any component can still set its own. */
+:where(#app *) {
+  min-width: 0;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+  background: var(--page) fixed;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Outfit has no Vietnamese subset: Vietnamese text - the interface in Vietnamese, or support text
+   written in Vietnamese - is set in Plus Jakarta Sans, the face this design project used before
+   its skin (UI_BACKEND_GAPS N-1, Design Contract rule 34). */
+:lang(vi) {
+  font-family: 'Plus Jakarta Sans', 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+}
+
+/* Zero specificity, so a component's own colour always wins over the plain link colour. */
+:where(a) {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+:where(a):hover {
+  color: var(--accent);
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+.o-hscroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.o-hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+button:disabled {
+  background: var(--surface3) !important;
+  color: var(--text3) !important;
+  border-color: transparent !important;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.ic {
+  display: block;
+  flex: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Chinese learning text: the design's Hanzi-over-Pinyin stacks. `data-tl` is the learning
+   language (set by the shell from the server's active language), `data-pyon` the pinyin toggle. */
+[data-py] {
+  display: none;
+}
+:root[data-tl='zh'][data-pyon='1'] [data-py] {
+  display: block;
+  text-align: center;
+  font-family: Outfit, sans-serif;
+  font-size: max(12.5px, 0.64em);
+  line-height: 1.3;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  padding: 0 1px;
+}
+:root[data-tl='zh'][data-pyon='1'] [data-hz] {
+  display: block;
+  min-width: 1.15em;
+  text-align: center;
+}
+:root[data-tl='zh'] span:has(> span > [data-hz]) {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  vertical-align: bottom;
+  white-space: nowrap;
+  margin-bottom: 8px;
+}
+:root[data-tl='zh'] [data-zhf] {
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+.o-zh {
+  font-family: 'Noto Serif SC', serif;
+  line-height: 2.1;
+  letter-spacing: 0.02em;
+}
+rt {
+  font: 500 11px Outfit, 'Noto Sans SC', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* The Orena Intelligence mark's states (D-090), used by the symbols in kit/brand.js. */
+@keyframes oi-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes oi-sway {
+  0%,
+  100% {
+    transform: scale(0.94) rotate(-6deg);
+  }
+  50% {
+    transform: scale(0.94) rotate(6deg);
+  }
+}
+@keyframes oi-in {
+  0% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+}
+@keyframes oi-speak {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.14);
+  }
+  24% {
+    transform: scale(1.02);
+  }
+  38% {
+    transform: scale(1.18);
+  }
+  52% {
+    transform: scale(1.04);
+  }
+  68% {
+    transform: scale(1.11);
+  }
+  84% {
+    transform: scale(1);
+  }
+}
+@keyframes oi-speak-arms {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.035);
+  }
+  24% {
+    transform: scale(1);
+  }
+  38% {
+    transform: scale(1.045);
+  }
+  52% {
+    transform: scale(1.01);
+  }
+  68% {
+    transform: scale(1.03);
+  }
+  84% {
+    transform: scale(1);
+  }
+}
+@keyframes oi-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.88;
+  }
+}
+@keyframes oi-think {
+  0%,
+  100% {
+    transform: scale(0.9) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.16) rotate(30deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

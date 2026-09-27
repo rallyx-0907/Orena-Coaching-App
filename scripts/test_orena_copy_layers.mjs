@@ -13,7 +13,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import { referenceCopy, refCopy } from '../static/orena/ui/reference.js';
 import { speakingCopy, speakCopy } from '../static/orena/ui/speaking-copy.js';
-import { layeredCopy } from '../static/orena/ui/layered-copy.js';
+import { layeredCopy } from '../static/orena/product/layered-copy.js';
 import { COPY_LAYERS, REFERENCE_LAYERS, SPEAKING_LAYERS, REVIEWED, LAYERS } from '../static/orena/ui/copy-layers.js';
 
 const TABLES = {
