@@ -1,18 +1,20 @@
 # Grammar Lab — Grammar content contract (proposal, schema v0.4)
 
-28/09/2026 · nhánh `feature/grammar-lab-pipeline` · nguồn: chỉ đạo trực tiếp của người,
-ghi lại tại đây để không dựa vào lịch sử chat.
+28/09/2026 · soạn ở nhánh `feature/grammar-lab-pipeline` (Grammar Lab) · nguồn: chỉ đạo trực
+tiếp của người, ghi lại tại đây để không dựa vào lịch sử chat.
 
-**Đề xuất, chưa gửi lane UI.** Người duyệt nội dung qua trang preview nội bộ
-(`python -m grammar_lab.pipeline.cli preview --serve`) trước; chỉ gửi lane UI sau khi người
-duyệt. Tài liệu định nghĩa chính xác dữ liệu một điểm ngữ pháp mang, đủ để UI vẽ: công thức
+**Trạng thái: đề xuất gửi lane UI review.** Người đã duyệt cấu trúc và giọng văn v0.4 qua trang
+preview nội bộ của Grammar Lab (28/09/2026, 11 điểm EN + 3 điểm ZH). Lane UI review tài liệu này
+theo nhu cầu của hai màn Grammar, liệt kê chỗ thiếu; người duyệt và merge. Đường dẫn
+`grammar_lab/...` bên dưới (schema, validate, verify, prompt) nằm ở nhánh
+`feature/grammar-lab-pipeline`, chưa có trong `codex/work`. Tài liệu định nghĩa chính xác dữ liệu một điểm ngữ pháp mang, đủ để UI vẽ: công thức
 nổi bật với ô tô màu theo vai trò, minh hoạ timeline/word_order/morphology, ví dụ tô màu cùng
 bảng màu, so sánh hai cột, sai/đúng, luyện nhanh bấm được. Nó **không** định hình dáng UI (màu,
 layout, font) — `docs/project/DESIGN_CONTRACT.md`/D-067 vẫn là nguồn UI thật.
 
-Đây là **nguồn ngữ pháp chuẩn duy nhất** đi tới (`PHASE0_DECISIONS.md` §6: Grammar Lab thay thế
+Đây là **nguồn ngữ pháp chuẩn duy nhất** đi tới (`docs/grammar_lab/PHASE0_DECISIONS.md` §6 ở nhánh Grammar Lab: Grammar Lab thay thế
 R5). Phần giải thích viết bằng tiếng Việt, giọng rõ ràng, cho người lớn, không văn vẻ. `story`
-(STORY_SPEC.md, VOICE.md) là nội dung phụ, tuỳ chọn (`blocks: [story]`), chỉ dùng khi người học
+(`grammar_lab/STORY_SPEC.md`, `grammar_lab/VOICE.md`) là nội dung phụ, tuỳ chọn (`blocks: [story]`), chỉ dùng khi người học
 cần giải thích thêm; prompt story v3 đang tạm dừng.
 
 ## 0. Metadata (không do model sinh)
@@ -66,7 +68,7 @@ Tiêu đề (ngôn ngữ giải thích + tên gốc bằng ngôn ngữ đích), 
   Tối thiểu 2, không trùng (`formula.option_duplicate`); tiếng Trung mỗi lựa chọn có `pinyin`.
 - Công thức phải phủ **mọi dạng tiêu đề nêu**. Verify kiểm bằng model khác họ với model sinh
   (blind-solve, hiện là Groq): đưa tiêu đề + tóm tắt + công thức (kèm các lựa chọn), hỏi còn
-  thiếu dạng nào; thiếu → cờ `formula_incomplete` (điểm bị flagged). Prompt: `prompts/verify_formula.md`.
+  thiếu dạng nào; thiếu → cờ `formula_incomplete` (điểm bị flagged). Prompt: `grammar_lab/prompts/verify_formula.md`.
 - Hai cách dùng khác nhau thì tách thành hai điểm, không gộp một công thức: mạo từ là
   `en.articles.a_an` (không xác định) và `en.articles.the` (xác định), `compare` lẫn nhau.
 - `variants.negative`/`variants.question`: cũng là ô, chỉ khai khi điểm có dạng phủ định/nghi
@@ -77,7 +79,7 @@ Tiêu đề (ngôn ngữ giải thích + tên gốc bằng ngôn ngữ đích), 
 
   | point_type | kind | Dữ liệu |
   | --- | --- | --- |
-  | `tense_aspect` (thì/thể) | `timeline` | `timeline.shape` (enum đóng, xem schema) + `relevance` tuỳ chọn |
+  | `tense_aspect` (thì/thể) | `timeline` | `timeline.shape`, enum đóng: `point_past`, `ongoing_now`, `unspecified_past`, `habit`, `future_condition`, `future_plan`, `past_ongoing` (thêm giá trị = thêm cách vẽ ở app); `relevance` (chuỗi) tuỳ chọn |
   | `word_order` (trật tự câu, vd. 把) | `word_order` | không có — UI vẽ chính các ô `formula` thành hộp theo thứ tự |
   | `morphology` (biến đổi từ) | `morphology` | 1-4 mục `{base, affix, result}`, vd. `book + -s → books` |
   | `other` | `none` | không có |
@@ -147,7 +149,7 @@ có đáp án vô nghĩa kiểu "cates". Kiểm tra:
   `boxs`, `floweres` dù đã được dặn không).
 - Validate: đáp án sai gắn `error_tag: spelling` bị cờ `quick_practice.distractor_misspelling`.
 - Verify: model khác họ đọc từng đáp án sai và phán đó là lỗi người học thật hay dạng bịa/sai
-  chính tả — cờ `quick_practice_distractor_implausible` (`prompts/verify_distractors.md`). Cần bước
+  chính tả — cờ `quick_practice_distractor_implausible` (`grammar_lab/prompts/verify_distractors.md`). Cần bước
   này vì luật theo nhãn không đủ: khi bị cấm nhãn `spelling`, model sinh chỉ đổi nhãn dạng bịa
   thành `word_form`; và engine cũng không phân biệt được (nó vẫn báo `cates` là lỗi).
 - Verify điền từng đáp án vào chỗ trống và chấm qua engine: đáp án đúng phải sạch
@@ -169,7 +171,7 @@ của câu luyện nhanh.
 
 | Kiểm tra | Cách làm | Mã cờ |
 | --- | --- | --- |
-| Span hợp lệ, phủ đủ công thức | Tất định (`validate.py`) | `example.span_invalid`, `example.formula_role_missing`, `example.span_role_not_in_formula` |
+| Span hợp lệ, phủ đủ công thức | Tất định (`grammar_lab/pipeline/validate.py`) | `example.span_invalid`, `example.formula_role_missing`, `example.span_role_not_in_formula` |
 | Ô công thức không mang `+` | Tất định | `formula.slot_has_joiner` |
 | Đáp án sai không chỉ là lỗi chính tả | Tất định | `quick_practice.distractor_misspelling` |
 | Minh hoạ hợp `point_type` | Tất định | `illustration.kind_mismatch` |
