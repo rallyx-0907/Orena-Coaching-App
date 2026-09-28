@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.4",
   "id": "en.there_is_are",
   "version": 1,
   "target_lang": "en",
@@ -11,72 +11,78 @@
   "source_refs": {},
   "title": {"vi": "There is / There are", "en": "There is / There are"},
   "summary": {"vi": "Dùng there is/there are để nói ở đâu đó có cái gì. Không dùng have cho nghĩa này."},
-  "blocks": [
-    {"type": "formula", "parts": ["There is", "+ danh từ số ít / không đếm được"]},
-    {"type": "formula", "parts": ["There are", "+ danh từ số nhiều"]},
+  "when_to_use": [
+    {"vi": "Khi muốn nói ở đâu đó có cái gì."},
+    {"vi": "Khi giới thiệu sự tồn tại, không phải sở hữu."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "There", "role": "marker"},
+      {"text": "is / are", "role": "verb"},
+      {"text": "a book / two cats", "role": "object"}
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
     {
-      "type": "example",
-      "text": "There is a new café near my house.",
-      "seg": [["There is", "target"], [" a new café near my house."]],
-      "tr": {"vi": "Có một quán cà phê mới gần nhà tôi."}
+      "text": "There is a book on the table.",
+      "spans": [{"start": 0, "end": 8, "role": "marker"}],
+      "annotation": {"vi": "danh từ số ít → is"},
+      "translation": {"vi": "Có một quyển sách trên bàn."}
     },
     {
-      "type": "example",
-      "text": "There are thirty students in my class.",
-      "seg": [["There are", "target"], [" thirty students in my class."]],
-      "tr": {"vi": "Lớp tôi có ba mươi học sinh."}
-    },
+      "text": "There are two cats in the garden.",
+      "spans": [{"start": 0, "end": 9, "role": "marker"}],
+      "annotation": {"vi": "danh từ số nhiều → are"},
+      "translation": {"vi": "Có hai con mèo trong vườn."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
     {
-      "type": "pitfall",
-      "l1": ["vi"],
       "wrong": "In my room have a big bed.",
       "right": "There is a big bed in my room.",
-      "error_tag": "sentence_structure",
-      "why": {
+      "reason": {
         "vi": "Tiếng Việt dùng 'có' cho cả sở hữu ('tôi có xe') lẫn tồn tại ('phòng có giường'). Tiếng Anh tách ra: sở hữu dùng have, tồn tại dùng there is/are."
-      }
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
     },
     {
-      "type": "pitfall",
-      "l1": ["vi"],
       "wrong": "There is many people in the park.",
       "right": "There are many people in the park.",
+      "reason": {"vi": "People là số nhiều nên phải dùng are."},
       "error_tag": "agreement",
-      "why": {"vi": "People là số nhiều nên phải dùng are."}
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ a bank on this street?",
+      "options": ["Is there", "Are there", "Have"],
+      "answer": 0,
+      "explain": {"vi": "A bank số ít → Is there."}
     },
     {
-      "type": "check",
-      "items": [
-        {
-          "q": "___ a bank on this street?",
-          "options": ["Is there", "Are there", "Have"],
-          "answer": 0,
-          "explain": {"vi": "A bank số ít → Is there."}
-        },
-        {
-          "q": "My city ___ many parks.",
-          "options": ["there are", "has", "have"],
-          "answer": 1,
-          "explain": {
-            "vi": "Chủ ngữ là my city (sở hữu) nên dùng has. Cách khác: There are many parks in my city."
-          }
-        },
-        {
-          "q": "There ___ some milk in the fridge.",
-          "options": ["are", "is", "have"],
-          "answer": 1,
-          "explain": {"vi": "Milk không đếm được → is."}
-        }
-      ]
+      "q": "My city ___ many parks.",
+      "options": ["there are", "has", "have"],
+      "answer": 1,
+      "explain": {"vi": "Chủ ngữ là my city (sở hữu) nên dùng has."}
+    },
+    {
+      "q": "There ___ some milk in the fridge.",
+      "options": ["are", "is", "have"],
+      "answer": 1,
+      "explain": {"vi": "Milk không đếm được → is."}
     }
   ],
   "status": "draft_ai",
   "provenance": {
     "model": "unknown",
-    "prompt_version": "sample_v0.1",
-    "run_id": "migrate.sample_v0.1",
-    "generated_at": "2026-09-26T00:00:00+07:00",
-    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+    "prompt_version": "hand_migrated_v04",
+    "run_id": "migrate.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00",
+    "migrated_from": {"file": "content/en/en.there_is_are.json (v0.2, pre-migration)", "schema_version": "0.2"}
   },
   "review": null
 }

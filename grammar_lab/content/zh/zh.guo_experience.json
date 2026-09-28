@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.guo_experience",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.past_experience",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.le_completion"],
+  "contrasts": ["zh.le_completion"],
+  "error_tags": ["aspect"],
+  "source_refs": {},
+  "title": {"vi": "Trợ từ 过 (đã từng)", "zh-Hans": "动态助词“过”"},
+  "summary": {"vi": "过 đặt sau động từ để nói đã từng làm gì, không cần mốc thời gian cụ thể."},
+  "when_to_use": [
+    {"vi": "Khi nói đã từng có trải nghiệm đó, không quan trọng khi nào."},
+    {"vi": "Không dùng khi câu đã có mốc thời gian xác định gần đây."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "动词", "role": "verb"},
+      {"text": "过", "role": "particle"},
+      {"text": "宾语", "role": "object"}
+    ],
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past", "relevance": "now"}}
+  },
+  "examples": [
+    {
+      "text": "我去过北京。",
+      "spans": [{"start": 2, "end": 3, "role": "particle"}],
+      "annotation": {"vi": "đã từng, không cần mốc thời gian"},
+      "translation": {"vi": "Tôi đã từng đến Bắc Kinh."},
+      "pinyin": ["wǒ", "qù", "guò", "běi", "jīng", ""]
+    },
+    {
+      "text": "他学过三年英语。",
+      "spans": [{"start": 2, "end": 3, "role": "particle"}],
+      "annotation": {"vi": "trải nghiệm trong quá khứ"},
+      "translation": {"vi": "Anh ấy đã từng học tiếng Anh ba năm."},
+      "pinyin": ["tā", "xué", "guò", "sān", "nián", "yīng", "yǔ", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.le_completion",
+      "this_meaning": {"vi": "Đã từng trải nghiệm, không cần mốc thời gian cụ thể."},
+      "this_example": "我去过北京。",
+      "other_meaning": {"vi": "Hành động đã xong, thường có mốc thời gian cụ thể."},
+      "other_example": "我们吃了饭。"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "我不去过北京。",
+      "right": "我没去过北京。",
+      "reason": {"vi": "Phủ định của 过 dùng 没, không dùng 不."},
+      "error_tag": "aspect",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "我去过北京昨天。",
+      "right": "我昨天去了北京。",
+      "reason": {"vi": "过 không dùng khi câu có mốc thời gian xác định gần đây như 昨天; khi đó dùng 了."},
+      "error_tag": "aspect",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___中国菜吗？",
+      "options": ["吃", "吃过", "吃着"],
+      "answer": 1,
+      "explain": {"vi": "Hỏi đã từng trải nghiệm chưa → 吃过。"}
+    },
+    {
+      "q": "我以前___这本书。",
+      "options": ["看过", "看了", "看着"],
+      "answer": 0,
+      "explain": {"vi": "以前 (trước đây, không mốc cụ thể) → 看过。"}
+    },
+    {
+      "q": "他没___这个电影。",
+      "options": ["看过", "看了", "看着"],
+      "answer": 0,
+      "explain": {"vi": "Phủ định trải nghiệm: 没 + V + 过。"}
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "hand_authored_v04",
+    "run_id": "author.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00"
+  },
+  "review": null
+}

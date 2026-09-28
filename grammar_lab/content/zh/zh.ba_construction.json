@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.ba_construction",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.le_completion"],
+  "contrasts": [],
+  "error_tags": ["ba_sentence"],
+  "source_refs": {},
+  "title": {"vi": "Câu chữ 把", "zh-Hans": "把字句"},
+  "summary": {"vi": "把 đưa tân ngữ xác định lên trước động từ để nhấn mạnh kết quả xử lý trên vật đó."},
+  "when_to_use": [
+    {"vi": "Khi muốn nhấn mạnh kết quả xử lý/di chuyển một vật cụ thể."},
+    {"vi": "Tân ngữ sau 把 phải là vật xác định (đã biết là vật nào), không chung chung."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "我", "role": "subject"},
+      {"text": "把", "role": "marker"},
+      {"text": "书", "role": "object"},
+      {"text": "看完", "role": "verb"},
+      {"text": "了", "role": "particle"}
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我把书看完了。",
+      "spans": [{"start": 1, "end": 2, "role": "marker"}, {"start": 3, "end": 5, "role": "verb"}],
+      "annotation": {"vi": "把 + tân ngữ + động từ + kết quả"},
+      "translation": {"vi": "Tôi đã đọc xong quyển sách rồi."},
+      "pinyin": ["wǒ", "bǎ", "shū", "kàn", "wán", "le", ""]
+    },
+    {
+      "text": "请把门关上。",
+      "spans": [{"start": 1, "end": 2, "role": "marker"}, {"start": 3, "end": 5, "role": "verb"}],
+      "annotation": {"vi": "把 + tân ngữ + động từ + kết quả (câu mệnh lệnh)"},
+      "translation": {"vi": "Làm ơn đóng cửa lại."},
+      "pinyin": ["qǐng", "bǎ", "mén", "guān", "shàng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我看完了书。",
+      "right": "我把书看完了。",
+      "reason": {
+        "vi": "Khi nhấn mạnh kết quả xử lý một vật xác định, tiếng Trung thường đưa tân ngữ lên trước bằng 把, không để tân ngữ ở cuối như câu SVO thường."
+      },
+      "error_tag": "ba_sentence",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "我把一本书看完了。",
+      "right": "我把那本书看完了。",
+      "reason": {
+        "vi": "Tân ngữ sau 把 phải là vật xác định (đã biết là vật nào, ví dụ 那本书), không dùng số từ không xác định như 一本。"
+      },
+      "error_tag": "ba_sentence",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___作业做完了。",
+      "options": ["把", "被", "在"],
+      "answer": 0,
+      "explain": {"vi": "Nhấn mạnh kết quả xử lý bài tập → 把。"}
+    },
+    {
+      "q": "请___门打开。",
+      "options": ["把", "被", "给"],
+      "answer": 0,
+      "explain": {"vi": "Câu mệnh lệnh xử lý một vật cụ thể → 把。"}
+    },
+    {
+      "q": "我___这件事忘了。",
+      "options": ["把", "被", "跟"],
+      "answer": 0,
+      "explain": {"vi": "Nhấn mạnh kết quả (quên mất việc đó) → 把。"}
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "hand_authored_v04",
+    "run_id": "author.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00"
+  },
+  "review": null
+}

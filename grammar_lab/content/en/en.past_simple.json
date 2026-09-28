@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.4",
   "id": "en.past_simple",
   "version": 1,
   "target_lang": "en",
@@ -13,74 +13,86 @@
   "summary": {
     "vi": "Dùng cho việc đã xong tại một thời điểm xác định trong quá khứ (yesterday, last week, in 2020...)."
   },
-  "blocks": [
-    {"type": "formula", "parts": ["S", "V-ed / V2"]},
-    {"type": "formula", "parts": ["S", "didn't", "V nguyên mẫu"]},
-    {"type": "timeline", "kind": "point_past"},
-    {
-      "type": "rule_table",
-      "rows": [
-        ["work", "worked", {"vi": "Có quy tắc: thêm -ed"}],
-        ["stop", "stopped", {"vi": "Nhân đôi phụ âm cuối"}],
-        ["go", "went", {"vi": "Bất quy tắc"}],
-        ["buy", "bought", {"vi": "Bất quy tắc"}]
+  "when_to_use": [
+    {"vi": "Việc đã xong tại một thời điểm xác định trong quá khứ."},
+    {"vi": "Có mốc thời gian như yesterday, last week, in 2020."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "I", "role": "subject"},
+      {"text": "went", "role": "verb"},
+      {"text": "to the market", "role": "place"}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "I", "role": "subject"},
+        {"text": "didn't", "role": "aux"},
+        {"text": "go", "role": "verb"},
+        {"text": "to the market", "role": "place"}
       ]
     },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
     {
-      "type": "example",
       "text": "Yesterday I went to the market.",
-      "seg": [["Yesterday I "], ["went", "target"], [" to the market."]],
-      "tr": {"vi": "Hôm qua tôi đi chợ."}
+      "spans": [{"start": 12, "end": 16, "role": "verb"}],
+      "annotation": {"vi": "bất quy tắc: go → went"},
+      "translation": {"vi": "Hôm qua tôi đi chợ."}
     },
     {
-      "type": "pitfall",
-      "l1": ["vi"],
+      "text": "She didn't call me last night.",
+      "spans": [{"start": 4, "end": 15, "role": "aux"}],
+      "annotation": {"vi": "did + not + V nguyên mẫu"},
+      "translation": {"vi": "Tối qua cô ấy đã không gọi cho tôi."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
       "wrong": "Yesterday I go to the market.",
       "right": "Yesterday I went to the market.",
-      "error_tag": "tense",
-      "why": {
+      "reason": {
         "vi": "Trong tiếng Việt, 'hôm qua' là đủ để biết thời gian. Trong tiếng Anh, động từ vẫn phải chuyển sang quá khứ."
-      }
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
     },
     {
-      "type": "pitfall",
-      "l1": ["vi"],
       "wrong": "I didn't went there.",
       "right": "I didn't go there.",
+      "reason": {"vi": "Did đã mang nghĩa quá khứ, nên động từ sau nó giữ nguyên mẫu."},
       "error_tag": "tense",
-      "why": {"vi": "Did đã mang nghĩa quá khứ, nên động từ sau nó giữ nguyên mẫu."}
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "We ___ a great film last night.",
+      "options": ["see", "saw", "seed"],
+      "answer": 1,
+      "explain": {"vi": "See là bất quy tắc: saw."}
     },
     {
-      "type": "check",
-      "items": [
-        {
-          "q": "We ___ a great film last night.",
-          "options": ["see", "saw", "seed"],
-          "answer": 1,
-          "explain": {"vi": "See là bất quy tắc: saw."}
-        },
-        {
-          "q": "She didn't ___ the email.",
-          "options": ["read", "reads", "readed"],
-          "answer": 0,
-          "explain": {"vi": "Sau didn't dùng động từ nguyên mẫu."}
-        },
-        {
-          "q": "The bus ___ suddenly.",
-          "options": ["stoped", "stopped", "stop"],
-          "answer": 1,
-          "explain": {"vi": "Stop: một nguyên âm + một phụ âm → nhân đôi p."}
-        }
-      ]
+      "q": "She didn't ___ the email.",
+      "options": ["read", "reads", "readed"],
+      "answer": 0,
+      "explain": {"vi": "Sau didn't dùng động từ nguyên mẫu."}
+    },
+    {
+      "q": "The bus ___ suddenly.",
+      "options": ["stoped", "stopped", "stop"],
+      "answer": 1,
+      "explain": {"vi": "Stop: một nguyên âm + một phụ âm → nhân đôi p."}
     }
   ],
   "status": "draft_ai",
   "provenance": {
     "model": "unknown",
-    "prompt_version": "sample_v0.1",
-    "run_id": "migrate.sample_v0.1",
-    "generated_at": "2026-09-26T00:00:00+07:00",
-    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+    "prompt_version": "hand_migrated_v04",
+    "run_id": "migrate.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00",
+    "migrated_from": {"file": "content/en/en.past_simple.json (v0.2, pre-migration)", "schema_version": "0.2"}
   },
   "review": null
 }

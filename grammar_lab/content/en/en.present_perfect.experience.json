@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.4",
   "id": "en.present_perfect.experience",
   "version": 1,
   "target_lang": "en",
@@ -11,82 +11,102 @@
   "source_refs": {},
   "title": {"vi": "Hiện tại hoàn thành (trải nghiệm)", "en": "Present perfect for experience"},
   "summary": {"vi": "Dùng have/has + V3 để nói bạn đã từng làm gì trong đời, khi không nêu thời điểm cụ thể."},
-  "blocks": [
-    {"type": "formula", "parts": ["S", "have / has", "V3", "(never / before / twice)"]},
-    {"type": "timeline", "kind": "unspecified_past", "relevance": "now"},
+  "when_to_use": [
+    {"vi": "Nói đã từng làm gì trong đời, không nêu thời điểm cụ thể."},
+    {"vi": "Không dùng khi câu có mốc thời gian đã kết thúc (yesterday, last year, in 2020)."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "I", "role": "subject"},
+      {"text": "have", "role": "aux"},
+      {"text": "visited", "role": "verb"},
+      {"text": "Hanoi twice", "role": "complement"}
+    ],
+    "variants": {
+      "question": [
+        {"text": "Have", "role": "aux"},
+        {"text": "you", "role": "subject"},
+        {"text": "ever", "role": "time"},
+        {"text": "eaten durian", "role": "verb"}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past", "relevance": "now"}}
+  },
+  "examples": [
     {
-      "type": "example",
       "text": "I have visited Hanoi twice.",
-      "seg": [["I "], ["have visited", "target"], [" Hanoi twice."]],
-      "tr": {"vi": "Tôi đã đến Hà Nội hai lần."}
+      "spans": [{"start": 2, "end": 14, "role": "verb"}],
+      "annotation": {"vi": "trải nghiệm, không nêu khi nào"},
+      "translation": {"vi": "Tôi đã đến Hà Nội hai lần."}
     },
     {
-      "type": "example",
       "text": "Have you ever eaten durian?",
-      "seg": [["Have", "target"], [" you ever "], ["eaten", "target"], [" durian?"]],
-      "tr": {"vi": "Bạn đã bao giờ ăn sầu riêng chưa?"}
-    },
+      "spans": [{"start": 0, "end": 4, "role": "aux"}, {"start": 14, "end": 19, "role": "verb"}],
+      "annotation": {"vi": "câu hỏi trải nghiệm: have + ever + V3"},
+      "translation": {"vi": "Bạn đã bao giờ ăn sầu riêng chưa?"}
+    }
+  ],
+  "compare": [
     {
-      "type": "contrast",
       "with": "en.past_simple",
-      "pairs": [["I have been to Da Lat.", "I went to Da Lat last year."]],
-      "explain": {
-        "vi": "Không nêu thời gian → hiện tại hoàn thành. Có thời gian đã kết thúc (last year) → quá khứ đơn."
-      }
-    },
+      "this_meaning": {"vi": "Không nêu thời gian, chỉ nói đã từng."},
+      "this_example": "I have been to Da Lat.",
+      "other_meaning": {"vi": "Có thời gian đã kết thúc."},
+      "other_example": "I went to Da Lat last year."
+    }
+  ],
+  "common_mistakes": [
     {
-      "type": "pitfall",
-      "l1": ["vi"],
       "wrong": "I have visited Da Lat last year.",
       "right": "I visited Da Lat last year.",
-      "error_tag": "tense",
-      "why": {
+      "reason": {
         "vi": "Chữ 'đã' trong tiếng Việt dùng cho cả hai thì, nhưng tiếng Anh không cho dùng have + V3 với mốc thời gian đã kết thúc."
-      }
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
     },
     {
-      "type": "pitfall",
-      "l1": ["vi"],
       "wrong": "I have ever been to Japan.",
       "right": "I have been to Japan.",
-      "error_tag": "word_choice",
-      "why": {
+      "reason": {
         "vi": "'Đã từng' dễ bị dịch thành ever, nhưng ever chỉ dùng trong câu hỏi và câu phủ định, không dùng trong câu khẳng định."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ sushi before.",
+      "options": ["has never eaten", "never ate yesterday", "has ever eaten"],
+      "answer": 0,
+      "explain": {
+        "vi": "Trải nghiệm, không có thời điểm; never dùng được trong câu khẳng định dạng phủ nghĩa."
       }
     },
     {
-      "type": "check",
-      "items": [
-        {
-          "q": "She ___ sushi before.",
-          "options": ["has never eaten", "never ate yesterday", "has ever eaten"],
-          "answer": 0,
-          "explain": {
-            "vi": "Trải nghiệm, không có thời điểm; never dùng được trong câu khẳng định dạng phủ nghĩa."
-          }
-        },
-        {
-          "q": "I ___ this film in 2022.",
-          "options": ["have seen", "saw", "have saw"],
-          "answer": 1,
-          "explain": {"vi": "In 2022 là thời điểm đã kết thúc → quá khứ đơn."}
-        },
-        {
-          "q": "___ you ever ___ to Korea?",
-          "options": ["Did / been", "Have / been", "Have / went"],
-          "answer": 1,
-          "explain": {"vi": "Have + V3 (been)."}
-        }
-      ]
+      "q": "I ___ this film in 2022.",
+      "options": ["have seen", "saw", "have saw"],
+      "answer": 1,
+      "explain": {"vi": "In 2022 là thời điểm đã kết thúc → quá khứ đơn."}
+    },
+    {
+      "q": "___ you ever been to Korea?",
+      "options": ["Did", "Have", "Do"],
+      "answer": 1,
+      "explain": {"vi": "Have + V3 (been)."}
     }
   ],
   "status": "draft_ai",
   "provenance": {
     "model": "unknown",
-    "prompt_version": "sample_v0.1",
-    "run_id": "migrate.sample_v0.1",
-    "generated_at": "2026-09-26T00:00:00+07:00",
-    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+    "prompt_version": "hand_migrated_v04",
+    "run_id": "migrate.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00",
+    "migrated_from": {
+      "file": "content/en/en.present_perfect.experience.json (v0.2, pre-migration)",
+      "schema_version": "0.2"
+    }
   },
   "review": null
 }

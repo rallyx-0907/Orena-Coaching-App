@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.4",
   "id": "en.comparatives",
   "version": 1,
   "target_lang": "en",
@@ -11,71 +11,78 @@
   "source_refs": {},
   "title": {"vi": "So sánh hơn", "en": "Comparatives"},
   "summary": {"vi": "Tính từ ngắn thêm -er, tính từ dài dùng more; sau đó là than + đối tượng so sánh."},
-  "blocks": [
-    {"type": "formula", "parts": ["A", "be", "adj-er / more adj", "than", "B"]},
+  "when_to_use": [
+    {"vi": "Khi so sánh hai người/vật khác nhau."},
+    {"vi": "Tính từ ngắn: +er. Tính từ dài: more + tính từ."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "A", "role": "subject"},
+      {"text": "is", "role": "verb"},
+      {"text": "bigger / more expensive", "role": "complement"},
+      {"text": "than", "role": "connector"},
+      {"text": "B", "role": "object"}
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
     {
-      "type": "rule_table",
-      "rows": [
-        ["tall", "taller", {"vi": "Tính từ 1 âm tiết: thêm -er"}],
-        ["big", "bigger", {"vi": "Nhân đôi phụ âm cuối"}],
-        ["easy", "easier", {"vi": "Phụ âm + y → -ier"}],
-        ["expensive", "more expensive", {"vi": "Tính từ dài: more"}],
-        ["good / bad", "better / worse", {"vi": "Bất quy tắc"}]
-      ]
-    },
-    {
-      "type": "example",
       "text": "Ho Chi Minh City is bigger than Da Nang.",
-      "seg": [["Ho Chi Minh City is "], ["bigger than", "target"], [" Da Nang."]],
-      "tr": {"vi": "TP.HCM lớn hơn Đà Nẵng."}
+      "spans": [{"start": 20, "end": 31, "role": "complement"}],
+      "annotation": {"vi": "tính từ ngắn: +er"},
+      "translation": {"vi": "TP.HCM lớn hơn Đà Nẵng."}
     },
     {
-      "type": "pitfall",
-      "l1": ["vi"],
+      "text": "This laptop is more expensive than that one.",
+      "spans": [{"start": 15, "end": 34, "role": "complement"}],
+      "annotation": {"vi": "tính từ dài: more + adj"},
+      "translation": {"vi": "Laptop này đắt hơn cái kia."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
       "wrong": "This phone is more cheaper.",
       "right": "This phone is cheaper.",
+      "reason": {"vi": "'Hơn' đã nằm trong đuôi -er, nên không dùng thêm more."},
       "error_tag": "word_form",
-      "why": {"vi": "'Hơn' đã nằm trong đuôi -er, nên không dùng thêm more."}
+      "l1": ["vi"]
     },
     {
-      "type": "pitfall",
-      "l1": ["vi"],
       "wrong": "She is taller me.",
       "right": "She is taller than me.",
+      "reason": {"vi": "'Cao hơn tôi': chữ 'hơn' tương ứng với cả -er lẫn than. Không được bỏ than."},
       "error_tag": "sentence_structure",
-      "why": {"vi": "'Cao hơn tôi': chữ 'hơn' tương ứng với cả -er lẫn than. Không được bỏ than."}
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "English is ___ than Chinese for me.",
+      "options": ["more easy", "easier", "more easier"],
+      "answer": 1,
+      "explain": {"vi": "Easy → easier."}
     },
     {
-      "type": "check",
-      "items": [
-        {
-          "q": "English is ___ than Chinese for me.",
-          "options": ["more easy", "easier", "more easier"],
-          "answer": 1,
-          "explain": {"vi": "Easy → easier."}
-        },
-        {
-          "q": "This hotel is ___ than that one.",
-          "options": ["expensiver", "more expensive", "most expensive"],
-          "answer": 1,
-          "explain": {"vi": "Tính từ dài → more expensive."}
-        },
-        {
-          "q": "Today the weather is ___ than yesterday.",
-          "options": ["badder", "worse", "more bad"],
-          "answer": 1,
-          "explain": {"vi": "Bad là bất quy tắc: worse."}
-        }
-      ]
+      "q": "This hotel is ___ than that one.",
+      "options": ["expensiver", "more expensive", "most expensive"],
+      "answer": 1,
+      "explain": {"vi": "Tính từ dài → more expensive."}
+    },
+    {
+      "q": "Today the weather is ___ than yesterday.",
+      "options": ["badder", "worse", "more bad"],
+      "answer": 1,
+      "explain": {"vi": "Bad là bất quy tắc: worse."}
     }
   ],
   "status": "draft_ai",
   "provenance": {
     "model": "unknown",
-    "prompt_version": "sample_v0.1",
-    "run_id": "migrate.sample_v0.1",
-    "generated_at": "2026-09-26T00:00:00+07:00",
-    "migrated_from": {"file": "docs/grammar_lab/sample_v0.1.json", "schema_version": "0.1"}
+    "prompt_version": "hand_migrated_v04",
+    "run_id": "migrate.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00",
+    "migrated_from": {"file": "content/en/en.comparatives.json (v0.2, pre-migration)", "schema_version": "0.2"}
   },
   "review": null
 }

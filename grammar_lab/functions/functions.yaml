@@ -67,9 +67,9 @@ functions:
   realizations:
     en:
     - en.past_simple
-  planned:
     zh-Hans:
     - zh.le_completion
+  planned:
     ja:
     - ja.ta_form
 - id: fn.past_experience
@@ -79,9 +79,9 @@ functions:
   realizations:
     en:
     - en.present_perfect.experience
-  planned:
     zh-Hans:
     - zh.guo_experience
+  planned:
     ja:
     - ja.ta_koto_ga_aru
 - id: fn.comparison
@@ -108,3 +108,10 @@ functions:
     - zh.ruguo_jiu
     ja:
     - ja.tara_ba
+- id: fn.object_disposal
+  title:
+    vi: Nhấn mạnh kết quả xử lý một vật cụ thể
+    zh-Hans: 强调对具体事物的处理结果
+  realizations:
+    zh-Hans:
+    - zh.ba_construction

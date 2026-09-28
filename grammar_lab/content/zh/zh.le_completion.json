@@ -1,0 +1,97 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.le_completion",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.completed_past",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": ["zh.guo_experience"],
+  "error_tags": ["aspect"],
+  "source_refs": {},
+  "title": {"vi": "Trợ từ 了 (hoàn thành)", "zh-Hans": "动态助词“了”"},
+  "summary": {"vi": "了 đặt sau động từ để nói hành động đã hoàn thành, thường có mốc thời gian cụ thể."},
+  "when_to_use": [
+    {"vi": "Khi hành động đã hoàn thành, thường có mốc thời gian cụ thể."},
+    {"vi": "Không dùng cho thói quen hay sự thật chung."}
+  ],
+  "pattern": {
+    "parts": [
+      {"text": "动词", "role": "verb"},
+      {"text": "了", "role": "particle"},
+      {"text": "宾语", "role": "object"}
+    ],
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "我们吃了饭。",
+      "spans": [{"start": 3, "end": 4, "role": "particle"}],
+      "annotation": {"vi": "đã hoàn thành"},
+      "translation": {"vi": "Chúng tôi đã ăn cơm."},
+      "pinyin": ["wǒ", "men", "chī", "le", "fàn", ""]
+    },
+    {
+      "text": "他昨天买了一本书。",
+      "spans": [{"start": 4, "end": 5, "role": "particle"}],
+      "annotation": {"vi": "đã hoàn thành, có mốc thời gian 昨天"},
+      "translation": {"vi": "Hôm qua anh ấy đã mua một quyển sách."},
+      "pinyin": ["tā", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.guo_experience",
+      "this_meaning": {"vi": "Hành động đã xong, thường có mốc thời gian cụ thể."},
+      "this_example": "我们吃了饭。",
+      "other_meaning": {"vi": "Đã từng trải nghiệm, không cần mốc thời gian cụ thể."},
+      "other_example": "我去过北京。"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "我昨天吃饭。",
+      "right": "我昨天吃了饭。",
+      "reason": {"vi": "Hành động đã xong cần 了, dù câu đã có mốc thời gian 昨天."},
+      "error_tag": "aspect",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "我每天吃了早饭。",
+      "right": "我每天吃早饭。",
+      "reason": {
+        "vi": "每天 diễn tả thói quen lặp lại, không phải một hành động đã hoàn thành một lần, nên không dùng 了."
+      },
+      "error_tag": "aspect",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他吃___饭就走了。",
+      "options": ["了", "着", "过"],
+      "answer": 0,
+      "explain": {"vi": "Ăn xong rồi mới đi → hành động hoàn thành, dùng 了."}
+    },
+    {
+      "q": "昨天我们___一个电影。",
+      "options": ["看", "看了", "在看"],
+      "answer": 1,
+      "explain": {"vi": "Đã xem xong hôm qua → 看了。"}
+    },
+    {
+      "q": "他已经___作业了。",
+      "options": ["做", "做完", "做着"],
+      "answer": 1,
+      "explain": {"vi": "已经...了 diễn tả đã hoàn thành → 做完。"}
+    }
+  ],
+  "status": "draft_ai",
+  "provenance": {
+    "model": "unknown",
+    "prompt_version": "hand_authored_v04",
+    "run_id": "author.grammar_content_contract_v04",
+    "generated_at": "2026-09-28T00:00:00+07:00"
+  },
+  "review": null
+}
