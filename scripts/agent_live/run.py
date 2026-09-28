@@ -29,7 +29,7 @@ on :8013, or :8015 when :8013 is taken), runs, and takes it down when it ends - 
 failed, stopped at the cost cap, interrupted (Ctrl+C) or terminated - so no lane waits
 on a forgotten container. Only GEMINI_* is read from the env file; nothing is printed.
 
-Before the sandbox it takes the machine-wide live-provider lock (lock.py, README.md) and
+Before the sandbox it takes the Gemini text quota group's lock (lock.py, README.md) and
 releases it in the same unwinding, so lanes queue for the provider instead of colliding.
 """
 
@@ -138,15 +138,27 @@ def price(tokens_in: int, tokens_out: int) -> float:
 WORST_TURN_USD = WORST_ROUNDS * price(WORST_IN, WORST_OUT)
 
 
+ROUND_WORST_USD = price(WORST_IN, WORST_OUT)
+RETRY_SECONDS = 20  # a refused first round ("high demand", 503) is tried once more, with the same model
+
+
 def use_model(name: str) -> None:
     """The run's one model, and the rates its cap is counted at."""
 
-    global MODEL, PRICE_IN, PRICE_OUT, WORST_TURN_USD
+    global MODEL, PRICE_IN, PRICE_OUT, WORST_TURN_USD, ROUND_WORST_USD
     if name not in PRICES:
         sys.exit(f"refusing: no published rate for {name} here (PRICES)")
     MODEL = name
     PRICE_IN, PRICE_OUT = PRICES[name]
-    WORST_TURN_USD = WORST_ROUNDS * price(WORST_IN, WORST_OUT)
+    ROUND_WORST_USD = price(WORST_IN, WORST_OUT)
+    WORST_TURN_USD = WORST_ROUNDS * ROUND_WORST_USD
+
+
+def first_round_refused(summary: dict) -> bool:
+    """The turn ended in provider_unavailable before anything came back: at most its first round was sent."""
+
+    error = summary.get("error") or {}
+    return error.get("class") == "provider_unavailable" and not summary.get("tools") and not summary.get("deltas")
 
 
 PROBES: dict[str, int] = {}  # model -> HTTP status of its one-token probe
@@ -409,11 +421,19 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                 body["message"] = message
             if session_id:
                 body["session_id"] = session_id
-            result = client.turn(body)
-            while result["status"] == 429:
-                time.sleep(int(result.get("retry_after") or 1))
+            for attempt in (1, 2):
                 result = client.turn(body)
-            summary = summarize(result) if result["status"] == 200 else {"body": result.get("body")}
+                while result["status"] == 429:
+                    time.sleep(int(result.get("retry_after") or 1))
+                    result = client.turn(body)
+                summary = summarize(result) if result["status"] == 200 else {"body": result.get("body")}
+                if not first_round_refused(summary):
+                    break
+                spent += ROUND_WORST_USD  # at most the one round that was refused (a 503/429 is not billed)
+                if attempt == 1:
+                    print(f"{name:8} {step:12} the provider refused the first round; the same turn once more in "
+                          f"{RETRY_SECONDS} s, same model")  # fmt: skip
+                    time.sleep(RETRY_SECONDS)
             for event in result.get("events", []):
                 if event["name"] == "session":
                     session_id = event["data"]["session_id"]
@@ -422,7 +442,7 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                 if event["name"] == "memory_update" and event["data"]["op"] == "remove":
                     notes.pop(event["data"]["note"]["id"], None)  # the device drops it, as it would
             memory = [e["data"] for e in result.get("events", []) if e["name"] == "memory_update"]
-            if result["status"] == 200:
+            if result["status"] == 200 and not first_round_refused(summary):
                 spent += price(summary["tokens_in"], summary["tokens_out"]) if summary["usage_reported"] else WORST_TURN_USD
             row = {"flow": name, "step": step, "target": target, "locale": locale, "message": message,
                    "status": result["status"], "memory_update": memory, **summary}  # fmt: skip
@@ -532,9 +552,9 @@ def main() -> int:
     for name in ("SIGTERM", "SIGBREAK"):
         if hasattr(signal, name):
             signal.signal(getattr(signal, name), _stop_on_signal)
-    # Lanes queue on one machine-wide lock before any sandbox or provider call (lock.py, README.md).
+    # Lanes using the same quota queue on its lock before any sandbox or provider call (lock.py, README.md).
     try:
-        lock = live_lock.acquire(_lane(), args.cap_usd)
+        lock = live_lock.acquire(_lane(), args.cap_usd, group="gemini-text")  # this run's one quota group
     except live_lock.LockTimeout as error:
         print(f"stopping: {error}")
         return 3

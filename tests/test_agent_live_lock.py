@@ -68,9 +68,54 @@ def test_the_record_is_exactly_the_shared_format(tmp_path):
     assert not path.exists()
 
 
-def test_the_path_is_outside_every_repository(monkeypatch, tmp_path):
+def test_one_lock_per_quota_group_outside_every_repository(monkeypatch, tmp_path):
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    assert lock.lock_path() == tmp_path / ".orena" / "live-provider.lock"
+    assert lock.GROUPS == ("gemini-text", "gemini-live", "deepseek")
+    assert lock.lock_path("gemini-text") == tmp_path / ".orena" / "live-gemini-text.lock"
+    assert lock.lock_path("gemini-live") == tmp_path / ".orena" / "live-gemini-live.lock"
+    assert lock.lock_path("deepseek") == tmp_path / ".orena" / "live-deepseek.lock"
+    with pytest.raises(ValueError):
+        lock.lock_path("provider")  # the single lock of before is retired
+
+
+def test_groups_do_not_block_each_other(monkeypatch, tmp_path):
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    clock = Clock()
+    voice = lock.acquire("voice-spike", 0.0, group="gemini-live", clock=clock, sleep=clock.sleep, say=lambda _m: None)
+    text = lock.acquire(LANE, 0.3, group="gemini-text", clock=clock, sleep=clock.sleep, say=lambda _m: None)
+    assert clock.sleeps == []  # the text run did not wait for the voice spike
+    text.release()
+    voice.release()
+    assert not list((tmp_path / ".orena").iterdir())
+
+
+def test_a_process_takes_its_groups_in_order_and_gives_all_back(monkeypatch, tmp_path):
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    clock = Clock()
+    order = []
+    real = lock.acquire
+
+    def spy(*args, group, **kw):
+        order.append(group)
+        return real(*args, group=group, **kw)
+
+    monkeypatch.setattr(lock, "acquire", spy)
+    held = lock.acquire_groups(LANE, 0.3, ["deepseek", "gemini-text"], clock=clock, sleep=clock.sleep, say=lambda _m: None)
+    assert order == ["gemini-text", "deepseek"]  # the fixed order: two lanes never wait on each other
+    assert {p.name for p in (tmp_path / ".orena").iterdir()} == {"live-gemini-text.lock", "live-deepseek.lock"}
+    held.release()
+    assert not list((tmp_path / ".orena").iterdir())
+
+
+def test_a_group_that_cannot_be_had_gives_back_those_taken(monkeypatch, tmp_path):
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    clock = Clock()
+    lock.lock_path("deepseek").parent.mkdir(parents=True)
+    held(lock.lock_path("deepseek"), clock, lane="grammar-lab")  # another lane holds DeepSeek
+    with pytest.raises(lock.LockTimeout):
+        lock.acquire_groups(LANE, 0.3, ["gemini-text", "deepseek"], clock=clock, sleep=clock.sleep,
+                            alive=lambda pid: True, say=lambda _m: None, wait=30)  # fmt: skip
+    assert not lock.lock_path("gemini-text").exists()  # not kept while waiting failed
 
 
 def test_creation_is_exclusive(tmp_path, monkeypatch):
@@ -164,5 +209,11 @@ def test_liveness_of_a_real_process():
 def test_the_runner_holds_it_around_the_sandbox():
     source = (Path(__file__).resolve().parents[1] / "scripts/agent_live/run.py").read_text(encoding="utf-8")
     main = source[source.index("def main()"):source.index("def _add_provider_errors")]
+    assert 'live_lock.acquire(_lane(), args.cap_usd, group="gemini-text")' in main  # its one quota group
     assert main.index("live_lock.acquire(") < main.index("sandbox.up(")
     assert main.index("sandbox.down()") < main.index("lock.release()")
+
+
+def test_the_voice_spike_holds_only_the_live_group():
+    source = (Path(__file__).resolve().parents[1] / "scripts/voice_spike/server.py").read_text(encoding="utf-8")
+    assert 'group="gemini-live"' in source and 'group="gemini-text"' not in source

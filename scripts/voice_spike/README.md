@@ -21,9 +21,9 @@ logged. For each session the server mints a one-use ephemeral token (`v1beta/aut
 which must open its session within 60 s and lasts 30 min. The page opens
 `BidiGenerateContentConstrained?access_token=<token>`.
 
-**The lock.** The server holds the machine-wide live-provider lock
-(`scripts/agent_live/README.md`) while it runs, so other lanes queue behind it. Stop
-it with Ctrl+C when you are done.
+**The lock.** The server holds only the Gemini Live quota group's lock
+(`live-gemini-live.lock`, see `scripts/agent_live/README.md`) while it runs. Text runs, which use a different
+quota, do not wait for it. Stop the server with Ctrl+C when you are done.
 
 **Nothing is stored.** No audio is kept: the microphone is streamed and playback is
 dropped as it ends. The page keeps only numbers and transcripts in memory, and

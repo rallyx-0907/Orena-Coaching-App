@@ -10,8 +10,8 @@ no audio, no transcript; the page can export its own measurements as JSON.
     python scripts/voice_spike/server.py --gemini-env <.env holding GEMINI_API_KEY>
     open http://127.0.0.1:8790
 
-It holds the machine-wide live-provider lock (scripts/agent_live/lock.py) while
-it runs, so lanes queue behind it: stop it (Ctrl+C) when the session is done.
+It holds the Gemini Live quota group's lock (live-gemini-live.lock, scripts/agent_live/lock.py) while it runs -
+only that one: text runs do not wait for it. Stop it (Ctrl+C) when the session is done.
 Standard library only.
 """
 
@@ -145,10 +145,10 @@ def main() -> int:
         print("no GEMINI_API_KEY found")
         return 1
     sys.path.insert(0, str(HERE.parent / "agent_live"))
-    import lock as live_lock  # the lock every lane queues on before a real provider call
+    import lock as live_lock  # the quota-group locks lanes queue on before a real provider call
 
     try:
-        held = live_lock.acquire("feature/orena-intelligence:voice-spike", 0.0)
+        held = live_lock.acquire("feature/orena-intelligence:voice-spike", 0.0, group="gemini-live")
     except live_lock.LockTimeout as error:
         print(f"stopping: {error}")
         return 3

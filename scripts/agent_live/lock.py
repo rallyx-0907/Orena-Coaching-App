@@ -1,9 +1,17 @@
-"""The machine-wide lock every lane takes before a real provider call (human direction 2026-09-28).
+"""The machine-wide locks lanes take before a real provider call, one per quota group (human direction 2026-09-28).
 
-The format is shared with the Grammar Lab lane, which defined it first; keep it exactly:
+Lanes queue only when they use the same quota. One lock file per group, outside every repository:
 
-    %USERPROFILE%\\.orena\\live-provider.lock      (outside every repository)
+    %USERPROFILE%\\.orena\\live-gemini-text.lock   Gemini text models (agent live runs, Grammar Lab's evaluator)
+    %USERPROFILE%\\.orena\\live-gemini-live.lock   Gemini Live models (the voice spike)
+    %USERPROFILE%\\.orena\\live-deepseek.lock      DeepSeek
+
+The format is the one the Grammar Lab lane defined first; keep it exactly:
+
     {"lane": "...", "pid": <int>, "acquired_at": "<ISO-8601 UTC>", "cost_ceiling_usd": <number>}
+
+A process holds exactly the locks of the groups it uses, taken in the order above and released in reverse. The
+single live-provider.lock of before is retired.
 
 - Created atomically (O_CREAT|O_EXCL) before a sandbox or a real provider call, and
   removed in the same finally/trap that takes the sandbox down.
@@ -16,7 +24,7 @@ The format is shared with the Grammar Lab lane, which defined it first; keep it 
 - Never stop another lane's containers.
 
     python scripts/agent_live/lock.py status
-    python scripts/agent_live/lock.py run --lane <lane> --cost-ceiling-usd 0.30 -- <command ...>
+    python scripts/agent_live/lock.py run --lane <lane> --group gemini-text --cost-ceiling-usd 0.30 -- <command ...>
 
 Standard library only.
 """
@@ -39,9 +47,14 @@ WAIT_SECONDS = 30 * 60
 STALE_SECONDS = 60 * 60
 
 
-def lock_path() -> Path:
+GROUPS = ("gemini-text", "gemini-live", "deepseek")  # the taking order: never two lanes waiting on each other
+
+
+def lock_path(group: str) -> Path:
+    if group not in GROUPS:
+        raise ValueError(f"unknown quota group {group!r}; one of {GROUPS}")
     home = os.environ.get("USERPROFILE") or str(Path.home())
-    return Path(home) / ".orena" / "live-provider.lock"
+    return Path(home) / ".orena" / f"live-{group}.lock"
 
 
 class LockTimeout(RuntimeError):
@@ -130,6 +143,7 @@ def acquire(
     lane: str,
     cost_ceiling_usd: float,
     *,
+    group: str = "gemini-text",
     path: Path | None = None,
     poll: float = POLL_SECONDS,
     wait: float = WAIT_SECONDS,
@@ -139,7 +153,7 @@ def acquire(
     sleep: Callable[[float], None] = time.sleep,
     say: Callable[[str], None] = print,
 ) -> Lock:
-    path = path or lock_path()
+    path = path or lock_path(group)
     path.parent.mkdir(parents=True, exist_ok=True)
     deadline = clock() + wait
     notes: list[str] = []
@@ -182,6 +196,34 @@ def acquire(
         sleep(poll)
 
 
+@dataclass
+class Locks:
+    """The locks of every quota group a process uses, released together (in reverse)."""
+
+    held: list[Lock]
+
+    @property
+    def notes(self) -> list[str]:
+        return [note for lock in self.held for note in lock.notes]
+
+    def release(self) -> None:
+        for lock in reversed(self.held):
+            lock.release()
+
+
+def acquire_groups(lane: str, cost_ceiling_usd: float, groups: list[str] | tuple[str, ...], **kw) -> Locks:
+    """Each group's lock, in the fixed order of GROUPS; if one cannot be had, those taken are given back."""
+
+    taken: list[Lock] = []
+    try:
+        for group in sorted(set(groups), key=GROUPS.index):
+            taken.append(acquire(lane, cost_ceiling_usd, group=group, **kw))
+    except BaseException:
+        Locks(taken).release()
+        raise
+    return Locks(taken)
+
+
 def _orphan(holder: dict | None, mtime: float, now: float, stale_after: float, alive) -> str | None:
     pid = (holder or {}).get("pid")
     if isinstance(pid, int) and not isinstance(pid, bool) and not alive(pid):
@@ -208,18 +250,21 @@ def _cli() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("status")
-    run = sub.add_parser("run", help="run a command while holding the lock")
+    run = sub.add_parser("run", help="run a command while holding the locks of its quota groups")
     run.add_argument("--lane", required=True)
+    run.add_argument("--group", action="append", choices=GROUPS, required=True, help="repeat for each group used")
     run.add_argument("--cost-ceiling-usd", type=float, required=True)
     run.add_argument("argv", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.command == "status":
-        holder, mtime = _read(lock_path())
-        print("free" if mtime is None else json.dumps(holder, ensure_ascii=False) if holder else "held (unreadable)")
+        for group in GROUPS:
+            holder, mtime = _read(lock_path(group))
+            held = "free" if mtime is None else json.dumps(holder, ensure_ascii=False) if holder else "held (unreadable)"
+            print(f"{group}: {held}")
         return 0
     argv = args.argv[1:] if args.argv[:1] == ["--"] else args.argv
     try:
-        lock = acquire(args.lane, args.cost_ceiling_usd)
+        lock = acquire_groups(args.lane, args.cost_ceiling_usd, args.group)
     except LockTimeout as error:
         print(error)
         return 3
