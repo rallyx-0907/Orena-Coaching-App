@@ -10,7 +10,7 @@
   },
   "$ref": "#/$defs/grammar_point",
   "$defs": {
-    "schema_version": {"enum": ["0.2", "0.3"]},
+    "schema_version": {"enum": ["0.2", "0.3", "0.4"]},
     "target_lang": {
       "description": "BCP-47 target language. Only simplified script is allowed for Chinese.",
       "enum": ["en", "zh-Hans", "ja"]
@@ -102,7 +102,7 @@
       "additionalProperties": false,
       "required": [
         "schema_version", "id", "version", "target_lang", "function", "level", "prereqs", "contrasts",
-        "error_tags", "source_refs", "title", "summary", "blocks", "status", "provenance", "review"
+        "error_tags", "source_refs", "title", "summary", "status", "provenance", "review"
       ],
       "properties": {
         "schema_version": {"$ref": "#/$defs/schema_version"},
@@ -122,7 +122,16 @@
         },
         "title": {"$ref": "#/$defs/locale_map"},
         "summary": {"$ref": "#/$defs/locale_map"},
-        "blocks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/block"}},
+        "blocks": {
+          "description": "v0.2/v0.3: the point's whole content. v0.4 (GRAMMAR_CONTENT_CONTRACT.md): optional, story only -- the primary content moved to when_to_use/pattern/examples/compare/common_mistakes/quick_practice below.",
+          "type": "array", "items": {"$ref": "#/$defs/block"}
+        },
+        "when_to_use": {"$ref": "#/$defs/when_to_use"},
+        "pattern": {"$ref": "#/$defs/pattern"},
+        "examples": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/example_item"}},
+        "compare": {"type": "array", "items": {"$ref": "#/$defs/compare_item"}},
+        "common_mistakes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/common_mistake_item"}},
+        "quick_practice": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/quick_practice_item"}},
         "status": {"$ref": "#/$defs/status"},
         "flags": {
           "description": "Routing reasons, e.g. validate:example.no_target.",
@@ -183,6 +192,33 @@
               }
             }
           }
+        },
+        {
+          "description": "v0.2/v0.3: blocks is the point's whole content, required and non-empty (GRAMMAR_CONTENT_CONTRACT.md did not exist yet).",
+          "if": {"required": ["schema_version"], "properties": {"schema_version": {"enum": ["0.2", "0.3"]}}},
+          "then": {"required": ["blocks"], "properties": {"blocks": {"minItems": 1}}}
+        },
+        {
+          "description": "v0.4 (GRAMMAR_CONTENT_CONTRACT.md): the fixed content blocks are required; blocks, if present at all, may only carry the optional secondary story (STORY_SPEC.md/VOICE.md) -- not the v0.2/v0.3 formula/rule_table/example/pitfall/note/check types, which this shape replaces.",
+          "if": {"required": ["schema_version"], "properties": {"schema_version": {"const": "0.4"}}},
+          "then": {
+            "required": ["when_to_use", "pattern", "examples", "compare", "common_mistakes", "quick_practice"],
+            "properties": {
+              "blocks": {"items": {"properties": {"type": {"const": "story"}}}}
+            }
+          }
+        },
+        {
+          "description": "v0.4 examples: pinyin is required, one entry per character in text, only when target_lang is zh-Hans.",
+          "if": {
+            "required": ["schema_version", "target_lang"],
+            "properties": {"schema_version": {"const": "0.4"}, "target_lang": {"const": "zh-Hans"}}
+          },
+          "then": {
+            "properties": {
+              "examples": {"items": {"required": ["pinyin"]}}
+            }
+          }
         }
       ]
     },
@@ -237,16 +273,17 @@
         }
       }
     },
+    "timeline_shape": {
+      "description": "Closed enum. Extending it requires a matching preview/app renderer. Shared by the legacy block_timeline (v0.2/v0.3) and pattern.illustration (v0.4, GRAMMAR_CONTENT_CONTRACT.md) so both draw from one source of truth.",
+      "enum": ["point_past", "ongoing_now", "unspecified_past", "habit", "future_condition", "future_plan", "past_ongoing"]
+    },
     "block_timeline": {
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "kind"],
       "properties": {
         "type": {"const": "timeline"},
-        "kind": {
-          "description": "Closed enum. Extending it requires a matching preview/app renderer.",
-          "enum": ["point_past", "ongoing_now", "unspecified_past", "habit", "future_condition", "future_plan", "past_ongoing"]
-        },
+        "kind": {"$ref": "#/$defs/timeline_shape"},
         "relevance": {"type": "string", "minLength": 1}
       }
     },
@@ -424,6 +461,126 @@
         "reveal": {"description": "VOICE.md: the real insight (may be phonetic/phonological), not a grammar restatement (recall).", "$ref": "#/$defs/locale_map"},
         "reveal_short": {"description": "<= 20 words, for review.", "$ref": "#/$defs/locale_map"},
         "teaser": {"description": "VOICE.md: a closing paradox or open question, never a preview of the next lesson.", "$ref": "#/$defs/locale_map"}
+      }
+    },
+    "pattern_role": {
+      "description": "GRAMMAR_CONTENT_CONTRACT.md §2/§4: shared by pattern.parts[].role and examples[].spans[].role so the app colours both consistently.",
+      "enum": ["subject", "verb", "aux", "object", "complement", "time", "place", "marker", "particle", "connector", "other"]
+    },
+    "pattern_part": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "role"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "role": {"$ref": "#/$defs/pattern_role"}
+      }
+    },
+    "pattern_illustration": {
+      "description": "GRAMMAR_CONTENT_CONTRACT.md §2. word_order needs no extra data: the app draws pattern.parts (and variants) as ordered boxes. timeline reuses the same closed shape enum as the legacy block_timeline.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["timeline", "word_order", "none"]},
+        "timeline": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["shape"],
+          "properties": {
+            "shape": {"$ref": "#/$defs/timeline_shape"},
+            "relevance": {"type": "string", "minLength": 1}
+          }
+        }
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "timeline"}}}, "then": {"required": ["timeline"]}},
+        {"if": {"properties": {"kind": {"enum": ["word_order", "none"]}}}, "then": {"not": {"required": ["timeline"]}}}
+      ]
+    },
+    "pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parts", "illustration"],
+      "properties": {
+        "parts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_part"}},
+        "variants": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "negative": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_part"}},
+            "question": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_part"}}
+          }
+        },
+        "illustration": {"$ref": "#/$defs/pattern_illustration"}
+      }
+    },
+    "when_to_use": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/locale_map"}
+    },
+    "example_span": {
+      "description": "Character offsets into the sibling text (0-based, end exclusive) -- not a repeated substring, so it can never drift out of sync with text the way v0.2/v0.3's seg tuples could.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "role"],
+      "properties": {
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 0},
+        "role": {"$ref": "#/$defs/pattern_role"}
+      }
+    },
+    "example_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "spans", "annotation", "translation"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "spans": {"type": "array", "items": {"$ref": "#/$defs/example_span"}},
+        "annotation": {"$ref": "#/$defs/locale_map"},
+        "translation": {"$ref": "#/$defs/locale_map"},
+        "pinyin": {
+          "description": "Required (validate.py) when target_lang is zh-Hans: one entry per character in text, '' for punctuation/spaces. Absent for other target languages.",
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "compare_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["with", "this_meaning", "this_example", "other_meaning", "other_example"],
+      "properties": {
+        "with": {"$ref": "#/$defs/point_id"},
+        "this_meaning": {"$ref": "#/$defs/locale_map"},
+        "this_example": {"type": "string", "minLength": 1},
+        "other_meaning": {"$ref": "#/$defs/locale_map"},
+        "other_example": {"type": "string", "minLength": 1}
+      }
+    },
+    "common_mistake_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wrong", "right", "reason", "error_tag", "l1"],
+      "properties": {
+        "wrong": {"type": "string", "minLength": 1},
+        "right": {"type": "string", "minLength": 1},
+        "reason": {"$ref": "#/$defs/locale_map"},
+        "error_tag": {"$ref": "#/$defs/error_tag"},
+        "l1": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/l1"}}
+      }
+    },
+    "quick_practice_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["q", "options", "answer", "explain"],
+      "properties": {
+        "q": {"type": "string", "minLength": 1},
+        "options": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+        "answer": {"description": "0-based index into options.", "type": "integer", "minimum": 0},
+        "explain": {"$ref": "#/$defs/locale_map"}
       }
     },
     "set_manifest": {

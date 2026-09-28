@@ -38,6 +38,8 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
+PROMPT_VERSION_V04 = "generate_point_v04.v1"
+PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 STORY_PROMPT_VERSION = "generate_story.v2"
 # grammar_set.schema.json's story_mode allows "history" too (VOICE.md), but generate.py
 # does not offer it yet: a "history" story may only state a fact from a vetted source, and
@@ -191,6 +193,99 @@ def _generation_schema(*, locales: list[str], l1s: list[str], error_tags: list[s
     }
 
 
+_PATTERN_ROLES = [
+    "subject", "verb", "aux", "object", "complement", "time", "place", "marker", "particle", "connector", "other",
+]
+_TIMELINE_SHAPES = [
+    "point_past", "ongoing_now", "unspecified_past", "habit", "future_condition", "future_plan", "past_ongoing",
+]
+
+
+def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: list[str],
+                            contrast_with: list[str], num_examples: int) -> dict[str, Any]:
+    """GRAMMAR_CONTENT_CONTRACT.md: replaces _generation_schema for schema_version 0.4 points.
+
+    illustration_kind/timeline_shape are two flat, always-required fields rather than the
+    content schema's conditional {kind, timeline?} -- structured-output dialects vary in
+    how well they support if/then (Gemini's in particular does not), so the model always
+    fills timeline_shape and generate.py drops it when the kind isn't "timeline"."""
+    locale_map = _locale_map_schema(locales)
+    part = {
+        "type": "object", "additionalProperties": False, "required": ["text", "role"],
+        "properties": {"text": {"type": "string", "minLength": 1}, "role": {"enum": _PATTERN_ROLES}},
+    }
+    span = {
+        "type": "object", "additionalProperties": False, "required": ["start", "end", "role"],
+        "properties": {
+            "start": {"type": "integer", "minimum": 0}, "end": {"type": "integer", "minimum": 0},
+            "role": {"enum": _PATTERN_ROLES},
+        },
+    }
+    example = {
+        "type": "object", "additionalProperties": False, "required": ["text", "spans", "annotation", "translation"],
+        "properties": {
+            "text": {"type": "string", "minLength": 1},
+            "spans": {"type": "array", "items": span},
+            "annotation": locale_map,
+            "translation": locale_map,
+        },
+    }
+    compare_item = {
+        "type": "object", "additionalProperties": False,
+        "required": ["with", "this_meaning", "this_example", "other_meaning", "other_example"],
+        "properties": {
+            "with": {"enum": contrast_with} if contrast_with else {"type": "string"},
+            "this_meaning": locale_map, "this_example": {"type": "string", "minLength": 1},
+            "other_meaning": locale_map, "other_example": {"type": "string", "minLength": 1},
+        },
+    }
+    common_mistake = {
+        "type": "object", "additionalProperties": False,
+        "required": ["wrong", "right", "reason", "error_tag", "l1"],
+        "properties": {
+            "wrong": {"type": "string", "minLength": 1}, "right": {"type": "string", "minLength": 1},
+            "reason": locale_map,
+            "error_tag": {"enum": error_tags} if error_tags else {"type": "string"},
+            "l1": {"type": "array", "minItems": 1, "items": {"enum": l1s} if l1s else {"type": "string"}},
+        },
+    }
+    quick_practice_item = {
+        "type": "object", "additionalProperties": False, "required": ["q", "options", "answer", "explain"],
+        "properties": {
+            "q": {"type": "string", "minLength": 1},
+            "options": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"type": "string", "minLength": 1}},
+            "answer": {"type": "integer", "minimum": 0},
+            "explain": locale_map,
+        },
+    }
+    mistake_count = max(1, len(error_tags))
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["when_to_use", "pattern", "examples", "compare", "common_mistakes", "quick_practice"],
+        "properties": {
+            "when_to_use": {"type": "array", "minItems": 2, "maxItems": 4, "items": locale_map},
+            "pattern": {
+                "type": "object", "additionalProperties": False,
+                "required": ["parts", "illustration_kind", "timeline_shape"],
+                "properties": {
+                    "parts": {"type": "array", "minItems": 1, "items": part},
+                    "illustration_kind": {"enum": ["timeline", "word_order", "none"]},
+                    "timeline_shape": {"enum": _TIMELINE_SHAPES},
+                },
+            },
+            "examples": {"type": "array", "minItems": num_examples, "maxItems": num_examples, "items": example},
+            "compare": {
+                "type": "array", "minItems": len(contrast_with), "maxItems": len(contrast_with), "items": compare_item
+            },
+            "common_mistakes": {
+                "type": "array", "minItems": mistake_count, "maxItems": mistake_count, "items": common_mistake
+            },
+            "quick_practice": {"type": "array", "minItems": 3, "maxItems": 3, "items": quick_practice_item},
+        },
+    }
+
+
 def _story_generation_schema(*, locales: list[str], error_tags: list[str], cast_names: list[str]) -> dict[str, Any]:
     """STORY_SPEC.md §2: the LLM writes everything except ``type``/``theme`` (code sets
     those). One alternative per error_tag, same bounded-count pattern as pitfalls."""
@@ -321,6 +416,11 @@ class Generator:
         functions = load_functions(self.root)["functions"]
         function = next(f for f in functions if f["id"] == existing["function"])
 
+        if existing.get("schema_version") == "0.4":
+            if with_story:
+                raise ValueError("--with-story is not wired into schema_version 0.4 generation yet (story is paused this round)")
+            return self._generate_v04(existing, locales=locales, l1s=l1s, function=function)
+
         rule_table = build_rule_table(point_id, locales)
         schema = _generation_schema(
             locales=locales, l1s=l1s, error_tags=existing["error_tags"],
@@ -388,6 +488,56 @@ class Generator:
         }
         save_point(self.lang, point, self.root)
         return GenerateOutcome(point_id, "written", cost_usd=cost or None, cached=cached)
+
+    def _generate_v04(
+        self, existing: dict[str, Any], *, locales: list[str], l1s: list[str], function: dict[str, Any]
+    ) -> GenerateOutcome:
+        """GRAMMAR_CONTENT_CONTRACT.md: the six fixed content blocks, replacing generate()'s
+        free-form blocks[] path for points already on schema_version 0.4."""
+        point_id = existing["id"]
+        schema = _generation_schema_v04(
+            locales=locales, l1s=l1s, error_tags=existing["error_tags"],
+            contrast_with=existing["contrasts"], num_examples=self.num_examples,
+        )
+        system = PROMPT_PATH_V04.read_text(encoding="utf-8").format(
+            point_id=point_id, target_lang=existing["target_lang"],
+            level_framework=existing["level"]["framework"], level_value=existing["level"]["value"],
+            function_title=function["title"].get("en", function["title"].get("vi", "")),
+            function_id=function["id"], locales=", ".join(locales), l1s=", ".join(l1s),
+            contrast_with_ids=", ".join(existing["contrasts"]) or "(none)",
+            error_tags=", ".join(existing["error_tags"]) or "(none)",
+            num_examples=self.num_examples,
+        )
+        user = f"Write the grammar point {point_id} now, matching the structured output schema."
+        result = self.llm.complete(system=system, user=user, json_schema=schema, schema_name="grammar_point_v04")
+        data = result.data
+
+        illustration: dict[str, Any] = {"kind": data["pattern"]["illustration_kind"]}
+        if illustration["kind"] == "timeline":
+            illustration["timeline"] = {"shape": data["pattern"]["timeline_shape"]}
+        pattern = {"parts": data["pattern"]["parts"], "illustration": illustration}
+
+        point = {
+            **existing,
+            "schema_version": "0.4",
+            "when_to_use": data["when_to_use"],
+            "pattern": pattern,
+            "examples": data["examples"],
+            "compare": data["compare"],
+            "common_mistakes": data["common_mistakes"],
+            "quick_practice": data["quick_practice"],
+            "status": "draft_ai",
+            "flags": [],
+            "provenance": {
+                "model": f"{result.provider}:{result.model}",
+                "prompt_version": PROMPT_VERSION_V04,
+                "run_id": f"generate.{int(time.time())}",
+                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            },
+            "review": None,
+        }
+        save_point(self.lang, point, self.root)
+        return GenerateOutcome(point_id, "written", cost_usd=result.usage.cost_usd(result.model) or None, cached=result.cached)
 
     def _generate_story(self, existing: dict[str, Any], locales: list[str], *, mode: str = "everyday") -> tuple[Any, dict[str, Any]]:
         """STORY_SPEC.md + VOICE.md: a dedicated call for the point's daily-theme story block."""

@@ -116,6 +116,61 @@ def test_evaluator_connection_failure_is_flagged_not_raised(tmp_path: Path) -> N
     assert not report.ok
 
 
+# --- v0.4 fixed content blocks (GRAMMAR_CONTENT_CONTRACT.md) -----------------------------
+
+def v04_point() -> dict:
+    point = alpha_point()
+    point["schema_version"] = "0.4"
+    point.pop("blocks", None)
+    point["examples"] = [{
+        "text": "She works in a bank.",
+        "spans": [{"start": 4, "end": 9, "role": "verb"}],
+        "annotation": {"vi": "ngôi thứ ba số ít"},
+        "translation": {"vi": "Cô ấy làm ở ngân hàng."},
+    }]
+    point["compare"] = []
+    point["common_mistakes"] = [{
+        "wrong": "He go to school.", "right": "He goes to school.",
+        "reason": {"vi": "Ngôi thứ ba số ít cần thêm -s."},
+        "error_tag": "agreement", "l1": ["vi"],
+    }]
+    point["quick_practice"] = [
+        {"q": "He ___ to school.", "options": ["go", "goes"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+    ]
+    return point
+
+
+def test_v04_all_checks_pass_produces_no_flags(tmp_path: Path) -> None:
+    point = v04_point()
+    tagged = {"He go to school.": ["agreement"], "He goes to school.": [], "She works in a bank.": []}
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    assert report.ok, report.flags
+    assert report.checked_examples == 1
+    assert report.checked_common_mistakes == 1
+    assert report.checked_quick_practice == 1
+
+
+def test_v04_common_mistake_not_caught_is_flagged(tmp_path: Path) -> None:
+    point = v04_point()
+    tagged = {"He go to school.": [], "He goes to school.": [], "She works in a bank.": []}
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    assert "common_mistake_not_caught" in report.codes()
+
+
+def test_v04_common_mistake_right_flagged_by_engine(tmp_path: Path) -> None:
+    point = v04_point()
+    tagged = {"He go to school.": ["agreement"], "He goes to school.": ["punctuation"], "She works in a bank.": []}
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    assert "common_mistake_right_flagged" in report.codes()
+
+
+def test_v04_quick_practice_wrong_answer_is_flagged(tmp_path: Path) -> None:
+    point = v04_point()
+    tagged = {"He go to school.": ["agreement"], "He goes to school.": [], "She works in a bank.": []}
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 0))
+    assert "blind_solve_wrong" in report.codes()
+
+
 def test_contrast_pair_sentences_are_checked_too(tmp_path: Path) -> None:
     point = alpha_point()
     point["blocks"].append({

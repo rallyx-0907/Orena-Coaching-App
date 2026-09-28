@@ -52,7 +52,8 @@ def test_schema_level_rules_match_level_scales() -> None:
 
 
 def test_timeline_kind_is_the_closed_spec_enum() -> None:
-    assert SCHEMA["$defs"]["block_timeline"]["properties"]["kind"]["enum"] == SPEC_TIMELINE_KINDS
+    assert SCHEMA["$defs"]["timeline_shape"]["enum"] == SPEC_TIMELINE_KINDS
+    assert SCHEMA["$defs"]["block_timeline"]["properties"]["kind"] == {"$ref": "#/$defs/timeline_shape"}
 
 
 def test_bridge_is_not_a_storable_block() -> None:
@@ -65,19 +66,29 @@ def test_committed_sample_validates_clean() -> None:
     assert report.ok, [issue.to_dict() for issue in report.issues]
 
 
-def test_migration_reproduces_committed_content(tmp_path: Path) -> None:
+def test_migration_produces_valid_v02_content(tmp_path: Path) -> None:
+    """migrate_sample_v01.migrate() still works and still produces valid v0.2 content.
+
+    content/en/*.json no longer equals this function's output byte-for-byte: the committed
+    sample was deliberately hand-migrated on to schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md,
+    PHASE0_DECISIONS.md §6 -- Grammar Lab replaces R5). migrate() itself is unchanged and kept
+    for audit (its own docstring), so this checks it against a fresh, isolated run instead of
+    the now-evolved committed files.
+    """
     shutil.copytree(LAB_ROOT / "schema", tmp_path / "schema")
+    shutil.copytree(LAB_ROOT / "cast", tmp_path / "cast")
     written = migrate(SAMPLE, tmp_path)
     assert len(written) == 12  # manifest + 10 points + functions
-    for path in written:
-        relative = path.relative_to(tmp_path)
-        assert path.read_bytes() == (LAB_ROOT / relative).read_bytes(), relative
+    report = validate_lang("en", tmp_path)
+    assert report.ok, [issue.to_dict() for issue in report.issues]
 
 
-def test_migration_keeps_every_sample_point_and_pitfall() -> None:
+def test_migration_keeps_every_sample_point_and_pitfall(tmp_path: Path) -> None:
+    shutil.copytree(LAB_ROOT / "schema", tmp_path / "schema")
+    migrate(SAMPLE, tmp_path)
     sample = read_json(SAMPLE)
     for old in sample["grammar_points"]:
-        new = read_json(LAB_ROOT / "content" / "en" / f"{old['id']}.json")
+        new = read_json(tmp_path / "content" / "en" / f"{old['id']}.json")
         assert [b["type"] for b in new["blocks"]] == [b["type"] for b in old["blocks"]]
         old_pitfalls = [b for b in old["blocks"] if b["type"] == "pitfall"]
         new_pitfalls = [b for b in new["blocks"] if b["type"] == "pitfall"]

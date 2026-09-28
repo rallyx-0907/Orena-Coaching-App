@@ -191,6 +191,8 @@ def verify(
                 "checked_examples": verify_report.checked_examples,
                 "checked_checks": verify_report.checked_checks,
                 "checked_story_sentences": verify_report.checked_story_sentences,
+                "checked_common_mistakes": verify_report.checked_common_mistakes,
+                "checked_quick_practice": verify_report.checked_quick_practice,
             }
             verdict = "OK" if verify_report.ok else f"{len(verify_report.flags)} flag(s)"
             typer.echo(f"{point_id:40} {verdict}")
@@ -244,7 +246,8 @@ def route(
         outcome = route_point(
             point_id, validate_issue_codes=issue_codes_by_id.get(point_id, set()),
             verify_report=verify_report, threshold=threshold, gold_set_passed=gold_set_passed,
-            target_lang=point.get("target_lang"), has_story=any(b["type"] == "story" for b in point["blocks"]),
+            target_lang=point.get("target_lang"),
+            has_story=any(b["type"] == "story" for b in point.get("blocks", [])),
         )
         save_point(lang, apply_route(point, outcome), root)
         outcomes[point_id] = {"score": outcome.score, "status": outcome.status, "flags": outcome.flags}

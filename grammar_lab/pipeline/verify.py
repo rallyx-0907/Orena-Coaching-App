@@ -50,6 +50,8 @@ class VerifyReport:
     checked_examples: int = 0
     checked_checks: int = 0
     checked_story_sentences: int = 0
+    checked_common_mistakes: int = 0
+    checked_quick_practice: int = 0
 
     @property
     def ok(self) -> bool:
@@ -129,13 +131,18 @@ def _story_text(block: dict[str, Any]) -> str:
 def _flatten_example_texts(point: dict[str, Any]) -> list[tuple[str, str]]:
     """(label, text) for every sentence the "clean examples" check must send."""
     texts: list[tuple[str, str]] = []
-    for index, block in enumerate(point["blocks"]):
+    for index, block in enumerate(point.get("blocks", [])):
         if block["type"] == "example":
             texts.append((f"blocks[{index}] example", block["text"]))
         elif block["type"] == "contrast":
             for pair_index, pair in enumerate(block["pairs"]):
                 for side_index, sentence in enumerate(pair):
                     texts.append((f"blocks[{index}] contrast.pairs[{pair_index}][{side_index}]", sentence))
+    for index, example in enumerate(point.get("examples", [])):
+        texts.append((f"examples[{index}]", example["text"]))
+    for index, item in enumerate(point.get("compare", [])):
+        texts.append((f"compare[{index}].this_example", item["this_example"]))
+        texts.append((f"compare[{index}].other_example", item["other_example"]))
     return texts
 
 
@@ -148,7 +155,7 @@ def verify_point(
     report = VerifyReport(point_id=point["id"])
     target_cefr = point["level"]["value"] if point["level"]["framework"] == "cefr" else None
 
-    for index, block in enumerate(point["blocks"]):
+    for index, block in enumerate(point.get("blocks", [])):
         if block["type"] != "pitfall":
             continue
         report.checked_pitfalls += 1
@@ -189,7 +196,7 @@ def verify_point(
                 f"{label} {text!r}: engine found errors ({sorted(result.categories())})",
             ))
 
-    for index, block in enumerate(point["blocks"]):
+    for index, block in enumerate(point.get("blocks", [])):
         if block["type"] != "check":
             continue
         for item_index, item in enumerate(block["items"]):
@@ -216,10 +223,62 @@ def verify_point(
                     f"{label}: blind solver picked {answer_index} ({item['options'][answer_index] if 0 <= answer_index < len(item['options']) else '?'}), expected {item['answer']}",
                 ))
 
-    for index, block in enumerate(point["blocks"]):
+    for index, block in enumerate(point.get("blocks", [])):
         if block["type"] == "story":
             _verify_story(point, index, block, evaluator=evaluator, blind_solver=blind_solver,
                           target_cefr=target_cefr, report=report)
+
+    for index, item in enumerate(point.get("common_mistakes", [])):
+        report.checked_common_mistakes += 1
+        label = f"common_mistakes[{index}]"
+        try:
+            wrong_result = evaluator.evaluate(item["wrong"], target_cefr=target_cefr)
+        except EvaluatorClientError as exc:
+            report.flags.append(VerifyFlag("evaluator_error", f"{label} wrong: {exc}"))
+            continue
+        if item["error_tag"] not in wrong_result.categories():
+            report.flags.append(VerifyFlag(
+                "common_mistake_not_caught",
+                f"{label}: engine did not tag {item['error_tag']!r} for {item['wrong']!r} "
+                f"(got {sorted(wrong_result.categories())})",
+            ))
+        try:
+            right_result = evaluator.evaluate(item["right"], target_cefr=target_cefr)
+        except EvaluatorClientError as exc:
+            report.flags.append(VerifyFlag("evaluator_error", f"{label} right: {exc}"))
+            continue
+        if right_result.errors:
+            report.flags.append(VerifyFlag(
+                "common_mistake_right_flagged",
+                f"{label}: engine found errors in the corrected sentence {item['right']!r} "
+                f"({sorted(right_result.categories())})",
+            ))
+
+    for index, item in enumerate(point.get("quick_practice", [])):
+        report.checked_quick_practice += 1
+        label = f"quick_practice[{index}]"
+        system = PROMPT_PATH.read_text(encoding="utf-8").format(
+            level_framework=point["level"]["framework"], level_value=point["level"]["value"],
+            target_lang=point["target_lang"], question=item["q"],
+            options="\n".join(f"{i}: {opt}" for i, opt in enumerate(item["options"])),
+        )
+        try:
+            result = blind_solver.complete(
+                system=system, user="Answer now.", json_schema=_BLIND_SOLVE_SCHEMA, schema_name="blind_solve",
+            )
+        except LLMError as exc:
+            report.flags.append(VerifyFlag("blind_solve_error", f"{label}: {exc}"))
+            continue
+        answer_index = result.data["answer_index"]
+        if answer_index == -1:
+            report.flags.append(VerifyFlag("blind_solve_ambiguous", f"{label}: blind solver found no single correct option"))
+        elif answer_index != item["answer"]:
+            report.flags.append(VerifyFlag(
+                "blind_solve_wrong",
+                f"{label}: blind solver picked {answer_index} "
+                f"({item['options'][answer_index] if 0 <= answer_index < len(item['options']) else '?'}), "
+                f"expected {item['answer']}",
+            ))
 
     return report
 

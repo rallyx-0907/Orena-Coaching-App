@@ -90,6 +90,43 @@ CANNED_STORY = {
 }
 
 
+CANNED_V04 = {
+    "when_to_use": [{"vi": "Khi chủ ngữ là he/she/it."}, {"vi": "Nói về thói quen."}],
+    "pattern": {
+        "parts": [{"text": "He / She / It", "role": "subject"}, {"text": "works", "role": "verb"}],
+        "illustration_kind": "timeline",
+        "timeline_shape": "habit",
+    },
+    "examples": [
+        {
+            "text": "She works in a bank.",
+            "spans": [{"start": 4, "end": 9, "role": "verb"}],
+            "annotation": {"vi": "ngôi thứ ba số ít: +s"},
+            "translation": {"vi": "Cô ấy làm ở ngân hàng."},
+        },
+        {
+            "text": "He studies every day.",
+            "spans": [{"start": 3, "end": 10, "role": "verb"}],
+            "annotation": {"vi": "phụ âm + y: -ies"},
+            "translation": {"vi": "Anh ấy học mỗi ngày."},
+        },
+    ],
+    "compare": [],
+    "common_mistakes": [
+        {
+            "wrong": "He go to school.", "right": "He goes to school.",
+            "reason": {"vi": "Ngôi thứ ba số ít cần thêm -s."},
+            "error_tag": "agreement", "l1": ["vi"],
+        },
+    ],
+    "quick_practice": [
+        {"q": "He ___ to school.", "options": ["go", "goes"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+        {"q": "She ___ a book.", "options": ["read", "reads"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+        {"q": "It ___ every morning.", "options": ["rain", "rains"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+    ],
+}
+
+
 def canned_transport() -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
         sent = json.loads(request.content)
@@ -98,6 +135,11 @@ def canned_transport() -> httpx.MockTransport:
             return httpx.Response(200, json={
                 "content": [{"type": "tool_use", "name": "emit_story", "input": CANNED_STORY}],
                 "usage": {"input_tokens": 400, "output_tokens": 250},
+            })
+        if tool_name == "emit_grammar_point_v04":
+            return httpx.Response(200, json={
+                "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": CANNED_V04}],
+                "usage": {"input_tokens": 500, "output_tokens": 300},
             })
         return httpx.Response(200, json={
             "content": [{"type": "tool_use", "name": "emit_grammar_point_blocks", "input": CANNED_BLOCKS}],
@@ -283,6 +325,62 @@ def test_with_story_sums_cost_of_both_calls(tmp_path: Path) -> None:
 def test_story_generation_schema_constrains_characters_to_the_cast() -> None:
     schema = _story_generation_schema(locales=["vi"], error_tags=["agreement"], cast_names=["Alex", "Sam"])
     assert schema["properties"]["characters"]["items"] == {"enum": ["Alex", "Sam"]}
+
+
+def test_generate_v04_writes_the_six_fixed_content_blocks(tmp_path: Path) -> None:
+    """GRAMMAR_CONTENT_CONTRACT.md: a point already on schema_version 0.4 regenerates
+    through the new when_to_use/pattern/examples/compare/common_mistakes/quick_practice
+    path, not the old free-form blocks[] one."""
+    lab = Lab(tmp_path, "en")
+    lab.points["en.alpha"]["schema_version"] = "0.4"
+    lab.points["en.alpha"].pop("blocks", None)
+    lab.write()
+
+    outcome = make_generator(lab.root, canned_transport()).generate("en.alpha")
+
+    assert outcome.status == "written"
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["schema_version"] == "0.4"
+    assert "blocks" not in point
+    assert point["when_to_use"] == CANNED_V04["when_to_use"]
+    assert point["pattern"]["illustration"] == {"kind": "timeline", "timeline": {"shape": "habit"}}
+    assert len(point["examples"]) == 2
+    assert len(point["common_mistakes"]) == 1
+    assert len(point["quick_practice"]) == 3
+    report = validate_lang("en", lab.root)
+    assert report.ok, report.issues
+
+
+def test_generate_v04_illustration_drops_timeline_when_kind_is_not_timeline(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.points["en.alpha"]["schema_version"] = "0.4"
+    lab.points["en.alpha"].pop("blocks", None)
+    lab.write()
+    canned = {**CANNED_V04, "pattern": {**CANNED_V04["pattern"], "illustration_kind": "none"}}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": canned}],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+    assert outcome.status == "written"
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["pattern"]["illustration"] == {"kind": "none"}
+
+
+def test_generate_v04_rejects_with_story(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.points["en.alpha"]["schema_version"] = "0.4"
+    lab.points["en.alpha"].pop("blocks", None)
+    lab.write()
+    try:
+        make_generator(lab.root, canned_transport()).generate("en.alpha", with_story=True)
+    except ValueError as exc:
+        assert "0.4" in str(exc)
+    else:
+        raise AssertionError("expected a ValueError")
 
 
 def test_story_generation_schema_bounds_alternatives_to_one_per_error_tag() -> None:

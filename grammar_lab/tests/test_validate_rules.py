@@ -228,6 +228,21 @@ CASES = [
     fail("story.forbidden_phrase", "fairy-tale opener in scene", lambda lab: (
         story := _with_story(alpha(lab)),
         story["scene"].update(vi="Ngày xửa ngày xưa. " + story["scene"]["vi"]))),
+    # --- v0.4 fixed content blocks (GRAMMAR_CONTENT_CONTRACT.md) -----------------------
+    ok("example.span_invalid", "span within text bounds", lambda lab: _with_v04(alpha(lab))),
+    fail("example.span_invalid", "span end beyond text length", lambda lab: (
+        point := _with_v04(alpha(lab)), point["examples"][0]["spans"][0].update(end=999))),
+    fail("example.span_invalid", "span start >= end", lambda lab: (
+        point := _with_v04(alpha(lab)), point["examples"][0]["spans"][0].update(start=5, end=5))),
+    ok("example.pinyin_length_mismatch", "pinyin matches character count", lambda lab: _with_v04_zh(lab), lang="zh"),
+    fail("example.pinyin_length_mismatch", "pinyin shorter than text",
+         lambda lab: _with_v04_zh(lab, pinyin=["wǒ"]), lang="zh"),
+    ok("common_mistake.same_wrong_right", "wrong differs from right", lambda lab: _with_v04(alpha(lab))),
+    fail("common_mistake.same_wrong_right", "wrong equals right", lambda lab: (
+        point := _with_v04(alpha(lab)), point["common_mistakes"][0].update(right="I have two cat."))),
+    ok("error_tag.common_mistake_unlisted", "error_tag listed on the point", lambda lab: _with_v04(alpha(lab))),
+    fail("error_tag.common_mistake_unlisted", "error_tag not on the point", lambda lab: (
+        point := _with_v04(alpha(lab)), point["common_mistakes"][0].update(error_tag="tense"))),
 ]
 
 
@@ -314,6 +329,73 @@ def _with_story(point: dict) -> dict:
     story = _valid_story()
     point["blocks"].append(story)
     return story
+
+
+def _v04_fields(*, error_tag: str = "agreement") -> dict:
+    """A schema-valid set of the six v0.4 content fields (GRAMMAR_CONTENT_CONTRACT.md)."""
+    return {
+        "when_to_use": [{"vi": "Khi có từ hai trở lên."}, {"vi": "Khi đếm được."}],
+        "pattern": {
+            "parts": [{"text": "two", "role": "marker"}, {"text": "cats", "role": "object"}],
+            "illustration": {"kind": "none"},
+        },
+        "examples": [{
+            "text": "I have two cats.",
+            "spans": [{"start": 12, "end": 16, "role": "object"}],
+            "annotation": {"vi": "số nhiều"},
+            "translation": {"vi": "Tôi có hai con mèo."},
+        }],
+        "compare": [],
+        "common_mistakes": [{
+            "wrong": "I have two cat.", "right": "I have two cats.",
+            "reason": {"vi": "Đếm được, từ hai trở lên phải thêm -s."},
+            "error_tag": error_tag, "l1": ["vi"],
+        }],
+        "quick_practice": [
+            {"q": "I have two ___.", "options": ["cat", "cats"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+            {"q": "She has three ___.", "options": ["book", "books"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+            {"q": "There are five ___.", "options": ["box", "boxes"], "answer": 1, "explain": {"vi": "Thêm -es."}},
+        ],
+    }
+
+
+def _with_v04(point: dict, **field_overrides: object) -> dict:
+    """Bump ``point`` to schema_version 0.4 with a valid set of the new content fields."""
+    point["schema_version"] = "0.4"
+    point.pop("blocks", None)
+    point.update(_v04_fields())
+    point.update(field_overrides)
+    return point
+
+
+def _with_v04_zh(lab: Lab, *, pinyin: list[str] | None = None) -> dict:
+    """A schema-valid v0.4 zh.le_completion point, for the pinyin-length rule (zh-Hans only)."""
+    point = lab.points["zh.le_completion"]
+    point["schema_version"] = "0.4"
+    point.pop("blocks", None)
+    fields = _v04_fields(error_tag="aspect")
+    fields["pattern"] = {
+        "parts": [{"text": "动词", "role": "verb"}, {"text": "了", "role": "particle"}],
+        "illustration": {"kind": "none"},
+    }
+    fields["examples"] = [{
+        "text": "我们吃了饭。",
+        "spans": [{"start": 2, "end": 4, "role": "particle"}],
+        "annotation": {"vi": "đã hoàn thành"},
+        "translation": {"vi": "Chúng tôi đã ăn cơm."},
+        "pinyin": pinyin if pinyin is not None else ["wǒ", "men", "chī", "le", "fàn", ""],
+    }]
+    fields["common_mistakes"] = [{
+        "wrong": "我昨天吃饭。", "right": "我昨天吃了饭。",
+        "reason": {"vi": "Hành động đã xong cần 了."}, "error_tag": "aspect", "l1": ["vi"],
+    }]
+    fields["quick_practice"] = [
+        {"q": "我___饭。", "options": ["吃了", "吃着"], "answer": 0, "explain": {"vi": "Đã xong."}},
+        {"q": "他___了。", "options": ["走", "走了"], "answer": 1, "explain": {"vi": "Đã xong."}},
+        {"q": "你___吗？", "options": ["吃了", "吃着呢"], "answer": 0, "explain": {"vi": "Hỏi đã xong chưa."}},
+    ]
+    point.update(fields)
+    return point
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case.id for case in CASES])

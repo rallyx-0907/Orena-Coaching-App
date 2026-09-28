@@ -36,6 +36,10 @@ story.length_out_of_range   hook+scene+need+reveal+consequences (vi) is not 150-
 story.reveal_short_too_long reveal_short (vi) is more than 20 words
 story.short_not_one_line    an alternative's short (or reveal_short) contains a newline
 story.forbidden_phrase      vi text uses a phrase VOICE.md bans (fairy-tale opener/vocabulary, etc.)
+example.span_invalid        examples[].spans start>=end or end beyond text length (GRAMMAR_CONTENT_CONTRACT.md v0.4)
+example.pinyin_length_mismatch  examples[].pinyin length differs from text's character count (zh-Hans, v0.4)
+common_mistake.same_wrong_right  common_mistakes[].wrong and .right are identical (v0.4)
+error_tag.common_mistake_unlisted  common_mistakes[].error_tag is not in the point's error_tags (v0.4)
 """
 
 from __future__ import annotations
@@ -258,7 +262,7 @@ class _Validation:
         self.check_level(file, point)
         self.check_refs(file, point)
         self.check_error_tags(file, point)
-        for index, block in enumerate(point["blocks"]):
+        for index, block in enumerate(point.get("blocks", [])):
             path = f"blocks[{index}]"
             kind = block["type"]
             if kind == "example":
@@ -271,6 +275,14 @@ class _Validation:
                 self.check_contrast(file, path, block, point)
             elif kind == "story":
                 self.check_story(file, path, block, point)
+        if "examples" in point:
+            self.check_examples_v04(file, point)
+        if "compare" in point:
+            self.check_compare_v04(file, point)
+        if "common_mistakes" in point:
+            self.check_common_mistakes_v04(file, point)
+        if "quick_practice" in point:
+            self.check_quick_practice_v04(file, point)
         for path, mapping in _locale_maps(point):
             self.check_locales(file, path, mapping)
         self.check_script(file, point)
@@ -403,6 +415,60 @@ class _Validation:
         if not (low <= total <= high):
             self.issue(file, path, "story.length_out_of_range", f"{total} words (vi), expected {low}-{high}")
 
+    def check_examples_v04(self, file: str, point: dict[str, Any]) -> None:
+        for index, example in enumerate(point["examples"]):
+            path = f"examples[{index}]"
+            text_len = len(example["text"])
+            for span_index, span in enumerate(example["spans"]):
+                if span["start"] >= span["end"] or span["end"] > text_len:
+                    self.issue(file, f"{path}.spans[{span_index}]", "example.span_invalid",
+                               f"start={span['start']} end={span['end']} out of range for text of length {text_len}")
+            pinyin = example.get("pinyin")
+            if self.target_lang == ZH_HANS and pinyin is not None and len(pinyin) != text_len:
+                self.issue(file, f"{path}.pinyin", "example.pinyin_length_mismatch",
+                           f"pinyin has {len(pinyin)} entries, text has {text_len} characters")
+
+    def check_compare_v04(self, file: str, point: dict[str, Any]) -> None:
+        for index, item in enumerate(point["compare"]):
+            path = f"compare[{index}]"
+            other = item["with"]
+            if other not in self.known_ids:
+                self.issue(file, f"{path}.with", "ref.unknown_contrast", f"unknown grammar point {other}")
+            if other not in point["contrasts"]:
+                self.issue(file, f"{path}.with", "ref.contrast_block_unlisted", f"{other} is not listed in contrasts")
+
+    def check_common_mistakes_v04(self, file: str, point: dict[str, Any]) -> None:
+        for index, item in enumerate(point["common_mistakes"]):
+            path = f"common_mistakes[{index}]"
+            if _normalize(item["wrong"]) == _normalize(item["right"]):
+                self.issue(file, path, "common_mistake.same_wrong_right", "wrong and right are identical")
+            if item["error_tag"] not in point["error_tags"]:
+                self.issue(file, f"{path}.error_tag", "error_tag.common_mistake_unlisted",
+                           f"{item['error_tag']!r} is not in the point's error_tags")
+            if self.engine_tags is not None and item["error_tag"] not in self.engine_tags:
+                self.issue(file, f"{path}.error_tag", "error_tag.unknown",
+                           f"{item['error_tag']!r} is not an engine error label for {self.target_lang}")
+            if self.l1s:
+                for l1_index, l1 in enumerate(item["l1"]):
+                    if l1 not in self.l1s:
+                        self.issue(file, f"{path}.l1[{l1_index}]", "locale.l1_undeclared",
+                                   f"L1 {l1!r} is not declared in the set manifest")
+
+    def check_quick_practice_v04(self, file: str, point: dict[str, Any]) -> None:
+        for index, item in enumerate(point["quick_practice"]):
+            path = f"quick_practice[{index}]"
+            if item["answer"] >= len(item["options"]):
+                self.issue(file, f"{path}.answer", "check.answer_out_of_range",
+                           f"answer {item['answer']} but only {len(item['options'])} options")
+            seen: dict[str, int] = {}
+            for option_index, option in enumerate(item["options"]):
+                key = _normalize(option)
+                if key in seen:
+                    self.issue(file, f"{path}.options[{option_index}]", "check.duplicate_options",
+                               f"{option!r} duplicates option {seen[key]}")
+                else:
+                    seen[key] = option_index
+
     def check_locales(self, file: str, path: str, mapping: dict[str, str]) -> None:
         missing = [locale for locale in self.locales if locale not in mapping]
         if missing:
@@ -515,7 +581,19 @@ def _story_forbidden_check_texts(block: dict[str, Any]) -> Iterator[tuple[str, s
 def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
     yield "title", point["title"]
     yield "summary", point["summary"]
-    for index, block in enumerate(point["blocks"]):
+    for index, item in enumerate(point.get("when_to_use", [])):
+        yield f"when_to_use[{index}]", item
+    for index, example in enumerate(point.get("examples", [])):
+        yield f"examples[{index}].annotation", example["annotation"]
+        yield f"examples[{index}].translation", example["translation"]
+    for index, item in enumerate(point.get("compare", [])):
+        yield f"compare[{index}].this_meaning", item["this_meaning"]
+        yield f"compare[{index}].other_meaning", item["other_meaning"]
+    for index, item in enumerate(point.get("common_mistakes", [])):
+        yield f"common_mistakes[{index}].reason", item["reason"]
+    for index, item in enumerate(point.get("quick_practice", [])):
+        yield f"quick_practice[{index}].explain", item["explain"]
+    for index, block in enumerate(point.get("blocks", [])):
         path = f"blocks[{index}]"
         kind = block["type"]
         if kind == "rule_table":
@@ -546,7 +624,25 @@ def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
 
 def _target_texts(point: dict[str, Any]) -> Iterator[tuple[str, str]]:
     """Strings written in the target language (as opposed to explanation locales)."""
-    for index, block in enumerate(point["blocks"]):
+    if "pattern" in point:
+        for part_index, part in enumerate(point["pattern"]["parts"]):
+            yield f"pattern.parts[{part_index}].text", part["text"]
+        for variant_name, parts in point["pattern"].get("variants", {}).items():
+            for part_index, part in enumerate(parts):
+                yield f"pattern.variants.{variant_name}[{part_index}].text", part["text"]
+    for index, example in enumerate(point.get("examples", [])):
+        yield f"examples[{index}].text", example["text"]
+    for index, item in enumerate(point.get("compare", [])):
+        yield f"compare[{index}].this_example", item["this_example"]
+        yield f"compare[{index}].other_example", item["other_example"]
+    for index, item in enumerate(point.get("common_mistakes", [])):
+        yield f"common_mistakes[{index}].wrong", item["wrong"]
+        yield f"common_mistakes[{index}].right", item["right"]
+    for index, item in enumerate(point.get("quick_practice", [])):
+        yield f"quick_practice[{index}].q", item["q"]
+        for option_index, option in enumerate(item["options"]):
+            yield f"quick_practice[{index}].options[{option_index}]", option
+    for index, block in enumerate(point.get("blocks", [])):
         path = f"blocks[{index}]"
         kind = block["type"]
         if kind == "formula":
