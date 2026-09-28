@@ -27,7 +27,15 @@ that *verifies* a check item (blind solve) to differ from the model that
   The schema is instead spelled out in the prompt text, and the system
   message must contain the word "json" per DeepSeek's own requirement for
   this mode to activate. Weaker structural guarantee than the other four
-  providers; not yet exercised against a live key.
+  providers. **Exercised live** 2026-09-28: the first real run came back
+  with empty ``content`` for every call. Cause: DeepSeek's thinking mode is
+  **on by default at "high" effort** (its own docs), and for a schema this
+  size it reliably spent the entire ``max_tokens`` budget on
+  ``reasoning_content`` before ever writing to ``content``. Fixed by sending
+  ``"thinking": {"type": "disabled"}`` -- chain-of-thought buys nothing for
+  filling in a schema. A 3-attempt retry remains as a safety net for the
+  separate "occasionally empty" case DeepSeek's own json-mode docs warn
+  about even outside thinking mode.
 
 Every key is read from its own environment variable
 (``ANTHROPIC_API_KEY``/``OPENAI_API_KEY``/``GEMINI_API_KEY``/``GROQ_API_KEY``/
@@ -35,6 +43,11 @@ Every key is read from its own environment variable
 never logged: an error message built from a provider's raw response text is
 passed through ``secrets_redact.redact`` before it becomes an exception
 message, in case a provider ever echoes a credential back.
+
+A failed call can still have been billed (DeepSeek bills reasoning tokens
+even when ``content`` ends up empty): every attempt's usage is accumulated
+and attached to the ``LLMError`` as ``.usage``, so a caller that catches the
+error can still account for the real cost rather than silently losing it.
 
 Gemini calls go through ``rate_limit.limiter_for("gemini", ...)`` and retry
 on HTTP 429 with backoff: this project's Gemini key is shared with other
@@ -121,9 +134,12 @@ PRICING: dict[str, tuple[float, float]] = {
 class LLMError(RuntimeError):
     """A provider call failed, or its response did not match the requested schema."""
 
-    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+    def __init__(self, message: str, *, status_code: int | None = None, usage: LLMUsage | None = None) -> None:
         super().__init__(redact(message))
         self.status_code = status_code
+        # Set when a provider can bill a failed call (e.g. DeepSeek's reasoning
+        # tokens on an empty-content response) -- see module docstring.
+        self.usage = usage
 
 
 def to_gemini_schema(schema: Any) -> Any:
@@ -346,7 +362,17 @@ class LLMClient:
     ) -> tuple[dict[str, Any], LLMUsage]:
         """DeepSeek's json_object mode has no schema parameter at all (see module
         docstring): the schema is spelled out in the prompt instead, and the
-        word "json" must appear for the mode to activate at all."""
+        word "json" must appear for the mode to activate at all.
+
+        Thinking mode is on by default at "high" effort (DeepSeek's own docs).
+        Live testing (2026-09-28) found it reliably burns the whole
+        ``max_tokens`` budget on ``reasoning_content`` before writing anything
+        to ``content`` for a schema this size, coming back with empty
+        ``content`` every time -- explicitly disabled here since chain-of-
+        thought buys nothing for filling in a schema. A short retry remains
+        as a safety net for the "occasionally empty" case DeepSeek's own
+        json-mode docs separately warn about.
+        """
         schema_instruction = (
             "\n\nRespond with a single JSON object and nothing else (no markdown fences, no commentary), "
             f"matching this JSON Schema exactly:\n{json.dumps(json_schema, ensure_ascii=False)}"
@@ -355,29 +381,38 @@ class LLMClient:
             "model": self.model,
             "temperature": temperature,
             "max_tokens": max_tokens,
+            "thinking": {"type": "disabled"},
             "messages": [
                 {"role": "system", "content": system + schema_instruction},
                 {"role": "user", "content": user},
             ],
             "response_format": {"type": "json_object"},
         }
-        response = self._post(DEEPSEEK_API_URL, body, headers={
-            "authorization": f"Bearer {self.api_key}",
-            "content-type": "application/json",
-        })
-        choices = response.get("choices") or []
-        if not choices:
-            raise LLMError(f"response had no choices: {response!r}")
-        content = choices[0]["message"]["content"]
-        if not content:
-            raise LLMError("DeepSeek returned empty content (a known json_object-mode issue per its own docs)")
-        try:
-            data = json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise LLMError(f"response content was not JSON: {content!r}") from exc
-        usage_raw = response.get("usage", {})
-        usage = LLMUsage(int(usage_raw.get("prompt_tokens", 0)), int(usage_raw.get("completion_tokens", 0)))
-        return data, usage
+        spent_input = 0
+        spent_output = 0
+        last_message = "DeepSeek returned empty content 3 times (a known json_object-mode issue per its own docs)"
+        for attempt in range(3):
+            response = self._post(DEEPSEEK_API_URL, body, headers={
+                "authorization": f"Bearer {self.api_key}",
+                "content-type": "application/json",
+            })
+            usage_raw = response.get("usage", {})
+            spent_input += int(usage_raw.get("prompt_tokens", 0))
+            spent_output += int(usage_raw.get("completion_tokens", 0))
+            choices = response.get("choices") or []
+            if not choices:
+                raise LLMError(f"response had no choices: {response!r}", usage=LLMUsage(spent_input, spent_output))
+            content = choices[0]["message"]["content"]
+            if not content:
+                last_message = f"DeepSeek returned empty content on attempt {attempt + 1}/3"
+                continue
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise LLMError(f"response content was not JSON: {content!r}",
+                                usage=LLMUsage(spent_input, spent_output)) from exc
+            return data, LLMUsage(spent_input, spent_output)
+        raise LLMError(last_message, usage=LLMUsage(spent_input, spent_output))
 
     def _call_gemini_with_retry(
         self, system: str, user: str, json_schema: dict[str, Any], temperature: float, max_tokens: int,

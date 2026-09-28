@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from grammar_lab.pipeline.llm_client import LLMClient, LLMError, to_gemini_schema
+from grammar_lab.pipeline.llm_client import LLMClient, LLMError, LLMUsage, to_gemini_schema
 
 SCHEMA = {"type": "object", "properties": {"greeting": {"type": "string"}}, "required": ["greeting"]}
 
@@ -232,12 +232,60 @@ def test_deepseek_embeds_the_schema_and_the_word_json_in_the_system_message(tmp_
     assert "greeting" in system_message  # a property name from SCHEMA, proving the schema was embedded
 
 
-def test_deepseek_empty_content_raises_llm_error(tmp_path: Path) -> None:
+def test_deepseek_empty_content_raises_llm_error_after_3_attempts(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={"choices": [{"message": {"content": ""}}], "usage": {}})
+        calls.append(request)
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": ""}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 500},
+        })
+
     c = client(tmp_path, "deepseek", httpx.MockTransport(handler))
-    with pytest.raises(LLMError, match="empty"):
+    with pytest.raises(LLMError, match="empty") as excinfo:
         c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert len(calls) == 3
+    # Every attempt was a real billed call (DeepSeek bills reasoning tokens even
+    # on empty content) -- the error must carry the accumulated usage, not lose it.
+    assert excinfo.value.usage == LLMUsage(300, 1500)
+
+
+def test_deepseek_sends_thinking_disabled(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    client(tmp_path, "deepseek", _deepseek_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    sent = json.loads(calls[0].content)
+    assert sent["thinking"] == {"type": "disabled"}
+
+
+def test_deepseek_retries_empty_content_then_succeeds(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) < 3:
+            return httpx.Response(200, json={
+                "choices": [{"message": {"content": ""}}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 500},
+            })
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": json.dumps({"greeting": "hi"})}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        })
+
+    c = client(tmp_path, "deepseek", httpx.MockTransport(handler))
+    result = c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert result.data == {"greeting": "hi"}
+    assert len(calls) == 3
+    # Usage from the two wasted (empty) attempts is not silently dropped.
+    assert result.usage == LLMUsage(300, 1050)
+
+
+def test_deepseek_llm_error_usage_is_none_when_not_a_deepseek_billing_case(tmp_path: Path) -> None:
+    c = client(tmp_path, "gemini", httpx.MockTransport(lambda r: httpx.Response(500, text="boom")))
+    with pytest.raises(LLMError) as excinfo:
+        c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert excinfo.value.usage is None
 
 
 def test_deepseek_hits_its_own_url(tmp_path: Path) -> None:

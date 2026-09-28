@@ -108,7 +108,10 @@ def generate(
             try:
                 outcomes.append(generator.generate(point_id, regenerate_note=regenerate_note or None, with_story=with_story))
             except LLMError as exc:
-                outcomes.append(GenerateOutcome(point_id, "error", reason=str(exc)))
+                # A failed call can still have been billed (e.g. DeepSeek's reasoning
+                # tokens on an empty-content response) -- exc.usage carries that spend.
+                wasted_cost = exc.usage.cost_usd(model) if exc.usage is not None else None
+                outcomes.append(GenerateOutcome(point_id, "error", reason=str(exc), cost_usd=wasted_cost))
     total_cost = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
     for outcome in outcomes:
         cost = f"${outcome.cost_usd:.4f}" if outcome.cost_usd is not None else ("cached" if outcome.cached else "n/a")
