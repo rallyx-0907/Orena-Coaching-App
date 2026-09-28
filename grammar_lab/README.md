@@ -26,10 +26,10 @@ python -m grammar_lab.pipeline.cli validate --lang en --json   # báo cáo dạn
 python -m grammar_lab.pipeline.cli validate --lang en --mark   # ghi status=flagged + flags validate:<mã> vào file lỗi
 python -m grammar_lab.pipeline.cli export-error-tags           # xuất lại schema/error_tags.json từ engine chấm bài
 
-# Giai đoạn 1 (SPEC §5.1-§5.5) -- cần một key managed API (ANTHROPIC_API_KEY / OPENAI_API_KEY /
-# GEMINI_API_KEY, riêng của lab, không phải key trong sandbox app) và một evaluator sandbox.
-python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple,en.there_is_are
-python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8011
+# Giai đoạn 1 (SPEC §5.1-§5.5) -- cần key managed API riêng của lab (không phải key trong sandbox app)
+# và evaluator sandbox: grammar_lab/sandbox/ (docker compose, xem sandbox/README.md).
+python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple,en.there_is_are   # provider mặc định: anthropic
+python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8020    # blind-solve mặc định: gemini
 python -m grammar_lab.pipeline.cli route --lang en --gold-set-passed   # bỏ cờ này -> mọi mục bị flagged (SPEC §5.4)
 python -m grammar_lab.pipeline.cli report --lang en                    # reports/<run_id>/report.{json,html}
 
@@ -38,6 +38,11 @@ python -m pytest grammar_lab/tests                              # toàn bộ tes
 
 Mã lỗi của `validate` được liệt kê ở đầu [`pipeline/validate.py`](pipeline/validate.py); mỗi mã có ít
 nhất một ca đúng và một ca sai trong `tests/test_validate_rules.py`.
+
+**So hai model cho `generate`** (SPEC §9, "managed API nào và ngân sách"): chạy `generate` hai lần cho
+cùng 10 điểm với `--model` khác nhau (`claude-haiku-4-5-20251001` rồi `claude-sonnet-5`), mỗi lần ra
+một `run_id` riêng trong `reports/`; `verify` + `route` + `report` cho từng run_id rồi so
+`report.json`'s `route_status_counts`/`verify_flag_rate`/`api_cost_usd` giữa hai lần chạy.
 
 `generate`/`verify` gọi API thật (`llm_client.py` có cache theo hash input ở `.cache/llm/`, không
 tính phí lần chạy lại). `evaluator_client.py` chỉ có chế độ staging (HTTP); **không có `base_url` mặc
@@ -63,6 +68,7 @@ sandbox được phép thao tác (vd. `orena-foundation-web` ở `:8011`).
 | `pipeline/evaluator_client.py` | Client HTTP chế độ staging cho engine chấm bài (không có `base_url` mặc định) |
 | `pipeline/run_context.py`, `report_step.py` | `reports/<run_id>/*.json` + `reports/latest.txt` nối các bước; `report` gộp thành JSON/HTML |
 | `reports/<run_id>/` | Kết quả chạy (không commit) |
+| `sandbox/` | Evaluator sandbox rời (compose project, image, port riêng) cho `verify`; xem `sandbox/README.md` |
 
 ## Quy ước
 

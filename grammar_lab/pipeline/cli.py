@@ -129,10 +129,11 @@ def verify(
         ..., "--evaluator-url",
         help="Base URL of a writing-evaluator instance you are allowed to operate. "
              "Never the public orena.chillpickle.org tunnel: that is production, a human gate "
-             "(AGENTS.md Safety). Point this at a sandbox, e.g. http://localhost:8011.",
+             "(AGENTS.md Safety). Point this at a sandbox, e.g. http://localhost:8020 "
+             "(grammar_lab/sandbox/).",
     ),
-    blind_provider: str = typer.Option("openai", "--blind-provider", help="Must differ from generate's --provider."),
-    blind_model: str = typer.Option("gpt-6-luna", "--blind-model"),
+    blind_provider: str = typer.Option("gemini", "--blind-provider", help="Must differ from generate's --provider."),
+    blind_model: str = typer.Option("gemini-3.5-flash-lite", "--blind-model"),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.3: engine pitfall match, clean examples, blind solve. Skips points that fail validate."""

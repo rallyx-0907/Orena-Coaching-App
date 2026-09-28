@@ -1,0 +1,47 @@
+# Throwaway writing-evaluator sandbox for grammar_lab's verify step (SPEC §5.3).
+# Read sandbox/README.md before running anything here.
+#
+# Isolation, by design:
+# - Own compose project name (grammar-lab-eval) and own image tag
+#   (orena-grammar-eval:local) -- never ai-writing-coach:local, never the
+#   compose project any other lane is running.
+# - Own port (8020), never 8000/8010/8011 (CLAUDE.md's off-limits/sandbox list).
+# - PERSISTENCE_BACKEND=sqlite on tmpfs: no named volume, nothing survives
+#   `down`, and it never touches ai-writing-coach-data /
+#   ai-writing-coach-postgres-data.
+# - No Google OAuth configured (empty client id/secret) + APP_ENV=development:
+#   the app's own require_admin() grants a local "admin" identity without
+#   login in that combination (auth_support.py), which is what lets grammar_lab
+#   call PUT /api/admin/ai/config without a real account existing anywhere.
+name: grammar-lab-eval
+
+services:
+  evaluator:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: orena-grammar-eval:local
+    ports:
+      - "8020:8000"
+    environment:
+      PERSISTENCE_BACKEND: sqlite
+      POSTGRES_RUNTIME_URL: ""
+      WRITING_DB: /rundata/w.db
+      AUTH_DB: /rundata/a.db
+      PLATFORM_DB: /rundata/p.db
+      PRODUCT_DB: /rundata/pr.db
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_REDIRECT_URI: ""
+      APP_ENV: development
+      PUBLIC_BASE_URL: http://localhost:8020
+      SESSION_SECRET: ""
+      # Grammar Lab's own Gemini key, never the app's. Set GRAMMAR_LAB_GEMINI_API_KEY
+      # in the shell that runs `docker compose`, or in a .env file next to this
+      # one that is never committed (see .gitignore). Empty is fine for build/
+      # boot: the container comes up and reports ai_ready=false until it is set.
+      GEMINI_API_KEY: ${GRAMMAR_LAB_GEMINI_API_KEY:-}
+      GEMINI_MODELS: gemini-3.5-flash-lite
+    tmpfs:
+      - /rundata
+    restart: "no"
