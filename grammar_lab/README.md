@@ -88,6 +88,7 @@ tác (vd. `grammar_lab/sandbox/` ở `:8020`).
 | `reports/<run_id>/` | Kết quả chạy (không commit) |
 | `sandbox/` | Evaluator sandbox rời (compose project, image, port riêng) cho `verify`; xem `sandbox/README.md` |
 | `sandbox/live_provider_lock.py` | Khóa file dùng chung giữa các lane trước một lần chạy live (không đụng Docker) |
+| `sandbox/run_smoke.py` | Điểm vào duy nhất cho một lần chạy live: giữ khóa + kiểm `docker ps`, dựng sandbox, generate/validate/verify, gỡ đảm bảo |
 
 ## Quy ước
 

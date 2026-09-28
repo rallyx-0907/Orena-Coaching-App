@@ -85,6 +85,33 @@ combination -- no login, no bootstrap user needed. This is the same path
 CLAUDE.md already documents for `orena-foundation-web`; it is not a bypass
 this sandbox invented.
 
+## Running a live smoke test (`run_smoke.py`)
+
+`run_smoke.py` is the one entry point for a live run against this sandbox -- it holds the
+live-provider lock, brings the sandbox up, runs `generate` -> `validate` -> `verify`, and
+guarantees teardown (`docker compose down`, then the lock release) even on failure. Nothing
+else should re-implement this sequence by hand; a one-off script in a scratchpad cannot be
+trusted to keep the lock and the sandbox in sync the way this one is tested to.
+
+```bash
+python grammar_lab/sandbox/run_smoke.py \
+  --dotenv "<path to the .env holding the provider keys>" \
+  --ids en.plural_nouns.regular,en.there_is_are \
+  --generate-provider deepseek --generate-model deepseek-flash --deepseek-thinking off \
+  --blind-provider groq --blind-model openai/gpt-oss-120b \
+  --with-story --story-mode everyday \
+  --cost-ceiling-usd 0.05
+```
+
+Before bringing the sandbox up it also checks `docker ps` itself for another lane's
+`orena-agent-live-*` container -- that lane may not honour the lock yet. If one is running:
+release the lock, wait, retry, up to 30 minutes, without prompting anyone; only giving up
+after the full 30 minutes raises and is reported. See "The live-provider lock" above for
+the lock's own behaviour underneath this.
+
+The rest of this section explains what `run_smoke.py` does step by step, for debugging it
+or for following along by hand.
+
 ## Bring it up
 
 `GEMINI_API_KEY` is a bare pass-through in `docker-compose.yml` (`- GEMINI_API_KEY`,
