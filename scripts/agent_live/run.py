@@ -296,6 +296,20 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "帮我保存这个词。", {"word": "meticulous"}),
     ],
     "history": [("zh-CN", "zh-writing", VI, "Khi viết tôi hay mắc lỗi gì nhất?", {})],
+    # Slice 3: the opening on the snapshot, weaknesses and next steps from the backend, SRS in the learner's words
+    "coaching": [
+        ("zh-CN", "opening", VI, None, {"trigger": "open", "surface": "orena.home"}),
+        ("zh-CN", "weak", VI, "Mình đang yếu ở đâu nhất?", {"surface": "home"}),
+        ("zh-CN", "next", VI, "Giờ mình nên học gì tiếp?", {"surface": "home"}),
+        ("zh-CN", "srs", VI, "Từ 朋友 của mình đang ở trạng thái nào?", {}),
+    ],
+    # coach notes, layer 3: kept, corrected (replaced), forgotten (removed), each by the learner's own words
+    "notes": [
+        ("zh-CN", "remember", VI, "Nhớ giúp mình: mình thích ví dụ thật ngắn.", {}),
+        ("zh-CN", "correct", VI, "À không, ví dụ dài hơn một chút thì mình dễ hiểu hơn.", {}),
+        ("zh-CN", "forget", VI, "Quên ghi chú về ví dụ đó đi.", {}),
+        ("zh-CN", "after", VI, "Cho mình một ví dụ với 朋友.", {}),
+    ],
     "screens": [
         ("zh-CN", "vi", VI, "Màn này dùng để làm gì?", {"surface": "vocabulary.my_language"}),
         ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "这个页面是做什么的？", {"surface": "vocabulary.my_language"}),
@@ -316,19 +330,21 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                 session_id = None
             context: dict = {"surface": extra.get("surface", "vocabulary.my_language"),
                              "locale": {**locale, "target": target, "content": target}}  # fmt: skip
-            actions = ["navigate"]
+            actions, intents = ["navigate"], ["vocabulary.review_due", "writing.revision"]
             if extra.get("word"):
                 context["selected_item"] = {"type": "word", "text": extra["word"], "lang": target}
                 actions = ["save_word", "add_word_to_collection"]
+            if context["surface"] in {"home", "orena.home"}:
+                actions, intents = ALL_ACTIONS, ALL_INTENTS
             body = {
                 "contract_version": version,
-                "trigger": "message",
-                "message": message,
-                "client": {"ui_version": "agent-live-run", "supported_actions": actions,
-                           "supported_intents": ["vocabulary.review_due", "writing.revision"]},  # fmt: skip
+                "trigger": extra.get("trigger", "message"),
+                "client": {"ui_version": "agent-live-run", "supported_actions": actions, "supported_intents": intents},
                 "context": context,
                 "coach_notes": list(notes.values()),
             }
+            if message is not None:
+                body["message"] = message
             if session_id:
                 body["session_id"] = session_id
             result = client.turn(body)
@@ -341,6 +357,8 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                     session_id = event["data"]["session_id"]
                 if event["name"] == "memory_update" and event["data"]["op"] == "upsert":
                     notes[event["data"]["note"]["id"]] = event["data"]["note"]
+                if event["name"] == "memory_update" and event["data"]["op"] == "remove":
+                    notes.pop(event["data"]["note"]["id"], None)  # the device drops it, as it would
             memory = [e["data"] for e in result.get("events", []) if e["name"] == "memory_update"]
             if result["status"] == 200:
                 spent += price(summary["tokens_in"], summary["tokens_out"]) if summary["usage_reported"] else WORST_TURN_USD
@@ -348,7 +366,8 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                    "status": result["status"], "memory_update": memory, **summary}  # fmt: skip
             rows.append(row)
             print(f"{name:8} {step:12} {target:6} {result['status']} tools={summary.get('tools')} "
-                  f"memory={[m['note'].get('text') for m in memory if 'note' in m]} flags={summary.get('flags')} "
+                  f"memory={[(m['op'], m['note'].get('text') or m['note'].get('id')) for m in memory]} "
+                  f"flags={summary.get('flags')} "
                   f"spent=${spent:.4f}")  # fmt: skip
             time.sleep(gap)
     return rows, spent
