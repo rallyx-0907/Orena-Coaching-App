@@ -124,3 +124,8 @@ def test_a_claim_is_held_before_it_is_streamed():
     assert gate.finish("Bấm Lưu từ để thêm 我 vào từ vựng của bạn.") == [
         "Ôn nó mỗi ngày nhé. Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
     ]
+
+
+@pytest.mark.parametrize("text", ["Mình đã ghi nhớ từ 我 giúp bạn rồi nhé!", "我已经帮你记录下了这个词。"])
+def test_the_live_runs_other_verbs_are_claims_too(text):
+    assert claims_acted(text)

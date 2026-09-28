@@ -108,6 +108,35 @@ _ADDRESS_ARGS = {
 }
 
 
+def payload_shapes(action_type: str, target: str, intents: list[str] | None = None) -> str:
+    """The payloads an action takes, spelled out for the model (the live run: it guessed four wrong shapes).
+
+    From the contract's own table: `save_word: {"text": "…", "lang": "zh-CN"}`. `lang` is always the language
+    being learned; a closed set is listed; `navigate` takes `intent` plus that intent's ids.
+    """
+
+    spec = ACTIONS[action_type]
+    if action_type == "navigate":
+        return 'navigate: {"intent": <one of the navigable intents>, …that intent\'s ids}'
+    forms = []
+    for shape in spec.shapes:
+        fields = []
+        for key in sorted(shape.required) + sorted(shape.optional):
+            if key == "lang":
+                value = f'"{target}"'
+            elif key in spec.values:
+                value = " | ".join(f'"{v}"' for v in sorted(spec.values[key]))
+            elif key == "target":
+                value = '{"system": "deck" | "library", "id": "…"}'
+            elif key == "item_ids":
+                value = '["…"]'
+            else:
+                value = '"…"'
+            fields.append(f'"{key}": {value}' + ("" if key in shape.required else " (optional)"))
+        forms.append("{" + ", ".join(fields) + "}")
+    return f"{action_type}: " + " or ".join(forms)
+
+
 def action_label_key(action_type: str, payload: Mapping[str, Any]) -> str:
     if action_type == "navigate":
         return f"navigate.{payload.get('intent')}"
@@ -186,6 +215,7 @@ def reply_tool_specs(
                 PROPOSE_ACTION,
                 "Offer a button the learner can tap. Nothing happens until they tap it, so your answer "
                 "invites them to (\"Bấm Lưu từ để…\") and never says it is done. "
+                "Payloads, exactly: " + "; ".join(payload_shapes(a, target) for a in allowed) + ". "
                 "Ids in the payload must come from a tool result or the "
                 "context, never invented; a word is {text, lang} in the language being learned. navigate "
                 f"needs 'intent' plus that intent's ids; navigable intents: {', '.join(intents) or 'none'}."
@@ -313,7 +343,10 @@ class ReplyOutputs:
                 f"a{len(self.actions) + 1}", action_type, self._label(key), payload, display=self._display(args, payload)
             )
         except (ValidationError, ValueError) as exc:
-            return f"refused: payload does not fit {action_type} ({_first_error(exc)})"
+            return (
+                f"refused: payload does not fit {action_type} ({_first_error(exc)}). "
+                f"It takes {payload_shapes(action_type, self.target)}"
+            )
         self.actions.append(action)
         return (
             f"accepted: {action.id}, shown as the button '{action.label}'. The learner has not tapped it: "

@@ -30,9 +30,9 @@ from typing import Any
 
 from writing_coach.agent import learner_copy
 
-_VI_DONE = r"(?:lưu|thêm|xóa|xoá|bỏ lưu|mở|chuyển|bắt đầu)"
+_VI_DONE = r"(?:lưu|thêm|xóa|xoá|bỏ lưu|mở|chuyển|bắt đầu|ghi nhớ|ghi lại)"
 _EN_DONE = r"(?:saved|added|removed|deleted|opened|started)"
-_ZH_DONE = r"(?:保存|添加|加入|删除|移除|收藏|打开|开始)"
+_ZH_DONE = r"(?:保存|添加|加入|删除|移除|收藏|打开|开始|记录|记下)"
 
 # Orena (or an implied Orena: a sentence that opens with the verb) says it acted.
 _SELF = re.compile(
@@ -44,7 +44,8 @@ _SELF = re.compile(
     rf"|\b(?:lưu|thêm|xóa|xoá)\s+xong\b"
     rf"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?{_EN_DONE}\b"
     rf"|^\W*(?:done[,!.]?\s*)?{_EN_DONE}\b"
-    rf"|(?:我|已经)?(?:帮你|为你|给你){_ZH_DONE}(?:好|了)"
+    rf"|(?:我|已经)?(?:帮你|为你|给你){_ZH_DONE}(?:下来?|好)?了"
+    rf"|(?:帮你|为你|给你){_ZH_DONE}好"
     rf"|(?:保存|添加|收藏|删除)(?:好|成功)了"
 )
 # A completion with no actor: false only beside a pending button.

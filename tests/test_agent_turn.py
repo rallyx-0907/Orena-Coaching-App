@@ -747,3 +747,21 @@ def test_a_dropped_opening_claim_leaves_no_leading_space():
     rt, _ = runtime([reply("Mình đã lưu 是 rồi.\n\nTừ này nghĩa là “là”.")])
     events = run(rt, turn_request(actions=()))
     assert next(e for e in events if e.name == "segment_end").text == "Từ này nghĩa là “là”."
+
+
+def test_the_model_is_told_each_payload_exactly_and_a_refusal_says_the_shape():
+    """Live run: the model guessed {word: …}, {text}, {lang, word}, {word_id} - every one refused."""
+
+    from writing_coach.agent.outputs import reply_tool_specs
+
+    specs = reply_tool_specs(turn_request().client, "zh-CN", version=4)
+    action_spec = next(s for s in specs if s.name == "propose_action")
+    assert 'save_word: {"lang": "zh-CN", "text": "…"}' in action_spec.description
+    rounds = [
+        (ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"word": "是"}}), TurnFinished(0, 2, "tool_calls")),
+        reply("Bấm Lưu từ để lưu 是."),
+    ]
+    rt, provider = runtime(rounds)
+    run(rt)
+    told = provider.requests[1].messages[-1].content
+    assert told.startswith("refused: payload does not fit save_word") and 'It takes save_word: {"lang": "zh-CN", "text": "…"}' in told
