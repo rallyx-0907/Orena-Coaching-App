@@ -174,9 +174,23 @@ phải kỹ thuật.
 thứ hai" mà app đã cam kết tránh. Không cần quyết ngay — chỉ cần trước giai đoạn 4; giai đoạn 1 (mục
 này) chạy hoàn toàn offline, không đụng R5.
 
-**Quyết định của người (28/09/2026)**: chọn phương án 2 — nối output Grammar Lab vào Concept ID của R5;
-không thay thế, không tách vĩnh viễn. SPEC §8 đã viết lại theo hướng "làm giàu concept R5 hiện có"
-thay vì bảng/route song song (xem SPEC §8 và cảnh báo protected-area ở đầu mục đó). Số quyết định
-chính thức (D-xxx) sẽ cấp khi nhánh này tích hợp về `codex/work` — `D-xxx` chỉ được cấp trên `codex/work`
-theo quy ước của repo; nội dung quyết định đã ghi đầy đủ ở đây và không chờ số mới có hiệu lực. Không
-chặn giai đoạn 1–3.
+**Quyết định của người (28/09/2026): SỬA LẠI.** Bản ghi "chọn phương án 2" ngay trên là do Claude Code
+hiểu sai; đây không phải điều người quyết. Người đã đính chính trực tiếp (28/09/2026): **phương án 1 —
+Grammar Lab thay thế R5**. R5 bị đánh giá là không đáng tin và sẽ bị loại bỏ; Grammar Lab là nguồn ngữ
+pháp chuẩn duy nhất đi tới. SPEC §8 đã viết lại theo hướng này (không còn "làm giàu concept R5 hiện có").
+
+Giữ nguyên đoạn "chọn phương án 2" phía trên trong lịch sử tài liệu (không xóa) để không mất dấu vết
+diễn biến quyết định — nhưng nó **không còn hiệu lực**, chỉ đoạn này mới là quyết định thật.
+
+Phạm vi của lần sửa này: chỉ định hướng sản phẩm (Grammar Lab là nguồn ngữ pháp chuẩn) và tiếp tục xây
+Grammar Lab theo hướng đó — không phải lệnh xóa/di chuyển code R5 ngay. R5 vẫn là **protected area**
+(`AGENTS.md` §6) và đóng ở baseline PR #44 (`ARCHITECTURE_INVARIANTS.md`, "Closed-stage protection");
+việc thay thế thật sự trong app (rút API `/api/library/grammar*`, các route UI, `writing_grammar_transfer`,
+tra cứu theo `error_tag`, v.v. — xem kiểm kê phụ thuộc R5 đang được lập) là **schema/migration thay đổi
+trạng thái sản phẩm hiện có**, thuộc diện `AGENTS.md` §1 "cần review kiến trúc độc lập" khi tới lúc thực
+hiện — không tự phê duyệt. Việc này chưa xảy ra ở đây; đây chỉ là bước chuẩn bị (kiểm kê + tiếp tục xây
+Grammar Lab), không đụng code app hay R5.
+
+Số quyết định chính thức (D-xxx) sẽ cấp khi nhánh này tích hợp về `codex/work` — `D-xxx` chỉ được cấp
+trên `codex/work` theo quy ước của repo; nội dung quyết định đã ghi đầy đủ ở đây và không chờ số mới có
+hiệu lực. Không chặn giai đoạn 1–3.

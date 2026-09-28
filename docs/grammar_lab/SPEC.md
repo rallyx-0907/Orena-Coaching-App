@@ -328,50 +328,50 @@ Kiểm tra level từ vựng và dịch ngược có thể để sang giai đo�
 
 ## 8. Kế hoạch tích hợp vào Orena (giai đoạn 4)
 
-**Quyết định của người (28/09/2026, xem `PHASE0_DECISIONS.md` §6):** Grammar Lab **làm giàu** các
-concept đã có trong R5 (`writing_coach/languages/{english,chinese}/grammar_curriculum.json` +
-`grammar_knowledge.json`, 508 concept, Concept ID ổn định), không tạo một hệ `grammar_point` song
-song, và không thay thế R5. Kế hoạch dưới đây thay hoàn toàn bản trước đó (bảng `grammar_function`/
-`grammar_point`/`grammar_point_version` riêng, route `/api/grammar/*` riêng) — bản đó giả định một
-hệ nội dung mới độc lập, điều mà quyết định ở trên loại bỏ.
+**Quyết định của người (28/09/2026, đính chính — xem `PHASE0_DECISIONS.md` §6):** Grammar Lab
+**thay thế** R5, không làm giàu nó. R5 (`writing_coach/languages/{english,chinese}/
+grammar_curriculum.json` + `grammar_knowledge.json`, 508 concept) được đánh giá là không đáng tin;
+Grammar Lab trở thành nguồn ngữ pháp chuẩn duy nhất khi tới giai đoạn 4. Bản trước của mục này ("làm
+giàu concept R5 hiện có, không tạo hệ song song") ghi một quyết định mà người sau đó xác nhận là do
+hiểu sai — đã sửa; xem `PHASE0_DECISIONS.md` §6 để biết đầy đủ diễn biến.
 
-**Rào chắn bắt buộc trước khi code**: R5 Grammar contracts và Concept ID là **protected area**
-(`AGENTS.md` §6) và **đóng ở baseline PR #44** (`ARCHITECTURE_INVARIANTS.md`, "Closed-stage
-protection" — cấm "recreate superseded broad structural Grammar migration write paths"). Giai đoạn 4
-không được bắt đầu code trước khi có **review kiến trúc riêng cho việc chạm vào vùng này** (`AGENTS.md`
-mục "Architecture review authority": không tự duyệt thay đổi kiến trúc rủi ro cao). Việc này không
-chặn giai đoạn 1–3, vốn không đụng app.
+**Rào chắn bắt buộc trước khi code, không đổi so với trước**: R5 Grammar contracts và Concept ID là
+**protected area** (`AGENTS.md` §6) và **đóng ở baseline PR #44** (`ARCHITECTURE_INVARIANTS.md`,
+"Closed-stage protection" — cấm "recreate superseded broad structural Grammar migration write
+paths"). Thay thế R5 rủi ro cao hơn làm giàu, không thấp hơn: giai đoạn 4 không được bắt đầu code
+trước khi có **review kiến trúc riêng cho việc chạm vào vùng này** (`AGENTS.md` mục "Architecture
+review authority": không tự duyệt thay đổi kiến trúc rủi ro cao; schema/migration là loại đổi bắt
+buộc review độc lập). Việc này không chặn giai đoạn 1–3, vốn không đụng app — kể cả việc dựng lại
+schema/nội dung Grammar Lab theo cấu trúc mới (`GRAMMAR_CONTENT_CONTRACT.md`) và kiểm kê phụ thuộc
+R5 trong app: đó là chuẩn bị, không phải bắt đầu giai đoạn 4.
 
-**Hướng tích hợp (mức khung; thiết kế chi tiết từng trường là việc của chính giai đoạn 4, sau review
-ở trên)**
+**Hướng tích hợp (mức khung; thiết kế chi tiết là việc của chính giai đoạn 4, sau review ở trên)**
 
-- **Không có bảng DB mới cho nội dung.** R5 hiện lưu nội dung concept trong file JSON tĩnh
-  (`grammar_curriculum.json`, `grammar_knowledge.json`), không phải bảng `grammar_point`. Việc "làm
-  giàu" nghĩa là hợp nhất các khối mà Grammar Lab sinh ra (đặc biệt `pitfall` gắn `error_tag`,
-  `contrast`, `timeline`, bridge theo L1) vào đúng entry đã có của R5, khớp theo Concept ID hiện có —
-  không phát sinh ID song song kiểu `en.past_simple`.
-- **Đối chiếu, không tự động ghi đè.** Mỗi điểm Grammar Lab `approved`/`auto_ok` cần ánh xạ tới đúng
-  một Concept ID của R5 trước khi merge (thủ công hoặc bán tự động, do người xác nhận — đây là bước
-  mới, không có trong danh mục inventory hiện tại). Một Concept ID có nội dung `curated` của R5 không
-  bị ghi đè tự động; chỉ các mục `foundation` yếu (audit cũ ghi nhiều mục tiếng Trung "generic/
-  placeholder") là ứng viên làm giàu trước.
-- **Không bảng schema mới cho tiến độ học.** `grammar_progress`/hoàn thành đã có sẵn qua
-  `/api/library/grammar/{lesson_id}/complete`; làm giàu nội dung của một Concept ID không đổi khóa
-  tiến độ của người học.
-- **Liên kết lỗi → bài học vẫn giữ**, vì đây là năng lực R5 hiện chưa có và là lý do chính đáng để làm
-  giàu: một bảng tra cứu nhỏ `error_tag → Concept ID` (không phải `→ point_id`), phục vụ nút "Học điểm
-  này" trong phần feedback viết. Thiết kế bảng/API chính xác thuộc phạm vi review kiến trúc ở trên.
-- **Import vẫn một chiều, validate trước khi ghi, và idempotent**, giữ nguyên các nguyên tắc cũ (chỉ
-  nhận `approved`/`auto_ok`; chạy lại nhiều lần cho cùng kết quả) — chỉ đổi đích ghi (entry R5 hiện có)
-  thay vì bảng mới.
-- **Frontend**: các component render (`formula`, `timeline`, `rule_table`, `example`, `contrast`,
-  `pitfall`, `check`) là ứng viên bổ sung cho renderer schema-v2 hiện có của R5, không phải một trang
-  bài học song song; renderer nào đã có khối tương đương thì không nhân đôi.
+- **Grammar Lab trở thành nguồn dữ liệu ngữ pháp phục vụ trực tiếp**, không còn là lớp làm giàu bên
+  cạnh R5. ID của Grammar Lab (`en.past_simple`…) là ID chính thức đi tới, không cần ánh xạ ngược về
+  Concept ID của R5.
+- **API/route/tool phụ thuộc R5 cần thay thế lần lượt**, không phải một lần: `GET/POST
+  /api/library/grammar*`, route `/next` (`grammar`, `grammar/:id`), `writing_grammar_transfer`, tra
+  cứu theo `error_tag`, và bất kỳ tool nào của Orena đọc Concept ID — danh sách đầy đủ, có file:dòng,
+  nằm trong kiểm kê phụ thuộc R5 (việc chuẩn bị giai đoạn 4, tách khỏi việc thiết kế thay thế).
+- **Tiến độ học của người dùng hiện tại** (`grammar_progress`, hoàn thành qua
+  `/api/library/grammar/{lesson_id}/complete`) là dữ liệu sống, không được vỡ khi chuyển nguồn — cách
+  giữ liên tục (di chuyển khóa, ánh xạ, hay khác) là việc thiết kế của giai đoạn 4, sau review kiến
+  trúc, không quyết ở đây.
+- **Liên kết lỗi → bài học**: Grammar Lab đã có `error_tag` gắn trực tiếp vào từng `common_mistakes`/
+  pitfall (SPEC §3, §5.2) — mạnh hơn bảng tra cứu gián tiếp `error_tag → Concept ID` mà bản làm-giàu
+  trước đây cần; thiết kế bảng/API tra cứu thật thuộc phạm vi review kiến trúc.
+- **Import vẫn một chiều, validate trước khi ghi, và idempotent** (chỉ nhận `approved`/`auto_ok`; chạy
+  lại nhiều lần cho cùng kết quả) — không đổi so với các giai đoạn trước, chỉ đổi đích ghi.
+- **Frontend**: R5's renderer hiện tại không còn là đích lâu dài; UI cho `header`/`pattern`/
+  `when_to_use`/`examples`/`compare`/`common_mistakes`/`quick_practice` (`GRAMMAR_CONTENT_CONTRACT.md`)
+  là thiết kế mới, gửi lane UI làm đề xuất riêng trước, không phải phần mở rộng renderer schema-v2 của
+  R5.
 
 **Tiêu chí chấp nhận (khung, cụ thể hoá khi thiết kế giai đoạn 4)**: review kiến trúc cho vùng
-protected đã có kết quả và ghi trong Git trước khi merge nội dung nào; làm giàu thử N concept (số cụ
-thể chốt lúc đó) không đổi Concept ID hay tiến độ người học đang có; nút "Học điểm này" hoạt động cho
-ít nhất 5 `error_tag`; tắt mọi cờ liên quan thì app chạy như cũ.
+protected đã có kết quả và ghi trong Git trước khi merge nội dung nào; danh sách phụ thuộc R5 (việc
+chuẩn bị) đã đầy đủ và mỗi mục có kế hoạch thay thế cụ thể trước khi bắt đầu; tiến độ học hiện có của
+người dùng không mất khi chuyển nguồn; tắt mọi cờ liên quan thì app chạy như cũ cho tới khi cắt hẳn.
 
 ## 9. Rủi ro, câu hỏi mở và việc cần người quyết
 
