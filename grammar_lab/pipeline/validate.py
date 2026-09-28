@@ -32,9 +32,10 @@ zh.traditional_char         zh-Hans content contains traditional characters
 inventory.duplicate_id      inv_id appears twice in the inventory
 story.character_unknown     a story character is not in cast/cast.yaml
 error_tag.story_alternative_unlisted  a story alternative's error_tag is not in the point's error_tags
-story.length_out_of_range   scene+need+anchor+consequences (vi) is not 150-250 words (STORY_SPEC.md §2)
-story.anchor_short_too_long anchor_short (vi) is more than 20 words
-story.short_not_one_line    an alternative's short (or anchor_short) contains a newline
+story.length_out_of_range   hook+scene+need+reveal+consequences (vi) is not 150-250 words (STORY_SPEC.md §2, VOICE.md)
+story.reveal_short_too_long reveal_short (vi) is more than 20 words
+story.short_not_one_line    an alternative's short (or reveal_short) contains a newline
+story.forbidden_phrase      vi text uses a phrase VOICE.md bans (fairy-tale opener/vocabulary, etc.)
 """
 
 from __future__ import annotations
@@ -62,7 +63,17 @@ GRAMMAR_SCHEMA_PATH = Path("schema/grammar_set.schema.json")
 INVENTORY_SCHEMA_PATH = Path("schema/inventory.schema.json")
 
 STORY_LENGTH_RANGE = (150, 250)  # words, vi (STORY_SPEC.md §2)
-ANCHOR_SHORT_MAX_WORDS = 20
+REVEAL_SHORT_MAX_WORDS = 20
+
+# VOICE.md §2: fairy-tale opener/vocabulary and other patterns an adult-voice story may
+# never use, in any form (checked as a case-insensitive substring of vi text).
+FORBIDDEN_STORY_PHRASES = (
+    "ngày xửa ngày xưa",
+    "đã từ lâu lắm rồi",
+    "vương quốc",
+    "nhà vô địch",
+    "lão làng",
+)
 
 # Short code (content dir, ID prefix, CLI --lang) -> BCP-47 target_lang.
 LANGS = {"en": "en", "zh": "zh-Hans", "ja": "ja"}
@@ -365,20 +376,27 @@ class _Validation:
             for locale, text in alt["short"].items():
                 if "\n" in text:
                     self.issue(file, f"{alt_path}.short.{locale}", "story.short_not_one_line", "contains a newline")
-        for locale, text in block["anchor_short"].items():
+        for locale, text in block["reveal_short"].items():
             if "\n" in text:
-                self.issue(file, f"{path}.anchor_short.{locale}", "story.short_not_one_line", "contains a newline")
+                self.issue(file, f"{path}.reveal_short.{locale}", "story.short_not_one_line", "contains a newline")
+        for sub_path, text in _story_forbidden_check_texts(block):
+            lowered = text.lower()
+            for phrase in FORBIDDEN_STORY_PHRASES:
+                if phrase in lowered:
+                    self.issue(file, f"{path}.{sub_path}", "story.forbidden_phrase", f"contains banned phrase {phrase!r}")
         if "vi" not in self.locales:
             return
-        anchor_short_vi = block["anchor_short"].get("vi", "")
-        words = len(anchor_short_vi.split())
-        if anchor_short_vi and words > ANCHOR_SHORT_MAX_WORDS:
-            self.issue(file, f"{path}.anchor_short.vi", "story.anchor_short_too_long",
-                       f"{words} words, max {ANCHOR_SHORT_MAX_WORDS}")
+        reveal_short_vi = block["reveal_short"].get("vi", "")
+        words = len(reveal_short_vi.split())
+        if reveal_short_vi and words > REVEAL_SHORT_MAX_WORDS:
+            self.issue(file, f"{path}.reveal_short.vi", "story.reveal_short_too_long",
+                       f"{words} words, max {REVEAL_SHORT_MAX_WORDS}")
         total = (
-            len(block["scene"].get("vi", "").split())
+            len(block["hook"]["text"].get("vi", "").split())
+            + len(block["scene"].get("vi", "").split())
             + len(block["need"].get("vi", "").split())
-            + len(block["anchor"].get("vi", "").split())
+            + len(block["reveal"].get("vi", "").split())
+            + len(block["teaser"].get("vi", "").split())
             + sum(len(alt["consequence"].get("vi", "").split()) for alt in block["alternatives"])
         )
         low, high = STORY_LENGTH_RANGE
@@ -481,6 +499,19 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().casefold()
 
 
+def _story_forbidden_check_texts(block: dict[str, Any]) -> Iterator[tuple[str, str]]:
+    """Every vi-locale string in a story block, for the VOICE.md banned-phrase check."""
+    yield "hook.text.vi", block["hook"]["text"].get("vi", "")
+    yield "scene.vi", block["scene"].get("vi", "")
+    yield "need.vi", block["need"].get("vi", "")
+    yield "reveal.vi", block["reveal"].get("vi", "")
+    yield "reveal_short.vi", block["reveal_short"].get("vi", "")
+    yield "teaser.vi", block["teaser"].get("vi", "")
+    for index, alt in enumerate(block["alternatives"]):
+        yield f"alternatives[{index}].consequence.vi", alt["consequence"].get("vi", "")
+        yield f"alternatives[{index}].short.vi", alt["short"].get("vi", "")
+
+
 def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
     yield "title", point["title"]
     yield "summary", point["summary"]
@@ -502,10 +533,12 @@ def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
             for item_index, item in enumerate(block["items"]):
                 yield f"{path}.items[{item_index}].explain", item["explain"]
         elif kind == "story":
+            yield f"{path}.hook.text", block["hook"]["text"]
             yield f"{path}.scene", block["scene"]
             yield f"{path}.need", block["need"]
-            yield f"{path}.anchor", block["anchor"]
-            yield f"{path}.anchor_short", block["anchor_short"]
+            yield f"{path}.reveal", block["reveal"]
+            yield f"{path}.reveal_short", block["reveal_short"]
+            yield f"{path}.teaser", block["teaser"]
             for alt_index, alt in enumerate(block["alternatives"]):
                 yield f"{path}.alternatives[{alt_index}].consequence", alt["consequence"]
                 yield f"{path}.alternatives[{alt_index}].short", alt["short"]

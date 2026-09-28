@@ -12,26 +12,36 @@ mọi điểm ở `schema_version: "0.3"` (SPEC §3, `grammar_set.schema.json` `
 `contains` ở cấp `grammar_point`). Điểm ở `schema_version: "0.2"` không bị ảnh hưởng — không cần story.
 
 Story là **trung tâm** của một điểm ngữ pháp: một câu chuyện ngắn, sống động, giúp hình dung và nhớ
-được khi nào dùng cấu trúc này.
+được khi nào dùng cấu trúc này. Giọng văn (đối tượng người lớn, cấm khuôn cổ tích, cấu trúc
+`hook`/`reveal`/`teaser`, `mode`) là quyết định riêng ở `VOICE.md` — spec này giữ phần cấu trúc/vị
+trí trong schema, không lặp lại nội dung giọng văn.
 
 ## 2. Các beat (lưu tách riêng — app hiển thị từng beat độc lập)
 
+Giọng văn của mọi beat vi tuân theo `VOICE.md` (giọng người lớn, cấm khuôn cổ tích).
+
 | Beat | Nội dung | Ứng với luồng R5 |
 | --- | --- | --- |
+| `hook` | Câu mở đầu, gắn `hook_type` (`stakes` \| `insider` \| `myth-bust`, `VOICE.md` §3) | notice |
 | `scene` | Tình huống đời thường, có nhân vật cụ thể | notice |
 | `need` | Vì sao người nói cần cách nói này | understand |
 | `form_in_action` | (Các) câu đúng trong tình huống đó | pattern, context |
-| `alternatives[]` | Cách nói khác, và điều gì xảy ra sai (hiểu lầm, ngượng, buồn cười) | compare |
-| `anchor` | Hình ảnh/ẩn dụ giúp nhớ khi nào dùng và khi nào không | recall |
+| `alternatives[]` | Cách nói khác, và điều gì xảy ra sai (hiểu lầm, ngượng, buồn cười), hậu quả viết theo `theme` (`VOICE.md` §5) | compare |
+| `reveal` | Insight thật (kể cả nguyên nhân ngữ âm), không chỉ ẩn dụ hình ảnh (`VOICE.md` §4, đổi tên từ `anchor` ở v1) | recall |
+| `teaser` | Nghịch lý/câu hỏi mở kết thúc câu chuyện, không phải lời mời xem bài sau (`VOICE.md` §6) | -- |
 
 Mỗi `alternative` có: câu ở ngôn ngữ đích (`sentence`), một hoặc nhiều `error_tags`, và `consequence`
 (giải thích đầy đủ điều gì xảy ra sai — dùng để đối chiếu ở bước verify).
 
-**Dạng ngắn** (cho màn hình ôn tập): `anchor_short` (≤ 20 từ) và `short` trong mỗi alternative (một
-dòng).
+`mode` (`history` \| `everyday`, `VOICE.md` §7) trên story: `everyday` không có tuyên bố lịch sử/từ
+nguyên nào; `history` cần nguồn dữ kiện đã duyệt, chưa triển khai trong pipeline.
 
-**Độ dài**: 150–250 từ ở locale giải thích (vi trước) — tính tổng `scene` + `need` + `anchor` +
-`consequence` của mọi alternative, không tính các dạng ngắn. Câu ở ngôn ngữ đích (`form_in_action`,
+**Dạng ngắn** (cho màn hình ôn tập): `reveal_short` (≤ 20 từ, đổi tên từ `anchor_short`) và `short`
+trong mỗi alternative (một dòng).
+
+**Độ dài**: 150–250 từ ở locale giải thích (vi trước) — tính tổng `hook.text` + `scene` + `need` +
+`reveal` + `teaser` + `consequence` của mọi alternative, không tính các dạng ngắn (`VOICE.md` §9, mở
+rộng công thức này thêm `hook.text` và `teaser`). Câu ở ngôn ngữ đích (`form_in_action`,
 `alternatives[].sentence`) viết bằng ngôn ngữ đích, không tính vào 150–250 từ đó.
 
 ## 3. Cast nhân vật
@@ -63,7 +73,8 @@ Nhãn `theme` trên story: `daily | travel | work | exam`. `daily` là mặc đ�
 | Alternative — nếu sai ngữ pháp | Gửi `sentence` qua engine | Engine không bắt đúng `error_tags` đã khai |
 | Alternative — nếu đúng ngữ pháp nhưng khác nghĩa | Engine không bắt lỗi → hỏi model blind-solve mô tả câu đó ngụ ý gì | Mô tả không khớp `consequence` đã khai |
 | Không có tuyên bố về nguồn gốc lịch sử/từ nguyên | Hỏi model blind-solve | Có tuyên bố loại này |
-| Rubric: dễ hình dung, đúng khi-nào-dùng, không dài dòng | Model **khác họ** với model sinh chấm điểm | Điểm thấp |
+| Không dùng cụm từ bị cấm ở `VOICE.md` §2 (khớp chuỗi chính xác) | `validate.py`'s `check_story()`, không cần LLM | Có khớp (rule `story.forbidden_phrase`) |
+| Rubric: dễ hình dung, đúng khi-nào-dùng, không dài dòng, phù hợp người lớn, không có mẫu bị cấm (`VOICE.md` §8) | Model **khác họ** với model sinh chấm điểm | Điểm thấp trên bất kỳ tiêu chí nào |
 | Tiếng Trung | — | **Luôn vào hàng đợi duyệt**, bất kể điểm hay đã qua gold set |
 
 Nguyên tắc chung của SPEC vẫn áp dụng: model sinh và model verify phải khác họ; mọi câu chuyện đều là

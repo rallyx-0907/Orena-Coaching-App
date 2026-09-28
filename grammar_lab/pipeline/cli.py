@@ -101,6 +101,11 @@ def generate(
         help="Only meaningful with --provider deepseek: off | low | high. Reasoning shares max_tokens "
              "with the final answer, so low/high add headroom automatically (llm_client.py docstring).",
     ),
+    story_mode: str = typer.Option(
+        "everyday", "--story-mode",
+        help="Only meaningful with --with-story: history | everyday (VOICE.md §7). 'history' is not "
+             "wired in yet -- no vetted facts source exists in this repo.",
+    ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.1: code-generated rule_table + LLM-generated blocks + templated check items."""
@@ -111,7 +116,9 @@ def generate(
         generator = Generator(lang=lang, l1=l1, llm=llm, root=root)
         for point_id in (p.strip() for p in ids.split(",") if p.strip()):
             try:
-                outcomes.append(generator.generate(point_id, regenerate_note=regenerate_note or None, with_story=with_story))
+                outcomes.append(generator.generate(
+                    point_id, regenerate_note=regenerate_note or None, with_story=with_story, story_mode=story_mode
+                ))
             except LLMError as exc:
                 # A failed call can still have been billed (e.g. DeepSeek's reasoning
                 # tokens on an empty-content response) -- exc.usage carries that spend.
@@ -126,6 +133,7 @@ def generate(
     write_step(root, run_id, "generate", {
         "run_id": run_id, "lang": lang, "provider": provider, "model": model,
         "deepseek_thinking": deepseek_thinking if provider == "deepseek" else None,
+        "story_mode": story_mode if with_story else None,
         "outcomes": [
             {"point_id": o.point_id, "status": o.status, "reason": o.reason, "cost_usd": o.cost_usd, "cached": o.cached}
             for o in outcomes

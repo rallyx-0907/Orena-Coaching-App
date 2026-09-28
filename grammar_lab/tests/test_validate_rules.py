@@ -213,16 +213,21 @@ CASES = [
     ok("story.length_out_of_range", "150-250 words vi", lambda lab: _with_story(alpha(lab))),
     fail("story.length_out_of_range", "too short", lambda lab: (
         story := _with_story(alpha(lab)),
-        story.update(scene={"vi": "Ngắn."}, need={"vi": "Ngắn."}, anchor={"vi": "Ngắn."}),
+        story.update(scene={"vi": "Ngắn."}, need={"vi": "Ngắn."}, reveal={"vi": "Ngắn."}, teaser={"vi": "Ngắn."}),
+        story["hook"].update(text={"vi": "Ngắn."}),
         story["alternatives"][0].update(consequence={"vi": "Ngắn."}))),
-    ok("story.anchor_short_too_long", "anchor_short at or under 20 words", lambda lab: _with_story(alpha(lab))),
-    fail("story.anchor_short_too_long", "anchor_short over 20 words", lambda lab: _with_story(alpha(lab)).update(
-        anchor_short={"vi": " ".join(["từ"] * 21)})),
+    ok("story.reveal_short_too_long", "reveal_short at or under 20 words", lambda lab: _with_story(alpha(lab))),
+    fail("story.reveal_short_too_long", "reveal_short over 20 words", lambda lab: _with_story(alpha(lab)).update(
+        reveal_short={"vi": " ".join(["từ"] * 21)})),
     ok("story.short_not_one_line", "short forms have no newline", lambda lab: _with_story(alpha(lab))),
     fail("story.short_not_one_line", "alternative short has a newline", lambda lab: (
         story := _with_story(alpha(lab)), story["alternatives"][0]["short"].update(vi="dòng một\ndòng hai"))),
-    fail("story.short_not_one_line", "anchor_short has a newline",
-         lambda lab: _with_story(alpha(lab)).update(anchor_short={"vi": "dòng một\ndòng hai"})),
+    fail("story.short_not_one_line", "reveal_short has a newline",
+         lambda lab: _with_story(alpha(lab)).update(reveal_short={"vi": "dòng một\ndòng hai"})),
+    ok("story.forbidden_phrase", "no banned phrase", lambda lab: _with_story(alpha(lab))),
+    fail("story.forbidden_phrase", "fairy-tale opener in scene", lambda lab: (
+        story := _with_story(alpha(lab)),
+        story["scene"].update(vi="Ngày xửa ngày xưa. " + story["scene"]["vi"]))),
 ]
 
 
@@ -252,11 +257,16 @@ def _zh_explanations(lab: Lab, text: str) -> None:
 
 
 def _valid_story() -> dict:
-    """A schema-valid story block, ~180 words (vi) -- inside STORY_SPEC.md's 150-250 range."""
+    """A schema-valid story block, inside STORY_SPEC.md/VOICE.md's 150-250 word (vi) range."""
     return {
         "type": "story",
         "theme": "daily",
+        "mode": "everyday",
         "characters": ["Alex", "Sam"],
+        "hook": {"hook_type": "insider", "text": {"vi": (
+            "Người bản xứ nghe 'I live here for three days' là thấy lệch ngay, dù không phải "
+            "lúc nào cũng nói được chính xác vì sao."
+        )}},
         "scene": {"vi": (
             "Alex vừa chuyển đến một căn hộ mới gần trung tâm thành phố được vài hôm. Sáng thứ hai, "
             "Alex đứng trong bếp trống, nhìn tủ lạnh trống không, và nhận ra mình chưa mua thức ăn cho "
@@ -288,11 +298,13 @@ def _valid_story() -> dict:
                 "slots": [{"role": "person", "value": "I", "constraint": "a personal pronoun or proper noun"}],
             },
         ],
-        "anchor": {"vi": (
-            "Hãy nghĩ đến một sợi dây nối liền từ quá khứ đến hiện tại: hành động hay trạng thái bắt "
-            "đầu trước đó và vẫn còn đúng ngay lúc này, chưa hề kết thúc."
+        "reveal": {"vi": (
+            "Tiếng Việt không có thì hoàn thành: 'đã' chỉ nói việc từng xảy ra, không nói việc đó "
+            "còn kéo dài đến bây giờ. Vì vậy người Việt phải học thêm một trục thời gian hoàn toàn "
+            "mới, không phải chỉ thêm một từ vào câu."
         )},
-        "anchor_short": {"vi": "Một sợi dây nối quá khứ với hiện tại, chưa đứt."},
+        "reveal_short": {"vi": "Tiếng Việt không có thì hoàn thành -- đây là một trục thời gian mới."},
+        "teaser": {"vi": "Vậy vì sao thêm đúng một trợ động từ lại đổi cả câu chuyện?"},
     }
 
 

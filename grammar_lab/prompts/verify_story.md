@@ -1,4 +1,4 @@
-# Prompt: verify_story (v1)
+# Prompt: verify_story (v2, VOICE.md)
 
 Three blind-judgment checks for one story block (STORY_SPEC.md §6), all run by a model from a
 **different family** than the one that generated the story -- the same reason blind-solve for
@@ -34,7 +34,7 @@ Story text:
 
 ## rubric
 
-Rate this story block for a language lesson against three criteria, each 0.0 (fails) to 1.0
+Rate this story block for a language lesson against five criteria, each 0.0 (fails) to 1.0
 (excellent):
 
 - `vivid`: can a reader picture the scene and the characters concretely, or is it generic and
@@ -42,6 +42,14 @@ Rate this story block for a language lesson against three criteria, each 0.0 (fa
 - `correct_when_to_use`: after reading it, would a learner know when to use this grammar point
   and when the alternatives fail -- is the contrast actually clear?
 - `concise`: does every sentence earn its place, or does it pad, repeat itself, or over-explain?
+- `adult_appropriate` (VOICE.md): is this written the way a smart friend explains something to
+  an adult -- short, direct, confident, dry wit allowed? Score low for anything that reads like
+  a children's storyteller, a classroom pep talk, or generic cheerleading ("You're doing
+  great!").
+- `no_forbidden_pattern` (VOICE.md): free of fairy-tale openers ("once upon a time" /
+  "kingdom" / "champion" / "old master" or close variants), personified objects/ideas with
+  "magic", naive/childish metaphor, and piled-up exclamation marks? Score low if any of these
+  appear even without the exact banned words -- judge the pattern, not just the literal string.
 
 Story text:
 

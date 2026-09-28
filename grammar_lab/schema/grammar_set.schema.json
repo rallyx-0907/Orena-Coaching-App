@@ -349,6 +349,23 @@
       "description": "STORY_SPEC.md: daily is required on every point; the others arrive in a later round.",
       "enum": ["daily", "travel", "work", "exam"]
     },
+    "story_mode": {
+      "description": "VOICE.md: everyday makes no historical/etymological claim at all; history may state one, but only from a vetted facts source -- generate.py only writes everyday until that source exists.",
+      "enum": ["history", "everyday"]
+    },
+    "story_hook_type": {
+      "description": "VOICE.md: the opening line's angle, replacing a generic \"do you know why\" opener.",
+      "enum": ["stakes", "insider", "myth-bust"]
+    },
+    "story_hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hook_type", "text"],
+      "properties": {
+        "hook_type": {"$ref": "#/$defs/story_hook_type"},
+        "text": {"$ref": "#/$defs/locale_map"}
+      }
+    },
     "story_slot": {
       "description": "A filled-in role in a story sentence, so the app can later swap it for the learner's own life at the transfer step (STORY_SPEC.md). Filling slots is out of scope for the lab itself -- this only records what is already in the sentence.",
       "type": "object",
@@ -387,20 +404,26 @@
       "description": "The centerpiece block (STORY_SPEC.md): a short, vivid narrative that makes the point easy to picture. Beats are stored separately because the app shows them apart (first-time lesson, review, on a mistake via error_tag, or told on request).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "theme", "characters", "scene", "need", "form_in_action", "alternatives", "anchor", "anchor_short"],
+      "required": [
+        "type", "theme", "mode", "characters", "hook", "scene", "need", "form_in_action",
+        "alternatives", "reveal", "reveal_short", "teaser"
+      ],
       "properties": {
         "type": {"const": "story"},
         "theme": {"$ref": "#/$defs/story_theme"},
+        "mode": {"$ref": "#/$defs/story_mode"},
         "characters": {
           "description": "Names drawn from cast/cast.yaml; validate checks membership.",
           "type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}
         },
+        "hook": {"description": "VOICE.md: the opening line, typed (stakes/insider/myth-bust).", "$ref": "#/$defs/story_hook"},
         "scene": {"description": "An everyday situation with concrete characters (R5 flow: notice).", "$ref": "#/$defs/locale_map"},
         "need": {"description": "Why the speaker needs this way of saying it (understand).", "$ref": "#/$defs/locale_map"},
         "form_in_action": {"$ref": "#/$defs/story_beat"},
         "alternatives": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/story_alternative"}},
-        "anchor": {"description": "The image/metaphor that fixes when to use this and when not (recall).", "$ref": "#/$defs/locale_map"},
-        "anchor_short": {"description": "<= 20 words, for review.", "$ref": "#/$defs/locale_map"}
+        "reveal": {"description": "VOICE.md: the real insight (may be phonetic/phonological), not a grammar restatement (recall).", "$ref": "#/$defs/locale_map"},
+        "reveal_short": {"description": "<= 20 words, for review.", "$ref": "#/$defs/locale_map"},
+        "teaser": {"description": "VOICE.md: a closing paradox or open question, never a preview of the next lesson.", "$ref": "#/$defs/locale_map"}
       }
     },
     "set_manifest": {

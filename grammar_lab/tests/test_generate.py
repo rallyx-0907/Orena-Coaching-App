@@ -49,6 +49,10 @@ CANNED_BLOCKS = {
 
 CANNED_STORY = {
     "characters": ["Alex", "Sam"],
+    "hook": {"hook_type": "insider", "text": {"vi": (
+        "Người bản xứ nghe 'I live here for three days' là thấy lệch ngay, dù không phải lúc nào "
+        "cũng nói được chính xác vì sao."
+    )}},
     "scene": {"vi": (
         "Alex vừa chuyển đến một căn hộ mới gần trung tâm thành phố được vài hôm. Sáng thứ hai, Alex "
         "đứng trong bếp trống, nhìn tủ lạnh trống không, và nhận ra mình chưa mua thức ăn cho cả tuần. "
@@ -76,11 +80,13 @@ CANNED_STORY = {
             "slots": [],
         },
     ],
-    "anchor": {"vi": (
-        "Một sợi dây nối liền từ quá khứ đến hiện tại: hành động hay trạng thái bắt đầu trước đó và vẫn "
-        "còn đúng ngay lúc này, chưa hề đứt."
+    "reveal": {"vi": (
+        "Tiếng Việt không có thì hoàn thành: 'đã' chỉ nói việc từng xảy ra, không nói việc đó còn kéo "
+        "dài đến bây giờ. Vì vậy người Việt phải học thêm một trục thời gian hoàn toàn mới, không phải "
+        "chỉ thêm một từ vào câu."
     )},
-    "anchor_short": {"vi": "Một sợi dây nối quá khứ với hiện tại, chưa đứt."},
+    "reveal_short": {"vi": "Tiếng Việt không có thì hoàn thành -- đây là một trục thời gian mới."},
+    "teaser": {"vi": "Vậy vì sao thêm đúng một trợ động từ lại đổi cả câu chuyện?"},
 }
 
 

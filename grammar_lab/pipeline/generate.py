@@ -38,7 +38,12 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-STORY_PROMPT_VERSION = "generate_story.v1"
+STORY_PROMPT_VERSION = "generate_story.v2"
+# grammar_set.schema.json's story_mode allows "history" too (VOICE.md), but generate.py
+# does not offer it yet: a "history" story may only state a fact from a vetted source, and
+# no such source exists in this repo yet. Wire it in once one does, rather than letting the
+# model invent historical/etymological claims it cannot be checked against.
+STORY_MODES = {"everyday"}
 STORY_PROMPT_PATH = LAB_ROOT / "prompts" / "generate_story.md"
 
 # point id -> (rule label, vocabulary the rule table is built from)
@@ -221,22 +226,34 @@ def _story_generation_schema(*, locales: list[str], error_tags: list[str], cast_
             "slots": {"type": "array", "items": slot},
         },
     }
+    hook = {
+        "type": "object", "additionalProperties": False,
+        "required": ["hook_type", "text"],
+        "properties": {
+            "hook_type": {"enum": ["stakes", "insider", "myth-bust"]},
+            "text": locale_map,
+        },
+    }
     alternative_count = max(1, len(error_tags))
     return {
         "type": "object",
         "additionalProperties": False,
-        "required": ["characters", "scene", "need", "form_in_action", "alternatives", "anchor", "anchor_short"],
+        "required": [
+            "characters", "hook", "scene", "need", "form_in_action", "alternatives", "reveal", "reveal_short", "teaser"
+        ],
         "properties": {
             "characters": {
                 "type": "array", "minItems": 1, "uniqueItems": True,
                 "items": {"enum": cast_names} if cast_names else {"type": "string"},
             },
+            "hook": hook,
             "scene": locale_map,
             "need": locale_map,
             "form_in_action": beat,
             "alternatives": {"type": "array", "minItems": alternative_count, "maxItems": alternative_count, "items": alternative},
-            "anchor": locale_map,
-            "anchor_short": locale_map,
+            "reveal": locale_map,
+            "reveal_short": locale_map,
+            "teaser": locale_map,
         },
     }
 
@@ -287,7 +304,11 @@ class Generator:
     root: Path = LAB_ROOT
     num_examples: int = 2
 
-    def generate(self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False) -> GenerateOutcome:
+    def generate(
+        self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False, story_mode: str = "everyday"
+    ) -> GenerateOutcome:
+        if story_mode not in STORY_MODES:
+            raise ValueError(f"story_mode must be one of {sorted(STORY_MODES)}, got {story_mode!r}")
         existing = load_point(self.lang, point_id, self.root)
         if existing is None:
             return GenerateOutcome(point_id, "error", reason="point metadata does not exist yet; seed it from the inventory first")
@@ -341,7 +362,7 @@ class Generator:
         prompt_version = PROMPT_VERSION
         schema_version = existing.get("schema_version", "0.2")
         if with_story:
-            story_result, story_block = self._generate_story(existing, locales)
+            story_result, story_block = self._generate_story(existing, locales, mode=story_mode)
             blocks.append(story_block)
             story_cost = story_result.usage.cost_usd(story_result.model)
             cost = (cost + story_cost) if story_cost is not None else cost
@@ -368,8 +389,8 @@ class Generator:
         save_point(self.lang, point, self.root)
         return GenerateOutcome(point_id, "written", cost_usd=cost or None, cached=cached)
 
-    def _generate_story(self, existing: dict[str, Any], locales: list[str]) -> tuple[Any, dict[str, Any]]:
-        """STORY_SPEC.md: a dedicated call for the point's daily-theme story block."""
+    def _generate_story(self, existing: dict[str, Any], locales: list[str], *, mode: str = "everyday") -> tuple[Any, dict[str, Any]]:
+        """STORY_SPEC.md + VOICE.md: a dedicated call for the point's daily-theme story block."""
         cast = load_cast(self.root)
         cast_names = [member["name"] for member in cast]
         cast_list = "\n".join(f"- {member['name']}: {member['personality'].get('vi', '')}" for member in cast)
@@ -382,4 +403,4 @@ class Generator:
         )
         user = f"Write the daily-theme story for {existing['id']} now, matching the structured output schema."
         result = self.llm.complete(system=system, user=user, json_schema=schema, schema_name="story")
-        return result, {"type": "story", "theme": "daily", **result.data}
+        return result, {"type": "story", "theme": "daily", "mode": mode, **result.data}

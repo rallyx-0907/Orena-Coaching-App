@@ -139,7 +139,8 @@ def test_contrast_pair_sentences_are_checked_too(tmp_path: Path) -> None:
 
 def story_block() -> dict:
     return {
-        "type": "story", "theme": "daily", "characters": ["Alex"],
+        "type": "story", "theme": "daily", "mode": "everyday", "characters": ["Alex"],
+        "hook": {"hook_type": "insider", "text": {"vi": "..."}},
         "scene": {"vi": "..."}, "need": {"vi": "..."},
         "form_in_action": {
             "sentences": ["I have lived here for three days."],
@@ -154,7 +155,8 @@ def story_block() -> dict:
                 "slots": [],
             },
         ],
-        "anchor": {"vi": "..."}, "anchor_short": {"vi": "..."},
+        "reveal": {"vi": "..."}, "reveal_short": {"vi": "..."},
+        "teaser": {"vi": "..."},
     }
 
 
@@ -174,7 +176,10 @@ CLEAN_STORY_RESPONSES = {
     "meaning_match": {"implied_meaning": "a repeated habit, not a state since three days ago",
                        "matches_declared_consequence": True},
     "historical_claim": {"makes_historical_claim": False},
-    "rubric": {"vivid": 0.8, "correct_when_to_use": 0.8, "concise": 0.8},
+    "rubric": {
+        "vivid": 0.8, "correct_when_to_use": 0.8, "concise": 0.8,
+        "adult_appropriate": 0.8, "no_forbidden_pattern": 0.8,
+    },
 }
 
 
@@ -262,7 +267,25 @@ def test_low_rubric_score_is_flagged(tmp_path: Path) -> None:
     point = alpha_point()
     point["blocks"].append(story_block())
     tagged = {**clean_engine_tagged(), "I live here for three days.": ["agreement"]}
-    responses = {**CLEAN_STORY_RESPONSES, "rubric": {"vivid": 0.2, "correct_when_to_use": 0.8, "concise": 0.8}}
+    responses = {**CLEAN_STORY_RESPONSES, "rubric": {
+        "vivid": 0.2, "correct_when_to_use": 0.8, "concise": 0.8,
+        "adult_appropriate": 0.8, "no_forbidden_pattern": 0.8,
+    }}
+    report = verify_point(point, evaluator=make_evaluator(tagged),
+                           blind_solver=make_multi_blind_solver(tmp_path, responses))
+    assert "story_rubric_low" in report.codes()
+
+
+def test_low_adult_appropriate_score_is_flagged(tmp_path: Path) -> None:
+    # VOICE.md: a story that reads like a children's fairy tale must be caught by the
+    # rubric even when the other four criteria score well.
+    point = alpha_point()
+    point["blocks"].append(story_block())
+    tagged = {**clean_engine_tagged(), "I live here for three days.": ["agreement"]}
+    responses = {**CLEAN_STORY_RESPONSES, "rubric": {
+        "vivid": 0.8, "correct_when_to_use": 0.8, "concise": 0.8,
+        "adult_appropriate": 0.1, "no_forbidden_pattern": 0.8,
+    }}
     report = verify_point(point, evaluator=make_evaluator(tagged),
                            blind_solver=make_multi_blind_solver(tmp_path, responses))
     assert "story_rubric_low" in report.codes()

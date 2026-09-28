@@ -22,7 +22,7 @@ from grammar_lab.pipeline.llm_client import LLMClient, LLMError
 
 PROMPT_VERSION = "blind_solve.v1"
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "blind_solve.md"
-STORY_PROMPT_VERSION = "verify_story.v1"
+STORY_PROMPT_VERSION = "verify_story.v2"
 STORY_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "verify_story.md"
 
 FLAG_PREFIX = "verify:"
@@ -92,11 +92,13 @@ _HISTORICAL_CLAIM_SCHEMA = {
 _RUBRIC_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["vivid", "correct_when_to_use", "concise"],
+    "required": ["vivid", "correct_when_to_use", "concise", "adult_appropriate", "no_forbidden_pattern"],
     "properties": {
         "vivid": {"type": "number", "minimum": 0, "maximum": 1},
         "correct_when_to_use": {"type": "number", "minimum": 0, "maximum": 1},
         "concise": {"type": "number", "minimum": 0, "maximum": 1},
+        "adult_appropriate": {"type": "number", "minimum": 0, "maximum": 1},
+        "no_forbidden_pattern": {"type": "number", "minimum": 0, "maximum": 1},
     },
 }
 
@@ -113,7 +115,13 @@ def _read_prompt_section(path: Path, name: str) -> str:
 def _story_text(block: dict[str, Any]) -> str:
     """Every explanation-locale prose field, concatenated, for the historical-claim and
     rubric checks (STORY_SPEC.md §6) -- both judge the whole story, not one sentence."""
-    parts = [block["scene"].get("vi", ""), block["need"].get("vi", ""), block["anchor"].get("vi", "")]
+    parts = [
+        block["hook"]["text"].get("vi", ""),
+        block["scene"].get("vi", ""),
+        block["need"].get("vi", ""),
+        block["reveal"].get("vi", ""),
+        block["teaser"].get("vi", ""),
+    ]
     parts.extend(alt["consequence"].get("vi", "") for alt in block["alternatives"])
     return "\n".join(part for part in parts if part)
 
