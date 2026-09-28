@@ -27,6 +27,55 @@ human gate. This sandbox exists so `verify` never has to.
 - Before starting: `docker ps` and confirm nothing else is mid-run that this
   would disturb (the three worktrees share one Docker daemon, AGENTS.md §10).
 
+## The live-provider lock
+
+`docker ps` only catches another lane mid-*container*-run. It says nothing
+about a lane that is live against a paid provider without a sandbox
+container (or about a container that hasn't started yet). Every live run --
+including a smoke test -- acquires `%USERPROFILE%\.orena\live-provider.lock`
+first, via `grammar_lab/sandbox/live_provider_lock.py`, and releases it in
+the same trap that tears down the sandbox.
+
+This is a plain JSON file at a path every lane's process can reach (all
+lanes run under the same Windows user account on this machine), never a
+Docker construct -- the module makes no subprocess/`docker` call at all, so
+it structurally cannot stop another lane's container:
+
+```json
+{"lane": "grammar-lab", "pid": 12345, "acquired_at": "2026-09-28T06:15:00+00:00",
+ "cost_ceiling_usd": 0.05}
+```
+
+Every lane should read and write exactly this shape so the lock means the
+same thing everywhere. This checkout cannot see the Orena Intelligence
+lane's own implementation (a different worktree/branch, AGENTS.md §3) --
+if that lane's lock code was written independently, confirm the field names
+and path match before relying on it across lanes.
+
+```bash
+# acquire before bringing the sandbox up; $$ is the runner script's own pid,
+# not the short-lived python helper's -- the lock must name the long-lived holder
+python grammar_lab/sandbox/live_provider_lock.py acquire \
+  --lane grammar-lab --pid $$ --cost-ceiling-usd 0.05
+
+# release in the same trap/finally that tears the sandbox down
+python grammar_lab/sandbox/live_provider_lock.py release --lane grammar-lab --pid $$
+```
+
+Behaviour:
+
+- **Held by a live lane:** waits, re-checking every 30s (`--poll-seconds`),
+  up to 30 minutes total (`--wait-max-seconds`); past that, `acquire` exits 1
+  and prints who holds it. It never kills or waits on that lane's container
+  -- only on the lock file.
+- **Orphaned lock** (its PID is no longer running, or `acquired_at` is more
+  than 60 minutes old, `--stale-seconds`): removed automatically, printed as
+  `orphan lock removed: lane=... pid=... reason=dead-pid|stale`, and
+  acquisition retries immediately.
+- **Release** only deletes the file when its `lane` and `pid` still match
+  what this process wrote; a lock that changed hands underneath it (e.g.
+  reaped as an orphan, then re-acquired by someone else) is left untouched.
+
 ## Why `PUT /api/admin/ai/config` works here with no login
 
 `APP_ENV=development` and empty `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` make

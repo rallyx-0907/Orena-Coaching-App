@@ -55,6 +55,11 @@ tính phí lần chạy lại). Bốn provider: `anthropic | openai | gemini | g
 qua `rate_limit.py` (chia sẻ một bucket với engine chấm bài trong sandbox nếu engine cũng dùng Gemini
 -- xem `sandbox/README.md`); DeepSeek có bucket riêng nếu cần, không dùng chung với Gemini.
 
+Trước một lần chạy live bất kỳ (kể cả smoke test): giữ
+`sandbox/live_provider_lock.py` (khóa file dùng chung
+`%USERPROFILE%\.orena\live-provider.lock` giữa các lane, giải phóng trong cùng
+trap gỡ sandbox) -- xem `sandbox/README.md`.
+
 `evaluator_client.py` chỉ có chế độ staging (HTTP); **không có `base_url` mặc định** -- endpoint công
 khai duy nhất, `orena.chillpickle.org`, chui thẳng vào container production (`writing-coach:8000`),
 một "human gate" theo `AGENTS.md` phần Safety. Trỏ `--evaluator-url` vào một sandbox được phép thao
@@ -82,6 +87,7 @@ tác (vd. `grammar_lab/sandbox/` ở `:8020`).
 | `prompts/generate_story.md`, `verify_story.md` | Prompt sinh và verify block `story` (schema v0.3) |
 | `reports/<run_id>/` | Kết quả chạy (không commit) |
 | `sandbox/` | Evaluator sandbox rời (compose project, image, port riêng) cho `verify`; xem `sandbox/README.md` |
+| `sandbox/live_provider_lock.py` | Khóa file dùng chung giữa các lane trước một lần chạy live (không đụng Docker) |
 
 ## Quy ước
 
