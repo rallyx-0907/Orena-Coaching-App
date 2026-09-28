@@ -378,6 +378,10 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
             row = {"flow": name, "step": step, "target": target, "locale": locale, "message": message,
                    "status": result["status"], "memory_update": memory, **summary}  # fmt: skip
             rows.append(row)
+            unavailable = [r for r in rows[-2:] if (r.get("error") or {}).get("class") == "provider_unavailable"]
+            if len(unavailable) == 2:  # the provider is refusing (a spent quota answers 429): stop, spend no more
+                print("stopping: two provider_unavailable in a row (see provider_errors)")
+                return rows, spent
             print(f"{name:8} {step:12} {target:6} {result['status']} tools={summary.get('tools')} "
                   f"memory={[(m['op'], m['note'].get('text') or m['note'].get('id')) for m in memory]} "
                   f"flags={summary.get('flags')} "
