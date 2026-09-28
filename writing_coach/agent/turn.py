@@ -194,6 +194,7 @@ class _Turn:
         # What is streamed; an action is never reported as done (agent/honesty.py).
         self.gate = ClaimGate(passthrough=not request.client.allowed_actions)
         self.provider_rounds = 0
+        self.address_offered_now = False
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
 
     # --- the turn ------------------------------------------------------------
@@ -243,6 +244,7 @@ class _Turn:
             version=self.stream.version,
             opening=self.opening,
             take_ref=self.request.context.take_ref,
+            address_asked=session.address_asked,
         )
         # What the request named may be named back, as what it named; everything else must be read first.
         context = self.request.context
@@ -274,7 +276,9 @@ class _Turn:
             for tool in self.rt.tools.tools()
             if self.learner.contract_language in tool.languages
         )
-        reply_specs = reply_tool_specs(self.request.client, self.locale.target, version=self.stream.version)
+        reply_specs = reply_tool_specs(
+            self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
+        )
         limit = self.rt.limits.max_tool_iterations_per_turn
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
@@ -427,6 +431,9 @@ class _Turn:
             yield self.stream.emit(action)
         for suggestion in outputs.suggestions:
             yield self.stream.emit(suggestion)
+        for update in outputs.memory_updates:  # the address pair the learner chose (agent/address.py)
+            yield self.stream.emit(update)
+        self.address_offered_now = outputs.address_offered_now
         usage = Usage(input_tokens=self.usage_in, output_tokens=self.usage_out)
         yield self.stream.emit(DoneEvent(usage=usage, trace_id=self.trace_id))
 
@@ -442,6 +449,8 @@ class _Turn:
             state = state.with_context(turn.context)
             if not self.opening:  # an opening turn is not a learner turn (§3.2)
                 state = state.with_turn()
+            if self.address_offered_now:
+                state = state.with_address_asked()
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
             return state

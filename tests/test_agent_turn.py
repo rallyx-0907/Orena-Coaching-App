@@ -671,7 +671,7 @@ def test_orena_speaks_as_minh_to_ban_in_vietnamese():
 
     from writing_coach.agent.prompts import INSTRUCTION
 
-    assert 'In Vietnamese, you are "mình" and the learner is "bạn", in every sentence, refusals included.' in INSTRUCTION
+    assert "call yourself context.address.self_term and the learner" in INSTRUCTION  # default vi: mình / bạn
     for key, entry in learner_copy.CATALOG.items():
         if entry.layer is learner_copy.CopyLayer.SUPPORT:  # what Orena says, not a button or the learner's own words
             assert not re.search(r"\b[Tt]ôi\b", entry.texts["vi"]), key

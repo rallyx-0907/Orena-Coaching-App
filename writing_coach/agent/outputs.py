@@ -45,7 +45,8 @@ from writing_coach.agent.contract import (
     actions_for_version,
     intents_for_version,
 )
-from writing_coach.agent.events import ActionEvent, Display, SuggestionEvent, make_action
+from writing_coach.agent.address import address_note, valid_term
+from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
 
@@ -91,7 +92,20 @@ SUGGEST_NEXT = "suggest_next"
 CITE_EVIDENCE = "cite_evidence"
 SET_VOICE_STYLE = "set_voice_style"
 ADD_REFERENCE = "add_reference"
-REPLY_TOOL_NAMES = frozenset({PROPOSE_ACTION, SUGGEST_NEXT, CITE_EVIDENCE, SET_VOICE_STYLE, ADD_REFERENCE})
+SET_ADDRESS = "set_address"
+OFFER_ADDRESS = "offer_address"
+REPLY_TOOL_NAMES = frozenset(
+    {PROPOSE_ACTION, SUGGEST_NEXT, CITE_EVIDENCE, SET_VOICE_STYLE, ADD_REFERENCE, SET_ADDRESS, OFFER_ADDRESS}
+)
+_ADDRESS_ARGS = {
+    "type": "object",
+    "properties": {
+        "self_term": {"type": "string", "description": "How you will call yourself, e.g. chị, em, tôi, 我."},
+        "user_term": {"type": "string", "description": "How you will call the learner, e.g. em, anh, bạn, 您."},
+    },
+    "required": ["self_term", "user_term"],
+    "additionalProperties": False,
+}
 
 
 def action_label_key(action_type: str, payload: Mapping[str, Any]) -> str:
@@ -111,9 +125,9 @@ def opening_suggestions(surface: str | None) -> tuple[str, ...]:
 
 
 def reply_tool_specs(
-    client: ClientInfo, target: str, *, version: int = CONTRACT_VERSION
+    client: ClientInfo, target: str, *, version: int = CONTRACT_VERSION, opening: bool = False
 ) -> tuple[ProviderToolSpec, ...]:
-    """The reply tools this client can use. No actions declared, no action tool."""
+    """The reply tools this client can use. No actions declared, no action tool; no address tools when opening."""
 
     specs = [
         ProviderToolSpec(
@@ -177,6 +191,21 @@ def reply_tool_specs(
                 {"type": "object", "properties": properties, "required": ["type", "payload"], "additionalProperties": False},
             ),
         )
+    if not opening:  # an opening turn has no learner words to take an address from (§3.2: no memory_update)
+        specs += [
+            ProviderToolSpec(
+                SET_ADDRESS,
+                "Keep how you and the learner are called from now on - only when the learner asked for this pair "
+                "or said yes when you offered it. The device remembers it.",
+                _ADDRESS_ARGS,
+            ),
+            ProviderToolSpec(
+                OFFER_ADDRESS,
+                "Before asking the learner, once, whether they want the pair they keep using themselves. "
+                "Refused if you already asked in this session.",
+                _ADDRESS_ARGS,
+            ),
+        ]
     return tuple(specs)
 
 
@@ -198,6 +227,9 @@ class ReplyOutputs:
     citations: list[str] = field(default_factory=list)
     references: list[tuple[str, str]] = field(default_factory=list)
     voice_style: str = "neutral_explain"
+    address_asked: bool = False  # already offered in this session
+    address_offered_now: bool = False
+    memory_updates: list[MemoryUpdateEvent] = field(default_factory=list)
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -236,6 +268,8 @@ class ReplyOutputs:
         if name == CITE_EVIDENCE:
             return self._cite(args, known_evidence)
         handlers = {
+            SET_ADDRESS: self._set_address,
+            OFFER_ADDRESS: self._offer_address,
             PROPOSE_ACTION: self._action,
             SUGGEST_NEXT: self._suggest,
             SET_VOICE_STYLE: self._style,
@@ -322,6 +356,35 @@ class ReplyOutputs:
         if reason is None and kind is None:
             return None
         return Display(kind=kind, reason=reason)
+
+    def _address_terms(self, args: Mapping[str, Any]) -> tuple[str, str] | None:
+        self_term, user_term = args.get("self_term"), args.get("user_term")
+        if not (valid_term(self_term) and valid_term(user_term)):
+            return None
+        return str(self_term).strip(), str(user_term).strip()
+
+    def _set_address(self, args: Mapping[str, Any]) -> str:
+        if self.opening:
+            return "refused: not in an opening turn"
+        terms = self._address_terms(args)
+        if terms is None:
+            return "refused: each term is 1-24 letters (spaces, hyphens, apostrophes between), nothing else"
+        note = address_note(self.support, *terms)
+        self.memory_updates = [MemoryUpdateEvent(op="upsert", note=note)]  # one pair per support language
+        return (
+            f"accepted: from this answer on you are '{terms[0]}' and the learner is '{terms[1]}'. "
+            "The words change; the respect does not."
+        )
+
+    def _offer_address(self, args: Mapping[str, Any]) -> str:
+        if self.opening:
+            return "refused: not in an opening turn"
+        if self.address_asked or self.address_offered_now:
+            return "refused: you already asked in this session; keep the current address and do not ask again"
+        if self._address_terms(args) is None:
+            return "refused: each term is 1-24 letters (spaces, hyphens, apostrophes between), nothing else"
+        self.address_offered_now = True
+        return "accepted: ask once, in your answer, whether they want this pair; call set_address only on a yes"
 
     def _suggest(self, args: Mapping[str, Any]) -> str:
         intent = args.get("intent")

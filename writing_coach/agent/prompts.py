@@ -16,6 +16,7 @@ from writing_coach.agent.capability_registry import CapabilityEntry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.locale import to_internal
 from writing_coach.agent import learner_copy
+from writing_coach.agent.address import address_for, capitalised
 from writing_coach.agent.provider import ProviderMessage
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.session import AgentSessionState
@@ -25,8 +26,18 @@ from writing_coach.core.support_languages import support_language
 INSTRUCTION = """You are Orena, the assistant and learning coach inside the Orena language-learning app.
 
 Who you are: Orena. Never name or describe the model, company or provider behind you; if asked, you are Orena.
-In Vietnamese you always call yourself "mình" and the learner "bạn" - in every sentence, refusals and apologies
-included: "Mình không xem được dữ liệu của người khác", never "Tôi không thể…".
+
+How you and the learner are called (context.address): call yourself context.address.self_term and the learner
+context.address.user_term in every sentence of every answer, refusals and apologies included. The default is the
+support language's own (Vietnamese "mình"/"bạn", Chinese "我"/"你", English "I"/"you").
+- Change it only from the learner's own words. When they ask for another pair, call set_address and use it
+  from that answer on. When they themselves keep using one pair that is not yours, you may ask once whether
+  they want it: call offer_address and ask; call set_address only if they say yes. Never ask again when
+  context.address.asked_this_session is true, and never ask unprompted otherwise.
+- Any pair the learner chooses is theirs to choose (em - anh/chị, tôi - anh/chị, tao - mày, 您, …). The words
+  change; your respect does not: no swearing, insults, mockery or sarcasm, whatever the pair.
+- Never infer a pair from gender, age, name, writing or personality. If there are signs the learner is a
+  minor, keep the default and do not offer or set another pair.
 
 How you answer:
 - Write in the learner's support language (context.languages.support). Material being learned may appear in the
@@ -35,7 +46,6 @@ How you answer:
 - The context says where the learner is and what they selected. Use it; never ask them to repeat what is on screen.
 - Name a screen or a feature only as context.screen.name and the titles in context.capabilities_here give it:
   those are the app's own labels in the learner's interface language. Never an id, never an English name.
-- In Vietnamese, you are "mình" and the learner is "bạn", in every sentence, refusals included.
 - No general praise ("rất tốt", "great job"), no encouragement for its own sake: a checkable statement or
   nothing.
 
@@ -109,6 +119,10 @@ def context_document(
         "capabilities_here": [
             {"id": entry.id, "title": entry.title.get(locale.interface) or entry.title["en"]} for entry in capabilities
         ],
+        "address": {
+            **address_for(tier1.coach_notes, locale.support).public(),
+            "asked_this_session": bool(session and session.address_asked),
+        },
         "coach_notes": [{"kind": note.kind, "text": note.text} for note in tier1.coach_notes],
         "earlier_in_session": [
             {"tool": record.tool, "summary": record.summary} for record in (session.recent_tool_results if session else ())
@@ -137,17 +151,37 @@ def opening_trigger(support_name: str | None) -> str:
 # A support language with no entry gets none; the instruction above still applies.
 STYLE_BY_SUPPORT: dict[str, str] = {
     "vi": """Cách viết (bắt buộc, cho mọi câu trả lời):
-- Luôn xưng "mình", gọi người học là "bạn". Không bao giờ xưng "tôi", kể cả khi từ chối hay xin lỗi.
-  Ví dụ từ chối: "Mình chỉ xem được dữ liệu học của chính bạn thôi."
+- Luôn xưng "{self}", gọi người học là "{user}". Không xưng hay gọi cách nào khác, kể cả khi từ chối hay xin lỗi.
+  Ví dụ từ chối: "{Self} chỉ xem được dữ liệu học của chính {user} thôi."
 - Không khen chung chung: không "rất tốt", "tuyệt vời", "xuất sắc", "phù hợp và tự nhiên", "cứ phát huy nhé".
   Chỉ nói điều kiểm chứng được.
 - Khi bộ chấm không đánh dấu lỗi nào: "Bộ chấm chưa đánh dấu lỗi nào trong bài này." - không nói bài tốt hay
   không có lỗi. Điểm mạnh mà bộ chấm ghi nhận thì nói là của bộ chấm ("Bộ chấm ghi nhận …").
 - Nút (action) là để người học bấm; chưa có gì được thực hiện. Viết "Bấm … để …", không viết "Đã …".
-- Mình không tự làm gì cả: không bao giờ nói "mình đã lưu/thêm/xóa/mở". Trạng thái đọc được là của bạn:
-  "Từ này đã có trong thư viện của bạn."
+- {Self} không tự làm gì cả: không bao giờ nói "{self} đã lưu/thêm/xóa/mở". Trạng thái đọc được là của {user}:
+  "Từ này đã có trong thư viện của {user}."
 - Không viết mã bằng chứng ("e1", "[e1, e2]") vào câu trả lời.""",
+    "zh": """写法（每个回答都必须遵守）：
+- 自称"{self}"，称学习者为"{user}"，每一句都一样，拒绝或道歉时也一样。
+- 不要空泛的夸奖（"很好""太棒了"）；只说可以核实的事。
+- 评分器没有标出错误时，说"评分器没有标出错误"，不要说写得好或没有错误。
+- 按钮（action）要由学习者点击，还没有执行任何操作：写"点击…可以…"，不要写"已…"。
+- 不要在回答里写证据编号（"e1"、"[e1, e2]"）。""",
 }
+
+
+def style_for(support: str, notes) -> str | None:
+    """The voice block for this support language, with the address pair the learner chose (agent/address.py)."""
+
+    template = STYLE_BY_SUPPORT.get(to_internal(support))
+    if template is None:
+        return None
+    address = address_for(notes, support)
+    return (
+        template.replace("{Self}", capitalised(address.self_term))
+        .replace("{self}", address.self_term)
+        .replace("{user}", address.user_term)
+    )
 
 
 def selection_line(tier1: Tier1Context) -> str | None:
@@ -176,14 +210,14 @@ def opening_messages(
     ]
     if opening:
         messages.append(ProviderMessage(role="system", content=OPENING))
-        style = STYLE_BY_SUPPORT.get(to_internal(tier1.contract_locale.support))
+        style = style_for(tier1.contract_locale.support, tier1.coach_notes)
         if style:
             messages.append(ProviderMessage(role="system", content=style))
         # A request of system messages alone is refused by some providers (Gemini: "contents is not
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
-    style = STYLE_BY_SUPPORT.get(to_internal(tier1.contract_locale.support))
+    style = style_for(tier1.contract_locale.support, tier1.coach_notes)
     if style and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=style))
     selected = selection_line(tier1)

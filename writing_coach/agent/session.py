@@ -50,6 +50,7 @@ class AgentSessionState:
     recent_tool_results: tuple[ToolResultRecord, ...] = ()
     voice_session_ref: str | None = field(default=None, repr=False)
     turn_count: int = 0
+    address_asked: bool = False  # the learner was asked once, this session, about an address pair
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
@@ -58,6 +59,9 @@ class AgentSessionState:
     def with_tool_result(self, record: ToolResultRecord, *, limit: int) -> AgentSessionState:
         kept = (*self.recent_tool_results, record)[-limit:]
         return replace(self, recent_tool_results=kept)
+
+    def with_address_asked(self) -> AgentSessionState:
+        return replace(self, address_asked=True)
 
     def with_turn(self) -> AgentSessionState:
         return replace(self, turn_count=self.turn_count + 1)
