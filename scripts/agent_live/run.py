@@ -21,16 +21,26 @@ case to what was spent (measured usage when known, the worst case when not) and
 stops when that would pass the cap. Standard library only; results go to a JSON
 file outside the repository.
 
-    python scripts/agent_live/run.py --cap-usd 2.00 --approved
+    python scripts/agent_live/run.py --cap-usd 2.00 --approved --gemini-env <path to a .env holding GEMINI_*>
     python scripts/agent_live/run.py --plan          # the plan and its worst case, nothing sent
+
+The script owns the sandbox: it starts compose.yaml's own project (orena-agent-live,
+on :8013, or :8015 when :8013 is taken), runs, and takes it down when it ends - done,
+failed, stopped at the cost cap, interrupted (Ctrl+C) or terminated - so no lane waits
+on a forgotten container. Only GEMINI_* is read from the env file; nothing is printed.
 """
 
 from __future__ import annotations
 
 import argparse
+import atexit
 import http.cookiejar
 import json
+import os
 import re
+import signal
+import socket
+import subprocess
 import sys
 import tempfile
 import time
@@ -328,9 +338,101 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
     return rows, spent
 
 
+# --- the sandbox this script owns -------------------------------------------------------------
+
+COMPOSE_FILE = ROOT / "scripts/agent_live/compose.yaml"
+PROJECT = "orena-agent-live"
+GEMINI_KEYS = ("GEMINI_API_KEY", "GEMINI_BASE_URL", "GEMINI_MODELS")
+
+
+def _port_free(port: int) -> bool:
+    with socket.socket() as probe:
+        probe.settimeout(0.5)
+        return probe.connect_ex(("127.0.0.1", port)) != 0
+
+
+def _compose_env(gemini_env: str | None, port: int) -> dict[str, str]:
+    """This process's environment, with GEMINI_* only from the named file (never printed)."""
+
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("COMPOSE_", "GEMINI_") if gemini_env else "COMPOSE_")}
+    if gemini_env:
+        for line in Path(gemini_env).read_text(encoding="utf-8", errors="replace").splitlines():
+            key, sep, value = line.partition("=")
+            if sep and key.strip() in GEMINI_KEYS and value.strip().strip("'\""):
+                env[key.strip()] = value.strip().strip("'\"")
+    env["AGENT_LIVE_PORT"] = str(port)
+    return env
+
+
+class Sandbox:
+    """compose.yaml's own project, up for the run and down at its end, whatever the end is."""
+
+    def __init__(self, env: dict[str, str]) -> None:
+        self.env = env
+        self.started = False
+        self.removed = False
+
+    def _compose(self, *args: str, check: bool = True) -> int:
+        command = ["docker", "compose", "-p", PROJECT, "-f", str(COMPOSE_FILE), *args]
+        return subprocess.run(command, env=self.env, check=check).returncode
+
+    def up(self, base_url: str, wait_seconds: float = 120) -> None:
+        self.started = True  # from here on, down() must run, even if up fails halfway
+        atexit.register(self.down)
+        self._compose("up", "-d")
+        deadline = time.monotonic() + wait_seconds
+        while time.monotonic() < deadline:
+            try:
+                with urllib.request.urlopen(base_url + "/api/readiness", timeout=3) as response:
+                    if response.status == 200:
+                        return
+            except (urllib.error.URLError, OSError):
+                pass
+            time.sleep(1)
+        raise RuntimeError("the sandbox did not become ready")
+
+    def down(self) -> None:
+        if self.started and not self.removed:
+            self.removed = True
+            print("taking the sandbox down")
+            self._compose("down", "--remove-orphans", check=False)
+
+
+def _stop_on_signal(signum, frame):  # noqa: ANN001 - signal handler
+    raise SystemExit(128 + signum)  # unwinds through finally: the sandbox comes down
+
+
 def main() -> int:
+    args = _arguments()
+    turns = plan()["model_turns_per_target_per_repeat"] * args.repeat * len([t for t in args.targets.split(",") if t])
+    print(f"plan: {turns} model turns (scenarios); worst case ${turns * WORST_TURN_USD + 2 * WORST_SETUP_USD:.2f}")
+    if args.plan:
+        return 0
+    if not args.approved or args.cap_usd is None or args.cap_usd <= 0:
+        sys.exit("refusing: needs --approved and the approved --cap-usd")
+    port = next((p for p in sorted(SANDBOX_PORTS) if _port_free(p)), None)
+    if port is None:
+        sys.exit(f"refusing: {sorted(SANDBOX_PORTS)} are all taken")
+    sandbox = Sandbox(_compose_env(args.gemini_env, port))
+    for name in ("SIGTERM", "SIGBREAK"):
+        if hasattr(signal, name):
+            signal.signal(getattr(signal, name), _stop_on_signal)
+    # A run killed outright (TerminateProcess, kill -9) runs no finally: its leftovers of this project go first.
+    sandbox._compose("down", "--remove-orphans", check=False)
+    try:
+        base_url = f"http://127.0.0.1:{port}"
+        sandbox.up(base_url)
+        return drive(args, base_url)
+    except subprocess.CalledProcessError:
+        print("the sandbox did not start (is GEMINI_API_KEY set?)")
+        return 1
+    finally:
+        sandbox.down()
+
+
+def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--base-url", default=f"http://127.0.0.1:{SANDBOX_PORT}")
+    parser.add_argument("--gemini-env", help="a .env file to take GEMINI_* from (default: this environment)")
     parser.add_argument("--cap-usd", type=float)
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--targets", default="en,zh-CN")
@@ -341,22 +443,18 @@ def main() -> int:
     parser.add_argument("--approved", action="store_true", help="the human approved this run and its cap")
     parser.add_argument("--plan", action="store_true", help="print the plan and its worst case; send nothing")
     parser.add_argument("--out", default=str(Path(tempfile.gettempdir()) / "orena-agent-live-run.json"))
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def drive(args: argparse.Namespace, base_url: str) -> int:
+    """The run itself, against the sandbox main() started."""
+
     targets = [t for t in args.targets.split(",") if t]
     only = {name for name in args.only.split(",") if name}
-
-    turns = plan()["model_turns_per_target_per_repeat"] * args.repeat * len(targets)
-    worst = turns * WORST_TURN_USD + len(targets) * WORST_SETUP_USD
-    print(f"plan: {turns} model turns + {2 * len(targets)} identity turns; worst case ${worst:.2f}")
-    if args.plan:
-        return 0
-    parsed = urllib.parse.urlparse(args.base_url)
+    parsed = urllib.parse.urlparse(base_url)
     if parsed.hostname not in {"127.0.0.1", "localhost"} or parsed.port in SHARED_PORTS or parsed.port not in SANDBOX_PORTS:
         sys.exit(f"refusing: the live run drives only the throwaway sandbox on 127.0.0.1:{sorted(SANDBOX_PORTS)}")
-    if not args.approved or args.cap_usd is None or args.cap_usd <= 0:
-        sys.exit("refusing: needs --approved and the approved --cap-usd")
-
-    client = Client(args.base_url)
+    client = Client(base_url)
     status, readiness = client.call("GET", "/api/readiness")
     if not isinstance(readiness, dict) or readiness.get("environment") != "development":
         sys.exit("refusing: the server reports production")

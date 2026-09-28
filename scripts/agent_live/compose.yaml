@@ -2,14 +2,14 @@
 #
 # A compose project of its own - never the app's `ai-writing-coach` project,
 # never :8000/:8010/:8011/:8012 - with a throwaway PostgreSQL on tmpfs and no
-# named volume: `down` leaves nothing behind. AGENT_LIVE_PORT=8015 when :8013 is taken. Run only after the human approved
-# the run and its cost cap:
+# named volume: `down` leaves nothing behind. Run only after the human approved the run and its cost cap,
+# and only through the runner, which owns this project's whole life:
 #
-#   docker compose -p orena-agent-live -f scripts/agent_live/compose.yaml --env-file .env up -d
-#   python scripts/agent_live/run.py --cap-usd <approved> --approved
-#   docker compose -p orena-agent-live -f scripts/agent_live/compose.yaml down
+#   python scripts/agent_live/run.py --approved --cap-usd <approved> --gemini-env <.env holding GEMINI_*>
 #
-# Only GEMINI_* is read from the env file; the key is never printed.
+# It takes :8013 (or :8015 when :8013 is taken), clears any leftover of this project first, and takes the
+# sandbox down when it ends - done, failed, at the cost cap, interrupted or terminated. Only GEMINI_* is read
+# from the env file; the key is never printed.
 name: orena-agent-live
 
 services:
