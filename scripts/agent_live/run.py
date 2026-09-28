@@ -475,7 +475,7 @@ def main() -> int:
             signal.signal(getattr(signal, name), _stop_on_signal)
     # Lanes queue on one machine-wide lock before any sandbox or provider call (lock.py, README.md).
     try:
-        lock = live_lock.acquire(_lane(), args.cap_usd, purpose="scripts/agent_live/run.py")
+        lock = live_lock.acquire(_lane(), args.cap_usd)
     except live_lock.LockTimeout as error:
         print(f"stopping: {error}")
         return 3

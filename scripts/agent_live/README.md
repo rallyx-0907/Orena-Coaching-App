@@ -17,48 +17,46 @@ to a JSON file outside the repository (`--out`).
 ## The live-provider lock (shared by every lane)
 
 Lanes on one machine share one Docker runtime and one provider quota, so they queue
-on a single lock before any real provider call:
+on a single lock before any real provider call. The Grammar Lab lane defined the
+format first. Every lane uses it exactly as written here.
 
 ```text
 %USERPROFILE%\.orena\live-provider.lock
 ```
 
-It sits outside every repository and is never committed.
-
-**The file.** It holds one JSON object:
+It sits outside every repository and is never committed. It holds one JSON object:
 
 ```json
-{"lane": "feature/orena-intelligence", "pid": 12345, "host": "MACHINE",
- "started_at": "2026-09-28T09:15:02.123456+00:00", "cap_usd": 0.3, "purpose": "scripts/agent_live/run.py"}
+{"lane": "feature/orena-intelligence", "pid": 12345, "acquired_at": "2026-09-28T06:13:48.760421+00:00", "cost_ceiling_usd": 0.3}
 ```
 
 | Field | Meaning |
 | --- | --- |
-| `lane` | the branch or worktree that holds it |
-| `pid` | the Windows process id that will release it. In Git Bash use `cat /proc/$$/winpid`, not `$$` |
-| `host` | the machine name; `pid` is only judged on the same host |
-| `started_at` | when it was taken, UTC, ISO 8601 |
-| `cap_usd` | the approved cost cap of the run |
-| `purpose` | a short free text |
+| `lane` | the lane that holds it (this runner: the branch) |
+| `pid` | the process that will release it. On Windows this is the Windows process id; in Git Bash use `cat /proc/$$/winpid`, not `$$` |
+| `acquired_at` | when it was taken, ISO 8601, UTC |
+| `cost_ceiling_usd` | the human-approved cost cap of the run |
 
 **The rules.**
 
-1. **Take it** before starting a sandbox or calling a real provider. Create the file
-   exclusively (`O_CREAT|O_EXCL`; in PowerShell `New-Item` without `-Force`). If it
-   already exists, it is held.
+1. **Take it** before starting a sandbox or calling a real provider, by creating the
+   file atomically with `O_CREAT|O_EXCL`. If the file already exists, it is held.
 2. **Release it** in the same `finally`/`trap` that takes your sandbox down, after the
-   sandbox is down. Remove it only if it is still your record.
-3. **Held:** look again every 30 s, for at most 30 min. Then stop and tell the human.
-   Never stop another lane's containers.
-4. **Orphan:** the lock may be removed, and the removal reported in the run's result,
-   in two cases. Either its holder on this host is no longer running, or it has been
-   held for more than 60 min. Re-read it just before removing, and leave it if it has
-   changed.
+   sandbox is down. Remove it only when its `lane` and `pid` are the ones you wrote.
+3. **Held:** look again every 30 s, for at most 30 min. Then stop and report the lane
+   and PID that hold it. Never stop another lane's containers.
+4. **Orphan:** a lock is an orphan when either:
+   - its `pid` is no longer alive (Windows: `OpenProcess`; POSIX: `os.kill(pid, 0)`), or
+   - `acquired_at` is more than 60 min ago.
 
-`run.py` does all of this through `lock.py`, and lists what happened in the result's
+   Remove it and record `orphan lock removed: lane=<lane> reason=dead-pid|stale`, then
+   try again at once. Re-read the file just before removing it, and leave it alone if
+   it has changed.
+
+`run.py` does all of this through `lock.py` and lists what happened in the result's
 `"lock"` field. Another lane can wrap any command with it:
 
 ```bash
 python scripts/agent_live/lock.py status
-python scripts/agent_live/lock.py run --lane <lane> --cap-usd 0.20 -- <command ...>
+python scripts/agent_live/lock.py run --lane <lane> --cost-ceiling-usd 0.20 -- <command ...>
 ```

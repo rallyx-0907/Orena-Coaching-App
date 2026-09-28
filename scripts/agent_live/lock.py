@@ -1,22 +1,22 @@
 """The machine-wide lock every lane takes before a real provider call (human direction 2026-09-28).
 
-Two lanes on one machine share one Docker runtime and one provider quota. Before
-a lane starts a sandbox or calls a real provider it creates, atomically,
+The format is shared with the Grammar Lab lane, which defined it first; keep it exactly:
 
     %USERPROFILE%\\.orena\\live-provider.lock      (outside every repository)
+    {"lane": "...", "pid": <int>, "acquired_at": "<ISO-8601 UTC>", "cost_ceiling_usd": <number>}
 
-and removes it in the same finally/trap that takes its sandbox down. The file is
-JSON: {"lane", "pid", "host", "started_at" (UTC ISO 8601), "cap_usd", "purpose"}.
-`pid` is the Windows process id of the process that will release it (in Git Bash:
-`cat /proc/$$/winpid`, not `$$`).
-
-A lock that exists is held: wait, looking again every 30 s, for at most 30 min,
-then stop and tell the human. A lock is an orphan - and may be removed, saying so
-in the run's result - when its holder on this host is no longer alive, or it has
-been held for more than 60 min. Nobody stops another lane's containers.
+- Created atomically (O_CREAT|O_EXCL) before a sandbox or a real provider call, and
+  removed in the same finally/trap that takes the sandbox down.
+- Held: look again every 30 s, for at most 30 min; then stop and name the lane and
+  PID that hold it.
+- Orphan: its PID is no longer alive (Windows: OpenProcess; POSIX: os.kill(pid, 0)),
+  or acquired_at is more than 60 min ago. Remove it, say
+  "orphan lock removed: lane=... reason=dead-pid|stale", and try again at once.
+- Remove it only when its lane and pid are the ones this run wrote.
+- Never stop another lane's containers.
 
     python scripts/agent_live/lock.py status
-    python scripts/agent_live/lock.py run --lane <lane> --cap-usd 0.30 -- <command ...>
+    python scripts/agent_live/lock.py run --lane <lane> --cost-ceiling-usd 0.30 -- <command ...>
 
 Standard library only.
 """
@@ -26,7 +26,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import socket
 import subprocess
 import sys
 import time
@@ -37,7 +36,7 @@ from pathlib import Path
 
 POLL_SECONDS = 30
 WAIT_SECONDS = 30 * 60
-ORPHAN_SECONDS = 60 * 60
+STALE_SECONDS = 60 * 60
 
 
 def lock_path() -> Path:
@@ -50,7 +49,8 @@ class LockTimeout(RuntimeError):
 
 
 def pid_alive(pid: int) -> bool:
-    """Whether a process with this id runs here. Never signals it (os.kill(pid, 0) terminates on Windows)."""
+    """Whether a process with this id runs here. On Windows through OpenProcess: os.kill(pid, 0) would
+    terminate it there."""
 
     if pid <= 0:
         return False
@@ -77,7 +77,7 @@ def pid_alive(pid: int) -> bool:
 
 
 def _read(path: Path) -> tuple[dict | None, float | None]:
-    """The holder's record (None when unreadable, e.g. half written) and the file's age basis (mtime)."""
+    """The holder's record (None when unreadable, e.g. half written) and the file's mtime (None: no file)."""
 
     try:
         mtime = path.stat().st_mtime
@@ -91,11 +91,18 @@ def _read(path: Path) -> tuple[dict | None, float | None]:
     return (record if isinstance(record, dict) else None), mtime
 
 
-def _started(record: dict | None, mtime: float) -> float:
+def _acquired(record: dict | None, mtime: float) -> float:
     try:
-        return datetime.fromisoformat(str(record["started_at"])).timestamp()  # type: ignore[index]
+        moment = datetime.fromisoformat(str(record["acquired_at"]).replace("Z", "+00:00"))  # type: ignore[index]
     except (TypeError, KeyError, ValueError):
-        return mtime
+        return mtime  # unreadable: judged by when the file was written
+    return (moment if moment.tzinfo else moment.replace(tzinfo=UTC)).timestamp()
+
+
+def _holder(record: dict | None) -> str:
+    if not record:
+        return "lane=? pid=?"
+    return f"lane={record.get('lane', '?')} pid={record.get('pid', '?')}"
 
 
 @dataclass
@@ -106,13 +113,13 @@ class Lock:
     released: bool = False
 
     def release(self) -> None:
-        """Removes the lock if it is still this one; someone else's is never touched."""
+        """Removes the lock only while its lane and pid are this run's; someone else's is never touched."""
 
         if self.released:
             return
         self.released = True
         current, _ = _read(self.path)
-        if current == self.record:
+        if current and current.get("lane") == self.record["lane"] and current.get("pid") == self.record["pid"]:
             try:
                 self.path.unlink()
             except FileNotFoundError:
@@ -121,13 +128,12 @@ class Lock:
 
 def acquire(
     lane: str,
-    cap_usd: float,
+    cost_ceiling_usd: float,
     *,
-    purpose: str = "",
     path: Path | None = None,
     poll: float = POLL_SECONDS,
     wait: float = WAIT_SECONDS,
-    orphan_after: float = ORPHAN_SECONDS,
+    stale_after: float = STALE_SECONDS,
     alive: Callable[[int], bool] = pid_alive,
     clock: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
@@ -135,7 +141,6 @@ def acquire(
 ) -> Lock:
     path = path or lock_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    host = socket.gethostname()
     deadline = clock() + wait
     notes: list[str] = []
     waited = False
@@ -143,10 +148,8 @@ def acquire(
         record = {
             "lane": lane,
             "pid": os.getpid(),
-            "host": host,
-            "started_at": datetime.fromtimestamp(clock(), UTC).isoformat(),
-            "cap_usd": cap_usd,
-            "purpose": purpose,
+            "acquired_at": datetime.fromtimestamp(clock(), UTC).isoformat(),
+            "cost_ceiling_usd": cost_ceiling_usd,
         }
         try:
             fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
@@ -162,28 +165,29 @@ def acquire(
         holder, mtime = _read(path)
         if mtime is None:
             continue  # released between the two looks: try again at once
-        why = _orphan(holder, mtime, host, clock(), orphan_after, alive)
-        if why and _remove_if_unchanged(path, holder, mtime):
-            note = f"removed an orphaned live-provider lock ({why}): {json.dumps(holder, ensure_ascii=False)}"
+        reason = _orphan(holder, mtime, clock(), stale_after, alive)
+        if reason and _remove_if_unchanged(path, holder, mtime):
+            note = f"orphan lock removed: lane={(holder or {}).get('lane', '?')} reason={reason}"
             notes.append(note)
             say(note)
-            continue
+            continue  # try again at once
         if clock() >= deadline:
             raise LockTimeout(
-                f"the live-provider lock is held ({json.dumps(holder, ensure_ascii=False)}); "
-                f"waited {int(wait // 60)} min - stopping, ask the human"
+                f"the live-provider lock is held by {_holder(holder)}; waited {int(wait // 60)} min - "
+                "stopping, ask the human"
             )
         if not waited:
-            say(f"live-provider lock held by {json.dumps(holder, ensure_ascii=False)}; checking every {int(poll)} s")
+            say(f"live-provider lock held by {_holder(holder)}; checking every {int(poll)} s")
         waited = True
         sleep(poll)
 
 
-def _orphan(holder: dict | None, mtime: float, host: str, now: float, orphan_after: float, alive) -> str | None:
-    if now - _started(holder, mtime) > orphan_after:
-        return f"held for more than {int(orphan_after // 60)} min"
-    if holder and holder.get("host") == host and isinstance(holder.get("pid"), int) and not alive(holder["pid"]):
-        return f"process {holder['pid']} is no longer running"
+def _orphan(holder: dict | None, mtime: float, now: float, stale_after: float, alive) -> str | None:
+    pid = (holder or {}).get("pid")
+    if isinstance(pid, int) and not isinstance(pid, bool) and not alive(pid):
+        return "dead-pid"
+    if now - _acquired(holder, mtime) > stale_after:
+        return "stale"
     return None
 
 
@@ -206,17 +210,16 @@ def _cli() -> int:
     sub.add_parser("status")
     run = sub.add_parser("run", help="run a command while holding the lock")
     run.add_argument("--lane", required=True)
-    run.add_argument("--cap-usd", type=float, required=True)
-    run.add_argument("--purpose", default="")
+    run.add_argument("--cost-ceiling-usd", type=float, required=True)
     run.add_argument("argv", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.command == "status":
         holder, mtime = _read(lock_path())
-        print("free" if mtime is None else json.dumps(holder, ensure_ascii=False) or "held (unreadable)")
+        print("free" if mtime is None else json.dumps(holder, ensure_ascii=False) if holder else "held (unreadable)")
         return 0
     argv = args.argv[1:] if args.argv[:1] == ["--"] else args.argv
     try:
-        lock = acquire(args.lane, args.cap_usd, purpose=args.purpose or " ".join(argv)[:120])
+        lock = acquire(args.lane, args.cost_ceiling_usd)
     except LockTimeout as error:
         print(error)
         return 3

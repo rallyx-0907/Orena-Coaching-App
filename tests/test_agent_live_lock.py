@@ -1,11 +1,11 @@
-"""The machine-wide live-provider lock the live runner takes (scripts/agent_live/lock.py)."""
+"""The machine-wide live-provider lock, in the format the Grammar Lab lane defined (scripts/agent_live/lock.py)."""
 
 from __future__ import annotations
 
 import importlib.util
 import json
 import os
-import socket
+import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +18,8 @@ _SPEC = importlib.util.spec_from_file_location(
 lock = importlib.util.module_from_spec(_SPEC)
 sys.modules.setdefault("agent_live_lock", lock)  # dataclasses look their module up
 _SPEC.loader.exec_module(lock)
+
+LANE = "feature/orena-intelligence"
 
 
 class Clock:
@@ -33,96 +35,114 @@ class Clock:
         self.now += seconds
 
 
-def held(path: Path, clock: Clock, *, pid: int = 4242, host: str | None = None, age: float = 0) -> dict:
+def held(path: Path, clock: Clock, *, lane: str = "grammar-lab", pid: int = 4242, age: float = 0) -> dict:
     record = {
-        "lane": "grammar-lab",
+        "lane": lane,
         "pid": pid,
-        "host": host or socket.gethostname(),
-        "started_at": datetime.fromtimestamp(clock() - age, UTC).isoformat(),
-        "cap_usd": 0.2,
-        "purpose": "eval",
+        "acquired_at": datetime.fromtimestamp(clock() - age, UTC).isoformat(),
+        "cost_ceiling_usd": 0.2,
     }
     path.write_text(json.dumps(record), encoding="utf-8")
     return record
 
 
-def take(path: Path, clock: Clock, alive=lambda pid: True, **kw):
-    return lock.acquire("feature/orena-intelligence", 0.3, path=path, clock=clock, sleep=clock.sleep, alive=alive,
-                        say=lambda _m: None, **kw)  # fmt: skip
+def take(path: Path, clock: Clock, alive=lambda pid: True, said=None):
+    return lock.acquire(LANE, 0.3, path=path, clock=clock, sleep=clock.sleep, alive=alive,
+                        say=(said.append if said is not None else lambda _m: None))  # fmt: skip
 
 
-def test_a_free_lock_is_taken_with_its_record_and_released(tmp_path):
+def on_disk(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_the_record_is_exactly_the_shared_format(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
     taken = take(path, clock)
-    record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["lane"] == "feature/orena-intelligence" and record["pid"] == os.getpid()
-    assert record["cap_usd"] == 0.3 and record["host"] == socket.gethostname()
-    assert datetime.fromisoformat(record["started_at"]).timestamp() == clock()
+    record = on_disk(path)
+    assert set(record) == {"lane", "pid", "acquired_at", "cost_ceiling_usd"}
+    assert record["lane"] == LANE and record["pid"] == os.getpid() and record["cost_ceiling_usd"] == 0.3
+    acquired = datetime.fromisoformat(record["acquired_at"])
+    assert acquired.utcoffset().total_seconds() == 0 and acquired.timestamp() == clock()
     assert taken.notes == []
     taken.release()
     assert not path.exists()
 
 
-def test_the_default_path_is_outside_every_repository(monkeypatch, tmp_path):
+def test_the_path_is_outside_every_repository(monkeypatch, tmp_path):
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
     assert lock.lock_path() == tmp_path / ".orena" / "live-provider.lock"
 
 
-def test_a_held_lock_is_waited_for_every_30_seconds_then_taken(tmp_path):
+def test_creation_is_exclusive(tmp_path, monkeypatch):
+    path, clock = tmp_path / "live-provider.lock", Clock()
+    flags = []
+    real_open = os.open
+    monkeypatch.setattr(lock.os, "open", lambda p, f, *a: flags.append(f) or real_open(p, f, *a))
+    take(path, clock)
+    assert flags and flags[0] & os.O_CREAT and flags[0] & os.O_EXCL
+
+
+def test_a_held_lock_is_checked_every_30_seconds_then_taken(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
     held(path, clock)
-    released_after = 3
 
     def sleep(seconds):
         clock.sleep(seconds)
-        if len(clock.sleeps) == released_after:
-            path.unlink()
+        if len(clock.sleeps) == 3:
+            path.unlink()  # the other lane releases it
 
-    taken = lock.acquire("me", 0.3, path=path, clock=clock, sleep=sleep, alive=lambda pid: True, say=lambda _m: None)
-    assert clock.sleeps == [30] * released_after
-    assert json.loads(path.read_text(encoding="utf-8"))["lane"] == "me"
+    taken = lock.acquire(LANE, 0.3, path=path, clock=clock, sleep=sleep, alive=lambda pid: True, say=lambda _m: None)
+    assert clock.sleeps == [30, 30, 30]
+    assert on_disk(path)["lane"] == LANE
     assert taken.notes == ["waited for the live-provider lock"]
 
 
-def test_a_lock_held_past_30_minutes_of_waiting_stops_the_run_and_is_left_alone(tmp_path):
+def test_after_30_minutes_it_stops_naming_the_holder_and_leaves_the_lock(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
-    record = held(path, clock)
-    with pytest.raises(lock.LockTimeout, match="ask the human"):
+    record = held(path, clock, lane="grammar-lab", pid=4242)
+    with pytest.raises(lock.LockTimeout, match="lane=grammar-lab pid=4242"):
         take(path, clock)
-    assert sum(clock.sleeps) == 30 * 60
-    assert json.loads(path.read_text(encoding="utf-8")) == record  # never removed
+    assert sum(clock.sleeps) == 30 * 60 and set(clock.sleeps) == {30}
+    assert on_disk(path) == record
 
 
-def test_a_lock_whose_holder_is_gone_is_an_orphan_removed_and_reported(tmp_path):
+def test_a_dead_pid_is_an_orphan_removed_reported_and_retried_at_once(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
-    held(path, clock, pid=4242)
-    taken = take(path, clock, alive=lambda pid: pid != 4242)
-    assert clock.sleeps == []
-    assert json.loads(path.read_text(encoding="utf-8"))["pid"] == os.getpid()
-    assert len(taken.notes) == 1 and "process 4242 is no longer running" in taken.notes[0]
+    held(path, clock, lane="grammar-lab", pid=4242)
+    said: list[str] = []
+    taken = take(path, clock, alive=lambda pid: pid != 4242, said=said)
+    assert clock.sleeps == []  # at once
+    assert on_disk(path)["pid"] == os.getpid()
+    assert taken.notes == said == ["orphan lock removed: lane=grammar-lab reason=dead-pid"]
 
 
-def test_a_lock_held_over_60_minutes_is_an_orphan(tmp_path):
+def test_a_lock_acquired_over_60_minutes_ago_is_stale(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
-    held(path, clock, age=61 * 60)
+    held(path, clock, lane="grammar-lab", age=61 * 60)
     taken = take(path, clock)
-    assert "held for more than 60 min" in taken.notes[0]
+    assert taken.notes == ["orphan lock removed: lane=grammar-lab reason=stale"]
 
 
-def test_a_holder_on_another_host_is_not_judged_by_its_pid(tmp_path):
+def test_a_lock_under_60_minutes_with_a_live_pid_is_waited_for(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
-    held(path, clock, host="another-machine")
+    held(path, clock, age=59 * 60)
     with pytest.raises(lock.LockTimeout):
-        take(path, clock, alive=lambda pid: False)
+        lock.acquire(LANE, 0.3, path=path, clock=clock, sleep=clock.sleep, alive=lambda pid: True,
+                     say=lambda _m: None, wait=30)  # fmt: skip
 
 
-def test_release_never_removes_someone_elses_lock(tmp_path):
+def test_release_removes_only_a_lock_with_this_lane_and_pid(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
     taken = take(path, clock)
     path.unlink()
-    other = held(path, clock)  # another lane took it meanwhile
+    other = held(path, clock, lane="grammar-lab", pid=os.getpid())  # same pid, other lane
     taken.release()
-    assert json.loads(path.read_text(encoding="utf-8")) == other
+    assert on_disk(path) == other
+    path.unlink()
+    other = held(path, clock, lane=LANE, pid=os.getpid() + 1)  # same lane, other pid
+    taken.released = False
+    taken.release()
+    assert on_disk(path) == other
 
 
 def test_an_orphan_replaced_meanwhile_is_not_removed(tmp_path):
@@ -131,13 +151,18 @@ def test_an_orphan_replaced_meanwhile_is_not_removed(tmp_path):
     mtime = path.stat().st_mtime
     newer = held(path, clock, pid=os.getpid())
     assert lock._remove_if_unchanged(path, judged, mtime) is False
-    assert json.loads(path.read_text(encoding="utf-8")) == newer
+    assert on_disk(path) == newer
 
 
-def test_this_process_is_alive_and_a_finished_one_is_not():
-    import subprocess
-
+def test_liveness_of_a_real_process():
     assert lock.pid_alive(os.getpid())
     done = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"], capture_output=True, text=True)
     assert not lock.pid_alive(int(done.stdout))
     assert not lock.pid_alive(0)
+
+
+def test_the_runner_holds_it_around_the_sandbox():
+    source = (Path(__file__).resolve().parents[1] / "scripts/agent_live/run.py").read_text(encoding="utf-8")
+    main = source[source.index("def main()"):source.index("def _add_provider_errors")]
+    assert main.index("live_lock.acquire(") < main.index("sandbox.up(")
+    assert main.index("sandbox.down()") < main.index("lock.release()")
