@@ -160,6 +160,13 @@ R23 (2026-09-28, sau live Slice 3) Câu mời do server viết: mọi câu "Bấ
     coach note: server nhận ý định theo luật, nhắc model một lần kèm id; vẫn không gọi thì trả lời thật là chưa
     làm. Lượt mở đầu: server kiểm câu chào có dữ kiện của snapshot; không có thì dùng câu chào dựng từ snapshot.
     Không bao giờ câu chào chung chung.
+R24 (2026-09-28) Contract v5 (D-096) được phục vụ: xưng hô đi qua context.address (self/user/register/lang),
+    lưu bằng note kind "address" (id address-<lang>, không bao giờ trong coach_notes); server kiểm từ xưng hô
+    theo đúng luật UI (chữ cái Unicode + dấu cách đơn, 1-24 ký tự, ≤3 từ; sai một chỗ thì mặc định cả object),
+    chỉ áp khi lang = support, không ghi log/lưu, đưa vào model dưới dạng dữ liệu đã escape. Copy cố định (danh
+    tính, lỗi, câu mời, câu chào) có chỗ {self}/{user}. Client v4: không address, không note address. Tên màn
+    đọc từ static/orena/copy/surfaces.json (purpose khi UI viết). Câu "Mình lưu … cho bạn" và các dạng theo cặp
+    xưng hô ("Chị lưu … cho em") là khẳng định đã làm. memory_update đứng trước segment_end (S14).
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -215,14 +222,16 @@ Kiểm live 2026-09-28 (trần 0,20 USD, thực ≈ 0,10 USD; sandbox đã gỡ)
 Sửa R21 161544d: agent/labels.py (SRS, danh mục lỗi hai ngôn ngữ, loại lỗi, lỗi phát âm; LearnerScope mang
           interface), đổi lại xưng hô, câu mời gọn; "Mình lưu … cho bạn" là claim (v5 B1). Flow live mới: decline
           (một cặp qua nhiều lượt, hỏi một lần, từ chối), rechange.
-Slice 3  REVIEWABLE (local, 2026-09-28; R21). 03faf0c: coaching.py - build_learning_snapshot (/api/learner-summary
+Slice 3  IMPLEMENTING (2026-09-28; R21, R23). Gate local đạt; live chưa kiểm được: flash-lite hết quota (429),
+          gemini-3.8-flash quá tải (503) - REVIEWABLE sau một lần live đạt. 03faf0c: coaching.py - build_learning_snapshot (/api/learner-summary
           30 ngày + review due, không current_level, số demo bị loại, null khi không đọc được),
           get_learning_weaknesses (đếm tất định trên bản ghi; ngữ pháp null), get_recommended_next_activities
           (thứ tự backend: từ đến hạn rồi cross-skill cue, kèm id cho navigate); coach notes lớp 3 (remember_note /
           forget_note → memory_update, id của note người học); S13 dựng trên snapshot, không read tool.
           coaching.next_steps active. Test Postgres dùng một lần: snapshot và weaknesses đúng learner, đúng ngôn ngữ.
-Tiếp      Người quyết: trần chi phí cho lần live Slice 3 (gộp flow R21); gói/quota provider trước khi kích hoạt;
-          contract v5 (xưng hô) cho copy cố định; rồi Slice 4 (§26).
+v5       R24: contract v5 (D-096) - context.address, note kind address, copy có chỗ xưng hô, surfaces.json, S14/S15.
+Tiếp      Người quyết: model ghim cho agent_turn/agent_turn_deep và trần cho lần live Slice 3 (coaching, notes,
+          claims); gói/quota provider trước khi kích hoạt; rồi Slice 4 (§26).
 ```
 
 ---

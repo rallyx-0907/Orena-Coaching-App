@@ -328,6 +328,41 @@ def test_the_canonical_sequences_are_the_contracts():
         "session", "tool_call", "tool_result", "evidence", "evidence", "segment_end", "action", "done",
     ]  # fmt: skip
     assert canonical("S13") == ["session", "segment_end", "suggestion", "suggestion", "done"]
+    assert canonical("S14") == ["session", "memory_update", "segment_end", "done"]
+    assert canonical("S15") == ["session", "segment_end", "done"]
+
+
+# v5 (D-096): S14 - the learner asks for a pair; it is kept, then used in the very reply.
+@TARGETS
+def test_s14_address(harness, target):
+    rounds = [
+        (ToolCallRequest("c1", "set_address", {"self_term": "chị", "user_term": "em"}), TurnFinished(0, 3, "tool_calls")),
+        (TextDelta("Được rồi, từ giờ chị gọi em là em nhé."), ToolCallRequest("c2", "set_voice_style", {"style": "brief_ack"}),
+         TurnFinished(0, 9, "tool_calls")),
+    ]  # fmt: skip
+    events = turn(harness.client(rounds), target, "Gọi mình là em, còn Orena xưng chị nhé.", {"surface": "orena.home"},
+                  version=5)  # fmt: skip
+    assert names(events) == canonical("S14")
+    note = dict(events)["memory_update"]["note"]
+    assert (note["id"], note["kind"], note["address"]) == ("address-vi", "address", {"self": "chị", "user": "em", "lang": "vi"})
+    assert (note["weight"], note["expires_at"]) == (1, None)
+    assert dict(events)["segment_end"]["text"] == "Được rồi, từ giờ chị gọi em là em nhé."
+
+
+# v5: S15 - identity is fixed copy, addressed as the learner chose, and no model is asked.
+@TARGETS
+def test_s15_identity_with_address(harness, target):
+    events = turn(harness.client([]), target, "Bạn là ai?",
+                  {"surface": "home", "address": {"self": "chị", "user": "em", "lang": "vi"}}, version=5)  # fmt: skip
+    assert names(events) == canonical("S15")
+    text = dict(events)["segment_end"]["text"]
+    assert text.startswith("Chị là Orena, trợ lý học tập AI") and "của em" in text
+
+
+def test_a_v4_client_keeps_the_defaults_and_gets_no_address_note(harness):
+    events = turn(harness.client([]), "zh-CN", "Bạn là ai?",
+                  {"surface": "home", "address": {"self": "chị", "user": "em", "lang": "vi"}}, version=4)  # fmt: skip
+    assert dict(events)["segment_end"]["text"].startswith("Mình là Orena")
 
 
 # (a) human review of the live run: S5's answer offers the button, it never says the word is saved.

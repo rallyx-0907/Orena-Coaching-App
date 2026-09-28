@@ -49,10 +49,10 @@ from writing_coach.agent.decision import (
     RuleDecisionProvider,
 )
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
-from writing_coach.agent.address import address_for, address_note, mirrored_address
+from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
-from writing_coach.agent.honesty import ClaimGate, copy_terms, nothing_done, offer, offer_instead
+from writing_coach.agent.honesty import ClaimGate, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import notes_the_message_changes
 from writing_coach.agent.notes import nudge as note_nudge
 from writing_coach.agent.identity import IdentityQuestion
@@ -207,6 +207,8 @@ class _Turn:
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.snapshot: dict | None = None
+        # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
+        self.address: Address = default_address(request.context.locale.support)
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
 
     # --- the turn ------------------------------------------------------------
@@ -217,6 +219,8 @@ class _Turn:
         try:
             turn = TurnInput.from_request(self.request)
             tier1 = build_tier1(turn, session)
+            self.address = tier1.address
+            self.gate.address = tier1.address
             questions = {DecisionQuestion.CAPABILITY}
             if not self.opening:  # an opening turn has no message to ask about
                 questions.add(DecisionQuestion.IDENTITY_QUESTION)
@@ -248,15 +252,16 @@ class _Turn:
     def _mirror(self, turn: TurnInput, tier1) -> tuple[Any, dict | None]:
         """Vietnamese kinship address answered in kind at once: the pair kept and applied to this very turn."""
 
-        if self.opening or to_internal(self.locale.support) != "vi":
+        # A v4 client is never sent an address note (§5.6): it keeps the defaults.
+        if self.opening or self.stream.version < ADDRESS_VERSION or to_internal(self.locale.support) != "vi":
             return tier1, None
         pair = mirrored_address(turn.message)
-        current = address_for(tier1.coach_notes, self.locale.support)
-        if pair is None or pair == (current.self_term, current.user_term):
+        if pair is None or pair == tier1.address.pair:
             return tier1, None
         note = address_note(self.locale.support, *pair)
-        kept = tuple(n for n in tier1.coach_notes if n.id != note["id"]) + (CoachNote.model_validate(note),)
-        return replace(tier1, coach_notes=kept), note
+        chosen = Address(pair[0], pair[1], chosen=True, lang=self.locale.support)
+        self.address = self.gate.address = chosen
+        return replace(tier1, address=chosen), note
 
     def _model_turn(self, turn: TurnInput, tier1, decisions: Decisions, session) -> Iterator[Event]:
         tier1, mirrored = self._mirror(turn, tier1)
@@ -278,13 +283,10 @@ class _Turn:
             opening=self.opening,
             take_ref=self.request.context.take_ref,
             address_asked=session.address_asked,
-            address_chosen=address_for(tier1.coach_notes, self.locale.support).chosen,
+            address_chosen=tier1.address.chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
             learner_words=turn.message or "",
-            address_terms=(
-                address_for(tier1.coach_notes, self.locale.support).self_term,
-                address_for(tier1.coach_notes, self.locale.support).user_term,
-            ),
+            address_terms=tier1.address.pair,
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -320,8 +322,9 @@ class _Turn:
     def _identity(self, question: IdentityQuestion) -> Iterator[Event]:
         """Spec §35: who Orena is comes from copy, never from a model, and names no provider."""
 
-        lang, answer = learner_copy.text(
-            f"identity.{question.value}", interface=self.locale.interface, support=self.locale.support
+        lang, answer = learner_copy.text(  # addressed as the learner chose (S15)
+            f"identity.{question.value}", interface=self.locale.interface, support=self.locale.support,
+            address=self.address,
         )
         yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=answer, voice_style="neutral_explain"))
         yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
@@ -487,9 +490,10 @@ class _Turn:
         summary = learner_copy.text("result.unavailable", interface=self.locale.interface, support=self.locale.support)[1]
         return self.stream.emit(ToolResultEvent(tool=name, summary=summary, evidence_ids=[]))
 
-    def _address(self, language: str) -> tuple[str | None, str | None]:
-        chosen = address_for(self.coach_notes, language)
-        return chosen.self_term, chosen.user_term
+    def _address(self, language: str) -> Address:
+        """The turn's address; copy in another language than the support one takes that language's default."""
+
+        return self.address
 
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
         index = 0
@@ -508,7 +512,8 @@ class _Turn:
         nothing = nothing_done(self.locale.interface, support, self._address(support))
         if self.opening:
             greeting = offer_instead("".join(self.text), None, interface=self.locale.interface, support=support,
-                                     pending=bool(outputs.actions), action=action_type, nothing=nothing)  # fmt: skip
+                                     pending=bool(outputs.actions), action=action_type, nothing=nothing,
+                                     address=self.address)  # fmt: skip
             if not states_a_fact(greeting, self.snapshot):  # never a generic greeting (agent/greeting.py)
                 greeting = built_greeting(self.snapshot, interface=self.locale.interface, support=support,
                                           address=self._address(support))  # fmt: skip
@@ -523,9 +528,7 @@ class _Turn:
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
                 unchanged = learner_copy.text("notes.unchanged", interface=self.locale.interface, support=support,
-                                              **copy_terms(learner_copy.language_of("notes.unchanged",
-                                                  interface=self.locale.interface, support=support),
-                                                  *self._address(support)))[1]  # fmt: skip
+                                              address=self.address)[1]  # fmt: skip
             finished = self.gate.finish(
                 inline,
                 pending=bool(outputs.actions),
@@ -537,6 +540,10 @@ class _Turn:
             for chunk in finished:
                 yield self.stream.emit(SegmentDelta(index=0, lang=support, text_delta=chunk))
             text = self.gate.text
+        # The device applies a memory_update without a tap, so it comes before the words that say it is
+        # applied (S14: memory_update -> segment_end); coach notes and the address (§5.4, §5.6).
+        for update in outputs.memory_updates:
+            yield self.stream.emit(update)
         if text:
             yield self.stream.emit(
                 SegmentEnd(index=0, lang=support, text=text, voice_style=outputs.voice_style),
@@ -554,14 +561,14 @@ class _Turn:
             yield self.stream.emit(action)
         for suggestion in outputs.suggestions:
             yield self.stream.emit(suggestion)
-        for update in outputs.memory_updates:  # coach notes and the address pair the learner chose (§5.4)
-            yield self.stream.emit(update)
         self.address_offered_now = outputs.address_offered_now
         usage = Usage(input_tokens=self.usage_in, output_tokens=self.usage_out)
         yield self.stream.emit(DoneEvent(usage=usage, trace_id=self.trace_id))
 
     def _error(self, error_class: str) -> Event:
-        return self.stream.emit(error_event(error_class, interface=self.locale.interface, support=self.locale.support))
+        return self.stream.emit(
+            error_event(error_class, interface=self.locale.interface, support=self.locale.support, address=self.address)
+        )
 
     # --- after a completed turn -------------------------------------------------
 

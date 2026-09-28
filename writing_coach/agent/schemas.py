@@ -23,7 +23,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from writing_coach.agent.contract import (
     ACTIONS,
     ACTIVITY_TYPES,
-    COACH_NOTE_KINDS,
+    ADDRESS_NOTE_KIND,
+    NOTE_KINDS,
     MAX_COACH_NOTES,
     MAX_COACH_NOTES_BYTES,
     SELECTED_ITEM_TYPES,
@@ -136,6 +137,9 @@ class AppContextSnapshot(_Incoming):
     take_ref: str | None = Field(default=None, pattern=_ID)
     essay_id: str | None = Field(default=None, pattern=_ID)
     selected_item: SelectedItem | None = None
+    # §5.6: the learner's address, as raw data. It is checked - and falls back whole to the default - where it is
+    # applied (agent/address.py), never refused here: a bad term costs the learner nothing but the default.
+    address: dict | None = None
     client_evidence: ClientEvidence | None = None
 
     @field_validator("activity_type")
@@ -159,13 +163,20 @@ class CoachNote(_Incoming):
     weight: float = Field(ge=0.0, le=1.0)
     last_reinforced: datetime
     expires_at: datetime | None = None
+    address: dict[str, str] | None = None  # kind `address` only (§5.6)
 
     @field_validator("kind")
     @classmethod
     def _kind(cls, value: str) -> str:
-        if value not in COACH_NOTE_KINDS:
+        if value not in NOTE_KINDS:
             raise ValueError(f"unknown coach note kind {value!r}")
         return value
+
+    @model_validator(mode="after")
+    def _address(self) -> CoachNote:
+        if (self.kind == ADDRESS_NOTE_KIND) != (self.address is not None):
+            raise ValueError("an address note carries `address`, and only an address note does")
+        return self
 
 
 def coach_notes_bytes(notes: list[CoachNote]) -> int:
@@ -194,6 +205,14 @@ class TurnRequest(_Incoming):
             raise ValueError("a message turn needs a message")
         if self.trigger == "open" and self.message is not None:
             raise ValueError("an opening turn carries no message")
+        return self
+
+    @model_validator(mode="after")
+    def _no_address_note(self) -> TurnRequest:
+        # §3: the address note is never among coach_notes (it travels as context.address); one sent there is ignored.
+        kept = [note for note in self.coach_notes if note.kind != ADDRESS_NOTE_KIND]
+        if len(kept) != len(self.coach_notes):
+            object.__setattr__(self, "coach_notes", kept)
         return self
 
     @model_validator(mode="after")

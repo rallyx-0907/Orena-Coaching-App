@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from writing_coach.agent.address import address_note
+from writing_coach.agent.address import Address, address_note
 from writing_coach.agent.capability_registry import load_capability_registry
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, reply
 from writing_coach.agent.greeting import built, numbers_in, states_a_fact
@@ -32,12 +32,19 @@ SHORT = CoachNote.model_validate(
 
 
 def address(self_term: str, user_term: str, support: str = "vi") -> CoachNote:
+    """The address note as the device keeps it (§5.6); it travels as context.address, never in coach_notes."""
+
     return CoachNote.model_validate(address_note(support, self_term, user_term))
 
 
-def request(message, *, interface="vi", support="vi", notes=(), trigger="message", actions=("save_word", "navigate")):
+def chosen(self_term: str, user_term: str, support: str = "vi") -> Address:
+    return Address(self_term, user_term, chosen=True, lang=support)
+
+
+def request(message, *, interface="vi", support="vi", notes=(), trigger="message", actions=("save_word", "navigate"),
+            addressed=None):  # fmt: skip
     body = {
-        "contract_version": 4,
+        "contract_version": 5,
         "trigger": trigger,
         "client": {"ui_version": "t", "supported_actions": list(actions), "supported_intents": ["vocabulary.review_due"]},
         "context": {
@@ -45,8 +52,10 @@ def request(message, *, interface="vi", support="vi", notes=(), trigger="message
             "locale": {"interface": interface, "support": support, "target": "zh-CN"},
             "selected_item": {"type": "word", "text": "我", "lang": "zh-CN"},
         },
-        "coach_notes": [n.model_dump(mode="json") for n in notes],
+        "coach_notes": [n.model_dump(mode="json") for n in notes if n.kind != "address"],
     }
+    if addressed is not None:
+        body["context"]["address"] = addressed
     if message is not None:
         body["message"] = message
     return TurnRequest.model_validate(body)
@@ -123,13 +132,14 @@ def test_with_a_button_the_servers_offer_replaces_the_models():
 
 
 def test_the_offer_is_in_the_learners_address_pair():
-    lang, text = offer("save_word", "Lưu từ", {"text": "我"}, interface="vi", support="vi", address=("em", "anh"))
+    lang, text = offer("save_word", "Lưu từ", {"text": "我"}, interface="vi", support="vi", address=chosen("em", "anh"))
     assert (lang, text) == ("vi", "Bấm Lưu từ để thêm 我 vào từ vựng của anh.")
-    assert offer("save_word", "保存单词", {"text": "我"}, interface="zh-CN", support="zh-CN", address=("我", "您"))[1] == (
+    assert offer("save_word", "保存单词", {"text": "我"}, interface="zh-CN", support="zh-CN",
+                 address=chosen("我", "您", "zh-CN"))[1] == (
         "点击“保存单词”，把我加入您的词汇。"
     )
     events, _ = run([(TextDelta("Nghĩa là tôi."), *SAVE)],
-                    request("Lưu từ này giúp em.", notes=(address("chị", "em"),)))  # fmt: skip
+                    request("Lưu từ này giúp em.", addressed={"self": "chị", "user": "em", "lang": "vi"}))  # fmt: skip
     assert segments(events)[0][1].endswith("Bấm Lưu từ để thêm 我 vào từ vựng của em.")
 
 
@@ -191,7 +201,8 @@ def test_a_note_ignored_is_asked_once_more_and_then_forgotten():
 def test_a_note_ignored_twice_is_said_plainly_in_the_learners_address():
     events, provider = run(
         [reply("Mình hiểu rồi."), reply("Để chị lấy ví dụ dài hơn nhé.")],
-        request("À không, ví dụ dài hơn một chút thì em dễ hiểu hơn.", notes=(SHORT, address("chị", "em"))),
+        request("À không, ví dụ dài hơn một chút thì em dễ hiểu hơn.", notes=(SHORT,),
+                addressed={"self": "chị", "user": "em", "lang": "vi"}),
     )
     assert len(provider.requests) == 2  # once more, not more
     assert not [e for e in events if e.name == "memory_update"]
@@ -240,7 +251,7 @@ def test_a_generic_or_invented_greeting_is_not(greeting):
 
 def test_the_built_greeting_is_one_fact_in_the_learners_address():
     assert built(snapshot(due=3), interface="vi", support="vi") == "Chào bạn! Hôm nay bạn có 3 từ đến hạn ôn."
-    assert built(snapshot(due=3), interface="vi", support="vi", address=("em", "anh")) == (
+    assert built(snapshot(due=3), interface="vi", support="vi", address=chosen("em", "anh")) == (
         "Chào anh! Hôm nay anh có 3 từ đến hạn ôn."
     )
     assert built(snapshot(due=0, counts={"writing": 2, "reading": 5}), interface="vi", support="vi") == (

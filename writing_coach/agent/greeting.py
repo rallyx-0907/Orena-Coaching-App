@@ -15,7 +15,6 @@ from collections.abc import Mapping
 from typing import Any
 
 from writing_coach.agent import learner_copy
-from writing_coach.agent.honesty import copy_terms
 
 WINDOW_DAYS = 30
 _WORDS = {
@@ -64,7 +63,7 @@ def built(
     *,
     interface: str,
     support: str,
-    address: tuple[str | None, str | None] = (None, None),
+    address: object = None,
 ) -> str:
     """The greeting built from the snapshot, in the support layer and the learner's address pair."""
 
@@ -77,8 +76,7 @@ def built(
         key, params = "opening.activity", {"n": count, "what": entry["activity"].get("what") or "", "skill": entry["name"]}
     else:
         key, params = "opening.empty", {}
-    language = learner_copy.language_of(key, interface=interface, support=support)
-    return learner_copy.text(key, interface=interface, support=support, **copy_terms(language, *address), **params)[1]
+    return learner_copy.text(key, interface=interface, support=support, address=address, **params)[1]
 
 
 def _readable(snapshot: Mapping[str, Any]) -> bool:

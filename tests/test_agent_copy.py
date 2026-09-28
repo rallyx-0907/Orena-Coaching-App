@@ -75,10 +75,27 @@ def test_every_copy_text_is_silent_about_providers():
 
 
 
-def test_every_surface_has_its_name_in_every_interface_language():
+def test_every_surface_is_named_from_the_uis_published_file_and_nowhere_else():
+    # Contract v5 §6.2: the UI publishes names (and purposes) in surfaces.json; the server keeps no copy.
+    from writing_coach.agent import surfaces
     from writing_coach.agent.contract import SURFACES
 
+    assert not [key for key in learner_copy.CATALOG if key.startswith("surface.")]
     for surface in SURFACES:
-        entry = learner_copy.CATALOG[f"surface.{surface}"]
-        assert entry.layer is learner_copy.CopyLayer.INTERFACE
-        assert set(entry.texts) == {"en", "vi", "zh-CN"} and all(entry.texts.values()), surface
+        for language in ("en", "vi", "zh-CN"):
+            assert surfaces.name(surface, language), (surface, language)
+    assert surfaces.name("vocabulary.my_language", "vi") == surfaces.published()["vocabulary.my_language"]["name"]["vi"]
+    assert surfaces.name("no.such.place", "vi") is None
+
+
+def test_a_purpose_is_used_only_when_the_ui_wrote_one(monkeypatch):
+    from types import MappingProxyType
+
+    from writing_coach.agent import surfaces
+
+    table = {"home": {"name": {"en": "Today", "vi": "Hôm nay", "zh-CN": "今天"},
+                      "purpose": {"en": "Start here.", "vi": "Bắt đầu ở đây.", "zh-CN": "从这里开始。"}},
+             "library": {"name": {"en": "Discover", "vi": "Khám phá", "zh-CN": "发现"}}}  # fmt: skip
+    monkeypatch.setattr(surfaces, "published", lambda: MappingProxyType(table))
+    assert surfaces.purpose("home", "vi") == "Bắt đầu ở đây."
+    assert surfaces.purpose("library", "vi") is None  # no purpose of the server's own

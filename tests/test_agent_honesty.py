@@ -178,3 +178,68 @@ def test_a_true_state_stays_and_the_offer_comes_once():
     streamed = gate.feed("Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn.")
     streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review")
     assert "".join(streamed) == "Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn. Bấm Ôn từ đến hạn để mở."
+
+
+# Contract v5 (D-096) §7: a reply that comes with an action offers it. The old S5 line "Mình lưu 我 cho bạn nhé."
+# is a claim, and so is the same line in the learner's own address (§5.6).
+from writing_coach.agent.address import resolve  # noqa: E402
+
+CHI_EM = resolve({"self": "chị", "user": "em", "lang": "vi"}, "vi")
+NIN = resolve({"register": "polite", "lang": "zh-CN"}, "zh-CN")
+XIAOMING = resolve({"user": "小明", "lang": "zh-CN"}, "zh-CN")
+
+
+@pytest.mark.parametrize(
+    ("sentence", "address"),
+    [
+        ("Mình lưu 我 cho bạn nhé.", None),  # the v4 S5 line
+        ("Chị lưu 我 cho em nhé.", CHI_EM),
+        ("Chị đã lưu từ này rồi.", CHI_EM),
+        ("Chị vừa thêm 我 vào từ vựng.", CHI_EM),
+        ("Chị sẽ lưu nó cho em.", CHI_EM),
+        ("我帮您保存了这个词。", NIN),
+        ("我帮小明保存了。", XIAOMING),
+    ],
+)
+def test_the_old_s5_line_and_its_addressed_forms_are_claims(sentence, address):
+    assert claims_acted(sentence, address=address) and claims_done(sentence, address=address)
+
+
+@pytest.mark.parametrize(
+    ("sentence", "address"),
+    [
+        ("Em đã lưu từ này trong thư viện rồi.", CHI_EM),  # the learner (em) did it: a state, not Orena's act
+        ("Chị lưu từ này chưa?", CHI_EM),  # a question
+        ("Bấm Lưu từ để thêm 我 vào từ vựng của em.", CHI_EM),  # what the button will do
+    ],
+)
+def test_the_learners_own_act_a_question_or_the_offer_is_not(sentence, address):
+    assert not claims_acted(sentence, address=address)
+
+
+def test_through_a_turn_the_addressed_claim_gives_way_to_the_offer():
+    from writing_coach.agent.capability_registry import load_capability_registry
+    from writing_coach.agent.fake_provider import FakeAgentTurnProvider
+    from writing_coach.agent.provider import TextDelta, ToolCallRequest, TurnFinished
+    from writing_coach.agent.runtime import build_tool_registry
+    from writing_coach.agent.schemas import TurnRequest
+    from writing_coach.agent.session import SessionCache
+    from writing_coach.agent.tools import LearnerScope
+    from writing_coach.agent.turn import AgentRuntime
+
+    tools = build_tool_registry(writing_review=lambda essay_id: None)
+    rounds = [(TextDelta("Chị lưu 我 cho em nhé."),
+               ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"text": "我", "lang": "zh-CN"}}),
+               TurnFinished(0, 5, "tool_calls"))]  # fmt: skip
+    rt = AgentRuntime(provider=FakeAgentTurnProvider(rounds), tools=tools,
+                      capabilities=load_capability_registry(registered_tools=tools.names()), sessions=SessionCache())  # fmt: skip
+    body = {
+        "contract_version": 5, "trigger": "message", "message": "Lưu từ này giúp em.",
+        "client": {"ui_version": "t", "supported_actions": ["save_word"], "supported_intents": []},
+        "context": {"surface": "vocabulary.word", "locale": {"interface": "vi", "support": "vi", "target": "zh-CN"},
+                    "selected_item": {"type": "word", "text": "我", "lang": "zh-CN"},
+                    "address": {"self": "chị", "user": "em", "lang": "vi"}},
+    }  # fmt: skip
+    events = list(rt.run(TurnRequest.model_validate(body), LearnerScope(user_key="u", language="zh")))
+    text = next(e.text for e in events if e.name == "segment_end")
+    assert text == "Bấm Lưu từ để thêm 我 vào từ vựng của em."  # S5 (v5), in the learner's address

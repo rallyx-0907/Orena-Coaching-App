@@ -415,8 +415,12 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                 "trigger": extra.get("trigger", "message"),
                 "client": {"ui_version": "agent-live-run", "supported_actions": actions, "supported_intents": intents},
                 "context": context,
-                "coach_notes": list(notes.values()),
+                # §5.6 (v5): the address note travels as context.address, never in coach_notes
+                "coach_notes": [n for n in notes.values() if n.get("kind") != "address"],
             }
+            kept_address = next((n["address"] for n in notes.values() if n.get("kind") == "address"), None)
+            if kept_address is not None:
+                context["address"] = kept_address
             if message is not None:
                 body["message"] = message
             if session_id:

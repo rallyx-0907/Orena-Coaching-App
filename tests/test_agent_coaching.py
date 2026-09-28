@@ -223,7 +223,8 @@ def test_saying_a_note_is_kept_is_true_when_the_turn_keeps_it():
     rt, _ = _runtime(rounds)
     events = list(rt.run(_request(), ZH))
     assert next(e for e in events if e.name == "segment_end").text == "Mình đã ghi nhớ mục tiêu HSK4 của bạn."
-    assert [e.name for e in events][-2:] == ["memory_update", "done"]
+    # S14: a memory_update comes before the words that say it is applied
+    assert [e.name for e in events][-3:] == ["memory_update", "segment_end", "done"]
     rt2, _ = _runtime([reply("Mình đã ghi nhớ từ 我 giúp bạn rồi.")])
     events2 = list(rt2.run(_request("Lưu 我 giúp mình."), ZH))  # nothing kept: remembering is a false claim
     assert "ghi nhớ" not in next(e for e in events2 if e.name == "segment_end").text

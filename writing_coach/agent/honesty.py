@@ -25,12 +25,12 @@ action allowlist (save, add, remove, open, start).
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
 
 from writing_coach.agent import learner_copy
-from writing_coach.agent.address import DEFAULTS, capitalised
 
 _VI_ACT = "lưu|thêm|xóa|xoá|bỏ lưu|mở|chuyển|bắt đầu"
 _VI_MEMORY = "ghi nhớ|ghi lại"  # what a memory_update does: true when the turn carries one (contract v5 B1)
@@ -39,21 +39,40 @@ _ZH_ACT = "保存|添加|加入|删除|移除|收藏|打开|开始"
 _ZH_MEMORY = "记录|记下"
 
 
-def _patterns(vi_done: str, zh_done: str) -> tuple[re.Pattern[str], re.Pattern[str]]:
+# Who Orena is and who the learner is, in a claim: the defaults, plus the learner's own address (contract v5
+# §5.6) - "Chị lưu 我 cho em nhé" is as much a claim as "Mình lưu 我 cho bạn nhé" (the old S5 line).
+_VI_SELF, _VI_USER = ("mình", "orena", "tôi"), ("bạn",)
+_ZH_SELF, _ZH_USER = ("我",), ("你", "您")
+
+
+def _alternation(words) -> str:
+    return "|".join(re.escape(w) for w in sorted(set(words), key=len, reverse=True))
+
+
+def _patterns(
+    vi_done: str,
+    zh_done: str,
+    vi_self: tuple[str, ...] = _VI_SELF,
+    vi_user: tuple[str, ...] = _VI_USER,
+    zh_self: tuple[str, ...] = _ZH_SELF,
+    zh_user: tuple[str, ...] = _ZH_USER,
+) -> tuple[re.Pattern[str], re.Pattern[str]]:
     vi, zh = f"(?:{vi_done})", f"(?:{zh_done})"
+    me, you = f"(?:{_alternation(vi_self)})", f"(?:{_alternation(vi_user)})"
+    zme, zyou = f"(?:{_alternation(zh_self)})", f"(?:{_alternation(zh_user)})"
     # Orena (or an implied Orena: a sentence that opens with the verb) says it acted.
     acted = re.compile(
         r"(?im)"
-        rf"\b(?:mình|orena)\s+(?:vừa\s+|đã\s+|vừa\s+đã\s+)?{vi}\b[^.!?\n]{{0,60}}?\b(?:rồi|xong)\b"
-        rf"|\b(?:mình|orena)\s+(?:vừa\s+)?đã\s+{vi}\b"
-        rf"|\b(?:mình|orena)\s+vừa\s+{vi}\b"
-        rf"|\b(?:mình|orena)\s+(?:sẽ\s+)?{vi}\b[^.!?\n]{{0,40}}?\bcho\s+bạn\b"
+        rf"\b{me}\s+(?:vừa\s+|đã\s+|vừa\s+đã\s+)?{vi}\b[^.!?\n]{{0,60}}?\b(?:rồi|xong)\b"
+        rf"|\b{me}\s+(?:vừa\s+)?đã\s+{vi}\b"
+        rf"|\b{me}\s+vừa\s+{vi}\b"
+        rf"|\b{me}\s+(?:sẽ\s+)?{vi}\b[^.!?\n]{{0,40}}?\bcho\s+{you}\b"
         rf"|^\W*đã\s+{vi}\b"
         rf"|\b(?:lưu|thêm|xóa|xoá)\s+xong\b"
         rf"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?{_EN_DONE}\b"
         rf"|^\W*(?:done[,!.]?\s*)?{_EN_DONE}\b"
-        rf"|(?:我|已经)?(?:帮你|为你|给你){zh}(?:下来?|好)?了"
-        rf"|(?:帮你|为你|给你){zh}好"
+        rf"|(?:{zme}|已经)?(?:帮|为|给){zyou}{zh}(?:下来?|好)?了"
+        rf"|(?:帮|为|给){zyou}{zh}好"
         rf"|(?:保存|添加|收藏|删除)(?:好|成功)了"
     )
     # A completion with no actor: false only beside a pending button.
@@ -69,6 +88,24 @@ def _patterns(vi_done: str, zh_done: str) -> tuple[re.Pattern[str], re.Pattern[s
 
 _SELF, _STATE = _patterns(f"{_VI_ACT}|{_VI_MEMORY}", f"{_ZH_ACT}|{_ZH_MEMORY}")
 _SELF_ACT, _STATE_ACT = _patterns(_VI_ACT, _ZH_ACT)  # when the turn kept a note, remembering is not a claim
+
+
+@lru_cache(maxsize=64)
+def _addressed(self_term: str | None, user_term: str | None, remembered: bool) -> tuple[re.Pattern[str], re.Pattern[str]]:
+    """The claim patterns with the learner's address added to the defaults."""
+
+    extra_self = (self_term,) if self_term else ()
+    extra_user = (user_term,) if user_term else ()
+    vi_done, zh_done = (_VI_ACT, _ZH_ACT) if remembered else (f"{_VI_ACT}|{_VI_MEMORY}", f"{_ZH_ACT}|{_ZH_MEMORY}")
+    return _patterns(vi_done, zh_done, _VI_SELF + extra_self, _VI_USER + extra_user, _ZH_SELF + extra_self,
+                     _ZH_USER + extra_user)  # fmt: skip
+
+
+def _claim_patterns(remembered: bool, address: object) -> tuple[re.Pattern[str], re.Pattern[str]]:
+    self_term, user_term = getattr(address, "self_term", None), getattr(address, "user_term", None)
+    if not getattr(address, "chosen", False) or not (self_term or user_term):
+        return (_SELF_ACT, _STATE_ACT) if remembered else (_SELF, _STATE)
+    return _addressed(self_term, user_term, remembered)
 
 # A completion with no actor is false only when it is what the pending button would do: beside "Ôn từ đến
 # hạn", "Từ 朋友 đã được lưu" is a state a tool read, not a claim (live run 2026-09-28).
@@ -106,16 +143,17 @@ def _question(sentence: str) -> bool:
     return stripped.endswith(("?", "？")) or bool(re.search(r"(?i)\bchưa\s*[?？]?$", stripped))
 
 
-def claims_acted(sentence: str, *, remembered: bool = False) -> bool:
-    acted = _SELF_ACT if remembered else _SELF
+def claims_acted(sentence: str, *, remembered: bool = False, address: object = None) -> bool:
+    acted, _ = _claim_patterns(remembered, address)
     return not _question(sentence) and bool(acted.search(sentence))
 
 
-def claims_done(sentence: str, *, remembered: bool = False, action: str | None = None) -> bool:
+def claims_done(sentence: str, *, remembered: bool = False, action: str | None = None, address: object = None) -> bool:
     """Either kind of claim, in a sentence that is not a question. With the pending button's `action`, a
-    completion without an actor counts only when it is that button's own (an action with no verbs here: all)."""
+    completion without an actor counts only when it is that button's own (an action with no verbs here: all).
+    `address` is the turn's (§5.6): its terms name Orena and the learner too."""
 
-    acted, stated = (_SELF_ACT, _STATE_ACT) if remembered else (_SELF, _STATE)
+    acted, stated = _claim_patterns(remembered, address)
     if action is not None and _STATED_FOR.get(action) is not None:
         stated = _STATED_FOR[action]
     return not _question(sentence) and bool(acted.search(sentence) or stated.search(sentence))
@@ -143,18 +181,8 @@ def _sentences(text: str) -> list[str]:
     return _SENTENCE.findall(text)
 
 
-def copy_terms(language: str, self_term: str | None, user_term: str | None) -> dict[str, str]:
-    """The learner's own address pair for copy in `language` (agent/address.py); its default otherwise."""
-
-    default_self, default_user = DEFAULTS.get(language, DEFAULTS[learner_copy.FALLBACK_LANGUAGE])
-    chosen_self, chosen_user = self_term or default_self, user_term or default_user
-    return {"self": chosen_self, "self_cap": capitalised(chosen_self), "user": chosen_user,
-            "user_cap": capitalised(chosen_user)}  # fmt: skip
-
-
-def nothing_done(interface: str, support: str, address: tuple[str | None, str | None] = (None, None)) -> str:
-    language = learner_copy.language_of("honesty.nothing_done", interface=interface, support=support)
-    return learner_copy.text("honesty.nothing_done", interface=interface, support=support, **copy_terms(language, *address))[1]
+def nothing_done(interface: str, support: str, address: object = None) -> str:
+    return learner_copy.text("honesty.nothing_done", interface=interface, support=support, address=address)[1]
 
 
 def offer(
@@ -164,17 +192,16 @@ def offer(
     *,
     interface: str,
     support: str,
-    address: tuple[str | None, str | None] = (None, None),
+    address: object = None,
 ) -> tuple[str, str]:
-    """(language, sentence) offering this button, in the interface layer and the learner's address pair:
-    "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."."""
+    """(language, sentence) offering this button, in the interface layer and - when that is the language of the
+    learner's address - their address pair: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."."""
 
     key = f"offer.{action_type}"
     text = str(payload.get("text") or "")
     if key not in learner_copy.CATALOG or ("{text}" in learner_copy.CATALOG[key].texts.get("en", "") and not text):
         key = "offer.action"
-    language = learner_copy.language_of(key, interface=interface, support=support)
-    return learner_copy.text(key, interface=interface, support=support, label=label, text=text, **copy_terms(language, *address))
+    return learner_copy.text(key, interface=interface, support=support, address=address, label=label, text=text)
 
 
 def offer_for(action_type: str, label: str, payload: Mapping[str, Any], *, interface: str, support: str, **kw: Any) -> str:
@@ -197,6 +224,7 @@ def offer_instead(
     remembered: bool = False,
     action: str | None = None,
     nothing: str | None = None,
+    address: object = None,
 ) -> str:
     """The whole answer at once (an opening greeting): claims and the model's own offers out, the server's
     offer in when there is one. `pending` is whether a button is proposed (the offer may be sent apart)."""
@@ -206,7 +234,9 @@ def offer_instead(
     def drop(part: str) -> bool:
         if offers_a_button(part, support):
             return True
-        return claims_done(part, remembered=remembered, action=action) if pending else claims_acted(part, remembered=remembered)
+        if pending:
+            return claims_done(part, remembered=remembered, action=action, address=address)
+        return claims_acted(part, remembered=remembered, address=address)
 
     parts = _sentences(text)
     dropped = any(drop(part) for part in parts)
@@ -232,6 +262,7 @@ class ClaimGate:
     def __init__(self, *, interface: str = "en", support: str = "en", hold_all: bool = False) -> None:
         self._interface, self._support = interface, support
         self.hold_all = hold_all
+        self.address: object = None  # the turn's address (§5.6), set once the request is read
         self._partial = ""
         self._held: list[str] = []
         self.sent: list[str] = []
@@ -241,7 +272,12 @@ class ClaimGate:
         out: list[str] = []
         while (end := _BOUNDARY.search(self._partial)) is not None:
             sentence, self._partial = self._partial[: end.end()], self._partial[end.end() :]
-            if self.hold_all or self._held or claims_done(sentence) or offers_a_button(sentence, self._support):
+            if (
+                self.hold_all
+                or self._held
+                or claims_done(sentence, address=self.address)
+                or offers_a_button(sentence, self._support)
+            ):
                 self._held.append(sentence)
             else:
                 out.append(sentence)
@@ -276,8 +312,8 @@ class ClaimGate:
             if offers_a_button(part, self._support):
                 return True
             if pending:
-                return claims_done(part, remembered=remembered, action=action)
-            return claims_acted(part, remembered=remembered)
+                return claims_done(part, remembered=remembered, action=action, address=self.address)
+            return claims_acted(part, remembered=remembered, address=self.address)
 
         dropped = any(drop(part) for part in tail)
         kept = "".join(part for part in tail if not drop(part))
@@ -287,7 +323,7 @@ class ClaimGate:
         if offer_text is not None:
             addition = _join(before, offer_text)
         elif dropped and not before.strip() and not pending:
-            addition = nothing if nothing is not None else nothing_done(self._interface, self._support)
+            addition = nothing if nothing is not None else nothing_done(self._interface, self._support, self.address)
         else:
             addition = ""
         chunk = kept + addition

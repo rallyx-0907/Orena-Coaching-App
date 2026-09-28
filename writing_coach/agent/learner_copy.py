@@ -115,10 +115,10 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             {
                 "en": "I'm Orena, your AI learning assistant and personal coach in this app. "
                 "Ask me about this screen, your progress, or what to practise next.",
-                "vi": "Mình là Orena, trợ lý học tập AI và huấn luyện viên riêng của bạn trong ứng dụng này. "
-                "Bạn có thể hỏi mình về màn hình này, tiến độ học, hay nên luyện gì tiếp.",
-                "zh-CN": "我是 Orena，你在这个应用里的 AI 学习助手和私人教练。"
-                "你可以问我这个页面的用法、你的学习进度，或者接下来该练什么。",
+                "vi": "{self_cap} là Orena, trợ lý học tập AI và huấn luyện viên riêng của {user} trong ứng dụng này. "
+                "{user_cap} có thể hỏi {self} về màn hình này, tiến độ học, hay nên luyện gì tiếp.",
+                "zh-CN": "{self}是 Orena，{user}在这个应用里的 AI 学习助手和私人教练。"
+                "{user}可以问{self}这个页面的用法、{user}的学习进度，或者接下来该练什么。",
             },
         ),
         "identity.model": _entry(
@@ -126,9 +126,9 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             {
                 "en": "I'm Orena, your AI learning assistant and personal coach. "
                 "The AI model behind me is chosen by Orena and may change, so I don't name one.",
-                "vi": "Mình là Orena, trợ lý học tập AI và huấn luyện viên riêng của bạn. "
-                "Mô hình AI phía sau do Orena chọn và có thể thay đổi, nên mình không nêu tên mô hình.",
-                "zh-CN": "我是 Orena，你的 AI 学习助手和私人教练。背后的 AI 模型由 Orena 选择，可能会更换，所以我不说具体名称。",
+                "vi": "{self_cap} là Orena, trợ lý học tập AI và huấn luyện viên riêng của {user}. "
+                "Mô hình AI phía sau do Orena chọn và có thể thay đổi, nên {self} không nêu tên mô hình.",
+                "zh-CN": "{self}是 Orena，{user}的 AI 学习助手和私人教练。背后的 AI 模型由 Orena 选择，可能会更换，所以{self}不说具体名称。",
             },
         ),
         "error.provider_unavailable": _entry(
@@ -451,37 +451,7 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "What is this screen for?", "vi": "Màn này dùng để làm gì?", "zh-CN": "这个页面是做什么的？"},
         ),
-        # Each place's name as the new UI shows it (its shell copy), so an answer names a screen the way
-        # the learner reads it, never by an id or an English title.
-        **{
-            f"surface.{surface}": _entry(CopyLayer.INTERFACE, {"en": en, "vi": vi, "zh-CN": zh})
-            for surface, (en, vi, zh) in {
-                "home": ("Today", "Hôm nay", "今天"),
-                "orena.home": ("Orena", "Orena", "Orena"),
-                "library": ("Discover", "Khám phá", "发现"),
-                "reading.library": ("Discover", "Khám phá", "发现"),
-                "reading.workspace": ("Reader", "Đọc", "阅读"),
-                "listening.library": ("Discover", "Khám phá", "发现"),
-                "listening.workspace": ("Listening", "Nghe", "听力"),
-                "listening.dictation": ("Dictation", "Chép chính tả", "听写"),
-                "speaking.library": ("Practice Hub", "Luyện tập", "练习中心"),
-                "speaking.workspace": ("Pronunciation", "Phát âm", "发音"),
-                "speaking.free_talk": ("Free Talk", "Nói tự do", "自由说"),
-                "speaking.word_detail": ("Compare with model", "So với mẫu", "与示范对比"),
-                "speaking.compare": ("Compare with model", "So với mẫu", "与示范对比"),
-                "writing.workspace": ("Writing", "Viết", "写作"),
-                "writing.review": ("Writing", "Viết", "写作"),
-                "writing.revision": ("Compare versions", "So sánh phiên bản", "版本对比"),
-                "vocabulary.my_language": ("My Library", "Thư viện của tôi", "我的书库"),
-                "vocabulary.word": ("Word", "Từ", "词语"),
-                "vocabulary.review_due": ("Review", "Ôn tập", "复习"),
-                "grammar.catalog": ("Grammar", "Ngữ pháp", "语法"),
-                "grammar.point": ("Grammar", "Ngữ pháp", "语法"),
-                "progress": ("Progress", "Tiến độ", "进度"),
-                "preferences": ("Settings", "Cài đặt", "设置"),
-                "preferences.agent_memory": ("Settings", "Cài đặt", "设置"),
-            }.items()
-        },
+        # Place names are the UI's, read from surfaces.json (agent/surfaces.py, contract v5 §6.2).
     }
 )
 
@@ -498,15 +468,28 @@ def language_of(key: str, *, interface: str, support: str) -> str:
     return language if language in entry.texts else FALLBACK_LANGUAGE
 
 
-def text(key: str, *, interface: str, support: str, **params: object) -> tuple[str, str]:
+def address_terms(language: str, address: object = None) -> dict[str, str]:
+    """The `{self}` / `{user}` slots (and their sentence-initial `_cap` forms) for copy in `language`: the learner's
+    address when it is for that language (contract v5 §5.6), that language's default otherwise - so a text with
+    slots reads exactly as the unaddressed one when nothing was chosen."""
+
+    from writing_coach.agent.address import DEFAULTS, capitalised
+
+    self_term, user_term = DEFAULTS.get(language, DEFAULTS[FALLBACK_LANGUAGE])
+    if address is not None and getattr(address, "lang", None) == language:
+        self_term = getattr(address, "self_term", None) or self_term
+        user_term = getattr(address, "user_term", None) or user_term
+    return {"self": self_term, "self_cap": capitalised(self_term), "user": user_term, "user_cap": capitalised(user_term)}
+
+
+def text(key: str, *, interface: str, support: str, address: object = None, **params: object) -> tuple[str, str]:
     """Return `(language, text)` for a key, read from its own layer's pack.
 
-    `params` fill `{name}` placeholders (counts only; never learner content).
+    `params` fill `{name}` placeholders (counts, labels, the word an action names). `address` is the turn's
+    §5.6 address: it fills `{self}` / `{user}` only in copy of its own language.
     """
 
     entry = CATALOG[key]
-    language = layer_language(entry.layer, interface=interface, support=support)
-    if language not in entry.texts:
-        language = FALLBACK_LANGUAGE
+    language = language_of(key, interface=interface, support=support)
     words = entry.texts[language]
-    return language, words.format(**params) if params else words
+    return language, words.format(**{**address_terms(language, address), **params})

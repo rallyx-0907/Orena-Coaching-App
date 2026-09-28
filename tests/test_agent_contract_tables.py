@@ -146,6 +146,10 @@ def test_small_enumerations():
     assert _enum_after("`selected_item`: `type` ∈") == contract.SELECTED_ITEM_TYPES
     assert '"kind": "preference | goal | plan"' in CONTRACT
     assert contract.COACH_NOTE_KINDS == {"preference", "goal", "plan"}
+    # v5 (D-096): the address note is a kind of its own, never sent in coach_notes.
+    assert "Kinds are `preference | goal | plan`, plus `address` (§5.6)" in CONTRACT
+    assert "the `address` note is never among them (§5.6)" in CONTRACT
+    assert contract.NOTE_KINDS == contract.COACH_NOTE_KINDS | {"address"}
     assert "send at most 20, most weighted first, total ≤ 2 KB" in CONTRACT
     assert (contract.MAX_COACH_NOTES, contract.MAX_COACH_NOTES_BYTES) == (20, 2048)
     # v3 (D-094): an action's label is interface copy, which ruling R12 already served.

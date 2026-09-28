@@ -1,47 +1,56 @@
-"""How Orena says "I" and "you" to this learner, in their support language (human direction 2026-09-28).
+"""How Orena says "I" and "you" to this learner, in their support language (contract v5 §5.6, D-096).
 
-The default is the support language's own: Vietnamese `mình` / `bạn`, Chinese
-`我` / `你`, English `I` / `you`. It changes only from the learner's own words:
-they ask for another pair, or they keep using one and say yes when asked once.
-Nothing is inferred from gender, age, a name or anything else, and the words
-change without the respect changing.
+The learner's choice arrives as `context.address` - `{self, user, register, lang}` -
+and is applied only when its `lang` is the support language; omitted, or with any
+invalid term, the language's default applies to the whole object: Vietnamese
+`mình` / `bạn`, Chinese `我` / `你` (`plain`; `您` only for `polite`), English
+`I` / `you` (where `user` is a name to call the learner by, never a replacement for
+"you"). A support language without a row uses its own ordinary first and second
+person, left to the model.
 
-The choice is a coach note the learner stated directly (contract §5.4): the
-agent proposes it with `memory_update`, the device keeps it and sends it back
-in `coach_notes`, and each turn reads it here. One note per support language,
-with a fixed id (`address-vi`, `address-zh-CN`, `address-en`), so a change of
-mind replaces it and the privacy list shows it in the learner's own language.
+It is kept as a coach note of kind `address`, one per support language
+(`address-<lang>`), which the device stores and sends back as `context.address`,
+never in `coach_notes`. The server proposes it with `memory_update` - when the
+learner asks for a pair, when their own Vietnamese kinship address is answered in
+kind (below), or when they say yes to the one question about a pair they keep
+using - and reads the `address` object, never the note's text. Nothing is inferred
+from gender, age, a name or anything else; the words change, the respect does not.
 
-The server's fixed copy (identity, refusals, errors) keeps the default until
-the contract carries the address (proposed v5); only the model applies it now.
+The terms may carry the learner's name: they are used for the turn only - never
+logged, stored or written raw into an instruction (the model reads them as JSON
+data in its context).
 """
 
 from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Iterable
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from types import MappingProxyType
+from typing import Any
 
 from writing_coach.agent.schemas import CoachNote
 
+ADDRESS_VERSION = 5  # the contract version that carries context.address (§5.6)
+
+# §5.6's table: the fields each support language takes, and its default.
+ADDRESS_FIELDS = MappingProxyType({"en": ("user",), "vi": ("self", "user"), "zh-CN": ("self", "user", "register")})
 DEFAULTS = MappingProxyType({"vi": ("mình", "bạn"), "zh-CN": ("我", "你"), "en": ("I", "you")})
+REGISTERS = ("plain", "polite")
 
-# 1-24 letters of any script, with their marks, and spaces, hyphens or apostrophes between them.
-_TERM = re.compile(r"^[^\W\d_](?:[^\W\d_]|[ '\-])*$")
 MAX_TERM_CHARS = 24
+MAX_TERM_WORDS = 3  # "chị", "cô giáo", "anh Minh": a way of calling, never a sentence
 
-# Readable in the learner's privacy list, and read back here.
+# Readable in the learner's privacy list; never read back (the server reads the `address` object).
 _NOTE_TEXT = MappingProxyType(
     {
         "vi": 'Xưng hô: Orena xưng "{self}", gọi người học là "{user}".',
         "zh-CN": '称呼：Orena 自称"{self}"，称学习者为"{user}"。',
-        "en": 'Address: Orena calls itself "{self}" and the learner "{user}".',
+        "en": 'Address: Orena calls the learner "{user}".',
     }
 )
-_NOTE_TERMS = re.compile(r'"([^"]{1,24})"[^"]*"([^"]{1,24})"')
 
 
 @dataclass(frozen=True)
@@ -49,24 +58,36 @@ class Address:
     self_term: str | None  # None: the support language's ordinary first person
     user_term: str | None
     chosen: bool  # False: the language default
+    register: str | None = None  # zh-CN only: plain | polite
+    lang: str | None = None  # the support language it is for: copy in another language takes that one's default
 
     def public(self) -> dict:
         # Not "user": the provider-bound context drops keys that name a learner (agent/redaction.py).
-        return {"self_term": self.self_term, "user_term": self.user_term, "set_by": "learner" if self.chosen else "default"}
+        out = {"self_term": self.self_term, "user_term": self.user_term, "set_by": "learner" if self.chosen else "default"}
+        if self.register is not None:
+            out["register"] = self.register
+        return out
 
-
-MAX_TERM_WORDS = 3  # "chị", "cô giáo", "anh Minh": a way of calling, never a sentence
+    @property
+    def pair(self) -> tuple[str | None, str | None]:
+        return self.self_term, self.user_term
 
 
 def valid_term(term: object) -> bool:
-    if not isinstance(term, str):
+    """§5.6: 1-24 characters, at most 3 words, only Unicode letters with their combining marks, single spaces
+    between words; a word starts with a letter. The same rule as the UI's (static/orena/agent/contract.js)."""
+
+    if not isinstance(term, str) or not 1 <= len(term) <= MAX_TERM_CHARS:
         return False
-    stripped = term.strip()
-    return (
-        0 < len(stripped) <= MAX_TERM_CHARS
-        and len(stripped.split()) <= MAX_TERM_WORDS
-        and bool(_TERM.match(stripped))
-    )
+    words = term.split(" ")
+    if len(words) > MAX_TERM_WORDS:
+        return False
+    for word in words:
+        if not word or not unicodedata.category(word[0]).startswith("L"):
+            return False
+        if any(unicodedata.category(ch)[0] not in "LM" for ch in word):
+            return False
+    return True
 
 
 def note_id(support: str) -> str:
@@ -78,29 +99,74 @@ def default_address(support: str) -> Address:
     person, left to the model rather than an English "I"/"you" (adversarial review)."""
 
     self_term, user_term = DEFAULTS.get(support, (None, None))
-    return Address(self_term, user_term, chosen=False)
+    return Address(self_term, user_term, chosen=False, register="plain" if support == "zh-CN" else None, lang=support)
 
 
-def address_for(notes: Iterable[CoachNote], support: str) -> Address:
-    """The pair the learner chose for this support language, or its default."""
+def normalize(raw: object, support: str) -> dict | None:
+    """The §5.6 object for this support language, or None: the fields the language ignores dropped, zh-CN's
+    register resolved (plain unless polite), and None for any invalid term, a language with no row, or an object
+    that carries nothing (the UI's normalizeAddress)."""
 
-    for note in notes:
-        if note.id != note_id(support):
+    fields = ADDRESS_FIELDS.get(support)
+    if not fields or not isinstance(raw, Mapping):
+        return None
+    out: dict[str, Any] = {"lang": support}
+    for name in fields:
+        if name == "register":
+            out["register"] = "polite" if raw.get("register") == "polite" else "plain"
             continue
-        found = _NOTE_TERMS.search(note.text)
-        if found and valid_term(found.group(1)) and valid_term(found.group(2)):
-            return Address(found.group(1).strip(), found.group(2).strip(), chosen=True)
-    return default_address(support)
+        value = raw.get(name)
+        if value is None:
+            continue
+        if not valid_term(value):
+            return None
+        out[name] = value
+    return out if len(out) > 1 else None
 
 
-def address_note(support: str, self_term: str, user_term: str, *, now: datetime | None = None) -> dict:
-    """The coach note that keeps the pair: stated by the learner, so full weight and no expiry."""
+def resolve(raw: object, support: str, version: int = ADDRESS_VERSION) -> Address:
+    """`context.address` as this turn applies it: only when its lang is the support language, only for a v5+
+    client, and the whole object's default when anything in it is invalid."""
 
-    template = _NOTE_TEXT.get(support, _NOTE_TEXT["en"])
+    if version < ADDRESS_VERSION or not isinstance(raw, Mapping) or raw.get("lang") != support:
+        return default_address(support)
+    chosen = normalize(raw, support)
+    if chosen is None:
+        return default_address(support)
+    base = default_address(support)
+    register = chosen.get("register") if support == "zh-CN" else None
+    user = chosen.get("user")
+    if support == "zh-CN" and user is None:
+        user = "您" if register == "polite" else "你"
+    elif support == "en":
+        user = user or base.user_term
+    return Address(
+        chosen.get("self", base.self_term),
+        user or base.user_term,
+        chosen=True,
+        register=register,
+        lang=support,
+    )
+
+
+def address_note(
+    support: str, self_term: str | None, user_term: str | None, *, register: str | None = None, now: datetime | None = None
+) -> dict:
+    """The note that keeps the choice (§5.6): kind `address`, full weight, no expiry, one per support language."""
+
+    raw: dict[str, Any] = {"self": self_term, "user": user_term}
+    if support == "zh-CN":
+        raw["register"] = register or "plain"
+    address = normalize({k: v for k, v in raw.items() if v is not None}, support)
+    if address is None:
+        raise ValueError("an address note needs valid terms for a support language §5.6 names")
+    default_self, default_user = DEFAULTS[support]
+    template = _NOTE_TEXT[support]
     note = {
         "id": note_id(support),
-        "kind": "preference",
-        "text": template.format(self=self_term.strip(), user=user_term.strip()),
+        "kind": "address",
+        "address": address,
+        "text": template.format(self=address.get("self", default_self), user=address.get("user", default_user)),
         "weight": 1.0,
         "last_reinforced": (now or datetime.now(UTC)).isoformat(),
         "expires_at": None,

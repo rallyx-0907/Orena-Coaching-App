@@ -49,7 +49,15 @@ from writing_coach.agent.contract import (
 import secrets
 from datetime import UTC, datetime
 
-from writing_coach.agent.address import CASUAL, GENDERED, address_note, explicit_request, used_by_learner, valid_term
+from writing_coach.agent.address import (
+    ADDRESS_VERSION,
+    CASUAL,
+    GENDERED,
+    address_note,
+    explicit_request,
+    used_by_learner,
+    valid_term,
+)
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
@@ -114,11 +122,14 @@ _ADDRESS_ARGS = {
     "type": "object",
     "properties": {
         "self_term": {"type": "string", "description": "How you will call yourself, e.g. chị, em, tôi, 我."},
-        "user_term": {"type": "string", "description": "How you will call the learner, e.g. em, anh, bạn, 您."},
+        "user_term": {"type": "string", "description": "How you will call the learner, e.g. em, anh, bạn, a name."},
+        "register": {"type": "string", "enum": ["plain", "polite"],
+                     "description": "Chinese only: polite (您) only when the learner asks for it."},  # fmt: skip
     },
     "required": ["self_term", "user_term"],
     "additionalProperties": False,
 }
+TERM_RULE = "each term is 1-24 letters, at most 3 words with single spaces between, nothing else (§5.6)"
 
 
 def payload_shapes(action_type: str, target: str, intents: list[str] | None = None) -> str:
@@ -236,7 +247,7 @@ def reply_tool_specs(
                 {"type": "object", "properties": properties, "required": ["type", "payload"], "additionalProperties": False},
             ),
         )
-    if not opening:  # an opening turn has no learner words to take an address from (§3.2: no memory_update)
+    if not opening:  # an opening turn has no learner words to take a note from (§3.2: no memory_update)
         specs += [
             ProviderToolSpec(
                 REMEMBER_NOTE,
@@ -260,6 +271,9 @@ def reply_tool_specs(
                 "Forget a coach note the learner asked you to forget, by its id.",
                 {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"], "additionalProperties": False},
             ),
+        ]
+    if not opening and version >= ADDRESS_VERSION:  # a v4 client is never sent an address note (§5.6)
+        specs += [
             ProviderToolSpec(
                 SET_ADDRESS,
                 "Keep how you and the learner are called from now on - only when the learner asked for this pair "
@@ -435,16 +449,18 @@ class ReplyOutputs:
 
     def _address_terms(self, args: Mapping[str, Any]) -> tuple[str, str] | None:
         self_term, user_term = args.get("self_term"), args.get("user_term")
-        if not (valid_term(self_term) and valid_term(user_term)):
+        if not (valid_term(self_term) and valid_term(user_term)):  # the UI's rule, checked again here (§5.6)
             return None
-        return str(self_term).strip(), str(user_term).strip()
+        return str(self_term), str(user_term)
 
     def _set_address(self, args: Mapping[str, Any]) -> str:
         if self.opening:
             return "refused: not in an opening turn"
+        if self.version < ADDRESS_VERSION:
+            return "refused: this app does not keep an address yet"
         terms = self._address_terms(args)
         if terms is None:
-            return "refused: each term is 1-24 letters (spaces, hyphens, apostrophes between), nothing else"
+            return f"refused: {TERM_RULE}"
         for term in terms:
             if term in self.address_terms:
                 continue  # the pair in use may always be kept
@@ -452,7 +468,14 @@ class ReplyOutputs:
                 return f"refused: '{term}' is never used unless the learner used it (no guessing gender or age)"
             if term.casefold() in CASUAL and not explicit_request(term, self.learner_words):
                 return f"refused: '{term}' only when the learner asks for it in so many words"
-        note = address_note(self.support, *terms)
+        register = "polite" if args.get("register") == "polite" or terms[1] == "您" else "plain"
+        self_term, user_term = terms
+        if self.support == "zh-CN" and user_term in {"你", "您"}:
+            user_term = None  # 你 / 您 is the register, not a form of address (§5.6)
+        try:
+            note = address_note(self.support, self_term, user_term, register=register)
+        except ValueError:
+            return "refused: this support language keeps no address (§5.6); use its ordinary first and second person"
         # one pair per support language: a second call in the turn replaces the first
         self.memory_updates = [u for u in self.memory_updates if u.note.get("id") != note["id"]]
         self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note))
@@ -513,7 +536,7 @@ class ReplyOutputs:
         if self.address_asked or self.address_offered_now:
             return "refused: you already asked in this session; keep the current address and do not ask again"
         if self._address_terms(args) is None:
-            return "refused: each term is 1-24 letters (spaces, hyphens, apostrophes between), nothing else"
+            return f"refused: {TERM_RULE}"
         self.address_offered_now = True
         return "accepted: ask once, in your answer, whether they want this pair; call set_address only on a yes"
 

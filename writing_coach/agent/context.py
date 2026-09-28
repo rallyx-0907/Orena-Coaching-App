@@ -15,10 +15,11 @@ first. Tiers 2 and 3 are tool reads, not context.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from types import MappingProxyType
 
+from writing_coach.agent.address import Address, default_address, resolve
 from writing_coach.agent.locale import InternalLocale
 from writing_coach.agent.schemas import AppContextSnapshot, ClientInfo, CoachNote, ContractLocale, SelectedItem, TurnRequest
 from writing_coach.agent.session import AgentSessionState
@@ -56,6 +57,7 @@ class Tier1Context:
     selection: SelectedItem | None
     ids: Mapping[str, str]
     coach_notes: tuple[CoachNote, ...]
+    address: Address = field(default_factory=lambda: default_address("en"))  # §5.6, as this turn applies it
 
 
 def live_coach_notes(notes: tuple[CoachNote, ...], *, now: datetime) -> tuple[CoachNote, ...]:
@@ -81,4 +83,5 @@ def build_tier1(
         selection=selection,
         ids=MappingProxyType(ids),
         coach_notes=live_coach_notes(turn.coach_notes, now=moment),
+        address=resolve(context.address, context.locale.support, turn.version),
     )

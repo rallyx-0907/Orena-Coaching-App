@@ -15,8 +15,8 @@ from collections.abc import Sequence
 from writing_coach.agent.capability_registry import CapabilityEntry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent import learner_copy
-from writing_coach.agent.address import address_for, capitalised
+from writing_coach.agent import surfaces
+from writing_coach.agent.address import Address, capitalised
 from writing_coach.agent.provider import ProviderMessage
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.session import AgentSessionState
@@ -112,13 +112,14 @@ def _language_name(contract_code: str | None, *, target: bool) -> str | None:
     return definition.translation_label if definition else contract_code
 
 
-def _screen_name(surface: str | None, interface: str) -> str | None:
-    """The place's name as the app shows it, in the interface language (copy `surface.<id>`)."""
+def _screen(surface: str | None, interface: str) -> dict:
+    """The place as the UI publishes it (surfaces.json, §6.2): its name, and its purpose once the UI writes one."""
 
-    key = f"surface.{surface}"
-    if surface is None or key not in learner_copy.CATALOG:
-        return None
-    return learner_copy.text(key, interface=interface, support=interface)[1]
+    screen = {"name": surfaces.name(surface, interface)}
+    what_for = surfaces.purpose(surface, interface)
+    if what_for:
+        screen["purpose"] = what_for
+    return screen
 
 
 def context_document(
@@ -136,7 +137,7 @@ def context_document(
             "content": locale.content,
         },
         "surface": tier1.surface,
-        "screen": {"name": _screen_name(tier1.surface, locale.interface)},
+        "screen": _screen(tier1.surface, locale.interface),
         "activity": tier1.activity_type,
         "in_view": dict(tier1.ids),
         "selection": tier1.selection.model_dump(exclude_none=True) if tier1.selection else None,
@@ -144,7 +145,7 @@ def context_document(
             {"id": entry.id, "title": entry.title.get(locale.interface) or entry.title["en"]} for entry in capabilities
         ],
         "address": {
-            **address_for(tier1.coach_notes, locale.support).public(),
+            **tier1.address.public(),
             "asked_this_session": bool(session and session.address_asked),
         },
         # the address note has its own place above; the rest, with ids, so a correction can replace one
@@ -205,19 +206,25 @@ STYLE_BY_SUPPORT: dict[str, str] = {
 }
 
 
-def style_for(support: str, notes) -> str | None:
-    """The voice block for this support language, with the address pair the learner chose (agent/address.py)."""
+def _escaped(term: str) -> str:
+    """A term as a JSON string's content: data, never instruction (contract v5 §5.6). The terms are letters and
+    single spaces only (agent/address.py), so this is also exactly how the learner wrote them."""
+
+    return json.dumps(term, ensure_ascii=False)[1:-1]
+
+
+def style_for(support: str, address: Address) -> str | None:
+    """The voice block for this support language, with the address this turn applies (agent/address.py)."""
 
     template = STYLE_BY_SUPPORT.get(to_internal(support))
     if template is None:
         return None
-    address = address_for(notes, support)
     if address.self_term is None or address.user_term is None:
         return None
     return (
-        template.replace("{Self}", capitalised(address.self_term))
-        .replace("{self}", address.self_term)
-        .replace("{user}", address.user_term)
+        template.replace("{Self}", _escaped(capitalised(address.self_term)))
+        .replace("{self}", _escaped(address.self_term))
+        .replace("{user}", _escaped(address.user_term))
     )
 
 
@@ -253,14 +260,14 @@ def opening_messages(
         )
     if opening:
         messages.append(ProviderMessage(role="system", content=OPENING))
-        style = style_for(tier1.contract_locale.support, tier1.coach_notes)
+        style = style_for(tier1.contract_locale.support, tier1.address)
         if style:
             messages.append(ProviderMessage(role="system", content=style))
         # A request of system messages alone is refused by some providers (Gemini: "contents is not
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
-    style = style_for(tier1.contract_locale.support, tier1.coach_notes)
+    style = style_for(tier1.contract_locale.support, tier1.address)
     if style and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=style))
     selected = selection_line(tier1)

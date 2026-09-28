@@ -7,6 +7,8 @@ import socket
 from types import MappingProxyType
 
 import pytest
+
+from writing_coach.agent.address import default_address
 from pydantic import BaseModel, ConfigDict
 
 from writing_coach.agent import learner_copy
@@ -502,7 +504,7 @@ def test_an_identity_question_is_answered_from_copy_and_no_model_is_asked():
     assert provider.requests == []
     segment = events[1]
     assert (segment.lang, segment.voice_style) == ("vi", "neutral_explain")
-    assert segment.text == learner_copy.CATALOG["identity.who"].texts["vi"]
+    assert segment.text == learner_copy.text("identity.who", interface="vi", support="vi")[1]
     assert events[-1].usage.input_tokens == 0 and events[-1].usage.output_tokens == 0
     assert [feature for _, feature, _, _ in meter] == ["agent.turn"]  # a learner turn; no tokens were spent
     assert rt.sessions.get(events[0].session_id, "learner-1").turn_count == 1
@@ -513,7 +515,7 @@ def test_a_model_question_is_answered_in_the_support_language():
     body["context"]["locale"].update(interface="zh-CN", support="zh-CN")
     rt, provider = runtime([])
     events = run(rt, TurnRequest.model_validate(body))
-    assert events[1].lang == "zh-CN" and events[1].text == learner_copy.CATALOG["identity.model"].texts["zh-CN"]
+    assert events[1].lang == "zh-CN" and events[1].text == learner_copy.text("identity.model", interface="zh-CN", support="zh-CN")[1]
     assert provider.requests == []
 
 
@@ -537,7 +539,7 @@ def test_the_decision_provider_is_the_gate():
     rt, provider = runtime([reply("Chào bạn.")])
     rt.decider = Decider()
     events = run(rt)  # any message: the decider says what it is
-    assert events[1].text == learner_copy.CATALOG["identity.model"].texts["vi"] and provider.requests == []
+    assert events[1].text == learner_copy.text("identity.model", interface="vi", support="vi")[1] and provider.requests == []
     run(rt, opening_request())  # an opening turn has no message and is never asked about
     assert DecisionQuestion.IDENTITY_QUESTION not in asked[-1]
     assert len(provider.requests) == 1
@@ -677,7 +679,7 @@ def test_orena_speaks_as_minh_to_ban_in_vietnamese():
     for key, entry in learner_copy.CATALOG.items():
         if entry.layer is learner_copy.CopyLayer.SUPPORT:  # what Orena says, not a button or the learner's own words
             assert not re.search(r"\b[Tt]ôi\b", entry.texts["vi"]), key
-    assert learner_copy.CATALOG["identity.who"].texts["vi"].startswith("Mình là Orena")
+    assert learner_copy.text("identity.who", interface="vi", support="vi")[1].startswith("Mình là Orena")  # the default
     assert "mình" not in learner_copy.CATALOG["action.play_user"].texts["vi"]  # the learner's take, not Orena's
 
 
@@ -726,7 +728,7 @@ def test_an_action_with_no_words_is_answered_by_its_offer():
 def test_the_voice_block_opens_the_way_to_a_change():
     from writing_coach.agent.prompts import style_for
 
-    style = style_for("vi", [])
+    style = style_for("vi", default_address("vi"))
     assert "gọi set_address" in style and "không từ chối" in style
 
 
@@ -776,4 +778,4 @@ def test_the_offer_is_one_short_sentence_and_never_describes_the_button():
         "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
     )
     assert 'never\n  describe the button or the screen ("the button below"' in INSTRUCTION
-    assert '"nút bên dưới", "mình đã chuẩn bị sẵn nút"' in style_for("vi", [])
+    assert '"nút bên dưới", "mình đã chuẩn bị sẵn nút"' in style_for("vi", default_address("vi"))

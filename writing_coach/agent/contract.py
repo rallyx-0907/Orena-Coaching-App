@@ -9,7 +9,13 @@ reaches this lane by merge cannot be missed.
 
 Adding an id is a contract change made on `codex/work`, never here.
 
-Version 4 (D-095) is served; it names the HTTP statuses (§2.1) and the
+Version 5 (D-096) is served: the learner's address travels as
+`context.address` and is kept as a note of kind `address` (§5.6); the server's
+fixed support copy follows it; a reply with an action offers it and never
+reports it done; surface names come from the UI's surfaces.json (§6.2). A
+client that declares 4 or less sends no address and is never sent an address
+note (agent/address.py).
+Version 4 (D-095) names the HTTP statuses (§2.1) and the
 error classes (§4.1) this server already answered with, and changes no event.
 Version 3 (D-094) changed no shape either: an action's label is
 interface copy (it always was here, ruling R12) and a suggestion's intent is a
@@ -27,7 +33,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 
-CONTRACT_VERSION = 4
+CONTRACT_VERSION = 5
 
 
 def negotiated_version(client_version: int) -> int:
@@ -98,7 +104,9 @@ ACTIVITY_TYPES = frozenset(
 )
 SELECTED_ITEM_TYPES = frozenset({"word", "sentence", "feedback_item", "grammar_point"})
 TRIGGERS = frozenset({"message", "open"})
-COACH_NOTE_KINDS = frozenset({"preference", "goal", "plan"})
+COACH_NOTE_KINDS = frozenset({"preference", "goal", "plan"})  # what `coach_notes` carries (§3, §5.4)
+ADDRESS_NOTE_KIND = "address"  # §5.6: its own rules; sent back as context.address, never in coach_notes
+NOTE_KINDS = COACH_NOTE_KINDS | {ADDRESS_NOTE_KIND}
 MAX_COACH_NOTES = 20
 MAX_COACH_NOTES_BYTES = 2048
 
