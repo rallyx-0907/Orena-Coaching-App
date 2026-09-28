@@ -1,0 +1,9 @@
+{
+  "authenticated": true,
+  "mode": "local",
+  "name": "Local user",
+  "email": "",
+  "picture": "",
+  "role": "admin",
+  "is_admin": true
+}

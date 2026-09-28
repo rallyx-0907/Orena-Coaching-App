@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "created_at": "2026-09-20T10:15:00+00:00",
+    "prompt": "Describe a challenge you overcame\nand what you learned from it.",
+    "word_count": 214,
+    "target_cefr": "B2",
+    "grammar": 74.0,
+    "vocabulary": 71.5,
+    "coherence": 80.0,
+    "task_achievement": 82.0,
+    "naturalness": 68.0,
+    "overall": 78.4,
+    "cefr_estimate": "B2",
+    "evaluator": "fallback-demo",
+    "series_id": 1,
+    "revision_no": 1,
+    "parent_id": null,
+    "language_code": "en",
+    "target_level": "B2",
+    "level_estimate": "B2",
+    "review_kept_at": null
+  }
+]

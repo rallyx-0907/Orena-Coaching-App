@@ -24,29 +24,31 @@ The intelligence lane integrates against `/next`. Frame → route → code →
 status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation: REVIEWABLE.
-- Wave A destinations (`c922e37`): IMPLEMENTING - built, reviewed, integrated;
-  browser re-check running.
+- Wave A destinations: REVIEWABLE (`f13c542`) - built, reviewed, integrated,
+  re-checked in the browser, language layer finished, every API reader checked
+  against captured real payloads (`scripts/fixtures/api/`). Reviewable at
+  http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
 - Agent UI side: contract v4 on the mock; hiding Orena's entry points when the
   agent is absent comes with the Orena panel (Wave B).
 
 ## Last verified batch
 
-2026-09-27, `c922e37`, local: all 85 CI `.mjs` gates, the browser ESM graph
-(188 modules) and the memory/architecture validators pass. Browser re-check of
-the integrated tree pending. Last full pytest: 2026-09-26, PostgreSQL 16,
+2026-09-28, `f13c542`, local: all 85 CI `.mjs` gates, the browser ESM graph
+(189 modules) and the memory/architecture validators pass; Wave A re-checked in
+the browser on the isolated stack (seeded learner; en/vi/zh; both themes;
+1920/1440/1366 and 390/360). Last full pytest: 2026-09-26, PostgreSQL 16,
 `2472 passed, 3 skipped`. No CI pass is claimed. Visual-source gate: PINNED.
 
 ## DONE
 
 Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
-contract v4 (D-095); copy engine fixes; Wave A destinations checkpoint.
+contract v4 (D-095); copy engine fixes; Wave A destinations (REVIEWABLE).
 
 ## IN PROGRESS
 
-- Wave A browser re-check on the isolated stack (`orena-next-verify-*`,
-  127.0.0.1:8021, tmpfs, no provider keys, seeded learner).
-- Chinese writing evaluator recall: investigation only; findings go to the
-  human before any change.
+- Human review of Wave A; Wave B starts after it.
+- Chinese writing evaluator recall: investigated and reported; no change until
+  the human chooses a fix.
 
 ## PENDING
 

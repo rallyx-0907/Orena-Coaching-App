@@ -110,6 +110,28 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   assert.equal(buildWritingEvidence(null, null).length, 0, 'a failed read is an empty list, not a crash');
 }
 
+// ---- Field-shape gate: GET /api/essays is the LIST route, and app.py's row_to_dict() pops
+// `text` unconditionally in its non-detail branch (the only branch this route ever takes) -
+// confirmed against writing_coach/persistence/learning_repository.py's _essay_payload(), which
+// proves `text` exists on the raw row and is stripped only at this route's serialization step.
+// This sandbox cannot capture a non-empty GET /api/essays (essays.json is `[]` - creating one
+// needs the AI evaluator, which fails closed here; see fixtures/api/README.md "Not captured"), so
+// fixtures/api/progress_essays_list.json is a synthetic fixture built field-for-field from
+// row_to_dict's non-detail branch / _essay_payload(): every key that route actually returns,
+// none of the keys it strips (no `text`, no `summary_vi`, no `*_json`).
+{
+  const { readFileSync } = await import('node:fs');
+  const realEssays = JSON.parse(readFileSync(new URL('./fixtures/api/progress_essays_list.json', import.meta.url)));
+  assert.ok(!Object.prototype.hasOwnProperty.call(realEssays[0], 'text'), 'fixture matches the real list route: GET /api/essays never sends a `text` key');
+  const writing = buildWritingEvidence(realEssays, []);
+  assert.equal(writing.length, 1);
+  assert.equal(writing[0].sourceText, 'Describe a challenge you overcame', 'the real `prompt` field still reaches the row title');
+  assert.equal(writing[0].score, 78, 'the real `overall` field still reaches the row score');
+  assert.equal(writing[0].responseText, '', 'GET /api/essays never returns `text` on this route - the row is an honest blank, never `undefined`-as-a-guess');
+  const modelSrc = readFileSync(new URL('../static/orena/screens/progress/model.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(modelSrc, /clip\(e\.text\)/, 'buildWritingEvidence must not read `e.text` - the list route this screen calls never returns it (row_to_dict\'s non-detail branch pops it; only GET /api/essays/{id} carries it)');
+}
+
 {
   const reading = [{ article_id: 'a1', title: 'A Morning in the City', correct_count: 3, total: 5, created_at: '2026-09-19T00:00:00Z' }, { article_id: 'a2', title: 'Zero questions', correct_count: 0, total: 0, created_at: '2026-09-19T00:00:00Z' }];
   const items = buildReadingEvidence(reading);

@@ -1,0 +1,124 @@
+{
+  "policyVersion": "learner-summary/1",
+  "learningLanguage": "en",
+  "window": {
+    "kind": "7d",
+    "from": "2026-09-21T01:51:48.634113+00:00",
+    "to": "2026-09-28T01:51:48.634113+00:00"
+  },
+  "outcome": "partial",
+  "unavailableDomains": [],
+  "truncatedDomains": [
+    "language"
+  ],
+  "domains": {
+    "writing": {
+      "status": "empty",
+      "activity": {
+        "label": "submitted_versions",
+        "count": 0,
+        "undated": 0,
+        "lastObservedAt": null,
+        "countKind": "exact"
+      },
+      "observations": [],
+      "growth": {
+        "status": "unavailable",
+        "reason": "assistance_mode_unrecorded"
+      }
+    },
+    "reading": {
+      "status": "empty",
+      "activity": {
+        "label": "checks_answered",
+        "count": 0,
+        "undated": 0,
+        "lastObservedAt": null,
+        "countKind": "exact"
+      },
+      "observations": [],
+      "growth": {
+        "status": "unavailable",
+        "reason": "assistance_mode_unrecorded"
+      }
+    },
+    "listening": {
+      "status": "empty",
+      "activity": {
+        "label": "lines_reconstructed",
+        "count": 0,
+        "undated": 0,
+        "lastObservedAt": null,
+        "countKind": "exact"
+      },
+      "observations": [],
+      "growth": {
+        "status": "unavailable",
+        "reason": "no_repeated_comparable_measure"
+      }
+    },
+    "speaking": {
+      "status": "empty",
+      "activity": {
+        "label": "takes",
+        "count": 0,
+        "undated": 0,
+        "lastObservedAt": null,
+        "countKind": "exact"
+      },
+      "observations": [],
+      "growth": {
+        "status": "unavailable",
+        "reason": "assistance_mode_unrecorded"
+      }
+    },
+    "grammar": {
+      "status": "empty",
+      "activity": {
+        "label": "patterns_marked_complete",
+        "count": 0,
+        "undated": 0,
+        "lastObservedAt": null,
+        "countKind": "exact"
+      },
+      "observations": [],
+      "growth": {
+        "status": "unavailable",
+        "reason": "no_measure"
+      }
+    },
+    "language": {
+      "status": "current",
+      "activity": {
+        "label": "phrases_kept",
+        "count": 200,
+        "undated": 0,
+        "lastObservedAt": "2026-09-27T23:40:03+00:00",
+        "countKind": "at_least"
+      },
+      "observations": [
+        {
+          "ref": {
+            "domain": "language",
+            "id": "*"
+          },
+          "measure": "successful_recalls_all_time",
+          "value": 573,
+          "producer": "recall-self-assessment",
+          "synthetic": false,
+          "assisted": null,
+          "observedAt": null
+        }
+      ],
+      "growth": {
+        "status": "unavailable",
+        "reason": "no_measure"
+      }
+    }
+  },
+  "achievements": {
+    "status": "unavailable",
+    "reason": "no_approved_policy",
+    "items": []
+  }
+}

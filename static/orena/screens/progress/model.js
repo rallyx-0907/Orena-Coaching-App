@@ -90,7 +90,15 @@ const roundOrNull = (value) => (Number.isFinite(Number(value)) ? Math.round(Numb
 
 /* `essays` = GET /api/essays (array); `outcomes` = GET /api/practice-outcomes's `.items`. Both
    are essay-grounded, so both file under domain "writing" - the mislabel this fixes is filing
-   `outcomes` as dictation/listening (see the module doc comment). */
+   `outcomes` as dictation/listening (see the module doc comment).
+
+   `e.text` is never read here: GET /api/essays is the LIST route, and app.py's row_to_dict()
+   unconditionally pops `text` in its non-detail branch (the only branch this route ever takes) -
+   confirmed against writing_coach/persistence/learning_repository.py's _essay_payload(), which
+   proves the field exists on the raw row and is stripped only at this route's serialization step.
+   Only GET /api/essays/{id} (detail=True) carries it, and fetching that per row would mean one
+   request per essay just to fill a list. responseText is the honest empty for essay rows, same as
+   the outcomes rows two lines below already are - never a guess at text this endpoint can't send. */
 export function buildWritingEvidence(essays, outcomes) {
   const fromEssays = (Array.isArray(essays) ? essays : []).map((e) => ({
     id: `essay:${e.id}`,
@@ -99,7 +107,7 @@ export function buildWritingEvidence(essays, outcomes) {
     kind: 'essay',
     essayId: e.id,
     sourceText: clip(firstLine(e.prompt)),
-    responseText: clip(e.text),
+    responseText: '',
     score: roundOrNull(e.overall),
   }));
   const fromOutcomes = (Array.isArray(outcomes) ? outcomes : []).map((o) => ({

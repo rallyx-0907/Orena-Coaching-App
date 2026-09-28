@@ -1,0 +1,27 @@
+{
+  "language": "en",
+  "intent": "baseline",
+  "focus_category": "expression",
+  "focus_label": "Clear Expression",
+  "focus_family": "expression",
+  "focus_status": "",
+  "evidence": "",
+  "goal": "everyday",
+  "guidance_style": "guided",
+  "task_type": "opinion",
+  "topic": "daily life",
+  "target_level": "B2",
+  "word_target": 150,
+  "difficulty": {
+    "state": "insufficient",
+    "word_target": 150,
+    "length_delta": 0,
+    "provenance": {
+      "source": "none",
+      "evidence_count": 0
+    }
+  },
+  "reason": "Orena does not have enough repeated evidence yet. A short real writing sample will create the next useful baseline.",
+  "focus_instruction": "Prioritize Clear Expression in this piece: Express the real idea first, then notice one reusable pattern you can improve.",
+  "action_label": "Create a baseline"
+}

@@ -1,0 +1,145 @@
+{
+  "items": [
+    {
+      "word": "health",
+      "phonetic": "/helθ/",
+      "part_of_speech": "",
+      "definition": "",
+      "translation_vi": "",
+      "added_at": "2026-09-27T23:40:03+00:00",
+      "source_essay_id": null,
+      "source_fragment": "",
+      "source_kind": "dictionary",
+      "focus_note": "",
+      "review_stage": 0,
+      "stage_label": "New",
+      "successful_recalls": 0,
+      "lapse_count": 0,
+      "last_reviewed_at": "",
+      "next_review_at": "2026-09-27T23:40:03+00:00",
+      "due": true,
+      "schedule": {
+        "again": {
+          "minutes": 10
+        },
+        "unsure": {
+          "days": 1
+        },
+        "got_it": {
+          "days": 1
+        }
+      },
+      "level": "A1",
+      "framework": "cefr-internal",
+      "topic": "health",
+      "support_translations": {
+        "vi": "sức khỏe"
+      },
+      "examples": [
+        {
+          "language": "en",
+          "text": "Regular sleep is important for your health."
+        }
+      ]
+    },
+    {
+      "word": "ancient-still-8",
+      "phonetic": "",
+      "part_of_speech": "",
+      "definition": "seeded for review",
+      "translation_vi": "",
+      "added_at": "2026-09-27T23:29:45+00:00",
+      "source_essay_id": null,
+      "source_fragment": "",
+      "source_kind": "manual",
+      "focus_note": "",
+      "review_stage": 1,
+      "stage_label": "Learning",
+      "successful_recalls": 1,
+      "lapse_count": 0,
+      "last_reviewed_at": "2026-09-27T23:29:45+00:00",
+      "next_review_at": "2026-09-28T23:29:45+00:00",
+      "due": false,
+      "schedule": {
+        "again": {
+          "minutes": 10
+        },
+        "unsure": {
+          "days": 1
+        },
+        "got_it": {
+          "days": 3
+        }
+      }
+    },
+    {
+      "word": "bright-still-8",
+      "phonetic": "",
+      "part_of_speech": "",
+      "definition": "seeded for review",
+      "translation_vi": "",
+      "added_at": "2026-09-27T23:29:45+00:00",
+      "source_essay_id": null,
+      "source_fragment": "",
+      "source_kind": "manual",
+      "focus_note": "",
+      "review_stage": 1,
+      "stage_label": "Learning",
+      "successful_recalls": 1,
+      "lapse_count": 0,
+      "last_reviewed_at": "2026-09-27T23:29:45+00:00",
+      "next_review_at": "2026-09-28T23:29:45+00:00",
+      "due": false,
+      "schedule": {
+        "again": {
+          "minutes": 10
+        },
+        "unsure": {
+          "days": 1
+        },
+        "got_it": {
+          "days": 3
+        }
+      }
+    }
+  ],
+  "next_cursor": "cmVjZW50H2UzNTUxZDU5HzIwMjYtMDktMjdUMjM6Mjk6NDUrMDA6MDAfZ2F0aGVyLXN0aWxsLTg",
+  "has_more": true,
+  "total": 3013,
+  "summary": {
+    "total": 3013,
+    "saved": 3013,
+    "due": 1,
+    "due_next_day": 12,
+    "learning": 13,
+    "mastered": 3000,
+    "available": 3000
+  },
+  "ladder": [
+    {
+      "tier": 1,
+      "name": "Initiate",
+      "band": "Amethyst",
+      "words": 50
+    },
+    {
+      "tier": 2,
+      "name": "Apprentice",
+      "band": "Amethyst",
+      "words": 150
+    },
+    {
+      "tier": 3,
+      "name": "Scribe",
+      "band": "Amethyst",
+      "words": 300
+    }
+  ],
+  "rank": 11,
+  "rank_total": 32,
+  "rank_name": "Luminary",
+  "band": "Orchid",
+  "next_rank_name": "Oracle",
+  "next_rank_words": 4500,
+  "next_rank_remaining": 1500
+}

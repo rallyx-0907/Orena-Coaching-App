@@ -3,6 +3,7 @@
    Contract rule 40 (never invent data) is what these assertions exist to hold: a metric the
    backend does not measure comes back 0/empty, never a guess. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   contentRows, contentRouteId, wordKindOf, isNewWord, masteryFilled, wordMeaning, languageRows,
   libraryCollectionRows, deckRows, collectionsAndDecks, dueStats, pinnedKindKey, dueListRows,
@@ -96,6 +97,30 @@ import {
   assert.equal(list[1].text, '', 'a pinned row with no captured title is empty text, not an invented one - the screen falls back to its kind label');
   assert.equal(list[1].kindKey, 'kindReading');
   assert.deepEqual(dueListRows({}), [], 'no pinned field is an empty preview list, not a crash');
+}
+
+// M1 (api-audit): `GET /api/library/review-queue`'s `pinned[].kind` is a `LibraryItem.kind`
+// (writing_coach/persistence/models.py LIBRARY_KINDS), which is 'listening' for a pinned
+// listening/media item - never 'media' (that string is a *different* vocabulary, the
+// `/api/collection` domain field). This fixture is a real, live capture (not hand-written): a
+// listening lesson was kept and pinned through this same sandbox's own
+// `POST /api/library/items` + `PATCH /api/library/items/{id}` flow, then
+// `GET /api/library/review-queue` was captured as returned - the real
+// `library_review_queue.json` capture has an empty `pinned` array (nothing was pinned yet in
+// that capture), so it cannot exercise this path on its own.
+{
+  const queue = JSON.parse(
+    readFileSync(new URL('../scripts/fixtures/api/library_review_queue_pinned_listening.json', import.meta.url)),
+  );
+  assert.equal(queue.pinned[0].kind, 'listening', 'sanity: the real backend writes "listening", never "media", for a pinned listening item');
+
+  // Old code mapped only `media: 'kindMedia'`, so this real 'listening' value fell through to
+  // the 'kindWord' default - a live pinned listening item silently mislabeled "Word"/"Từ".
+  assert.equal(pinnedKindKey(queue.pinned[0]), 'kindMedia', 'a pinned listening item (the real API kind, "listening") maps to the Listening fallback label, not the Word default');
+
+  const rows = dueListRows(queue);
+  assert.equal(rows[0].text, '', 'the real pinned listening row has no word text, so the screen falls back to its kind label');
+  assert.equal(rows[0].kindKey, 'kindMedia', 'the real payload reaches dueListRows() with the correct kind key end to end');
 }
 
 // languages-5 / finding A: screen.js marks Saved content's title and Saved language's word with

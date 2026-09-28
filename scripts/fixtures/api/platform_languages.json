@@ -1,0 +1,59 @@
+{
+  "api_version": 1,
+  "active": "en",
+  "data_isolation": "user+language",
+  "support_languages": [
+    {
+      "code": "en",
+      "label": "English"
+    },
+    {
+      "code": "vi",
+      "label": "Vietnamese"
+    },
+    {
+      "code": "zh",
+      "label": "Simplified Chinese"
+    }
+  ],
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "native_name": "English",
+      "icon": "🇬🇧",
+      "enabled": true,
+      "status": "ready",
+      "levels": [
+        "A1",
+        "A2",
+        "B1"
+      ],
+      "api_namespace": "en",
+      "capabilities": [
+        "writing",
+        "grammar",
+        "vocabulary"
+      ]
+    },
+    {
+      "code": "zh",
+      "name": "Chinese",
+      "native_name": "中文",
+      "icon": "🇨🇳",
+      "enabled": true,
+      "status": "beta",
+      "levels": [
+        "HSK1",
+        "HSK2",
+        "HSK3"
+      ],
+      "api_namespace": "zh",
+      "capabilities": [
+        "writing",
+        "task_generation",
+        "improve"
+      ]
+    }
+  ]
+}
