@@ -1,6 +1,6 @@
 """Managed LLM API wrapper with a cache keyed by input hash (SPEC §2, §5.1).
 
-Four provider families are wired in, because SPEC §5.3/§9 requires the model
+Five provider families are wired in, because SPEC §5.3/§9 requires the model
 that *verifies* a check item (blind solve) to differ from the model that
 *generated* it — otherwise the same blind spot could pass its own work:
 
@@ -10,31 +10,40 @@ that *verifies* a check item (blind solve) to differ from the model that
 - ``openai``: Chat Completions with ``response_format: json_schema`` (strict
   mode), OpenAI's equivalent.
 - ``gemini``: ``generateContent`` with ``generationConfig.responseMimeType
-  = application/json`` + ``responseSchema``. Uses the ``x-goog-api-key``
-  header, never the ``?key=`` query parameter -- a secret does not belong in
-  a URL.
+  = application/json`` + ``responseSchema``, rewritten through
+  ``to_gemini_schema`` for Gemini's narrower dialect (see that function).
+  Uses the ``x-goog-api-key`` header, never the ``?key=`` query parameter --
+  a secret does not belong in a URL. **Exercised live** 2026-09-28 (real
+  generate calls; see grammar_lab/sandbox/).
 - ``groq``: an OpenAI-compatible ``chat/completions`` endpoint
   (api.groq.com/openai/v1), ``response_format: json_schema`` with
   ``strict: false`` (Groq's own docs list only best-effort mode as broadly
   supported; strict mode is model-limited). A genuinely different model
   family from Gemini even though the request shape mirrors OpenAI's.
+  **Exercised live** 2026-09-28 (blind-solve calls).
+- ``deepseek``: an OpenAI-compatible endpoint (api.deepseek.com), but
+  **only** ``response_format: {"type": "json_object"}`` (no schema
+  enforcement at all -- DeepSeek's own docs list no ``json_schema`` mode).
+  The schema is instead spelled out in the prompt text, and the system
+  message must contain the word "json" per DeepSeek's own requirement for
+  this mode to activate. Weaker structural guarantee than the other four
+  providers; not yet exercised against a live key.
 
 Every key is read from its own environment variable
-(``ANTHROPIC_API_KEY``/``OPENAI_API_KEY``/``GEMINI_API_KEY``/``GROQ_API_KEY``),
-never a literal in code or in a compose file, and is never logged: an error
-message built from a provider's raw response text is passed through
-``secrets_redact.redact`` before it becomes an exception message, in case a
-provider ever echoes a credential back.
+(``ANTHROPIC_API_KEY``/``OPENAI_API_KEY``/``GEMINI_API_KEY``/``GROQ_API_KEY``/
+``DEEPSEEK_API_KEY``), never a literal in code or in a compose file, and is
+never logged: an error message built from a provider's raw response text is
+passed through ``secrets_redact.redact`` before it becomes an exception
+message, in case a provider ever echoes a credential back.
 
 Gemini calls go through ``rate_limit.limiter_for("gemini", ...)`` and retry
 on HTTP 429 with backoff: this project's Gemini key is shared with other
 live traffic and has a measured ceiling of roughly 25-30 requests/minute
-(see ``pipeline/rate_limit.py``).
-
-None of the four request shapes below have been exercised against a live
-API key from this environment as of the module's own last edit -- they
-follow each provider's current published reference, not a guaranteed-tested
-round trip; treat the first real call as the actual test.
+(see ``pipeline/rate_limit.py``). DeepSeek gets its own named bucket
+(``"deepseek"``) if a caller ever rate-limits it -- never ``"gemini"`` -- but
+no interval is forced by default: DeepSeek publishes a 500-2500 concurrent
+request limit, nothing like Gemini's measured ceiling, so there is nothing
+to protect it against here yet.
 
 Every call is cached on disk keyed by a hash of everything that determines
 the output (provider, model, system+user prompt, schema, temperature, seed),
@@ -48,7 +57,9 @@ provider's current pricing page before trusting a cost estimate for a real
 budget decision (SPEC §9, "Managed API nào dùng... ngân sách mỗi lần chạy").
 Groq pricing for the model this project uses could not be confirmed live and
 is deliberately left out of the table; its cost reports as ``None`` (never a
-guessed number) until a checked price is added.
+guessed number) until a checked price is added. DeepSeek's peak, cache-miss
+rate is used (the conservative case -- off-peak/cached traffic is billed
+less); checked live 2026-09-28.
 """
 
 from __future__ import annotations
@@ -75,15 +86,17 @@ ANTHROPIC_VERSION = "2023-06-01"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 GEMINI_API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
 
 GEMINI_MAX_RETRIES = 5
 
-PROVIDERS = {"anthropic", "openai", "gemini", "groq"}
+PROVIDERS = {"anthropic", "openai", "gemini", "groq", "deepseek"}
 _ENV_VAR_BY_PROVIDER = {
     "anthropic": "ANTHROPIC_API_KEY",
     "openai": "OPENAI_API_KEY",
     "gemini": "GEMINI_API_KEY",
     "groq": "GROQ_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
 }
 
 # USD per 1,000,000 tokens (input, output). Checked live against
@@ -99,6 +112,9 @@ PRICING: dict[str, tuple[float, float]] = {
     "gpt-6-astra": (10.0, 50.0),
     "gemini-3.5-flash-lite": (0.30, 2.50),
     # "openai/gpt-oss-120b" (Groq) deliberately omitted -- see module docstring.
+    # DeepSeek: peak, cache-miss rate (api-docs.deepseek.com/quick_start/pricing, checked 2026-09-28).
+    "deepseek-flash": (0.30, 1.20),
+    "deepseek-v4-pro": (1.32, 3.96),
 }
 
 
@@ -257,6 +273,8 @@ class LLMClient:
             data, usage = self._call_openai_compatible(
                 GROQ_API_URL, system, user, json_schema, schema_name, temperature, seed, max_tokens, strict=False,
             )
+        elif self.provider == "deepseek":
+            data, usage = self._call_deepseek(system, user, json_schema, temperature, max_tokens)
         else:
             data, usage = self._call_gemini_with_retry(system, user, json_schema, temperature, max_tokens)
 
@@ -315,6 +333,44 @@ class LLMClient:
         if not choices:
             raise LLMError(f"response had no choices: {response!r}")
         content = choices[0]["message"]["content"]
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise LLMError(f"response content was not JSON: {content!r}") from exc
+        usage_raw = response.get("usage", {})
+        usage = LLMUsage(int(usage_raw.get("prompt_tokens", 0)), int(usage_raw.get("completion_tokens", 0)))
+        return data, usage
+
+    def _call_deepseek(
+        self, system: str, user: str, json_schema: dict[str, Any], temperature: float, max_tokens: int,
+    ) -> tuple[dict[str, Any], LLMUsage]:
+        """DeepSeek's json_object mode has no schema parameter at all (see module
+        docstring): the schema is spelled out in the prompt instead, and the
+        word "json" must appear for the mode to activate at all."""
+        schema_instruction = (
+            "\n\nRespond with a single JSON object and nothing else (no markdown fences, no commentary), "
+            f"matching this JSON Schema exactly:\n{json.dumps(json_schema, ensure_ascii=False)}"
+        )
+        body = {
+            "model": self.model,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "messages": [
+                {"role": "system", "content": system + schema_instruction},
+                {"role": "user", "content": user},
+            ],
+            "response_format": {"type": "json_object"},
+        }
+        response = self._post(DEEPSEEK_API_URL, body, headers={
+            "authorization": f"Bearer {self.api_key}",
+            "content-type": "application/json",
+        })
+        choices = response.get("choices") or []
+        if not choices:
+            raise LLMError(f"response had no choices: {response!r}")
+        content = choices[0]["message"]["content"]
+        if not content:
+            raise LLMError("DeepSeek returned empty content (a known json_object-mode issue per its own docs)")
         try:
             data = json.loads(content)
         except json.JSONDecodeError as exc:

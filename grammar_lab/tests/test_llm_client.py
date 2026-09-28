@@ -51,11 +51,22 @@ def _groq_transport(calls: list[httpx.Request]) -> httpx.MockTransport:
     return httpx.MockTransport(handler)
 
 
+def _deepseek_transport(calls: list[httpx.Request]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": json.dumps({"greeting": "hi"})}}],
+            "usage": {"prompt_tokens": 4, "completion_tokens": 1},
+        })
+    return httpx.MockTransport(handler)
+
+
 _MODEL_BY_PROVIDER = {
     "anthropic": "claude-haiku-4-5-20251001",
     "openai": "gpt-6-luna",
     "gemini": "gemini-3.5-flash-lite",
     "groq": "openai/gpt-oss-120b",
+    "deepseek": "deepseek-flash",
 }
 
 
@@ -194,6 +205,52 @@ def test_groq_and_openai_hit_different_urls(tmp_path: Path) -> None:
 def test_unknown_provider_still_rejected(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="groq"):
         LLMClient("cohere", "some-model", api_key="k", cache_dir=tmp_path)
+
+
+def test_deepseek_returns_parsed_json_content(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    c = client(tmp_path, "deepseek", _deepseek_transport(calls))
+    result = c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert result.data == {"greeting": "hi"}
+    assert result.usage.input_tokens == 4 and result.usage.output_tokens == 1
+    assert len(calls) == 1
+
+
+def test_deepseek_uses_json_object_mode_not_json_schema(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    client(tmp_path, "deepseek", _deepseek_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    sent = json.loads(calls[0].content)
+    assert sent["response_format"] == {"type": "json_object"}
+
+
+def test_deepseek_embeds_the_schema_and_the_word_json_in_the_system_message(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    client(tmp_path, "deepseek", _deepseek_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    sent = json.loads(calls[0].content)
+    system_message = sent["messages"][0]["content"]
+    assert "json" in system_message.casefold()
+    assert "greeting" in system_message  # a property name from SCHEMA, proving the schema was embedded
+
+
+def test_deepseek_empty_content_raises_llm_error(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": [{"message": {"content": ""}}], "usage": {}})
+    c = client(tmp_path, "deepseek", httpx.MockTransport(handler))
+    with pytest.raises(LLMError, match="empty"):
+        c.complete(system="s", user="u", json_schema=SCHEMA)
+
+
+def test_deepseek_hits_its_own_url(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    client(tmp_path, "deepseek", _deepseek_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    assert "deepseek.com" in str(calls[0].url)
+
+
+def test_deepseek_cost_uses_the_pricing_table(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    result = client(tmp_path, "deepseek", _deepseek_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    cost = result.usage.cost_usd(result.model)
+    assert cost is not None and cost > 0
 
 
 def test_second_call_with_same_input_is_cached_and_makes_no_request(tmp_path: Path) -> None:
