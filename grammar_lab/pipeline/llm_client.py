@@ -110,6 +110,56 @@ class LLMError(RuntimeError):
         self.status_code = status_code
 
 
+def to_gemini_schema(schema: Any) -> Any:
+    """Rewrite a draft-2020-12 JSON Schema into Gemini's narrower ``Schema``
+    proto dialect (confirmed live 2026-09-28: a full JSON Schema payload is
+    rejected outright, not merely ignored in the unsupported parts):
+
+    - ``additionalProperties`` is not a recognised field at all -- dropped.
+    - ``type`` must be one string, never an array; a ``["X", "null"]`` union
+      becomes ``type: "X", nullable: true``.
+    - ``prefixItems`` (tuple validation) is not supported; an array using it
+      collapses to plain ``items`` with the common type of its prefix
+      schemas (this codebase's only use, ``example.seg``, is a homogeneous
+      string tuple, so this loses no information here; a genuinely
+      mixed-type tuple would fall back to ``{"type": "string"}``, best-effort
+      rather than a schema Gemini would reject).
+
+    Only degrades what does not fit through this specific parser; a plain
+    Anthropic/OpenAI/Groq schema (draft-2020-12, checked against the real
+    APIs) does not go through this function at all.
+    """
+    if isinstance(schema, list):
+        return [to_gemini_schema(item) for item in schema]
+    if not isinstance(schema, dict):
+        return schema
+
+    result = {key: value for key, value in schema.items() if key != "additionalProperties"}
+
+    type_value = result.get("type")
+    if isinstance(type_value, list):
+        non_null = [t for t in type_value if t != "null"]
+        if "null" in type_value:
+            result["nullable"] = True
+        result["type"] = non_null[0] if non_null else "null"
+
+    if "prefixItems" in result:
+        prefix_items = result.pop("prefixItems")
+        types = {item.get("type") for item in prefix_items if isinstance(item, dict)}
+        result["items"] = {"type": types.pop()} if len(types) == 1 else {"type": "string"}
+    elif "items" in result:
+        result["items"] = to_gemini_schema(result["items"])
+
+    if "properties" in result:
+        result["properties"] = {key: to_gemini_schema(value) for key, value in result["properties"].items()}
+
+    for key in ("allOf", "anyOf", "oneOf"):
+        if key in result:
+            result[key] = [to_gemini_schema(item) for item in result[key]]
+
+    return result
+
+
 @dataclass(frozen=True)
 class LLMUsage:
     input_tokens: int
@@ -298,7 +348,7 @@ class LLMClient:
                 "temperature": temperature,
                 "maxOutputTokens": max_tokens,
                 "responseMimeType": "application/json",
-                "responseSchema": json_schema,
+                "responseSchema": to_gemini_schema(json_schema),
             },
         }
         # x-goog-api-key, not ?key=<api_key> in the URL: a secret does not belong in a URL/query string.

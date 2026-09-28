@@ -140,6 +140,7 @@ def verify(
              "blind-solve model draw on the same provider quota (grammar_lab/sandbox/ defaults "
              "to Gemini for both). Pass '' to disable if the sandbox uses an unmetered provider.",
     ),
+    ids: str = typer.Option("", "--ids", help="Comma-separated point ids to verify (default: every point)."),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.3: engine pitfall match, clean examples, blind solve. Skips points that fail validate."""
@@ -148,6 +149,9 @@ def verify(
     report = validate_lang(lang, root)
     dirty_ids = {report.point_files[file] for file in {i.file for i in report.issues} if file in report.point_files}
     points = load_points(lang, root)
+    if ids:
+        wanted = {p.strip() for p in ids.split(",") if p.strip()}
+        points = {point_id: point for point_id, point in points.items() if point_id in wanted}
     results: dict[str, dict] = {}
     evaluator = EvaluatorClient(evaluator_url, rate_limit_key=evaluator_rate_limit_key or None)
     with evaluator, LLMClient(blind_provider, blind_model) as blind_solver:

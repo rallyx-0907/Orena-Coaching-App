@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from grammar_lab.pipeline.llm_client import LLMClient, LLMError
+from grammar_lab.pipeline.llm_client import LLMClient, LLMError, to_gemini_schema
 
 SCHEMA = {"type": "object", "properties": {"greeting": {"type": "string"}}, "required": ["greeting"]}
 
@@ -264,3 +264,70 @@ def test_unknown_model_cost_is_none(tmp_path: Path) -> None:
                   transport=_anthropic_transport(calls))
     result = c.complete(system="s", user="u", json_schema=SCHEMA)
     assert result.usage.cost_usd(result.model) is None
+
+
+def test_to_gemini_schema_drops_additional_properties() -> None:
+    schema = {"type": "object", "additionalProperties": False, "properties": {"a": {"type": "string"}}}
+    result = to_gemini_schema(schema)
+    assert "additionalProperties" not in result
+
+
+def test_to_gemini_schema_converts_nullable_union() -> None:
+    schema = {"type": ["object", "null"], "properties": {}}
+    result = to_gemini_schema(schema)
+    assert result["type"] == "object"
+    assert result["nullable"] is True
+
+
+def test_to_gemini_schema_unwraps_singleton_type_list() -> None:
+    assert to_gemini_schema({"type": ["string"]})["type"] == "string"
+
+
+def test_to_gemini_schema_leaves_a_plain_type_alone() -> None:
+    assert to_gemini_schema({"type": "string"})["type"] == "string"
+    assert "nullable" not in to_gemini_schema({"type": "string"})
+
+
+def test_to_gemini_schema_collapses_homogeneous_prefix_items() -> None:
+    schema = {
+        "type": "array",
+        "items": {
+            "type": "array",
+            "prefixItems": [{"type": "string", "minLength": 1}, {"type": "string", "pattern": "^[a-z]+$"}],
+        },
+    }
+    result = to_gemini_schema(schema)
+    inner = result["items"]
+    assert "prefixItems" not in inner
+    assert inner["items"] == {"type": "string"}
+
+
+def test_to_gemini_schema_falls_back_to_string_for_mixed_prefix_items() -> None:
+    schema = {"type": "array", "prefixItems": [{"type": "string"}, {"type": "object"}]}
+    result = to_gemini_schema(schema)
+    assert result["items"] == {"type": "string"}
+
+
+def test_to_gemini_schema_recurses_into_nested_properties() -> None:
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "child": {"type": ["object", "null"], "additionalProperties": False, "properties": {}},
+        },
+    }
+    child = to_gemini_schema(schema)["properties"]["child"]
+    assert child["type"] == "object"
+    assert child["nullable"] is True
+    assert "additionalProperties" not in child
+
+
+def test_gemini_call_sends_the_sanitized_schema(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    schema = {"type": "object", "additionalProperties": False, "properties": {"a": {"type": ["string", "null"]}}}
+    client(tmp_path, "gemini", _gemini_transport(calls)).complete(system="s", user="u", json_schema=schema)
+    sent = json.loads(calls[0].content)
+    response_schema = sent["generationConfig"]["responseSchema"]
+    assert "additionalProperties" not in response_schema
+    assert response_schema["properties"]["a"]["type"] == "string"
+    assert response_schema["properties"]["a"]["nullable"] is True
