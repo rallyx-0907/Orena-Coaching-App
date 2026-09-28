@@ -9,78 +9,100 @@
   "contrasts": [],
   "error_tags": ["agreement"],
   "source_refs": {},
-  "title": {"vi": "Danh từ số nhiều", "en": "Plural nouns"},
-  "summary": {
-    "vi": "Danh từ đếm được khi có từ hai trở lên phải đổi sang số nhiều, thường bằng cách thêm -s/-es."
+  "point_type": "morphology",
+  "header": {
+    "title": {"vi": "Danh từ số nhiều"},
+    "native_title": "Plural nouns",
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
+    "summary": {"vi": "Danh từ đếm được ở số nhiều thường thêm -s hoặc -es vào cuối từ."}
   },
-  "when_to_use": [{"vi": "Khi có từ hai trở lên."}, {"vi": "Khi nói chung, không chỉ một cái cụ thể."}],
+  "when_to_use": [
+    {"vi": "Khi nói về hai hoặc nhiều người, vật, hoặc sự việc."},
+    {"vi": "Khi danh từ đứng sau các từ chỉ số lượng như two, three, many, some, a lot of."},
+    {"vi": "Khi danh từ đếm được được dùng chung, không có a/an ở trước."},
+    {"vi": "Khi chủ ngữ của câu là nhiều người hoặc nhiều vật."}
+  ],
   "pattern": {
-    "parts": [{"text": "two / three / many", "role": "marker"}, {"text": "cats", "role": "object"}],
-    "illustration": {"kind": "none"}
+    "formula": [
+      {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
+      {
+        "text": "-s/-es",
+        "role": "other",
+        "label": {"vi": "hậu tố số nhiều"},
+        "options": [{"text": "-s"}, {"text": "-es"}]
+      }
+    ],
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {"base": "book", "affix": "-s", "result": "books"},
+        {"base": "box", "affix": "-es", "result": "boxes"},
+        {"base": "city", "affix": "-ies", "result": "cities"}
+      ]
+    }
   },
   "examples": [
     {
-      "text": "I have two cats.",
-      "spans": [{"start": 11, "end": 15, "role": "object"}],
-      "annotation": {"vi": "đếm được, số nhiều: +s"},
-      "translation": {"vi": "Tôi có hai con mèo."}
+      "text": "I have two books.",
+      "form": "affirmative",
+      "spans": [{"start": 11, "end": 15, "role": "subject"}, {"start": 15, "end": 16, "role": "other"}],
+      "annotation": {"vi": "book là danh từ đếm được, thêm -s để thành số nhiều books."},
+      "translation": {"vi": "Tôi có hai quyển sách."}
     },
     {
-      "text": "There are three boxes on the table.",
-      "spans": [{"start": 16, "end": 21, "role": "object"}],
-      "annotation": {"vi": "tận cùng -x: +es"},
-      "translation": {"vi": "Có ba cái hộp trên bàn."}
+      "text": "She buys three boxes.",
+      "form": "affirmative",
+      "spans": [{"start": 15, "end": 18, "role": "subject"}, {"start": 18, "end": 20, "role": "other"}],
+      "annotation": {"vi": "box tận cùng bằng -x, nên thêm -es để thành boxes."},
+      "translation": {"vi": "Cô ấy mua ba cái hộp."}
+    },
+    {
+      "text": "The students like their new class.",
+      "form": "affirmative",
+      "spans": [{"start": 4, "end": 11, "role": "subject"}, {"start": 11, "end": 12, "role": "other"}],
+      "annotation": {"vi": "student là danh từ số nhiều, thêm -s để thành students."},
+      "translation": {"vi": "Các học sinh thích lớp học mới của họ."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "I have two cat.",
-      "right": "I have two cats.",
+      "wrong": "I have two book.",
+      "right": "I have two books.",
       "reason": {
-        "vi": "Tiếng Việt thể hiện số lượng bằng từ đứng trước, danh từ giữ nguyên. Tiếng Anh vẫn phải thêm -s dù đã có số đếm."
+        "vi": "Tiếng Việt không biến đổi hình thức danh từ theo số lượng, nên người học thường quên thêm -s sau danh từ đếm được khi có số lượng từ hai trở lên."
       },
-      "error_tag": "agreement",
-      "l1": ["vi"]
-    },
-    {
-      "wrong": "Many student like this teacher.",
-      "right": "Many students like this teacher.",
-      "reason": {"vi": "Many luôn đi với danh từ số nhiều."},
       "error_tag": "agreement",
       "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "There are two ___ on the table.",
-      "options": ["box", "boxs", "boxes"],
-      "answer": 2,
-      "explain": {"vi": "Tận cùng -x → thêm -es."}
-    },
-    {
-      "q": "Five ___ are waiting outside.",
-      "options": ["peoples", "people", "person"],
-      "answer": 1,
-      "explain": {"vi": "Số nhiều của person là people (không thêm -s)."}
-    },
-    {
-      "q": "I visited many ___ in Europe.",
-      "options": ["cities", "city", "citys"],
+      "q": "There are many ___ in the garden.",
+      "options": [{"text": "flowers", "error_tag": null}, {"text": "flower", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {"vi": "Phụ âm + y → -ies."}
+      "explain": {"vi": "Sau many, danh từ đếm được phải ở số nhiều: flowers."}
+    },
+    {
+      "q": "My sister has two ___.",
+      "options": [{"text": "cats", "error_tag": null}, {"text": "cat", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {"vi": "Sau số từ two, danh từ đếm được phải ở số nhiều: cats."}
+    },
+    {
+      "q": "She puts the ___ on the table.",
+      "options": [{"text": "boxes", "error_tag": null}, {"text": "boxs", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {"vi": "Danh từ tận cùng bằng -x tạo số nhiều bằng -es: boxes, không phải boxs."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_migrated_v04",
-    "run_id": "migrate.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00",
-    "migrated_from": {
-      "file": "content/en/en.plural_nouns.regular.json (v0.2, pre-migration)",
-      "schema_version": "0.2"
-    }
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v8",
+    "run_id": "generate.1790591370",
+    "generated_at": "2026-09-28T10:29:30Z"
   },
   "review": null
 }

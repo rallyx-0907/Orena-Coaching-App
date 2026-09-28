@@ -60,9 +60,10 @@ def test_bridge_is_not_a_storable_block() -> None:
     assert "bridge" not in SCHEMA["$defs"]["block"]["properties"]["type"]["enum"]
 
 
-def test_committed_sample_validates_clean() -> None:
-    report = validate_lang("en", LAB_ROOT)
-    assert report.points == 10
+@pytest.mark.parametrize(("lang", "points"), [("en", 11), ("zh", 3)])
+def test_committed_sample_validates_clean(lang: str, points: int) -> None:
+    report = validate_lang(lang, LAB_ROOT)
+    assert report.points == points
     assert report.ok, [issue.to_dict() for issue in report.issues]
 
 

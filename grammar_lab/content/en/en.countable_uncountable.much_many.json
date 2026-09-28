@@ -9,81 +9,150 @@
   "contrasts": [],
   "error_tags": ["word_form", "word_choice"],
   "source_refs": {},
-  "title": {"vi": "Đếm được / không đếm được, much / many", "en": "Countable vs uncountable"},
-  "summary": {
-    "vi": "Một số danh từ trong tiếng Anh không đếm được: không thêm -s, không đi với a/an, và dùng much thay vì many."
+  "point_type": "other",
+  "header": {
+    "title": {"vi": "Đếm được / không đếm được, much / many"},
+    "native_title": "Countable vs uncountable",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Phân biệt danh từ đếm được và không đếm được, và dùng much/many để hỏi hoặc phủ định số lượng."
+    }
   },
   "when_to_use": [
-    {"vi": "many/a few: danh từ đếm được số nhiều."},
-    {"vi": "much/a little: danh từ không đếm được."}
+    {"vi": "Khi bạn muốn hỏi số lượng của một danh từ đếm được số nhiều, dùng many."},
+    {"vi": "Khi bạn muốn hỏi số lượng của một danh từ không đếm được, dùng much."},
+    {
+      "vi": "Khi bạn muốn nói 'nhiều' trong câu phủ định hoặc nghi vấn, dùng much hoặc many tùy loại danh từ."
+    },
+    {"vi": "Khi bạn muốn nhấn mạnh 'quá nhiều' trong câu khẳng định, dùng too much hoặc too many."}
   ],
   "pattern": {
-    "parts": [{"text": "much / a little", "role": "marker"}, {"text": "time", "role": "object"}],
+    "formula": [
+      {
+        "text": "much/many",
+        "role": "other",
+        "label": {"vi": "lượng từ"},
+        "options": [{"text": "much"}, {"text": "many"}]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "not", "role": "aux", "label": {"vi": "trợ từ phủ định"}},
+        {
+          "text": "much/many",
+          "role": "other",
+          "label": {"vi": "lượng từ"},
+          "options": [{"text": "much"}, {"text": "many"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ"}}
+      ],
+      "question": [
+        {
+          "text": "much/many",
+          "role": "other",
+          "label": {"vi": "lượng từ"},
+          "options": [{"text": "much"}, {"text": "many"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ"}}
+      ]
+    },
     "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "Can you give me some advice?",
-      "spans": [{"start": 21, "end": 27, "role": "object"}],
-      "annotation": {"vi": "không đếm được, không có -s"},
-      "translation": {"vi": "Bạn cho tôi vài lời khuyên được không?"}
+      "text": "I don't have much time.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 7, "role": "aux"},
+        {"start": 13, "end": 17, "role": "other"},
+        {"start": 18, "end": 22, "role": "object"}
+      ],
+      "annotation": {"vi": "much dùng với danh từ không đếm được 'time' trong câu phủ định."},
+      "translation": {"vi": "Tôi không có nhiều thời gian."}
     },
     {
-      "text": "I don't have much time today.",
-      "spans": [{"start": 13, "end": 22, "role": "marker"}],
-      "annotation": {"vi": "time không đếm được → much"},
-      "translation": {"vi": "Hôm nay tôi không có nhiều thời gian."}
+      "text": "How many books do you have?",
+      "form": "question",
+      "spans": [{"start": 4, "end": 8, "role": "other"}, {"start": 9, "end": 14, "role": "object"}],
+      "annotation": {"vi": "many dùng với danh từ đếm được số nhiều 'books' trong câu hỏi."},
+      "translation": {"vi": "Bạn có bao nhiêu quyển sách?"}
+    },
+    {
+      "text": "She doesn't have many friends.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "aux"},
+        {"start": 17, "end": 21, "role": "other"},
+        {"start": 22, "end": 29, "role": "object"}
+      ],
+      "annotation": {"vi": "many dùng với danh từ đếm được số nhiều 'friends' trong câu phủ định."},
+      "translation": {"vi": "Cô ấy không có nhiều bạn."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "I need many informations.",
-      "right": "I need a lot of information.",
+      "wrong": "I don't have many money.",
+      "right": "I don't have much money.",
       "reason": {
-        "vi": "Trong tiếng Việt, 'thông tin' có thể đếm được. Trong tiếng Anh, information không đếm được."
+        "vi": "Lỗi dùng sai từ: 'money' là danh từ không đếm được, nên phải dùng 'much', không dùng 'many'."
       },
-      "error_tag": "word_form",
+      "error_tag": "word_choice",
       "l1": ["vi"]
     },
     {
-      "wrong": "We have too many homeworks.",
-      "right": "We have too much homework.",
-      "reason": {"vi": "Homework không đếm được."},
-      "error_tag": "word_choice",
+      "wrong": "How much books do you have?",
+      "right": "How many books do you have?",
+      "reason": {
+        "vi": "Lỗi dùng sai dạng từ: 'books' là danh từ đếm được số nhiều, nên phải dùng 'many', không dùng 'much'."
+      },
+      "error_tag": "word_form",
       "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "How ___ money do you have?",
-      "options": ["many", "much", "a few"],
-      "answer": 1,
-      "explain": {"vi": "Money không đếm được → much."}
+      "q": "I don't have ___ time today.",
+      "options": [
+        {"text": "much", "error_tag": null},
+        {"text": "many", "error_tag": "word_choice"},
+        {"text": "a lot", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "'time' là danh từ không đếm được, nên dùng 'much' trong câu phủ định."}
     },
     {
-      "q": "She gave me some useful ___.",
-      "options": ["advices", "advice", "an advice"],
-      "answer": 1,
-      "explain": {"vi": "Advice không đếm được."}
+      "q": "How ___ students are in the class?",
+      "options": [
+        {"text": "many", "error_tag": null},
+        {"text": "much", "error_tag": "word_choice"},
+        {"text": "more", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "'students' là danh từ đếm được số nhiều, nên dùng 'many' trong câu hỏi."}
     },
     {
-      "q": "How ___ chairs are there?",
-      "options": ["much", "many", "little"],
-      "answer": 1,
-      "explain": {"vi": "Chairs đếm được số nhiều → many."}
+      "q": "She doesn't have ___ money.",
+      "options": [
+        {"text": "much", "error_tag": null},
+        {"text": "many", "error_tag": "word_choice"},
+        {"text": "a few", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "'money' là danh từ không đếm được, nên dùng 'much' trong câu phủ định."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_migrated_v04",
-    "run_id": "migrate.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00",
-    "migrated_from": {
-      "file": "content/en/en.countable_uncountable.much_many.json (v0.2, pre-migration)",
-      "schema_version": "0.2"
-    }
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v7",
+    "run_id": "generate.1790591204",
+    "generated_at": "2026-09-28T10:26:44Z"
   },
   "review": null
 }

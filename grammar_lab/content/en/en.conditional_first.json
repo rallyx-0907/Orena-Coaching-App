@@ -9,37 +9,102 @@
   "contrasts": [],
   "error_tags": ["tense"],
   "source_refs": {},
-  "title": {"vi": "Câu điều kiện loại 1", "en": "First conditional"},
-  "summary": {
-    "vi": "Nói về điều có thể xảy ra ở tương lai: mệnh đề if dùng hiện tại đơn, mệnh đề kết quả dùng will."
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {"vi": "Câu điều kiện loại 1"},
+    "native_title": "First conditional",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu điều kiện loại 1 dùng để nói về một điều kiện có thể xảy ra trong hiện tại hoặc tương lai và kết quả của nó."
+    }
   },
   "when_to_use": [
-    {"vi": "Nói về điều có thể xảy ra ở tương lai."},
-    {"vi": "Mệnh đề if dùng hiện tại đơn, mệnh đề kết quả dùng will."}
+    {"vi": "Khi bạn muốn nói một việc có thể xảy ra nếu một điều kiện nào đó được đáp ứng."},
+    {"vi": "Khi đưa ra lời hứa hoặc lời đe dọa dựa trên một hành động trong tương lai."},
+    {"vi": "Khi cảnh báo ai đó về hậu quả nếu họ làm hoặc không làm gì đó."},
+    {"vi": "Khi thương lượng hoặc đề nghị: nếu bạn làm điều này, tôi sẽ làm điều kia."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "If", "role": "connector"},
-      {"text": "it rains", "role": "verb"},
-      {"text": ",", "role": "other"},
-      {"text": "we", "role": "subject"},
-      {"text": "will stay", "role": "verb"},
-      {"text": "at home", "role": "place"}
+    "formula": [
+      {"text": "If", "role": "marker", "label": {"vi": "từ nối điều kiện"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề if"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chia hiện tại đơn"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề chính"}},
+      {"text": "will", "role": "aux", "label": {"vi": "trợ động từ will"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
     ],
+    "variants": {
+      "negative": [
+        {"text": "If", "role": "marker", "label": {"vi": "từ nối điều kiện"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề if"}},
+        {"text": "do/does not", "role": "aux", "label": {"vi": "trợ động từ phủ định"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề chính"}},
+        {"text": "will not", "role": "aux", "label": {"vi": "trợ động từ phủ định"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      ],
+      "question": [
+        {"text": "If", "role": "marker", "label": {"vi": "từ nối điều kiện"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề if"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chia hiện tại đơn"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
+        {"text": "will", "role": "aux", "label": {"vi": "trợ động từ will"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề chính"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      ]
+    },
     "illustration": {"kind": "timeline", "timeline": {"shape": "future_condition"}}
   },
   "examples": [
     {
       "text": "If it rains, we will stay at home.",
-      "spans": [{"start": 6, "end": 11, "role": "verb"}, {"start": 16, "end": 25, "role": "verb"}],
-      "annotation": {"vi": "vế if: hiện tại đơn; vế kết quả: will"},
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 5, "role": "subject"},
+        {"start": 6, "end": 11, "role": "verb"},
+        {"start": 13, "end": 15, "role": "subject"},
+        {"start": 16, "end": 20, "role": "aux"},
+        {"start": 21, "end": 25, "role": "verb"}
+      ],
+      "annotation": {"vi": "Điều kiện có thể xảy ra ở hiện tại, kết quả ở tương lai."},
       "translation": {"vi": "Nếu trời mưa, chúng tôi sẽ ở nhà."}
     },
     {
       "text": "If you study hard, you will pass the exam.",
-      "spans": [{"start": 7, "end": 12, "role": "verb"}, {"start": 23, "end": 32, "role": "verb"}],
-      "annotation": {"vi": "vế if: hiện tại đơn; vế kết quả: will"},
-      "translation": {"vi": "Nếu bạn học chăm chỉ, bạn sẽ vượt qua kỳ thi."}
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 12, "role": "verb"},
+        {"start": 19, "end": 22, "role": "subject"},
+        {"start": 23, "end": 27, "role": "aux"},
+        {"start": 28, "end": 32, "role": "verb"},
+        {"start": 33, "end": 41, "role": "object"}
+      ],
+      "annotation": {"vi": "Hành động học tập có thể dẫn đến kết quả thi đỗ."},
+      "translation": {"vi": "Nếu bạn học chăm chỉ, bạn sẽ đỗ kỳ thi."}
+    },
+    {
+      "text": "If she doesn't hurry, she will miss the train.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 14, "role": "aux"},
+        {"start": 15, "end": 20, "role": "verb"},
+        {"start": 22, "end": 25, "role": "subject"},
+        {"start": 26, "end": 30, "role": "aux"},
+        {"start": 31, "end": 35, "role": "verb"},
+        {"start": 36, "end": 45, "role": "object"}
+      ],
+      "annotation": {"vi": "Điều kiện phủ định: nếu cô ấy không nhanh lên, kết quả xấu sẽ xảy ra."},
+      "translation": {"vi": "Nếu cô ấy không nhanh lên, cô ấy sẽ lỡ chuyến tàu."}
     }
   ],
   "compare": [],
@@ -48,16 +113,7 @@
       "wrong": "If it will rain, we will stay at home.",
       "right": "If it rains, we will stay at home.",
       "reason": {
-        "vi": "Câu tiếng Việt 'nếu trời (sẽ) mưa' khiến người học muốn thêm will vào vế if. Trong tiếng Anh, vế if dùng hiện tại đơn dù nói về tương lai."
-      },
-      "error_tag": "tense",
-      "l1": ["vi"]
-    },
-    {
-      "wrong": "If I have time, I visit you.",
-      "right": "If I have time, I will visit you.",
-      "reason": {
-        "vi": "Vế kết quả nói về tương lai nên cần will. Trong tiếng Việt, 'thì' hay 'sẽ' thường bị lược bỏ."
+        "vi": "Trong mệnh đề if của câu điều kiện loại 1, không dùng will; động từ phải chia ở hiện tại đơn để diễn tả điều kiện có thể xảy ra."
       },
       "error_tag": "tense",
       "l1": ["vi"]
@@ -65,31 +121,43 @@
   ],
   "quick_practice": [
     {
-      "q": "If you ___ hard, you will pass.",
-      "options": ["will study", "study", "studied"],
-      "answer": 1,
-      "explain": {"vi": "Vế if → hiện tại đơn."}
-    },
-    {
-      "q": "If she calls, I ___ you.",
-      "options": ["tell", "will tell", "told"],
-      "answer": 1,
-      "explain": {"vi": "Vế kết quả → will + V."}
-    },
-    {
-      "q": "We ___ late if we don't hurry.",
-      "options": ["will be", "are", "be"],
+      "q": "If you ___ hard, you will pass the exam.",
+      "options": [
+        {"text": "study", "error_tag": null},
+        {"text": "will study", "error_tag": "tense"},
+        {"text": "studied", "error_tag": "tense"}
+      ],
       "answer": 0,
-      "explain": {"vi": "Vế kết quả có thể đứng trước; vẫn dùng will."}
+      "explain": {"vi": "Mệnh đề if dùng hiện tại đơn, không dùng will hay quá khứ đơn."}
+    },
+    {
+      "q": "If she ___ the bus, she will be late.",
+      "options": [
+        {"text": "misses", "error_tag": null},
+        {"text": "miss", "error_tag": "agreement"},
+        {"text": "will miss", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Chủ ngữ she số ít nên động từ thêm -es; không dùng will trong mệnh đề if."}
+    },
+    {
+      "q": "If it rains, we ___ at home.",
+      "options": [
+        {"text": "will stay", "error_tag": null},
+        {"text": "stay", "error_tag": "tense"},
+        {"text": "stayed", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Mệnh đề chính diễn tả kết quả trong tương lai nên dùng will + động từ nguyên thể."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_migrated_v04",
-    "run_id": "migrate.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00",
-    "migrated_from": {"file": "content/en/en.conditional_first.json (v0.2, pre-migration)", "schema_version": "0.2"}
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790590028",
+    "generated_at": "2026-09-28T10:07:08Z"
   },
   "review": null
 }

@@ -9,80 +9,167 @@
   "contrasts": [],
   "error_tags": ["sentence_structure", "agreement"],
   "source_refs": {},
-  "title": {"vi": "There is / There are", "en": "There is / There are"},
-  "summary": {"vi": "Dùng there is/there are để nói ở đâu đó có cái gì. Không dùng have cho nghĩa này."},
+  "point_type": "word_order",
+  "header": {
+    "title": {"vi": "There is / There are"},
+    "native_title": "There is / There are",
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
+    "summary": {
+      "vi": "Cấu trúc \"There is / There are\" dùng để nói rằng một người hay vật nào đó tồn tại hoặc hiện diện ở một nơi nào đó."
+    }
+  },
   "when_to_use": [
-    {"vi": "Khi muốn nói ở đâu đó có cái gì."},
-    {"vi": "Khi giới thiệu sự tồn tại, không phải sở hữu."}
+    {"vi": "Khi bạn muốn nói có một thứ gì đó tồn tại hoặc đang ở một nơi cụ thể."},
+    {"vi": "Khi bạn giới thiệu một người hoặc vật mà người nghe chưa biết."},
+    {
+      "vi": "Khi bạn mô tả một nơi chốn có những gì (ví dụ: trong phòng, trên bàn, trong thành phố)."
+    },
+    {"vi": "Khi bạn muốn hỏi xem có thứ gì đó hay không."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "There", "role": "marker"},
-      {"text": "is / are", "role": "verb"},
-      {"text": "a book / two cats", "role": "object"}
+    "formula": [
+      {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ to be"},
+        "options": [{"text": "is"}, {"text": "are"}]
+      },
+      {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
+      {"text": "place", "role": "place", "label": {"vi": "nơi chốn"}, "optional": true}
     ],
+    "variants": {
+      "negative": [
+        {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be"},
+          "options": [{"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "other", "label": {"vi": "phủ định"}},
+        {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
+        {"text": "place", "role": "place", "label": {"vi": "nơi chốn"}, "optional": true}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be"},
+          "options": [{"text": "Is"}, {"text": "Are"}]
+        },
+        {"text": "there", "role": "other", "label": {"vi": "chủ ngữ giả"}},
+        {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
+        {"text": "place", "role": "place", "label": {"vi": "nơi chốn"}, "optional": true}
+      ]
+    },
     "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
       "text": "There is a book on the table.",
-      "spans": [{"start": 0, "end": 8, "role": "marker"}],
-      "annotation": {"vi": "danh từ số ít → is"},
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 9, "end": 15, "role": "subject"},
+        {"start": 16, "end": 28, "role": "place"}
+      ],
+      "annotation": {"vi": "Cấu trúc khẳng định: There is + danh từ số ít + nơi chốn."},
       "translation": {"vi": "Có một quyển sách trên bàn."}
     },
     {
       "text": "There are two cats in the garden.",
-      "spans": [{"start": 0, "end": 9, "role": "marker"}],
-      "annotation": {"vi": "danh từ số nhiều → are"},
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 9, "role": "verb"},
+        {"start": 10, "end": 18, "role": "subject"},
+        {"start": 19, "end": 32, "role": "place"}
+      ],
+      "annotation": {"vi": "Cấu trúc khẳng định: There are + danh từ số nhiều + nơi chốn."},
       "translation": {"vi": "Có hai con mèo trong vườn."}
+    },
+    {
+      "text": "There is not a pen in my bag.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 9, "end": 12, "role": "other"},
+        {"start": 13, "end": 18, "role": "subject"},
+        {"start": 19, "end": 28, "role": "place"}
+      ],
+      "annotation": {"vi": "Cấu trúc phủ định: There is not + danh từ số ít + nơi chốn."},
+      "translation": {"vi": "Không có một cây bút nào trong túi của tôi."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "In my room have a big bed.",
-      "right": "There is a big bed in my room.",
+      "wrong": "There is two cats in the garden.",
+      "right": "There are two cats in the garden.",
       "reason": {
-        "vi": "Tiếng Việt dùng 'có' cho cả sở hữu ('tôi có xe') lẫn tồn tại ('phòng có giường'). Tiếng Anh tách ra: sở hữu dùng have, tồn tại dùng there is/are."
+        "vi": "Người Việt thường không phân biệt số ít/số nhiều của động từ to be khi nói về sự tồn tại, nên dùng 'is' cho cả danh từ số nhiều. Cần chia 'are' với danh từ số nhiều."
       },
-      "error_tag": "sentence_structure",
+      "error_tag": "agreement",
       "l1": ["vi"]
     },
     {
-      "wrong": "There is many people in the park.",
-      "right": "There are many people in the park.",
-      "reason": {"vi": "People là số nhiều nên phải dùng are."},
-      "error_tag": "agreement",
+      "wrong": "There have a book on the table.",
+      "right": "There is a book on the table.",
+      "reason": {
+        "vi": "Người Việt dịch 'có' thành 'have' vì nghĩ 'có' tương đương với 'have', nhưng cấu trúc tồn tại trong tiếng Anh dùng 'there is/are', không dùng 'have'."
+      },
+      "error_tag": "sentence_structure",
       "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "___ a bank on this street?",
-      "options": ["Is there", "Are there", "Have"],
+      "q": "___ a cat on the sofa.",
+      "options": [
+        {"text": "There is", "error_tag": null},
+        {"text": "There are", "error_tag": "agreement"},
+        {"text": "There have", "error_tag": "sentence_structure"}
+      ],
       "answer": 0,
-      "explain": {"vi": "A bank số ít → Is there."}
+      "explain": {
+        "vi": "Danh từ 'a cat' là số ít, nên dùng 'There is'. 'There are' sai vì không hợp số ít; 'There have' sai vì không dùng 'have' trong cấu trúc tồn tại."
+      }
     },
     {
-      "q": "My city ___ many parks.",
-      "options": ["there are", "has", "have"],
+      "q": "___ many students in the classroom?",
+      "options": [
+        {"text": "Is there", "error_tag": "agreement"},
+        {"text": "Are there", "error_tag": null},
+        {"text": "There are", "error_tag": "sentence_structure"}
+      ],
       "answer": 1,
-      "explain": {"vi": "Chủ ngữ là my city (sở hữu) nên dùng has."}
+      "explain": {
+        "vi": "Danh từ 'many students' là số nhiều, nên câu hỏi dùng 'Are there'. 'Is there' sai vì không hợp số nhiều; 'There are' sai vì không phải dạng câu hỏi."
+      }
     },
     {
-      "q": "There ___ some milk in the fridge.",
-      "options": ["are", "is", "have"],
-      "answer": 1,
-      "explain": {"vi": "Milk không đếm được → is."}
+      "q": "There ___ any milk in the fridge.",
+      "options": [
+        {"text": "is not", "error_tag": null},
+        {"text": "are not", "error_tag": "agreement"},
+        {"text": "not is", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh từ 'milk' không đếm được, nên dùng 'There is not'. 'There are not' sai vì không hợp danh từ không đếm được; 'There not is' sai vì trật tự từ."
+      }
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_migrated_v04",
-    "run_id": "migrate.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00",
-    "migrated_from": {"file": "content/en/en.there_is_are.json (v0.2, pre-migration)", "schema_version": "0.2"}
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v7",
+    "run_id": "generate.1790591161",
+    "generated_at": "2026-09-28T10:26:01Z"
   },
   "review": null
 }

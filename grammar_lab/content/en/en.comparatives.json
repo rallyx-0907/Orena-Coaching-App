@@ -9,80 +9,154 @@
   "contrasts": [],
   "error_tags": ["word_form", "sentence_structure"],
   "source_refs": {},
-  "title": {"vi": "So sánh hơn", "en": "Comparatives"},
-  "summary": {"vi": "Tính từ ngắn thêm -er, tính từ dài dùng more; sau đó là than + đối tượng so sánh."},
+  "point_type": "morphology",
+  "header": {
+    "title": {"vi": "So sánh hơn"},
+    "native_title": "Comparatives",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "So sánh hơn dùng để so sánh hai người hoặc hai vật, cho thấy một bên có đặc điểm nhiều hơn bên kia."
+    }
+  },
   "when_to_use": [
-    {"vi": "Khi so sánh hai người/vật khác nhau."},
-    {"vi": "Tính từ ngắn: +er. Tính từ dài: more + tính từ."}
+    {"vi": "Khi so sánh hai người, hai vật hoặc hai nhóm cụ thể."},
+    {"vi": "Khi tính từ ngắn (một âm tiết) như tall, small, fast."},
+    {"vi": "Khi tính từ dài (hai âm tiết trở lên) như beautiful, expensive, interesting."},
+    {"vi": "Khi muốn nhấn mạnh mức độ khác biệt bằng 'much' hoặc 'a lot' trước hình thức so sánh."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "A", "role": "subject"},
-      {"text": "is", "role": "verb"},
-      {"text": "bigger / more expensive", "role": "complement"},
-      {"text": "than", "role": "connector"},
-      {"text": "B", "role": "object"}
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+      {"text": "adj-er", "role": "complement", "label": {"vi": "tính từ ngắn + -er"}},
+      {"text": "than", "role": "marker", "label": {"vi": "từ so sánh"}},
+      {"text": "N", "role": "object", "label": {"vi": "đối tượng so sánh"}}
     ],
-    "illustration": {"kind": "word_order"}
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định"}},
+        {"text": "adj-er", "role": "complement", "label": {"vi": "tính từ ngắn + -er"}},
+        {"text": "than", "role": "marker", "label": {"vi": "từ so sánh"}},
+        {"text": "N", "role": "object", "label": {"vi": "đối tượng so sánh"}}
+      ],
+      "question": [
+        {"text": "V", "role": "aux", "label": {"vi": "trợ động từ"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "adj-er", "role": "complement", "label": {"vi": "tính từ ngắn + -er"}},
+        {"text": "than", "role": "marker", "label": {"vi": "từ so sánh"}},
+        {"text": "N", "role": "object", "label": {"vi": "đối tượng so sánh"}}
+      ]
+    },
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {"base": "tall", "affix": "-er", "result": "taller"},
+        {"base": "big", "affix": "-ger", "result": "bigger"},
+        {"base": "happy", "affix": "-ier", "result": "happier"},
+        {"base": "large", "affix": "-r", "result": "larger"}
+      ]
+    }
   },
   "examples": [
     {
-      "text": "Ho Chi Minh City is bigger than Da Nang.",
-      "spans": [{"start": 20, "end": 31, "role": "complement"}],
-      "annotation": {"vi": "tính từ ngắn: +er"},
-      "translation": {"vi": "TP.HCM lớn hơn Đà Nẵng."}
+      "text": "My house is bigger than your house.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 18, "role": "complement"},
+        {"start": 19, "end": 23, "role": "marker"},
+        {"start": 24, "end": 34, "role": "object"}
+      ],
+      "annotation": {"vi": "So sánh hai ngôi nhà, dùng 'bigger' vì 'big' là tính từ ngắn."},
+      "translation": {"vi": "Nhà của tôi lớn hơn nhà của bạn."}
     },
     {
-      "text": "This laptop is more expensive than that one.",
-      "spans": [{"start": 15, "end": 34, "role": "complement"}],
-      "annotation": {"vi": "tính từ dài: more + adj"},
-      "translation": {"vi": "Laptop này đắt hơn cái kia."}
+      "text": "This book is not more interesting than that book.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 13, "end": 16, "role": "particle"},
+        {"start": 17, "end": 33, "role": "complement"},
+        {"start": 34, "end": 38, "role": "marker"},
+        {"start": 39, "end": 48, "role": "object"}
+      ],
+      "annotation": {"vi": "Phủ định so sánh hơn: 'not' đứng trước 'more interesting'."},
+      "translation": {"vi": "Cuốn sách này không thú vị hơn cuốn sách kia."}
+    },
+    {
+      "text": "Is your car faster than my car?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "aux"},
+        {"start": 3, "end": 11, "role": "subject"},
+        {"start": 12, "end": 18, "role": "complement"},
+        {"start": 19, "end": 23, "role": "marker"},
+        {"start": 24, "end": 30, "role": "object"}
+      ],
+      "annotation": {"vi": "Câu hỏi so sánh hơn: đảo trợ động từ 'is' lên trước chủ ngữ."},
+      "translation": {"vi": "Xe của bạn nhanh hơn xe của tôi phải không?"}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "This phone is more cheaper.",
-      "right": "This phone is cheaper.",
-      "reason": {"vi": "'Hơn' đã nằm trong đuôi -er, nên không dùng thêm more."},
+      "wrong": "She is more tall than her sister.",
+      "right": "She is taller than her sister.",
+      "reason": {"vi": "Với tính từ ngắn như 'tall', phải thêm '-er' thay vì dùng 'more'."},
       "error_tag": "word_form",
       "l1": ["vi"]
     },
     {
-      "wrong": "She is taller me.",
-      "right": "She is taller than me.",
-      "reason": {"vi": "'Cao hơn tôi': chữ 'hơn' tương ứng với cả -er lẫn than. Không được bỏ than."},
+      "wrong": "This bag is expensiver than that bag.",
+      "right": "This bag is more expensive than that bag.",
+      "reason": {"vi": "Với tính từ dài như 'expensive', phải dùng 'more' thay vì thêm '-er'."},
       "error_tag": "sentence_structure",
       "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "English is ___ than Chinese for me.",
-      "options": ["more easy", "easier", "more easier"],
-      "answer": 1,
-      "explain": {"vi": "Easy → easier."}
+      "q": "My sister is ___ than me.",
+      "options": [
+        {"text": "taller", "error_tag": null},
+        {"text": "more tall", "error_tag": "word_form"},
+        {"text": "tallest", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Tính từ ngắn 'tall' tạo so sánh hơn bằng cách thêm '-er': taller."}
     },
     {
-      "q": "This hotel is ___ than that one.",
-      "options": ["expensiver", "more expensive", "most expensive"],
-      "answer": 1,
-      "explain": {"vi": "Tính từ dài → more expensive."}
+      "q": "This exercise is ___ than the last one.",
+      "options": [
+        {"text": "more difficult", "error_tag": null},
+        {"text": "difficulter", "error_tag": "word_form"},
+        {"text": "most difficult", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Tính từ dài 'difficult' tạo so sánh hơn bằng 'more': more difficult."}
     },
     {
-      "q": "Today the weather is ___ than yesterday.",
-      "options": ["badder", "worse", "more bad"],
-      "answer": 1,
-      "explain": {"vi": "Bad là bất quy tắc: worse."}
+      "q": "The weather today is ___ than yesterday.",
+      "options": [
+        {"text": "worse", "error_tag": null},
+        {"text": "more bad", "error_tag": "word_form"},
+        {"text": "badder", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "'Bad' có dạng so sánh hơn bất quy tắc là 'worse'."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_migrated_v04",
-    "run_id": "migrate.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00",
-    "migrated_from": {"file": "content/en/en.comparatives.json (v0.2, pre-migration)", "schema_version": "0.2"}
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790589933",
+    "generated_at": "2026-09-28T10:05:33Z"
   },
   "review": null
 }

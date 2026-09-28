@@ -9,87 +9,170 @@
   "contrasts": ["zh.le_completion"],
   "error_tags": ["aspect"],
   "source_refs": {},
-  "title": {"vi": "Trợ từ 过 (đã từng)", "zh-Hans": "动态助词“过”"},
-  "summary": {"vi": "过 đặt sau động từ để nói đã từng làm gì, không cần mốc thời gian cụ thể."},
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {"vi": "Trợ từ 过 (đã từng)"},
+    "native_title": "动态助词“过”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Trợ từ động thái 过 đặt sau động từ để nói rằng chủ thể đã từng trải qua hành động đó ít nhất một lần trong quá khứ, tính đến hiện tại."
+    }
+  },
   "when_to_use": [
-    {"vi": "Khi nói đã từng có trải nghiệm đó, không quan trọng khi nào."},
-    {"vi": "Không dùng khi câu đã có mốc thời gian xác định gần đây."}
+    {"vi": "Khi muốn kể một trải nghiệm đã từng xảy ra, không quan tâm thời điểm cụ thể."},
+    {"vi": "Khi trả lời câu hỏi dạng 你...过...吗？ để xác nhận có hay chưa từng làm gì."},
+    {"vi": "Khi phủ định trải nghiệm bằng 没(有) + động từ + 过, không dùng 不."},
+    {"vi": "Khi muốn nhấn mạnh số lần đã trải qua, đặt cụm số lần sau 过."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "动词", "role": "verb"},
-      {"text": "过", "role": "particle"},
-      {"text": "宾语", "role": "object"}
+    "formula": [
+      {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+      {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+      {"text": "过", "role": "particle", "label": {"vi": "trợ từ trải nghiệm"}, "pinyin": ["guo"]},
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
     ],
-    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past", "relevance": "now"}}
+    "variants": {
+      "negative": [
+        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+        {"text": "没", "role": "aux", "label": {"vi": "phủ định"}, "pinyin": ["méi"]},
+        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {"text": "过", "role": "particle", "label": {"vi": "trợ từ trải nghiệm"}, "pinyin": ["guo"]},
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ],
+      "question": [
+        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {"text": "过", "role": "particle", "label": {"vi": "trợ từ trải nghiệm"}, "pinyin": ["guo"]},
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {"text": "吗", "role": "particle", "label": {"vi": "trợ từ nghi vấn"}, "pinyin": ["ma"]}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past"}}
   },
   "examples": [
     {
-      "text": "我去过北京。",
-      "spans": [{"start": 2, "end": 3, "role": "particle"}],
-      "annotation": {"vi": "đã từng, không cần mốc thời gian"},
-      "translation": {"vi": "Tôi đã từng đến Bắc Kinh."},
-      "pinyin": ["wǒ", "qù", "guò", "běi", "jīng", ""]
+      "text": "我吃过北京烤鸭。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 7, "role": "object"}
+      ],
+      "annotation": {"vi": "Kể lại một trải nghiệm đã từng có, không nêu thời điểm cụ thể."},
+      "translation": {"vi": "Tôi đã từng ăn vịt quay Bắc Kinh."},
+      "pinyin": ["wǒ", "chī", "guo", "běi", "jīng", "kǎo", "yā", ""]
     },
     {
-      "text": "他学过三年英语。",
-      "spans": [{"start": 2, "end": 3, "role": "particle"}],
-      "annotation": {"vi": "trải nghiệm trong quá khứ"},
-      "translation": {"vi": "Anh ấy đã từng học tiếng Anh ba năm."},
-      "pinyin": ["tā", "xué", "guò", "sān", "nián", "yīng", "yǔ", ""]
+      "text": "他没去过长城。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {"vi": "Phủ định trải nghiệm bằng 没, không dùng 不."},
+      "translation": {"vi": "Anh ấy chưa từng đi Vạn Lý Trường Thành."},
+      "pinyin": ["tā", "méi", "qù", "guo", "cháng", "chéng", ""]
+    },
+    {
+      "text": "你学过汉语吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {"vi": "Hỏi xem đối phương đã từng học chưa, dùng 过...吗."},
+      "translation": {"vi": "Bạn đã từng học tiếng Trung chưa?"},
+      "pinyin": ["nǐ", "xué", "guo", "hàn", "yǔ", "ma", ""]
     }
   ],
   "compare": [
     {
       "with": "zh.le_completion",
-      "this_meaning": {"vi": "Đã từng trải nghiệm, không cần mốc thời gian cụ thể."},
-      "this_example": "我去过北京。",
-      "other_meaning": {"vi": "Hành động đã xong, thường có mốc thời gian cụ thể."},
-      "other_example": "我们吃了饭。"
+      "this_meaning": {"vi": "过 nhấn mạnh đã từng trải qua, không quan tâm thời điểm và kết quả hiện tại."},
+      "this_example": "我看过那部电影。",
+      "other_meaning": {
+        "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một thời điểm hoặc kết quả cụ thể."
+      },
+      "other_example": "我看了那部电影。"
     }
   ],
   "common_mistakes": [
     {
       "wrong": "我不去过北京。",
       "right": "我没去过北京。",
-      "reason": {"vi": "Phủ định của 过 dùng 没, không dùng 不."},
+      "reason": {
+        "vi": "Người học Việt Nam thường dịch thẳng 'không' thành 不, nhưng phủ định trải nghiệm với 过 bắt buộc dùng 没(有), không dùng 不."
+      },
       "error_tag": "aspect",
-      "l1": ["vi"]
-    },
-    {
-      "wrong": "我去过北京昨天。",
-      "right": "我昨天去了北京。",
-      "reason": {"vi": "过 không dùng khi câu có mốc thời gian xác định gần đây như 昨天; khi đó dùng 了."},
-      "error_tag": "aspect",
-      "l1": ["vi"]
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "bù", "qù", "guo", "běi", "jīng", ""],
+      "right_pinyin": ["wǒ", "méi", "qù", "guo", "běi", "jīng", ""]
     }
   ],
   "quick_practice": [
     {
-      "q": "你___中国菜吗？",
-      "options": ["吃", "吃过", "吃着"],
-      "answer": 1,
-      "explain": {"vi": "Hỏi đã từng trải nghiệm chưa → 吃过。"}
+      "q": "我___过日本。",
+      "options": [
+        {"text": "去", "error_tag": null},
+        {"text": "不", "error_tag": "aspect"},
+        {"text": "了", "error_tag": "aspect"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu khẳng định kể trải nghiệm dùng động từ + 过, nên chỗ trống là động từ 去."}
     },
     {
-      "q": "我以前___这本书。",
-      "options": ["看过", "看了", "看着"],
+      "q": "他___吃过越南菜。",
+      "options": [
+        {"text": "没", "error_tag": null},
+        {"text": "不", "error_tag": "aspect"},
+        {"text": "了", "error_tag": "aspect"}
+      ],
       "answer": 0,
-      "explain": {"vi": "以前 (trước đây, không mốc cụ thể) → 看过。"}
+      "explain": {"vi": "Phủ định trải nghiệm với 过 dùng 没, không dùng 不 hay 了."}
     },
     {
-      "q": "他没___这个电影。",
-      "options": ["看过", "看了", "看着"],
+      "q": "你学___汉语吗？",
+      "options": [
+        {"text": "过", "error_tag": null},
+        {"text": "了", "error_tag": "aspect"},
+        {"text": "不", "error_tag": "aspect"}
+      ],
       "answer": 0,
-      "explain": {"vi": "Phủ định trải nghiệm: 没 + V + 过。"}
+      "explain": {"vi": "Câu hỏi về trải nghiệm dùng 过 sau động từ, không dùng 了 hay 不."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_authored_v04",
-    "run_id": "author.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790589982",
+    "generated_at": "2026-09-28T10:06:22Z"
   },
   "review": null
 }

@@ -9,89 +9,168 @@
   "contrasts": ["zh.guo_experience"],
   "error_tags": ["aspect"],
   "source_refs": {},
-  "title": {"vi": "Trợ từ 了 (hoàn thành)", "zh-Hans": "动态助词“了”"},
-  "summary": {"vi": "了 đặt sau động từ để nói hành động đã hoàn thành, thường có mốc thời gian cụ thể."},
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {"vi": "Trợ từ 了 (hoàn thành)"},
+    "native_title": "动态助词“了”",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {"vi": "Trợ từ 了 đặt sau động từ để nói một hành động đã hoàn thành, thường là trong quá khứ."}
+  },
   "when_to_use": [
-    {"vi": "Khi hành động đã hoàn thành, thường có mốc thời gian cụ thể."},
-    {"vi": "Không dùng cho thói quen hay sự thật chung."}
+    {"vi": "Khi muốn nói một hành động đã xảy ra và đã kết thúc, không cần nêu rõ thời gian."},
+    {"vi": "Khi câu có một mốc thời gian trong quá khứ như 昨天, 上午, 去年."},
+    {"vi": "Khi kể lại một chuỗi việc đã làm xong, mỗi động từ chính có thể mang 了."},
+    {"vi": "Khi muốn nhấn mạnh số lượng kết quả đã đạt được, ví dụ 买了三本书."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "动词", "role": "verb"},
-      {"text": "了", "role": "particle"},
-      {"text": "宾语", "role": "object"}
+    "formula": [
+      {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+      {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+      {"text": "了", "role": "particle", "label": {"vi": "trợ từ hoàn thành"}, "pinyin": ["le"]},
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
     ],
+    "variants": {
+      "negative": [
+        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+        {"text": "没有", "role": "aux", "label": {"vi": "phủ định"}, "pinyin": ["méi", "yǒu"]},
+        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ],
+      "question": [
+        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {"text": "了", "role": "particle", "label": {"vi": "trợ từ hoàn thành"}, "pinyin": ["le"]},
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {"text": "吗", "role": "particle", "label": {"vi": "trợ từ nghi vấn"}, "pinyin": ["ma"]}
+      ]
+    },
     "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
   },
   "examples": [
     {
-      "text": "我们吃了饭。",
-      "spans": [{"start": 3, "end": 4, "role": "particle"}],
-      "annotation": {"vi": "đã hoàn thành"},
-      "translation": {"vi": "Chúng tôi đã ăn cơm."},
-      "pinyin": ["wǒ", "men", "chī", "le", "fàn", ""]
+      "text": "我昨天买了一本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 8, "role": "object"}
+      ],
+      "annotation": {"vi": "Hành động mua đã hoàn thành trong quá khứ, có mốc thời gian 昨天."},
+      "translation": {"vi": "Hôm qua tôi đã mua một cuốn sách."},
+      "pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
     },
     {
-      "text": "他昨天买了一本书。",
-      "spans": [{"start": 4, "end": 5, "role": "particle"}],
-      "annotation": {"vi": "đã hoàn thành, có mốc thời gian 昨天"},
-      "translation": {"vi": "Hôm qua anh ấy đã mua một quyển sách."},
-      "pinyin": ["tā", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
+      "text": "他没吃了早饭。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了."},
+      "translation": {"vi": "Anh ấy chưa ăn sáng."},
+      "pinyin": ["tā", "méi", "chī", "le", "zǎo", "fàn", ""]
+    },
+    {
+      "text": "你看了那个电影吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {"vi": "Câu hỏi có 吗, hành động xem đã hoàn thành hay chưa."},
+      "translation": {"vi": "Bạn đã xem bộ phim đó chưa?"},
+      "pinyin": ["nǐ", "kàn", "le", "nà", "gè", "diàn", "yǐng", "ma", ""]
     }
   ],
   "compare": [
     {
       "with": "zh.guo_experience",
-      "this_meaning": {"vi": "Hành động đã xong, thường có mốc thời gian cụ thể."},
-      "this_example": "我们吃了饭。",
-      "other_meaning": {"vi": "Đã từng trải nghiệm, không cần mốc thời gian cụ thể."},
+      "this_meaning": {
+        "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một lần cụ thể hoặc kết quả cụ thể."
+      },
+      "this_example": "我昨天买了一本书。",
+      "other_meaning": {
+        "vi": "过 nhấn mạnh kinh nghiệm từng trải qua ít nhất một lần, không quan tâm thời điểm cụ thể."
+      },
       "other_example": "我去过北京。"
     }
   ],
   "common_mistakes": [
     {
-      "wrong": "我昨天吃饭。",
-      "right": "我昨天吃了饭。",
-      "reason": {"vi": "Hành động đã xong cần 了, dù câu đã có mốc thời gian 昨天."},
-      "error_tag": "aspect",
-      "l1": ["vi"]
-    },
-    {
-      "wrong": "我每天吃了早饭。",
-      "right": "我每天吃早饭。",
+      "wrong": "我昨天买一本书了。",
+      "right": "我昨天买了一本书。",
       "reason": {
-        "vi": "每天 diễn tả thói quen lặp lại, không phải một hành động đã hoàn thành một lần, nên không dùng 了."
+        "vi": "Người Việt thường đặt 了 ở cuối câu theo thói quen, nhưng 了 hoàn thành phải đứng ngay sau động từ khi có tân ngữ."
       },
       "error_tag": "aspect",
-      "l1": ["vi"]
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "yī", "běn", "shū", "le", ""],
+      "right_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
     }
   ],
   "quick_practice": [
     {
-      "q": "他吃___饭就走了。",
-      "options": ["了", "着", "过"],
+      "q": "我昨天___两碗米饭。",
+      "options": [
+        {"text": "吃了", "error_tag": null},
+        {"text": "吃", "error_tag": "aspect"},
+        {"text": "吃过", "error_tag": "aspect"}
+      ],
       "answer": 0,
-      "explain": {"vi": "Ăn xong rồi mới đi → hành động hoàn thành, dùng 了."}
+      "explain": {"vi": "Hành động ăn đã hoàn thành trong quá khứ, cần 了 sau động từ 吃."}
     },
     {
-      "q": "昨天我们___一个电影。",
-      "options": ["看", "看了", "在看"],
-      "answer": 1,
-      "explain": {"vi": "Đã xem xong hôm qua → 看了。"}
+      "q": "他___去学校。",
+      "options": [
+        {"text": "没", "error_tag": null},
+        {"text": "没了", "error_tag": "aspect"},
+        {"text": "不", "error_tag": "aspect"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了 hay 不."}
     },
     {
-      "q": "他已经___作业了。",
-      "options": ["做", "做完", "做着"],
-      "answer": 1,
-      "explain": {"vi": "已经...了 diễn tả đã hoàn thành → 做完。"}
+      "q": "你___那个电影吗？",
+      "options": [
+        {"text": "看了", "error_tag": null},
+        {"text": "看", "error_tag": "aspect"},
+        {"text": "看过", "error_tag": "aspect"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu hỏi về hành động đã hoàn thành dùng 了 sau động từ 看."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_authored_v04",
-    "run_id": "author.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790589975",
+    "generated_at": "2026-09-28T10:06:15Z"
   },
   "review": null
 }

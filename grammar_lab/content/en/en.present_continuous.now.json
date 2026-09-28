@@ -9,90 +9,143 @@
   "contrasts": ["en.present_simple.third_person_s"],
   "error_tags": ["tense"],
   "source_refs": {},
-  "title": {"vi": "Hiện tại tiếp diễn", "en": "Present continuous"},
-  "summary": {"vi": "Dùng am/is/are + V-ing cho việc đang xảy ra ngay lúc nói hoặc trong giai đoạn này."},
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {"vi": "Hiện tại tiếp diễn"},
+    "native_title": "Present continuous",
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
+    "summary": {"vi": "Thì hiện tại tiếp diễn dùng để nói về một hành động đang xảy ra ngay lúc nói."}
+  },
   "when_to_use": [
-    {"vi": "Việc đang xảy ra ngay lúc nói."},
-    {"vi": "Việc tạm thời, đang diễn ra trong giai đoạn này."}
+    {"vi": "Hành động đang diễn ra ngay bây giờ, người nói nhìn thấy hoặc biết rõ."},
+    {"vi": "Hành động tạm thời trong giai đoạn hiện tại, không phải thói quen lâu dài."},
+    {"vi": "Dùng với các từ như now, right now, at the moment để nhấn mạnh thời điểm."},
+    {"vi": "Một tình huống đang thay đổi hoặc đang phát triển."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "She", "role": "subject"},
-      {"text": "is", "role": "aux"},
-      {"text": "reading", "role": "verb"},
-      {"text": "a book", "role": "object"}
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+      {"text": "am/is/are", "role": "aux", "label": {"vi": "trợ động từ to be"}},
+      {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
+      {"text": "now", "role": "time", "label": {"vi": "mốc thời gian"}, "optional": true}
     ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "am/is/are", "role": "aux", "label": {"vi": "trợ động từ to be"}},
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      ],
+      "question": [
+        {"text": "Am/Is/Are", "role": "aux", "label": {"vi": "trợ động từ to be"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      ]
+    },
     "illustration": {"kind": "timeline", "timeline": {"shape": "ongoing_now"}}
   },
   "examples": [
     {
       "text": "She is reading a book now.",
-      "spans": [{"start": 4, "end": 14, "role": "verb"}],
-      "annotation": {"vi": "đang xảy ra ngay lúc nói"},
-      "translation": {"vi": "Cô ấy đang đọc sách."}
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 6, "role": "aux"},
+        {"start": 7, "end": 14, "role": "verb"},
+        {"start": 15, "end": 21, "role": "object"},
+        {"start": 22, "end": 25, "role": "time"}
+      ],
+      "annotation": {"vi": "Hành động đang xảy ra ngay lúc nói."},
+      "translation": {"vi": "Cô ấy đang đọc một cuốn sách ngay bây giờ."}
     },
     {
-      "text": "They are having dinner at the moment.",
-      "spans": [{"start": 5, "end": 15, "role": "verb"}],
-      "annotation": {"vi": "at the moment → be + V-ing"},
-      "translation": {"vi": "Họ đang ăn tối."}
+      "text": "They are not playing football at the moment.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "aux"},
+        {"start": 9, "end": 12, "role": "particle"},
+        {"start": 13, "end": 20, "role": "verb"},
+        {"start": 21, "end": 29, "role": "object"}
+      ],
+      "annotation": {"vi": "Phủ định: thêm not sau trợ động từ to be."},
+      "translation": {"vi": "Họ không chơi bóng đá vào lúc này."}
+    },
+    {
+      "text": "Are you listening to me?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 17, "role": "verb"},
+        {"start": 21, "end": 23, "role": "object"}
+      ],
+      "annotation": {"vi": "Câu hỏi: đảo trợ động từ to be lên trước chủ ngữ."},
+      "translation": {"vi": "Bạn có đang nghe tôi nói không?"}
     }
   ],
   "compare": [
     {
       "with": "en.present_simple.third_person_s",
-      "this_meaning": {"vi": "Đang diễn ra, tạm thời."},
-      "this_example": "I am working from home this week.",
-      "other_meaning": {"vi": "Thói quen, lâu dài."},
-      "other_example": "I work in an office."
+      "this_meaning": {"vi": "Hành động đang xảy ra ngay lúc nói, tạm thời."},
+      "this_example": "She is reading a book now.",
+      "other_meaning": {"vi": "Thói quen hoặc sự thật lặp đi lặp lại, không nhất thiết ngay lúc nói."},
+      "other_example": "She reads a book every night."
     }
   ],
   "common_mistakes": [
     {
-      "wrong": "She reading a book.",
-      "right": "She is reading a book.",
-      "reason": {"vi": "Chữ 'đang' trong tiếng Việt ứng với cả cụm be + V-ing. Không được bỏ is/am/are."},
-      "error_tag": "tense",
-      "l1": ["vi"]
-    },
-    {
-      "wrong": "I am go to school now.",
-      "right": "I am going to school now.",
-      "reason": {"vi": "Có be thì động từ phải ở dạng -ing."},
+      "wrong": "She reading a book now.",
+      "right": "She is reading a book now.",
+      "reason": {
+        "vi": "Người Việt thường bỏ trợ động từ to be vì trong tiếng Việt không có động từ 'to be' đứng trước động từ chính trong thì hiện tại tiếp diễn."
+      },
       "error_tag": "tense",
       "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "Listen! The baby ___.",
-      "options": ["cries", "is crying", "crying"],
-      "answer": 1,
-      "explain": {"vi": "'Listen!' cho thấy việc đang xảy ra → is crying."}
-    },
-    {
-      "q": "They ___ dinner at the moment.",
-      "options": ["are having", "have", "having"],
+      "q": "Look! The baby ___ .",
+      "options": [
+        {"text": "is sleeping", "error_tag": null},
+        {"text": "sleeps", "error_tag": "tense"},
+        {"text": "sleep", "error_tag": "agreement"}
+      ],
       "answer": 0,
-      "explain": {"vi": "At the moment → hiện tại tiếp diễn, đủ be + V-ing."}
+      "explain": {"vi": "Hành động đang xảy ra ngay lúc nói nên dùng thì hiện tại tiếp diễn: is sleeping."}
     },
     {
-      "q": "He usually ___ to work by bike.",
-      "options": ["is going", "goes", "going"],
-      "answer": 1,
-      "explain": {"vi": "Usually chỉ thói quen → hiện tại đơn."}
+      "q": "They ___ TV at the moment.",
+      "options": [
+        {"text": "are watching", "error_tag": null},
+        {"text": "watch", "error_tag": "tense"},
+        {"text": "watches", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Có 'at the moment' chỉ thời điểm đang diễn ra, nên dùng are watching."}
+    },
+    {
+      "q": "___ she cooking dinner now?",
+      "options": [
+        {"text": "Is", "error_tag": null},
+        {"text": "Does", "error_tag": "tense"},
+        {"text": "Are", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu hỏi hiện tại tiếp diễn với chủ ngữ số ít 'she' dùng 'Is'."}
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_migrated_v04",
-    "run_id": "migrate.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00",
-    "migrated_from": {
-      "file": "content/en/en.present_continuous.now.json (v0.2, pre-migration)",
-      "schema_version": "0.2"
-    }
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790589955",
+    "generated_at": "2026-09-28T10:05:55Z"
   },
   "review": null
 }

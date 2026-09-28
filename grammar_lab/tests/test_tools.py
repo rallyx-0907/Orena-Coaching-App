@@ -35,7 +35,7 @@ def test_traditional_chars(text: str, expected: list[str]) -> None:
 def test_cli_validate_committed_content_exits_zero() -> None:
     result = runner.invoke(app, ["validate", "--lang", "en"])
     assert result.exit_code == 0, result.output
-    assert "10 point(s), OK" in result.output
+    assert "11 point(s), OK" in result.output  # articles split into a_an + the (2026-09-28)
 
 
 def test_cli_validate_reports_issues_and_exits_one(lab: Lab) -> None:

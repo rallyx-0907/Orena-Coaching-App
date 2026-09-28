@@ -42,7 +42,8 @@ functions:
     en: Reference
   realizations:
     en:
-    - en.articles.a_an_the
+    - en.articles.a_an
+    - en.articles.the
   planned:
     zh-Hans:
     - zh.zhe_na_measure

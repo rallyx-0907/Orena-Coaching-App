@@ -9,85 +9,159 @@
   "contrasts": [],
   "error_tags": ["ba_sentence"],
   "source_refs": {},
-  "title": {"vi": "Câu chữ 把", "zh-Hans": "把字句"},
-  "summary": {"vi": "把 đưa tân ngữ xác định lên trước động từ để nhấn mạnh kết quả xử lý trên vật đó."},
+  "point_type": "word_order",
+  "header": {
+    "title": {"vi": "Câu chữ 把"},
+    "native_title": "把字句",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Câu chữ 把 dùng để nhấn mạnh việc xử lý một vật cụ thể và kết quả của việc đó, với vật bị xử lý đứng ngay sau 把."
+    }
+  },
   "when_to_use": [
-    {"vi": "Khi muốn nhấn mạnh kết quả xử lý/di chuyển một vật cụ thể."},
-    {"vi": "Tân ngữ sau 把 phải là vật xác định (đã biết là vật nào), không chung chung."}
+    {"vi": "Khi muốn nói rõ mình đã làm gì với một vật cụ thể và kết quả ra sao."},
+    {"vi": "Khi vật bị xử lý là một đối tượng xác định, không phải chung chung."},
+    {"vi": "Khi câu có kết quả hoặc thay đổi rõ ràng ở cuối, như 完, 好, 在, 到."},
+    {"vi": "Khi muốn tránh cách nói chỉ nêu hành động mà không cho biết kết quả."}
   ],
   "pattern": {
-    "parts": [
-      {"text": "我", "role": "subject"},
-      {"text": "把", "role": "marker"},
-      {"text": "书", "role": "object"},
-      {"text": "看完", "role": "verb"},
-      {"text": "了", "role": "particle"}
+    "formula": [
+      {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+      {"text": "把", "role": "marker", "label": {"vi": "trợ từ 把"}, "pinyin": ["bǎ"]},
+      {"text": "宾语", "role": "object", "label": {"vi": "tân ngữ"}, "pinyin": ["bīn", "yǔ"]},
+      {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+      {"text": "补语", "role": "complement", "label": {"vi": "bổ ngữ"}, "pinyin": ["bǔ", "yǔ"]}
     ],
+    "variants": {
+      "negative": [
+        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+        {"text": "没有", "role": "aux", "label": {"vi": "phủ định"}, "pinyin": ["méi", "yǒu"]},
+        {"text": "把", "role": "marker", "label": {"vi": "trợ từ 把"}, "pinyin": ["bǎ"]},
+        {"text": "宾语", "role": "object", "label": {"vi": "tân ngữ"}, "pinyin": ["bīn", "yǔ"]},
+        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {"text": "补语", "role": "complement", "label": {"vi": "bổ ngữ"}, "pinyin": ["bǔ", "yǔ"]}
+      ],
+      "question": [
+        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
+        {"text": "把", "role": "marker", "label": {"vi": "trợ từ 把"}, "pinyin": ["bǎ"]},
+        {"text": "宾语", "role": "object", "label": {"vi": "tân ngữ"}, "pinyin": ["bīn", "yǔ"]},
+        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {"text": "补语", "role": "complement", "label": {"vi": "bổ ngữ"}, "pinyin": ["bǔ", "yǔ"]},
+        {
+          "text": "了吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn"},
+          "pinyin": ["le", "ma"]
+        }
+      ]
+    },
     "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
-      "text": "我把书看完了。",
-      "spans": [{"start": 1, "end": 2, "role": "marker"}, {"start": 3, "end": 5, "role": "verb"}],
-      "annotation": {"vi": "把 + tân ngữ + động từ + kết quả"},
-      "translation": {"vi": "Tôi đã đọc xong quyển sách rồi."},
-      "pinyin": ["wǒ", "bǎ", "shū", "kàn", "wán", "le", ""]
+      "text": "我把书放在桌子上了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 9, "role": "complement"}
+      ],
+      "annotation": {"vi": "Câu nói rõ đã xử lý quyển sách và kết quả là nó nằm trên bàn."},
+      "translation": {"vi": "Tôi đã đặt quyển sách lên bàn rồi."},
+      "pinyin": ["wǒ", "bǎ", "shū", "fàng", "zài", "zhuō", "zi", "shàng", "le", ""]
     },
     {
-      "text": "请把门关上。",
-      "spans": [{"start": 1, "end": 2, "role": "marker"}, {"start": 3, "end": 5, "role": "verb"}],
-      "annotation": {"vi": "把 + tân ngữ + động từ + kết quả (câu mệnh lệnh)"},
-      "translation": {"vi": "Làm ơn đóng cửa lại."},
-      "pinyin": ["qǐng", "bǎ", "mén", "guān", "shàng", ""]
+      "text": "他没有把作业做完。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {"vi": "Phủ định đặt trước 把, cho biết việc xử lý bài tập chưa đạt kết quả hoàn thành."},
+      "translation": {"vi": "Anh ấy chưa làm xong bài tập."},
+      "pinyin": ["tā", "méi", "yǒu", "bǎ", "zuò", "yè", "zuò", "wán", ""]
+    },
+    {
+      "text": "你把窗户关好了吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 8, "role": "particle"}
+      ],
+      "annotation": {"vi": "Câu hỏi có 吗 ở cuối, hỏi xem việc đóng cửa sổ đã xong chưa."},
+      "translation": {"vi": "Bạn đã đóng cửa sổ lại chưa?"},
+      "pinyin": ["nǐ", "bǎ", "chuāng", "hu", "guān", "hǎo", "le", "ma", ""]
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "我看完了书。",
-      "right": "我把书看完了。",
+      "wrong": "我放书在桌子上了。",
+      "right": "我把书放在桌子上了。",
       "reason": {
-        "vi": "Khi nhấn mạnh kết quả xử lý một vật xác định, tiếng Trung thường đưa tân ngữ lên trước bằng 把, không để tân ngữ ở cuối như câu SVO thường."
+        "vi": "Người Việt thường đặt tân ngữ ngay sau động từ theo thói quen tiếng Việt, nhưng câu chữ 把 bắt buộc phải có 把 đứng trước tân ngữ để nhấn mạnh việc xử lý."
       },
       "error_tag": "ba_sentence",
-      "l1": ["vi"]
-    },
-    {
-      "wrong": "我把一本书看完了。",
-      "right": "我把那本书看完了。",
-      "reason": {
-        "vi": "Tân ngữ sau 把 phải là vật xác định (đã biết là vật nào, ví dụ 那本书), không dùng số từ không xác định như 一本。"
-      },
-      "error_tag": "ba_sentence",
-      "l1": ["vi"]
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "fàng", "shū", "zài", "zhuō", "zi", "shàng", "le", ""],
+      "right_pinyin": ["wǒ", "bǎ", "shū", "fàng", "zài", "zhuō", "zi", "shàng", "le", ""]
     }
   ],
   "quick_practice": [
     {
+      "q": "请___窗户关好。",
+      "options": [
+        {"text": "把", "error_tag": null},
+        {"text": "被", "error_tag": "bei_sentence"},
+        {"text": "在", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu chữ 把 dùng 把 trước tân ngữ để nhấn mạnh việc xử lý; 被 là câu bị động, 在 không phù hợp ở vị trí này."
+      }
+    },
+    {
+      "q": "我___书放在桌子上了。",
+      "options": [
+        {"text": "把", "error_tag": null},
+        {"text": "被", "error_tag": "bei_sentence"},
+        {"text": "给", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 我 thực hiện hành động lên 书, nên dùng 把; 被 dùng khi chủ ngữ bị tác động, 给 không đúng ngữ pháp ở đây."
+      }
+    },
+    {
       "q": "他___作业做完了。",
-      "options": ["把", "被", "在"],
+      "options": [
+        {"text": "把", "error_tag": null},
+        {"text": "被", "error_tag": "bei_sentence"},
+        {"text": "对", "error_tag": "word_choice"}
+      ],
       "answer": 0,
-      "explain": {"vi": "Nhấn mạnh kết quả xử lý bài tập → 把。"}
-    },
-    {
-      "q": "请___门打开。",
-      "options": ["把", "被", "给"],
-      "answer": 0,
-      "explain": {"vi": "Câu mệnh lệnh xử lý một vật cụ thể → 把。"}
-    },
-    {
-      "q": "我___这件事忘了。",
-      "options": ["把", "被", "跟"],
-      "answer": 0,
-      "explain": {"vi": "Nhấn mạnh kết quả (quên mất việc đó) → 把。"}
+      "explain": {
+        "vi": "Câu chữ 把 cần 把 trước tân ngữ 作业 để nêu kết quả xử lý; 被 sai hướng tác động, 对 không dùng trong cấu trúc này."
+      }
     }
   ],
   "status": "draft_ai",
+  "flags": [],
   "provenance": {
-    "model": "unknown",
-    "prompt_version": "hand_authored_v04",
-    "run_id": "author.grammar_content_contract_v04",
-    "generated_at": "2026-09-28T00:00:00+07:00"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790589990",
+    "generated_at": "2026-09-28T10:06:30Z"
   },
   "review": null
 }
