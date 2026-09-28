@@ -17,10 +17,36 @@ from collections.abc import Iterable
 from writing_coach.agent.schemas import CoachNote
 
 _CHANGE = re.compile(
-    r"(?i)\b(?:quên|xoá|xóa|bỏ|đừng nhớ|không cần nhớ|à không|thôi|đổi|sửa|không phải|thay vì|ngược lại)\b"
-    r"|\b(?:forget|delete|remove|actually|no longer|instead|change|not anymore|scratch that)\b"
-    r"|忘|删|不要记|别记|其实|不是|改|换"
+    r"(?i)\b(?:quên|xoá|xóa|bỏ|đừng|không cần nhớ|à không|thôi|đổi|sửa|không phải|thay vì|ngược lại)\b"
+    r"|\b(?:forget|delete|remove|actually|no longer|instead|change|not anymore|scratch that|don't|do not)\b"
+    r"|忘|删|不要|别|其实|不是|改|换"
 )
+
+# Forgetting deletes: only a request to forget that states no new wish (human direction 2026-09-28). A message
+# that says what the learner wants now is a correction, even with "xoá"/"đừng" in it; anything unclear is a
+# correction too - the note is replaced (same id), never lost.
+_FORGET = re.compile(
+    r"(?i)\b(?:quên|xoá|xóa|bỏ ghi chú|đừng nhớ|đừng ghi nhớ|không cần nhớ)\b"
+    r"|\b(?:forget|delete|remove|stop remembering|don't remember)\b"
+    r"|忘|删|不要记|别记"
+)
+_NEW_WISH = re.compile(
+    r"(?i)\b(?:lấy|giải thích|dùng|hãy|nên|muốn|thích|từ giờ|từ nay|thay vì|thay bằng|hơn|bằng tiếng|cho mình|nói)\b"
+    r"|\b(?:instead|from now|use|explain|prefer|want|give me|make|longer|shorter|more|less|in english|in vietnamese"
+    r"|in chinese|rather)\b"
+    r"|改|换|用|以后|从现在|要|更|请|喜欢"
+)
+CORRECT, FORGET = "correct", "forget"
+
+
+def note_intent(message: str | None) -> str:
+    """`forget` only for a request to forget with no new wish ("quên cái đó đi", "forget that", "忘掉吧");
+    otherwise `correct` ("Xoá cái cũ đi, từ giờ giải thích bằng tiếng Anh" keeps the note, with new words)."""
+
+    text = unicodedata.normalize("NFC", message or "")
+    if _FORGET.search(text) and not _NEW_WISH.search(text):
+        return FORGET
+    return CORRECT
 _NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|lưu ý|note|notes)\b|笔记|那条|记录")
 _EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want"})
 
@@ -52,10 +78,11 @@ def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote]) -
     return tuple(note for note in own if _phrases(note.text) & said)
 
 
-def nudge(notes: Iterable[CoachNote]) -> str:
+def nudge(notes: Iterable[CoachNote], intent: str = CORRECT) -> str:
     listed = "; ".join(f"{note.id}: {note.text}" for note in notes)
-    return (
-        "Your answer changed no coach note, but the learner's message changes or cancels one of these: "
-        f"{listed}. Call remember_note with replaces set to its id (a correction, in their words) or "
-        "forget_note with its id (to forget it) now, then answer in one or two sentences."
-    )
+    if intent == FORGET:
+        what = "The learner asks you to forget it: call forget_note with its id now"
+    else:
+        what = ("The learner corrects it with a new wish: call remember_note with replaces set to its id and the new "
+                "wish in their words now - do not forget it")  # fmt: skip
+    return f"Your answer changed no coach note, but the learner's message is about this one: {listed}. {what}, then answer in one or two sentences."

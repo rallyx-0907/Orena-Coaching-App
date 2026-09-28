@@ -311,6 +311,8 @@ class ReplyOutputs:
     address_asked: bool = False  # already offered in this session
     address_chosen: bool = False  # the learner already chose a pair (or said no): no offer
     notes: Mapping[str, float] = field(default_factory=dict)  # coach note id -> weight, as the device sent them
+    # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
+    correcting: tuple[str, ...] = ()
     learner_words: str = ""  # this turn's message: a gendered or casual term must come from it
     address_terms: tuple[str | None, str | None] = (None, None)  # the pair in use
     address_offered_now: bool = False
@@ -499,6 +501,8 @@ class ReplyOutputs:
         if self.opening:
             return "refused: not in an opening turn"
         kind, text, replaces = args.get("kind"), args.get("text"), args.get("replaces")
+        if replaces is None and len(self.correcting) == 1:
+            replaces = self.correcting[0]  # the learner corrected this very note: the new words replace it
         if kind not in COACH_NOTE_KINDS or not isinstance(text, str) or not text.strip():
             return f"refused: kind is one of {sorted(COACH_NOTE_KINDS)} and text is the learner's own words"
         if len(text.strip()) > MAX_NOTE_CHARS:
@@ -525,6 +529,9 @@ class ReplyOutputs:
         note_id = str(args.get("id") or "")
         if note_id not in self.notes or note_id.startswith("address-"):
             return "refused: no such coach note (an address is changed with set_address)"
+        if note_id in self.correcting:
+            return ("refused: the learner corrected this note with a new wish, they did not ask to forget it - call "
+                    "remember_note with replaces set to its id and the new wish")  # fmt: skip
         self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": note_id}))
         return f"accepted: {note_id} is forgotten; you may say so"
 

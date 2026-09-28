@@ -350,3 +350,76 @@ def test_a_note_turn_that_fails_after_asking_again_says_so_in_the_log(caplog):
     assert events[-1].name == "error"
     lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("agent notes:")]
     assert lines == ["agent notes: the model changed no note of 1; asked again", "agent notes: failed before a verdict"]
+
+
+# --- human direction 2026-09-28: forgetting deletes only on a plain request to forget -------------------------
+
+from writing_coach.agent.notes import CORRECT, FORGET, note_intent  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["quên cái đó đi", "đừng nhớ chuyện ví dụ nữa", "Quên ghi chú về ví dụ đó đi.", "forget that",
+     "Please forget that note.", "忘掉吧", "删掉那条笔记。", "别记这个了。"],
+)  # fmt: skip
+def test_a_plain_request_to_forget_is_forget(message):
+    assert note_intent(message) == FORGET
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["Đừng lấy ví dụ ngắn nữa, lấy dài hơn đi", "Xoá cái cũ đi, từ giờ giải thích bằng tiếng Anh",
+     "À không, ví dụ dài hơn một chút thì mình dễ hiểu hơn.", "Forget that, use longer examples instead.",
+     "Delete the old note and explain in English from now on.", "别记那个了，以后用英文解释。",
+     "删掉旧的，改成长一点的例子。", "Thôi, đổi lại nhé."],  # the last is unclear: a correction, never a deletion
+)  # fmt: skip
+def test_a_new_wish_or_anything_unclear_is_a_correction(message):
+    assert note_intent(message) == CORRECT
+
+
+def test_a_correction_is_never_a_deletion_and_replaces_the_note():
+    forget = (ToolCallRequest("c1", FORGET_NOTE, {"id": SHORT.id}), TurnFinished(0, 3, "tool_calls"))
+    keep = (ToolCallRequest("c2", REMEMBER_NOTE, {"kind": "preference", "text": "Thích ví dụ dài hơn"}),
+            TurnFinished(0, 3, "tool_calls"))  # fmt: skip
+    events, provider = run([forget, keep, reply("Mình ghi nhớ rồi nhé.")],
+                           request("Đừng lấy ví dụ ngắn nữa, lấy dài hơn đi.", notes=(SHORT,)))  # fmt: skip
+    assert provider.requests[1].messages[-1].content.startswith("refused: the learner corrected this note")
+    updates = [(e.op, e.note["id"]) for e in events if e.name == "memory_update"]
+    assert updates == [("upsert", SHORT.id)]  # replaced in place, same id: never removed
+
+
+def test_the_nudge_names_the_right_tool():
+    from writing_coach.agent.notes import nudge
+
+    assert "call forget_note" in nudge((SHORT,), FORGET)
+    assert "remember_note with replaces" in nudge((SHORT,), CORRECT) and "do not forget it" in nudge((SHORT,), CORRECT)
+
+
+def test_a_plain_forget_removes_the_note():
+    forget = (ToolCallRequest("c1", FORGET_NOTE, {"id": SHORT.id}), TurnFinished(0, 3, "tool_calls"))
+    events, _ = run([forget, reply("Mình đã quên ghi chú đó.")], request("Quên ghi chú về ví dụ đó đi.", notes=(SHORT,)))
+    assert [(e.op, e.note["id"]) for e in events if e.name == "memory_update"] == [("remove", SHORT.id)]
+
+
+# --- no button syntax in an answer; a source named only with its evidence -----------------------------------------
+
+
+def test_leftover_button_tags_are_removed():
+    from writing_coach.agent.honesty import strip_markup
+
+    assert strip_markup("[START_REVIEW scope=due]Ôn ngay[/START_REVIEW] Bấm Ôn ngay.") == "Ôn ngay Bấm Ôn ngay."
+    assert strip_markup("Xem <button>Lưu từ</button> nhé.") == "Xem Lưu từ nhé."
+    assert strip_markup("Từ [朋友] nghĩa là bạn bè.") == "Từ [朋友] nghĩa là bạn bè."  # not a tag
+    assert strip_markup("See [see also] and [note].") == "See [see also] and [note]."  # lower case: not a tag
+    events, _ = run([(TextDelta("Bạn có 3 từ đến hạn. [START_REVIEW scope=due]Ôn ngay[/START_REVIEW]"),
+                      ToolCallRequest("c1", PROPOSE_ACTION, {"type": "navigate", "payload": {"intent": "vocabulary.review_due"}}),
+                      TurnFinished(0, 5, "tool_calls"))], request("Giờ học gì?"))  # fmt: skip
+    text = segments(events)[0][1]
+    assert "[" not in text and "START_REVIEW" not in text
+
+
+def test_the_instruction_forbids_button_syntax_and_unsourced_attribution():
+    from writing_coach.agent.prompts import INSTRUCTION
+
+    assert "never write tags, square brackets or any button syntax" in INSTRUCTION
+    assert "words due come from the\n  review schedule, not the evaluator" in INSTRUCTION

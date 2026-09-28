@@ -53,7 +53,7 @@ from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, 
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
 from writing_coach.agent.honesty import ClaimGate, nothing_done, offer, offer_instead
-from writing_coach.agent.notes import notes_the_message_changes
+from writing_coach.agent.notes import CORRECT, note_intent, notes_the_message_changes
 from writing_coach.agent.notes import nudge as note_nudge
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
@@ -206,6 +206,7 @@ class _Turn:
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
+        self.notes_intent: str | None = None  # correct | forget, by rule (agent/notes.py)
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.snapshot: dict | None = None
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -273,6 +274,7 @@ class _Turn:
         self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
         if not self.opening:
             self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
+            self.notes_intent = note_intent(turn.message) if self.notes_asked else None
             self.gate.hold_all = bool(self.notes_asked)  # it may be written again: nothing streams early
         messages = opening_messages(
             turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot
@@ -288,6 +290,7 @@ class _Turn:
             address_asked=session.address_asked,
             address_chosen=tier1.address.chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
+            correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
             learner_words=turn.message or "",
             address_terms=tier1.address.pair,
         )
@@ -381,7 +384,7 @@ class _Turn:
             if not calls:
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
-                    self._ask_again(messages, round_text, note_nudge(self.notes_asked))
+                    self._ask_again(messages, round_text, note_nudge(self.notes_asked, self.notes_intent or CORRECT))
                     continue
                 if self.text or outputs.actions or nudged or round_index >= limit:
                     return
@@ -402,7 +405,7 @@ class _Turn:
             if not read_any and round_text:
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
-                    self._ask_again(messages, "", note_nudge(self.notes_asked))
+                    self._ask_again(messages, "", note_nudge(self.notes_asked, self.notes_intent or CORRECT))
                     continue
                 return  # the answer is written and its extras are attached
 

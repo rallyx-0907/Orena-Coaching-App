@@ -187,6 +187,17 @@ _ZH_BUTTON = re.compile(r"^\s*(?:[“「『\"]|.{0,6}?(?:按钮|按键|这里|�
 _WORD = re.compile(r"\S+")
 
 
+# The model never writes button syntax; an action is the server's (live run 2026-09-28: "[START_REVIEW
+# scope=due]Ôn ngay[/START_REVIEW]"). A leftover tag is removed - bracketed upper-case tags and action/button
+# markup - never the words around it.
+_MARKUP = re.compile(r"\[/?[A-Z][A-Z0-9_]{2,}(?:[ =][^\]\n]*)?\]|(?i:</?(?:button|action|btn)\b[^>\n]*>)")
+
+
+def strip_markup(text: str) -> str:
+    cleaned = _MARKUP.sub("", text)
+    return re.sub(r"[ \t]{2,}", " ", cleaned) if cleaned != text else text
+
+
 def _bare(word: str) -> str:
     return word.strip(".,!?;:…").casefold()
 
@@ -282,6 +293,7 @@ def offer_instead(
             return claims_done(part, remembered=remembered, action=action, address=address)
         return claims_acted(part, remembered=remembered, address=address)
 
+    text = strip_markup(text)
     parts = _sentences(text)
     dropped = any(drop(part) for part in parts)
     kept = "".join(part for part in parts if not drop(part)).strip() if dropped else text.strip()
@@ -316,6 +328,9 @@ class ClaimGate:
         out: list[str] = []
         while (end := _BOUNDARY.search(self._partial)) is not None:
             sentence, self._partial = self._partial[: end.end()], self._partial[end.end() :]
+            sentence = strip_markup(sentence)
+            if not sentence.strip():
+                continue
             if (
                 self.hold_all
                 or self._held
@@ -346,7 +361,7 @@ class ClaimGate:
         """The rest of the answer. `replace_with`: the whole held answer is set aside for this (nothing of it
         was sent)."""
 
-        tail = self._held + ([self._partial] if self._partial else [])
+        tail = self._held + ([strip_markup(self._partial)] if self._partial else [])
         self._held, self._partial = [], ""
         if replace_with is not None and not self.text:
             tail = [replace_with]
