@@ -96,10 +96,10 @@ def test_the_instruction_carries_the_rules():
 
 def test_the_voice_block_uses_the_chosen_pair():
     default = style_for("vi", [])
-    assert 'Luôn xưng "mình", gọi người học là "bạn"' in default
+    assert 'Xưng "mình", gọi người học là "bạn"' in default
     assert '"Mình chỉ xem được dữ liệu học của chính bạn thôi."' in default
     chosen = style_for("vi", [note("vi", "chị", "em")])
-    assert 'Luôn xưng "chị", gọi người học là "em"' in chosen
+    assert 'Xưng "chị", gọi người học là "em"' in chosen
     assert '"Chị chỉ xem được dữ liệu học của chính em thôi."' in chosen and "mình" not in chosen
     assert '称学习者为"您"' in style_for("zh-CN", [note("zh-CN", "我", "您")])
     assert style_for("en", [note("en", "I", "you")]) is None  # English needs no block
@@ -154,7 +154,7 @@ def test_the_chosen_pair_reaches_the_model_and_the_fixed_copy_keeps_the_default(
         "self_term": "chị", "user_term": "em", "set_by": "learner", "asked_this_session": False,
     }  # fmt: skip
     style = next(m.content for m in provider.requests[0].messages if m.content.startswith("Cách viết"))
-    assert 'Luôn xưng "chị", gọi người học là "em"' in style
+    assert 'Xưng "chị", gọi người học là "em"' in style
     # identity, refusals and errors are fixed copy: "mình"/"bạn" until the contract carries the address (v5)
     rt2, provider2 = runtime([])
     events = list(rt2.run(request("Bạn là ai?", notes=(note("vi", "chị", "em"),)), ZH))

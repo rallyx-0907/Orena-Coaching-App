@@ -144,6 +144,8 @@ class ClaimGate:
             chunk = kept + joiner + addition
         else:
             chunk = "".join(tail)
+        if offer is not None and not (self.text + chunk).strip():
+            chunk = offer  # the model proposed the button and said nothing: the offer is the answer
         if chunk:
             self.sent.append(chunk)
             return [chunk]

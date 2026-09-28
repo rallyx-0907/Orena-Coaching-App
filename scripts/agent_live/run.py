@@ -249,6 +249,85 @@ def plan() -> dict:
     return {"model_turns_per_target_per_repeat": per_target, "worst_turn_usd": round(WORST_TURN_USD, 4)}
 
 
+# --- multi-turn flows: a session, and the coach notes the device would keep ------------------
+
+VI = {"interface": "vi", "support": "vi"}
+FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
+    # name: [(target, step, locale, message, context extras)]
+    "address": [
+        ("zh-CN", "default", VI, "Giải thích giúp mình từ 学习 nhé.", {}),
+        ("zh-CN", "request", VI, "Từ giờ Orena xưng chị, gọi mình là em nhé.", {}),
+        ("zh-CN", "after", VI, "Chị giải thích từ 机会 cho em với.", {}),
+    ],
+    "decline": [
+        ("zh-CN", "uses-a-pair", VI, "Em hỏi chị: 朋友 nghĩa là gì ạ?", {}),
+        ("zh-CN", "says-no", VI, "Thôi, cứ xưng mình và gọi bạn như cũ là được.", {}),
+        ("zh-CN", "later", VI, "Em hỏi chị tiếp: 学生 là gì ạ?", {"new_session": True}),
+    ],
+    "claims": [
+        ("zh-CN", "vi", VI, "Lưu từ này giúp mình.", {"word": "我"}),
+        ("en", "en", {"interface": "en", "support": "en"}, "Save this word for me.", {"word": "meticulous"}),
+        ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "帮我保存这个词。", {"word": "meticulous"}),
+    ],
+    "history": [("zh-CN", "zh-writing", VI, "Khi viết tôi hay mắc lỗi gì nhất?", {})],
+    "screens": [
+        ("zh-CN", "vi", VI, "Màn này dùng để làm gì?", {"surface": "vocabulary.my_language"}),
+        ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "这个页面是做什么的？", {"surface": "vocabulary.my_language"}),
+    ],
+}
+
+
+def run_flows(client: Client, version: int, names: list[str], cap: float, gap: float, spent: float) -> tuple[list[dict], float]:
+    rows: list[dict] = []
+    for name in names:
+        session_id, notes = None, {}
+        for target, step, locale, message, extra in FLOWS[name]:
+            if spent + WORST_TURN_USD > cap:
+                print(f"cap ${cap:.2f} would be passed; stopping at ${spent:.4f}")
+                return rows, spent
+            client.call("POST", "/api/platform/language", {"language": TARGETS[target]["language"]})
+            if extra.get("new_session"):
+                session_id = None
+            context: dict = {"surface": extra.get("surface", "vocabulary.my_language"),
+                             "locale": {**locale, "target": target, "content": target}}  # fmt: skip
+            actions = ["navigate"]
+            if extra.get("word"):
+                context["selected_item"] = {"type": "word", "text": extra["word"], "lang": target}
+                actions = ["save_word", "add_word_to_collection"]
+            body = {
+                "contract_version": version,
+                "trigger": "message",
+                "message": message,
+                "client": {"ui_version": "agent-live-run", "supported_actions": actions,
+                           "supported_intents": ["vocabulary.review_due", "writing.revision"]},  # fmt: skip
+                "context": context,
+                "coach_notes": list(notes.values()),
+            }
+            if session_id:
+                body["session_id"] = session_id
+            result = client.turn(body)
+            while result["status"] == 429:
+                time.sleep(int(result.get("retry_after") or 1))
+                result = client.turn(body)
+            summary = summarize(result) if result["status"] == 200 else {"body": result.get("body")}
+            for event in result.get("events", []):
+                if event["name"] == "session":
+                    session_id = event["data"]["session_id"]
+                if event["name"] == "memory_update" and event["data"]["op"] == "upsert":
+                    notes[event["data"]["note"]["id"]] = event["data"]["note"]
+            memory = [e["data"] for e in result.get("events", []) if e["name"] == "memory_update"]
+            if result["status"] == 200:
+                spent += price(summary["tokens_in"], summary["tokens_out"]) if summary["usage_reported"] else WORST_TURN_USD
+            row = {"flow": name, "step": step, "target": target, "locale": locale, "message": message,
+                   "status": result["status"], "memory_update": memory, **summary}  # fmt: skip
+            rows.append(row)
+            print(f"{name:8} {step:12} {target:6} {result['status']} tools={summary.get('tools')} "
+                  f"memory={[m['note'].get('text') for m in memory if 'note' in m]} flags={summary.get('flags')} "
+                  f"spent=${spent:.4f}")  # fmt: skip
+            time.sleep(gap)
+    return rows, spent
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--base-url", default=f"http://127.0.0.1:{SANDBOX_PORT}")
@@ -257,6 +336,8 @@ def main() -> int:
     parser.add_argument("--targets", default="en,zh-CN")
     parser.add_argument("--only", default="", help="comma-separated scenario names, e.g. S5,S9 (default: all)")
     parser.add_argument("--gap", type=float, default=TURN_GAP_SECONDS, help="seconds between turns (provider quota)")
+    parser.add_argument("--flows", default="", help="comma-separated multi-turn flows instead of the scenarios: "
+                        + ",".join(FLOWS))
     parser.add_argument("--approved", action="store_true", help="the human approved this run and its cap")
     parser.add_argument("--plan", action="store_true", help="print the plan and its worst case; send nothing")
     parser.add_argument("--out", default=str(Path(tempfile.gettempdir()) / "orena-agent-live-run.json"))
@@ -288,6 +369,19 @@ def main() -> int:
         sys.exit(f"could not select Gemini ({status})")
 
     spent, rows, provider_failures, provider_answered = 0.0, [], 0, False
+    if args.flows:
+        for target in ("zh-CN", "en"):  # the words and the essay the flows read
+            t = TARGETS[target]
+            client.call("POST", "/api/platform/language", {"language": t["language"]})
+            for word in t["words"]:
+                client.call("POST", "/api/library/vocabulary", {"word": word})
+            status, essay = client.call("POST", "/api/evaluate", {"text": t["essay"], "learning_language": t["language"]})
+            spent += WORST_SETUP_USD
+            if status != 200:
+                print(f"stopping: the essay review (a provider call) answered {status}: {str(essay)[:300]}")
+                return finish(rows, spent, args.out)
+        rows, spent = run_flows(client, version, [n for n in args.flows.split(",") if n], args.cap_usd, args.gap, spent)
+        return finish(rows, spent, args.out)
     for target in targets:
         t = TARGETS[target]
         client.call("POST", "/api/platform/language", {"language": t["language"]})

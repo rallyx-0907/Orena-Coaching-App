@@ -258,8 +258,9 @@ class _Turn:
         yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
-        if not "".join(self.text).strip():
-            # Nothing to say (or only whitespace) is not an answer: the learner is told, and it is not metered.
+        if not "".join(self.text).strip() and not outputs.actions:
+            # Nothing to say (or only whitespace) and nothing offered is not an answer: the learner is told,
+            # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
 
@@ -410,6 +411,8 @@ class _Turn:
         if self.opening:
             text = "".join(self.text)
             text = offer_instead(text, offer, interface=self.locale.interface, support=self.locale.support)
+            if not text.strip() and offer is not None:
+                text = offer
             text = _fit_greeting(text)
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):
