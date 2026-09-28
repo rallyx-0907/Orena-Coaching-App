@@ -1,7 +1,7 @@
 """Persistent, lock-aware runner for the evaluator sandbox (sandbox/README.md).
 
 Supersedes an ad-hoc shell script: every live run against the :8020 sandbox -- including
-a smoke test -- goes through here so the live-provider lock (live_provider_lock.py) and
+a smoke test -- goes through here so the quota-group locks (live_provider_lock.py) and
 the check for another lane's live session are never skipped or reimplemented by hand.
 
 Usage::
@@ -10,20 +10,21 @@ Usage::
         --ids en.plural_nouns.regular,en.there_is_are \\
         --generate-provider deepseek --generate-model deepseek-flash \\
         --blind-provider groq --blind-model openai/gpt-oss-120b \\
-        [--with-story] [--deepseek-thinking off] [--story-mode everyday] \\
-        [--cost-ceiling-usd 0.05]
+        [--deepseek-thinking off] [--cost-ceiling-usd 0.05]
 
 Order of operations, with guaranteed cleanup (docker compose down, then the lock release)
 even if a step raises or the process is interrupted:
 
-1. Hold the live-provider lock (grammar-lab), AND confirm no ``orena-agent-live-*``
-   container is running -- that lane may not use the lock yet. If one is running: release
-   the lock, wait, retry, up to 30 minutes, with no need to prompt anyone (message to the
-   human, 2026-09-28). Giving up after that raises and is reported.
+1. Hold the quota-group locks this run uses (live_provider_lock.py): always gemini-text,
+   since the sandbox's evaluator engine is a Gemini text model, plus deepseek when DeepSeek
+   generates or blind-solves. Groq has no lock yet. AND confirm no ``orena-agent-live-*``
+   container is running. If one is: release the locks, wait, retry, up to 30 minutes, with
+   no need to prompt anyone (message to the human, 2026-09-28). Giving up after that raises
+   and is reported.
 2. Bring the :8020 sandbox up, select Gemini as its provider.
 3. Run generate (--with-story optional) -> validate -> verify for the given point ids.
 4. Print the sandbox's own AI-operations telemetry, if any.
-5. Tear down: ``docker compose down``, then release the lock -- always, in that order.
+5. Tear down: ``docker compose down``, then release the locks -- always, in that order.
 """
 
 from __future__ import annotations
@@ -80,21 +81,35 @@ def _docker_ps_names() -> list[str]:
     return [line for line in result.stdout.splitlines() if line]
 
 
+_PROVIDER_QUOTA_GROUP = {"gemini": "gemini-text", "deepseek": "deepseek"}
+
+
+def quota_groups(generate_provider: str, blind_provider: str) -> list[str]:
+    """The lock groups a run draws on: the engine's Gemini text quota always, plus whichever
+    of generate/blind-solve maps to a locked group (Groq and others have no lock)."""
+    used = {"gemini-text"}
+    used.update(_PROVIDER_QUOTA_GROUP[p] for p in (generate_provider, blind_provider) if p in _PROVIDER_QUOTA_GROUP)
+    return [group for group in live_provider_lock.GROUP_ORDER if group in used]
+
+
+def _report_orphan(existing: Any, reason: str, lock: Path) -> None:
+    print(f"orphan lock removed: lane={existing.lane} reason={reason} pid={existing.pid} lock={lock.name}")
+
+
 def wait_for_clear_to_run(
     lane: str,
     cost_ceiling_usd: float,
+    groups: list[str],
     *,
     list_containers: Callable[[], list[str]] = _docker_ps_names,
-    acquire: Callable[..., Any] = live_provider_lock.acquire,
-    release: Callable[..., bool] = live_provider_lock.release,
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
     poll_seconds: float = 30.0,
     wait_max_seconds: float = 1800.0,
-    path: Path | None = None,
+    directory: Path | None = None,
     pid: int | None = None,
-):
-    """Hold the live-provider lock AND confirm no other lane's live container is running.
+) -> list[str]:
+    """Hold the run's quota-group locks AND confirm no other lane's live container is running.
 
     Message to the human, 2026-09-28: "Lane intelligence co the chua dung khoa. Truoc khi
     dung sandbox: giu khoa, VA kiem docker ps khong co orena-agent-live-*. Co thi nha khoa,
@@ -103,14 +118,14 @@ def wait_for_clear_to_run(
     """
     start = clock()
     while True:
-        remaining = max(0.0, wait_max_seconds - (clock() - start))
-        info = acquire(
-            lane, cost_ceiling_usd, path=path, pid=pid,
-            wait_max_seconds=remaining, poll_seconds=poll_seconds, clock=clock, sleep=sleep,
+        taken = live_provider_lock.acquire_groups(
+            lane, cost_ceiling_usd, groups, directory=directory, pid=pid,
+            wait_max_seconds=max(0.0, wait_max_seconds - (clock() - start)), poll_seconds=poll_seconds,
+            clock=clock, sleep=sleep, on_orphan_removed=_report_orphan,
         )
         if not _other_lane_is_live(list_containers()):
-            return info
-        release(lane, path=path, pid=pid)
+            return taken
+        live_provider_lock.release_groups(lane, taken, directory=directory, pid=pid)
         if clock() - start >= wait_max_seconds:
             raise LiveLaneStillRunning(clock() - start)
         sleep(poll_seconds)
@@ -147,9 +162,10 @@ def main(argv: list[str]) -> int:
     generate_key_name = args.generate_api_key_name or f"{args.generate_provider.upper()}_API_KEY"
     blind_key_name = args.blind_api_key_name or f"{args.blind_provider.upper()}_API_KEY"
 
-    print("=== acquiring live-provider lock (shared across lanes) ===")
-    wait_for_clear_to_run(
-        args.lane, args.cost_ceiling_usd,
+    groups = quota_groups(args.generate_provider, args.blind_provider)
+    print(f"=== acquiring quota-group locks: {','.join(groups)} ===")
+    taken = wait_for_clear_to_run(
+        args.lane, args.cost_ceiling_usd, groups,
         pid=pid, wait_max_seconds=args.wait_max_seconds, poll_seconds=args.poll_seconds,
     )
 
@@ -161,8 +177,8 @@ def main(argv: list[str]) -> int:
                 "--", "docker", "compose", "-p", COMPOSE_PROJECT, "-f", str(COMPOSE_FILE), "down",
             ])
         finally:
-            print("=== releasing live-provider lock ===")
-            live_provider_lock.release(args.lane, pid=pid)
+            released = live_provider_lock.release_groups(args.lane, taken, pid=pid)
+            print(f"=== released quota-group locks: {','.join(released) or '(none)'} ===")
 
     try:
         _run([

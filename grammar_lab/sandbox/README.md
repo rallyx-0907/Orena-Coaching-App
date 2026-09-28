@@ -27,54 +27,63 @@ human gate. This sandbox exists so `verify` never has to.
 - Before starting: `docker ps` and confirm nothing else is mid-run that this
   would disturb (the three worktrees share one Docker daemon, AGENTS.md §10).
 
-## The live-provider lock
+## Quota-group locks
 
-`docker ps` only catches another lane mid-*container*-run. It says nothing
-about a lane that is live against a paid provider without a sandbox
-container (or about a container that hasn't started yet). Every live run --
-including a smoke test -- acquires `%USERPROFILE%\.orena\live-provider.lock`
-first, via `grammar_lab/sandbox/live_provider_lock.py`, and releases it in
-the same trap that tears down the sandbox.
+`docker ps` only catches another lane mid-*container*-run. It says nothing about a lane
+that is live against a paid provider without a sandbox container. Every live run --
+including a smoke test -- takes a lock per **quota group** it draws on, via
+`grammar_lab/sandbox/live_provider_lock.py`, and releases them in the same `finally` that
+tears the sandbox down. This is the format shared with the Orena Intelligence lane; the
+old single `live-provider.lock` is retired.
 
-This is a plain JSON file at a path every lane's process can reach (all
-lanes run under the same Windows user account on this machine), never a
-Docker construct -- the module makes no subprocess/`docker` call at all, so
-it structurally cannot stop another lane's container:
+One file per quota group, in `%USERPROFILE%\.orena\` (all lanes run under the same Windows
+user account on this machine):
+
+| File | Quota group |
+| --- | --- |
+| `live-gemini-text.lock` | Gemini text models -- the evaluator engine in this sandbox |
+| `live-gemini-live.lock` | Gemini Live |
+| `live-deepseek.lock` | DeepSeek |
+
+Groq has no lock yet. Each file is one JSON object:
 
 ```json
 {"lane": "grammar-lab", "pid": 12345, "acquired_at": "2026-09-28T06:15:00+00:00",
  "cost_ceiling_usd": 0.05}
 ```
 
-Every lane should read and write exactly this shape so the lock means the
-same thing everywhere. This checkout cannot see the Orena Intelligence
-lane's own implementation (a different worktree/branch, AGENTS.md §3) --
-if that lane's lock code was written independently, confirm the field names
-and path match before relying on it across lanes.
+A lane holds only the groups it uses. Grammar Lab uses **gemini-text** (always -- the
+sandbox engine) and **deepseek** (when DeepSeek generates or blind-solves); `run_smoke.py`
+derives the set from `--generate-provider`/`--blind-provider`. The module makes no
+subprocess/`docker` call at all, so it structurally cannot stop another lane's container.
 
 ```bash
 # acquire before bringing the sandbox up; $$ is the runner script's own pid,
 # not the short-lived python helper's -- the lock must name the long-lived holder
 python grammar_lab/sandbox/live_provider_lock.py acquire \
-  --lane grammar-lab --pid $$ --cost-ceiling-usd 0.05
+  --lane grammar-lab --pid $$ --groups gemini-text,deepseek --cost-ceiling-usd 0.05
 
 # release in the same trap/finally that tears the sandbox down
-python grammar_lab/sandbox/live_provider_lock.py release --lane grammar-lab --pid $$
+python grammar_lab/sandbox/live_provider_lock.py release \
+  --lane grammar-lab --pid $$ --groups gemini-text,deepseek
 ```
 
 Behaviour:
 
-- **Held by a live lane:** waits, re-checking every 30s (`--poll-seconds`),
-  up to 30 minutes total (`--wait-max-seconds`); past that, `acquire` exits 1
-  and prints who holds it. It never kills or waits on that lane's container
+- **Order:** always taken gemini-text -> gemini-live -> deepseek (whatever order you list
+  them), released in reverse, so two lanes can never each hold a lock the other waits on.
+  Failing to take one gives back every lock already taken in that attempt.
+- **Created atomically** (`O_CREAT|O_EXCL`).
+- **Held by a live lane:** waits, re-checking every 30s (`--poll-seconds`), up to 30 minutes
+  total across all groups (`--wait-max-seconds`); past that, `acquire` exits 1 and prints
+  the lock file and the holder's lane/PID. It never kills or waits on that lane's container
   -- only on the lock file.
-- **Orphaned lock** (its PID is no longer running, or `acquired_at` is more
-  than 60 minutes old, `--stale-seconds`): removed automatically, printed as
-  `orphan lock removed: lane=... pid=... reason=dead-pid|stale`, and
-  acquisition retries immediately.
-- **Release** only deletes the file when its `lane` and `pid` still match
-  what this process wrote; a lock that changed hands underneath it (e.g.
-  reaped as an orphan, then re-acquired by someone else) is left untouched.
+- **Orphaned lock** (its PID is no longer running, or `acquired_at` is more than 60 minutes
+  old, `--stale-seconds`): removed, printed as
+  `orphan lock removed: lane=... reason=dead-pid|stale` (followed by `pid=`/`lock=` detail),
+  and acquisition retries immediately.
+- **Release** only deletes a file whose `lane` and `pid` still match what this process
+  wrote; a lock that changed hands underneath it is left untouched.
 
 ## Why `PUT /api/admin/ai/config` works here with no login
 
@@ -88,8 +97,8 @@ this sandbox invented.
 ## Running a live smoke test (`run_smoke.py`)
 
 `run_smoke.py` is the one entry point for a live run against this sandbox -- it holds the
-live-provider lock, brings the sandbox up, runs `generate` -> `validate` -> `verify`, and
-guarantees teardown (`docker compose down`, then the lock release) even on failure. Nothing
+quota-group locks the run uses, brings the sandbox up, runs `generate` -> `validate` ->
+`verify`, and guarantees teardown (`docker compose down`, then the lock release) even on failure. Nothing
 else should re-implement this sequence by hand; a one-off script in a scratchpad cannot be
 trusted to keep the lock and the sandbox in sync the way this one is tested to.
 
@@ -99,15 +108,16 @@ python grammar_lab/sandbox/run_smoke.py \
   --ids en.plural_nouns.regular,en.there_is_are \
   --generate-provider deepseek --generate-model deepseek-flash --deepseek-thinking off \
   --blind-provider groq --blind-model openai/gpt-oss-120b \
-  --with-story --story-mode everyday \
   --cost-ceiling-usd 0.05
 ```
 
+(That run takes `gemini-text` and `deepseek`; Groq has no lock. `--with-story` only
+applies to schema v0.2/v0.3 points -- story is paused, and v0.4 generation rejects it.)
+
 Before bringing the sandbox up it also checks `docker ps` itself for another lane's
-`orena-agent-live-*` container -- that lane may not honour the lock yet. If one is running:
-release the lock, wait, retry, up to 30 minutes, without prompting anyone; only giving up
-after the full 30 minutes raises and is reported. See "The live-provider lock" above for
-the lock's own behaviour underneath this.
+`orena-agent-live-*` container. If one is running: release the locks, wait, retry, up to 30
+minutes, without prompting anyone; only giving up after the full 30 minutes raises and is
+reported. See "Quota-group locks" above for the lock behaviour underneath this.
 
 The rest of this section explains what `run_smoke.py` does step by step, for debugging it
 or for following along by hand.
