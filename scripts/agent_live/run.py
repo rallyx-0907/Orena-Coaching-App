@@ -28,6 +28,9 @@ The script owns the sandbox: it starts compose.yaml's own project (orena-agent-l
 on :8013, or :8015 when :8013 is taken), runs, and takes it down when it ends - done,
 failed, stopped at the cost cap, interrupted (Ctrl+C) or terminated - so no lane waits
 on a forgotten container. Only GEMINI_* is read from the env file; nothing is printed.
+
+Before the sandbox it takes the machine-wide live-provider lock (lock.py, README.md) and
+releases it in the same unwinding, so lanes queue for the provider instead of colliding.
 """
 
 from __future__ import annotations
@@ -50,7 +53,11 @@ import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import lock as live_lock  # noqa: E402 - this folder's own module, next to this script
+
 ROOT = Path(__file__).resolve().parents[2]
+LOCK_NOTES: list[str] = []  # orphaned locks removed, waits: reported in the result
 CONTRACT = ROOT / "docs/project/AGENT_CONTRACT.md"
 SANDBOX_PORT = 8013
 SANDBOX_PORTS = {8013, 8015}  # 8015 when another lane holds 8013
@@ -238,8 +245,11 @@ def summarize(result: dict) -> dict:
     usage = (done or {}).get("usage") or {}
     tokens_in, tokens_out = int(usage.get("input_tokens") or 0), int(usage.get("output_tokens") or 0)
     error = next((e["data"] for e in result["events"] if e["name"] == "error"), None)
-    text = "".join(e["data"].get("text", "") for e in result["events"] if e["name"] == "segment_end")
+    segments = [e["data"] for e in result["events"] if e["name"] == "segment_end"]
+    # A reference segment (a target-language word to hear) is its own segment, not part of the sentence.
+    text = "".join(s.get("text", "") for s in segments if s.get("voice_style") != "reference")
     return {
+        "references": [s.get("text") for s in segments if s.get("voice_style") == "reference"],
         "sequence": [n for n in names if n != "segment_delta"],
         "deltas": names.count("segment_delta"),
         "tools": [e["data"].get("name") for e in result["events"] if e["name"] == "tool_call"],  # §4 { name, label }
@@ -426,6 +436,21 @@ class Sandbox:
             time.sleep(1)
         raise RuntimeError("the sandbox did not become ready")
 
+    def provider_errors(self) -> list[str]:
+        """What the provider answered when a round failed, from the web log (the learner only sees
+        provider_unavailable). Only those lines, anything key-like redacted; read before the sandbox goes."""
+
+        if not self.started or self.removed:
+            return []
+        command = ["docker", "compose", "-p", PROJECT, "-f", str(COMPOSE_FILE), "logs", "--no-color", "web"]
+        try:
+            log = subprocess.run(command, env=self.env, capture_output=True, text=True, encoding="utf-8",
+                                 errors="replace", check=False, timeout=60).stdout  # fmt: skip
+        except (OSError, subprocess.TimeoutExpired):
+            return ["the web log could not be read"]
+        lines = [line for line in log.splitlines() if "agent provider round" in line or "agent turn failed" in line]
+        return [re.sub(r"(?i)(key=|bearer\s+|AIza)[\w\-.]+", r"\1<redacted>", line)[-600:] for line in lines]
+
     def down(self) -> None:
         if self.started and not self.removed:
             self.removed = True
@@ -445,24 +470,58 @@ def main() -> int:
         return 0
     if not args.approved or args.cap_usd is None or args.cap_usd <= 0:
         sys.exit("refusing: needs --approved and the approved --cap-usd")
-    port = next((p for p in sorted(SANDBOX_PORTS) if _port_free(p)), None)
-    if port is None:
-        sys.exit(f"refusing: {sorted(SANDBOX_PORTS)} are all taken")
-    sandbox = Sandbox(_compose_env(args.gemini_env, port))
     for name in ("SIGTERM", "SIGBREAK"):
         if hasattr(signal, name):
             signal.signal(getattr(signal, name), _stop_on_signal)
-    # A run killed outright (TerminateProcess, kill -9) runs no finally: its leftovers of this project go first.
-    sandbox._compose("down", "--remove-orphans", check=False)
+    # Lanes queue on one machine-wide lock before any sandbox or provider call (lock.py, README.md).
     try:
-        base_url = f"http://127.0.0.1:{port}"
-        sandbox.up(base_url)
-        return drive(args, base_url)
-    except subprocess.CalledProcessError:
-        print("the sandbox did not start (is GEMINI_API_KEY set?)")
-        return 1
+        lock = live_lock.acquire(_lane(), args.cap_usd, purpose="scripts/agent_live/run.py")
+    except live_lock.LockTimeout as error:
+        print(f"stopping: {error}")
+        return 3
+    LOCK_NOTES.extend(lock.notes)
+    atexit.register(lock.release)
+    try:
+        # Chosen under the lock: a lane that held it may have just freed :8013.
+        port = next((p for p in sorted(SANDBOX_PORTS) if _port_free(p)), None)
+        if port is None:
+            print(f"refusing: {sorted(SANDBOX_PORTS)} are all taken")
+            return 1
+        sandbox = Sandbox(_compose_env(args.gemini_env, port))
+        # A run killed outright (TerminateProcess, kill -9) runs no finally: its leftovers of this project go first.
+        sandbox._compose("down", "--remove-orphans", check=False)
+        try:
+            base_url = f"http://127.0.0.1:{port}"
+            sandbox.up(base_url)
+            return drive(args, base_url)
+        except subprocess.CalledProcessError:
+            print("the sandbox did not start (is GEMINI_API_KEY set?)")
+            return 1
+        finally:
+            _add_provider_errors(args.out, sandbox.provider_errors())
+            sandbox.down()
     finally:
-        sandbox.down()
+        lock.release()  # after the sandbox is down, in the same unwinding
+
+
+def _add_provider_errors(out: str, errors: list[str]) -> None:
+    for line in errors:
+        print(f"provider error: {line}")
+    path = Path(out)
+    if not errors or not path.exists():
+        return
+    result = json.loads(path.read_text(encoding="utf-8"))
+    result["provider_errors"] = errors
+    path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _lane() -> str:
+    try:
+        branch = subprocess.run(["git", "-C", str(ROOT), "branch", "--show-current"], capture_output=True, text=True,
+                                check=False).stdout.strip()  # fmt: skip
+    except OSError:
+        branch = ""
+    return branch or ROOT.name
 
 
 def _arguments() -> argparse.Namespace:
@@ -575,7 +634,8 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
 
 def finish(rows: list[dict], spent: float, out: str) -> int:
     Path(out).write_text(
-        json.dumps({"spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT], "turns": rows}, ensure_ascii=False, indent=2),
+        json.dumps({"spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT], "lock": LOCK_NOTES, "turns": rows},
+                   ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )
     print(f"results: {out}  (spend bound ${spent:.4f})")
