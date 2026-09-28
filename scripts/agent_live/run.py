@@ -139,7 +139,9 @@ WORST_TURN_USD = WORST_ROUNDS * price(WORST_IN, WORST_OUT)
 
 
 ROUND_WORST_USD = price(WORST_IN, WORST_OUT)
-RETRY_SECONDS = 20  # a refused first round ("high demand", 503) is tried once more, with the same model
+# A turn whose first round the provider refused ("high demand", 503) is sent again with the same model, at most three
+# times, waiting longer each time; still refused, the run stops (human direction 2026-09-28).
+RETRY_DELAYS = (5, 15, 45)
 
 
 def use_model(name: str) -> None:
@@ -425,19 +427,33 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                 body["message"] = message
             if session_id:
                 body["session_id"] = session_id
-            for attempt in (1, 2):
+            refused = 0
+            result: dict = {}
+            summary: dict = {}
+            while True:
+                if spent + WORST_TURN_USD > cap:  # every send, a retry too, fits the cap at its worst
+                    print(f"cap ${cap:.2f} would be passed; stopping at ${spent:.4f}")
+                    if refused:  # the refused attempt is kept in the result, not lost
+                        rows.append(_row(name, step, target, locale, message, result, summary, [], refused))
+                    return rows, spent
                 result = client.turn(body)
-                while result["status"] == 429:
+                while result["status"] == 429:  # this server's own per-learner limit (§2.1): wait, send again
                     time.sleep(int(result.get("retry_after") or 1))
                     result = client.turn(body)
                 summary = summarize(result) if result["status"] == 200 else {"body": result.get("body")}
                 if not first_round_refused(summary):
                     break
                 spent += ROUND_WORST_USD  # at most the one round that was refused (a 503/429 is not billed)
-                if attempt == 1:
-                    print(f"{name:8} {step:12} the provider refused the first round; the same turn once more in "
-                          f"{RETRY_SECONDS} s, same model")  # fmt: skip
-                    time.sleep(RETRY_SECONDS)
+                if refused == len(RETRY_DELAYS):
+                    print(f"stopping: the provider refused {name}/{step} {refused + 1} times with {MODEL} "
+                          f"(see provider_errors)")  # fmt: skip
+                    rows.append(_row(name, step, target, locale, message, result, summary, [], refused + 1))
+                    return rows, spent
+                delay = RETRY_DELAYS[refused]
+                refused += 1
+                print(f"{name:8} {step:12} the provider refused the first round; retry {refused}/{len(RETRY_DELAYS)} "
+                      f"in {delay} s, same model ({MODEL})")  # fmt: skip
+                time.sleep(delay)
             for event in result.get("events", []):
                 if event["name"] == "session":
                     session_id = event["data"]["session_id"]
@@ -448,19 +464,63 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
             memory = [e["data"] for e in result.get("events", []) if e["name"] == "memory_update"]
             if result["status"] == 200 and not first_round_refused(summary):
                 spent += price(summary["tokens_in"], summary["tokens_out"]) if summary["usage_reported"] else WORST_TURN_USD
-            row = {"flow": name, "step": step, "target": target, "locale": locale, "message": message,
-                   "status": result["status"], "memory_update": memory, **summary}  # fmt: skip
-            rows.append(row)
+            rows.append(_row(name, step, target, locale, message, result, summary, memory, refused + 1))
             unavailable = [r for r in rows[-2:] if (r.get("error") or {}).get("class") == "provider_unavailable"]
             if len(unavailable) == 2:  # the provider is refusing (a spent quota answers 429): stop, spend no more
                 print("stopping: two provider_unavailable in a row (see provider_errors)")
                 return rows, spent
             print(f"{name:8} {step:12} {target:6} {result['status']} tools={summary.get('tools')} "
                   f"memory={[(m['op'], m['note'].get('text') or m['note'].get('id')) for m in memory]} "
-                  f"flags={summary.get('flags')} "
+                  f"flags={summary.get('flags')} segment={result.get('t_first_segment')}s "
                   f"spent=${spent:.4f}")  # fmt: skip
             time.sleep(gap)
     return rows, spent
+
+
+def _row(name, step, target, locale, message, result, summary, memory, attempts) -> dict:  # noqa: ANN001
+    return {"flow": name, "step": step, "target": target, "locale": locale, "message": message,
+            "status": result["status"], "memory_update": memory, "attempts": attempts,
+            "t_first_event": result.get("t_first_event"), "t_first_segment": result.get("t_first_segment"),
+            "t_done": result.get("t_done"), **summary}  # fmt: skip
+
+
+def notes_verdict(rows: list[dict]) -> dict:
+    """The notes flow, judged from what the device received: a note kept, the same note replaced, then removed, and
+    a plain turn after. `pass` only when all four hold."""
+
+    steps = {row["step"]: row for row in rows if row.get("flow") == "notes"}
+    verdict: dict = {"complete": all(s in steps for s in ("remember", "correct", "forget", "after"))}
+
+    def ops(step: str) -> list[tuple[str, str]]:
+        return [(m["op"], m["note"].get("id", "")) for m in (steps.get(step) or {}).get("memory_update", [])
+                if not str(m["note"].get("id", "")).startswith("address-")]  # fmt: skip
+
+    kept = [note_id for op, note_id in ops("remember") if op == "upsert"]
+    note_id = kept[0] if len(kept) == 1 else None
+    verdict["remember"] = note_id is not None
+    corrected = ops("correct")
+    verdict["correct"] = note_id is not None and corrected == [("upsert", note_id)]
+    verdict["correct_detail"] = "replaced" if verdict["correct"] else ("new note" if corrected else "unchanged")
+    verdict["forget"] = note_id is not None and ops("forget") == [("remove", note_id)]
+    after = steps.get("after") or {}
+    verdict["after"] = bool(after) and not after.get("error") and not ops("after")
+    verdict["pass"] = all(verdict[k] for k in ("complete", "remember", "correct", "forget", "after"))
+    return verdict
+
+
+def notes_log(lines: list[str]) -> list[dict]:
+    """The server's "agent notes:" lines, one entry per turn that changed or cancelled a note: whether the model
+    was asked again, and the outcome (turn.py logs counts only)."""
+
+    turns: list[dict] = []
+    asked = False
+    for line in lines:
+        if "asked again" in line and "unchanged" not in line:
+            asked = True
+        elif "agent notes: changed" in line or "unchanged after asking again" in line:
+            turns.append({"asked_again": asked, "changed": "unchanged" not in line})
+            asked = False
+    return turns
 
 
 # --- the sandbox this script owns -------------------------------------------------------------
@@ -594,14 +654,21 @@ def main() -> int:
         lock.release()  # after the sandbox is down, in the same unwinding
 
 
-def _add_provider_errors(out: str, errors: list[str]) -> None:
+def _add_provider_errors(out: str, lines: list[str]) -> None:
+    """The provider's own error lines and the note nudges, from the web log, into the result."""
+
+    errors = [line for line in lines if "agent notes:" not in line]
+    nudges = notes_log([line for line in lines if "agent notes:" in line])
     for line in errors:
         print(f"provider error: {line}")
+    for index, entry in enumerate(nudges, 1):
+        print(f"notes turn {index}: asked again={entry['asked_again']} changed={entry['changed']}")
     path = Path(out)
-    if not errors or not path.exists():
+    if not lines or not path.exists():
         return
     result = json.loads(path.read_text(encoding="utf-8"))
     result["provider_errors"] = errors
+    result["notes_log"] = nudges
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
@@ -728,13 +795,32 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
     return finish(rows, spent, args.out)
 
 
+def timing(rows: list[dict]) -> dict:
+    """Seconds to the first segment over the turns that answered, client side (median and the slowest)."""
+
+    seconds = sorted(r["t_first_segment"] for r in rows if r.get("t_first_segment") is not None and not r.get("error"))
+    if not seconds:
+        return {"turns": 0}
+    middle = len(seconds) // 2
+    median = seconds[middle] if len(seconds) % 2 else (seconds[middle - 1] + seconds[middle]) / 2
+    return {"turns": len(seconds), "first_segment_median_s": round(median, 3), "first_segment_max_s": seconds[-1]}
+
+
 def finish(rows: list[dict], spent: float, out: str) -> int:
     Path(out).write_text(
-        json.dumps({"model": MODEL, "probes": PROBES, "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
-                    "lock": LOCK_NOTES, "turns": rows},
+        json.dumps({"model": MODEL, "probes": PROBES,
+                    # R8: an agent turn routes through the one pinned selection, so both keys run on the same model
+                    # in dev; a separate model for ordinary turns is chosen before launch (human direction 2026-09-28).
+                    "capability_models": {"agent_turn_fast": MODEL, "agent_turn_deep": MODEL},
+                    "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
+                    "lock": LOCK_NOTES, "notes_verdict": notes_verdict(rows) if any(r.get("flow") == "notes" for r in rows)
+                    else None, "timing": timing(rows), "turns": rows},
                    ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )
+    if any(r.get("flow") == "notes" for r in rows):
+        print(f"notes verdict: {notes_verdict(rows)}")
+    print(f"timing: {timing(rows)}")
     print(f"results: {out}  (spend bound ${spent:.4f})")
     return 0
 
