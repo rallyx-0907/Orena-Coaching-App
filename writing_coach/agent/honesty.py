@@ -25,6 +25,8 @@ action allowlist (save, add, remove, open, start).
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
+from typing import Any
 
 from writing_coach.agent import learner_copy
 
@@ -80,16 +82,25 @@ def _nothing_done(interface: str, support: str) -> str:
     return learner_copy.text("honesty.nothing_done", interface=interface, support=support)[1]
 
 
-def offer_instead(text: str, label: str | None, *, interface: str, support: str) -> str:
+def offer_for(action_type: str, label: str, payload: Mapping[str, Any], *, interface: str, support: str) -> str:
+    """The sentence that offers this button, built from it: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."."""
+
+    key = f"offer.{action_type}"
+    text = str(payload.get("text") or "")
+    if key not in learner_copy.CATALOG or ("{text}" in learner_copy.CATALOG[key].texts.get("en", "") and not text):
+        key = "offer.action"
+    return learner_copy.text(key, interface=interface, support=support, label=label, text=text)[1]
+
+
+def offer_instead(text: str, offer: str | None, *, interface: str, support: str) -> str:
     """The whole answer at once (an opening greeting): claims out, the button offered when there is one."""
 
-    claim = claims_done if label else claims_acted
+    claim = claims_done if offer else claims_acted
     parts = _sentences(text)
     if not any(claim(part) for part in parts):
         return text
     kept = "".join(part for part in parts if not claim(part)).strip()
-    if label:
-        offer = learner_copy.text("offer.action", interface=interface, support=support, label=label)[1]
+    if offer:
         return f"{kept} {offer}".strip() if kept else offer
     return kept or _nothing_done(interface, support)
 

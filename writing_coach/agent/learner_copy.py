@@ -45,9 +45,33 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
     {
         # Said in place of a claim that a button's action is done (agent/honesty.py): support layer,
         # since it is part of the answer; the label is the button's own interface-layer text.
+        # Built from the action in hand (label, and the word it names): what tapping does.
+        "offer.save_word": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Tap {label} to add {text} to your words.", "vi": "Bấm {label} để thêm {text} vào từ vựng của bạn.",
+             "zh-CN": "点击“{label}”，把{text}加入你的词汇。"},
+        ),
+        "offer.unsave_word": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Tap {label} to remove {text} from your words.", "vi": "Bấm {label} để bỏ {text} khỏi từ vựng của bạn.",
+             "zh-CN": "点击“{label}”，把{text}从你的词汇中移除。"},
+        ),
+        "offer.add_word_to_collection": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Tap {label} to add {text} to the collection.", "vi": "Bấm {label} để thêm {text} vào bộ sưu tập.",
+             "zh-CN": "点击“{label}”，把{text}加入收藏。"},
+        ),
+        "offer.start_review": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Tap {label} to start the review.", "vi": "Bấm {label} để bắt đầu ôn.", "zh-CN": "点击“{label}”开始复习。"},
+        ),
+        "offer.navigate": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Tap {label} to open it.", "vi": "Bấm {label} để mở.", "zh-CN": "点击“{label}”打开。"},
+        ),
         "offer.action": _entry(
             CopyLayer.SUPPORT,
-            {"en": "Tap “{label}” if you want to.", "vi": "Bấm “{label}” nếu bạn muốn.", "zh-CN": "需要的话，点击“{label}”。"},
+            {"en": "Tap {label} if you want to.", "vi": "Bấm {label} nếu bạn muốn.", "zh-CN": "需要的话，点击“{label}”。"},
         ),
         # Said when every sentence of an answer claimed Orena had changed something (agent/honesty.py).
         "honesty.nothing_done": _entry(

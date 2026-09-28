@@ -184,7 +184,9 @@ def reply_tool_specs(
             0,
             ProviderToolSpec(
                 PROPOSE_ACTION,
-                "Offer a button the app can run. Ids in the payload must come from a tool result or the "
+                "Offer a button the learner can tap. Nothing happens until they tap it, so your answer "
+                "invites them to (\"Bấm Lưu từ để…\") and never says it is done. "
+                "Ids in the payload must come from a tool result or the "
                 "context, never invented; a word is {text, lang} in the language being learned. navigate "
                 f"needs 'intent' plus that intent's ids; navigable intents: {', '.join(intents) or 'none'}."
                 + (" 'reason' is one short, checkable line on why, in the support language." if version >= 2 else ""),

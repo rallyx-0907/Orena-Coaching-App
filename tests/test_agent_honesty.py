@@ -44,12 +44,13 @@ def test_an_offer_is_not(text):
 
 def test_only_the_claiming_sentences_are_replaced():
     text = "Từ 我 nghĩa là tôi. Nó đã được lưu vào danh sách. Hãy ôn lại mỗi ngày."
-    assert offer_instead(text, "Lưu từ", interface="vi", support="vi") == (
-        "Từ 我 nghĩa là tôi. Hãy ôn lại mỗi ngày. Bấm “Lưu từ” nếu bạn muốn."
+    offer = "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
+    assert offer_instead(text, offer, interface="vi", support="vi") == (
+        "Từ 我 nghĩa là tôi. Hãy ôn lại mỗi ngày. Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
     )
-    assert offer_instead("Saved!", "Save word", interface="en", support="en") == "Tap “Save word” if you want to."
-    assert offer_instead("It has been saved.", "Save word", interface="en", support="en") == "Tap “Save word” if you want to."
-    assert offer_instead("已保存。", "保存单词", interface="zh-CN", support="zh-CN") == "需要的话，点击“保存单词”。"
+    assert offer_instead("Saved!", "Tap Save word.", interface="en", support="en") == "Tap Save word."
+    assert offer_instead("It has been saved.", "Tap Save word.", interface="en", support="en") == "Tap Save word."
+    assert offer_instead("已保存。", "点击“保存”。", interface="zh-CN", support="zh-CN") == "点击“保存”。"
 
 
 # --- adversarial review ---------------------------------------------------------------------
@@ -69,7 +70,7 @@ def test_the_common_ways_of_saying_it_acted_are_claims(text):
 def test_a_question_is_never_a_claim():
     assert not claims_done("Đã mở phần Ngữ pháp chưa?") and not claims_done("Has it been saved?")
     text = "Ngữ pháp này khá quan trọng đó. Đã mở phần Ngữ pháp chưa? Bấm vào để xem thêm nhé."
-    assert offer_instead(text, "Mở Ngữ pháp", interface="vi", support="vi") == text
+    assert offer_instead(text, "Bấm Mở Ngữ pháp để mở.", interface="vi", support="vi") == text
 
 
 def gated(text, offer):
@@ -92,3 +93,34 @@ def test_without_a_button_orena_saying_it_acted_is_dropped_and_a_read_state_kept
 def test_with_a_button_both_kinds_are_dropped_and_the_button_offered():
     text = gated("Từ 我 đã được lưu. Mình đã thêm nó vào sổ.", "Bấm “Lưu từ” nếu bạn muốn.")
     assert text == "Bấm “Lưu từ” nếu bạn muốn."
+
+
+# --- the offer is built from the action in hand (human direction 2026-09-28) ------------------
+
+from writing_coach.agent.honesty import offer_for  # noqa: E402
+
+
+def test_the_offer_is_built_from_the_action():
+    word = {"text": "我", "lang": "zh-CN"}
+    assert offer_for("save_word", "Lưu từ", word, interface="vi", support="vi") == "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
+    assert offer_for("save_word", "Save word", {"text": "apple", "lang": "en"}, interface="en", support="en") == (
+        "Tap Save word to add apple to your words."
+    )
+    assert offer_for("save_word", "保存单词", word, interface="zh-CN", support="zh-CN") == "点击“保存单词”，把我加入你的词汇。"
+    assert offer_for("start_review", "Ôn ngay", {"scope": "due"}, interface="vi", support="vi") == "Bấm Ôn ngay để bắt đầu ôn."
+    assert offer_for("navigate", "Sửa bài", {"intent": "writing.revision"}, interface="vi", support="vi") == "Bấm Sửa bài để mở."
+    # an action with no sentence of its own falls back to the plain offer
+    assert offer_for("play_model", "Nghe mẫu", {"content_id": "c1"}, interface="vi", support="vi") == "Bấm Nghe mẫu nếu bạn muốn."
+
+
+def test_a_claim_is_held_before_it_is_streamed():
+    """The filter runs on the way out, a sentence at a time: a claim never reaches the client, even briefly."""
+
+    gate = ClaimGate(interface="vi", support="vi")
+    out = []
+    for piece in ["Từ này nghĩa là tôi. Mình đ", "ã lưu nó rồi", ". Ôn nó mỗi ngày nhé."]:
+        out.append(gate.feed(piece))
+    assert out == [["Từ này nghĩa là tôi. "], [], []]  # the claim and everything after it are held
+    assert gate.finish("Bấm Lưu từ để thêm 我 vào từ vựng của bạn.") == [
+        "Ôn nó mỗi ngày nhé. Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
+    ]

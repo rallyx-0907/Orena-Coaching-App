@@ -50,7 +50,7 @@ from writing_coach.agent.decision import (
 )
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
 from writing_coach.agent.address import address_for
-from writing_coach.agent.honesty import ClaimGate, offer_instead
+from writing_coach.agent.honesty import ClaimGate, offer_for, offer_instead
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
     DoneEvent,
@@ -403,13 +403,13 @@ class _Turn:
         index = 0
         offer = None
         if outputs.actions:  # an action is offered, never reported as done (agent/honesty.py)
-            offer = learner_copy.text(
-                "offer.action", interface=self.locale.interface, support=self.locale.support, label=outputs.actions[0].label
-            )[1]
+            first = outputs.actions[0]
+            offer = offer_for(
+                first.type, first.label, first.payload, interface=self.locale.interface, support=self.locale.support
+            )
         if self.opening:
             text = "".join(self.text)
-            label = outputs.actions[0].label if outputs.actions else None
-            text = offer_instead(text, label, interface=self.locale.interface, support=self.locale.support)
+            text = offer_instead(text, offer, interface=self.locale.interface, support=self.locale.support)
             text = _fit_greeting(text)
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):

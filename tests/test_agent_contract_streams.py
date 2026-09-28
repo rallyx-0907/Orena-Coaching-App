@@ -354,7 +354,7 @@ def test_s5_never_reports_the_save_as_done(harness, target, claim):
     assert names(events) == canonical("S5")
     text = dict(events)["segment_end"]["text"]
     assert "đã được lưu" not in text and "đã lưu" not in text
-    assert text.endswith("Bấm “Lưu từ” nếu bạn muốn.")
+    assert text.endswith(f"Bấm Lưu từ để thêm {word} vào từ vựng của bạn.")  # built from the action in hand
     if target == "en":
         assert text.startswith("Đây là một danh từ đếm được.")  # what was not a claim stays
 
