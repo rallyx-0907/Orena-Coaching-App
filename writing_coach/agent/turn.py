@@ -49,6 +49,7 @@ from writing_coach.agent.decision import (
     RuleDecisionProvider,
 )
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
+from writing_coach.agent.address import address_for
 from writing_coach.agent.honesty import ClaimGate, offer_instead
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
@@ -192,7 +193,7 @@ class _Turn:
         self.records: list[ToolResultRecord] = []
         self.text: list[str] = []
         # What is streamed; an action is never reported as done (agent/honesty.py).
-        self.gate = ClaimGate(passthrough=not request.client.allowed_actions)
+        self.gate = ClaimGate(interface=request.context.locale.interface, support=request.context.locale.support)
         self.provider_rounds = 0
         self.address_offered_now = False
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
@@ -245,6 +246,7 @@ class _Turn:
             opening=self.opening,
             take_ref=self.request.context.take_ref,
             address_asked=session.address_asked,
+            address_chosen=address_for(tier1.coach_notes, self.locale.support).chosen,
         )
         # What the request named may be named back, as what it named; everything else must be read first.
         context = self.request.context
@@ -406,10 +408,8 @@ class _Turn:
             )[1]
         if self.opening:
             text = "".join(self.text)
-            if offer is not None:
-                text = offer_instead(
-                    text, outputs.actions[0].label, interface=self.locale.interface, support=self.locale.support
-                )
+            label = outputs.actions[0].label if outputs.actions else None
+            text = offer_instead(text, label, interface=self.locale.interface, support=self.locale.support)
             text = _fit_greeting(text)
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):

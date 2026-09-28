@@ -228,6 +228,7 @@ class ReplyOutputs:
     references: list[tuple[str, str]] = field(default_factory=list)
     voice_style: str = "neutral_explain"
     address_asked: bool = False  # already offered in this session
+    address_chosen: bool = False  # the learner already chose a pair (or said no): no offer
     address_offered_now: bool = False
     memory_updates: list[MemoryUpdateEvent] = field(default_factory=list)
 
@@ -379,6 +380,8 @@ class ReplyOutputs:
     def _offer_address(self, args: Mapping[str, Any]) -> str:
         if self.opening:
             return "refused: not in an opening turn"
+        if self.address_chosen:
+            return "refused: the learner already chose how you are called; change it only if they ask"
         if self.address_asked or self.address_offered_now:
             return "refused: you already asked in this session; keep the current address and do not ask again"
         if self._address_terms(args) is None:

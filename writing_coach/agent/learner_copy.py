@@ -49,6 +49,11 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.SUPPORT,
             {"en": "Tap “{label}” if you want to.", "vi": "Bấm “{label}” nếu bạn muốn.", "zh-CN": "需要的话，点击“{label}”。"},
         ),
+        # Said when every sentence of an answer claimed Orena had changed something (agent/honesty.py).
+        "honesty.nothing_done": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I haven't changed anything.", "vi": "Mình chưa thay đổi gì cả.", "zh-CN": "我没有做任何更改。"},
+        ),
         "identity.who": _entry(
             CopyLayer.SUPPORT,
             {

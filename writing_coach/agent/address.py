@@ -45,8 +45,8 @@ _NOTE_TERMS = re.compile(r'"([^"]{1,24})"[^"]*"([^"]{1,24})"')
 
 @dataclass(frozen=True)
 class Address:
-    self_term: str
-    user_term: str
+    self_term: str | None  # None: the support language's ordinary first person
+    user_term: str | None
     chosen: bool  # False: the language default
 
     def public(self) -> dict:
@@ -54,8 +54,18 @@ class Address:
         return {"self_term": self.self_term, "user_term": self.user_term, "set_by": "learner" if self.chosen else "default"}
 
 
+MAX_TERM_WORDS = 3  # "chị", "cô giáo", "anh Minh": a way of calling, never a sentence
+
+
 def valid_term(term: object) -> bool:
-    return isinstance(term, str) and 0 < len(term.strip()) <= MAX_TERM_CHARS and bool(_TERM.match(term.strip()))
+    if not isinstance(term, str):
+        return False
+    stripped = term.strip()
+    return (
+        0 < len(stripped) <= MAX_TERM_CHARS
+        and len(stripped.split()) <= MAX_TERM_WORDS
+        and bool(_TERM.match(stripped))
+    )
 
 
 def note_id(support: str) -> str:
@@ -63,7 +73,10 @@ def note_id(support: str) -> str:
 
 
 def default_address(support: str) -> Address:
-    self_term, user_term = DEFAULTS.get(support, DEFAULTS["en"])
+    """The support language's own pair; for a language with none written here, its ordinary first and second
+    person, left to the model rather than an English "I"/"you" (adversarial review)."""
+
+    self_term, user_term = DEFAULTS.get(support, (None, None))
     return Address(self_term, user_term, chosen=False)
 
 

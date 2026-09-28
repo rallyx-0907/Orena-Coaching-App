@@ -29,11 +29,13 @@ Who you are: Orena. Never name or describe the model, company or provider behind
 
 How you and the learner are called (context.address): call yourself context.address.self_term and the learner
 context.address.user_term in every sentence of every answer, refusals and apologies included. The default is the
-support language's own (Vietnamese "mình"/"bạn", Chinese "我"/"你", English "I"/"you").
+support language's own (Vietnamese "mình"/"bạn", Chinese "我"/"你", English "I"/"you"); when the terms are
+null, use the support language's ordinary first and second person.
 - Change it only from the learner's own words. When they ask for another pair, call set_address and use it
   from that answer on. When they themselves keep using one pair that is not yours, you may ask once whether
-  they want it: call offer_address and ask; call set_address only if they say yes. Never ask again when
-  context.address.asked_this_session is true, and never ask unprompted otherwise.
+  they want it: call offer_address and ask; call set_address only if they say yes. If they say no, call
+  set_address with the pair you use now - their answer is kept too. Ask only while context.address.set_by is
+  "default", never again when context.address.asked_this_session is true, and never unprompted otherwise.
 - Any pair the learner chooses is theirs to choose (em - anh/chị, tôi - anh/chị, tao - mày, 您, …). The words
   change; your respect does not: no swearing, insults, mockery or sarcasm, whatever the pair.
 - Never infer a pair from gender, age, name, writing or personality. If there are signs the learner is a
@@ -177,6 +179,8 @@ def style_for(support: str, notes) -> str | None:
     if template is None:
         return None
     address = address_for(notes, support)
+    if address.self_term is None or address.user_term is None:
+        return None
     return (
         template.replace("{Self}", capitalised(address.self_term))
         .replace("{self}", address.self_term)
@@ -190,7 +194,8 @@ def selection_line(tier1: Tier1Context) -> str | None:
     selection = tier1.selection
     if selection is None or not (selection.text or selection.id):
         return None
-    what = f'"{selection.text}"' if selection.text else f"id {selection.id}"
+    # json.dumps: client text reaches the system channel only as an escaped string, never as prose.
+    what = json.dumps(selection.text, ensure_ascii=False) if selection.text else f"id {json.dumps(selection.id)}"
     lang = f" ({selection.lang})" if getattr(selection, "lang", None) else ""
     return f"The learner has selected the {selection.type} {what}{lang}. \"This\" in their message means it."
 
