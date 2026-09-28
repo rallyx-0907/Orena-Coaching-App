@@ -320,7 +320,7 @@ def test_the_model_is_told_who_it_is_and_where_the_learner_is_without_a_message_
     assert "speaking.pronunciation.tone" in context.content  # the capabilities here, chosen from surface and language
     # the voice in the support language, last before the learner's words (the live run: English rules lost)
     assert style.role == "system" and 'Xưng "mình", gọi người học là "bạn"' in style.content
-    assert "Bộ chấm chưa đánh dấu lỗi nào" in style.content and '"Bấm <nhãn nút> để <việc' in style.content
+    assert "Bộ chấm chưa đánh dấu lỗi nào" in style.content and 'Không tự viết câu mời "Bấm …"' in style.content
     # the selection restated next to the learner's words (the live run lost one kept only in the context)
     assert selected.role == "system" and selected.content.startswith('The learner has selected the word "是"')
     assert user.content == "Tại sao tôi sai từ này?"
@@ -639,7 +639,7 @@ def test_a_accepted_action_is_offered_as_a_button_never_as_done():
     run(rt)
     told = provider.requests[1].messages[-1].content
     assert "shown as the button 'Lưu từ'" in told and "has not tapped it" in told and "do not say it is done" in told
-    assert "never write as if it happened" in INSTRUCTION and "Bấm Lưu từ để thêm 我 vào từ vựng của bạn." in INSTRUCTION
+    assert "never write as if it happened" in INSTRUCTION and "the server adds the one sentence that offers" in INSTRUCTION
 
 
 def test_no_marked_error_is_not_no_error_and_praise_is_not_an_answer():
@@ -775,5 +775,5 @@ def test_the_offer_is_one_short_sentence_and_never_describes_the_button():
     assert offer_for("save_word", "Lưu từ", {"text": "我", "lang": "zh-CN"}, interface="vi", support="vi") == (
         "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
     )
-    assert 'Never describe the button or the\n  screen ("the button below"' in INSTRUCTION
+    assert 'never\n  describe the button or the screen ("the button below"' in INSTRUCTION
     assert '"nút bên dưới", "mình đã chuẩn bị sẵn nút"' in style_for("vi", [])

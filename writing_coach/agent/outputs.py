@@ -464,6 +464,12 @@ class ReplyOutputs:
     def _note_updates(self) -> int:
         return sum(1 for u in self.memory_updates if not str(u.note.get("id", "")).startswith("address-"))
 
+    @property
+    def note_changed(self) -> bool:
+        """A coach note (not the address) was kept, replaced or forgotten in this turn."""
+
+        return self._note_updates() > 0
+
     def _remember(self, args: Mapping[str, Any]) -> str:
         """A coach note (spec §12 layer 3): only what the learner said directly; the device keeps it (§5.4)."""
 

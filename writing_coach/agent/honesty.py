@@ -26,9 +26,11 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any
 
 from writing_coach.agent import learner_copy
+from writing_coach.agent.address import DEFAULTS, capitalised
 
 _VI_ACT = "lưu|thêm|xóa|xoá|bỏ lưu|mở|chuyển|bắt đầu"
 _VI_MEMORY = "ghi nhớ|ghi lại"  # what a memory_update does: true when the turn carries one (contract v5 B1)
@@ -119,69 +121,117 @@ def claims_done(sentence: str, *, remembered: bool = False, action: str | None =
     return not _question(sentence) and bool(acted.search(sentence) or stated.search(sentence))
 
 
-def _offered(text: str, label: str | None) -> bool:
-    """The answer already offers this button by its label ("Bấm Ôn từ đến hạn để…"): not offered twice."""
+# The model never offers a button in its own words; the server does, once (human direction 2026-09-28: the
+# live run showed "Bấm Ôn tập từ vựng…" with no button, and "nút bên dưới", "below", "下方的按钮"). Read in the
+# support language only, so a target-language word ("click", "点击") being explained is never taken for one.
+_OFFER_SENTENCE = MappingProxyType(
+    {
+        "vi": re.compile(r"(?i)(?:^\W*|\b(?:hãy|có thể|cứ|chỉ cần|vui lòng)\s+)(?:bấm|nhấn|chạm|nhấp)\b"),
+        "en": re.compile(r"(?i)(?:^\W*|\b(?:can|just|please|simply)\s+)(?:tap|click|press)\b"),
+        # not a quoted word ("“点击”的意思…"): a closing quote right after it
+        "zh-CN": re.compile(r"(?:^\W*|你可以|可以|请|直接|只要)(?:点击|点一下|轻点|点按|按一下)(?![”\"」』])"),
+    }
+)
 
-    return bool(label) and label.casefold() in text.casefold()
+
+def offers_a_button(sentence: str, support: str) -> bool:
+    pattern = _OFFER_SENTENCE.get(support, _OFFER_SENTENCE["en"])
+    return bool(pattern.search(sentence))
 
 
 def _sentences(text: str) -> list[str]:
     return _SENTENCE.findall(text)
 
 
-def _nothing_done(interface: str, support: str) -> str:
-    return learner_copy.text("honesty.nothing_done", interface=interface, support=support)[1]
+def copy_terms(language: str, self_term: str | None, user_term: str | None) -> dict[str, str]:
+    """The learner's own address pair for copy in `language` (agent/address.py); its default otherwise."""
+
+    default_self, default_user = DEFAULTS.get(language, DEFAULTS[learner_copy.FALLBACK_LANGUAGE])
+    chosen_self, chosen_user = self_term or default_self, user_term or default_user
+    return {"self": chosen_self, "self_cap": capitalised(chosen_self), "user": chosen_user,
+            "user_cap": capitalised(chosen_user)}  # fmt: skip
 
 
-def offer_for(action_type: str, label: str, payload: Mapping[str, Any], *, interface: str, support: str) -> str:
-    """The sentence that offers this button, built from it: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."."""
+def nothing_done(interface: str, support: str, address: tuple[str | None, str | None] = (None, None)) -> str:
+    language = learner_copy.language_of("honesty.nothing_done", interface=interface, support=support)
+    return learner_copy.text("honesty.nothing_done", interface=interface, support=support, **copy_terms(language, *address))[1]
+
+
+def offer(
+    action_type: str,
+    label: str,
+    payload: Mapping[str, Any],
+    *,
+    interface: str,
+    support: str,
+    address: tuple[str | None, str | None] = (None, None),
+) -> tuple[str, str]:
+    """(language, sentence) offering this button, in the interface layer and the learner's address pair:
+    "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."."""
 
     key = f"offer.{action_type}"
     text = str(payload.get("text") or "")
     if key not in learner_copy.CATALOG or ("{text}" in learner_copy.CATALOG[key].texts.get("en", "") and not text):
         key = "offer.action"
-    return learner_copy.text(key, interface=interface, support=support, label=label, text=text)[1]
+    language = learner_copy.language_of(key, interface=interface, support=support)
+    return learner_copy.text(key, interface=interface, support=support, label=label, text=text, **copy_terms(language, *address))
+
+
+def offer_for(action_type: str, label: str, payload: Mapping[str, Any], *, interface: str, support: str, **kw: Any) -> str:
+    return offer(action_type, label, payload, interface=interface, support=support, **kw)[1]
+
+
+def _join(before: str, addition: str) -> str:
+    if not addition:
+        return ""
+    return addition if not before or before.endswith((" ", "\n")) else " " + addition
 
 
 def offer_instead(
     text: str,
-    offer: str | None,
+    offer_text: str | None,
     *,
     interface: str,
     support: str,
+    pending: bool | None = None,
     remembered: bool = False,
     action: str | None = None,
-    label: str | None = None,
+    nothing: str | None = None,
 ) -> str:
-    """The whole answer at once (an opening greeting): claims out, the button offered when there is one."""
+    """The whole answer at once (an opening greeting): claims and the model's own offers out, the server's
+    offer in when there is one. `pending` is whether a button is proposed (the offer may be sent apart)."""
 
-    def claim(part: str) -> bool:
-        if offer:
-            return claims_done(part, remembered=remembered, action=action)
-        return claims_acted(part, remembered=remembered)
+    pending = offer_text is not None if pending is None else pending
+
+    def drop(part: str) -> bool:
+        if offers_a_button(part, support):
+            return True
+        return claims_done(part, remembered=remembered, action=action) if pending else claims_acted(part, remembered=remembered)
 
     parts = _sentences(text)
-    if not any(claim(part) for part in parts):
-        return text
-    kept = "".join(part for part in parts if not claim(part)).strip()
-    if offer:
-        if _offered(kept, label):
-            return kept
-        return f"{kept} {offer}".strip() if kept else offer
-    return kept or _nothing_done(interface, support)
+    dropped = any(drop(part) for part in parts)
+    kept = "".join(part for part in parts if not drop(part)).strip() if dropped else text.strip()
+    if offer_text:
+        return (kept + _join(kept, offer_text)).strip()
+    if dropped and not kept and not pending:
+        return nothing if nothing is not None else nothing_done(interface, support)
+    return kept
 
 
 class ClaimGate:
-    """Streams an answer a sentence at a time, and holds it from its first possible claim on.
+    """Streams an answer a sentence at a time, and holds it from its first possible claim or button offer on.
 
     Every chunk it lets out is final: the segment's text is exactly what was streamed
-    (the stream's own invariant). At the turn's end the held claims are dropped - with
-    a pending button, both kinds, and the button is offered; without one, only Orena's
-    claims to have acted. Whatever else was held goes out as written, in order.
+    (the stream's own invariant). At the turn's end the model's own button offers are
+    dropped, and so are the held claims - with a pending button, both kinds; without one,
+    only Orena's claims to have acted. Whatever else was held goes out as written, in
+    order, then the server's one offer when there is a button. `hold_all` holds the
+    whole answer (a turn that may be asked again, agent/notes.py).
     """
 
-    def __init__(self, *, interface: str = "en", support: str = "en") -> None:
+    def __init__(self, *, interface: str = "en", support: str = "en", hold_all: bool = False) -> None:
         self._interface, self._support = interface, support
+        self.hold_all = hold_all
         self._partial = ""
         self._held: list[str] = []
         self.sent: list[str] = []
@@ -191,46 +241,60 @@ class ClaimGate:
         out: list[str] = []
         while (end := _BOUNDARY.search(self._partial)) is not None:
             sentence, self._partial = self._partial[: end.end()], self._partial[end.end() :]
-            if self._held or claims_done(sentence):
+            if self.hold_all or self._held or claims_done(sentence) or offers_a_button(sentence, self._support):
                 self._held.append(sentence)
             else:
                 out.append(sentence)
         self.sent.extend(out)
         return out
 
-    def finish(
-        self, offer: str | None, *, remembered: bool = False, action: str | None = None, label: str | None = None
-    ) -> list[str]:
-        tail = self._held + ([self._partial] if self._partial else [])
+    def discard(self) -> None:
+        """Drops what is held and not yet sent (an answer that will be written again)."""
+
         self._held, self._partial = [], ""
 
-        def claim(part: str) -> bool:
-            if offer is not None:
+    def finish(
+        self,
+        offer_text: str | None,
+        *,
+        pending: bool | None = None,
+        remembered: bool = False,
+        action: str | None = None,
+        nothing: str | None = None,
+        replace_with: str | None = None,
+    ) -> list[str]:
+        """The rest of the answer. `replace_with`: the whole held answer is set aside for this (nothing of it
+        was sent)."""
+
+        tail = self._held + ([self._partial] if self._partial else [])
+        self._held, self._partial = [], ""
+        if replace_with is not None and not self.text:
+            tail = [replace_with]
+        pending = offer_text is not None if pending is None else pending
+
+        def drop(part: str) -> bool:
+            if offers_a_button(part, self._support):
+                return True
+            if pending:
                 return claims_done(part, remembered=remembered, action=action)
             return claims_acted(part, remembered=remembered)
 
-        if any(claim(part) for part in tail):
-            kept = "".join(part for part in tail if not claim(part))
-            if not self.text.strip():
-                kept = kept.lstrip()  # the claim opened the answer: no stray space or blank line before the rest
-            before = "".join(self.sent) + kept
-            if offer is not None and _offered(before, label):
-                addition = ""  # the answer already offers this button by name
-            else:
-                addition = offer if offer is not None else ("" if before.strip() else self._nothing())
-            joiner = "" if not addition or not before or before.endswith((" ", "\n")) else " "
-            chunk = kept + joiner + addition
+        dropped = any(drop(part) for part in tail)
+        kept = "".join(part for part in tail if not drop(part))
+        if dropped and not self.text.strip():
+            kept = kept.lstrip()  # a dropped sentence opened the answer: no stray space before the rest
+        before = self.text + kept
+        if offer_text is not None:
+            addition = _join(before, offer_text)
+        elif dropped and not before.strip() and not pending:
+            addition = nothing if nothing is not None else nothing_done(self._interface, self._support)
         else:
-            chunk = "".join(tail)
-        if offer is not None and not (self.text + chunk).strip():
-            chunk = offer  # the model proposed the button and said nothing: the offer is the answer
+            addition = ""
+        chunk = kept + addition
         if chunk:
             self.sent.append(chunk)
             return [chunk]
         return []
-
-    def _nothing(self) -> str:
-        return _nothing_done(self._interface, self._support)
 
     @property
     def text(self) -> str:

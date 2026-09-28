@@ -155,6 +155,11 @@ R22 (2026-09-28) Xưng hô tiếng Việt theo quan hệ, thay "hỏi một lầ
     anh/chị → Orena xưng "em"; cô/chú/bác → "cháu"; người học xưng em gọi Orena anh/chị → Orena xưng đúng từ đó.
     Đáp theo ngay, lưu note ngay, cập nhật khi người học đổi. Phân biệt tự xưng với nói về người khác ("anh tôi");
     không chắc thì giữ cặp hiện tại. Không dùng anh/chị… nếu người học chưa dùng. tao/mày chỉ khi được yêu cầu rõ.
+R23 (2026-09-28, sau live Slice 3) Câu mời do server viết: mọi câu "Bấm…/Tap…/点击…" của model bị bỏ; có action
+    thì server thêm đúng một câu mời chuẩn (lớp interface, theo cặp xưng hô), không action thì không mời. Sửa/xoá
+    coach note: server nhận ý định theo luật, nhắc model một lần kèm id; vẫn không gọi thì trả lời thật là chưa
+    làm. Lượt mở đầu: server kiểm câu chào có dữ kiện của snapshot; không có thì dùng câu chào dựng từ snapshot.
+    Không bao giờ câu chào chung chung.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):

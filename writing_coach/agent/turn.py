@@ -50,7 +50,11 @@ from writing_coach.agent.decision import (
 )
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
 from writing_coach.agent.address import address_for, address_note, mirrored_address
-from writing_coach.agent.honesty import ClaimGate, offer_for, offer_instead
+from writing_coach.agent.greeting import built as built_greeting
+from writing_coach.agent.greeting import states_a_fact
+from writing_coach.agent.honesty import ClaimGate, copy_terms, nothing_done, offer, offer_instead
+from writing_coach.agent.notes import notes_the_message_changes
+from writing_coach.agent.notes import nudge as note_nudge
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
     DoneEvent,
@@ -200,6 +204,9 @@ class _Turn:
         self.gate = ClaimGate(interface=request.context.locale.interface, support=request.context.locale.support)
         self.provider_rounds = 0
         self.address_offered_now = False
+        self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
+        self.coach_notes: tuple[CoachNote, ...] = ()
+        self.snapshot: dict | None = None
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
 
     # --- the turn ------------------------------------------------------------
@@ -255,6 +262,10 @@ class _Turn:
         tier1, mirrored = self._mirror(turn, tier1)
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
         snapshot = self._opening_snapshot() if self.opening else None
+        self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
+        if not self.opening:
+            self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
+            self.gate.hold_all = bool(self.notes_asked)  # it may be written again: nothing streams early
         messages = opening_messages(
             turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot
         )
@@ -287,7 +298,7 @@ class _Turn:
         yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
-        if not "".join(self.text).strip() and not outputs.actions:
+        if not "".join(self.text).strip() and not outputs.actions and not self.notes_asked:
             # Nothing to say (or only whitespace) and nothing offered is not an answer: the learner is told,
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
@@ -326,7 +337,7 @@ class _Turn:
             self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
         )
         limit = self.rt.limits.max_tool_iterations_per_turn
-        nudged = False
+        nudged = notes_nudged = False
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
             if remaining <= 0:
@@ -362,6 +373,10 @@ class _Turn:
             if self.should_stop():
                 return
             if not calls:
+                if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
+                    notes_nudged = True
+                    self._ask_again(messages, round_text, note_nudge(self.notes_asked))
+                    continue
                 if self.text or outputs.actions or nudged or round_index >= limit:
                     return
                 # A round that ended with no words and nothing offered (the live run: a refused action,
@@ -379,7 +394,24 @@ class _Turn:
                     answer = yield from self._read(call, messages, outputs)
                 messages.append(ProviderMessage(role="tool", content=answer, tool_call_id=call.id))
             if not read_any and round_text:
+                if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
+                    notes_nudged = True
+                    self._ask_again(messages, "", note_nudge(self.notes_asked))
+                    continue
                 return  # the answer is written and its extras are attached
+
+    def _note_unchanged(self, outputs: ReplyOutputs) -> bool:
+        return bool(self.notes_asked) and not outputs.note_changed
+
+    def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str) -> None:
+        """Once: the answer is set aside (nothing of it was streamed) and the model is asked again."""
+
+        written = "".join(round_text)
+        if written:
+            messages.append(ProviderMessage(role="assistant", content=written))
+        messages.append(ProviderMessage(role="user", content=ask))
+        self.gate.discard()
+        self.text.clear()
 
     def _read(self, call: ToolCallRequest, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         registered = call.name in self.rt.tools.names()
@@ -452,39 +484,63 @@ class _Turn:
         summary = learner_copy.text("result.unavailable", interface=self.locale.interface, support=self.locale.support)[1]
         return self.stream.emit(ToolResultEvent(tool=name, summary=summary, evidence_ids=[]))
 
+    def _address(self, language: str) -> tuple[str | None, str | None]:
+        chosen = address_for(self.coach_notes, language)
+        return chosen.self_term, chosen.user_term
+
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
         index = 0
-        offer = action_type = label = None
-        if outputs.actions:  # an action is offered, never reported as done (agent/honesty.py)
+        support = self.locale.support
+        offer_lang = offer_text = action_type = None
+        if outputs.actions:  # the server's one offer of the button; the model's own are dropped (agent/honesty.py)
             first = outputs.actions[0]
-            action_type, label = first.type, first.label
-            offer = offer_for(
-                first.type, first.label, first.payload, interface=self.locale.interface, support=self.locale.support
-            )
+            action_type = first.type
+            offer_lang = learner_copy.language_of(f"offer.{first.type}" if f"offer.{first.type}" in
+                                                  learner_copy.CATALOG else "offer.action",
+                                                  interface=self.locale.interface, support=support)  # fmt: skip
+            offer_text = offer(first.type, first.label, first.payload, interface=self.locale.interface,
+                               support=support, address=self._address(offer_lang))[1]  # fmt: skip
+        inline = offer_text if offer_lang == support else None  # in the answer's own language, or apart
+        apart = offer_text if inline is None else None
+        nothing = nothing_done(self.locale.interface, support, self._address(support))
         if self.opening:
-            text = "".join(self.text)
-            text = offer_instead(
-                text, offer, interface=self.locale.interface, support=self.locale.support, action=action_type, label=label
-            )
-            if not text.strip() and offer is not None:
-                text = offer
-            text = _fit_greeting(text)
+            greeting = offer_instead("".join(self.text), None, interface=self.locale.interface, support=support,
+                                     pending=bool(outputs.actions), action=action_type, nothing=nothing)  # fmt: skip
+            if not states_a_fact(greeting, self.snapshot):  # never a generic greeting (agent/greeting.py)
+                greeting = built_greeting(self.snapshot, interface=self.locale.interface, support=support,
+                                          address=self._address(support))  # fmt: skip
+            text = _fit_greeting(greeting + (" " + inline if inline else ""))
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):
                     outputs.suggest(intent)
         else:
+            unchanged = None
+            if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
+                unchanged = learner_copy.text("notes.unchanged", interface=self.locale.interface, support=support,
+                                              **copy_terms(learner_copy.language_of("notes.unchanged",
+                                                  interface=self.locale.interface, support=support),
+                                                  *self._address(support)))[1]  # fmt: skip
             finished = self.gate.finish(
-                offer, remembered=bool(outputs.memory_updates), action=action_type, label=label
+                inline,
+                pending=bool(outputs.actions),
+                remembered=bool(outputs.memory_updates),
+                action=action_type,
+                nothing=nothing,
+                replace_with=unchanged,
             )
             for chunk in finished:
-                yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
+                yield self.stream.emit(SegmentDelta(index=0, lang=support, text_delta=chunk))
             text = self.gate.text
         if text:
             yield self.stream.emit(
-                SegmentEnd(index=0, lang=self.locale.support, text=text, voice_style=outputs.voice_style),
+                SegmentEnd(index=0, lang=support, text=text, voice_style=outputs.voice_style),
                 cites=outputs.citations,
             )
             index = 1
+        if apart:
+            yield self.stream.emit(SegmentDelta(index=index, lang=offer_lang, text_delta=apart))
+            yield self.stream.emit(SegmentEnd(index=index, lang=offer_lang, text=apart, voice_style="neutral_explain"))
+            index += 1
         for lang, reference in outputs.references:
             yield self.stream.emit(SegmentEnd(index=index, lang=lang, text=reference, voice_style="reference"))
             index += 1

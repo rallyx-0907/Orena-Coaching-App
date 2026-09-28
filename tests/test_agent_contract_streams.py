@@ -359,7 +359,8 @@ def test_s5_never_reports_the_save_as_done(harness, target, claim):
         assert text.startswith("Đây là một danh từ đếm được.")  # what was not a claim stays
 
 
-def test_s5_an_offer_is_left_as_it_is(harness):
+def test_s5_the_models_own_offer_is_replaced_by_the_servers(harness):
+    # Human direction 2026-09-28: the offer sentence is the server's, once, never the model's.
     round_one = (
         TextDelta("Bấm Lưu từ để lưu 我."),
         ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"text": "我", "lang": "zh-CN"}}),
@@ -370,4 +371,4 @@ def test_s5_an_offer_is_left_as_it_is(harness):
         {"surface": "vocabulary.word", "selected_item": {"type": "word", "text": "我", "lang": "zh-CN"}},
         actions=("save_word",),
     )  # fmt: skip
-    assert dict(events)["segment_end"]["text"] == "Bấm Lưu từ để lưu 我."
+    assert dict(events)["segment_end"]["text"] == "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."

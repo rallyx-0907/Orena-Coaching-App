@@ -43,40 +43,72 @@ def _entry(layer: CopyLayer, texts: dict[str, str]) -> CopyEntry:
 
 CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
     {
-        # Said in place of a claim that a button's action is done (agent/honesty.py): support layer,
-        # since it is part of the answer; the label is the button's own interface-layer text.
-        # Built from the action in hand (label, and the word it names): what tapping does.
+        # The one sentence that offers a proposed button (agent/honesty.py): the server's, never the model's,
+        # in the interface layer like the button it names, and in the learner's address pair (human direction
+        # 2026-09-28). Built from the action in hand (label, and the word it names): what tapping does.
         "offer.save_word": _entry(
-            CopyLayer.SUPPORT,
-            {"en": "Tap {label} to add {text} to your words.", "vi": "Bấm {label} để thêm {text} vào từ vựng của bạn.",
-             "zh-CN": "点击“{label}”，把{text}加入你的词汇。"},
+            CopyLayer.INTERFACE,
+            {"en": "Tap {label} to add {text} to your words.", "vi": "Bấm {label} để thêm {text} vào từ vựng của {user}.",
+             "zh-CN": "点击“{label}”，把{text}加入{user}的词汇。"},
         ),
         "offer.unsave_word": _entry(
-            CopyLayer.SUPPORT,
-            {"en": "Tap {label} to remove {text} from your words.", "vi": "Bấm {label} để bỏ {text} khỏi từ vựng của bạn.",
-             "zh-CN": "点击“{label}”，把{text}从你的词汇中移除。"},
+            CopyLayer.INTERFACE,
+            {"en": "Tap {label} to remove {text} from your words.", "vi": "Bấm {label} để bỏ {text} khỏi từ vựng của {user}.",
+             "zh-CN": "点击“{label}”，把{text}从{user}的词汇中移除。"},
         ),
         "offer.add_word_to_collection": _entry(
-            CopyLayer.SUPPORT,
+            CopyLayer.INTERFACE,
             {"en": "Tap {label} to add {text} to the collection.", "vi": "Bấm {label} để thêm {text} vào bộ sưu tập.",
              "zh-CN": "点击“{label}”，把{text}加入收藏。"},
         ),
         "offer.start_review": _entry(
-            CopyLayer.SUPPORT,
+            CopyLayer.INTERFACE,
             {"en": "Tap {label} to start the review.", "vi": "Bấm {label} để bắt đầu ôn.", "zh-CN": "点击“{label}”开始复习。"},
         ),
         "offer.navigate": _entry(
-            CopyLayer.SUPPORT,
+            CopyLayer.INTERFACE,
             {"en": "Tap {label} to open it.", "vi": "Bấm {label} để mở.", "zh-CN": "点击“{label}”打开。"},
         ),
         "offer.action": _entry(
-            CopyLayer.SUPPORT,
-            {"en": "Tap {label} if you want to.", "vi": "Bấm {label} nếu bạn muốn.", "zh-CN": "需要的话，点击“{label}”。"},
+            CopyLayer.INTERFACE,
+            {"en": "Tap {label} if you want to.", "vi": "Bấm {label} nếu {user} muốn.", "zh-CN": "需要的话，点击“{label}”。"},
         ),
         # Said when every sentence of an answer claimed Orena had changed something (agent/honesty.py).
         "honesty.nothing_done": _entry(
             CopyLayer.SUPPORT,
-            {"en": "I haven't changed anything.", "vi": "Mình chưa thay đổi gì cả.", "zh-CN": "我没有做任何更改。"},
+            {"en": "I haven't changed anything.", "vi": "{self_cap} chưa thay đổi gì cả.", "zh-CN": "{self}没有做任何更改。"},
+        ),
+        # Said when the learner changed or cancelled a coach note and none was changed, even when asked again
+        # (agent/notes.py): the truth, never "there is no such note".
+        "notes.unchanged": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I haven't changed your notes yet. Could you say which one to change or forget?",
+             "vi": "{self_cap} chưa sửa hay xoá ghi chú nào của {user}. {user_cap} nói rõ ghi chú nào cần sửa hoặc xoá nhé?",
+             "zh-CN": "{self}还没有修改或删除{user}的笔记。请告诉{self}要修改或删除哪一条？"},
+        ),
+        # The opening greeting when the model's names no fact of the snapshot (agent/greeting.py): one fact, from
+        # the snapshot, never a generic line (human direction 2026-09-28).
+        "opening.due": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Hi! You have {n} words due for review today.", "vi": "Chào {user}! Hôm nay {user} có {n} từ đến hạn ôn.",
+             "zh-CN": "你好！今天{user}有{n}个词需要复习。"},
+        ),
+        "opening.activity": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Hi! In the last 30 days: {n} × {what} in {skill}.",
+             "vi": "Chào {user}! 30 ngày qua {user} có {n} {what} ở phần {skill}.",
+             "zh-CN": "你好！最近30天，{user}在{skill}有{n}次{what}。"},
+        ),
+        "opening.empty": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Hi! Nothing has been recorded in the last 30 days yet.",
+             "vi": "Chào {user}! 30 ngày qua chưa có hoạt động nào được ghi lại.",
+             "zh-CN": "你好！最近30天还没有学习记录。"},
+        ),
+        "opening.unread": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Hi! I can't read your progress right now.", "vi": "Chào {user}! {self_cap} chưa đọc được tiến độ lúc này.",
+             "zh-CN": "你好！{self}现在读不到{user}的学习进度。"},
         ),
         "identity.who": _entry(
             CopyLayer.SUPPORT,
@@ -456,6 +488,14 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
 
 def layer_language(layer: CopyLayer, *, interface: str, support: str) -> str:
     return interface if layer is CopyLayer.INTERFACE else support
+
+
+def language_of(key: str, *, interface: str, support: str) -> str:
+    """The pack a key is read from for this locale (its layer's language, or the fallback)."""
+
+    entry = CATALOG[key]
+    language = layer_language(entry.layer, interface=interface, support=support)
+    return language if language in entry.texts else FALLBACK_LANGUAGE
 
 
 def text(key: str, *, interface: str, support: str, **params: object) -> tuple[str, str]:

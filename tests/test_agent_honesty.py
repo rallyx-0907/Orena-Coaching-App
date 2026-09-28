@@ -69,7 +69,9 @@ def test_the_common_ways_of_saying_it_acted_are_claims(text):
 def test_a_question_is_never_a_claim():
     assert not claims_done("Đã mở phần Ngữ pháp chưa?") and not claims_done("Has it been saved?")
     text = "Ngữ pháp này khá quan trọng đó. Đã mở phần Ngữ pháp chưa? Bấm vào để xem thêm nhé."
-    assert offer_instead(text, "Bấm Mở Ngữ pháp để mở.", interface="vi", support="vi") == text
+    assert offer_instead(text, "Bấm Mở Ngữ pháp để mở.", interface="vi", support="vi") == (
+        "Ngữ pháp này khá quan trọng đó. Đã mở phần Ngữ pháp chưa? Bấm Mở Ngữ pháp để mở."
+    )  # the question stays; the model's own offer gives way to the server's
 
 
 def gated(text, offer):
@@ -160,18 +162,19 @@ def test_the_pending_buttons_own_completion_is_still_a_claim(sentence, action):
     assert claims_done(sentence, action=action)
 
 
-def test_the_offer_is_not_added_twice():
+def test_the_offer_comes_once_and_is_the_servers():
     gate = ClaimGate(interface="vi", support="vi")
     streamed = gate.feed("Bấm Ôn từ đến hạn để bắt đầu ôn tập. Ôn tập đã được bắt đầu.")
-    streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review", label="Ôn từ đến hạn")
-    assert "".join(streamed) == "Bấm Ôn từ đến hạn để bắt đầu ôn tập. "
+    streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review")
+    assert "".join(streamed) == "Bấm Ôn từ đến hạn để mở."
     text = "Bấm Ôn từ đến hạn để ôn. Đã bắt đầu ôn."
-    assert offer_instead(text, "Bấm Ôn từ đến hạn để mở.", interface="vi", support="vi", action="start_review",
-                         label="Ôn từ đến hạn") == "Bấm Ôn từ đến hạn để ôn."  # fmt: skip
+    assert offer_instead(text, "Bấm Ôn từ đến hạn để mở.", interface="vi", support="vi", action="start_review") == (
+        "Bấm Ôn từ đến hạn để mở."
+    )
 
 
 def test_a_true_state_stays_and_the_offer_comes_once():
     gate = ClaimGate(interface="vi", support="vi")
     streamed = gate.feed("Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn.")
-    streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review", label="Ôn từ đến hạn")
-    assert "".join(streamed) == "Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn."
+    streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review")
+    assert "".join(streamed) == "Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn. Bấm Ôn từ đến hạn để mở."
