@@ -45,9 +45,9 @@ def test_every_v1_domain_is_known(registry):
         assert expected in ids
 
 
-def test_vocabulary_and_writing_are_active_and_everything_else_pending(registry):
+def test_vocabulary_writing_and_grammar_are_active_and_everything_else_pending(registry):
     active = {entry.id for entry in registry.entries() if entry.status == "active"}
-    assert active == {"vocabulary.words", "review.due", "writing.review"}
+    assert active == {"vocabulary.words", "review.due", "writing.review", "grammar.point"}
     assert {entry.status for entry in registry.entries() if entry.id not in active} == {"pending"}
 
 

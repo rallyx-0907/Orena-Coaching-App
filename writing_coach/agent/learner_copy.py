@@ -138,6 +138,22 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "Saved: {n}", "vi": "Đã lưu: {n}", "zh-CN": "已保存：{n}"},
         ),
+        "tool.get_grammar_point": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Opening the grammar point", "vi": "Đang mở điểm ngữ pháp", "zh-CN": "正在打开语法点"},
+        ),
+        "result.get_grammar_point": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Grammar points: {n}", "vi": "Điểm ngữ pháp: {n}", "zh-CN": "语法点：{n}"},
+        ),
+        "tool.search_grammar_points": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Searching grammar", "vi": "Đang tìm ngữ pháp", "zh-CN": "正在查找语法"},
+        ),
+        "result.search_grammar_points": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Matches: {n}", "vi": "Kết quả: {n}", "zh-CN": "结果：{n}"},
+        ),
         "result.get_word_detail": _entry(
             CopyLayer.INTERFACE,
             {"en": "Entries: {n}", "vi": "Mục từ: {n}", "zh-CN": "词条：{n}"},

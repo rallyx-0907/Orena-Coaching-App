@@ -132,3 +132,28 @@ def test_the_writing_history_reads_the_session_language_and_learner(learning, ap
     with learner_context(OTHER_ZH):
         other = tools.invoke("get_writing_history_summary", OTHER_ZH, {})
     assert other.data == {"revision_count": 0, "categories": []}
+
+
+def test_grammar_completion_is_the_learners_own_in_their_language(learning, app_module):
+    """R5 completion on PostgreSQL: scoped by learner and language, read through the app's own route."""
+
+    from writing_coach.agent.runtime import AppReads, build_tool_registry
+
+    tools = build_tool_registry(
+        writing_review=lambda essay_id: None,
+        reads=AppReads(
+            grammar_library=lambda: app_module.api_grammar_library(),
+            grammar_lesson=lambda grammar_id: app_module._agent_grammar_lesson(grammar_id),
+        ),
+    )
+    point = "zh-hsk1-1-svo-c-b-n"
+    with learner_context(ZH):
+        before = tools.invoke("get_grammar_point", ZH, {"grammar_id": point})
+        app_module.api_complete_grammar(point)  # the learner's own POST, not a tool
+        after = tools.invoke("get_grammar_point", ZH, {"grammar_id": point})
+        listed = tools.invoke("search_grammar_points", ZH, {"query": "svo", "level": "HSK1"})
+    with learner_context(OTHER_ZH):
+        other = tools.invoke("get_grammar_point", OTHER_ZH, {"grammar_id": point})
+    assert before.data["completed"] is False and after.data["completed"] is True
+    assert next(p for p in listed.data["points"] if p["grammar_id"] == point)["completed"] is True
+    assert other.data["completed"] is False

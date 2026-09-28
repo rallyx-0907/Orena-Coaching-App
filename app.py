@@ -681,7 +681,7 @@ app.include_router(learner_summary_router)
 # answer 404. It routes through the legacy AI selection and reads with the app's
 # own services: the Writing review below and the usage store it meters with.
 from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router  # noqa: E402
-from writing_coach.agent.runtime import build_agent_runtime  # noqa: E402
+from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
 
 
 def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
@@ -693,10 +693,23 @@ def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
         raise
 
 
+def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
+    try:
+        return api_grammar_lesson(grammar_id)
+    except HTTPException as exc:
+        if exc.status_code in (404, 503):  # no such point here, or its knowledge is not there
+            return None
+        raise
+
+
 configure_agent(
     build_agent_runtime(
         writing_review=_agent_writing_review,
         writing_history=lambda: api_error_memory(),
+        reads=AppReads(
+            grammar_library=lambda: api_grammar_library(),
+            grammar_lesson=lambda grammar_id: _agent_grammar_lesson(grammar_id),
+        ),
         record_usage=_persistence_runtime.product_repository.record_usage,
     )
     if agent_enabled(os.environ, production=APP_ENV == "production")

@@ -25,6 +25,7 @@ def test_the_registered_tools_are_the_planned_ones_read_only_and_labelled():
     assert tools.names() == {
         "get_due_review_summary", "get_due_vocabulary", "get_current_writing_evaluation",
         "get_saved_word_state", "get_word_detail", "get_writing_feedback_items", "get_writing_history_summary",
+        "get_grammar_point", "search_grammar_points",
     }  # fmt: skip
     for tool in tools.tools():
         planned = PLANNED_TOOLS[tool.name]

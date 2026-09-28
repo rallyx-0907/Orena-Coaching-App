@@ -11,7 +11,7 @@
         "grammar.catalog",
         "grammar.point"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [
         "selected_item"
       ],
@@ -25,8 +25,7 @@
       "evidence_source": "grammar.catalog",
       "tools": [
         "get_grammar_point",
-        "search_grammar_points",
-        "get_grammar_mistakes_summary"
+        "search_grammar_points"
       ]
     }
   ]

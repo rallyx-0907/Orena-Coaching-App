@@ -8,8 +8,16 @@ and the usage store it already meters with. Everything else is the agent's own.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from writing_coach.agent.capability_registry import load_capability_registry
+from writing_coach.agent.grammar_tools import (
+    GrammarLessonReader,
+    GrammarLibraryReader,
+    _no_lesson,
+    _no_library,
+    grammar_tools,
+)
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.platform_provider import PlatformAgentTurnProvider
 from writing_coach.agent.provider import AgentTurnProvider
@@ -25,16 +33,30 @@ def _no_history() -> dict:
     return {"items": [], "revision_count": 0}
 
 
+@dataclass(frozen=True)
+class AppReads:
+    """The app's own read compositions the tools go through - its routes' code, never re-implemented.
+
+    Each defaults to "nothing there", so a test or a runtime that does not hand one in gets
+    empty answers from that tool, never a guess.
+    """
+
+    grammar_library: GrammarLibraryReader = _no_library
+    grammar_lesson: GrammarLessonReader = _no_lesson
+
+
 def build_tool_registry(
     *,
     writing_review: WritingReviewReader,
     writing_history: WritingHistoryReader = _no_history,
+    reads: AppReads = AppReads(),
     limits: AgentLimits = DEFAULT_LIMITS,
 ) -> ToolRegistry:
     registry = ToolRegistry(limits=limits)
     for tool in (
         *read_tools(writing_review=writing_review),
         *more_read_tools(writing_review=writing_review, writing_history=writing_history),
+        *grammar_tools(library=reads.grammar_library, lesson=reads.grammar_lesson),
     ):
         registry.register(tool)
     return registry
@@ -45,10 +67,13 @@ def build_agent_runtime(
     writing_review: WritingReviewReader,
     record_usage: RecordUsage | None,
     writing_history: WritingHistoryReader = _no_history,
+    reads: AppReads = AppReads(),
     provider: AgentTurnProvider | None = None,
     limits: AgentLimits = DEFAULT_LIMITS,
 ) -> AgentRuntime:
-    tools = build_tool_registry(writing_review=writing_review, writing_history=writing_history, limits=limits)
+    tools = build_tool_registry(
+        writing_review=writing_review, writing_history=writing_history, reads=reads, limits=limits
+    )
 
     def meter(user_key: str, feature: str, amount: int, request_id: str) -> None:
         if record_usage is not None:
