@@ -11,6 +11,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from writing_coach.agent.capability_registry import load_capability_registry
+from writing_coach.agent.coaching import (
+    CrossSkillCueReader,
+    LearnerSummaryReader,
+    ListeningRecent,
+    _no_cue,
+    _unavailable_summary,
+    coaching_tools,
+)
 from writing_coach.agent.grammar_tools import (
     GrammarLessonReader,
     GrammarLibraryReader,
@@ -63,6 +71,9 @@ class AppReads:
     reading_article: ReadingArticle = _none
     reading_chapter: ReadingChapter = _none
     reading_evidence: ReadingEvidence = _empty
+    learner_summary: LearnerSummaryReader = _unavailable_summary
+    cross_skill_cue: CrossSkillCueReader = _no_cue
+    listening_recent: ListeningRecent = _empty
 
 
 def build_tool_registry(
@@ -84,6 +95,14 @@ def build_tool_registry(
             listening_progress=reads.listening_progress,
             reading_article=reads.reading_article,
             reading_chapter=reads.reading_chapter,
+            reading_evidence=reads.reading_evidence,
+        ),
+        *coaching_tools(
+            learner_summary=reads.learner_summary,
+            cross_skill_cue=reads.cross_skill_cue,
+            writing_history=writing_history,
+            speaking_attempts=reads.speaking_attempts,
+            listening_recent=reads.listening_recent,
             reading_evidence=reads.reading_evidence,
         ),
     ):

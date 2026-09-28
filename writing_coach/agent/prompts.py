@@ -73,11 +73,21 @@ Data and actions:
   screen ("the button below", "I have set up a button").
 - You change nothing yourself, ever: never say you saved, added, removed or opened anything. A state a tool
   read is the learner's ("Từ này đã có trong thư viện của bạn"), not your doing.
-- Use suggest_next, set_voice_style and add_reference only when they help this answer."""
+- Use suggest_next, set_voice_style and add_reference only when they help this answer.
+
+Coach notes (context.coach_notes; the device keeps them):
+- Keep with remember_note only what the learner says directly about how they learn: a preference, a goal, a
+  plan, in their words. Never feelings, circumstances or health, and never what their records already show
+  (levels, scores, saved words, progress): the tools read those.
+- When they correct one ("no, explain in more detail"), call remember_note with replaces set to its id; when
+  they ask you to forget one, call forget_note. A note kept or forgotten in this turn may be said to be so.
+- Follow the notes when you answer; do not recite them."""
 
 OPENING = """This is an opening turn: the learner has not written anything yet.
 - Write one short greeting fitted to where they are and what they have in view: at most 240 characters,
-  one or two sentences, a statement they can check (for example what is due), no praise and no slogans.
+  one or two sentences, a statement they can check, taken from the snapshot below (for example how many words
+  are due), no praise and no slogans. If the snapshot holds no records, greet without numbers. Never state a
+  number the snapshot does not hold.
 - Then call suggest_next one to five times with the most useful next questions. You may offer at most two
   actions, none that needs a confirmation. Claim no error without evidence."""
 
@@ -128,7 +138,12 @@ def context_document(
             **address_for(tier1.coach_notes, locale.support).public(),
             "asked_this_session": bool(session and session.address_asked),
         },
-        "coach_notes": [{"kind": note.kind, "text": note.text} for note in tier1.coach_notes],
+        # the address note has its own place above; the rest, with ids, so a correction can replace one
+        "coach_notes": [
+            {"id": note.id, "kind": note.kind, "text": note.text}
+            for note in tier1.coach_notes
+            if not note.id.startswith("address-")
+        ],
         "earlier_in_session": [
             {"tool": record.tool, "summary": record.summary} for record in (session.recent_tool_results if session else ())
         ],
@@ -216,12 +231,17 @@ def opening_messages(
     session: AgentSessionState | None,
     *,
     opening: bool = False,
+    snapshot: dict | None = None,
 ) -> list[ProviderMessage]:
     context = json.dumps(context_document(turn, tier1, capabilities, session), ensure_ascii=False)
     messages = [
         ProviderMessage(role="system", content=INSTRUCTION),
         ProviderMessage(role="system", content=f"context: {context}"),
     ]
+    if snapshot is not None:  # the opening turn is built on the learner's snapshot (S13), read by the server
+        messages.append(
+            ProviderMessage(role="system", content="snapshot: " + json.dumps(redact_for_provider(snapshot), ensure_ascii=False))
+        )
     if opening:
         messages.append(ProviderMessage(role="system", content=OPENING))
         style = style_for(tier1.contract_locale.support, tier1.coach_notes)

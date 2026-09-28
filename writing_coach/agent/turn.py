@@ -104,6 +104,7 @@ _log = logging.getLogger(__name__)
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
 TURN_FEATURE = "agent.turn"
 OPEN_FEATURE = "agent.open"
+SNAPSHOT_TOOL = "build_learning_snapshot"
 ANSWER_NUDGE = "[No answer was written. Answer the learner now, in words, in their support language.]"
 TOKENS_FEATURE = "agent.tokens"
 
@@ -237,7 +238,10 @@ class _Turn:
 
     def _model_turn(self, turn: TurnInput, tier1, decisions: Decisions, session) -> Iterator[Event]:
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
-        messages = opening_messages(turn, tier1, [c for c in here if c], session, opening=self.opening)
+        snapshot = self._opening_snapshot() if self.opening else None
+        messages = opening_messages(
+            turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot
+        )
         outputs = ReplyOutputs(
             client=self.request.client,
             interface=self.locale.interface,
@@ -248,6 +252,7 @@ class _Turn:
             take_ref=self.request.context.take_ref,
             address_asked=session.address_asked,
             address_chosen=address_for(tier1.coach_notes, self.locale.support).chosen,
+            notes={note.id: note.weight for note in tier1.coach_notes},
         )
         # What the request named may be named back, as what it named; everything else must be read first.
         context = self.request.context
@@ -265,6 +270,19 @@ class _Turn:
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
 
+    def _opening_snapshot(self) -> dict | None:
+        """S13 is built on the learner's snapshot: read here, by the server, not asked of the model."""
+
+        if SNAPSHOT_TOOL not in self.rt.tools.names():
+            return None
+        learner = replace(self.learner, interface=self.locale.interface)
+        try:
+            with learner_context(learner):
+                return dict(self.rt.tools.invoke(SNAPSHOT_TOOL, learner, {}).data)
+        except Exception:
+            _log.warning("opening snapshot unavailable", exc_info=True, extra={"trace_id": self.trace_id})
+            return None
+
     def _identity(self, question: IdentityQuestion) -> Iterator[Event]:
         """Spec §35: who Orena is comes from copy, never from a model, and names no provider."""
 
@@ -275,7 +293,8 @@ class _Turn:
         yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
-        read_specs = tuple(
+        # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
+        read_specs = () if self.opening else tuple(
             ProviderToolSpec.from_tool(tool)
             for tool in self.rt.tools.tools()
             if self.learner.contract_language in tool.languages
@@ -428,7 +447,7 @@ class _Turn:
                 for intent in opening_suggestions(self.request.context.known_surface):
                     outputs.suggest(intent)
         else:
-            for chunk in self.gate.finish(offer):
+            for chunk in self.gate.finish(offer, remembered=bool(outputs.memory_updates)):
                 yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
             text = self.gate.text
         if text:
@@ -444,7 +463,7 @@ class _Turn:
             yield self.stream.emit(action)
         for suggestion in outputs.suggestions:
             yield self.stream.emit(suggestion)
-        for update in outputs.memory_updates:  # the address pair the learner chose (agent/address.py)
+        for update in outputs.memory_updates:  # coach notes and the address pair the learner chose (§5.4)
             yield self.stream.emit(update)
         self.address_offered_now = outputs.address_offered_now
         usage = Usage(input_tokens=self.usage_in, output_tokens=self.usage_out)

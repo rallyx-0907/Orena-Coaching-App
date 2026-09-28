@@ -109,10 +109,18 @@ _PLAN = (
     ),
     PlannedTool(
         "get_learning_weaknesses",
-        "gap",
-        None,
-        "No cross-skill weakness or strength computation exists; the summary reports growth as "
-        "unavailable in every domain.",
+        "adapter",
+        "writing_coach.agent.coaching:weaknesses",
+        "Slice 3 (human direction 2026-09-28): deterministic counts over the learner's own records - recurring "
+        "writing error categories, provider-flagged words, dictation lines, reading checks, forgotten words. "
+        "No strength or trend (growth stays unavailable); grammar has no mistake store and stays null.",
+        composes=(
+            "writing_coach.writing_analytics:parse_persisted_error_events",
+            f"{_SPECIALIZED}.list_speaking_attempt_records",
+            f"{_SPECIALIZED}.list_recent_listening_progress_records",
+            f"{_READING_EVIDENCE}.list_evidence",
+            "writing_coach.becoming_library:list_library_vocabulary",
+        ),
         evidence_source="learner_summary",
     ),
     PlannedTool(

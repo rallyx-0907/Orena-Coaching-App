@@ -98,6 +98,49 @@ PRONUNCIATION_ERROR = _table(
 )
 
 
+# The learner summary's domains, activity counts, measures and states (learner_summary.py).
+DOMAIN = _table(
+    {
+        "reading": ("Reading", "Đọc", "阅读"),
+        "listening": ("Listening", "Nghe", "听力"),
+        "speaking": ("Speaking", "Nói", "口语"),
+        "writing": ("Writing", "Viết", "写作"),
+        "vocabulary": ("Vocabulary", "Từ vựng", "词汇"),
+        "grammar": ("Grammar", "Ngữ pháp", "语法"),
+    }
+)
+ACTIVITY = _table(
+    {
+        "submitted_versions": ("versions submitted", "bản bài đã nộp", "提交的版本"),
+        "checks_answered": ("comprehension checks answered", "bài kiểm tra đọc hiểu đã làm", "完成的阅读理解"),
+        "lines_reconstructed": ("dictation lines worked on", "câu chép chính tả đã làm", "练过的听写句子"),
+        "takes": ("speaking takes", "lần nói", "录音次数"),
+        "patterns_marked_complete": ("grammar lessons completed", "bài ngữ pháp đã hoàn thành", "完成的语法课"),
+        "phrases_kept": ("words saved", "từ đã lưu", "保存的词"),
+    }
+)
+MEASURE = _table(
+    {
+        "overall": ("writing score (0-100)", "điểm bài viết (0-100)", "写作分数（0-100）"),
+        "comprehension_matched": ("answers right", "số câu đúng", "答对的题数"),
+        "dictation_best_match": ("best dictation match (%)", "độ khớp chép chính tả tốt nhất (%)", "听写最佳匹配（%）"),
+        "speaking_dimensions": ("speaking scores (0-100)", "điểm nói (0-100)", "口语分数（0-100）"),
+        "successful_recalls_all_time": ("successful recalls", "lần nhớ đúng", "成功回忆次数"),
+        "pronunciation": ("pronunciation", "phát âm", "发音"),
+        "fluency": ("fluency", "độ trôi chảy", "流利度"),
+        "content_match": ("matching the text", "khớp với câu mẫu", "与原文一致"),
+        "transcription_confidence": ("recognition confidence", "độ tin cậy nhận dạng", "识别置信度"),
+    }
+)
+DOMAIN_STATUS = _table(
+    {
+        "current": ("has records in this window", "có dữ liệu trong khoảng này", "此期间有记录"),
+        "empty": ("no records yet", "chưa có dữ liệu", "暂无记录"),
+        "unavailable": ("could not be read now", "hiện không đọc được", "暂时无法读取"),
+    }
+)
+
+
 def label(table: Table, key: object, interface: str) -> str | None:
     """The key's name in the interface language (contract or internal code); None for an unknown key."""
 

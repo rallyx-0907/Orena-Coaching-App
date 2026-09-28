@@ -38,7 +38,7 @@
         "orena.home",
         "progress"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [],
       "actions": [
         "navigate",

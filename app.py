@@ -693,6 +693,16 @@ def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
         raise
 
 
+def _agent_learner_summary(window: str) -> dict[str, Any]:
+    # The route's own composition (GET /api/learner-summary); not configured is unreadable, never empty.
+    from writing_coach.learner_summary_api import summary
+
+    try:
+        return summary(window)
+    except HTTPException as exc:
+        raise RuntimeError("the learner summary is not available") from exc
+
+
 def _agent_engine() -> Any:
     if _persistence_runtime.engine is None:
         raise RuntimeError("the reading records require the PostgreSQL runtime")
@@ -743,6 +753,9 @@ configure_agent(
                 book_id, chapter_id
             ),
             reading_evidence=lambda limit: _agent_reading_evidence(limit),
+            learner_summary=lambda window: _agent_learner_summary(window),
+            cross_skill_cue=lambda: becoming_cross_skill_cue_get(),
+            listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
         ),
         record_usage=_persistence_runtime.product_repository.record_usage,
     )

@@ -30,33 +30,43 @@ from typing import Any
 
 from writing_coach.agent import learner_copy
 
-_VI_DONE = r"(?:lưu|thêm|xóa|xoá|bỏ lưu|mở|chuyển|bắt đầu|ghi nhớ|ghi lại)"
+_VI_ACT = "lưu|thêm|xóa|xoá|bỏ lưu|mở|chuyển|bắt đầu"
+_VI_MEMORY = "ghi nhớ|ghi lại"  # what a memory_update does: true when the turn carries one (contract v5 B1)
 _EN_DONE = r"(?:saved|added|removed|deleted|opened|started)"
-_ZH_DONE = r"(?:保存|添加|加入|删除|移除|收藏|打开|开始|记录|记下)"
+_ZH_ACT = "保存|添加|加入|删除|移除|收藏|打开|开始"
+_ZH_MEMORY = "记录|记下"
 
-# Orena (or an implied Orena: a sentence that opens with the verb) says it acted.
-_SELF = re.compile(
-    r"(?im)"
-    rf"\b(?:mình|orena)\s+(?:vừa\s+|đã\s+|vừa\s+đã\s+)?{_VI_DONE}\b[^.!?\n]{{0,60}}?\b(?:rồi|xong)\b"
-    rf"|\b(?:mình|orena)\s+(?:vừa\s+)?đã\s+{_VI_DONE}\b"
-    rf"|\b(?:mình|orena)\s+vừa\s+{_VI_DONE}\b"
-    rf"|\b(?:mình|orena)\s+(?:sẽ\s+)?{_VI_DONE}\b[^.!?\n]{{0,40}}?\bcho\s+bạn\b"
-    rf"|^\W*đã\s+{_VI_DONE}\b"
-    rf"|\b(?:lưu|thêm|xóa|xoá)\s+xong\b"
-    rf"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?{_EN_DONE}\b"
-    rf"|^\W*(?:done[,!.]?\s*)?{_EN_DONE}\b"
-    rf"|(?:我|已经)?(?:帮你|为你|给你){_ZH_DONE}(?:下来?|好)?了"
-    rf"|(?:帮你|为你|给你){_ZH_DONE}好"
-    rf"|(?:保存|添加|收藏|删除)(?:好|成功)了"
-)
-# A completion with no actor: false only beside a pending button.
-_STATE = re.compile(
-    r"(?i)"
-    rf"\bđã\s+được\s+{_VI_DONE}\b"
-    rf"|\b(?:has|have|had)\s+been\s+{_EN_DONE}\b"
-    r"|\bis\s+now\s+(?:saved|in\s+your)\b"
-    rf"|已(?:经)?(?:被)?{_ZH_DONE}"
-)
+
+def _patterns(vi_done: str, zh_done: str) -> tuple[re.Pattern[str], re.Pattern[str]]:
+    vi, zh = f"(?:{vi_done})", f"(?:{zh_done})"
+    # Orena (or an implied Orena: a sentence that opens with the verb) says it acted.
+    acted = re.compile(
+        r"(?im)"
+        rf"\b(?:mình|orena)\s+(?:vừa\s+|đã\s+|vừa\s+đã\s+)?{vi}\b[^.!?\n]{{0,60}}?\b(?:rồi|xong)\b"
+        rf"|\b(?:mình|orena)\s+(?:vừa\s+)?đã\s+{vi}\b"
+        rf"|\b(?:mình|orena)\s+vừa\s+{vi}\b"
+        rf"|\b(?:mình|orena)\s+(?:sẽ\s+)?{vi}\b[^.!?\n]{{0,40}}?\bcho\s+bạn\b"
+        rf"|^\W*đã\s+{vi}\b"
+        rf"|\b(?:lưu|thêm|xóa|xoá)\s+xong\b"
+        rf"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?{_EN_DONE}\b"
+        rf"|^\W*(?:done[,!.]?\s*)?{_EN_DONE}\b"
+        rf"|(?:我|已经)?(?:帮你|为你|给你){zh}(?:下来?|好)?了"
+        rf"|(?:帮你|为你|给你){zh}好"
+        rf"|(?:保存|添加|收藏|删除)(?:好|成功)了"
+    )
+    # A completion with no actor: false only beside a pending button.
+    stated = re.compile(
+        r"(?i)"
+        rf"\bđã\s+được\s+{vi}\b"
+        rf"|\b(?:has|have|had)\s+been\s+{_EN_DONE}\b"
+        r"|\bis\s+now\s+(?:saved|in\s+your)\b"
+        rf"|已(?:经)?(?:被)?{zh}"
+    )
+    return acted, stated
+
+
+_SELF, _STATE = _patterns(f"{_VI_ACT}|{_VI_MEMORY}", f"{_ZH_ACT}|{_ZH_MEMORY}")
+_SELF_ACT, _STATE_ACT = _patterns(_VI_ACT, _ZH_ACT)  # when the turn kept a note, remembering is not a claim
 _SENTENCE = re.compile(r"[^.!?。！？\n]+[.!?。！？]*\s*|\n+")
 _BOUNDARY = re.compile(r"[.!?。！？]+[\"'”’)\]]*\s*|\n+")
 
@@ -66,14 +76,16 @@ def _question(sentence: str) -> bool:
     return stripped.endswith(("?", "？")) or bool(re.search(r"(?i)\bchưa\s*[?？]?$", stripped))
 
 
-def claims_acted(sentence: str) -> bool:
-    return not _question(sentence) and bool(_SELF.search(sentence))
+def claims_acted(sentence: str, *, remembered: bool = False) -> bool:
+    acted = _SELF_ACT if remembered else _SELF
+    return not _question(sentence) and bool(acted.search(sentence))
 
 
-def claims_done(sentence: str) -> bool:
+def claims_done(sentence: str, *, remembered: bool = False) -> bool:
     """Either kind of claim, in a sentence that is not a question."""
 
-    return not _question(sentence) and bool(_SELF.search(sentence) or _STATE.search(sentence))
+    acted, stated = (_SELF_ACT, _STATE_ACT) if remembered else (_SELF, _STATE)
+    return not _question(sentence) and bool(acted.search(sentence) or stated.search(sentence))
 
 
 def _sentences(text: str) -> list[str]:
@@ -94,10 +106,12 @@ def offer_for(action_type: str, label: str, payload: Mapping[str, Any], *, inter
     return learner_copy.text(key, interface=interface, support=support, label=label, text=text)[1]
 
 
-def offer_instead(text: str, offer: str | None, *, interface: str, support: str) -> str:
+def offer_instead(text: str, offer: str | None, *, interface: str, support: str, remembered: bool = False) -> str:
     """The whole answer at once (an opening greeting): claims out, the button offered when there is one."""
 
-    claim = claims_done if offer else claims_acted
+    def claim(part: str) -> bool:
+        return (claims_done if offer else claims_acted)(part, remembered=remembered)
+
     parts = _sentences(text)
     if not any(claim(part) for part in parts):
         return text
@@ -134,10 +148,13 @@ class ClaimGate:
         self.sent.extend(out)
         return out
 
-    def finish(self, offer: str | None) -> list[str]:
+    def finish(self, offer: str | None, *, remembered: bool = False) -> list[str]:
         tail = self._held + ([self._partial] if self._partial else [])
         self._held, self._partial = [], ""
-        claim = claims_done if offer is not None else claims_acted
+
+        def claim(part: str) -> bool:
+            return (claims_done if offer is not None else claims_acted)(part, remembered=remembered)
+
         if any(claim(part) for part in tail):
             kept = "".join(part for part in tail if not claim(part))
             if not self.text.strip():

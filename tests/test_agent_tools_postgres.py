@@ -17,6 +17,7 @@ import json
 import os
 import uuid
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from urllib.parse import quote
 
@@ -124,7 +125,7 @@ def test_the_writing_history_reads_the_session_language_and_learner(learning, ap
     with learner_context(EN):
         _essay(learning, "Yesterday I go to the market.", "tense", "go")
     tools = _tools(app_module)
-    for learner, category in ((ZH, "particle"), (EN, "tense")):
+    for learner, category in ((ZH, "Particles"), (EN, "Tense")):  # named in the interface language, never the key
         with learner_context(learner):
             result = tools.invoke("get_writing_history_summary", learner, {})
         assert result.data["revision_count"] == 1, learner.language
@@ -271,3 +272,52 @@ def test_reading_context_and_progress(engine, app_module):
     assert progress.data["attempts"][0]["correct"] == 1
     with learner_context(ZH):  # shared content, but in the learner's language only
         assert tools.invoke("get_current_reading_context", ZH, {"content_id": content_id}).data == {"found": False}
+
+
+def test_the_snapshot_and_weaknesses_are_the_learners_own_in_their_language(engine, app_module):
+    """Slice 3 on PostgreSQL: the learner summary and the weakness counts read only this learner, this language."""
+
+    from writing_coach.agent.runtime import AppReads, build_tool_registry
+    from writing_coach.core.request_context import current_language_code
+    from writing_coach.learner_summary import learner_summary
+    from writing_coach.learner_summary_api import runtime_sources
+    from writing_coach.persistence.specialized_repository import PostgresSpecializedLearningRepository
+
+    specialized = PostgresSpecializedLearningRepository(engine)
+    sources = runtime_sources(
+        essays=lambda: [], reading=lambda limit: {"items": []}, grammar=lambda: [],
+        library=lambda limit: {"items": []}, specialized=specialized,
+    )  # fmt: skip
+    tools = build_tool_registry(
+        writing_review=lambda essay_id: None,
+        reads=AppReads(
+            learner_summary=lambda window: learner_summary(current_language_code(), sources(), window=window),
+            speaking_attempts=lambda limit, *, asset_id=None, segment_id=None: specialized.list_speaking_attempt_records(
+                limit, asset_id=asset_id, segment_id=segment_id
+            ),
+            listening_recent=specialized.list_recent_listening_progress_records,
+        ),
+    )
+    # a word of its own: the module's schema also holds the Slice 2 test's attempt
+    flagged_word = [{"word": "学生", "accuracy_score": 40.0, "error_type": "Mispronunciation", "phonemes": []}]
+    with learner_context(ZH):
+        for take in range(2):
+            specialized.create_speaking_attempt_record(
+                {
+                    "created_at": f"2026-09-2{take + 4}T08:00:00+00:00", "language": "zh",  # in the past: in the window
+                    "take_id": f"s1:{take}:{uuid.uuid4().hex}", "asset_id": "lesson-9", "segment_id": "s1",
+                    "reference_text": "我是学生", "transcript_text": "我是学生", "dimensions": {"pronunciation": 70.0},
+                    "provenance": {}, "evidence": {"pronunciation": {"words": flagged_word}},
+                }
+            )  # fmt: skip
+        mine = tools.invoke("build_learning_snapshot", replace(ZH, interface="vi"), {})
+        weak = tools.invoke("get_learning_weaknesses", replace(ZH, interface="vi"), {})
+    speaking = mine.data["skill_summary"]["speaking"]
+    assert speaking["activity"]["count"] >= 2 and speaking["latest"]
+    assert {"word": "学生", "times_flagged": 2, "most_often": "Phát âm sai"} in weak.data["by_skill"]["Nói"]
+    for learner in (OTHER_ZH, EN):  # another learner, the other language: nothing of these records
+        with learner_context(learner):
+            other = tools.invoke("build_learning_snapshot", learner, {})
+            other_weak = tools.invoke("get_learning_weaknesses", learner, {})
+        assert other.data["skill_summary"]["speaking"]["latest"] == []
+        assert other_weak.data["by_skill"]["Speaking"] == []

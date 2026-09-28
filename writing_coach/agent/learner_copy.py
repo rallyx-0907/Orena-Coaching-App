@@ -223,6 +223,30 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "Attempts: {n}", "vi": "Lần làm: {n}", "zh-CN": "作答：{n}"},
         ),
+        "tool.build_learning_snapshot": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Looking at your learning", "vi": "Đang xem việc học của bạn", "zh-CN": "正在查看你的学习情况"},
+        ),
+        "result.build_learning_snapshot": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Skills with records: {n}", "vi": "Kỹ năng có dữ liệu: {n}", "zh-CN": "有记录的技能：{n}"},
+        ),
+        "tool.get_learning_weaknesses": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Looking for patterns", "vi": "Đang tìm điểm hay lặp lại", "zh-CN": "正在查找反复出现的问题"},
+        ),
+        "result.get_learning_weaknesses": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Skills with patterns: {n}", "vi": "Kỹ năng có điểm lặp lại: {n}", "zh-CN": "有反复问题的技能：{n}"},
+        ),
+        "tool.get_recommended_next_activities": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Choosing what's next", "vi": "Đang chọn việc tiếp theo", "zh-CN": "正在选择下一步"},
+        ),
+        "result.get_recommended_next_activities": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Next steps: {n}", "vi": "Bước tiếp theo: {n}", "zh-CN": "下一步：{n}"},
+        ),
         "tool.get_grammar_point": _entry(
             CopyLayer.INTERFACE,
             {"en": "Opening the grammar point", "vi": "Đang mở điểm ngữ pháp", "zh-CN": "正在打开语法点"},

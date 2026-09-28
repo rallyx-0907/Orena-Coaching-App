@@ -33,6 +33,7 @@ from pydantic import ValidationError
 from writing_coach.agent import learner_copy
 from writing_coach.agent.contract import (
     ACTIONS,
+    COACH_NOTE_KINDS,
     CONTRACT_VERSION,
     MAX_DISPLAY_REASON_CHARS,
     OPENING_MAX_ACTIONS,
@@ -45,6 +46,9 @@ from writing_coach.agent.contract import (
     actions_for_version,
     intents_for_version,
 )
+import secrets
+from datetime import UTC, datetime
+
 from writing_coach.agent.address import address_note, valid_term
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
 from writing_coach.agent.provider import ProviderToolSpec
@@ -94,9 +98,18 @@ SET_VOICE_STYLE = "set_voice_style"
 ADD_REFERENCE = "add_reference"
 SET_ADDRESS = "set_address"
 OFFER_ADDRESS = "offer_address"
+REMEMBER_NOTE = "remember_note"
+FORGET_NOTE = "forget_note"
 REPLY_TOOL_NAMES = frozenset(
-    {PROPOSE_ACTION, SUGGEST_NEXT, CITE_EVIDENCE, SET_VOICE_STYLE, ADD_REFERENCE, SET_ADDRESS, OFFER_ADDRESS}
-)
+    {
+        PROPOSE_ACTION, SUGGEST_NEXT, CITE_EVIDENCE, SET_VOICE_STYLE, ADD_REFERENCE, SET_ADDRESS, OFFER_ADDRESS,
+        REMEMBER_NOTE, FORGET_NOTE,
+    }
+)  # fmt: skip
+MAX_NOTE_CHARS = 200
+MAX_NOTE_UPDATES = 2  # coach notes a turn may propose, besides the address
+NEW_NOTE_WEIGHT = 0.6
+REINFORCE = 0.2
 _ADDRESS_ARGS = {
     "type": "object",
     "properties": {
@@ -226,6 +239,28 @@ def reply_tool_specs(
     if not opening:  # an opening turn has no learner words to take an address from (§3.2: no memory_update)
         specs += [
             ProviderToolSpec(
+                REMEMBER_NOTE,
+                "Keep something the learner said directly about how they learn: a preference (\"explain "
+                "briefly\"), a goal (\"HSK4 in December\") or a plan (\"15 minutes a day\"), in their words. Never "
+                "feelings, circumstances or health; never what their records already show. To correct or restate "
+                "one, give its id as replaces. The device keeps it.",
+                {
+                    "type": "object",
+                    "properties": {
+                        "kind": {"type": "string", "enum": sorted(COACH_NOTE_KINDS)},
+                        "text": {"type": "string", "maxLength": MAX_NOTE_CHARS},
+                        "replaces": {"type": "string", "description": "The id of the coach note this corrects."},
+                    },
+                    "required": ["kind", "text"],
+                    "additionalProperties": False,
+                },
+            ),
+            ProviderToolSpec(
+                FORGET_NOTE,
+                "Forget a coach note the learner asked you to forget, by its id.",
+                {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"], "additionalProperties": False},
+            ),
+            ProviderToolSpec(
                 SET_ADDRESS,
                 "Keep how you and the learner are called from now on - only when the learner asked for this pair "
                 "or said yes when you offered it. The device remembers it.",
@@ -261,6 +296,7 @@ class ReplyOutputs:
     voice_style: str = "neutral_explain"
     address_asked: bool = False  # already offered in this session
     address_chosen: bool = False  # the learner already chose a pair (or said no): no offer
+    notes: Mapping[str, float] = field(default_factory=dict)  # coach note id -> weight, as the device sent them
     address_offered_now: bool = False
     memory_updates: list[MemoryUpdateEvent] = field(default_factory=list)
 
@@ -301,6 +337,8 @@ class ReplyOutputs:
         if name == CITE_EVIDENCE:
             return self._cite(args, known_evidence)
         handlers = {
+            REMEMBER_NOTE: self._remember,
+            FORGET_NOTE: self._forget,
             SET_ADDRESS: self._set_address,
             OFFER_ADDRESS: self._offer_address,
             PROPOSE_ACTION: self._action,
@@ -406,11 +444,51 @@ class ReplyOutputs:
         if terms is None:
             return "refused: each term is 1-24 letters (spaces, hyphens, apostrophes between), nothing else"
         note = address_note(self.support, *terms)
-        self.memory_updates = [MemoryUpdateEvent(op="upsert", note=note)]  # one pair per support language
+        # one pair per support language: a second call in the turn replaces the first
+        self.memory_updates = [u for u in self.memory_updates if u.note.get("id") != note["id"]]
+        self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note))
         return (
             f"accepted: from this answer on you are '{terms[0]}' and the learner is '{terms[1]}'. "
             "The words change; the respect does not."
         )
+
+    def _note_updates(self) -> int:
+        return sum(1 for u in self.memory_updates if not str(u.note.get("id", "")).startswith("address-"))
+
+    def _remember(self, args: Mapping[str, Any]) -> str:
+        """A coach note (spec §12 layer 3): only what the learner said directly; the device keeps it (§5.4)."""
+
+        if self.opening:
+            return "refused: not in an opening turn"
+        kind, text, replaces = args.get("kind"), args.get("text"), args.get("replaces")
+        if kind not in COACH_NOTE_KINDS or not isinstance(text, str) or not text.strip():
+            return f"refused: kind is one of {sorted(COACH_NOTE_KINDS)} and text is the learner's own words"
+        if len(text.strip()) > MAX_NOTE_CHARS:
+            return f"refused: at most {MAX_NOTE_CHARS} characters"
+        if replaces is not None and (str(replaces) not in self.notes or str(replaces).startswith("address-")):
+            return "refused: replaces names a coach note the learner has (not an address note: use set_address)"
+        if self._note_updates() >= MAX_NOTE_UPDATES:
+            return f"refused: at most {MAX_NOTE_UPDATES} notes a turn"
+        weight = min(1.0, self.notes[str(replaces)] + REINFORCE) if replaces is not None else NEW_NOTE_WEIGHT
+        note = {
+            "id": str(replaces) if replaces is not None else f"n-{secrets.token_hex(5)}",
+            "kind": kind,
+            "text": text.strip(),
+            "weight": round(weight, 2),
+            "last_reinforced": datetime.now(UTC).isoformat(),
+            "expires_at": None,
+        }
+        self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note))
+        return f"accepted: kept as {note['id']}; you may say it is noted"
+
+    def _forget(self, args: Mapping[str, Any]) -> str:
+        if self.opening:
+            return "refused: not in an opening turn"
+        note_id = str(args.get("id") or "")
+        if note_id not in self.notes or note_id.startswith("address-"):
+            return "refused: no such coach note (an address is changed with set_address)"
+        self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": note_id}))
+        return f"accepted: {note_id} is forgotten; you may say so"
 
     def _offer_address(self, args: Mapping[str, Any]) -> str:
         if self.opening:
